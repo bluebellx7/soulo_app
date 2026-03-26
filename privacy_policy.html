@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Soulo (搜罗)</title>
+    <style>
+        :root {
+            --primary-color: #6366F1;
+            --text-color: #1d1d1f;
+            --bg-color: #f5f5f7;
+            --card-bg: #ffffff;
+            --secondary-text: #86868b;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 40px;
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+        }
+        header {
+            border-bottom: 1px solid #e5e5e5;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+        }
+        h1 { font-size: 32px; font-weight: 700; margin-bottom: 10px; color: #000; }
+        h2 { font-size: 22px; font-weight: 600; margin-top: 30px; margin-bottom: 15px; color: var(--primary-color); }
+        p, li { font-size: 16px; margin-bottom: 15px; }
+        .last-updated { font-size: 14px; color: var(--secondary-text); margin-bottom: 20px; }
+        .highlight-box {
+            background-color: #eef2ff;
+            border-left: 4px solid var(--primary-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 14px;
+            color: var(--secondary-text);
+        }
+        @media (max-width: 600px) {
+            .container { margin: 10px; padding: 20px; border-radius: 12px; }
+            h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Privacy Policy</h1>
+            <p class="last-updated">Last Updated: March 2026</p>
+            <p><strong>App Name:</strong> Soulo (搜罗)</p>
+        </header>
+
+        <section>
+            <div class="highlight-box">
+                <strong>Core Commitment:</strong> Soulo is a search aggregation tool. We do not collect, store, or transmit any personal data to external servers. All data stays on your device.
+            </div>
+
+            <h2>1. What Soulo Does</h2>
+            <p>Soulo is an aggregated search app that helps you search across multiple platforms (Google, Baidu, YouTube, Bilibili, etc.) through an embedded browser. When you search, Soulo constructs a URL using your keyword and opens it within the app's WebView. Your search terms are sent directly to the selected platform — Soulo does not intercept, store, or relay these queries through any server.</p>
+
+            <h2>2. Data We Do NOT Collect</h2>
+            <ul>
+                <li><strong>No Server Communication:</strong> Soulo does not operate any backend servers. There is no account system, no analytics, and no telemetry.</li>
+                <li><strong>No Personal Identifiers:</strong> We do not collect names, email addresses, phone numbers, or any personal information.</li>
+                <li><strong>No Tracking:</strong> We do not use any third-party analytics, advertising SDKs, or tracking frameworks.</li>
+            </ul>
+
+            <h2>3. Local Data Storage</h2>
+            <p>The following data is stored locally on your device and never leaves it:</p>
+            <ul>
+                <li><strong>Search History:</strong> Your recent search keywords are saved using SwiftData for quick access. You can clear this at any time in Settings → Privacy.</li>
+                <li><strong>Bookmarks:</strong> Pages you bookmark are stored locally. You can delete them individually or clear all.</li>
+                <li><strong>Platform Configuration:</strong> Your platform visibility, order, and custom groups are saved in UserDefaults.</li>
+                <li><strong>Preferences:</strong> Language, appearance, wallpaper settings, and home screen customization are stored locally via UserDefaults.</li>
+            </ul>
+
+            <h2>4. iCloud Sync</h2>
+            <p>If you enable iCloud sync in Settings, your platform configuration and recent search keywords are synced via Apple's iCloud Key-Value Store. This data is encrypted by Apple and only accessible with your Apple ID. Soulo does not have access to your iCloud credentials.</p>
+
+            <h2>5. Permissions</h2>
+            <ul>
+                <li><strong>Microphone:</strong> Used only for voice search. Audio is processed on-device using Apple's Speech framework and is never recorded or transmitted.</li>
+                <li><strong>Camera:</strong> Used only for image-based text search (OCR). Photos are processed locally using Apple's Vision framework.</li>
+                <li><strong>Photo Library:</strong> Used to set custom wallpapers and save wallpaper images. Photos are never uploaded.</li>
+            </ul>
+
+            <h2>6. Third-Party Content</h2>
+            <p>Search results are displayed from third-party platforms via WebView. Each platform has its own privacy policy and data practices. Soulo does not control, modify, or intercept the content displayed by these platforms, beyond optional ad filtering and login popup removal for improved user experience.</p>
+
+            <h2>7. Ad Filtering</h2>
+            <p>Soulo includes an optional ad blocker that can be enabled in Settings. When enabled, it blocks network requests to known advertising domains and hides ad elements using CSS/JavaScript injection. This feature operates entirely within the app's WebView and does not affect other apps or browsers.</p>
+
+            <h2>8. On-Device AI Features</h2>
+            <p>Soulo uses Apple's on-device frameworks for intelligent features:</p>
+            <ul>
+                <li><strong>Spell Correction:</strong> UITextChecker (on-device)</li>
+                <li><strong>Language Detection:</strong> NLLanguageRecognizer (on-device)</li>
+                <li><strong>Text Extraction:</strong> Vision framework OCR (on-device)</li>
+                <li><strong>Clipboard Analysis:</strong> NLTagger for content type detection (on-device)</li>
+            </ul>
+            <p>All AI processing happens locally. No data is sent to any cloud AI service.</p>
+
+            <h2>9. Children's Privacy</h2>
+            <p>Soulo does not collect any personal data and is safe for users of all ages. We do not knowingly collect information from children under 13.</p>
+
+            <h2>10. Data Deletion</h2>
+            <p>Deleting the app removes all locally stored data instantly. Since we store nothing on our servers, there is nothing to request deletion of. You can also selectively clear search history, bookmarks, and WebView cache in Settings → Privacy.</p>
+
+            <h2>11. Changes to This Policy</h2>
+            <p>We may update this privacy policy from time to time. Changes will be reflected in the "Last Updated" date above.</p>
+
+            <h2>12. Contact Us</h2>
+            <p>If you have questions about this privacy policy, please contact us at <a href="mailto:contact@dkluge.com">contact@dkluge.com</a></p>
+        </section>
+
+        <footer>
+            &copy; 2025-2026 DKluge.com. All Rights Reserved.
+        </footer>
+    </div>
+</body>
+</html>

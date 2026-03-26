@@ -1,0 +1,345 @@
+/* App */
+"app_name" = "搜罗";
+"app_subtitle" = "一键搜遍全球平台";
+
+/* Search */
+"search_placeholder" = "搜索关键词或输入网址";
+"search" = "搜索";
+"recent_searches" = "最近搜索";
+"show_more" = "更多";
+"show_less" = "收起";
+"clear_all" = "清除全部";
+"no_results" = "暂无结果";
+
+/* Clipboard */
+"clipboard_detected" = "检测到剪贴板内容";
+
+/* Regions */
+"region_china" = "中国";
+"region_international" = "国际";
+"region_japan" = "日本";
+"region_russia" = "俄罗斯";
+
+/* Platforms - ALL 22 */
+"platform_douyin" = "抖音";
+"platform_bilibili" = "B站";
+"platform_xiaohongshu" = "小红书";
+"platform_weibo" = "微博";
+"platform_zhihu" = "知乎";
+"platform_baidu" = "百度";
+"platform_taobao" = "淘宝";
+"platform_jd" = "京东";
+"platform_wechat" = "微信搜一搜";
+"platform_google" = "Google";
+"platform_youtube" = "YouTube";
+"platform_twitter" = "X (Twitter)";
+"platform_reddit" = "Reddit";
+"platform_amazon" = "Amazon";
+"platform_tiktok" = "TikTok";
+"platform_yahoo_jp" = "Yahoo! Japan";
+"platform_google_jp" = "Google 日本";
+"platform_twitter_jp" = "X 日本";
+"platform_youtube_jp" = "YouTube 日本";
+"platform_yandex" = "Yandex";
+"platform_vk" = "VK";
+
+/* WebView */
+"loading" = "加载中...";
+"load_error" = "加载失败";
+"bookmark_added" = "已添加到收藏";
+"bookmark_removed" = "已从收藏移除";
+
+/* Bookmarks */
+"bookmarks" = "收藏";
+"no_bookmarks" = "暂无收藏";
+"no_bookmarks_desc" = "浏览网页时点击收藏按钮保存";
+
+/* History */
+"search_history" = "搜索历史";
+"no_history" = "暂无搜索历史";
+"no_history_desc" = "搜索过的关键词会显示在这里";
+"today" = "今天";
+"yesterday" = "昨天";
+"earlier" = "更早";
+"confirm_clear_history" = "确认清除所有搜索历史？";
+"confirm_clear_bookmarks" = "确认清除所有收藏？";
+
+/* Settings */
+"settings" = "设置";
+"platform_management" = "平台管理";
+"appearance" = "外观";
+"appearance_system" = "跟随系统";
+"appearance_light" = "浅色";
+"appearance_dark" = "深色";
+"language" = "语言";
+"background" = "背景";
+"privacy" = "隐私";
+"about" = "关于";
+"version" = "版本";
+"reset_to_defaults" = "恢复默认设置";
+"confirm_reset" = "确认恢复默认设置？这将重置所有平台配置。";
+
+/* Wallpaper */
+"wallpaper_bing" = "Bing 每日壁纸";
+"wallpaper_custom" = "自定义壁纸";
+"wallpaper_none" = "动态背景";
+"choose_photo" = "选择照片";
+
+/* Platform Management */
+"add_platform" = "添加平台";
+"platform_name" = "平台名称";
+"search_url_template" = "搜索 URL 模板";
+"search_url_hint" = "使用 %@ 作为关键词占位符\n例如: https://example.com/search?q=%@";
+"home_url" = "首页地址";
+"select_region" = "选择地区";
+"auto_sort_by_frequency" = "按使用频率自动排序";
+"custom_platform" = "自定义平台";
+"delete_platform" = "删除平台";
+"confirm_delete_platform" = "确认删除此自定义平台？";
+"url_template_error" = "URL 模板必须包含 %@ 占位符";
+
+/* Privacy */
+"incognito_mode" = "无痕模式";
+"incognito_desc" = "开启后搜索不会记录历史";
+"clear_search_history" = "清除搜索历史";
+"clear_bookmarks" = "清除所有收藏";
+"clear_webview_cache" = "清除浏览缓存";
+"clear_cache_desc" = "清除 WebView 的 Cookie 和缓存数据";
+"clear_all_data" = "清除所有数据";
+"action_irreversible" = "此操作不可撤销";
+
+/* Privacy Settings (extended keys) */
+"privacy_section_browsing" = "浏览";
+"privacy_section_data" = "数据管理";
+"privacy_incognito" = "无痕模式";
+"privacy_incognito_desc" = "开启后搜索不会记录历史";
+"privacy_clear_history" = "清除搜索历史";
+"privacy_clear_history_desc" = "删除所有已保存的搜索关键词";
+"privacy_clear_history_confirm_title" = "清除搜索历史？";
+"privacy_clear_history_confirm_message" = "所有搜索历史将被永久删除。";
+"privacy_clear_bookmarks" = "清除所有收藏";
+"privacy_clear_bookmarks_desc" = "删除所有已保存的收藏";
+"privacy_clear_bookmarks_confirm_title" = "清除所有收藏？";
+"privacy_clear_bookmarks_confirm_message" = "所有收藏将被永久删除。";
+"privacy_clear_cache" = "清除浏览缓存";
+"privacy_clear_cache_desc" = "清除 Cookie、缓存和本地存储";
+"privacy_clear_cache_confirm_title" = "清除浏览缓存？";
+"privacy_clear_cache_confirm_message" = "所有浏览数据将被永久删除。";
+"privacy_clear_action" = "清除";
+"privacy_data_footer" = "以上操作不可撤销，清除的数据无法恢复。";
+"settings_privacy" = "隐私";
+"platform_sort_options" = "排序选项";
+"cancel" = "取消";
+"confirm" = "确认";
+"delete" = "删除";
+"done" = "完成";
+"save" = "保存";
+"edit" = "编辑";
+"share" = "分享";
+
+/* Permissions */
+"speech_permission" = "需要语音识别权限才能使用语音搜索";
+"microphone_permission" = "需要麦克风权限进行语音输入";
+
+/* Errors */
+"error_occurred" = "出现错误";
+"network_error" = "网络连接失败";
+"try_again" = "重试";
+
+/* Voice Input */
+"voice_listening" = "正在聆听...";
+"voice_tap_to_speak" = "点击按钮开始说话";
+
+/* F3: 拼写纠错 */
+"did_you_mean" = "你是不是要搜:";
+
+/* F4: 页面摘要 */
+"summarize" = "摘要";
+"summary_title" = "页面摘要";
+"summarizing" = "正在生成摘要...";
+"copy_summary" = "复制";
+
+/* F5: 平台推荐 */
+"suggested_platforms" = "推荐";
+
+/* F7: 剪贴板智能 */
+"clipboard_url_detected" = "检测到链接";
+"clipboard_product_detected" = "检测到商品";
+"clipboard_person_detected" = "检测到人名";
+"open_directly" = "直接打开";
+
+/* F8: 跨语言搜索 */
+"also_search_in" = "同时用%@搜索";
+
+/* F9: 图片搜索 */
+"image_search" = "图片搜索";
+"extracting_text" = "正在提取文字...";
+"no_text_found" = "未识别到文字";
+"detected_objects" = "识别到:";
+"photo_library" = "相册";
+
+/* F1: Siri */
+"siri_search_tip" = "试试说：\"用搜罗搜猫\"";
+
+/* AI 平台 */
+"platform_deepseek" = "DeepSeek";
+"platform_qianwen" = "通义千问";
+"platform_bing" = "必应";
+"platform_duckduckgo" = "DuckDuckGo";
+"platform_github" = "GitHub";
+"platform_wikipedia" = "维基百科";
+"platform_perplexity" = "Perplexity AI";
+"platform_instagram" = "Instagram";
+"platform_linkedin" = "LinkedIn";
+"platform_pinterest" = "Pinterest";
+"platform_ebay" = "eBay";
+"platform_stackoverflow" = "StackOverflow";
+"platform_scholar" = "谷歌学术";
+"platform_sogou" = "搜狗";
+"platform_360" = "360搜索";
+"platform_toutiao" = "头条搜索";
+"platform_youku" = "优酷";
+"platform_iqiyi" = "爱奇艺";
+"platform_netease_music" = "网易云音乐";
+"platform_csdn" = "CSDN";
+"platform_juejin" = "掘金";
+"platform_rakuten" = "乐天";
+"platform_niconico" = "ニコニコ";
+"platform_yuanbao" = "腾讯元宝";
+"platform_doubao" = "豆包";
+"login_required_title" = "需要登录";
+"login_required_message" = "该平台需要先登录才能使用。请在页面中登录，登录后搜索将自动执行。";
+"login_required_toast" = "请先登录后再搜索";
+/* 自定义分组 */
+"custom_groups" = "自定义分组";
+"no_groups" = "暂无自定义分组";
+"no_groups_desc" = "创建分组来整理你常用的平台";
+"add_group" = "新建分组";
+"group_name" = "分组名称";
+"platforms_count" = "个平台";
+
+/* 动态主题 */
+"dynamic_theme" = "主题";
+"theme_midnight" = "午夜";
+"theme_ocean" = "海洋";
+"theme_aurora" = "极光";
+"theme_sunset" = "日落";
+"theme_monochrome" = "黑白";
+"wallpaper_drag_hint" = "拖拽移动，捏合缩放";
+"edit_title" = "编辑首页标题";
+"edit_subtitle" = "编辑副标题";
+"home_customization" = "首页定制";
+"link_copied" = "链接已复制";
+"copy_link" = "复制链接";
+"copied" = "已复制！";
+"ad_block" = "广告过滤";
+"ad_block_desc" = "隐藏搜索结果中的广告和追踪器（重新搜索后生效）";
+"browsing" = "浏览";
+"no_platforms_in_group" = "暂无平台";
+"add_to_group" = "添加平台到分组";
+"wallpaper_saved" = "壁纸已保存到相册";
+"add_existing" = "选择已有";
+"region_image_search" = "图片搜索";
+"platform_google_lens" = "Google 识图";
+"platform_baidu_image" = "百度识图";
+"platform_yandex_image" = "Yandex 识图";
+"confirm_delete_group" = "确认删除此分组？";
+"confirm_reset" = "恢复所有平台为默认设置？自定义分组将被清除。";
+
+/* Missing translations */
+"camera" = "相机";
+"select_region" = "选择分组";
+"add_platform_region" = "分组";
+"image_search_desc" = "选择一张图片，通过图片搜索平台进行搜索";
+"image_uploading" = "正在上传图片...";
+"switch_to_bing" = "切换到 Bing 壁纸？";
+"switch_to_bing_desc" = "开启 Bing 每日壁纸后，点击小风车即可浏览精美壁纸。";
+
+"open_external_title" = "打开外部应用？";
+"open_external_message" = "此链接将打开其他应用，是否继续？";
+
+"ai_loading_page" = "正在加载 AI 平台...";
+"ai_loading_input" = "本地 AI 正在分析并输入...";
+
+/* Widget */
+"widget_search" = "快速搜索";
+"widget_description" = "快速搜索多个平台";
+
+/* Settings - Navigation & Titles */
+"settings_title" = "设置";
+"settings_platforms" = "平台";
+"settings_appearance" = "外观";
+"settings_language" = "语言";
+"settings_wallpaper" = "壁纸";
+"settings_version" = "版本";
+"settings_privacy_policy" = "隐私政策";
+"settings_terms" = "服务条款";
+
+/* Settings - Section Headers */
+"settings_section_platforms" = "平台";
+"settings_section_appearance" = "外观";
+"settings_section_language" = "语言";
+"settings_section_background" = "背景";
+"settings_section_privacy" = "隐私";
+"settings_section_about" = "关于";
+
+/* Platform Management */
+"platform_auto_sort" = "按使用频率自动排序";
+"platform_auto_sort_desc" = "根据使用频率自动调整平台顺序";
+"platform_custom_badge" = "自定义";
+"platform_reset_defaults" = "恢复默认设置";
+"platform_reset_footer" = "重置将恢复所有平台的默认顺序和可见性。";
+"platform_reset_confirm_title" = "重置平台配置？";
+"platform_reset_confirm_action" = "重置";
+"platform_reset_confirm_message" = "所有平台配置将恢复为默认设置，此操作不可撤销。";
+
+/* Add Custom Platform */
+"add_platform_title" = "添加自定义平台";
+"add_platform_subtitle" = "将任意搜索引擎或网站添加为平台";
+"add_platform_name" = "平台名称";
+"add_platform_name_placeholder" = "例如：DuckDuckGo";
+"add_platform_search_url" = "搜索 URL 模板";
+"add_platform_home_url" = "首页地址";
+"add_platform_home_url_optional" = "选填 - 在没有搜索词时打开平台主页";
+"add_platform_error_name_empty" = "请输入平台名称";
+"add_platform_error_url_placeholder" = "URL 必须包含 %@ 作为搜索关键词占位符";
+"add_platform_url_help_title" = "URL 模板说明";
+"add_platform_url_help_desc" = "将 URL 中的搜索关键词替换为 %@，搜索时会自动填入你输入的内容。";
+"add_platform_url_help_examples" = "示例";
+
+/* Wallpaper (extended) */
+"wallpaper_choose_photo" = "选择照片";
+
+/* Language Settings */
+"language_select_title" = "选择语言";
+"language_footer" = "更改语言将更新应用内的所有文本。";
+
+/* Home Bookmarks */
+"show_bookmarks_home" = "首页显示收藏";
+"show_bookmarks_home_desc" = "在首页以图标形式展示收藏的网站";
+"home_screen" = "首页";
+
+/* AI Search Platforms */
+"platform_metaso" = "秘塔搜索";
+"platform_tiangong" = "天工AI搜索";
+"platform_phind" = "Phind";
+"platform_you" = "You.com";
+"platform_kimi" = "Kimi搜索";
+"voice_stop" = "停止";
+"voice_record" = "录音";
+
+/* Batch Import */
+"batch_import" = "批量导入";
+"batch_import_format" = "粘贴以下格式的 JSON";
+"batch_import_group" = "添加到分组（选填）";
+"batch_import_group_placeholder" = "如：影视";
+"batch_import_action" = "导入";
+"batch_import_result" = "成功导入 %d 个平台";
+"paste_from_clipboard" = "从剪贴板粘贴";
+"none" = "无";
+"show_group_picker_home" = "首页显示分组";
+"show_group_picker_home_desc" = "在首页显示平台分组标签，快速切换搜索范围";
+"error_no_internet" = "无网络连接，请检查网络设置";
+"error_timeout" = "连接超时，请重试";
+"error_ssl" = "安全连接失败，该网站可能不安全";
+"retry" = "重试";

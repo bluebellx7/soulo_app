@@ -1,0 +1,4 @@
+NSMicrophoneUsageDescription = "Soulo cần quyền truy cập microphone để tìm kiếm bằng giọng nói.";
+NSSpeechRecognitionUsageDescription = "Soulo cần nhận dạng giọng nói để chuyển đổi giọng nói của bạn thành văn bản tìm kiếm.";
+NSPhotoLibraryUsageDescription = "Soulo cần quyền truy cập thư viện ảnh để đặt hình nền tùy chỉnh.";
+NSPhotoLibraryAddUsageDescription = "Soulo cần quyền để lưu ảnh web vào thư viện ảnh của bạn.";

@@ -1,0 +1,343 @@
+/* App */
+"app_name" = "Soulo";
+"app_subtitle" = "Search Everything, Everywhere";
+
+/* Search */
+"search_placeholder" = "Search or enter URL";
+"search" = "Search";
+"recent_searches" = "Recent Searches";
+"show_more" = "More";
+"show_less" = "Less";
+"clear_all" = "Clear All";
+"no_results" = "No Results";
+
+/* Clipboard */
+"clipboard_detected" = "Clipboard content detected";
+
+/* Regions */
+"region_china" = "China";
+"region_international" = "International";
+"region_japan" = "Japan";
+"region_russia" = "Russia";
+
+/* Platforms - ALL 22 */
+"platform_douyin" = "Douyin";
+"platform_bilibili" = "Bilibili";
+"platform_xiaohongshu" = "Xiaohongshu";
+"platform_weibo" = "Weibo";
+"platform_zhihu" = "Zhihu";
+"platform_baidu" = "Baidu";
+"platform_taobao" = "Taobao";
+"platform_jd" = "JD";
+"platform_wechat" = "WeChat Search";
+"platform_google" = "Google";
+"platform_youtube" = "YouTube";
+"platform_twitter" = "X (Twitter)";
+"platform_reddit" = "Reddit";
+"platform_amazon" = "Amazon";
+"platform_tiktok" = "TikTok";
+"platform_yahoo_jp" = "Yahoo! Japan";
+"platform_google_jp" = "Google Japan";
+"platform_twitter_jp" = "X Japan";
+"platform_youtube_jp" = "YouTube Japan";
+"platform_yandex" = "Yandex";
+"platform_vk" = "VK";
+
+/* WebView */
+"loading" = "Loading...";
+"load_error" = "Failed to Load";
+"bookmark_added" = "Bookmark Added";
+"bookmark_removed" = "Bookmark Removed";
+
+/* Bookmarks */
+"bookmarks" = "Bookmarks";
+"no_bookmarks" = "No Bookmarks";
+"no_bookmarks_desc" = "Tap the bookmark button while browsing to save pages";
+
+/* History */
+"search_history" = "Search History";
+"no_history" = "No Search History";
+"no_history_desc" = "Your recent searches will appear here";
+"today" = "Today";
+"yesterday" = "Yesterday";
+"earlier" = "Earlier";
+"confirm_clear_history" = "Clear all search history?";
+"confirm_clear_bookmarks" = "Clear all bookmarks?";
+
+/* Settings */
+"settings" = "Settings";
+"platform_management" = "Platform Management";
+"appearance" = "Appearance";
+"appearance_system" = "System";
+"appearance_light" = "Light";
+"appearance_dark" = "Dark";
+"language" = "Language";
+"background" = "Background";
+"privacy" = "Privacy";
+"about" = "About";
+"version" = "Version";
+"reset_to_defaults" = "Reset to Defaults";
+"confirm_reset" = "Reset to default settings? This will reset all platform configurations.";
+
+/* Wallpaper */
+"wallpaper_bing" = "Bing Daily Wallpaper";
+"wallpaper_custom" = "Custom Wallpaper";
+"wallpaper_none" = "Dynamic Background";
+"choose_photo" = "Choose Photo";
+
+/* Platform Management */
+"add_platform" = "Add Platform";
+"platform_name" = "Platform Name";
+"search_url_template" = "Search URL Template";
+"search_url_hint" = "Use %@ as the keyword placeholder\nExample: https://example.com/search?q=%@";
+"home_url" = "Home URL";
+"select_region" = "Select Region";
+"auto_sort_by_frequency" = "Auto-sort by Usage Frequency";
+"custom_platform" = "Custom Platform";
+"delete_platform" = "Delete Platform";
+"confirm_delete_platform" = "Delete this custom platform?";
+"url_template_error" = "URL template must contain the %@ placeholder";
+
+/* Privacy */
+"incognito_mode" = "Incognito Mode";
+"incognito_desc" = "Searches won't be saved to history when enabled";
+"clear_search_history" = "Clear Search History";
+"clear_bookmarks" = "Clear All Bookmarks";
+"clear_webview_cache" = "Clear Browsing Cache";
+"clear_cache_desc" = "Clear WebView cookies and cached data";
+"clear_all_data" = "Clear All Data";
+"action_irreversible" = "This action cannot be undone";
+
+/* Privacy Settings (extended keys) */
+"privacy_section_browsing" = "Browsing";
+"privacy_section_data" = "Data Management";
+"privacy_incognito" = "Incognito Mode";
+"privacy_incognito_desc" = "Searches won't be saved to history when enabled";
+"privacy_clear_history" = "Clear Search History";
+"privacy_clear_history_desc" = "Remove all saved search keywords";
+"privacy_clear_history_confirm_title" = "Clear Search History?";
+"privacy_clear_history_confirm_message" = "All search history will be permanently deleted.";
+"privacy_clear_bookmarks" = "Clear All Bookmarks";
+"privacy_clear_bookmarks_desc" = "Remove all saved bookmarks";
+"privacy_clear_bookmarks_confirm_title" = "Clear All Bookmarks?";
+"privacy_clear_bookmarks_confirm_message" = "All bookmarks will be permanently deleted.";
+"privacy_clear_cache" = "Clear Browsing Cache";
+"privacy_clear_cache_desc" = "Clear cookies, cache, and local storage";
+"privacy_clear_cache_confirm_title" = "Clear Browsing Cache?";
+"privacy_clear_cache_confirm_message" = "All browsing data will be permanently deleted.";
+"privacy_clear_action" = "Clear";
+"privacy_data_footer" = "These actions cannot be undone. Cleared data cannot be recovered.";
+"settings_privacy" = "Privacy";
+"platform_sort_options" = "Sort Options";
+"cancel" = "Cancel";
+"confirm" = "Confirm";
+"delete" = "Delete";
+"done" = "Done";
+"save" = "Save";
+"edit" = "Edit";
+"share" = "Share";
+
+/* Permissions */
+"speech_permission" = "Speech recognition permission is required for voice search";
+"microphone_permission" = "Microphone permission is required for voice input";
+
+/* Errors */
+"error_occurred" = "An Error Occurred";
+"network_error" = "Network Connection Failed";
+"try_again" = "Try Again";
+
+/* Voice Input */
+"voice_listening" = "Listening...";
+"voice_tap_to_speak" = "Tap the button to start speaking";
+
+/* F3: Spell Correction */
+"did_you_mean" = "Did you mean:";
+
+/* F4: Page Summary */
+"summarize" = "Summarize";
+"summary_title" = "Page Summary";
+"summarizing" = "Summarizing...";
+"copy_summary" = "Copy";
+
+/* F5: Platform Recommendation */
+"suggested_platforms" = "Suggested";
+
+/* F7: Clipboard Intelligence */
+"clipboard_url_detected" = "URL detected";
+"clipboard_product_detected" = "Product detected";
+"clipboard_person_detected" = "Person detected";
+"open_directly" = "Open";
+
+/* F8: Cross-language */
+"also_search_in" = "Also search in %@";
+
+/* F9: Image Search */
+"image_search" = "Image Search";
+"extracting_text" = "Extracting text...";
+"no_text_found" = "No text found in image";
+"detected_objects" = "Detected:";
+"photo_library" = "Photo Library";
+
+/* F1: Siri */
+"siri_search_tip" = "Try: \"Search Soulo for cats\"";
+
+/* AI Platforms */
+"platform_deepseek" = "DeepSeek";
+"platform_qianwen" = "Qianwen";
+"platform_bing" = "Bing";
+"platform_duckduckgo" = "DuckDuckGo";
+"platform_github" = "GitHub";
+"platform_wikipedia" = "Wikipedia";
+"platform_perplexity" = "Perplexity";
+"platform_instagram" = "Instagram";
+"platform_linkedin" = "LinkedIn";
+"platform_pinterest" = "Pinterest";
+"platform_ebay" = "eBay";
+"platform_stackoverflow" = "StackOverflow";
+"platform_scholar" = "Google Scholar";
+"platform_sogou" = "Sogou";
+"platform_360" = "360 Search";
+"platform_toutiao" = "Toutiao";
+"platform_youku" = "Youku";
+"platform_iqiyi" = "iQIYI";
+"platform_netease_music" = "NetEase Music";
+"platform_csdn" = "CSDN";
+"platform_juejin" = "Juejin";
+"platform_rakuten" = "Rakuten";
+"platform_niconico" = "Niconico";
+"platform_yuanbao" = "Tencent Yuanbao";
+"platform_doubao" = "Doubao";
+"login_required_title" = "Login Required";
+"login_required_message" = "This platform requires you to log in first. Please log in on the page, then your search will be executed automatically.";
+"login_required_toast" = "Please log in first, then search again";
+/* Custom Groups */
+"custom_groups" = "Custom Groups";
+"no_groups" = "No Custom Groups";
+"no_groups_desc" = "Create groups to organize your favorite platforms";
+"add_group" = "New Group";
+"group_name" = "Group Name";
+"platforms_count" = "platforms";
+
+/* Dynamic Themes */
+"dynamic_theme" = "Theme";
+"theme_midnight" = "Midnight";
+"theme_ocean" = "Ocean";
+"theme_aurora" = "Aurora";
+"theme_sunset" = "Sunset";
+"theme_monochrome" = "Mono";
+"wallpaper_drag_hint" = "Drag to move, pinch to zoom";
+"edit_title" = "Edit Home Title";
+"edit_subtitle" = "Edit Subtitle";
+"home_customization" = "Home Screen";
+"link_copied" = "Link Copied";
+"copy_link" = "Copy Link";
+"copied" = "Copied!";
+"ad_block" = "Ad Blocker";
+"ad_block_desc" = "Hide ads and trackers in search results (restart search to apply)";
+"browsing" = "Browsing";
+"no_platforms_in_group" = "No platforms yet";
+"add_to_group" = "Add Platform to Group";
+"wallpaper_saved" = "Wallpaper saved to Photos";
+"add_existing" = "Add Existing";
+"region_image_search" = "Image Search";
+"platform_google_lens" = "Google Lens";
+"platform_baidu_image" = "Baidu Image";
+"platform_yandex_image" = "Yandex Images";
+"confirm_delete_group" = "Delete this group?";
+"confirm_reset" = "Reset all platforms to defaults? Custom groups will be removed.";
+"camera" = "Camera";
+"select_region" = "Select Group";
+"add_platform_region" = "Group";
+"image_search_desc" = "Select a photo to search across image search platforms";
+"image_uploading" = "Uploading image...";
+"switch_to_bing" = "Switch to Bing Wallpaper?";
+"switch_to_bing_desc" = "Enable Bing daily wallpaper to browse beautiful backgrounds with the pinwheel.";
+
+"open_external_title" = "Open External App?";
+"open_external_message" = "This link will open another app. Do you want to continue?";
+
+"ai_loading_page" = "Loading AI platform...";
+"ai_loading_input" = "Local AI analyzing and typing...";
+
+/* Widget */
+"widget_search" = "Quick Search";
+"widget_description" = "Search across multiple platforms instantly";
+
+/* Settings - Navigation & Titles */
+"settings_title" = "Settings";
+"settings_platforms" = "Platforms";
+"settings_appearance" = "Appearance";
+"settings_language" = "Language";
+"settings_wallpaper" = "Wallpaper";
+"settings_version" = "Version";
+"settings_privacy_policy" = "Privacy Policy";
+"settings_terms" = "Terms of Service";
+
+/* Settings - Section Headers */
+"settings_section_platforms" = "Platforms";
+"settings_section_appearance" = "Appearance";
+"settings_section_language" = "Language";
+"settings_section_background" = "Background";
+"settings_section_privacy" = "Privacy";
+"settings_section_about" = "About";
+
+/* Platform Management */
+"platform_auto_sort" = "Auto-Sort by Frequency";
+"platform_auto_sort_desc" = "Automatically reorder platforms based on how often you use them";
+"platform_custom_badge" = "Custom";
+"platform_reset_defaults" = "Reset to Defaults";
+"platform_reset_footer" = "Resetting will restore all platforms to their original order and visibility.";
+"platform_reset_confirm_title" = "Reset Platforms?";
+"platform_reset_confirm_action" = "Reset";
+"platform_reset_confirm_message" = "All platform configurations will be restored to defaults. This cannot be undone.";
+
+/* Add Custom Platform */
+"add_platform_title" = "Add Custom Platform";
+"add_platform_subtitle" = "Add any search engine or website as a platform";
+"add_platform_name" = "Platform Name";
+"add_platform_name_placeholder" = "e.g. DuckDuckGo";
+"add_platform_search_url" = "Search URL Template";
+"add_platform_home_url" = "Home URL";
+"add_platform_home_url_optional" = "Optional - used when opening the platform without a search query";
+"add_platform_error_name_empty" = "Please enter a platform name";
+"add_platform_error_url_placeholder" = "URL must contain %@ as the search keyword placeholder";
+"add_platform_url_help_title" = "How URL Templates Work";
+"add_platform_url_help_desc" = "Replace the search keyword in the URL with %@ and we'll fill it in automatically when you search.";
+"add_platform_url_help_examples" = "Examples";
+
+/* Wallpaper (extended) */
+"wallpaper_choose_photo" = "Choose Photo";
+
+/* Language Settings */
+"language_select_title" = "Select Language";
+"language_footer" = "Changing the language will update all text throughout the app.";
+
+/* Home Bookmarks */
+"show_bookmarks_home" = "Show Bookmarks on Home";
+"show_bookmarks_home_desc" = "Display bookmarked sites as icons on the home screen";
+"home_screen" = "Home Screen";
+
+/* AI Search Platforms */
+"platform_metaso" = "Metaso";
+"platform_tiangong" = "Tiangong AI";
+"platform_phind" = "Phind";
+"platform_you" = "You.com";
+"platform_kimi" = "Kimi Search";
+"voice_stop" = "Stop";
+"voice_record" = "Record";
+
+/* Batch Import */
+"batch_import" = "Batch Import";
+"batch_import_format" = "Paste JSON in the format below";
+"batch_import_group" = "Add to Group (Optional)";
+"batch_import_group_placeholder" = "e.g. Movies";
+"batch_import_action" = "Import";
+"batch_import_result" = "Successfully imported %d platforms";
+"paste_from_clipboard" = "Paste from Clipboard";
+"none" = "None";
+"show_group_picker_home" = "Show Group Picker on Home";
+"show_group_picker_home_desc" = "Display platform group tabs on the home screen for quick switching";
+"error_no_internet" = "No internet connection. Please check your network.";
+"error_timeout" = "Connection timed out. Please try again.";
+"error_ssl" = "Secure connection failed. This site may not be safe.";
+"retry" = "Retry";

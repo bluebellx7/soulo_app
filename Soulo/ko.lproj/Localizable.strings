@@ -1,0 +1,324 @@
+/* App */
+"app_name" = "Soulo";
+"app_subtitle" = "모든 것을, 어디서든 검색";
+"search_placeholder" = "검색어 또는 URL 입력";
+"search" = "검색";
+"recent_searches" = "최근 검색";
+"show_more" = "더 보기";
+"show_less" = "접기";
+"clear_all" = "모두 지우기";
+"no_results" = "결과 없음";
+"clipboard_detected" = "클립보드 내용이 감지되었습니다";
+"region_china" = "중국";
+"region_international" = "인터내셔널";
+"region_japan" = "일본";
+"region_russia" = "러시아";
+"platform_douyin" = "Douyin";
+"platform_bilibili" = "Bilibili";
+"platform_xiaohongshu" = "Xiaohongshu";
+"platform_weibo" = "Weibo";
+"platform_zhihu" = "Zhihu";
+"platform_baidu" = "Baidu";
+"platform_taobao" = "Taobao";
+"platform_jd" = "JD";
+"platform_wechat" = "WeChat Search";
+"platform_google" = "Google";
+"platform_youtube" = "YouTube";
+"platform_twitter" = "X (Twitter)";
+"platform_reddit" = "Reddit";
+"platform_amazon" = "Amazon";
+"platform_tiktok" = "TikTok";
+"platform_yahoo_jp" = "Yahoo! Japan";
+"platform_google_jp" = "Google Japan";
+"platform_twitter_jp" = "X Japan";
+"platform_youtube_jp" = "YouTube Japan";
+"platform_yandex" = "Yandex";
+"platform_vk" = "VK";
+"loading" = "불러오는 중...";
+"load_error" = "불러오기 실패";
+"bookmark_added" = "북마크 추가됨";
+"bookmark_removed" = "북마크 삭제됨";
+"bookmarks" = "북마크";
+"no_bookmarks" = "북마크 없음";
+"no_bookmarks_desc" = "브라우징 중 북마크 버튼을 탭하여 페이지를 저장하세요";
+"search_history" = "검색 기록";
+"no_history" = "검색 기록 없음";
+"no_history_desc" = "검색한 키워드가 여기에 표시됩니다";
+"today" = "오늘";
+"yesterday" = "어제";
+"earlier" = "이전";
+"confirm_clear_history" = "검색 기록을 모두 삭제하시겠습니까?";
+"confirm_clear_bookmarks" = "북마크를 모두 삭제하시겠습니까?";
+"settings" = "설정";
+"platform_management" = "플랫폼 관리";
+"appearance" = "외관";
+"appearance_system" = "시스템";
+"appearance_light" = "라이트";
+"appearance_dark" = "다크";
+"language" = "언어";
+"background" = "배경";
+"privacy" = "개인정보 보호";
+"about" = "앱 정보";
+"version" = "버전";
+"reset_to_defaults" = "기본값으로 재설정";
+"confirm_reset" = "모든 플랫폼 설정을 기본값으로 재설정하시겠습니까?";
+"wallpaper_bing" = "Bing 오늘의 배경화면";
+"wallpaper_custom" = "사용자 지정 배경화면";
+"wallpaper_none" = "애니메이션 배경";
+"choose_photo" = "사진 선택";
+"add_platform" = "플랫폼 추가";
+"platform_name" = "플랫폼 이름";
+"search_url_template" = "검색 URL 템플릿";
+"search_url_hint" = "키워드 자리에 %@ 를 사용하세요\n예: https://example.com/search?q=%@";
+"home_url" = "홈 URL";
+"select_region" = "지역 선택";
+"auto_sort_by_frequency" = "사용 빈도에 따라 자동 정렬";
+"custom_platform" = "사용자 지정 플랫폼";
+"delete_platform" = "플랫폼 삭제";
+"confirm_delete_platform" = "이 사용자 지정 플랫폼을 삭제하시겠습니까?";
+"url_template_error" = "URL 템플릿에 %@ 자리 표시자가 포함되어야 합니다";
+"incognito_mode" = "시크릿 모드";
+"incognito_desc" = "검색이 기록에 저장되지 않습니다";
+"clear_search_history" = "검색 기록 삭제";
+"clear_bookmarks" = "북마크 모두 삭제";
+"clear_webview_cache" = "브라우저 캐시 삭제";
+"clear_cache_desc" = "WebView 쿠키 및 캐시를 삭제합니다";
+"clear_all_data" = "모든 데이터 삭제";
+"action_irreversible" = "이 작업은 취소할 수 없습니다";
+"cancel" = "취소";
+"confirm" = "확인";
+"delete" = "삭제";
+"done" = "완료";
+"save" = "저장";
+"edit" = "편집";
+"share" = "공유";
+"speech_permission" = "음성 검색을 위해 음성 인식 권한이 필요합니다";
+"microphone_permission" = "음성 입력을 위해 마이크 권한이 필요합니다";
+"error_occurred" = "오류가 발생했습니다";
+"network_error" = "네트워크 연결 실패";
+"try_again" = "다시 시도";
+"widget_search" = "빠른 검색";
+"widget_description" = "여러 플랫폼에서 검색";
+
+/* Voice Input */
+"voice_listening" = "듣고 있습니다...";
+"voice_tap_to_speak" = "버튼을 탭하여 말하기 시작하세요";
+
+/* F3: Spell Correction */
+"did_you_mean" = "혹시 이것을 찾으셨나요:";
+
+/* F4: Page Summary */
+"summarize" = "요약";
+"summary_title" = "페이지 요약";
+"summarizing" = "요약 중...";
+"copy_summary" = "복사";
+
+/* F5: Platform Recommendation */
+"suggested_platforms" = "추천";
+
+/* F7: Clipboard Intelligence */
+"clipboard_url_detected" = "URL 감지됨";
+"clipboard_product_detected" = "상품 감지됨";
+"clipboard_person_detected" = "인물 감지됨";
+"open_directly" = "열기";
+
+/* F8: Cross-language */
+"also_search_in" = "%@에서도 검색";
+
+/* F9: Image Search */
+"image_search" = "이미지 검색";
+"extracting_text" = "텍스트 추출 중...";
+"no_text_found" = "이미지에서 텍스트를 찾을 수 없습니다";
+"detected_objects" = "감지됨:";
+"photo_library" = "사진 라이브러리";
+
+/* F1: Siri */
+"siri_search_tip" = "시도해 보세요: \"Soulo에서 고양이 검색\"";
+
+/* AI Platforms */
+"platform_deepseek" = "DeepSeek";
+"platform_qianwen" = "Qianwen";
+"platform_bing" = "Bing";
+"platform_duckduckgo" = "DuckDuckGo";
+"platform_github" = "GitHub";
+"platform_wikipedia" = "Wikipedia";
+"platform_perplexity" = "Perplexity";
+"platform_instagram" = "Instagram";
+"platform_linkedin" = "LinkedIn";
+"platform_pinterest" = "Pinterest";
+"platform_ebay" = "eBay";
+"platform_stackoverflow" = "StackOverflow";
+"platform_scholar" = "Google Scholar";
+"platform_sogou" = "Sogou";
+"platform_360" = "360 Search";
+"platform_toutiao" = "Toutiao";
+"platform_youku" = "Youku";
+"platform_iqiyi" = "iQIYI";
+"platform_netease_music" = "NetEase Music";
+"platform_csdn" = "CSDN";
+"platform_juejin" = "Juejin";
+"platform_rakuten" = "Rakuten";
+"platform_niconico" = "Niconico";
+"platform_yuanbao" = "Tencent Yuanbao";
+"platform_doubao" = "Doubao";
+"platform_google_lens" = "Google Lens";
+"platform_baidu_image" = "Baidu Image";
+"platform_yandex_image" = "Yandex Images";
+
+/* Login Required */
+"login_required_title" = "로그인 필요";
+"login_required_message" = "이 플랫폼은 먼저 로그인이 필요합니다. 페이지에서 로그인하면 검색이 자동으로 실행됩니다.";
+"login_required_toast" = "먼저 로그인한 후 다시 검색하세요";
+
+/* Custom Groups */
+"custom_groups" = "사용자 지정 그룹";
+"no_groups" = "사용자 지정 그룹 없음";
+"no_groups_desc" = "그룹을 만들어 즐겨 찾는 플랫폼을 정리하세요";
+"add_group" = "새 그룹";
+"group_name" = "그룹 이름";
+"platforms_count" = "플랫폼";
+
+/* Dynamic Themes */
+"dynamic_theme" = "테마";
+"theme_midnight" = "미드나이트";
+"theme_ocean" = "오션";
+"theme_aurora" = "오로라";
+"theme_sunset" = "선셋";
+"theme_monochrome" = "모노";
+"wallpaper_drag_hint" = "드래그하여 이동, 핀치하여 확대/축소";
+"edit_title" = "홈 제목 편집";
+"edit_subtitle" = "부제목 편집";
+"home_customization" = "홈 화면";
+"link_copied" = "링크 복사됨";
+"copy_link" = "링크 복사";
+"copied" = "복사됨!";
+
+/* Ad Blocker */
+"ad_block" = "광고 차단";
+"ad_block_desc" = "검색 결과의 광고 및 추적기를 숨깁니다 (적용하려면 검색을 다시 시작하세요)";
+"browsing" = "브라우징";
+
+/* Groups */
+"no_platforms_in_group" = "플랫폼이 없습니다";
+"add_to_group" = "그룹에 플랫폼 추가";
+"add_existing" = "기존 추가";
+"confirm_delete_group" = "이 그룹을 삭제하시겠습니까?";
+
+/* Wallpaper */
+"wallpaper_saved" = "배경화면이 사진에 저장되었습니다";
+"region_image_search" = "이미지 검색";
+"camera" = "카메라";
+"add_platform_region" = "그룹";
+"image_search_desc" = "이미지 검색 플랫폼에서 검색할 사진을 선택하세요";
+"image_uploading" = "이미지 업로드 중...";
+"switch_to_bing" = "Bing 배경화면으로 전환하시겠습니까?";
+"switch_to_bing_desc" = "Bing 데일리 배경화면을 활성화하여 팽이를 사용해 아름다운 배경을 탐색하세요.";
+
+/* External URL */
+"open_external_title" = "외부 앱을 여시겠습니까?";
+"open_external_message" = "이 링크는 다른 앱을 엽니다. 계속하시겠습니까?";
+
+/* AI Loading */
+"ai_loading_page" = "AI 플랫폼 로딩 중...";
+"ai_loading_input" = "로컬 AI가 분석 및 입력 중...";
+
+/* Privacy Settings (extended keys) */
+"privacy_section_browsing" = "브라우징";
+"privacy_section_data" = "데이터 관리";
+"privacy_incognito" = "시크릿 모드";
+"privacy_incognito_desc" = "검색이 기록에 저장되지 않습니다";
+"privacy_clear_history" = "검색 기록 삭제";
+"privacy_clear_history_desc" = "저장된 모든 검색 키워드 삭제";
+"privacy_clear_history_confirm_title" = "검색 기록을 삭제하시겠습니까?";
+"privacy_clear_history_confirm_message" = "모든 검색 기록이 영구적으로 삭제됩니다.";
+"privacy_clear_bookmarks" = "북마크 모두 삭제";
+"privacy_clear_bookmarks_desc" = "저장된 모든 북마크 삭제";
+"privacy_clear_bookmarks_confirm_title" = "모든 북마크를 삭제하시겠습니까?";
+"privacy_clear_bookmarks_confirm_message" = "모든 북마크가 영구적으로 삭제됩니다.";
+"privacy_clear_cache" = "브라우저 캐시 삭제";
+"privacy_clear_cache_desc" = "쿠키, 캐시 및 로컬 스토리지 삭제";
+"privacy_clear_cache_confirm_title" = "브라우저 캐시를 삭제하시겠습니까?";
+"privacy_clear_cache_confirm_message" = "모든 브라우저 데이터가 영구적으로 삭제됩니다.";
+"privacy_clear_action" = "삭제";
+"privacy_data_footer" = "이 작업은 취소할 수 없습니다. 삭제된 데이터는 복구할 수 없습니다.";
+"settings_privacy" = "개인정보 보호";
+"platform_sort_options" = "정렬 옵션";
+
+/* Settings - Navigation & Titles */
+"settings_title" = "설정";
+"settings_platforms" = "플랫폼";
+"settings_appearance" = "외관";
+"settings_language" = "언어";
+"settings_wallpaper" = "배경화면";
+"settings_version" = "버전";
+"settings_privacy_policy" = "개인정보 처리방침";
+"settings_terms" = "서비스 약관";
+
+/* Settings - Section Headers */
+"settings_section_platforms" = "플랫폼";
+"settings_section_appearance" = "외관";
+"settings_section_language" = "언어";
+"settings_section_background" = "배경";
+"settings_section_privacy" = "개인정보 보호";
+"settings_section_about" = "앱 정보";
+
+/* Platform Management */
+"platform_auto_sort" = "빈도별 자동 정렬";
+"platform_auto_sort_desc" = "사용 빈도에 따라 플랫폼을 자동으로 재정렬합니다";
+"platform_custom_badge" = "사용자 지정";
+"platform_reset_defaults" = "기본값으로 재설정";
+"platform_reset_footer" = "재설정하면 모든 플랫폼이 원래 순서와 표시 설정으로 복원됩니다.";
+"platform_reset_confirm_title" = "플랫폼을 재설정하시겠습니까?";
+"platform_reset_confirm_action" = "재설정";
+"platform_reset_confirm_message" = "모든 플랫폼 설정이 기본값으로 복원됩니다. 이 작업은 취소할 수 없습니다.";
+
+/* Add Custom Platform */
+"add_platform_title" = "사용자 지정 플랫폼 추가";
+"add_platform_subtitle" = "검색 엔진이나 웹사이트를 플랫폼으로 추가하세요";
+"add_platform_name" = "플랫폼 이름";
+"add_platform_name_placeholder" = "예: DuckDuckGo";
+"add_platform_search_url" = "검색 URL 템플릿";
+"add_platform_home_url" = "홈 URL";
+"add_platform_home_url_optional" = "선택 사항 - 검색 쿼리 없이 플랫폼을 열 때 사용";
+"add_platform_error_name_empty" = "플랫폼 이름을 입력해 주세요";
+"add_platform_error_url_placeholder" = "URL에 검색 키워드 자리 표시자로 %@ 가 포함되어야 합니다";
+"add_platform_url_help_title" = "URL 템플릿 사용 방법";
+"add_platform_url_help_desc" = "URL에서 검색 키워드를 %@ 로 바꾸면 검색할 때 자동으로 채워집니다.";
+"add_platform_url_help_examples" = "예시";
+
+/* Wallpaper (extended) */
+"wallpaper_choose_photo" = "사진 선택";
+
+/* Language Settings */
+"language_select_title" = "언어 선택";
+"language_footer" = "언어를 변경하면 앱 전체의 텍스트가 업데이트됩니다.";
+
+/* Home Bookmarks */
+"show_bookmarks_home" = "홈에 북마크 표시";
+"show_bookmarks_home_desc" = "즐겨찾기한 사이트를 홈 화면에 아이콘으로 표시";
+"home_screen" = "홈 화면";
+
+/* AI Search Platforms */
+"platform_metaso" = "Metaso";
+"platform_tiangong" = "Tiangong AI";
+"platform_phind" = "Phind";
+"platform_you" = "You.com";
+"platform_kimi" = "Kimi Search";
+"voice_stop" = "중지";
+"voice_record" = "녹음";
+
+/* Batch Import */
+"batch_import" = "Batch Import";
+"batch_import_format" = "Paste JSON in the format below";
+"batch_import_group" = "Add to Group (Optional)";
+"batch_import_group_placeholder" = "e.g. Movies";
+"batch_import_action" = "Import";
+"batch_import_result" = "Successfully imported %d platforms";
+"paste_from_clipboard" = "Paste from Clipboard";
+"none" = "None";
+"show_group_picker_home" = "Show Group Picker on Home";
+"show_group_picker_home_desc" = "Display platform group tabs on the home screen";
+"error_no_internet" = "No internet connection. Please check your network.";
+"error_timeout" = "Connection timed out. Please try again.";
+"error_ssl" = "Secure connection failed.";
+"retry" = "Retry";

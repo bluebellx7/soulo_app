@@ -1,0 +1,120 @@
+name: Soulo
+options:
+  bundleIdPrefix: com.dkluge
+  deploymentTarget:
+    iOS: "17.0"
+  knownRegions:
+    - en
+    - zh-Hans
+    - ja
+    - ko
+    - fr
+    - de
+    - es
+    - vi
+    - Base
+
+targets:
+  Soulo:
+    type: application
+    platform: iOS
+    sources:
+      - Soulo/Source
+      - Soulo/Assets.xcassets
+      - Soulo/PrivacyInfo.xcprivacy
+      - path: Soulo/en.lproj
+        type: folder
+        buildPhase: resources
+      - path: Soulo/zh-Hans.lproj
+        type: folder
+        buildPhase: resources
+      - path: Soulo/ja.lproj
+        type: folder
+        buildPhase: resources
+      - path: Soulo/ko.lproj
+        type: folder
+        buildPhase: resources
+      - path: Soulo/fr.lproj
+        type: folder
+        buildPhase: resources
+      - path: Soulo/de.lproj
+        type: folder
+        buildPhase: resources
+      - path: Soulo/es.lproj
+        type: folder
+        buildPhase: resources
+      - path: Soulo/vi.lproj
+        type: folder
+        buildPhase: resources
+    info:
+      path: Soulo/Info.plist
+      properties:
+        CFBundleDisplayName: 搜罗
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UILaunchScreen:
+          UIColorName: LaunchScreenColor
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        ITSAppUsesNonExemptEncryption: false
+        NSMicrophoneUsageDescription: "Soulo needs microphone access for voice search."
+        NSSpeechRecognitionUsageDescription: "Soulo needs speech recognition to convert your voice to search text."
+        NSPhotoLibraryUsageDescription: "Soulo needs photo library access to set a custom wallpaper."
+        NSPhotoLibraryAddUsageDescription: "Soulo needs permission to save web images to your photo library."
+        NSSupportsLiveActivities: true
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+              - soulo
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+          NSAllowsArbitraryLoadsInWebContent: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dkluge.Soulo
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 7S2LBJA9VA
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: 1
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ENABLE_PREVIEWS: "YES"
+        SWIFT_EMIT_LOC_STRINGS: "YES"
+    dependencies:
+      - target: SouloWidgetExtension
+
+  SouloWidgetExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: SouloWidget
+        excludes:
+          - Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dkluge.Soulo.Widget
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 7S2LBJA9VA
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: 1
+        GENERATE_INFOPLIST_FILE: "YES"
+        INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        SKIP_INSTALL: "YES"
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
+
+schemes:
+  Soulo:
+    build:
+      targets:
+        Soulo: all
+        SouloWidgetExtension: all
+    run:
+      config: Debug
+    archive:
+      config: Release

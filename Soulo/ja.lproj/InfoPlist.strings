@@ -1,0 +1,4 @@
+NSMicrophoneUsageDescription = "Souloは音声検索のためにマイクへのアクセスが必要です。";
+NSSpeechRecognitionUsageDescription = "Souloは音声をテキストに変換して検索するために音声認識が必要です。";
+NSPhotoLibraryUsageDescription = "Souloはカスタム壁紙を設定するためにフォトライブラリへのアクセスが必要です。";
+NSPhotoLibraryAddUsageDescription = "Souloはウェブ画像をフォトライブラリに保存するための権限が必要です。";

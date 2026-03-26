@@ -1,0 +1,4 @@
+NSMicrophoneUsageDescription = "搜罗需要麦克风权限进行语音搜索";
+NSSpeechRecognitionUsageDescription = "搜罗需要语音识别权限将语音转换为搜索文字";
+NSPhotoLibraryUsageDescription = "搜罗需要访问相册以设置自定义壁纸";
+NSPhotoLibraryAddUsageDescription = "搜罗需要权限将网页图片保存到相册";
