@@ -1,0 +1,412 @@
+/* App */
+"app_name" = "Soulo";
+"app_subtitle" = "Ищите всё и везде";
+
+/* Search */
+"search_placeholder" = "Поиск или введите URL";
+"search" = "Поиск";
+"recent_searches" = "Недавние запросы";
+"show_more" = "Ещё";
+"show_less" = "Свернуть";
+"clear_all" = "Очистить всё";
+"no_results" = "Нет результатов";
+
+/* Clipboard */
+"clipboard_detected" = "Обнаружено содержимое буфера обмена";
+
+/* Regions */
+"region_china" = "Китай";
+"region_international" = "Международный";
+"region_japan" = "Япония";
+"region_russia" = "Россия";
+
+/* Platforms - ALL 22 */
+"platform_douyin" = "Douyin";
+"platform_bilibili" = "Bilibili";
+"platform_xiaohongshu" = "Xiaohongshu";
+"platform_weibo" = "Weibo";
+"platform_zhihu" = "Zhihu";
+"platform_baidu" = "Baidu";
+"platform_taobao" = "Taobao";
+"platform_jd" = "JD";
+"platform_wechat" = "Поиск WeChat";
+"platform_google" = "Google";
+"platform_youtube" = "YouTube";
+"platform_twitter" = "X (Twitter)";
+"platform_reddit" = "Reddit";
+"platform_amazon" = "Amazon";
+"platform_tiktok" = "TikTok";
+"platform_yahoo_jp" = "Yahoo! Japan";
+"platform_google_jp" = "Google Япония";
+"platform_twitter_jp" = "X Япония";
+"platform_youtube_jp" = "YouTube Япония";
+"platform_yandex" = "Яндекс";
+"platform_vk" = "ВКонтакте";
+
+/* WebView */
+"loading" = "Загрузка...";
+"load_error" = "Ошибка загрузки";
+"bookmark_added" = "Закладка добавлена";
+"bookmark_removed" = "Закладка удалена";
+
+/* Bookmarks */
+"bookmarks" = "Закладки";
+"no_bookmarks" = "Нет закладок";
+"no_bookmarks_desc" = "Нажмите кнопку закладки при просмотре, чтобы сохранить страницу";
+
+/* History */
+"search_history" = "История поиска";
+"no_history" = "Нет истории поиска";
+"no_history_desc" = "Ваши недавние запросы появятся здесь";
+"today" = "Сегодня";
+"yesterday" = "Вчера";
+"earlier" = "Ранее";
+"confirm_clear_history" = "Очистить всю историю поиска?";
+"confirm_clear_bookmarks" = "Очистить все закладки?";
+
+/* Settings */
+"settings" = "Настройки";
+"platform_management" = "Управление платформами";
+"appearance" = "Оформление";
+"appearance_system" = "Системная";
+"appearance_light" = "Светлая";
+"appearance_dark" = "Тёмная";
+"language" = "Язык";
+"background" = "Фон";
+"privacy" = "Конфиденциальность";
+"about" = "О приложении";
+"version" = "Версия";
+"reset_to_defaults" = "Сбросить настройки";
+"confirm_reset" = "Сбросить настройки по умолчанию? Все настройки платформ будут сброшены.";
+
+/* Wallpaper */
+"wallpaper_bing" = "Bing ежедневно";
+"wallpaper_custom" = "Своё фото";
+"wallpaper_none" = "Динамический фон";
+"wallpaper_gradient" = "Градиенты";
+"wallpaper_photo" = "Фотообои";
+"wallpaper_solid" = "Сплошные цвета";
+"wallpaper_source" = "Источник обоев";
+"wallpaper_type" = "Тип фона";
+"wallpaper_refresh" = "Случайный выбор";
+"wallpaper_download" = "Сохранить в Фото";
+"wallpaper_saved" = "Обои сохранены в Фото";
+"wallpaper_fetch_bing" = "Получить изображение дня";
+"wallpaper_choose_photo" = "Выбрать из библиотеки";
+"wallpaper_color" = "Цвет фона";
+"wallpaper_load_error" = "Ошибка загрузки";
+"wallpaper_favorites" = "Избранное";
+"wallpaper_search_placeholder" = "Поиск стиля (напр. Лес, Минимализм)";
+"wallpaper_discover" = "Новые обои";
+"wallpaper_pexels" = "Pexels (подборка)";
+"wallpaper_pixabay" = "Pixabay (природа)";
+"wallpaper_current_vibe" = "Текущий стиль";
+"settings_wallpaper" = "Обои и стиль";
+"wallpaper_discover" = "Обзор обоев";
+"choose_photo" = "Выбрать фото";
+
+/* Platform Management */
+"add_platform" = "Добавить платформу";
+"platform_name" = "Название платформы";
+"search_url_template" = "Шаблон URL поиска";
+"search_url_hint" = "Используйте %@ как заполнитель ключевого слова\nПример: https://example.com/search?q=%@";
+"home_url" = "Домашний URL";
+"select_region" = "Выбрать группу";
+"auto_sort_by_frequency" = "Автосортировка по частоте использования";
+"custom_platform" = "Пользовательская платформа";
+"delete_platform" = "Удалить платформу";
+"confirm_delete_platform" = "Удалить эту пользовательскую платформу?";
+"url_template_error" = "Шаблон URL должен содержать заполнитель %@";
+
+/* Privacy */
+"incognito_mode" = "Режим инкогнито";
+"incognito_desc" = "Запросы не будут сохраняться в истории";
+"clear_search_history" = "Очистить историю поиска";
+"clear_bookmarks" = "Очистить все закладки";
+"clear_webview_cache" = "Очистить кэш браузера";
+"clear_cache_desc" = "Очистить cookie и кэшированные данные WebView";
+"clear_all_data" = "Очистить все данные";
+"action_irreversible" = "Это действие нельзя отменить";
+
+/* Privacy Settings (extended keys) */
+"privacy_section_browsing" = "Просмотр";
+"privacy_section_data" = "Управление данными";
+"privacy_incognito" = "Режим инкогнито";
+"privacy_incognito_desc" = "Запросы не будут сохраняться в истории";
+"privacy_clear_history" = "Очистить историю поиска";
+"privacy_clear_history_desc" = "Удалить все сохранённые поисковые запросы";
+"privacy_clear_history_confirm_title" = "Очистить историю поиска?";
+"privacy_clear_history_confirm_message" = "Вся история поиска будет безвозвратно удалена.";
+"privacy_clear_bookmarks" = "Очистить все закладки";
+"privacy_clear_bookmarks_desc" = "Удалить все сохранённые закладки";
+"privacy_clear_bookmarks_confirm_title" = "Очистить все закладки?";
+"privacy_clear_bookmarks_confirm_message" = "Все закладки будут безвозвратно удалены.";
+"privacy_clear_cache" = "Очистить кэш браузера";
+"privacy_clear_cache_desc" = "Очистить cookie, кэш и локальное хранилище";
+"privacy_clear_cache_confirm_title" = "Очистить кэш браузера?";
+"privacy_clear_cache_confirm_message" = "Все данные просмотра будут безвозвратно удалены.";
+"privacy_clear_action" = "Очистить";
+"privacy_data_footer" = "Эти действия нельзя отменить. Удалённые данные невозможно восстановить.";
+"settings_privacy" = "Конфиденциальность";
+"platform_sort_options" = "Параметры сортировки";
+"cancel" = "Отмена";
+"confirm" = "Подтвердить";
+"delete" = "Удалить";
+"done" = "Готово";
+"save" = "Сохранить";
+"edit" = "Изменить";
+"share" = "Поделиться";
+
+/* Permissions */
+"speech_permission" = "Для голосового поиска требуется разрешение на распознавание речи";
+"microphone_permission" = "Для голосового ввода требуется разрешение на микрофон";
+
+/* Errors */
+"error_occurred" = "Произошла ошибка";
+"network_error" = "Ошибка сетевого подключения";
+"try_again" = "Повторить";
+
+/* Voice Input */
+"voice_listening" = "Слушаю...";
+"voice_tap_to_speak" = "Нажмите кнопку, чтобы начать говорить";
+
+/* F3: Spell Correction */
+"did_you_mean" = "Возможно, вы имели в виду:";
+
+/* F4: Page Summary */
+"summarize" = "Резюме";
+"summary_title" = "Краткое содержание";
+"summarizing" = "Создание резюме...";
+"copy_summary" = "Копировать";
+
+/* F5: Platform Recommendation */
+"suggested_platforms" = "Рекомендации";
+
+/* F7: Clipboard Intelligence */
+"clipboard_url_detected" = "Обнаружена ссылка";
+"clipboard_product_detected" = "Обнаружен товар";
+"clipboard_person_detected" = "Обнаружено имя";
+"open_directly" = "Открыть";
+
+/* F8: Cross-language */
+"also_search_in" = "Искать также на %@";
+
+/* F9: Image Search */
+"image_search" = "Поиск по изображению";
+"extracting_text" = "Извлечение текста...";
+"no_text_found" = "Текст на изображении не найден";
+"detected_objects" = "Обнаружено:";
+"photo_library" = "Медиатека";
+
+/* F1: Siri */
+"siri_search_tip" = "Попробуйте: «Найти в Soulo кошек»";
+
+/* AI Platforms */
+"platform_deepseek" = "DeepSeek";
+"platform_qianwen" = "Qianwen";
+"platform_bing" = "Bing";
+"platform_duckduckgo" = "DuckDuckGo";
+"platform_github" = "GitHub";
+"platform_wikipedia" = "Википедия";
+"platform_perplexity" = "Perplexity";
+"platform_instagram" = "Instagram";
+"platform_linkedin" = "LinkedIn";
+"platform_pinterest" = "Pinterest";
+"platform_ebay" = "eBay";
+"platform_stackoverflow" = "StackOverflow";
+"platform_scholar" = "Google Академия";
+"platform_sogou" = "Sogou";
+"platform_360" = "360 Search";
+"platform_toutiao" = "Toutiao";
+"platform_youku" = "Youku";
+"platform_iqiyi" = "iQIYI";
+"platform_netease_music" = "NetEase Music";
+"platform_csdn" = "CSDN";
+"platform_juejin" = "Juejin";
+"platform_rakuten" = "Rakuten";
+"platform_niconico" = "Niconico";
+"platform_yuanbao" = "Tencent Yuanbao";
+"platform_doubao" = "Doubao";
+"login_required_title" = "Требуется вход";
+"login_required_message" = "Для использования этой платформы необходимо войти в систему. Пожалуйста, войдите на странице — поиск выполнится автоматически.";
+"login_required_toast" = "Сначала войдите, затем повторите поиск";
+/* Custom Groups */
+"custom_groups" = "Пользовательские группы";
+"no_groups" = "Нет пользовательских групп";
+"no_groups_desc" = "Создайте группы для организации избранных платформ";
+"add_group" = "Новая группа";
+"group_name" = "Название группы";
+"platforms_count" = "платформ";
+
+/* Dynamic Themes */
+"dynamic_theme" = "Тема";
+"theme_midnight" = "Полночь";
+"theme_ocean" = "Океан";
+"theme_aurora" = "Северное сияние";
+"theme_sunset" = "Закат";
+"theme_monochrome" = "Моно";
+"wallpaper_drag_hint" = "Перетащите для перемещения, сведите для масштаба";
+"edit_title" = "Изменить заголовок главной";
+"edit_subtitle" = "Изменить подзаголовок";
+"home_customization" = "Главный экран";
+"link_copied" = "Ссылка скопирована";
+"copy_link" = "Копировать ссылку";
+"copied" = "Скопировано!";
+"ad_block" = "Блокировка рекламы";
+"ad_block_desc" = "Скрыть рекламу и трекеры в результатах поиска (перезапустите поиск для применения)";
+"browsing" = "Просмотр";
+"no_platforms_in_group" = "Пока нет платформ";
+"add_to_group" = "Добавить платформу в группу";
+"wallpaper_saved" = "Обои сохранены в Фото";
+"add_existing" = "Добавить существующую";
+"region_image_search" = "Поиск по изображению";
+"platform_google_lens" = "Google Lens";
+"platform_baidu_image" = "Baidu Картинки";
+"platform_yandex_image" = "Яндекс Картинки";
+"confirm_delete_group" = "Удалить эту группу?";
+"confirm_reset" = "Сбросить все платформы до настроек по умолчанию? Пользовательские группы будут удалены.";
+"camera" = "Камера";
+"select_region" = "Выбрать группу";
+"add_platform_region" = "Группа";
+"image_search_desc" = "Выберите фото для поиска по платформам поиска изображений";
+"image_uploading" = "Загрузка изображения...";
+"switch_to_bing" = "Переключить на обои Bing?";
+"switch_to_bing_desc" = "Включите ежедневные обои Bing, чтобы просматривать красивые фоны с помощью вертушки.";
+
+"open_external_title" = "Открыть внешнее приложение?";
+"open_external_message" = "Эта ссылка откроет другое приложение. Продолжить?";
+
+"ai_loading_page" = "Загрузка AI-платформы...";
+"ai_loading_input" = "Локальный AI анализирует и вводит...";
+
+/* Widget */
+"widget_search" = "Быстрый поиск";
+"widget_description" = "Мгновенный поиск по нескольким платформам";
+
+/* Settings - Navigation & Titles */
+"settings_title" = "Настройки";
+"settings_platforms" = "Платформы";
+"settings_appearance" = "Оформление";
+"settings_language" = "Язык";
+"settings_wallpaper" = "Обои";
+"settings_version" = "Версия";
+"settings_privacy_policy" = "Политика конфиденциальности";
+"settings_terms" = "Условия использования";
+
+/* Settings - Section Headers */
+"settings_section_platforms" = "Платформы";
+"settings_section_appearance" = "Оформление";
+"settings_section_language" = "Язык";
+"settings_section_background" = "Фон";
+"settings_section_privacy" = "Конфиденциальность";
+"settings_section_about" = "О приложении";
+
+/* Platform Management */
+"platform_auto_sort" = "Автосортировка по частоте";
+"platform_auto_sort_desc" = "Автоматически упорядочивать платформы по частоте использования";
+"platform_custom_badge" = "Пользовательская";
+"platform_reset_defaults" = "Сбросить настройки";
+"platform_reset_footer" = "Сброс восстановит порядок и видимость всех платформ по умолчанию.";
+"platform_reset_confirm_title" = "Сбросить платформы?";
+"platform_reset_confirm_action" = "Сбросить";
+"platform_reset_confirm_message" = "Все настройки платформ будут восстановлены по умолчанию. Это действие нельзя отменить.";
+
+/* Add Custom Platform */
+"add_platform_title" = "Добавить свою платформу";
+"add_platform_subtitle" = "Добавьте любую поисковую систему или сайт как платформу";
+"add_platform_name" = "Название платформы";
+"add_platform_name_placeholder" = "напр. DuckDuckGo";
+"add_platform_search_url" = "Шаблон URL поиска";
+"add_platform_home_url" = "Домашний URL";
+"add_platform_home_url_optional" = "Необязательно — используется при открытии платформы без запроса";
+"add_platform_error_name_empty" = "Пожалуйста, введите название платформы";
+"add_platform_error_url_placeholder" = "URL должен содержать %@ как заполнитель ключевого слова";
+"add_platform_url_help_title" = "Как работают шаблоны URL";
+"add_platform_url_help_desc" = "Замените ключевое слово в URL на %@, и мы автоматически подставим его при поиске.";
+"add_platform_url_help_examples" = "Примеры";
+
+/* Wallpaper (extended) */
+"wallpaper_choose_photo" = "Выбрать фото";
+
+/* Language Settings */
+"language_select_title" = "Выбор языка";
+"language_footer" = "Изменение языка обновит весь текст в приложении.";
+
+/* Home Bookmarks */
+"show_bookmarks_home" = "Закладки на главной";
+"show_bookmarks_home_desc" = "Показывать закладки в виде значков на главном экране";
+"home_screen" = "Главный экран";
+
+/* AI Search Platforms */
+"platform_metaso" = "Metaso";
+"platform_tiangong" = "Tiangong AI";
+"platform_phind" = "Phind";
+"platform_you" = "You.com";
+"platform_kimi" = "Kimi Search";
+"voice_stop" = "Стоп";
+"voice_record" = "Запись";
+
+/* Batch Import */
+"batch_import" = "Пакетный импорт";
+"batch_import_format" = "Вставьте JSON в формате ниже";
+"batch_import_group" = "Добавить в группу (необязательно)";
+"batch_import_group_placeholder" = "напр. Фильмы";
+"batch_import_action" = "Импорт";
+"batch_import_result" = "Успешно импортировано %d платформ";
+"paste_from_clipboard" = "Вставить из буфера обмена";
+"none" = "Нет";
+"show_group_picker_home" = "Показать выбор групп на главной";
+"show_group_picker_home_desc" = "Показать вкладки групп платформ на главном экране для быстрого переключения";
+"error_no_internet" = "Нет подключения к интернету. Проверьте сеть.";
+"error_timeout" = "Время соединения истекло. Попробуйте снова.";
+"error_ssl" = "Ошибка безопасного соединения. Этот сайт может быть небезопасным.";
+"retry" = "Повторить";
+
+/* Support & Feedback */
+"settings_rate" = "Оценить приложение";
+"settings_feedback" = "Отправить отзыв";
+"settings_help" = "Центр помощи";
+"settings_section_support" = "Поддержка";
+"feedback_title" = "Обратная связь";
+"feedback_type" = "Тип";
+"feedback_type_bug" = "Сообщение об ошибке";
+"feedback_type_feature" = "Предложение функции";
+"feedback_type_question" = "Вопрос";
+"feedback_type_other" = "Другое";
+"feedback_content" = "Содержание";
+"feedback_placeholder" = "Ваш отзыв помогает нам стать лучше!\n\nРасскажите нам:\n· С какой проблемой вы столкнулись?\n· Какую функцию хотите добавить?\n· Что можно улучшить?";
+"feedback_contact" = "Контакт";
+"feedback_contact_hint" = "Email или другой способ связи";
+"feedback_optional" = "необязательно";
+"feedback_submit" = "Отправить";
+"feedback_submitting" = "Отправка...";
+"feedback_success_title" = "Спасибо";
+"feedback_success_msg" = "Ваш отзыв отправлен!";
+"feedback_error" = "Ошибка";
+
+/* Help Center */
+"help_title" = "Центр помощи";
+"help_welcome_title" = "Чем мы можем помочь?";
+"help_welcome_subtitle" = "Здесь всё, что вам нужно знать о Soulo.";
+"help_getting_started" = "Начало работы";
+"help_search_title" = "Поиск";
+"help_search_desc" = "Ищите сразу на нескольких платформах. Листайте между результатами.";
+"help_platforms_title" = "Платформы";
+"help_platforms_desc" = "Настройте поисковые системы и инструменты AI.";
+"help_features" = "Функции";
+"help_bookmarks_title" = "Закладки";
+"help_bookmarks_desc" = "Сохраняйте любимые страницы для быстрого доступа.";
+"help_wallpaper_title" = "Обои";
+"help_wallpaper_desc" = "Красивые фоны от Pexels, Pixabay и Bing.";
+"help_adblock_title" = "Блокировка рекламы";
+"help_adblock_desc" = "Блокируйте рекламу и всплывающие окна для комфортного просмотра.";
+"help_contact" = "Свяжитесь с нами";
+"help_email_title" = "Электронная почта";
+"theme_system" = "Системная";
+"theme_light" = "Светлая";
+"theme_dark" = "Тёмная";
+
+/* Wallpaper Delete Confirmation */
+"wallpaper_delete_title" = "Удалить обои";
+"wallpaper_delete_confirm" = "Удалить";
+"wallpaper_delete_msg" = "Эти обои будут скрыты из вашего списка.";

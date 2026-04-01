@@ -322,3 +322,57 @@
 "error_timeout" = "Connection timed out. Please try again.";
 "error_ssl" = "Secure connection failed.";
 "retry" = "Retry";
+
+/* Support & Feedback */
+"settings_rate" = "앱 평가하기";
+"settings_feedback" = "피드백 보내기";
+"settings_help" = "도움말";
+"settings_section_support" = "지원";
+"feedback_title" = "피드백";
+"feedback_type" = "유형";
+"feedback_type_bug" = "버그 신고";
+"feedback_type_feature" = "기능 제안";
+"feedback_type_question" = "질문";
+"feedback_type_other" = "기타";
+"feedback_content" = "내용";
+"feedback_placeholder" = "여러분의 피드백이 앱 개선의 원동력입니다!
+
+알려주세요:
+· 어떤 문제가 있었나요?
+· 어떤 기능을 원하시나요?
+· 어디를 개선하면 좋을까요?";
+"feedback_contact" = "연락처";
+"feedback_contact_hint" = "이메일 또는 연락처";
+"feedback_optional" = "선택사항";
+"feedback_submit" = "제출";
+"feedback_submitting" = "제출 중...";
+"feedback_success_title" = "감사합니다";
+"feedback_success_msg" = "피드백이 제출되었습니다!";
+"feedback_error" = "제출 실패";
+
+/* Help Center */
+"help_title" = "도움말";
+"help_welcome_title" = "도움이 필요하세요?";
+"help_welcome_subtitle" = "Soulo에 대해 알아야 할 모든 것.";
+"help_getting_started" = "시작하기";
+"help_search_title" = "검색";
+"help_search_desc" = "여러 플랫폼에서 동시 검색. 스와이프로 결과 전환.";
+"help_platforms_title" = "플랫폼";
+"help_platforms_desc" = "검색 엔진과 AI 도구를 맞춤 설정.";
+"help_features" = "기능";
+"help_bookmarks_title" = "북마크";
+"help_bookmarks_desc" = "자주 방문하는 페이지를 저장해 빠르게 접근.";
+"help_wallpaper_title" = "배경화면";
+"help_wallpaper_desc" = "Pexels, Pixabay, Bing의 아름다운 배경화면.";
+"help_adblock_title" = "광고 차단";
+"help_adblock_desc" = "광고와 팝업을 차단해 깔끔한 브라우징 경험.";
+"help_contact" = "문의";
+"help_email_title" = "이메일";
+"theme_system" = "시스템";
+"theme_light" = "라이트";
+"theme_dark" = "다크";
+
+/* Wallpaper Delete Confirmation */
+"wallpaper_delete_title" = "배경화면 제거";
+"wallpaper_delete_confirm" = "제거";
+"wallpaper_delete_msg" = "이 배경화면이 목록에서 숨겨집니다.";

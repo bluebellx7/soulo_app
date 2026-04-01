@@ -7,8 +7,13 @@ struct SouloApp: App {
     @StateObject private var languageManager = LanguageManager.shared
     @StateObject private var themeManager = ThemeManager.shared
     @StateObject private var searchVM = SearchViewModel()
-    @StateObject private var wallpaperVM = BingWallpaperService.shared
+    @StateObject private var wallpaperManager = WallpaperManager.shared
     @Environment(\.scenePhase) private var scenePhase
+
+    init() {
+        // Pre-compile ad block rules and warm up WebView process pool
+        WebViewRepresentable.preWarm()
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -16,9 +21,9 @@ struct SouloApp: App {
                 .environmentObject(languageManager)
                 .environmentObject(themeManager)
                 .environmentObject(searchVM)
-                .environmentObject(wallpaperVM)
+                .environmentObject(wallpaperManager)
                 .environment(\.locale, languageManager.locale)
-                .preferredColorScheme(themeManager.preferredColorScheme)
+                // Appearance controlled by UIKit overrideUserInterfaceStyle via ThemeManager.applyAppearance()
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {
                         searchVM.detectClipboard()

@@ -322,3 +322,56 @@
 "error_timeout" = "Connection timed out. Please try again.";
 "error_ssl" = "Secure connection failed.";
 "retry" = "Retry";
+
+/* Support & Feedback */
+"settings_rate" = "App bewerten";
+"settings_feedback" = "Feedback senden";
+"settings_help" = "Hilfe-Center";
+"settings_section_support" = "Support";
+"feedback_title" = "Feedback";
+"feedback_type" = "Typ";
+"feedback_type_bug" = "Fehlerbericht";
+"feedback_type_feature" = "Funktionswunsch";
+"feedback_type_question" = "Frage";
+"feedback_type_other" = "Sonstiges";
+"feedback_content" = "Inhalt";
+"feedback_placeholder" = "Jedes Feedback hilft uns, die App zu verbessern!
+
+Erzahlen Sie uns:
+· Welches Problem hatten Sie?
+· Was koennen wir verbessern?";
+"feedback_contact" = "Kontakt";
+"feedback_contact_hint" = "E-Mail oder Kontaktdaten";
+"feedback_optional" = "optional";
+"feedback_submit" = "Absenden";
+"feedback_submitting" = "Wird gesendet...";
+"feedback_success_title" = "Vielen Dank";
+"feedback_success_msg" = "Ihr Feedback wurde gesendet!";
+"feedback_error" = "Sendefehler";
+
+/* Help Center */
+"help_title" = "Hilfe-Center";
+"help_welcome_title" = "Wie konnen wir helfen?";
+"help_welcome_subtitle" = "Alles, was du uber Soulo wissen musst.";
+"help_getting_started" = "Erste Schritte";
+"help_search_title" = "Suche";
+"help_search_desc" = "Suche gleichzeitig auf mehreren Plattformen.";
+"help_platforms_title" = "Plattformen";
+"help_platforms_desc" = "Suchmaschinen und KI-Tools anpassen.";
+"help_features" = "Funktionen";
+"help_bookmarks_title" = "Lesezeichen";
+"help_bookmarks_desc" = "Lieblingsseiten fur schnellen Zugriff speichern.";
+"help_wallpaper_title" = "Hintergrundbild";
+"help_wallpaper_desc" = "Schoene Hintergrundbilder von Pexels, Pixabay und Bing.";
+"help_adblock_title" = "Werbeblocker";
+"help_adblock_desc" = "Blockiere Werbung und Popups.";
+"help_contact" = "Kontakt";
+"help_email_title" = "E-Mail";
+"theme_system" = "System";
+"theme_light" = "Hell";
+"theme_dark" = "Dunkel";
+
+/* Wallpaper Delete Confirmation */
+"wallpaper_delete_title" = "Hintergrund entfernen";
+"wallpaper_delete_confirm" = "Entfernen";
+"wallpaper_delete_msg" = "Dieses Hintergrundbild wird aus Ihrer Liste ausgeblendet.";

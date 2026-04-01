@@ -1,27 +1,15 @@
 import SwiftUI
+@_exported import DKlugeTheme
 
-class ThemeManager: ObservableObject {
-    static let shared = ThemeManager()
+// MARK: - Soulo-specific compatibility
 
-    @Published var appearance: String {
-        didSet {
-            UserDefaults.standard.set(appearance, forKey: "appearance")
-        }
+extension ThemeManager {
+    /// Alias for appearanceMode (Soulo call sites use `appearance`).
+    var appearance: String {
+        get { appearanceMode }
+        set { appearanceMode = newValue }
     }
 
-    var preferredColorScheme: ColorScheme? {
-        switch appearance {
-        case "light": return .light
-        case "dark":  return .dark
-        default:      return nil
-        }
-    }
-
-    private init() {
-        self.appearance = UserDefaults.standard.string(forKey: "appearance") ?? "system"
-    }
-
-    func setAppearance(_ mode: String) {
-        appearance = mode
-    }
+    /// Alias for colorScheme (Soulo call sites use preferredColorScheme).
+    var preferredColorScheme: ColorScheme? { colorScheme }
 }

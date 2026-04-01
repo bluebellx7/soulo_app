@@ -1,0 +1,412 @@
+/* App */
+"app_name" = "搜羅";
+"app_subtitle" = "一鍵搜遍全球平台";
+
+/* Search */
+"search_placeholder" = "搜尋關鍵詞或輸入網址";
+"search" = "搜尋";
+"recent_searches" = "最近搜尋";
+"show_more" = "更多";
+"show_less" = "收起";
+"clear_all" = "清除全部";
+"no_results" = "暫無結果";
+
+/* Clipboard */
+"clipboard_detected" = "偵測到剪貼簿內容";
+
+/* Regions */
+"region_china" = "中國";
+"region_international" = "國際";
+"region_japan" = "日本";
+"region_russia" = "俄羅斯";
+
+/* Platforms - ALL 22 */
+"platform_douyin" = "抖音";
+"platform_bilibili" = "B站";
+"platform_xiaohongshu" = "小紅書";
+"platform_weibo" = "微博";
+"platform_zhihu" = "知乎";
+"platform_baidu" = "百度";
+"platform_taobao" = "淘寶";
+"platform_jd" = "京東";
+"platform_wechat" = "微信搜一搜";
+"platform_google" = "Google";
+"platform_youtube" = "YouTube";
+"platform_twitter" = "X (Twitter)";
+"platform_reddit" = "Reddit";
+"platform_amazon" = "Amazon";
+"platform_tiktok" = "TikTok";
+"platform_yahoo_jp" = "Yahoo! Japan";
+"platform_google_jp" = "Google 日本";
+"platform_twitter_jp" = "X 日本";
+"platform_youtube_jp" = "YouTube 日本";
+"platform_yandex" = "Yandex";
+"platform_vk" = "VK";
+
+/* WebView */
+"loading" = "載入中...";
+"load_error" = "載入失敗";
+"bookmark_added" = "已加入收藏";
+"bookmark_removed" = "已從收藏移除";
+
+/* Bookmarks */
+"bookmarks" = "收藏";
+"no_bookmarks" = "暫無收藏";
+"no_bookmarks_desc" = "瀏覽網頁時點擊收藏按鈕儲存";
+
+/* History */
+"search_history" = "搜尋歷史";
+"no_history" = "暫無搜尋歷史";
+"no_history_desc" = "搜尋過的關鍵詞會顯示在這裡";
+"today" = "今天";
+"yesterday" = "昨天";
+"earlier" = "更早";
+"confirm_clear_history" = "確認清除所有搜尋歷史？";
+"confirm_clear_bookmarks" = "確認清除所有收藏？";
+
+/* Settings */
+"settings" = "設定";
+"platform_management" = "平台管理";
+"appearance" = "外觀";
+"appearance_system" = "跟隨系統";
+"appearance_light" = "淺色";
+"appearance_dark" = "深色";
+"language" = "語言";
+"background" = "背景";
+"privacy" = "隱私";
+"about" = "關於";
+"version" = "版本";
+"reset_to_defaults" = "恢復預設設定";
+"confirm_reset" = "確認恢復預設設定？這將重設所有平台配置。";
+
+/* Wallpaper */
+"wallpaper_bing" = "Bing 每日";
+"wallpaper_custom" = "自訂照片";
+"wallpaper_none" = "動態背景";
+"wallpaper_gradient" = "漸變色彩";
+"wallpaper_photo" = "照片桌布";
+"wallpaper_solid" = "純色背景";
+"wallpaper_source" = "桌布來源";
+"wallpaper_type" = "背景類型";
+"wallpaper_refresh" = "隨機換樣";
+"wallpaper_download" = "下載到相簿";
+"wallpaper_saved" = "已儲存到相簿";
+"wallpaper_fetch_bing" = "取得今日桌布";
+"wallpaper_choose_photo" = "選擇照片";
+"wallpaper_color" = "背景顏色";
+"wallpaper_load_error" = "圖片載入失敗";
+"wallpaper_favorites" = "我的收藏";
+"wallpaper_search_placeholder" = "搜尋氛圍（如：森林、極簡）";
+"wallpaper_discover" = "探索發現";
+"wallpaper_pexels" = "Pexels 精選";
+"wallpaper_pixabay" = "Pixabay 攝影";
+"wallpaper_current_vibe" = "當前氛圍";
+"settings_wallpaper" = "桌布與背景";
+"wallpaper_discover" = "發現美圖";
+"choose_photo" = "選擇照片";
+
+/* Platform Management */
+"add_platform" = "新增平台";
+"platform_name" = "平台名稱";
+"search_url_template" = "搜尋 URL 範本";
+"search_url_hint" = "使用 %@ 作為關鍵詞佔位符\n例如: https://example.com/search?q=%@";
+"home_url" = "首頁網址";
+"select_region" = "選擇群組";
+"auto_sort_by_frequency" = "依使用頻率自動排序";
+"custom_platform" = "自訂平台";
+"delete_platform" = "刪除平台";
+"confirm_delete_platform" = "確認刪除此自訂平台？";
+"url_template_error" = "URL 範本必須包含 %@ 佔位符";
+
+/* Privacy */
+"incognito_mode" = "無痕模式";
+"incognito_desc" = "開啟後搜尋不會記錄歷史";
+"clear_search_history" = "清除搜尋歷史";
+"clear_bookmarks" = "清除所有收藏";
+"clear_webview_cache" = "清除瀏覽快取";
+"clear_cache_desc" = "清除 WebView 的 Cookie 和快取資料";
+"clear_all_data" = "清除所有資料";
+"action_irreversible" = "此操作不可撤銷";
+
+/* Privacy Settings (extended keys) */
+"privacy_section_browsing" = "瀏覽";
+"privacy_section_data" = "資料管理";
+"privacy_incognito" = "無痕模式";
+"privacy_incognito_desc" = "開啟後搜尋不會記錄歷史";
+"privacy_clear_history" = "清除搜尋歷史";
+"privacy_clear_history_desc" = "刪除所有已儲存的搜尋關鍵詞";
+"privacy_clear_history_confirm_title" = "清除搜尋歷史？";
+"privacy_clear_history_confirm_message" = "所有搜尋歷史將被永久刪除。";
+"privacy_clear_bookmarks" = "清除所有收藏";
+"privacy_clear_bookmarks_desc" = "刪除所有已儲存的收藏";
+"privacy_clear_bookmarks_confirm_title" = "清除所有收藏？";
+"privacy_clear_bookmarks_confirm_message" = "所有收藏將被永久刪除。";
+"privacy_clear_cache" = "清除瀏覽快取";
+"privacy_clear_cache_desc" = "清除 Cookie、快取和本機儲存";
+"privacy_clear_cache_confirm_title" = "清除瀏覽快取？";
+"privacy_clear_cache_confirm_message" = "所有瀏覽資料將被永久刪除。";
+"privacy_clear_action" = "清除";
+"privacy_data_footer" = "以上操作不可撤銷，清除的資料無法恢復。";
+"settings_privacy" = "隱私";
+"platform_sort_options" = "排序選項";
+"cancel" = "取消";
+"confirm" = "確認";
+"delete" = "刪除";
+"done" = "完成";
+"save" = "儲存";
+"edit" = "編輯";
+"share" = "分享";
+
+/* Permissions */
+"speech_permission" = "需要語音辨識權限才能使用語音搜尋";
+"microphone_permission" = "需要麥克風權限進行語音輸入";
+
+/* Errors */
+"error_occurred" = "發生錯誤";
+"network_error" = "網路連線失敗";
+"try_again" = "重試";
+
+/* Voice Input */
+"voice_listening" = "正在聆聽...";
+"voice_tap_to_speak" = "點擊按鈕開始說話";
+
+/* F3: 拼寫糾錯 */
+"did_you_mean" = "你是不是要搜:";
+
+/* F4: 頁面摘要 */
+"summarize" = "摘要";
+"summary_title" = "頁面摘要";
+"summarizing" = "正在產生摘要...";
+"copy_summary" = "複製";
+
+/* F5: 平台推薦 */
+"suggested_platforms" = "推薦";
+
+/* F7: 剪貼簿智慧 */
+"clipboard_url_detected" = "偵測到連結";
+"clipboard_product_detected" = "偵測到商品";
+"clipboard_person_detected" = "偵測到人名";
+"open_directly" = "直接開啟";
+
+/* F8: 跨語言搜尋 */
+"also_search_in" = "同時用%@搜尋";
+
+/* F9: 圖片搜尋 */
+"image_search" = "圖片搜尋";
+"extracting_text" = "正在擷取文字...";
+"no_text_found" = "未辨識到文字";
+"detected_objects" = "辨識到:";
+"photo_library" = "相簿";
+
+/* F1: Siri */
+"siri_search_tip" = "試試說：「用搜羅搜貓」";
+
+/* AI 平台 */
+"platform_deepseek" = "DeepSeek";
+"platform_qianwen" = "通義千問";
+"platform_bing" = "Bing";
+"platform_duckduckgo" = "DuckDuckGo";
+"platform_github" = "GitHub";
+"platform_wikipedia" = "維基百科";
+"platform_perplexity" = "Perplexity AI";
+"platform_instagram" = "Instagram";
+"platform_linkedin" = "LinkedIn";
+"platform_pinterest" = "Pinterest";
+"platform_ebay" = "eBay";
+"platform_stackoverflow" = "StackOverflow";
+"platform_scholar" = "Google 學術";
+"platform_sogou" = "搜狗";
+"platform_360" = "360搜索";
+"platform_toutiao" = "頭條搜尋";
+"platform_youku" = "優酷";
+"platform_iqiyi" = "愛奇藝";
+"platform_netease_music" = "網易雲音樂";
+"platform_csdn" = "CSDN";
+"platform_juejin" = "掘金";
+"platform_rakuten" = "樂天";
+"platform_niconico" = "Niconico";
+"platform_yuanbao" = "騰訊元寶";
+"platform_doubao" = "豆包";
+"login_required_title" = "需要登入";
+"login_required_message" = "該平台需要先登入才能使用。請在頁面中登入，登入後搜尋將自動執行。";
+"login_required_toast" = "請先登入後再搜尋";
+/* 自訂群組 */
+"custom_groups" = "自訂群組";
+"no_groups" = "暫無自訂群組";
+"no_groups_desc" = "建立群組來整理你常用的平台";
+"add_group" = "新建群組";
+"group_name" = "群組名稱";
+"platforms_count" = "個平台";
+
+/* 動態主題 */
+"dynamic_theme" = "主題";
+"theme_midnight" = "午夜";
+"theme_ocean" = "海洋";
+"theme_aurora" = "極光";
+"theme_sunset" = "日落";
+"theme_monochrome" = "黑白";
+"wallpaper_drag_hint" = "拖曳移動，捏合縮放";
+"edit_title" = "編輯首頁標題";
+"edit_subtitle" = "編輯副標題";
+"home_customization" = "首頁自訂";
+"link_copied" = "連結已複製";
+"copy_link" = "複製連結";
+"copied" = "已複製！";
+"ad_block" = "廣告過濾";
+"ad_block_desc" = "隱藏搜尋結果中的廣告和追蹤器（重新搜尋後生效）";
+"browsing" = "瀏覽";
+"no_platforms_in_group" = "暫無平台";
+"add_to_group" = "新增平台到群組";
+"wallpaper_saved" = "桌布已儲存到相簿";
+"add_existing" = "選擇已有";
+"region_image_search" = "圖片搜尋";
+"platform_google_lens" = "Google 識圖";
+"platform_baidu_image" = "百度識圖";
+"platform_yandex_image" = "Yandex 識圖";
+"confirm_delete_group" = "確認刪除此群組？";
+"confirm_reset" = "恢復所有平台為預設設定？自訂群組將被清除。";
+"camera" = "相機";
+"select_region" = "選擇群組";
+"add_platform_region" = "群組";
+"image_search_desc" = "選擇一張圖片，透過圖片搜尋平台進行搜尋";
+"image_uploading" = "正在上傳圖片...";
+"switch_to_bing" = "切換到 Bing 桌布？";
+"switch_to_bing_desc" = "開啟 Bing 每日桌布後，點擊小風車即可瀏覽精美桌布。";
+
+"open_external_title" = "開啟外部應用程式？";
+"open_external_message" = "此連結將開啟其他應用程式，是否繼續？";
+
+"ai_loading_page" = "正在載入 AI 平台...";
+"ai_loading_input" = "本機 AI 正在分析並輸入...";
+
+/* Widget */
+"widget_search" = "快速搜尋";
+"widget_description" = "快速搜尋多個平台";
+
+/* Settings - Navigation & Titles */
+"settings_title" = "設定";
+"settings_platforms" = "平台";
+"settings_appearance" = "外觀";
+"settings_language" = "語言";
+"settings_wallpaper" = "桌布";
+"settings_version" = "版本";
+"settings_privacy_policy" = "隱私權政策";
+"settings_terms" = "服務條款";
+
+/* Settings - Section Headers */
+"settings_section_platforms" = "平台";
+"settings_section_appearance" = "外觀";
+"settings_section_language" = "語言";
+"settings_section_background" = "背景";
+"settings_section_privacy" = "隱私";
+"settings_section_about" = "關於";
+
+/* Platform Management */
+"platform_auto_sort" = "依使用頻率自動排序";
+"platform_auto_sort_desc" = "根據使用頻率自動調整平台順序";
+"platform_custom_badge" = "自訂";
+"platform_reset_defaults" = "恢復預設設定";
+"platform_reset_footer" = "重設將恢復所有平台的預設順序和可見性。";
+"platform_reset_confirm_title" = "重設平台配置？";
+"platform_reset_confirm_action" = "重設";
+"platform_reset_confirm_message" = "所有平台配置將恢復為預設設定，此操作不可撤銷。";
+
+/* Add Custom Platform */
+"add_platform_title" = "新增自訂平台";
+"add_platform_subtitle" = "將任意搜尋引擎或網站新增為平台";
+"add_platform_name" = "平台名稱";
+"add_platform_name_placeholder" = "例如：DuckDuckGo";
+"add_platform_search_url" = "搜尋 URL 範本";
+"add_platform_home_url" = "首頁網址";
+"add_platform_home_url_optional" = "選填 - 在沒有搜尋詞時開啟平台首頁";
+"add_platform_error_name_empty" = "請輸入平台名稱";
+"add_platform_error_url_placeholder" = "URL 必須包含 %@ 作為搜尋關鍵詞佔位符";
+"add_platform_url_help_title" = "URL 範本說明";
+"add_platform_url_help_desc" = "將 URL 中的搜尋關鍵詞替換為 %@，搜尋時會自動填入你輸入的內容。";
+"add_platform_url_help_examples" = "範例";
+
+/* Wallpaper (extended) */
+"wallpaper_choose_photo" = "選擇照片";
+
+/* Language Settings */
+"language_select_title" = "選擇語言";
+"language_footer" = "更改語言將更新應用程式內的所有文字。";
+
+/* Home Bookmarks */
+"show_bookmarks_home" = "首頁顯示收藏";
+"show_bookmarks_home_desc" = "在首頁以圖示形式展示收藏的網站";
+"home_screen" = "首頁";
+
+/* AI Search Platforms */
+"platform_metaso" = "秘塔搜尋";
+"platform_tiangong" = "天工AI搜尋";
+"platform_phind" = "Phind";
+"platform_you" = "You.com";
+"platform_kimi" = "Kimi搜尋";
+"voice_stop" = "停止";
+"voice_record" = "錄音";
+
+/* Batch Import */
+"batch_import" = "批次匯入";
+"batch_import_format" = "貼上以下格式的 JSON";
+"batch_import_group" = "新增到群組（選填）";
+"batch_import_group_placeholder" = "如：影視";
+"batch_import_action" = "匯入";
+"batch_import_result" = "成功匯入 %d 個平台";
+"paste_from_clipboard" = "從剪貼簿貼上";
+"none" = "無";
+"show_group_picker_home" = "首頁顯示群組";
+"show_group_picker_home_desc" = "在首頁顯示平台群組標籤，快速切換搜尋範圍";
+"error_no_internet" = "無網路連線，請檢查網路設定";
+"error_timeout" = "連線逾時，請重試";
+"error_ssl" = "安全連線失敗，該網站可能不安全";
+"retry" = "重試";
+
+/* Support & Feedback */
+"settings_rate" = "給個好評";
+"settings_feedback" = "傳送回饋";
+"settings_help" = "說明中心";
+"settings_section_support" = "支援";
+"feedback_title" = "使用者回饋";
+"feedback_type" = "回饋類型";
+"feedback_type_bug" = "Bug 回報";
+"feedback_type_feature" = "功能建議";
+"feedback_type_question" = "使用問題";
+"feedback_type_other" = "其他";
+"feedback_content" = "回饋內容";
+"feedback_placeholder" = "您的每一條回饋都是我們改進的動力！\n\n可以告訴我們：\n· 遇到了什麼問題？\n· 希望增加什麼功能？\n· 哪裡的體驗可以更好？";
+"feedback_contact" = "聯絡方式";
+"feedback_contact_hint" = "電子郵件或其他聯絡方式";
+"feedback_optional" = "選填";
+"feedback_submit" = "提交";
+"feedback_submitting" = "提交中...";
+"feedback_success_title" = "感謝回饋";
+"feedback_success_msg" = "您的回饋已提交成功！";
+"feedback_error" = "提交失敗";
+
+/* Help Center */
+"help_title" = "說明中心";
+"help_welcome_title" = "需要協助？";
+"help_welcome_subtitle" = "這裡是關於 Soulo 你需要了解的一切。";
+"help_getting_started" = "快速上手";
+"help_search_title" = "搜尋";
+"help_search_desc" = "同時在多個平台搜尋。滑動切換結果。";
+"help_platforms_title" = "平台";
+"help_platforms_desc" = "自訂搜尋引擎和 AI 工具。";
+"help_features" = "功能";
+"help_bookmarks_title" = "書籤";
+"help_bookmarks_desc" = "儲存常用頁面方便快速存取。";
+"help_wallpaper_title" = "桌布";
+"help_wallpaper_desc" = "來自 Pexels、Pixabay 和 Bing 的精美桌布。";
+"help_adblock_title" = "廣告攔截";
+"help_adblock_desc" = "攔截廣告和彈出視窗，獲得更清爽的瀏覽體驗。";
+"help_contact" = "聯絡我們";
+"help_email_title" = "電子郵件";
+"theme_system" = "跟隨系統";
+"theme_light" = "淺色";
+"theme_dark" = "深色";
+
+/* Wallpaper Delete Confirmation */
+"wallpaper_delete_title" = "移除桌布";
+"wallpaper_delete_confirm" = "移除";
+"wallpaper_delete_msg" = "該桌布將從列表中隱藏。";

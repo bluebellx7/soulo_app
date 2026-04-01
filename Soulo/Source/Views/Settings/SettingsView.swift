@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import StoreKit
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -7,10 +8,6 @@ struct SettingsView: View {
     @EnvironmentObject var themeManager: ThemeManager
 
     @State private var selectedAppearance: String = ThemeManager.shared.appearance
-    @State private var wallpaperMode: WallpaperMode = WallpaperMode(rawValue: UserDefaults.standard.string(forKey: "wallpaper_mode") ?? "bing") ?? .bing
-    @State private var selectedPhotoItem: PhotosPickerItem? = nil
-    @State private var selectedDynamicTheme: DynamicTheme = DynamicTheme(rawValue: UserDefaults.standard.string(forKey: "dynamic_theme") ?? "midnight") ?? .midnight
-    @State private var wallpaperToEdit: IdentifiableImage? = nil
     @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = false
     @AppStorage("show_bookmarks_on_home") private var showBookmarksOnHome: Bool = false
     @AppStorage("show_group_picker_on_home") private var showGroupPickerOnHome: Bool = false
@@ -20,8 +17,8 @@ struct SettingsView: View {
     @State private var showHomeSubtitleEdit = false
     @State private var editingHomeTitle = ""
     @State private var editingHomeSubtitle = ""
-    @State private var customWallpaperImage: Image? = nil
-    @State private var showPhotoPicker = false
+    @State private var showFeedback = false
+    @Environment(\.requestReview) private var requestReview
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -71,18 +68,28 @@ struct SettingsView: View {
                             }
                             .padding(.top, 2)
 
-                            Picker("", selection: $selectedAppearance) {
-                                Label("System", systemImage: "circle.lefthalf.filled")
-                                    .tag("system")
-                                Label("Light", systemImage: "sun.max.fill")
-                                    .tag("light")
-                                Label("Dark", systemImage: "moon.fill")
-                                    .tag("dark")
-                            }
-                            .pickerStyle(.segmented)
-                            .onChange(of: selectedAppearance) { _, newValue in
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    ThemeManager.shared.setAppearance(newValue)
+                            HStack(spacing: 8) {
+                                ForEach(["system", "light", "dark"], id: \.self) { mode in
+                                    let sel = selectedAppearance == mode
+                                    let icon = mode == "system" ? "circle.lefthalf.filled" : mode == "light" ? "sun.max.fill" : "moon.fill"
+                                    let name = LanguageManager.shared.localizedString("theme_\(mode)")
+                                    Button {
+                                        selectedAppearance = mode
+                                        HapticsManager.selection()
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                            ThemeManager.shared.setAppearance(mode)
+                                        }
+                                    } label: {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: icon).font(.system(size: 11))
+                                            Text(name).font(.system(size: 12, weight: .medium))
+                                        }
+                                        .foregroundStyle(sel ? .white : .secondary)
+                                        .padding(.horizontal, 12).padding(.vertical, 8)
+                                        .frame(maxWidth: .infinity)
+                                        .background(Capsule().fill(sel ? Color.blue : Color(uiColor: .secondarySystemFill)))
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                             }
                         }
@@ -112,106 +119,11 @@ struct SettingsView: View {
 
                     // MARK: - Background / Wallpaper
                     Section {
-                        VStack(alignment: .leading, spacing: 12) {
+                        NavigationLink(destination: WallpaperSettingsView()) {
                             Label {
                                 Text(LanguageManager.shared.localizedString("settings_wallpaper"))
                             } icon: {
                                 IconBadge(systemName: "photo.fill", color: .teal)
-                            }
-                            .padding(.top, 2)
-
-                            Picker("", selection: $wallpaperMode) {
-                                Text("Bing").tag(WallpaperMode.bing)
-                                Text(LanguageManager.shared.localizedString("wallpaper_custom")).tag(WallpaperMode.custom)
-                                Text(LanguageManager.shared.localizedString("wallpaper_none")).tag(WallpaperMode.none)
-                            }
-                            .pickerStyle(.segmented)
-                            .onChange(of: wallpaperMode) { _, newValue in
-                                BingWallpaperService.shared.setMode(newValue)
-                                if newValue == .custom {
-                                    showPhotoPicker = true
-                                }
-                            }
-                        }
-                        .padding(.vertical, 4)
-
-                        // Custom wallpaper: pick + adjust position
-                        if wallpaperMode == .custom {
-                            PhotosPicker(
-                                selection: $selectedPhotoItem,
-                                matching: .images,
-                                photoLibrary: .shared()
-                            ) {
-                                HStack {
-                                    Image(systemName: "photo.on.rectangle.angled")
-                                        .foregroundStyle(.blue)
-                                    Text(LanguageManager.shared.localizedString("wallpaper_choose_photo"))
-                                        .foregroundStyle(.blue)
-                                    Spacer()
-                                    if customWallpaperImage != nil {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundStyle(.green)
-                                    }
-                                }
-                            }
-                            .onChange(of: selectedPhotoItem) { _, newItem in
-                                Task {
-                                    if let data = try? await newItem?.loadTransferable(type: Data.self),
-                                       let uiImage = UIImage(data: data) {
-                                        await MainActor.run {
-                                            wallpaperToEdit = IdentifiableImage(image: uiImage)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Dynamic theme picker (when mode = none)
-                        if wallpaperMode == .none {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(LanguageManager.shared.localizedString("dynamic_theme"))
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 10) {
-                                        ForEach(DynamicTheme.allCases) { theme in
-                                            Button {
-                                                selectedDynamicTheme = theme
-                                                UserDefaults.standard.set(theme.rawValue, forKey: "dynamic_theme")
-                                            } label: {
-                                                VStack(spacing: 4) {
-                                                    RoundedRectangle(cornerRadius: 8)
-                                                        .fill(theme.baseColor)
-                                                        .overlay(
-                                                            ZStack {
-                                                                let colors = theme.blobColors
-                                                                Circle()
-                                                                    .fill(colors[0].0.opacity(colors[0].1 * 2))
-                                                                    .frame(width: 20, height: 20)
-                                                                    .offset(x: -8, y: -5)
-                                                                Circle()
-                                                                    .fill(colors[1].0.opacity(colors[1].1 * 2))
-                                                                    .frame(width: 16, height: 16)
-                                                                    .offset(x: 8, y: 5)
-                                                            }
-                                                        )
-                                                        .frame(width: 52, height: 36)
-                                                        .overlay(
-                                                            RoundedRectangle(cornerRadius: 8)
-                                                                .stroke(selectedDynamicTheme == theme ? Color.blue : Color.clear, lineWidth: 2)
-                                                        )
-
-                                                    Text(LanguageManager.shared.localizedString(theme.nameKey))
-                                                        .font(.system(size: 9))
-                                                        .foregroundStyle(.secondary)
-                                                }
-                                                .padding(2) // space for selection border
-                                            }
-                                            .buttonStyle(.plain)
-                                        }
-                                    }
-                                }
                             }
                         }
                     } header: {
@@ -321,6 +233,39 @@ struct SettingsView: View {
                         SectionHeader(title: LanguageManager.shared.localizedString("settings_section_privacy"))
                     }
 
+                    // MARK: - Support
+                    Section {
+                        Button { requestReview() } label: {
+                            Label {
+                                Text(LanguageManager.shared.localizedString("settings_rate"))
+                                    .foregroundStyle(.primary)
+                            } icon: {
+                                IconBadge(systemName: "star.bubble.fill", color: .yellow)
+                            }
+                        }
+
+                        Button { showFeedback = true } label: {
+                            Label {
+                                Text(LanguageManager.shared.localizedString("settings_feedback"))
+                                    .foregroundStyle(.primary)
+                            } icon: {
+                                IconBadge(systemName: "envelope.fill", color: .orange)
+                            }
+                        }
+
+                        NavigationLink {
+                            HelpCenterView()
+                        } label: {
+                            Label {
+                                Text(LanguageManager.shared.localizedString("settings_help"))
+                            } icon: {
+                                IconBadge(systemName: "questionmark.circle.fill", color: .teal)
+                            }
+                        }
+                    } header: {
+                        SectionHeader(title: LanguageManager.shared.localizedString("settings_section_support"))
+                    }
+
                     // MARK: - About
                     Section {
                         HStack {
@@ -402,12 +347,10 @@ struct SettingsView: View {
                 editingHomeTitle = homeTitle
                 editingHomeSubtitle = homeSubtitle
             }
-            .fullScreenCover(item: $wallpaperToEdit) { item in
-                WallpaperEditorView(image: item.image) { adjusted in
-                    BingWallpaperService.shared.setCustomWallpaper(adjusted)
-                    customWallpaperImage = Image(uiImage: adjusted)
-                }
+            .sheet(isPresented: $showFeedback) {
+                FeedbackView()
             }
+            // Appearance controlled by UIKit via ThemeManager.applyAppearance()
         }
     }
 }

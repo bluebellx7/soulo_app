@@ -80,9 +80,29 @@
 "confirm_reset" = "Reset to default settings? This will reset all platform configurations.";
 
 /* Wallpaper */
-"wallpaper_bing" = "Bing Daily Wallpaper";
-"wallpaper_custom" = "Custom Wallpaper";
-"wallpaper_none" = "Dynamic Background";
+"wallpaper_bing" = "Bing Daily";
+"wallpaper_custom" = "Custom Photo";
+"wallpaper_none" = "Dynamic Mesh";
+"wallpaper_gradient" = "Gradients";
+"wallpaper_photo" = "Photo Wall";
+"wallpaper_solid" = "Solid Colors";
+"wallpaper_source" = "Wallpaper Source";
+"wallpaper_type" = "Background Type";
+"wallpaper_refresh" = "Randomize";
+"wallpaper_download" = "Download to Photos";
+"wallpaper_saved" = "Wallpaper Saved";
+"wallpaper_fetch_bing" = "Fetch Daily Image";
+"wallpaper_choose_photo" = "Pick from Library";
+"wallpaper_color" = "Background Color";
+"wallpaper_load_error" = "Failed to load";
+"wallpaper_favorites" = "My Favorites";
+"wallpaper_search_placeholder" = "Search vibe (e.g. Forest, Minimal)";
+"wallpaper_discover" = "Discover New";
+"wallpaper_pexels" = "Pexels (Curated)";
+"wallpaper_pixabay" = "Pixabay (Nature)";
+"wallpaper_current_vibe" = "Current Vibe";
+"settings_wallpaper" = "Wallpaper & Style";
+"wallpaper_discover" = "Explore Wallpapers";
 "choose_photo" = "Choose Photo";
 
 /* Platform Management */
@@ -341,3 +361,52 @@
 "error_timeout" = "Connection timed out. Please try again.";
 "error_ssl" = "Secure connection failed. This site may not be safe.";
 "retry" = "Retry";
+
+/* Support & Feedback */
+"settings_rate" = "Rate This App";
+"settings_feedback" = "Send Feedback";
+"settings_help" = "Help Center";
+"settings_section_support" = "Support";
+"feedback_title" = "Feedback";
+"feedback_type" = "Type";
+"feedback_type_bug" = "Bug Report";
+"feedback_type_feature" = "Feature Request";
+"feedback_type_question" = "Question";
+"feedback_type_other" = "Other";
+"feedback_content" = "Content";
+"feedback_placeholder" = "Your feedback helps us improve!\n\nTell us:\n· What issue did you encounter?\n· What feature would you like?\n· What could work better?";
+"feedback_contact" = "Contact";
+"feedback_contact_hint" = "Email or other contact";
+"feedback_optional" = "optional";
+"feedback_submit" = "Submit";
+"feedback_submitting" = "Submitting...";
+"feedback_success_title" = "Thank You";
+"feedback_success_msg" = "Your feedback has been submitted!";
+"feedback_error" = "Error";
+
+/* Help Center */
+"help_title" = "Help Center";
+"help_welcome_title" = "How can we help?";
+"help_welcome_subtitle" = "Here's everything you need to know about Soulo.";
+"help_getting_started" = "Getting Started";
+"help_search_title" = "Search";
+"help_search_desc" = "Search across multiple platforms at once. Swipe between results.";
+"help_platforms_title" = "Platforms";
+"help_platforms_desc" = "Customize which search engines and AI tools to use.";
+"help_features" = "Features";
+"help_bookmarks_title" = "Bookmarks";
+"help_bookmarks_desc" = "Save your favorite pages for quick access.";
+"help_wallpaper_title" = "Wallpaper";
+"help_wallpaper_desc" = "Beautiful backgrounds from Pexels, Pixabay, and Bing.";
+"help_adblock_title" = "Ad Blocker";
+"help_adblock_desc" = "Block ads and popups for a cleaner browsing experience.";
+"help_contact" = "Contact Us";
+"help_email_title" = "Email";
+"theme_system" = "System";
+"theme_light" = "Light";
+"theme_dark" = "Dark";
+
+/* Wallpaper Delete Confirmation */
+"wallpaper_delete_title" = "Remove Wallpaper";
+"wallpaper_delete_confirm" = "Remove";
+"wallpaper_delete_msg" = "This wallpaper will be hidden from your list.";

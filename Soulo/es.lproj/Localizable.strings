@@ -322,3 +322,57 @@
 "error_timeout" = "Connection timed out. Please try again.";
 "error_ssl" = "Secure connection failed.";
 "retry" = "Retry";
+
+/* Support & Feedback */
+"settings_rate" = "Valorar la app";
+"settings_feedback" = "Enviar comentarios";
+"settings_help" = "Centro de ayuda";
+"settings_section_support" = "Soporte";
+"feedback_title" = "Comentarios";
+"feedback_type" = "Tipo";
+"feedback_type_bug" = "Reporte de error";
+"feedback_type_feature" = "Solicitud";
+"feedback_type_question" = "Pregunta";
+"feedback_type_other" = "Otro";
+"feedback_content" = "Contenido";
+"feedback_placeholder" = "Cada comentario nos ayuda a mejorar!
+
+Cuentanos:
+· Que problema encontraste?
+· Que funcion te gustaria?
+· Que podemos mejorar?";
+"feedback_contact" = "Contacto";
+"feedback_contact_hint" = "Email u otro contacto";
+"feedback_optional" = "opcional";
+"feedback_submit" = "Enviar";
+"feedback_submitting" = "Enviando...";
+"feedback_success_title" = "Gracias";
+"feedback_success_msg" = "Tus comentarios han sido enviados!";
+"feedback_error" = "Error";
+
+/* Help Center */
+"help_title" = "Centro de ayuda";
+"help_welcome_title" = "Como podemos ayudar?";
+"help_welcome_subtitle" = "Todo lo que necesitas saber sobre Soulo.";
+"help_getting_started" = "Comenzar";
+"help_search_title" = "Busqueda";
+"help_search_desc" = "Busca en multiples plataformas a la vez.";
+"help_platforms_title" = "Plataformas";
+"help_platforms_desc" = "Personaliza motores de busqueda y herramientas IA.";
+"help_features" = "Funciones";
+"help_bookmarks_title" = "Marcadores";
+"help_bookmarks_desc" = "Guarda tus paginas favoritas para acceso rapido.";
+"help_wallpaper_title" = "Fondo de pantalla";
+"help_wallpaper_desc" = "Fondos hermosos de Pexels, Pixabay y Bing.";
+"help_adblock_title" = "Bloqueador de anuncios";
+"help_adblock_desc" = "Bloquea anuncios y popups.";
+"help_contact" = "Contacto";
+"help_email_title" = "Email";
+"theme_system" = "Sistema";
+"theme_light" = "Claro";
+"theme_dark" = "Oscuro";
+
+/* Wallpaper Delete Confirmation */
+"wallpaper_delete_title" = "Eliminar fondo";
+"wallpaper_delete_confirm" = "Eliminar";
+"wallpaper_delete_msg" = "Este fondo se ocultará de tu lista.";

@@ -12,6 +12,13 @@ options:
     - de
     - es
     - vi
+    - zh-Hant
+    - pt-BR
+    - ru
+    - tr
+    - it
+    - ar
+    - th
     - Base
 
 targets:
@@ -46,9 +53,32 @@ targets:
       - path: Soulo/vi.lproj
         type: folder
         buildPhase: resources
+      - path: Soulo/zh-Hant.lproj
+        type: folder
+        buildPhase: resources
+      - path: Soulo/pt-BR.lproj
+        type: folder
+        buildPhase: resources
+      - path: Soulo/ru.lproj
+        type: folder
+        buildPhase: resources
+      - path: Soulo/tr.lproj
+        type: folder
+        buildPhase: resources
+      - path: Soulo/it.lproj
+        type: folder
+        buildPhase: resources
+      - path: Soulo/ar.lproj
+        type: folder
+        buildPhase: resources
+      - path: Soulo/th.lproj
+        type: folder
+        buildPhase: resources
     info:
       path: Soulo/Info.plist
       properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleDisplayName: 搜罗
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
@@ -80,14 +110,22 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.dkluge.Soulo
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: "1.0.2"
+        CURRENT_PROJECT_VERSION: 3
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_PREVIEWS: "YES"
         SWIFT_EMIT_LOC_STRINGS: "YES"
     dependencies:
       - target: SouloWidgetExtension
+      - package: DKlugeKit
+        product: DKlugeCore
+      - package: DKlugeKit
+        product: DKlugeFeedback
+      - package: DKlugeKit
+        product: DKlugeI18n
+      - package: DKlugeKit
+        product: DKlugeTheme
 
   SouloWidgetExtension:
     type: app-extension
@@ -101,12 +139,16 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.dkluge.Soulo.Widget
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: "1.0.2"
+        CURRENT_PROJECT_VERSION: 3
         GENERATE_INFOPLIST_FILE: "YES"
         INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
         SKIP_INSTALL: "YES"
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
+
+packages:
+  DKlugeKit:
+    path: ../DKlugeKit
 
 schemes:
   Soulo:

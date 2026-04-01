@@ -322,3 +322,57 @@
 "error_timeout" = "Connection timed out. Please try again.";
 "error_ssl" = "Secure connection failed.";
 "retry" = "Retry";
+
+/* Support & Feedback */
+"settings_rate" = "Danh gia ung dung";
+"settings_feedback" = "Gui phan hoi";
+"settings_help" = "Trung tam tro giup";
+"settings_section_support" = "Ho tro";
+"feedback_title" = "Phan hoi";
+"feedback_type" = "Loai";
+"feedback_type_bug" = "Bao loi";
+"feedback_type_feature" = "Yeu cau tinh nang";
+"feedback_type_question" = "Cau hoi";
+"feedback_type_other" = "Khac";
+"feedback_content" = "Noi dung";
+"feedback_placeholder" = "Moi y kien phan hoi giup chung toi cai thien!
+
+Hay cho chung toi biet:
+· Ban gap van de gi?
+· Ban muon them tinh nang gi?
+· Dieu gi co the tot hon?";
+"feedback_contact" = "Lien he";
+"feedback_contact_hint" = "Email hoac lien he khac";
+"feedback_optional" = "tuy chon";
+"feedback_submit" = "Gui";
+"feedback_submitting" = "Dang gui...";
+"feedback_success_title" = "Cam on";
+"feedback_success_msg" = "Phan hoi da duoc gui!";
+"feedback_error" = "Loi gui";
+
+/* Help Center */
+"help_title" = "Trung tam tro giup";
+"help_welcome_title" = "Chung toi co the giup gi?";
+"help_welcome_subtitle" = "Tat ca nhung gi ban can biet ve Soulo.";
+"help_getting_started" = "Bat dau";
+"help_search_title" = "Tim kiem";
+"help_search_desc" = "Tim kiem dong thoi tren nhieu nen tang.";
+"help_platforms_title" = "Nen tang";
+"help_platforms_desc" = "Tuy chinh cong cu tim kiem va AI.";
+"help_features" = "Tinh nang";
+"help_bookmarks_title" = "Danh dau trang";
+"help_bookmarks_desc" = "Luu trang yeu thich de truy cap nhanh.";
+"help_wallpaper_title" = "Hinh nen";
+"help_wallpaper_desc" = "Hinh nen dep tu Pexels, Pixabay va Bing.";
+"help_adblock_title" = "Chan quang cao";
+"help_adblock_desc" = "Chan quang cao va popup.";
+"help_contact" = "Lien he";
+"help_email_title" = "Email";
+"theme_system" = "He thong";
+"theme_light" = "Sang";
+"theme_dark" = "Toi";
+
+/* Wallpaper Delete Confirmation */
+"wallpaper_delete_title" = "Xóa hình nền";
+"wallpaper_delete_confirm" = "Xóa";
+"wallpaper_delete_msg" = "Hình nền này sẽ bị ẩn khỏi danh sách.";

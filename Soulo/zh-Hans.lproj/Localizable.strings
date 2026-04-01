@@ -80,9 +80,29 @@
 "confirm_reset" = "确认恢复默认设置？这将重置所有平台配置。";
 
 /* Wallpaper */
-"wallpaper_bing" = "Bing 每日壁纸";
-"wallpaper_custom" = "自定义壁纸";
+"wallpaper_bing" = "必应每日";
+"wallpaper_custom" = "自定照片";
 "wallpaper_none" = "动态背景";
+"wallpaper_gradient" = "渐变色彩";
+"wallpaper_photo" = "照片壁纸";
+"wallpaper_solid" = "纯色背景";
+"wallpaper_source" = "壁纸来源";
+"wallpaper_type" = "背景类型";
+"wallpaper_refresh" = "随机换样";
+"wallpaper_download" = "下载到相册";
+"wallpaper_saved" = "已保存到相册";
+"wallpaper_fetch_bing" = "获取今日壁纸";
+"wallpaper_choose_photo" = "选择照片";
+"wallpaper_color" = "背景颜色";
+"wallpaper_load_error" = "图片加载失败";
+"wallpaper_favorites" = "我的收藏";
+"wallpaper_search_placeholder" = "搜索氛围 (如：森林、极简)";
+"wallpaper_discover" = "探索发现";
+"wallpaper_pexels" = "Pexels 精选";
+"wallpaper_pixabay" = "Pixabay 摄影";
+"wallpaper_current_vibe" = "当前氛围";
+"settings_wallpaper" = "壁纸与背景";
+"wallpaper_discover" = "发现美图";
 "choose_photo" = "选择照片";
 
 /* Platform Management */
@@ -343,3 +363,52 @@
 "error_timeout" = "连接超时，请重试";
 "error_ssl" = "安全连接失败，该网站可能不安全";
 "retry" = "重试";
+
+/* Support & Feedback */
+"settings_rate" = "给个好评";
+"settings_feedback" = "发送反馈";
+"settings_help" = "帮助中心";
+"settings_section_support" = "支持";
+"feedback_title" = "用户反馈";
+"feedback_type" = "反馈类型";
+"feedback_type_bug" = "Bug 报告";
+"feedback_type_feature" = "功能建议";
+"feedback_type_question" = "使用问题";
+"feedback_type_other" = "其他";
+"feedback_content" = "反馈内容";
+"feedback_placeholder" = "您的每一条反馈都是我们改进的动力！\n\n可以告诉我们：\n· 遇到了什么问题？\n· 希望增加什么功能？\n· 哪里的体验可以更好？";
+"feedback_contact" = "联系方式";
+"feedback_contact_hint" = "邮箱或其他联系方式";
+"feedback_optional" = "可选";
+"feedback_submit" = "提交";
+"feedback_submitting" = "提交中...";
+"feedback_success_title" = "感谢反馈";
+"feedback_success_msg" = "您的反馈已提交成功！";
+"feedback_error" = "提交失败";
+
+/* Help Center */
+"help_title" = "帮助中心";
+"help_welcome_title" = "需要帮助？";
+"help_welcome_subtitle" = "这里是关于 Soulo 你需要了解的一切。";
+"help_getting_started" = "快速上手";
+"help_search_title" = "搜索";
+"help_search_desc" = "同时在多个平台搜索。滑动切换结果。";
+"help_platforms_title" = "平台";
+"help_platforms_desc" = "自定义搜索引擎和 AI 工具。";
+"help_features" = "功能";
+"help_bookmarks_title" = "书签";
+"help_bookmarks_desc" = "保存常用页面方便快速访问。";
+"help_wallpaper_title" = "壁纸";
+"help_wallpaper_desc" = "来自 Pexels、Pixabay 和 Bing 的精美壁纸。";
+"help_adblock_title" = "广告拦截";
+"help_adblock_desc" = "拦截广告和弹窗，获得更清爽的浏览体验。";
+"help_contact" = "联系我们";
+"help_email_title" = "邮箱";
+"theme_system" = "跟随系统";
+"theme_light" = "浅色";
+"theme_dark" = "深色";
+
+/* Wallpaper Delete Confirmation */
+"wallpaper_delete_title" = "移除壁纸";
+"wallpaper_delete_confirm" = "移除";
+"wallpaper_delete_msg" = "该壁纸将从列表中隐藏。";

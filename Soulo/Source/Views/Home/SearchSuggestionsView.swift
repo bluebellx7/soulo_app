@@ -45,6 +45,7 @@ struct SearchSuggestionsView: View {
                 }
                 .padding(.horizontal, 30)
             }
+            .frame(maxWidth: 600)
         }
     }
 

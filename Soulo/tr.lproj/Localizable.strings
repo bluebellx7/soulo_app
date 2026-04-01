@@ -1,0 +1,412 @@
+/* App */
+"app_name" = "Soulo";
+"app_subtitle" = "Her Şeyi, Her Yerde Ara";
+
+/* Search */
+"search_placeholder" = "Arama yapın veya URL girin";
+"search" = "Ara";
+"recent_searches" = "Son Aramalar";
+"show_more" = "Daha Fazla";
+"show_less" = "Daha Az";
+"clear_all" = "Tümünü Temizle";
+"no_results" = "Sonuç Yok";
+
+/* Clipboard */
+"clipboard_detected" = "Pano içeriği algılandı";
+
+/* Regions */
+"region_china" = "Çin";
+"region_international" = "Uluslararası";
+"region_japan" = "Japonya";
+"region_russia" = "Rusya";
+
+/* Platforms - ALL 22 */
+"platform_douyin" = "Douyin";
+"platform_bilibili" = "Bilibili";
+"platform_xiaohongshu" = "Xiaohongshu";
+"platform_weibo" = "Weibo";
+"platform_zhihu" = "Zhihu";
+"platform_baidu" = "Baidu";
+"platform_taobao" = "Taobao";
+"platform_jd" = "JD";
+"platform_wechat" = "WeChat Arama";
+"platform_google" = "Google";
+"platform_youtube" = "YouTube";
+"platform_twitter" = "X (Twitter)";
+"platform_reddit" = "Reddit";
+"platform_amazon" = "Amazon";
+"platform_tiktok" = "TikTok";
+"platform_yahoo_jp" = "Yahoo! Japan";
+"platform_google_jp" = "Google Japonya";
+"platform_twitter_jp" = "X Japonya";
+"platform_youtube_jp" = "YouTube Japonya";
+"platform_yandex" = "Yandex";
+"platform_vk" = "VK";
+
+/* WebView */
+"loading" = "Yükleniyor...";
+"load_error" = "Yükleme Başarısız";
+"bookmark_added" = "Yer İmi Eklendi";
+"bookmark_removed" = "Yer İmi Kaldırıldı";
+
+/* Bookmarks */
+"bookmarks" = "Yer İmleri";
+"no_bookmarks" = "Yer İmi Yok";
+"no_bookmarks_desc" = "Sayfaları kaydetmek için göz atarken yer imi düğmesine dokunun";
+
+/* History */
+"search_history" = "Arama Geçmişi";
+"no_history" = "Arama Geçmişi Yok";
+"no_history_desc" = "Son aramalarınız burada görünecek";
+"today" = "Bugün";
+"yesterday" = "Dün";
+"earlier" = "Daha Önce";
+"confirm_clear_history" = "Tüm arama geçmişi temizlensin mi?";
+"confirm_clear_bookmarks" = "Tüm yer imleri temizlensin mi?";
+
+/* Settings */
+"settings" = "Ayarlar";
+"platform_management" = "Platform Yönetimi";
+"appearance" = "Görünüm";
+"appearance_system" = "Sistem";
+"appearance_light" = "Açık";
+"appearance_dark" = "Koyu";
+"language" = "Dil";
+"background" = "Arka Plan";
+"privacy" = "Gizlilik";
+"about" = "Hakkında";
+"version" = "Sürüm";
+"reset_to_defaults" = "Varsayılanlara Sıfırla";
+"confirm_reset" = "Varsayılan ayarlara sıfırlansın mı? Tüm platform yapılandırmaları sıfırlanacak.";
+
+/* Wallpaper */
+"wallpaper_bing" = "Bing Günlük";
+"wallpaper_custom" = "Özel Fotoğraf";
+"wallpaper_none" = "Dinamik Arka Plan";
+"wallpaper_gradient" = "Gradyanlar";
+"wallpaper_photo" = "Fotoğraf Duvarı";
+"wallpaper_solid" = "Düz Renkler";
+"wallpaper_source" = "Duvar Kağıdı Kaynağı";
+"wallpaper_type" = "Arka Plan Türü";
+"wallpaper_refresh" = "Rastgele";
+"wallpaper_download" = "Fotoğraflara Kaydet";
+"wallpaper_saved" = "Duvar kağıdı Fotoğraflara kaydedildi";
+"wallpaper_fetch_bing" = "Günlük Resmi Getir";
+"wallpaper_choose_photo" = "Kütüphaneden Seç";
+"wallpaper_color" = "Arka Plan Rengi";
+"wallpaper_load_error" = "Yükleme başarısız";
+"wallpaper_favorites" = "Favorilerim";
+"wallpaper_search_placeholder" = "Tarz ara (ör. Orman, Minimal)";
+"wallpaper_discover" = "Yenileri Keşfet";
+"wallpaper_pexels" = "Pexels (Seçki)";
+"wallpaper_pixabay" = "Pixabay (Doğa)";
+"wallpaper_current_vibe" = "Mevcut Tarz";
+"settings_wallpaper" = "Duvar Kağıdı ve Stil";
+"wallpaper_discover" = "Duvar Kağıtlarını Keşfet";
+"choose_photo" = "Fotoğraf Seç";
+
+/* Platform Management */
+"add_platform" = "Platform Ekle";
+"platform_name" = "Platform Adı";
+"search_url_template" = "Arama URL Şablonu";
+"search_url_hint" = "Anahtar kelime yer tutucusu olarak %@ kullanın\nÖrnek: https://example.com/search?q=%@";
+"home_url" = "Ana Sayfa URL";
+"select_region" = "Grup Seç";
+"auto_sort_by_frequency" = "Kullanım sıklığına göre otomatik sırala";
+"custom_platform" = "Özel Platform";
+"delete_platform" = "Platformu Sil";
+"confirm_delete_platform" = "Bu özel platform silinsin mi?";
+"url_template_error" = "URL şablonu %@ yer tutucusunu içermelidir";
+
+/* Privacy */
+"incognito_mode" = "Gizli Mod";
+"incognito_desc" = "Etkinleştirildiğinde aramalar geçmişe kaydedilmez";
+"clear_search_history" = "Arama Geçmişini Temizle";
+"clear_bookmarks" = "Tüm Yer İmlerini Temizle";
+"clear_webview_cache" = "Tarama Önbelleğini Temizle";
+"clear_cache_desc" = "WebView çerezlerini ve önbellek verilerini temizle";
+"clear_all_data" = "Tüm Verileri Temizle";
+"action_irreversible" = "Bu işlem geri alınamaz";
+
+/* Privacy Settings (extended keys) */
+"privacy_section_browsing" = "Göz Atma";
+"privacy_section_data" = "Veri Yönetimi";
+"privacy_incognito" = "Gizli Mod";
+"privacy_incognito_desc" = "Etkinleştirildiğinde aramalar geçmişe kaydedilmez";
+"privacy_clear_history" = "Arama Geçmişini Temizle";
+"privacy_clear_history_desc" = "Kaydedilmiş tüm arama anahtar kelimelerini kaldır";
+"privacy_clear_history_confirm_title" = "Arama Geçmişi Temizlensin mi?";
+"privacy_clear_history_confirm_message" = "Tüm arama geçmişi kalıcı olarak silinecek.";
+"privacy_clear_bookmarks" = "Tüm Yer İmlerini Temizle";
+"privacy_clear_bookmarks_desc" = "Kaydedilmiş tüm yer imlerini kaldır";
+"privacy_clear_bookmarks_confirm_title" = "Tüm Yer İmleri Temizlensin mi?";
+"privacy_clear_bookmarks_confirm_message" = "Tüm yer imleri kalıcı olarak silinecek.";
+"privacy_clear_cache" = "Tarama Önbelleğini Temizle";
+"privacy_clear_cache_desc" = "Çerezleri, önbelleği ve yerel depolamayı temizle";
+"privacy_clear_cache_confirm_title" = "Tarama Önbelleği Temizlensin mi?";
+"privacy_clear_cache_confirm_message" = "Tüm tarama verileri kalıcı olarak silinecek.";
+"privacy_clear_action" = "Temizle";
+"privacy_data_footer" = "Bu işlemler geri alınamaz. Silinen veriler kurtarılamaz.";
+"settings_privacy" = "Gizlilik";
+"platform_sort_options" = "Sıralama Seçenekleri";
+"cancel" = "İptal";
+"confirm" = "Onayla";
+"delete" = "Sil";
+"done" = "Bitti";
+"save" = "Kaydet";
+"edit" = "Düzenle";
+"share" = "Paylaş";
+
+/* Permissions */
+"speech_permission" = "Sesli arama için konuşma tanıma izni gereklidir";
+"microphone_permission" = "Sesli giriş için mikrofon izni gereklidir";
+
+/* Errors */
+"error_occurred" = "Bir Hata Oluştu";
+"network_error" = "Ağ Bağlantısı Başarısız";
+"try_again" = "Tekrar Dene";
+
+/* Voice Input */
+"voice_listening" = "Dinleniyor...";
+"voice_tap_to_speak" = "Konuşmaya başlamak için düğmeye dokunun";
+
+/* F3: Spell Correction */
+"did_you_mean" = "Bunu mu demek istediniz:";
+
+/* F4: Page Summary */
+"summarize" = "Özetle";
+"summary_title" = "Sayfa Özeti";
+"summarizing" = "Özetleniyor...";
+"copy_summary" = "Kopyala";
+
+/* F5: Platform Recommendation */
+"suggested_platforms" = "Önerilen";
+
+/* F7: Clipboard Intelligence */
+"clipboard_url_detected" = "URL algılandı";
+"clipboard_product_detected" = "Ürün algılandı";
+"clipboard_person_detected" = "Kişi algılandı";
+"open_directly" = "Aç";
+
+/* F8: Cross-language */
+"also_search_in" = "%@ ile de ara";
+
+/* F9: Image Search */
+"image_search" = "Görsel Arama";
+"extracting_text" = "Metin çıkarılıyor...";
+"no_text_found" = "Görselde metin bulunamadı";
+"detected_objects" = "Algılanan:";
+"photo_library" = "Fotoğraf Kütüphanesi";
+
+/* F1: Siri */
+"siri_search_tip" = "Deneyin: \"Soulo'da kedileri ara\"";
+
+/* AI Platforms */
+"platform_deepseek" = "DeepSeek";
+"platform_qianwen" = "Qianwen";
+"platform_bing" = "Bing";
+"platform_duckduckgo" = "DuckDuckGo";
+"platform_github" = "GitHub";
+"platform_wikipedia" = "Vikipedi";
+"platform_perplexity" = "Perplexity";
+"platform_instagram" = "Instagram";
+"platform_linkedin" = "LinkedIn";
+"platform_pinterest" = "Pinterest";
+"platform_ebay" = "eBay";
+"platform_stackoverflow" = "StackOverflow";
+"platform_scholar" = "Google Akademik";
+"platform_sogou" = "Sogou";
+"platform_360" = "360 Search";
+"platform_toutiao" = "Toutiao";
+"platform_youku" = "Youku";
+"platform_iqiyi" = "iQIYI";
+"platform_netease_music" = "NetEase Music";
+"platform_csdn" = "CSDN";
+"platform_juejin" = "Juejin";
+"platform_rakuten" = "Rakuten";
+"platform_niconico" = "Niconico";
+"platform_yuanbao" = "Tencent Yuanbao";
+"platform_doubao" = "Doubao";
+"login_required_title" = "Giriş Gerekli";
+"login_required_message" = "Bu platform giriş yapmanızı gerektiriyor. Lütfen sayfada giriş yapın, ardından aramanız otomatik olarak yürütülecektir.";
+"login_required_toast" = "Lütfen önce giriş yapın, sonra tekrar arayın";
+/* Custom Groups */
+"custom_groups" = "Özel Gruplar";
+"no_groups" = "Özel Grup Yok";
+"no_groups_desc" = "Favori platformlarınızı düzenlemek için gruplar oluşturun";
+"add_group" = "Yeni Grup";
+"group_name" = "Grup Adı";
+"platforms_count" = "platform";
+
+/* Dynamic Themes */
+"dynamic_theme" = "Tema";
+"theme_midnight" = "Gece Yarısı";
+"theme_ocean" = "Okyanus";
+"theme_aurora" = "Kutup Işığı";
+"theme_sunset" = "Gün Batımı";
+"theme_monochrome" = "Mono";
+"wallpaper_drag_hint" = "Taşımak için sürükleyin, yakınlaştırmak için kıstırın";
+"edit_title" = "Ana Sayfa Başlığını Düzenle";
+"edit_subtitle" = "Alt Başlığı Düzenle";
+"home_customization" = "Ana Ekran";
+"link_copied" = "Bağlantı Kopyalandı";
+"copy_link" = "Bağlantıyı Kopyala";
+"copied" = "Kopyalandı!";
+"ad_block" = "Reklam Engelleyici";
+"ad_block_desc" = "Arama sonuçlarındaki reklamları ve izleyicileri gizle (uygulamak için aramayı yeniden başlatın)";
+"browsing" = "Göz Atma";
+"no_platforms_in_group" = "Henüz platform yok";
+"add_to_group" = "Gruba Platform Ekle";
+"wallpaper_saved" = "Duvar kağıdı Fotoğraflara kaydedildi";
+"add_existing" = "Mevcut Olanı Ekle";
+"region_image_search" = "Görsel Arama";
+"platform_google_lens" = "Google Lens";
+"platform_baidu_image" = "Baidu Görsel";
+"platform_yandex_image" = "Yandex Görseller";
+"confirm_delete_group" = "Bu grup silinsin mi?";
+"confirm_reset" = "Tüm platformlar varsayılana sıfırlansın mı? Özel gruplar kaldırılacak.";
+"camera" = "Kamera";
+"select_region" = "Grup Seç";
+"add_platform_region" = "Grup";
+"image_search_desc" = "Görsel arama platformlarında aramak için bir fotoğraf seçin";
+"image_uploading" = "Görsel yükleniyor...";
+"switch_to_bing" = "Bing Duvar Kağıdına Geçilsin mi?";
+"switch_to_bing_desc" = "Rüzgar gülü ile güzel arka planları keşfetmek için Bing günlük duvar kağıdını etkinleştirin.";
+
+"open_external_title" = "Harici Uygulama Açılsın mı?";
+"open_external_message" = "Bu bağlantı başka bir uygulama açacak. Devam etmek istiyor musunuz?";
+
+"ai_loading_page" = "AI platformu yükleniyor...";
+"ai_loading_input" = "Yerel AI analiz ediyor ve yazıyor...";
+
+/* Widget */
+"widget_search" = "Hızlı Arama";
+"widget_description" = "Birden fazla platformda anında arama yapın";
+
+/* Settings - Navigation & Titles */
+"settings_title" = "Ayarlar";
+"settings_platforms" = "Platformlar";
+"settings_appearance" = "Görünüm";
+"settings_language" = "Dil";
+"settings_wallpaper" = "Duvar Kağıdı";
+"settings_version" = "Sürüm";
+"settings_privacy_policy" = "Gizlilik Politikası";
+"settings_terms" = "Hizmet Şartları";
+
+/* Settings - Section Headers */
+"settings_section_platforms" = "Platformlar";
+"settings_section_appearance" = "Görünüm";
+"settings_section_language" = "Dil";
+"settings_section_background" = "Arka Plan";
+"settings_section_privacy" = "Gizlilik";
+"settings_section_about" = "Hakkında";
+
+/* Platform Management */
+"platform_auto_sort" = "Sıklığa Göre Otomatik Sırala";
+"platform_auto_sort_desc" = "Platformları kullanım sıklığına göre otomatik olarak yeniden sırala";
+"platform_custom_badge" = "Özel";
+"platform_reset_defaults" = "Varsayılanlara Sıfırla";
+"platform_reset_footer" = "Sıfırlama tüm platformları orijinal sıra ve görünürlüğüne geri yükleyecektir.";
+"platform_reset_confirm_title" = "Platformlar Sıfırlansın mı?";
+"platform_reset_confirm_action" = "Sıfırla";
+"platform_reset_confirm_message" = "Tüm platform yapılandırmaları varsayılanlara geri yüklenecek. Bu işlem geri alınamaz.";
+
+/* Add Custom Platform */
+"add_platform_title" = "Özel Platform Ekle";
+"add_platform_subtitle" = "Herhangi bir arama motoru veya web sitesini platform olarak ekleyin";
+"add_platform_name" = "Platform Adı";
+"add_platform_name_placeholder" = "ör. DuckDuckGo";
+"add_platform_search_url" = "Arama URL Şablonu";
+"add_platform_home_url" = "Ana Sayfa URL";
+"add_platform_home_url_optional" = "İsteğe bağlı - arama sorgusu olmadan platformu açarken kullanılır";
+"add_platform_error_name_empty" = "Lütfen bir platform adı girin";
+"add_platform_error_url_placeholder" = "URL, arama anahtar kelimesi yer tutucusu olarak %@ içermelidir";
+"add_platform_url_help_title" = "URL Şablonları Nasıl Çalışır";
+"add_platform_url_help_desc" = "URL'deki arama anahtar kelimesini %@ ile değiştirin, arama yaptığınızda otomatik olarak doldururuz.";
+"add_platform_url_help_examples" = "Örnekler";
+
+/* Wallpaper (extended) */
+"wallpaper_choose_photo" = "Fotoğraf Seç";
+
+/* Language Settings */
+"language_select_title" = "Dil Seç";
+"language_footer" = "Dili değiştirmek uygulama genelindeki tüm metinleri güncelleyecektir.";
+
+/* Home Bookmarks */
+"show_bookmarks_home" = "Ana Ekranda Yer İmlerini Göster";
+"show_bookmarks_home_desc" = "Yer imli siteleri ana ekranda simge olarak göster";
+"home_screen" = "Ana Ekran";
+
+/* AI Search Platforms */
+"platform_metaso" = "Metaso";
+"platform_tiangong" = "Tiangong AI";
+"platform_phind" = "Phind";
+"platform_you" = "You.com";
+"platform_kimi" = "Kimi Search";
+"voice_stop" = "Durdur";
+"voice_record" = "Kaydet";
+
+/* Batch Import */
+"batch_import" = "Toplu İçe Aktar";
+"batch_import_format" = "Aşağıdaki formatta JSON yapıştırın";
+"batch_import_group" = "Gruba Ekle (İsteğe Bağlı)";
+"batch_import_group_placeholder" = "ör. Filmler";
+"batch_import_action" = "İçe Aktar";
+"batch_import_result" = "%d platform başarıyla içe aktarıldı";
+"paste_from_clipboard" = "Panodan Yapıştır";
+"none" = "Yok";
+"show_group_picker_home" = "Ana Ekranda Grup Seçiciyi Göster";
+"show_group_picker_home_desc" = "Hızlı geçiş için ana ekranda platform grup sekmelerini göster";
+"error_no_internet" = "İnternet bağlantısı yok. Lütfen ağınızı kontrol edin.";
+"error_timeout" = "Bağlantı zaman aşımına uğradı. Lütfen tekrar deneyin.";
+"error_ssl" = "Güvenli bağlantı başarısız. Bu site güvenli olmayabilir.";
+"retry" = "Tekrar Dene";
+
+/* Support & Feedback */
+"settings_rate" = "Bu Uygulamayı Değerlendir";
+"settings_feedback" = "Geri Bildirim Gönder";
+"settings_help" = "Yardım Merkezi";
+"settings_section_support" = "Destek";
+"feedback_title" = "Geri Bildirim";
+"feedback_type" = "Tür";
+"feedback_type_bug" = "Hata Bildirimi";
+"feedback_type_feature" = "Özellik İsteği";
+"feedback_type_question" = "Soru";
+"feedback_type_other" = "Diğer";
+"feedback_content" = "İçerik";
+"feedback_placeholder" = "Geri bildiriminiz iyileştirmemize yardımcı olur!\n\nBize anlatın:\n· Hangi sorunla karşılaştınız?\n· Hangi özelliği istersiniz?\n· Ne daha iyi çalışabilir?";
+"feedback_contact" = "İletişim";
+"feedback_contact_hint" = "E-posta veya diğer iletişim bilgisi";
+"feedback_optional" = "isteğe bağlı";
+"feedback_submit" = "Gönder";
+"feedback_submitting" = "Gönderiliyor...";
+"feedback_success_title" = "Teşekkürler";
+"feedback_success_msg" = "Geri bildiriminiz gönderildi!";
+"feedback_error" = "Hata";
+
+/* Help Center */
+"help_title" = "Yardım Merkezi";
+"help_welcome_title" = "Size nasıl yardımcı olabiliriz?";
+"help_welcome_subtitle" = "Soulo hakkında bilmeniz gereken her şey burada.";
+"help_getting_started" = "Başlarken";
+"help_search_title" = "Arama";
+"help_search_desc" = "Birden fazla platformda aynı anda arama yapın. Sonuçlar arasında kaydırın.";
+"help_platforms_title" = "Platformlar";
+"help_platforms_desc" = "Hangi arama motorları ve AI araçlarını kullanacağınızı özelleştirin.";
+"help_features" = "Özellikler";
+"help_bookmarks_title" = "Yer İmleri";
+"help_bookmarks_desc" = "Hızlı erişim için favori sayfalarınızı kaydedin.";
+"help_wallpaper_title" = "Duvar Kağıdı";
+"help_wallpaper_desc" = "Pexels, Pixabay ve Bing'den güzel arka planlar.";
+"help_adblock_title" = "Reklam Engelleyici";
+"help_adblock_desc" = "Daha temiz bir tarama deneyimi için reklamları ve açılır pencereleri engelleyin.";
+"help_contact" = "Bize Ulaşın";
+"help_email_title" = "E-posta";
+"theme_system" = "Sistem";
+"theme_light" = "Açık";
+"theme_dark" = "Koyu";
+
+/* Wallpaper Delete Confirmation */
+"wallpaper_delete_title" = "Duvar kağıdını kaldır";
+"wallpaper_delete_confirm" = "Kaldır";
+"wallpaper_delete_msg" = "Bu duvar kağıdı listenizden gizlenecek.";

@@ -322,3 +322,56 @@
 "error_timeout" = "Connection timed out. Please try again.";
 "error_ssl" = "Secure connection failed.";
 "retry" = "Retry";
+
+/* Support & Feedback */
+"settings_rate" = "Noter l'app";
+"settings_feedback" = "Envoyer un retour";
+"settings_help" = "Centre d'aide";
+"settings_section_support" = "Support";
+"feedback_title" = "Retour";
+"feedback_type" = "Type";
+"feedback_type_bug" = "Rapport de bug";
+"feedback_type_feature" = "Fonctionnalite";
+"feedback_type_question" = "Question";
+"feedback_type_other" = "Autre";
+"feedback_content" = "Contenu";
+"feedback_placeholder" = "Chaque retour nous aide a nous ameliorer !
+
+Dites-nous :
+· Quel probleme avez-vous rencontre ?
+· Que pouvons-nous ameliorer ?";
+"feedback_contact" = "Contact";
+"feedback_contact_hint" = "Email ou autre contact";
+"feedback_optional" = "optionnel";
+"feedback_submit" = "Envoyer";
+"feedback_submitting" = "Envoi...";
+"feedback_success_title" = "Merci";
+"feedback_success_msg" = "Votre retour a ete envoye !";
+"feedback_error" = "Erreur";
+
+/* Help Center */
+"help_title" = "Centre d'aide";
+"help_welcome_title" = "Comment pouvons-nous vous aider ?";
+"help_welcome_subtitle" = "Tout ce que vous devez savoir sur Soulo.";
+"help_getting_started" = "Pour commencer";
+"help_search_title" = "Recherche";
+"help_search_desc" = "Recherchez sur plusieurs plateformes a la fois.";
+"help_platforms_title" = "Plateformes";
+"help_platforms_desc" = "Personnalisez les moteurs de recherche et outils IA.";
+"help_features" = "Fonctions";
+"help_bookmarks_title" = "Signets";
+"help_bookmarks_desc" = "Enregistrez vos pages favorites pour un acces rapide.";
+"help_wallpaper_title" = "Fond d'ecran";
+"help_wallpaper_desc" = "Beaux fonds d'ecran de Pexels, Pixabay et Bing.";
+"help_adblock_title" = "Bloqueur de pubs";
+"help_adblock_desc" = "Bloquez les publicites et popups.";
+"help_contact" = "Contact";
+"help_email_title" = "Email";
+"theme_system" = "Systeme";
+"theme_light" = "Clair";
+"theme_dark" = "Sombre";
+
+/* Wallpaper Delete Confirmation */
+"wallpaper_delete_title" = "Supprimer le fond";
+"wallpaper_delete_confirm" = "Supprimer";
+"wallpaper_delete_msg" = "Ce fond d'écran sera masqué de votre liste.";

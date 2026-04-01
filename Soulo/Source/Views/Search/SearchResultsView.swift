@@ -86,15 +86,24 @@ struct SearchResultsView: View {
                         isFullscreen: $isFullscreen
                     )
 
-                    // Loading — centered spinner before first page renders
+                    // Loading — thin overlay spinner at top, WebView visible underneath
                     if !pageReady {
-                        Color(UIColor.systemBackground)
-                            .overlay {
+                        VStack {
+                            HStack(spacing: 8) {
                                 ProgressView()
-                                    .controlSize(.large)
+                                    .controlSize(.small)
                                     .tint(Color(hex: "7C3AED"))
+                                Text(languageManager.localizedString("loading"))
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.secondary)
                             }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .background(.ultraThinMaterial, in: Capsule())
+                            .padding(.top, 12)
+                            Spacer()
+                        }
+                        .transition(.opacity)
                     }
 
                     // WebView error overlay

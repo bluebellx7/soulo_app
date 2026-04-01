@@ -10,8 +10,21 @@ struct WebViewRepresentable: UIViewRepresentable {
 
     // MARK: - Make View
 
+    // Shared process pool — reused across all WKWebView instances for faster creation
+    private static let sharedProcessPool = WKProcessPool()
+    // Pre-compiled ad block rules (call preWarm() at app launch)
+    private static var cachedAdBlockRules: WKContentRuleList?
+
+    /// Call once at app launch to pre-compile ad blocking rules
+    static func preWarm() {
+        Task {
+            cachedAdBlockRules = await AdBlockService.compileRules()
+        }
+    }
+
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
+        configuration.processPool = Self.sharedProcessPool
 
         // Custom user agent
         configuration.applicationNameForUserAgent = nil
@@ -203,11 +216,9 @@ struct WebViewRepresentable: UIViewRepresentable {
             )
             contentController.addUserScript(adScript)
 
-            // Compile and apply content rules (blocks ad network requests)
-            Task { @MainActor in
-                if let rules = await AdBlockService.compileRules() {
-                    configuration.userContentController.add(rules)
-                }
+            // Apply pre-compiled content rules (non-blocking)
+            if let cached = Self.cachedAdBlockRules {
+                configuration.userContentController.add(cached)
             }
         }
 

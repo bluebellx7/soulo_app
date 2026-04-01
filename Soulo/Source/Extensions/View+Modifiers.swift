@@ -97,3 +97,12 @@ extension View {
         modifier(PressEffectModifier())
     }
 }
+
+// MARK: - UserDefaults Codable helpers (from DKlugeCore)
+// DKlugeCore provides setCodable/getCodable; this shim keeps the local `codable` call-site name.
+import DKlugeCore
+extension UserDefaults {
+    func codable<T: Decodable>(_ type: T.Type, forKey key: String) -> T? {
+        getCodable(type, forKey: key)
+    }
+}

@@ -4,7 +4,7 @@ import SwiftData
 struct HomeView: View {
     @EnvironmentObject var searchVM: SearchViewModel
     @EnvironmentObject var languageManager: LanguageManager
-    @EnvironmentObject var wallpaperVM: BingWallpaperService
+    @ObservedObject var wallpaperManager = WallpaperManager.shared
     @StateObject private var speechService = SpeechRecognitionService()
     @Environment(\.modelContext) private var modelContext
     @Namespace private var searchBarNamespace
@@ -26,8 +26,8 @@ struct HomeView: View {
 
     var body: some View {
         ZStack {
-            // Background
-            backgroundLayer
+            // Background from DklugeClock
+            WallpaperBackground()
 
             if searchVM.isSearching {
                 SearchResultsView(
@@ -105,85 +105,22 @@ struct HomeView: View {
             }
             Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
         }
-        .alert(LanguageManager.shared.localizedString("switch_to_bing"), isPresented: $showSwitchToBing) {
-            Button(LanguageManager.shared.localizedString("confirm")) {
-                wallpaperVM.setMode(.bing)
-                Task { await wallpaperVM.fetchWallpapers() }
-            }
-            Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
-        } message: {
-            Text(LanguageManager.shared.localizedString("switch_to_bing_desc"))
-        }
         .onAppear {
             editingTitle = homeTitle
             editingSubtitle = homeSubtitle
             searchVM.loadRecentSearches(context: modelContext)
-            Task { await wallpaperVM.fetchWallpapers() }
         }
         .onChange(of: searchVM.isSearching) { _, isSearching in
             if !isSearching {
                 searchVM.loadRecentSearches(context: modelContext)
             }
         }
-        .onChange(of: wallpaperVM.mode) { _, _ in
-            // Refresh dynamic theme when wallpaper mode changes
-            dynamicTheme = DynamicTheme(rawValue: UserDefaults.standard.string(forKey: "dynamic_theme") ?? "midnight") ?? .midnight
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
-            let newTheme = DynamicTheme(rawValue: UserDefaults.standard.string(forKey: "dynamic_theme") ?? "midnight") ?? .midnight
-            if newTheme != dynamicTheme {
-                dynamicTheme = newTheme
-            }
-        }
-    }
-
-    // MARK: - Background (FocusLock style: wallpaper + dark gradient overlay)
-
-    @ViewBuilder
-    private var backgroundLayer: some View {
-        ZStack {
-            // Base dark color (FocusLock's deep navy)
-            Color(red: 12/255, green: 10/255, blue: 32/255)
-                .ignoresSafeArea()
-
-            // Wallpaper image (clipped to prevent layout overflow)
-            GeometryReader { geo in
-                wallpaperImage
-                    .frame(width: geo.size.width, height: geo.size.height)
-                    .clipped()
-            }
-            .ignoresSafeArea()
-            .transition(.opacity.animation(.easeInOut(duration: 1.2)))
-
-            // FocusLock-style overlay: dark edges, lighter center
-            LinearGradient(
-                colors: [
-                    .black.opacity(0.50),
-                    .black.opacity(0.15),
-                    .black.opacity(0.50)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-        }
-    }
-
-    @ViewBuilder
-    private var wallpaperImage: some View {
-        switch wallpaperVM.mode {
-        case .bing, .custom:
-            if let image = wallpaperVM.currentImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            }
-        case .none:
-            AnimatedMeshBackground(theme: dynamicTheme)
-        }
     }
 
     // MARK: - Home Content
+
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    private var isIPad: Bool { horizontalSizeClass == .regular }
 
     private var homeContent: some View {
         VStack(spacing: 0) {
@@ -219,6 +156,7 @@ struct HomeView: View {
                     onMicTap: { showVoiceInput = true },
                 )
                 .matchedGeometryEffect(id: "searchBar", in: searchBarNamespace)
+                .frame(maxWidth: isIPad ? 600 : .infinity)
                 .padding(.horizontal, 28)
 
                 // Group picker
@@ -256,29 +194,23 @@ struct HomeView: View {
 
             // Bottom bar: pinwheel left, credit center, download right
             HStack {
-                // Pinwheel button - tap to switch wallpaper
+                // Pinwheel button - tap to switch wallpaper randomly
                 PinwheelButton {
-                    if wallpaperVM.mode == .bing {
-                        wallpaperVM.applyWallpaper()
-                    } else {
-                        showSwitchToBing = true
-                    }
+                    Task { await wallpaperManager.refreshRandom() }
                 }
 
                 Spacer()
 
-                // Wallpaper credit
-                if wallpaperVM.mode == .bing, let wp = wallpaperVM.currentWallpaper {
-                    Text(wp.copyright)
-                        .font(.system(size: 8))
-                        .foregroundStyle(.white.opacity(0.15))
-                        .lineLimit(1)
-                }
+                // Wallpaper Credit: Show search topic or source
+                Text(wallpaperManager.source == .bing ? "Bing Daily" : wallpaperManager.searchTopic)
+                    .font(.system(size: 8))
+                    .foregroundStyle(.white.opacity(0.15))
+                    .lineLimit(1)
 
                 Spacer()
 
                 // Download wallpaper button
-                if wallpaperVM.currentImage != nil {
+                if wallpaperManager.currentImage != nil || wallpaperManager.customImage != nil {
                     Button {
                         saveWallpaperToPhotos()
                     } label: {
@@ -340,6 +272,7 @@ struct HomeView: View {
                     }
                 }
             }
+            .frame(maxWidth: isIPad ? 600 : .infinity)
             .padding(.horizontal, 32)
         }
     }
@@ -365,6 +298,7 @@ struct HomeView: View {
                     }
                 }
             }
+            .frame(maxWidth: isIPad ? 600 : .infinity)
             .padding(.horizontal, 32)
         }
     }
@@ -411,8 +345,11 @@ struct HomeView: View {
     @State private var showSwitchToBing = false
 
     private func saveWallpaperToPhotos() {
-        guard let image = wallpaperVM.currentImage else { return }
-        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+        if let image = wallpaperManager.currentImage {
+            wallpaperManager.saveToAlbum(image: image)
+        } else if let image = wallpaperManager.customImage {
+            wallpaperManager.saveToAlbum(image: image)
+        }
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             showSavedToast = true

@@ -322,3 +322,57 @@
 "error_timeout" = "Connection timed out. Please try again.";
 "error_ssl" = "Secure connection failed.";
 "retry" = "Retry";
+
+/* Support & Feedback */
+"settings_rate" = "アプリを評価";
+"settings_feedback" = "フィードバック";
+"settings_help" = "ヘルプ";
+"settings_section_support" = "サポート";
+"feedback_title" = "フィードバック";
+"feedback_type" = "種類";
+"feedback_type_bug" = "バグ報告";
+"feedback_type_feature" = "機能リクエスト";
+"feedback_type_question" = "質問";
+"feedback_type_other" = "その他";
+"feedback_content" = "内容";
+"feedback_placeholder" = "フィードバックがアプリ改善の力になります！
+
+お聞かせください：
+· どんな問題がありましたか？
+· どんな機能が欲しいですか？
+· どこを改善できますか？";
+"feedback_contact" = "連絡先";
+"feedback_contact_hint" = "メールまたは連絡先";
+"feedback_optional" = "任意";
+"feedback_submit" = "送信";
+"feedback_submitting" = "送信中...";
+"feedback_success_title" = "ありがとうございます";
+"feedback_success_msg" = "フィードバックが送信されました！";
+"feedback_error" = "送信失敗";
+
+/* Help Center */
+"help_title" = "ヘルプセンター";
+"help_welcome_title" = "お困りですか？";
+"help_welcome_subtitle" = "Soulo について知っておくべきことをご紹介。";
+"help_getting_started" = "はじめに";
+"help_search_title" = "検索";
+"help_search_desc" = "複数プラットフォームで同時検索。スワイプで結果を切り替え。";
+"help_platforms_title" = "プラットフォーム";
+"help_platforms_desc" = "検索エンジンとAIツールをカスタマイズ。";
+"help_features" = "機能";
+"help_bookmarks_title" = "ブックマーク";
+"help_bookmarks_desc" = "お気に入りのページを保存して素早くアクセス。";
+"help_wallpaper_title" = "壁紙";
+"help_wallpaper_desc" = "Pexels、Pixabay、Bingの美しい壁紙。";
+"help_adblock_title" = "広告ブロック";
+"help_adblock_desc" = "広告やポップアップをブロックしてクリーンな閲覧体験を。";
+"help_contact" = "お問い合わせ";
+"help_email_title" = "メール";
+"theme_system" = "システム";
+"theme_light" = "ライト";
+"theme_dark" = "ダーク";
+
+/* Wallpaper Delete Confirmation */
+"wallpaper_delete_title" = "壁紙を削除";
+"wallpaper_delete_confirm" = "削除";
+"wallpaper_delete_msg" = "この壁紙はリストから非表示になります。";
