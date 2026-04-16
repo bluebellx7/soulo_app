@@ -410,3 +410,27 @@
 "wallpaper_delete_title" = "ลบวอลเปเปอร์";
 "wallpaper_delete_confirm" = "ลบ";
 "wallpaper_delete_msg" = "วอลเปเปอร์นี้จะถูกซ่อนจากรายการของคุณ";
+
+/* แท็บเบราว์เซอร์ */
+"tab_new_tab" = "แท็บใหม่";
+"tab_tabs" = "แท็บ";
+"tab_close" = "ปิดแท็บ";
+"tab_close_others" = "ปิดแท็บอื่น";
+"tab_close_all" = "ปิดแท็บทั้งหมด";
+"tab_no_tabs" = "ไม่มีแท็บ";
+"tab_duplicate" = "ทำซ้ำแท็บ";
+"tab_open_new" = "เปิดในแท็บใหม่";
+
+/* ฟีเจอร์เบราว์เซอร์ */
+"find_in_page" = "ค้นหาในหน้า";
+"desktop_mode" = "โหมดเดสก์ท็อป";
+"mobile_mode" = "โหมดมือถือ";
+"tab_restore_last" = "กู้คืนแท็บที่ปิด";
+"tab_recently_closed" = "ปิดล่าสุด";
+"ntp_quick_links" = "ลิงก์ด่วน";
+"image_options" = "ตัวเลือกรูปภาพ";
+"save_image" = "บันทึกลงรูปภาพ";
+"copy_image_link" = "คัดลอก URL รูปภาพ";
+"image_saved" = "บันทึกลงรูปภาพแล้ว";
+"save_failed" = "บันทึกล้มเหลว";
+"downloading" = "กำลังดาวน์โหลด...";

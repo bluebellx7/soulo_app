@@ -376,3 +376,45 @@ Hay cho chung toi biet:
 "wallpaper_delete_title" = "Xóa hình nền";
 "wallpaper_delete_confirm" = "Xóa";
 "wallpaper_delete_msg" = "Hình nền này sẽ bị ẩn khỏi danh sách.";
+
+/* Tab trình duyệt */
+"tab_new_tab" = "Tab mới";
+"tab_tabs" = "Tab";
+"tab_close" = "Đóng tab";
+"tab_close_others" = "Đóng các tab khác";
+"tab_close_all" = "Đóng tất cả tab";
+"tab_no_tabs" = "Không có tab";
+"tab_duplicate" = "Nhân đôi tab";
+"tab_open_new" = "Mở trong tab mới";
+
+/* Tính năng trình duyệt */
+"find_in_page" = "Tìm trong trang";
+"desktop_mode" = "Chế độ máy tính";
+"mobile_mode" = "Chế độ di động";
+"tab_restore_last" = "Khôi phục tab đã đóng";
+"tab_recently_closed" = "Đã đóng gần đây";
+"ntp_quick_links" = "Truy cập nhanh";
+"image_options" = "Tùy chọn ảnh";
+"save_image" = "Lưu vào Ảnh";
+"copy_image_link" = "Sao chép URL ảnh";
+"image_saved" = "Đã lưu vào Ảnh";
+"save_failed" = "Lưu thất bại";
+"downloading" = "Đang tải xuống...";
+
+/* Hình nền (bổ sung) */
+"wallpaper_color" = "Màu nền";
+"wallpaper_current_vibe" = "Phong cách hiện tại";
+"wallpaper_discover" = "Khám phá";
+"wallpaper_download" = "Lưu vào Ảnh";
+"wallpaper_favorites" = "Yêu thích";
+"wallpaper_fetch_bing" = "Ảnh hôm nay";
+"wallpaper_gradient" = "Chuyển màu";
+"wallpaper_load_error" = "Không thể tải";
+"wallpaper_pexels" = "Pexels (Chọn lọc)";
+"wallpaper_photo" = "Tường ảnh";
+"wallpaper_pixabay" = "Pixabay (Thiên nhiên)";
+"wallpaper_refresh" = "Ngẫu nhiên";
+"wallpaper_search_placeholder" = "Tìm phong cách (VD: Rừng, Tối giản)";
+"wallpaper_solid" = "Màu đơn sắc";
+"wallpaper_source" = "Nguồn hình nền";
+"wallpaper_type" = "Kiểu nền";

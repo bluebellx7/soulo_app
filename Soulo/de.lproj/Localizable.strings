@@ -375,3 +375,45 @@ Erzahlen Sie uns:
 "wallpaper_delete_title" = "Hintergrund entfernen";
 "wallpaper_delete_confirm" = "Entfernen";
 "wallpaper_delete_msg" = "Dieses Hintergrundbild wird aus Ihrer Liste ausgeblendet.";
+
+/* Browser-Tabs */
+"tab_new_tab" = "Neuer Tab";
+"tab_tabs" = "Tabs";
+"tab_close" = "Tab schließen";
+"tab_close_others" = "Andere Tabs schließen";
+"tab_close_all" = "Alle Tabs schließen";
+"tab_no_tabs" = "Keine Tabs";
+"tab_duplicate" = "Tab duplizieren";
+"tab_open_new" = "In neuem Tab öffnen";
+
+/* Browser-Funktionen */
+"find_in_page" = "Auf Seite suchen";
+"desktop_mode" = "Desktop-Modus";
+"mobile_mode" = "Mobil-Modus";
+"tab_restore_last" = "Geschlossenen Tab wiederherstellen";
+"tab_recently_closed" = "Kürzlich geschlossen";
+"ntp_quick_links" = "Schnellzugriff";
+"image_options" = "Bildoptionen";
+"save_image" = "In Fotos speichern";
+"copy_image_link" = "Bild-URL kopieren";
+"image_saved" = "In Fotos gespeichert";
+"save_failed" = "Speichern fehlgeschlagen";
+"downloading" = "Wird heruntergeladen...";
+
+/* Wallpaper (extra) */
+"wallpaper_color" = "Hintergrundfarbe";
+"wallpaper_current_vibe" = "Aktuelle Stimmung";
+"wallpaper_discover" = "Entdecken";
+"wallpaper_download" = "In Fotos speichern";
+"wallpaper_favorites" = "Meine Favoriten";
+"wallpaper_fetch_bing" = "Tagesbild abrufen";
+"wallpaper_gradient" = "Farbverläufe";
+"wallpaper_load_error" = "Laden fehlgeschlagen";
+"wallpaper_pexels" = "Pexels (Kuratiert)";
+"wallpaper_photo" = "Fotowand";
+"wallpaper_pixabay" = "Pixabay (Natur)";
+"wallpaper_refresh" = "Zufällig";
+"wallpaper_search_placeholder" = "Stimmung suchen (z. B. Wald, Minimal)";
+"wallpaper_solid" = "Einfarbig";
+"wallpaper_source" = "Hintergrundquelle";
+"wallpaper_type" = "Hintergrundtyp";

@@ -376,3 +376,45 @@
 "wallpaper_delete_title" = "배경화면 제거";
 "wallpaper_delete_confirm" = "제거";
 "wallpaper_delete_msg" = "이 배경화면이 목록에서 숨겨집니다.";
+
+/* 브라우저 탭 */
+"tab_new_tab" = "새 탭";
+"tab_tabs" = "개 탭";
+"tab_close" = "탭 닫기";
+"tab_close_others" = "다른 탭 닫기";
+"tab_close_all" = "모든 탭 닫기";
+"tab_no_tabs" = "탭 없음";
+"tab_duplicate" = "탭 복제";
+"tab_open_new" = "새 탭에서 열기";
+
+/* 브라우저 기능 */
+"find_in_page" = "페이지에서 찾기";
+"desktop_mode" = "데스크톱 모드";
+"mobile_mode" = "모바일 모드";
+"tab_restore_last" = "닫은 탭 복원";
+"tab_recently_closed" = "최근 닫은 탭";
+"ntp_quick_links" = "바로가기";
+"image_options" = "이미지 옵션";
+"save_image" = "사진에 저장";
+"copy_image_link" = "이미지 URL 복사";
+"image_saved" = "사진에 저장됨";
+"save_failed" = "저장 실패";
+"downloading" = "다운로드 중...";
+
+/* 배경화면 (추가) */
+"wallpaper_color" = "배경색";
+"wallpaper_current_vibe" = "현재 분위기";
+"wallpaper_discover" = "새로 발견";
+"wallpaper_download" = "사진에 저장";
+"wallpaper_favorites" = "내 즐겨찾기";
+"wallpaper_fetch_bing" = "오늘의 이미지 가져오기";
+"wallpaper_gradient" = "그라디언트";
+"wallpaper_load_error" = "로드 실패";
+"wallpaper_pexels" = "Pexels (큐레이션)";
+"wallpaper_photo" = "포토 월";
+"wallpaper_pixabay" = "Pixabay (자연)";
+"wallpaper_refresh" = "랜덤";
+"wallpaper_search_placeholder" = "분위기 검색 (예: 숲, 미니멀)";
+"wallpaper_solid" = "단색";
+"wallpaper_source" = "배경화면 소스";
+"wallpaper_type" = "배경 유형";

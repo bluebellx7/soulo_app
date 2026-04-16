@@ -8,7 +8,7 @@ struct SearchResultsView: View {
     @EnvironmentObject var searchVM: SearchViewModel
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var wallpaperVM: BingWallpaperService
-    @StateObject private var webVM = WebViewModel()
+    @EnvironmentObject var tabManager: TabManager
     @StateObject private var bookmarkVM = BookmarkViewModel()
     @Environment(\.modelContext) private var modelContext
 
@@ -16,6 +16,8 @@ struct SearchResultsView: View {
     @State private var isFullscreen: Bool = false
     @State private var showVoiceInput = false
     @State private var pageReady = false
+    /// Incremented each time performSearch runs; compared to detect new vs. returning
+    @State private var lastSearchID: UUID = UUID()
 
     // Persist last selected group
     @AppStorage("last_selected_region") private var lastRegion: String = ""
@@ -31,6 +33,41 @@ struct SearchResultsView: View {
                         .padding(.horizontal, 10)
                         .padding(.top, 4)
                         .padding(.bottom, 2)
+
+                    // Floating autocomplete — zero-height container with overlay extending below
+                    Color.clear
+                        .frame(height: 0)
+                        .overlay(alignment: .top) {
+                            if !searchVM.suggestions.isEmpty {
+                                SearchAutocompleteView(
+                                    suggestions: searchVM.suggestions,
+                                    query: searchVM.searchText,
+                                    darkVariant: false,
+                                    onSelect: { suggestion in
+                                        searchVM.searchText = suggestion
+                                        searchVM.performSearch(context: modelContext)
+                                        loadCurrentPlatformURL()
+                                    },
+                                    onFill: { suggestion in
+                                        searchVM.searchText = suggestion
+                                    }
+                                )
+                                .padding(.horizontal, 10)
+                                .padding(.top, 4)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                            }
+                        }
+                        .zIndex(100)
+                        .allowsHitTesting(!searchVM.suggestions.isEmpty)
+
+                    // Tab bar — show when multiple tabs
+                    if tabManager.tabs.count > 1 {
+                        BrowserTabBar(tabManager: tabManager) {
+                            createNewTabFromCurrentSearch()
+                        }
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    }
 
                     if !searchVM.currentKeyword.isValidURL {
                         if !searchVM.recommendedPlatforms.isEmpty {
@@ -78,13 +115,24 @@ struct SearchResultsView: View {
                     }
                 }
 
-                // WebView — extend into bottom safe area via extra padding
+                // WebView — ZStack with all tabs, only active one visible
                 ZStack {
-                    WebViewContainer(
-                        webViewModel: webVM,
-                        bookmarkViewModel: bookmarkVM,
-                        isFullscreen: $isFullscreen
-                    )
+                    // Render all tabs; show only active
+                    ForEach(tabManager.tabs) { tab in
+                        let isActive = tab.id == tabManager.activeTab?.id
+                        WebViewContainer(
+                            webViewModel: tab.webViewModel,
+                            bookmarkViewModel: bookmarkVM,
+                            isFullscreen: $isFullscreen,
+                            tabManager: tabManager,
+                            isActiveTab: isActive,
+                            onPageLoaded: {
+                                if !pageReady { pageReady = true }
+                            }
+                        )
+                        .opacity(isActive ? 1 : 0)
+                        .allowsHitTesting(isActive)
+                    }
 
                     // Loading — thin overlay spinner at top, WebView visible underneath
                     if !pageReady {
@@ -106,8 +154,9 @@ struct SearchResultsView: View {
                         .transition(.opacity)
                     }
 
-                    // WebView error overlay
-                    if let error = webVM.errorMessage, !error.isEmpty, !webVM.isLoading {
+                    // WebView error overlay (for active tab)
+                    if let activeVM = tabManager.activeWebViewModel,
+                       let error = activeVM.errorMessage, !error.isEmpty, !activeVM.isLoading {
                         VStack(spacing: 16) {
                             Image(systemName: "wifi.exclamationmark")
                                 .font(.system(size: 36))
@@ -118,7 +167,7 @@ struct SearchResultsView: View {
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 40)
                             Button {
-                                webVM.reload()
+                                activeVM.reload()
                             } label: {
                                 Text(languageManager.localizedString("retry"))
                                     .font(.system(size: 14, weight: .medium))
@@ -244,12 +293,21 @@ struct SearchResultsView: View {
                 }
             }
         }
-        .onChange(of: webVM.isScrollingUp) { _, scrollingUp in
-            isFullscreen = scrollingUp
+        .onChange(of: tabManager.activeTabIndex) { _, _ in
+            // Sync fullscreen state with the new active tab
+            if let vm = tabManager.activeWebViewModel {
+                isFullscreen = vm.isScrollingUp
+            }
         }
-        .onChange(of: webVM.isLoading) { _, loading in
-            if !loading && !pageReady {
-                pageReady = true
+        // Handle "open in new tab" from WebView (target="_blank" links)
+        .onReceive(NotificationCenter.default.publisher(for: .openInNewTab)) { notification in
+            if let url = notification.userInfo?["url"] as? URL {
+                tabManager.createTab(url: url, keyword: searchVM.currentKeyword, platform: searchVM.selectedPlatform)
+            }
+        }
+        .sheet(isPresented: $tabManager.showTabOverview) {
+            TabOverviewView(tabManager: tabManager) {
+                createNewTabFromCurrentSearch()
             }
         }
         .onAppear {
@@ -264,8 +322,18 @@ struct SearchResultsView: View {
             } else if !lastRegion.isEmpty, let region = PlatformRegion(rawValue: lastRegion) {
                 searchVM.selectRegion(region)
             }
-            // else: uses SearchViewModel.defaultRegion (auto-detected)
-            loadCurrentPlatformURL()
+
+            if searchVM.searchID != lastSearchID && !searchVM.currentKeyword.isEmpty {
+                // New search or bookmark click — load in active tab
+                lastSearchID = searchVM.searchID
+                loadCurrentPlatformURL()
+            } else if tabManager.activeWebViewModel?.currentURL == nil {
+                // Empty tab with no content — try loading
+                if !searchVM.currentKeyword.isEmpty {
+                    loadCurrentPlatformURL()
+                }
+            }
+            // Otherwise: returning to existing tabs, keep as-is
         }
     }
 
@@ -273,14 +341,14 @@ struct SearchResultsView: View {
 
     private var topSearchBar: some View {
         HStack(spacing: 8) {
-            // Back button
+            // Home button
             Button {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
                     searchVM.clearSearch()
                 }
             } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
+                Image(systemName: "house.fill")
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(Color(UIColor.label))
                     .frame(width: 36, height: 36)
                     .background(.ultraThinMaterial, in: Circle())
@@ -375,9 +443,41 @@ struct SearchResultsView: View {
     @State private var showAILoading = false
     @State private var aiLoadingText = ""
 
+    /// Create a new tab using the current search context.
+    private func createNewTabFromCurrentSearch() {
+        let keyword = searchVM.currentKeyword
+        let platform = searchVM.selectedPlatform
+        let tab = tabManager.createTab(keyword: keyword, platform: platform)
+
+        // Load the current platform URL into the new tab
+        if keyword.isValidURL, let url = keyword.asURL {
+            tab.webViewModel.loadURL(url)
+            return
+        }
+
+        guard let platform = platform else { return }
+        switch platform.interactionType {
+        case .aiChat:
+            if let url = URL(string: platform.homeURL) {
+                tab.webViewModel.loadURL(url)
+            }
+        case .urlSearch:
+            if let url = platform.searchURL(for: keyword) {
+                tab.webViewModel.loadURL(url)
+            }
+        }
+    }
+
     private func loadCurrentPlatformURL() {
+        guard let webVM = tabManager.activeWebViewModel else { return }
         guard let platform = searchVM.selectedPlatform else { return }
         let keyword = searchVM.currentKeyword
+
+        // Update active tab metadata
+        if let index = tabManager.tabs.firstIndex(where: { $0.id == tabManager.activeTab?.id }) {
+            tabManager.tabs[index].keyword = keyword
+            tabManager.tabs[index].platform = platform
+        }
 
         // Check if the keyword is a direct URL
         if keyword.isValidURL, let url = keyword.asURL {
@@ -443,6 +543,7 @@ struct SearchResultsView: View {
     }
 
     private func toggleBookmark() {
+        guard let webVM = tabManager.activeWebViewModel else { return }
         guard let url = webVM.currentURL?.absoluteString else { return }
         let title = webVM.pageTitle.isEmpty ? url : webVM.pageTitle
         let platformName = searchVM.selectedPlatform.map { languageManager.localizedString($0.name) }

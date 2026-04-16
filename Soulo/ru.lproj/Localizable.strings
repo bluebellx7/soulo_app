@@ -410,3 +410,27 @@
 "wallpaper_delete_title" = "Удалить обои";
 "wallpaper_delete_confirm" = "Удалить";
 "wallpaper_delete_msg" = "Эти обои будут скрыты из вашего списка.";
+
+/* Вкладки браузера */
+"tab_new_tab" = "Новая вкладка";
+"tab_tabs" = "Вкладки";
+"tab_close" = "Закрыть вкладку";
+"tab_close_others" = "Закрыть другие";
+"tab_close_all" = "Закрыть все";
+"tab_no_tabs" = "Нет вкладок";
+"tab_duplicate" = "Дублировать вкладку";
+"tab_open_new" = "Открыть в новой вкладке";
+
+/* Функции браузера */
+"find_in_page" = "Найти на странице";
+"desktop_mode" = "Режим ПК";
+"mobile_mode" = "Мобильный режим";
+"tab_restore_last" = "Восстановить вкладку";
+"tab_recently_closed" = "Недавно закрытые";
+"ntp_quick_links" = "Быстрые ссылки";
+"image_options" = "Опции изображения";
+"save_image" = "Сохранить в Фото";
+"copy_image_link" = "Скопировать URL";
+"image_saved" = "Сохранено в Фото";
+"save_failed" = "Ошибка сохранения";
+"downloading" = "Загрузка...";

@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import UIKit
 import CoreSpotlight
+import Combine
 
 @MainActor
 class SearchViewModel: ObservableObject {
@@ -10,6 +11,8 @@ class SearchViewModel: ObservableObject {
 
     @Published var searchText: String = ""
     @Published var isSearching: Bool = false
+    /// Unique ID that changes each time a new search is performed. Used to detect new vs. returning.
+    @Published var searchID: UUID = UUID()
     @Published var currentKeyword: String = ""
     @Published var selectedRegion: PlatformRegion = .international
     @Published var selectedPlatform: SearchPlatform?
@@ -17,9 +20,71 @@ class SearchViewModel: ObservableObject {
     @Published var showClipboardPrompt: Bool = false
     @Published var recentSearches: [String] = []
 
+    // Live autocomplete suggestions
+    @Published var suggestions: [String] = []
+    @Published var isLoadingSuggestions: Bool = false
+    private var suggestionTask: Task<Void, Never>?
+    private var suggestCancellables = Set<AnyCancellable>()
+
     init() {
         selectedRegion = Self.detectDefaultRegion()
         selectedPlatform = PlatformDataStore.shared.firstVisiblePlatform(for: selectedRegion)
+        setupSuggestionDebouncer()
+    }
+
+    // MARK: - Autocomplete Suggestions
+
+    private func setupSuggestionDebouncer() {
+        $searchText
+            .removeDuplicates()
+            .debounce(for: .milliseconds(250), scheduler: DispatchQueue.main)
+            .sink { [weak self] text in
+                self?.fetchSuggestions(for: text)
+            }
+            .store(in: &suggestCancellables)
+    }
+
+    private func fetchSuggestions(for query: String) {
+        // Cancel any in-flight request
+        suggestionTask?.cancel()
+
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Don't fetch if:
+        // - empty
+        // - URL (user is pasting a link)
+        // - text matches the last submitted search (user just arrived at results page)
+        guard !trimmed.isEmpty,
+              !trimmed.isValidURL,
+              trimmed != currentKeyword
+        else {
+            suggestions = []
+            isLoadingSuggestions = false
+            return
+        }
+
+        isLoadingSuggestions = true
+        let region = selectedRegion
+        suggestionTask = Task { @MainActor [weak self] in
+            let results = await SearchSuggestionService.fetch(query: trimmed, region: region)
+            guard !Task.isCancelled else { return }
+            guard let self else { return }
+            // Re-check conditions on completion (user may have submitted in flight)
+            let current = self.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard current == trimmed, current != self.currentKeyword else {
+                self.suggestions = []
+                self.isLoadingSuggestions = false
+                return
+            }
+            self.suggestions = results
+            self.isLoadingSuggestions = false
+        }
+    }
+
+    func clearSuggestions() {
+        suggestionTask?.cancel()
+        suggestions = []
+        isLoadingSuggestions = false
     }
 
     /// Detect if user is likely in China based on locale/timezone
@@ -69,6 +134,8 @@ class SearchViewModel: ObservableObject {
 
         currentKeyword = trimmed
         isSearching = true
+        searchID = UUID()
+        clearSuggestions()
 
         // Clear previous suggestions
         spellSuggestion = nil

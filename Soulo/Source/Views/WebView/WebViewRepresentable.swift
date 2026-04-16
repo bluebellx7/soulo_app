@@ -144,68 +144,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         )
         contentController.addUserScript(modalScript)
 
-        // --- JS: Long-press image detection ---
-        let imageDetectionScript = """
-        (function() {
-            function interceptImages() {
-                document.addEventListener('contextmenu', function(e) {
-                    const target = e.target;
-                    if (target && target.tagName === 'IMG') {
-                        const src = target.src || target.currentSrc || '';
-                        if (src && src.length > 0) {
-                            try {
-                                window.webkit.messageHandlers.imageLongPress.postMessage({ src: src });
-                            } catch(_) {}
-                        }
-                    }
-                }, true);
-
-                // Also handle long-press via touch events
-                let longPressTimer = null;
-                document.addEventListener('touchstart', function(e) {
-                    const target = e.target;
-                    if (target && target.tagName === 'IMG') {
-                        longPressTimer = setTimeout(function() {
-                            const src = target.src || target.currentSrc || '';
-                            if (src && src.length > 0) {
-                                try {
-                                    window.webkit.messageHandlers.imageLongPress.postMessage({ src: src });
-                                } catch(_) {}
-                            }
-                        }, 500);
-                    }
-                }, { passive: true });
-
-                document.addEventListener('touchend', function() {
-                    if (longPressTimer) {
-                        clearTimeout(longPressTimer);
-                        longPressTimer = null;
-                    }
-                }, { passive: true });
-
-                document.addEventListener('touchmove', function() {
-                    if (longPressTimer) {
-                        clearTimeout(longPressTimer);
-                        longPressTimer = null;
-                    }
-                }, { passive: true });
-            }
-
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', interceptImages);
-            } else {
-                interceptImages();
-            }
-        })();
-        """
-
-        let imageScript = WKUserScript(
-            source: imageDetectionScript,
-            injectionTime: .atDocumentEnd,
-            forMainFrameOnly: false
-        )
-        contentController.addUserScript(imageScript)
-        contentController.add(context.coordinator, name: "imageLongPress")
+        // (Long-press context menus are handled natively via WKUIDelegate contextMenuConfigurationForElement)
 
         // Ad blocking: inject CSS/JS to hide ad elements
         if adBlockEnabled {
@@ -266,16 +205,16 @@ struct WebViewRepresentable: UIViewRepresentable {
     static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) {
         coordinator.invalidateObservations()
         uiView.configuration.userContentController.removeAllUserScripts()
-        uiView.configuration.userContentController.removeScriptMessageHandler(forName: "imageLongPress")
     }
 
     // MARK: - Coordinator
 
-    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler, UIScrollViewDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, UIScrollViewDelegate, WKDownloadDelegate {
         private var lastContentOffset: CGFloat = 0
 
         private let viewModel: WebViewModel
         private var observations: [NSKeyValueObservation] = []
+        private var downloadFileURL: URL?
 
         init(viewModel: WebViewModel) {
             self.viewModel = viewModel
@@ -332,10 +271,15 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            Task { @MainActor in
-                viewModel.updateLoading(false)
-                viewModel.updateCurrentURL(webView.url)
-                viewModel.updateTitle(webView.title)
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.viewModel.updateLoading(false)
+                self.viewModel.updateCurrentURL(webView.url)
+                self.viewModel.updateTitle(webView.title)
+                // Capture snapshot for tab preview (slight delay for render)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                    self?.viewModel.takeSnapshot()
+                }
             }
         }
 
@@ -398,21 +342,86 @@ struct WebViewRepresentable: UIViewRepresentable {
             }
 
             let scheme = url.scheme?.lowercased() ?? ""
+            let host = url.host?.lowercased() ?? ""
 
-            if ["http", "https", "about", "blob", "data"].contains(scheme) {
-                decisionHandler(.allow)
-            } else {
-                // Non-HTTP schemes — ask user before leaving the app
+            // Block all non-web schemes
+            let webSchemes: Set<String> = ["http", "https", "about", "blob", "data"]
+            guard webSchemes.contains(scheme) else {
                 decisionHandler(.cancel)
                 NotificationCenter.default.post(
                     name: .webViewExternalURLRequest,
                     object: nil,
                     userInfo: ["url": url]
                 )
+                return
+            }
+
+            // Block known universal link domains that would open external apps
+            let externalDomains: [String] = [
+                "apps.apple.com", "itunes.apple.com",
+                "music.apple.com", "podcasts.apple.com", "books.apple.com",
+                "maps.apple.com", "tv.apple.com",
+                "open.spotify.com",
+                "play.google.com",
+                "t.me", "telegram.me",
+                "line.me",
+                "wa.me", "api.whatsapp.com",
+            ]
+            if externalDomains.contains(where: { host == $0 || host.hasSuffix(".\($0)") }) {
+                decisionHandler(.cancel)
+                NotificationCenter.default.post(
+                    name: .webViewExternalURLRequest,
+                    object: nil,
+                    userInfo: ["url": url]
+                )
+                return
+            }
+
+            decisionHandler(.allow)
+        }
+
+        // MARK: Download detection — handle non-displayable responses
+
+        func webView(
+            _ webView: WKWebView,
+            decidePolicyFor navigationResponse: WKNavigationResponse,
+            decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void
+        ) {
+            let response = navigationResponse.response
+            let mimeType = response.mimeType ?? ""
+
+            // Detect files that should be downloaded, not displayed
+            let downloadMIME = [
+                "application/pdf", "application/zip", "application/x-zip-compressed",
+                "application/octet-stream", "application/msword",
+                "application/vnd.openxmlformats-officedocument", "application/x-tar",
+                "application/gzip", "text/csv",
+            ]
+            let isDownload = downloadMIME.contains(where: { mimeType.hasPrefix($0) })
+                || (response.suggestedFilename?.contains(".") == true
+                    && !["html", "htm", "php", "asp", "jsp"].contains(
+                        (response.suggestedFilename as? NSString)?.pathExtension.lowercased() ?? ""
+                    )
+                    && mimeType == "application/octet-stream")
+
+            if isDownload {
+                decisionHandler(.download)
+            } else {
+                decisionHandler(.allow)
             }
         }
 
-        // MARK: WKUIDelegate — open target="_blank" links in current webView
+        // MARK: Navigation becomes download
+
+        func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) {
+            download.delegate = self
+        }
+
+        func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) {
+            download.delegate = self
+        }
+
+        // MARK: WKUIDelegate — open target="_blank" links in new tab
 
         func webView(
             _ webView: WKWebView,
@@ -420,9 +429,18 @@ struct WebViewRepresentable: UIViewRepresentable {
             for navigationAction: WKNavigationAction,
             windowFeatures: WKWindowFeatures
         ) -> WKWebView? {
-            // If the target is a new window (e.g. target="_blank"), load in current webView
             if navigationAction.targetFrame == nil || !(navigationAction.targetFrame?.isMainFrame ?? false) {
-                webView.load(navigationAction.request)
+                if let url = navigationAction.request.url {
+                    // Open in a new tab via notification
+                    NotificationCenter.default.post(
+                        name: .openInNewTab,
+                        object: nil,
+                        userInfo: ["url": url]
+                    )
+                } else {
+                    // Fallback: load in current webView
+                    webView.load(navigationAction.request)
+                }
             }
             return nil
         }
@@ -484,30 +502,110 @@ struct WebViewRepresentable: UIViewRepresentable {
             lastContentOffset = currentOffset
         }
 
-        // MARK: WKScriptMessageHandler
+        // MARK: Native Context Menu (replaces custom JS long-press)
 
-        func userContentController(
-            _ userContentController: WKUserContentController,
-            didReceive message: WKScriptMessage
+        func webView(
+            _ webView: WKWebView,
+            contextMenuConfigurationForElement elementInfo: WKContextMenuElementInfo,
+            completionHandler: @escaping (UIContextMenuConfiguration?) -> Void
         ) {
-            guard message.name == "imageLongPress",
-                  let body = message.body as? [String: Any],
-                  let srcString = body["src"] as? String,
-                  let imageURL = URL(string: srcString)
-            else { return }
+            // Only customize for links — images use the default WKWebView menu
+            // which already has "Save to Photos", "Copy", "Share"
+            guard let linkURL = elementInfo.linkURL else {
+                completionHandler(nil) // default behavior for images, text, etc.
+                return
+            }
 
-            // Notify via NotificationCenter so any listener can handle (e.g. preview sheet)
-            NotificationCenter.default.post(
-                name: .webViewImageLongPressed,
-                object: nil,
-                userInfo: ["imageURL": imageURL]
-            )
+            let config = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+                let openInNewTab = UIAction(
+                    title: LanguageManager.shared.localizedString("tab_open_new"),
+                    image: UIImage(systemName: "plus.square.on.square")
+                ) { _ in
+                    NotificationCenter.default.post(
+                        name: .openInNewTab,
+                        object: nil,
+                        userInfo: ["url": linkURL]
+                    )
+                }
+
+                let copyLink = UIAction(
+                    title: LanguageManager.shared.localizedString("copy_link"),
+                    image: UIImage(systemName: "doc.on.doc")
+                ) { _ in
+                    UIPasteboard.general.url = linkURL
+                }
+
+                let share = UIAction(
+                    title: LanguageManager.shared.localizedString("share"),
+                    image: UIImage(systemName: "square.and.arrow.up")
+                ) { _ in
+                    guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                          let root = scene.keyWindow?.rootViewController else { return }
+                    var vc = root
+                    while let presented = vc.presentedViewController { vc = presented }
+                    let activityVC = UIActivityViewController(activityItems: [linkURL], applicationActivities: nil)
+                    vc.present(activityVC, animated: true)
+                }
+
+                return UIMenu(children: [openInNewTab, copyLink, share])
+            }
+            completionHandler(config)
+        }
+
+        // MARK: WKDownloadDelegate
+
+        func download(
+            _ download: WKDownload,
+            decideDestinationUsing response: URLResponse,
+            suggestedFilename: String,
+            completionHandler: @escaping (URL?) -> Void
+        ) {
+            let tempDir = FileManager.default.temporaryDirectory
+            let fileURL = tempDir.appendingPathComponent(suggestedFilename)
+            // Remove if already exists
+            try? FileManager.default.removeItem(at: fileURL)
+            downloadFileURL = fileURL
+
+            Task { @MainActor in
+                viewModel.isDownloading = true
+                viewModel.downloadFileName = suggestedFilename
+            }
+
+            completionHandler(fileURL)
+        }
+
+        func downloadDidFinish(_ download: WKDownload) {
+            guard let fileURL = downloadFileURL else { return }
+            Task { @MainActor in
+                viewModel.isDownloading = false
+
+                // Present system share sheet to let user decide where to save
+                guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                      let root = scene.keyWindow?.rootViewController else { return }
+                var vc = root
+                while let presented = vc.presentedViewController { vc = presented }
+
+                let activityVC = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+                activityVC.completionWithItemsHandler = { _, _, _, _ in
+                    // Clean up temp file
+                    try? FileManager.default.removeItem(at: fileURL)
+                }
+                vc.present(activityVC, animated: true)
+            }
+        }
+
+        func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
+            Task { @MainActor in
+                viewModel.isDownloading = false
+                viewModel.setError(LanguageManager.shared.localizedString("save_failed"))
+            }
+            if let fileURL = downloadFileURL {
+                try? FileManager.default.removeItem(at: fileURL)
+            }
         }
     }
 }
 
 // MARK: - Notification Name
 
-extension Notification.Name {
-    static let webViewImageLongPressed = Notification.Name("webViewImageLongPressed")
-}
+// (webViewImageLongPressed / webViewLinkLongPressed removed — using native WKUIDelegate context menus)

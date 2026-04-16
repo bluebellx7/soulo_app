@@ -410,3 +410,27 @@
 "wallpaper_delete_title" = "Rimuovi sfondo";
 "wallpaper_delete_confirm" = "Rimuovi";
 "wallpaper_delete_msg" = "Questo sfondo verrà nascosto dalla lista.";
+
+/* Schede del browser */
+"tab_new_tab" = "Nuova scheda";
+"tab_tabs" = "Schede";
+"tab_close" = "Chiudi scheda";
+"tab_close_others" = "Chiudi le altre";
+"tab_close_all" = "Chiudi tutte";
+"tab_no_tabs" = "Nessuna scheda";
+"tab_duplicate" = "Duplica scheda";
+"tab_open_new" = "Apri in nuova scheda";
+
+/* Funzioni del browser */
+"find_in_page" = "Cerca nella pagina";
+"desktop_mode" = "Modalità desktop";
+"mobile_mode" = "Modalità mobile";
+"tab_restore_last" = "Riapri scheda chiusa";
+"tab_recently_closed" = "Chiuse di recente";
+"ntp_quick_links" = "Link rapidi";
+"image_options" = "Opzioni immagine";
+"save_image" = "Salva in Foto";
+"copy_image_link" = "Copia URL immagine";
+"image_saved" = "Salvato in Foto";
+"save_failed" = "Salvataggio fallito";
+"downloading" = "Download in corso...";

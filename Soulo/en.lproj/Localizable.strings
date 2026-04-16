@@ -410,3 +410,27 @@
 "wallpaper_delete_title" = "Remove Wallpaper";
 "wallpaper_delete_confirm" = "Remove";
 "wallpaper_delete_msg" = "This wallpaper will be hidden from your list.";
+
+/* Browser Tabs */
+"tab_new_tab" = "New Tab";
+"tab_tabs" = "Tabs";
+"tab_close" = "Close Tab";
+"tab_close_others" = "Close Other Tabs";
+"tab_close_all" = "Close All Tabs";
+"tab_no_tabs" = "No Tabs";
+"tab_duplicate" = "Duplicate Tab";
+"tab_open_new" = "Open in New Tab";
+
+/* Browser Features */
+"find_in_page" = "Find in Page";
+"desktop_mode" = "Desktop Mode";
+"mobile_mode" = "Mobile Mode";
+"tab_restore_last" = "Reopen Closed Tab";
+"tab_recently_closed" = "Recently Closed";
+"ntp_quick_links" = "Quick Links";
+"image_options" = "Image Options";
+"save_image" = "Save to Photos";
+"copy_image_link" = "Copy Image URL";
+"image_saved" = "Saved to Photos";
+"save_failed" = "Save Failed";
+"downloading" = "Downloading...";

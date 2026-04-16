@@ -412,3 +412,27 @@
 "wallpaper_delete_title" = "移除壁纸";
 "wallpaper_delete_confirm" = "移除";
 "wallpaper_delete_msg" = "该壁纸将从列表中隐藏。";
+
+/* 浏览器标签 */
+"tab_new_tab" = "新标签页";
+"tab_tabs" = "个标签页";
+"tab_close" = "关闭标签页";
+"tab_close_others" = "关闭其他标签页";
+"tab_close_all" = "关闭所有标签页";
+"tab_no_tabs" = "暂无标签页";
+"tab_duplicate" = "复制标签页";
+"tab_open_new" = "在新标签页中打开";
+
+/* 浏览器功能 */
+"find_in_page" = "页内查找";
+"desktop_mode" = "桌面模式";
+"mobile_mode" = "移动模式";
+"tab_restore_last" = "恢复关闭的标签页";
+"tab_recently_closed" = "最近关闭";
+"ntp_quick_links" = "快速链接";
+"image_options" = "图片选项";
+"save_image" = "保存到相册";
+"copy_image_link" = "复制图片链接";
+"image_saved" = "已保存到相册";
+"save_failed" = "保存失败";
+"downloading" = "下载中...";

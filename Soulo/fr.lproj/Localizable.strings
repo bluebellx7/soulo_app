@@ -375,3 +375,45 @@ Dites-nous :
 "wallpaper_delete_title" = "Supprimer le fond";
 "wallpaper_delete_confirm" = "Supprimer";
 "wallpaper_delete_msg" = "Ce fond d'écran sera masqué de votre liste.";
+
+/* Onglets du navigateur */
+"tab_new_tab" = "Nouvel onglet";
+"tab_tabs" = "Onglets";
+"tab_close" = "Fermer l'onglet";
+"tab_close_others" = "Fermer les autres";
+"tab_close_all" = "Tout fermer";
+"tab_no_tabs" = "Aucun onglet";
+"tab_duplicate" = "Dupliquer l'onglet";
+"tab_open_new" = "Ouvrir dans un nouvel onglet";
+
+/* Fonctions du navigateur */
+"find_in_page" = "Rechercher dans la page";
+"desktop_mode" = "Mode bureau";
+"mobile_mode" = "Mode mobile";
+"tab_restore_last" = "Rouvrir l'onglet fermé";
+"tab_recently_closed" = "Récemment fermés";
+"ntp_quick_links" = "Liens rapides";
+"image_options" = "Options de l'image";
+"save_image" = "Enregistrer dans Photos";
+"copy_image_link" = "Copier l'URL de l'image";
+"image_saved" = "Enregistré dans Photos";
+"save_failed" = "Échec de l'enregistrement";
+"downloading" = "Téléchargement...";
+
+/* Wallpaper (extra) */
+"wallpaper_color" = "Couleur d'arrière-plan";
+"wallpaper_current_vibe" = "Vibe actuelle";
+"wallpaper_discover" = "Découvrir";
+"wallpaper_download" = "Enregistrer dans Photos";
+"wallpaper_favorites" = "Mes favoris";
+"wallpaper_fetch_bing" = "Récupérer l'image du jour";
+"wallpaper_gradient" = "Dégradés";
+"wallpaper_load_error" = "Échec du chargement";
+"wallpaper_pexels" = "Pexels (Sélection)";
+"wallpaper_photo" = "Mur de photos";
+"wallpaper_pixabay" = "Pixabay (Nature)";
+"wallpaper_refresh" = "Aléatoire";
+"wallpaper_search_placeholder" = "Rechercher une ambiance (ex. Forêt, Minimal)";
+"wallpaper_solid" = "Couleurs unies";
+"wallpaper_source" = "Source du fond d'écran";
+"wallpaper_type" = "Type d'arrière-plan";

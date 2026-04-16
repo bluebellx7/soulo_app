@@ -13,12 +13,33 @@ private extension VerticalAlignment {
 struct VoiceInputView: View {
     @ObservedObject var speechService: SpeechRecognitionService
     @EnvironmentObject var languageManager: LanguageManager
+    @EnvironmentObject var searchVM: SearchViewModel
     var onConfirm: (String) -> Void
     var onDismiss: () -> Void
 
     @State private var pulseScale: CGFloat = 1.0
     @State private var wavePhase: CGFloat = 0
     @State private var appeared = false
+
+    /// Build contextual vocabulary: platform names + recent searches.
+    /// Boosts recognition accuracy for proper nouns like "抖音", "小红书", etc.
+    private var contextualVocabulary: [String] {
+        var vocab: [String] = []
+        // Platform names (localized + raw keys)
+        let allPlatforms = PlatformDataStore.shared.allPlatforms()
+        for platform in allPlatforms {
+            vocab.append(LanguageManager.shared.localizedString(platform.name))
+        }
+        // Common platform aliases
+        vocab.append(contentsOf: [
+            "抖音", "小红书", "B站", "哔哩哔哩", "微博", "知乎", "百度", "淘宝", "京东", "微信",
+            "Google", "YouTube", "Twitter", "Reddit", "Amazon", "GitHub", "Wikipedia",
+            "Yahoo", "Yandex", "Naver", "DeepSeek", "ChatGPT", "Claude",
+        ])
+        // Recent searches (user's actual vocabulary)
+        vocab.append(contentsOf: searchVM.recentSearches.prefix(30))
+        return Array(Set(vocab)) // dedupe
+    }
 
     var body: some View {
         ZStack {
@@ -79,7 +100,7 @@ struct VoiceInputView: View {
         .presentationBackground(.clear)
         .onAppear {
             speechService.recognizedText = ""
-            speechService.startRecording(locale: languageManager.speechLocaleIdentifier)
+            speechService.startRecording(locale: languageManager.speechLocaleIdentifier, contextualStrings: contextualVocabulary)
             withAnimation(.easeOut(duration: 0.4)) { appeared = true }
         }
         .onDisappear {
@@ -208,7 +229,7 @@ struct VoiceInputView: View {
                     speechService.stopRecording()
                 } else {
                     speechService.recognizedText = ""
-                    speechService.startRecording(locale: languageManager.speechLocaleIdentifier)
+                    speechService.startRecording(locale: languageManager.speechLocaleIdentifier, contextualStrings: contextualVocabulary)
                 }
             } label: {
                 VStack(spacing: 6) {

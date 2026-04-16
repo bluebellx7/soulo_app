@@ -4,6 +4,7 @@ import SwiftData
 struct HomeView: View {
     @EnvironmentObject var searchVM: SearchViewModel
     @EnvironmentObject var languageManager: LanguageManager
+    @EnvironmentObject var tabManager: TabManager
     @ObservedObject var wallpaperManager = WallpaperManager.shared
     @StateObject private var speechService = SpeechRecognitionService()
     @Environment(\.modelContext) private var modelContext
@@ -13,6 +14,7 @@ struct HomeView: View {
     @State private var showHistory = false
     @State private var showBookmarks = false
     @State private var showVoiceInput = false
+    @State private var showTabOverviewFromHome = false
     @State private var showTitleEditor = false
     @State private var showSubtitleEditor = false
     @State private var editingTitle = ""
@@ -69,6 +71,15 @@ struct HomeView: View {
         }
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
+        .sheet(isPresented: $showTabOverviewFromHome) {
+            HomeTabOverviewSheet(tabManager: tabManager) {
+                // User selected a tab → dismiss sheet, then jump into browser
+                showTabOverviewFromHome = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    searchVM.isSearching = true
+                }
+            }
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
@@ -148,7 +159,7 @@ struct HomeView: View {
                         .onTapGesture { showSubtitleEditor = true }
                 }
 
-                // Search bar (glass material style)
+                // Search bar
                 SearchBarView(
                     text: $searchVM.searchText,
                     isRecording: speechService.isRecording,
@@ -158,6 +169,33 @@ struct HomeView: View {
                 .matchedGeometryEffect(id: "searchBar", in: searchBarNamespace)
                 .frame(maxWidth: isIPad ? 600 : .infinity)
                 .padding(.horizontal, 28)
+
+                // Floating autocomplete — zero-height anchor, overlay extends downward
+                Color.clear
+                    .frame(height: 0)
+                    .overlay(alignment: .top) {
+                        if !searchVM.suggestions.isEmpty {
+                            SearchAutocompleteView(
+                                suggestions: searchVM.suggestions,
+                                query: searchVM.searchText,
+                                darkVariant: true,
+                                onSelect: { suggestion in
+                                    searchVM.searchText = suggestion
+                                    performSearch()
+                                },
+                                onFill: { suggestion in
+                                    searchVM.searchText = suggestion
+                                }
+                            )
+                            .frame(maxWidth: isIPad ? 600 : .infinity)
+                            .padding(.horizontal, 28)
+                            .padding(.top, 8)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
+                    }
+                    .zIndex(100)
+                    .allowsHitTesting(!searchVM.suggestions.isEmpty)
 
                 // Group picker
                 if showGroupPickerOnHome {
@@ -171,8 +209,8 @@ struct HomeView: View {
                         .padding(.top, 4)
                 }
 
-                // Recent searches
-                if !searchVM.recentSearches.isEmpty {
+                // Recent searches (hidden while typing, shown when empty)
+                if !searchVM.recentSearches.isEmpty && searchVM.searchText.isEmpty {
                     SearchSuggestionsView(
                         recentSearches: searchVM.recentSearches,
                         onTap: { keyword in
@@ -303,11 +341,41 @@ struct HomeView: View {
         }
     }
 
+    /// Whether there are real tabs with loaded content (not just the default empty tab).
+    private var hasActiveTabs: Bool {
+        tabManager.tabs.contains { $0.webViewModel.currentURL != nil }
+    }
+
     private var topBar: some View {
         HStack(spacing: 10) {
             // Incognito indicator
             if searchVM.isIncognito {
                 miniButton(icon: "eye.slash.fill", opacity: 0.5)
+            }
+
+            // Tab indicator — show when there are loaded tabs
+            if hasActiveTabs {
+                Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    showTabOverviewFromHome = true
+                } label: {
+                    HStack(spacing: 5) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                .stroke(.white.opacity(0.6), lineWidth: 1.2)
+                                .frame(width: 16, height: 16)
+                            Text("\(tabManager.tabCount)")
+                                .font(.system(size: 10, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.7))
+                        }
+                        Text(LanguageManager.shared.localizedString("tab_tabs"))
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.4))
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(.ultraThinMaterial.opacity(0.3), in: Capsule())
+                }
             }
 
             Spacer()

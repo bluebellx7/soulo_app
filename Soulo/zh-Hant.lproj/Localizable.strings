@@ -410,3 +410,27 @@
 "wallpaper_delete_title" = "移除桌布";
 "wallpaper_delete_confirm" = "移除";
 "wallpaper_delete_msg" = "該桌布將從列表中隱藏。";
+
+/* 瀏覽器標籤 */
+"tab_new_tab" = "新標籤頁";
+"tab_tabs" = "個標籤頁";
+"tab_close" = "關閉標籤頁";
+"tab_close_others" = "關閉其他標籤頁";
+"tab_close_all" = "關閉所有標籤頁";
+"tab_no_tabs" = "暫無標籤頁";
+"tab_duplicate" = "複製標籤頁";
+"tab_open_new" = "在新標籤頁中打開";
+
+/* 瀏覽器功能 */
+"find_in_page" = "頁內查找";
+"desktop_mode" = "桌面模式";
+"mobile_mode" = "行動模式";
+"tab_restore_last" = "恢復關閉的標籤頁";
+"tab_recently_closed" = "最近關閉";
+"ntp_quick_links" = "快速連結";
+"image_options" = "圖片選項";
+"save_image" = "儲存到相簿";
+"copy_image_link" = "複製圖片連結";
+"image_saved" = "已儲存到相簿";
+"save_failed" = "儲存失敗";
+"downloading" = "下載中...";

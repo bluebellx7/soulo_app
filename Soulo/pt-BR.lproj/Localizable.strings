@@ -410,3 +410,27 @@
 "wallpaper_delete_title" = "Remover papel de parede";
 "wallpaper_delete_confirm" = "Remover";
 "wallpaper_delete_msg" = "Este papel de parede será ocultado da sua lista.";
+
+/* Abas do navegador */
+"tab_new_tab" = "Nova aba";
+"tab_tabs" = "Abas";
+"tab_close" = "Fechar aba";
+"tab_close_others" = "Fechar outras abas";
+"tab_close_all" = "Fechar todas";
+"tab_no_tabs" = "Sem abas";
+"tab_duplicate" = "Duplicar aba";
+"tab_open_new" = "Abrir em nova aba";
+
+/* Recursos do navegador */
+"find_in_page" = "Buscar na página";
+"desktop_mode" = "Modo desktop";
+"mobile_mode" = "Modo mobile";
+"tab_restore_last" = "Reabrir aba fechada";
+"tab_recently_closed" = "Fechadas recentemente";
+"ntp_quick_links" = "Atalhos";
+"image_options" = "Opções da imagem";
+"save_image" = "Salvar em Fotos";
+"copy_image_link" = "Copiar URL da imagem";
+"image_saved" = "Salvo em Fotos";
+"save_failed" = "Falha ao salvar";
+"downloading" = "Baixando...";

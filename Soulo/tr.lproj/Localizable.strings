@@ -410,3 +410,27 @@
 "wallpaper_delete_title" = "Duvar kağıdını kaldır";
 "wallpaper_delete_confirm" = "Kaldır";
 "wallpaper_delete_msg" = "Bu duvar kağıdı listenizden gizlenecek.";
+
+/* Tarayıcı sekmeleri */
+"tab_new_tab" = "Yeni sekme";
+"tab_tabs" = "Sekme";
+"tab_close" = "Sekmeyi kapat";
+"tab_close_others" = "Diğerlerini kapat";
+"tab_close_all" = "Tümünü kapat";
+"tab_no_tabs" = "Sekme yok";
+"tab_duplicate" = "Sekmeyi çoğalt";
+"tab_open_new" = "Yeni sekmede aç";
+
+/* Tarayıcı özellikleri */
+"find_in_page" = "Sayfada bul";
+"desktop_mode" = "Masaüstü modu";
+"mobile_mode" = "Mobil mod";
+"tab_restore_last" = "Kapatılan sekmeyi geri al";
+"tab_recently_closed" = "Son kapatılanlar";
+"ntp_quick_links" = "Hızlı bağlantılar";
+"image_options" = "Görsel seçenekleri";
+"save_image" = "Fotoğraflara kaydet";
+"copy_image_link" = "Görsel URL'sini kopyala";
+"image_saved" = "Fotoğraflara kaydedildi";
+"save_failed" = "Kaydetme başarısız";
+"downloading" = "İndiriliyor...";

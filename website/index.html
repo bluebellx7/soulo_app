@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>搜罗 Soulo - 一键搜遍全球平台 | 聚合搜索引擎</title>
+    <title>搜罗 Soulo - 聚合全球搜索平台 | 多平台搜索 App</title>
     <meta
       name="description"
-      content="搜罗 (Soulo) 是一款聚合搜索引擎 App，内置 40+ 搜索平台，支持 AI 搜索、影视资源搜索、语音搜索，一个 App 搜遍全球。"
+      content="搜罗 (Soulo) 是一款聚合搜索平台 App，内置 40+ 搜索平台，支持 AI 搜索、影视资源搜索、语音搜索。一次输入关键词，即可快速切换多个平台查看结果。"
     />
     <link rel="icon" type="image/png" href="app-icon.png" />
     <link rel="apple-touch-icon" href="app-icon.png" />
@@ -14,21 +14,53 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     />
+    <script>
+      (function () {
+        var storedTheme = 'system';
+        try {
+          var savedTheme = localStorage.getItem('soulo-theme');
+          storedTheme =
+            savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : 'system';
+        } catch (error) {}
+        var prefersDark =
+          window.matchMedia &&
+          window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var resolvedTheme =
+          storedTheme === 'system' ? (prefersDark ? 'dark' : 'light') : storedTheme;
+        document.documentElement.setAttribute('data-theme', storedTheme);
+        document.documentElement.setAttribute(
+          'data-resolved-theme',
+          resolvedTheme
+        );
+      })();
+    </script>
     <style>
-      :root{--primary:#6366f1;--primary-dark:#4f46e5;--accent:#7c3aed;--text:#1e293b;--text-secondary:#64748b;--bg:#f8fafc;--card:#fff;--border:#e2e8f0}
-      @media(prefers-color-scheme:dark){:root{--text:#f1f5f9;--text-secondary:#94a3b8;--bg:#020617;--card:#0f172a;--border:#1e293b}}
+      :root{--primary:#6366f1;--primary-dark:#4f46e5;--accent:#7c3aed;--text:#1e293b;--text-secondary:#64748b;--bg:#f8fafc;--card:#fff;--border:#e2e8f0;--nav-bg:rgba(248,250,252,.9);--nav-border:rgba(15,23,42,.08);--nav-text:#0f172a;--nav-link:rgba(15,23,42,.68);--nav-link-hover:#111827;--nav-panel-bg:rgba(248,250,252,.98);--nav-control-bg:rgba(15,23,42,.04);--nav-control-border:rgba(15,23,42,.08);--nav-control-text:rgba(15,23,42,.68);--nav-control-shadow:inset 0 1px 0 rgba(255,255,255,.8);--usecase-bg:linear-gradient(135deg,#eef2ff,#e0e7ff);--usecase-book-bg:linear-gradient(135deg,#f5f3ff,#dbeafe);--usecase-text:#0f172a;--usecase-subtitle:rgba(15,23,42,.62);--usecase-soft:rgba(15,23,42,.62);--usecase-panel-bg:rgba(255,255,255,.64);--usecase-panel-hover:rgba(255,255,255,.84);--usecase-panel-border:rgba(99,102,241,.12);--usecase-accent:#6366f1;--usecase-shot-border:rgba(99,102,241,.12);--usecase-shot-shadow:0 16px 32px rgba(79,70,229,.16);--batch-bg:rgba(99,102,241,.08);--batch-border:rgba(99,102,241,.15);--batch-desc:rgba(15,23,42,.68);--copy-btn-bg:linear-gradient(135deg,#4f46e5,#7c3aed);--copy-btn-shadow:0 12px 24px rgba(79,70,229,.18);--json-bg:rgba(255,255,255,.72);--json-text:rgba(15,23,42,.58);--footer-bg:linear-gradient(113deg,#e2e8f0,#cbd5e1);--footer-text:#64748b;--footer-link:#334155}
+      html{color-scheme:light}
+      html[data-resolved-theme="dark"]{color-scheme:dark;--text:#f1f5f9;--text-secondary:#94a3b8;--bg:#020617;--card:#0f172a;--border:#1e293b;--nav-bg:rgba(11,16,30,.92);--nav-border:rgba(255,255,255,.06);--nav-text:#fff;--nav-link:rgba(255,255,255,.65);--nav-link-hover:#fff;--nav-panel-bg:rgba(11,16,30,.97);--nav-control-bg:rgba(255,255,255,.05);--nav-control-border:rgba(255,255,255,.08);--nav-control-text:rgba(255,255,255,.62);--nav-control-shadow:inset 0 1px 0 rgba(255,255,255,.03);--usecase-bg:linear-gradient(135deg,#0f172a,#1e293b);--usecase-book-bg:linear-gradient(135deg,#111827,#312e81);--usecase-text:#f1f5f9;--usecase-subtitle:rgba(241,245,249,.55);--usecase-soft:rgba(241,245,249,.55);--usecase-panel-bg:rgba(255,255,255,.04);--usecase-panel-hover:rgba(255,255,255,.1);--usecase-panel-border:rgba(255,255,255,.08);--usecase-accent:#818cf8;--usecase-shot-border:rgba(255,255,255,.06);--usecase-shot-shadow:0 8px 32px rgba(0,0,0,.35);--batch-bg:rgba(99,102,241,.08);--batch-border:rgba(99,102,241,.15);--batch-desc:rgba(241,245,249,.55);--copy-btn-bg:linear-gradient(135deg,#0f172a,#1e293b);--copy-btn-shadow:inset 0 1px 0 rgba(255,255,255,.06);--json-bg:rgba(0,0,0,.25);--json-text:rgba(241,245,249,.35);--footer-bg:linear-gradient(113deg,#080c17,#000);--footer-text:#999;--footer-link:#ccc}
       *{margin:0;padding:0;box-sizing:border-box}
-      body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans",Arial,sans-serif;color:var(--text);background:var(--bg);line-height:1.6;font-weight:300;-webkit-font-smoothing:antialiased}
+      body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans",Arial,sans-serif;color:var(--text);background:var(--bg);line-height:1.6;font-weight:300;-webkit-font-smoothing:antialiased;transition:background-color .25s ease,color .25s ease}
       a{text-decoration:none;color:inherit}
       img{display:block;max-width:100%}
 
       /* Nav -- dkluge dark glass */
-      nav{position:fixed;top:0;width:100%;background:rgba(11,16,30,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:100;border-bottom:1px solid rgba(255,255,255,.06)}
+      nav{position:fixed;top:0;width:100%;background:var(--nav-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:100;border-bottom:1px solid var(--nav-border)}
       nav .nav-inner{max-width:980px;margin:0 auto;padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between}
-      nav .brand{font-size:16px;font-weight:600;color:#fff;text-decoration:none}
-      nav .brand span{background:linear-gradient(135deg,var(--primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-      nav .nav-links a{font-size:14px;color:rgba(255,255,255,.65);text-decoration:none;margin-left:28px;transition:color .2s}
-      nav .nav-links a:hover{color:#fff}
+      nav .brand{font-size:16px;font-weight:600;color:var(--nav-text);text-decoration:none;display:flex;align-items:center}
+      nav .brand-primary{background:linear-gradient(135deg,var(--primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+      nav .brand-secondary{margin-left:6px}
+      nav .brand-secondary:empty{display:none}
+      nav .nav-links{display:flex;align-items:center}
+      nav .nav-links a:first-child{margin-left:0}
+      nav .nav-links a{font-size:14px;color:var(--nav-link);text-decoration:none;margin-left:28px;transition:color .2s}
+      nav .nav-links a:hover{color:var(--nav-link-hover)}
+      .nav-tools{display:flex;align-items:center;gap:10px;margin-left:24px;padding-left:20px;border-left:1px solid var(--nav-control-border)}
+      .segmented-control{display:inline-flex;align-items:center;gap:2px;padding:3px;border:1px solid var(--nav-control-border);border-radius:999px;background:var(--nav-control-bg);box-shadow:var(--nav-control-shadow)}
+      .segmented-btn{border:none;background:transparent;color:var(--nav-control-text);font-size:12px;font-weight:600;line-height:1;padding:8px 12px;border-radius:999px;cursor:pointer;transition:background .2s,color .2s,transform .2s}
+      .segmented-btn:hover{color:var(--nav-link-hover)}
+      .segmented-btn:focus-visible{outline:2px solid rgba(196,181,253,.9);outline-offset:2px}
+      .segmented-btn.is-active{background:linear-gradient(135deg,rgba(99,102,241,.9),rgba(124,58,237,.88));color:#fff;box-shadow:0 8px 18px rgba(79,70,229,.22)}
+      .segmented-btn[data-lang-option]{min-width:46px}
 
       /* Hero -- with floating orbs */
       .hero{text-align:center;padding:130px 20px 80px;position:relative;overflow:hidden}
@@ -39,7 +71,9 @@
       .hero .app-icon{width:100px;height:100px;border-radius:22px;margin:0 auto 28px;box-shadow:0 8px 30px rgba(99,102,241,.18);overflow:hidden;position:relative;z-index:1}
       .hero .app-icon img{width:100%;height:100%;display:block}
       .hero h1{font-size:clamp(30px,5vw,44px);font-weight:700;letter-spacing:-.02em;margin-bottom:12px;position:relative;z-index:1}
-      .hero h1 span{background:linear-gradient(135deg,var(--primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+      .hero-title-secondary{margin-right:12px}
+      .hero-title-secondary:empty{display:none}
+      .hero-title-primary{background:linear-gradient(135deg,var(--primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
       .hero .tagline{font-size:20px;color:var(--text-secondary);margin-bottom:10px;position:relative;z-index:1}
       .hero .sub-tagline{font-size:16px;color:var(--text-secondary);margin-bottom:36px;position:relative;z-index:1}
       .app-store-badge{display:inline-block;transition:transform .2s;position:relative;z-index:1}
@@ -62,7 +96,7 @@
       .features{max-width:980px;margin:0 auto;padding:0 20px 80px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
       .feature-card{background:var(--card);border:1px solid var(--bd, var(--border));border-radius:8px;padding:28px 24px;transition:all .3s ease}
       .feature-card:hover{transform:translateY(-4px);box-shadow:0 8px 25px rgba(0,0,0,.1)}
-      @media(prefers-color-scheme:dark){.feature-card:hover{box-shadow:0 16px 48px rgba(0,0,0,.4)}}
+      html[data-resolved-theme="dark"] .feature-card:hover{box-shadow:0 16px 48px rgba(0,0,0,.4)}
       .feature-card .icon-wrapper{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;font-size:20px}
       .feature-card h3{font-size:17px;font-weight:600;margin-bottom:6px}
       .feature-card p{font-size:14px;color:var(--text-secondary);line-height:1.55}
@@ -74,49 +108,49 @@
       .ic-privacy{background:rgba(236,72,153,.1);color:#ec4899}
       .ic-i18n{background:rgba(6,182,212,.1);color:#06b6d4}
       .ic-custom{background:rgba(249,115,22,.1);color:#f97316}
-      .ic-bookmark{background:rgba(234,179,8,.1);color:#eab308}
       .ic-book{background:rgba(14,165,233,.1);color:#0ea5e9}
 
       /* Use Case -- dkluge dark card */
       .usecase-section{max-width:980px;margin:0 auto;padding:0 20px 80px}
-      .usecase-card{background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:12px;padding:48px;color:#f1f5f9;position:relative;overflow:hidden}
+      .usecase-card{background:var(--usecase-bg);border-radius:12px;padding:48px;color:var(--usecase-text);position:relative;overflow:hidden}
+      .usecase-card-book{background:var(--usecase-book-bg)}
       .usecase-card::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(99,102,241,.12),transparent 40%);pointer-events:none}
       .usecase-card h2{font-size:26px;font-weight:600;margin-bottom:12px;position:relative}
-      .usecase-card .subtitle{font-size:15px;color:rgba(241,245,249,.55);margin-bottom:28px;position:relative}
+      .usecase-card .subtitle{font-size:15px;color:var(--usecase-subtitle);margin-bottom:28px;position:relative}
       .film-sources{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
-      .film-source{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 14px;transition:background .2s}
-      .film-source:hover{background:rgba(255,255,255,.1)}
+      .film-source{display:flex;align-items:center;gap:10px;background:var(--usecase-panel-bg);border:1px solid var(--usecase-panel-border);border-radius:8px;padding:10px 14px;transition:background .2s,border-color .2s}
+      .film-source:hover{background:var(--usecase-panel-hover)}
       .film-source img{width:24px;height:24px;border-radius:4px;flex-shrink:0}
       .film-source .fs-info{flex:1;min-width:0}
       .film-source .fs-name{font-size:14px;font-weight:500}
-      .film-source .fs-url{font-size:11px;color:rgba(241,245,249,.35);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-      .usecase-tip{margin-top:20px;padding:14px 18px;background:rgba(255,255,255,.04);border-radius:8px;display:flex;align-items:flex-start;gap:10px}
-      .usecase-tip i{color:#818cf8;margin-top:2px}
-      .usecase-tip p{font-size:13px;color:rgba(241,245,249,.6);line-height:1.6}
+      .film-source .fs-url{font-size:11px;color:var(--usecase-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .usecase-tip{margin-top:20px;padding:14px 18px;background:var(--usecase-panel-bg);border:1px solid var(--usecase-panel-border);border-radius:8px;display:flex;align-items:flex-start;gap:10px}
+      .usecase-tip i{color:var(--usecase-accent);margin-top:2px}
+      .usecase-tip p{font-size:13px;color:var(--usecase-soft);line-height:1.6}
 
       /* Steps */
       .steps-flow{display:flex;gap:10px;margin:20px 0 24px}
-      .step-card{flex:1;display:flex;align-items:flex-start;gap:10px;background:rgba(255,255,255,.04);border-radius:8px;padding:12px}
+      .step-card{flex:1;display:flex;align-items:flex-start;gap:10px;background:var(--usecase-panel-bg);border:1px solid var(--usecase-panel-border);border-radius:8px;padding:12px}
       .step-badge{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#7c3aed);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
       .step-text h4{font-size:13px;font-weight:600;margin-bottom:2px}
-      .step-text p{font-size:11px;color:rgba(241,245,249,.45);line-height:1.4}
+      .step-text p{font-size:11px;color:var(--usecase-soft);line-height:1.4}
 
       /* Screenshots */
       .screenshots-row{display:flex;gap:14px;justify-content:center;margin:24px 0}
       .screenshot-item{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;max-width:220px}
-      .screenshot-item img{width:100%;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.06)}
-      .screenshot-item span{font-size:11px;color:rgba(241,245,249,.45);font-weight:500}
+      .screenshot-item img{width:100%;border-radius:12px;box-shadow:var(--usecase-shot-shadow);border:1px solid var(--usecase-shot-border)}
+      .screenshot-item span{font-size:11px;color:var(--usecase-soft);font-weight:500}
 
       /* Batch Import */
-      .batch-import-box{margin-top:28px;padding:24px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.15);border-radius:10px}
+      .batch-import-box{margin-top:28px;padding:24px;background:var(--batch-bg);border:1px solid var(--batch-border);border-radius:10px}
       .batch-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-      .batch-header i{color:#818cf8;font-size:17px}
+      .batch-header i{color:var(--usecase-accent);font-size:17px}
       .batch-header h3{font-size:17px;font-weight:600}
-      .batch-desc{font-size:13px;color:rgba(241,245,249,.55);line-height:1.6;margin-bottom:16px}
-      .copy-json-btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;border:none;border-radius:6px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;margin-bottom:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+      .batch-desc{font-size:13px;color:var(--batch-desc);line-height:1.6;margin-bottom:16px}
+      .copy-json-btn{display:inline-flex;align-items:center;gap:8px;background:var(--copy-btn-bg);color:#fff;border:none;border-radius:6px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;margin-bottom:14px;box-shadow:var(--copy-btn-shadow)}
       .copy-json-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.3)}
       .copy-json-btn:active{transform:scale(.97)}
-      .json-preview{font-size:11px;color:rgba(241,245,249,.35);line-height:1.5;background:rgba(0,0,0,.25);border-radius:8px;padding:12px 14px;overflow-x:auto;white-space:pre;max-height:200px;overflow-y:auto}
+      .json-preview{font-size:11px;color:var(--json-text);line-height:1.5;background:var(--json-bg);border-radius:8px;padding:12px 14px;overflow-x:auto;white-space:pre;max-height:200px;overflow-y:auto}
 
       /* Tutorial Steps */
       .tutorial-step{margin-bottom:28px}
@@ -131,14 +165,14 @@
       .url-example mark{background:#6366f1;color:#fff;padding:1px 5px;border-radius:3px}
 
       /* More Examples */
-      .more-examples{margin-top:8px;padding-top:28px;border-top:1px solid rgba(255,255,255,.06)}
+      .more-examples{margin-top:8px;padding-top:28px;border-top:1px solid var(--usecase-panel-border)}
       .more-title{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
-      .more-title i{color:#818cf8}
+      .more-title i{color:var(--usecase-accent)}
       .example-table{display:flex;flex-direction:column;gap:6px}
-      .example-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border-radius:6px;padding:8px 12px}
+      .example-row{display:flex;align-items:center;gap:10px;background:var(--usecase-panel-bg);border:1px solid var(--usecase-panel-border);border-radius:6px;padding:8px 12px}
       .example-row img{width:20px;height:20px;border-radius:4px;flex-shrink:0}
       .example-row .ex-name{font-size:12px;font-weight:500;width:72px;flex-shrink:0}
-      .example-row .ex-url{font-size:11px;color:rgba(241,245,249,.4);word-break:break-all;flex:1;min-width:0;background:none;padding:0}
+      .example-row .ex-url{font-size:11px;color:var(--usecase-soft);word-break:break-all;flex:1;min-width:0;background:none;padding:0}
 
       /* Stats */
       .stats{max-width:980px;margin:0 auto;padding:0 20px 80px}
@@ -148,18 +182,21 @@
       .stat-item .stat-label{font-size:14px;color:var(--text-secondary);margin-top:4px}
 
       /* Footer -- dkluge dark gradient */
-      footer{background:linear-gradient(113deg,#080c17,#000);padding:40px 20px}
+      footer{background:var(--footer-bg);padding:40px 20px}
       footer .footer-inner{max-width:980px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
-      footer .copyright{font-size:13px;color:#999}
-      footer .footer-links a{font-size:13px;color:#ccc;text-decoration:none;margin-left:24px;transition:color .2s}
+      footer .copyright{font-size:13px;color:var(--footer-text)}
+      footer .footer-links a{font-size:13px;color:var(--footer-link);text-decoration:none;margin-left:24px;transition:color .2s}
       footer .footer-links a:hover{color:#6366f1}
 
-      .hamburger{display:none;width:44px;height:44px;align-items:center;justify-content:center;background:none;border:none;font-size:22px;color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent}
+      .hamburger{display:none;width:44px;height:44px;align-items:center;justify-content:center;background:none;border:none;font-size:22px;color:var(--nav-text);cursor:pointer;-webkit-tap-highlight-color:transparent}
 
       @media(max-width:768px){
-        nav .nav-links{display:none;flex-direction:column;position:absolute;top:56px;left:0;right:0;background:rgba(11,16,30,.97);border-bottom:1px solid rgba(255,255,255,.06);padding:16px 20px;gap:16px}
+        nav .nav-links{display:none;flex-direction:column;position:absolute;top:56px;left:0;right:0;background:var(--nav-panel-bg);border-bottom:1px solid var(--nav-border);padding:16px 20px;gap:16px}
         nav .nav-links.active{display:flex}
         nav .nav-links a{margin-left:0;font-size:16px}
+        .nav-tools{width:100%;margin-left:0;padding-left:0;padding-top:14px;border-left:none;border-top:1px solid var(--nav-control-border);justify-content:space-between;flex-wrap:wrap}
+        .segmented-control{width:100%;justify-content:space-between}
+        .segmented-btn{flex:1}
         .hamburger{display:flex}
         .hero{padding:120px 20px 60px}
         .hero h1{font-size:32px}
@@ -183,29 +220,89 @@
   <body>
     <nav>
       <div class="nav-inner">
-        <a class="brand" href="/"><span>Soulo</span> 搜罗</a>
-        <button class="hamburger" onclick="this.parentElement.querySelector('.nav-links').classList.toggle('active')" aria-label="菜单">☰</button>
+        <a class="brand" href="/">
+          <span class="brand-primary">Soulo</span>
+          <span class="brand-secondary" data-i18n="brandSecondary"></span>
+        </a>
+        <button
+          class="hamburger"
+          id="navToggle"
+          onclick="this.parentElement.querySelector('.nav-links').classList.toggle('active')"
+          aria-label="菜单"
+        >
+          ☰
+        </button>
         <div class="nav-links">
-          <a href="#platforms">平台</a>
-          <a href="#features">功能</a>
-          <a href="#film">影视搜索</a>
-          <a href="#books">书籍搜索</a>
-          <a href="privacy.html">隐私政策</a>
+          <a href="#platforms" data-i18n="navPlatforms">平台</a>
+          <a href="#features" data-i18n="navFeatures">功能</a>
+          <a href="#film" data-i18n="navFilm">影视搜索</a>
+          <a href="#books" data-i18n="navBooks">书籍搜索</a>
+          <a href="privacy.html" data-i18n="navPrivacy">隐私政策</a>
+          <div class="nav-tools">
+            <div
+              class="segmented-control"
+              id="languageSwitch"
+              role="group"
+              aria-label="Language switch"
+            >
+              <button
+                class="segmented-btn"
+                type="button"
+                data-lang-option="zh"
+              >
+                中文
+              </button>
+              <button
+                class="segmented-btn"
+                type="button"
+                data-lang-option="en"
+              >
+                EN
+              </button>
+            </div>
+            <div
+              class="segmented-control"
+              id="themeSwitch"
+              role="group"
+              aria-label="Theme switch"
+            >
+              <button
+                class="segmented-btn"
+                type="button"
+                data-theme-option="light"
+                data-i18n="themeLight"
+              >
+                浅色
+              </button>
+              <button
+                class="segmented-btn"
+                type="button"
+                data-theme-option="dark"
+                data-i18n="themeDark"
+              >
+                深色
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </nav>
 
     <section class="hero">
       <div class="app-icon">
-        <img src="app-icon.png" alt="搜罗 Soulo" />
+        <img id="appIconImg" src="app-icon.png" alt="Soulo" />
       </div>
-      <h1>搜罗 <span>Soulo</span></h1>
-      <p class="tagline">一键搜遍全球平台</p>
-      <p class="sub-tagline">
+      <h1>
+        <span class="hero-title-secondary" data-i18n="heroNameSecondary"></span>
+        <span class="hero-title-primary">Soulo</span>
+      </h1>
+      <p class="tagline" data-i18n="heroTagline">一个 App，聚合全球搜索平台</p>
+      <p class="sub-tagline" data-i18n="heroSubTagline">
         40+ 搜索平台 &middot; AI 智能搜索 &middot; 8 国语言 &middot; 广告拦截
       </p>
       <a class="app-store-badge" href="https://apps.apple.com/cn/app/soulo-%E6%90%9C%E7%BD%97-ai%E8%81%9A%E5%90%88%E6%90%9C%E7%B4%A2%E5%BC%95%E6%93%8E/id6761165330" target="_blank">
         <img
+          id="appStoreBadgeImg"
           src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/zh-cn?size=250x83"
           alt="在 App Store 下载"
         />
@@ -217,172 +314,172 @@
       <div class="stats-grid">
         <div class="stat-item">
           <div class="stat-num">40+</div>
-          <div class="stat-label">内置搜索平台</div>
+          <div class="stat-label" data-i18n="statPlatforms">内置搜索平台</div>
         </div>
         <div class="stat-item">
           <div class="stat-num">5</div>
-          <div class="stat-label">AI 搜索引擎</div>
+          <div class="stat-label" data-i18n="statAi">AI 搜索引擎</div>
         </div>
         <div class="stat-item">
           <div class="stat-num">8</div>
-          <div class="stat-label">支持语言</div>
+          <div class="stat-label" data-i18n="statLanguages">支持语言</div>
         </div>
         <div class="stat-item">
           <div class="stat-num">100%</div>
-          <div class="stat-label">隐私保护</div>
+          <div class="stat-label" data-i18n="statPrivacy">隐私保护</div>
         </div>
       </div>
     </section>
 
     <!-- Platforms -->
     <div class="section-title" id="platforms">
-      <h2>覆盖全球主流平台</h2>
-      <p>搜索、视频、购物、社交、AI、开发者 —— 一个 App 全搞定</p>
+      <h2 data-i18n="platformsTitle">覆盖全球主流平台</h2>
+      <p data-i18n="platformsDesc">搜索、视频、购物、社交、AI、开发者 —— 一个 App 全搞定</p>
     </div>
 
     <section class="platforms-section">
       <div class="platform-grid">
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=google.com&sz=64"
+            src="favicons/google.com.png"
             alt="Google"
           /><span>Google</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=baidu.com&sz=64"
+            src="favicons/baidu.com.png"
             alt="百度"
-          /><span>百度</span>
+          /><span data-i18n="platformBaidu">百度</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=bing.com&sz=64"
+            src="favicons/bing.com.png"
             alt="Bing"
           /><span>Bing</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=youtube.com&sz=64"
+            src="favicons/youtube.com.png"
             alt="YouTube"
           /><span>YouTube</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=bilibili.com&sz=64"
+            src="favicons/bilibili.com.png"
             alt="B站"
-          /><span>哔哩哔哩</span>
+          /><span data-i18n="platformBilibili">哔哩哔哩</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=douyin.com&sz=64"
+            src="favicons/douyin.com.png"
             alt="抖音"
-          /><span>抖音</span>
+          /><span data-i18n="platformDouyin">抖音</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=weibo.com&sz=64"
+            src="favicons/weibo.com.png"
             alt="微博"
-          /><span>微博</span>
+          /><span data-i18n="platformWeibo">微博</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=zhihu.com&sz=64"
+            src="favicons/zhihu.com.png"
             alt="知乎"
-          /><span>知乎</span>
+          /><span data-i18n="platformZhihu">知乎</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=taobao.com&sz=64"
+            src="favicons/taobao.com.png"
             alt="淘宝"
-          /><span>淘宝</span>
+          /><span data-i18n="platformTaobao">淘宝</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=jd.com&sz=64"
+            src="favicons/jd.com.png"
             alt="京东"
-          /><span>京东</span>
+          /><span data-i18n="platformJd">京东</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=amazon.com&sz=64"
+            src="favicons/amazon.com.png"
             alt="Amazon"
           /><span>Amazon</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=twitter.com&sz=64"
+            src="favicons/twitter.com.png"
             alt="X"
           /><span>X (Twitter)</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=reddit.com&sz=64"
+            src="favicons/reddit.com.png"
             alt="Reddit"
           /><span>Reddit</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=github.com&sz=64"
+            src="favicons/github.com.png"
             alt="GitHub"
           /><span>GitHub</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=stackoverflow.com&sz=64"
+            src="favicons/stackoverflow.com.png"
             alt="Stack Overflow"
           /><span>Stack Overflow</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=wikipedia.org&sz=64"
+            src="favicons/wikipedia.org.png"
             alt="Wikipedia"
           /><span>Wikipedia</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=perplexity.ai&sz=64"
+            src="favicons/perplexity.ai.png"
             alt="Perplexity"
           /><span>Perplexity</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=phind.com&sz=64"
+            src="favicons/phind.com.png"
             alt="Phind"
           /><span>Phind</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=deepseek.com&sz=64"
+            src="favicons/deepseek.com.png"
             alt="DeepSeek"
           /><span>DeepSeek</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=duckduckgo.com&sz=64"
+            src="favicons/duckduckgo.com.png"
             alt="DuckDuckGo"
           /><span>DuckDuckGo</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=sogou.com&sz=64"
+            src="favicons/sogou.com.png"
             alt="搜狗"
-          /><span>搜狗</span>
+          /><span data-i18n="platformSogou">搜狗</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=you.com&sz=64"
+            src="favicons/you.com.png"
             alt="You.com"
           /><span>You.com</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=yahoo.co.jp&sz=64"
+            src="favicons/yahoo.co.jp.png"
             alt="Yahoo Japan"
           /><span>Yahoo! Japan</span>
         </div>
         <div class="platform-item">
           <img
-            src="https://www.google.com/s2/favicons?domain=yandex.com&sz=64"
+            src="favicons/yandex.com.png"
             alt="Yandex"
           /><span>Yandex</span>
         </div>
@@ -391,8 +488,8 @@
 
     <!-- Features -->
     <div class="section-title" id="features">
-      <h2>核心功能</h2>
-      <p>不只是搜索，更是你的全能信息助手</p>
+      <h2 data-i18n="featuresTitle">核心功能</h2>
+      <p data-i18n="featuresDesc">不只是搜索，更是你的全能信息助手</p>
     </div>
 
     <section class="features">
@@ -400,45 +497,45 @@
         <div class="icon-wrapper ic-search">
           <i class="fa-solid fa-magnifying-glass"></i>
         </div>
-        <h3>40+ 平台聚合</h3>
-        <p>
+        <h3 data-i18n="featureAggregateTitle">40+ 平台聚合</h3>
+        <p data-i18n="featureAggregateDesc">
           内置 Google、百度、YouTube、B站、淘宝、GitHub 等 40
           余个平台，输入一次关键词，左右切换平台即可对比结果。
         </p>
       </div>
       <div class="feature-card">
         <div class="icon-wrapper ic-ai"><i class="fa-solid fa-robot"></i></div>
-        <h3>AI 智能搜索</h3>
-        <p>
+        <h3 data-i18n="featureAiTitle">AI 智能搜索</h3>
+        <p data-i18n="featureAiDesc">
           集成 DeepSeek、通义千问、Perplexity、Phind、You.com 等 AI
           搜索引擎，自动输入关键词获取 AI 分析结果。
         </p>
       </div>
       <div class="feature-card">
         <div class="icon-wrapper ic-film"><i class="fa-solid fa-film"></i></div>
-        <h3>影视资源搜索</h3>
-        <p>
+        <h3 data-i18n="featureFilmTitle">影视资源搜索</h3>
+        <p data-i18n="featureFilmDesc">
           支持添加各类影视资源站作为自定义平台，一键搜索全网片源。详见下方影视搜索示例。
         </p>
       </div>
       <div class="feature-card">
         <div class="icon-wrapper ic-book"><i class="fa-solid fa-book"></i></div>
-        <h3>书籍资源搜索</h3>
-        <p>添加电子书资源站，搜索全网书籍。支持批量导入，一键搜索多个书库。</p>
+        <h3 data-i18n="featureBookTitle">书籍资源搜索</h3>
+        <p data-i18n="featureBookDesc">添加电子书资源站，搜索全网书籍。支持批量导入，一键搜索多个书库。</p>
       </div>
       <div class="feature-card">
         <div class="icon-wrapper ic-voice">
           <i class="fa-solid fa-microphone"></i>
         </div>
-        <h3>语音搜索</h3>
-        <p>支持语音输入转文字搜索，智能识别 8 种语言，解放双手即可搜索。</p>
+        <h3 data-i18n="featureVoiceTitle">语音搜索</h3>
+        <p data-i18n="featureVoiceDesc">支持语音输入转文字搜索，智能识别 8 种语言，解放双手即可搜索。</p>
       </div>
       <div class="feature-card">
         <div class="icon-wrapper ic-adblock">
           <i class="fa-solid fa-shield-halved"></i>
         </div>
-        <h3>广告拦截</h3>
-        <p>
+        <h3 data-i18n="featureAdblockTitle">广告拦截</h3>
+        <p data-i18n="featureAdblockDesc">
           内置广告拦截引擎，自动屏蔽搜索页面中的广告内容，还你清爽的搜索体验。
         </p>
       </div>
@@ -446,8 +543,8 @@
         <div class="icon-wrapper ic-i18n">
           <i class="fa-solid fa-language"></i>
         </div>
-        <h3>跨语言搜索</h3>
-        <p>
+        <h3 data-i18n="featureI18nTitle">跨语言搜索</h3>
+        <p data-i18n="featureI18nDesc">
           智能检测关键词语言，建议翻译后在对应地区平台搜索。支持拼写纠错与智能平台推荐。
         </p>
       </div>
@@ -455,28 +552,18 @@
         <div class="icon-wrapper ic-custom">
           <i class="fa-solid fa-puzzle-piece"></i>
         </div>
-        <h3>自定义平台</h3>
-        <p>
+        <h3 data-i18n="featureCustomTitle">自定义平台</h3>
+        <p data-i18n="featureCustomDesc">
           任何支持 URL
           搜索的网站都可以添加为自定义平台。创建自定义分组，打造属于你的专属搜索引擎。
-        </p>
-      </div>
-      <div class="feature-card">
-        <div class="icon-wrapper ic-bookmark">
-          <i class="fa-solid fa-bookmark"></i>
-        </div>
-        <h3>收藏与历史</h3>
-        <p>
-          一键收藏网页，搜索历史自动记录并同步到 Spotlight 和
-          Siri，随时快速回顾。
         </p>
       </div>
       <div class="feature-card">
         <div class="icon-wrapper ic-privacy">
           <i class="fa-solid fa-lock"></i>
         </div>
-        <h3>隐私保护</h3>
-        <p>
+        <h3 data-i18n="featurePrivacyTitle">隐私保护</h3>
+        <p data-i18n="featurePrivacyDesc">
           无账号体系，无数据上传，搜索历史和收藏仅保存在本地设备。支持隐身模式，不留痕迹。
         </p>
       </div>
@@ -484,8 +571,8 @@
 
     <!-- Film Search -->
     <div class="section-title" id="film">
-      <h2>影视资源搜索</h2>
-      <p>一键导入影视资源站，用搜罗搜索全网片源</p>
+      <h2 data-i18n="filmSectionTitle">影视资源搜索</h2>
+      <p data-i18n="filmSectionDesc">一键导入影视资源站，用搜罗搜索全网片源</p>
     </div>
 
     <section class="usecase-section">
@@ -495,9 +582,9 @@
             class="fa-solid fa-clapperboard"
             style="margin-right: 10px; color: #a78bfa"
           ></i
-          >影视资源站合集
+          ><span data-i18n="filmUsecaseTitle">影视资源站合集</span>
         </h2>
-        <p class="subtitle">
+        <p class="subtitle" data-i18n="filmUsecaseSubtitle">
           以下资源站已整理为可导入格式，点击复制后在搜罗 App 中批量导入即可使用
         </p>
 
@@ -506,22 +593,22 @@
           <div class="step-card">
             <div class="step-badge">1</div>
             <div class="step-text">
-              <h4>复制下方 JSON 配置</h4>
-              <p>点击「复制 JSON 配置」按钮</p>
+              <h4 data-i18n="filmStep1Title">复制下方 JSON 配置</h4>
+              <p data-i18n="filmStep1Desc">点击「复制 JSON 配置」按钮</p>
             </div>
           </div>
           <div class="step-card">
             <div class="step-badge">2</div>
             <div class="step-text">
-              <h4>打开批量导入</h4>
-              <p>设置 > 平台管理 > 右上角菜单 > 批量导入</p>
+              <h4 data-i18n="filmStep2Title">打开批量导入</h4>
+              <p data-i18n="filmStep2Desc">设置 > 平台管理 > 右上角菜单 > 批量导入</p>
             </div>
           </div>
           <div class="step-card">
             <div class="step-badge">3</div>
             <div class="step-text">
-              <h4>粘贴并导入</h4>
-              <p>粘贴 JSON，选择分组，点击导入</p>
+              <h4 data-i18n="filmStep3Title">粘贴并导入</h4>
+              <p data-i18n="filmStep3Desc">粘贴 JSON，选择分组，点击导入</p>
             </div>
           </div>
         </div>
@@ -529,15 +616,15 @@
         <div class="screenshots-row">
           <div class="screenshot-item">
             <img src="step-batch-menu.jpeg" alt="打开批量导入菜单" />
-            <span>打开批量导入</span>
+            <span data-i18n="filmShot1">打开批量导入</span>
           </div>
           <div class="screenshot-item">
             <img src="step-paste-json.jpeg" alt="粘贴JSON配置" />
-            <span>粘贴 JSON 导入</span>
+            <span data-i18n="filmShot2">粘贴 JSON 导入</span>
           </div>
           <div class="screenshot-item">
             <img src="step-search-result.jpeg" alt="搜索影视结果" />
-            <span>搜索影视结果</span>
+            <span data-i18n="filmShot3">搜索影视结果</span>
           </div>
         </div>
 
@@ -545,58 +632,58 @@
         <div class="example-table" style="margin-top: 20px">
           <div class="example-row">
             <img
-              src="https://www.google.com/s2/favicons?domain=pianbs.com&sz=64"
+              src="favicons/pianbs.com.ico"
               alt=""
             />
-            <span class="ex-name">片吧搜索</span>
+            <span class="ex-name" data-i18n="filmResourcePianbs">片吧搜索</span>
             <code class="ex-url">pianbs.com</code>
           </div>
           <div class="example-row">
             <img
-              src="https://www.google.com/s2/favicons?domain=zuidazy.co&sz=64"
+              src="favicons/default-site.svg"
               alt=""
             />
-            <span class="ex-name">最大资源</span>
+            <span class="ex-name" data-i18n="filmResourceZuidazy">最大资源</span>
             <code class="ex-url">zuidazy.co</code>
           </div>
           <div class="example-row">
             <img
-              src="https://www.google.com/s2/favicons?domain=ukuzy0.com&sz=64"
+              src="favicons/default-site.svg"
               alt=""
             />
-            <span class="ex-name">优酷资源</span>
+            <span class="ex-name" data-i18n="filmResourceUku">优酷资源</span>
             <code class="ex-url">ukuzy0.com</code>
           </div>
           <div class="example-row">
             <img
-              src="https://www.google.com/s2/favicons?domain=guangsuzy.com&sz=64"
+              src="favicons/default-site.svg"
               alt=""
             />
-            <span class="ex-name">光速资源</span>
+            <span class="ex-name" data-i18n="filmResourceGuangsu">光速资源</span>
             <code class="ex-url">guangsuzy.com</code>
           </div>
           <div class="example-row">
             <img
-              src="https://www.google.com/s2/favicons?domain=jinyingzy.com&sz=64"
+              src="favicons/jinyingzy.com.png"
               alt=""
             />
-            <span class="ex-name">金鹰资源</span>
+            <span class="ex-name" data-i18n="filmResourceJinying">金鹰资源</span>
             <code class="ex-url">jinyingzy.com</code>
           </div>
           <div class="example-row">
             <img
-              src="https://www.google.com/s2/favicons?domain=mtzy.me&sz=64"
+              src="favicons/default-site.svg"
               alt=""
             />
-            <span class="ex-name">木头资源</span>
+            <span class="ex-name" data-i18n="filmResourceMtzy">木头资源</span>
             <code class="ex-url">mtzy.me</code>
           </div>
           <div class="example-row">
             <img
-              src="https://www.google.com/s2/favicons?domain=jszy333.com&sz=64"
+              src="favicons/jszy333.com.png"
               alt=""
             />
-            <span class="ex-name">极速资源</span>
+            <span class="ex-name" data-i18n="filmResourceJisu">极速资源</span>
             <code class="ex-url">jszy333.com</code>
           </div>
         </div>
@@ -605,15 +692,15 @@
         <div class="batch-import-box">
           <div class="batch-header">
             <i class="fa-solid fa-bolt"></i>
-            <h3>一键批量导入</h3>
+            <h3 data-i18n="filmBatchTitle">一键批量导入</h3>
           </div>
-          <p class="batch-desc">
+          <p class="batch-desc" data-i18n="filmBatchDesc">
             点击下方按钮复制全部资源站的 JSON 配置，然后在搜罗 App 中「设置 >
             平台管理 > 右上角菜单 > 批量导入」粘贴即可一次性添加所有影视资源站。
           </p>
           <button class="copy-json-btn" onclick="copyJSON()">
             <i class="fa-solid fa-copy"></i>
-            <span id="copyBtnText">复制 JSON 配置</span>
+            <span id="copyBtnText" data-i18n="filmCopyButton">复制 JSON 配置</span>
           </button>
           <pre class="json-preview" id="jsonPreview">
 [
@@ -630,7 +717,7 @@
 
         <div class="usecase-tip">
           <i class="fa-solid fa-lightbulb"></i>
-          <p>
+          <p data-i18n="filmTip">
             点击上方「复制 JSON 配置」按钮，然后打开搜罗 App > 设置 > 平台管理 >
             右上角菜单 > 批量导入 >
             粘贴并导入。建议选择或新建一个「影视」分组，方便管理。导入后即可在首页搜索任意影视剧名。
@@ -639,38 +726,22 @@
       </div>
     </section>
 
-    <script>
-      function copyJSON() {
-        var json = document.getElementById('jsonPreview').textContent;
-        navigator.clipboard.writeText(json).then(function () {
-          var btn = document.getElementById('copyBtnText');
-          btn.textContent = '已复制';
-          setTimeout(function () {
-            btn.textContent = '复制 JSON 配置';
-          }, 2000);
-        });
-      }
-    </script>
-
     <!-- Book Search -->
     <div class="section-title" id="books">
-      <h2>书籍资源搜索</h2>
-      <p>一键导入电子书资源站，用搜罗搜索全网书籍</p>
+      <h2 data-i18n="booksSectionTitle">书籍资源搜索</h2>
+      <p data-i18n="booksSectionDesc">一键导入电子书资源站，用搜罗搜索全网书籍</p>
     </div>
 
     <section class="usecase-section">
-      <div
-        class="usecase-card"
-        style="background: linear-gradient(135deg, #0c2d48, #1a4a6e)"
-      >
+      <div class="usecase-card usecase-card-book">
         <h2>
           <i
             class="fa-solid fa-book-open"
-            style="margin-right: 10px; color: #60a5fa"
+            style="margin-right: 10px; color: #c4b5fd"
           ></i
-          >电子书资源站合集
+          ><span data-i18n="bookUsecaseTitle">电子书资源站合集</span>
         </h2>
-        <p class="subtitle">
+        <p class="subtitle" data-i18n="bookUsecaseSubtitle">
           以下书籍资源站已整理为可导入格式，点击复制后在搜罗 App
           中批量导入即可使用
         </p>
@@ -678,7 +749,7 @@
         <div class="example-table" style="margin-top: 20px">
           <div class="example-row">
             <img
-              src="https://www.google.com/s2/favicons?domain=z-library.sk&sz=64"
+              src="favicons/z-library.sk.png"
               alt=""
             />
             <span class="ex-name">Z-Library</span>
@@ -686,15 +757,15 @@
           </div>
           <div class="example-row">
             <img
-              src="https://www.google.com/s2/favicons?domain=hgn101.ru&sz=64"
+              src="favicons/z-library.sk.png"
               alt=""
             />
-            <span class="ex-name">Z-Library (镜像)</span>
+            <span class="ex-name" data-i18n="bookResourceMirror">Z-Library (镜像)</span>
             <code class="ex-url">zh.hgn101.ru</code>
           </div>
           <div class="example-row">
             <img
-              src="https://www.google.com/s2/favicons?domain=ibooks.org.cn&sz=64"
+              src="favicons/ibooks.org.cn.png"
               alt=""
             />
             <span class="ex-name">iBooks</span>
@@ -706,25 +777,25 @@
         <div
           class="batch-import-box"
           style="
-            background: rgba(96, 165, 250, 0.12);
-            border-color: rgba(96, 165, 250, 0.2);
+            background: rgba(196, 181, 253, 0.1);
+            border-color: rgba(196, 181, 253, 0.18);
           "
         >
           <div class="batch-header">
-            <i class="fa-solid fa-bolt"></i>
-            <h3>一键批量导入</h3>
+            <i class="fa-solid fa-bolt" style="color: #c4b5fd"></i>
+            <h3 data-i18n="bookBatchTitle">一键批量导入</h3>
           </div>
-          <p class="batch-desc">
+          <p class="batch-desc" data-i18n="bookBatchDesc">
             点击下方按钮复制全部书籍资源站的 JSON 配置，然后在搜罗 App
             中批量导入。
           </p>
           <button
             class="copy-json-btn"
-            style="background: linear-gradient(135deg, #2563eb, #0369a1)"
+            style="background: linear-gradient(135deg, #4f46e5, #7c3aed)"
             onclick="copyBookJSON()"
           >
             <i class="fa-solid fa-copy"></i>
-            <span id="copyBookBtnText">复制 JSON 配置</span>
+            <span id="copyBookBtnText" data-i18n="bookCopyButton">复制 JSON 配置</span>
           </button>
           <pre class="json-preview" id="bookJsonPreview">
 [
@@ -736,8 +807,8 @@
         </div>
 
         <div class="usecase-tip">
-          <i class="fa-solid fa-lightbulb"></i>
-          <p>
+          <i class="fa-solid fa-lightbulb" style="color: #c4b5fd"></i>
+          <p data-i18n="bookTip">
             点击「复制 JSON 配置」按钮，然后打开搜罗 App > 设置 > 平台管理 >
             右上角菜单 > 批量导入 >
             粘贴并导入。建议选择或新建一个「书籍」分组，方便管理。
@@ -746,19 +817,6 @@
       </div>
     </section>
 
-    <script>
-      function copyBookJSON() {
-        var json = document.getElementById('bookJsonPreview').textContent;
-        navigator.clipboard.writeText(json).then(function () {
-          var btn = document.getElementById('copyBookBtnText');
-          btn.textContent = '已复制';
-          setTimeout(function () {
-            btn.textContent = '复制 JSON 配置';
-          }, 2000);
-        });
-      }
-    </script>
-
     <!-- Footer -->
     <footer>
       <div class="footer-inner">
@@ -766,10 +824,434 @@
           >&copy; 2025-2026 Dkluge.com. All Rights Reserved.</span
         >
         <div class="footer-links">
-          <a href="privacy.html">隐私政策</a>
-          <a href="https://www.dkluge.com/contact-us">技术支持</a>
+          <a href="privacy.html" data-i18n="footerPrivacy">隐私政策</a>
+          <a href="https://www.dkluge.com/contact-us" data-i18n="footerSupport">技术支持</a>
         </div>
       </div>
     </footer>
+    <script>
+      (function () {
+        var THEME_STORAGE_KEY = 'soulo-theme';
+        var LANGUAGE_STORAGE_KEY = 'soulo-language';
+        var systemThemeQuery = window.matchMedia
+          ? window.matchMedia('(prefers-color-scheme: dark)')
+          : null;
+        var metaDescription = document.querySelector('meta[name="description"]');
+        var navToggle = document.getElementById('navToggle');
+        var appIconImg = document.getElementById('appIconImg');
+        var appStoreBadgeImg = document.getElementById('appStoreBadgeImg');
+        var languageSwitch = document.getElementById('languageSwitch');
+        var themeSwitch = document.getElementById('themeSwitch');
+        var currentTheme = document.documentElement.getAttribute('data-theme') || 'system';
+        var currentLanguage = 'zh';
+        var translations = {
+          zh: {
+            metaTitle: '搜罗 Soulo - 聚合全球搜索平台 | 多平台搜索 App',
+            metaDescription:
+              '搜罗 (Soulo) 是一款聚合搜索平台 App，内置 40+ 搜索平台，支持 AI 搜索、影视资源搜索、语音搜索。一次输入关键词，即可快速切换多个平台查看结果。',
+            navPlatforms: '平台',
+            navFeatures: '功能',
+            navFilm: '影视搜索',
+            navBooks: '书籍搜索',
+            navPrivacy: '隐私政策',
+            brandSecondary: '搜罗',
+            navMenuLabel: '菜单',
+            languageSwitchLabel: '语言切换',
+            themeSwitchLabel: '主题切换',
+            themeLight: '浅色',
+            themeDark: '深色',
+            heroNameSecondary: '搜罗',
+            heroTagline: '一个 App，聚合全球搜索平台',
+            heroSubTagline: '40+ 搜索平台 · AI 智能搜索 · 8 国语言 · 广告拦截',
+            appIconAlt: '搜罗 Soulo',
+            appStoreBadgeAlt: '在 App Store 下载',
+            appStoreBadgeSrc:
+              'https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/zh-cn?size=250x83',
+            statPlatforms: '内置搜索平台',
+            statAi: 'AI 搜索引擎',
+            statLanguages: '支持语言',
+            statPrivacy: '隐私保护',
+            platformsTitle: '覆盖全球主流平台',
+            platformsDesc: '搜索、视频、购物、社交、AI、开发者 —— 一个 App 全搞定',
+            platformBaidu: '百度',
+            platformBilibili: '哔哩哔哩',
+            platformDouyin: '抖音',
+            platformWeibo: '微博',
+            platformZhihu: '知乎',
+            platformTaobao: '淘宝',
+            platformJd: '京东',
+            platformSogou: '搜狗',
+            featuresTitle: '核心功能',
+            featuresDesc: '不只是搜索，更是你的全能信息助手',
+            featureAggregateTitle: '40+ 平台聚合',
+            featureAggregateDesc:
+              '内置 Google、百度、YouTube、B站、淘宝、GitHub 等 40 余个平台，输入一次关键词，左右切换平台即可对比结果。',
+            featureAiTitle: 'AI 智能搜索',
+            featureAiDesc:
+              '集成 DeepSeek、通义千问、Perplexity、Phind、You.com 等 AI 搜索引擎，自动输入关键词获取 AI 分析结果。',
+            featureFilmTitle: '影视资源搜索',
+            featureFilmDesc:
+              '支持添加各类影视资源站作为自定义平台，一键搜索全网片源。详见下方影视搜索示例。',
+            featureBookTitle: '书籍资源搜索',
+            featureBookDesc:
+              '添加电子书资源站，搜索全网书籍。支持批量导入，一键搜索多个书库。',
+            featureVoiceTitle: '语音搜索',
+            featureVoiceDesc:
+              '支持语音输入转文字搜索，智能识别 8 种语言，解放双手即可搜索。',
+            featureAdblockTitle: '广告拦截',
+            featureAdblockDesc:
+              '内置广告拦截引擎，自动屏蔽搜索页面中的广告内容，还你清爽的搜索体验。',
+            featureI18nTitle: '跨语言搜索',
+            featureI18nDesc:
+              '智能检测关键词语言，建议翻译后在对应地区平台搜索。支持拼写纠错与智能平台推荐。',
+            featureCustomTitle: '自定义平台',
+            featureCustomDesc:
+              '任何支持 URL 搜索的网站都可以添加为自定义平台。创建自定义分组，打造属于你的专属搜索引擎。',
+            featurePrivacyTitle: '隐私保护',
+            featurePrivacyDesc:
+              '无账号体系，无数据上传，搜索历史和收藏仅保存在本地设备。支持隐身模式，不留痕迹。',
+            filmSectionTitle: '影视资源搜索',
+            filmSectionDesc: '一键导入影视资源站，用搜罗搜索全网片源',
+            filmUsecaseTitle: '影视资源站合集',
+            filmUsecaseSubtitle:
+              '以下资源站已整理为可导入格式，点击复制后在搜罗 App 中批量导入即可使用',
+            filmStep1Title: '复制下方 JSON 配置',
+            filmStep1Desc: '点击「复制 JSON 配置」按钮',
+            filmStep2Title: '打开批量导入',
+            filmStep2Desc: '设置 > 平台管理 > 右上角菜单 > 批量导入',
+            filmStep3Title: '粘贴并导入',
+            filmStep3Desc: '粘贴 JSON，选择分组，点击导入',
+            filmShot1: '打开批量导入',
+            filmShot2: '粘贴 JSON 导入',
+            filmShot3: '搜索影视结果',
+            filmResourcePianbs: '片吧搜索',
+            filmResourceZuidazy: '最大资源',
+            filmResourceUku: '优酷资源',
+            filmResourceGuangsu: '光速资源',
+            filmResourceJinying: '金鹰资源',
+            filmResourceMtzy: '木头资源',
+            filmResourceJisu: '极速资源',
+            filmBatchTitle: '一键批量导入',
+            filmBatchDesc:
+              '点击下方按钮复制全部资源站的 JSON 配置，然后在搜罗 App 中「设置 > 平台管理 > 右上角菜单 > 批量导入」粘贴即可一次性添加所有影视资源站。',
+            filmCopyButton: '复制 JSON 配置',
+            copyButtonCopied: '已复制',
+            booksSectionTitle: '书籍资源搜索',
+            booksSectionDesc: '一键导入电子书资源站，用搜罗搜索全网书籍',
+            bookUsecaseTitle: '电子书资源站合集',
+            bookUsecaseSubtitle:
+              '以下书籍资源站已整理为可导入格式，点击复制后在搜罗 App 中批量导入即可使用',
+            bookResourceMirror: 'Z-Library (镜像)',
+            bookBatchTitle: '一键批量导入',
+            bookBatchDesc:
+              '点击下方按钮复制全部书籍资源站的 JSON 配置，然后在搜罗 App 中批量导入。',
+            bookCopyButton: '复制 JSON 配置',
+            filmTip:
+              '点击上方「复制 JSON 配置」按钮，然后打开搜罗 App > 设置 > 平台管理 > 右上角菜单 > 批量导入 > 粘贴并导入。建议选择或新建一个「影视」分组，方便管理。导入后即可在首页搜索任意影视剧名。',
+            bookTip:
+              '点击「复制 JSON 配置」按钮，然后打开搜罗 App > 设置 > 平台管理 > 右上角菜单 > 批量导入 > 粘贴并导入。建议选择或新建一个「书籍」分组，方便管理。',
+            footerPrivacy: '隐私政策',
+            footerSupport: '技术支持',
+          },
+          en: {
+            metaTitle: 'Soulo - Search Across Global Platforms | Multi-Platform Search App',
+            metaDescription:
+              'Soulo is a multi-platform search app with 40+ built-in platforms, AI search, movie resource search, and voice search. Enter one keyword and switch across platforms instantly.',
+            navPlatforms: 'Platforms',
+            navFeatures: 'Features',
+            navFilm: 'Movie Search',
+            navBooks: 'Book Search',
+            navPrivacy: 'Privacy',
+            brandSecondary: '',
+            navMenuLabel: 'Menu',
+            languageSwitchLabel: 'Language switch',
+            themeSwitchLabel: 'Theme switch',
+            themeLight: 'Light',
+            themeDark: 'Dark',
+            heroNameSecondary: '',
+            heroTagline: 'One app to unify global search platforms',
+            heroSubTagline: '40+ platforms · AI-powered search · 8 languages · Ad blocking',
+            appIconAlt: 'Soulo',
+            appStoreBadgeAlt: 'Download on the App Store',
+            appStoreBadgeSrc:
+              'https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83',
+            statPlatforms: 'Built-in platforms',
+            statAi: 'AI search engines',
+            statLanguages: 'Supported languages',
+            statPrivacy: 'Privacy protection',
+            platformsTitle: 'Search across major global platforms',
+            platformsDesc: 'Search, video, shopping, social, AI, developer tools — all in one app',
+            platformBaidu: 'Baidu',
+            platformBilibili: 'Bilibili',
+            platformDouyin: 'Douyin',
+            platformWeibo: 'Weibo',
+            platformZhihu: 'Zhihu',
+            platformTaobao: 'Taobao',
+            platformJd: 'JD.com',
+            platformSogou: 'Sogou',
+            featuresTitle: 'Core Features',
+            featuresDesc: 'More than search. Soulo is your all-purpose discovery hub.',
+            featureAggregateTitle: '40+ integrated platforms',
+            featureAggregateDesc:
+              'Built in with Google, Baidu, YouTube, Bilibili, Taobao, GitHub and 40+ more. Enter a query once and switch platforms instantly to compare results.',
+            featureAiTitle: 'AI-powered search',
+            featureAiDesc:
+              'Search with DeepSeek, Qwen, Perplexity, Phind, You.com and more. Soulo fills in your query automatically so you can compare AI answers fast.',
+            featureFilmTitle: 'Movie resource search',
+            featureFilmDesc:
+              'Add movie resource sites as custom platforms and search across multiple sources with one query. See the example below.',
+            featureBookTitle: 'Book resource search',
+            featureBookDesc:
+              'Add ebook sites and search across multiple libraries. Batch import is supported for faster setup.',
+            featureVoiceTitle: 'Voice search',
+            featureVoiceDesc:
+              'Dictate your query and search hands-free. Supports speech recognition across 8 languages.',
+            featureAdblockTitle: 'Ad blocking',
+            featureAdblockDesc:
+              'Built-in ad blocking removes clutter from search pages for a cleaner browsing experience.',
+            featureI18nTitle: 'Cross-language search',
+            featureI18nDesc:
+              'Detects query language, suggests translations for regional platforms, and helps with spelling correction and platform recommendations.',
+            featureCustomTitle: 'Custom platforms',
+            featureCustomDesc:
+              'Any site with a searchable URL can be added as a custom platform. Build your own groups and tailor Soulo to your workflow.',
+            featurePrivacyTitle: 'Privacy-first',
+            featurePrivacyDesc:
+              'No accounts. No uploads. Search history and bookmarks stay on your device, with incognito mode for clean sessions.',
+            filmSectionTitle: 'Movie Resource Search',
+            filmSectionDesc: 'Batch import movie sites and search across sources with Soulo',
+            filmUsecaseTitle: 'Movie resource site pack',
+            filmUsecaseSubtitle:
+              'These sites are already formatted for import. Copy the JSON and batch import them into Soulo.',
+            filmStep1Title: 'Copy the JSON',
+            filmStep1Desc: 'Tap the copy button below',
+            filmStep2Title: 'Open batch import',
+            filmStep2Desc: 'Settings > Platform Manager > Top-right menu > Batch import',
+            filmStep3Title: 'Paste and import',
+            filmStep3Desc: 'Paste the JSON, choose a group, and import',
+            filmShot1: 'Open batch import',
+            filmShot2: 'Paste JSON',
+            filmShot3: 'Search results',
+            filmResourcePianbs: 'Pianba Search',
+            filmResourceZuidazy: 'Zuidazy',
+            filmResourceUku: 'Uku Resource',
+            filmResourceGuangsu: 'Guangsu Resource',
+            filmResourceJinying: 'Jinying Resource',
+            filmResourceMtzy: 'Mutou Resource',
+            filmResourceJisu: 'Jisu Resource',
+            filmBatchTitle: 'One-click batch import',
+            filmBatchDesc:
+              'Copy the full JSON below, then paste it into Soulo: Settings > Platform Manager > Top-right menu > Batch import.',
+            filmCopyButton: 'Copy JSON',
+            copyButtonCopied: 'Copied',
+            booksSectionTitle: 'Book Resource Search',
+            booksSectionDesc: 'Batch import ebook sites and search across libraries with Soulo',
+            bookUsecaseTitle: 'Ebook site pack',
+            bookUsecaseSubtitle:
+              'These ebook sites are already formatted for import. Copy the JSON and batch import them into Soulo.',
+            bookResourceMirror: 'Z-Library (Mirror)',
+            bookBatchTitle: 'One-click batch import',
+            bookBatchDesc:
+              'Copy the full JSON below, then paste it into Soulo using batch import.',
+            bookCopyButton: 'Copy JSON',
+            filmTip:
+              'Tap “Copy JSON”, then open Soulo > Settings > Platform Manager > Top-right menu > Batch import. Create a Movie group if needed, then start searching by title.',
+            bookTip:
+              'Tap “Copy JSON”, then open Soulo > Settings > Platform Manager > Top-right menu > Batch import. Create a Books group if needed for easier management.',
+            footerPrivacy: 'Privacy Policy',
+            footerSupport: 'Support',
+          },
+        };
+
+        function readStorage(key) {
+          try {
+            return localStorage.getItem(key);
+          } catch (error) {
+            return null;
+          }
+        }
+
+        function writeStorage(key, value) {
+          try {
+            localStorage.setItem(key, value);
+          } catch (error) {}
+        }
+
+        function getPreferredLanguage() {
+          var storedLanguage = readStorage(LANGUAGE_STORAGE_KEY);
+          if (storedLanguage === 'zh' || storedLanguage === 'en') {
+            return storedLanguage;
+          }
+          return navigator.language &&
+            navigator.language.toLowerCase().indexOf('zh') === 0
+            ? 'zh'
+            : 'en';
+        }
+
+        function resolveTheme(theme) {
+          if (theme === 'light' || theme === 'dark') {
+            return theme;
+          }
+          return systemThemeQuery && systemThemeQuery.matches ? 'dark' : 'light';
+        }
+
+        function syncThemeButtons() {
+          var activeTheme =
+            currentTheme === 'system' ? resolveTheme('system') : currentTheme;
+          document.querySelectorAll('[data-theme-option]').forEach(function (button) {
+            var isActive =
+              button.getAttribute('data-theme-option') === activeTheme;
+            button.classList.toggle('is-active', isActive);
+            button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+          });
+        }
+
+        function applyTheme(theme, persist) {
+          currentTheme =
+            theme === 'light' || theme === 'dark' ? theme : 'system';
+          document.documentElement.setAttribute('data-theme', currentTheme);
+          document.documentElement.setAttribute(
+            'data-resolved-theme',
+            resolveTheme(currentTheme)
+          );
+          syncThemeButtons();
+          if (persist) {
+            writeStorage(THEME_STORAGE_KEY, currentTheme);
+          }
+        }
+
+        function syncLanguageButtons() {
+          document.querySelectorAll('[data-lang-option]').forEach(function (button) {
+            var isActive = button.getAttribute('data-lang-option') === currentLanguage;
+            button.classList.toggle('is-active', isActive);
+            button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+          });
+        }
+
+        function syncCopyButtonLabels() {
+          ['copyBtnText', 'copyBookBtnText'].forEach(function (id) {
+            var label = document.getElementById(id);
+            if (!label) {
+              return;
+            }
+            var key =
+              label.dataset.copied === 'true'
+                ? 'copyButtonCopied'
+                : label.getAttribute('data-i18n');
+            label.textContent = translations[currentLanguage][key];
+          });
+        }
+
+        function applyLanguage(language, persist) {
+          currentLanguage = language === 'en' ? 'en' : 'zh';
+          var dict = translations[currentLanguage];
+          document.documentElement.lang = currentLanguage === 'en' ? 'en' : 'zh-CN';
+          document.title = dict.metaTitle;
+          if (metaDescription) {
+            metaDescription.setAttribute('content', dict.metaDescription);
+          }
+          if (navToggle) {
+            navToggle.setAttribute('aria-label', dict.navMenuLabel);
+          }
+          if (languageSwitch) {
+            languageSwitch.setAttribute('aria-label', dict.languageSwitchLabel);
+          }
+          if (themeSwitch) {
+            themeSwitch.setAttribute('aria-label', dict.themeSwitchLabel);
+          }
+          if (appIconImg) {
+            appIconImg.setAttribute('alt', dict.appIconAlt);
+          }
+          if (appStoreBadgeImg) {
+            appStoreBadgeImg.setAttribute('src', dict.appStoreBadgeSrc);
+            appStoreBadgeImg.setAttribute('alt', dict.appStoreBadgeAlt);
+          }
+          document.querySelectorAll('[data-i18n]').forEach(function (element) {
+            var key = element.getAttribute('data-i18n');
+            if (dict[key]) {
+              element.textContent = dict[key];
+            }
+          });
+          syncLanguageButtons();
+          syncCopyButtonLabels();
+          if (persist) {
+            writeStorage(LANGUAGE_STORAGE_KEY, currentLanguage);
+          }
+        }
+
+        function copyText(sourceId, labelId) {
+          var source = document.getElementById(sourceId);
+          var label = document.getElementById(labelId);
+          if (!source || !label) {
+            return;
+          }
+
+          function showCopiedState() {
+            label.dataset.copied = 'true';
+            syncCopyButtonLabels();
+            window.setTimeout(function () {
+              label.dataset.copied = 'false';
+              syncCopyButtonLabels();
+            }, 2000);
+          }
+
+          var text = source.textContent;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(showCopiedState);
+            return;
+          }
+
+          var textarea = document.createElement('textarea');
+          textarea.value = text;
+          textarea.setAttribute('readonly', '');
+          textarea.style.position = 'absolute';
+          textarea.style.left = '-9999px';
+          document.body.appendChild(textarea);
+          textarea.select();
+          try {
+            document.execCommand('copy');
+            showCopiedState();
+          } finally {
+            document.body.removeChild(textarea);
+          }
+        }
+
+        window.copyJSON = function () {
+          copyText('jsonPreview', 'copyBtnText');
+        };
+
+        window.copyBookJSON = function () {
+          copyText('bookJsonPreview', 'copyBookBtnText');
+        };
+
+        document.querySelectorAll('[data-lang-option]').forEach(function (button) {
+          button.addEventListener('click', function () {
+            applyLanguage(button.getAttribute('data-lang-option'), true);
+          });
+        });
+
+        document.querySelectorAll('[data-theme-option]').forEach(function (button) {
+          button.addEventListener('click', function () {
+            applyTheme(button.getAttribute('data-theme-option'), true);
+          });
+        });
+
+        if (systemThemeQuery) {
+          var onSystemThemeChange = function () {
+            if (currentTheme === 'system') {
+              applyTheme('system', false);
+            }
+          };
+          if (systemThemeQuery.addEventListener) {
+            systemThemeQuery.addEventListener('change', onSystemThemeChange);
+          } else if (systemThemeQuery.addListener) {
+            systemThemeQuery.addListener(onSystemThemeChange);
+          }
+        }
+
+        applyTheme(currentTheme, false);
+        applyLanguage(getPreferredLanguage(), false);
+      })();
+    </script>
   </body>
 </html>

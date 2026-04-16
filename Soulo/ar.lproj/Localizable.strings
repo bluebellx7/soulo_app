@@ -410,3 +410,27 @@
 "wallpaper_delete_title" = "إزالة الخلفية";
 "wallpaper_delete_confirm" = "إزالة";
 "wallpaper_delete_msg" = "سيتم إخفاء هذه الخلفية من قائمتك.";
+
+/* علامات تبويب المتصفح */
+"tab_new_tab" = "علامة تبويب جديدة";
+"tab_tabs" = "علامات التبويب";
+"tab_close" = "إغلاق علامة التبويب";
+"tab_close_others" = "إغلاق الأخرى";
+"tab_close_all" = "إغلاق الكل";
+"tab_no_tabs" = "لا توجد علامات تبويب";
+"tab_duplicate" = "تكرار علامة التبويب";
+"tab_open_new" = "فتح في علامة تبويب جديدة";
+
+/* ميزات المتصفح */
+"find_in_page" = "البحث في الصفحة";
+"desktop_mode" = "وضع سطح المكتب";
+"mobile_mode" = "وضع الهاتف";
+"tab_restore_last" = "استعادة آخر علامة تبويب";
+"tab_recently_closed" = "المغلقة مؤخراً";
+"ntp_quick_links" = "روابط سريعة";
+"image_options" = "خيارات الصورة";
+"save_image" = "حفظ في الصور";
+"copy_image_link" = "نسخ رابط الصورة";
+"image_saved" = "تم الحفظ في الصور";
+"save_failed" = "فشل الحفظ";
+"downloading" = "جارٍ التحميل...";

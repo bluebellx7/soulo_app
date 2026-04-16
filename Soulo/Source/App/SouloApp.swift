@@ -7,6 +7,7 @@ struct SouloApp: App {
     @StateObject private var languageManager = LanguageManager.shared
     @StateObject private var themeManager = ThemeManager.shared
     @StateObject private var searchVM = SearchViewModel()
+    @StateObject private var tabManager = TabManager()
     @StateObject private var wallpaperManager = WallpaperManager.shared
     @Environment(\.scenePhase) private var scenePhase
 
@@ -21,19 +22,20 @@ struct SouloApp: App {
                 .environmentObject(languageManager)
                 .environmentObject(themeManager)
                 .environmentObject(searchVM)
+                .environmentObject(tabManager)
                 .environmentObject(wallpaperManager)
                 .environment(\.locale, languageManager.locale)
                 // Appearance controlled by UIKit overrideUserInterfaceStyle via ThemeManager.applyAppearance()
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {
                         searchVM.detectClipboard()
-                        // Clean up leftover Live Activities from previous sessions
                         if !searchVM.isSearching {
                             LiveActivityService.shared.cleanupStaleActivities()
                         }
                     } else if newPhase == .background {
-                        // End Live Activity when app goes to background
                         LiveActivityService.shared.end()
+                        // Persist tab state when app goes to background
+                        tabManager.saveToDisk()
                     }
                 }
                 // Handle URL scheme (soulo://search from widget)

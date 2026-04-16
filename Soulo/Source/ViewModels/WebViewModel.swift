@@ -1,4 +1,4 @@
-import Foundation
+import UIKit
 import WebKit
 import Combine
 
@@ -9,7 +9,6 @@ final class WebViewModel: ObservableObject {
 
     @Published var currentURL: URL?
     @Published var pageTitle: String = ""
-    /// Always-available URL string for copy-link. Never reset to empty.
     var lastURLString: String = ""
     @Published var isLoading: Bool = false
     @Published var estimatedProgress: Double = 0.0
@@ -17,6 +16,11 @@ final class WebViewModel: ObservableObject {
     @Published var canGoForward: Bool = false
     @Published var errorMessage: String?
     @Published var isScrollingUp: Bool = false
+    @Published var snapshot: UIImage?
+
+    // Download state
+    @Published var isDownloading: Bool = false
+    @Published var downloadFileName: String = ""
 
     deinit {
         webView = nil
@@ -24,15 +28,17 @@ final class WebViewModel: ObservableObject {
 
     // MARK: - WebView Reference
 
-    /// Pending URL to load once webView is assigned.
     private var pendingURL: URL?
 
     var webView: WKWebView? {
         didSet {
-            // Load any queued URL once the webView becomes available
-            if let url = pendingURL, webView != nil {
+            guard webView != nil else { return }
+            if let url = pendingURL {
                 pendingURL = nil
                 loadURL(url)
+            } else if let url = currentURL {
+                let request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 30)
+                webView?.load(request)
             }
         }
     }
@@ -41,13 +47,10 @@ final class WebViewModel: ObservableObject {
 
     func loadURL(_ url: URL) {
         errorMessage = nil
-
-        // Always set currentURL immediately so copy-link works even before navigation finishes
         currentURL = url
         lastURLString = url.absoluteString
 
         guard let webView = webView else {
-            // WebView not rendered yet — queue for later
             pendingURL = url
             return
         }
@@ -82,7 +85,7 @@ final class WebViewModel: ObservableObject {
         loadURL(url)
     }
 
-    // MARK: - Internal State Sync (called from Coordinator / KVO)
+    // MARK: - State Sync (called from Coordinator / KVO)
 
     func updateProgress(_ progress: Double) {
         estimatedProgress = progress
@@ -91,24 +94,18 @@ final class WebViewModel: ObservableObject {
     func updateLoading(_ loading: Bool) {
         isLoading = loading
         if !loading {
-            estimatedProgress = loading ? estimatedProgress : 1.0
+            estimatedProgress = 1.0
         }
     }
 
-    func updateCanGoBack(_ value: Bool) {
-        canGoBack = value
-    }
-
-    func updateCanGoForward(_ value: Bool) {
-        canGoForward = value
-    }
+    func updateCanGoBack(_ value: Bool) { canGoBack = value }
+    func updateCanGoForward(_ value: Bool) { canGoForward = value }
 
     func updateTitle(_ title: String?) {
         pageTitle = title ?? ""
     }
 
     func updateCurrentURL(_ url: URL?) {
-        // Only accept non-nil URLs — prevents KVO from overwriting the URL set by loadURL()
         guard let url = url else { return }
         currentURL = url
         lastURLString = url.absoluteString
@@ -117,5 +114,18 @@ final class WebViewModel: ObservableObject {
     func setError(_ message: String) {
         errorMessage = message
         isLoading = false
+    }
+
+    // MARK: - Snapshot
+
+    func takeSnapshot() {
+        guard let webView = webView, !webView.isLoading else { return }
+        let config = WKSnapshotConfiguration()
+        config.snapshotWidth = NSNumber(value: 300)
+        webView.takeSnapshot(with: config) { [weak self] image, _ in
+            Task { @MainActor in
+                self?.snapshot = image
+            }
+        }
     }
 }

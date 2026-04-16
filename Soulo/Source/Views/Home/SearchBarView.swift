@@ -97,8 +97,11 @@ struct SearchBarView: View {
         .padding(.vertical, isCompact ? 6 : 10)
         .background {
             if isCompact {
-                Capsule()
-                    .fill(Color(UIColor.secondarySystemFill))
+                ZStack {
+                    Capsule().fill(.ultraThinMaterial)
+                    Capsule().stroke(Color(UIColor.separator).opacity(0.3), lineWidth: 0.5)
+                }
+                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
             } else {
                 ZStack {
                     Capsule().fill(.ultraThinMaterial.opacity(0.6))

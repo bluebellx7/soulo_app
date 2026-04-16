@@ -208,7 +208,7 @@ class WallpaperManager: ObservableObject {
     }
 
     private func downloadImage(from url: URL) async -> UIImage? {
-        try? await Task.detached { guard let data = try? Data(contentsOf: url) else { return nil }; return UIImage(data: data) }.value
+        await Task.detached { guard let data = try? Data(contentsOf: url) else { return nil }; return UIImage(data: data) }.value
     }
 
     var currentGradient: GradientPreset { GradientPreset.presets.first { $0.id == selectedGradientId } ?? GradientPreset.presets[0] }

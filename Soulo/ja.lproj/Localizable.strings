@@ -376,3 +376,45 @@
 "wallpaper_delete_title" = "壁紙を削除";
 "wallpaper_delete_confirm" = "削除";
 "wallpaper_delete_msg" = "この壁紙はリストから非表示になります。";
+
+/* ブラウザタブ */
+"tab_new_tab" = "新しいタブ";
+"tab_tabs" = "個のタブ";
+"tab_close" = "タブを閉じる";
+"tab_close_others" = "他のタブを閉じる";
+"tab_close_all" = "すべてのタブを閉じる";
+"tab_no_tabs" = "タブがありません";
+"tab_duplicate" = "タブを複製";
+"tab_open_new" = "新しいタブで開く";
+
+/* ブラウザ機能 */
+"find_in_page" = "ページ内検索";
+"desktop_mode" = "デスクトップモード";
+"mobile_mode" = "モバイルモード";
+"tab_restore_last" = "閉じたタブを復元";
+"tab_recently_closed" = "最近閉じたタブ";
+"ntp_quick_links" = "クイックリンク";
+"image_options" = "画像オプション";
+"save_image" = "写真に保存";
+"copy_image_link" = "画像URLをコピー";
+"image_saved" = "写真に保存しました";
+"save_failed" = "保存に失敗しました";
+"downloading" = "ダウンロード中...";
+
+/* 壁紙（追加） */
+"wallpaper_color" = "背景色";
+"wallpaper_current_vibe" = "現在の雰囲気";
+"wallpaper_discover" = "新しい発見";
+"wallpaper_download" = "写真に保存";
+"wallpaper_favorites" = "お気に入り";
+"wallpaper_fetch_bing" = "今日の画像を取得";
+"wallpaper_gradient" = "グラデーション";
+"wallpaper_load_error" = "読み込み失敗";
+"wallpaper_pexels" = "Pexels（厳選）";
+"wallpaper_photo" = "フォトウォール";
+"wallpaper_pixabay" = "Pixabay（自然）";
+"wallpaper_refresh" = "ランダム";
+"wallpaper_search_placeholder" = "雰囲気で検索（例：森、ミニマル）";
+"wallpaper_solid" = "単色";
+"wallpaper_source" = "壁紙のソース";
+"wallpaper_type" = "背景タイプ";
