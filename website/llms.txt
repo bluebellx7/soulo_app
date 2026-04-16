@@ -1,0 +1,27 @@
+# Soulo
+
+> Soulo is a privacy-first iOS search aggregation app and public product website.
+
+Soulo lets users search across 40+ global platforms from one interface, including web search, video, shopping, developer communities, and AI search engines. The public website is available without authentication and may be indexed or summarized according to `robots.txt`.
+
+## Primary Pages
+
+- [Home](https://soulo.dkluge.com/): Product overview, supported platform categories, core features, App Store download, and batch import examples for movie and book search sources.
+- [Privacy Policy](https://soulo.dkluge.com/privacy.html): Privacy and on-device data handling policy for the app.
+- [Full LLM Context](https://soulo.dkluge.com/llms-full.txt): Expanded summary of product facts and privacy commitments.
+
+## Product Facts
+
+- Product name: Soulo
+- Chinese name: 搜罗
+- Platform: iOS app
+- Category: Aggregated search / multi-platform search
+- Website languages: Chinese and English
+- Core features: 40+ search platforms, AI search, voice search, ad blocking, custom platforms, privacy-first local storage
+
+## Crawling Notes
+
+- The website is public and does not require login.
+- Main content is rendered directly in HTML.
+- Crawlers should follow [robots.txt](https://soulo.dkluge.com/robots.txt).
+- Sitemap is available at [sitemap.xml](https://soulo.dkluge.com/sitemap.xml).

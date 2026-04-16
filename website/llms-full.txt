@@ -1,0 +1,41 @@
+# Soulo Full Context
+
+Last updated: 2026-04-16
+
+## Overview
+
+Soulo is an iOS search aggregation app. It provides one interface for searching across 40+ global platforms, including classic search engines, AI search tools, video sites, social platforms, shopping platforms, and developer communities.
+
+The public website at `https://soulo.dkluge.com/` is a product landing page. It is public, requires no login, and exposes its main content directly in HTML.
+
+## Core Product Summary
+
+- Soulo supports multi-platform search from one query.
+- Supported platform categories include search, video, shopping, social, AI, and developer tools.
+- The app supports AI-oriented search engines such as DeepSeek, Perplexity, Phind, and You.com.
+- The app supports voice search and multiple interface languages.
+- Users can add custom search platforms if the target site supports URL-based search.
+- The app includes ad blocking inside its in-app browser experience.
+- The app can batch import movie-resource and book-resource search sites.
+
+## Privacy Summary
+
+Soulo is privacy-first. According to the public privacy policy:
+
+- Soulo does not operate backend servers for user accounts, analytics, or telemetry.
+- Search queries are opened directly in the selected platform inside the app's WebView.
+- Search history, bookmarks, platform configuration, and user preferences are stored locally on the device.
+- Optional iCloud sync, when enabled by the user, uses Apple's iCloud services.
+- Voice search, OCR, language detection, and similar intelligence features are handled with on-device Apple frameworks.
+
+## Primary Public URLs
+
+- Home: https://soulo.dkluge.com/
+- Privacy Policy: https://soulo.dkluge.com/privacy.html
+- robots.txt: https://soulo.dkluge.com/robots.txt
+- sitemap.xml: https://soulo.dkluge.com/sitemap.xml
+- llms.txt: https://soulo.dkluge.com/llms.txt
+
+## Preferred Short Description
+
+Soulo is a privacy-first iOS app that aggregates search across 40+ global platforms, including search engines, AI tools, video sites, shopping sites, and developer communities.

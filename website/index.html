@@ -8,8 +8,75 @@
       name="description"
       content="搜罗 (Soulo) 是一款聚合搜索平台 App，内置 40+ 搜索平台，支持 AI 搜索、影视资源搜索、语音搜索。一次输入关键词，即可快速切换多个平台查看结果。"
     />
+    <meta
+      name="robots"
+      content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
+    />
+    <meta
+      name="googlebot"
+      content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
+    />
+    <link rel="canonical" href="https://soulo.dkluge.com/" />
+    <meta property="og:site_name" content="Soulo" />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:title"
+      content="搜罗 Soulo - 聚合全球搜索平台 | 多平台搜索 App"
+    />
+    <meta
+      property="og:description"
+      content="搜罗 (Soulo) 是一款聚合搜索平台 App，内置 40+ 搜索平台，支持 AI 搜索、影视资源搜索、语音搜索。一次输入关键词，即可快速切换多个平台查看结果。"
+    />
+    <meta property="og:url" content="https://soulo.dkluge.com/" />
+    <meta
+      property="og:image"
+      content="https://soulo.dkluge.com/app-icon.png"
+    />
+    <meta property="og:locale" content="zh_CN" />
+    <meta name="twitter:card" content="summary" />
+    <meta
+      name="twitter:title"
+      content="搜罗 Soulo - 聚合全球搜索平台 | 多平台搜索 App"
+    />
+    <meta
+      name="twitter:description"
+      content="搜罗 (Soulo) 是一款聚合搜索平台 App，内置 40+ 搜索平台，支持 AI 搜索、影视资源搜索、语音搜索。一次输入关键词，即可快速切换多个平台查看结果。"
+    />
+    <meta
+      name="twitter:image"
+      content="https://soulo.dkluge.com/app-icon.png"
+    />
     <link rel="icon" type="image/png" href="app-icon.png" />
     <link rel="apple-touch-icon" href="app-icon.png" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Soulo",
+        "alternateName": "搜罗",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "iOS",
+        "description": "Soulo is a privacy-first search aggregation app with 40+ integrated platforms, AI search, voice search, and custom platform support.",
+        "url": "https://soulo.dkluge.com/",
+        "image": "https://soulo.dkluge.com/app-icon.png",
+        "inLanguage": ["zh-CN", "en"],
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "featureList": [
+          "Search across 40+ platforms",
+          "AI search engines",
+          "Voice search",
+          "Movie and book resource search",
+          "Custom platforms",
+          "Ad blocking",
+          "Privacy-first local storage"
+        ]
+      }
+    </script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
@@ -837,6 +904,13 @@
           ? window.matchMedia('(prefers-color-scheme: dark)')
           : null;
         var metaDescription = document.querySelector('meta[name="description"]');
+        var ogTitle = document.querySelector('meta[property="og:title"]');
+        var ogDescription = document.querySelector('meta[property="og:description"]');
+        var ogLocale = document.querySelector('meta[property="og:locale"]');
+        var twitterTitle = document.querySelector('meta[name="twitter:title"]');
+        var twitterDescription = document.querySelector(
+          'meta[name="twitter:description"]'
+        );
         var navToggle = document.getElementById('navToggle');
         var appIconImg = document.getElementById('appIconImg');
         var appStoreBadgeImg = document.getElementById('appStoreBadgeImg');
@@ -849,6 +923,7 @@
             metaTitle: '搜罗 Soulo - 聚合全球搜索平台 | 多平台搜索 App',
             metaDescription:
               '搜罗 (Soulo) 是一款聚合搜索平台 App，内置 40+ 搜索平台，支持 AI 搜索、影视资源搜索、语音搜索。一次输入关键词，即可快速切换多个平台查看结果。',
+            metaLocale: 'zh_CN',
             navPlatforms: '平台',
             navFeatures: '功能',
             navFilm: '影视搜索',
@@ -957,6 +1032,7 @@
             metaTitle: 'Soulo - Search Across Global Platforms | Multi-Platform Search App',
             metaDescription:
               'Soulo is a multi-platform search app with 40+ built-in platforms, AI search, movie resource search, and voice search. Enter one keyword and switch across platforms instantly.',
+            metaLocale: 'en_US',
             navPlatforms: 'Platforms',
             navFeatures: 'Features',
             navFilm: 'Movie Search',
@@ -1149,6 +1225,21 @@
           document.title = dict.metaTitle;
           if (metaDescription) {
             metaDescription.setAttribute('content', dict.metaDescription);
+          }
+          if (ogTitle) {
+            ogTitle.setAttribute('content', dict.metaTitle);
+          }
+          if (ogDescription) {
+            ogDescription.setAttribute('content', dict.metaDescription);
+          }
+          if (ogLocale) {
+            ogLocale.setAttribute('content', dict.metaLocale);
+          }
+          if (twitterTitle) {
+            twitterTitle.setAttribute('content', dict.metaTitle);
+          }
+          if (twitterDescription) {
+            twitterDescription.setAttribute('content', dict.metaDescription);
           }
           if (navToggle) {
             navToggle.setAttribute('aria-label', dict.navMenuLabel);
