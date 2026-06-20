@@ -8,9 +8,13 @@ struct SettingsView: View {
     @EnvironmentObject var themeManager: ThemeManager
 
     @State private var selectedAppearance: String = ThemeManager.shared.appearance
-    @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = false
+    @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = true
+    @AppStorage("ad_block_network_enabled") private var adBlockNetworkEnabled: Bool = true
+    @AppStorage("ad_block_cosmetic_enabled") private var adBlockCosmeticEnabled: Bool = true
+    @AppStorage("ad_block_popup_enabled") private var adBlockPopupEnabled: Bool = true
     @AppStorage("show_bookmarks_on_home") private var showBookmarksOnHome: Bool = false
     @AppStorage("show_group_picker_on_home") private var showGroupPickerOnHome: Bool = false
+    @AppStorage("show_recent_searches_on_home") private var showRecentSearchesOnHome: Bool = true
     @AppStorage("home_title") private var homeTitle: String = "Soulo"
     @AppStorage("home_subtitle") private var homeSubtitle: String = ""
     @State private var showHomeTitleEdit = false
@@ -181,6 +185,59 @@ struct SettingsView: View {
                             }
                         }
                         .tint(.green)
+
+                        if adBlockEnabled {
+                            Toggle(isOn: $adBlockNetworkEnabled) {
+                                Label {
+                                    Text(LanguageManager.shared.localizedString("ad_block_network"))
+                                } icon: {
+                                    IconBadge(systemName: "network.badge.shield.half.filled", color: .green)
+                                }
+                            }
+                            .tint(.green)
+
+                            Toggle(isOn: $adBlockCosmeticEnabled) {
+                                Label {
+                                    Text(LanguageManager.shared.localizedString("ad_block_cosmetic"))
+                                } icon: {
+                                    IconBadge(systemName: "eye.slash.fill", color: .blue)
+                                }
+                            }
+                            .tint(.blue)
+
+                            Toggle(isOn: $adBlockPopupEnabled) {
+                                Label {
+                                    Text(LanguageManager.shared.localizedString("ad_block_popups"))
+                                } icon: {
+                                    IconBadge(systemName: "rectangle.badge.xmark", color: .orange)
+                                }
+                            }
+                            .tint(.orange)
+                        }
+
+                        NavigationLink(destination: ElementBlockManagementView(currentHost: nil)) {
+                            Label {
+                                Text(LanguageManager.shared.localizedString("manage_blocked_elements"))
+                            } icon: {
+                                IconBadge(systemName: "nosign", color: .red)
+                            }
+                        }
+
+                        NavigationLink(destination: AdBlockManagementView(currentHost: nil)) {
+                            Label {
+                                Text(LanguageManager.shared.localizedString("ad_block_management"))
+                            } icon: {
+                                IconBadge(systemName: "shield.lefthalf.filled", color: .green)
+                            }
+                        }
+
+                        NavigationLink(destination: ExternalNavigationSettingsView()) {
+                            Label {
+                                Text(LanguageManager.shared.localizedString("external_navigation"))
+                            } icon: {
+                                IconBadge(systemName: "arrow.up.forward.app", color: .orange)
+                            }
+                        }
                     } header: {
                         SectionHeader(title: LanguageManager.shared.localizedString("browsing"))
                     }
@@ -216,6 +273,21 @@ struct SettingsView: View {
                             }
                         }
                         .tint(.indigo)
+
+                        Toggle(isOn: $showRecentSearchesOnHome) {
+                            Label {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(LanguageManager.shared.localizedString("show_recent_searches_home"))
+                                        .font(.body)
+                                    Text(LanguageManager.shared.localizedString("show_recent_searches_home_desc"))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } icon: {
+                                IconBadge(systemName: "clock.arrow.circlepath", color: .blue)
+                            }
+                        }
+                        .tint(.blue)
                     } header: {
                         SectionHeader(title: LanguageManager.shared.localizedString("home_screen"))
                     }

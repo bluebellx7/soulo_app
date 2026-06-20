@@ -19,10 +19,12 @@ struct HomeView: View {
     @State private var showSubtitleEditor = false
     @State private var editingTitle = ""
     @State private var editingSubtitle = ""
+    @State private var wallpaperLoadTask: Task<Void, Never>?
     @AppStorage("home_title") private var homeTitle: String = "Soulo"
     @AppStorage("home_subtitle") private var homeSubtitle: String = ""
     @AppStorage("show_bookmarks_on_home") private var showBookmarksOnHome: Bool = false
     @AppStorage("show_group_picker_on_home") private var showGroupPickerOnHome: Bool = false
+    @AppStorage("show_recent_searches_on_home") private var showRecentSearchesOnHome: Bool = true
     @Query(sort: \BookmarkItem.dateAdded, order: .reverse) private var bookmarks: [BookmarkItem]
     @State private var dynamicTheme: DynamicTheme = DynamicTheme(rawValue: UserDefaults.standard.string(forKey: "dynamic_theme") ?? "midnight") ?? .midnight
 
@@ -120,6 +122,15 @@ struct HomeView: View {
             editingTitle = homeTitle
             editingSubtitle = homeSubtitle
             searchVM.loadRecentSearches(context: modelContext)
+            wallpaperLoadTask?.cancel()
+            wallpaperLoadTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 600_000_000)
+                guard !Task.isCancelled else { return }
+                wallpaperManager.ensureLoaded()
+            }
+        }
+        .onDisappear {
+            wallpaperLoadTask?.cancel()
         }
         .onChange(of: searchVM.isSearching) { _, isSearching in
             if !isSearching {
@@ -148,13 +159,13 @@ struct HomeView: View {
                 VStack(spacing: 6) {
                     Text(homeTitle)
                         .font(.system(size: 38, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                        .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47") : .white)
+                        .shadow(color: wallpaperManager.isCurrentWallpaperLight ? .black.opacity(0.05) : .black.opacity(0.2), radius: 4, x: 0, y: 2)
                         .onTapGesture { showTitleEditor = true }
 
                     Text(homeSubtitle.isEmpty ? languageManager.localizedString("app_subtitle") : homeSubtitle)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.6) : .white.opacity(0.4))
                         .tracking(1.5)
                         .onTapGesture { showSubtitleEditor = true }
                 }
@@ -210,7 +221,7 @@ struct HomeView: View {
                 }
 
                 // Recent searches (hidden while typing, shown when empty)
-                if !searchVM.recentSearches.isEmpty && searchVM.searchText.isEmpty {
+                if showRecentSearchesOnHome && !searchVM.recentSearches.isEmpty && searchVM.searchText.isEmpty {
                     SearchSuggestionsView(
                         recentSearches: searchVM.recentSearches,
                         onTap: { keyword in
@@ -242,7 +253,7 @@ struct HomeView: View {
                 // Wallpaper Credit: Show search topic or source
                 Text(wallpaperManager.source == .bing ? "Bing Daily" : wallpaperManager.searchTopic)
                     .font(.system(size: 8))
-                    .foregroundStyle(.white.opacity(0.15))
+                    .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.3) : .white.opacity(0.15))
                     .lineLimit(1)
 
                 Spacer()
@@ -254,7 +265,7 @@ struct HomeView: View {
                     } label: {
                         Image(systemName: "arrow.down.circle")
                             .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.3))
+                            .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.5) : .white.opacity(0.3))
                     }
                 }
             }
@@ -281,13 +292,17 @@ struct HomeView: View {
                     } label: {
                         Text(PlatformDataStore.shared.regionDisplayName(for: region))
                             .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
-                            .foregroundStyle(isSelected ? .white : .white.opacity(0.5))
+                            .foregroundStyle(
+                                isSelected
+                                    ? (wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47") : .white)
+                                    : (wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.55) : .white.opacity(0.5))
+                            )
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(
                                 isSelected
-                                    ? Capsule().fill(.white.opacity(0.2))
-                                    : Capsule().fill(.white.opacity(0.06))
+                                    ? Capsule().fill(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.12) : .white.opacity(0.2))
+                                    : Capsule().fill(wallpaperManager.isCurrentWallpaperLight ? Color.black.opacity(0.04) : .white.opacity(0.06))
                             )
                     }
                 }
@@ -299,13 +314,17 @@ struct HomeView: View {
                     } label: {
                         Text(group.name)
                             .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
-                            .foregroundStyle(isSelected ? .white : .white.opacity(0.5))
+                            .foregroundStyle(
+                                isSelected
+                                    ? (wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47") : .white)
+                                    : (wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.55) : .white.opacity(0.5))
+                            )
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(
                                 isSelected
-                                    ? Capsule().fill(.white.opacity(0.2))
-                                    : Capsule().fill(.white.opacity(0.06))
+                                    ? Capsule().fill(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.12) : .white.opacity(0.2))
+                                    : Capsule().fill(wallpaperManager.isCurrentWallpaperLight ? Color.black.opacity(0.04) : .white.opacity(0.06))
                             )
                     }
                 }
@@ -329,7 +348,7 @@ struct HomeView: View {
                             BookmarkFaviconView(urlString: bookmark.urlString, size: 24)
                             Text(bookmark.title)
                                 .font(.system(size: 9))
-                                .foregroundStyle(.white.opacity(0.6))
+                                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.7) : .white.opacity(0.6))
                                 .lineLimit(1)
                                 .frame(width: 38)
                         }
@@ -362,19 +381,25 @@ struct HomeView: View {
                     HStack(spacing: 5) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                .stroke(.white.opacity(0.6), lineWidth: 1.2)
+                                .stroke(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.6), lineWidth: 1.2)
                                 .frame(width: 16, height: 16)
                             Text("\(tabManager.tabCount)")
                                 .font(.system(size: 10, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.7))
+                                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.7))
                         }
                         Text(LanguageManager.shared.localizedString("tab_tabs"))
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.4))
+                            .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.6) : .white.opacity(0.4))
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
-                    .background(.ultraThinMaterial.opacity(0.3), in: Capsule())
+                    .background {
+                        if wallpaperManager.isCurrentWallpaperLight {
+                            Capsule().fill(Color.black.opacity(0.04))
+                        } else {
+                            Capsule().fill(.ultraThinMaterial.opacity(0.3))
+                        }
+                    }
                 }
             }
 
@@ -401,9 +426,15 @@ struct HomeView: View {
         } label: {
             Image(systemName: icon)
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white.opacity(opacity))
+                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.85) : .white.opacity(opacity))
                 .frame(width: 34, height: 34)
-                .background(.ultraThinMaterial.opacity(0.3), in: Circle())
+                .background {
+                    if wallpaperManager.isCurrentWallpaperLight {
+                        Circle().fill(Color.black.opacity(0.04))
+                    } else {
+                        Circle().fill(.ultraThinMaterial.opacity(0.3))
+                    }
+                }
         }
     }
 

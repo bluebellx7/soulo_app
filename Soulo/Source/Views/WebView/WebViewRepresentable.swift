@@ -6,25 +6,43 @@ import WebKit
 struct WebViewRepresentable: UIViewRepresentable {
 
     @ObservedObject var viewModel: WebViewModel
-    @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = false
+    @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = true
+    @AppStorage("ad_block_network_enabled") private var adBlockNetworkEnabled: Bool = true
+    @AppStorage("ad_block_cosmetic_enabled") private var adBlockCosmeticEnabled: Bool = true
+    @AppStorage("ad_block_popup_enabled") private var adBlockPopupEnabled: Bool = true
+    @AppStorage("is_incognito") private var isIncognito: Bool = false
+    @ObservedObject private var adBlockSettings = AdBlockSettingsService.shared
 
     // MARK: - Make View
 
-    // Shared process pool — reused across all WKWebView instances for faster creation
-    private static let sharedProcessPool = WKProcessPool()
     // Pre-compiled ad block rules (call preWarm() at app launch)
     private static var cachedAdBlockRules: WKContentRuleList?
+    private static var cachedAdBlockAllowlistSignature: String?
+    private static var compilingAdBlockAllowlistSignature: String?
 
     /// Call once at app launch to pre-compile ad blocking rules
     static func preWarm() {
-        Task {
-            cachedAdBlockRules = await AdBlockService.compileRules()
+        let defaults = UserDefaults.standard
+        guard defaults.object(forKey: "ad_block_enabled") as? Bool ?? true,
+              defaults.object(forKey: "ad_block_network_enabled") as? Bool ?? true else {
+            return
+        }
+
+        Task(priority: .utility) {
+            let allowlist = AdBlockSettingsService.shared.allowlistedHosts
+            let signature = allowlistSignature(for: allowlist)
+            guard compilingAdBlockAllowlistSignature != signature else { return }
+            compilingAdBlockAllowlistSignature = signature
+            cachedAdBlockAllowlistSignature = signature
+            cachedAdBlockRules = await AdBlockService.compileRules(allowlistedHosts: allowlist)
+            if compilingAdBlockAllowlistSignature == signature {
+                compilingAdBlockAllowlistSignature = nil
+            }
         }
     }
 
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
-        configuration.processPool = Self.sharedProcessPool
 
         // Custom user agent
         configuration.applicationNameForUserAgent = nil
@@ -32,132 +50,53 @@ struct WebViewRepresentable: UIViewRepresentable {
         // Inline media playback
         configuration.allowsInlineMediaPlayback = true
         configuration.mediaTypesRequiringUserActionForPlayback = []
+        configuration.websiteDataStore = isIncognito ? .nonPersistent() : .default()
 
         // Content controller for JS message handler
         let contentController = WKUserContentController()
-
-        // --- JS: Remove login / signup modal overlays ---
-        // Only targets overlays on standard search platforms, skips AI chat platforms
-        let modalRemovalScript = """
-        (function() {
-            // Skip on AI chat platforms that need their own login UI
-            var skipDomains = ['deepseek.com', 'qianwen.com', 'chatgpt.com', 'claude.ai', 'xiaohongshu.com', 'taobao.com', 'jd.com', 'yuanbao.tencent.com', 'doubao.com', 'metaso.cn'];
-            var host = window.location.hostname;
-            for (var i = 0; i < skipDomains.length; i++) {
-                if (host.includes(skipDomains[i])) return;
-            }
-
-            const OVERLAY_SELECTORS = [
-                '.login-modal',
-                '.signup-dialog',
-                '.login-popup',
-                '.signup-popup',
-                '.auth-modal',
-                // Douyin / TikTok
-                '[class*="login-guide"]',
-                '[class*="loginGuide"]',
-                '[class*="login-panel"]',
-                '[class*="login-mask"]',
-                '[class*="dy-account"]',
-                '[class*="passport-sdk"]',
-                // Weibo
-                '[class*="loginLayer"]',
-                '[class*="login-layer"]',
-                // Generic
-                '[class*="mask-login"]',
-                '[class*="guide-login"]'
-            ];
-
-            function shouldRemove(el) {
-                try {
-                    const style = window.getComputedStyle(el);
-                    const zIndex = parseInt(style.zIndex, 10);
-                    const position = style.position;
-                    if (
-                        (position === 'fixed' || position === 'absolute') &&
-                        zIndex > 999
-                    ) {
-                        return true;
-                    }
-                } catch (_) {}
-                return false;
-            }
-
-            function removeOverlays() {
-                OVERLAY_SELECTORS.forEach(function(selector) {
-                    try {
-                        document.querySelectorAll(selector).forEach(function(el) {
-                            if (shouldRemove(el)) {
-                                el.remove();
-                            }
-                        });
-                    } catch (_) {}
-                });
-
-                // Also remove any high z-index fixed overlay that contains login-related text
-                try {
-                    document.querySelectorAll('div').forEach(function(el) {
-                        var s = window.getComputedStyle(el);
-                        if ((s.position === 'fixed' || s.position === 'absolute') &&
-                            parseInt(s.zIndex) > 999 &&
-                            el.offsetWidth > 100 && el.offsetHeight > 100) {
-                            var text = (el.textContent || '').toLowerCase();
-                            if (text.includes('登录') || text.includes('login') ||
-                                text.includes('注册') || text.includes('sign') ||
-                                text.includes('验证码') || text.includes('手机号')) {
-                                el.remove();
-                            }
-                        }
-                    });
-                } catch(_) {}
-
-                // Restore body scroll
-                try {
-                    document.body.style.overflow = '';
-                    document.documentElement.style.overflow = '';
-                } catch (_) {}
-            }
-
-            // Run immediately
-            removeOverlays();
-
-            // Observe DOM for dynamically injected overlays
-            const observer = new MutationObserver(function(mutations) {
-                let shouldCheck = false;
-                mutations.forEach(function(m) {
-                    if (m.addedNodes.length > 0) shouldCheck = true;
-                });
-                if (shouldCheck) removeOverlays();
-            });
-
-            observer.observe(document.body || document.documentElement, {
-                childList: true,
-                subtree: true
-            });
-        })();
-        """
+        contentController.add(context.coordinator, name: "souloElementBlocker")
+        contentController.add(context.coordinator, name: "souloAdBlocker")
 
         let modalScript = WKUserScript(
-            source: modalRemovalScript,
+            source: WebViewScripts.loginOverlayRemoval,
             injectionTime: .atDocumentEnd,
             forMainFrameOnly: false
         )
         contentController.addUserScript(modalScript)
 
+        let elementBlockScript = WKUserScript(
+            source: WebViewScripts.initialElementBlockStyle(css: ElementBlockService.shared.cssForHost(viewModel.currentURL?.host)),
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false
+        )
+        contentController.addUserScript(elementBlockScript)
+
+        let pickerScript = WKUserScript(
+            source: WebViewScripts.elementPicker,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: true
+        )
+        contentController.addUserScript(pickerScript)
+
         // (Long-press context menus are handled natively via WKUIDelegate contextMenuConfigurationForElement)
 
         // Ad blocking: inject CSS/JS to hide ad elements
-        if adBlockEnabled {
+        let hostIsAllowlisted = adBlockSettings.isAllowlisted(viewModel.currentURL?.host)
+        if adBlockEnabled && !hostIsAllowlisted && (adBlockCosmeticEnabled || adBlockPopupEnabled) {
             let adScript = WKUserScript(
-                source: AdBlockService.adHidingScript,
+                source: AdBlockService.adHidingScript(
+                    cosmetic: adBlockCosmeticEnabled,
+                    popups: adBlockPopupEnabled,
+                    allowlistedHosts: adBlockSettings.allowlistedHosts
+                ),
                 injectionTime: .atDocumentEnd,
                 forMainFrameOnly: false
             )
             contentController.addUserScript(adScript)
 
             // Apply pre-compiled content rules (non-blocking)
-            if let cached = Self.cachedAdBlockRules {
-                configuration.userContentController.add(cached)
+            if adBlockNetworkEnabled, !hostIsAllowlisted, let cached = Self.cachedAdBlockRules {
+                contentController.add(cached)
             }
         }
 
@@ -194,6 +133,46 @@ struct WebViewRepresentable: UIViewRepresentable {
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
         // URL loading is driven imperatively via viewModel.loadURL(_:)
+        context.coordinator.applyAdHidingIfNeeded(
+            on: uiView,
+                enabled: adBlockEnabled,
+                cosmetic: adBlockCosmeticEnabled,
+                popups: adBlockPopupEnabled,
+                allowlistedHosts: adBlockSettings.allowlistedHosts,
+                host: uiView.url?.host ?? viewModel.currentURL?.host
+            )
+        if adBlockEnabled && adBlockNetworkEnabled {
+            Self.ensureCurrentContentRules(on: uiView, allowlist: adBlockSettings.allowlistedHosts)
+        } else {
+            uiView.configuration.userContentController.removeAllContentRuleLists()
+        }
+    }
+
+    private static func ensureCurrentContentRules(on webView: WKWebView, allowlist: [String]) {
+        let signature = allowlistSignature(for: allowlist)
+        guard signature != cachedAdBlockAllowlistSignature || cachedAdBlockRules == nil else { return }
+        guard compilingAdBlockAllowlistSignature != signature else { return }
+        cachedAdBlockAllowlistSignature = signature
+        compilingAdBlockAllowlistSignature = signature
+        Task {
+            let ruleList = await AdBlockService.compileRules(allowlistedHosts: allowlist)
+            await MainActor.run {
+                if compilingAdBlockAllowlistSignature == signature {
+                    compilingAdBlockAllowlistSignature = nil
+                }
+                guard cachedAdBlockAllowlistSignature == signature else { return }
+                cachedAdBlockRules = ruleList
+                webView.configuration.userContentController.removeAllContentRuleLists()
+                if let ruleList, !AdBlockSettingsService.isHostAllowlisted(webView.url?.host, allowlistedHosts: allowlist) {
+                    webView.configuration.userContentController.add(ruleList)
+                }
+            }
+        }
+    }
+
+    private static func allowlistSignature(for allowlist: [String]) -> String {
+        let hosts = Array(Set(allowlist.map { AdBlockSettingsService.normalizedHost($0) }.filter { !$0.isEmpty })).sorted().joined(separator: ",")
+        return "\(hosts)|rules:\(AdBlockSubscriptionService.rulesSignature())"
     }
 
     func makeCoordinator() -> Coordinator {
@@ -204,20 +183,62 @@ struct WebViewRepresentable: UIViewRepresentable {
 
     static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) {
         coordinator.invalidateObservations()
+        uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloElementBlocker")
+        uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloAdBlocker")
         uiView.configuration.userContentController.removeAllUserScripts()
     }
 
     // MARK: - Coordinator
 
-    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, UIScrollViewDelegate, WKDownloadDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, UIScrollViewDelegate, WKDownloadDelegate, WKScriptMessageHandler {
         private var lastContentOffset: CGFloat = 0
 
         private let viewModel: WebViewModel
         private var observations: [NSKeyValueObservation] = []
         private var downloadFileURL: URL?
+        private var lastAdHidingSignature = ""
+        private var httpsUpgradeFallbacks: [String: URL] = [:]
+        private var oneShotHTTPFallbacks = Set<String>()
 
         init(viewModel: WebViewModel) {
             self.viewModel = viewModel
+        }
+
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            guard let body = message.body as? [String: Any] else { return }
+            if message.name == "souloAdBlocker" {
+                let count = body["hiddenCount"] as? Int ?? 0
+                let host = (body["host"] as? String) ?? viewModel.currentURL?.host
+                Task { @MainActor in
+                    AdBlockSettingsService.shared.recordHiddenElementCount(count, for: host)
+                }
+                return
+            }
+
+            guard message.name == "souloElementBlocker" else { return }
+            let selector = body["selector"] as? String ?? ""
+            let xpath = body["xpath"] as? String ?? ""
+            let host = (body["host"] as? String) ?? viewModel.currentURL?.host ?? ""
+            let label = (body["label"] as? String) ?? selector
+            Task { @MainActor in
+                let rule = ElementBlockService.shared.addRule(
+                    host: host,
+                    selector: selector,
+                    xpath: xpath,
+                    label: label,
+                    pageTitle: viewModel.pageTitle,
+                    pageURL: viewModel.currentURL?.absoluteString ?? ""
+                )
+                viewModel.isElementPickerActive = false
+                viewModel.applyElementBlocks()
+                if let rule {
+                    NotificationCenter.default.post(
+                        name: .elementBlockRuleAdded,
+                        object: nil,
+                        userInfo: ["rule": rule]
+                    )
+                }
+            }
         }
 
         // MARK: KVO
@@ -262,12 +283,49 @@ struct WebViewRepresentable: UIViewRepresentable {
             observations.removeAll()
         }
 
+        func applyAdHidingIfNeeded(
+            on webView: WKWebView,
+            enabled: Bool,
+            cosmetic: Bool,
+            popups: Bool,
+            allowlistedHosts: [String],
+            host: String?
+        ) {
+            let signature = [
+                host ?? "",
+                enabled ? "1" : "0",
+                cosmetic ? "1" : "0",
+                popups ? "1" : "0",
+                allowlistedHosts.joined(separator: ","),
+                AdBlockSettingsService.isHostAllowlisted(host) ? "1" : "0"
+            ].joined(separator: "|")
+            guard signature != lastAdHidingSignature else { return }
+            lastAdHidingSignature = signature
+
+            guard enabled, !AdBlockSettingsService.isHostAllowlisted(host), cosmetic || popups else {
+                return
+            }
+            webView.evaluateJavaScript(
+                AdBlockService.adHidingScript(cosmetic: cosmetic, popups: popups, allowlistedHosts: allowlistedHosts),
+                completionHandler: nil
+            )
+        }
+
         // MARK: WKNavigationDelegate
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
             Task { @MainActor in
                 viewModel.errorMessage = nil
             }
+            lastAdHidingSignature = ""
+        }
+
+        func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+            Task { @MainActor [weak self] in
+                self?.viewModel.updateCurrentURL(webView.url)
+                self?.viewModel.applyElementBlocks()
+            }
+            applyCurrentAdHidingIfNeeded(on: webView)
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -276,6 +334,8 @@ struct WebViewRepresentable: UIViewRepresentable {
                 self.viewModel.updateLoading(false)
                 self.viewModel.updateCurrentURL(webView.url)
                 self.viewModel.updateTitle(webView.title)
+                self.viewModel.applyElementBlocks()
+                self.applyCurrentAdHidingIfNeeded(on: webView)
                 // Capture snapshot for tab preview (slight delay for render)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                     self?.viewModel.takeSnapshot()
@@ -296,6 +356,9 @@ struct WebViewRepresentable: UIViewRepresentable {
             didFailProvisionalNavigation navigation: WKNavigation!,
             withError error: Error
         ) {
+            if retryHTTPFallbackIfNeeded(on: webView, error: error) {
+                return
+            }
             handleNavigationError(error)
         }
 
@@ -322,13 +385,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         // MARK: HTTP Auth Challenge
         func webView(_ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-            // Accept server trust for HTTPS (allows self-signed certs in embedded web)
-            if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
-               let trust = challenge.protectionSpace.serverTrust {
-                completionHandler(.useCredential, URLCredential(trust: trust))
-            } else {
-                completionHandler(.performDefaultHandling, nil)
-            }
+            completionHandler(.performDefaultHandling, nil)
         }
 
         func webView(
@@ -341,43 +398,91 @@ struct WebViewRepresentable: UIViewRepresentable {
                 return
             }
 
-            let scheme = url.scheme?.lowercased() ?? ""
-            let host = url.host?.lowercased() ?? ""
+            switch WebNavigationPolicyService.shared.decision(for: url) {
+            case .allow:
+                let method = navigationAction.request.httpMethod?.uppercased() ?? "GET"
+                let isMainFrame = navigationAction.targetFrame?.isMainFrame ?? true
+                let shouldSkipPrivacyTransform = oneShotHTTPFallbacks.remove(url.absoluteString) != nil
 
-            // Block all non-web schemes
-            let webSchemes: Set<String> = ["http", "https", "about", "blob", "data"]
-            guard webSchemes.contains(scheme) else {
+                if method == "GET", !shouldSkipPrivacyTransform {
+                    switch PrivacyNavigationService.shared.decision(for: url, isMainFrame: isMainFrame) {
+                    case .allow:
+                        decisionHandler(.allow)
+                    case .redirect(let transformedURL):
+                        if isHTTPSUpgrade(from: url, to: transformedURL) {
+                            httpsUpgradeFallbacks[transformedURL.absoluteString] = url
+                        }
+                        decisionHandler(.cancel)
+                        webView.load(URLRequest(url: transformedURL))
+                    }
+                } else {
+                    decisionHandler(.allow)
+                }
+            case .cancel:
                 decisionHandler(.cancel)
-                NotificationCenter.default.post(
-                    name: .webViewExternalURLRequest,
-                    object: nil,
-                    userInfo: ["url": url]
-                )
-                return
+            case .external(let externalURL):
+                decisionHandler(.cancel)
+                postExternalURLRequestIfNeeded(externalURL)
             }
+        }
 
-            // Block known universal link domains that would open external apps
-            let externalDomains: [String] = [
-                "apps.apple.com", "itunes.apple.com",
-                "music.apple.com", "podcasts.apple.com", "books.apple.com",
-                "maps.apple.com", "tv.apple.com",
-                "open.spotify.com",
-                "play.google.com",
-                "t.me", "telegram.me",
-                "line.me",
-                "wa.me", "api.whatsapp.com",
+        private func isHTTPSUpgrade(from originalURL: URL, to transformedURL: URL) -> Bool {
+            originalURL.scheme?.lowercased() == "http"
+                && transformedURL.scheme?.lowercased() == "https"
+                && originalURL.host?.lowercased() == transformedURL.host?.lowercased()
+        }
+
+        private func retryHTTPFallbackIfNeeded(on webView: WKWebView, error: Error) -> Bool {
+            let nsError = error as NSError
+            let retriableCodes: Set<Int> = [
+                NSURLErrorCannotFindHost,
+                NSURLErrorCannotConnectToHost,
+                NSURLErrorNetworkConnectionLost,
+                NSURLErrorTimedOut,
+                NSURLErrorSecureConnectionFailed,
+                NSURLErrorServerCertificateHasBadDate,
+                NSURLErrorServerCertificateUntrusted
             ]
-            if externalDomains.contains(where: { host == $0 || host.hasSuffix(".\($0)") }) {
-                decisionHandler(.cancel)
-                NotificationCenter.default.post(
-                    name: .webViewExternalURLRequest,
-                    object: nil,
-                    userInfo: ["url": url]
-                )
-                return
+            guard retriableCodes.contains(nsError.code),
+                  let failedURL = failingURL(from: nsError),
+                  let originalHTTPURL = httpsUpgradeFallbacks.removeValue(forKey: failedURL.absoluteString) else {
+                return false
             }
 
-            decisionHandler(.allow)
+            oneShotHTTPFallbacks.insert(originalHTTPURL.absoluteString)
+            webView.load(URLRequest(url: originalHTTPURL))
+            return true
+        }
+
+        private func failingURL(from error: NSError) -> URL? {
+            if let url = error.userInfo[NSURLErrorFailingURLErrorKey] as? URL {
+                return url
+            }
+            if let urlString = error.userInfo[NSURLErrorFailingURLStringErrorKey] as? String {
+                return URL(string: urlString)
+            }
+            return nil
+        }
+
+        private func postExternalURLRequestIfNeeded(_ url: URL) {
+            if ExternalNavigationService.shared.shouldSilentlyBlock(url) { return }
+            NotificationCenter.default.post(
+                name: .webViewExternalURLRequest,
+                object: nil,
+                userInfo: ["url": url]
+            )
+        }
+
+        private func applyCurrentAdHidingIfNeeded(on webView: WKWebView) {
+            let defaults = UserDefaults.standard
+            applyAdHidingIfNeeded(
+                on: webView,
+                enabled: defaults.object(forKey: "ad_block_enabled") as? Bool ?? true,
+                cosmetic: defaults.object(forKey: "ad_block_cosmetic_enabled") as? Bool ?? true,
+                popups: defaults.object(forKey: "ad_block_popup_enabled") as? Bool ?? true,
+                allowlistedHosts: AdBlockSettingsService.shared.allowlistedHosts,
+                host: webView.url?.host
+            )
         }
 
         // MARK: Download detection — handle non-displayable responses

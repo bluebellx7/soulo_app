@@ -1,5 +1,5 @@
 /* App */
-"app_name" = "搜羅";
+"app_name" = "Soulo";
 "app_subtitle" = "一鍵搜遍全球平台";
 
 /* Search */
@@ -133,6 +133,10 @@
 "privacy_section_data" = "資料管理";
 "privacy_incognito" = "無痕模式";
 "privacy_incognito_desc" = "開啟後搜尋不會記錄歷史";
+"privacy_https_upgrade" = "自動升級 HTTPS";
+"privacy_https_upgrade_desc" = "優先嘗試使用安全的 HTTPS 開啟 HTTP 網站";
+"privacy_strip_tracking" = "移除追蹤參數";
+"privacy_strip_tracking_desc" = "從網址中清除常見點擊和行銷追蹤 ID";
 "privacy_clear_history" = "清除搜尋歷史";
 "privacy_clear_history_desc" = "刪除所有已儲存的搜尋關鍵詞";
 "privacy_clear_history_confirm_title" = "清除搜尋歷史？";
@@ -199,7 +203,7 @@
 "photo_library" = "相簿";
 
 /* F1: Siri */
-"siri_search_tip" = "試試說：「用搜羅搜貓」";
+"siri_search_tip" = "試試說：「用Soulo搜貓」";
 
 /* AI 平台 */
 "platform_deepseek" = "DeepSeek";
@@ -335,6 +339,8 @@
 /* Home Bookmarks */
 "show_bookmarks_home" = "首頁顯示收藏";
 "show_bookmarks_home_desc" = "在首頁以圖示形式展示收藏的網站";
+"show_recent_searches_home" = "首頁顯示最近搜尋";
+"show_recent_searches_home_desc" = "在首頁搜尋框下方顯示最近搜尋關鍵字";
 "home_screen" = "首頁";
 
 /* AI Search Platforms */

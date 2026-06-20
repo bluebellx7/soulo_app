@@ -227,6 +227,10 @@
 "privacy_section_data" = "Gestión de datos";
 "privacy_incognito" = "Modo incógnito";
 "privacy_incognito_desc" = "Las búsquedas no se guardarán en el historial";
+"privacy_https_upgrade" = "Actualizar HTTP a HTTPS";
+"privacy_https_upgrade_desc" = "Intentar HTTPS seguro antes de cargar sitios HTTP";
+"privacy_strip_tracking" = "Eliminar parámetros de seguimiento";
+"privacy_strip_tracking_desc" = "Quitar IDs comunes de clics y campañas de las URL";
 "privacy_clear_history" = "Borrar historial de búsqueda";
 "privacy_clear_history_desc" = "Eliminar todas las palabras clave de búsqueda guardadas";
 "privacy_clear_history_confirm_title" = "¿Borrar historial de búsqueda?";
@@ -296,6 +300,8 @@
 /* Home Bookmarks */
 "show_bookmarks_home" = "Mostrar marcadores en inicio";
 "show_bookmarks_home_desc" = "Mostrar sitios favoritos como iconos en la pantalla de inicio";
+"show_recent_searches_home" = "Mostrar búsquedas recientes en inicio";
+"show_recent_searches_home_desc" = "Mostrar palabras clave recientes debajo de la barra de búsqueda de inicio";
 "home_screen" = "Pantalla de inicio";
 
 /* AI Search Platforms */

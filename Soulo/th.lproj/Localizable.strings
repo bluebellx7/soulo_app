@@ -133,6 +133,10 @@
 "privacy_section_data" = "การจัดการข้อมูล";
 "privacy_incognito" = "โหมดไม่ระบุตัวตน";
 "privacy_incognito_desc" = "การค้นหาจะไม่ถูกบันทึกในประวัติเมื่อเปิดใช้งาน";
+"privacy_https_upgrade" = "อัปเกรด HTTP เป็น HTTPS";
+"privacy_https_upgrade_desc" = "ลองใช้ HTTPS ที่ปลอดภัยก่อนโหลดเว็บไซต์ HTTP";
+"privacy_strip_tracking" = "ลบพารามิเตอร์ติดตาม";
+"privacy_strip_tracking_desc" = "ลบ ID การคลิกและแคมเปญที่พบบ่อยออกจาก URL";
 "privacy_clear_history" = "ล้างประวัติการค้นหา";
 "privacy_clear_history_desc" = "ลบคำค้นหาที่บันทึกไว้ทั้งหมด";
 "privacy_clear_history_confirm_title" = "ล้างประวัติการค้นหา?";
@@ -335,6 +339,8 @@
 /* Home Bookmarks */
 "show_bookmarks_home" = "แสดงบุ๊กมาร์กที่หน้าแรก";
 "show_bookmarks_home_desc" = "แสดงเว็บไซต์ที่บุ๊กมาร์กเป็นไอคอนบนหน้าจอหลัก";
+"show_recent_searches_home" = "แสดงการค้นหาล่าสุดที่หน้าแรก";
+"show_recent_searches_home_desc" = "แสดงคำค้นหาล่าสุดใต้แถบค้นหาบนหน้าจอหลัก";
 "home_screen" = "หน้าจอหลัก";
 
 /* AI Search Platforms */

@@ -1,6 +1,7 @@
 import Speech
 import AVFoundation
 import SwiftUI
+import NaturalLanguage
 
 /// Enhanced speech recognition service tuned for search queries.
 /// Improvements over baseline:
@@ -42,31 +43,103 @@ class SpeechRecognitionService: ObservableObject {
     // MARK: - Init
 
     init(languageCode: String = "en") {
-        let localeID = Self.regionLocale(for: languageCode)
+        let localeID = Self.localeIdentifier(for: languageCode)
         self.speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: localeID))
         self.isAvailable = speechRecognizer?.isAvailable ?? false
     }
 
-    /// Map app language code to region-specific locale for better phonetic models.
-    private static func regionLocale(for lang: String) -> String {
-        switch lang {
-        case "zh-Hans": return "zh-CN"
-        case "zh-Hant": return "zh-TW"
-        case "en":      return "en-US"
-        case "ja":      return "ja-JP"
-        case "ko":      return "ko-KR"
-        case "fr":      return "fr-FR"
-        case "de":      return "de-DE"
-        case "es":      return "es-ES"
-        case "ru":      return "ru-RU"
-        case "vi":      return "vi-VN"
-        case "pt-BR":   return "pt-BR"
-        case "it":      return "it-IT"
-        case "tr":      return "tr-TR"
-        case "ar":      return "ar-SA"
-        case "th":      return "th-TH"
-        default:        return "en-US"
+    /// Map app language codes and full locale identifiers to region-specific speech locales.
+    nonisolated static func localeIdentifier(for languageOrLocale: String) -> String {
+        let normalized = languageOrLocale
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "_", with: "-")
+
+        switch normalized {
+        case "zh", "zh-Hans", "zh-CN", "zh-Hans-CN":
+            return "zh-CN"
+        case "zh-Hant", "zh-TW", "zh-Hant-TW", "zh-HK", "zh-Hant-HK":
+            return "zh-TW"
+        case "en", "en-US":
+            return "en-US"
+        case "ja", "ja-JP":
+            return "ja-JP"
+        case "ko", "ko-KR":
+            return "ko-KR"
+        case "fr", "fr-FR":
+            return "fr-FR"
+        case "de", "de-DE":
+            return "de-DE"
+        case "es", "es-ES":
+            return "es-ES"
+        case "ru", "ru-RU":
+            return "ru-RU"
+        case "vi", "vi-VN":
+            return "vi-VN"
+        case "pt", "pt-BR":
+            return "pt-BR"
+        case "it", "it-IT":
+            return "it-IT"
+        case "tr", "tr-TR":
+            return "tr-TR"
+        case "ar", "ar-SA":
+            return "ar-SA"
+        case "th", "th-TH":
+            return "th-TH"
+        case "nl", "nl-NL":
+            return "nl-NL"
+        case "hi", "hi-IN":
+            return "hi-IN"
+        case "id", "id-ID":
+            return "id-ID"
+        default:
+            return Locale.availableIdentifiers.contains(normalized) ? normalized : "en-US"
         }
+    }
+
+    /// Choose the best speech locale before recording.
+    /// Priority: user text context -> system preferred languages -> app language -> English.
+    nonisolated static func automaticLocaleIdentifier(
+        appLanguage: String?,
+        systemLanguages: [String] = Locale.preferredLanguages,
+        contextStrings: [String] = []
+    ) -> String {
+        if let contextLocale = dominantContextLocaleIdentifier(from: contextStrings) {
+            return contextLocale
+        }
+
+        for language in systemLanguages {
+            let locale = localeIdentifier(for: language)
+            if locale != "en-US" || language.hasPrefix("en") {
+                return locale
+            }
+        }
+
+        if let appLanguage, !appLanguage.isEmpty {
+            return localeIdentifier(for: appLanguage)
+        }
+
+        return "en-US"
+    }
+
+    private nonisolated static func dominantContextLocaleIdentifier(from contextStrings: [String]) -> String? {
+        let text = contextStrings
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .prefix(20)
+            .joined(separator: " ")
+
+        guard text.count >= 2 else { return nil }
+
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(text)
+
+        let hypotheses = recognizer.languageHypotheses(withMaximum: 2)
+        guard let best = hypotheses.max(by: { $0.value < $1.value }),
+              best.value >= 0.45 else {
+            return nil
+        }
+
+        return localeIdentifier(for: best.key.rawValue)
     }
 
     // MARK: - Authorization
@@ -97,7 +170,7 @@ class SpeechRecognitionService: ObservableObject {
     /// Start recording. `locale` overrides the default; `contextualStrings` boosts accuracy.
     func startRecording(locale: String? = nil, contextualStrings: [String] = []) {
         if let locale, !locale.isEmpty {
-            let newLocale = Locale(identifier: Self.regionLocale(for: locale))
+            let newLocale = Locale(identifier: Self.localeIdentifier(for: locale))
             speechRecognizer = SFSpeechRecognizer(locale: newLocale)
             isAvailable = speechRecognizer?.isAvailable ?? false
         }
@@ -129,7 +202,7 @@ class SpeechRecognitionService: ObservableObject {
         // Configure audio session with .spokenAudio mode for best speech capture
         let audioSession = AVAudioSession.sharedInstance()
         do {
-            try audioSession.setCategory(.playAndRecord, mode: .spokenAudio, options: [.duckOthers, .defaultToSpeaker, .allowBluetooth])
+            try audioSession.setCategory(.playAndRecord, mode: .spokenAudio, options: [.duckOthers, .defaultToSpeaker, .allowBluetoothHFP])
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
             errorMessage = "Failed to configure audio session: \(error.localizedDescription)"

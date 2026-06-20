@@ -133,6 +133,10 @@
 "privacy_section_data" = "إدارة البيانات";
 "privacy_incognito" = "وضع التصفح الخفي";
 "privacy_incognito_desc" = "لن يتم حفظ عمليات البحث في السجل عند التفعيل";
+"privacy_https_upgrade" = "الترقية إلى HTTPS تلقائياً";
+"privacy_https_upgrade_desc" = "جرّب HTTPS الآمن قبل فتح مواقع HTTP";
+"privacy_strip_tracking" = "إزالة معلمات التتبع";
+"privacy_strip_tracking_desc" = "إزالة معرفات النقر والحملات الشائعة من الروابط";
 "privacy_clear_history" = "مسح سجل البحث";
 "privacy_clear_history_desc" = "إزالة جميع كلمات البحث المحفوظة";
 "privacy_clear_history_confirm_title" = "مسح سجل البحث؟";
@@ -335,6 +339,8 @@
 /* Home Bookmarks */
 "show_bookmarks_home" = "عرض الإشارات المرجعية في الرئيسية";
 "show_bookmarks_home_desc" = "عرض المواقع المحفوظة كأيقونات على الشاشة الرئيسية";
+"show_recent_searches_home" = "عرض عمليات البحث الأخيرة في الرئيسية";
+"show_recent_searches_home_desc" = "عرض كلمات البحث الأخيرة أسفل شريط البحث في الشاشة الرئيسية";
 "home_screen" = "الشاشة الرئيسية";
 
 /* AI Search Platforms */

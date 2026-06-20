@@ -227,6 +227,10 @@
 "privacy_section_data" = "Quản lý dữ liệu";
 "privacy_incognito" = "Chế độ ẩn danh";
 "privacy_incognito_desc" = "Các tìm kiếm sẽ không được lưu vào lịch sử";
+"privacy_https_upgrade" = "Tự nâng cấp HTTP lên HTTPS";
+"privacy_https_upgrade_desc" = "Thử HTTPS an toàn trước khi tải trang HTTP";
+"privacy_strip_tracking" = "Xóa tham số theo dõi";
+"privacy_strip_tracking_desc" = "Xóa các ID nhấp chuột và chiến dịch phổ biến khỏi URL";
 "privacy_clear_history" = "Xóa lịch sử tìm kiếm";
 "privacy_clear_history_desc" = "Xóa tất cả từ khóa tìm kiếm đã lưu";
 "privacy_clear_history_confirm_title" = "Xóa lịch sử tìm kiếm?";
@@ -296,6 +300,8 @@
 /* Home Bookmarks */
 "show_bookmarks_home" = "Hiện bookmark trên trang chủ";
 "show_bookmarks_home_desc" = "Hiển thị các trang đã lưu dưới dạng biểu tượng trên màn hình chính";
+"show_recent_searches_home" = "Hiện tìm kiếm gần đây trên trang chủ";
+"show_recent_searches_home_desc" = "Hiển thị từ khóa tìm kiếm gần đây bên dưới thanh tìm kiếm trên màn hình chính";
 "home_screen" = "Màn hình chính";
 
 /* AI Search Platforms */

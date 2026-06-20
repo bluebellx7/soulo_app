@@ -6,7 +6,10 @@ struct SearchSuggestionsView: View {
     var onDelete: (String) -> Void
 
     @EnvironmentObject var languageManager: LanguageManager
+    @ObservedObject var wallpaperManager = WallpaperManager.shared
     @State private var showAll = false
+
+    private var isLight: Bool { wallpaperManager.isCurrentWallpaperLight }
 
     var body: some View {
         if !recentSearches.isEmpty {
@@ -15,7 +18,7 @@ struct SearchSuggestionsView: View {
                 HStack {
                     Text(languageManager.localizedString("recent_searches"))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(isLight ? Color(hex: "2E2A47").opacity(0.55) : .white.opacity(0.5))
 
                     Spacer()
 
@@ -27,7 +30,7 @@ struct SearchSuggestionsView: View {
                         } label: {
                             Text(languageManager.localizedString(showAll ? "show_less" : "show_more"))
                                 .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.4))
+                                .foregroundStyle(isLight ? Color(hex: "2E2A47").opacity(0.5) : .white.opacity(0.4))
                         }
                     }
                 }
@@ -63,6 +66,8 @@ private struct SuggestionChip: View {
 
     @State private var showDelete = false
 
+    private var isLight: Bool { WallpaperManager.shared.isCurrentWallpaperLight }
+
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 4) {
@@ -86,11 +91,11 @@ private struct SuggestionChip: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(.white.opacity(0.06))
-            .foregroundStyle(.white.opacity(0.7))
+            .background(isLight ? Color.black.opacity(0.04) : .white.opacity(0.06))
+            .foregroundStyle(isLight ? Color(hex: "2E2A47").opacity(0.75) : .white.opacity(0.7))
             .clipShape(Capsule())
             .overlay(
-                Capsule().stroke(.white.opacity(0.08), lineWidth: 0.5)
+                Capsule().stroke(isLight ? Color(hex: "2E2A47").opacity(0.12) : .white.opacity(0.08), lineWidth: 0.5)
             )
         }
         .buttonStyle(.plain)

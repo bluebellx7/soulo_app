@@ -4,8 +4,11 @@ import WebKit
 
 struct PrivacySettingsView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var tabManager: TabManager
 
     @AppStorage("is_incognito") private var isIncognito: Bool = false
+    @AppStorage("privacy_https_upgrade_enabled") private var httpsUpgradeEnabled: Bool = true
+    @AppStorage("privacy_strip_tracking_parameters") private var stripTrackingParameters: Bool = true
 
     @State private var showClearHistoryAlert = false
     @State private var showClearBookmarksAlert = false
@@ -59,6 +62,22 @@ struct PrivacySettingsView: View {
                         .padding(.leading, 2)
                     }
                     .padding(.vertical, 4)
+
+                    PrivacyToggleRow(
+                        icon: "lock.fill",
+                        color: .green,
+                        title: LanguageManager.shared.localizedString("privacy_https_upgrade"),
+                        description: LanguageManager.shared.localizedString("privacy_https_upgrade_desc"),
+                        isOn: $httpsUpgradeEnabled
+                    )
+
+                    PrivacyToggleRow(
+                        icon: "link.badge.minus",
+                        color: .blue,
+                        title: LanguageManager.shared.localizedString("privacy_strip_tracking"),
+                        description: LanguageManager.shared.localizedString("privacy_strip_tracking_desc"),
+                        isOn: $stripTrackingParameters
+                    )
                 } header: {
                     SectionHeader(title: LanguageManager.shared.localizedString("privacy_section_browsing"))
                 }
@@ -158,6 +177,12 @@ struct PrivacySettingsView: View {
         }
         .navigationTitle(LanguageManager.shared.localizedString("settings_privacy"))
         .navigationBarTitleDisplayMode(.large)
+        .onChange(of: isIncognito) { _, enabled in
+            if enabled {
+                UserDefaults.standard.removeObject(forKey: "soulo_saved_tabs")
+                tabManager.closeAllTabs()
+            }
+        }
     }
 
     // MARK: - Actions
@@ -208,14 +233,7 @@ struct PrivacySettingsView: View {
 
     private func clearWebViewCache() {
         clearingCache = true
-        let dataTypes: Set<String> = [
-            WKWebsiteDataTypeDiskCache,
-            WKWebsiteDataTypeMemoryCache,
-            WKWebsiteDataTypeOfflineWebApplicationCache,
-            WKWebsiteDataTypeCookies,
-            WKWebsiteDataTypeSessionStorage,
-            WKWebsiteDataTypeLocalStorage
-        ]
+        let dataTypes = WKWebsiteDataStore.allWebsiteDataTypes()
         WKWebsiteDataStore.default().removeData(
             ofTypes: dataTypes,
             modifiedSince: .distantPast
@@ -230,6 +248,33 @@ struct PrivacySettingsView: View {
                 }
             }
         }
+    }
+}
+
+struct PrivacyToggleRow: View {
+    let icon: String
+    let color: Color
+    let title: String
+    let description: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            HStack(alignment: .top, spacing: 14) {
+                IconBadge(systemName: icon, color: color)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.body)
+                        .fontWeight(.medium)
+                    Text(description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+        .tint(color)
     }
 }
 

@@ -21,11 +21,20 @@ extension LanguageManager {
     var speechLocaleIdentifier: String {
         switch currentLanguage {
         case "zh-Hans": return "zh-Hans-CN"
+        case "zh-Hant": return "zh-Hant-TW"
+        case "en":      return "en-US"
         case "ja":      return "ja-JP"
         case "ko":      return "ko-KR"
         case "fr":      return "fr-FR"
         case "de":      return "de-DE"
         case "es":      return "es-ES"
+        case "ru":      return "ru-RU"
+        case "vi":      return "vi-VN"
+        case "pt-BR":   return "pt-BR"
+        case "it":      return "it-IT"
+        case "tr":      return "tr-TR"
+        case "ar":      return "ar-SA"
+        case "th":      return "th-TH"
         default:        return "en-US"
         }
     }

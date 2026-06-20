@@ -133,6 +133,10 @@
 "privacy_section_data" = "Управление данными";
 "privacy_incognito" = "Режим инкогнито";
 "privacy_incognito_desc" = "Запросы не будут сохраняться в истории";
+"privacy_https_upgrade" = "Автоматически переходить на HTTPS";
+"privacy_https_upgrade_desc" = "Сначала пробовать безопасный HTTPS перед загрузкой HTTP-сайтов";
+"privacy_strip_tracking" = "Удалять параметры отслеживания";
+"privacy_strip_tracking_desc" = "Удалять из URL распространённые идентификаторы кликов и кампаний";
 "privacy_clear_history" = "Очистить историю поиска";
 "privacy_clear_history_desc" = "Удалить все сохранённые поисковые запросы";
 "privacy_clear_history_confirm_title" = "Очистить историю поиска?";
@@ -335,6 +339,8 @@
 /* Home Bookmarks */
 "show_bookmarks_home" = "Закладки на главной";
 "show_bookmarks_home_desc" = "Показывать закладки в виде значков на главном экране";
+"show_recent_searches_home" = "Показывать недавние запросы на главной";
+"show_recent_searches_home_desc" = "Показывать недавние поисковые запросы под строкой поиска на главном экране";
 "home_screen" = "Главный экран";
 
 /* AI Search Platforms */

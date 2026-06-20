@@ -1,5 +1,5 @@
 /* App */
-"app_name" = "搜罗";
+"app_name" = "Soulo";
 "app_subtitle" = "一键搜遍全球平台";
 
 /* Search */
@@ -13,6 +13,7 @@
 
 /* Clipboard */
 "clipboard_detected" = "检测到剪贴板内容";
+"clipboard_tap_to_search" = "点击搜索后使用剪贴板";
 
 /* Regions */
 "region_china" = "中国";
@@ -133,6 +134,10 @@
 "privacy_section_data" = "数据管理";
 "privacy_incognito" = "无痕模式";
 "privacy_incognito_desc" = "开启后搜索不会记录历史";
+"privacy_https_upgrade" = "自动升级 HTTPS";
+"privacy_https_upgrade_desc" = "优先尝试使用安全的 HTTPS 打开 HTTP 网站";
+"privacy_strip_tracking" = "移除跟踪参数";
+"privacy_strip_tracking_desc" = "从网址中清除常见点击和营销跟踪 ID";
 "privacy_clear_history" = "清除搜索历史";
 "privacy_clear_history_desc" = "删除所有已保存的搜索关键词";
 "privacy_clear_history_confirm_title" = "清除搜索历史？";
@@ -199,7 +204,7 @@
 "photo_library" = "相册";
 
 /* F1: Siri */
-"siri_search_tip" = "试试说：\"用搜罗搜猫\"";
+"siri_search_tip" = "试试说：\"用Soulo搜猫\"";
 
 /* AI 平台 */
 "platform_deepseek" = "DeepSeek";
@@ -254,6 +259,19 @@
 "copied" = "已复制！";
 "ad_block" = "广告过滤";
 "ad_block_desc" = "隐藏搜索结果中的广告和追踪器（重新搜索后生效）";
+"ad_block_network" = "拦截广告网络请求";
+"ad_block_cosmetic" = "隐藏广告占位";
+"ad_block_popups" = "清理弹窗和悬浮层";
+"ad_block_management" = "广告过滤管理";
+"ad_block_allowlist" = "允许的网站";
+"ad_block_disable_current_site" = "在当前网站停用广告过滤";
+"ad_block_enable_current_site" = "在当前网站启用广告过滤";
+"ad_block_site_toggle_desc" = "修改后会重新加载当前页面，让新的广告过滤设置生效。";
+"ad_block_no_allowlisted_sites" = "暂无允许的网站。";
+"ad_block_stats" = "已隐藏元素";
+"ad_block_stats_desc" = "统计为估算值，仅包含页面级外观清理隐藏的元素。";
+"ad_block_no_stats" = "暂无隐藏元素统计。";
+"ad_block_reset_stats" = "重置统计";
 "browsing" = "浏览";
 "no_platforms_in_group" = "暂无平台";
 "add_to_group" = "添加平台到分组";
@@ -337,6 +355,8 @@
 /* Home Bookmarks */
 "show_bookmarks_home" = "首页显示收藏";
 "show_bookmarks_home_desc" = "在首页以图标形式展示收藏的网站";
+"show_recent_searches_home" = "首页显示最近搜索";
+"show_recent_searches_home_desc" = "在首页搜索框下方显示最近搜索关键词";
 "home_screen" = "首页";
 
 /* AI Search Platforms */
@@ -353,6 +373,7 @@
 "batch_import_format" = "粘贴以下格式的 JSON";
 "batch_import_group" = "添加到分组（选填）";
 "batch_import_group_placeholder" = "如：影视";
+"batch_import_film_entry" = "打开影视平台预设";
 "batch_import_action" = "导入";
 "batch_import_result" = "成功导入 %d 个平台";
 "paste_from_clipboard" = "从剪贴板粘贴";
@@ -436,3 +457,57 @@
 "image_saved" = "已保存到相册";
 "save_failed" = "保存失败";
 "downloading" = "下载中...";
+
+/* 浏览器屏蔽 */
+"block_element" = "屏蔽元素";
+"manage_blocked_elements" = "屏蔽元素管理";
+"element_block_enabled_current_site" = "在当前网站启用";
+"element_block_site_toggle_desc" = "关闭后不会删除已保存规则，只是不在当前网站应用。";
+"element_block_total_rules" = "已保存规则";
+"element_block_disabled_sites" = "已暂停网站";
+"element_block_enable_all_sites" = "启用所有网站";
+"element_block_restore_all" = "恢复全部屏蔽元素";
+"element_block_restore_all_desc" = "这会删除所有手动屏蔽元素规则，并重新启用所有网站的元素屏蔽。";
+"element_block_search" = "搜索屏蔽元素";
+"ad_block_allowlisted_count" = "白名单网站";
+"ad_block_total_hidden" = "已隐藏元素";
+"ad_block_current_site_hidden" = "当前网站";
+"ad_block_search_allowlist" = "搜索白名单";
+"ad_block_subscriptions" = "过滤规则订阅";
+"ad_block_subscriptions_desc" = "Soulo 支持 ABP 过滤列表的高价值子集，并转换为 WebKit 拦截规则和元素隐藏规则。来源包括 EasyList、EasyList China 和 AdGuard 过滤器。";
+"ad_block_subscription_enabled" = "已启用列表";
+"ad_block_subscription_rules" = "已缓存规则";
+"ad_block_subscription_rules_suffix" = "条规则";
+"ad_block_subscription_update" = "更新已启用列表";
+"ad_block_subscription_updating" = "更新中...";
+"ad_block_subscription_reset" = "重置订阅";
+"wallpaper_remote_error" = "壁纸来源暂不可用，请刷新或切换来源。";
+"restore_current_site" = "恢复当前网站";
+"restore" = "恢复";
+"no_blocked_elements" = "暂无屏蔽元素";
+"no_blocked_elements_desc" = "浏览网页时可通过底部工具栏选择并隐藏页面元素。";
+"element_picker_hint" = "点击页面中要隐藏的元素。";
+"element_blocked" = "元素已隐藏";
+"undo" = "撤销";
+"never_prompt" = "以后不提示";
+"external_navigation" = "外部 App 链接";
+"never_prompt_external" = "静默拦截外部 App 跳转";
+"never_prompt_external_desc" = "开启后，Soulo 会直接取消外部 App 跳转，不再弹出提示。";
+"blocked_external_hosts" = "已屏蔽域名";
+"no_external_hosts" = "暂无已屏蔽域名";
+"no_external_hosts_desc" = "当你对外部 App 链接选择“以后不提示”后会显示在这里。";
+
+/* 壁纸自动刷新 */
+"wallpaper_auto_refresh_header" = "自动刷新";
+"wallpaper_auto_refresh" = "刷新间隔";
+"wallpaper_auto_refresh_desc" = "可用时 Soulo 会在自动刷新前提前预加载下一张远程壁纸。";
+"wallpaper_random_sources" = "随机切换来源";
+"wallpaper_random_sources_desc" = "自动刷新和随机刷新会在已选远程来源中切换，至少保留一个来源。";
+"wallpaper_random_topics" = "随机切换关键词";
+"wallpaper_interval_none" = "不自动刷新";
+"wallpaper_interval_1min" = "每 1 分钟";
+"wallpaper_interval_5min" = "每 5 分钟";
+"wallpaper_interval_15min" = "每 15 分钟";
+"wallpaper_interval_30min" = "每 30 分钟";
+"wallpaper_interval_1hour" = "每 1 小时";
+"wallpaper_interval_1day" = "每 1 天";

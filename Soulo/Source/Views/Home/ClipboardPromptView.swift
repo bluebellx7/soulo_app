@@ -21,8 +21,9 @@ struct ClipboardPromptView: View {
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.secondary)
 
-                    Text(searchVM.clipboardContent ?? "")
+                    Text(searchVM.clipboardContent ?? languageManager.localizedString("clipboard_tap_to_search"))
                         .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(searchVM.clipboardContent == nil ? .secondary : .primary)
                         .lineLimit(1)
                 }
 

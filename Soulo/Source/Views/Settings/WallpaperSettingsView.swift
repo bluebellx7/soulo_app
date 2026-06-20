@@ -27,7 +27,35 @@ struct WallpaperSettingsView: View {
                 }.listRowBackground(Color.clear).listRowInsets(EdgeInsets())
             } header: { Label(LText("wallpaper_source"), systemImage: "photo.on.rectangle.angled") }
 
-            // 2. Search & Tags
+            // 2. Auto Refresh
+            Section {
+                Picker(LText("wallpaper_auto_refresh"), selection: $wallpaperManager.autoRefreshInterval) {
+                    ForEach(WallpaperRefreshInterval.allCases, id: \.self) { interval in
+                        Text(interval.localizedName).tag(interval)
+                    }
+                }
+
+                Toggle(LText("wallpaper_random_sources"), isOn: $wallpaperManager.autoRandomizeRemoteSources)
+
+                if wallpaperManager.autoRandomizeRemoteSources {
+                    ForEach([WallpaperSource.pexels, .pixabay, .bing], id: \.self) { src in
+                        Toggle(src.localizedName, isOn: Binding(
+                            get: { wallpaperManager.autoRemoteSources.contains(src) },
+                            set: { wallpaperManager.setAutoRemoteSource(src, enabled: $0) }
+                        ))
+                    }
+                    Text(LText("wallpaper_random_sources_desc"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Toggle(LText("wallpaper_random_topics"), isOn: $wallpaperManager.autoRandomizeTopics)
+                Text(LText("wallpaper_auto_refresh_desc"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } header: { Label(LText("wallpaper_auto_refresh_header"), systemImage: "clock.arrow.2.circlepath") }
+
+            // 3. Search & Tags
             if wallpaperManager.source == .pexels || wallpaperManager.source == .pixabay {
                 Section {
                     VStack(alignment: .leading, spacing: 12) {
@@ -163,6 +191,11 @@ struct WallpaperSettingsView: View {
                     }
                 }
             }.padding(.top, 4)
+            if !wallpaperManager.lastRemoteError.isEmpty {
+                Label(wallpaperManager.lastRemoteError, systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             LazyVGrid(columns: columns, spacing: 12) { ForEach(wallpaperManager.candidateWallpapers) { wall in wallpaperTile(wall) } }.padding(.vertical, 8)
         }
     }
@@ -174,6 +207,11 @@ struct WallpaperSettingsView: View {
                 Button { Task { await wallpaperManager.fetchBingWallpaper(random: true) } } label: {
                     Image(systemName: "arrow.clockwise").font(.system(size: 14, weight: .semibold))
                 }
+            }
+            if !wallpaperManager.lastRemoteError.isEmpty {
+                Label(wallpaperManager.lastRemoteError, systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             if let wall = wallpaperManager.candidateWallpapers.first { wallpaperTile(wall, isLarge: true) }
         }

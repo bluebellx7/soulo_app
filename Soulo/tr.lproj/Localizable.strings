@@ -133,6 +133,10 @@
 "privacy_section_data" = "Veri Yönetimi";
 "privacy_incognito" = "Gizli Mod";
 "privacy_incognito_desc" = "Etkinleştirildiğinde aramalar geçmişe kaydedilmez";
+"privacy_https_upgrade" = "HTTP'yi HTTPS'e yükselt";
+"privacy_https_upgrade_desc" = "HTTP sitelerini yüklemeden önce güvenli HTTPS'yi dene";
+"privacy_strip_tracking" = "Takip parametrelerini kaldır";
+"privacy_strip_tracking_desc" = "URL'lerden yaygın tıklama ve kampanya kimliklerini kaldır";
 "privacy_clear_history" = "Arama Geçmişini Temizle";
 "privacy_clear_history_desc" = "Kaydedilmiş tüm arama anahtar kelimelerini kaldır";
 "privacy_clear_history_confirm_title" = "Arama Geçmişi Temizlensin mi?";
@@ -335,6 +339,8 @@
 /* Home Bookmarks */
 "show_bookmarks_home" = "Ana Ekranda Yer İmlerini Göster";
 "show_bookmarks_home_desc" = "Yer imli siteleri ana ekranda simge olarak göster";
+"show_recent_searches_home" = "Ana ekranda son aramaları göster";
+"show_recent_searches_home_desc" = "Son arama kelimelerini ana ekrandaki arama çubuğunun altında göster";
 "home_screen" = "Ana Ekran";
 
 /* AI Search Platforms */

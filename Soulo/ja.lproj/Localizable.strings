@@ -227,6 +227,10 @@
 "privacy_section_data" = "データ管理";
 "privacy_incognito" = "シークレットモード";
 "privacy_incognito_desc" = "検索が履歴に保存されません";
+"privacy_https_upgrade" = "HTTPをHTTPSに自動アップグレード";
+"privacy_https_upgrade_desc" = "HTTPサイトを開く前に安全なHTTPSを試します";
+"privacy_strip_tracking" = "トラッキングパラメータを削除";
+"privacy_strip_tracking_desc" = "URLから一般的なクリックIDやキャンペーンIDを削除します";
 "privacy_clear_history" = "検索履歴を削除";
 "privacy_clear_history_desc" = "保存された検索キーワードをすべて削除";
 "privacy_clear_history_confirm_title" = "検索履歴を削除しますか？";
@@ -296,6 +300,8 @@
 /* Home Bookmarks */
 "show_bookmarks_home" = "ホームにブックマーク表示";
 "show_bookmarks_home_desc" = "ブックマークしたサイトをホーム画面にアイコン表示";
+"show_recent_searches_home" = "ホームに最近の検索を表示";
+"show_recent_searches_home_desc" = "ホームの検索バー下に最近の検索キーワードを表示";
 "home_screen" = "ホーム画面";
 
 /* AI Search Platforms */

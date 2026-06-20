@@ -7,6 +7,9 @@ struct WebViewToolbar: View {
     var tabManager: TabManager?
     var onShare: (() -> Void)?
     var onBookmarkToggle: (() -> Void)?
+    var onBlockElement: (() -> Void)?
+    var onManageBlockers: (() -> Void)?
+    var onManageAdBlock: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 10) {
@@ -16,6 +19,11 @@ struct WebViewToolbar: View {
             btn(isBookmarked ? "bookmark.fill" : "bookmark",
                 enabled: true,
                 tint: isBookmarked ? .blue : nil) { onBookmarkToggle?() }
+            if viewModel.isElementPickerActive {
+                btn("scope",
+                    enabled: viewModel.currentURL != nil,
+                    tint: .red) { onBlockElement?() }
+            }
 
             // More actions menu
             moreMenu
@@ -63,6 +71,26 @@ struct WebViewToolbar: View {
                     tabManager.startFindInPage()
                 } label: {
                     Label(LanguageManager.shared.localizedString("find_in_page"), systemImage: "doc.text.magnifyingglass")
+                }
+            }
+
+            Button {
+                onBlockElement?()
+            } label: {
+                Label(LanguageManager.shared.localizedString("block_element"), systemImage: "nosign")
+            }
+
+            Button {
+                onManageBlockers?()
+            } label: {
+                Label(LanguageManager.shared.localizedString("manage_blocked_elements"), systemImage: "line.3.horizontal.decrease.circle")
+            }
+
+            if viewModel.currentURL?.host != nil {
+                Button {
+                    onManageAdBlock?()
+                } label: {
+                    Label(LanguageManager.shared.localizedString("ad_block_management"), systemImage: "shield.lefthalf.filled")
                 }
             }
 

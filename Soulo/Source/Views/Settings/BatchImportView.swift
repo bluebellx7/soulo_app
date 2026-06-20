@@ -9,13 +9,22 @@ struct BatchImportView: View {
     @State private var useNewGroup = false
     @State private var importResult: String? = nil
     @State private var isImporting = false
+    @State private var showFilmExample = false
+    @FocusState private var focusedField: Field?
 
     private enum GroupSelection {
         case region(PlatformRegion)
         case customGroup(UUID)
         case newGroup
     }
+
+    private enum Field {
+        case json
+        case groupName
+    }
+
     @State private var selection: GroupSelection = .region(.international)
+    private let filmImportURL = URL(string: "https://soulo.dkluge.com/#film")
 
     var body: some View {
         NavigationStack {
@@ -35,6 +44,35 @@ struct BatchImportView: View {
                         .padding(10)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color(UIColor.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 8))
+
+                    if let filmImportURL {
+                        Button {
+                            focusedField = nil
+                            showFilmExample = true
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "film.stack")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(.purple)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("示例")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundStyle(.primary)
+                                    Text(filmImportURL.host ?? filmImportURL.absoluteString)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
                 .padding(.horizontal, 20)
 
@@ -51,6 +89,7 @@ struct BatchImportView: View {
                         .font(.system(size: 13, design: .monospaced))
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
+                        .focused($focusedField, equals: .json)
                         .frame(minHeight: 160)
                         .padding(10)
                         .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
@@ -59,6 +98,7 @@ struct BatchImportView: View {
 
                 // Paste from clipboard button
                 Button {
+                    focusedField = nil
                     if let clip = UIPasteboard.general.string, !clip.isEmpty {
                         jsonText = clip
                     }
@@ -84,6 +124,7 @@ struct BatchImportView: View {
                         // All groups (built-in + custom) in one flat list
                         ForEach(PlatformRegion.allCases, id: \.self) { region in
                             Button {
+                                focusedField = nil
                                 selection = .region(region)
                             } label: {
                                 HStack {
@@ -96,6 +137,7 @@ struct BatchImportView: View {
                         }
                         ForEach(PlatformDataStore.shared.customGroups) { group in
                             Button {
+                                focusedField = nil
                                 selection = .customGroup(group.id)
                             } label: {
                                 HStack {
@@ -110,6 +152,7 @@ struct BatchImportView: View {
                         Divider()
 
                         Button {
+                            focusedField = .groupName
                             selection = .newGroup
                             groupName = ""
                         } label: {
@@ -134,6 +177,7 @@ struct BatchImportView: View {
                             text: $groupName
                         )
                         .font(.body)
+                        .focused($focusedField, equals: .groupName)
                         .padding(12)
                         .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
                     }
@@ -152,6 +196,7 @@ struct BatchImportView: View {
 
                 // Import button
                 Button {
+                    focusedField = nil
                     doImport()
                 } label: {
                     HStack(spacing: 8) {
@@ -180,11 +225,32 @@ struct BatchImportView: View {
                 .padding(.bottom, 20)
             }
             .padding(.top, 16)
+            .background {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        focusedField = nil
+                    }
+            }
             .navigationTitle(LanguageManager.shared.localizedString("batch_import"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(LanguageManager.shared.localizedString("cancel")) { dismiss() }
+                    Button(LanguageManager.shared.localizedString("cancel")) {
+                        focusedField = nil
+                        dismiss()
+                    }
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button(LanguageManager.shared.localizedString("done")) {
+                        focusedField = nil
+                    }
+                }
+            }
+            .sheet(isPresented: $showFilmExample) {
+                if let filmImportURL {
+                    BatchImportExampleWebView(url: filmImportURL)
                 }
             }
         }
@@ -230,6 +296,39 @@ struct BatchImportView: View {
             isImporting = false
             if count > 0 {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { dismiss() }
+            }
+        }
+    }
+}
+
+private struct BatchImportExampleWebView: View {
+    let url: URL
+
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var webViewModel = WebViewModel()
+    @StateObject private var bookmarkViewModel = BookmarkViewModel()
+    @State private var isFullscreen = false
+
+    var body: some View {
+        NavigationStack {
+            WebViewContainer(
+                webViewModel: webViewModel,
+                bookmarkViewModel: bookmarkViewModel,
+                isFullscreen: $isFullscreen
+            )
+            .navigationTitle("示例")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(LanguageManager.shared.localizedString("done")) {
+                        dismiss()
+                    }
+                }
+            }
+            .onAppear {
+                if webViewModel.currentURL == nil {
+                    webViewModel.loadURL(url)
+                }
             }
         }
     }

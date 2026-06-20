@@ -22,15 +22,19 @@ class PlatformDataStore: ObservableObject {
 
     // MARK: - Persistence
 
-    private let platformVersion = 33 // Increment to force reset cached platforms
+    private let platformVersion = 35 // Increment when cached built-in defaults need migration
 
     private func load() {
         let savedVersion = UserDefaults.standard.integer(forKey: "platform_config_version")
-        if savedVersion == platformVersion,
-           let data = UserDefaults.standard.data(forKey: userDefaultsKey),
+        if let data = UserDefaults.standard.data(forKey: userDefaultsKey),
            let decoded = try? JSONDecoder().decode([SearchPlatform].self, from: data),
            !decoded.isEmpty {
             platforms = decoded
+            if savedVersion < platformVersion {
+                applyPlatformDefaultMigration(from: savedVersion)
+                UserDefaults.standard.set(platformVersion, forKey: "platform_config_version")
+                savePlatforms()
+            }
         } else {
             platforms = Self.defaultPlatforms()
             UserDefaults.standard.set(platformVersion, forKey: "platform_config_version")
@@ -207,7 +211,16 @@ class PlatformDataStore: ObservableObject {
         regionNameOverrides = [:]
         savePlatforms()
         saveGroups()
+        UserDefaults.standard.set(platformVersion, forKey: "platform_config_version")
         UserDefaults.standard.removeObject(forKey: "region_name_overrides")
+    }
+
+    private func applyPlatformDefaultMigration(from version: Int) {
+        if version < 35 {
+            for index in platforms.indices where Self.defaultHiddenPlatformNames.contains(platforms[index].name) && platforms[index].isBuiltIn {
+                platforms[index].isVisible = false
+            }
+        }
     }
 
     func sortByFrequency() {
@@ -467,7 +480,7 @@ class PlatformDataStore: ObservableObject {
         // Mark platforms that require login
         let loginRequired: Set<String> = ["platform_taobao", "platform_jd", "platform_instagram", "platform_linkedin"]
         // Hide less important platforms by default (user can enable in settings)
-        let hiddenByDefault: Set<String> = [
+        let hiddenByDefault = Self.defaultHiddenPlatformNames.union([
             "platform_sogou", "platform_360",
             "platform_youku", "platform_iqiyi",
             "platform_csdn", "platform_juejin",
@@ -475,7 +488,7 @@ class PlatformDataStore: ObservableObject {
             "platform_instagram", "platform_linkedin", "platform_pinterest",
             "platform_ebay", "platform_stackoverflow", "platform_scholar",
             "platform_rakuten", "platform_niconico",
-        ]
+        ])
         for i in all.indices {
             if loginRequired.contains(all[i].name) {
                 all[i].requiresLogin = true
@@ -487,4 +500,12 @@ class PlatformDataStore: ObservableObject {
 
         return all
     }
+
+    private static let defaultHiddenPlatformNames: Set<String> = [
+        "platform_taobao",
+        "platform_jd",
+        "platform_zhihu",
+        "platform_doubao",
+        "platform_qianwen"
+    ]
 }

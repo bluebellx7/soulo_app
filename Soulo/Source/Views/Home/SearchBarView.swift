@@ -8,27 +8,33 @@ struct SearchBarView: View {
     var onMicTap: () -> Void
     var onClear: (() -> Void)?
 
+    @ObservedObject var wallpaperManager = WallpaperManager.shared
+
     @FocusState private var isFocused: Bool
     @State private var animateGlow = false
 
+    private var isLight: Bool {
+        !isCompact && wallpaperManager.isCurrentWallpaperLight
+    }
+
     // Adaptive colors based on mode
     private var iconColor: Color {
-        isCompact ? Color(UIColor.secondaryLabel) : .white.opacity(0.5)
+        isCompact ? Color(UIColor.secondaryLabel) : (isLight ? Color(hex: "2E2A47").opacity(0.5) : .white.opacity(0.5))
     }
     private var iconActiveColor: Color {
-        isCompact ? Color(UIColor.label) : .white.opacity(0.9)
+        isCompact ? Color(UIColor.label) : (isLight ? Color(hex: "2E2A47").opacity(0.85) : .white.opacity(0.9))
     }
     private var textColor: Color {
-        isCompact ? Color(UIColor.label) : .white
+        isCompact ? Color(UIColor.label) : (isLight ? Color(hex: "2E2A47") : .white)
     }
     private var placeholderColor: Color {
-        isCompact ? Color(UIColor.tertiaryLabel) : .white.opacity(0.35)
+        isCompact ? Color(UIColor.tertiaryLabel) : (isLight ? Color(hex: "2E2A47").opacity(0.35) : .white.opacity(0.35))
     }
     private var clearColor: Color {
-        isCompact ? Color(UIColor.tertiaryLabel) : .white.opacity(0.4)
+        isCompact ? Color(UIColor.tertiaryLabel) : (isLight ? Color(hex: "2E2A47").opacity(0.4) : .white.opacity(0.4))
     }
     private var dividerColor: Color {
-        isCompact ? Color(UIColor.separator) : .white.opacity(0.15)
+        isCompact ? Color(UIColor.separator) : (isLight ? Color(hex: "2E2A47").opacity(0.15) : .white.opacity(0.15))
     }
 
     var body: some View {
@@ -104,11 +110,16 @@ struct SearchBarView: View {
                 .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
             } else {
                 ZStack {
-                    Capsule().fill(.ultraThinMaterial.opacity(0.6))
-                    Capsule().fill(.white.opacity(0.08))
-                    Capsule().stroke(.white.opacity(isFocused ? 0.3 : 0.12), lineWidth: 0.5)
+                    if isLight {
+                        Capsule().fill(.white.opacity(0.75))
+                        Capsule().stroke(Color(hex: "2E2A47").opacity(isFocused ? 0.35 : 0.15), lineWidth: 0.5)
+                    } else {
+                        Capsule().fill(.ultraThinMaterial.opacity(0.6))
+                        Capsule().fill(.white.opacity(0.08))
+                        Capsule().stroke(.white.opacity(isFocused ? 0.3 : 0.12), lineWidth: 0.5)
+                    }
                 }
-                .shadow(color: .black.opacity(0.2), radius: 16, x: 0, y: 4)
+                .shadow(color: isLight ? .black.opacity(0.04) : .black.opacity(0.2), radius: 16, x: 0, y: 4)
             }
         }
         .animation(.easeInOut(duration: 0.2), value: isFocused)

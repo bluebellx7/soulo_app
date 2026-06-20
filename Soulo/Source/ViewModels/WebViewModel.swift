@@ -17,6 +17,7 @@ final class WebViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var isScrollingUp: Bool = false
     @Published var snapshot: UIImage?
+    @Published var isElementPickerActive: Bool = false
 
     // Download state
     @Published var isDownloading: Bool = false
@@ -75,6 +76,21 @@ final class WebViewModel: ObservableObject {
         } else {
             webView?.reload()
         }
+    }
+
+    func startElementPicker() {
+        isElementPickerActive = true
+        webView?.evaluateJavaScript("window.souloElementPickerStart && window.souloElementPickerStart();", completionHandler: nil)
+    }
+
+    func stopElementPicker() {
+        isElementPickerActive = false
+        webView?.evaluateJavaScript("window.souloElementPickerStop && window.souloElementPickerStop();", completionHandler: nil)
+    }
+
+    func applyElementBlocks() {
+        let js = ElementBlockService.shared.makeApplyScript(for: currentURL?.host)
+        webView?.evaluateJavaScript(js, completionHandler: nil)
     }
 
     func loadSearchURL(keyword: String, platform: SearchPlatform) {

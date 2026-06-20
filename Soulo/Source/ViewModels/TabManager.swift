@@ -394,6 +394,11 @@ final class TabManager: ObservableObject {
 
     /// Save current tab state to UserDefaults.
     func saveToDisk() {
+        guard !UserDefaults.standard.bool(forKey: "is_incognito") else {
+            UserDefaults.standard.removeObject(forKey: Self.storageKey)
+            return
+        }
+
         let saved = tabs.map { tab in
             SavedTab(
                 id: tab.id.uuidString,
@@ -410,6 +415,11 @@ final class TabManager: ObservableObject {
 
     /// Restore tabs from UserDefaults. Called once at init.
     private func restoreFromDisk() {
+        guard !UserDefaults.standard.bool(forKey: "is_incognito") else {
+            UserDefaults.standard.removeObject(forKey: Self.storageKey)
+            return
+        }
+
         guard let data = UserDefaults.standard.data(forKey: Self.storageKey),
               let state = try? JSONDecoder().decode(SavedState.self, from: data) else { return }
 

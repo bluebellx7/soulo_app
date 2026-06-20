@@ -10,11 +10,7 @@ struct SouloApp: App {
     @StateObject private var tabManager = TabManager()
     @StateObject private var wallpaperManager = WallpaperManager.shared
     @Environment(\.scenePhase) private var scenePhase
-
-    init() {
-        // Pre-compile ad block rules and warm up WebView process pool
-        WebViewRepresentable.preWarm()
-    }
+    @State private var activationTask: Task<Void, Never>?
 
     var body: some Scene {
         WindowGroup {
@@ -28,11 +24,9 @@ struct SouloApp: App {
                 // Appearance controlled by UIKit overrideUserInterfaceStyle via ThemeManager.applyAppearance()
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {
-                        searchVM.detectClipboard()
-                        if !searchVM.isSearching {
-                            LiveActivityService.shared.cleanupStaleActivities()
-                        }
+                        schedulePostActivationWork()
                     } else if newPhase == .background {
+                        activationTask?.cancel()
                         LiveActivityService.shared.end()
                         // Persist tab state when app goes to background
                         tabManager.saveToDisk()
@@ -73,4 +67,29 @@ struct SouloApp: App {
         .modelContainer(for: [SearchHistoryItem.self, BookmarkItem.self])
     }
 
+    @MainActor
+    private func schedulePostActivationWork() {
+        activationTask?.cancel()
+        activationTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            guard !Task.isCancelled else { return }
+            searchVM.detectClipboard()
+
+            try? await Task.sleep(nanoseconds: 450_000_000)
+            guard !Task.isCancelled else { return }
+            wallpaperManager.refreshIfNeededAfterForeground()
+
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            guard !Task.isCancelled, !searchVM.isSearching else { return }
+            LiveActivityService.shared.cleanupStaleActivities()
+
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            guard !Task.isCancelled else { return }
+            WebViewRepresentable.preWarm()
+
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            guard !Task.isCancelled else { return }
+            await AdBlockSubscriptionService.shared.updateEnabledSubscriptionsIfNeeded()
+        }
+    }
 }

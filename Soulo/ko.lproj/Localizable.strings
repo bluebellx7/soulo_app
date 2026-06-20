@@ -227,6 +227,10 @@
 "privacy_section_data" = "데이터 관리";
 "privacy_incognito" = "시크릿 모드";
 "privacy_incognito_desc" = "검색이 기록에 저장되지 않습니다";
+"privacy_https_upgrade" = "HTTP를 HTTPS로 자동 업그레이드";
+"privacy_https_upgrade_desc" = "HTTP 사이트를 열기 전에 보안 HTTPS를 먼저 시도";
+"privacy_strip_tracking" = "추적 매개변수 제거";
+"privacy_strip_tracking_desc" = "URL에서 일반적인 클릭 및 캠페인 ID 제거";
 "privacy_clear_history" = "검색 기록 삭제";
 "privacy_clear_history_desc" = "저장된 모든 검색 키워드 삭제";
 "privacy_clear_history_confirm_title" = "검색 기록을 삭제하시겠습니까?";
@@ -296,6 +300,8 @@
 /* Home Bookmarks */
 "show_bookmarks_home" = "홈에 북마크 표시";
 "show_bookmarks_home_desc" = "즐겨찾기한 사이트를 홈 화면에 아이콘으로 표시";
+"show_recent_searches_home" = "홈에 최근 검색 표시";
+"show_recent_searches_home_desc" = "홈 검색창 아래에 최근 검색어 표시";
 "home_screen" = "홈 화면";
 
 /* AI Search Platforms */

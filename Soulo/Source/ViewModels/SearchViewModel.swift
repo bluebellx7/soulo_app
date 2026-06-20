@@ -125,6 +125,7 @@ class SearchViewModel: ObservableObject {
 
     @AppStorage("is_incognito") var isIncognito: Bool = false
     @AppStorage("last_clipboard_hash") private var lastClipboardHash: String = ""
+    @AppStorage("last_clipboard_change_count") private var lastClipboardChangeCount: Int = 0
 
     // MARK: - Search
 
@@ -221,46 +222,54 @@ class SearchViewModel: ObservableObject {
     // MARK: - Clipboard (F7 Enhanced)
 
     func detectClipboard() {
-        // Use detectPatterns to avoid the "wants to paste" system prompt
-        // Only shows our custom prompt if clipboard has string content
-        UIPasteboard.general.detectPatterns(for: [.probableWebURL, .number, .probableWebSearch]) { result in
-            guard case .success(let patterns) = result, !patterns.isEmpty else { return }
-            Task { @MainActor in
-                // Now safe to read — user already interacted with the app
-                guard let text = UIPasteboard.general.string,
-                      !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-
-                let hash = String(text.hashValue)
-                guard hash != self.lastClipboardHash else { return }
-
-                self.clipboardContent = text
-
-                // F7: Analyze clipboard content
-                let analysis = ClipboardAnalyzer.analyze(text)
-                self.clipboardContentType = analysis.type
-
-                let allPlatforms = PlatformDataStore.shared.allPlatforms()
-                self.suggestedClipboardPlatforms = analysis.suggestedPlatforms.compactMap { name in
-                    allPlatforms.first { $0.name == name && $0.isVisible }
-                }
-
-                self.showClipboardPrompt = true
-            }
+        // Detect pasteboard content without reading it, avoiding the system paste prompt.
+        let changeCount = UIPasteboard.general.changeCount
+        guard changeCount != lastClipboardChangeCount else { return }
+        Task { @MainActor in
+            guard let patterns = try? await UIPasteboard.general.detectedPatterns(for: [\.probableWebURL, \.number, \.probableWebSearch]),
+                  !patterns.isEmpty else { return }
+            self.clipboardContent = nil
+            self.suggestedClipboardPlatforms = []
+            self.showClipboardPrompt = true
         }
     }
 
     func dismissClipboard() {
         showClipboardPrompt = false
+        lastClipboardChangeCount = UIPasteboard.general.changeCount
         if let content = clipboardContent {
             lastClipboardHash = String(content.hashValue)
         }
     }
 
     func searchFromClipboard(context: ModelContext? = nil) {
-        guard let content = clipboardContent else { return }
+        guard let content = readClipboardForUserAction() else {
+            dismissClipboard()
+            return
+        }
         searchText = content
         performSearch(context: context)
         dismissClipboard()
+    }
+
+    private func readClipboardForUserAction() -> String? {
+        guard let text = UIPasteboard.general.string?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !text.isEmpty else { return nil }
+
+        let hash = String(text.hashValue)
+        guard hash != lastClipboardHash else { return nil }
+
+        clipboardContent = text
+
+        let analysis = ClipboardAnalyzer.analyze(text)
+        clipboardContentType = analysis.type
+
+        let allPlatforms = PlatformDataStore.shared.allPlatforms()
+        suggestedClipboardPlatforms = analysis.suggestedPlatforms.compactMap { name in
+            allPlatforms.first { $0.name == name && $0.isVisible }
+        }
+
+        return text
     }
 
     // MARK: - Clear

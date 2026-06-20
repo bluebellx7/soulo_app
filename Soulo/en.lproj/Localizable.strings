@@ -13,6 +13,7 @@
 
 /* Clipboard */
 "clipboard_detected" = "Clipboard content detected";
+"clipboard_tap_to_search" = "Tap Search to use clipboard";
 
 /* Regions */
 "region_china" = "China";
@@ -133,6 +134,10 @@
 "privacy_section_data" = "Data Management";
 "privacy_incognito" = "Incognito Mode";
 "privacy_incognito_desc" = "Searches won't be saved to history when enabled";
+"privacy_https_upgrade" = "Upgrade HTTP to HTTPS";
+"privacy_https_upgrade_desc" = "Try secure HTTPS before loading HTTP sites";
+"privacy_strip_tracking" = "Remove Tracking Parameters";
+"privacy_strip_tracking_desc" = "Strip common click and campaign IDs from URLs";
 "privacy_clear_history" = "Clear Search History";
 "privacy_clear_history_desc" = "Remove all saved search keywords";
 "privacy_clear_history_confirm_title" = "Clear Search History?";
@@ -254,6 +259,19 @@
 "copied" = "Copied!";
 "ad_block" = "Ad Blocker";
 "ad_block_desc" = "Hide ads and trackers in search results (restart search to apply)";
+"ad_block_network" = "Block Ad Network Requests";
+"ad_block_cosmetic" = "Hide Ad Placeholders";
+"ad_block_popups" = "Clean Popups and Overlays";
+"ad_block_management" = "Ad Block Management";
+"ad_block_allowlist" = "Allowed Sites";
+"ad_block_disable_current_site" = "Disable Ad Block on This Site";
+"ad_block_enable_current_site" = "Enable Ad Block on This Site";
+"ad_block_site_toggle_desc" = "Changing this reloads the current page so the new ad-block setting can apply.";
+"ad_block_no_allowlisted_sites" = "No allowed sites.";
+"ad_block_stats" = "Hidden Elements";
+"ad_block_stats_desc" = "Counts are approximate and only include page elements hidden by cosmetic cleanup.";
+"ad_block_no_stats" = "No hidden element stats yet.";
+"ad_block_reset_stats" = "Reset Stats";
 "browsing" = "Browsing";
 "no_platforms_in_group" = "No platforms yet";
 "add_to_group" = "Add Platform to Group";
@@ -335,6 +353,8 @@
 /* Home Bookmarks */
 "show_bookmarks_home" = "Show Bookmarks on Home";
 "show_bookmarks_home_desc" = "Display bookmarked sites as icons on the home screen";
+"show_recent_searches_home" = "Show Recent Searches on Home";
+"show_recent_searches_home_desc" = "Display recent search keywords below the home search bar";
 "home_screen" = "Home Screen";
 
 /* AI Search Platforms */
@@ -351,6 +371,7 @@
 "batch_import_format" = "Paste JSON in the format below";
 "batch_import_group" = "Add to Group (Optional)";
 "batch_import_group_placeholder" = "e.g. Movies";
+"batch_import_film_entry" = "Open movie platform presets";
 "batch_import_action" = "Import";
 "batch_import_result" = "Successfully imported %d platforms";
 "paste_from_clipboard" = "Paste from Clipboard";
@@ -434,3 +455,57 @@
 "image_saved" = "Saved to Photos";
 "save_failed" = "Save Failed";
 "downloading" = "Downloading...";
+
+/* Browser Blocking */
+"block_element" = "Block Element";
+"manage_blocked_elements" = "Blocked Elements";
+"element_block_enabled_current_site" = "Enable on This Site";
+"element_block_site_toggle_desc" = "Turn off element blocking for this site without deleting saved rules.";
+"element_block_total_rules" = "Saved Rules";
+"element_block_disabled_sites" = "Paused Sites";
+"element_block_enable_all_sites" = "Enable All Sites";
+"element_block_restore_all" = "Restore All Blocked Elements";
+"element_block_restore_all_desc" = "This removes every manually blocked element rule and re-enables element blocking on all sites.";
+"element_block_search" = "Search blocked elements";
+"ad_block_allowlisted_count" = "Allowlisted Sites";
+"ad_block_total_hidden" = "Hidden Elements";
+"ad_block_current_site_hidden" = "This Site";
+"ad_block_search_allowlist" = "Search allowlist";
+"ad_block_subscriptions" = "Filter Subscriptions";
+"ad_block_subscriptions_desc" = "Soulo supports a practical subset of ABP filter lists and converts them to WebKit rules plus cosmetic hiding. Sources include EasyList, EasyList China, and AdGuard filters.";
+"ad_block_subscription_enabled" = "Enabled Lists";
+"ad_block_subscription_rules" = "Cached Rules";
+"ad_block_subscription_rules_suffix" = "rules";
+"ad_block_subscription_update" = "Update Enabled Lists";
+"ad_block_subscription_updating" = "Updating...";
+"ad_block_subscription_reset" = "Reset Subscriptions";
+"wallpaper_remote_error" = "Wallpaper source is unavailable. Try refreshing or switch source.";
+"restore_current_site" = "Restore Current Site";
+"restore" = "Restore";
+"no_blocked_elements" = "No Blocked Elements";
+"no_blocked_elements_desc" = "Use the bottom toolbar while browsing to pick and hide page elements.";
+"element_picker_hint" = "Tap an element on the page to hide it.";
+"element_blocked" = "Element hidden";
+"undo" = "Undo";
+"never_prompt" = "Never Prompt";
+"external_navigation" = "External App Links";
+"never_prompt_external" = "Silently block external app links";
+"never_prompt_external_desc" = "When enabled, Soulo cancels external app jumps without showing a prompt.";
+"blocked_external_hosts" = "Blocked Hosts";
+"no_external_hosts" = "No Blocked Hosts";
+"no_external_hosts_desc" = "Hosts appear here after you choose Never Prompt on an external app link.";
+
+/* Wallpaper Auto Refresh */
+"wallpaper_auto_refresh_header" = "Auto Refresh";
+"wallpaper_auto_refresh" = "Refresh Interval";
+"wallpaper_auto_refresh_desc" = "Soulo preloads the next remote wallpaper before automatic refresh when possible.";
+"wallpaper_random_sources" = "Randomize Sources";
+"wallpaper_random_sources_desc" = "Automatic refresh and random refresh switch among selected remote sources. At least one source is kept.";
+"wallpaper_random_topics" = "Randomize Topics";
+"wallpaper_interval_none" = "Never";
+"wallpaper_interval_1min" = "Every Minute";
+"wallpaper_interval_5min" = "Every 5 Minutes";
+"wallpaper_interval_15min" = "Every 15 Minutes";
+"wallpaper_interval_30min" = "Every 30 Minutes";
+"wallpaper_interval_1hour" = "Every Hour";
+"wallpaper_interval_1day" = "Every Day";

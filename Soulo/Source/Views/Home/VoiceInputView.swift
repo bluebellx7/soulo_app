@@ -41,6 +41,13 @@ struct VoiceInputView: View {
         return Array(Set(vocab)) // dedupe
     }
 
+    private var automaticSpeechLocaleIdentifier: String {
+        SpeechRecognitionService.automaticLocaleIdentifier(
+            appLanguage: languageManager.selectedLanguage,
+            contextStrings: Array(searchVM.recentSearches.prefix(10))
+        )
+    }
+
     var body: some View {
         ZStack {
             // Semi-transparent dark background
@@ -100,7 +107,7 @@ struct VoiceInputView: View {
         .presentationBackground(.clear)
         .onAppear {
             speechService.recognizedText = ""
-            speechService.startRecording(locale: languageManager.speechLocaleIdentifier, contextualStrings: contextualVocabulary)
+            speechService.startRecording(locale: automaticSpeechLocaleIdentifier, contextualStrings: contextualVocabulary)
             withAnimation(.easeOut(duration: 0.4)) { appeared = true }
         }
         .onDisappear {
@@ -229,7 +236,7 @@ struct VoiceInputView: View {
                     speechService.stopRecording()
                 } else {
                     speechService.recognizedText = ""
-                    speechService.startRecording(locale: languageManager.speechLocaleIdentifier, contextualStrings: contextualVocabulary)
+                    speechService.startRecording(locale: automaticSpeechLocaleIdentifier, contextualStrings: contextualVocabulary)
                 }
             } label: {
                 VStack(spacing: 6) {

@@ -55,19 +55,31 @@ struct WallpaperBackground: View {
 
     private var scrimLayer: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    .black.opacity(0.65),
-                    .black.opacity(0.25),
-                    .black.opacity(0.25),
-                    .black.opacity(0.70),
-                ],
-                startPoint: .top, endPoint: .bottom
-            )
-            RadialGradient(
-                colors: [.clear, .black.opacity(0.2)],
-                center: .center, startRadius: 150, endRadius: 500
-            )
+            if wallpaperManager.isCurrentWallpaperLight {
+                LinearGradient(
+                    colors: [
+                        .black.opacity(0.06),
+                        .clear,
+                        .clear,
+                        .black.opacity(0.04),
+                    ],
+                    startPoint: .top, endPoint: .bottom
+                )
+            } else {
+                LinearGradient(
+                    colors: [
+                        .black.opacity(0.65),
+                        .black.opacity(0.25),
+                        .black.opacity(0.25),
+                        .black.opacity(0.70),
+                    ],
+                    startPoint: .top, endPoint: .bottom
+                )
+                RadialGradient(
+                    colors: [.clear, .black.opacity(0.2)],
+                    center: .center, startRadius: 150, endRadius: 500
+                )
+            }
         }
     }
 }

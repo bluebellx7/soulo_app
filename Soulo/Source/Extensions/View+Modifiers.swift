@@ -18,14 +18,21 @@ struct GlassCardModifier: ViewModifier {
     var cornerRadius: CGFloat
 
     func body(content: Content) -> some View {
+        let isLight = WallpaperManager.shared.isCurrentWallpaperLight
         content
-            .background(.ultraThinMaterial)
+            .background {
+                if isLight {
+                    Color.clear.background(.ultraThinMaterial.opacity(0.8))
+                } else {
+                    Color.clear.background(.ultraThinMaterial)
+                }
+            }
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(.white.opacity(0.2), lineWidth: 0.5)
+                    .stroke(isLight ? Color(hex: "2E2A47").opacity(0.12) : .white.opacity(0.2), lineWidth: 0.5)
             )
-            .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 4)
+            .shadow(color: isLight ? .black.opacity(0.04) : .black.opacity(0.1), radius: 10, x: 0, y: 4)
     }
 }
 
