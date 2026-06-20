@@ -6,6 +6,7 @@ struct WallpaperBackground: View {
     var body: some View {
         GeometryReader { geo in
             ZStack {
+                Color(red: 0.05, green: 0.07, blue: 0.16)
                 wallpaperLayer(size: geo.size)
                 scrimLayer
             }
