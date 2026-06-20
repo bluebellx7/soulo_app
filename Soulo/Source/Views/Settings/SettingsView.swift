@@ -215,14 +215,6 @@ struct SettingsView: View {
                             .tint(.orange)
                         }
 
-                        NavigationLink(destination: ElementBlockManagementView(currentHost: nil)) {
-                            Label {
-                                Text(LanguageManager.shared.localizedString("manage_blocked_elements"))
-                            } icon: {
-                                IconBadge(systemName: "nosign", color: .red)
-                            }
-                        }
-
                         NavigationLink(destination: AdBlockManagementView(currentHost: nil)) {
                             Label {
                                 Text(LanguageManager.shared.localizedString("ad_block_management"))

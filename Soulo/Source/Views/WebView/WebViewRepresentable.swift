@@ -54,7 +54,6 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         // Content controller for JS message handler
         let contentController = WKUserContentController()
-        contentController.add(context.coordinator, name: "souloElementBlocker")
         contentController.add(context.coordinator, name: "souloAdBlocker")
 
         let modalScript = WKUserScript(
@@ -63,20 +62,6 @@ struct WebViewRepresentable: UIViewRepresentable {
             forMainFrameOnly: false
         )
         contentController.addUserScript(modalScript)
-
-        let elementBlockScript = WKUserScript(
-            source: WebViewScripts.initialElementBlockStyle(css: ElementBlockService.shared.cssForHost(viewModel.currentURL?.host)),
-            injectionTime: .atDocumentStart,
-            forMainFrameOnly: false
-        )
-        contentController.addUserScript(elementBlockScript)
-
-        let pickerScript = WKUserScript(
-            source: WebViewScripts.elementPicker,
-            injectionTime: .atDocumentEnd,
-            forMainFrameOnly: true
-        )
-        contentController.addUserScript(pickerScript)
 
         // (Long-press context menus are handled natively via WKUIDelegate contextMenuConfigurationForElement)
 
@@ -183,7 +168,6 @@ struct WebViewRepresentable: UIViewRepresentable {
 
     static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) {
         coordinator.invalidateObservations()
-        uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloElementBlocker")
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloAdBlocker")
         uiView.configuration.userContentController.removeAllUserScripts()
     }
@@ -205,39 +189,12 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-            guard let body = message.body as? [String: Any] else { return }
-            if message.name == "souloAdBlocker" {
-                let count = body["hiddenCount"] as? Int ?? 0
-                let host = (body["host"] as? String) ?? viewModel.currentURL?.host
-                Task { @MainActor in
-                    AdBlockSettingsService.shared.recordHiddenElementCount(count, for: host)
-                }
-                return
-            }
-
-            guard message.name == "souloElementBlocker" else { return }
-            let selector = body["selector"] as? String ?? ""
-            let xpath = body["xpath"] as? String ?? ""
-            let host = (body["host"] as? String) ?? viewModel.currentURL?.host ?? ""
-            let label = (body["label"] as? String) ?? selector
+            guard message.name == "souloAdBlocker",
+                  let body = message.body as? [String: Any] else { return }
+            let count = body["hiddenCount"] as? Int ?? 0
+            let host = (body["host"] as? String) ?? viewModel.currentURL?.host
             Task { @MainActor in
-                let rule = ElementBlockService.shared.addRule(
-                    host: host,
-                    selector: selector,
-                    xpath: xpath,
-                    label: label,
-                    pageTitle: viewModel.pageTitle,
-                    pageURL: viewModel.currentURL?.absoluteString ?? ""
-                )
-                viewModel.isElementPickerActive = false
-                viewModel.applyElementBlocks()
-                if let rule {
-                    NotificationCenter.default.post(
-                        name: .elementBlockRuleAdded,
-                        object: nil,
-                        userInfo: ["rule": rule]
-                    )
-                }
+                AdBlockSettingsService.shared.recordHiddenElementCount(count, for: host)
             }
         }
 
@@ -323,7 +280,6 @@ struct WebViewRepresentable: UIViewRepresentable {
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
             Task { @MainActor [weak self] in
                 self?.viewModel.updateCurrentURL(webView.url)
-                self?.viewModel.applyElementBlocks()
             }
             applyCurrentAdHidingIfNeeded(on: webView)
         }
@@ -334,7 +290,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                 self.viewModel.updateLoading(false)
                 self.viewModel.updateCurrentURL(webView.url)
                 self.viewModel.updateTitle(webView.title)
-                self.viewModel.applyElementBlocks()
                 self.applyCurrentAdHidingIfNeeded(on: webView)
                 // Capture snapshot for tab preview (slight delay for render)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in

@@ -459,16 +459,6 @@
 "downloading" = "下载中...";
 
 /* 浏览器屏蔽 */
-"block_element" = "屏蔽元素";
-"manage_blocked_elements" = "屏蔽元素管理";
-"element_block_enabled_current_site" = "在当前网站启用";
-"element_block_site_toggle_desc" = "关闭后不会删除已保存规则，只是不在当前网站应用。";
-"element_block_total_rules" = "已保存规则";
-"element_block_disabled_sites" = "已暂停网站";
-"element_block_enable_all_sites" = "启用所有网站";
-"element_block_restore_all" = "恢复全部屏蔽元素";
-"element_block_restore_all_desc" = "这会删除所有手动屏蔽元素规则，并重新启用所有网站的元素屏蔽。";
-"element_block_search" = "搜索屏蔽元素";
 "ad_block_allowlisted_count" = "白名单网站";
 "ad_block_total_hidden" = "已隐藏元素";
 "ad_block_current_site_hidden" = "当前网站";
@@ -482,13 +472,7 @@
 "ad_block_subscription_updating" = "更新中...";
 "ad_block_subscription_reset" = "重置订阅";
 "wallpaper_remote_error" = "壁纸来源暂不可用，请刷新或切换来源。";
-"restore_current_site" = "恢复当前网站";
 "restore" = "恢复";
-"no_blocked_elements" = "暂无屏蔽元素";
-"no_blocked_elements_desc" = "浏览网页时可通过底部工具栏选择并隐藏页面元素。";
-"element_picker_hint" = "点击页面中要隐藏的元素。";
-"element_blocked" = "元素已隐藏";
-"undo" = "撤销";
 "never_prompt" = "以后不提示";
 "external_navigation" = "外部 App 链接";
 "never_prompt_external" = "静默拦截外部 App 跳转";

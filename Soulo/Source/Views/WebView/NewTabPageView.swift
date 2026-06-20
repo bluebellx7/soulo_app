@@ -1,5 +1,4 @@
 import SwiftUI
-import SwiftData
 
 /// A beautiful landing page shown when a new tab has no content.
 /// Quick links are automatically selected based on the user's language/region.
@@ -7,7 +6,6 @@ struct NewTabPageView: View {
     var tabManager: TabManager?
     var onNavigate: (URL) -> Void
 
-    @Query(sort: \BookmarkItem.dateAdded, order: .reverse) private var bookmarks: [BookmarkItem]
     @State private var urlText: String = ""
     @FocusState private var isSearchFocused: Bool
     @Environment(\.colorScheme) private var colorScheme
@@ -79,12 +77,6 @@ struct NewTabPageView: View {
                 // Quick links (region-aware)
                 if !quickLinkPlatforms.isEmpty {
                     quickLinksSection
-                        .padding(.horizontal, 20)
-                }
-
-                // Bookmarks
-                if !bookmarks.isEmpty {
-                    bookmarksSection
                         .padding(.horizontal, 20)
                 }
 
@@ -179,48 +171,6 @@ struct NewTabPageView: View {
                         .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-
-    // MARK: - Bookmarks Section
-
-    private var bookmarksSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Label(
-                    LanguageManager.shared.localizedString("bookmarks"),
-                    systemImage: "bookmark.fill"
-                )
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .padding(.horizontal, 4)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 14) {
-                    ForEach(bookmarks.prefix(12)) { bookmark in
-                        Button {
-                            if let url = bookmark.url {
-                                HapticsManager.light()
-                                onNavigate(url)
-                            }
-                        } label: {
-                            VStack(spacing: 6) {
-                                BookmarkFaviconView(urlString: bookmark.urlString, size: 36)
-
-                                Text(bookmark.title)
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundStyle(.primary)
-                                    .lineLimit(2)
-                                    .multilineTextAlignment(.center)
-                                    .frame(width: 56)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                    }
                 }
             }
         }

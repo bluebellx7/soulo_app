@@ -19,10 +19,7 @@ struct WebViewContainer: View {
     @State private var externalDismissTask: DispatchWorkItem? = nil
     @State private var showNewTabPage: Bool = true
     @State private var toolbarMinimized: Bool = false
-    @State private var showElementBlockManager = false
     @State private var showAdBlockManager = false
-    @State private var blockedRuleToast: BlockedElementRule?
-    @State private var blockedRuleToastTask: DispatchWorkItem?
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -80,8 +77,6 @@ struct WebViewContainer: View {
                                 }
                             },
                             onBookmarkToggle: { handleBookmarkToggle() },
-                            onBlockElement: { toggleElementPicker() },
-                            onManageBlockers: { showElementBlockManager = true },
                             onManageAdBlock: { showAdBlockManager = true }
                         )
                         .transition(.asymmetric(
@@ -100,14 +95,6 @@ struct WebViewContainer: View {
                     icon: isBookmarked ? "bookmark.fill" : "bookmark.slash",
                     text: LanguageManager.shared.localizedString(isBookmarked ? "bookmark_added" : "bookmark_removed")
                 )
-            }
-
-            if let rule = blockedRuleToast {
-                undoElementBlockToast(rule)
-            }
-
-            if webViewModel.isElementPickerActive {
-                elementPickerHint
             }
 
             // External app confirmation bar
@@ -248,22 +235,9 @@ struct WebViewContainer: View {
                 }
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .elementBlockRuleAdded)) { notification in
-            guard isActiveTab else { return }
-            if let rule = notification.userInfo?["rule"] as? BlockedElementRule {
-                showElementBlockUndoToast(rule)
-            }
-        }
         // Link & image long-press handled by native WKUIDelegate context menus
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(items: shareItems)
-        }
-        .sheet(isPresented: $showElementBlockManager) {
-            NavigationStack {
-                ElementBlockManagementView(currentHost: webViewModel.currentURL?.host) {
-                    webViewModel.reload()
-                }
-            }
         }
         .sheet(isPresented: $showAdBlockManager) {
             NavigationStack {
@@ -293,66 +267,6 @@ struct WebViewContainer: View {
             .padding(.bottom, 72)
         }
         .allowsHitTesting(false)
-    }
-
-    private var elementPickerHint: some View {
-        VStack {
-            Spacer()
-            HStack(spacing: 10) {
-                Image(systemName: "scope")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.red)
-                Text(LanguageManager.shared.localizedString("element_picker_hint"))
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white)
-                    .lineLimit(2)
-                Spacer()
-                Button {
-                    webViewModel.stopElementPicker()
-                } label: {
-                    Text(LanguageManager.shared.localizedString("cancel"))
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.9))
-                }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 11)
-            .background(.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .padding(.horizontal, 16)
-            .padding(.bottom, 66)
-        }
-        .transition(.move(edge: .bottom).combined(with: .opacity))
-    }
-
-    private func undoElementBlockToast(_ rule: BlockedElementRule) -> some View {
-        VStack {
-            Spacer()
-            HStack(spacing: 10) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.green)
-                Text(LanguageManager.shared.localizedString("element_blocked"))
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white)
-                Spacer()
-                Button {
-                    ElementBlockService.shared.removeRule(rule)
-                    webViewModel.webView?.reload()
-                    blockedRuleToastTask?.cancel()
-                    withAnimation { blockedRuleToast = nil }
-                } label: {
-                    Text(LanguageManager.shared.localizedString("undo"))
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
-                }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 11)
-            .background(.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .padding(.horizontal, 16)
-            .padding(.bottom, 66)
-        }
-        .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
     // MARK: - Mini Toolbar Pill
@@ -428,28 +342,6 @@ struct WebViewContainer: View {
     private func syncBookmarkState(for url: URL?) {
         guard let s = url?.absoluteString else { isBookmarked = false; return }
         isBookmarked = bookmarkViewModel.isBookmarked(url: s, context: modelContext)
-    }
-
-    private func toggleElementPicker() {
-        guard webViewModel.currentURL != nil else { return }
-        HapticsManager.medium()
-        if webViewModel.isElementPickerActive {
-            webViewModel.stopElementPicker()
-        } else {
-            webViewModel.startElementPicker()
-        }
-    }
-
-    private func showElementBlockUndoToast(_ rule: BlockedElementRule) {
-        blockedRuleToastTask?.cancel()
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-            blockedRuleToast = rule
-        }
-        let task = DispatchWorkItem {
-            withAnimation { blockedRuleToast = nil }
-        }
-        blockedRuleToastTask = task
-        DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: task)
     }
 }
 

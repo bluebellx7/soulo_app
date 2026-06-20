@@ -7,8 +7,6 @@ struct WebViewToolbar: View {
     var tabManager: TabManager?
     var onShare: (() -> Void)?
     var onBookmarkToggle: (() -> Void)?
-    var onBlockElement: (() -> Void)?
-    var onManageBlockers: (() -> Void)?
     var onManageAdBlock: (() -> Void)?
 
     var body: some View {
@@ -16,13 +14,10 @@ struct WebViewToolbar: View {
             btn("chevron.left", enabled: viewModel.canGoBack) { viewModel.goBack() }
             btn("chevron.right", enabled: viewModel.canGoForward) { viewModel.goForward() }
             btn(viewModel.isLoading ? "xmark" : "arrow.clockwise", enabled: true) { viewModel.reload() }
-            btn(isBookmarked ? "bookmark.fill" : "bookmark",
-                enabled: true,
-                tint: isBookmarked ? .blue : nil) { onBookmarkToggle?() }
-            if viewModel.isElementPickerActive {
-                btn("scope",
-                    enabled: viewModel.currentURL != nil,
-                    tint: .red) { onBlockElement?() }
+            if viewModel.currentURL != nil {
+                btn(isBookmarked ? "bookmark.fill" : "bookmark",
+                    enabled: true,
+                    tint: isBookmarked ? .blue : nil) { onBookmarkToggle?() }
             }
 
             // More actions menu
@@ -66,24 +61,12 @@ struct WebViewToolbar: View {
             Divider()
 
             // Find in Page
-            if let tabManager = tabManager {
+            if let tabManager = tabManager, viewModel.currentURL != nil {
                 Button {
                     tabManager.startFindInPage()
                 } label: {
                     Label(LanguageManager.shared.localizedString("find_in_page"), systemImage: "doc.text.magnifyingglass")
                 }
-            }
-
-            Button {
-                onBlockElement?()
-            } label: {
-                Label(LanguageManager.shared.localizedString("block_element"), systemImage: "nosign")
-            }
-
-            Button {
-                onManageBlockers?()
-            } label: {
-                Label(LanguageManager.shared.localizedString("manage_blocked_elements"), systemImage: "line.3.horizontal.decrease.circle")
             }
 
             if viewModel.currentURL?.host != nil {

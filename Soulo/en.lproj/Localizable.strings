@@ -457,16 +457,6 @@
 "downloading" = "Downloading...";
 
 /* Browser Blocking */
-"block_element" = "Block Element";
-"manage_blocked_elements" = "Blocked Elements";
-"element_block_enabled_current_site" = "Enable on This Site";
-"element_block_site_toggle_desc" = "Turn off element blocking for this site without deleting saved rules.";
-"element_block_total_rules" = "Saved Rules";
-"element_block_disabled_sites" = "Paused Sites";
-"element_block_enable_all_sites" = "Enable All Sites";
-"element_block_restore_all" = "Restore All Blocked Elements";
-"element_block_restore_all_desc" = "This removes every manually blocked element rule and re-enables element blocking on all sites.";
-"element_block_search" = "Search blocked elements";
 "ad_block_allowlisted_count" = "Allowlisted Sites";
 "ad_block_total_hidden" = "Hidden Elements";
 "ad_block_current_site_hidden" = "This Site";
@@ -480,13 +470,7 @@
 "ad_block_subscription_updating" = "Updating...";
 "ad_block_subscription_reset" = "Reset Subscriptions";
 "wallpaper_remote_error" = "Wallpaper source is unavailable. Try refreshing or switch source.";
-"restore_current_site" = "Restore Current Site";
 "restore" = "Restore";
-"no_blocked_elements" = "No Blocked Elements";
-"no_blocked_elements_desc" = "Use the bottom toolbar while browsing to pick and hide page elements.";
-"element_picker_hint" = "Tap an element on the page to hide it.";
-"element_blocked" = "Element hidden";
-"undo" = "Undo";
 "never_prompt" = "Never Prompt";
 "external_navigation" = "External App Links";
 "never_prompt_external" = "Silently block external app links";
