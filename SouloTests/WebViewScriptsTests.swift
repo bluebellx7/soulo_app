@@ -64,6 +64,7 @@ final class WebViewScriptsTests: XCTestCase {
 
     func testInjectedBrowserScriptsAreParsableJavaScript() {
         assertJavaScriptParses(AdBlockService.adHidingScript(cosmetic: true, popups: true))
+        assertJavaScriptParses(WebViewScripts.blankPageProbe)
         assertJavaScriptParses(WebViewScripts.privacyProtection(gpcEnabled: true, cookieBannerHandling: true))
     }
 

@@ -1,6 +1,38 @@
 import Foundation
 
 enum WebViewScripts {
+    static let blankPageProbe = """
+    (function() {
+        var body = document.body;
+        var text = body ? String(body.innerText || body.textContent || '').replace(/\\s+/g, '') : '';
+        var visibleElementCount = 0;
+        var ignoredTags = { SCRIPT: true, STYLE: true, LINK: true, META: true, NOSCRIPT: true, TEMPLATE: true };
+        if (body) {
+            var elements = body.getElementsByTagName('*');
+            for (var i = 0; i < elements.length && i < 800; i++) {
+                var el = elements[i];
+                if (ignoredTags[el.tagName]) continue;
+                var style = window.getComputedStyle(el);
+                if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity || '1') === 0) continue;
+                var rect = el.getBoundingClientRect();
+                if (rect.width > 1 && rect.height > 1) {
+                    visibleElementCount++;
+                    if (visibleElementCount > 0) break;
+                }
+            }
+        }
+        return {
+            readyState: document.readyState,
+            titleLength: String(document.title || '').trim().length,
+            textLength: text.length,
+            bodyChildCount: body ? body.children.length : 0,
+            bodyHTMLLength: body ? body.innerHTML.length : 0,
+            visibleElementCount: visibleElementCount,
+            location: location.href
+        };
+    })();
+    """
+
     static func privacyProtection(gpcEnabled: Bool, cookieBannerHandling: Bool, disabledHosts: [String] = []) -> String {
         let disabledHostsJSON = (try? JSONSerialization.data(withJSONObject: disabledHosts))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"

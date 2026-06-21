@@ -23,6 +23,7 @@ struct AdBlockService {
     static func encodedContentRuleList(allowlistedHosts: [String] = []) -> String? {
         let excludedDomains = normalizedAllowlist(allowlistedHosts)
             .flatMap { ["*\($0)", $0] }
+        let defaultBlockedResourceTypes = ["script", "image", "style-sheet", "font", "media", "raw", "popup"]
 
         func trigger(_ urlFilter: String, resourceTypes: [String]? = nil) -> [String: Any] {
             var value: [String: Any] = ["url-filter": urlFilter]
@@ -36,7 +37,8 @@ struct AdBlockService {
         }
 
         func trigger(for rule: AdBlockNetworkRule) -> [String: Any] {
-            var value = trigger(rule.urlFilter, resourceTypes: rule.resourceTypes.isEmpty ? nil : rule.resourceTypes)
+            let resourceTypes = rule.resourceTypes.filter { $0 != "document" }
+            var value = trigger(rule.urlFilter, resourceTypes: resourceTypes.isEmpty ? defaultBlockedResourceTypes : resourceTypes)
             if !rule.loadTypes.isEmpty {
                 value["load-type"] = rule.loadTypes
             }
@@ -99,7 +101,7 @@ struct AdBlockService {
 
         var rulesArray: [[String: Any]] = adDomains.map { domain in
             [
-                "trigger": trigger(domain),
+                "trigger": trigger(domain, resourceTypes: defaultBlockedResourceTypes),
                 "action": ["type": "block"]
             ]
         }
@@ -131,7 +133,7 @@ struct AdBlockService {
         let cachedRules = AdBlockSubscriptionService.cachedRules()
         let structuredNetworkRules = cachedRules.networkRules.isEmpty
             ? cachedRules.networkURLFilters.map {
-                AdBlockNetworkRule(urlFilter: $0, resourceTypes: ["script", "image", "raw", "document", "popup"])
+                AdBlockNetworkRule(urlFilter: $0, resourceTypes: ["script", "image", "raw", "popup"])
             }
             : cachedRules.networkRules
 

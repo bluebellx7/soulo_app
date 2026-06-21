@@ -37,6 +37,8 @@ final class WebViewModel: ObservableObject {
                 pendingURL = nil
                 loadURL(url)
             } else if let url = currentURL {
+                isLoading = true
+                estimatedProgress = 0.0
                 let request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 30)
                 webView?.load(request)
             }
@@ -49,6 +51,8 @@ final class WebViewModel: ObservableObject {
         errorMessage = nil
         currentURL = url
         lastURLString = url.absoluteString
+        isLoading = true
+        estimatedProgress = 0.0
 
         guard let webView = webView else {
             pendingURL = url

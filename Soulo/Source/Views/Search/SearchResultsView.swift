@@ -117,6 +117,9 @@ struct SearchResultsView: View {
 
                 // WebView — ZStack with all tabs, only active one visible
                 ZStack {
+                    let activeWebViewModel = tabManager.activeWebViewModel
+                    let activePageIsLoading = activeWebViewModel?.isLoading == true && activeWebViewModel?.currentURL != nil
+
                     // Render all tabs; show only active
                     ForEach(tabManager.tabs) { tab in
                         let isActive = tab.id == tabManager.activeTab?.id
@@ -135,7 +138,7 @@ struct SearchResultsView: View {
                     }
 
                     // Loading — thin overlay spinner at top, WebView visible underneath
-                    if !pageReady {
+                    if !pageReady || activePageIsLoading {
                         VStack {
                             HStack(spacing: 8) {
                                 ProgressView()

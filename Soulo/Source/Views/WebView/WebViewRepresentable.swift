@@ -209,6 +209,9 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var httpsUpgradeFallbacks: [String: URL] = [:]
         private var oneShotHTTPFallbacks = Set<String>()
         private var privacyHeaderBypassURLs = Set<String>()
+        private var blankPageRecoveryURLs = Set<String>()
+        private var terminatedProcessRecoveryURLs = Set<String>()
+        private var navigationGeneration = UUID()
 
         init(viewModel: WebViewModel) {
             self.viewModel = viewModel
@@ -362,6 +365,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         // MARK: WKNavigationDelegate
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+            navigationGeneration = UUID()
             Task { @MainActor in
                 viewModel.errorMessage = nil
             }
@@ -383,6 +387,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 self.viewModel.updateTitle(webView.title)
                 self.applyCurrentAdHidingIfNeeded(on: webView)
                 self.applyPrivacyProtectionIfNeeded(on: webView)
+                self.scheduleBlankPageRecovery(on: webView)
                 // Capture snapshot for tab preview (slight delay for render)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                     self?.viewModel.takeSnapshot()
@@ -409,6 +414,25 @@ struct WebViewRepresentable: UIViewRepresentable {
             handleNavigationError(error)
         }
 
+        func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            guard let url = webView.url, isRecoverableWebPageURL(url) else { return }
+            let key = url.absoluteString
+            guard !terminatedProcessRecoveryURLs.contains(key) else {
+                Task { @MainActor in
+                    viewModel.setError(LanguageManager.shared.localizedString("load_error"))
+                }
+                return
+            }
+
+            terminatedProcessRecoveryURLs.insert(key)
+            navigationGeneration = UUID()
+            Task { @MainActor in
+                viewModel.errorMessage = nil
+                viewModel.updateLoading(true)
+            }
+            webView.reload()
+        }
+
         private func handleNavigationError(_ error: Error) {
             let nsError = error as NSError
             guard nsError.code != NSURLErrorCancelled else { return }
@@ -428,6 +452,77 @@ struct WebViewRepresentable: UIViewRepresentable {
                 }
                 viewModel.setError(message)
             }
+        }
+
+        private func scheduleBlankPageRecovery(on webView: WKWebView) {
+            guard let url = webView.url, isRecoverableWebPageURL(url) else { return }
+            let urlString = url.absoluteString
+            let generation = navigationGeneration
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self, weak webView] in
+                guard let self,
+                      let webView,
+                      self.navigationGeneration == generation,
+                      webView.url?.absoluteString == urlString,
+                      !webView.isLoading else {
+                    return
+                }
+
+                webView.evaluateJavaScript(WebViewScripts.blankPageProbe) { [weak self, weak webView] result, error in
+                    guard let self,
+                          let webView,
+                          error == nil,
+                          self.navigationGeneration == generation,
+                          webView.url?.absoluteString == urlString,
+                          !webView.isLoading,
+                          self.shouldRecoverBlankPage(from: result),
+                          !self.blankPageRecoveryURLs.contains(urlString) else {
+                        return
+                    }
+
+                    self.blankPageRecoveryURLs.insert(urlString)
+                    self.navigationGeneration = UUID()
+                    Task { @MainActor in
+                        self.viewModel.errorMessage = nil
+                        self.viewModel.updateLoading(true)
+                    }
+                    webView.reload()
+                }
+            }
+        }
+
+        private func shouldRecoverBlankPage(from value: Any?) -> Bool {
+            guard let probe = value as? [String: Any],
+                  (probe["readyState"] as? String) == "complete" else {
+                return false
+            }
+
+            let titleLength = numericProbeValue(probe["titleLength"])
+            let textLength = numericProbeValue(probe["textLength"])
+            let bodyChildCount = numericProbeValue(probe["bodyChildCount"])
+            let bodyHTMLLength = numericProbeValue(probe["bodyHTMLLength"])
+            let visibleElementCount = numericProbeValue(probe["visibleElementCount"])
+
+            guard titleLength == 0,
+                  textLength == 0,
+                  visibleElementCount == 0 else {
+                return false
+            }
+
+            return bodyChildCount == 0 || bodyHTMLLength < 240
+        }
+
+        private func numericProbeValue(_ value: Any?) -> Int {
+            if let intValue = value as? Int { return intValue }
+            if let doubleValue = value as? Double { return Int(doubleValue) }
+            if let numberValue = value as? NSNumber { return numberValue.intValue }
+            if let stringValue = value as? String { return Int(stringValue) ?? 0 }
+            return 0
+        }
+
+        private func isRecoverableWebPageURL(_ url: URL) -> Bool {
+            let scheme = url.scheme?.lowercased()
+            return scheme == "http" || scheme == "https"
         }
 
         // MARK: HTTP Auth Challenge

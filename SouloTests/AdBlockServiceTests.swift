@@ -18,6 +18,23 @@ final class AdBlockServiceTests: XCTestCase {
         })
     }
 
+    func testNetworkBlockRulesDoNotTargetMainDocuments() throws {
+        let json = try XCTUnwrap(AdBlockService.encodedContentRuleList())
+        let data = try XCTUnwrap(json.data(using: .utf8))
+        let rules = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [[String: Any]])
+
+        let blockRules = rules.filter { rule in
+            (rule["action"] as? [String: Any])?["type"] as? String == "block"
+        }
+
+        XCTAssertFalse(blockRules.isEmpty)
+        for rule in blockRules {
+            let trigger = try XCTUnwrap(rule["trigger"] as? [String: Any])
+            let resourceTypes = try XCTUnwrap(trigger["resource-type"] as? [String])
+            XCTAssertFalse(resourceTypes.contains("document"))
+        }
+    }
+
     func testEncodedContentRulesIncludeAllowlistDomains() throws {
         let json = try XCTUnwrap(AdBlockService.encodedContentRuleList(allowlistedHosts: ["www.example.com"]))
         let data = try XCTUnwrap(json.data(using: .utf8))
