@@ -177,14 +177,47 @@ enum WebViewScripts {
 
     static let readerExtraction = """
     (function() {
+        function cleanText(value) {
+            return String(value || '').replace(/\\u00a0/g, ' ').replace(/[\\t\\r\\n ]+/g, ' ').trim();
+        }
+
         function text(el) {
-            return String((el && el.textContent) || '').replace(/\\s+/g, ' ').trim();
+            return cleanText((el && el.textContent) || '');
         }
 
         function removeNoise(root) {
-            root.querySelectorAll('script, style, noscript, nav, header, footer, aside, form, button, iframe, figure, .ad, .ads, [class*="advert"], [class*="comment"], [id*="comment"], [class*="share"], [class*="related"]').forEach(function(el) {
+            root.querySelectorAll('script, style, noscript, nav, header, footer, aside, form, button, iframe, .ad, .ads, [class*="advert"], [class*="comment"], [id*="comment"], [class*="share"], [class*="related"], [aria-hidden="true"]').forEach(function(el) {
                 el.remove();
             });
+        }
+
+        function resolvedURL(value) {
+            try {
+                return value ? new URL(value, location.href).href : '';
+            } catch (_) {
+                return '';
+            }
+        }
+
+        function imageURL(el) {
+            return resolvedURL(
+                el.currentSrc ||
+                el.src ||
+                el.getAttribute('data-src') ||
+                el.getAttribute('data-original') ||
+                el.getAttribute('data-lazy-src') ||
+                ''
+            );
+        }
+
+        function blockKind(el) {
+            var tag = el.tagName.toLowerCase();
+            if (/^h[1-4]$/.test(tag)) return 'heading';
+            if (tag === 'blockquote') return 'quote';
+            if (tag === 'li') return 'listItem';
+            if (tag === 'pre' || tag === 'code') return 'code';
+            if (tag === 'img') return 'image';
+            return 'paragraph';
         }
 
         var source =
@@ -206,13 +239,45 @@ enum WebViewScripts {
         var byline =
             (document.querySelector('meta[name="author"]') || {}).content ||
             text(document.querySelector('[rel="author"], .byline, .author'));
-        var bodyText = text(clone);
+        var blocks = [];
+        var seen = Object.create(null);
+
+        function addBlock(kind, value, url) {
+            var cleaned = cleanText(value);
+            if (kind !== 'image' && !cleaned) return;
+            if (kind === 'paragraph' && cleaned.length < 12) return;
+            if (kind === 'heading' && cleaned === cleanText(title)) return;
+            var key = kind + '|' + (url || cleaned).toLowerCase();
+            if (seen[key]) return;
+            seen[key] = true;
+            blocks.push({ type: kind, text: cleaned, url: url || '' });
+        }
+
+        clone.querySelectorAll('h1, h2, h3, h4, p, blockquote, li, pre, code, img').forEach(function(el) {
+            var kind = blockKind(el);
+            if (kind === 'image') {
+                var url = imageURL(el);
+                if (url) addBlock(kind, el.getAttribute('alt') || '', url);
+                return;
+            }
+            addBlock(kind, text(el), '');
+        });
+
+        if (blocks.length === 0) {
+            addBlock('paragraph', text(clone), '');
+        }
+
+        var bodyText = blocks
+            .filter(function(block) { return block.type !== 'image'; })
+            .map(function(block) { return block.text; })
+            .join('\\n\\n');
 
         return {
             title: title,
             byline: byline,
             text: bodyText,
-            url: location.href
+            url: location.href,
+            blocks: blocks
         };
     })();
     """
