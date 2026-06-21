@@ -57,10 +57,45 @@ final class PrivacyProtectionService: ObservableObject {
         updateSummary(for: pageHost) { summary in
             for host in cleanHosts where !Self.domainMatches(host, pageHost: summary.host) {
                 let classification = Self.classify(host: host)
+                let observation = ResourceObservation(
+                    urlString: "https://\(host)",
+                    resourceType: "unknown",
+                    pageURLString: "https://\(summary.host)",
+                    potentiallyBlocked: true
+                )
+                if let request = TrackerRadarService.shared.classify(
+                    observation: observation,
+                    protectionEnabled: !Self.isProtectionDisabled(summary.host, disabledHosts: protectionDisabledHosts)
+                ) {
+                    summary.trackerRequests.insert(request)
+                }
                 var set = summary.trackerHostsByCategory[classification.category] ?? []
                 set.insert(classification.host)
                 summary.trackerHostsByCategory[classification.category] = set
                 summary.trackerCompanies.insert(classification.company)
+            }
+        }
+    }
+
+    func recordResourceObservations(_ observations: [ResourceObservation], for pageURL: URL?) {
+        guard !observations.isEmpty else { return }
+        let pageHost = pageURL?.host ?? observations.first.flatMap { URL(string: $0.pageURLString)?.host }
+        let protectionEnabled = !isProtectionDisabled(for: pageHost)
+        updateSummary(for: pageHost) { summary in
+            for observation in observations {
+                guard let request = TrackerRadarService.shared.classify(
+                    observation: observation,
+                    protectionEnabled: protectionEnabled
+                ) else {
+                    continue
+                }
+                summary.trackerRequests.insert(request)
+                if request.state != .allowedOtherThirdPartyRequest {
+                    var set = summary.trackerHostsByCategory[request.category] ?? []
+                    set.insert(request.host)
+                    summary.trackerHostsByCategory[request.category] = set
+                    summary.trackerCompanies.insert(request.networkNameForDisplay)
+                }
             }
         }
     }

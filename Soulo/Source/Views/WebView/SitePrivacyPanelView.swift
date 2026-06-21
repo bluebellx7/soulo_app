@@ -80,9 +80,27 @@ struct SitePrivacyPanelView: View {
 
             Section {
                 metricRow(
+                    title: LanguageManager.shared.localizedString("site_blocked_trackers"),
+                    value: summary.blockedTrackerCount,
+                    icon: "shield.lefthalf.filled",
+                    color: .green
+                )
+                metricRow(
+                    title: LanguageManager.shared.localizedString("site_detected_trackers"),
+                    value: summary.detectedTrackerCount,
+                    icon: "scope",
+                    color: .purple
+                )
+                metricRow(
+                    title: LanguageManager.shared.localizedString("site_third_party_requests"),
+                    value: summary.thirdPartyRequestCount,
+                    icon: "network",
+                    color: .teal
+                )
+                metricRow(
                     title: LanguageManager.shared.localizedString("site_tracker_hosts"),
                     value: summary.trackerHostCount,
-                    icon: "scope",
+                    icon: "point.3.connected.trianglepath.dotted",
                     color: .purple
                 )
                 metricRow(
@@ -111,6 +129,33 @@ struct SitePrivacyPanelView: View {
                 )
             } header: {
                 SectionHeader(title: LanguageManager.shared.localizedString("site_privacy_activity"))
+            }
+
+            if !summary.trackerRequests.isEmpty {
+                Section {
+                    ForEach(Array(summary.trackerRequests).sorted(by: trackerRequestSort)) { request in
+                        HStack(alignment: .top, spacing: 10) {
+                            Image(systemName: icon(for: request.state))
+                                .foregroundStyle(color(for: request.state))
+                                .frame(width: 20)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(request.networkNameForDisplay)
+                                    .font(.subheadline.weight(.medium))
+                                    .lineLimit(1)
+                                Text(request.host)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                Text(statusText(for: request.state))
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(color(for: request.state))
+                            }
+                            Spacer()
+                        }
+                    }
+                } header: {
+                    SectionHeader(title: LanguageManager.shared.localizedString("site_tracker_requests"))
+                }
             }
 
             if !summary.trackerHostsByCategory.isEmpty {
@@ -186,6 +231,44 @@ struct SitePrivacyPanelView: View {
             Text("\(value)")
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
+        }
+    }
+
+    private func trackerRequestSort(_ lhs: TrackerRequest, _ rhs: TrackerRequest) -> Bool {
+        if lhs.isBlocked != rhs.isBlocked {
+            return lhs.isBlocked
+        }
+        return lhs.networkNameForDisplay < rhs.networkNameForDisplay
+    }
+
+    private func icon(for state: TrackerRequestState) -> String {
+        switch state {
+        case .blocked: return "shield.fill"
+        case .allowedProtectionDisabled: return "shield.slash"
+        case .allowedOwnedByFirstParty: return "building.2"
+        case .allowedOtherThirdPartyRequest: return "network"
+        }
+    }
+
+    private func color(for state: TrackerRequestState) -> Color {
+        switch state {
+        case .blocked: return .green
+        case .allowedProtectionDisabled: return .orange
+        case .allowedOwnedByFirstParty: return .blue
+        case .allowedOtherThirdPartyRequest: return .secondary
+        }
+    }
+
+    private func statusText(for state: TrackerRequestState) -> String {
+        switch state {
+        case .blocked:
+            return LanguageManager.shared.localizedString("site_tracker_blocked")
+        case .allowedProtectionDisabled:
+            return LanguageManager.shared.localizedString("site_tracker_allowed_protection_disabled")
+        case .allowedOwnedByFirstParty:
+            return LanguageManager.shared.localizedString("site_tracker_allowed_first_party")
+        case .allowedOtherThirdPartyRequest:
+            return LanguageManager.shared.localizedString("site_tracker_allowed_third_party")
         }
     }
 

@@ -29,7 +29,7 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertTrue(script.contains("position !== 'fixed' && position !== 'absolute'"))
     }
 
-    func testPrivacyProtectionScriptIncludesGPCTrackerScanAndCookieHandling() {
+    func testPrivacyProtectionScriptIncludesGPCResourceObservationAndCookieHandling() {
         let script = WebViewScripts.privacyProtection(
             gpcEnabled: true,
             cookieBannerHandling: true,
@@ -38,7 +38,9 @@ final class WebViewScriptsTests: XCTestCase {
 
         XCTAssertTrue(script.contains("globalPrivacyControl"))
         XCTAssertTrue(script.contains("souloPrivacy"))
-        XCTAssertTrue(script.contains("trackerScan"))
+        XCTAssertTrue(script.contains("resourceObserved"))
+        XCTAssertTrue(script.contains("observations"))
+        XCTAssertTrue(script.contains("resourceType"))
         XCTAssertTrue(script.contains("cookieBanner"))
         XCTAssertTrue(script.contains("example.com"))
         XCTAssertTrue(script.contains("MutationObserver"))

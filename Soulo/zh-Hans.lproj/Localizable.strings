@@ -477,6 +477,14 @@
 "site_ad_blocking" = "广告拦截";
 "site_privacy_activity" = "隐私活动";
 "site_tracker_hosts" = "追踪器域名";
+"site_tracker_allowed_third_party" = "允许的第三方请求";
+"site_tracker_allowed_first_party" = "作为第一方归属而允许";
+"site_tracker_allowed_protection_disabled" = "因保护关闭而允许";
+"site_tracker_blocked" = "已拦截";
+"site_tracker_requests" = "追踪请求";
+"site_third_party_requests" = "第三方请求";
+"site_detected_trackers" = "已检测追踪器";
+"site_blocked_trackers" = "已拦截追踪器";
 "site_hidden_elements" = "已隐藏元素";
 "site_https_upgrades" = "HTTPS 升级";
 "site_stripped_params" = "已移除追踪参数";

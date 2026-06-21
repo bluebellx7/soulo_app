@@ -53,25 +53,52 @@ enum WebViewScripts {
                 }
             }
 
-            function looksLikeTrackerHost(host) {
-                host = normalizedHost(host);
-                if (!host || domainMatches(host, location.hostname)) return false;
-                return /doubleclick|googlesyndication|googleadservices|google-analytics|googletagmanager|facebook|connect\\.facebook|tiktok|bytedance|oceanengine|hm\\.baidu|cnzz|umeng|clarity\\.ms|hotjar|mouseflow|taboola|outbrain|criteo|adnxs|rubiconproject|pubmatic|openx|scorecardresearch|quantserve|amazon-adsystem|ads-twitter|linkedin|adservice|ads?\\./i.test(host);
+            function resourceTypeForElement(el) {
+                var tag = String(el.tagName || '').toLowerCase();
+                if (tag === 'script') return 'script';
+                if (tag === 'iframe') return 'document';
+                if (tag === 'img') return 'image';
+                if (tag === 'link') return 'stylesheet';
+                if (tag === 'source') return 'media';
+                return 'raw';
             }
 
             function scanTrackers() {
                 var hosts = [];
+                var observations = [];
+                var seen = Object.create(null);
                 var selector = 'script[src], iframe[src], img[src], link[href], source[src], a[href]';
                 try {
                     document.querySelectorAll(selector).forEach(function(el) {
                         var value = el.src || el.href || '';
                         var host = hostFromURL(value);
-                        if (looksLikeTrackerHost(host)) hosts.push(normalizedHost(host));
+                        if (!host || domainMatches(host, location.hostname)) return;
+                        var absoluteURL = '';
+                        try {
+                            absoluteURL = new URL(value, location.href).href;
+                        } catch (_) {
+                            return;
+                        }
+                        var key = absoluteURL + '|' + location.href;
+                        if (seen[key]) return;
+                        seen[key] = true;
+                        hosts.push(normalizedHost(host));
+                        observations.push({
+                            url: absoluteURL,
+                            resourceType: resourceTypeForElement(el),
+                            potentiallyBlocked: true,
+                            pageUrl: location.href
+                        });
                     });
                 } catch (_) {}
                 hosts = Array.from(new Set(hosts)).slice(0, 80);
-                if (hosts.length > 0) {
-                    postPrivacyMessage({ type: 'trackerScan', trackerHosts: hosts });
+                observations = observations.slice(0, 120);
+                if (hosts.length > 0 || observations.length > 0) {
+                    postPrivacyMessage({
+                        type: 'resourceObserved',
+                        trackerHosts: hosts,
+                        observations: observations
+                    });
                 }
             }
 

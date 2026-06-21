@@ -25,6 +25,10 @@ struct WebViewRepresentable: UIViewRepresentable {
 
     /// Call once at app launch to pre-compile ad blocking rules
     static func preWarm() {
+        Task(priority: .utility) {
+            _ = TrackerRadarService.shared
+        }
+
         let defaults = UserDefaults.standard
         guard defaults.object(forKey: "ad_block_enabled") as? Bool ?? true,
               defaults.object(forKey: "ad_block_network_enabled") as? Bool ?? true else {
@@ -237,13 +241,31 @@ struct WebViewRepresentable: UIViewRepresentable {
             let host = (body["host"] as? String) ?? viewModel.currentURL?.host
             Task { @MainActor in
                 switch type {
-                case "trackerScan":
+                case "trackerScan", "resourceObserved":
+                    let observations = self.resourceObservations(from: body["observations"])
+                    PrivacyProtectionService.shared.recordResourceObservations(observations, for: viewModel.currentURL)
                     PrivacyProtectionService.shared.recordTrackerHosts(body["trackerHosts"] as? [String] ?? [], for: host)
                 case "cookieBanner":
                     PrivacyProtectionService.shared.recordCookieBannerActions(body["actionCount"] as? Int ?? 0, for: host)
                 default:
                     break
                 }
+            }
+        }
+
+        private func resourceObservations(from value: Any?) -> [ResourceObservation] {
+            guard let rawObservations = value as? [[String: Any]] else { return [] }
+            return rawObservations.compactMap { raw in
+                guard let urlString = raw["url"] as? String,
+                      !urlString.isEmpty else {
+                    return nil
+                }
+                return ResourceObservation(
+                    urlString: urlString,
+                    resourceType: raw["resourceType"] as? String ?? "raw",
+                    pageURLString: raw["pageUrl"] as? String ?? viewModel.currentURL?.absoluteString ?? "",
+                    potentiallyBlocked: raw["potentiallyBlocked"] as? Bool ?? false
+                )
             }
         }
 

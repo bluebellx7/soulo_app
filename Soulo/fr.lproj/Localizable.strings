@@ -427,6 +427,14 @@ Dites-nous :
 "site_ad_blocking" = "Ad Blocking";
 "site_privacy_activity" = "Privacy Activity";
 "site_tracker_hosts" = "Tracker Hosts";
+"site_tracker_allowed_third_party" = "Allowed third-party request";
+"site_tracker_allowed_first_party" = "Allowed as first-party owned";
+"site_tracker_allowed_protection_disabled" = "Allowed because protection is off";
+"site_tracker_blocked" = "Blocked";
+"site_tracker_requests" = "Tracker Requests";
+"site_third_party_requests" = "Third-Party Requests";
+"site_detected_trackers" = "Detected Trackers";
+"site_blocked_trackers" = "Blocked Trackers";
 "site_hidden_elements" = "Hidden Page Elements";
 "site_https_upgrades" = "HTTPS Upgrades";
 "site_stripped_params" = "Tracking Parameters Removed";
