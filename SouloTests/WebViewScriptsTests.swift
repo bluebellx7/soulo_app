@@ -16,6 +16,7 @@ final class WebViewScriptsTests: XCTestCase {
 
         XCTAssertTrue(script.contains("souloAdBlocker"))
         XCTAssertTrue(script.contains("hiddenCount"))
+        XCTAssertTrue(script.contains("trackerHosts"))
         XCTAssertTrue(script.contains("location.hostname"))
     }
 
@@ -26,5 +27,36 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertTrue(script.contains("gudingwei"))
         XCTAssertTrue(script.contains("isLikelyFloatingAd"))
         XCTAssertTrue(script.contains("position !== 'fixed' && position !== 'absolute'"))
+    }
+
+    func testPrivacyProtectionScriptIncludesGPCTrackerScanAndCookieHandling() {
+        let script = WebViewScripts.privacyProtection(
+            gpcEnabled: true,
+            cookieBannerHandling: true,
+            disabledHosts: ["example.com"]
+        )
+
+        XCTAssertTrue(script.contains("globalPrivacyControl"))
+        XCTAssertTrue(script.contains("souloPrivacy"))
+        XCTAssertTrue(script.contains("trackerScan"))
+        XCTAssertTrue(script.contains("cookieBanner"))
+        XCTAssertTrue(script.contains("example.com"))
+        XCTAssertTrue(script.contains("MutationObserver"))
+    }
+
+    func testPrivacyProtectionScriptCanDisableGPCAndCookieHandling() {
+        let script = WebViewScripts.privacyProtection(gpcEnabled: false, cookieBannerHandling: false)
+
+        XCTAssertTrue(script.contains("var souloGPCEnabled = false"))
+        XCTAssertTrue(script.contains("var souloCookieBannerHandling = false"))
+    }
+
+    func testReaderExtractionPrefersReadableContentAndRemovesNoise() {
+        let script = WebViewScripts.readerExtraction
+
+        XCTAssertTrue(script.contains("document.querySelector('article')"))
+        XCTAssertTrue(script.contains("removeNoise"))
+        XCTAssertTrue(script.contains("meta[property=\"og:title\"]"))
+        XCTAssertTrue(script.contains("return {"))
     }
 }

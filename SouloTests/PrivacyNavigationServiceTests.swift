@@ -61,4 +61,25 @@ final class PrivacyNavigationServiceTests: XCTestCase {
 
         XCTAssertEqual(service.decision(for: url, isMainFrame: false), .allow)
     }
+
+    func testSiteProtectionDisableBypassesPrivacyNavigation() {
+        let service = PrivacyNavigationService(userDefaults: defaults)
+        defaults.set(["example.com"], forKey: "soulo_privacy_disabled_hosts")
+        let url = URL(string: "http://news.example.com/?utm_source=x&id=1")!
+
+        XCTAssertNil(service.transformedURL(for: url))
+    }
+
+    func testHTTPSUpgradeFailureExcludesHostAndSubdomains() {
+        let service = PrivacyNavigationService(userDefaults: defaults)
+
+        service.recordHTTPSUpgradeFailure(for: "example.com")
+
+        XCTAssertNil(service.transformedURL(for: URL(string: "http://example.com/path")!))
+        XCTAssertNil(service.transformedURL(for: URL(string: "http://news.example.com/path")!))
+        XCTAssertEqual(
+            service.transformedURL(for: URL(string: "http://other.com/path")!)?.absoluteString,
+            "https://other.com/path"
+        )
+    }
 }

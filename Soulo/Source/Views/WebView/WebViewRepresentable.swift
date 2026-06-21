@@ -11,7 +11,11 @@ struct WebViewRepresentable: UIViewRepresentable {
     @AppStorage("ad_block_cosmetic_enabled") private var adBlockCosmeticEnabled: Bool = true
     @AppStorage("ad_block_popup_enabled") private var adBlockPopupEnabled: Bool = true
     @AppStorage("is_incognito") private var isIncognito: Bool = false
+    @AppStorage("privacy_gpc_enabled") private var gpcEnabled: Bool = true
+    @AppStorage("privacy_dnt_enabled") private var dntEnabled: Bool = true
+    @AppStorage("privacy_cookie_banner_enabled") private var cookieBannerEnabled: Bool = true
     @ObservedObject private var adBlockSettings = AdBlockSettingsService.shared
+    @ObservedObject private var privacyService = PrivacyProtectionService.shared
 
     // MARK: - Make View
 
@@ -55,6 +59,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         // Content controller for JS message handler
         let contentController = WKUserContentController()
         contentController.add(context.coordinator, name: "souloAdBlocker")
+        contentController.add(context.coordinator, name: "souloPrivacy")
 
         let modalScript = WKUserScript(
             source: WebViewScripts.loginOverlayRemoval,
@@ -63,10 +68,22 @@ struct WebViewRepresentable: UIViewRepresentable {
         )
         contentController.addUserScript(modalScript)
 
+        let privacyScript = WKUserScript(
+            source: WebViewScripts.privacyProtection(
+                gpcEnabled: gpcEnabled,
+                cookieBannerHandling: cookieBannerEnabled,
+                disabledHosts: privacyService.protectionDisabledHosts
+            ),
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false
+        )
+        contentController.addUserScript(privacyScript)
+
         // (Long-press context menus are handled natively via WKUIDelegate contextMenuConfigurationForElement)
 
         // Ad blocking: inject CSS/JS to hide ad elements
         let hostIsAllowlisted = adBlockSettings.isAllowlisted(viewModel.currentURL?.host)
+            || privacyService.isProtectionDisabled(for: viewModel.currentURL?.host)
         if adBlockEnabled && !hostIsAllowlisted && (adBlockCosmeticEnabled || adBlockPopupEnabled) {
             let adScript = WKUserScript(
                 source: AdBlockService.adHidingScript(
@@ -126,7 +143,8 @@ struct WebViewRepresentable: UIViewRepresentable {
                 allowlistedHosts: adBlockSettings.allowlistedHosts,
                 host: uiView.url?.host ?? viewModel.currentURL?.host
             )
-        if adBlockEnabled && adBlockNetworkEnabled {
+        let host = uiView.url?.host ?? viewModel.currentURL?.host
+        if adBlockEnabled && adBlockNetworkEnabled && !privacyService.isProtectionDisabled(for: host) {
             Self.ensureCurrentContentRules(on: uiView, allowlist: adBlockSettings.allowlistedHosts)
         } else {
             uiView.configuration.userContentController.removeAllContentRuleLists()
@@ -169,6 +187,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) {
         coordinator.invalidateObservations()
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloAdBlocker")
+        uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloPrivacy")
         uiView.configuration.userContentController.removeAllUserScripts()
     }
 
@@ -179,22 +198,43 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         private let viewModel: WebViewModel
         private var observations: [NSKeyValueObservation] = []
-        private var downloadFileURL: URL?
+        private var downloadIDs: [ObjectIdentifier: UUID] = [:]
         private var lastAdHidingSignature = ""
         private var httpsUpgradeFallbacks: [String: URL] = [:]
         private var oneShotHTTPFallbacks = Set<String>()
+        private var privacyHeaderBypassURLs = Set<String>()
 
         init(viewModel: WebViewModel) {
             self.viewModel = viewModel
         }
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-            guard message.name == "souloAdBlocker",
-                  let body = message.body as? [String: Any] else { return }
-            let count = body["hiddenCount"] as? Int ?? 0
+            guard let body = message.body as? [String: Any] else { return }
+
+            if message.name == "souloAdBlocker" {
+                let count = body["hiddenCount"] as? Int ?? 0
+                let host = (body["host"] as? String) ?? viewModel.currentURL?.host
+                let trackerHosts = body["trackerHosts"] as? [String] ?? []
+                Task { @MainActor in
+                    AdBlockSettingsService.shared.recordHiddenElementCount(count, for: host)
+                    PrivacyProtectionService.shared.recordHiddenElementCount(count, for: host)
+                    PrivacyProtectionService.shared.recordTrackerHosts(trackerHosts, for: host)
+                }
+                return
+            }
+
+            guard message.name == "souloPrivacy" else { return }
+            let type = body["type"] as? String ?? ""
             let host = (body["host"] as? String) ?? viewModel.currentURL?.host
             Task { @MainActor in
-                AdBlockSettingsService.shared.recordHiddenElementCount(count, for: host)
+                switch type {
+                case "trackerScan":
+                    PrivacyProtectionService.shared.recordTrackerHosts(body["trackerHosts"] as? [String] ?? [], for: host)
+                case "cookieBanner":
+                    PrivacyProtectionService.shared.recordCookieBannerActions(body["actionCount"] as? Int ?? 0, for: host)
+                default:
+                    break
+                }
             }
         }
 
@@ -254,16 +294,31 @@ struct WebViewRepresentable: UIViewRepresentable {
                 cosmetic ? "1" : "0",
                 popups ? "1" : "0",
                 allowlistedHosts.joined(separator: ","),
-                AdBlockSettingsService.isHostAllowlisted(host) ? "1" : "0"
+                (AdBlockSettingsService.isHostAllowlisted(host) || PrivacyProtectionService.isProtectionDisabled(host)) ? "1" : "0"
             ].joined(separator: "|")
             guard signature != lastAdHidingSignature else { return }
             lastAdHidingSignature = signature
 
-            guard enabled, !AdBlockSettingsService.isHostAllowlisted(host), cosmetic || popups else {
+            guard enabled,
+                  !AdBlockSettingsService.isHostAllowlisted(host),
+                  !PrivacyProtectionService.isProtectionDisabled(host),
+                  cosmetic || popups else {
                 return
             }
             webView.evaluateJavaScript(
                 AdBlockService.adHidingScript(cosmetic: cosmetic, popups: popups, allowlistedHosts: allowlistedHosts),
+                completionHandler: nil
+            )
+        }
+
+        func applyPrivacyProtectionIfNeeded(on webView: WKWebView) {
+            let defaults = UserDefaults.standard
+            webView.evaluateJavaScript(
+                WebViewScripts.privacyProtection(
+                    gpcEnabled: defaults.object(forKey: "privacy_gpc_enabled") as? Bool ?? true,
+                    cookieBannerHandling: defaults.object(forKey: "privacy_cookie_banner_enabled") as? Bool ?? true,
+                    disabledHosts: defaults.stringArray(forKey: "soulo_privacy_disabled_hosts") ?? []
+                ),
                 completionHandler: nil
             )
         }
@@ -282,6 +337,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 self?.viewModel.updateCurrentURL(webView.url)
             }
             applyCurrentAdHidingIfNeeded(on: webView)
+            applyPrivacyProtectionIfNeeded(on: webView)
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -291,6 +347,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 self.viewModel.updateCurrentURL(webView.url)
                 self.viewModel.updateTitle(webView.title)
                 self.applyCurrentAdHidingIfNeeded(on: webView)
+                self.applyPrivacyProtectionIfNeeded(on: webView)
                 // Capture snapshot for tab preview (slight delay for render)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                     self?.viewModel.takeSnapshot()
@@ -362,23 +419,76 @@ struct WebViewRepresentable: UIViewRepresentable {
                 if method == "GET", !shouldSkipPrivacyTransform {
                     switch PrivacyNavigationService.shared.decision(for: url, isMainFrame: isMainFrame) {
                     case .allow:
-                        decisionHandler(.allow)
+                        break
                     case .redirect(let transformedURL):
                         if isHTTPSUpgrade(from: url, to: transformedURL) {
                             httpsUpgradeFallbacks[transformedURL.absoluteString] = url
                         }
+                        let strippedCount = PrivacyNavigationService.shared.strippedTrackingParameterCount(from: url, to: transformedURL)
+                        Task { @MainActor in
+                            if self.isHTTPSUpgrade(from: url, to: transformedURL) {
+                                PrivacyProtectionService.shared.recordHTTPSUpgrade(for: transformedURL.host ?? url.host)
+                            }
+                            PrivacyProtectionService.shared.recordTrackingParametersStripped(strippedCount, for: transformedURL.host ?? url.host)
+                        }
+                        var transformedRequest = navigationAction.request
+                        transformedRequest.url = transformedURL
+                        if let privacyHeaderRequest = privacyHeaderRequestIfNeeded(for: transformedRequest) {
+                            transformedRequest = privacyHeaderRequest
+                            privacyHeaderBypassURLs.insert(privacyHeaderRequest.url?.absoluteString ?? transformedURL.absoluteString)
+                        }
                         decisionHandler(.cancel)
-                        webView.load(URLRequest(url: transformedURL))
+                        webView.load(transformedRequest)
+                        return
                     }
-                } else {
-                    decisionHandler(.allow)
                 }
+
+                if method == "GET",
+                   let privacyHeaderRequest = privacyHeaderRequestIfNeeded(for: navigationAction.request) {
+                    privacyHeaderBypassURLs.insert(privacyHeaderRequest.url?.absoluteString ?? url.absoluteString)
+                    decisionHandler(.cancel)
+                    webView.load(privacyHeaderRequest)
+                    return
+                }
+
+                decisionHandler(.allow)
             case .cancel:
                 decisionHandler(.cancel)
             case .external(let externalURL):
                 decisionHandler(.cancel)
                 postExternalURLRequestIfNeeded(externalURL)
             }
+        }
+
+        private func privacyHeaderRequestIfNeeded(for request: URLRequest) -> URLRequest? {
+            guard let url = request.url,
+                  let scheme = url.scheme?.lowercased(),
+                  scheme == "http" || scheme == "https",
+                  !PrivacyProtectionService.isProtectionDisabled(url.host) else {
+                return nil
+            }
+
+            if privacyHeaderBypassURLs.remove(url.absoluteString) != nil {
+                return nil
+            }
+
+            let defaults = UserDefaults.standard
+            let gpcEnabled = defaults.object(forKey: "privacy_gpc_enabled") as? Bool ?? true
+            let dntEnabled = defaults.object(forKey: "privacy_dnt_enabled") as? Bool ?? true
+            guard gpcEnabled || dntEnabled else { return nil }
+
+            let existingHeaders = request.allHTTPHeaderFields ?? [:]
+            var needsRewrite = false
+            var rewritten = request
+            if gpcEnabled && existingHeaders["Sec-GPC"] == nil {
+                rewritten.setValue("1", forHTTPHeaderField: "Sec-GPC")
+                needsRewrite = true
+            }
+            if dntEnabled && existingHeaders["DNT"] == nil {
+                rewritten.setValue("1", forHTTPHeaderField: "DNT")
+                needsRewrite = true
+            }
+            return needsRewrite ? rewritten : nil
         }
 
         private func isHTTPSUpgrade(from originalURL: URL, to transformedURL: URL) -> Bool {
@@ -405,6 +515,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             }
 
             oneShotHTTPFallbacks.insert(originalHTTPURL.absoluteString)
+            PrivacyNavigationService.shared.recordHTTPSUpgradeFailure(for: originalHTTPURL.host)
             webView.load(URLRequest(url: originalHTTPURL))
             return true
         }
@@ -620,11 +731,11 @@ struct WebViewRepresentable: UIViewRepresentable {
             suggestedFilename: String,
             completionHandler: @escaping (URL?) -> Void
         ) {
-            let tempDir = FileManager.default.temporaryDirectory
-            let fileURL = tempDir.appendingPathComponent(suggestedFilename)
-            // Remove if already exists
-            try? FileManager.default.removeItem(at: fileURL)
-            downloadFileURL = fileURL
+            let (item, fileURL) = DownloadManagerService.shared.beginDownload(
+                suggestedFilename: suggestedFilename,
+                sourceURL: response.url
+            )
+            downloadIDs[ObjectIdentifier(download)] = item.id
 
             Task { @MainActor in
                 viewModel.isDownloading = true
@@ -635,9 +746,16 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         func downloadDidFinish(_ download: WKDownload) {
-            guard let fileURL = downloadFileURL else { return }
+            let downloadID = downloadIDs.removeValue(forKey: ObjectIdentifier(download))
+            let fileURL = downloadID.flatMap { id in
+                DownloadManagerService.shared.downloads.first(where: { $0.id == id })?.localURL
+            }
+            if let downloadID {
+                DownloadManagerService.shared.markFinished(id: downloadID)
+            }
             Task { @MainActor in
                 viewModel.isDownloading = false
+                guard let fileURL else { return }
 
                 // Present system share sheet to let user decide where to save
                 guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
@@ -646,21 +764,18 @@ struct WebViewRepresentable: UIViewRepresentable {
                 while let presented = vc.presentedViewController { vc = presented }
 
                 let activityVC = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
-                activityVC.completionWithItemsHandler = { _, _, _, _ in
-                    // Clean up temp file
-                    try? FileManager.default.removeItem(at: fileURL)
-                }
                 vc.present(activityVC, animated: true)
             }
         }
 
         func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
+            let downloadID = downloadIDs.removeValue(forKey: ObjectIdentifier(download))
+            if let downloadID {
+                DownloadManagerService.shared.markFailed(id: downloadID, error: error)
+            }
             Task { @MainActor in
                 viewModel.isDownloading = false
                 viewModel.setError(LanguageManager.shared.localizedString("save_failed"))
-            }
-            if let fileURL = downloadFileURL {
-                try? FileManager.default.removeItem(at: fileURL)
             }
         }
     }

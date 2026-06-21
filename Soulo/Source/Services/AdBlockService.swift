@@ -351,8 +351,37 @@ struct AdBlockService {
                 }
             }
 
+            function normalizedTrackerHost(value) {
+                return String(value || '').toLowerCase().replace(/^www\\./, '');
+            }
+
+            function hostFromElement(el) {
+                try {
+                    var value = el.src || el.href || '';
+                    if (!value && el.querySelector) {
+                        var child = el.querySelector('[src], [href]');
+                        value = (child && (child.src || child.href)) || '';
+                    }
+                    if (!value) {
+                        var html = String(el.outerHTML || '');
+                        var match = html.match(/https?:\\/\\/([^\\/"'\\s>]+)/i);
+                        value = match ? match[0] : '';
+                    }
+                    return normalizedTrackerHost(new URL(value, location.href).hostname);
+                } catch(e) {
+                    return '';
+                }
+            }
+
+            function looksLikeTrackerHost(host) {
+                host = normalizedTrackerHost(host);
+                if (!host || domainMatches(host, location.hostname)) return false;
+                return /doubleclick|googlesyndication|googleadservices|google-analytics|googletagmanager|facebook|connect\\.facebook|tiktok|bytedance|oceanengine|hm\\.baidu|cnzz|umeng|clarity\\.ms|hotjar|mouseflow|taboola|outbrain|criteo|adnxs|rubiconproject|pubmatic|openx|scorecardresearch|quantserve|amazon-adsystem|ads-twitter|linkedin|adservice|ads?\\./i.test(host);
+            }
+
             function removeAds() {
                 var hiddenCount = 0;
+                var trackerHosts = [];
                 if (souloCosmeticEnabled) {
                     var selectors = [
                         'ins.adsbygoogle', 'div[id^="div-gpt-ad"]',
@@ -383,6 +412,8 @@ struct AdBlockService {
                         try {
                             document.querySelectorAll(sel).forEach(function(el) {
                                 hiddenCount++;
+                                var host = hostFromElement(el);
+                                if (looksLikeTrackerHost(host)) trackerHosts.push(host);
                                 el.remove();
                             });
                         } catch(e) {}
@@ -426,6 +457,8 @@ struct AdBlockService {
                     document.querySelectorAll('div, section, aside, iframe, a, img').forEach(function(el) {
                         if (isLikelyFloatingAd(el)) {
                             hiddenCount++;
+                            var host = hostFromElement(el);
+                            if (looksLikeTrackerHost(host)) trackerHosts.push(host);
                             el.remove();
                         }
                     });
@@ -441,7 +474,8 @@ struct AdBlockService {
                     try {
                         window.webkit.messageHandlers.souloAdBlocker.postMessage({
                             host: location.hostname,
-                            hiddenCount: hiddenCount
+                            hiddenCount: hiddenCount,
+                            trackerHosts: Array.from(new Set(trackerHosts)).slice(0, 80)
                         });
                     } catch(e) {}
                 }

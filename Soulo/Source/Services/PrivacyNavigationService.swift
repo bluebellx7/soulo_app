@@ -11,6 +11,7 @@ struct PrivacyNavigationService {
     private let userDefaults: UserDefaults
     private let httpsUpgradeKey: String
     private let stripTrackingParametersKey: String
+    private let httpsUpgradeExcludedHostsKey: String
 
     private let trackingParameterPrefixes: Set<String> = [
         "utm_", "ga_", "pk_", "mtm_"
@@ -53,11 +54,13 @@ struct PrivacyNavigationService {
     init(
         userDefaults: UserDefaults = .standard,
         httpsUpgradeKey: String = "privacy_https_upgrade_enabled",
-        stripTrackingParametersKey: String = "privacy_strip_tracking_parameters"
+        stripTrackingParametersKey: String = "privacy_strip_tracking_parameters",
+        httpsUpgradeExcludedHostsKey: String = "privacy_https_upgrade_excluded_hosts"
     ) {
         self.userDefaults = userDefaults
         self.httpsUpgradeKey = httpsUpgradeKey
         self.stripTrackingParametersKey = stripTrackingParametersKey
+        self.httpsUpgradeExcludedHostsKey = httpsUpgradeExcludedHostsKey
     }
 
     func decision(for url: URL, isMainFrame: Bool = true) -> PrivacyNavigationDecision {
@@ -70,6 +73,9 @@ struct PrivacyNavigationService {
     func transformedURL(for url: URL) -> URL? {
         guard let scheme = url.scheme?.lowercased(),
               scheme == "http" || scheme == "https" else {
+            return nil
+        }
+        guard !PrivacyProtectionService.isProtectionDisabled(url.host, userDefaults: userDefaults) else {
             return nil
         }
 
@@ -96,10 +102,27 @@ struct PrivacyNavigationService {
         userDefaults.object(forKey: stripTrackingParametersKey) as? Bool ?? true
     }
 
+    func strippedTrackingParameterCount(from originalURL: URL, to transformedURL: URL) -> Int {
+        let originalNames = URLComponents(url: originalURL, resolvingAgainstBaseURL: false)?.queryItems?.map(\.name) ?? []
+        let transformedNames = Set(URLComponents(url: transformedURL, resolvingAgainstBaseURL: false)?.queryItems?.map(\.name) ?? [])
+        return originalNames.filter { isTrackingParameter($0) && !transformedNames.contains($0) }.count
+    }
+
+    func recordHTTPSUpgradeFailure(for host: String?) {
+        let cleanHost = PrivacyProtectionService.normalizedHost(host)
+        guard !cleanHost.isEmpty else { return }
+        var hosts = userDefaults.stringArray(forKey: httpsUpgradeExcludedHostsKey) ?? []
+        guard !hosts.contains(cleanHost) else { return }
+        hosts.append(cleanHost)
+        hosts.sort()
+        userDefaults.set(hosts, forKey: httpsUpgradeExcludedHostsKey)
+    }
+
     private func httpsUpgradedURL(from url: URL) -> URL? {
         guard url.scheme?.lowercased() == "http",
               let host = url.host,
               !isLocalOrPrivateHost(host),
+              !isHTTPSUpgradeExcluded(host),
               var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return nil
         }
@@ -109,6 +132,12 @@ struct PrivacyNavigationService {
             components.port = nil
         }
         return components.url
+    }
+
+    private func isHTTPSUpgradeExcluded(_ host: String) -> Bool {
+        let cleanHost = PrivacyProtectionService.normalizedHost(host)
+        let excludedHosts = userDefaults.stringArray(forKey: httpsUpgradeExcludedHostsKey) ?? []
+        return excludedHosts.contains { cleanHost == $0 || cleanHost.hasSuffix(".\($0)") }
     }
 
     private func strippedTrackingParametersURL(from url: URL) -> URL? {

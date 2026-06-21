@@ -7,7 +7,11 @@ struct WebViewToolbar: View {
     var tabManager: TabManager?
     var onShare: (() -> Void)?
     var onBookmarkToggle: (() -> Void)?
+    var onShowPrivacy: (() -> Void)?
     var onManageAdBlock: (() -> Void)?
+    var onShowDownloads: (() -> Void)?
+    var onReaderMode: (() -> Void)?
+    var onFireButton: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 10) {
@@ -60,6 +64,22 @@ struct WebViewToolbar: View {
 
             Divider()
 
+            if viewModel.currentURL?.host != nil {
+                Button {
+                    onShowPrivacy?()
+                } label: {
+                    Label(LanguageManager.shared.localizedString("site_privacy"), systemImage: "shield.checkered")
+                }
+            }
+
+            if viewModel.currentURL != nil {
+                Button {
+                    onReaderMode?()
+                } label: {
+                    Label(LanguageManager.shared.localizedString("reader_mode"), systemImage: "doc.plaintext")
+                }
+            }
+
             // Find in Page
             if let tabManager = tabManager, viewModel.currentURL != nil {
                 Button {
@@ -75,6 +95,12 @@ struct WebViewToolbar: View {
                 } label: {
                     Label(LanguageManager.shared.localizedString("ad_block_management"), systemImage: "shield.lefthalf.filled")
                 }
+            }
+
+            Button {
+                onShowDownloads?()
+            } label: {
+                Label(LanguageManager.shared.localizedString("downloads"), systemImage: "arrow.down.circle")
             }
 
             // Desktop Mode
@@ -97,6 +123,12 @@ struct WebViewToolbar: View {
                     tabManager.createTab()
                 } label: {
                     Label(LanguageManager.shared.localizedString("tab_new_tab"), systemImage: "plus.square")
+                }
+
+                Button(role: .destructive) {
+                    onFireButton?()
+                } label: {
+                    Label(LanguageManager.shared.localizedString("fire_button"), systemImage: "flame.fill")
                 }
 
                 // Restore Last Closed

@@ -223,6 +223,14 @@ struct SettingsView: View {
                             }
                         }
 
+                        NavigationLink(destination: DownloadManagerView()) {
+                            Label {
+                                Text(LanguageManager.shared.localizedString("downloads"))
+                            } icon: {
+                                IconBadge(systemName: "arrow.down.circle.fill", color: .blue)
+                            }
+                        }
+
                         NavigationLink(destination: ExternalNavigationSettingsView()) {
                             Label {
                                 Text(LanguageManager.shared.localizedString("external_navigation"))

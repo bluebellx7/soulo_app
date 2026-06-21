@@ -20,6 +20,10 @@ struct WebViewContainer: View {
     @State private var showNewTabPage: Bool = true
     @State private var toolbarMinimized: Bool = false
     @State private var showAdBlockManager = false
+    @State private var showPrivacyPanel = false
+    @State private var showDownloads = false
+    @State private var showFireConfirm = false
+    @State private var showFireComplete = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -77,7 +81,11 @@ struct WebViewContainer: View {
                                 }
                             },
                             onBookmarkToggle: { handleBookmarkToggle() },
-                            onManageAdBlock: { showAdBlockManager = true }
+                            onShowPrivacy: { showPrivacyPanel = true },
+                            onManageAdBlock: { showAdBlockManager = true },
+                            onShowDownloads: { showDownloads = true },
+                            onReaderMode: { webViewModel.extractReaderContent() },
+                            onFireButton: { showFireConfirm = true }
                         )
                         .transition(.asymmetric(
                             insertion: .move(edge: .bottom).combined(with: .opacity),
@@ -94,6 +102,14 @@ struct WebViewContainer: View {
                 toastView(
                     icon: isBookmarked ? "bookmark.fill" : "bookmark.slash",
                     text: LanguageManager.shared.localizedString(isBookmarked ? "bookmark_added" : "bookmark_removed")
+                )
+            }
+
+            if showFireComplete {
+                toastView(
+                    icon: "flame.fill",
+                    text: LanguageManager.shared.localizedString("fire_complete"),
+                    iconColor: .orange
                 )
             }
 
@@ -245,6 +261,36 @@ struct WebViewContainer: View {
                     webViewModel.reload()
                 }
             }
+        }
+        .sheet(isPresented: $showPrivacyPanel) {
+            NavigationStack {
+                SitePrivacyPanelView(currentURL: webViewModel.currentURL) {
+                    webViewModel.reload()
+                }
+            }
+        }
+        .sheet(isPresented: $showDownloads) {
+            NavigationStack {
+                DownloadManagerView()
+            }
+        }
+        .sheet(item: $webViewModel.readerContent) { content in
+            ReaderModeView(content: content)
+        }
+        .alert(LanguageManager.shared.localizedString("fire_button"), isPresented: $showFireConfirm) {
+            Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
+            Button(LanguageManager.shared.localizedString("fire_button_confirm"), role: .destructive) {
+                FireButtonService.burn(tabManager: tabManager) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        showFireComplete = true
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+                        withAnimation { showFireComplete = false }
+                    }
+                }
+            }
+        } message: {
+            Text(LanguageManager.shared.localizedString("fire_button_desc"))
         }
     }
 

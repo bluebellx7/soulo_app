@@ -68,6 +68,13 @@ final class AdBlockSettingsService: ObservableObject {
         saveStats()
     }
 
+    func resetStats(for host: String?) {
+        guard let host else { return }
+        let cleanHost = normalizedHost(host)
+        hiddenElementCountByHost.removeValue(forKey: cleanHost)
+        saveStats()
+    }
+
     private func normalizedHost(_ host: String) -> String {
         Self.normalizedHost(host)
     }
