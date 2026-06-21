@@ -9,6 +9,11 @@ enum WebViewScripts {
             var souloGPCEnabled = \(gpcEnabled ? "true" : "false");
             var souloCookieBannerHandling = \(cookieBannerHandling ? "true" : "false");
             var souloDisabledHosts = \(disabledHostsJSON);
+            window.__souloPrivacyConfig = {
+                gpcEnabled: souloGPCEnabled,
+                cookieBannerHandling: souloCookieBannerHandling,
+                disabledHosts: souloDisabledHosts
+            };
 
             function normalizedHost(value) {
                 return String(value || '').toLowerCase().replace(/^www\\./, '');
@@ -21,14 +26,22 @@ enum WebViewScripts {
                 return host === pattern || host.endsWith('.' + pattern);
             }
 
+            function privacyConfig() {
+                return window.__souloPrivacyConfig || {
+                    gpcEnabled: souloGPCEnabled,
+                    cookieBannerHandling: souloCookieBannerHandling,
+                    disabledHosts: souloDisabledHosts
+                };
+            }
+
             function siteProtectionDisabled() {
                 var host = normalizedHost(location.hostname);
-                return souloDisabledHosts.some(function(domain) { return domainMatches(domain, host); });
+                return (privacyConfig().disabledHosts || []).some(function(domain) { return domainMatches(domain, host); });
             }
 
             if (siteProtectionDisabled()) return;
 
-            if (souloGPCEnabled) {
+            if (privacyConfig().gpcEnabled) {
                 try {
                     Object.defineProperty(navigator, 'globalPrivacyControl', {
                         value: true,
@@ -36,6 +49,14 @@ enum WebViewScripts {
                     });
                 } catch (_) {}
             }
+
+            if (window.__souloPrivacyProtectionInstalled) {
+                if (typeof window.__souloPrivacyScan === 'function') {
+                    window.__souloPrivacyScan();
+                }
+                return;
+            }
+            window.__souloPrivacyProtectionInstalled = true;
 
             function postPrivacyMessage(payload) {
                 if (!window.webkit || !window.webkit.messageHandlers || !window.webkit.messageHandlers.souloPrivacy) return;
@@ -58,29 +79,58 @@ enum WebViewScripts {
                 if (tag === 'script') return 'script';
                 if (tag === 'iframe') return 'document';
                 if (tag === 'img') return 'image';
-                if (tag === 'link') return 'stylesheet';
-                if (tag === 'source') return 'media';
+                if (tag === 'link') {
+                    var rel = String(el.rel || '').toLowerCase();
+                    if (rel.indexOf('stylesheet') >= 0) return 'stylesheet';
+                    if (rel.indexOf('icon') >= 0) return 'image';
+                    return 'raw';
+                }
+                if (tag === 'source' || tag === 'video' || tag === 'audio' || tag === 'track') return 'media';
+                if (tag === 'embed' || tag === 'object') return 'document';
                 return 'raw';
             }
 
+            function resourceURLForElement(el) {
+                var tag = String(el.tagName || '').toLowerCase();
+                if (tag === 'object') return el.data || '';
+                return el.currentSrc || el.src || el.href || el.data || '';
+            }
+
             function scanTrackers() {
+                if (siteProtectionDisabled()) return;
                 var hosts = [];
                 var observations = [];
                 var seen = Object.create(null);
-                var selector = 'script[src], iframe[src], img[src], link[href], source[src], a[href]';
+                var selector = [
+                    'script[src]',
+                    'iframe[src]',
+                    'img[src]',
+                    'link[href][rel~="stylesheet"]',
+                    'link[href][rel~="preload"]',
+                    'link[href][rel~="preconnect"]',
+                    'link[href][rel~="dns-prefetch"]',
+                    'source[src]',
+                    'video[src]',
+                    'audio[src]',
+                    'track[src]',
+                    'embed[src]',
+                    'object[data]'
+                ].join(',');
                 try {
-                    document.querySelectorAll(selector).forEach(function(el) {
-                        var value = el.src || el.href || '';
+                    var elements = document.querySelectorAll(selector);
+                    for (var i = 0; i < elements.length && observations.length < 120; i++) {
+                        var el = elements[i];
+                        var value = resourceURLForElement(el);
                         var host = hostFromURL(value);
-                        if (!host || domainMatches(host, location.hostname)) return;
+                        if (!host || domainMatches(host, location.hostname)) continue;
                         var absoluteURL = '';
                         try {
                             absoluteURL = new URL(value, location.href).href;
                         } catch (_) {
-                            return;
+                            continue;
                         }
                         var key = absoluteURL + '|' + location.href;
-                        if (seen[key]) return;
+                        if (seen[key]) continue;
                         seen[key] = true;
                         hosts.push(normalizedHost(host));
                         observations.push({
@@ -89,10 +139,9 @@ enum WebViewScripts {
                             potentiallyBlocked: true,
                             pageUrl: location.href
                         });
-                    });
+                    }
                 } catch (_) {}
                 hosts = Array.from(new Set(hosts)).slice(0, 80);
-                observations = observations.slice(0, 120);
                 if (hosts.length > 0 || observations.length > 0) {
                     postPrivacyMessage({
                         type: 'resourceObserved',
@@ -141,7 +190,7 @@ enum WebViewScripts {
             }
 
             function handleCookieBanners() {
-                if (!souloCookieBannerHandling) return;
+                if (siteProtectionDisabled() || !privacyConfig().cookieBannerHandling) return;
                 var handled = 0;
                 var selectors = [
                     '#onetrust-banner-sdk', '#onetrust-consent-sdk', '.ot-sdk-container',
@@ -181,22 +230,32 @@ enum WebViewScripts {
                 }
             }
 
-            scanTrackers();
-            handleCookieBanners();
+            window.__souloPrivacyScan = function() {
+                scanTrackers();
+                handleCookieBanners();
+            };
+            window.__souloPrivacyScan();
 
-            var observer = new MutationObserver(function(mutations) {
-                var needsScan = false;
-                mutations.forEach(function(m) { if (m.addedNodes.length > 0) needsScan = true; });
-                if (needsScan) {
-                    clearTimeout(observer._timer);
-                    observer._timer = setTimeout(function() {
-                        scanTrackers();
-                        handleCookieBanners();
-                    }, 250);
-                }
-            });
-            if (document.body) {
-                observer.observe(document.body, { childList: true, subtree: true });
+            function installPrivacyObserver() {
+                if (!document.body || window.__souloPrivacyObserver) return;
+                window.__souloPrivacyObserver = new MutationObserver(function(mutations) {
+                    var needsScan = false;
+                    mutations.forEach(function(m) { if (m.addedNodes.length > 0) needsScan = true; });
+                    if (needsScan) {
+                        clearTimeout(window.__souloPrivacyTimer);
+                        window.__souloPrivacyTimer = setTimeout(function() {
+                            if (typeof window.__souloPrivacyScan === 'function') {
+                                window.__souloPrivacyScan();
+                            }
+                        }, 250);
+                    }
+                });
+                window.__souloPrivacyObserver.observe(document.body, { childList: true, subtree: true });
+            }
+
+            installPrivacyObserver();
+            if (!document.body) {
+                document.addEventListener('DOMContentLoaded', installPrivacyObserver, { once: true });
             }
         })();
         """

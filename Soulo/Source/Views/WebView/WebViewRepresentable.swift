@@ -113,8 +113,9 @@ struct WebViewRepresentable: UIViewRepresentable {
         webView.uiDelegate = context.coordinator
         webView.allowsBackForwardNavigationGestures = true
         webView.scrollView.contentInsetAdjustmentBehavior = .never
-        webView.backgroundColor = .clear
-        webView.isOpaque = false
+        webView.backgroundColor = UIColor.systemBackground
+        webView.scrollView.backgroundColor = UIColor.systemBackground
+        webView.isOpaque = true
 
         // Apply custom user agent
         webView.customUserAgent = AppConstants.webViewUserAgent
@@ -372,7 +373,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                 self?.viewModel.updateCurrentURL(webView.url)
             }
             applyCurrentAdHidingIfNeeded(on: webView)
-            applyPrivacyProtectionIfNeeded(on: webView)
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {

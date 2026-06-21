@@ -241,6 +241,12 @@ struct AdBlockService {
             var souloPopupEnabled = \(popups ? "true" : "false");
             var souloAllowlistedHosts = \(allowlistJSON);
             var souloSubscriptionCosmeticRules = \(subscriptionCosmeticRulesJSON);
+            window.__souloAdBlockConfig = {
+                cosmeticEnabled: souloCosmeticEnabled,
+                popupEnabled: souloPopupEnabled,
+                allowlistedHosts: souloAllowlistedHosts,
+                subscriptionCosmeticRules: souloSubscriptionCosmeticRules
+            };
 
             function normalizedHost(value) {
                 return String(value || '').toLowerCase().replace(/^www\\./, '');
@@ -253,17 +259,34 @@ struct AdBlockService {
                 return host === pattern || host.endsWith('.' + pattern);
             }
 
+            function adBlockConfig() {
+                return window.__souloAdBlockConfig || {
+                    cosmeticEnabled: souloCosmeticEnabled,
+                    popupEnabled: souloPopupEnabled,
+                    allowlistedHosts: souloAllowlistedHosts,
+                    subscriptionCosmeticRules: souloSubscriptionCosmeticRules
+                };
+            }
+
             function isSouloAllowlisted() {
                 var host = normalizedHost(location.hostname);
-                return souloAllowlistedHosts.some(function(domain) { return domainMatches(domain, host); });
+                return (adBlockConfig().allowlistedHosts || []).some(function(domain) { return domainMatches(domain, host); });
+            }
+
+            if (window.__souloAdBlockInstalled) {
+                if (typeof window.__souloAdBlockRemoveAds === 'function') {
+                    window.__souloAdBlockRemoveAds();
+                }
+                return;
             }
 
             if (isSouloAllowlisted()) return;
+            window.__souloAdBlockInstalled = true;
 
             function matchingSubscriptionSelectors() {
                 var host = normalizedHost(location.hostname);
                 var selectors = [];
-                souloSubscriptionCosmeticRules.forEach(function(rule) {
+                (adBlockConfig().subscriptionCosmeticRules || []).forEach(function(rule) {
                     var selector = rule.selector || '';
                     if (!selector) return;
                     var ifDomains = rule.ifDomains || [];
@@ -275,10 +298,14 @@ struct AdBlockService {
                 return selectors;
             }
 
-            var souloSubscriptionSelectors = matchingSubscriptionSelectors();
-
-            if (souloCosmeticEnabled) {
-                var style = document.getElementById('soulo-ad-hiding-style');
+            function applyStaticStyles() {
+                var existingStyle = document.getElementById('soulo-ad-hiding-style');
+                if (!adBlockConfig().cosmeticEnabled || isSouloAllowlisted()) {
+                    if (existingStyle) existingStyle.remove();
+                    return;
+                }
+                var souloSubscriptionSelectors = matchingSubscriptionSelectors();
+                var style = existingStyle;
                 if (!style) {
                     style = document.createElement('style');
                     style.id = 'soulo-ad-hiding-style';
@@ -350,6 +377,7 @@ struct AdBlockService {
                     style.textContent += '\\n' + souloSubscriptionSelectors.join(',\\n') + '{display:none!important;height:0!important;max-height:0!important;overflow:hidden!important;visibility:hidden!important;pointer-events:none!important;}';
                 }
             }
+            applyStaticStyles();
 
             function normalizedTrackerHost(value) {
                 return String(value || '').toLowerCase().replace(/^www\\./, '');
@@ -380,9 +408,12 @@ struct AdBlockService {
             }
 
             function removeAds() {
+                applyStaticStyles();
+                if (isSouloAllowlisted()) return;
                 var hiddenCount = 0;
                 var trackerHosts = [];
-                if (souloCosmeticEnabled) {
+                if (adBlockConfig().cosmeticEnabled) {
+                    var souloSubscriptionSelectors = matchingSubscriptionSelectors();
                     var selectors = [
                         'ins.adsbygoogle', 'div[id^="div-gpt-ad"]',
                         'iframe[src*="doubleclick"]', 'iframe[src*="googlesyndication"]',
@@ -453,7 +484,7 @@ struct AdBlockService {
                 }
 
                 // Remove fixed/absolute overlays with high z-index (popup and floating ads)
-                if (souloPopupEnabled) try {
+                if (adBlockConfig().popupEnabled) try {
                     document.querySelectorAll('div, section, aside, iframe, a, img').forEach(function(el) {
                         if (isLikelyFloatingAd(el)) {
                             hiddenCount++;
@@ -465,7 +496,7 @@ struct AdBlockService {
                 } catch(e) {}
 
                 // Restore scroll if ads locked it
-                if (souloPopupEnabled) try {
+                if (adBlockConfig().popupEnabled) try {
                     document.body.style.overflow = '';
                     document.documentElement.style.overflow = '';
                 } catch(e) {}
@@ -481,18 +512,29 @@ struct AdBlockService {
                 }
             }
 
-            removeAds();
+            window.__souloAdBlockRemoveAds = removeAds;
+            window.__souloAdBlockRemoveAds();
 
-            var observer = new MutationObserver(function(mutations) {
-                var needsClean = false;
-                mutations.forEach(function(m) { if (m.addedNodes.length > 0) needsClean = true; });
-                if (needsClean) {
-                    clearTimeout(observer._timer);
-                    observer._timer = setTimeout(removeAds, 100);
-                }
-            });
-            if (document.body) {
-                observer.observe(document.body, { childList: true, subtree: true });
+            function installAdBlockObserver() {
+                if (!document.body || window.__souloAdBlockObserver) return;
+                window.__souloAdBlockObserver = new MutationObserver(function(mutations) {
+                    var needsClean = false;
+                    mutations.forEach(function(m) { if (m.addedNodes.length > 0) needsClean = true; });
+                    if (needsClean) {
+                        clearTimeout(window.__souloAdBlockTimer);
+                        window.__souloAdBlockTimer = setTimeout(function() {
+                            if (typeof window.__souloAdBlockRemoveAds === 'function') {
+                                window.__souloAdBlockRemoveAds();
+                            }
+                        }, 100);
+                    }
+                });
+                window.__souloAdBlockObserver.observe(document.body, { childList: true, subtree: true });
+            }
+
+            installAdBlockObserver();
+            if (!document.body) {
+                document.addEventListener('DOMContentLoaded', installAdBlockObserver, { once: true });
             }
         })();
         """
