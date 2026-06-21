@@ -187,6 +187,49 @@ enum WebViewScripts {
                 return String((el && el.textContent) || '').toLowerCase().replace(/\\s+/g, ' ').trim();
             }
 
+            function isProtectedPageElement(el) {
+                try {
+                    if (!el || el === document.body || el === document.documentElement) return true;
+                    var tag = String(el.tagName || '').toLowerCase();
+                    if (tag === 'main' || tag === 'article') return true;
+
+                    var id = String(el.id || '').toLowerCase();
+                    var role = String(el.getAttribute('role') || '').toLowerCase();
+                    if (/^(app|root|__next|__nuxt|main|content|page|container|results|lg_wrapper)$/.test(id) || role === 'main') return true;
+
+                    var rect = el.getBoundingClientRect();
+                    var textLength = String(el.innerText || el.textContent || '').replace(/\\s+/g, '').length;
+                    var linkCount = el.querySelectorAll ? el.querySelectorAll('a').length : 0;
+                    var coversViewport = rect.width > window.innerWidth * 0.86 && rect.height > window.innerHeight * 0.6;
+                    var topLevelContent = el.parentElement === document.body && rect.width > window.innerWidth * 0.7 && rect.height > window.innerHeight * 0.35;
+                    if ((coversViewport || topLevelContent) && (textLength > 120 || linkCount > 6)) return true;
+                } catch (_) {}
+                return false;
+            }
+
+            function hasCookieConsentLanguage(text) {
+                text = String(text || '').toLowerCase();
+                var hasCookieWord = /cookie|cookies|gdpr|ccpa/.test(text);
+                var hasConsentWord = /consent|agree|accept|reject|decline|deny|preferences|necessary|同意|接受|允许|拒绝|不同意|必要|偏好|設定|设置|拒絕/.test(text);
+                var hasPrivacyWord = /privacy|隐私|隱私/.test(text);
+                return hasCookieWord || (hasPrivacyWord && hasConsentWord);
+            }
+
+            function isOverlayLike(el) {
+                try {
+                    var style = window.getComputedStyle(el);
+                    var position = style.position;
+                    var zIndex = parseInt(style.zIndex, 10) || 0;
+                    var rect = el.getBoundingClientRect();
+                    if (rect.width <= 160 || rect.height <= 40) return false;
+                    if (position === 'fixed' || position === 'sticky') return true;
+                    if (position === 'absolute' && zIndex >= 100) return true;
+                    var role = String(el.getAttribute('role') || '').toLowerCase();
+                    if (role === 'dialog' || el.tagName === 'DIALOG') return true;
+                } catch (_) {}
+                return false;
+            }
+
             function clickRejectButton(root) {
                 var buttons = Array.prototype.slice.call(root.querySelectorAll('button, [role="button"], input[type="button"], input[type="submit"], a'));
                 var rejectPatterns = [
@@ -208,14 +251,11 @@ enum WebViewScripts {
 
             function isCookieBanner(el) {
                 try {
-                    if (!el || el === document.body || el === document.documentElement) return false;
+                    if (!el || isProtectedPageElement(el)) return false;
                     var text = textOf(el);
-                    if (!/cookie|cookies|consent|privacy|gdpr|ccpa|隐私|同意|cookie|隱私/i.test(text)) return false;
-                    var style = window.getComputedStyle(el);
-                    var position = style.position;
-                    var rect = el.getBoundingClientRect();
-                    var largeEnough = rect.width > 160 && rect.height > 40;
-                    return largeEnough && (position === 'fixed' || position === 'sticky' || position === 'absolute' || rect.bottom > window.innerHeight * 0.65);
+                    if (text.length > 1400) return false;
+                    if (!hasCookieConsentLanguage(text)) return false;
+                    return isOverlayLike(el);
                 } catch (_) {
                     return false;
                 }
@@ -237,7 +277,7 @@ enum WebViewScripts {
                             if (clickRejectButton(el)) {
                                 handled++;
                             } else if (isCookieBanner(el)) {
-                                el.remove();
+                                el.style.setProperty('display', 'none', 'important');
                                 handled++;
                             }
                         });
@@ -245,9 +285,11 @@ enum WebViewScripts {
                 });
 
                 try {
-                    document.querySelectorAll('div, section, aside, dialog, footer').forEach(function(el) {
+                    document.querySelectorAll('div, section, aside, dialog').forEach(function(el) {
                         if (isCookieBanner(el)) {
-                            if (!clickRejectButton(el)) el.remove();
+                            if (!clickRejectButton(el)) {
+                                el.style.setProperty('display', 'none', 'important');
+                            }
                             handled++;
                         }
                     });

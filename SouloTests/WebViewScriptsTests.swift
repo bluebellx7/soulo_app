@@ -51,6 +51,11 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertTrue(script.contains("observations.length < 120"))
         XCTAssertFalse(script.contains("a[href]"))
         XCTAssertTrue(script.contains("cookieBanner"))
+        XCTAssertTrue(script.contains("isProtectedPageElement"))
+        XCTAssertTrue(script.contains("hasCookieConsentLanguage"))
+        XCTAssertTrue(script.contains("isOverlayLike"))
+        XCTAssertFalse(script.contains("rect.bottom > window.innerHeight * 0.65"))
+        XCTAssertFalse(script.contains("dialog, footer"))
         XCTAssertTrue(script.contains("example.com"))
         XCTAssertTrue(script.contains("MutationObserver"))
     }
