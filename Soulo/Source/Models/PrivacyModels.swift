@@ -58,51 +58,11 @@ struct SitePrivacySummary: Codable, Equatable {
     }
 }
 
-enum ReaderBlockKind: String, Equatable {
-    case heading
-    case paragraph
-    case quote
-    case listItem
-    case code
-    case image
-}
-
-struct ReaderBlock: Identifiable, Equatable {
-    let id: String
-    let kind: ReaderBlockKind
-    let text: String
-    let urlString: String
-
-    init(id: String = UUID().uuidString, kind: ReaderBlockKind, text: String, urlString: String = "") {
-        self.id = id
-        self.kind = kind
-        self.text = text
-        self.urlString = urlString
-    }
-}
-
-struct ReaderContent: Identifiable, Equatable {
-    let title: String
-    let byline: String
-    let text: String
-    let urlString: String
-    let blocks: [ReaderBlock]
-
-    var id: String {
-        "\(urlString)|\(title)"
-    }
-
-    var isEmpty: Bool {
-        title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && blocks.isEmpty
-    }
-}
-
 enum BrowserDownloadStatus: String, Codable {
     case inProgress
     case finished
     case failed
+    case canceled
 }
 
 struct BrowserDownloadItem: Identifiable, Codable, Equatable {

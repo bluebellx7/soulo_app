@@ -464,7 +464,7 @@
 "downloads_in_progress" = "下载中";
 "downloads_finished" = "已完成";
 "downloads_failed" = "失败";
-"reader_mode" = "阅读模式";
+"downloads_canceled" = "已取消";
 "fire_button" = "火焰清理";
 "fire_button_confirm" = "清理";
 "fire_button_desc" = "关闭浏览器标签页，并清除网站数据、Cookie、缓存和隐私统计。";
@@ -488,8 +488,6 @@
 "site_reset_stats" = "重置当前站点统计";
 "privacy_gpc" = "全局隐私控制";
 "privacy_gpc_desc" = "向支持 GPC 的网站请求不要出售或共享你的数据。";
-"privacy_dnt" = "请勿追踪";
-"privacy_dnt_desc" = "在浏览器请求中发送 DNT 隐私信号。";
 "privacy_cookie_banners" = "处理 Cookie 提示";
 "privacy_cookie_banners_desc" = "尝试拒绝或关闭常见 Cookie 同意横幅。";
 

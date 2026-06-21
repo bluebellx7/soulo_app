@@ -17,7 +17,6 @@ final class WebViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var isScrollingUp: Bool = false
     @Published var snapshot: UIImage?
-    @Published var readerContent: ReaderContent?
 
     // Download state
     @Published var isDownloading: Bool = false
@@ -115,40 +114,6 @@ final class WebViewModel: ObservableObject {
     func setError(_ message: String) {
         errorMessage = message
         isLoading = false
-    }
-
-    func extractReaderContent() {
-        webView?.evaluateJavaScript(WebViewScripts.readerExtraction) { [weak self] result, _ in
-            guard let payload = result as? [String: Any] else { return }
-            let blocks = Self.readerBlocks(from: payload["blocks"])
-            let content = ReaderContent(
-                title: payload["title"] as? String ?? "",
-                byline: payload["byline"] as? String ?? "",
-                text: payload["text"] as? String ?? "",
-                urlString: payload["url"] as? String ?? "",
-                blocks: blocks
-            )
-            Task { @MainActor in
-                guard !content.isEmpty else { return }
-                self?.readerContent = content
-            }
-        }
-    }
-
-    private nonisolated static func readerBlocks(from value: Any?) -> [ReaderBlock] {
-        guard let rawBlocks = value as? [[String: Any]] else { return [] }
-        return rawBlocks.enumerated().compactMap { index, block in
-            let kind = ReaderBlockKind(rawValue: block["type"] as? String ?? "") ?? .paragraph
-            let text = (block["text"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            let urlString = (block["url"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !text.isEmpty || (kind == .image && !urlString.isEmpty) else { return nil }
-            return ReaderBlock(
-                id: "\(index)-\(kind.rawValue)-\(urlString.isEmpty ? text.hashValue : urlString.hashValue)",
-                kind: kind,
-                text: text,
-                urlString: urlString
-            )
-        }
     }
 
     // MARK: - Snapshot

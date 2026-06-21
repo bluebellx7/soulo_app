@@ -12,7 +12,6 @@ struct WebViewRepresentable: UIViewRepresentable {
     @AppStorage("ad_block_popup_enabled") private var adBlockPopupEnabled: Bool = true
     @AppStorage("is_incognito") private var isIncognito: Bool = false
     @AppStorage("privacy_gpc_enabled") private var gpcEnabled: Bool = true
-    @AppStorage("privacy_dnt_enabled") private var dntEnabled: Bool = true
     @AppStorage("privacy_cookie_banner_enabled") private var cookieBannerEnabled: Bool = true
     @ObservedObject private var adBlockSettings = AdBlockSettingsService.shared
     @ObservedObject private var privacyService = PrivacyProtectionService.shared
@@ -199,6 +198,8 @@ struct WebViewRepresentable: UIViewRepresentable {
         private let viewModel: WebViewModel
         private var observations: [NSKeyValueObservation] = []
         private var downloadIDs: [ObjectIdentifier: UUID] = [:]
+        private var activeDownloads: [ObjectIdentifier: WKDownload] = [:]
+        private var downloadCancelObserver: NSObjectProtocol?
         private var lastAdHidingSignature = ""
         private var httpsUpgradeFallbacks: [String: URL] = [:]
         private var oneShotHTTPFallbacks = Set<String>()
@@ -206,6 +207,14 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         init(viewModel: WebViewModel) {
             self.viewModel = viewModel
+            super.init()
+            downloadCancelObserver = NotificationCenter.default.addObserver(
+                forName: .cancelActiveDownloads,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.cancelActiveDownloads()
+            }
         }
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -278,6 +287,10 @@ struct WebViewRepresentable: UIViewRepresentable {
         func invalidateObservations() {
             observations.forEach { $0.invalidate() }
             observations.removeAll()
+            if let downloadCancelObserver {
+                NotificationCenter.default.removeObserver(downloadCancelObserver)
+                self.downloadCancelObserver = nil
+            }
         }
 
         func applyAdHidingIfNeeded(
@@ -474,21 +487,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
             let defaults = UserDefaults.standard
             let gpcEnabled = defaults.object(forKey: "privacy_gpc_enabled") as? Bool ?? true
-            let dntEnabled = defaults.object(forKey: "privacy_dnt_enabled") as? Bool ?? true
-            guard gpcEnabled || dntEnabled else { return nil }
-
-            let existingHeaders = request.allHTTPHeaderFields ?? [:]
-            var needsRewrite = false
-            var rewritten = request
-            if gpcEnabled && existingHeaders["Sec-GPC"] == nil {
-                rewritten.setValue("1", forHTTPHeaderField: "Sec-GPC")
-                needsRewrite = true
-            }
-            if dntEnabled && existingHeaders["DNT"] == nil {
-                rewritten.setValue("1", forHTTPHeaderField: "DNT")
-                needsRewrite = true
-            }
-            return needsRewrite ? rewritten : nil
+            return GPCRequestFactory(userDefaults: defaults).requestForGPC(basedOn: request, gpcEnabled: gpcEnabled)
         }
 
         private func isHTTPSUpgrade(from originalURL: URL, to transformedURL: URL) -> Bool {
@@ -736,6 +735,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 sourceURL: response.url
             )
             downloadIDs[ObjectIdentifier(download)] = item.id
+            activeDownloads[ObjectIdentifier(download)] = download
 
             Task { @MainActor in
                 viewModel.isDownloading = true
@@ -746,7 +746,9 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         func downloadDidFinish(_ download: WKDownload) {
-            let downloadID = downloadIDs.removeValue(forKey: ObjectIdentifier(download))
+            let identifier = ObjectIdentifier(download)
+            activeDownloads.removeValue(forKey: identifier)
+            let downloadID = downloadIDs.removeValue(forKey: identifier)
             let fileURL = downloadID.flatMap { id in
                 DownloadManagerService.shared.downloads.first(where: { $0.id == id })?.localURL
             }
@@ -769,13 +771,30 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
-            let downloadID = downloadIDs.removeValue(forKey: ObjectIdentifier(download))
+            let identifier = ObjectIdentifier(download)
+            activeDownloads.removeValue(forKey: identifier)
+            let downloadID = downloadIDs.removeValue(forKey: identifier)
             if let downloadID {
                 DownloadManagerService.shared.markFailed(id: downloadID, error: error)
             }
             Task { @MainActor in
                 viewModel.isDownloading = false
                 viewModel.setError(LanguageManager.shared.localizedString("save_failed"))
+            }
+        }
+
+        private func cancelActiveDownloads() {
+            let downloadsToCancel = activeDownloads
+            activeDownloads.removeAll()
+            for (identifier, download) in downloadsToCancel {
+                if let downloadID = downloadIDs.removeValue(forKey: identifier) {
+                    DownloadManagerService.shared.markCanceled(id: downloadID)
+                }
+                download.cancel { _ in }
+            }
+            Task { @MainActor in
+                viewModel.isDownloading = false
+                viewModel.downloadFileName = ""
             }
         }
     }

@@ -84,7 +84,6 @@ struct WebViewContainer: View {
                             onShowPrivacy: { showPrivacyPanel = true },
                             onManageAdBlock: { showAdBlockManager = true },
                             onShowDownloads: { showDownloads = true },
-                            onReaderMode: { webViewModel.extractReaderContent() },
                             onFireButton: { showFireConfirm = true }
                         )
                         .transition(.asymmetric(
@@ -273,9 +272,6 @@ struct WebViewContainer: View {
             NavigationStack {
                 DownloadManagerView()
             }
-        }
-        .sheet(item: $webViewModel.readerContent) { content in
-            ReaderModeView(content: content)
         }
         .alert(LanguageManager.shared.localizedString("fire_button"), isPresented: $showFireConfirm) {
             Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}

@@ -10,7 +10,6 @@ struct PrivacySettingsView: View {
     @AppStorage("privacy_https_upgrade_enabled") private var httpsUpgradeEnabled: Bool = true
     @AppStorage("privacy_strip_tracking_parameters") private var stripTrackingParameters: Bool = true
     @AppStorage("privacy_gpc_enabled") private var gpcEnabled: Bool = true
-    @AppStorage("privacy_dnt_enabled") private var dntEnabled: Bool = true
     @AppStorage("privacy_cookie_banner_enabled") private var cookieBannerEnabled: Bool = true
 
     @State private var showClearHistoryAlert = false
@@ -88,14 +87,6 @@ struct PrivacySettingsView: View {
                         title: LanguageManager.shared.localizedString("privacy_gpc"),
                         description: LanguageManager.shared.localizedString("privacy_gpc_desc"),
                         isOn: $gpcEnabled
-                    )
-
-                    PrivacyToggleRow(
-                        icon: "hand.raised.slash.fill",
-                        color: .teal,
-                        title: LanguageManager.shared.localizedString("privacy_dnt"),
-                        description: LanguageManager.shared.localizedString("privacy_dnt_desc"),
-                        isOn: $dntEnabled
                     )
 
                     PrivacyToggleRow(

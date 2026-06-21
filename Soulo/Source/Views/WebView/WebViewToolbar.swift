@@ -10,7 +10,6 @@ struct WebViewToolbar: View {
     var onShowPrivacy: (() -> Void)?
     var onManageAdBlock: (() -> Void)?
     var onShowDownloads: (() -> Void)?
-    var onReaderMode: (() -> Void)?
     var onFireButton: (() -> Void)?
 
     var body: some View {
@@ -69,14 +68,6 @@ struct WebViewToolbar: View {
                     onShowPrivacy?()
                 } label: {
                     Label(LanguageManager.shared.localizedString("site_privacy"), systemImage: "shield.checkered")
-                }
-            }
-
-            if viewModel.currentURL != nil {
-                Button {
-                    onReaderMode?()
-                } label: {
-                    Label(LanguageManager.shared.localizedString("reader_mode"), systemImage: "doc.plaintext")
                 }
             }
 

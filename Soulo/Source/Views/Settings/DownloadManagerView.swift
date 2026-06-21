@@ -94,6 +94,7 @@ struct DownloadManagerView: View {
         case .inProgress: "arrow.down.circle"
         case .finished: "checkmark.circle.fill"
         case .failed: "exclamationmark.triangle.fill"
+        case .canceled: "xmark.circle.fill"
         }
     }
 
@@ -102,6 +103,7 @@ struct DownloadManagerView: View {
         case .inProgress: .blue
         case .finished: .green
         case .failed: .orange
+        case .canceled: .secondary
         }
     }
 
@@ -110,6 +112,7 @@ struct DownloadManagerView: View {
         case .inProgress: LanguageManager.shared.localizedString("downloads_in_progress")
         case .finished: LanguageManager.shared.localizedString("downloads_finished")
         case .failed: LanguageManager.shared.localizedString("downloads_failed")
+        case .canceled: LanguageManager.shared.localizedString("downloads_canceled")
         }
     }
 }

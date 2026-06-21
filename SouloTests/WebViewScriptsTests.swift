@@ -51,14 +51,4 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertTrue(script.contains("var souloCookieBannerHandling = false"))
     }
 
-    func testReaderExtractionPrefersReadableContentAndRemovesNoise() {
-        let script = WebViewScripts.readerExtraction
-
-        XCTAssertTrue(script.contains("document.querySelector('article')"))
-        XCTAssertTrue(script.contains("removeNoise"))
-        XCTAssertTrue(script.contains("meta[property=\"og:title\"]"))
-        XCTAssertTrue(script.contains("blocks.push"))
-        XCTAssertTrue(script.contains("h1, h2, h3, h4, p, blockquote, li, pre, code, img"))
-        XCTAssertTrue(script.contains("return {"))
-    }
 }

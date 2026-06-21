@@ -58,6 +58,27 @@ final class DownloadManagerService: ObservableObject {
         save()
     }
 
+    func markCanceled(id: UUID) {
+        guard let index = downloads.firstIndex(where: { $0.id == id }) else { return }
+        downloads[index].status = .canceled
+        downloads[index].completedAt = Date()
+        downloads[index].errorMessage = ""
+        save()
+    }
+
+    func cancelAllDownloads() {
+        var changed = false
+        for index in downloads.indices where downloads[index].status == .inProgress {
+            downloads[index].status = .canceled
+            downloads[index].completedAt = Date()
+            downloads[index].errorMessage = ""
+            changed = true
+        }
+        if changed {
+            save()
+        }
+    }
+
     func delete(_ item: BrowserDownloadItem) {
         try? FileManager.default.removeItem(at: item.localURL)
         downloads.removeAll { $0.id == item.id }
@@ -84,7 +105,7 @@ final class DownloadManagerService: ObservableObject {
         let ext = nsName.pathExtension
 
         var candidate = filename
-        var counter = 2
+        var counter = 1
         while FileManager.default.fileExists(atPath: storageDirectory.appendingPathComponent(candidate).path) {
             candidate = ext.isEmpty ? "\(base) \(counter)" : "\(base) \(counter).\(ext)"
             counter += 1

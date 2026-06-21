@@ -415,7 +415,7 @@ Hay cho chung toi biet:
 "downloads_in_progress" = "Downloading";
 "downloads_finished" = "Finished";
 "downloads_failed" = "Failed";
-"reader_mode" = "Reader Mode";
+"downloads_canceled" = "Canceled";
 "fire_button" = "Fire Button";
 "fire_button_confirm" = "Burn";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
@@ -439,8 +439,6 @@ Hay cho chung toi biet:
 "site_reset_stats" = "Reset Site Stats";
 "privacy_gpc" = "Global Privacy Control";
 "privacy_gpc_desc" = "Ask websites not to sell or share your data when they support GPC.";
-"privacy_dnt" = "Do Not Track";
-"privacy_dnt_desc" = "Send the DNT signal with browser requests.";
 "privacy_cookie_banners" = "Handle Cookie Prompts";
 "privacy_cookie_banners_desc" = "Try to reject or dismiss common cookie consent banners.";
 

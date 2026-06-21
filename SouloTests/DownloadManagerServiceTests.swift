@@ -54,7 +54,19 @@ final class DownloadManagerServiceTests: XCTestCase {
             sourceURL: URL(string: "https://example.com/report.pdf")
         )
 
-        XCTAssertEqual(item.fileName, "Report 2.pdf")
-        XCTAssertEqual(fileURL.lastPathComponent, "Report 2.pdf")
+        XCTAssertEqual(item.fileName, "Report 1.pdf")
+        XCTAssertEqual(fileURL.lastPathComponent, "Report 1.pdf")
+    }
+
+    func testCancelAllDownloadsMarksInProgressItemsCanceled() {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let (item, _) = service.beginDownload(
+            suggestedFilename: "Report.pdf",
+            sourceURL: URL(string: "https://example.com/report.pdf")
+        )
+
+        service.cancelAllDownloads()
+
+        XCTAssertEqual(service.downloads.first(where: { $0.id == item.id })?.status, .canceled)
     }
 }
