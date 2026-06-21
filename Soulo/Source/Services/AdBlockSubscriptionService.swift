@@ -288,7 +288,7 @@ enum AdBlockRuleParser {
             case "*":
                 output += ".*"
             case "^":
-                output += "([\\\\/:?&=]|$)"
+                output += "[\\\\/:?&=]"
             case ".":
                 output += "\\."
             case "?":
@@ -330,7 +330,14 @@ enum AdBlockRuleParser {
               !selector.contains("}"),
               !selector.contains("<"),
               !selector.contains(">"),
-              !selector.contains("`")
+              !selector.contains("`"),
+              !selector.localizedCaseInsensitiveContains(":-abp-"),
+              !selector.localizedCaseInsensitiveContains(":contains"),
+              !selector.localizedCaseInsensitiveContains(":matches-css"),
+              !selector.localizedCaseInsensitiveContains(":xpath"),
+              !selector.localizedCaseInsensitiveContains(":upward"),
+              !selector.localizedCaseInsensitiveContains(":remove"),
+              !selector.localizedCaseInsensitiveContains("+js(")
         else { return false }
         return true
     }

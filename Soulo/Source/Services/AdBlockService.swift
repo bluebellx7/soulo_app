@@ -13,7 +13,7 @@ struct AdBlockService {
             normalizedAllowlist(allowlistedHosts).joined(separator: ","),
             AdBlockSubscriptionService.rulesSignature()
         ].joined(separator: "|")
-        let identifier = "SouloAdBlockV3-\(stableIdentifierHash(signature))"
+        let identifier = "SouloAdBlockV4-\(stableIdentifierHash(signature))"
         return try? await WKContentRuleListStore.default().compileContentRuleList(
             forIdentifier: identifier,
             encodedContentRuleList: jsonString
@@ -36,9 +36,10 @@ struct AdBlockService {
             return value
         }
 
-        func trigger(for rule: AdBlockNetworkRule) -> [String: Any] {
+        func trigger(for rule: AdBlockNetworkRule) -> [String: Any]? {
+            guard let urlFilter = sanitizedContentBlockerURLFilter(rule.urlFilter) else { return nil }
             let resourceTypes = rule.resourceTypes.filter { $0 != "document" }
-            var value = trigger(rule.urlFilter, resourceTypes: resourceTypes.isEmpty ? defaultBlockedResourceTypes : resourceTypes)
+            var value = trigger(urlFilter, resourceTypes: resourceTypes.isEmpty ? defaultBlockedResourceTypes : resourceTypes)
             if !rule.loadTypes.isEmpty {
                 value["load-type"] = rule.loadTypes
             }
@@ -138,31 +139,34 @@ struct AdBlockService {
             : cachedRules.networkRules
 
         for networkRule in structuredNetworkRules {
+            guard let networkTrigger = trigger(for: networkRule) else { continue }
             rulesArray.append([
-                "trigger": trigger(for: networkRule),
+                "trigger": networkTrigger,
                 "action": ["type": "block"]
             ])
         }
 
         var hideSelectors = [
             ".adsbygoogle", "ins.adsbygoogle", "[id^='div-gpt-ad']",
-            "[class*='ad-container']", "[class*='ad-wrapper']", "[class*='ad-banner']",
             "[id*='google_ads']", "[data-ad-slot]", "[data-ad-position]",
-            "[class*='sponsor']", "[class*='promoted']", "[class*='taboola']",
+            "[class*='taboola']",
             "[class*='outbrain']", "iframe[src*='doubleclick']",
             "iframe[src*='googlesyndication']", "[aria-label*='advertisement' i]",
-            "[aria-label*='广告']", "[class*='advertisement']", "[id*='advertisement']",
+            "[aria-label*='广告']",
             "[class*='banner-ad']", "[class*='sticky-ad']", "[class*='popup-ad']",
             ".cpcad", ".pcad", ".adpic", ".adpicbox", ".gg", "[class*=' cpcad']",
-            "[class*='-ad-']", "[class^='ad-']", "[id^='ad-']", "[id^='gg']",
-            "[class^='gg-']", "[class*='-gg']", "[class*='广告']", "[id*='广告']",
             "[class*='gudingwei']", "[id*='gudingwei']", "[class*='jioeidd']",
             "[id*='jioeidd']", "[class*='cqlkxq1wc']", "[id*='cqlkxq1wc']",
-            "[class*='tuiguang']", "[id*='tuiguang']", "[class*='floatad']",
+            "[class*='floatad']",
             "[id*='floatad']", "[class*='popupad']", "[id*='popupad']"
         ]
 
-        hideSelectors.append(contentsOf: cachedRules.cosmeticRules.filter { $0.ifDomains.isEmpty && $0.unlessDomains.isEmpty }.map(\.selector))
+        hideSelectors.append(
+            contentsOf: cachedRules.cosmeticRules
+                .filter { $0.ifDomains.isEmpty && $0.unlessDomains.isEmpty }
+                .compactMap { sanitizedContentBlockerSelector($0.selector) }
+        )
+        hideSelectors = hideSelectors.compactMap { sanitizedContentBlockerSelector($0) }
         for selectorGroup in chunkedSelectors(hideSelectors) {
             rulesArray.append([
                 "trigger": trigger(".*"),
@@ -171,6 +175,7 @@ struct AdBlockService {
         }
 
         for cosmeticRule in cachedRules.cosmeticRules where !cosmeticRule.ifDomains.isEmpty || !cosmeticRule.unlessDomains.isEmpty {
+            guard let selector = sanitizedContentBlockerSelector(cosmeticRule.selector) else { continue }
             var cosmeticTrigger = trigger(".*")
             if !cosmeticRule.ifDomains.isEmpty {
                 cosmeticTrigger["if-domain"] = cosmeticRule.ifDomains
@@ -181,7 +186,7 @@ struct AdBlockService {
             }
             rulesArray.append([
                 "trigger": cosmeticTrigger,
-                "action": ["type": "css-display-none", "selector": cosmeticRule.selector]
+                "action": ["type": "css-display-none", "selector": selector]
             ])
         }
 
@@ -191,6 +196,59 @@ struct AdBlockService {
 
     private static func normalizedAllowlist(_ hosts: [String]) -> [String] {
         Array(Set(hosts.map { AdBlockSettingsService.normalizedHost($0) }.filter { !$0.isEmpty })).sorted()
+    }
+
+    private static func sanitizedContentBlockerURLFilter(_ value: String) -> String? {
+        var filter = value
+            .replacingOccurrences(of: #"([\\/:?&=]|$)"#, with: #"[\\/:?&=]"#)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        while filter.contains("..*") {
+            filter = filter.replacingOccurrences(of: "..*", with: ".*")
+        }
+
+        guard !filter.isEmpty,
+              filter.count <= 220,
+              !filter.contains("|"),
+              !filter.contains("(?"),
+              !filter.contains("(?<"),
+              !filter.contains("\\1"),
+              !filter.contains("\\2")
+        else {
+            return nil
+        }
+        return filter
+    }
+
+    private static func sanitizedContentBlockerSelector(_ value: String) -> String? {
+        let selector = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lowercased = selector.lowercased()
+        guard !selector.isEmpty,
+              selector.count <= 240,
+              !selector.contains("{"),
+              !selector.contains("}"),
+              !selector.contains("<"),
+              !selector.contains(">"),
+              !selector.contains("`"),
+              !lowercased.contains(":-abp-"),
+              !lowercased.contains(":contains"),
+              !lowercased.contains(":matches-css"),
+              !lowercased.contains(":xpath"),
+              !lowercased.contains(":upward"),
+              !lowercased.contains(":remove"),
+              !lowercased.contains("+js(")
+        else {
+            return nil
+        }
+
+        let rootPatterns = [
+            #"(?i)^\s*(html|body|main|article)\b"#,
+            #"(?i)^\s*#(app|root|__next|__nuxt|main|content|page|container)\b"#,
+            #"(?i)^\s*\[role=['"]?main['"]?\]"#
+        ]
+        guard !rootPatterns.contains(where: { selector.range(of: $0, options: .regularExpression) != nil }) else {
+            return nil
+        }
+        return selector
     }
 
     private static func stableIdentifierHash(_ value: String) -> String {
@@ -291,6 +349,7 @@ struct AdBlockService {
                 (adBlockConfig().subscriptionCosmeticRules || []).forEach(function(rule) {
                     var selector = rule.selector || '';
                     if (!selector) return;
+                    if (isUnsafeSelector(selector)) return;
                     var ifDomains = rule.ifDomains || [];
                     var unlessDomains = rule.unlessDomains || [];
                     var included = ifDomains.length === 0 || ifDomains.some(function(domain) { return domainMatches(domain, host); });
@@ -315,36 +374,19 @@ struct AdBlockService {
                 }
                 style.textContent = `
                 /* Common ad containers */
-                [class*="ad-container"], [class*="ad-wrapper"], [class*="ad-banner"],
-                [class*="ad-slot"], [class*="ad_"], [class*="adsbygoogle"],
-                [id*="ad-container"], [id*="ad-wrapper"], [id*="ad-banner"],
-                [id*="google_ads"], [id*="div-gpt-ad"],
+                [class*="adsbygoogle"], [id*="google_ads"], [id*="div-gpt-ad"],
                 ins.adsbygoogle, div[data-ad], div[data-ad-slot],
-                [class*="sponsor"], [class*="promoted"],
-                .ad, .ads, .advert, .advertisement,
-                #ad, #ads, #advert, #advertisement,
 
                 /* iframes */
                 iframe[src*="doubleclick"], iframe[src*="googlesyndication"],
-                iframe[src*="advertising"], iframe[src*="ads."],
-                iframe[src*="ad."], iframe[src*="adserver"],
+                iframe[src*="adserver"],
 
                 /* Baidu specific */
-                #content_right .result-op[data-click],
                 .ec_tuiguang_pplink, .ec_tuiguang_pptitle,
                 [class*="s_side_ad"], [class*="ec_wise_ad"],
                 #ec_im_container, .ec-result-container,
 
-                /* Sogou specific */
-                [class*="promote"], .vrwrap[data-promote],
-
                 /* Common patterns */
-                [class*="adArea"], [class*="ad-area"],
-                [class*="adsBox"], [class*="ads-box"],
-                [class*="adBlock"], [class*="ad-block"],
-                [class*="banner-ad"], [class*="bannerAd"],
-                [data-testid*="ad"], [data-ad-position],
-                [class*="commercial"], [class*="promo-"],
                 [class*="outbrain"], [class*="taboola"],
                 [aria-label*="advertisement" i], [aria-label*="广告"],
 
@@ -355,11 +397,7 @@ struct AdBlockService {
 
                 /* Chinese video/resource site ad templates */
                 .cpcad, .pcad, .adpic, .adpicbox, .gg,
-                [class*=" cpcad"], [class*="-ad-"], [class^="ad-"],
-                [id^="ad-"], [id^="gg"], [class^="gg-"], [class*="-gg"],
-                [class*="广告"], [id*="广告"],
-                [class*="tuiguang"], [id*="tuiguang"],
-                [class*="promotion"], [class*="promote"],
+                [class*=" cpcad"],
                 [class*="gudingwei"], [id*="gudingwei"],
                 [class*="jioeidd"], [id*="jioeidd"],
                 [class*="cqlkxq1wc"], [id*="cqlkxq1wc"],
@@ -375,9 +413,6 @@ struct AdBlockService {
                     pointer-events: none !important;
                 }
             `;
-                if (souloSubscriptionSelectors.length) {
-                    style.textContent += '\\n' + souloSubscriptionSelectors.join(',\\n') + '{display:none!important;height:0!important;max-height:0!important;overflow:hidden!important;visibility:hidden!important;pointer-events:none!important;}';
-                }
             }
             applyStaticStyles();
 
@@ -407,6 +442,58 @@ struct AdBlockService {
                 host = normalizedTrackerHost(host);
                 if (!host || domainMatches(host, location.hostname)) return false;
                 return /doubleclick|googlesyndication|googleadservices|google-analytics|googletagmanager|facebook|connect\\.facebook|tiktok|bytedance|oceanengine|hm\\.baidu|cnzz|umeng|clarity\\.ms|hotjar|mouseflow|taboola|outbrain|criteo|adnxs|rubiconproject|pubmatic|openx|scorecardresearch|quantserve|amazon-adsystem|ads-twitter|linkedin|adservice|ads?\\./i.test(host);
+            }
+
+            function isUnsafeSelector(selector) {
+                selector = String(selector || '').trim().toLowerCase();
+                if (!selector || selector.length > 240) return true;
+                if (/(:-abp-|:contains|:matches-css|:xpath|:upward|:remove|\\+js\\()/i.test(selector)) return true;
+                return /^(html|body|main|article|#app|#root|#__next|#__nuxt|\\[role=["']?main)/i.test(selector);
+            }
+
+            function hasAdLikeResource(el) {
+                try {
+                    var html = (el.outerHTML || '').toLowerCase();
+                    var bg = window.getComputedStyle(el).backgroundImage || '';
+                    return /cpcad|gudingwei|jioeidd|cqlkxq1wc|adpic|adimg|floatad|popupad|\\/ads?\\/|adserver|doubleclick|googlesyndication|tuiguang|广告|推广|sponsor/.test(html + ' ' + bg);
+                } catch(e) {
+                    return false;
+                }
+            }
+
+            function isProtectedPageElement(el) {
+                try {
+                    if (!el || el === document.body || el === document.documentElement) return true;
+                    var tag = String(el.tagName || '').toLowerCase();
+                    if (tag === 'main' || tag === 'article') return true;
+
+                    var id = String(el.id || '').toLowerCase();
+                    var role = String(el.getAttribute('role') || '').toLowerCase();
+                    if (/^(app|root|__next|__nuxt|main|content|page|container)$/.test(id) || role === 'main') return true;
+
+                    var rect = el.getBoundingClientRect();
+                    var textLength = String(el.innerText || el.textContent || '').replace(/\\s+/g, '').length;
+                    var coversViewport = rect.width > window.innerWidth * 0.88 && rect.height > window.innerHeight * 0.62;
+                    var topLevelContent = el.parentElement === document.body && rect.width > window.innerWidth * 0.7 && rect.height > window.innerHeight * 0.35;
+                    if ((coversViewport || topLevelContent) && textLength > 80 && !hasAdLikeResource(el)) return true;
+                } catch(e) {}
+                return false;
+            }
+
+            function hideAdElement(el) {
+                try {
+                    if (!el || isProtectedPageElement(el) || el.hasAttribute('data-soulo-hidden-ad')) return false;
+                    el.setAttribute('data-soulo-hidden-ad', 'true');
+                    el.style.setProperty('display', 'none', 'important');
+                    el.style.setProperty('height', '0', 'important');
+                    el.style.setProperty('max-height', '0', 'important');
+                    el.style.setProperty('overflow', 'hidden', 'important');
+                    el.style.setProperty('visibility', 'hidden', 'important');
+                    el.style.setProperty('pointer-events', 'none', 'important');
+                    return true;
+                } catch(e) {
+                    return false;
+                }
             }
 
             function removeAds() {
@@ -444,23 +531,14 @@ struct AdBlockService {
                     selectors.forEach(function(sel) {
                         try {
                             document.querySelectorAll(sel).forEach(function(el) {
-                                hiddenCount++;
                                 var host = hostFromElement(el);
-                                if (looksLikeTrackerHost(host)) trackerHosts.push(host);
-                                el.remove();
+                                if (hideAdElement(el)) {
+                                    hiddenCount++;
+                                    if (looksLikeTrackerHost(host)) trackerHosts.push(host);
+                                }
                             });
                         } catch(e) {}
                     });
-                }
-
-                function hasAdLikeResource(el) {
-                    try {
-                        var html = (el.outerHTML || '').toLowerCase();
-                        var bg = window.getComputedStyle(el).backgroundImage || '';
-                        return /cpcad|gudingwei|jioeidd|cqlkxq1wc|adpic|adimg|floatad|popupad|\\/ads?\\/|adserver|doubleclick|googlesyndication|tuiguang|广告|推广|sponsor|data:image\\/(jpg|jpeg|png|gif);base64/.test(html + ' ' + bg);
-                    } catch(e) {
-                        return false;
-                    }
                 }
 
                 function isLikelyFloatingAd(el) {
@@ -489,10 +567,11 @@ struct AdBlockService {
                 if (adBlockConfig().popupEnabled) try {
                     document.querySelectorAll('div, section, aside, iframe, a, img').forEach(function(el) {
                         if (isLikelyFloatingAd(el)) {
-                            hiddenCount++;
                             var host = hostFromElement(el);
-                            if (looksLikeTrackerHost(host)) trackerHosts.push(host);
-                            el.remove();
+                            if (hideAdElement(el)) {
+                                hiddenCount++;
+                                if (looksLikeTrackerHost(host)) trackerHosts.push(host);
+                            }
                         }
                     });
                 } catch(e) {}

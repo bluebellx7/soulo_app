@@ -1,4 +1,5 @@
 import XCTest
+import WebKit
 @testable import Soulo
 
 final class AdBlockServiceTests: XCTestCase {
@@ -33,6 +34,48 @@ final class AdBlockServiceTests: XCTestCase {
             let resourceTypes = try XCTUnwrap(trigger["resource-type"] as? [String])
             XCTAssertFalse(resourceTypes.contains("document"))
         }
+    }
+
+    func testEncodedContentRulesCompileWithWebKit() async throws {
+        let json = try XCTUnwrap(AdBlockService.encodedContentRuleList())
+        let identifier = "SouloTests-\(UUID().uuidString)"
+
+        _ = try await WKContentRuleListStore.default().compileContentRuleList(
+            forIdentifier: identifier,
+            encodedContentRuleList: json
+        )
+    }
+
+    func testEncodedContentRulesSanitizeLegacyUnsupportedURLFilters() async throws {
+        let defaults = UserDefaults.standard
+        let key = "soulo_ad_block_subscription_rules"
+        let oldData = defaults.data(forKey: key)
+        defer {
+            if let oldData {
+                defaults.set(oldData, forKey: key)
+            } else {
+                defaults.removeObject(forKey: key)
+            }
+        }
+
+        let cached = ParsedAdBlockRules(
+            networkRules: [
+                AdBlockNetworkRule(
+                    urlFilter: #"/waWQiOjE.*=eyJ\.js([\\/:?&=]|$)"#,
+                    resourceTypes: ["script"]
+                )
+            ]
+        )
+        let data = try JSONEncoder().encode(cached)
+        defaults.set(data, forKey: key)
+
+        let json = try XCTUnwrap(AdBlockService.encodedContentRuleList())
+
+        XCTAssertFalse(json.contains(#"([\\/:?&=]|$)"#))
+        _ = try await WKContentRuleListStore.default().compileContentRuleList(
+            forIdentifier: "SouloLegacyFilterTest-\(UUID().uuidString)",
+            encodedContentRuleList: json
+        )
     }
 
     func testEncodedContentRulesIncludeAllowlistDomains() throws {
@@ -117,6 +160,9 @@ final class AdBlockServiceTests: XCTestCase {
 
         XCTAssertTrue(script.contains("z < 999"))
         XCTAssertTrue(script.contains("div, section, aside, iframe, a, img"))
+        XCTAssertTrue(script.contains("hideAdElement"))
+        XCTAssertTrue(script.contains("isProtectedPageElement"))
+        XCTAssertFalse(script.contains("el.remove()"))
         XCTAssertTrue(script.contains("adpic"))
         XCTAssertTrue(script.contains("adimg"))
         XCTAssertTrue(script.contains("floatad"))

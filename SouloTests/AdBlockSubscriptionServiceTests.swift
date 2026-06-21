@@ -40,6 +40,18 @@ final class AdBlockSubscriptionServiceTests: XCTestCase {
         XCTAssertTrue(rule?.unlessDomains.contains("*admin.example.com") == true)
     }
 
+    func testParserDoesNotEmitWebKitUnsupportedDisjunctions() {
+        let sample = """
+        /waWQiOjE*=eyJ.js^
+        """
+
+        let parsed = AdBlockRuleParser.parse(sample)
+
+        XCTAssertFalse(parsed.networkURLFilters.isEmpty)
+        XCTAssertFalse(parsed.networkURLFilters.contains { $0.contains("|") })
+        XCTAssertFalse(parsed.networkURLFilters.contains { $0.contains("([\\\\/:?&=]|$)") })
+    }
+
     func testAdBlockServiceMergesCachedSubscriptionRules() throws {
         let defaults = UserDefaults.standard
         let key = "soulo_ad_block_subscription_rules"
