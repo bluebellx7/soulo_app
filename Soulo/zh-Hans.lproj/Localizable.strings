@@ -465,10 +465,10 @@
 "downloads_finished" = "已完成";
 "downloads_failed" = "失败";
 "downloads_canceled" = "已取消";
-"fire_button" = "火焰清理";
-"fire_button_confirm" = "清理";
+"fire_button" = "隐私清理";
+"fire_button_confirm" = "清除";
 "fire_button_desc" = "关闭浏览器标签页，并清除网站数据、Cookie、缓存和隐私统计。";
-"fire_complete" = "浏览数据已清除";
+"fire_complete" = "隐私数据已清除";
 "site_privacy" = "站点隐私";
 "site_privacy_no_site" = "无站点";
 "site_privacy_protected" = "保护已开启";

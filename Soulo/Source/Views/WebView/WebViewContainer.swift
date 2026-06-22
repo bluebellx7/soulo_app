@@ -106,9 +106,9 @@ struct WebViewContainer: View {
 
             if showFireComplete {
                 toastView(
-                    icon: "flame.fill",
+                    icon: "trash.fill",
                     text: LanguageManager.shared.localizedString("fire_complete"),
-                    iconColor: .orange
+                    iconColor: .red
                 )
             }
 

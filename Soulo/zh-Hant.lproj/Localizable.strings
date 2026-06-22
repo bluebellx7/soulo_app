@@ -450,10 +450,10 @@
 "downloads_finished" = "Finished";
 "downloads_failed" = "Failed";
 "downloads_canceled" = "Canceled";
-"fire_button" = "Fire Button";
-"fire_button_confirm" = "Burn";
-"fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
-"fire_complete" = "Browser data cleared";
+"fire_button" = "隱私清理";
+"fire_button_confirm" = "清除";
+"fire_button_desc" = "關閉瀏覽器分頁，並清除網站資料、Cookie、快取和隱私統計。";
+"fire_complete" = "隱私資料已清除";
 "site_privacy" = "Site Privacy";
 "site_privacy_no_site" = "No Site";
 "site_privacy_protected" = "Protections are active";

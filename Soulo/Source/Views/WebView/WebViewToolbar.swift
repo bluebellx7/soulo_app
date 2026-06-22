@@ -119,7 +119,7 @@ struct WebViewToolbar: View {
                 Button(role: .destructive) {
                     onFireButton?()
                 } label: {
-                    Label(LanguageManager.shared.localizedString("fire_button"), systemImage: "flame.fill")
+                    Label(LanguageManager.shared.localizedString("fire_button"), systemImage: "trash.fill")
                 }
 
                 // Restore Last Closed

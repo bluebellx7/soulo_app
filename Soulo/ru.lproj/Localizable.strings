@@ -450,10 +450,10 @@
 "downloads_finished" = "Finished";
 "downloads_failed" = "Failed";
 "downloads_canceled" = "Canceled";
-"fire_button" = "Fire Button";
-"fire_button_confirm" = "Burn";
+"fire_button" = "Clear Privacy Data";
+"fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
-"fire_complete" = "Browser data cleared";
+"fire_complete" = "Privacy data cleared";
 "site_privacy" = "Site Privacy";
 "site_privacy_no_site" = "No Site";
 "site_privacy_protected" = "Protections are active";
