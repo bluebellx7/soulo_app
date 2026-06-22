@@ -462,4 +462,5 @@ extension String {
 extension Notification.Name {
     static let openInNewTab = Notification.Name("soulo.openInNewTab")
     static let cancelActiveDownloads = Notification.Name("soulo.cancelActiveDownloads")
+    static let linkCopied = Notification.Name("soulo.linkCopied")
 }

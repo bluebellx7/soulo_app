@@ -15,6 +15,7 @@ struct WebViewContainer: View {
     @State private var shareItems: [Any] = []
     @State private var showExternalConfirm: Bool = false
     @State private var showBookmarkToast: Bool = false
+    @State private var showLinkCopiedToast: Bool = false
     @State private var externalURL: URL? = nil
     @State private var externalDismissTask: DispatchWorkItem? = nil
     @State private var showNewTabPage: Bool = true
@@ -101,6 +102,14 @@ struct WebViewContainer: View {
                 toastView(
                     icon: isBookmarked ? "bookmark.fill" : "bookmark.slash",
                     text: LanguageManager.shared.localizedString(isBookmarked ? "bookmark_added" : "bookmark_removed")
+                )
+            }
+
+            if showLinkCopiedToast {
+                toastView(
+                    icon: "checkmark",
+                    text: LanguageManager.shared.localizedString("link_copied"),
+                    iconColor: .green
                 )
             }
 
@@ -248,6 +257,15 @@ struct WebViewContainer: View {
                 if let task = externalDismissTask {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: task)
                 }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .linkCopied)) { _ in
+            guard isActiveTab else { return }
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                showLinkCopiedToast = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+                withAnimation { showLinkCopiedToast = false }
             }
         }
         // Link & image long-press handled by native WKUIDelegate context menus

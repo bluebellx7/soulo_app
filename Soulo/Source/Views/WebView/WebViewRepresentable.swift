@@ -820,6 +820,8 @@ struct WebViewRepresentable: UIViewRepresentable {
                     image: UIImage(systemName: "doc.on.doc")
                 ) { _ in
                     UIPasteboard.general.url = linkURL
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    NotificationCenter.default.post(name: .linkCopied, object: nil)
                 }
 
                 let share = UIAction(

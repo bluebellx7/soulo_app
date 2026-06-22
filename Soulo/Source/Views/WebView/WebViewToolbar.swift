@@ -56,6 +56,7 @@ struct WebViewToolbar: View {
                 Button {
                     UIPasteboard.general.url = url
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    NotificationCenter.default.post(name: .linkCopied, object: nil)
                 } label: {
                     Label(LanguageManager.shared.localizedString("copy_link"), systemImage: "doc.on.doc")
                 }
