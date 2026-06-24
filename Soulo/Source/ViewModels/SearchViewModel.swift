@@ -238,7 +238,7 @@ class SearchViewModel: ObservableObject {
         showClipboardPrompt = false
         lastClipboardChangeCount = UIPasteboard.general.changeCount
         if let content = clipboardContent {
-            lastClipboardHash = String(content.hashValue)
+            lastClipboardHash = Self.stableHash(for: content)
         }
     }
 
@@ -256,7 +256,7 @@ class SearchViewModel: ObservableObject {
         guard let text = UIPasteboard.general.string?.trimmingCharacters(in: .whitespacesAndNewlines),
               !text.isEmpty else { return nil }
 
-        let hash = String(text.hashValue)
+        let hash = Self.stableHash(for: text)
         guard hash != lastClipboardHash else { return nil }
 
         clipboardContent = text
@@ -347,5 +347,14 @@ class SearchViewModel: ObservableObject {
             // F2: Index in Spotlight
             SpotlightIndexingService.indexHistoryItem(keyword: keyword, id: item.id)
         } catch {}
+    }
+
+    private static func stableHash(for text: String) -> String {
+        var hash: UInt64 = 14_695_981_039_346_656_037
+        for byte in text.utf8 {
+            hash ^= UInt64(byte)
+            hash &*= 1_099_511_628_211
+        }
+        return String(hash, radix: 16)
     }
 }

@@ -22,6 +22,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     private static var cachedAdBlockRules: WKContentRuleList?
     private static var cachedAdBlockAllowlistSignature: String?
     private static var compilingAdBlockAllowlistSignature: String?
+    private static var installedContentRuleSignatures: [ObjectIdentifier: String] = [:]
 
     /// Call once at app launch to pre-compile ad blocking rules
     static func preWarm() {
@@ -49,6 +50,12 @@ struct WebViewRepresentable: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> WKWebView {
+        if let existingWebView = viewModel.webView {
+            installRuntimeIfNeeded(on: existingWebView.configuration.userContentController, context: context)
+            configureWebView(existingWebView, context: context)
+            return existingWebView
+        }
+
         let configuration = WKWebViewConfiguration()
 
         // Custom user agent
@@ -61,30 +68,48 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         // Content controller for JS message handler
         let contentController = WKUserContentController()
+        installRuntimeIfNeeded(on: contentController, context: context)
+        configuration.userContentController = contentController
+
+        // Build the WKWebView
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        configureWebView(webView, context: context)
+
+        // Hand the webView reference back to the ViewModel. This triggers any pending initial load.
+        viewModel.webView = webView
+
+        return webView
+    }
+
+    private func installRuntimeIfNeeded(on contentController: WKUserContentController, context: Context) {
+        guard !viewModel.isWebViewRuntimeInstalled else { return }
+
         contentController.add(context.coordinator, name: "souloAdBlocker")
         contentController.add(context.coordinator, name: "souloPrivacy")
 
-        let modalScript = WKUserScript(
-            source: WebViewScripts.loginOverlayRemoval,
-            injectionTime: .atDocumentEnd,
-            forMainFrameOnly: false
+        contentController.addUserScript(
+            WKUserScript(
+                source: WebViewScripts.loginOverlayRemoval,
+                injectionTime: .atDocumentEnd,
+                forMainFrameOnly: false
+            )
         )
-        contentController.addUserScript(modalScript)
 
-        let privacyScript = WKUserScript(
-            source: WebViewScripts.privacyProtection(
-                gpcEnabled: gpcEnabled,
-                cookieBannerHandling: cookieBannerEnabled,
-                disabledHosts: privacyService.protectionDisabledHosts
-            ),
-            injectionTime: .atDocumentEnd,
-            forMainFrameOnly: false
+        contentController.addUserScript(
+            WKUserScript(
+                source: WebViewScripts.privacyProtection(
+                    gpcEnabled: gpcEnabled,
+                    cookieBannerHandling: cookieBannerEnabled,
+                    disabledHosts: privacyService.protectionDisabledHosts
+                ),
+                injectionTime: .atDocumentEnd,
+                forMainFrameOnly: false
+            )
         )
-        contentController.addUserScript(privacyScript)
 
-        // (Long-press context menus are handled natively via WKUIDelegate contextMenuConfigurationForElement)
+        // Long-press context menus are handled natively via WKUIDelegate contextMenuConfigurationForElement.
 
-        // Ad blocking: inject CSS/JS to hide ad elements
+        // Ad blocking: inject CSS/JS to hide ad elements.
         let hostIsAllowlisted = adBlockSettings.isAllowlisted(viewModel.currentURL?.host)
             || privacyService.isProtectionDisabled(for: viewModel.currentURL?.host)
         if adBlockEnabled && !hostIsAllowlisted && (adBlockCosmeticEnabled || adBlockPopupEnabled) {
@@ -98,17 +123,17 @@ struct WebViewRepresentable: UIViewRepresentable {
                 forMainFrameOnly: false
             )
             contentController.addUserScript(adScript)
-
-            // Apply pre-compiled content rules (non-blocking)
-            if adBlockNetworkEnabled, !hostIsAllowlisted, let cached = Self.cachedAdBlockRules {
-                contentController.add(cached)
-            }
         }
 
-        configuration.userContentController = contentController
+        // Apply pre-compiled content rules before the first navigation whenever possible.
+        if adBlockEnabled && adBlockNetworkEnabled && !hostIsAllowlisted, let cached = Self.cachedAdBlockRules {
+            contentController.add(cached)
+        }
 
-        // Build the WKWebView
-        let webView = WKWebView(frame: .zero, configuration: configuration)
+        viewModel.isWebViewRuntimeInstalled = true
+    }
+
+    private func configureWebView(_ webView: WKWebView, context: Context) {
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
         webView.allowsBackForwardNavigationGestures = true
@@ -123,9 +148,6 @@ struct WebViewRepresentable: UIViewRepresentable {
         // KVO observations
         context.coordinator.observe(webView: webView, viewModel: viewModel)
 
-        // Hand the webView reference back to the ViewModel
-        viewModel.webView = webView
-
         // Pull-to-refresh
         let refreshControl = UIRefreshControl()
         refreshControl.addTarget(context.coordinator, action: #selector(Coordinator.handleRefresh(_:)), for: .valueChanged)
@@ -133,31 +155,41 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         // Scroll direction detection
         webView.scrollView.delegate = context.coordinator
-
-        return webView
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
         // URL loading is driven imperatively via viewModel.loadURL(_:)
         context.coordinator.applyAdHidingIfNeeded(
             on: uiView,
-                enabled: adBlockEnabled,
-                cosmetic: adBlockCosmeticEnabled,
-                popups: adBlockPopupEnabled,
-                allowlistedHosts: adBlockSettings.allowlistedHosts,
-                host: uiView.url?.host ?? viewModel.currentURL?.host
-            )
+            enabled: adBlockEnabled,
+            cosmetic: adBlockCosmeticEnabled,
+            popups: adBlockPopupEnabled,
+            allowlistedHosts: adBlockSettings.allowlistedHosts,
+            host: uiView.url?.host ?? viewModel.currentURL?.host
+        )
         let host = uiView.url?.host ?? viewModel.currentURL?.host
         if adBlockEnabled && adBlockNetworkEnabled && !privacyService.isProtectionDisabled(for: host) {
             Self.ensureCurrentContentRules(on: uiView, allowlist: adBlockSettings.allowlistedHosts)
         } else {
             uiView.configuration.userContentController.removeAllContentRuleLists()
+            Self.installedContentRuleSignatures.removeValue(forKey: ObjectIdentifier(uiView))
         }
     }
 
     private static func ensureCurrentContentRules(on webView: WKWebView, allowlist: [String]) {
         let signature = allowlistSignature(for: allowlist)
-        guard signature != cachedAdBlockAllowlistSignature || cachedAdBlockRules == nil else { return }
+        let webViewID = ObjectIdentifier(webView)
+        if signature == cachedAdBlockAllowlistSignature, let cachedAdBlockRules {
+            guard installedContentRuleSignatures[webViewID] != signature else { return }
+            webView.configuration.userContentController.removeAllContentRuleLists()
+            if !AdBlockSettingsService.isHostAllowlisted(webView.url?.host, allowlistedHosts: allowlist) {
+                webView.configuration.userContentController.add(cachedAdBlockRules)
+                installedContentRuleSignatures[webViewID] = signature
+            } else {
+                installedContentRuleSignatures.removeValue(forKey: webViewID)
+            }
+            return
+        }
         guard compilingAdBlockAllowlistSignature != signature else { return }
         cachedAdBlockAllowlistSignature = signature
         compilingAdBlockAllowlistSignature = signature
@@ -172,6 +204,9 @@ struct WebViewRepresentable: UIViewRepresentable {
                 webView.configuration.userContentController.removeAllContentRuleLists()
                 if let ruleList, !AdBlockSettingsService.isHostAllowlisted(webView.url?.host, allowlistedHosts: allowlist) {
                     webView.configuration.userContentController.add(ruleList)
+                    installedContentRuleSignatures[ObjectIdentifier(webView)] = signature
+                } else {
+                    installedContentRuleSignatures.removeValue(forKey: ObjectIdentifier(webView))
                 }
             }
         }
@@ -193,6 +228,9 @@ struct WebViewRepresentable: UIViewRepresentable {
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloAdBlocker")
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloPrivacy")
         uiView.configuration.userContentController.removeAllUserScripts()
+        uiView.configuration.userContentController.removeAllContentRuleLists()
+        installedContentRuleSignatures.removeValue(forKey: ObjectIdentifier(uiView))
+        coordinator.markRuntimeDismantled()
     }
 
     // MARK: - Coordinator
@@ -223,6 +261,10 @@ struct WebViewRepresentable: UIViewRepresentable {
             ) { [weak self] _ in
                 self?.cancelActiveDownloads()
             }
+        }
+
+        func markRuntimeDismantled() {
+            viewModel.isWebViewRuntimeInstalled = false
         }
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -276,6 +318,8 @@ struct WebViewRepresentable: UIViewRepresentable {
         // MARK: KVO
 
         func observe(webView: WKWebView, viewModel: WebViewModel) {
+            observations.forEach { $0.invalidate() }
+            observations.removeAll()
             observations = [
                 webView.observe(\.estimatedProgress, options: .new) { [weak self] wv, _ in
                     Task { @MainActor in

@@ -174,14 +174,14 @@ struct TabSwitcherOverlay: View {
                             onSelect: { index in
                                 HapticsManager.selection()
                                 let selectedIndex = index
-                                withAnimation(.easeOut(duration: 0.14)) {
+                                withAnimation(.spring(response: 0.22, dampingFraction: 0.86)) {
                                     isExpanding = true
                                     expandingIndex = selectedIndex
                                 }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.04) {
                                     tabManager.focusTabInSwitcher(at: selectedIndex)
                                 }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) {
                                     onSelectTab(selectedIndex)
                                     onDismiss()
                                 }
@@ -440,7 +440,7 @@ private struct TabSwitcherCardItem: View {
             let centeredness = max(0.0, 1.0 - clampedDistance / 1.4)
 
             let scaleVal: CGFloat = {
-                if isThisExpanding { return 1.0 }
+                if isThisExpanding { return 1.08 }
                 return CGFloat(0.82 + centeredness * 0.18)
             }()
 
@@ -448,7 +448,7 @@ private struct TabSwitcherCardItem: View {
             let offsetValY: CGFloat = isThisExpanding ? 0.0 : CGFloat(1.0 - centeredness) * 22.0
 
             let opacityVal: Double = {
-                if isAnyExpanding { return 0.0 }
+                if isAnyExpanding { return isThisExpanding ? 1.0 : 0.0 }
                 return 0.74 + centeredness * 0.26
             }()
 

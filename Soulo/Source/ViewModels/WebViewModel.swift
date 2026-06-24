@@ -18,6 +18,7 @@ final class WebViewModel: ObservableObject {
     @Published var isScrollingUp: Bool = false
     @Published var snapshot: UIImage?
     @Published var showSnapshotWhileRestoring: Bool = false
+    var isWebViewRuntimeInstalled: Bool = false
     private var snapshotPersistenceID: String?
 
     // Download state
@@ -34,15 +35,15 @@ final class WebViewModel: ObservableObject {
 
     var webView: WKWebView? {
         didSet {
-            guard webView != nil else { return }
+            guard let webView, oldValue !== webView else { return }
             if let request = pendingRequest {
                 pendingRequest = nil
-                webView?.load(request)
+                webView.load(request)
             } else if let url = currentURL {
                 isLoading = true
                 estimatedProgress = 0.0
                 let request = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad, timeoutInterval: 30)
-                webView?.load(request)
+                webView.load(request)
             }
         }
     }
@@ -163,6 +164,10 @@ final class WebViewModel: ObservableObject {
     func deletePersistedSnapshot() {
         guard let snapshotPersistenceID else { return }
         try? FileManager.default.removeItem(at: Self.snapshotURL(id: snapshotPersistenceID))
+    }
+
+    static func deleteAllPersistedSnapshots() {
+        try? FileManager.default.removeItem(at: snapshotDirectory)
     }
 
     private func persistSnapshot(_ image: UIImage) {

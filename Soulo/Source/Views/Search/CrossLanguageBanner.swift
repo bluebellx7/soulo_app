@@ -20,13 +20,10 @@ struct CrossLanguageBanner: View {
 
                 // Label
                 HStack(spacing: 4) {
-                    Text("Also search in")
+                    Text(String(format: LanguageManager.shared.localizedString("also_search_in"), targetLanguage))
                         .font(.system(size: 13, weight: .regular))
                         .foregroundStyle(.secondary)
-
-                    Text(targetLanguage)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.primary)
+                        .lineLimit(1)
 
                     Text("·")
                         .font(.system(size: 13, weight: .regular))

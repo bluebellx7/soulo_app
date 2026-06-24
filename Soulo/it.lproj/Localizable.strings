@@ -483,3 +483,4 @@
 "privacy_gpc_desc" = "Ask websites not to sell or share your data when they support GPC.";
 "privacy_cookie_banners" = "Handle Cookie Prompts";
 "privacy_cookie_banners_desc" = "Try to reject or dismiss common cookie consent banners.";
+"example" = "Esempio";

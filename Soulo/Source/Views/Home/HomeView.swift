@@ -373,9 +373,11 @@ struct HomeView: View {
         }
     }
 
-    /// Whether there are real tabs with loaded content (not just the default empty tab).
-    private var hasActiveTabs: Bool {
-        tabManager.tabs.contains { $0.webViewModel.currentURL != nil }
+    /// Show the tab switcher whenever there is anything worth restoring or previewing.
+    private var shouldShowTabEntry: Bool {
+        tabManager.tabs.count > 1 || tabManager.tabs.contains {
+            $0.webViewModel.currentURL != nil || $0.webViewModel.snapshot != nil
+        }
     }
 
     private var topBar: some View {
@@ -386,7 +388,7 @@ struct HomeView: View {
             }
 
             // Tab indicator — show when there are loaded tabs
-            if hasActiveTabs {
+            if shouldShowTabEntry {
                 Button {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     tabManager.refreshSnapshotsForSwitcher()

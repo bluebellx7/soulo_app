@@ -197,8 +197,7 @@ struct PrivacySettingsView: View {
         .navigationBarTitleDisplayMode(.large)
         .onChange(of: isIncognito) { _, enabled in
             if enabled {
-                UserDefaults.standard.removeObject(forKey: "soulo_saved_tabs")
-                tabManager.closeAllTabs()
+                tabManager.resetTabsForPrivacy()
             }
         }
     }
@@ -251,6 +250,8 @@ struct PrivacySettingsView: View {
 
     private func clearWebViewCache() {
         clearingCache = true
+        WebViewModel.deleteAllPersistedSnapshots()
+        tabManager.tabs.forEach { $0.webViewModel.snapshot = nil }
         let dataTypes = WKWebsiteDataStore.allWebsiteDataTypes()
         WKWebsiteDataStore.default().removeData(
             ofTypes: dataTypes,

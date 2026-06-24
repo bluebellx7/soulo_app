@@ -197,16 +197,33 @@ final class TabManager: ObservableObject {
     }
 
     func closeAllTabs() {
+        closeAllTabs(addingToRecentlyClosed: true)
+    }
+
+    func resetTabsForPrivacy() {
+        closeAllTabs(addingToRecentlyClosed: false)
+        recentlyClosed.removeAll()
+        WebViewModel.deleteAllPersistedSnapshots()
+        UserDefaults.standard.removeObject(forKey: Self.storageKey)
+        saveToDisk()
+    }
+
+    private func closeAllTabs(addingToRecentlyClosed: Bool) {
         for tab in tabs {
             tab.webViewModel.deletePersistedSnapshot()
-            let closed = RecentlyClosedTab(
-                id: tab.id, title: tab.displayTitle,
-                url: tab.webViewModel.currentURL,
-                keyword: tab.keyword, platform: tab.platform, closedAt: Date()
-            )
-            recentlyClosed.insert(closed, at: 0)
+            if addingToRecentlyClosed {
+                let closed = RecentlyClosedTab(
+                    id: tab.id,
+                    title: tab.displayTitle,
+                    url: tab.webViewModel.currentURL,
+                    keyword: tab.keyword,
+                    platform: tab.platform,
+                    closedAt: Date()
+                )
+                recentlyClosed.insert(closed, at: 0)
+            }
         }
-        if recentlyClosed.count > Self.maxRecentlyClosed {
+        if addingToRecentlyClosed, recentlyClosed.count > Self.maxRecentlyClosed {
             recentlyClosed = Array(recentlyClosed.prefix(Self.maxRecentlyClosed))
         }
         desktopModeTabs.removeAll()

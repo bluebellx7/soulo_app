@@ -55,7 +55,7 @@ struct BatchImportView: View {
                                     .font(.system(size: 16, weight: .semibold))
                                     .foregroundStyle(.purple)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("示例")
+                                    Text(LanguageManager.shared.localizedString("example"))
                                         .font(.system(size: 14, weight: .semibold))
                                         .foregroundStyle(.primary)
                                     Text(filmImportURL.host ?? filmImportURL.absoluteString)
@@ -316,7 +316,7 @@ private struct BatchImportExampleWebView: View {
                 bookmarkViewModel: bookmarkViewModel,
                 isFullscreen: $isFullscreen
             )
-            .navigationTitle("示例")
+            .navigationTitle(LanguageManager.shared.localizedString("example"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

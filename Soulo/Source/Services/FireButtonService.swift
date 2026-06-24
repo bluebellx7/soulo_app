@@ -9,7 +9,8 @@ enum FireButtonService {
         URLSession.shared.configuration.urlCache?.removeAllCachedResponses()
         URLCache.shared.removeAllCachedResponses()
 
-        tabManager?.closeAllTabs()
+        tabManager?.resetTabsForPrivacy()
+        WebViewModel.deleteAllPersistedSnapshots()
         AdBlockSettingsService.shared.resetStats()
         PrivacyProtectionService.shared.resetAllSummaries()
 

@@ -145,7 +145,13 @@ struct WallpaperSettingsView: View {
                     }
                     .buttonStyle(.plain)
                     .contentShape(Capsule())
-                    .contextMenu { Button(role: .destructive) { withAnimation { wallpaperManager.removeVibeTag(tag) } } label: { Label("Remove", systemImage: "trash") } }
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            withAnimation { wallpaperManager.removeVibeTag(tag) }
+                        } label: {
+                            Label(LText("delete"), systemImage: "trash")
+                        }
+                    }
                 }
             }.padding(.horizontal, 4)
         }
@@ -234,8 +240,11 @@ struct WallpaperSettingsView: View {
     }
 
     private var photoSection: some View {
-        Section {
-            PhotosPicker(selection: $selectedPhoto, matching: .images) { Label(LText("wallpaper_choose_photo"), systemImage: "photo.on.rectangle") }
+        let choosePhotoTitle = LText("wallpaper_choose_photo")
+        return Section {
+            PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                Label(choosePhotoTitle, systemImage: "photo.on.rectangle")
+            }
             .onChange(of: selectedPhoto) { _, item in Task { if let data = try? await item?.loadTransferable(type: Data.self), let image = UIImage(data: data) { wallpaperManager.saveCustomImage(image) } } }
             if let image = wallpaperManager.customImage { Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 200).clipShape(RoundedRectangle(cornerRadius: 12)) }
         }

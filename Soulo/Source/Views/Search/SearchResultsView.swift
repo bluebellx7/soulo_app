@@ -7,7 +7,6 @@ struct SearchResultsView: View {
 
     @EnvironmentObject var searchVM: SearchViewModel
     @EnvironmentObject var languageManager: LanguageManager
-    @EnvironmentObject var wallpaperVM: BingWallpaperService
     @EnvironmentObject var tabManager: TabManager
     @StateObject private var bookmarkVM = BookmarkViewModel()
     @Environment(\.modelContext) private var modelContext
@@ -115,20 +114,20 @@ struct SearchResultsView: View {
                     }
                 }
 
-                // WebView — ZStack with all tabs, only active one visible
+                // WebView — mount only the active tab; WebViewModel keeps the WKWebView alive for instant restores.
                 ZStack {
                     let activeWebViewModel = tabManager.activeWebViewModel
                     let activePageIsLoading = activeWebViewModel?.isLoading == true && activeWebViewModel?.currentURL != nil
+                    let shouldShowLoadingOverlay = activePageIsLoading
+                        || (!pageReady && activeWebViewModel?.currentURL != nil)
 
-                    // Render all tabs; show only active
-                    ForEach(tabManager.tabs) { tab in
-                        let isActive = tab.id == tabManager.activeTab?.id
+                    if let activeTab = tabManager.activeTab {
                         WebViewContainer(
-                            webViewModel: tab.webViewModel,
+                            webViewModel: activeTab.webViewModel,
                             bookmarkViewModel: bookmarkVM,
                             isFullscreen: $isFullscreen,
                             tabManager: tabManager,
-                            isActiveTab: isActive,
+                            isActiveTab: true,
                             onGoHome: {
                                 withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
                                     searchVM.clearSearch()
@@ -138,12 +137,12 @@ struct SearchResultsView: View {
                                 if !pageReady { pageReady = true }
                             }
                         )
-                        .opacity(isActive ? 1 : 0)
-                        .allowsHitTesting(isActive)
+                        .id(activeTab.id)
+                        .transition(.opacity)
                     }
 
                     // Loading — thin overlay spinner at top, WebView visible underneath
-                    if !pageReady || activePageIsLoading {
+                    if shouldShowLoadingOverlay {
                         VStack {
                             HStack(spacing: 8) {
                                 ProgressView()

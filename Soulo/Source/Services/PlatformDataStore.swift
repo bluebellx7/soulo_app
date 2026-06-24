@@ -192,6 +192,9 @@ class PlatformDataStore: ObservableObject {
         platforms[index].name = name
         platforms[index].searchURLTemplate = searchURL
         platforms[index].homeURL = homeURL
+        if platforms[index].isCustom {
+            platforms[index].faviconURL = Self.faviconURL(from: homeURL.isEmpty ? searchURL : homeURL)
+        }
         savePlatforms()
     }
 
