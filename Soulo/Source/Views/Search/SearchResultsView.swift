@@ -278,6 +278,8 @@ struct SearchResultsView: View {
             .ignoresSafeArea()
         )
         .ignoresSafeArea(isFullscreen ? .container : [], edges: .top)
+        .tabOverviewScale(isActive: tabManager.showTabOverview)
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: tabManager.showTabOverview)
         .overlay(alignment: .top) {
             if showLoginAlert {
                 HStack(spacing: 10) {

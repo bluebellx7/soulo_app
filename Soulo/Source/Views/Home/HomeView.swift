@@ -30,46 +30,50 @@ struct HomeView: View {
 
     var body: some View {
         ZStack {
-            // Background from DklugeClock
-            WallpaperBackground()
+            Group {
+                // Background from DklugeClock
+                WallpaperBackground()
 
-            if searchVM.isSearching {
-                SearchResultsView(
-                    searchBarNamespace: searchBarNamespace,
-                    speechService: speechService
-                )
-                .transition(.identity)
-            } else {
-                homeContent
-                    .transition(.opacity)
-            }
-
-            // Clipboard prompt
-            if searchVM.showClipboardPrompt {
-                ClipboardPromptView()
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                    .zIndex(100)
-            }
-
-            // Saved toast
-            if showSavedToast {
-                VStack {
-                    Spacer()
-                    HStack(spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                        Text(LanguageManager.shared.localizedString("wallpaper_saved"))
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.white)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(.black.opacity(0.6), in: Capsule())
-                    .padding(.bottom, 80)
+                if searchVM.isSearching {
+                    SearchResultsView(
+                        searchBarNamespace: searchBarNamespace,
+                        speechService: speechService
+                    )
+                    .transition(.identity)
+                } else {
+                    homeContent
+                        .transition(.opacity)
                 }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-                .zIndex(100)
+
+                // Clipboard prompt
+                if searchVM.showClipboardPrompt {
+                    ClipboardPromptView()
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .zIndex(100)
+                }
+
+                // Saved toast
+                if showSavedToast {
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text(LanguageManager.shared.localizedString("wallpaper_saved"))
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(.white)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(.black.opacity(0.6), in: Capsule())
+                        .padding(.bottom, 80)
+                    }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .zIndex(100)
+                }
             }
+            .tabOverviewScale(isActive: showTabOverviewFromHome)
+            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: showTabOverviewFromHome)
 
             if showTabOverviewFromHome {
                 TabSwitcherOverlay(

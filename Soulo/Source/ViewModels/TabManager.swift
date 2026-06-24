@@ -247,6 +247,15 @@ final class TabManager: ObservableObject {
         saveToDisk()
     }
 
+    func focusTabInSwitcher(at index: Int) {
+        guard tabs.indices.contains(index), index != activeTabIndex else { return }
+        activeWebViewModel?.takeSnapshot()
+        activeTabIndex = index
+        dismissFindInPage()
+        manageTabLifecycles()
+        saveToDisk()
+    }
+
     func switchToTab(id: UUID) {
         guard let index = tabs.firstIndex(where: { $0.id == id }) else { return }
         switchToTab(at: index)
