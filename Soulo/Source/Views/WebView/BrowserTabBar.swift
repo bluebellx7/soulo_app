@@ -308,78 +308,113 @@ private struct TabSwitcherCarousel: View {
     let onSelect: (Int) -> Void
     let onClose: (Int) -> Void
 
-    @State private var activeTabId: UUID? = nil
+    @State private var dragOffset: CGFloat = 0
+    @State private var isHorizontalDragging = false
 
     var body: some View {
         GeometryReader { geo in
             let cardWidth = min(max(geo.size.width * 0.68, 250), 360)
-            let horizontalMargin = max((geo.size.width - cardWidth) / 2, 22)
-            // Adjust spacing to create a tighter iOS-style card stack
             let cardSpacing = -cardWidth * 0.22
+            let stepDistance = cardWidth + cardSpacing
             let viewportMinY = geo.frame(in: .global).minY
-            let viewportMidX = geo.frame(in: .global).midX
             let safeAreaTop = geo.safeAreaInsets.top
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .center, spacing: cardSpacing) {
-                    ForEach(Array(tabManager.tabs.enumerated()), id: \.element.id) { index, tab in
-                        TabSwitcherCardItem(
-                            index: index,
-                            tab: tab,
-                            isActive: index == tabManager.activeTabIndex,
-                            isExpanding: isExpanding,
-                            isAnyExpanding: isExpanding,
-                            expandingIndex: expandingIndex,
-                            cardWidth: cardWidth,
-                            viewportWidth: geo.size.width,
-                            viewportMidX: viewportMidX,
-                            viewportMinY: viewportMinY,
-                            safeAreaTop: safeAreaTop,
-                            onSelect: onSelect,
-                            onClose: onClose,
-                            tabManager: tabManager
-                        )
-                        .id(tab.id)
-                    }
+            ZStack {
+                ForEach(Array(tabManager.tabs.enumerated()), id: \.element.id) { index, tab in
+                    TabSwitcherCardItem(
+                        index: index,
+                        tab: tab,
+                        isActive: index == tabManager.activeTabIndex,
+                        isExpanding: isExpanding,
+                        isAnyExpanding: isExpanding,
+                        expandingIndex: expandingIndex,
+                        cardWidth: cardWidth,
+                        stepDistance: stepDistance,
+                        dragOffset: dragOffset,
+                        viewportWidth: geo.size.width,
+                        viewportMinY: viewportMinY,
+                        safeAreaTop: safeAreaTop,
+                        onSelect: onSelect,
+                        onClose: onClose,
+                        tabManager: tabManager
+                    )
                 }
-                .scrollTargetLayout()
-                .padding(.horizontal, horizontalMargin)
-                .padding(.vertical, 18)
             }
-            .scrollTargetBehavior(.viewAligned)
-            .scrollClipDisabled()
-            .scrollPosition(id: $activeTabId)
-            .onAppear {
-                activeTabId = tabManager.activeTab?.id
-            }
-            .onChange(of: tabManager.activeTabIndex) { _, newIndex in
-                if tabManager.tabs.indices.contains(newIndex) {
-                    let newId = tabManager.tabs[newIndex].id
-                    if activeTabId != newId {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                            activeTabId = newId
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 8)
+                    .onChanged { value in
+                        guard !isExpanding, tabManager.tabs.count > 1 else { return }
+                        let isHorizontal = abs(value.translation.width) > abs(value.translation.height)
+
+                        if !isHorizontalDragging && isHorizontal {
+                            isHorizontalDragging = true
+                        }
+
+                        if isHorizontalDragging {
+                            dragOffset = resistedOffset(value.translation.width, stepDistance: stepDistance)
                         }
                     }
-                }
-            }
-            .onChange(of: tabManager.tabs.map(\.id)) { _, ids in
-                if let activeTabId, !ids.contains(activeTabId) {
-                    self.activeTabId = tabManager.activeTab?.id
-                } else if activeTabId == nil {
-                    activeTabId = tabManager.activeTab?.id
-                }
-            }
-            .onChange(of: activeTabId) { _, newValue in
-                if let newValue,
-                   let index = tabManager.tabs.firstIndex(where: { $0.id == newValue }),
-                   index != tabManager.activeTabIndex {
-                    HapticsManager.selection()
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                        tabManager.focusTabInSwitcher(at: index)
+                    .onEnded { value in
+                        guard isHorizontalDragging else {
+                            resetDrag()
+                            return
+                        }
+
+                        let projected = resistedOffset(value.predictedEndTranslation.width, stepDistance: stepDistance)
+                        let targetIndex = targetIndex(for: projected, stepDistance: stepDistance)
+
+                        if targetIndex != tabManager.activeTabIndex {
+                            HapticsManager.selection()
+                            withAnimation(.spring(response: 0.36, dampingFraction: 0.84)) {
+                                tabManager.focusTabInSwitcher(at: targetIndex)
+                                dragOffset = 0
+                            }
+                        } else {
+                            resetDrag()
+                        }
+                        isHorizontalDragging = false
                     }
-                }
+            )
+            .onChange(of: tabManager.activeTabIndex) { _, _ in
+                resetDrag()
             }
         }
+    }
+
+    private func resetDrag() {
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+            dragOffset = 0
+        }
+        isHorizontalDragging = false
+    }
+
+    private func resistedOffset(_ proposed: CGFloat, stepDistance: CGFloat) -> CGFloat {
+        let activeIndex = tabManager.activeTabIndex
+        let rightLimit = CGFloat(activeIndex) * stepDistance
+        let leftLimit = CGFloat(max(tabManager.tabs.count - 1 - activeIndex, 0)) * stepDistance
+
+        if proposed > rightLimit {
+            return rightLimit + (proposed - rightLimit) * 0.24
+        }
+        if proposed < -leftLimit {
+            return -leftLimit + (proposed + leftLimit) * 0.24
+        }
+        return proposed
+    }
+
+    private func targetIndex(for projectedOffset: CGFloat, stepDistance: CGFloat) -> Int {
+        guard stepDistance > 0 else { return tabManager.activeTabIndex }
+        let rawDelta = -projectedOffset / stepDistance
+        var delta = Int(rawDelta.rounded())
+
+        if delta == 0, abs(projectedOffset) > stepDistance * 0.22 {
+            delta = projectedOffset < 0 ? 1 : -1
+        }
+
+        let proposedIndex = tabManager.activeTabIndex + delta
+        return min(max(proposedIndex, 0), max(tabManager.tabs.count - 1, 0))
     }
 }
 
@@ -393,8 +428,9 @@ private struct TabSwitcherCardItem: View {
     let isAnyExpanding: Bool
     let expandingIndex: Int?
     let cardWidth: CGFloat
+    let stepDistance: CGFloat
+    let dragOffset: CGFloat
     let viewportWidth: CGFloat
-    let viewportMidX: CGFloat
     let viewportMinY: CGFloat
     let safeAreaTop: CGFloat
     let onSelect: (Int) -> Void
@@ -403,15 +439,14 @@ private struct TabSwitcherCardItem: View {
 
     var body: some View {
         let isThisExpanding = isExpanding && index == expandingIndex
-        let zIndexVal: Double = isThisExpanding ? 200.0 : (isActive ? 100.0 : Double(50 - abs(index - tabManager.activeTabIndex)))
         let scaleValMultiplier: CGFloat = isThisExpanding ? (viewportWidth / cardWidth) * 1.02 : 1.0
         let verticalOffsetVal: CGFloat = isThisExpanding ? -viewportMinY + safeAreaTop - 10.0 : 0.0
+        let baseOffsetX = CGFloat(index - tabManager.activeTabIndex) * stepDistance + dragOffset
+        let layerDistance = stepDistance > 0 ? abs(baseOffsetX / stepDistance) : 0
+        let zIndexVal: Double = isThisExpanding ? 200.0 : Double(100.0 - min(layerDistance, 5.0))
 
-        GeometryReader { cardGeo in
-            let midX = cardGeo.frame(in: .global).midX
-            let distance = midX - viewportMidX
-            let stepDistance = cardWidth * 0.78
-            let normalizedDistance = stepDistance > 0 ? (distance / stepDistance) : 0.0
+        GeometryReader { _ in
+            let normalizedDistance = stepDistance > 0 ? (baseOffsetX / stepDistance) : 0.0
             let clampedDistance = min(abs(normalizedDistance), 1.4)
             let centeredness = max(0.0, 1.0 - clampedDistance / 1.4)
 
@@ -444,7 +479,7 @@ private struct TabSwitcherCardItem: View {
                     )
                 }
                 .scaleEffect(scaleVal)
-                .offset(x: offsetValX, y: offsetValY)
+                .offset(x: baseOffsetX + offsetValX, y: offsetValY)
                 .opacity(opacityVal)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
