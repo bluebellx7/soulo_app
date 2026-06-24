@@ -129,6 +129,11 @@ struct SearchResultsView: View {
                             isFullscreen: $isFullscreen,
                             tabManager: tabManager,
                             isActiveTab: isActive,
+                            onGoHome: {
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                                    searchVM.clearSearch()
+                                }
+                            },
                             onPageLoaded: {
                                 if !pageReady { pageReady = true }
                             }
@@ -344,19 +349,6 @@ struct SearchResultsView: View {
 
     private var topSearchBar: some View {
         HStack(spacing: 8) {
-            // Home button
-            Button {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
-                    searchVM.clearSearch()
-                }
-            } label: {
-                Image(systemName: "house.fill")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color(UIColor.label))
-                    .frame(width: 36, height: 36)
-                    .background(.ultraThinMaterial, in: Circle())
-            }
-
             // Search bar
             SearchBarView(
                 text: $searchVM.searchText,

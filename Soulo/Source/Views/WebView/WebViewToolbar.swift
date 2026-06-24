@@ -11,9 +11,11 @@ struct WebViewToolbar: View {
     var onManageAdBlock: (() -> Void)?
     var onShowDownloads: (() -> Void)?
     var onFireButton: (() -> Void)?
+    var onGoHome: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 10) {
+            btn("house.fill", enabled: onGoHome != nil) { onGoHome?() }
             btn("chevron.left", enabled: viewModel.canGoBack) { viewModel.goBack() }
             btn("chevron.right", enabled: viewModel.canGoForward) { viewModel.goForward() }
             btn(viewModel.isLoading ? "xmark" : "arrow.clockwise", enabled: true) { viewModel.reload() }

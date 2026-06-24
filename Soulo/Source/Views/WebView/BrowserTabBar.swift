@@ -142,17 +142,12 @@ private struct BrowserTabChip: View {
     }
 }
 
-// MARK: - Tab Overview (Grid View)
+// MARK: - Tab Overview (App Switcher)
 
 struct TabOverviewView: View {
     @ObservedObject var tabManager: TabManager
     let onNewTab: () -> Void
     @Environment(\.dismiss) private var dismiss
-
-    private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
 
     var body: some View {
         NavigationStack {
@@ -162,88 +157,85 @@ struct TabOverviewView: View {
                 if tabManager.tabs.isEmpty {
                     emptyState
                 } else {
-                    ScrollView {
-                        VStack(spacing: 20) {
-                            LazyVGrid(columns: columns, spacing: 12) {
-                                ForEach(Array(tabManager.tabs.enumerated()), id: \.element.id) { index, tab in
-                                    TabOverviewCard(
-                                        webViewModel: tab.webViewModel,
-                                        keyword: tab.keyword,
-                                        isActive: index == tabManager.activeTabIndex,
-                                        onTap: {
-                                            HapticsManager.selection()
-                                            tabManager.switchToTab(at: index)
-                                            dismiss()
-                                        },
-                                        onClose: {
-                                            HapticsManager.light()
-                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                                tabManager.closeTab(at: index)
-                                            }
+                    GeometryReader { geo in
+                        ScrollView {
+                            VStack(spacing: 20) {
+                                TabSwitcherCarousel(
+                                    tabManager: tabManager,
+                                    onSelect: { index in
+                                        HapticsManager.selection()
+                                        tabManager.switchToTab(at: index)
+                                        dismiss()
+                                    },
+                                    onClose: { index in
+                                        HapticsManager.light()
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                            tabManager.closeTab(at: index)
                                         }
-                                    )
-                                    .transition(.scale(scale: 0.9).combined(with: .opacity))
-                                }
-                            }
-
-                            // Recently closed section
-                            if !tabManager.recentlyClosed.isEmpty {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    HStack {
-                                        Label(
-                                            LanguageManager.shared.localizedString("tab_recently_closed"),
-                                            systemImage: "clock.arrow.circlepath"
-                                        )
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundStyle(.secondary)
-                                        Spacer()
                                     }
+                                )
+                                .frame(height: min(max(geo.size.height * 0.78, 500), 720))
 
-                                    ForEach(tabManager.recentlyClosed.prefix(5)) { closed in
-                                        Button {
-                                            HapticsManager.selection()
-                                            tabManager.restoreClosedTab(closed)
-                                            dismiss()
-                                        } label: {
-                                            HStack(spacing: 10) {
-                                                Image(systemName: "globe")
-                                                    .font(.system(size: 13))
-                                                    .foregroundStyle(.secondary)
-                                                    .frame(width: 24)
-
-                                                VStack(alignment: .leading, spacing: 2) {
-                                                    Text(closed.title)
-                                                        .font(.system(size: 13, weight: .medium))
-                                                        .foregroundStyle(.primary)
-                                                        .lineLimit(1)
-                                                    if let host = closed.url?.host {
-                                                        Text(host)
-                                                            .font(.system(size: 11))
-                                                            .foregroundStyle(.tertiary)
-                                                            .lineLimit(1)
-                                                    }
-                                                }
-
-                                                Spacer()
-
-                                                Image(systemName: "arrow.uturn.backward.circle")
-                                                    .font(.system(size: 15))
-                                                    .foregroundStyle(Color(hex: "6366F1"))
-                                            }
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 10)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                                    .fill(Color(UIColor.secondarySystemGroupedBackground))
+                                // Recently closed section
+                                if !tabManager.recentlyClosed.isEmpty {
+                                    VStack(alignment: .leading, spacing: 10) {
+                                        HStack {
+                                            Label(
+                                                LanguageManager.shared.localizedString("tab_recently_closed"),
+                                                systemImage: "clock.arrow.circlepath"
                                             )
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundStyle(.secondary)
+                                            Spacer()
                                         }
-                                        .buttonStyle(.plain)
+
+                                        ForEach(tabManager.recentlyClosed.prefix(5)) { closed in
+                                            Button {
+                                                HapticsManager.selection()
+                                                tabManager.restoreClosedTab(closed)
+                                                dismiss()
+                                            } label: {
+                                                HStack(spacing: 10) {
+                                                    Image(systemName: "globe")
+                                                        .font(.system(size: 13))
+                                                        .foregroundStyle(.secondary)
+                                                        .frame(width: 24)
+
+                                                    VStack(alignment: .leading, spacing: 2) {
+                                                        Text(closed.title)
+                                                            .font(.system(size: 13, weight: .medium))
+                                                            .foregroundStyle(.primary)
+                                                            .lineLimit(1)
+                                                        if let host = closed.url?.host {
+                                                            Text(host)
+                                                                .font(.system(size: 11))
+                                                                .foregroundStyle(.tertiary)
+                                                                .lineLimit(1)
+                                                        }
+                                                    }
+
+                                                    Spacer()
+
+                                                    Image(systemName: "arrow.uturn.backward.circle")
+                                                        .font(.system(size: 15))
+                                                        .foregroundStyle(Color(hex: "6366F1"))
+                                                }
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 10)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                        .fill(Color(UIColor.secondarySystemGroupedBackground))
+                                                )
+                                            }
+                                            .buttonStyle(.plain)
+                                        }
                                     }
+                                    .padding(.horizontal, 16)
                                 }
                             }
+                            .padding(.vertical, 18)
+                            .padding(.bottom, 80)
                         }
-                        .padding(16)
-                        .padding(.bottom, 80)
                     }
                 }
             }
@@ -300,7 +292,60 @@ struct TabOverviewView: View {
     }
 }
 
-// MARK: - Tab Overview Card (observes WebViewModel directly, fixed height)
+// MARK: - Tab Switcher Carousel
+
+private struct TabSwitcherCarousel: View {
+    @ObservedObject var tabManager: TabManager
+    let onSelect: (Int) -> Void
+    let onClose: (Int) -> Void
+
+    var body: some View {
+        GeometryReader { geo in
+            let cardWidth = min(max(geo.size.width * 0.74, 260), 380)
+            let horizontalMargin = max((geo.size.width - cardWidth) / 2, 16)
+
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(alignment: .center, spacing: 18) {
+                        ForEach(Array(tabManager.tabs.enumerated()), id: \.element.id) { index, tab in
+                            TabOverviewCard(
+                                webViewModel: tab.webViewModel,
+                                keyword: tab.keyword,
+                                isActive: index == tabManager.activeTabIndex,
+                                onTap: { onSelect(index) },
+                                onClose: { onClose(index) }
+                            )
+                            .frame(width: cardWidth)
+                            .scaleEffect(index == tabManager.activeTabIndex ? 1.0 : 0.94)
+                            .opacity(index == tabManager.activeTabIndex ? 1.0 : 0.86)
+                            .id(tab.id)
+                            .animation(.spring(response: 0.35, dampingFraction: 0.82), value: tabManager.activeTabIndex)
+                        }
+                    }
+                    .scrollTargetLayout()
+                    .padding(.horizontal, horizontalMargin)
+                    .padding(.vertical, 18)
+                }
+                .scrollTargetBehavior(.viewAligned)
+                .onAppear { scrollToActive(proxy) }
+                .onChange(of: tabManager.activeTabIndex) { _, _ in
+                    scrollToActive(proxy)
+                }
+            }
+        }
+    }
+
+    private func scrollToActive(_ proxy: ScrollViewProxy) {
+        guard let id = tabManager.activeTab?.id else { return }
+        DispatchQueue.main.async {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                proxy.scrollTo(id, anchor: .center)
+            }
+        }
+    }
+}
+
+// MARK: - Tab Overview Card (observes WebViewModel directly)
 
 private struct TabOverviewCard: View {
     @ObservedObject var webViewModel: WebViewModel
@@ -326,79 +371,74 @@ private struct TabOverviewCard: View {
     var body: some View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 0) {
-                // Header: title + close
-                HStack(spacing: 6) {
-                    if webViewModel.isLoading {
-                        ProgressView()
-                            .controlSize(.mini)
-                            .frame(width: 14, height: 14)
-                    } else {
-                        Image(systemName: webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(isActive ? Color(hex: "6366F1") : .secondary)
-                    }
+                ZStack(alignment: .top) {
+                    preview
+                        .aspectRatio(0.70, contentMode: .fit)
+                        .frame(maxWidth: .infinity)
+                        .background(Color(UIColor.tertiarySystemFill).opacity(0.5))
+                        .clipped()
 
+                    LinearGradient(
+                        colors: [.black.opacity(0.34), .black.opacity(0.12), .clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 92)
+                    .allowsHitTesting(false)
+
+                    HStack(spacing: 8) {
+                        if webViewModel.isLoading {
+                            ProgressView()
+                                .controlSize(.mini)
+                                .tint(.white)
+                                .frame(width: 18, height: 18)
+                        } else {
+                            Image(systemName: webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.9))
+                                .frame(width: 18, height: 18)
+                        }
+
+                        Text(displayTitle)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
+
+                        Spacer(minLength: 6)
+
+                        Button(action: onClose) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white.opacity(0.9))
+                                .frame(width: 28, height: 28)
+                                .background(.black.opacity(0.38), in: Circle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.top, 12)
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
                     Text(displayTitle)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
-                    Spacer(minLength: 4)
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(isActive ? Color(hex: "6366F1") : Color(UIColor.tertiaryLabel))
+                            .frame(width: 6, height: 6)
 
-                    Button(action: onClose) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 9, weight: .bold))
+                        Text(subtitle.isEmpty ? LanguageManager.shared.localizedString("tab_new_tab") : subtitle)
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(.secondary)
-                            .frame(width: 20, height: 20)
-                            .background(Color(UIColor.tertiarySystemFill), in: Circle())
+                            .lineLimit(1)
                     }
-                    .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 10)
-                .padding(.top, 10)
-                .padding(.bottom, 6)
-
-                // Snapshot preview
-                if let snapshot = webViewModel.snapshot {
-                    Image(uiImage: snapshot)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 120)
-                        .clipped()
-                } else {
-                    // Placeholder
-                    Rectangle()
-                        .fill(Color(UIColor.tertiarySystemFill).opacity(0.5))
-                        .frame(height: 120)
-                        .overlay {
-                            if webViewModel.isLoading {
-                                VStack(spacing: 6) {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                    Text(LanguageManager.shared.localizedString("loading"))
-                                        .font(.system(size: 11))
-                                        .foregroundStyle(.tertiary)
-                                }
-                            } else if webViewModel.currentURL == nil {
-                                Image(systemName: "plus")
-                                    .font(.system(size: 24, weight: .light))
-                                    .foregroundStyle(.quaternary)
-                            } else {
-                                Image(systemName: "globe")
-                                    .font(.system(size: 24, weight: .light))
-                                    .foregroundStyle(.quaternary)
-                            }
-                        }
-                }
-
-                // URL line
-                Text(subtitle)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
-                    .lineLimit(1)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
 
                 // Loading progress
                 if webViewModel.isLoading {
@@ -415,15 +455,15 @@ private struct TabOverviewCard: View {
                 }
             }
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .fill(Color(UIColor.secondarySystemGroupedBackground))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(isActive ? Color(hex: "6366F1").opacity(0.5) : Color.clear, lineWidth: 2)
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(isActive ? Color(hex: "6366F1").opacity(0.6) : Color(UIColor.separator).opacity(0.16), lineWidth: isActive ? 2 : 1)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .shadow(color: isActive ? Color(hex: "6366F1").opacity(0.15) : .black.opacity(0.05), radius: 8, y: 4)
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .shadow(color: isActive ? Color(hex: "6366F1").opacity(0.18) : .black.opacity(0.10), radius: isActive ? 18 : 12, y: 8)
         }
         .buttonStyle(.plain)
         .contextMenu {
@@ -454,6 +494,37 @@ private struct TabOverviewCard: View {
             }
         }
     }
+
+    @ViewBuilder
+    private var preview: some View {
+        if let snapshot = webViewModel.snapshot {
+            Image(uiImage: snapshot)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+        } else {
+            Rectangle()
+                .fill(Color(UIColor.tertiarySystemFill).opacity(0.5))
+                .overlay {
+                    if webViewModel.isLoading {
+                        VStack(spacing: 8) {
+                            ProgressView()
+                                .controlSize(.regular)
+                            Text(LanguageManager.shared.localizedString("loading"))
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        }
+                    } else if webViewModel.currentURL == nil {
+                        Image(systemName: "plus")
+                            .font(.system(size: 34, weight: .light))
+                            .foregroundStyle(.quaternary)
+                    } else {
+                        Image(systemName: "globe")
+                            .font(.system(size: 34, weight: .light))
+                            .foregroundStyle(.quaternary)
+                    }
+                }
+        }
+    }
 }
 
 // MARK: - Home Tab Overview Sheet (shown from home page)
@@ -463,37 +534,40 @@ struct HomeTabOverviewSheet: View {
     var onSelectTab: () -> Void
     @Environment(\.dismiss) private var dismiss
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
-
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVGrid(columns: columns, spacing: 12) {
-                    ForEach(Array(tabManager.tabs.enumerated()), id: \.element.id) { index, tab in
-                        TabOverviewCard(
-                            webViewModel: tab.webViewModel,
-                            keyword: tab.keyword,
-                            isActive: index == tabManager.activeTabIndex,
-                            onTap: {
+            ZStack {
+                Color(UIColor.systemGroupedBackground).ignoresSafeArea()
+
+                if tabManager.tabs.isEmpty {
+                    emptyState
+                } else {
+                    GeometryReader { geo in
+                        let carouselHeight = min(
+                            max(geo.size.height * 0.78, 430),
+                            max(geo.size.height - 36, 320)
+                        )
+
+                        TabSwitcherCarousel(
+                            tabManager: tabManager,
+                            onSelect: { index in
                                 HapticsManager.selection()
                                 tabManager.switchToTab(at: index)
                                 onSelectTab()
                             },
-                            onClose: {
+                            onClose: { index in
                                 HapticsManager.light()
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                     tabManager.closeTab(at: index)
                                 }
                             }
                         )
+                        .frame(height: carouselHeight)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .padding(.top, 18)
                     }
                 }
-                .padding(16)
             }
-            .background(Color(UIColor.systemGroupedBackground))
             .navigationTitle("\(tabManager.tabCount) \(LanguageManager.shared.localizedString("tab_tabs"))")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -504,6 +578,17 @@ struct HomeTabOverviewSheet: View {
                     .fontWeight(.semibold)
                 }
             }
+        }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "square.on.square.dashed")
+                .font(.system(size: 48, weight: .light))
+                .foregroundStyle(.secondary)
+            Text(LanguageManager.shared.localizedString("tab_no_tabs"))
+                .font(.headline)
+                .foregroundStyle(.secondary)
         }
     }
 }

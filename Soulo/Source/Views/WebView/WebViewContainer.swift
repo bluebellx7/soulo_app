@@ -7,6 +7,7 @@ struct WebViewContainer: View {
     @Binding var isFullscreen: Bool
     var tabManager: TabManager? = nil
     var isActiveTab: Bool = true
+    var onGoHome: (() -> Void)? = nil
     var onPageLoaded: (() -> Void)? = nil
     @Environment(\.modelContext) private var modelContext
 
@@ -85,7 +86,8 @@ struct WebViewContainer: View {
                             onShowPrivacy: { showPrivacyPanel = true },
                             onManageAdBlock: { showAdBlockManager = true },
                             onShowDownloads: { showDownloads = true },
-                            onFireButton: { showFireConfirm = true }
+                            onFireButton: { showFireConfirm = true },
+                            onGoHome: onGoHome
                         )
                         .transition(.asymmetric(
                             insertion: .move(edge: .bottom).combined(with: .opacity),
