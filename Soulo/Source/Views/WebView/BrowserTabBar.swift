@@ -180,12 +180,12 @@ struct TabSwitcherOverlay: View {
                             expandingIndex: $expandingIndex,
                             onSelect: { index in
                                 HapticsManager.selection()
-                                withAnimation(.spring(response: 0.36, dampingFraction: 0.85)) {
+                                tabManager.focusTabInSwitcher(at: index)
+                                withAnimation(.spring(response: 0.24, dampingFraction: 0.9)) {
                                     isExpanding = true
                                     expandingIndex = index
                                 }
-                                // Trigger actual select after animation completes
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.36) {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
                                     onSelectTab(index)
                                     onDismiss()
                                 }
@@ -439,7 +439,7 @@ private struct TabSwitcherCardItem: View {
 
     var body: some View {
         let isThisExpanding = isExpanding && index == expandingIndex
-        let scaleValMultiplier: CGFloat = isThisExpanding ? (viewportWidth / cardWidth) * 1.02 : 1.0
+        let scaleValMultiplier: CGFloat = isThisExpanding ? (viewportWidth / cardWidth) * 1.08 : 1.0
         let verticalOffsetVal: CGFloat = isThisExpanding ? -viewportMinY + safeAreaTop - 10.0 : 0.0
         let baseOffsetX = CGFloat(index - tabManager.activeTabIndex) * stepDistance + dragOffset
         let layerDistance = stepDistance > 0 ? abs(baseOffsetX / stepDistance) : 0
@@ -459,7 +459,7 @@ private struct TabSwitcherCardItem: View {
             let offsetValY: CGFloat = isThisExpanding ? 0.0 : CGFloat(1.0 - centeredness) * 22.0
 
             let opacityVal: Double = {
-                if isAnyExpanding { return isThisExpanding ? 1.0 : 0.0 }
+                if isAnyExpanding { return isThisExpanding ? 0.92 : 0.0 }
                 return 0.74 + centeredness * 0.26
             }()
 

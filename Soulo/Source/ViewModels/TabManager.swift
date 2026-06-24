@@ -86,7 +86,7 @@ final class TabManager: ObservableObject {
 
     static let maxTabs = 20
     static let maxRecentlyClosed = 10
-    static let aliveWindow = 2
+    static let aliveWindow = maxTabs
 
     private static let storageKey = "soulo_saved_tabs"
 
