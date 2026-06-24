@@ -16,7 +16,9 @@ struct BrowserTab: Identifiable, Equatable {
 
     init(id: UUID = UUID(), keyword: String? = nil, platform: SearchPlatform? = nil) {
         self.id = id
-        self.webViewModel = WebViewModel()
+        let webViewModel = WebViewModel()
+        webViewModel.configureSnapshotPersistence(id: id)
+        self.webViewModel = webViewModel
         self.keyword = keyword
         self.platform = platform
         self.createdAt = Date()
@@ -159,6 +161,7 @@ final class TabManager: ObservableObject {
     func closeTab(at index: Int, animated: Bool = true) {
         guard tabs.indices.contains(index) else { return }
         let tab = tabs[index]
+        tab.webViewModel.deletePersistedSnapshot()
 
         let closed = RecentlyClosedTab(
             id: tab.id,
@@ -195,6 +198,7 @@ final class TabManager: ObservableObject {
 
     func closeAllTabs() {
         for tab in tabs {
+            tab.webViewModel.deletePersistedSnapshot()
             let closed = RecentlyClosedTab(
                 id: tab.id, title: tab.displayTitle,
                 url: tab.webViewModel.currentURL,
@@ -213,6 +217,7 @@ final class TabManager: ObservableObject {
     func closeOtherTabs() {
         guard let current = activeTab else { return }
         for tab in tabs where tab.id != current.id {
+            tab.webViewModel.deletePersistedSnapshot()
             let closed = RecentlyClosedTab(
                 id: tab.id, title: tab.displayTitle,
                 url: tab.webViewModel.currentURL,

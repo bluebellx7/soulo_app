@@ -84,17 +84,10 @@ private struct BrowserTabChip: View {
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 6) {
-                // Favicon / loading indicator
-                if webViewModel.isLoading {
-                    ProgressView()
-                        .controlSize(.mini)
-                        .tint(isActive ? .white : .secondary)
-                        .frame(width: 14, height: 14)
-                } else {
-                    Image(systemName: "globe")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(isActive ? .white : .secondary)
-                }
+                Image(systemName: webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(isActive ? .white : .secondary)
+                    .frame(width: 14, height: 14)
 
                 // Title — reactively updates from webViewModel
                 Text(displayTitle)
@@ -180,13 +173,16 @@ struct TabSwitcherOverlay: View {
                             expandingIndex: $expandingIndex,
                             onSelect: { index in
                                 HapticsManager.selection()
-                                tabManager.focusTabInSwitcher(at: index)
-                                withAnimation(.easeOut(duration: 0.16)) {
+                                let selectedIndex = index
+                                withAnimation(.easeOut(duration: 0.14)) {
                                     isExpanding = true
-                                    expandingIndex = index
+                                    expandingIndex = selectedIndex
                                 }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) {
-                                    onSelectTab(index)
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
+                                    tabManager.focusTabInSwitcher(at: selectedIndex)
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) {
+                                    onSelectTab(selectedIndex)
                                     onDismiss()
                                 }
                             },
@@ -295,7 +291,7 @@ struct TabSwitcherOverlay: View {
     }
 
     private func carouselHeight(in geo: GeometryProxy) -> CGFloat {
-        min(max(geo.size.height * 0.72, 430), max(geo.size.height - 170, 320))
+        min(max(geo.size.height * 0.78, 500), max(geo.size.height - 130, 360))
     }
 }
 
@@ -313,8 +309,8 @@ private struct TabSwitcherCarousel: View {
 
     var body: some View {
         GeometryReader { geo in
-            let cardWidth = min(max(geo.size.width * 0.68, 250), 360)
-            let cardSpacing = -cardWidth * 0.22
+            let cardWidth = min(max(geo.size.width * 0.74, 260), 390)
+            let cardSpacing = -cardWidth * 0.24
             let stepDistance = cardWidth + cardSpacing
 
             ZStack {
@@ -433,7 +429,7 @@ private struct TabSwitcherCardItem: View {
 
     var body: some View {
         let isThisExpanding = isExpanding && index == expandingIndex
-        let scaleValMultiplier: CGFloat = isThisExpanding ? 1.04 : 1.0
+        let scaleValMultiplier: CGFloat = 1.0
         let baseOffsetX = CGFloat(index - tabManager.activeTabIndex) * stepDistance + dragOffset
         let layerDistance = stepDistance > 0 ? abs(baseOffsetX / stepDistance) : 0
         let zIndexVal: Double = isThisExpanding ? 200.0 : Double(100.0 - min(layerDistance, 5.0))
@@ -583,7 +579,7 @@ private struct TabOverviewCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: isExpanding ? 0 : 10) {
+        VStack(alignment: .leading, spacing: 10) {
             cardHeader
                 .padding(.horizontal, 4)
 
@@ -665,40 +661,22 @@ private struct TabOverviewCard: View {
             }
             .buttonStyle(.plain)
         }
-        .frame(height: isExpanding ? 0 : nil)
-        .clipped()
-        .opacity(isExpanding ? 0.0 : 1.0)
     }
 
     private var previewCard: some View {
-        ZStack(alignment: .top) {
+        ZStack {
             preview
                 .aspectRatio(0.56, contentMode: .fit)
                 .frame(maxWidth: .infinity)
                 .background(Color(UIColor.secondarySystemBackground))
                 .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: isExpanding ? 0 : 34, style: .continuous))
-
-            if webViewModel.isLoading {
-                GeometryReader { geo in
-                    LinearGradient(
-                        colors: [Color(hex: "6366F1"), Color(hex: "7C3AED"), Color(hex: "A855F7")],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                    .frame(width: geo.size.width * max(webViewModel.estimatedProgress, 0.05), height: 2)
-                }
-                .frame(height: 2)
-                .clipShape(Capsule())
-                .padding(.horizontal, 24)
-                .padding(.top, 16)
-            }
+                .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
         }
         .overlay(
-            RoundedRectangle(cornerRadius: isExpanding ? 0 : 34, style: .continuous)
-                .stroke(isExpanding ? Color.clear : (isActive ? Color.white.opacity(0.55) : Color.white.opacity(0.22)), lineWidth: isExpanding ? 0 : (isActive ? 1.4 : 0.8))
+            RoundedRectangle(cornerRadius: 34, style: .continuous)
+                .stroke(isActive ? Color.white.opacity(0.55) : Color.white.opacity(0.22), lineWidth: isActive ? 1.4 : 0.8)
         )
-        .shadow(color: .black.opacity(isExpanding ? 0.0 : (isActive ? 0.34 : 0.24)), radius: isExpanding ? 0 : (isActive ? 30 : 18), y: isExpanding ? 0 : (isActive ? 18 : 10))
+        .shadow(color: .black.opacity(isActive ? 0.34 : 0.24), radius: isActive ? 30 : 18, y: isActive ? 18 : 10)
     }
 
     @ViewBuilder

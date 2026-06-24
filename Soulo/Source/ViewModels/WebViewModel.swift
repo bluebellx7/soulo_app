@@ -17,6 +17,8 @@ final class WebViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var isScrollingUp: Bool = false
     @Published var snapshot: UIImage?
+    @Published var showSnapshotWhileRestoring: Bool = false
+    private var snapshotPersistenceID: String?
 
     // Download state
     @Published var isDownloading: Bool = false
@@ -47,12 +49,17 @@ final class WebViewModel: ObservableObject {
 
     // MARK: - Navigation
 
-    func loadURL(_ url: URL, cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy) {
+    func loadURL(
+        _ url: URL,
+        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
+        keepSnapshotUntilLoaded: Bool = false
+    ) {
         errorMessage = nil
         currentURL = url
         lastURLString = url.absoluteString
         isLoading = true
         estimatedProgress = 0.0
+        showSnapshotWhileRestoring = keepSnapshotUntilLoaded && snapshot != nil
         let request = URLRequest(url: url, cachePolicy: cachePolicy, timeoutInterval: 30)
 
         guard let webView = webView else {
@@ -64,7 +71,7 @@ final class WebViewModel: ObservableObject {
     }
 
     func loadCachedURL(_ url: URL) {
-        loadURL(url, cachePolicy: .returnCacheDataElseLoad)
+        loadURL(url, cachePolicy: .returnCacheDataElseLoad, keepSnapshotUntilLoaded: true)
     }
 
     func goBack() {
@@ -103,6 +110,7 @@ final class WebViewModel: ObservableObject {
         isLoading = loading
         if !loading {
             estimatedProgress = 1.0
+            showSnapshotWhileRestoring = false
         }
     }
 
@@ -122,9 +130,17 @@ final class WebViewModel: ObservableObject {
     func setError(_ message: String) {
         errorMessage = message
         isLoading = false
+        showSnapshotWhileRestoring = false
     }
 
     // MARK: - Snapshot
+
+    func configureSnapshotPersistence(id: UUID) {
+        snapshotPersistenceID = id.uuidString
+        if snapshot == nil {
+            snapshot = Self.loadSnapshot(id: id.uuidString)
+        }
+    }
 
     func takeSnapshot(completion: (() -> Void)? = nil) {
         guard let webView = webView else {
@@ -132,14 +148,42 @@ final class WebViewModel: ObservableObject {
             return
         }
         let config = WKSnapshotConfiguration()
-        config.snapshotWidth = NSNumber(value: 300)
+        config.snapshotWidth = NSNumber(value: 430)
         webView.takeSnapshot(with: config) { [weak self] image, _ in
             Task { @MainActor in
                 if let image {
                     self?.snapshot = image
+                    self?.persistSnapshot(image)
                 }
                 completion?()
             }
         }
+    }
+
+    func deletePersistedSnapshot() {
+        guard let snapshotPersistenceID else { return }
+        try? FileManager.default.removeItem(at: Self.snapshotURL(id: snapshotPersistenceID))
+    }
+
+    private func persistSnapshot(_ image: UIImage) {
+        guard let snapshotPersistenceID,
+              let data = image.jpegData(compressionQuality: 0.82) else { return }
+        let directory = Self.snapshotDirectory
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try? data.write(to: Self.snapshotURL(id: snapshotPersistenceID), options: .atomic)
+    }
+
+    private static func loadSnapshot(id: String) -> UIImage? {
+        UIImage(contentsOfFile: snapshotURL(id: id).path)
+    }
+
+    private static var snapshotDirectory: URL {
+        let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        return base.appendingPathComponent("SouloTabSnapshots", isDirectory: true)
+    }
+
+    private static func snapshotURL(id: String) -> URL {
+        snapshotDirectory.appendingPathComponent("\(id).jpg")
     }
 }

@@ -50,6 +50,18 @@ struct WebViewContainer: View {
                     WebViewRepresentable(viewModel: webViewModel)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
+                    if webViewModel.showSnapshotWhileRestoring,
+                       let snapshot = webViewModel.snapshot,
+                       webViewModel.currentURL != nil {
+                        Image(uiImage: snapshot)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .clipped()
+                            .allowsHitTesting(false)
+                            .transition(.opacity)
+                    }
+
                     // New Tab Page overlay
                     if showNewTabPage && webViewModel.currentURL == nil && !webViewModel.isLoading {
                         NewTabPageView(tabManager: tabManager) { url in
@@ -218,6 +230,7 @@ struct WebViewContainer: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        .animation(.easeOut(duration: 0.18), value: webViewModel.showSnapshotWhileRestoring)
         .onChange(of: webViewModel.isScrollingUp) { _, scrollingUp in
             if isActiveTab {
                 isFullscreen = scrollingUp
