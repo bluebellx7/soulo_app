@@ -641,15 +641,9 @@ private struct TabOverviewCard: View {
                     .fill(.regularMaterial)
                     .frame(width: 32, height: 32)
 
-                if webViewModel.isLoading {
-                    ProgressView()
-                        .controlSize(.mini)
-                        .tint(.primary)
-                } else {
-                    Image(systemName: webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.primary.opacity(0.82))
-                }
+                Image(systemName: webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.primary.opacity(0.82))
             }
 
             VStack(alignment: .leading, spacing: 2) {
@@ -725,22 +719,23 @@ private struct TabOverviewCard: View {
             Rectangle()
                 .fill(Color(UIColor.tertiarySystemFill).opacity(0.5))
                 .overlay {
-                    if webViewModel.isLoading {
-                        VStack(spacing: 8) {
-                            ProgressView()
-                                .controlSize(.regular)
-                            Text(LanguageManager.shared.localizedString("loading"))
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.secondary)
-                        }
-                    } else if webViewModel.currentURL == nil {
+                    if webViewModel.currentURL == nil {
                         Image(systemName: "plus")
                             .font(.system(size: 34, weight: .light))
                             .foregroundStyle(.quaternary)
                     } else {
-                        Image(systemName: "globe")
-                            .font(.system(size: 34, weight: .light))
-                            .foregroundStyle(.quaternary)
+                        VStack(spacing: 8) {
+                            Image(systemName: webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
+                                .font(.system(size: 30, weight: .light))
+                                .foregroundStyle(.quaternary)
+                            if let host = webViewModel.currentURL?.host {
+                                Text(host)
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                    .padding(.horizontal, 24)
+                            }
+                        }
                     }
                 }
         }

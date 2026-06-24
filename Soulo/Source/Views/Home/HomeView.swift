@@ -389,7 +389,7 @@ struct HomeView: View {
             if hasActiveTabs {
                 Button {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    tabManager.activeWebViewModel?.takeSnapshot()
+                    tabManager.refreshSnapshotsForSwitcher()
                     withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
                         showTabOverviewFromHome = true
                     }

@@ -122,13 +122,19 @@ final class WebViewModel: ObservableObject {
 
     // MARK: - Snapshot
 
-    func takeSnapshot() {
-        guard let webView = webView, !webView.isLoading else { return }
+    func takeSnapshot(completion: (() -> Void)? = nil) {
+        guard let webView = webView else {
+            completion?()
+            return
+        }
         let config = WKSnapshotConfiguration()
         config.snapshotWidth = NSNumber(value: 300)
         webView.takeSnapshot(with: config) { [weak self] image, _ in
             Task { @MainActor in
-                self?.snapshot = image
+                if let image {
+                    self?.snapshot = image
+                }
+                completion?()
             }
         }
     }

@@ -117,6 +117,14 @@ final class TabManager: ObservableObject {
         return desktopModeTabs.contains(tab.id)
     }
 
+    // MARK: - Snapshots
+
+    func refreshSnapshotsForSwitcher() {
+        for tab in tabs where tab.isAlive {
+            tab.webViewModel.takeSnapshot()
+        }
+    }
+
     // MARK: - Tab Creation
 
     @discardableResult
@@ -307,10 +315,17 @@ final class TabManager: ObservableObject {
 
     private func suspendTab(at index: Int) {
         guard tabs.indices.contains(index) else { return }
+        let tabID = tabs[index].id
+        let webViewModel = tabs[index].webViewModel
         tabs[index].suspendedURL = tabs[index].webViewModel.currentURL
-        tabs[index].webViewModel.webView?.stopLoading()
-        tabs[index].webViewModel.webView?.loadHTMLString("", baseURL: nil)
         tabs[index].isAlive = false
+        webViewModel.takeSnapshot { [weak self] in
+            guard let self,
+                  let currentIndex = self.tabs.firstIndex(where: { $0.id == tabID }),
+                  !self.tabs[currentIndex].isAlive else { return }
+            webViewModel.webView?.stopLoading()
+            webViewModel.webView?.loadHTMLString("", baseURL: nil)
+        }
     }
 
     private func restoreTabMemory(at index: Int) {

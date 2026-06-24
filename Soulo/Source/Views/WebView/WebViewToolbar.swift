@@ -32,8 +32,7 @@ struct WebViewToolbar: View {
             if let tabManager = tabManager {
                 TabCountBadge(count: tabManager.tabCount) {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    // Snapshot current page before showing overview
-                    tabManager.activeWebViewModel?.takeSnapshot()
+                    tabManager.refreshSnapshotsForSwitcher()
                     withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
                         tabManager.showTabOverview = true
                     }
