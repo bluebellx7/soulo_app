@@ -181,11 +181,11 @@ struct TabSwitcherOverlay: View {
                             onSelect: { index in
                                 HapticsManager.selection()
                                 tabManager.focusTabInSwitcher(at: index)
-                                withAnimation(.spring(response: 0.24, dampingFraction: 0.9)) {
+                                withAnimation(.easeOut(duration: 0.16)) {
                                     isExpanding = true
                                     expandingIndex = index
                                 }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) {
                                     onSelectTab(index)
                                     onDismiss()
                                 }
@@ -316,8 +316,6 @@ private struct TabSwitcherCarousel: View {
             let cardWidth = min(max(geo.size.width * 0.68, 250), 360)
             let cardSpacing = -cardWidth * 0.22
             let stepDistance = cardWidth + cardSpacing
-            let viewportMinY = geo.frame(in: .global).minY
-            let safeAreaTop = geo.safeAreaInsets.top
 
             ZStack {
                 ForEach(Array(tabManager.tabs.enumerated()), id: \.element.id) { index, tab in
@@ -332,8 +330,6 @@ private struct TabSwitcherCarousel: View {
                         stepDistance: stepDistance,
                         dragOffset: dragOffset,
                         viewportWidth: geo.size.width,
-                        viewportMinY: viewportMinY,
-                        safeAreaTop: safeAreaTop,
                         onSelect: onSelect,
                         onClose: onClose,
                         tabManager: tabManager
@@ -431,16 +427,13 @@ private struct TabSwitcherCardItem: View {
     let stepDistance: CGFloat
     let dragOffset: CGFloat
     let viewportWidth: CGFloat
-    let viewportMinY: CGFloat
-    let safeAreaTop: CGFloat
     let onSelect: (Int) -> Void
     let onClose: (Int) -> Void
     @ObservedObject var tabManager: TabManager
 
     var body: some View {
         let isThisExpanding = isExpanding && index == expandingIndex
-        let scaleValMultiplier: CGFloat = isThisExpanding ? (viewportWidth / cardWidth) * 1.08 : 1.0
-        let verticalOffsetVal: CGFloat = isThisExpanding ? -viewportMinY + safeAreaTop - 10.0 : 0.0
+        let scaleValMultiplier: CGFloat = isThisExpanding ? 1.04 : 1.0
         let baseOffsetX = CGFloat(index - tabManager.activeTabIndex) * stepDistance + dragOffset
         let layerDistance = stepDistance > 0 ? abs(baseOffsetX / stepDistance) : 0
         let zIndexVal: Double = isThisExpanding ? 200.0 : Double(100.0 - min(layerDistance, 5.0))
@@ -459,7 +452,7 @@ private struct TabSwitcherCardItem: View {
             let offsetValY: CGFloat = isThisExpanding ? 0.0 : CGFloat(1.0 - centeredness) * 22.0
 
             let opacityVal: Double = {
-                if isAnyExpanding { return isThisExpanding ? 0.92 : 0.0 }
+                if isAnyExpanding { return 0.0 }
                 return 0.74 + centeredness * 0.26
             }()
 
@@ -487,7 +480,6 @@ private struct TabSwitcherCardItem: View {
         .frame(width: cardWidth)
         .zIndex(zIndexVal)
         .scaleEffect(scaleValMultiplier)
-        .offset(y: verticalOffsetVal)
     }
 }
 

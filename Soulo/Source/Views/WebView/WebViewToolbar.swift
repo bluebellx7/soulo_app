@@ -19,11 +19,6 @@ struct WebViewToolbar: View {
             btn("chevron.left", enabled: viewModel.canGoBack) { viewModel.goBack() }
             btn("chevron.right", enabled: viewModel.canGoForward) { viewModel.goForward() }
             btn(viewModel.isLoading ? "xmark" : "arrow.clockwise", enabled: true) { viewModel.reload() }
-            if viewModel.currentURL != nil {
-                btn(isBookmarked ? "bookmark.fill" : "bookmark",
-                    enabled: true,
-                    tint: isBookmarked ? .blue : nil) { onBookmarkToggle?() }
-            }
 
             // More actions menu
             moreMenu
@@ -62,6 +57,17 @@ struct WebViewToolbar: View {
                     NotificationCenter.default.post(name: .linkCopied, object: nil)
                 } label: {
                     Label(LanguageManager.shared.localizedString("copy_link"), systemImage: "doc.on.doc")
+                }
+            }
+
+            if viewModel.currentURL != nil {
+                Button {
+                    onBookmarkToggle?()
+                } label: {
+                    Label(
+                        LanguageManager.shared.localizedString("bookmarks"),
+                        systemImage: isBookmarked ? "bookmark.fill" : "bookmark"
+                    )
                 }
             }
 

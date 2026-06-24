@@ -28,18 +28,18 @@ final class WebViewModel: ObservableObject {
 
     // MARK: - WebView Reference
 
-    private var pendingURL: URL?
+    private var pendingRequest: URLRequest?
 
     var webView: WKWebView? {
         didSet {
             guard webView != nil else { return }
-            if let url = pendingURL {
-                pendingURL = nil
-                loadURL(url)
+            if let request = pendingRequest {
+                pendingRequest = nil
+                webView?.load(request)
             } else if let url = currentURL {
                 isLoading = true
                 estimatedProgress = 0.0
-                let request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 30)
+                let request = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad, timeoutInterval: 30)
                 webView?.load(request)
             }
         }
@@ -47,20 +47,24 @@ final class WebViewModel: ObservableObject {
 
     // MARK: - Navigation
 
-    func loadURL(_ url: URL) {
+    func loadURL(_ url: URL, cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy) {
         errorMessage = nil
         currentURL = url
         lastURLString = url.absoluteString
         isLoading = true
         estimatedProgress = 0.0
+        let request = URLRequest(url: url, cachePolicy: cachePolicy, timeoutInterval: 30)
 
         guard let webView = webView else {
-            pendingURL = url
+            pendingRequest = request
             return
         }
 
-        let request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 30)
         webView.load(request)
+    }
+
+    func loadCachedURL(_ url: URL) {
+        loadURL(url, cachePolicy: .returnCacheDataElseLoad)
     }
 
     func goBack() {

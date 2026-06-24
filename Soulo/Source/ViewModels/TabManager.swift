@@ -332,7 +332,7 @@ final class TabManager: ObservableObject {
         guard tabs.indices.contains(index) else { return }
         tabs[index].isAlive = true
         if let url = tabs[index].suspendedURL {
-            tabs[index].webViewModel.loadURL(url)
+            tabs[index].webViewModel.loadCachedURL(url)
             tabs[index].suspendedURL = nil
         }
     }
@@ -459,7 +459,7 @@ final class TabManager: ObservableObject {
                 platform: platform
             )
             if let urlStr = saved.urlString, let url = URL(string: urlStr) {
-                tab.webViewModel.loadURL(url)
+                tab.webViewModel.loadCachedURL(url)
             }
             tabs.append(tab)
         }
