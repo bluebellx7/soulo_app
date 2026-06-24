@@ -301,6 +301,23 @@ struct SearchResultsView: View {
                 }
             }
         }
+        .overlay {
+            if tabManager.showTabOverview {
+                TabSwitcherOverlay(
+                    tabManager: tabManager,
+                    onSelectTab: { index in
+                        HapticsManager.selection()
+                        tabManager.switchToTab(at: index)
+                    },
+                    onNewTab: {
+                        createNewTabFromCurrentSearch()
+                    },
+                    onDismiss: {
+                        tabManager.showTabOverview = false
+                    }
+                )
+            }
+        }
         .onChange(of: tabManager.activeTabIndex) { _, _ in
             // Sync fullscreen state with the new active tab
             if let vm = tabManager.activeWebViewModel {
@@ -311,11 +328,6 @@ struct SearchResultsView: View {
         .onReceive(NotificationCenter.default.publisher(for: .openInNewTab)) { notification in
             if let url = notification.userInfo?["url"] as? URL {
                 tabManager.createTab(url: url, keyword: searchVM.currentKeyword, platform: searchVM.selectedPlatform)
-            }
-        }
-        .sheet(isPresented: $tabManager.showTabOverview) {
-            TabOverviewView(tabManager: tabManager) {
-                createNewTabFromCurrentSearch()
             }
         }
         .onAppear {

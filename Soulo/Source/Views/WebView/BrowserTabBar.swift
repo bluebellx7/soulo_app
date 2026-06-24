@@ -142,153 +142,142 @@ private struct BrowserTabChip: View {
     }
 }
 
-// MARK: - Tab Overview (App Switcher)
+// MARK: - Tab Switcher Overlay
 
-struct TabOverviewView: View {
+struct TabSwitcherOverlay: View {
     @ObservedObject var tabManager: TabManager
+    let onSelectTab: (Int) -> Void
     let onNewTab: () -> Void
-    @Environment(\.dismiss) private var dismiss
+    let onDismiss: () -> Void
 
     var body: some View {
-        NavigationStack {
+        GeometryReader { geo in
             ZStack {
-                Color(UIColor.systemGroupedBackground).ignoresSafeArea()
-
-                if tabManager.tabs.isEmpty {
-                    emptyState
-                } else {
-                    GeometryReader { geo in
-                        ScrollView {
-                            VStack(spacing: 20) {
-                                TabSwitcherCarousel(
-                                    tabManager: tabManager,
-                                    onSelect: { index in
-                                        HapticsManager.selection()
-                                        tabManager.switchToTab(at: index)
-                                        dismiss()
-                                    },
-                                    onClose: { index in
-                                        HapticsManager.light()
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                            tabManager.closeTab(at: index)
-                                        }
-                                    }
-                                )
-                                .frame(height: min(max(geo.size.height * 0.78, 500), 720))
-
-                                // Recently closed section
-                                if !tabManager.recentlyClosed.isEmpty {
-                                    VStack(alignment: .leading, spacing: 10) {
-                                        HStack {
-                                            Label(
-                                                LanguageManager.shared.localizedString("tab_recently_closed"),
-                                                systemImage: "clock.arrow.circlepath"
-                                            )
-                                            .font(.system(size: 14, weight: .semibold))
-                                            .foregroundStyle(.secondary)
-                                            Spacer()
-                                        }
-
-                                        ForEach(tabManager.recentlyClosed.prefix(5)) { closed in
-                                            Button {
-                                                HapticsManager.selection()
-                                                tabManager.restoreClosedTab(closed)
-                                                dismiss()
-                                            } label: {
-                                                HStack(spacing: 10) {
-                                                    Image(systemName: "globe")
-                                                        .font(.system(size: 13))
-                                                        .foregroundStyle(.secondary)
-                                                        .frame(width: 24)
-
-                                                    VStack(alignment: .leading, spacing: 2) {
-                                                        Text(closed.title)
-                                                            .font(.system(size: 13, weight: .medium))
-                                                            .foregroundStyle(.primary)
-                                                            .lineLimit(1)
-                                                        if let host = closed.url?.host {
-                                                            Text(host)
-                                                                .font(.system(size: 11))
-                                                                .foregroundStyle(.tertiary)
-                                                                .lineLimit(1)
-                                                        }
-                                                    }
-
-                                                    Spacer()
-
-                                                    Image(systemName: "arrow.uturn.backward.circle")
-                                                        .font(.system(size: 15))
-                                                        .foregroundStyle(Color(hex: "6366F1"))
-                                                }
-                                                .padding(.horizontal, 12)
-                                                .padding(.vertical, 10)
-                                                .background(
-                                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                                        .fill(Color(UIColor.secondarySystemGroupedBackground))
-                                                )
-                                            }
-                                            .buttonStyle(.plain)
-                                        }
-                                    }
-                                    .padding(.horizontal, 16)
-                                }
-                            }
-                            .padding(.vertical, 18)
-                            .padding(.bottom, 80)
-                        }
-                    }
-                }
-            }
-            .navigationTitle("\(tabManager.tabCount) \(LanguageManager.shared.localizedString("tab_tabs"))")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(LanguageManager.shared.localizedString("done")) {
+                Color.clear
+                    .background(.ultraThinMaterial)
+                    .overlay(Color.black.opacity(0.18))
+                    .ignoresSafeArea()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
                         dismiss()
                     }
-                    .fontWeight(.semibold)
-                }
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button {
-                            HapticsManager.light()
-                            onNewTab()
-                        } label: {
-                            Label(LanguageManager.shared.localizedString("tab_new_tab"), systemImage: "plus")
-                        }
 
-                        if tabManager.tabs.count > 1 {
-                            Divider()
-                            Button {
-                                tabManager.closeOtherTabs()
-                            } label: {
-                                Label(LanguageManager.shared.localizedString("tab_close_others"), systemImage: "xmark.circle")
+                VStack(spacing: 0) {
+                    Spacer(minLength: max(geo.safeAreaInsets.top, 12) + 36)
+
+                    if tabManager.tabs.isEmpty {
+                        emptyState
+                    } else {
+                        TabSwitcherCarousel(
+                            tabManager: tabManager,
+                            onSelect: { index in
+                                onSelectTab(index)
+                                dismiss()
+                            },
+                            onClose: { index in
+                                HapticsManager.light()
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+                                    tabManager.closeTab(at: index)
+                                }
                             }
-                            Button(role: .destructive) {
-                                tabManager.closeAllTabs()
-                            } label: {
-                                Label(LanguageManager.shared.localizedString("tab_close_all"), systemImage: "trash")
-                            }
-                        }
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 20))
-                            .foregroundStyle(Color(hex: "6366F1"))
+                        )
+                        .frame(height: carouselHeight(in: geo))
                     }
+
+                    Spacer(minLength: 18)
+
+                    bottomDock
+                        .padding(.bottom, max(geo.safeAreaInsets.bottom, 12) + 10)
                 }
             }
         }
+        .transition(.opacity.combined(with: .scale(scale: 0.98)))
+        .zIndex(500)
+    }
+
+    private var bottomDock: some View {
+        HStack(spacing: 14) {
+            iconButton("plus") {
+                HapticsManager.light()
+                onNewTab()
+                dismiss()
+            }
+
+            if let closed = tabManager.recentlyClosed.first {
+                iconButton("arrow.uturn.backward") {
+                    HapticsManager.selection()
+                    tabManager.restoreClosedTab(closed)
+                    dismiss()
+                }
+            }
+
+            Menu {
+                if tabManager.tabs.count > 1 {
+                    Button {
+                        tabManager.closeOtherTabs()
+                    } label: {
+                        Label(LanguageManager.shared.localizedString("tab_close_others"), systemImage: "xmark.circle")
+                    }
+                }
+
+                Button(role: .destructive) {
+                    tabManager.closeAllTabs()
+                } label: {
+                    Label(LanguageManager.shared.localizedString("tab_close_all"), systemImage: "trash")
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .frame(width: 44, height: 44)
+                    .background(.black.opacity(0.34), in: Circle())
+                    .overlay(Circle().stroke(.white.opacity(0.14), lineWidth: 0.5))
+            }
+
+            iconButton("xmark") {
+                dismiss()
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay(Capsule().stroke(.white.opacity(0.12), lineWidth: 0.5))
+        .shadow(color: .black.opacity(0.22), radius: 18, y: 8)
     }
 
     private var emptyState: some View {
         VStack(spacing: 16) {
             Image(systemName: "square.on.square.dashed")
                 .font(.system(size: 48, weight: .light))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.white.opacity(0.8))
             Text(LanguageManager.shared.localizedString("tab_no_tabs"))
                 .font(.headline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.white.opacity(0.85))
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func iconButton(_ systemName: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.9))
+                .frame(width: 44, height: 44)
+                .background(.black.opacity(0.34), in: Circle())
+                .overlay(Circle().stroke(.white.opacity(0.14), lineWidth: 0.5))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func dismiss() {
+        HapticsManager.light()
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
+            onDismiss()
+        }
+    }
+
+    private func carouselHeight(in geo: GeometryProxy) -> CGFloat {
+        min(max(geo.size.height * 0.72, 430), max(geo.size.height - 170, 320))
     }
 }
 
@@ -301,12 +290,13 @@ private struct TabSwitcherCarousel: View {
 
     var body: some View {
         GeometryReader { geo in
-            let cardWidth = min(max(geo.size.width * 0.74, 260), 380)
-            let horizontalMargin = max((geo.size.width - cardWidth) / 2, 16)
+            let cardWidth = min(max(geo.size.width * 0.68, 250), 360)
+            let horizontalMargin = max((geo.size.width - cardWidth) / 2, 22)
+            let cardSpacing = -cardWidth * 0.18
 
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .center, spacing: 18) {
+                    LazyHStack(alignment: .center, spacing: cardSpacing) {
                         ForEach(Array(tabManager.tabs.enumerated()), id: \.element.id) { index, tab in
                             TabOverviewCard(
                                 webViewModel: tab.webViewModel,
@@ -316,8 +306,10 @@ private struct TabSwitcherCarousel: View {
                                 onClose: { onClose(index) }
                             )
                             .frame(width: cardWidth)
-                            .scaleEffect(index == tabManager.activeTabIndex ? 1.0 : 0.94)
-                            .opacity(index == tabManager.activeTabIndex ? 1.0 : 0.86)
+                            .scaleEffect(index == tabManager.activeTabIndex ? 1.0 : 0.90)
+                            .offset(y: index == tabManager.activeTabIndex ? 0 : 18)
+                            .opacity(index == tabManager.activeTabIndex ? 1.0 : 0.82)
+                            .zIndex(index == tabManager.activeTabIndex ? 10 : Double(tabManager.tabs.count - abs(index - tabManager.activeTabIndex)))
                             .id(tab.id)
                             .animation(.spring(response: 0.35, dampingFraction: 0.82), value: tabManager.activeTabIndex)
                         }
@@ -369,103 +361,14 @@ private struct TabOverviewCard: View {
     }
 
     var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 0) {
-                ZStack(alignment: .top) {
-                    preview
-                        .aspectRatio(0.70, contentMode: .fit)
-                        .frame(maxWidth: .infinity)
-                        .background(Color(UIColor.tertiarySystemFill).opacity(0.5))
-                        .clipped()
+        VStack(alignment: .leading, spacing: 10) {
+            cardHeader
+                .padding(.horizontal, 4)
 
-                    LinearGradient(
-                        colors: [.black.opacity(0.34), .black.opacity(0.12), .clear],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 92)
-                    .allowsHitTesting(false)
-
-                    HStack(spacing: 8) {
-                        if webViewModel.isLoading {
-                            ProgressView()
-                                .controlSize(.mini)
-                                .tint(.white)
-                                .frame(width: 18, height: 18)
-                        } else {
-                            Image(systemName: webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(.white.opacity(0.9))
-                                .frame(width: 18, height: 18)
-                        }
-
-                        Text(displayTitle)
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
-                            .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
-
-                        Spacer(minLength: 6)
-
-                        Button(action: onClose) {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.white.opacity(0.9))
-                                .frame(width: 28, height: 28)
-                                .background(.black.opacity(0.38), in: Circle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.top, 12)
-                }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(displayTitle)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(isActive ? Color(hex: "6366F1") : Color(UIColor.tertiaryLabel))
-                            .frame(width: 6, height: 6)
-
-                        Text(subtitle.isEmpty ? LanguageManager.shared.localizedString("tab_new_tab") : subtitle)
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-
-                // Loading progress
-                if webViewModel.isLoading {
-                    GeometryReader { geo in
-                        LinearGradient(
-                            colors: [Color(hex: "6366F1"), Color(hex: "7C3AED"), Color(hex: "A855F7")],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                        .frame(width: geo.size.width * max(webViewModel.estimatedProgress, 0.05), height: 2)
-                    }
-                    .frame(height: 2)
-                    .clipShape(Capsule())
-                }
-            }
-            .background(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(Color(UIColor.secondarySystemGroupedBackground))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .stroke(isActive ? Color(hex: "6366F1").opacity(0.6) : Color(UIColor.separator).opacity(0.16), lineWidth: isActive ? 2 : 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .shadow(color: isActive ? Color(hex: "6366F1").opacity(0.18) : .black.opacity(0.10), radius: isActive ? 18 : 12, y: 8)
+            previewCard
         }
-        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onTap)
         .contextMenu {
             Button {
                 onClose()
@@ -493,6 +396,84 @@ private struct TabOverviewCard: View {
                 }
             }
         }
+    }
+
+    private var cardHeader: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(.regularMaterial)
+                    .frame(width: 32, height: 32)
+
+                if webViewModel.isLoading {
+                    ProgressView()
+                        .controlSize(.mini)
+                        .tint(.primary)
+                } else {
+                    Image(systemName: webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.primary.opacity(0.82))
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(displayTitle)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .shadow(color: .black.opacity(0.24), radius: 2, y: 1)
+
+                if !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.72))
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer(minLength: 6)
+
+            Button(action: onClose) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .frame(width: 30, height: 30)
+                    .background(.black.opacity(0.36), in: Circle())
+                    .overlay(Circle().stroke(.white.opacity(0.14), lineWidth: 0.5))
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var previewCard: some View {
+        ZStack(alignment: .top) {
+            preview
+                .aspectRatio(0.56, contentMode: .fit)
+                .frame(maxWidth: .infinity)
+                .background(Color(UIColor.secondarySystemBackground))
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
+
+            if webViewModel.isLoading {
+                GeometryReader { geo in
+                    LinearGradient(
+                        colors: [Color(hex: "6366F1"), Color(hex: "7C3AED"), Color(hex: "A855F7")],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: geo.size.width * max(webViewModel.estimatedProgress, 0.05), height: 2)
+                }
+                .frame(height: 2)
+                .clipShape(Capsule())
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+            }
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 34, style: .continuous)
+                .stroke(isActive ? Color.white.opacity(0.55) : Color.white.opacity(0.22), lineWidth: isActive ? 1.4 : 0.8)
+        )
+        .shadow(color: .black.opacity(isActive ? 0.34 : 0.24), radius: isActive ? 30 : 18, y: isActive ? 18 : 10)
     }
 
     @ViewBuilder
@@ -523,72 +504,6 @@ private struct TabOverviewCard: View {
                             .foregroundStyle(.quaternary)
                     }
                 }
-        }
-    }
-}
-
-// MARK: - Home Tab Overview Sheet (shown from home page)
-
-struct HomeTabOverviewSheet: View {
-    @ObservedObject var tabManager: TabManager
-    var onSelectTab: () -> Void
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                Color(UIColor.systemGroupedBackground).ignoresSafeArea()
-
-                if tabManager.tabs.isEmpty {
-                    emptyState
-                } else {
-                    GeometryReader { geo in
-                        let carouselHeight = min(
-                            max(geo.size.height * 0.78, 430),
-                            max(geo.size.height - 36, 320)
-                        )
-
-                        TabSwitcherCarousel(
-                            tabManager: tabManager,
-                            onSelect: { index in
-                                HapticsManager.selection()
-                                tabManager.switchToTab(at: index)
-                                onSelectTab()
-                            },
-                            onClose: { index in
-                                HapticsManager.light()
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                    tabManager.closeTab(at: index)
-                                }
-                            }
-                        )
-                        .frame(height: carouselHeight)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                        .padding(.top, 18)
-                    }
-                }
-            }
-            .navigationTitle("\(tabManager.tabCount) \(LanguageManager.shared.localizedString("tab_tabs"))")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(LanguageManager.shared.localizedString("done")) {
-                        dismiss()
-                    }
-                    .fontWeight(.semibold)
-                }
-            }
-        }
-    }
-
-    private var emptyState: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "square.on.square.dashed")
-                .font(.system(size: 48, weight: .light))
-                .foregroundStyle(.secondary)
-            Text(LanguageManager.shared.localizedString("tab_no_tabs"))
-                .font(.headline)
-                .foregroundStyle(.secondary)
         }
     }
 }

@@ -70,18 +70,27 @@ struct HomeView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .zIndex(100)
             }
+
+            if showTabOverviewFromHome {
+                TabSwitcherOverlay(
+                    tabManager: tabManager,
+                    onSelectTab: { index in
+                        HapticsManager.selection()
+                        tabManager.switchToTab(at: index)
+                        searchVM.isSearching = true
+                    },
+                    onNewTab: {
+                        tabManager.createTab()
+                        searchVM.isSearching = true
+                    },
+                    onDismiss: {
+                        showTabOverviewFromHome = false
+                    }
+                )
+            }
         }
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-        }
-        .sheet(isPresented: $showTabOverviewFromHome) {
-            HomeTabOverviewSheet(tabManager: tabManager) {
-                // User selected a tab → dismiss sheet, then jump into browser
-                showTabOverviewFromHome = false
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    searchVM.isSearching = true
-                }
-            }
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
@@ -376,7 +385,10 @@ struct HomeView: View {
             if hasActiveTabs {
                 Button {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    showTabOverviewFromHome = true
+                    tabManager.activeWebViewModel?.takeSnapshot()
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
+                        showTabOverviewFromHome = true
+                    }
                 } label: {
                     HStack(spacing: 5) {
                         ZStack {
