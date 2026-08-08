@@ -1,6 +1,6 @@
 /* App */
 "app_name" = "Soulo";
-"app_subtitle" = "모든 것을, 어디서든 검색";
+"app_subtitle" = "한 번 입력으로 40개 이상 플랫폼";
 "search_placeholder" = "검색어 또는 URL 입력";
 "search" = "검색";
 "recent_searches" = "최근 검색";
@@ -216,11 +216,14 @@
 
 /* External URL */
 "open_external_title" = "외부 앱을 여시겠습니까?";
+"open_external_failed" = "외부 앱을 열 수 없습니다";
+"safari_compatibility_mode" = "Safari 호환 모드";
+"open_in_default_browser" = "기본 브라우저에서 열기";
 "open_external_message" = "이 링크는 다른 앱을 엽니다. 계속하시겠습니까?";
 
 /* AI Loading */
 "ai_loading_page" = "AI 플랫폼 로딩 중...";
-"ai_loading_input" = "로컬 AI가 분석 및 입력 중...";
+"ai_loading_input" = "질문을 입력하고 전송하는 중...";
 
 /* Privacy Settings (extended keys) */
 "privacy_section_browsing" = "브라우징";
@@ -416,6 +419,8 @@
 "downloads_finished" = "Finished";
 "downloads_failed" = "Failed";
 "downloads_canceled" = "Canceled";
+"live_activity" = "Dynamic Island";
+"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
@@ -468,3 +473,11 @@
 "wallpaper_source" = "배경화면 소스";
 "wallpaper_type" = "배경 유형";
 "example" = "예시";
+
+/* Browser Navigation */
+"browser_back" = "뒤로";
+"browser_forward" = "앞으로";
+"browser_reload" = "새로고침";
+"browser_edit_address" = "주소 또는 검색어 편집";
+"tab_limit_title" = "탭 한도에 도달했습니다";
+"tab_limit_message" = "탭은 최대 20개까지 유지할 수 있습니다. 새 탭을 열기 전에 하나를 닫아 주세요.";

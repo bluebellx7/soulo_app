@@ -19,11 +19,13 @@ final class WebViewModel: ObservableObject {
     @Published var snapshot: UIImage?
     @Published var showSnapshotWhileRestoring: Bool = false
     var isWebViewRuntimeInstalled: Bool = false
+    var isDesktopModeEnabled: Bool = false
     private var snapshotPersistenceID: String?
 
     // Download state
     @Published var isDownloading: Bool = false
     @Published var downloadFileName: String = ""
+    @Published var activeDownloadCount: Int = 0
 
     deinit {
         webView = nil
@@ -36,6 +38,7 @@ final class WebViewModel: ObservableObject {
     var webView: WKWebView? {
         didSet {
             guard let webView, oldValue !== webView else { return }
+            applyWebPreferences(to: webView)
             if let request = pendingRequest {
                 pendingRequest = nil
                 webView.load(request)
@@ -71,6 +74,22 @@ final class WebViewModel: ObservableObject {
         webView.load(request)
     }
 
+    func setDesktopModeEnabled(_ enabled: Bool) {
+        isDesktopModeEnabled = enabled
+        if let webView {
+            applyWebPreferences(to: webView)
+        }
+    }
+
+    func applyWebPreferences(to webView: WKWebView) {
+        webView.customUserAgent = isDesktopModeEnabled
+            ? AppConstants.desktopWebViewUserAgent
+            : AppConstants.mobileWebViewUserAgent
+        webView.configuration.defaultWebpagePreferences.preferredContentMode = isDesktopModeEnabled
+            ? .desktop
+            : .mobile
+    }
+
     func loadCachedURL(_ url: URL) {
         loadURL(url, cachePolicy: .returnCacheDataElseLoad, keepSnapshotUntilLoaded: true)
     }
@@ -93,6 +112,23 @@ final class WebViewModel: ObservableObject {
         }
     }
 
+    func retryCurrentPage() {
+        guard let currentURL else { return }
+        loadURL(currentURL, cachePolicy: .reloadRevalidatingCacheData)
+    }
+
+    /// Releases the expensive WebKit runtime while preserving the tab URL and snapshot.
+    /// The view is recreated lazily the next time the tab becomes active.
+    func releaseWebViewRuntime() {
+        webView?.stopLoading()
+        webView = nil
+        pendingRequest = nil
+        isWebViewRuntimeInstalled = false
+        isLoading = false
+        estimatedProgress = currentURL == nil ? 0 : 1
+        showSnapshotWhileRestoring = false
+    }
+
     func loadSearchURL(keyword: String, platform: SearchPlatform) {
         guard let url = platform.searchURL(for: keyword) else {
             errorMessage = "Could not construct search URL for \(platform.name)."
@@ -105,6 +141,9 @@ final class WebViewModel: ObservableObject {
 
     func updateProgress(_ progress: Double) {
         estimatedProgress = progress
+        if progress >= 0.999, isLoading {
+            updateLoading(false)
+        }
     }
 
     func updateLoading(_ loading: Bool) {
@@ -117,6 +156,17 @@ final class WebViewModel: ObservableObject {
 
     func updateCanGoBack(_ value: Bool) { canGoBack = value }
     func updateCanGoForward(_ value: Bool) { canGoForward = value }
+
+    func updateDownloadState(activeCount: Int, fileName: String? = nil) {
+        let normalizedCount = max(0, activeCount)
+        activeDownloadCount = normalizedCount
+        isDownloading = normalizedCount > 0
+        if normalizedCount == 0 {
+            downloadFileName = ""
+        } else if let fileName, !fileName.isEmpty {
+            downloadFileName = fileName
+        }
+    }
 
     func updateTitle(_ title: String?) {
         pageTitle = title ?? ""

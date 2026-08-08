@@ -43,7 +43,8 @@ final class DownloadManagerService: ObservableObject {
     }
 
     func markFinished(id: UUID) {
-        guard let index = downloads.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = downloads.firstIndex(where: { $0.id == id }),
+              downloads[index].status == .inProgress else { return }
         downloads[index].status = .finished
         downloads[index].completedAt = Date()
         downloads[index].errorMessage = ""
@@ -51,18 +52,22 @@ final class DownloadManagerService: ObservableObject {
     }
 
     func markFailed(id: UUID, error: Error) {
-        guard let index = downloads.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = downloads.firstIndex(where: { $0.id == id }),
+              downloads[index].status == .inProgress else { return }
         downloads[index].status = .failed
         downloads[index].completedAt = Date()
         downloads[index].errorMessage = error.localizedDescription
+        try? FileManager.default.removeItem(at: downloads[index].localURL)
         save()
     }
 
     func markCanceled(id: UUID) {
-        guard let index = downloads.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = downloads.firstIndex(where: { $0.id == id }),
+              downloads[index].status == .inProgress else { return }
         downloads[index].status = .canceled
         downloads[index].completedAt = Date()
         downloads[index].errorMessage = ""
+        try? FileManager.default.removeItem(at: downloads[index].localURL)
         save()
     }
 
@@ -72,6 +77,7 @@ final class DownloadManagerService: ObservableObject {
             downloads[index].status = .canceled
             downloads[index].completedAt = Date()
             downloads[index].errorMessage = ""
+            try? FileManager.default.removeItem(at: downloads[index].localURL)
             changed = true
         }
         if changed {
@@ -80,6 +86,7 @@ final class DownloadManagerService: ObservableObject {
     }
 
     func delete(_ item: BrowserDownloadItem) {
+        guard item.status != .inProgress else { return }
         try? FileManager.default.removeItem(at: item.localURL)
         downloads.removeAll { $0.id == item.id }
         save()
@@ -103,10 +110,16 @@ final class DownloadManagerService: ObservableObject {
         let nsName = filename as NSString
         let base = nsName.deletingPathExtension.isEmpty ? "Download" : nsName.deletingPathExtension
         let ext = nsName.pathExtension
+        let reservedNames = Set(
+            downloads
+                .filter { $0.status == .inProgress }
+                .map(\.fileName)
+        )
 
         var candidate = filename
         var counter = 1
-        while FileManager.default.fileExists(atPath: storageDirectory.appendingPathComponent(candidate).path) {
+        while reservedNames.contains(candidate)
+            || FileManager.default.fileExists(atPath: storageDirectory.appendingPathComponent(candidate).path) {
             candidate = ext.isEmpty ? "\(base) \(counter)" : "\(base) \(counter).\(ext)"
             counter += 1
         }
@@ -124,6 +137,17 @@ final class DownloadManagerService: ObservableObject {
         if let data = userDefaults.data(forKey: storageKey),
            let decoded = try? JSONDecoder().decode([BrowserDownloadItem].self, from: data) {
             downloads = decoded
+        }
+        var restoredInterruptedDownload = false
+        for index in downloads.indices where downloads[index].status == .inProgress {
+            downloads[index].status = .canceled
+            downloads[index].completedAt = Date()
+            downloads[index].errorMessage = ""
+            try? FileManager.default.removeItem(at: downloads[index].localURL)
+            restoredInterruptedDownload = true
+        }
+        if restoredInterruptedDownload {
+            save()
         }
         removeMissingFiles()
     }

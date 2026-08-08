@@ -240,27 +240,10 @@ struct NewTabPageView: View {
     // MARK: - Navigation
 
     private func navigateToInput() {
-        let trimmed = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-
-        let url: URL
-        if trimmed.isValidURL, let parsed = trimmed.asURL {
-            url = parsed
-        } else if trimmed.contains(".") && !trimmed.contains(" "),
-                  let parsed = URL(string: "https://\(trimmed)") {
-            url = parsed
-        } else {
-            // Search with the first platform from the detected region
-            if let platform = primaryPlatforms.first,
-               let searchURL = platform.searchURL(for: trimmed) {
-                url = searchURL
-            } else {
-                let encoded = trimmed.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? trimmed
-                guard let fallbackURL = URL(string: "https://www.google.com/search?q=\(encoded)") else { return }
-                url = fallbackURL
-            }
-        }
-
+        guard let url = BrowserNavigationResolver.resolve(
+            urlText,
+            preferredSearchPlatform: primaryPlatforms.first
+        ) else { return }
         onNavigate(url)
     }
 }

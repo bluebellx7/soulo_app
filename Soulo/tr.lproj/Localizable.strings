@@ -1,6 +1,6 @@
 /* App */
 "app_name" = "Soulo";
-"app_subtitle" = "Her Şeyi, Her Yerde Ara";
+"app_subtitle" = "Tek sorgu, 40'tan fazla platform";
 
 /* Search */
 "search_placeholder" = "Arama yapın veya URL girin";
@@ -278,10 +278,13 @@
 "switch_to_bing_desc" = "Rüzgar gülü ile güzel arka planları keşfetmek için Bing günlük duvar kağıdını etkinleştirin.";
 
 "open_external_title" = "Harici Uygulama Açılsın mı?";
+"open_external_failed" = "Harici uygulama açılamadı";
+"safari_compatibility_mode" = "Safari Uyumluluk Modu";
+"open_in_default_browser" = "Varsayılan Tarayıcıda Aç";
 "open_external_message" = "Bu bağlantı başka bir uygulama açacak. Devam etmek istiyor musunuz?";
 
 "ai_loading_page" = "AI platformu yükleniyor...";
-"ai_loading_input" = "Yerel AI analiz ediyor ve yazıyor...";
+"ai_loading_input" = "Sorunuz yazılıyor ve gönderiliyor...";
 
 /* Widget */
 "widget_search" = "Hızlı Arama";
@@ -450,6 +453,8 @@
 "downloads_finished" = "Finished";
 "downloads_failed" = "Failed";
 "downloads_canceled" = "Canceled";
+"live_activity" = "Dynamic Island";
+"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
@@ -484,3 +489,11 @@
 "privacy_cookie_banners" = "Handle Cookie Prompts";
 "privacy_cookie_banners_desc" = "Try to reject or dismiss common cookie consent banners.";
 "example" = "Örnek";
+
+/* Tarayıcı gezintisi */
+"browser_back" = "Geri";
+"browser_forward" = "İleri";
+"browser_reload" = "Yeniden yükle";
+"browser_edit_address" = "Adresi veya aramayı düzenle";
+"tab_limit_title" = "Sekme sınırına ulaşıldı";
+"tab_limit_message" = "En fazla 20 sekme açık tutabilirsiniz. Yeni bir sekme açmadan önce birini kapatın.";

@@ -14,7 +14,7 @@ struct TermsOfServiceView: View {
                     Text("By downloading, installing, or using Soulo, you agree to be bound by these Terms of Service. If you do not agree, please do not use the app.")
 
                     sectionTitle("2. Description of Service")
-                    Text("Soulo is an aggregated search tool that allows you to search across multiple platforms through an embedded browser. Soulo does not host, create, or control the content displayed from third-party platforms.")
+                    Text("Soulo is a multi-platform search browser that lets you enter a query and quickly switch between third-party search and AI platforms. Soulo does not host, create, merge, or control the answers and content displayed by those platforms.")
 
                     sectionTitle("3. User Conduct")
                     Text("You agree to use Soulo only for lawful purposes. You are solely responsible for your search queries and interactions with third-party platforms.")
@@ -25,7 +25,7 @@ struct TermsOfServiceView: View {
                     Text("Soulo and its original content, features, and functionality are owned by DKluge. Third-party platform logos and trademarks belong to their respective owners.")
 
                     sectionTitle("5. Third-Party Services")
-                    Text("Soulo provides access to third-party search platforms. We are not responsible for the content, privacy practices, or terms of these platforms. Your use of third-party services is at your own risk.")
+                    Text("Soulo provides access to third-party search and AI platforms. Queries you submit are sent directly to the platform you select and are subject to that platform's terms and privacy practices. We are not responsible for third-party content or services.")
 
                     sectionTitle("6. Disclaimer of Warranties")
                     Text("Soulo is provided \"as is\" without warranties of any kind. We do not guarantee that the app will be uninterrupted, error-free, or that search results from third-party platforms will be accurate.")

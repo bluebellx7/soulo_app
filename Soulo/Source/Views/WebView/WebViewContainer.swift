@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import SafariServices
 
 struct WebViewContainer: View {
     @ObservedObject var webViewModel: WebViewModel
@@ -8,8 +9,11 @@ struct WebViewContainer: View {
     var tabManager: TabManager? = nil
     var isActiveTab: Bool = true
     var onGoHome: (() -> Void)? = nil
+    var onAddressNavigate: ((URL) -> Void)? = nil
+    var onPageStarted: (() -> Void)? = nil
     var onPageLoaded: (() -> Void)? = nil
     @Environment(\.modelContext) private var modelContext
+    @StateObject private var safariCompatibilityPresenter = SafariCompatibilityPresenter()
 
     @State private var isBookmarked: Bool = false
     @State private var showShareSheet: Bool = false
@@ -18,6 +22,7 @@ struct WebViewContainer: View {
     @State private var showBookmarkToast: Bool = false
     @State private var showLinkCopiedToast: Bool = false
     @State private var externalURL: URL? = nil
+    @State private var externalRequestIsExplicit: Bool = false
     @State private var externalDismissTask: DispatchWorkItem? = nil
     @State private var showNewTabPage: Bool = true
     @State private var toolbarMinimized: Bool = false
@@ -26,6 +31,9 @@ struct WebViewContainer: View {
     @State private var showDownloads = false
     @State private var showFireConfirm = false
     @State private var showFireComplete = false
+    @State private var showExternalOpenFailed = false
+    @State private var showDownloadFailed = false
+    @State private var showAddressEditor = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -69,6 +77,21 @@ struct WebViewContainer: View {
                         }
                         .transition(.opacity)
                     }
+
+                    if let error = webViewModel.errorMessage,
+                       !error.isEmpty,
+                       !webViewModel.isLoading {
+                        BrowserLoadErrorView(
+                            message: error,
+                            host: webViewModel.currentURL?.host,
+                            onRetry: { webViewModel.retryCurrentPage() },
+                            onGoHome: onGoHome,
+                            onOpenCompatibility: canOpenSafariCompatibility
+                                ? { openSafariCompatibilityMode() }
+                                : nil
+                        )
+                        .transition(.opacity)
+                    }
                 }
             }
 
@@ -99,16 +122,21 @@ struct WebViewContainer: View {
                             onManageAdBlock: { showAdBlockManager = true },
                             onShowDownloads: { showDownloads = true },
                             onFireButton: { showFireConfirm = true },
-                            onGoHome: onGoHome
+                            onGoHome: onGoHome,
+                            onEditAddress: { showAddressEditor = true },
+                            onOpenSafariCompatibility: { openSafariCompatibilityMode() },
+                            onOpenDefaultBrowser: { openCurrentPageInDefaultBrowser() }
                         )
                         .transition(.asymmetric(
                             insertion: .move(edge: .bottom).combined(with: .opacity),
                             removal: .scale(scale: 0.8).combined(with: .opacity)
                         ))
+                        .zIndex(60)
                     }
                 }
                 .padding(.bottom, 16)
                 .animation(.spring(response: 0.35, dampingFraction: 0.8), value: toolbarMinimized)
+                .zIndex(50)
             }
 
             // Toast overlays
@@ -132,6 +160,22 @@ struct WebViewContainer: View {
                     icon: "trash.fill",
                     text: LanguageManager.shared.localizedString("fire_complete"),
                     iconColor: .red
+                )
+            }
+
+            if showExternalOpenFailed {
+                toastView(
+                    icon: "exclamationmark.triangle.fill",
+                    text: LanguageManager.shared.localizedString("open_external_failed"),
+                    iconColor: .orange
+                )
+            }
+
+            if showDownloadFailed {
+                toastView(
+                    icon: "exclamationmark.arrow.trianglehead.2.clockwise.rotate.90",
+                    text: LanguageManager.shared.localizedString("save_failed"),
+                    iconColor: .orange
                 )
             }
 
@@ -167,24 +211,37 @@ struct WebViewContainer: View {
                                     .padding(.vertical, 8)
                                     .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                             }
-                            Button {
-                                if let extURL = externalURL {
-                                    ExternalNavigationService.shared.rememberBlock(for: extURL)
+                            if !externalRequestIsExplicit {
+                                Button {
+                                    if let extURL = externalURL {
+                                        ExternalNavigationService.shared.rememberBlock(for: extURL)
+                                    }
+                                    withAnimation { showExternalConfirm = false }
+                                    externalDismissTask?.cancel()
+                                } label: {
+                                    Text(LanguageManager.shared.localizedString("never_prompt"))
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(.white.opacity(0.9))
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
+                                        .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                                 }
-                                withAnimation { showExternalConfirm = false }
-                                externalDismissTask?.cancel()
-                            } label: {
-                                Text(LanguageManager.shared.localizedString("never_prompt"))
-                                    .font(.system(size: 13, weight: .medium))
-                                    .foregroundStyle(.white.opacity(0.9))
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
-                                    .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                             }
                             Button {
                                 withAnimation { showExternalConfirm = false }
                                 externalDismissTask?.cancel()
-                                UIApplication.shared.open(extURL)
+                                UIApplication.shared.open(extURL) { success in
+                                    guard !success else { return }
+                                    DispatchQueue.main.async {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                            showExternalOpenFailed = true
+                                        }
+                                        UINotificationFeedbackGenerator().notificationOccurred(.error)
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                            withAnimation { showExternalOpenFailed = false }
+                                        }
+                                    }
+                                }
                             } label: {
                                 Text(LanguageManager.shared.localizedString("confirm"))
                                     .font(.system(size: 13, weight: .semibold))
@@ -215,7 +272,7 @@ struct WebViewContainer: View {
                             Text(LanguageManager.shared.localizedString("downloading"))
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundStyle(.white)
-                            Text(webViewModel.downloadFileName)
+                            Text(downloadStatusDetail)
                                 .font(.system(size: 10))
                                 .foregroundStyle(.white.opacity(0.6))
                                 .lineLimit(1)
@@ -249,7 +306,11 @@ struct WebViewContainer: View {
         .onChange(of: webViewModel.isLoading) { _, loading in
             if !loading { onPageLoaded?() }
         }
+        .onChange(of: webViewModel.estimatedProgress) { _, progress in
+            if progress >= 0.98 { onPageLoaded?() }
+        }
         .onChange(of: webViewModel.currentURL) { _, url in
+            onPageStarted?()
             syncBookmarkState(for: url)
             if url != nil {
                 withAnimation(.easeOut(duration: 0.2)) { showNewTabPage = false }
@@ -260,17 +321,22 @@ struct WebViewContainer: View {
             guard isActiveTab else { return }
             if let url = notification.userInfo?["url"] as? URL {
                 externalURL = url
+                externalRequestIsExplicit = notification.userInfo?["explicitUserAction"] as? Bool ?? false
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                     showExternalConfirm = true
                 }
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                // Auto-dismiss after 4 seconds
                 externalDismissTask?.cancel()
-                externalDismissTask = DispatchWorkItem { [self] in
-                    withAnimation { showExternalConfirm = false }
-                }
-                if let task = externalDismissTask {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: task)
+                externalDismissTask = nil
+                if !externalRequestIsExplicit {
+                    // Unsolicited app-jump prompts remain lightweight. A prompt
+                    // caused by an explicit download waits for the user's choice.
+                    externalDismissTask = DispatchWorkItem { [self] in
+                        withAnimation { showExternalConfirm = false }
+                    }
+                    if let task = externalDismissTask {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: task)
+                    }
                 }
             }
         }
@@ -283,9 +349,33 @@ struct WebViewContainer: View {
                 withAnimation { showLinkCopiedToast = false }
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .browserDownloadFailed)) { notification in
+            guard isActiveTab,
+                  notification.object as AnyObject? === webViewModel else { return }
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                showDownloadFailed = true
+            }
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation { showDownloadFailed = false }
+            }
+        }
         // Link & image long-press handled by native WKUIDelegate context menus
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(items: shareItems)
+        }
+        .sheet(isPresented: $showAddressEditor) {
+            BrowserAddressEditorSheet(
+                initialText: webViewModel.currentURL?.absoluteString ?? "",
+                preferredSearchPlatform: tabManager?.activeTab?.platform,
+                onOpen: { url in
+                    showAddressEditor = false
+                    onAddressNavigate?(url)
+                    webViewModel.loadURL(url)
+                }
+            )
+            .presentationDetents([.height(176)])
+            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showAdBlockManager) {
             NavigationStack {
@@ -324,6 +414,50 @@ struct WebViewContainer: View {
     }
 
     // MARK: - Toast
+
+    private var downloadStatusDetail: String {
+        guard webViewModel.activeDownloadCount > 1 else {
+            return webViewModel.downloadFileName
+        }
+        return "\(webViewModel.downloadFileName) · \(webViewModel.activeDownloadCount)"
+    }
+
+    private var canOpenSafariCompatibility: Bool {
+        WebNavigationPolicyService.shared.canUseSafariCompatibilityMode(
+            for: webViewModel.currentURL
+        )
+    }
+
+    private func openSafariCompatibilityMode() {
+        guard let url = webViewModel.currentURL,
+              WebNavigationPolicyService.shared.canUseSafariCompatibilityMode(for: url) else {
+            return
+        }
+        HapticsManager.selection()
+        safariCompatibilityPresenter.present(
+            url: url,
+            sourceView: webViewModel.webView
+        )
+    }
+
+    private func openCurrentPageInDefaultBrowser() {
+        guard let url = webViewModel.currentURL,
+              WebNavigationPolicyService.shared.canUseSafariCompatibilityMode(for: url) else {
+            return
+        }
+        UIApplication.shared.open(url) { success in
+            guard !success else { return }
+            DispatchQueue.main.async {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    showExternalOpenFailed = true
+                }
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    withAnimation { showExternalOpenFailed = false }
+                }
+            }
+        }
+    }
 
     private func toastView(icon: String, text: String, iconColor: Color = .white) -> some View {
         VStack {
@@ -394,6 +528,7 @@ struct WebViewContainer: View {
             .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(LanguageManager.shared.localizedString("browser_edit_address"))
     }
 
     // MARK: - Bookmark
@@ -417,6 +552,209 @@ struct WebViewContainer: View {
     private func syncBookmarkState(for url: URL?) {
         guard let s = url?.absoluteString else { isBookmarked = false; return }
         isBookmarked = bookmarkViewModel.isBookmarked(url: s, context: modelContext)
+    }
+}
+
+// MARK: - Address Editor
+
+private struct BrowserAddressEditorSheet: View {
+    let preferredSearchPlatform: SearchPlatform?
+    let onOpen: (URL) -> Void
+
+    @State private var text: String
+    @FocusState private var isFocused: Bool
+    @Environment(\.dismiss) private var dismiss
+
+    init(
+        initialText: String,
+        preferredSearchPlatform: SearchPlatform?,
+        onOpen: @escaping (URL) -> Void
+    ) {
+        self.preferredSearchPlatform = preferredSearchPlatform
+        self.onOpen = onOpen
+        _text = State(initialValue: initialText)
+    }
+
+    var body: some View {
+        VStack(spacing: 14) {
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+
+                TextField(
+                    LanguageManager.shared.localizedString("search_placeholder"),
+                    text: $text
+                )
+                .font(.system(size: 15))
+                .keyboardType(.webSearch)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.go)
+                .focused($isFocused)
+                .onSubmit(open)
+
+                if !text.isEmpty {
+                    Button {
+                        text = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.tertiary)
+                    }
+                    .accessibilityLabel(LanguageManager.shared.localizedString("fire_button_confirm"))
+                }
+            }
+            .padding(.horizontal, 14)
+            .frame(height: 48)
+            .background(Color(UIColor.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color(hex: "6366F1").opacity(isFocused ? 0.55 : 0.2), lineWidth: 1)
+            )
+
+            HStack(spacing: 12) {
+                Button(LanguageManager.shared.localizedString("cancel")) {
+                    dismiss()
+                }
+                .buttonStyle(.bordered)
+                .frame(maxWidth: .infinity)
+
+                Button(LanguageManager.shared.localizedString("open_directly")) {
+                    open()
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color(hex: "6366F1"))
+                .frame(maxWidth: .infinity)
+                .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 16)
+        .onAppear { isFocused = true }
+    }
+
+    private func open() {
+        guard let url = BrowserNavigationResolver.resolve(
+            text,
+            preferredSearchPlatform: preferredSearchPlatform
+        ) else { return }
+        HapticsManager.selection()
+        onOpen(url)
+    }
+}
+
+// MARK: - Load Error
+
+private struct BrowserLoadErrorView: View {
+    let message: String
+    let host: String?
+    let onRetry: () -> Void
+    let onGoHome: (() -> Void)?
+    let onOpenCompatibility: (() -> Void)?
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "wifi.exclamationmark")
+                .font(.system(size: 34, weight: .light))
+                .foregroundStyle(.secondary)
+
+            Text(LanguageManager.shared.localizedString("load_error"))
+                .font(.system(size: 18, weight: .semibold))
+
+            if let host, !host.isEmpty {
+                Text(host)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Text(message)
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+                .padding(.horizontal, 28)
+
+            HStack(spacing: 10) {
+                if let onGoHome {
+                    Button(LanguageManager.shared.localizedString("home_screen"), action: onGoHome)
+                        .buttonStyle(.bordered)
+                }
+
+                Button(LanguageManager.shared.localizedString("retry"), action: onRetry)
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color(hex: "6366F1"))
+            }
+            .padding(.top, 4)
+
+            if let onOpenCompatibility {
+                Button(action: onOpenCompatibility) {
+                    Label(
+                        LanguageManager.shared.localizedString("safari_compatibility_mode"),
+                        systemImage: "safari"
+                    )
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(UIColor.systemBackground))
+        .accessibilityElement(children: .contain)
+    }
+}
+
+// MARK: - Safari Compatibility Mode
+
+@MainActor
+private final class SafariCompatibilityPresenter: NSObject, ObservableObject, @preconcurrency SFSafariViewControllerDelegate {
+    private weak var presentedController: SFSafariViewController?
+
+    func present(url: URL, sourceView: UIView?) {
+        guard presentedController == nil,
+              let presentingController = topViewController(for: sourceView) else {
+            return
+        }
+        let configuration = SFSafariViewController.Configuration()
+        configuration.entersReaderIfAvailable = false
+        configuration.barCollapsingEnabled = true
+        let controller = SFSafariViewController(url: url, configuration: configuration)
+        controller.dismissButtonStyle = .close
+        controller.modalPresentationStyle = .fullScreen
+        controller.delegate = self
+        presentedController = controller
+        presentingController.present(controller, animated: true)
+    }
+
+    func safariViewControllerDidFinish(_ controller: SFSafariViewController) {
+        controller.dismiss(animated: true) { [weak self] in
+            self?.presentedController = nil
+        }
+    }
+
+    private func topViewController(for sourceView: UIView?) -> UIViewController? {
+        let sourceScene = sourceView?.window?.windowScene
+        let foregroundScene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+        guard let scene = sourceScene ?? foregroundScene,
+              let root = scene.keyWindow?.rootViewController else {
+            return nil
+        }
+        return visibleViewController(from: root)
+    }
+
+    private func visibleViewController(from root: UIViewController) -> UIViewController {
+        if let presented = root.presentedViewController {
+            return visibleViewController(from: presented)
+        }
+        if let navigation = root as? UINavigationController,
+           let visible = navigation.visibleViewController {
+            return visibleViewController(from: visible)
+        }
+        if let tabs = root as? UITabBarController,
+           let selected = tabs.selectedViewController {
+            return visibleViewController(from: selected)
+        }
+        return root
     }
 }
 

@@ -18,9 +18,7 @@ struct DownloadManagerView: View {
                     ForEach(downloadManager.downloads) { item in
                         downloadRow(item)
                     }
-                    .onDelete { offsets in
-                        offsets.map { downloadManager.downloads[$0] }.forEach(downloadManager.delete)
-                    }
+                    .onDelete(perform: deleteDownloads)
                 }
 
                 Section {
@@ -81,12 +79,24 @@ struct DownloadManagerView: View {
             }
         }
         .swipeActions(edge: .trailing) {
-            Button(role: .destructive) {
-                downloadManager.delete(item)
-            } label: {
-                Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
+            if item.status != .inProgress {
+                Button(role: .destructive) {
+                    downloadManager.delete(item)
+                } label: {
+                    Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
+                }
             }
         }
+    }
+
+    private func deleteDownloads(at offsets: IndexSet) {
+        offsets
+            .compactMap { index in
+                guard downloadManager.downloads.indices.contains(index) else { return nil }
+                return downloadManager.downloads[index]
+            }
+            .filter { $0.status != .inProgress }
+            .forEach(downloadManager.delete)
     }
 
     private func icon(for status: BrowserDownloadStatus) -> String {

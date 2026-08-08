@@ -12,6 +12,7 @@ struct SettingsView: View {
     @AppStorage("ad_block_network_enabled") private var adBlockNetworkEnabled: Bool = true
     @AppStorage("ad_block_cosmetic_enabled") private var adBlockCosmeticEnabled: Bool = true
     @AppStorage("ad_block_popup_enabled") private var adBlockPopupEnabled: Bool = true
+    @AppStorage(LiveActivityService.enabledKey) private var liveActivityEnabled: Bool = true
     @AppStorage("show_bookmarks_on_home") private var showBookmarksOnHome: Bool = false
     @AppStorage("show_group_picker_on_home") private var showGroupPickerOnHome: Bool = false
     @AppStorage("show_recent_searches_on_home") private var showRecentSearchesOnHome: Bool = true
@@ -229,6 +230,24 @@ struct SettingsView: View {
                             } icon: {
                                 IconBadge(systemName: "arrow.down.circle.fill", color: .blue)
                             }
+                        }
+
+                        Toggle(isOn: $liveActivityEnabled) {
+                            Label {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(LanguageManager.shared.localizedString("live_activity"))
+                                        .font(.body)
+                                    Text(LanguageManager.shared.localizedString("live_activity_desc"))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } icon: {
+                                IconBadge(systemName: "dot.radiowaves.left.and.right", color: .purple)
+                            }
+                        }
+                        .tint(.purple)
+                        .onChange(of: liveActivityEnabled) { _, enabled in
+                            LiveActivityService.shared.setEnabled(enabled)
                         }
 
                         NavigationLink(destination: ExternalNavigationSettingsView()) {

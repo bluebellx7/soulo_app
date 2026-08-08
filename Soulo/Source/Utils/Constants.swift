@@ -2,10 +2,12 @@ import Foundation
 
 enum AppConstants {
     static let appName = "Soulo"
-    static let appVersion = "1.0.4"
+    static let appVersion = "1.0.6"
     static let maxSearchHistoryCount = 500
     static let clipboardMaxLength = 200
-    static let webViewUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+    static let mobileWebViewUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+    static let desktopWebViewUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15"
+    static let webViewUserAgent = mobileWebViewUserAgent
 
     static let supportedLanguages: [(code: String, name: String, flag: String)] = [
         ("zh-Hans", "简体中文", "🇨🇳"),

@@ -195,7 +195,7 @@ struct AdBlockService {
     }
 
     private static func normalizedAllowlist(_ hosts: [String]) -> [String] {
-        Array(Set(hosts.map { AdBlockSettingsService.normalizedHost($0) }.filter { !$0.isEmpty })).sorted()
+        WebCompatibilityService.protectionBypassHosts(adding: hosts)
     }
 
     private static func sanitizedContentBlockerURLFilter(_ value: String) -> String? {
@@ -328,9 +328,17 @@ struct AdBlockService {
                 };
             }
 
+            function isSensitiveChallengePage() {
+                return /(^|[\\/?&#_=.-])(captcha|wappoc|verify|verification|challenge|security|passport|login|auth)([\\/?&#_=.-]|$)/.test(String(location.href || '').toLowerCase());
+            }
+
             function isSouloAllowlisted() {
                 var host = normalizedHost(location.hostname);
                 return (adBlockConfig().allowlistedHosts || []).some(function(domain) { return domainMatches(domain, host); });
+            }
+
+            function shouldDisableAdBlock() {
+                return isSensitiveChallengePage() || isSouloAllowlisted();
             }
 
             if (window.__souloAdBlockInstalled) {
@@ -340,7 +348,7 @@ struct AdBlockService {
                 return;
             }
 
-            if (isSouloAllowlisted()) return;
+            if (shouldDisableAdBlock()) return;
             window.__souloAdBlockInstalled = true;
 
             function matchingSubscriptionSelectors() {
@@ -361,7 +369,7 @@ struct AdBlockService {
 
             function applyStaticStyles() {
                 var existingStyle = document.getElementById('soulo-ad-hiding-style');
-                if (!adBlockConfig().cosmeticEnabled || isSouloAllowlisted()) {
+                if (!adBlockConfig().cosmeticEnabled || shouldDisableAdBlock()) {
                     if (existingStyle) existingStyle.remove();
                     return;
                 }
@@ -498,7 +506,7 @@ struct AdBlockService {
 
             function removeAds() {
                 applyStaticStyles();
-                if (isSouloAllowlisted()) return;
+                if (shouldDisableAdBlock()) return;
                 var hiddenCount = 0;
                 var trackerHosts = [];
                 if (adBlockConfig().cosmeticEnabled) {

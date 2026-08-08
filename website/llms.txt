@@ -1,8 +1,8 @@
 # Soulo
 
-> Soulo is a privacy-first iOS search aggregation app and public product website.
+> Soulo is a privacy-first iOS multi-search browser and public product website.
 
-Soulo lets users search across 40+ global platforms from one interface, including web search, video, shopping, developer communities, and AI search engines. The public website is available without authentication and may be indexed or summarized according to `robots.txt`.
+Soulo lets users enter one query and quickly switch between 40+ global platforms, including web search, video, shopping, developer communities, and third-party AI platforms. Soulo does not generate or merge those platforms' answers. The public website is available without authentication and may be indexed or summarized according to `robots.txt`.
 
 ## Primary Pages
 
@@ -15,9 +15,9 @@ Soulo lets users search across 40+ global platforms from one interface, includin
 - Product name: Soulo
 - Chinese name: 搜罗
 - Platform: iOS app
-- Category: Aggregated search / multi-platform search
+- Category: Multi-platform search browser
 - Website languages: Chinese and English
-- Core features: 40+ search platforms, AI search, voice search, ad blocking, custom platforms, privacy-first local storage
+- Core features: quick switching between 40+ search and AI platforms, voice search, ad blocking, custom platforms, privacy-first local storage
 
 ## Crawling Notes
 

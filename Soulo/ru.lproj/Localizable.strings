@@ -1,6 +1,6 @@
 /* App */
 "app_name" = "Soulo";
-"app_subtitle" = "Ищите всё и везде";
+"app_subtitle" = "Один запрос — более 40 платформ";
 
 /* Search */
 "search_placeholder" = "Поиск или введите URL";
@@ -278,10 +278,13 @@
 "switch_to_bing_desc" = "Включите ежедневные обои Bing, чтобы просматривать красивые фоны с помощью вертушки.";
 
 "open_external_title" = "Открыть внешнее приложение?";
+"open_external_failed" = "Не удалось открыть внешнее приложение";
+"safari_compatibility_mode" = "Режим совместимости Safari";
+"open_in_default_browser" = "Открыть в браузере по умолчанию";
 "open_external_message" = "Эта ссылка откроет другое приложение. Продолжить?";
 
 "ai_loading_page" = "Загрузка AI-платформы...";
-"ai_loading_input" = "Локальный AI анализирует и вводит...";
+"ai_loading_input" = "Вводим и отправляем ваш вопрос...";
 
 /* Widget */
 "widget_search" = "Быстрый поиск";
@@ -450,6 +453,8 @@
 "downloads_finished" = "Finished";
 "downloads_failed" = "Failed";
 "downloads_canceled" = "Canceled";
+"live_activity" = "Dynamic Island";
+"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
@@ -484,3 +489,11 @@
 "privacy_cookie_banners" = "Handle Cookie Prompts";
 "privacy_cookie_banners_desc" = "Try to reject or dismiss common cookie consent banners.";
 "example" = "Пример";
+
+/* Навигация браузера */
+"browser_back" = "Назад";
+"browser_forward" = "Вперёд";
+"browser_reload" = "Обновить";
+"browser_edit_address" = "Изменить адрес или поиск";
+"tab_limit_title" = "Достигнут лимит вкладок";
+"tab_limit_message" = "Можно держать открытыми до 20 вкладок. Закройте одну, прежде чем открыть новую.";

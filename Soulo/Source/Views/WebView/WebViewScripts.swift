@@ -33,6 +33,146 @@ enum WebViewScripts {
     })();
     """
 
+    /// Captures files created inside the page, which WKDownload cannot reliably
+    /// receive because blob: and data: URLs do not have a network response.
+    static let downloadBridge = """
+    (function() {
+        if (window.__souloDownloadBridgeInstalled) return;
+        window.__souloDownloadBridgeInstalled = true;
+
+        var activeDownloads = Object.create(null);
+        var chunkSize = 256 * 1024;
+        var maximumGeneratedFileSize = 256 * 1024 * 1024;
+
+        function post(payload) {
+            try {
+                var handler = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.souloDownload;
+                if (!handler) return Promise.reject(new Error('native download handler unavailable'));
+                return Promise.resolve(handler.postMessage(payload));
+            } catch (error) {
+                return Promise.reject(error);
+            }
+        }
+
+        function normalizedFilename(value) {
+            var name = String(value || '').trim();
+            if (!name) return 'Download';
+            try { name = decodeURIComponent(name); } catch (_) {}
+            return name.split('/').pop() || 'Download';
+        }
+
+        function filenameFor(anchor, href) {
+            var explicitName = anchor && (anchor.getAttribute('download') || anchor.download);
+            if (explicitName) return normalizedFilename(explicitName);
+            try {
+                var pathname = new URL(href, location.href).pathname;
+                var candidate = pathname.split('/').pop();
+                if (candidate) return normalizedFilename(candidate);
+            } catch (_) {}
+            return 'Download';
+        }
+
+        function downloadID() {
+            if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                return window.crypto.randomUUID();
+            }
+            return String(Date.now()) + '-' + Math.random().toString(36).slice(2);
+        }
+
+        function readSlice(blob) {
+            return new Promise(function(resolve, reject) {
+                var reader = new FileReader();
+                reader.onload = function() { resolve(reader.result); };
+                reader.onerror = function() { reject(reader.error || new Error('read failed')); };
+                reader.readAsArrayBuffer(blob);
+            });
+        }
+
+        function base64ForArrayBuffer(buffer) {
+            var bytes = new Uint8Array(buffer);
+            var binary = '';
+            var batchSize = 0x8000;
+            for (var offset = 0; offset < bytes.length; offset += batchSize) {
+                var batch = bytes.subarray(offset, Math.min(offset + batchSize, bytes.length));
+                binary += String.fromCharCode.apply(null, batch);
+            }
+            return btoa(binary);
+        }
+
+        window.__souloCancelDownloads = function() {
+            Object.keys(activeDownloads).forEach(function(identifier) {
+                activeDownloads[identifier] = false;
+            });
+        };
+
+        async function exportURL(href, filename) {
+            filename = normalizedFilename(filename);
+            var identifier = downloadID();
+            activeDownloads[identifier] = true;
+
+            try {
+                await post({
+                    type: 'started',
+                    downloadID: identifier,
+                    filename: filename,
+                    sourceURL: location.href
+                });
+
+                var response = await fetch(href);
+                var blob = await response.blob();
+                if (blob.size > maximumGeneratedFileSize) throw new Error('file too large');
+
+                var chunkIndex = 0;
+                for (var offset = 0; offset < blob.size; offset += chunkSize) {
+                    if (!activeDownloads[identifier]) throw new Error('download canceled');
+                    var buffer = await readSlice(blob.slice(offset, Math.min(offset + chunkSize, blob.size)));
+                    if (!activeDownloads[identifier]) throw new Error('download canceled');
+                    await post({
+                        type: 'chunk',
+                        downloadID: identifier,
+                        index: chunkIndex,
+                        base64: base64ForArrayBuffer(buffer)
+                    });
+                    chunkIndex += 1;
+                }
+
+                if (!activeDownloads[identifier]) throw new Error('download canceled');
+                await post({
+                    type: 'finished',
+                    downloadID: identifier,
+                    chunkCount: chunkIndex
+                });
+            } catch (error) {
+                try {
+                    await post({
+                        type: 'failed',
+                        downloadID: identifier,
+                        filename: filename,
+                        message: String(error || '')
+                    });
+                } catch (_) {}
+            } finally {
+                delete activeDownloads[identifier];
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            var target = event.target;
+            if (target && target.nodeType !== 1) target = target.parentElement;
+            var anchor = target && target.closest ? target.closest('a[href]') : null;
+            if (!anchor) return;
+
+            var href = String(anchor.href || anchor.getAttribute('href') || '');
+            var isGeneratedFile = href.indexOf('blob:') === 0 || href.indexOf('data:') === 0;
+            if (!isGeneratedFile) return;
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            exportURL(href, filenameFor(anchor, href));
+        }, true);
+    })();
+    """
+
     static func privacyProtection(gpcEnabled: Bool, cookieBannerHandling: Bool, disabledHosts: [String] = []) -> String {
         let disabledHostsJSON = (try? JSONSerialization.data(withJSONObject: disabledHosts))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
@@ -71,7 +211,11 @@ enum WebViewScripts {
                 return (privacyConfig().disabledHosts || []).some(function(domain) { return domainMatches(domain, host); });
             }
 
-            if (siteProtectionDisabled()) return;
+            function isSensitiveChallengePage() {
+                return /(^|[\\/?&#_=.-])(captcha|wappoc|verify|verification|challenge|security|passport|login|auth)([\\/?&#_=.-]|$)/.test(String(location.href || '').toLowerCase());
+            }
+
+            if (siteProtectionDisabled() || isSensitiveChallengePage()) return;
 
             if (privacyConfig().gpcEnabled) {
                 try {
@@ -337,10 +481,42 @@ enum WebViewScripts {
 
     static let loginOverlayRemoval = """
     (function() {
-        var skipDomains = ['deepseek.com', 'qianwen.com', 'chatgpt.com', 'claude.ai', 'xiaohongshu.com', 'taobao.com', 'jd.com', 'yuanbao.tencent.com', 'doubao.com', 'metaso.cn'];
-        var host = window.location.hostname;
+        var skipDomains = ['deepseek.com', 'qianwen.com', 'chatgpt.com', 'claude.ai', 'xiaohongshu.com', 'taobao.com', 'jd.com', 'yuanbao.tencent.com', 'doubao.com', 'metaso.cn', 'weixin.qq.com', 'wx.qq.com'];
+        var host = String(window.location.hostname || '').toLowerCase();
+        var href = String(window.location.href || '').toLowerCase();
+
+        function domainMatches(domain) {
+            domain = String(domain || '').toLowerCase().replace(/^www\\./, '');
+            var cleanHost = host.replace(/^www\\./, '');
+            return cleanHost === domain || cleanHost.endsWith('.' + domain);
+        }
+
         for (var i = 0; i < skipDomains.length; i++) {
-            if (host.includes(skipDomains[i])) return;
+            if (domainMatches(skipDomains[i])) return;
+        }
+
+        function isSensitiveChallengePage() {
+            return /(^|[\\/?&#_=.-])(captcha|wappoc|verify|verification|challenge|security|passport|login|auth)([\\/?&#_=.-]|$)/.test(href);
+        }
+
+        if (isSensitiveChallengePage()) return;
+
+        function textOf(el) {
+            return String((el && (el.innerText || el.textContent)) || '').toLowerCase().replace(/\\s+/g, ' ').trim();
+        }
+
+        function containsVerificationLanguage(text) {
+            return /验证码|驗證碼|验证|驗證|人机|安全校验|安全验证|安全驗證|手机号|手機號|captcha|verification code|security check|verify you are|phone number/.test(text);
+        }
+
+        function shouldPreserve(el) {
+            var text = textOf(el);
+            if (containsVerificationLanguage(text)) return true;
+            try {
+                return !!el.querySelector('input[type="tel"], input[type="password"], input[name*="captcha"], input[id*="captcha"], input[name*="verify"], input[id*="verify"]');
+            } catch (_) {
+                return false;
+            }
         }
 
         const OVERLAY_SELECTORS = [
@@ -352,6 +528,7 @@ enum WebViewScripts {
         ];
 
         function shouldRemove(el) {
+            if (shouldPreserve(el)) return false;
             try {
                 const style = window.getComputedStyle(el);
                 const zIndex = parseInt(style.zIndex, 10);
@@ -376,10 +553,10 @@ enum WebViewScripts {
                     if ((s.position === 'fixed' || s.position === 'absolute') &&
                         parseInt(s.zIndex) > 999 &&
                         el.offsetWidth > 100 && el.offsetHeight > 100) {
-                        var text = (el.textContent || '').toLowerCase();
-                        if (text.includes('登录') || text.includes('login') ||
-                            text.includes('注册') || text.includes('sign') ||
-                            text.includes('验证码') || text.includes('手机号')) {
+                        if (shouldPreserve(el)) return;
+                        var text = textOf(el);
+                        if (text.includes('登录') || text.includes('注册') ||
+                            /\\b(log in|login|sign in|sign up|signup|register|registration)\\b/.test(text)) {
                             el.remove();
                         }
                     }

@@ -1,6 +1,6 @@
 /* App */
 "app_name" = "Soulo";
-"app_subtitle" = "Cherchez tout, partout";
+"app_subtitle" = "Une recherche, plus de 40 plateformes";
 "search_placeholder" = "Rechercher ou entrer une URL";
 "search" = "Rechercher";
 "recent_searches" = "Recherches récentes";
@@ -216,11 +216,14 @@
 
 /* External URL */
 "open_external_title" = "Ouvrir une application externe ?";
+"open_external_failed" = "Impossible d’ouvrir l’application externe";
+"safari_compatibility_mode" = "Mode de compatibilité Safari";
+"open_in_default_browser" = "Ouvrir dans le navigateur par défaut";
 "open_external_message" = "Ce lien ouvrira une autre application. Voulez-vous continuer ?";
 
 /* AI Loading */
 "ai_loading_page" = "Chargement de la plateforme IA...";
-"ai_loading_input" = "L'IA locale analyse et saisit...";
+"ai_loading_input" = "Saisie et envoi de votre question...";
 
 /* Privacy Settings (extended keys) */
 "privacy_section_browsing" = "Navigation";
@@ -415,6 +418,8 @@ Dites-nous :
 "downloads_finished" = "Finished";
 "downloads_failed" = "Failed";
 "downloads_canceled" = "Canceled";
+"live_activity" = "Dynamic Island";
+"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
@@ -467,3 +472,11 @@ Dites-nous :
 "wallpaper_source" = "Source du fond d'écran";
 "wallpaper_type" = "Type d'arrière-plan";
 "example" = "Exemple";
+
+/* Navigation du navigateur */
+"browser_back" = "Retour";
+"browser_forward" = "Suivant";
+"browser_reload" = "Actualiser";
+"browser_edit_address" = "Modifier l’adresse ou la recherche";
+"tab_limit_title" = "Limite d’onglets atteinte";
+"tab_limit_message" = "Vous pouvez conserver jusqu’à 20 onglets. Fermez-en un avant d’en ouvrir un autre.";

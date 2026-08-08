@@ -70,6 +70,13 @@ final class PrivacyNavigationServiceTests: XCTestCase {
         XCTAssertNil(service.transformedURL(for: url))
     }
 
+    func testCompatibilityBypassSkipsPrivacyNavigation() {
+        let service = PrivacyNavigationService(userDefaults: defaults)
+        let url = URL(string: "https://mp.weixin.qq.com/mp/wappoc_appmsgcaptcha?poc_token=abc&utm_source=x")!
+
+        XCTAssertNil(service.transformedURL(for: url))
+    }
+
     func testHTTPSUpgradeFailureExcludesHostAndSubdomains() {
         let service = PrivacyNavigationService(userDefaults: defaults)
 

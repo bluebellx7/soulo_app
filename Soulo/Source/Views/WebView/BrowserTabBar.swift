@@ -19,9 +19,7 @@ struct BrowserTabBar: View {
                             isActive: index == tabManager.activeTabIndex,
                             onTap: {
                                 HapticsManager.selection()
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                    tabManager.switchToTab(at: index)
-                                }
+                                tabManager.switchToTab(at: index)
                             },
                             onClose: {
                                 HapticsManager.light()
@@ -173,16 +171,10 @@ struct TabSwitcherOverlay: View {
                             expandingIndex: $expandingIndex,
                             onSelect: { index in
                                 HapticsManager.selection()
-                                let selectedIndex = index
-                                withAnimation(.spring(response: 0.22, dampingFraction: 0.86)) {
-                                    isExpanding = true
-                                    expandingIndex = selectedIndex
-                                }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.04) {
-                                    tabManager.focusTabInSwitcher(at: selectedIndex)
-                                }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) {
-                                    onSelectTab(selectedIndex)
+                                var transaction = Transaction()
+                                transaction.disablesAnimations = true
+                                withTransaction(transaction) {
+                                    onSelectTab(index)
                                     onDismiss()
                                 }
                             },
@@ -723,19 +715,22 @@ struct TabCountBadge: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .stroke(.white.opacity(0.7), lineWidth: 1.5)
-                    .frame(width: 22, height: 22)
+                    .frame(width: 18, height: 18)
 
                 Text("\(min(count, 99))")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.85))
             }
-            .frame(width: 36, height: 36)
+            .frame(width: 30, height: 30)
             .background(
                 Circle()
                     .fill(.black.opacity(0.35))
                     .overlay(Circle().stroke(.white.opacity(0.1), lineWidth: 0.5))
             )
+            .frame(width: 40, height: 40)
+            .contentShape(Circle())
         }
+        .accessibilityLabel("\(count) \(LanguageManager.shared.localizedString("tab_tabs"))")
     }
 }
 

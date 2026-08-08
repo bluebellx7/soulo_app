@@ -1,6 +1,6 @@
 /* App */
 "app_name" = "Soulo";
-"app_subtitle" = "一鍵搜遍全球平台";
+"app_subtitle" = "一次輸入，切換 40+ 平台";
 
 /* Search */
 "search_placeholder" = "搜尋關鍵詞或輸入網址";
@@ -278,10 +278,13 @@
 "switch_to_bing_desc" = "開啟 Bing 每日桌布後，點擊小風車即可瀏覽精美桌布。";
 
 "open_external_title" = "開啟外部應用程式？";
+"open_external_failed" = "無法開啟外部應用程式";
+"safari_compatibility_mode" = "Safari 相容模式";
+"open_in_default_browser" = "在預設瀏覽器中開啟";
 "open_external_message" = "此連結將開啟其他應用程式，是否繼續？";
 
 "ai_loading_page" = "正在載入 AI 平台...";
-"ai_loading_input" = "本機 AI 正在分析並輸入...";
+"ai_loading_input" = "正在填寫並傳送問題...";
 
 /* Widget */
 "widget_search" = "快速搜尋";
@@ -450,6 +453,8 @@
 "downloads_finished" = "Finished";
 "downloads_failed" = "Failed";
 "downloads_canceled" = "Canceled";
+"live_activity" = "動態島";
+"live_activity_desc" = "在即時動態和動態島中顯示目前搜尋內容。";
 "fire_button" = "隱私清理";
 "fire_button_confirm" = "清除";
 "fire_button_desc" = "關閉瀏覽器分頁，並清除網站資料、Cookie、快取和隱私統計。";
@@ -484,3 +489,11 @@
 "privacy_cookie_banners" = "Handle Cookie Prompts";
 "privacy_cookie_banners_desc" = "Try to reject or dismiss common cookie consent banners.";
 "example" = "範例";
+
+/* 瀏覽器導覽 */
+"browser_back" = "返回";
+"browser_forward" = "前進";
+"browser_reload" = "重新載入";
+"browser_edit_address" = "編輯網址或搜尋";
+"tab_limit_title" = "已達標籤頁上限";
+"tab_limit_message" = "最多可保留 20 個標籤頁。請先關閉一個再開啟新的標籤頁。";

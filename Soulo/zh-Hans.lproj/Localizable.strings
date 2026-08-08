@@ -1,6 +1,6 @@
 /* App */
 "app_name" = "Soulo";
-"app_subtitle" = "一键搜遍全球平台";
+"app_subtitle" = "一次输入，切换 40+ 平台";
 
 /* Search */
 "search_placeholder" = "搜索关键词或输入网址";
@@ -294,10 +294,13 @@
 "switch_to_bing_desc" = "开启 Bing 每日壁纸后，点击小风车即可浏览精美壁纸。";
 
 "open_external_title" = "打开外部应用？";
+"open_external_failed" = "无法打开外部应用";
+"safari_compatibility_mode" = "Safari 兼容模式";
+"open_in_default_browser" = "在默认浏览器中打开";
 "open_external_message" = "此链接将打开其他应用，是否继续？";
 
 "ai_loading_page" = "正在加载 AI 平台...";
-"ai_loading_input" = "本地 AI 正在分析并输入...";
+"ai_loading_input" = "正在填写并发送问题...";
 
 /* Widget */
 "widget_search" = "快速搜索";
@@ -515,6 +518,8 @@
 "wallpaper_remote_error" = "壁纸来源暂不可用，请刷新或切换来源。";
 "restore" = "恢复";
 "never_prompt" = "以后不提示";
+"live_activity" = "灵动岛";
+"live_activity_desc" = "在实时活动和灵动岛中显示当前搜索内容。";
 "external_navigation" = "外部 App 链接";
 "never_prompt_external" = "静默拦截外部 App 跳转";
 "never_prompt_external_desc" = "开启后，Soulo 会直接取消外部 App 跳转，不再弹出提示。";
@@ -537,3 +542,11 @@
 "wallpaper_interval_1hour" = "每 1 小时";
 "wallpaper_interval_1day" = "每 1 天";
 "example" = "示例";
+
+/* 浏览器导航 */
+"browser_back" = "返回";
+"browser_forward" = "前进";
+"browser_reload" = "重新加载";
+"browser_edit_address" = "编辑地址或搜索";
+"tab_limit_title" = "已达到标签页上限";
+"tab_limit_message" = "最多可保留 20 个标签页。请关闭一个标签页后再打开新的标签页。";

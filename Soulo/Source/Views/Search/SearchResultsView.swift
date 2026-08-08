@@ -63,7 +63,7 @@ struct SearchResultsView: View {
                     // Tab bar — show when multiple tabs
                     if tabManager.tabs.count > 1 {
                         BrowserTabBar(tabManager: tabManager) {
-                            createNewTabFromCurrentSearch()
+                            tabManager.createTab()
                         }
                         .transition(.move(edge: .top).combined(with: .opacity))
                     }
@@ -76,12 +76,22 @@ struct SearchResultsView: View {
                             )
                         }
 
-                        PlatformTabBar(
-                            platforms: currentPlatforms,
-                            selectedPlatform: $searchVM.selectedPlatform
-                        )
-                        .onChange(of: searchVM.selectedPlatform) { _, _ in
-                            loadCurrentPlatformURL()
+                        HStack(spacing: 2) {
+                            groupPickerMenu
+                                .padding(.leading, 12)
+
+                            Rectangle()
+                                .fill(Color(UIColor.separator).opacity(0.35))
+                                .frame(width: 0.5, height: 18)
+
+                            PlatformTabBar(
+                                platforms: currentPlatforms,
+                                selectedPlatform: $searchVM.selectedPlatform
+                            )
+                            .frame(maxWidth: .infinity)
+                            .onChange(of: searchVM.selectedPlatform) { _, _ in
+                                loadCurrentPlatformURL()
+                            }
                         }
                     }
 
@@ -117,9 +127,13 @@ struct SearchResultsView: View {
                 // WebView — mount only the active tab; WebViewModel keeps the WKWebView alive for instant restores.
                 ZStack {
                     let activeWebViewModel = tabManager.activeWebViewModel
-                    let activePageIsLoading = activeWebViewModel?.isLoading == true && activeWebViewModel?.currentURL != nil
-                    let shouldShowLoadingOverlay = activePageIsLoading
-                        || (!pageReady && activeWebViewModel?.currentURL != nil)
+                    let activeProgress = activeWebViewModel?.estimatedProgress ?? 0
+                    let activePageIsLoading = activeWebViewModel?.isLoading == true
+                        && activeWebViewModel?.currentURL != nil
+                        && activeProgress < 0.98
+                    let activePageIsRendered = pageReady || activeProgress >= 0.98
+                    let shouldShowLoadingOverlay = activeWebViewModel?.currentURL != nil
+                        && (activePageIsLoading || !activePageIsRendered)
 
                     if let activeTab = tabManager.activeTab {
                         WebViewContainer(
@@ -132,6 +146,15 @@ struct SearchResultsView: View {
                                 withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
                                     searchVM.clearSearch()
                                 }
+                            },
+                            onAddressNavigate: { url in
+                                let value = url.absoluteString
+                                searchVM.searchText = value
+                                searchVM.currentKeyword = value
+                                searchVM.clearSuggestions()
+                            },
+                            onPageStarted: {
+                                if pageReady { pageReady = false }
                             },
                             onPageLoaded: {
                                 if !pageReady { pageReady = true }
@@ -159,33 +182,6 @@ struct SearchResultsView: View {
                             Spacer()
                         }
                         .transition(.opacity)
-                    }
-
-                    // WebView error overlay (for active tab)
-                    if let activeVM = tabManager.activeWebViewModel,
-                       let error = activeVM.errorMessage, !error.isEmpty, !activeVM.isLoading {
-                        VStack(spacing: 16) {
-                            Image(systemName: "wifi.exclamationmark")
-                                .font(.system(size: 36))
-                                .foregroundStyle(.secondary)
-                            Text(error)
-                                .font(.system(size: 14))
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 40)
-                            Button {
-                                activeVM.reload()
-                            } label: {
-                                Text(languageManager.localizedString("retry"))
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 24)
-                                    .padding(.vertical, 10)
-                                    .background(Color(hex: "6366F1"), in: Capsule())
-                            }
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color(UIColor.systemBackground))
                     }
 
                     // AI loading overlay
@@ -307,11 +303,10 @@ struct SearchResultsView: View {
                 TabSwitcherOverlay(
                     tabManager: tabManager,
                     onSelectTab: { index in
-                        HapticsManager.selection()
                         tabManager.switchToTab(at: index)
                     },
                     onNewTab: {
-                        createNewTabFromCurrentSearch()
+                        tabManager.createTab()
                     },
                     onDismiss: {
                         tabManager.showTabOverview = false
@@ -323,6 +318,7 @@ struct SearchResultsView: View {
             // Sync fullscreen state with the new active tab
             if let vm = tabManager.activeWebViewModel {
                 isFullscreen = vm.isScrollingUp
+                pageReady = vm.estimatedProgress >= 0.98 || (!vm.isLoading && vm.currentURL != nil)
             }
         }
         // Handle "open in new tab" from WebView (target="_blank" links)
@@ -330,6 +326,14 @@ struct SearchResultsView: View {
             if let url = notification.userInfo?["url"] as? URL {
                 tabManager.createTab(url: url, keyword: searchVM.currentKeyword, platform: searchVM.selectedPlatform)
             }
+        }
+        .alert(
+            languageManager.localizedString("tab_limit_title"),
+            isPresented: $tabManager.didReachTabLimit
+        ) {
+            Button(languageManager.localizedString("confirm"), role: .cancel) {}
+        } message: {
+            Text(languageManager.localizedString("tab_limit_message"))
         }
         .onAppear {
             // Restore last selected group and select first platform
@@ -361,68 +365,19 @@ struct SearchResultsView: View {
     // MARK: - Top Search Bar
 
     private var topSearchBar: some View {
-        HStack(spacing: 8) {
-            // Search bar
-            SearchBarView(
-                text: $searchVM.searchText,
-                isCompact: true,
-                isRecording: speechService.isRecording,
-                onSubmit: {
-                    searchVM.performSearch(context: modelContext)
-                    loadCurrentPlatformURL()
-                },
-                onMicTap: {
-                    showVoiceInput = true
-                }
-            )
-            .matchedGeometryEffect(id: "searchBar", in: searchBarNamespace)
-
-            // Region + custom group picker
-            Menu {
-                // Built-in regions (only with visible platforms)
-                ForEach(PlatformRegion.sortedCases(preferring: searchVM.selectedRegion).filter { !PlatformDataStore.shared.visiblePlatforms(for: $0).isEmpty }) { region in
-                    let count = PlatformDataStore.shared.visiblePlatforms(for: region).count
-                    Button {
-                        selectedCustomGroup = nil
-                        lastGroupID = ""
-                        lastRegion = region.rawValue
-                        searchVM.selectRegion(region)
-                        loadCurrentPlatformURL()
-                    } label: {
-                        HStack {
-                            Text("\(PlatformDataStore.shared.regionDisplayName(for: region)) (\(count))")
-                            if selectedCustomGroup == nil && searchVM.selectedRegion == region {
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-                }
-
-                // Custom groups (only with platforms)
-                ForEach(PlatformDataStore.shared.customGroups.filter { !PlatformDataStore.shared.platformsForGroup($0).isEmpty }) { group in
-                    let count = PlatformDataStore.shared.platformsForGroup(group).count
-                    Button {
-                        selectedCustomGroup = group
-                        lastGroupID = group.id.uuidString
-                        lastRegion = ""
-                        loadCurrentPlatformURL()
-                    } label: {
-                        HStack {
-                            Text("\(group.name) (\(count))")
-                            if selectedCustomGroup?.id == group.id {
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-                }
-            } label: {
-                Image(systemName: selectedCustomGroup != nil ? "folder.fill" : "globe")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(Color(UIColor.label))
-                    .frame(width: 36, height: 36)
-                    .background(.ultraThinMaterial, in: Circle())
+        SearchBarView(
+            text: $searchVM.searchText,
+            isCompact: true,
+            isRecording: speechService.isRecording,
+            onSubmit: {
+                searchVM.performSearch(context: modelContext)
+                loadCurrentPlatformURL()
+            },
+            onMicTap: {
+                showVoiceInput = true
             }
-        }
+        )
+        .matchedGeometryEffect(id: "searchBar", in: searchBarNamespace)
         .sheet(isPresented: $showVoiceInput) {
             VoiceInputView(
                 speechService: speechService,
@@ -435,6 +390,54 @@ struct SearchResultsView: View {
                 onDismiss: { showVoiceInput = false }
             )
         }
+    }
+
+    private var groupPickerMenu: some View {
+        Menu {
+            ForEach(PlatformRegion.sortedCases(preferring: searchVM.selectedRegion).filter { !PlatformDataStore.shared.visiblePlatforms(for: $0).isEmpty }) { region in
+                let count = PlatformDataStore.shared.visiblePlatforms(for: region).count
+                Button {
+                    selectedCustomGroup = nil
+                    lastGroupID = ""
+                    lastRegion = region.rawValue
+                    searchVM.selectRegion(region)
+                    loadCurrentPlatformURL()
+                } label: {
+                    HStack {
+                        Text("\(PlatformDataStore.shared.regionDisplayName(for: region)) (\(count))")
+                        if selectedCustomGroup == nil && searchVM.selectedRegion == region {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+
+            ForEach(PlatformDataStore.shared.customGroups.filter { !PlatformDataStore.shared.platformsForGroup($0).isEmpty }) { group in
+                let count = PlatformDataStore.shared.platformsForGroup(group).count
+                Button {
+                    selectedCustomGroup = group
+                    lastGroupID = group.id.uuidString
+                    lastRegion = ""
+                    loadCurrentPlatformURL()
+                } label: {
+                    HStack {
+                        Text("\(group.name) (\(count))")
+                        if selectedCustomGroup?.id == group.id {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: selectedCustomGroup != nil ? "folder.fill" : "globe")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color(hex: "6366F1"))
+                .frame(width: 32, height: 26)
+                .background(Color(hex: "6366F1").opacity(0.1), in: Capsule())
+                .frame(width: 40, height: 36)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel(LanguageManager.shared.localizedString("select_region"))
     }
 
     // Computed: platforms for current selection (region or custom group)
@@ -450,31 +453,6 @@ struct SearchResultsView: View {
     @State private var showLoginAlert = false
     @State private var showAILoading = false
     @State private var aiLoadingText = ""
-
-    /// Create a new tab using the current search context.
-    private func createNewTabFromCurrentSearch() {
-        let keyword = searchVM.currentKeyword
-        let platform = searchVM.selectedPlatform
-        let tab = tabManager.createTab(keyword: keyword, platform: platform)
-
-        // Load the current platform URL into the new tab
-        if keyword.isValidURL, let url = keyword.asURL {
-            tab.webViewModel.loadURL(url)
-            return
-        }
-
-        guard let platform = platform else { return }
-        switch platform.interactionType {
-        case .aiChat:
-            if let url = URL(string: platform.homeURL) {
-                tab.webViewModel.loadURL(url)
-            }
-        case .urlSearch:
-            if let url = platform.searchURL(for: keyword) {
-                tab.webViewModel.loadURL(url)
-            }
-        }
-    }
 
     private func loadCurrentPlatformURL() {
         guard let webVM = tabManager.activeWebViewModel else { return }

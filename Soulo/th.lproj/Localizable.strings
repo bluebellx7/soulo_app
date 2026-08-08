@@ -1,6 +1,6 @@
 /* App */
 "app_name" = "Soulo";
-"app_subtitle" = "ค้นหาทุกอย่าง ทุกที่";
+"app_subtitle" = "ค้นหาครั้งเดียว กว่า 40 แพลตฟอร์ม";
 
 /* Search */
 "search_placeholder" = "ค้นหาหรือป้อน URL";
@@ -278,10 +278,13 @@
 "switch_to_bing_desc" = "เปิดใช้วอลล์เปเปอร์ Bing ประจำวันเพื่อเรียกดูพื้นหลังสวยงามด้วยกังหันลม";
 
 "open_external_title" = "เปิดแอปภายนอก?";
+"open_external_failed" = "ไม่สามารถเปิดแอปภายนอกได้";
+"safari_compatibility_mode" = "โหมดความเข้ากันได้ของ Safari";
+"open_in_default_browser" = "เปิดในเบราว์เซอร์เริ่มต้น";
 "open_external_message" = "ลิงก์นี้จะเปิดแอปอื่น คุณต้องการดำเนินการต่อหรือไม่?";
 
 "ai_loading_page" = "กำลังโหลดแพลตฟอร์ม AI...";
-"ai_loading_input" = "AI ภายในเครื่องกำลังวิเคราะห์และพิมพ์...";
+"ai_loading_input" = "กำลังกรอกและส่งคำถามของคุณ...";
 
 /* Widget */
 "widget_search" = "ค้นหาด่วน";
@@ -450,6 +453,8 @@
 "downloads_finished" = "Finished";
 "downloads_failed" = "Failed";
 "downloads_canceled" = "Canceled";
+"live_activity" = "Dynamic Island";
+"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
@@ -484,3 +489,11 @@
 "privacy_cookie_banners" = "Handle Cookie Prompts";
 "privacy_cookie_banners_desc" = "Try to reject or dismiss common cookie consent banners.";
 "example" = "ตัวอย่าง";
+
+/* การนำทางเบราว์เซอร์ */
+"browser_back" = "ย้อนกลับ";
+"browser_forward" = "ถัดไป";
+"browser_reload" = "โหลดใหม่";
+"browser_edit_address" = "แก้ไขที่อยู่หรือการค้นหา";
+"tab_limit_title" = "ถึงขีดจำกัดแท็บแล้ว";
+"tab_limit_message" = "คุณสามารถเปิดแท็บไว้ได้สูงสุด 20 แท็บ โปรดปิดหนึ่งแท็บก่อนเปิดแท็บใหม่";

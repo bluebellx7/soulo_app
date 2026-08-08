@@ -79,7 +79,6 @@ struct HomeView: View {
                 TabSwitcherOverlay(
                     tabManager: tabManager,
                     onSelectTab: { index in
-                        HapticsManager.selection()
                         tabManager.switchToTab(at: index)
                         searchVM.isSearching = true
                     },
@@ -254,40 +253,17 @@ struct HomeView: View {
             Spacer()
             Spacer()
 
-            // Bottom bar: pinwheel left, credit center, download right
-            HStack {
-                // Pinwheel button - tap to switch wallpaper randomly
-                PinwheelButton {
-                    Task { await wallpaperManager.refreshRandom() }
-                }
-
-                Spacer()
-
-                // Wallpaper Credit: Show search topic or source
-                Text(wallpaperManager.source == .bing ? "Bing Daily" : wallpaperManager.searchTopic)
-                    .font(.system(size: 8))
-                    .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.3) : .white.opacity(0.15))
-                    .lineLimit(1)
-
-                Spacer()
-
-                // Download wallpaper button
-                if wallpaperManager.currentImage != nil || wallpaperManager.customImage != nil {
-                    Button {
-                        saveWallpaperToPhotos()
-                    } label: {
-                        Image(systemName: "arrow.down.circle")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.5) : .white.opacity(0.3))
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 6)
+            // Keep the footer informational only so search remains the single focal point.
+            Text(wallpaperManager.source == .bing ? "Bing Daily" : wallpaperManager.searchTopic)
+                .font(.system(size: 8, weight: .medium))
+                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.28) : .white.opacity(0.16))
+                .lineLimit(1)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 8)
         }
     }
 
-    // MARK: - Top Bar (FocusLock-style: small frosted glass buttons)
+    // MARK: - Top Bar
 
     // MARK: - Home Group Picker
 
@@ -423,17 +399,64 @@ struct HomeView: View {
 
             Spacer()
 
-            miniButton(icon: "clock.arrow.circlepath") {
-                showHistory = true
-            }
-            miniButton(icon: "bookmark") {
-                showBookmarks = true
-            }
-            miniButton(icon: "gearshape") {
-                showSettings = true
-            }
+            homeMenu
         }
         .padding(.horizontal, 16)
+    }
+
+    private var homeMenu: some View {
+        Menu {
+            Button {
+                showHistory = true
+            } label: {
+                Label(LanguageManager.shared.localizedString("search_history"), systemImage: "clock.arrow.circlepath")
+            }
+
+            Button {
+                showBookmarks = true
+            } label: {
+                Label(LanguageManager.shared.localizedString("bookmarks"), systemImage: "bookmark")
+            }
+
+            Divider()
+
+            Button {
+                Task { await wallpaperManager.refreshRandom() }
+            } label: {
+                Label(LanguageManager.shared.localizedString("wallpaper_refresh"), systemImage: "sparkles")
+            }
+
+            if wallpaperManager.currentImage != nil || wallpaperManager.customImage != nil {
+                Button {
+                    saveWallpaperToPhotos()
+                } label: {
+                    Label(LanguageManager.shared.localizedString("wallpaper_download"), systemImage: "square.and.arrow.down")
+                }
+            }
+
+            Divider()
+
+            Button {
+                showSettings = true
+            } label: {
+                Label(LanguageManager.shared.localizedString("settings"), systemImage: "gearshape")
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.78) : .white.opacity(0.68))
+                .frame(width: 34, height: 34)
+                .background {
+                    if wallpaperManager.isCurrentWallpaperLight {
+                        Circle().fill(Color.black.opacity(0.04))
+                    } else {
+                        Circle().fill(.ultraThinMaterial.opacity(0.3))
+                    }
+                }
+                .frame(width: 44, height: 44)
+                .contentShape(Circle())
+        }
+        .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
     }
 
     // FocusLock-style mini button: ultraThinMaterial, 0.3 opacity, small circle

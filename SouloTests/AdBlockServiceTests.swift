@@ -87,6 +87,8 @@ final class AdBlockServiceTests: XCTestCase {
 
         XCTAssertTrue(unlessDomain.contains("*example.com"))
         XCTAssertTrue(unlessDomain.contains("example.com"))
+        XCTAssertTrue(unlessDomain.contains("*weixin.qq.com"))
+        XCTAssertTrue(unlessDomain.contains("weixin.qq.com"))
     }
 
     func testEncodedContentRulesPreserveStructuredSubscriptionConditions() throws {

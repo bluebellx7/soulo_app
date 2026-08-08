@@ -77,6 +77,7 @@ final class TabManager: ObservableObject {
     @Published var activeTabIndex: Int = 0
     @Published var showTabOverview: Bool = false
     @Published var recentlyClosed: [RecentlyClosedTab] = []
+    @Published var didReachTabLimit: Bool = false
 
     // Find in Page
     @Published var showFindInPage: Bool = false
@@ -88,7 +89,9 @@ final class TabManager: ObservableObject {
 
     static let maxTabs = 20
     static let maxRecentlyClosed = 10
-    static let aliveWindow = maxTabs
+    /// Keep the active tab and a small neighborhood warm. Older tabs retain their
+    /// URL and snapshot but release WebKit, avoiding memory pressure with many tabs.
+    static let aliveWindow = 2
 
     private static let storageKey = "soulo_saved_tabs"
 
@@ -131,16 +134,13 @@ final class TabManager: ObservableObject {
 
     @discardableResult
     func createTab(url: URL? = nil, keyword: String? = nil, platform: SearchPlatform? = nil, switchTo: Bool = true) -> BrowserTab {
-        let tab = BrowserTab(keyword: keyword, platform: platform)
-
         if tabs.count >= Self.maxTabs {
-            // Evict the oldest non-active tab by creation date
-            let oldestIndex = tabs.indices
-                .filter { $0 != activeTabIndex }
-                .min(by: { tabs[$0].createdAt < tabs[$1].createdAt }) ?? 0
-            closeTab(at: oldestIndex, animated: false)
+            // Never discard a user's tab just because another page requested a new one.
+            didReachTabLimit = true
+            return activeTab ?? tabs[0]
         }
 
+        let tab = BrowserTab(keyword: keyword, platform: platform)
         tabs.append(tab)
 
         if switchTo {
@@ -345,8 +345,7 @@ final class TabManager: ObservableObject {
             guard let self,
                   let currentIndex = self.tabs.firstIndex(where: { $0.id == tabID }),
                   !self.tabs[currentIndex].isAlive else { return }
-            webViewModel.webView?.stopLoading()
-            webViewModel.webView?.loadHTMLString("", baseURL: nil)
+            webViewModel.releaseWebViewRuntime()
         }
     }
 
@@ -428,10 +427,10 @@ final class TabManager: ObservableObject {
 
         if desktopModeTabs.contains(tab.id) {
             desktopModeTabs.remove(tab.id)
-            webView.customUserAgent = AppConstants.webViewUserAgent
+            tab.webViewModel.setDesktopModeEnabled(false)
         } else {
             desktopModeTabs.insert(tab.id)
-            webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15"
+            tab.webViewModel.setDesktopModeEnabled(true)
         }
         webView.reload()
     }
@@ -509,4 +508,5 @@ extension Notification.Name {
     static let openInNewTab = Notification.Name("soulo.openInNewTab")
     static let cancelActiveDownloads = Notification.Name("soulo.cancelActiveDownloads")
     static let linkCopied = Notification.Name("soulo.linkCopied")
+    static let browserDownloadFailed = Notification.Name("soulo.browserDownloadFailed")
 }

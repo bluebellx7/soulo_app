@@ -24,7 +24,8 @@ struct PlatformTabBar: View {
                         .id(platform.id)
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.leading, 4)
+                .padding(.trailing, 16)
                 .padding(.vertical, 6)
             }
             .onChange(of: selectedPlatform) { _, newValue in

@@ -1,6 +1,61 @@
 import SwiftUI
 import WebKit
 
+enum WebNavigationErrorClassifier {
+    static func isExpectedInterruption(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorCancelled {
+            return true
+        }
+
+        let webKitDomains: Set<String> = [WKError.errorDomain, "WebKitErrorDomain", "WKErrorDomain"]
+        // WebKit's long-standing policy-change interruption code is 102. Some
+        // SDK overlays do not expose a named Swift enum case for it.
+        return webKitDomains.contains(nsError.domain) && nsError.code == 102
+    }
+}
+
+enum BrowserPopupPolicy {
+    static func shouldPreserveJavaScriptContext(
+        navigationType: WKNavigationType,
+        url: URL
+    ) -> Bool {
+        navigationType == .other || url.scheme?.lowercased() == "about"
+    }
+}
+
+enum BrowserDownloadPolicy {
+    private static let downloadableMIMEPrefixes = [
+        "application/pdf",
+        "application/zip",
+        "application/x-zip-compressed",
+        "application/octet-stream",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument",
+        "application/x-tar",
+        "application/gzip",
+        "text/csv",
+    ]
+
+    static func shouldDownload(
+        requestedByPage: Bool = false,
+        canShowMIMEType: Bool = true,
+        mimeType: String? = nil,
+        contentDisposition: String? = nil
+    ) -> Bool {
+        if requestedByPage || !canShowMIMEType {
+            return true
+        }
+
+        if contentDisposition?.lowercased().contains("attachment") == true {
+            return true
+        }
+
+        let normalizedMIMEType = mimeType?.lowercased() ?? ""
+        return downloadableMIMEPrefixes.contains { normalizedMIMEType.hasPrefix($0) }
+    }
+}
+
 // MARK: - WebViewRepresentable
 
 struct WebViewRepresentable: UIViewRepresentable {
@@ -86,6 +141,19 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         contentController.add(context.coordinator, name: "souloAdBlocker")
         contentController.add(context.coordinator, name: "souloPrivacy")
+        contentController.addScriptMessageHandler(
+            context.coordinator,
+            contentWorld: .page,
+            name: "souloDownload"
+        )
+
+        contentController.addUserScript(
+            WKUserScript(
+                source: WebViewScripts.downloadBridge,
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: false
+            )
+        )
 
         contentController.addUserScript(
             WKUserScript(
@@ -100,7 +168,9 @@ struct WebViewRepresentable: UIViewRepresentable {
                 source: WebViewScripts.privacyProtection(
                     gpcEnabled: gpcEnabled,
                     cookieBannerHandling: cookieBannerEnabled,
-                    disabledHosts: privacyService.protectionDisabledHosts
+                    disabledHosts: WebCompatibilityService.protectionBypassHosts(
+                        adding: privacyService.protectionDisabledHosts
+                    )
                 ),
                 injectionTime: .atDocumentEnd,
                 forMainFrameOnly: false
@@ -110,14 +180,22 @@ struct WebViewRepresentable: UIViewRepresentable {
         // Long-press context menus are handled natively via WKUIDelegate contextMenuConfigurationForElement.
 
         // Ad blocking: inject CSS/JS to hide ad elements.
-        let hostIsAllowlisted = adBlockSettings.isAllowlisted(viewModel.currentURL?.host)
+        let protectionBypassHosts = WebCompatibilityService.protectionBypassHosts(
+            adding: adBlockSettings.allowlistedHosts
+        )
+        let shouldBypassWebProtection = WebCompatibilityService.shouldBypassWebProtection(
+            for: viewModel.currentURL,
+            fallbackHost: viewModel.currentURL?.host
+        )
+        let hostIsAllowlisted = shouldBypassWebProtection
+            || adBlockSettings.isAllowlisted(viewModel.currentURL?.host)
             || privacyService.isProtectionDisabled(for: viewModel.currentURL?.host)
         if adBlockEnabled && !hostIsAllowlisted && (adBlockCosmeticEnabled || adBlockPopupEnabled) {
             let adScript = WKUserScript(
                 source: AdBlockService.adHidingScript(
                     cosmetic: adBlockCosmeticEnabled,
                     popups: adBlockPopupEnabled,
-                    allowlistedHosts: adBlockSettings.allowlistedHosts
+                    allowlistedHosts: protectionBypassHosts
                 ),
                 injectionTime: .atDocumentEnd,
                 forMainFrameOnly: false
@@ -142,8 +220,8 @@ struct WebViewRepresentable: UIViewRepresentable {
         webView.scrollView.backgroundColor = UIColor.systemBackground
         webView.isOpaque = true
 
-        // Apply custom user agent
-        webView.customUserAgent = AppConstants.webViewUserAgent
+        // Apply per-tab UA/content-mode preferences before each navigation or restore.
+        viewModel.applyWebPreferences(to: webView)
 
         // KVO observations
         context.coordinator.observe(webView: webView, viewModel: viewModel)
@@ -159,17 +237,24 @@ struct WebViewRepresentable: UIViewRepresentable {
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
         // URL loading is driven imperatively via viewModel.loadURL(_:)
+        let host = uiView.url?.host ?? viewModel.currentURL?.host
+        let shouldBypassWebProtection = WebCompatibilityService.shouldBypassWebProtection(
+            for: uiView.url ?? viewModel.currentURL,
+            fallbackHost: host
+        )
+        let adBlockAllowlist = WebCompatibilityService.protectionBypassHosts(
+            adding: adBlockSettings.allowlistedHosts
+        )
         context.coordinator.applyAdHidingIfNeeded(
             on: uiView,
-            enabled: adBlockEnabled,
+            enabled: adBlockEnabled && !shouldBypassWebProtection,
             cosmetic: adBlockCosmeticEnabled,
             popups: adBlockPopupEnabled,
-            allowlistedHosts: adBlockSettings.allowlistedHosts,
-            host: uiView.url?.host ?? viewModel.currentURL?.host
+            allowlistedHosts: adBlockAllowlist,
+            host: host
         )
-        let host = uiView.url?.host ?? viewModel.currentURL?.host
-        if adBlockEnabled && adBlockNetworkEnabled && !privacyService.isProtectionDisabled(for: host) {
-            Self.ensureCurrentContentRules(on: uiView, allowlist: adBlockSettings.allowlistedHosts)
+        if adBlockEnabled && adBlockNetworkEnabled && !privacyService.isProtectionDisabled(for: host) && !shouldBypassWebProtection {
+            Self.ensureCurrentContentRules(on: uiView, allowlist: adBlockAllowlist)
         } else {
             uiView.configuration.userContentController.removeAllContentRuleLists()
             Self.installedContentRuleSignatures.removeValue(forKey: ObjectIdentifier(uiView))
@@ -227,6 +312,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         coordinator.invalidateObservations()
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloAdBlocker")
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloPrivacy")
+        uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloDownload")
         uiView.configuration.userContentController.removeAllUserScripts()
         uiView.configuration.userContentController.removeAllContentRuleLists()
         installedContentRuleSignatures.removeValue(forKey: ObjectIdentifier(uiView))
@@ -235,19 +321,32 @@ struct WebViewRepresentable: UIViewRepresentable {
 
     // MARK: - Coordinator
 
-    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, UIScrollViewDelegate, WKDownloadDelegate, WKScriptMessageHandler {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, UIScrollViewDelegate, WKDownloadDelegate, WKScriptMessageHandler, WKScriptMessageHandlerWithReply {
+        private struct PageDownloadTransfer {
+            let itemID: UUID
+            let fileURL: URL
+            let fileName: String
+            let fileHandle: FileHandle
+            var nextChunkIndex: Int
+        }
+
         private var lastContentOffset: CGFloat = 0
+        private var lastReportedScrollingUp: Bool?
+        private var isUserZooming = false
+        private var accumulatedScrollDelta: CGFloat = 0
 
         private let viewModel: WebViewModel
         private var observations: [NSKeyValueObservation] = []
         private var downloadIDs: [ObjectIdentifier: UUID] = [:]
         private var activeDownloads: [ObjectIdentifier: WKDownload] = [:]
+        private var activeDownloadNames: [ObjectIdentifier: String] = [:]
+        private var pageDownloadTransfers: [String: PageDownloadTransfer] = [:]
         private var downloadCancelObserver: NSObjectProtocol?
         private var lastAdHidingSignature = ""
         private var httpsUpgradeFallbacks: [String: URL] = [:]
         private var oneShotHTTPFallbacks = Set<String>()
         private var privacyHeaderBypassURLs = Set<String>()
-        private var blankPageRecoveryURLs = Set<String>()
+        private var blankPageRecoveryAttempts: [String: Int] = [:]
         private var terminatedProcessRecoveryURLs = Set<String>()
         private var navigationGeneration = UUID()
 
@@ -296,6 +395,167 @@ struct WebViewRepresentable: UIViewRepresentable {
                 default:
                     break
                 }
+            }
+        }
+
+        func userContentController(
+            _ userContentController: WKUserContentController,
+            didReceive message: WKScriptMessage,
+            replyHandler: @escaping (Any?, String?) -> Void
+        ) {
+            guard message.name == "souloDownload",
+                  let body = message.body as? [String: Any] else {
+                replyHandler(nil, "Invalid download message")
+                return
+            }
+            Task { @MainActor [weak self] in
+                self?.handlePageDownloadMessage(body, replyHandler: replyHandler)
+            }
+        }
+
+        @MainActor
+        private func handlePageDownloadMessage(
+            _ body: [String: Any],
+            replyHandler: @escaping (Any?, String?) -> Void
+        ) {
+            let type = body["type"] as? String ?? ""
+            guard let transferID = body["downloadID"] as? String,
+                  !transferID.isEmpty else {
+                replyHandler(nil, "Missing download identifier")
+                return
+            }
+            let suggestedFilename = (body["filename"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let filename = suggestedFilename.flatMap { $0.isEmpty ? nil : $0 } ?? "Download"
+            let manager = DownloadManagerService.shared
+
+            switch type {
+            case "started":
+                if let existing = pageDownloadTransfers.removeValue(forKey: transferID) {
+                    try? existing.fileHandle.close()
+                    manager.markCanceled(id: existing.itemID)
+                }
+                let sourceURL = (body["sourceURL"] as? String).flatMap(URL.init(string:))
+                let (item, fileURL) = manager.beginDownload(
+                    suggestedFilename: filename,
+                    sourceURL: sourceURL
+                )
+                guard FileManager.default.createFile(atPath: fileURL.path, contents: nil) else {
+                    let error = CocoaError(.fileWriteUnknown)
+                    manager.markFailed(id: item.id, error: error)
+                    finishPageDownloadWithError()
+                    replyHandler(nil, error.localizedDescription)
+                    return
+                }
+                do {
+                    let fileHandle = try FileHandle(forWritingTo: fileURL)
+                    pageDownloadTransfers[transferID] = PageDownloadTransfer(
+                        itemID: item.id,
+                        fileURL: fileURL,
+                        fileName: item.fileName,
+                        fileHandle: fileHandle,
+                        nextChunkIndex: 0
+                    )
+                    refreshDownloadPresentation(preferredFilename: item.fileName)
+                    replyHandler(["accepted": true], nil)
+                } catch {
+                    try? FileManager.default.removeItem(at: fileURL)
+                    manager.markFailed(id: item.id, error: error)
+                    finishPageDownloadWithError()
+                    replyHandler(nil, error.localizedDescription)
+                }
+
+            case "chunk":
+                guard var transfer = pageDownloadTransfers[transferID],
+                      let encodedChunk = body["base64"] as? String,
+                      let chunk = Data(base64Encoded: encodedChunk),
+                      let chunkIndex = numericMessageValue(body["index"]),
+                      chunkIndex == transfer.nextChunkIndex else {
+                    replyHandler(nil, "Invalid or out-of-order download chunk")
+                    return
+                }
+                do {
+                    try transfer.fileHandle.write(contentsOf: chunk)
+                    transfer.nextChunkIndex += 1
+                    pageDownloadTransfers[transferID] = transfer
+                    replyHandler(["received": chunkIndex], nil)
+                } catch {
+                    pageDownloadTransfers.removeValue(forKey: transferID)
+                    try? transfer.fileHandle.close()
+                    try? FileManager.default.removeItem(at: transfer.fileURL)
+                    manager.markFailed(id: transfer.itemID, error: error)
+                    refreshDownloadPresentation()
+                    finishPageDownloadWithError()
+                    replyHandler(nil, error.localizedDescription)
+                }
+
+            case "finished":
+                guard let transfer = pageDownloadTransfers.removeValue(forKey: transferID) else {
+                    replyHandler(nil, "Download was canceled")
+                    return
+                }
+                do {
+                    try transfer.fileHandle.close()
+                    manager.markFinished(id: transfer.itemID)
+                    refreshDownloadPresentation()
+                    replyHandler(["finished": true], nil)
+                    presentDownloadedFile(transfer.fileURL)
+                } catch {
+                    try? FileManager.default.removeItem(at: transfer.fileURL)
+                    manager.markFailed(id: transfer.itemID, error: error)
+                    refreshDownloadPresentation()
+                    finishPageDownloadWithError()
+                    replyHandler(nil, error.localizedDescription)
+                }
+
+            case "failed":
+                let message = body["message"] as? String ?? ""
+                if let transfer = pageDownloadTransfers.removeValue(forKey: transferID) {
+                    try? transfer.fileHandle.close()
+                    try? FileManager.default.removeItem(at: transfer.fileURL)
+                    if message.localizedCaseInsensitiveContains("canceled") {
+                        manager.markCanceled(id: transfer.itemID)
+                    } else {
+                        let error = NSError(
+                            domain: "Soulo.PageDownload",
+                            code: 1,
+                            userInfo: [NSLocalizedDescriptionKey: message]
+                        )
+                        manager.markFailed(id: transfer.itemID, error: error)
+                        finishPageDownloadWithError()
+                    }
+                }
+                refreshDownloadPresentation()
+                replyHandler(["failed": true], nil)
+
+            default:
+                replyHandler(nil, "Unknown download message")
+            }
+        }
+
+        private func numericMessageValue(_ value: Any?) -> Int? {
+            if let value = value as? Int { return value }
+            if let value = value as? NSNumber { return value.intValue }
+            if let value = value as? String { return Int(value) }
+            return nil
+        }
+
+        @MainActor
+        private func refreshDownloadPresentation(preferredFilename: String? = nil) {
+            let activeCount = activeDownloads.count + pageDownloadTransfers.count
+            let fallbackFilename = pageDownloadTransfers.values.first?.fileName
+                ?? activeDownloadNames.values.first
+            viewModel.updateDownloadState(
+                activeCount: activeCount,
+                fileName: preferredFilename ?? fallbackFilename
+            )
+        }
+
+        private func finishPageDownloadWithError() {
+            Task { @MainActor in
+                NotificationCenter.default.post(
+                    name: .browserDownloadFailed,
+                    object: viewModel
+                )
             }
         }
 
@@ -400,7 +660,9 @@ struct WebViewRepresentable: UIViewRepresentable {
                 WebViewScripts.privacyProtection(
                     gpcEnabled: defaults.object(forKey: "privacy_gpc_enabled") as? Bool ?? true,
                     cookieBannerHandling: defaults.object(forKey: "privacy_cookie_banner_enabled") as? Bool ?? true,
-                    disabledHosts: defaults.stringArray(forKey: "soulo_privacy_disabled_hosts") ?? []
+                    disabledHosts: WebCompatibilityService.protectionBypassHosts(
+                        adding: defaults.stringArray(forKey: "soulo_privacy_disabled_hosts") ?? []
+                    )
                 ),
                 completionHandler: nil
             )
@@ -410,6 +672,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
             navigationGeneration = UUID()
+            resetScrollChromeState()
             Task { @MainActor in
                 viewModel.errorMessage = nil
             }
@@ -424,6 +687,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            webView.scrollView.refreshControl?.endRefreshing()
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.viewModel.updateLoading(false)
@@ -478,8 +742,9 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         private func handleNavigationError(_ error: Error) {
+            viewModel.webView?.scrollView.refreshControl?.endRefreshing()
+            guard !WebNavigationErrorClassifier.isExpectedInterruption(error) else { return }
             let nsError = error as NSError
-            guard nsError.code != NSURLErrorCancelled else { return }
             Task { @MainActor in
                 let message: String
                 switch nsError.code {
@@ -518,20 +783,40 @@ struct WebViewRepresentable: UIViewRepresentable {
                           error == nil,
                           self.navigationGeneration == generation,
                           webView.url?.absoluteString == urlString,
-                          !webView.isLoading,
-                          self.shouldRecoverBlankPage(from: result),
-                          !self.blankPageRecoveryURLs.contains(urlString) else {
+                          !webView.isLoading else {
                         return
                     }
 
-                    self.blankPageRecoveryURLs.insert(urlString)
-                    self.navigationGeneration = UUID()
-                    Task { @MainActor in
-                        self.viewModel.errorMessage = nil
-                        self.viewModel.updateLoading(true)
+                    guard self.shouldRecoverBlankPage(from: result) else {
+                        self.blankPageRecoveryAttempts.removeValue(forKey: urlString)
+                        return
                     }
-                    webView.reload()
+
+                    self.recoverBlankPage(on: webView, url: url, urlString: urlString)
                 }
+            }
+        }
+
+        private func recoverBlankPage(on webView: WKWebView, url: URL, urlString: String) {
+            let attempt = blankPageRecoveryAttempts[urlString, default: 0]
+            guard attempt < 2 else {
+                Task { @MainActor in
+                    viewModel.setError(LanguageManager.shared.localizedString("load_error"))
+                }
+                return
+            }
+
+            blankPageRecoveryAttempts[urlString] = attempt + 1
+            navigationGeneration = UUID()
+            Task { @MainActor in
+                viewModel.errorMessage = nil
+                viewModel.updateLoading(true)
+            }
+
+            if attempt == 0 {
+                webView.reload()
+            } else {
+                webView.load(URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30))
             }
         }
 
@@ -584,6 +869,11 @@ struct WebViewRepresentable: UIViewRepresentable {
                 return
             }
 
+            if BrowserDownloadPolicy.shouldDownload(requestedByPage: navigationAction.shouldPerformDownload) {
+                decisionHandler(.download)
+                return
+            }
+
             switch WebNavigationPolicyService.shared.decision(for: url) {
             case .allow:
                 let method = navigationAction.request.httpMethod?.uppercased() ?? "GET"
@@ -630,7 +920,10 @@ struct WebViewRepresentable: UIViewRepresentable {
                 decisionHandler(.cancel)
             case .external(let externalURL):
                 decisionHandler(.cancel)
-                postExternalURLRequestIfNeeded(externalURL)
+                routeExternalURL(
+                    externalURL,
+                    userInitiated: navigationAction.navigationType == .linkActivated
+                )
             }
         }
 
@@ -638,6 +931,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             guard let url = request.url,
                   let scheme = url.scheme?.lowercased(),
                   scheme == "http" || scheme == "https",
+                  !WebCompatibilityService.shouldBypassWebProtection(for: url, fallbackHost: url.host),
                   !PrivacyProtectionService.isProtectionDisabled(url.host) else {
                 return nil
             }
@@ -690,13 +984,30 @@ struct WebViewRepresentable: UIViewRepresentable {
             return nil
         }
 
-        private func postExternalURLRequestIfNeeded(_ url: URL) {
-            if ExternalNavigationService.shared.shouldSilentlyBlock(url) { return }
+        private func postExternalURLRequestIfNeeded(
+            _ url: URL,
+            explicitUserAction: Bool = false
+        ) {
+            if !explicitUserAction,
+               ExternalNavigationService.shared.shouldSilentlyBlock(url) { return }
             NotificationCenter.default.post(
                 name: .webViewExternalURLRequest,
                 object: nil,
-                userInfo: ["url": url]
+                userInfo: [
+                    "url": url,
+                    "explicitUserAction": explicitUserAction
+                ]
             )
+        }
+
+        private func routeExternalURL(_ url: URL, userInitiated _: Bool) {
+            if WebNavigationPolicyService.shared.isAppleAppStoreURL(url) {
+                // Explicit downloads always ask before leaving Soulo. They are not
+                // swallowed by the setting that blocks unsolicited app jumps.
+                postExternalURLRequestIfNeeded(url, explicitUserAction: true)
+                return
+            }
+            postExternalURLRequestIfNeeded(url)
         }
 
         private func applyCurrentAdHidingIfNeeded(on webView: WKWebView) {
@@ -719,23 +1030,13 @@ struct WebViewRepresentable: UIViewRepresentable {
             decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void
         ) {
             let response = navigationResponse.response
-            let mimeType = response.mimeType ?? ""
-
-            // Detect files that should be downloaded, not displayed
-            let downloadMIME = [
-                "application/pdf", "application/zip", "application/x-zip-compressed",
-                "application/octet-stream", "application/msword",
-                "application/vnd.openxmlformats-officedocument", "application/x-tar",
-                "application/gzip", "text/csv",
-            ]
-            let isDownload = downloadMIME.contains(where: { mimeType.hasPrefix($0) })
-                || (response.suggestedFilename?.contains(".") == true
-                    && !["html", "htm", "php", "asp", "jsp"].contains(
-                        (response.suggestedFilename as? NSString)?.pathExtension.lowercased() ?? ""
-                    )
-                    && mimeType == "application/octet-stream")
-
-            if isDownload {
+            let contentDisposition = (response as? HTTPURLResponse)?
+                .value(forHTTPHeaderField: "Content-Disposition")
+            if BrowserDownloadPolicy.shouldDownload(
+                canShowMIMEType: navigationResponse.canShowMIMEType,
+                mimeType: response.mimeType,
+                contentDisposition: contentDisposition
+            ) {
                 decisionHandler(.download)
             } else {
                 decisionHandler(.allow)
@@ -745,14 +1046,16 @@ struct WebViewRepresentable: UIViewRepresentable {
         // MARK: Navigation becomes download
 
         func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) {
+            webView.scrollView.refreshControl?.endRefreshing()
             download.delegate = self
         }
 
         func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) {
+            webView.scrollView.refreshControl?.endRefreshing()
             download.delegate = self
         }
 
-        // MARK: WKUIDelegate — open target="_blank" links in new tab
+        // MARK: WKUIDelegate — route target="_blank" links
 
         func webView(
             _ webView: WKWebView,
@@ -762,12 +1065,35 @@ struct WebViewRepresentable: UIViewRepresentable {
         ) -> WKWebView? {
             if navigationAction.targetFrame == nil || !(navigationAction.targetFrame?.isMainFrame ?? false) {
                 if let url = navigationAction.request.url {
-                    // Open in a new tab via notification
-                    NotificationCenter.default.post(
-                        name: .openInNewTab,
-                        object: nil,
-                        userInfo: ["url": url]
-                    )
+                    switch WebNavigationPolicyService.shared.decision(for: url) {
+                    case .allow:
+                        if BrowserPopupPolicy.shouldPreserveJavaScriptContext(
+                            navigationType: navigationAction.navigationType,
+                            url: url
+                        ) {
+                            return makeEmbeddedPopup(
+                                in: webView,
+                                configuration: configuration
+                            )
+                        } else {
+                            // Regular target="_blank" links are easier to manage as
+                            // Soulo tabs and do not require a JavaScript opener.
+                            NotificationCenter.default.post(
+                                name: .openInNewTab,
+                                object: nil,
+                                userInfo: ["url": url]
+                            )
+                        }
+                    case .cancel:
+                        break
+                    case .external(let externalURL):
+                        // New-window requests do not pass through the navigation
+                        // delegate, so route them through the same confirmation UI.
+                        routeExternalURL(
+                            externalURL,
+                            userInitiated: true
+                        )
+                    }
                 } else {
                     // Fallback: load in current webView
                     webView.load(navigationAction.request)
@@ -776,19 +1102,62 @@ struct WebViewRepresentable: UIViewRepresentable {
             return nil
         }
 
+        private func makeEmbeddedPopup(
+            in parentWebView: WKWebView,
+            configuration: WKWebViewConfiguration
+        ) -> WKWebView {
+            let container = UIView(frame: parentWebView.bounds)
+            container.backgroundColor = .systemBackground
+            container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+
+            let popupWebView = WKWebView(frame: container.bounds, configuration: configuration)
+            popupWebView.uiDelegate = self
+            popupWebView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            container.addSubview(popupWebView)
+
+            var buttonConfiguration = UIButton.Configuration.filled()
+            buttonConfiguration.image = UIImage(systemName: "xmark")
+            buttonConfiguration.baseForegroundColor = .label
+            buttonConfiguration.baseBackgroundColor = .secondarySystemBackground
+            buttonConfiguration.cornerStyle = .capsule
+            let closeButton = UIButton(configuration: buttonConfiguration)
+            closeButton.translatesAutoresizingMaskIntoConstraints = false
+            closeButton.accessibilityLabel = LanguageManager.shared.localizedString("cancel")
+            closeButton.addTarget(self, action: #selector(closeEmbeddedPopup(_:)), for: .touchUpInside)
+            container.addSubview(closeButton)
+
+            NSLayoutConstraint.activate([
+                closeButton.topAnchor.constraint(equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 10),
+                closeButton.trailingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.trailingAnchor, constant: -12),
+                closeButton.widthAnchor.constraint(equalToConstant: 44),
+                closeButton.heightAnchor.constraint(equalToConstant: 44)
+            ])
+            parentWebView.addSubview(container)
+            return popupWebView
+        }
+
+        @objc private func closeEmbeddedPopup(_ sender: UIButton) {
+            sender.superview?.removeFromSuperview()
+        }
+
+        func webViewDidClose(_ webView: WKWebView) {
+            guard webView !== viewModel.webView else { return }
+            webView.superview?.removeFromSuperview()
+        }
+
         // MARK: WKUIDelegate — JS alert / confirm / prompt
 
         func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
             let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in completionHandler() })
-            topViewController()?.present(alert, animated: true) ?? completionHandler()
+            topViewController(for: webView)?.present(alert, animated: true) ?? completionHandler()
         }
 
         func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
             let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in completionHandler(true) })
             alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in completionHandler(false) })
-            topViewController()?.present(alert, animated: true) ?? completionHandler(false)
+            topViewController(for: webView)?.present(alert, animated: true) ?? completionHandler(false)
         }
 
         func webView(_ webView: WKWebView, runJavaScriptTextInputPanelWithPrompt prompt: String, defaultText: String?, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (String?) -> Void) {
@@ -796,23 +1165,67 @@ struct WebViewRepresentable: UIViewRepresentable {
             alert.addTextField { $0.text = defaultText }
             alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in completionHandler(alert.textFields?.first?.text) })
             alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in completionHandler(nil) })
-            topViewController()?.present(alert, animated: true) ?? completionHandler(nil)
+            topViewController(for: webView)?.present(alert, animated: true) ?? completionHandler(nil)
         }
 
-        private func topViewController() -> UIViewController? {
-            guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+        private func topViewController(for sourceView: UIView? = nil) -> UIViewController? {
+            let sourceScene = sourceView?.window?.windowScene
+            let activeScene = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .first { $0.activationState == .foregroundActive }
+            guard let scene = sourceScene ?? activeScene,
                   let root = scene.keyWindow?.rootViewController else { return nil }
-            var vc = root
-            while let presented = vc.presentedViewController { vc = presented }
-            return vc
+            return visibleViewController(from: root)
+        }
+
+        private func visibleViewController(from root: UIViewController) -> UIViewController {
+            if let presented = root.presentedViewController {
+                return visibleViewController(from: presented)
+            }
+            if let navigation = root as? UINavigationController,
+               let visible = navigation.visibleViewController {
+                return visibleViewController(from: visible)
+            }
+            if let tabs = root as? UITabBarController,
+               let selected = tabs.selectedViewController {
+                return visibleViewController(from: selected)
+            }
+            return root
+        }
+
+        private func presentActivityController(items: [Any], sourceView: UIView?) {
+            guard let viewController = topViewController(for: sourceView) else { return }
+            let activityController = UIActivityViewController(
+                activityItems: items,
+                applicationActivities: nil
+            )
+            if let popover = activityController.popoverPresentationController {
+                guard let anchorView = sourceView ?? viewController.view else { return }
+                popover.sourceView = anchorView
+                popover.sourceRect = CGRect(
+                    x: anchorView.bounds.midX,
+                    y: anchorView.bounds.midY,
+                    width: 1,
+                    height: 1
+                )
+                popover.permittedArrowDirections = []
+            }
+            viewController.present(activityController, animated: true)
         }
 
         // MARK: Pull-to-Refresh
 
         @objc func handleRefresh(_ control: UIRefreshControl) {
-            viewModel.webView?.reload()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            guard let webView = viewModel.webView, webView.url != nil else {
                 control.endRefreshing()
+                return
+            }
+            webView.reload()
+
+            // Completion normally ends the control in didFinish/didFail. Keep a
+            // defensive timeout so a stalled WebKit process never leaves it spinning.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 15.0) { [weak control] in
+                control?.endRefreshing()
             }
         }
 
@@ -820,17 +1233,95 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func scrollViewDidScroll(_ scrollView: UIScrollView) {
             let currentOffset = scrollView.contentOffset.y
-            let delta = currentOffset - lastContentOffset
-            if currentOffset > 50 {
-                if delta > 10 {
-                    Task { @MainActor in viewModel.isScrollingUp = true }
-                } else if delta < -10 {
-                    Task { @MainActor in viewModel.isScrollingUp = false }
-                }
-            } else {
-                Task { @MainActor in viewModel.isScrollingUp = false }
+
+            guard !isUserZooming,
+                  !scrollView.isZooming,
+                  !scrollView.isZoomBouncing else {
+                lastContentOffset = currentOffset
+                return
             }
+
+            guard scrollView.isTracking || scrollView.isDragging || scrollView.isDecelerating else {
+                lastContentOffset = currentOffset
+                return
+            }
+
+            let minOffset = -scrollView.adjustedContentInset.top
+            let maxOffset = max(
+                minOffset,
+                scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom
+            )
+            let scrollableRange = maxOffset - minOffset
+
+            guard scrollableRange > max(180, scrollView.bounds.height * 0.35) else {
+                setScrollingUpIfNeeded(false)
+                accumulatedScrollDelta = 0
+                lastContentOffset = currentOffset
+                return
+            }
+
+            if currentOffset <= minOffset + 72 {
+                setScrollingUpIfNeeded(false)
+                accumulatedScrollDelta = 0
+                lastContentOffset = currentOffset
+                return
+            }
+
+            guard currentOffset <= maxOffset + 24 else {
+                lastContentOffset = currentOffset
+                return
+            }
+
+            let delta = currentOffset - lastContentOffset
             lastContentOffset = currentOffset
+            guard abs(delta) >= 1 else { return }
+
+            if (accumulatedScrollDelta > 0 && delta < 0) || (accumulatedScrollDelta < 0 && delta > 0) {
+                accumulatedScrollDelta = 0
+            }
+            accumulatedScrollDelta += delta
+
+            if accumulatedScrollDelta >= 56, currentOffset > minOffset + 120 {
+                setScrollingUpIfNeeded(true)
+                accumulatedScrollDelta = 0
+            } else if accumulatedScrollDelta <= -40 {
+                setScrollingUpIfNeeded(false)
+                accumulatedScrollDelta = 0
+            }
+        }
+
+        func scrollViewWillBeginZooming(_ scrollView: UIScrollView, with view: UIView?) {
+            isUserZooming = true
+            lastContentOffset = scrollView.contentOffset.y
+        }
+
+        func scrollViewDidZoom(_ scrollView: UIScrollView) {
+            lastContentOffset = scrollView.contentOffset.y
+        }
+
+        func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
+            isUserZooming = false
+            lastContentOffset = scrollView.contentOffset.y
+            accumulatedScrollDelta = 0
+        }
+
+        private func setScrollingUpIfNeeded(_ scrollingUp: Bool) {
+            guard lastReportedScrollingUp != scrollingUp else { return }
+            lastReportedScrollingUp = scrollingUp
+            Task { @MainActor [weak self] in
+                guard let self, self.viewModel.isScrollingUp != scrollingUp else { return }
+                self.viewModel.isScrollingUp = scrollingUp
+            }
+        }
+
+        private func resetScrollChromeState() {
+            lastContentOffset = 0
+            accumulatedScrollDelta = 0
+            lastReportedScrollingUp = nil
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.viewModel.isScrollingUp = false
+            }
         }
 
         // MARK: Native Context Menu (replaces custom JS long-press)
@@ -872,12 +1363,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                     title: LanguageManager.shared.localizedString("share"),
                     image: UIImage(systemName: "square.and.arrow.up")
                 ) { _ in
-                    guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                          let root = scene.keyWindow?.rootViewController else { return }
-                    var vc = root
-                    while let presented = vc.presentedViewController { vc = presented }
-                    let activityVC = UIActivityViewController(activityItems: [linkURL], applicationActivities: nil)
-                    vc.present(activityVC, animated: true)
+                    self.presentActivityController(items: [linkURL], sourceView: webView)
                 }
 
                 return UIMenu(children: [openInNewTab, copyLink, share])
@@ -899,10 +1385,10 @@ struct WebViewRepresentable: UIViewRepresentable {
             )
             downloadIDs[ObjectIdentifier(download)] = item.id
             activeDownloads[ObjectIdentifier(download)] = download
+            activeDownloadNames[ObjectIdentifier(download)] = item.fileName
 
             Task { @MainActor in
-                viewModel.isDownloading = true
-                viewModel.downloadFileName = suggestedFilename
+                refreshDownloadPresentation(preferredFilename: item.fileName)
             }
 
             completionHandler(fileURL)
@@ -911,6 +1397,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         func downloadDidFinish(_ download: WKDownload) {
             let identifier = ObjectIdentifier(download)
             activeDownloads.removeValue(forKey: identifier)
+            activeDownloadNames.removeValue(forKey: identifier)
             let downloadID = downloadIDs.removeValue(forKey: identifier)
             let fileURL = downloadID.flatMap { id in
                 DownloadManagerService.shared.downloads.first(where: { $0.id == id })?.localURL
@@ -919,45 +1406,48 @@ struct WebViewRepresentable: UIViewRepresentable {
                 DownloadManagerService.shared.markFinished(id: downloadID)
             }
             Task { @MainActor in
-                viewModel.isDownloading = false
+                refreshDownloadPresentation()
                 guard let fileURL else { return }
-
-                // Present system share sheet to let user decide where to save
-                guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                      let root = scene.keyWindow?.rootViewController else { return }
-                var vc = root
-                while let presented = vc.presentedViewController { vc = presented }
-
-                let activityVC = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
-                vc.present(activityVC, animated: true)
+                presentDownloadedFile(fileURL)
             }
+        }
+
+        private func presentDownloadedFile(_ fileURL: URL) {
+            presentActivityController(items: [fileURL], sourceView: viewModel.webView)
         }
 
         func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
             let identifier = ObjectIdentifier(download)
             activeDownloads.removeValue(forKey: identifier)
+            activeDownloadNames.removeValue(forKey: identifier)
             let downloadID = downloadIDs.removeValue(forKey: identifier)
-            if let downloadID {
-                DownloadManagerService.shared.markFailed(id: downloadID, error: error)
-            }
             Task { @MainActor in
-                viewModel.isDownloading = false
-                viewModel.setError(LanguageManager.shared.localizedString("save_failed"))
+                refreshDownloadPresentation()
+                guard let downloadID else { return }
+                DownloadManagerService.shared.markFailed(id: downloadID, error: error)
+                finishPageDownloadWithError()
             }
         }
 
         private func cancelActiveDownloads() {
             let downloadsToCancel = activeDownloads
             activeDownloads.removeAll()
+            activeDownloadNames.removeAll()
             for (identifier, download) in downloadsToCancel {
                 if let downloadID = downloadIDs.removeValue(forKey: identifier) {
                     DownloadManagerService.shared.markCanceled(id: downloadID)
                 }
                 download.cancel { _ in }
             }
+            let pageTransfersToCancel = pageDownloadTransfers
+            pageDownloadTransfers.removeAll()
+            for transfer in pageTransfersToCancel.values {
+                try? transfer.fileHandle.close()
+                DownloadManagerService.shared.markCanceled(id: transfer.itemID)
+            }
+            viewModel.webView?.evaluateJavaScript("window.__souloCancelDownloads && window.__souloCancelDownloads();")
             Task { @MainActor in
-                viewModel.isDownloading = false
-                viewModel.downloadFileName = ""
+                refreshDownloadPresentation()
             }
         }
     }

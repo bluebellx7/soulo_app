@@ -10,6 +10,7 @@ struct WebNavigationPolicyService {
     static let shared = WebNavigationPolicyService()
 
     private let webSchemes: Set<String> = ["http", "https", "about", "blob", "data"]
+    private let appStoreDomains: Set<String> = ["apps.apple.com", "itunes.apple.com"]
     private let externalDomains: [String] = [
         "apps.apple.com", "itunes.apple.com",
         "music.apple.com", "podcasts.apple.com", "books.apple.com",
@@ -34,5 +35,24 @@ struct WebNavigationPolicyService {
         }
 
         return .allow
+    }
+
+    func isAppleAppStoreURL(_ url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased(),
+              scheme == "http" || scheme == "https" || scheme == "itms-apps",
+              let host = url.host?.lowercased() else {
+            return false
+        }
+        return appStoreDomains.contains(host)
+    }
+
+    func canUseSafariCompatibilityMode(for url: URL?) -> Bool {
+        guard let url,
+              let scheme = url.scheme?.lowercased(),
+              scheme == "http" || scheme == "https",
+              url.host?.isEmpty == false else {
+            return false
+        }
+        return true
     }
 }

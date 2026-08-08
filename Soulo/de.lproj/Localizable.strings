@@ -1,6 +1,6 @@
 /* App */
 "app_name" = "Soulo";
-"app_subtitle" = "Alles suchen, überall";
+"app_subtitle" = "Eine Suche, über 40 Plattformen";
 "search_placeholder" = "Suchen oder URL eingeben";
 "search" = "Suchen";
 "recent_searches" = "Letzte Suchen";
@@ -216,11 +216,14 @@
 
 /* External URL */
 "open_external_title" = "Externe App öffnen?";
+"open_external_failed" = "Externe App kann nicht geöffnet werden";
+"safari_compatibility_mode" = "Safari-Kompatibilitätsmodus";
+"open_in_default_browser" = "Im Standardbrowser öffnen";
 "open_external_message" = "Dieser Link öffnet eine andere App. Möchten Sie fortfahren?";
 
 /* AI Loading */
 "ai_loading_page" = "KI-Plattform wird geladen...";
-"ai_loading_input" = "Lokale KI analysiert und tippt...";
+"ai_loading_input" = "Frage wird eingegeben und gesendet...";
 
 /* Privacy Settings (extended keys) */
 "privacy_section_browsing" = "Surfen";
@@ -415,6 +418,8 @@ Erzahlen Sie uns:
 "downloads_finished" = "Finished";
 "downloads_failed" = "Failed";
 "downloads_canceled" = "Canceled";
+"live_activity" = "Dynamic Island";
+"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
@@ -467,3 +472,11 @@ Erzahlen Sie uns:
 "wallpaper_source" = "Hintergrundquelle";
 "wallpaper_type" = "Hintergrundtyp";
 "example" = "Beispiel";
+
+/* Browser-Navigation */
+"browser_back" = "Zurück";
+"browser_forward" = "Vorwärts";
+"browser_reload" = "Neu laden";
+"browser_edit_address" = "Adresse oder Suche bearbeiten";
+"tab_limit_title" = "Tab-Limit erreicht";
+"tab_limit_message" = "Du kannst bis zu 20 Tabs geöffnet halten. Schließe einen, bevor du einen neuen öffnest.";

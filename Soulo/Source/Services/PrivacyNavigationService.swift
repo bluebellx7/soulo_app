@@ -75,7 +75,8 @@ struct PrivacyNavigationService {
               scheme == "http" || scheme == "https" else {
             return nil
         }
-        guard !PrivacyProtectionService.isProtectionDisabled(url.host, userDefaults: userDefaults) else {
+        guard !WebCompatibilityService.shouldBypassWebProtection(for: url, fallbackHost: url.host),
+              !PrivacyProtectionService.isProtectionDisabled(url.host, userDefaults: userDefaults) else {
             return nil
         }
 

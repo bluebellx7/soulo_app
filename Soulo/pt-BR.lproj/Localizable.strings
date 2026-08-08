@@ -1,6 +1,6 @@
 /* App */
 "app_name" = "Soulo";
-"app_subtitle" = "Pesquise Tudo, Em Qualquer Lugar";
+"app_subtitle" = "Uma busca, mais de 40 plataformas";
 
 /* Search */
 "search_placeholder" = "Pesquisar ou digitar URL";
@@ -278,10 +278,13 @@
 "switch_to_bing_desc" = "Ative o papel de parede diário do Bing para navegar por belos fundos com o catavento.";
 
 "open_external_title" = "Abrir App Externo?";
+"open_external_failed" = "Não foi possível abrir o app externo";
+"safari_compatibility_mode" = "Modo de compatibilidade com o Safari";
+"open_in_default_browser" = "Abrir no navegador padrão";
 "open_external_message" = "Este link abrirá outro aplicativo. Deseja continuar?";
 
 "ai_loading_page" = "Carregando plataforma de IA...";
-"ai_loading_input" = "IA local analisando e digitando...";
+"ai_loading_input" = "Preenchendo e enviando sua pergunta...";
 
 /* Widget */
 "widget_search" = "Pesquisa Rápida";
@@ -450,6 +453,8 @@
 "downloads_finished" = "Finished";
 "downloads_failed" = "Failed";
 "downloads_canceled" = "Canceled";
+"live_activity" = "Dynamic Island";
+"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
@@ -484,3 +489,11 @@
 "privacy_cookie_banners" = "Handle Cookie Prompts";
 "privacy_cookie_banners_desc" = "Try to reject or dismiss common cookie consent banners.";
 "example" = "Exemplo";
+
+/* Navegação do navegador */
+"browser_back" = "Voltar";
+"browser_forward" = "Avançar";
+"browser_reload" = "Recarregar";
+"browser_edit_address" = "Editar endereço ou busca";
+"tab_limit_title" = "Limite de abas atingido";
+"tab_limit_message" = "Você pode manter até 20 abas. Feche uma antes de abrir outra.";

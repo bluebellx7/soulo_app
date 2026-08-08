@@ -1,6 +1,6 @@
 /* App */
 "app_name" = "Soulo";
-"app_subtitle" = "Tìm kiếm mọi thứ, ở mọi nơi";
+"app_subtitle" = "Một lần nhập, hơn 40 nền tảng";
 "search_placeholder" = "Tìm kiếm hoặc nhập URL";
 "search" = "Tìm kiếm";
 "recent_searches" = "Tìm kiếm gần đây";
@@ -216,11 +216,14 @@
 
 /* External URL */
 "open_external_title" = "Mở ứng dụng bên ngoài?";
+"open_external_failed" = "Không thể mở ứng dụng bên ngoài";
+"safari_compatibility_mode" = "Chế độ tương thích Safari";
+"open_in_default_browser" = "Mở trong trình duyệt mặc định";
 "open_external_message" = "Liên kết này sẽ mở một ứng dụng khác. Bạn có muốn tiếp tục không?";
 
 /* AI Loading */
 "ai_loading_page" = "Đang tải nền tảng AI...";
-"ai_loading_input" = "AI cục bộ đang phân tích và nhập liệu...";
+"ai_loading_input" = "Đang nhập và gửi câu hỏi...";
 
 /* Privacy Settings (extended keys) */
 "privacy_section_browsing" = "Duyệt web";
@@ -416,6 +419,8 @@ Hay cho chung toi biet:
 "downloads_finished" = "Finished";
 "downloads_failed" = "Failed";
 "downloads_canceled" = "Canceled";
+"live_activity" = "Dynamic Island";
+"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
@@ -468,3 +473,11 @@ Hay cho chung toi biet:
 "wallpaper_source" = "Nguồn hình nền";
 "wallpaper_type" = "Kiểu nền";
 "example" = "Ví dụ";
+
+/* Điều hướng trình duyệt */
+"browser_back" = "Quay lại";
+"browser_forward" = "Tiếp theo";
+"browser_reload" = "Tải lại";
+"browser_edit_address" = "Sửa địa chỉ hoặc tìm kiếm";
+"tab_limit_title" = "Đã đạt giới hạn tab";
+"tab_limit_message" = "Bạn có thể giữ tối đa 20 tab. Hãy đóng một tab trước khi mở tab mới.";

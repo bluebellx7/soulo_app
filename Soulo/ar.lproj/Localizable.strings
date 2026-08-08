@@ -1,6 +1,6 @@
 /* App */
 "app_name" = "Soulo";
-"app_subtitle" = "ابحث عن كل شيء، في كل مكان";
+"app_subtitle" = "استعلام واحد، أكثر من 40 منصة";
 
 /* Search */
 "search_placeholder" = "ابحث أو أدخل عنوان URL";
@@ -278,10 +278,13 @@
 "switch_to_bing_desc" = "فعّل خلفية Bing اليومية لتصفح خلفيات جميلة باستخدام الدوّامة.";
 
 "open_external_title" = "فتح تطبيق خارجي؟";
+"open_external_failed" = "تعذر فتح التطبيق الخارجي";
+"safari_compatibility_mode" = "وضع التوافق مع Safari";
+"open_in_default_browser" = "فتح في المتصفح الافتراضي";
 "open_external_message" = "سيفتح هذا الرابط تطبيقاً آخر. هل تريد المتابعة؟";
 
 "ai_loading_page" = "جارٍ تحميل منصة الذكاء الاصطناعي...";
-"ai_loading_input" = "الذكاء الاصطناعي المحلي يحلل ويكتب...";
+"ai_loading_input" = "جارٍ إدخال سؤالك وإرساله...";
 
 /* Widget */
 "widget_search" = "بحث سريع";
@@ -450,6 +453,8 @@
 "downloads_finished" = "Finished";
 "downloads_failed" = "Failed";
 "downloads_canceled" = "Canceled";
+"live_activity" = "Dynamic Island";
+"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
@@ -484,3 +489,11 @@
 "privacy_cookie_banners" = "Handle Cookie Prompts";
 "privacy_cookie_banners_desc" = "Try to reject or dismiss common cookie consent banners.";
 "example" = "مثال";
+
+/* التنقل في المتصفح */
+"browser_back" = "رجوع";
+"browser_forward" = "إلى الأمام";
+"browser_reload" = "إعادة التحميل";
+"browser_edit_address" = "تعديل العنوان أو البحث";
+"tab_limit_title" = "تم بلوغ حد علامات التبويب";
+"tab_limit_message" = "يمكنك الاحتفاظ بما يصل إلى 20 علامة تبويب. أغلق واحدة قبل فتح علامة جديدة.";

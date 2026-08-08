@@ -8,8 +8,12 @@ final class WebViewScriptsTests: XCTestCase {
 
         XCTAssertTrue(script.contains("skipDomains"))
         XCTAssertTrue(script.contains("deepseek.com"))
+        XCTAssertTrue(script.contains("weixin.qq.com"))
+        XCTAssertTrue(script.contains("isSensitiveChallengePage"))
+        XCTAssertTrue(script.contains("containsVerificationLanguage"))
         XCTAssertTrue(script.contains("removeOverlays"))
         XCTAssertTrue(script.contains("MutationObserver"))
+        XCTAssertFalse(script.contains("text.includes('验证码') || text.includes('手机号')"))
     }
 
     func testAdHidingScriptPublishesHiddenElementStats() {
@@ -43,6 +47,7 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertTrue(script.contains("globalPrivacyControl"))
         XCTAssertTrue(script.contains("souloPrivacy"))
         XCTAssertTrue(script.contains("resourceObserved"))
+        XCTAssertTrue(script.contains("isSensitiveChallengePage"))
         XCTAssertTrue(script.contains("observations"))
         XCTAssertTrue(script.contains("resourceType"))
         XCTAssertTrue(script.contains("__souloPrivacyProtectionInstalled"))
@@ -67,10 +72,28 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertTrue(script.contains("var souloCookieBannerHandling = false"))
     }
 
+    func testDownloadBridgeCapturesGeneratedFilesAndReportsProgress() {
+        let script = WebViewScripts.downloadBridge
+
+        XCTAssertTrue(script.contains("souloDownload"))
+        XCTAssertTrue(script.contains("blob:"))
+        XCTAssertTrue(script.contains("data:"))
+        XCTAssertTrue(script.contains("type: 'started'"))
+        XCTAssertTrue(script.contains("type: 'chunk'"))
+        XCTAssertTrue(script.contains("type: 'finished'"))
+        XCTAssertTrue(script.contains("type: 'failed'"))
+        XCTAssertTrue(script.contains("__souloCancelDownloads"))
+        XCTAssertTrue(script.contains("blob.slice"))
+        XCTAssertTrue(script.contains("FileReader"))
+        XCTAssertFalse(script.contains("readAsDataURL"))
+    }
+
     func testInjectedBrowserScriptsAreParsableJavaScript() {
         assertJavaScriptParses(AdBlockService.adHidingScript(cosmetic: true, popups: true))
         assertJavaScriptParses(WebViewScripts.blankPageProbe)
         assertJavaScriptParses(WebViewScripts.privacyProtection(gpcEnabled: true, cookieBannerHandling: true))
+        assertJavaScriptParses(WebViewScripts.loginOverlayRemoval)
+        assertJavaScriptParses(WebViewScripts.downloadBridge)
     }
 
     private func assertJavaScriptParses(_ script: String, file: StaticString = #filePath, line: UInt = #line) {

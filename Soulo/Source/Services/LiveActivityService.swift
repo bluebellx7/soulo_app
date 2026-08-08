@@ -4,9 +4,20 @@ import Foundation
 @MainActor
 class LiveActivityService {
     static let shared = LiveActivityService()
+    static let enabledKey = "live_activity_enabled"
+
     private var currentActivity: Activity<SouloLiveActivityAttributes>?
 
+    private var isEnabled: Bool {
+        UserDefaults.standard.object(forKey: Self.enabledKey) as? Bool ?? true
+    }
+
     func startOrUpdate(keyword: String, platformName: String, platformIcon: String = "magnifyingglass") {
+        guard isEnabled else {
+            endAllActivities()
+            return
+        }
+
         let state = SouloLiveActivityAttributes.ContentState(
             keyword: keyword,
             platformName: platformName,
@@ -36,8 +47,19 @@ class LiveActivityService {
         endAllActivities()
     }
 
+    func setEnabled(_ enabled: Bool) {
+        UserDefaults.standard.set(enabled, forKey: Self.enabledKey)
+        if !enabled {
+            endAllActivities()
+        }
+    }
+
     /// End any leftover activities from a previous app session
     func cleanupStaleActivities() {
+        guard isEnabled else {
+            endAllActivities()
+            return
+        }
         endAllActivities()
     }
 

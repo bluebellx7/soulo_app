@@ -1,6 +1,6 @@
 /* App */
 "app_name" = "Soulo";
-"app_subtitle" = "Search Everything, Everywhere";
+"app_subtitle" = "One Query, 40+ Platforms";
 
 /* Search */
 "search_placeholder" = "Search or enter URL";
@@ -292,10 +292,13 @@
 "switch_to_bing_desc" = "Enable Bing daily wallpaper to browse beautiful backgrounds with the pinwheel.";
 
 "open_external_title" = "Open External App?";
+"open_external_failed" = "Unable to Open External App";
+"safari_compatibility_mode" = "Safari Compatibility Mode";
+"open_in_default_browser" = "Open in Default Browser";
 "open_external_message" = "This link will open another app. Do you want to continue?";
 
 "ai_loading_page" = "Loading AI platform...";
-"ai_loading_input" = "Local AI analyzing and typing...";
+"ai_loading_input" = "Filling and sending your question...";
 
 /* Widget */
 "widget_search" = "Quick Search";
@@ -513,6 +516,8 @@
 "wallpaper_remote_error" = "Wallpaper source is unavailable. Try refreshing or switch source.";
 "restore" = "Restore";
 "never_prompt" = "Never Prompt";
+"live_activity" = "Dynamic Island";
+"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "external_navigation" = "External App Links";
 "never_prompt_external" = "Silently block external app links";
 "never_prompt_external_desc" = "When enabled, Soulo cancels external app jumps without showing a prompt.";
@@ -535,3 +540,11 @@
 "wallpaper_interval_1hour" = "Every Hour";
 "wallpaper_interval_1day" = "Every Day";
 "example" = "Example";
+
+/* Browser Navigation */
+"browser_back" = "Back";
+"browser_forward" = "Forward";
+"browser_reload" = "Reload";
+"browser_edit_address" = "Edit address or search";
+"tab_limit_title" = "Tab Limit Reached";
+"tab_limit_message" = "You can keep up to 20 tabs. Close a tab before opening another.";
