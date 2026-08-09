@@ -415,7 +415,7 @@ struct HomeView: View {
             Button {
                 showBookmarks = true
             } label: {
-                Label(LanguageManager.shared.localizedString("bookmarks"), systemImage: "bookmark")
+                Label(LanguageManager.shared.localizedString("my_favorites"), systemImage: "bookmark")
             }
 
             Divider()
@@ -501,6 +501,15 @@ struct HomeView: View {
 
     private func performSearch() {
         guard !searchVM.searchText.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+
+        let selectedGroup = lastGroupID.isEmpty
+            ? nil
+            : PlatformDataStore.shared.customGroups.first { $0.id.uuidString == lastGroupID }
+        let selectedRegion = PlatformRegion(rawValue: lastRegion)
+        searchVM.prepareForHomeSearch(
+            preferredRegion: selectedRegion,
+            customGroup: selectedGroup
+        )
         searchVM.performSearch(context: modelContext)
     }
 }

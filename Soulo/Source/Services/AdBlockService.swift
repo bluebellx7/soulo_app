@@ -279,7 +279,7 @@ struct AdBlockService {
 
     // MARK: - CSS + JS injection to hide ad elements
 
-    static func adHidingScript(cosmetic: Bool = true, popups: Bool = true, allowlistedHosts: [String] = []) -> String {
+    static func adHidingScript(cosmetic: Bool = true, allowlistedHosts: [String] = []) -> String {
         let cachedRules = AdBlockSubscriptionService.cachedRules()
         let cosmeticRules = cachedRules.cosmeticRules.isEmpty
             ? cachedRules.cosmeticSelectors.map { AdBlockCosmeticRule(selector: $0) }
@@ -298,12 +298,10 @@ struct AdBlockService {
         return """
         (function() {
             var souloCosmeticEnabled = \(cosmetic ? "true" : "false");
-            var souloPopupEnabled = \(popups ? "true" : "false");
             var souloAllowlistedHosts = \(allowlistJSON);
             var souloSubscriptionCosmeticRules = \(subscriptionCosmeticRulesJSON);
             window.__souloAdBlockConfig = {
                 cosmeticEnabled: souloCosmeticEnabled,
-                popupEnabled: souloPopupEnabled,
                 allowlistedHosts: souloAllowlistedHosts,
                 subscriptionCosmeticRules: souloSubscriptionCosmeticRules
             };
@@ -322,7 +320,6 @@ struct AdBlockService {
             function adBlockConfig() {
                 return window.__souloAdBlockConfig || {
                     cosmeticEnabled: souloCosmeticEnabled,
-                    popupEnabled: souloPopupEnabled,
                     allowlistedHosts: souloAllowlistedHosts,
                     subscriptionCosmeticRules: souloSubscriptionCosmeticRules
                 };
@@ -399,7 +396,7 @@ struct AdBlockService {
                 [aria-label*="advertisement" i], [aria-label*="广告"],
 
                 /* Fixed / sticky overlays that are likely ads */
-                [class*="popup-ad"], [class*="interstitial"],
+                [class*="popup-ad"],
                 [class*="overlay-ad"], [id*="popup-ad"],
                 [class*="floating-ad"], [class*="sticky-ad"],
 
@@ -469,6 +466,28 @@ struct AdBlockService {
                 }
             }
 
+            function isAuthenticationElement(el) {
+                try {
+                    if (!el) return false;
+                    var identity = [
+                        el.id || '',
+                        typeof el.className === 'string' ? el.className : '',
+                        el.getAttribute && (el.getAttribute('role') || ''),
+                        el.getAttribute && (el.getAttribute('aria-label') || '')
+                    ].join(' ').toLowerCase();
+                    if (/(^|[\\s_-])(login|log-in|signin|sign-in|signup|sign-up|register|auth|passport)([\\s_-]|$)/.test(identity)) {
+                        return true;
+                    }
+                    if (el.matches && el.matches('input[type="tel"], input[type="password"], input[autocomplete*="one-time-code"]')) {
+                        return true;
+                    }
+                    if (el.querySelector && el.querySelector('input[type="tel"], input[type="password"], input[autocomplete*="one-time-code"], input[name*="captcha" i], input[name*="verify" i]')) {
+                        return true;
+                    }
+                } catch(e) {}
+                return false;
+            }
+
             function isProtectedPageElement(el) {
                 try {
                     if (!el || el === document.body || el === document.documentElement) return true;
@@ -490,7 +509,7 @@ struct AdBlockService {
 
             function hideAdElement(el) {
                 try {
-                    if (!el || isProtectedPageElement(el) || el.hasAttribute('data-soulo-hidden-ad')) return false;
+                    if (!el || isProtectedPageElement(el) || isAuthenticationElement(el) || el.hasAttribute('data-soulo-hidden-ad')) return false;
                     el.setAttribute('data-soulo-hidden-ad', 'true');
                     el.style.setProperty('display', 'none', 'important');
                     el.style.setProperty('height', '0', 'important');
@@ -548,47 +567,6 @@ struct AdBlockService {
                         } catch(e) {}
                     });
                 }
-
-                function isLikelyFloatingAd(el) {
-                    try {
-                        if (!el || el === document.body || el === document.documentElement) return false;
-                        var s = window.getComputedStyle(el);
-                        var position = s.position;
-                        var z = parseInt(s.zIndex, 10) || 0;
-                        if (position !== 'fixed' && position !== 'absolute') return false;
-                        if (z < 999) return false;
-
-                        var r = el.getBoundingClientRect();
-                        var coversMostScreen = r.width > window.innerWidth * 0.92 && r.height > window.innerHeight * 0.72;
-                        var smallFloating = r.width >= 20 && r.height >= 20 && r.width <= 900 && r.height <= 420;
-                        if (!coversMostScreen && !smallFloating) return false;
-
-                        var text = (el.textContent || '').toLowerCase();
-                        var adText = text.includes('ad') || text.includes('广告') || text.includes('推广') || text.includes('sponsor');
-                        return adText || hasAdLikeResource(el) || !!el.querySelector('iframe[src*="ad"], iframe[src*="doubleclick"], img[src*="ad"], a[href*="ad"]');
-                    } catch(e) {
-                        return false;
-                    }
-                }
-
-                // Remove fixed/absolute overlays with high z-index (popup and floating ads)
-                if (adBlockConfig().popupEnabled) try {
-                    document.querySelectorAll('div, section, aside, iframe, a, img').forEach(function(el) {
-                        if (isLikelyFloatingAd(el)) {
-                            var host = hostFromElement(el);
-                            if (hideAdElement(el)) {
-                                hiddenCount++;
-                                if (looksLikeTrackerHost(host)) trackerHosts.push(host);
-                            }
-                        }
-                    });
-                } catch(e) {}
-
-                // Restore scroll if ads locked it
-                if (adBlockConfig().popupEnabled) try {
-                    document.body.style.overflow = '';
-                    document.documentElement.style.overflow = '';
-                } catch(e) {}
 
                 if (hiddenCount > 0 && window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.souloAdBlocker) {
                     try {

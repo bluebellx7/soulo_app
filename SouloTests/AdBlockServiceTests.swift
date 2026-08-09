@@ -157,11 +157,11 @@ final class AdBlockServiceTests: XCTestCase {
         XCTAssertTrue(json.contains("cqlkxq1wc"))
     }
 
-    func testAdHidingScriptCoversLowerZIndexFloatingAdsAndImageAnchors() {
-        let script = AdBlockService.adHidingScript(cosmetic: true, popups: true)
+    func testAdHidingScriptUsesExplicitAdSelectorsWithoutGenericPopupScanning() {
+        let script = AdBlockService.adHidingScript(cosmetic: true)
 
-        XCTAssertTrue(script.contains("z < 999"))
-        XCTAssertTrue(script.contains("div, section, aside, iframe, a, img"))
+        XCTAssertFalse(script.contains("isLikelyFloatingAd"))
+        XCTAssertFalse(script.contains("div, section, aside, iframe, a, img"))
         XCTAssertTrue(script.contains("hideAdElement"))
         XCTAssertTrue(script.contains("isProtectedPageElement"))
         XCTAssertFalse(script.contains("el.remove()"))
@@ -173,7 +173,6 @@ final class AdBlockServiceTests: XCTestCase {
     func testAdHidingScriptChecksRuntimeAllowlist() {
         let script = AdBlockService.adHidingScript(
             cosmetic: true,
-            popups: true,
             allowlistedHosts: ["example.com"]
         )
 

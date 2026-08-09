@@ -89,8 +89,9 @@
 "wallpaper_solid" = "纯色背景";
 "wallpaper_source" = "壁纸来源";
 "wallpaper_type" = "背景类型";
-"wallpaper_refresh" = "随机换样";
-"wallpaper_download" = "下载到相册";
+"wallpaper_refresh" = "更换壁纸";
+"wallpaper_download" = "下载壁纸";
+"my_favorites" = "我的收藏";
 "wallpaper_saved" = "已保存到相册";
 "wallpaper_fetch_bing" = "获取今日壁纸";
 "wallpaper_choose_photo" = "选择照片";
@@ -147,12 +148,15 @@
 "privacy_clear_bookmarks_confirm_title" = "清除所有收藏？";
 "privacy_clear_bookmarks_confirm_message" = "所有收藏将被永久删除。";
 "privacy_clear_cache" = "清除浏览缓存";
-"privacy_clear_cache_desc" = "清除 Cookie、缓存和本地存储";
+"privacy_clear_cache_desc" = "清除网页缓存和标签页预览，保留登录状态";
 "privacy_clear_cache_confirm_title" = "清除浏览缓存？";
-"privacy_clear_cache_confirm_message" = "所有浏览数据将被永久删除。";
+"privacy_clear_cache_confirm_message" = "将清除网页缓存资源，但保留 Cookie 和登录状态。";
+
+"enter_fullscreen" = "进入全屏";
+"exit_fullscreen" = "退出全屏";
 "privacy_clear_action" = "清除";
 "privacy_data_footer" = "以上操作不可撤销，清除的数据无法恢复。";
-"settings_privacy" = "隐私";
+"settings_privacy" = "隐私设置";
 "platform_sort_options" = "排序选项";
 "cancel" = "取消";
 "confirm" = "确认";
@@ -235,6 +239,11 @@
 "login_required_title" = "需要登录";
 "login_required_message" = "该平台需要先登录才能使用。请在页面中登录，登录后搜索将自动执行。";
 "login_required_toast" = "请先登录后再搜索";
+"status_enabled" = "已启用";
+"status_disabled" = "已停用";
+"show_top_search_bar" = "显示顶部搜索框";
+"show_top_search_bar_desc" = "隐藏后，可点击底部地址栏搜索或使用语音输入";
+"ad_block_master_disabled_desc" = "开启广告过滤后，才能使用和管理下方过滤规则订阅。";
 /* 自定义分组 */
 "custom_groups" = "自定义分组";
 "no_groups" = "暂无自定义分组";
@@ -323,6 +332,7 @@
 "settings_section_background" = "背景";
 "settings_section_privacy" = "隐私";
 "settings_section_about" = "关于";
+"settings_section_about_support" = "关于与支持";
 
 /* Platform Management */
 "platform_auto_sort" = "按使用频率自动排序";
@@ -403,6 +413,7 @@
 "feedback_placeholder" = "您的每一条反馈都是我们改进的动力！\n\n可以告诉我们：\n· 遇到了什么问题？\n· 希望增加什么功能？\n· 哪里的体验可以更好？";
 "feedback_contact" = "联系方式";
 "feedback_contact_hint" = "邮箱或其他联系方式";
+"feedback_contact_reply_hint" = "可以留下您的邮箱，方便回复您";
 "feedback_optional" = "可选";
 "feedback_submit" = "提交";
 "feedback_submitting" = "提交中...";
@@ -472,7 +483,10 @@
 "fire_button_confirm" = "清除";
 "fire_button_desc" = "关闭浏览器标签页，并清除网站数据、Cookie、缓存和隐私统计。";
 "fire_complete" = "隐私数据已清除";
-"site_privacy" = "站点隐私";
+"site_privacy" = "当前站点保护";
+"site_privacy_scope_desc" = "仅影响当前网站；所有网站的默认规则可在“隐私设置”中修改。";
+"privacy_global_scope_desc" = "以上规则默认应用于所有网站；单个网站的例外可在“当前站点保护”中设置。";
+"site_privacy_compatibility_bypass" = "为保证登录和网页功能正常，此站点的保护已暂停。";
 "site_privacy_no_site" = "无站点";
 "site_privacy_protected" = "保护已开启";
 "site_privacy_unprotected" = "当前站点保护已关闭";
@@ -548,5 +562,6 @@
 "browser_forward" = "前进";
 "browser_reload" = "重新加载";
 "browser_edit_address" = "编辑地址或搜索";
+"current_page_link" = "当前网页链接";
 "tab_limit_title" = "已达到标签页上限";
 "tab_limit_message" = "最多可保留 20 个标签页。请关闭一个标签页后再打开新的标签页。";

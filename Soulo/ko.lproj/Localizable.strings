@@ -169,6 +169,11 @@
 "login_required_title" = "로그인 필요";
 "login_required_message" = "이 플랫폼은 먼저 로그인이 필요합니다. 페이지에서 로그인하면 검색이 자동으로 실행됩니다.";
 "login_required_toast" = "먼저 로그인한 후 다시 검색하세요";
+"status_enabled" = "활성화";
+"status_disabled" = "비활성화";
+"show_top_search_bar" = "상단 검색창 표시";
+"show_top_search_bar_desc" = "숨겨도 하단 주소 표시줄에서 검색하거나 음성 입력을 사용할 수 있습니다";
+"ad_block_master_disabled_desc" = "광고 차단을 켜야 아래 필터 구독을 사용하고 관리할 수 있습니다.";
 
 /* Custom Groups */
 "custom_groups" = "사용자 지정 그룹";
@@ -243,12 +248,15 @@
 "privacy_clear_bookmarks_confirm_title" = "모든 북마크를 삭제하시겠습니까?";
 "privacy_clear_bookmarks_confirm_message" = "모든 북마크가 영구적으로 삭제됩니다.";
 "privacy_clear_cache" = "브라우저 캐시 삭제";
-"privacy_clear_cache_desc" = "쿠키, 캐시 및 로컬 스토리지 삭제";
+"privacy_clear_cache_desc" = "웹 캐시와 탭 미리보기를 삭제합니다. 로그인 상태는 유지됩니다";
 "privacy_clear_cache_confirm_title" = "브라우저 캐시를 삭제하시겠습니까?";
-"privacy_clear_cache_confirm_message" = "모든 브라우저 데이터가 영구적으로 삭제됩니다.";
+"privacy_clear_cache_confirm_message" = "웹사이트 캐시를 삭제합니다. 쿠키와 로그인 상태는 유지됩니다.";
+
+"enter_fullscreen" = "전체 화면 시작";
+"exit_fullscreen" = "전체 화면 종료";
 "privacy_clear_action" = "삭제";
 "privacy_data_footer" = "이 작업은 취소할 수 없습니다. 삭제된 데이터는 복구할 수 없습니다.";
-"settings_privacy" = "개인정보 보호";
+"settings_privacy" = "개인정보 보호 설정";
 "platform_sort_options" = "정렬 옵션";
 
 /* Settings - Navigation & Titles */
@@ -268,6 +276,7 @@
 "settings_section_background" = "배경";
 "settings_section_privacy" = "개인정보 보호";
 "settings_section_about" = "앱 정보";
+"settings_section_about_support" = "앱 정보 및 지원";
 
 /* Platform Management */
 "platform_auto_sort" = "빈도별 자동 정렬";
@@ -352,6 +361,7 @@
 · 어디를 개선하면 좋을까요?";
 "feedback_contact" = "연락처";
 "feedback_contact_hint" = "이메일 또는 연락처";
+"feedback_contact_reply_hint" = "답변을 받으려면 이메일 주소를 남겨 주세요.";
 "feedback_optional" = "선택사항";
 "feedback_submit" = "제출";
 "feedback_submitting" = "제출 중...";
@@ -425,7 +435,10 @@
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Site Privacy";
+"site_privacy" = "현재 사이트 보호";
+"site_privacy_scope_desc" = "현재 사이트에만 적용됩니다. 모든 사이트의 기본값은 개인정보 보호 설정에서 변경할 수 있습니다.";
+"privacy_global_scope_desc" = "이 기본값은 모든 사이트에 적용됩니다. 사이트별 예외는 현재 사이트 보호에서 설정하세요.";
+"site_privacy_compatibility_bypass" = "로그인과 사이트 기능을 유지하기 위해 보호가 일시 중지되었습니다.";
 "site_privacy_no_site" = "No Site";
 "site_privacy_protected" = "Protections are active";
 "site_privacy_unprotected" = "Protections are disabled for this site";
@@ -459,7 +472,7 @@
 "wallpaper_color" = "배경색";
 "wallpaper_current_vibe" = "현재 분위기";
 "wallpaper_discover" = "새로 발견";
-"wallpaper_download" = "사진에 저장";
+"wallpaper_download" = "배경화면 다운로드";
 "wallpaper_favorites" = "내 즐겨찾기";
 "wallpaper_fetch_bing" = "오늘의 이미지 가져오기";
 "wallpaper_gradient" = "그라디언트";
@@ -467,7 +480,8 @@
 "wallpaper_pexels" = "Pexels (큐레이션)";
 "wallpaper_photo" = "포토 월";
 "wallpaper_pixabay" = "Pixabay (자연)";
-"wallpaper_refresh" = "랜덤";
+"wallpaper_refresh" = "배경화면 변경";
+"my_favorites" = "내 즐겨찾기";
 "wallpaper_search_placeholder" = "분위기 검색 (예: 숲, 미니멀)";
 "wallpaper_solid" = "단색";
 "wallpaper_source" = "배경화면 소스";
@@ -479,5 +493,6 @@
 "browser_forward" = "앞으로";
 "browser_reload" = "새로고침";
 "browser_edit_address" = "주소 또는 검색어 편집";
+"current_page_link" = "현재 페이지 링크";
 "tab_limit_title" = "탭 한도에 도달했습니다";
 "tab_limit_message" = "탭은 최대 20개까지 유지할 수 있습니다. 새 탭을 열기 전에 하나를 닫아 주세요.";

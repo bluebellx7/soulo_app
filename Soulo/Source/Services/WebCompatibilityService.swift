@@ -1,7 +1,14 @@
 import Foundation
 
 enum WebCompatibilityService {
+    private static let desktopModeHosts = ["xiaohongshu.com"]
+    private static let xiaohongshuAuthenticationCookieNames: Set<String> = [
+        "web_session",
+        "web_session_v2",
+    ]
+
     static let defaultProtectionBypassHosts = [
+        "xiaohongshu.com",
         "weixin.qq.com",
         "wx.qq.com"
     ]
@@ -16,6 +23,19 @@ enum WebCompatibilityService {
             return true
         }
         return isSensitiveChallengeURL(url)
+    }
+
+    static func requiresDesktopMode(for url: URL?, fallbackHost: String? = nil) -> Bool {
+        let host = normalizedHost(url?.host ?? fallbackHost)
+        return desktopModeHosts.contains { domainMatches(host: host, pattern: $0) }
+    }
+
+    static func hasAuthenticatedXiaohongshuSession(in cookies: [HTTPCookie]) -> Bool {
+        cookies.contains { cookie in
+            domainMatches(host: normalizedHost(cookie.domain), pattern: "xiaohongshu.com")
+                && xiaohongshuAuthenticationCookieNames.contains(cookie.name.lowercased())
+                && !cookie.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
     }
 
     static func isSensitiveChallengeURL(_ url: URL?) -> Bool {

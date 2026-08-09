@@ -88,8 +88,9 @@
 "wallpaper_solid" = "ألوان صلبة";
 "wallpaper_source" = "مصدر الخلفية";
 "wallpaper_type" = "نوع الخلفية";
-"wallpaper_refresh" = "عشوائي";
-"wallpaper_download" = "حفظ في الصور";
+"wallpaper_refresh" = "تغيير خلفية الشاشة";
+"wallpaper_download" = "تنزيل خلفية الشاشة";
+"my_favorites" = "مفضلاتي";
 "wallpaper_saved" = "تم حفظ الخلفية في الصور";
 "wallpaper_fetch_bing" = "جلب صورة اليوم";
 "wallpaper_choose_photo" = "اختر من المكتبة";
@@ -146,12 +147,15 @@
 "privacy_clear_bookmarks_confirm_title" = "مسح جميع الإشارات المرجعية؟";
 "privacy_clear_bookmarks_confirm_message" = "سيتم حذف جميع الإشارات المرجعية نهائياً.";
 "privacy_clear_cache" = "مسح ذاكرة التصفح المؤقتة";
-"privacy_clear_cache_desc" = "مسح ملفات تعريف الارتباط والذاكرة المؤقتة والتخزين المحلي";
+"privacy_clear_cache_desc" = "مسح ذاكرة الويب المؤقتة ومعاينات علامات التبويب مع الاحتفاظ بتسجيل الدخول";
 "privacy_clear_cache_confirm_title" = "مسح ذاكرة التصفح المؤقتة؟";
-"privacy_clear_cache_confirm_message" = "سيتم حذف جميع بيانات التصفح نهائياً.";
+"privacy_clear_cache_confirm_message" = "ستتم إزالة موارد الويب المؤقتة مع الاحتفاظ بملفات تعريف الارتباط وتسجيل الدخول.";
+
+"enter_fullscreen" = "الدخول إلى ملء الشاشة";
+"exit_fullscreen" = "الخروج من ملء الشاشة";
 "privacy_clear_action" = "مسح";
 "privacy_data_footer" = "لا يمكن التراجع عن هذه الإجراءات. لا يمكن استرداد البيانات المحذوفة.";
-"settings_privacy" = "الخصوصية";
+"settings_privacy" = "إعدادات الخصوصية";
 "platform_sort_options" = "خيارات الترتيب";
 "cancel" = "إلغاء";
 "confirm" = "تأكيد";
@@ -234,6 +238,11 @@
 "login_required_title" = "يلزم تسجيل الدخول";
 "login_required_message" = "تتطلب هذه المنصة تسجيل الدخول أولاً. يرجى تسجيل الدخول في الصفحة، ثم سيتم تنفيذ البحث تلقائياً.";
 "login_required_toast" = "يرجى تسجيل الدخول أولاً ثم البحث مرة أخرى";
+"status_enabled" = "مفعّل";
+"status_disabled" = "معطّل";
+"show_top_search_bar" = "إظهار شريط البحث العلوي";
+"show_top_search_bar_desc" = "عند إخفائه، استخدم شريط العنوان السفلي للبحث أو الإدخال الصوتي";
+"ad_block_master_disabled_desc" = "فعّل حظر الإعلانات لاستخدام اشتراكات عوامل التصفية أدناه وإدارتها.";
 /* Custom Groups */
 "custom_groups" = "مجموعات مخصصة";
 "no_groups" = "لا توجد مجموعات مخصصة";
@@ -307,6 +316,7 @@
 "settings_section_background" = "الخلفية";
 "settings_section_privacy" = "الخصوصية";
 "settings_section_about" = "حول";
+"settings_section_about_support" = "حول التطبيق والدعم";
 
 /* Platform Management */
 "platform_auto_sort" = "ترتيب تلقائي حسب التكرار";
@@ -386,6 +396,7 @@
 "feedback_placeholder" = "ملاحظاتك تساعدنا على التحسين!\n\nأخبرنا:\n· ما المشكلة التي واجهتها؟\n· ما الميزة التي تريدها؟\n· ما الذي يمكن أن يعمل بشكل أفضل؟";
 "feedback_contact" = "التواصل";
 "feedback_contact_hint" = "البريد الإلكتروني أو وسيلة اتصال أخرى";
+"feedback_contact_reply_hint" = "يمكنك ترك بريدك الإلكتروني لكي نتمكن من الرد عليك.";
 "feedback_optional" = "اختياري";
 "feedback_submit" = "إرسال";
 "feedback_submitting" = "جارٍ الإرسال...";
@@ -459,7 +470,10 @@
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Site Privacy";
+"site_privacy" = "حماية الموقع الحالي";
+"site_privacy_scope_desc" = "ينطبق على هذا الموقع فقط. غيّر الإعدادات الافتراضية لكل المواقع من إعدادات الخصوصية.";
+"privacy_global_scope_desc" = "تنطبق هذه الإعدادات على كل المواقع. استخدم حماية الموقع الحالي لإضافة استثناء خاص.";
+"site_privacy_compatibility_bypass" = "تم إيقاف الحماية مؤقتاً للحفاظ على تسجيل الدخول ووظائف الموقع.";
 "site_privacy_no_site" = "No Site";
 "site_privacy_protected" = "Protections are active";
 "site_privacy_unprotected" = "Protections are disabled for this site";
@@ -495,5 +509,6 @@
 "browser_forward" = "إلى الأمام";
 "browser_reload" = "إعادة التحميل";
 "browser_edit_address" = "تعديل العنوان أو البحث";
+"current_page_link" = "رابط الصفحة الحالية";
 "tab_limit_title" = "تم بلوغ حد علامات التبويب";
 "tab_limit_message" = "يمكنك الاحتفاظ بما يصل إلى 20 علامة تبويب. أغلق واحدة قبل فتح علامة جديدة.";

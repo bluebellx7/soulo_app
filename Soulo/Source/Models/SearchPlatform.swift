@@ -82,6 +82,12 @@ struct SearchPlatform: Codable, Identifiable, Hashable {
         URL(string: homeURL)
     }
 
+    /// Xiaohongshu's web search and authentication flows require a desktop
+    /// content mode inside WKWebView to remain fully usable.
+    var requiresDesktopMode: Bool {
+        name == "platform_xiaohongshu"
+    }
+
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }

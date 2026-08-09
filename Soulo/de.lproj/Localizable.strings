@@ -169,6 +169,11 @@
 "login_required_title" = "Anmeldung erforderlich";
 "login_required_message" = "Diese Plattform erfordert zunächst eine Anmeldung. Bitte melden Sie sich auf der Seite an, dann wird Ihre Suche automatisch ausgeführt.";
 "login_required_toast" = "Bitte melden Sie sich zunächst an und suchen Sie dann erneut";
+"status_enabled" = "Aktiviert";
+"status_disabled" = "Deaktiviert";
+"show_top_search_bar" = "Obere Suchleiste anzeigen";
+"show_top_search_bar_desc" = "Wenn ausgeblendet, über die untere Adressleiste suchen oder die Spracheingabe starten";
+"ad_block_master_disabled_desc" = "Aktivieren Sie den Werbeblocker, um die Filterlisten unten zu verwenden und zu verwalten.";
 
 /* Custom Groups */
 "custom_groups" = "Benutzerdefinierte Gruppen";
@@ -243,12 +248,15 @@
 "privacy_clear_bookmarks_confirm_title" = "Alle Lesezeichen löschen?";
 "privacy_clear_bookmarks_confirm_message" = "Alle Lesezeichen werden dauerhaft gelöscht.";
 "privacy_clear_cache" = "Browser-Cache leeren";
-"privacy_clear_cache_desc" = "Cookies, Cache und lokalen Speicher löschen";
+"privacy_clear_cache_desc" = "Web-Cache und Tab-Vorschauen löschen. Anmeldungen bleiben erhalten";
 "privacy_clear_cache_confirm_title" = "Browser-Cache leeren?";
-"privacy_clear_cache_confirm_message" = "Alle Browserdaten werden dauerhaft gelöscht.";
+"privacy_clear_cache_confirm_message" = "Zwischengespeicherte Webinhalte werden gelöscht. Cookies und Anmeldungen bleiben erhalten.";
+
+"enter_fullscreen" = "Vollbild aktivieren";
+"exit_fullscreen" = "Vollbild beenden";
 "privacy_clear_action" = "Löschen";
 "privacy_data_footer" = "Diese Aktionen können nicht rückgängig gemacht werden. Gelöschte Daten können nicht wiederhergestellt werden.";
-"settings_privacy" = "Datenschutz";
+"settings_privacy" = "Datenschutzeinstellungen";
 "platform_sort_options" = "Sortieroptionen";
 
 /* Settings - Navigation & Titles */
@@ -268,6 +276,7 @@
 "settings_section_background" = "Hintergrund";
 "settings_section_privacy" = "Datenschutz";
 "settings_section_about" = "Über";
+"settings_section_about_support" = "Über & Support";
 
 /* Platform Management */
 "platform_auto_sort" = "Automatisch nach Häufigkeit sortieren";
@@ -351,6 +360,7 @@ Erzahlen Sie uns:
 · Was koennen wir verbessern?";
 "feedback_contact" = "Kontakt";
 "feedback_contact_hint" = "E-Mail oder Kontaktdaten";
+"feedback_contact_reply_hint" = "Hinterlassen Sie Ihre E-Mail-Adresse, damit wir Ihnen antworten können.";
 "feedback_optional" = "optional";
 "feedback_submit" = "Absenden";
 "feedback_submitting" = "Wird gesendet...";
@@ -424,7 +434,10 @@ Erzahlen Sie uns:
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Site Privacy";
+"site_privacy" = "Schutz der aktuellen Website";
+"site_privacy_scope_desc" = "Gilt nur für diese Website. Die Standardwerte für alle Websites ändern Sie in den Datenschutzeinstellungen.";
+"privacy_global_scope_desc" = "Diese Standardwerte gelten für alle Websites. Ausnahmen legen Sie unter Schutz der aktuellen Website fest.";
+"site_privacy_compatibility_bypass" = "Der Schutz ist pausiert, damit Anmeldung und Website-Funktionen verfügbar bleiben.";
 "site_privacy_no_site" = "No Site";
 "site_privacy_protected" = "Protections are active";
 "site_privacy_unprotected" = "Protections are disabled for this site";
@@ -458,7 +471,7 @@ Erzahlen Sie uns:
 "wallpaper_color" = "Hintergrundfarbe";
 "wallpaper_current_vibe" = "Aktuelle Stimmung";
 "wallpaper_discover" = "Entdecken";
-"wallpaper_download" = "In Fotos speichern";
+"wallpaper_download" = "Hintergrundbild laden";
 "wallpaper_favorites" = "Meine Favoriten";
 "wallpaper_fetch_bing" = "Tagesbild abrufen";
 "wallpaper_gradient" = "Farbverläufe";
@@ -466,7 +479,8 @@ Erzahlen Sie uns:
 "wallpaper_pexels" = "Pexels (Kuratiert)";
 "wallpaper_photo" = "Fotowand";
 "wallpaper_pixabay" = "Pixabay (Natur)";
-"wallpaper_refresh" = "Zufällig";
+"wallpaper_refresh" = "Hintergrundbild wechseln";
+"my_favorites" = "Meine Favoriten";
 "wallpaper_search_placeholder" = "Stimmung suchen (z. B. Wald, Minimal)";
 "wallpaper_solid" = "Einfarbig";
 "wallpaper_source" = "Hintergrundquelle";
@@ -478,5 +492,6 @@ Erzahlen Sie uns:
 "browser_forward" = "Vorwärts";
 "browser_reload" = "Neu laden";
 "browser_edit_address" = "Adresse oder Suche bearbeiten";
+"current_page_link" = "Link der aktuellen Seite";
 "tab_limit_title" = "Tab-Limit erreicht";
 "tab_limit_message" = "Du kannst bis zu 20 Tabs geöffnet halten. Schließe einen, bevor du einen neuen öffnest.";

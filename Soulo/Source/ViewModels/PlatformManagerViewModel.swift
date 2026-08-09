@@ -3,7 +3,6 @@ import SwiftUI
 @MainActor
 class PlatformManagerViewModel: ObservableObject {
     @Published var platforms: [SearchPlatform] = []
-    @AppStorage("auto_sort_frequency") var autoSortByFrequency = false
 
     private let store = PlatformDataStore.shared
 
@@ -58,8 +57,4 @@ class PlatformManagerViewModel: ObservableObject {
         loadPlatforms()
     }
 
-    func sortByFrequency() {
-        store.sortByFrequency()
-        loadPlatforms()
-    }
 }

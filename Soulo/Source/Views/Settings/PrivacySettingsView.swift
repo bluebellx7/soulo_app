@@ -1,6 +1,5 @@
 import SwiftUI
 import SwiftData
-import WebKit
 
 struct PrivacySettingsView: View {
     @Environment(\.modelContext) private var modelContext
@@ -23,6 +22,7 @@ struct PrivacySettingsView: View {
     @State private var historyCleared = false
     @State private var bookmarksCleared = false
     @State private var cacheCleared = false
+    @State private var cacheSizeText: String?
 
     var body: some View {
         ZStack {
@@ -46,7 +46,10 @@ struct PrivacySettingsView: View {
                                     .font(.body)
                                     .fontWeight(.medium)
                             } icon: {
-                                IconBadge(systemName: "theatermasks.fill", color: .purple)
+                                IconBadge(
+                                    systemName: "theatermasks.fill",
+                                    color: isIncognito ? .purple : Color(uiColor: .systemGray3)
+                                )
                             }
                         }
                         .tint(.purple)
@@ -98,6 +101,8 @@ struct PrivacySettingsView: View {
                     )
                 } header: {
                     SectionHeader(title: LanguageManager.shared.localizedString("privacy_section_browsing"))
+                } footer: {
+                    Text(LanguageManager.shared.localizedString("privacy_global_scope_desc"))
                 }
 
                 // MARK: - Data Management
@@ -152,11 +157,12 @@ struct PrivacySettingsView: View {
                         Text(LanguageManager.shared.localizedString("privacy_clear_bookmarks_confirm_message"))
                     }
 
-                    // Clear WebView Cache
-                    DestructiveActionRow(
+                    // Clear browser cache without deleting account sessions.
+                    CacheActionRow(
                         icon: "internaldrive.fill",
                         title: LanguageManager.shared.localizedString("privacy_clear_cache"),
                         description: LanguageManager.shared.localizedString("privacy_clear_cache_desc"),
+                        detail: cacheSizeText,
                         isLoading: clearingCache,
                         isCompleted: cacheCleared
                     ) {
@@ -195,6 +201,9 @@ struct PrivacySettingsView: View {
         }
         .navigationTitle(LanguageManager.shared.localizedString("settings_privacy"))
         .navigationBarTitleDisplayMode(.large)
+        .task {
+            await refreshCacheSize()
+        }
         .onChange(of: isIncognito) { _, enabled in
             if enabled {
                 tabManager.resetTabsForPrivacy()
@@ -250,23 +259,19 @@ struct PrivacySettingsView: View {
 
     private func clearWebViewCache() {
         clearingCache = true
-        WebViewModel.deleteAllPersistedSnapshots()
-        tabManager.tabs.forEach { $0.webViewModel.snapshot = nil }
-        let dataTypes = WKWebsiteDataStore.allWebsiteDataTypes()
-        WKWebsiteDataStore.default().removeData(
-            ofTypes: dataTypes,
-            modifiedSince: .distantPast
-        ) {
-            DispatchQueue.main.async {
-                clearingCache = false
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    cacheCleared = true
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    withAnimation { cacheCleared = false }
-                }
+        Task {
+            await BrowserCacheService.clear(tabManager: tabManager)
+            clearingCache = false
+            cacheSizeText = nil
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                cacheCleared = true
             }
         }
+    }
+
+    private func refreshCacheSize() async {
+        let byteCount = await BrowserCacheService.currentSizeInBytes()
+        cacheSizeText = BrowserCacheService.formattedSize(byteCount)
     }
 }
 
@@ -280,7 +285,10 @@ struct PrivacyToggleRow: View {
     var body: some View {
         Toggle(isOn: $isOn) {
             HStack(alignment: .top, spacing: 14) {
-                IconBadge(systemName: icon, color: color)
+                IconBadge(
+                    systemName: icon,
+                    color: isOn ? color : Color(uiColor: .systemGray3)
+                )
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(.body)
@@ -346,6 +354,74 @@ struct DestructiveActionRow: View {
                     }
                 }
                 .frame(width: 24, height: 24)
+            }
+            .padding(.vertical, 4)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(isLoading)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isCompleted)
+        .animation(.default, value: isLoading)
+    }
+}
+
+struct CacheActionRow: View {
+    let icon: String
+    let title: String
+    let description: String
+    let detail: String?
+    let isLoading: Bool
+    let isCompleted: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color.teal.opacity(0.12))
+                        .frame(width: 34, height: 34)
+                    Image(systemName: icon)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.teal)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.body)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.primary)
+                    Text(description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                HStack(spacing: 7) {
+                    if let detail, !isLoading, !isCompleted {
+                        Text(detail)
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                            .lineLimit(1)
+                    }
+
+                    if isLoading {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .scaleEffect(0.85)
+                            .tint(.teal)
+                    } else if isCompleted {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(.green)
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                }
+                .frame(minHeight: 24)
+                .fixedSize(horizontal: true, vertical: false)
             }
             .padding(.vertical, 4)
             .contentShape(Rectangle())

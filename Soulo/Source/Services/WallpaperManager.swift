@@ -70,6 +70,7 @@ class WallpaperManager: ObservableObject {
     private var preloadTask: Task<Void, Never>?
     private var preloadedWallpaper: RemoteWallpaper?
     private var preloadedImage: UIImage?
+    private var preloadedImageData: Data?
 
     private init() {
         self.source = WallpaperSource(rawValue: UserDefaults.standard.string(forKey: "wallpaper_source") ?? "pexels") ?? .pexels
@@ -88,6 +89,7 @@ class WallpaperManager: ObservableObject {
         loadFavorites()
         loadBlocked()
         loadCustomImage()
+        loadPersistedRemoteWallpaper()
         setupAutoRefreshTimer(startPreloadImmediately: false)
     }
 
@@ -210,14 +212,19 @@ class WallpaperManager: ObservableObject {
         guard !networkLoading else { return }
         UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "wallpaper_last_auto_refresh_at")
 
-        if let wall = preloadedWallpaper, let image = preloadedImage {
+        if let wall = preloadedWallpaper,
+           let image = preloadedImage,
+           let imageData = preloadedImageData {
             if let newSource = WallpaperSource(rawValue: wall.source) {
                 source = newSource
             }
             searchTopic = wall.topic
             currentImageURLString = wall.url
-            currentImage = image
-            currentImageID = wall.id
+            withAnimation(.easeInOut(duration: 0.45)) {
+                currentImage = image
+                currentImageID = wall.id
+            }
+            await persistRemoteWallpaper(imageData, wallpaper: wall)
             resetPreloadedWallpaper()
             preloadNextAutoWallpaper()
             return
@@ -236,10 +243,13 @@ class WallpaperManager: ObservableObject {
             guard let wall = await fetchRandomRemoteWallpaper(source: selection.source, query: selection.topic) else { return }
             guard !Task.isCancelled else { return }
             let urlString = wall.url.isEmpty ? wall.previewURL : wall.url
-            guard let url = URL(string: urlString), let image = await downloadImage(from: url) else { return }
+            guard let url = URL(string: urlString),
+                  let imageData = await downloadImageData(from: url),
+                  let image = UIImage(data: imageData) else { return }
             guard !Task.isCancelled else { return }
             preloadedWallpaper = wall
             preloadedImage = image
+            preloadedImageData = imageData
         }
     }
 
@@ -248,6 +258,7 @@ class WallpaperManager: ObservableObject {
         preloadTask = nil
         preloadedWallpaper = nil
         preloadedImage = nil
+        preloadedImageData = nil
     }
 
     private func autoRandomRemoteSelection() -> (source: WallpaperSource, topic: String)? {
@@ -360,7 +371,11 @@ class WallpaperManager: ObservableObject {
         withAnimation(.easeOut(duration: 0.25)) {
             candidateWallpapers.removeAll { $0.id == wallpaper.id }
         }
-        if currentImageURLString == wallpaper.url { currentImage = nil; Task { await refreshRandom() } }
+        if currentImageURLString == wallpaper.url {
+            removePersistedRemoteWallpaper()
+            currentImage = nil
+            Task { await refreshRandom() }
+        }
         HapticsManager.medium()
     }
 
@@ -447,16 +462,23 @@ class WallpaperManager: ObservableObject {
     }
 
     func applyWallpaper(_ wallpaper: RemoteWallpaper) async {
-        guard let url = URL(string: wallpaper.url) else { return }
+        let urlString = wallpaper.url.isEmpty ? wallpaper.previewURL : wallpaper.url
+        guard let url = URL(string: urlString),
+              let imageData = await downloadImageData(from: url),
+              let image = UIImage(data: imageData) else { return }
+
         currentImageURLString = wallpaper.url
-        if let img = await downloadImage(from: url) {
-            self.currentImage = img
-            self.currentImageID = wallpaper.id
+        withAnimation(.easeInOut(duration: 0.45)) {
+            currentImage = image
+            currentImageID = wallpaper.id
         }
+        await persistRemoteWallpaper(imageData, wallpaper: wallpaper)
     }
 
-    private func downloadImage(from url: URL) async -> UIImage? {
-        await Task.detached { guard let data = try? Data(contentsOf: url) else { return nil }; return UIImage(data: data) }.value
+    private func downloadImageData(from url: URL) async -> Data? {
+        await Task.detached(priority: .utility) {
+            try? Data(contentsOf: url)
+        }.value
     }
 
     private func recordRemoteError(source: WallpaperSource, error: Error) {
@@ -523,6 +545,92 @@ class WallpaperManager: ObservableObject {
     private static var customImageURL: URL { FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("custom_wallpaper.jpg") }
     func saveToAlbum(image: UIImage) { UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil) }
     private var currentImageURLString: String? = nil
+
+    // MARK: - Current Wallpaper Cache
+
+    private static let currentWallpaperFileKey = "wallpaper_current_cache_file"
+    private static let currentWallpaperIDKey = "wallpaper_current_cache_id"
+    private static let currentWallpaperURLKey = "wallpaper_current_cache_url"
+
+    private static var currentWallpaperCacheDirectory: URL {
+        let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("CurrentWallpaper", isDirectory: true)
+        try? FileManager.default.createDirectory(
+            at: directory,
+            withIntermediateDirectories: true
+        )
+        return directory
+    }
+
+    /// Loads the last successfully displayed remote wallpaper synchronously so
+    /// the first rendered frame never has to wait for the network.
+    private func loadPersistedRemoteWallpaper() {
+        guard source.isRemote else { return }
+
+        let defaults = UserDefaults.standard
+        guard let fileName = defaults.string(forKey: Self.currentWallpaperFileKey),
+              let imageID = defaults.string(forKey: Self.currentWallpaperIDKey) else {
+            return
+        }
+
+        let fileURL = Self.currentWallpaperCacheDirectory.appendingPathComponent(fileName)
+        guard let data = try? Data(contentsOf: fileURL),
+              let image = UIImage(data: data) else {
+            removePersistedRemoteWallpaper()
+            return
+        }
+
+        currentImage = image.preparingForDisplay() ?? image
+        currentImageID = imageID
+        currentImageURLString = defaults.string(forKey: Self.currentWallpaperURLKey)
+    }
+
+    /// Uses a unique file for each write so overlapping downloads cannot
+    /// replace the cache for a newer wallpaper that has already won the race.
+    private func persistRemoteWallpaper(
+        _ imageData: Data,
+        wallpaper: RemoteWallpaper
+    ) async {
+        let fileName = "\(UUID().uuidString).image"
+        let fileURL = Self.currentWallpaperCacheDirectory.appendingPathComponent(fileName)
+        let saved = await Task.detached(priority: .utility) {
+            do {
+                try imageData.write(to: fileURL, options: .atomic)
+                return true
+            } catch {
+                return false
+            }
+        }.value
+
+        guard saved else { return }
+        guard currentImageID == wallpaper.id else {
+            try? FileManager.default.removeItem(at: fileURL)
+            return
+        }
+
+        let defaults = UserDefaults.standard
+        let previousFileName = defaults.string(forKey: Self.currentWallpaperFileKey)
+        defaults.set(fileName, forKey: Self.currentWallpaperFileKey)
+        defaults.set(wallpaper.id, forKey: Self.currentWallpaperIDKey)
+        defaults.set(wallpaper.url, forKey: Self.currentWallpaperURLKey)
+
+        if let previousFileName, previousFileName != fileName {
+            let previousURL = Self.currentWallpaperCacheDirectory
+                .appendingPathComponent(previousFileName)
+            try? FileManager.default.removeItem(at: previousURL)
+        }
+    }
+
+    private func removePersistedRemoteWallpaper() {
+        let defaults = UserDefaults.standard
+        if let fileName = defaults.string(forKey: Self.currentWallpaperFileKey) {
+            let fileURL = Self.currentWallpaperCacheDirectory.appendingPathComponent(fileName)
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+        defaults.removeObject(forKey: Self.currentWallpaperFileKey)
+        defaults.removeObject(forKey: Self.currentWallpaperIDKey)
+        defaults.removeObject(forKey: Self.currentWallpaperURLKey)
+    }
 
     // MARK: - HD Image Cache
 

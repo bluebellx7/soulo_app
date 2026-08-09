@@ -88,8 +88,9 @@
 "wallpaper_solid" = "純色背景";
 "wallpaper_source" = "桌布來源";
 "wallpaper_type" = "背景類型";
-"wallpaper_refresh" = "隨機換樣";
-"wallpaper_download" = "下載到相簿";
+"wallpaper_refresh" = "更換桌布";
+"wallpaper_download" = "下載桌布";
+"my_favorites" = "我的收藏";
 "wallpaper_saved" = "已儲存到相簿";
 "wallpaper_fetch_bing" = "取得今日桌布";
 "wallpaper_choose_photo" = "選擇照片";
@@ -146,12 +147,15 @@
 "privacy_clear_bookmarks_confirm_title" = "清除所有收藏？";
 "privacy_clear_bookmarks_confirm_message" = "所有收藏將被永久刪除。";
 "privacy_clear_cache" = "清除瀏覽快取";
-"privacy_clear_cache_desc" = "清除 Cookie、快取和本機儲存";
+"privacy_clear_cache_desc" = "清除網頁快取與分頁預覽，保留登入狀態";
 "privacy_clear_cache_confirm_title" = "清除瀏覽快取？";
-"privacy_clear_cache_confirm_message" = "所有瀏覽資料將被永久刪除。";
+"privacy_clear_cache_confirm_message" = "將清除網頁快取資源，但保留 Cookie 與登入狀態。";
+
+"enter_fullscreen" = "進入全螢幕";
+"exit_fullscreen" = "退出全螢幕";
 "privacy_clear_action" = "清除";
 "privacy_data_footer" = "以上操作不可撤銷，清除的資料無法恢復。";
-"settings_privacy" = "隱私";
+"settings_privacy" = "隱私設定";
 "platform_sort_options" = "排序選項";
 "cancel" = "取消";
 "confirm" = "確認";
@@ -234,6 +238,11 @@
 "login_required_title" = "需要登入";
 "login_required_message" = "該平台需要先登入才能使用。請在頁面中登入，登入後搜尋將自動執行。";
 "login_required_toast" = "請先登入後再搜尋";
+"status_enabled" = "已啟用";
+"status_disabled" = "已停用";
+"show_top_search_bar" = "顯示頂部搜尋框";
+"show_top_search_bar_desc" = "隱藏後，可點擊底部網址列搜尋或使用語音輸入";
+"ad_block_master_disabled_desc" = "開啟廣告過濾後，才能使用和管理下方過濾規則訂閱。";
 /* 自訂群組 */
 "custom_groups" = "自訂群組";
 "no_groups" = "暫無自訂群組";
@@ -307,6 +316,7 @@
 "settings_section_background" = "背景";
 "settings_section_privacy" = "隱私";
 "settings_section_about" = "關於";
+"settings_section_about_support" = "關於與支援";
 
 /* Platform Management */
 "platform_auto_sort" = "依使用頻率自動排序";
@@ -386,6 +396,7 @@
 "feedback_placeholder" = "您的每一條回饋都是我們改進的動力！\n\n可以告訴我們：\n· 遇到了什麼問題？\n· 希望增加什麼功能？\n· 哪裡的體驗可以更好？";
 "feedback_contact" = "聯絡方式";
 "feedback_contact_hint" = "電子郵件或其他聯絡方式";
+"feedback_contact_reply_hint" = "可以留下您的電子郵件，方便我們回覆您";
 "feedback_optional" = "選填";
 "feedback_submit" = "提交";
 "feedback_submitting" = "提交中...";
@@ -459,7 +470,10 @@
 "fire_button_confirm" = "清除";
 "fire_button_desc" = "關閉瀏覽器分頁，並清除網站資料、Cookie、快取和隱私統計。";
 "fire_complete" = "隱私資料已清除";
-"site_privacy" = "Site Privacy";
+"site_privacy" = "目前網站保護";
+"site_privacy_scope_desc" = "僅影響目前網站；所有網站的預設規則可在「隱私設定」中修改。";
+"privacy_global_scope_desc" = "以上規則預設套用至所有網站；單一網站的例外可在「目前網站保護」中設定。";
+"site_privacy_compatibility_bypass" = "為確保登入與網頁功能正常，此網站的保護已暫停。";
 "site_privacy_no_site" = "No Site";
 "site_privacy_protected" = "Protections are active";
 "site_privacy_unprotected" = "Protections are disabled for this site";
@@ -495,5 +509,6 @@
 "browser_forward" = "前進";
 "browser_reload" = "重新載入";
 "browser_edit_address" = "編輯網址或搜尋";
+"current_page_link" = "目前網頁連結";
 "tab_limit_title" = "已達標籤頁上限";
 "tab_limit_message" = "最多可保留 20 個標籤頁。請先關閉一個再開啟新的標籤頁。";

@@ -6,12 +6,11 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var tabManager: TabManager
 
     @State private var selectedAppearance: String = ThemeManager.shared.appearance
     @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = true
-    @AppStorage("ad_block_network_enabled") private var adBlockNetworkEnabled: Bool = true
-    @AppStorage("ad_block_cosmetic_enabled") private var adBlockCosmeticEnabled: Bool = true
-    @AppStorage("ad_block_popup_enabled") private var adBlockPopupEnabled: Bool = true
+    @AppStorage("show_top_search_bar") private var showTopSearchBar = true
     @AppStorage(LiveActivityService.enabledKey) private var liveActivityEnabled: Bool = true
     @AppStorage("show_bookmarks_on_home") private var showBookmarksOnHome: Bool = false
     @AppStorage("show_group_picker_on_home") private var showGroupPickerOnHome: Bool = false
@@ -23,6 +22,10 @@ struct SettingsView: View {
     @State private var editingHomeTitle = ""
     @State private var editingHomeSubtitle = ""
     @State private var showFeedback = false
+    @State private var showClearCacheAlert = false
+    @State private var clearingCache = false
+    @State private var cacheCleared = false
+    @State private var cacheSizeText: String?
     @Environment(\.requestReview) private var requestReview
 
     private var appVersion: String {
@@ -63,7 +66,7 @@ struct SettingsView: View {
                         SectionHeader(title: LanguageManager.shared.localizedString("settings_section_platforms"))
                     }
 
-                    // MARK: - Appearance
+                    // MARK: - Appearance, Language & Background
                     Section {
                         VStack(alignment: .leading, spacing: 12) {
                             Label {
@@ -99,12 +102,7 @@ struct SettingsView: View {
                             }
                         }
                         .padding(.vertical, 4)
-                    } header: {
-                        SectionHeader(title: LanguageManager.shared.localizedString("settings_section_appearance"))
-                    }
 
-                    // MARK: - Language
-                    Section {
                         NavigationLink(destination: LanguageSettingsView()) {
                             Label {
                                 HStack {
@@ -118,12 +116,7 @@ struct SettingsView: View {
                                 IconBadge(systemName: "globe", color: .blue)
                             }
                         }
-                    } header: {
-                        SectionHeader(title: LanguageManager.shared.localizedString("settings_section_language"))
-                    }
 
-                    // MARK: - Background / Wallpaper
-                    Section {
                         NavigationLink(destination: WallpaperSettingsView()) {
                             Label {
                                 Text(LanguageManager.shared.localizedString("settings_wallpaper"))
@@ -132,10 +125,10 @@ struct SettingsView: View {
                             }
                         }
                     } header: {
-                        SectionHeader(title: LanguageManager.shared.localizedString("settings_section_background"))
+                        SectionHeader(title: LanguageManager.shared.localizedString("settings_section_appearance"))
                     }
 
-                    // MARK: - Home Customization
+                    // MARK: - Home
                     Section {
                         HStack {
                             Label {
@@ -166,12 +159,84 @@ struct SettingsView: View {
                         }
                         .contentShape(Rectangle())
                         .onTapGesture { showHomeSubtitleEdit = true }
+
+                        Toggle(isOn: $showBookmarksOnHome) {
+                            Label {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(LanguageManager.shared.localizedString("show_bookmarks_home"))
+                                        .font(.body)
+                                    Text(LanguageManager.shared.localizedString("show_bookmarks_home_desc"))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } icon: {
+                                IconBadge(
+                                    systemName: "bookmark.fill",
+                                    color: showBookmarksOnHome ? .orange : Color(uiColor: .systemGray3)
+                                )
+                            }
+                        }
+                        .tint(.orange)
+
+                        Toggle(isOn: $showGroupPickerOnHome) {
+                            Label {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(LanguageManager.shared.localizedString("show_group_picker_home"))
+                                        .font(.body)
+                                    Text(LanguageManager.shared.localizedString("show_group_picker_home_desc"))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } icon: {
+                                IconBadge(
+                                    systemName: "folder.fill",
+                                    color: showGroupPickerOnHome ? .indigo : Color(uiColor: .systemGray3)
+                                )
+                            }
+                        }
+                        .tint(.indigo)
+
+                        Toggle(isOn: $showRecentSearchesOnHome) {
+                            Label {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(LanguageManager.shared.localizedString("show_recent_searches_home"))
+                                        .font(.body)
+                                    Text(LanguageManager.shared.localizedString("show_recent_searches_home_desc"))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } icon: {
+                                IconBadge(
+                                    systemName: "clock.arrow.circlepath",
+                                    color: showRecentSearchesOnHome ? .blue : Color(uiColor: .systemGray3)
+                                )
+                            }
+                        }
+                        .tint(.blue)
                     } header: {
-                        SectionHeader(title: LanguageManager.shared.localizedString("home_customization"))
+                        SectionHeader(title: LanguageManager.shared.localizedString("home_screen"))
                     }
 
-                    // MARK: - Ad Block
+                    // MARK: - Browsing
                     Section {
+                        Toggle(isOn: $showTopSearchBar) {
+                            Label {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(LanguageManager.shared.localizedString("show_top_search_bar"))
+                                        .font(.body)
+                                    Text(LanguageManager.shared.localizedString("show_top_search_bar_desc"))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } icon: {
+                                IconBadge(
+                                    systemName: "rectangle.topthird.inset.filled",
+                                    color: showTopSearchBar ? .blue : Color(uiColor: .systemGray3)
+                                )
+                            }
+                        }
+                        .tint(.blue)
+
                         Toggle(isOn: $adBlockEnabled) {
                             Label {
                                 VStack(alignment: .leading, spacing: 2) {
@@ -182,45 +247,30 @@ struct SettingsView: View {
                                         .foregroundStyle(.secondary)
                                 }
                             } icon: {
-                                IconBadge(systemName: "shield.checkered", color: .green)
+                                IconBadge(
+                                    systemName: adBlockEnabled ? "shield.checkered" : "shield.slash",
+                                    color: adBlockEnabled ? .green : Color(uiColor: .systemGray3)
+                                )
                             }
                         }
                         .tint(.green)
-
-                        if adBlockEnabled {
-                            Toggle(isOn: $adBlockNetworkEnabled) {
-                                Label {
-                                    Text(LanguageManager.shared.localizedString("ad_block_network"))
-                                } icon: {
-                                    IconBadge(systemName: "network.badge.shield.half.filled", color: .green)
-                                }
-                            }
-                            .tint(.green)
-
-                            Toggle(isOn: $adBlockCosmeticEnabled) {
-                                Label {
-                                    Text(LanguageManager.shared.localizedString("ad_block_cosmetic"))
-                                } icon: {
-                                    IconBadge(systemName: "eye.slash.fill", color: .blue)
-                                }
-                            }
-                            .tint(.blue)
-
-                            Toggle(isOn: $adBlockPopupEnabled) {
-                                Label {
-                                    Text(LanguageManager.shared.localizedString("ad_block_popups"))
-                                } icon: {
-                                    IconBadge(systemName: "rectangle.badge.xmark", color: .orange)
-                                }
-                            }
-                            .tint(.orange)
-                        }
 
                         NavigationLink(destination: AdBlockManagementView(currentHost: nil)) {
                             Label {
                                 Text(LanguageManager.shared.localizedString("ad_block_management"))
                             } icon: {
-                                IconBadge(systemName: "shield.lefthalf.filled", color: .green)
+                                IconBadge(
+                                    systemName: "shield.lefthalf.filled",
+                                    color: adBlockEnabled ? .green : Color(uiColor: .systemGray3)
+                                )
+                            }
+                        }
+
+                        NavigationLink(destination: PrivacySettingsView()) {
+                            Label {
+                                Text(LanguageManager.shared.localizedString("settings_privacy"))
+                            } icon: {
+                                IconBadge(systemName: "hand.raised.fill", color: .green)
                             }
                         }
 
@@ -242,7 +292,10 @@ struct SettingsView: View {
                                         .foregroundStyle(.secondary)
                                 }
                             } icon: {
-                                IconBadge(systemName: "dot.radiowaves.left.and.right", color: .purple)
+                                IconBadge(
+                                    systemName: "dot.radiowaves.left.and.right",
+                                    color: liveActivityEnabled ? .purple : Color(uiColor: .systemGray3)
+                                )
                             }
                         }
                         .tint(.purple)
@@ -250,81 +303,35 @@ struct SettingsView: View {
                             LiveActivityService.shared.setEnabled(enabled)
                         }
 
-                        NavigationLink(destination: ExternalNavigationSettingsView()) {
-                            Label {
-                                Text(LanguageManager.shared.localizedString("external_navigation"))
-                            } icon: {
-                                IconBadge(systemName: "arrow.up.forward.app", color: .orange)
+                        CacheActionRow(
+                            icon: "internaldrive.fill",
+                            title: LanguageManager.shared.localizedString("privacy_clear_cache"),
+                            description: LanguageManager.shared.localizedString("privacy_clear_cache_desc"),
+                            detail: cacheSizeText,
+                            isLoading: clearingCache,
+                            isCompleted: cacheCleared
+                        ) {
+                            showClearCacheAlert = true
+                        }
+                        .alert(
+                            LanguageManager.shared.localizedString("privacy_clear_cache_confirm_title"),
+                            isPresented: $showClearCacheAlert
+                        ) {
+                            Button(
+                                LanguageManager.shared.localizedString("privacy_clear_action"),
+                                role: .destructive
+                            ) {
+                                clearBrowserCache()
                             }
+                            Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
+                        } message: {
+                            Text(LanguageManager.shared.localizedString("privacy_clear_cache_confirm_message"))
                         }
                     } header: {
                         SectionHeader(title: LanguageManager.shared.localizedString("browsing"))
                     }
 
-                    // MARK: - Home Bookmarks
-                    Section {
-                        Toggle(isOn: $showBookmarksOnHome) {
-                            Label {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(LanguageManager.shared.localizedString("show_bookmarks_home"))
-                                        .font(.body)
-                                    Text(LanguageManager.shared.localizedString("show_bookmarks_home_desc"))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            } icon: {
-                                IconBadge(systemName: "bookmark.fill", color: .orange)
-                            }
-                        }
-                        .tint(.orange)
-
-                        Toggle(isOn: $showGroupPickerOnHome) {
-                            Label {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(LanguageManager.shared.localizedString("show_group_picker_home"))
-                                        .font(.body)
-                                    Text(LanguageManager.shared.localizedString("show_group_picker_home_desc"))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            } icon: {
-                                IconBadge(systemName: "folder.fill", color: .indigo)
-                            }
-                        }
-                        .tint(.indigo)
-
-                        Toggle(isOn: $showRecentSearchesOnHome) {
-                            Label {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(LanguageManager.shared.localizedString("show_recent_searches_home"))
-                                        .font(.body)
-                                    Text(LanguageManager.shared.localizedString("show_recent_searches_home_desc"))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            } icon: {
-                                IconBadge(systemName: "clock.arrow.circlepath", color: .blue)
-                            }
-                        }
-                        .tint(.blue)
-                    } header: {
-                        SectionHeader(title: LanguageManager.shared.localizedString("home_screen"))
-                    }
-
-                    // MARK: - Privacy
-                    Section {
-                        NavigationLink(destination: PrivacySettingsView()) {
-                            Label {
-                                Text(LanguageManager.shared.localizedString("settings_privacy"))
-                            } icon: {
-                                IconBadge(systemName: "hand.raised.fill", color: .green)
-                            }
-                        }
-                    } header: {
-                        SectionHeader(title: LanguageManager.shared.localizedString("settings_section_privacy"))
-                    }
-
-                    // MARK: - Support
+                    // MARK: - About & Support
                     Section {
                         Button { requestReview() } label: {
                             Label {
@@ -353,12 +360,7 @@ struct SettingsView: View {
                                 IconBadge(systemName: "questionmark.circle.fill", color: .teal)
                             }
                         }
-                    } header: {
-                        SectionHeader(title: LanguageManager.shared.localizedString("settings_section_support"))
-                    }
 
-                    // MARK: - About
-                    Section {
                         HStack {
                             Label {
                                 Text(LanguageManager.shared.localizedString("settings_version"))
@@ -388,7 +390,7 @@ struct SettingsView: View {
                             }
                         }
                     } header: {
-                        SectionHeader(title: LanguageManager.shared.localizedString("settings_section_about"))
+                        SectionHeader(title: LanguageManager.shared.localizedString("settings_section_about_support"))
                     } footer: {
                         HStack {
                             Spacer()
@@ -441,8 +443,28 @@ struct SettingsView: View {
             .sheet(isPresented: $showFeedback) {
                 FeedbackView()
             }
+            .task {
+                await refreshCacheSize()
+            }
             // Appearance controlled by UIKit via ThemeManager.applyAppearance()
         }
+    }
+
+    private func clearBrowserCache() {
+        clearingCache = true
+        Task {
+            await BrowserCacheService.clear(tabManager: tabManager)
+            clearingCache = false
+            cacheSizeText = nil
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                cacheCleared = true
+            }
+        }
+    }
+
+    private func refreshCacheSize() async {
+        let byteCount = await BrowserCacheService.currentSizeInBytes()
+        cacheSizeText = BrowserCacheService.formattedSize(byteCount)
     }
 }
 

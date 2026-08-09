@@ -88,8 +88,9 @@
 "wallpaper_solid" = "Colori Solidi";
 "wallpaper_source" = "Origine Sfondo";
 "wallpaper_type" = "Tipo di Sfondo";
-"wallpaper_refresh" = "Casuale";
-"wallpaper_download" = "Salva nelle Foto";
+"wallpaper_refresh" = "Cambia sfondo";
+"wallpaper_download" = "Scarica sfondo";
+"my_favorites" = "I miei preferiti";
 "wallpaper_saved" = "Sfondo salvato nelle Foto";
 "wallpaper_fetch_bing" = "Ottieni Immagine del Giorno";
 "wallpaper_choose_photo" = "Scegli dalla Libreria";
@@ -146,12 +147,15 @@
 "privacy_clear_bookmarks_confirm_title" = "Cancellare Tutti i Segnalibri?";
 "privacy_clear_bookmarks_confirm_message" = "Tutti i segnalibri verranno eliminati permanentemente.";
 "privacy_clear_cache" = "Cancella Cache di Navigazione";
-"privacy_clear_cache_desc" = "Cancella cookie, cache e archiviazione locale";
+"privacy_clear_cache_desc" = "Cancella cache web e anteprime delle schede. Gli accessi restano attivi";
 "privacy_clear_cache_confirm_title" = "Cancellare la Cache di Navigazione?";
-"privacy_clear_cache_confirm_message" = "Tutti i dati di navigazione verranno eliminati permanentemente.";
+"privacy_clear_cache_confirm_message" = "Le risorse nella cache verranno eliminate. Cookie e accessi saranno mantenuti.";
+
+"enter_fullscreen" = "Attiva schermo intero";
+"exit_fullscreen" = "Esci da schermo intero";
 "privacy_clear_action" = "Cancella";
 "privacy_data_footer" = "Queste azioni non possono essere annullate. I dati cancellati non possono essere recuperati.";
-"settings_privacy" = "Privacy";
+"settings_privacy" = "Impostazioni privacy";
 "platform_sort_options" = "Opzioni di Ordinamento";
 "cancel" = "Annulla";
 "confirm" = "Conferma";
@@ -234,6 +238,11 @@
 "login_required_title" = "Accesso Richiesto";
 "login_required_message" = "Questa piattaforma richiede l'accesso. Effettua il login sulla pagina e la ricerca verrà eseguita automaticamente.";
 "login_required_toast" = "Effettua prima l'accesso, poi cerca di nuovo";
+"status_enabled" = "Attivo";
+"status_disabled" = "Disattivato";
+"show_top_search_bar" = "Mostra la barra di ricerca superiore";
+"show_top_search_bar_desc" = "Se nascosta, usa la barra degli indirizzi in basso per cercare o avviare l’input vocale";
+"ad_block_master_disabled_desc" = "Attiva il blocco annunci per usare e gestire gli abbonamenti ai filtri qui sotto.";
 /* Custom Groups */
 "custom_groups" = "Gruppi Personalizzati";
 "no_groups" = "Nessun Gruppo Personalizzato";
@@ -307,6 +316,7 @@
 "settings_section_background" = "Sfondo";
 "settings_section_privacy" = "Privacy";
 "settings_section_about" = "Informazioni";
+"settings_section_about_support" = "Informazioni e supporto";
 
 /* Platform Management */
 "platform_auto_sort" = "Ordina Automaticamente per Frequenza";
@@ -386,6 +396,7 @@
 "feedback_placeholder" = "Il tuo feedback ci aiuta a migliorare!\n\nRaccontaci:\n· Quale problema hai riscontrato?\n· Quale funzionalità vorresti?\n· Cosa potrebbe funzionare meglio?";
 "feedback_contact" = "Contatto";
 "feedback_contact_hint" = "Email o altro contatto";
+"feedback_contact_reply_hint" = "Puoi lasciare il tuo indirizzo email per consentirci di risponderti.";
 "feedback_optional" = "facoltativo";
 "feedback_submit" = "Invia";
 "feedback_submitting" = "Invio in corso...";
@@ -459,7 +470,10 @@
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Site Privacy";
+"site_privacy" = "Protezione del sito attuale";
+"site_privacy_scope_desc" = "Si applica solo a questo sito. Modifica i valori predefiniti nelle Impostazioni privacy.";
+"privacy_global_scope_desc" = "Questi valori si applicano a tutti i siti. Usa Protezione del sito attuale per creare un’eccezione.";
+"site_privacy_compatibility_bypass" = "La protezione è sospesa per mantenere attivi accesso e funzioni del sito.";
 "site_privacy_no_site" = "No Site";
 "site_privacy_protected" = "Protections are active";
 "site_privacy_unprotected" = "Protections are disabled for this site";
@@ -495,5 +509,6 @@
 "browser_forward" = "Avanti";
 "browser_reload" = "Ricarica";
 "browser_edit_address" = "Modifica indirizzo o ricerca";
+"current_page_link" = "Link della pagina corrente";
 "tab_limit_title" = "Limite schede raggiunto";
 "tab_limit_message" = "Puoi tenere aperte fino a 20 schede. Chiudine una prima di aprirne un’altra.";

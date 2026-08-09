@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WebKit
 
 struct SearchResultsView: View {
     var searchBarNamespace: Namespace.ID
@@ -21,6 +22,7 @@ struct SearchResultsView: View {
     // Persist last selected group
     @AppStorage("last_selected_region") private var lastRegion: String = ""
     @AppStorage("last_selected_group_id") private var lastGroupID: String = ""
+    @AppStorage("show_top_search_bar") private var showTopSearchBar = true
 
     @State private var selectedCustomGroup: CustomGroup? = nil
 
@@ -28,37 +30,39 @@ struct SearchResultsView: View {
         GeometryReader { geo in
             VStack(spacing: 0) {
                 if !isFullscreen {
-                    topSearchBar
-                        .padding(.horizontal, 10)
-                        .padding(.top, 4)
-                        .padding(.bottom, 2)
+                    if showTopSearchBar {
+                        topSearchBar
+                            .padding(.horizontal, 10)
+                            .padding(.top, 4)
+                            .padding(.bottom, 2)
 
-                    // Floating autocomplete — zero-height container with overlay extending below
-                    Color.clear
-                        .frame(height: 0)
-                        .overlay(alignment: .top) {
-                            if !searchVM.suggestions.isEmpty {
-                                SearchAutocompleteView(
-                                    suggestions: searchVM.suggestions,
-                                    query: searchVM.searchText,
-                                    darkVariant: false,
-                                    onSelect: { suggestion in
-                                        searchVM.searchText = suggestion
-                                        searchVM.performSearch(context: modelContext)
-                                        loadCurrentPlatformURL()
-                                    },
-                                    onFill: { suggestion in
-                                        searchVM.searchText = suggestion
-                                    }
-                                )
-                                .padding(.horizontal, 10)
-                                .padding(.top, 4)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .transition(.opacity.combined(with: .move(edge: .top)))
+                        // Floating autocomplete — zero-height container with overlay extending below
+                        Color.clear
+                            .frame(height: 0)
+                            .overlay(alignment: .top) {
+                                if !searchVM.suggestions.isEmpty {
+                                    SearchAutocompleteView(
+                                        suggestions: searchVM.suggestions,
+                                        query: searchVM.searchText,
+                                        darkVariant: false,
+                                        onSelect: { suggestion in
+                                            searchVM.searchText = suggestion
+                                            searchVM.performSearch(context: modelContext)
+                                            loadCurrentPlatformURL()
+                                        },
+                                        onFill: { suggestion in
+                                            searchVM.searchText = suggestion
+                                        }
+                                    )
+                                    .padding(.horizontal, 10)
+                                    .padding(.top, 4)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                                }
                             }
-                        }
-                        .zIndex(100)
-                        .allowsHitTesting(!searchVM.suggestions.isEmpty)
+                            .zIndex(100)
+                            .allowsHitTesting(!searchVM.suggestions.isEmpty)
+                    }
 
                     // Tab bar — show when multiple tabs
                     if tabManager.tabs.count > 1 {
@@ -69,13 +73,6 @@ struct SearchResultsView: View {
                     }
 
                     if !searchVM.currentKeyword.isValidURL {
-                        if !searchVM.recommendedPlatforms.isEmpty {
-                            RecommendedPlatformsView(
-                                recommendations: searchVM.recommendedPlatforms,
-                                selectedPlatform: $searchVM.selectedPlatform
-                            )
-                        }
-
                         HStack(spacing: 2) {
                             groupPickerMenu
                                 .padding(.leading, 12)
@@ -86,7 +83,14 @@ struct SearchResultsView: View {
 
                             PlatformTabBar(
                                 platforms: currentPlatforms,
-                                selectedPlatform: $searchVM.selectedPlatform
+                                selectedPlatform: $searchVM.selectedPlatform,
+                                onEnterFullscreen: {
+                                    HapticsManager.light()
+                                    withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                                        isFullscreen = true
+                                    }
+                                },
+                                usesContrastingControlSurface: !showTopSearchBar
                             )
                             .frame(maxWidth: .infinity)
                             .onChange(of: searchVM.selectedPlatform) { _, _ in
@@ -142,16 +146,22 @@ struct SearchResultsView: View {
                             isFullscreen: $isFullscreen,
                             tabManager: tabManager,
                             isActiveTab: true,
+                            addressEditorText: searchVM.searchText.isEmpty
+                                ? searchVM.currentKeyword
+                                : searchVM.searchText,
                             onGoHome: {
                                 withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                                    isFullscreen = false
                                     searchVM.clearSearch()
                                 }
                             },
-                            onAddressNavigate: { url in
-                                let value = url.absoluteString
+                            onAddressSearch: { value in
                                 searchVM.searchText = value
-                                searchVM.currentKeyword = value
-                                searchVM.clearSuggestions()
+                                searchVM.performSearch(context: modelContext)
+                                loadCurrentPlatformURL()
+                            },
+                            onRequestVoiceSearch: {
+                                showVoiceInput = true
                             },
                             onPageStarted: {
                                 if pageReady { pageReady = false }
@@ -240,7 +250,11 @@ struct SearchResultsView: View {
         }
         .background(
             Group {
-                if pageReady {
+                if isShowingNewTabPage {
+                    // Keep the new-tab wallpaper continuous behind the top
+                    // platform controls instead of starting below them.
+                    Color.clear
+                } else if pageReady {
                     VStack(spacing: 0) {
                         LinearGradient(
                             colors: [
@@ -273,6 +287,8 @@ struct SearchResultsView: View {
             .ignoresSafeArea()
         )
         .ignoresSafeArea(isFullscreen ? .container : [], edges: .top)
+        .statusBarHidden(isFullscreen)
+        .persistentSystemOverlays(isFullscreen ? .hidden : .automatic)
         .tabOverviewScale(isActive: tabManager.showTabOverview)
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: tabManager.showTabOverview)
         .overlay(alignment: .top) {
@@ -315,9 +331,7 @@ struct SearchResultsView: View {
             }
         }
         .onChange(of: tabManager.activeTabIndex) { _, _ in
-            // Sync fullscreen state with the new active tab
             if let vm = tabManager.activeWebViewModel {
-                isFullscreen = vm.isScrollingUp
                 pageReady = vm.estimatedProgress >= 0.98 || (!vm.isLoading && vm.currentURL != nil)
             }
         }
@@ -334,6 +348,18 @@ struct SearchResultsView: View {
             Button(languageManager.localizedString("confirm"), role: .cancel) {}
         } message: {
             Text(languageManager.localizedString("tab_limit_message"))
+        }
+        .sheet(isPresented: $showVoiceInput) {
+            VoiceInputView(
+                speechService: speechService,
+                onConfirm: { text in
+                    searchVM.searchText = text
+                    showVoiceInput = false
+                    searchVM.performSearch(context: modelContext)
+                    loadCurrentPlatformURL()
+                },
+                onDismiss: { showVoiceInput = false }
+            )
         }
         .onAppear {
             // Restore last selected group and select first platform
@@ -378,18 +404,6 @@ struct SearchResultsView: View {
             }
         )
         .matchedGeometryEffect(id: "searchBar", in: searchBarNamespace)
-        .sheet(isPresented: $showVoiceInput) {
-            VoiceInputView(
-                speechService: speechService,
-                onConfirm: { text in
-                    searchVM.searchText = text
-                    showVoiceInput = false
-                    searchVM.performSearch(context: modelContext)
-                    loadCurrentPlatformURL()
-                },
-                onDismiss: { showVoiceInput = false }
-            )
-        }
     }
 
     private var groupPickerMenu: some View {
@@ -431,9 +445,19 @@ struct SearchResultsView: View {
         } label: {
             Image(systemName: selectedCustomGroup != nil ? "folder.fill" : "globe")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color(hex: "6366F1"))
-                .frame(width: 32, height: 26)
-                .background(Color(hex: "6366F1").opacity(0.1), in: Capsule())
+                .foregroundStyle(
+                    showTopSearchBar
+                        ? Color.primary.opacity(0.58)
+                        : Color(uiColor: .systemGray).opacity(0.88)
+                )
+                .frame(width: 32, height: 32)
+                .background {
+                    if showTopSearchBar {
+                        Capsule()
+                            .fill(Color.primary.opacity(0.06))
+                            .frame(height: 26)
+                    }
+                }
                 .frame(width: 40, height: 36)
                 .contentShape(Rectangle())
         }
@@ -448,9 +472,15 @@ struct SearchResultsView: View {
         return PlatformDataStore.shared.visiblePlatforms(for: searchVM.selectedRegion)
     }
 
+    private var isShowingNewTabPage: Bool {
+        guard let viewModel = tabManager.activeWebViewModel else { return false }
+        return viewModel.currentURL == nil && !viewModel.isLoading
+    }
+
     // MARK: - Actions
 
     @State private var showLoginAlert = false
+    @State private var didShowXiaohongshuLoginHint = false
     @State private var showAILoading = false
     @State private var aiLoadingText = ""
 
@@ -458,6 +488,23 @@ struct SearchResultsView: View {
         guard let webVM = tabManager.activeWebViewModel else { return }
         guard let platform = searchVM.selectedPlatform else { return }
         let keyword = searchVM.currentKeyword
+        let directURL = keyword.isValidURL ? keyword.asURL : nil
+
+        // Apply the platform's required content mode before starting navigation,
+        // so the very first request already carries the correct user agent.
+        let requiresDesktopMode = directURL.map {
+            WebCompatibilityService.requiresDesktopMode(for: $0)
+        } ?? platform.requiresDesktopMode
+        tabManager.setDesktopModeEnabled(requiresDesktopMode, reload: false)
+
+        let isXiaohongshu = platform.name == "platform_xiaohongshu"
+            || WebCompatibilityService.requiresDesktopMode(for: directURL)
+        if isXiaohongshu {
+            showXiaohongshuLoginHintIfNeeded(
+                for: platform,
+                using: webVM
+            )
+        }
 
         // Update active tab metadata
         if let index = tabManager.tabs.firstIndex(where: { $0.id == tabManager.activeTab?.id }) {
@@ -466,7 +513,7 @@ struct SearchResultsView: View {
         }
 
         // Check if the keyword is a direct URL
-        if keyword.isValidURL, let url = keyword.asURL {
+        if let url = directURL {
             webVM.loadURL(url)
             return
         }
@@ -524,6 +571,30 @@ struct SearchResultsView: View {
         case .urlSearch:
             if let url = platform.searchURL(for: keyword) {
                 webVM.loadURL(url)
+            }
+        }
+    }
+
+    private func showXiaohongshuLoginHintIfNeeded(
+        for platform: SearchPlatform,
+        using webViewModel: WebViewModel
+    ) {
+        guard !didShowXiaohongshuLoginHint else { return }
+        didShowXiaohongshuLoginHint = true
+
+        let cookieStore = webViewModel.webView?.configuration.websiteDataStore.httpCookieStore
+            ?? WKWebsiteDataStore.default().httpCookieStore
+        let platformID = platform.id
+
+        cookieStore.getAllCookies { cookies in
+            Task { @MainActor in
+                guard searchVM.selectedPlatform?.id == platformID else { return }
+                guard !WebCompatibilityService.hasAuthenticatedXiaohongshuSession(in: cookies) else {
+                    return
+                }
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    showLoginAlert = true
+                }
             }
         }
     }

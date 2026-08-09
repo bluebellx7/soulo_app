@@ -88,8 +88,9 @@
 "wallpaper_solid" = "Сплошные цвета";
 "wallpaper_source" = "Источник обоев";
 "wallpaper_type" = "Тип фона";
-"wallpaper_refresh" = "Случайный выбор";
-"wallpaper_download" = "Сохранить в Фото";
+"wallpaper_refresh" = "Сменить обои";
+"wallpaper_download" = "Скачать обои";
+"my_favorites" = "Моё избранное";
 "wallpaper_saved" = "Обои сохранены в Фото";
 "wallpaper_fetch_bing" = "Получить изображение дня";
 "wallpaper_choose_photo" = "Выбрать из библиотеки";
@@ -146,12 +147,15 @@
 "privacy_clear_bookmarks_confirm_title" = "Очистить все закладки?";
 "privacy_clear_bookmarks_confirm_message" = "Все закладки будут безвозвратно удалены.";
 "privacy_clear_cache" = "Очистить кэш браузера";
-"privacy_clear_cache_desc" = "Очистить cookie, кэш и локальное хранилище";
+"privacy_clear_cache_desc" = "Удалить веб-кэш и превью вкладок. Вход в аккаунты сохранится";
 "privacy_clear_cache_confirm_title" = "Очистить кэш браузера?";
-"privacy_clear_cache_confirm_message" = "Все данные просмотра будут безвозвратно удалены.";
+"privacy_clear_cache_confirm_message" = "Кэшированные ресурсы будут удалены. Cookie и вход в аккаунты сохранятся.";
+
+"enter_fullscreen" = "Включить полноэкранный режим";
+"exit_fullscreen" = "Выйти из полноэкранного режима";
 "privacy_clear_action" = "Очистить";
 "privacy_data_footer" = "Эти действия нельзя отменить. Удалённые данные невозможно восстановить.";
-"settings_privacy" = "Конфиденциальность";
+"settings_privacy" = "Настройки конфиденциальности";
 "platform_sort_options" = "Параметры сортировки";
 "cancel" = "Отмена";
 "confirm" = "Подтвердить";
@@ -234,6 +238,11 @@
 "login_required_title" = "Требуется вход";
 "login_required_message" = "Для использования этой платформы необходимо войти в систему. Пожалуйста, войдите на странице — поиск выполнится автоматически.";
 "login_required_toast" = "Сначала войдите, затем повторите поиск";
+"status_enabled" = "Включено";
+"status_disabled" = "Отключено";
+"show_top_search_bar" = "Показывать верхнюю строку поиска";
+"show_top_search_bar_desc" = "Если она скрыта, используйте нижнюю адресную строку для поиска или голосового ввода";
+"ad_block_master_disabled_desc" = "Включите блокировку рекламы, чтобы использовать и настраивать подписки на фильтры ниже.";
 /* Custom Groups */
 "custom_groups" = "Пользовательские группы";
 "no_groups" = "Нет пользовательских групп";
@@ -307,6 +316,7 @@
 "settings_section_background" = "Фон";
 "settings_section_privacy" = "Конфиденциальность";
 "settings_section_about" = "О приложении";
+"settings_section_about_support" = "О приложении и поддержка";
 
 /* Platform Management */
 "platform_auto_sort" = "Автосортировка по частоте";
@@ -386,6 +396,7 @@
 "feedback_placeholder" = "Ваш отзыв помогает нам стать лучше!\n\nРасскажите нам:\n· С какой проблемой вы столкнулись?\n· Какую функцию хотите добавить?\n· Что можно улучшить?";
 "feedback_contact" = "Контакт";
 "feedback_contact_hint" = "Email или другой способ связи";
+"feedback_contact_reply_hint" = "Оставьте адрес электронной почты, чтобы мы могли вам ответить.";
 "feedback_optional" = "необязательно";
 "feedback_submit" = "Отправить";
 "feedback_submitting" = "Отправка...";
@@ -459,7 +470,10 @@
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Site Privacy";
+"site_privacy" = "Защита текущего сайта";
+"site_privacy_scope_desc" = "Действует только для этого сайта. Общие настройки можно изменить в разделе конфиденциальности.";
+"privacy_global_scope_desc" = "Эти настройки применяются ко всем сайтам. Исключение задаётся в защите текущего сайта.";
+"site_privacy_compatibility_bypass" = "Защита приостановлена, чтобы сохранить вход и работу функций сайта.";
 "site_privacy_no_site" = "No Site";
 "site_privacy_protected" = "Protections are active";
 "site_privacy_unprotected" = "Protections are disabled for this site";
@@ -495,5 +509,6 @@
 "browser_forward" = "Вперёд";
 "browser_reload" = "Обновить";
 "browser_edit_address" = "Изменить адрес или поиск";
+"current_page_link" = "Ссылка текущей страницы";
 "tab_limit_title" = "Достигнут лимит вкладок";
 "tab_limit_message" = "Можно держать открытыми до 20 вкладок. Закройте одну, прежде чем открыть новую.";

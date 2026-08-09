@@ -12,6 +12,15 @@ final class WebNavigationPolicyServiceTests: XCTestCase {
         XCTAssertEqual(WebNavigationPolicyService.shared.decision(for: url), .external(url))
     }
 
+    func testExternalDestinationUsesAppNameInsteadOfInternalRouteHost() {
+        let url = URL(string: "baiduboxapp://v1/easybrowse")!
+
+        XCTAssertEqual(
+            WebNavigationPolicyService.shared.externalDestinationName(for: url),
+            "百度 App"
+        )
+    }
+
     func testTreatsKnownUniversalLinkAsExternal() {
         let url = URL(string: "https://apps.apple.com/app/id123")!
         XCTAssertEqual(WebNavigationPolicyService.shared.decision(for: url), .external(url))

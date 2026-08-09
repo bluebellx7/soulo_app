@@ -88,8 +88,9 @@
 "wallpaper_solid" = "Cores Sólidas";
 "wallpaper_source" = "Origem do Papel de Parede";
 "wallpaper_type" = "Tipo de Fundo";
-"wallpaper_refresh" = "Aleatorizar";
-"wallpaper_download" = "Salvar nas Fotos";
+"wallpaper_refresh" = "Alterar papel de parede";
+"wallpaper_download" = "Baixar papel de parede";
+"my_favorites" = "Meus favoritos";
 "wallpaper_saved" = "Papel de parede salvo nas Fotos";
 "wallpaper_fetch_bing" = "Buscar Imagem Diária";
 "wallpaper_choose_photo" = "Escolher da Biblioteca";
@@ -146,12 +147,15 @@
 "privacy_clear_bookmarks_confirm_title" = "Limpar Todos os Favoritos?";
 "privacy_clear_bookmarks_confirm_message" = "Todos os favoritos serão excluídos permanentemente.";
 "privacy_clear_cache" = "Limpar Cache de Navegação";
-"privacy_clear_cache_desc" = "Limpar cookies, cache e armazenamento local";
+"privacy_clear_cache_desc" = "Limpar o cache da web e as prévias das abas. Os logins são mantidos";
 "privacy_clear_cache_confirm_title" = "Limpar Cache de Navegação?";
-"privacy_clear_cache_confirm_message" = "Todos os dados de navegação serão excluídos permanentemente.";
+"privacy_clear_cache_confirm_message" = "Os recursos em cache serão removidos. Cookies e logins serão mantidos.";
+
+"enter_fullscreen" = "Entrar em Tela Cheia";
+"exit_fullscreen" = "Sair da Tela Cheia";
 "privacy_clear_action" = "Limpar";
 "privacy_data_footer" = "Estas ações não podem ser desfeitas. Os dados excluídos não podem ser recuperados.";
-"settings_privacy" = "Privacidade";
+"settings_privacy" = "Ajustes de privacidade";
 "platform_sort_options" = "Opções de Ordenação";
 "cancel" = "Cancelar";
 "confirm" = "Confirmar";
@@ -234,6 +238,11 @@
 "login_required_title" = "Login Necessário";
 "login_required_message" = "Esta plataforma requer login. Faça login na página e sua pesquisa será executada automaticamente.";
 "login_required_toast" = "Faça login primeiro e pesquise novamente";
+"status_enabled" = "Ativado";
+"status_disabled" = "Desativado";
+"show_top_search_bar" = "Mostrar barra de busca superior";
+"show_top_search_bar_desc" = "Quando oculta, use a barra de endereço inferior para pesquisar ou iniciar a entrada por voz";
+"ad_block_master_disabled_desc" = "Ative o bloqueio de anúncios para usar e gerenciar as assinaturas de filtros abaixo.";
 /* Custom Groups */
 "custom_groups" = "Grupos Personalizados";
 "no_groups" = "Sem Grupos Personalizados";
@@ -307,6 +316,7 @@
 "settings_section_background" = "Fundo";
 "settings_section_privacy" = "Privacidade";
 "settings_section_about" = "Sobre";
+"settings_section_about_support" = "Sobre e suporte";
 
 /* Platform Management */
 "platform_auto_sort" = "Ordenar Automaticamente por Frequência";
@@ -386,6 +396,7 @@
 "feedback_placeholder" = "Seu feedback nos ajuda a melhorar!\n\nConte-nos:\n· Qual problema você encontrou?\n· Qual recurso você gostaria?\n· O que poderia funcionar melhor?";
 "feedback_contact" = "Contato";
 "feedback_contact_hint" = "E-mail ou outro contato";
+"feedback_contact_reply_hint" = "Você pode deixar seu e-mail para que possamos responder.";
 "feedback_optional" = "opcional";
 "feedback_submit" = "Enviar";
 "feedback_submitting" = "Enviando...";
@@ -459,7 +470,10 @@
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Site Privacy";
+"site_privacy" = "Proteção do site atual";
+"site_privacy_scope_desc" = "Aplica-se apenas a este site. Altere os padrões de todos os sites nos Ajustes de privacidade.";
+"privacy_global_scope_desc" = "Esses padrões se aplicam a todos os sites. Use a Proteção do site atual para criar uma exceção.";
+"site_privacy_compatibility_bypass" = "A proteção está pausada para manter o login e os recursos do site funcionando.";
 "site_privacy_no_site" = "No Site";
 "site_privacy_protected" = "Protections are active";
 "site_privacy_unprotected" = "Protections are disabled for this site";
@@ -495,5 +509,6 @@
 "browser_forward" = "Avançar";
 "browser_reload" = "Recarregar";
 "browser_edit_address" = "Editar endereço ou busca";
+"current_page_link" = "Link da página atual";
 "tab_limit_title" = "Limite de abas atingido";
 "tab_limit_message" = "Você pode manter até 20 abas. Feche uma antes de abrir outra.";

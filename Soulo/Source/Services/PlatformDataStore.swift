@@ -22,7 +22,7 @@ class PlatformDataStore: ObservableObject {
 
     // MARK: - Persistence
 
-    private let platformVersion = 35 // Increment when cached built-in defaults need migration
+    private let platformVersion = 37 // Increment when cached built-in defaults need migration
 
     private func load() {
         let savedVersion = UserDefaults.standard.integer(forKey: "platform_config_version")
@@ -30,9 +30,16 @@ class PlatformDataStore: ObservableObject {
            let decoded = try? JSONDecoder().decode([SearchPlatform].self, from: data),
            !decoded.isEmpty {
             platforms = decoded
+            var shouldSave = false
             if savedVersion < platformVersion {
                 applyPlatformDefaultMigration(from: savedVersion)
                 UserDefaults.standard.set(platformVersion, forKey: "platform_config_version")
+                shouldSave = true
+            }
+            if normalizeSortOrders() {
+                shouldSave = true
+            }
+            if shouldSave {
                 savePlatforms()
             }
         } else {
@@ -55,9 +62,17 @@ class PlatformDataStore: ObservableObject {
     }
 
     func platforms(for region: PlatformRegion) -> [SearchPlatform] {
-        platforms
-            .filter { $0.region == region }
-            .sorted { $0.sortOrder < $1.sortOrder }
+        platforms.enumerated()
+            .filter { $0.element.region == region }
+            .sorted { lhs, rhs in
+                if lhs.element.sortOrder != rhs.element.sortOrder {
+                    return lhs.element.sortOrder < rhs.element.sortOrder
+                }
+                // Old configurations may contain duplicate sort values. Preserve
+                // their stored array order instead of letting sort reshuffle them.
+                return lhs.offset < rhs.offset
+            }
+            .map(\.element)
     }
 
     func visiblePlatforms(for region: PlatformRegion) -> [SearchPlatform] {
@@ -87,6 +102,25 @@ class PlatformDataStore: ObservableObject {
             }
         }
         savePlatforms()
+    }
+
+    func movePlatform(from source: IndexSet, to destination: Int, withinGroup groupID: UUID) {
+        guard let groupIndex = customGroups.firstIndex(where: { $0.id == groupID }) else { return }
+        var orderedIDs = customGroups[groupIndex].platformIDs.filter { platformID in
+            platforms.contains { $0.id == platformID }
+        }
+        orderedIDs.move(fromOffsets: source, toOffset: destination)
+        customGroups[groupIndex].platformIDs = orderedIDs
+        saveGroups()
+    }
+
+    func setPlatforms(_ platformIDs: [UUID], inGroup groupID: UUID) {
+        guard let groupIndex = customGroups.firstIndex(where: { $0.id == groupID }) else { return }
+        var seen = Set<UUID>()
+        customGroups[groupIndex].platformIDs = platformIDs.filter { platformID in
+            platforms.contains { $0.id == platformID } && seen.insert(platformID).inserted
+        }
+        saveGroups()
     }
 
     func toggleVisibility(platform: SearchPlatform) {
@@ -224,25 +258,47 @@ class PlatformDataStore: ObservableObject {
                 platforms[index].isVisible = false
             }
         }
+        if version < 36 {
+            // Frequency ordering was removed: a user's drag order is authoritative.
+            UserDefaults.standard.removeObject(forKey: "auto_sort_frequency")
+
+            if !platforms.contains(where: { $0.name == "platform_xiaohongshu" }) {
+                let nextOrder = (platforms
+                    .filter { $0.region == .china }
+                    .map(\.sortOrder)
+                    .max() ?? -1) + 1
+                platforms.append(Self.xiaohongshuPlatform(sortOrder: nextOrder))
+            }
+        }
+        if version < 37,
+           let index = platforms.firstIndex(where: { $0.name == "platform_xiaohongshu" && $0.isBuiltIn }) {
+            platforms[index].requiresLogin = true
+        }
     }
 
-    func sortByFrequency() {
-        // Sort within each region by usageCount descending, preserving region grouping
-        var result: [SearchPlatform] = []
+    @discardableResult
+    private func normalizeSortOrders() -> Bool {
+        var didChange = false
         for region in PlatformRegion.allCases {
-            let sorted = platforms
-                .filter { $0.region == region }
-                .sorted { $0.usageCount > $1.usageCount }
-                .enumerated()
-                .map { (offset, platform) -> SearchPlatform in
-                    var updated = platform
-                    updated.sortOrder = offset
-                    return updated
+            let orderedIDs = platforms.enumerated()
+                .filter { $0.element.region == region }
+                .sorted { lhs, rhs in
+                    if lhs.element.sortOrder != rhs.element.sortOrder {
+                        return lhs.element.sortOrder < rhs.element.sortOrder
+                    }
+                    return lhs.offset < rhs.offset
                 }
-            result.append(contentsOf: sorted)
+                .map { $0.element.id }
+
+            for (sortOrder, platformID) in orderedIDs.enumerated() {
+                guard let index = platforms.firstIndex(where: { $0.id == platformID }) else { continue }
+                if platforms[index].sortOrder != sortOrder {
+                    platforms[index].sortOrder = sortOrder
+                    didChange = true
+                }
+            }
         }
-        platforms = result
-        savePlatforms()
+        return didChange
     }
 
     // MARK: - Custom Groups
@@ -322,13 +378,14 @@ class PlatformDataStore: ObservableObject {
     private static func defaultPlatforms() -> [SearchPlatform] {
         var all: [SearchPlatform] = []
 
-        // MARK: China (9)
+        // MARK: China
         let chinaData: [(String, String, String, String)] = [
             ("platform_baidu",        "icon_baidu",        "https://www.baidu.com/s?wd=%@",                             "https://www.baidu.com"),
             ("platform_bilibili",     "icon_bilibili",     "https://search.bilibili.com/all?keyword=%@",                "https://www.bilibili.com"),
             ("platform_weibo",        "icon_weibo",        "https://s.weibo.com/weibo?q=%@",                            "https://weibo.com"),
             ("platform_wechat",       "icon_wechat",       "https://weixin.sogou.com/weixinwap?type=2&ie=utf8&s_from=input&query=%@", "https://weixin.sogou.com"),
             ("platform_douyin",       "icon_douyin",       "https://www.douyin.com/search/%@",                          "https://www.douyin.com"),
+            ("platform_xiaohongshu",  "icon_xiaohongshu",  "https://www.xiaohongshu.com/search_result?keyword=%@&source=web_explore_feed&type=51", "https://www.xiaohongshu.com"),
             ("platform_taobao",       "icon_taobao",       "https://s.m.taobao.com/h5?q=%@",                             "https://m.taobao.com"),
             ("platform_jd",           "icon_jd",           "https://so.m.jd.com/ware/search.action?keyword=%@",          "https://m.jd.com"),
             ("platform_sogou",        "icon_sogou",        "https://www.sogou.com/web?query=%@",                         "https://www.sogou.com"),
@@ -481,7 +538,10 @@ class PlatformDataStore: ObservableObject {
         }
 
         // Mark platforms that require login
-        let loginRequired: Set<String> = ["platform_taobao", "platform_jd", "platform_instagram", "platform_linkedin"]
+        let loginRequired: Set<String> = [
+            "platform_xiaohongshu", "platform_taobao", "platform_jd",
+            "platform_instagram", "platform_linkedin"
+        ]
         // Hide less important platforms by default (user can enable in settings)
         let hiddenByDefault = Self.defaultHiddenPlatformNames.union([
             "platform_sogou", "platform_360",
@@ -502,6 +562,23 @@ class PlatformDataStore: ObservableObject {
         }
 
         return all
+    }
+
+    private static func xiaohongshuPlatform(sortOrder: Int) -> SearchPlatform {
+        SearchPlatform(
+            id: UUID(),
+            name: "platform_xiaohongshu",
+            iconName: "icon_xiaohongshu",
+            searchURLTemplate: "https://www.xiaohongshu.com/search_result?keyword=%@&source=web_explore_feed&type=51",
+            homeURL: "https://www.xiaohongshu.com",
+            region: .china,
+            isBuiltIn: true,
+            isVisible: true,
+            sortOrder: sortOrder,
+            usageCount: 0,
+            isCustom: false,
+            requiresLogin: true
+        )
     }
 
     private static let defaultHiddenPlatformNames: Set<String> = [

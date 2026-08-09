@@ -19,25 +19,19 @@ struct SitePrivacyPanelView: View {
         privacyService.summary(for: host)
     }
 
-    private var protectionEnabled: Binding<Bool> {
-        Binding(
-            get: { !privacyService.isProtectionDisabled(for: host) },
-            set: { enabled in
-                privacyService.setProtectionEnabled(enabled, for: host)
-                onChanged?()
-            }
+    private var usesCompatibilityBypass: Bool {
+        WebCompatibilityService.shouldBypassWebProtection(
+            for: currentURL,
+            fallbackHost: host
         )
     }
 
-    private var adBlockingEnabled: Binding<Bool> {
+    private var protectionEnabled: Binding<Bool> {
         Binding(
-            get: { !adBlockService.isAllowlisted(host) },
+            get: { !usesCompatibilityBypass && !privacyService.isProtectionDisabled(for: host) },
             set: { enabled in
-                if enabled {
-                    adBlockService.removeAllowlistedHost(host)
-                } else {
-                    adBlockService.addAllowlistedHost(host)
-                }
+                guard !usesCompatibilityBypass else { return }
+                privacyService.setProtectionEnabled(enabled, for: host)
                 onChanged?()
             }
         )
@@ -57,7 +51,15 @@ struct SitePrivacyPanelView: View {
                         Text(host.isEmpty ? LanguageManager.shared.localizedString("site_privacy_no_site") : host)
                             .font(.headline)
                             .lineLimit(1)
-                        Text(LanguageManager.shared.localizedString(protectionEnabled.wrappedValue ? "site_privacy_protected" : "site_privacy_unprotected"))
+                        Text(
+                            LanguageManager.shared.localizedString(
+                                usesCompatibilityBypass
+                                    ? "site_privacy_compatibility_bypass"
+                                    : protectionEnabled.wrappedValue
+                                        ? "site_privacy_protected"
+                                        : "site_privacy_unprotected"
+                            )
+                        )
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -68,68 +70,75 @@ struct SitePrivacyPanelView: View {
                 Toggle(isOn: protectionEnabled) {
                     Label(LanguageManager.shared.localizedString("site_protection"), systemImage: "shield.fill")
                 }
-                .disabled(host.isEmpty)
+                .disabled(host.isEmpty || usesCompatibilityBypass)
                 .tint(.green)
-
-                Toggle(isOn: adBlockingEnabled) {
-                    Label(LanguageManager.shared.localizedString("site_ad_blocking"), systemImage: "eye.slash.fill")
-                }
-                .disabled(host.isEmpty || !protectionEnabled.wrappedValue)
-                .tint(.blue)
+            } footer: {
+                Text(LanguageManager.shared.localizedString("site_privacy_scope_desc"))
             }
 
             Section {
-                metricRow(
+                LazyVGrid(
+                    columns: [
+                        GridItem(.flexible(), spacing: 10),
+                        GridItem(.flexible(), spacing: 10)
+                    ],
+                    spacing: 10
+                ) {
+                metricCard(
                     title: LanguageManager.shared.localizedString("site_blocked_trackers"),
                     value: summary.blockedTrackerCount,
                     icon: "shield.lefthalf.filled",
                     color: .green
                 )
-                metricRow(
+                metricCard(
                     title: LanguageManager.shared.localizedString("site_detected_trackers"),
                     value: summary.detectedTrackerCount,
                     icon: "scope",
                     color: .purple
                 )
-                metricRow(
+                metricCard(
                     title: LanguageManager.shared.localizedString("site_third_party_requests"),
                     value: summary.thirdPartyRequestCount,
                     icon: "network",
                     color: .teal
                 )
-                metricRow(
+                metricCard(
                     title: LanguageManager.shared.localizedString("site_tracker_hosts"),
                     value: summary.trackerHostCount,
                     icon: "point.3.connected.trianglepath.dotted",
                     color: .purple
                 )
-                metricRow(
+                metricCard(
                     title: LanguageManager.shared.localizedString("site_hidden_elements"),
                     value: max(summary.hiddenElementCount, adBlockService.hiddenElementCount(for: host)),
                     icon: "eye.slash",
                     color: .blue
                 )
-                metricRow(
+                metricCard(
                     title: LanguageManager.shared.localizedString("site_https_upgrades"),
                     value: summary.httpsUpgradeCount,
                     icon: "lock.fill",
                     color: .green
                 )
-                metricRow(
+                metricCard(
                     title: LanguageManager.shared.localizedString("site_stripped_params"),
                     value: summary.strippedTrackingParameterCount,
                     icon: "link.badge.minus",
                     color: .orange
                 )
-                metricRow(
+                metricCard(
                     title: LanguageManager.shared.localizedString("site_cookie_banners"),
                     value: summary.cookieBannerActionCount,
                     icon: "birthday.cake.fill",
                     color: .pink
                 )
+                }
+                .padding(.vertical, 2)
             } header: {
                 SectionHeader(title: LanguageManager.shared.localizedString("site_privacy_activity"))
             }
+            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+            .listRowBackground(Color.clear)
 
             if !summary.trackerRequests.isEmpty {
                 Section {
@@ -219,19 +228,40 @@ struct SitePrivacyPanelView: View {
         }
     }
 
-    private func metricRow(title: String, value: Int, icon: String, color: Color) -> some View {
-        HStack {
-            Label {
-                Text(title)
-            } icon: {
+    private func metricCard(title: String, value: Int, icon: String, color: Color) -> some View {
+        let activeColor = value > 0 ? color : Color.secondary
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
                 Image(systemName: icon)
-                    .foregroundStyle(color)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(activeColor)
+                    .frame(width: 30, height: 30)
+                    .background(activeColor.opacity(0.11), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                Spacer()
+                Image(systemName: "chart.bar.fill")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(Color.secondary.opacity(0.35))
             }
-            Spacer()
+
             Text("\(value)")
-                .foregroundStyle(.secondary)
+                .font(.system(size: 25, weight: .bold, design: .rounded))
+                .foregroundStyle(value > 0 ? activeColor : Color.secondary)
                 .monospacedDigit()
+
+            Text(title)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 118, alignment: .topLeading)
+        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(activeColor.opacity(value > 0 ? 0.18 : 0.08), lineWidth: 0.5)
+        )
+        .accessibilityElement(children: .combine)
     }
 
     private func trackerRequestSort(_ lhs: TrackerRequest, _ rhs: TrackerRequest) -> Bool {

@@ -84,13 +84,13 @@ private struct BrowserTabChip: View {
             HStack(spacing: 6) {
                 Image(systemName: webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(isActive ? .white : .secondary)
+                    .foregroundStyle(isActive ? Color.primary.opacity(0.86) : Color.secondary)
                     .frame(width: 14, height: 14)
 
                 // Title — reactively updates from webViewModel
                 Text(displayTitle)
                     .font(.system(size: 12, weight: isActive ? .semibold : .regular))
-                    .foregroundStyle(isActive ? .white : .primary.opacity(0.6))
+                    .foregroundStyle(isActive ? Color.primary.opacity(0.9) : Color.primary.opacity(0.6))
                     .lineLimit(1)
                     .frame(maxWidth: 120)
 
@@ -98,10 +98,14 @@ private struct BrowserTabChip: View {
                 Button(action: onClose) {
                     Image(systemName: "xmark")
                         .font(.system(size: 8, weight: .bold))
-                        .foregroundStyle(isActive ? .white.opacity(0.6) : .secondary)
+                        .foregroundStyle(isActive ? Color.primary.opacity(0.58) : Color.secondary)
                         .frame(width: 16, height: 16)
                         .background(
-                            Circle().fill(isActive ? .white.opacity(0.15) : Color(UIColor.tertiarySystemFill))
+                            Circle().fill(
+                                isActive
+                                    ? Color.primary.opacity(0.09)
+                                    : Color(UIColor.tertiarySystemFill)
+                            )
                         )
                 }
                 .buttonStyle(.plain)
@@ -111,15 +115,23 @@ private struct BrowserTabChip: View {
             .padding(.vertical, 7)
             .background(
                 Capsule()
-                    .fill(isActive
-                          ? AnyShapeStyle(LinearGradient(colors: [Color(hex: "6366F1"), Color(hex: "7C3AED")],
-                                                          startPoint: .leading, endPoint: .trailing))
-                          : AnyShapeStyle(Color(UIColor.tertiarySystemFill))
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        Capsule().fill(
+                            isActive
+                                ? Color.primary.opacity(0.10)
+                                : Color.primary.opacity(0.025)
+                        )
                     )
             )
             .overlay(
                 Capsule()
-                    .stroke(isActive ? Color(hex: "6366F1").opacity(0.3) : Color(UIColor.separator).opacity(0.3), lineWidth: 0.5)
+                    .stroke(
+                        isActive
+                            ? Color.primary.opacity(0.18)
+                            : Color(UIColor.separator).opacity(0.22),
+                        lineWidth: isActive ? 0.8 : 0.5
+                    )
             )
         }
         .buttonStyle(.plain)
@@ -186,6 +198,7 @@ struct TabSwitcherOverlay: View {
                             }
                         )
                         .frame(height: carouselHeight(in: geo))
+                        .offset(y: -16)
                     }
 
                     Spacer(minLength: 18)
@@ -574,6 +587,7 @@ private struct TabOverviewCard: View {
         VStack(alignment: .leading, spacing: 10) {
             cardHeader
                 .padding(.horizontal, 4)
+                .frame(height: 44)
 
             previewCard
         }
@@ -656,19 +670,30 @@ private struct TabOverviewCard: View {
     }
 
     private var previewCard: some View {
-        ZStack {
+        RoundedRectangle(cornerRadius: 34, style: .continuous)
+            .fill(Color(UIColor.secondarySystemBackground))
+            // The card owns the aspect ratio. Snapshot dimensions must never
+            // participate in layout because WKWebView can briefly report a
+            // transitional viewport while the switcher is opening.
+            .aspectRatio(0.56, contentMode: .fit)
+            .overlay {
             preview
-                .aspectRatio(0.56, contentMode: .fit)
-                .frame(maxWidth: .infinity)
-                .background(Color(UIColor.secondarySystemBackground))
-                .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
-        }
-        .overlay(
-            RoundedRectangle(cornerRadius: 34, style: .continuous)
-                .stroke(isActive ? Color.white.opacity(0.55) : Color.white.opacity(0.22), lineWidth: isActive ? 1.4 : 0.8)
-        )
-        .shadow(color: .black.opacity(isActive ? 0.34 : 0.24), radius: isActive ? 30 : 18, y: isActive ? 18 : 10)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 34, style: .continuous)
+                    .stroke(
+                        isActive ? Color.white.opacity(0.55) : Color.white.opacity(0.22),
+                        lineWidth: isActive ? 1.4 : 0.8
+                    )
+            )
+            .shadow(
+                color: .black.opacity(isActive ? 0.34 : 0.24),
+                radius: isActive ? 30 : 18,
+                y: isActive ? 18 : 10
+            )
     }
 
     @ViewBuilder
@@ -676,7 +701,7 @@ private struct TabOverviewCard: View {
         if let snapshot = webViewModel.snapshot {
             Image(uiImage: snapshot)
                 .resizable()
-                .aspectRatio(contentMode: .fill)
+                .scaledToFill()
         } else {
             Rectangle()
                 .fill(Color(UIColor.tertiarySystemFill).opacity(0.5))

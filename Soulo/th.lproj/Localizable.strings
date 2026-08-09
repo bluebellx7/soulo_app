@@ -88,8 +88,9 @@
 "wallpaper_solid" = "สีพื้น";
 "wallpaper_source" = "แหล่งวอลล์เปเปอร์";
 "wallpaper_type" = "ประเภทพื้นหลัง";
-"wallpaper_refresh" = "สุ่ม";
-"wallpaper_download" = "บันทึกลงรูปภาพ";
+"wallpaper_refresh" = "เปลี่ยนวอลเปเปอร์";
+"wallpaper_download" = "ดาวน์โหลดวอลเปเปอร์";
+"my_favorites" = "รายการโปรดของฉัน";
 "wallpaper_saved" = "บันทึกวอลล์เปเปอร์ลงรูปภาพแล้ว";
 "wallpaper_fetch_bing" = "ดึงภาพประจำวัน";
 "wallpaper_choose_photo" = "เลือกจากคลัง";
@@ -146,12 +147,15 @@
 "privacy_clear_bookmarks_confirm_title" = "ล้างบุ๊กมาร์กทั้งหมด?";
 "privacy_clear_bookmarks_confirm_message" = "บุ๊กมาร์กทั้งหมดจะถูกลบอย่างถาวร";
 "privacy_clear_cache" = "ล้างแคชการเรียกดู";
-"privacy_clear_cache_desc" = "ล้างคุกกี้ แคช และที่เก็บข้อมูลในเครื่อง";
+"privacy_clear_cache_desc" = "ล้างแคชเว็บและตัวอย่างแท็บ โดยยังคงสถานะการเข้าสู่ระบบไว้";
 "privacy_clear_cache_confirm_title" = "ล้างแคชการเรียกดู?";
-"privacy_clear_cache_confirm_message" = "ข้อมูลการเรียกดูทั้งหมดจะถูกลบอย่างถาวร";
+"privacy_clear_cache_confirm_message" = "ทรัพยากรเว็บที่แคชไว้จะถูกลบ โดยยังคงคุกกี้และสถานะการเข้าสู่ระบบไว้";
+
+"enter_fullscreen" = "เข้าสู่โหมดเต็มหน้าจอ";
+"exit_fullscreen" = "ออกจากโหมดเต็มหน้าจอ";
 "privacy_clear_action" = "ล้าง";
 "privacy_data_footer" = "การดำเนินการเหล่านี้ไม่สามารถยกเลิกได้ ข้อมูลที่ล้างแล้วไม่สามารถกู้คืนได้";
-"settings_privacy" = "ความเป็นส่วนตัว";
+"settings_privacy" = "การตั้งค่าความเป็นส่วนตัว";
 "platform_sort_options" = "ตัวเลือกการจัดเรียง";
 "cancel" = "ยกเลิก";
 "confirm" = "ยืนยัน";
@@ -234,6 +238,11 @@
 "login_required_title" = "ต้องเข้าสู่ระบบ";
 "login_required_message" = "แพลตฟอร์มนี้ต้องการให้คุณเข้าสู่ระบบก่อน กรุณาเข้าสู่ระบบในหน้า จากนั้นการค้นหาจะดำเนินการโดยอัตโนมัติ";
 "login_required_toast" = "กรุณาเข้าสู่ระบบก่อนแล้วค้นหาอีกครั้ง";
+"status_enabled" = "เปิดใช้งาน";
+"status_disabled" = "ปิดใช้งาน";
+"show_top_search_bar" = "แสดงแถบค้นหาด้านบน";
+"show_top_search_bar_desc" = "เมื่อซ่อน ให้ใช้แถบที่อยู่ด้านล่างเพื่อค้นหาหรือเริ่มป้อนข้อมูลด้วยเสียง";
+"ad_block_master_disabled_desc" = "เปิดการบล็อกโฆษณาเพื่อใช้และจัดการรายการตัวกรองด้านล่าง";
 /* Custom Groups */
 "custom_groups" = "กลุ่มกำหนดเอง";
 "no_groups" = "ไม่มีกลุ่มกำหนดเอง";
@@ -307,6 +316,7 @@
 "settings_section_background" = "พื้นหลัง";
 "settings_section_privacy" = "ความเป็นส่วนตัว";
 "settings_section_about" = "เกี่ยวกับ";
+"settings_section_about_support" = "เกี่ยวกับและการสนับสนุน";
 
 /* Platform Management */
 "platform_auto_sort" = "จัดเรียงอัตโนมัติตามความถี่";
@@ -386,6 +396,7 @@
 "feedback_placeholder" = "ความคิดเห็นของคุณช่วยให้เราปรับปรุงได้!\n\nบอกเรา:\n· คุณพบปัญหาอะไร?\n· คุณต้องการฟีเจอร์อะไร?\n· อะไรที่ทำได้ดีกว่านี้?";
 "feedback_contact" = "ติดต่อ";
 "feedback_contact_hint" = "อีเมลหรือช่องทางติดต่ออื่น";
+"feedback_contact_reply_hint" = "คุณสามารถระบุอีเมลเพื่อให้เราตอบกลับได้";
 "feedback_optional" = "ไม่บังคับ";
 "feedback_submit" = "ส่ง";
 "feedback_submitting" = "กำลังส่ง...";
@@ -459,7 +470,10 @@
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Site Privacy";
+"site_privacy" = "การป้องกันเว็บไซต์ปัจจุบัน";
+"site_privacy_scope_desc" = "ใช้กับเว็บไซต์นี้เท่านั้น เปลี่ยนค่าเริ่มต้นของทุกเว็บไซต์ได้ในการตั้งค่าความเป็นส่วนตัว";
+"privacy_global_scope_desc" = "ค่าเริ่มต้นเหล่านี้ใช้กับทุกเว็บไซต์ ใช้การป้องกันเว็บไซต์ปัจจุบันเพื่อตั้งข้อยกเว้นเฉพาะเว็บไซต์";
+"site_privacy_compatibility_bypass" = "หยุดการป้องกันชั่วคราวเพื่อให้การเข้าสู่ระบบและฟังก์ชันของเว็บไซต์ทำงานได้";
 "site_privacy_no_site" = "No Site";
 "site_privacy_protected" = "Protections are active";
 "site_privacy_unprotected" = "Protections are disabled for this site";
@@ -495,5 +509,6 @@
 "browser_forward" = "ถัดไป";
 "browser_reload" = "โหลดใหม่";
 "browser_edit_address" = "แก้ไขที่อยู่หรือการค้นหา";
+"current_page_link" = "ลิงก์หน้าปัจจุบัน";
 "tab_limit_title" = "ถึงขีดจำกัดแท็บแล้ว";
 "tab_limit_message" = "คุณสามารถเปิดแท็บไว้ได้สูงสุด 20 แท็บ โปรดปิดหนึ่งแท็บก่อนเปิดแท็บใหม่";

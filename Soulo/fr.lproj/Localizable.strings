@@ -169,6 +169,11 @@
 "login_required_title" = "Connexion requise";
 "login_required_message" = "Cette plateforme nécessite une connexion préalable. Connectez-vous sur la page, puis votre recherche sera exécutée automatiquement.";
 "login_required_toast" = "Veuillez vous connecter d'abord, puis relancer la recherche";
+"status_enabled" = "Activé";
+"status_disabled" = "Désactivé";
+"show_top_search_bar" = "Afficher la barre de recherche supérieure";
+"show_top_search_bar_desc" = "Une fois masquée, utilisez la barre d’adresse inférieure pour rechercher ou lancer la saisie vocale";
+"ad_block_master_disabled_desc" = "Activez le blocage des publicités pour utiliser et gérer les abonnements ci-dessous.";
 
 /* Custom Groups */
 "custom_groups" = "Groupes personnalisés";
@@ -243,12 +248,15 @@
 "privacy_clear_bookmarks_confirm_title" = "Supprimer tous les favoris ?";
 "privacy_clear_bookmarks_confirm_message" = "Tous les favoris seront définitivement supprimés.";
 "privacy_clear_cache" = "Vider le cache du navigateur";
-"privacy_clear_cache_desc" = "Supprimer les cookies, le cache et le stockage local";
+"privacy_clear_cache_desc" = "Supprimer le cache web et les aperçus d’onglets. Les connexions sont conservées";
 "privacy_clear_cache_confirm_title" = "Vider le cache du navigateur ?";
-"privacy_clear_cache_confirm_message" = "Toutes les données de navigation seront définitivement supprimées.";
+"privacy_clear_cache_confirm_message" = "Les ressources en cache seront supprimées. Les cookies et connexions seront conservés.";
+
+"enter_fullscreen" = "Activer le plein écran";
+"exit_fullscreen" = "Quitter le plein écran";
 "privacy_clear_action" = "Effacer";
 "privacy_data_footer" = "Ces actions sont irréversibles. Les données effacées ne peuvent pas être récupérées.";
-"settings_privacy" = "Confidentialité";
+"settings_privacy" = "Réglages de confidentialité";
 "platform_sort_options" = "Options de tri";
 
 /* Settings - Navigation & Titles */
@@ -268,6 +276,7 @@
 "settings_section_background" = "Arrière-plan";
 "settings_section_privacy" = "Confidentialité";
 "settings_section_about" = "À propos";
+"settings_section_about_support" = "À propos et assistance";
 
 /* Platform Management */
 "platform_auto_sort" = "Tri automatique par fréquence";
@@ -351,6 +360,7 @@ Dites-nous :
 · Que pouvons-nous ameliorer ?";
 "feedback_contact" = "Contact";
 "feedback_contact_hint" = "Email ou autre contact";
+"feedback_contact_reply_hint" = "Vous pouvez laisser votre adresse e-mail afin que nous puissions vous répondre.";
 "feedback_optional" = "optionnel";
 "feedback_submit" = "Envoyer";
 "feedback_submitting" = "Envoi...";
@@ -424,7 +434,10 @@ Dites-nous :
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Site Privacy";
+"site_privacy" = "Protection du site actuel";
+"site_privacy_scope_desc" = "S’applique uniquement à ce site. Modifiez les réglages par défaut dans les réglages de confidentialité.";
+"privacy_global_scope_desc" = "Ces réglages s’appliquent à tous les sites. Utilisez la protection du site actuel pour créer une exception.";
+"site_privacy_compatibility_bypass" = "La protection est suspendue pour préserver la connexion et les fonctions du site.";
 "site_privacy_no_site" = "No Site";
 "site_privacy_protected" = "Protections are active";
 "site_privacy_unprotected" = "Protections are disabled for this site";
@@ -458,7 +471,7 @@ Dites-nous :
 "wallpaper_color" = "Couleur d'arrière-plan";
 "wallpaper_current_vibe" = "Vibe actuelle";
 "wallpaper_discover" = "Découvrir";
-"wallpaper_download" = "Enregistrer dans Photos";
+"wallpaper_download" = "Télécharger le fond d’écran";
 "wallpaper_favorites" = "Mes favoris";
 "wallpaper_fetch_bing" = "Récupérer l'image du jour";
 "wallpaper_gradient" = "Dégradés";
@@ -466,7 +479,8 @@ Dites-nous :
 "wallpaper_pexels" = "Pexels (Sélection)";
 "wallpaper_photo" = "Mur de photos";
 "wallpaper_pixabay" = "Pixabay (Nature)";
-"wallpaper_refresh" = "Aléatoire";
+"wallpaper_refresh" = "Changer le fond d’écran";
+"my_favorites" = "Mes favoris";
 "wallpaper_search_placeholder" = "Rechercher une ambiance (ex. Forêt, Minimal)";
 "wallpaper_solid" = "Couleurs unies";
 "wallpaper_source" = "Source du fond d'écran";
@@ -478,5 +492,6 @@ Dites-nous :
 "browser_forward" = "Suivant";
 "browser_reload" = "Actualiser";
 "browser_edit_address" = "Modifier l’adresse ou la recherche";
+"current_page_link" = "Lien de la page actuelle";
 "tab_limit_title" = "Limite d’onglets atteinte";
 "tab_limit_message" = "Vous pouvez conserver jusqu’à 20 onglets. Fermez-en un avant d’en ouvrir un autre.";

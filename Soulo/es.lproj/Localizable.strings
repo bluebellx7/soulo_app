@@ -169,6 +169,11 @@
 "login_required_title" = "Inicio de sesión requerido";
 "login_required_message" = "Esta plataforma requiere que inicies sesión primero. Por favor inicia sesión en la página y luego tu búsqueda se ejecutará automáticamente.";
 "login_required_toast" = "Por favor inicia sesión primero y luego busca de nuevo";
+"status_enabled" = "Activado";
+"status_disabled" = "Desactivado";
+"show_top_search_bar" = "Mostrar barra de búsqueda superior";
+"show_top_search_bar_desc" = "Si está oculta, usa la barra de direcciones inferior para buscar o iniciar la entrada de voz";
+"ad_block_master_disabled_desc" = "Activa el bloqueo de anuncios para usar y gestionar las suscripciones de filtros inferiores.";
 
 /* Custom Groups */
 "custom_groups" = "Grupos personalizados";
@@ -243,12 +248,15 @@
 "privacy_clear_bookmarks_confirm_title" = "¿Eliminar todos los marcadores?";
 "privacy_clear_bookmarks_confirm_message" = "Todos los marcadores serán eliminados permanentemente.";
 "privacy_clear_cache" = "Limpiar caché del navegador";
-"privacy_clear_cache_desc" = "Eliminar cookies, caché y almacenamiento local";
+"privacy_clear_cache_desc" = "Eliminar la caché web y las vistas previas. Se mantienen las sesiones";
 "privacy_clear_cache_confirm_title" = "¿Limpiar caché del navegador?";
-"privacy_clear_cache_confirm_message" = "Todos los datos de navegación serán eliminados permanentemente.";
+"privacy_clear_cache_confirm_message" = "Se eliminarán los recursos en caché. Se conservarán las cookies y las sesiones.";
+
+"enter_fullscreen" = "Activar pantalla completa";
+"exit_fullscreen" = "Salir de pantalla completa";
 "privacy_clear_action" = "Borrar";
 "privacy_data_footer" = "Estas acciones no se pueden deshacer. Los datos borrados no se pueden recuperar.";
-"settings_privacy" = "Privacidad";
+"settings_privacy" = "Ajustes de privacidad";
 "platform_sort_options" = "Opciones de orden";
 
 /* Settings - Navigation & Titles */
@@ -268,6 +276,7 @@
 "settings_section_background" = "Fondo";
 "settings_section_privacy" = "Privacidad";
 "settings_section_about" = "Acerca de";
+"settings_section_about_support" = "Acerca de y soporte";
 
 /* Platform Management */
 "platform_auto_sort" = "Ordenar automáticamente por frecuencia";
@@ -352,6 +361,7 @@ Cuentanos:
 · Que podemos mejorar?";
 "feedback_contact" = "Contacto";
 "feedback_contact_hint" = "Email u otro contacto";
+"feedback_contact_reply_hint" = "Puedes dejar tu correo electrónico para que podamos responderte.";
 "feedback_optional" = "opcional";
 "feedback_submit" = "Enviar";
 "feedback_submitting" = "Enviando...";
@@ -425,7 +435,10 @@ Cuentanos:
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Site Privacy";
+"site_privacy" = "Protección del sitio actual";
+"site_privacy_scope_desc" = "Solo se aplica a este sitio. Cambia los valores predeterminados en Ajustes de privacidad.";
+"privacy_global_scope_desc" = "Estos valores se aplican a todos los sitios. Usa Protección del sitio actual para crear una excepción.";
+"site_privacy_compatibility_bypass" = "La protección está pausada para mantener el inicio de sesión y las funciones del sitio.";
 "site_privacy_no_site" = "No Site";
 "site_privacy_protected" = "Protections are active";
 "site_privacy_unprotected" = "Protections are disabled for this site";
@@ -459,7 +472,7 @@ Cuentanos:
 "wallpaper_color" = "Color de fondo";
 "wallpaper_current_vibe" = "Ambiente actual";
 "wallpaper_discover" = "Descubrir";
-"wallpaper_download" = "Guardar en Fotos";
+"wallpaper_download" = "Descargar fondo de pantalla";
 "wallpaper_favorites" = "Mis favoritos";
 "wallpaper_fetch_bing" = "Imagen del día";
 "wallpaper_gradient" = "Degradados";
@@ -467,7 +480,8 @@ Cuentanos:
 "wallpaper_pexels" = "Pexels (Seleccionado)";
 "wallpaper_photo" = "Muro de fotos";
 "wallpaper_pixabay" = "Pixabay (Naturaleza)";
-"wallpaper_refresh" = "Aleatorio";
+"wallpaper_refresh" = "Cambiar fondo de pantalla";
+"my_favorites" = "Mis favoritos";
 "wallpaper_search_placeholder" = "Buscar ambiente (ej. Bosque, Minimal)";
 "wallpaper_solid" = "Colores sólidos";
 "wallpaper_source" = "Fuente del fondo";
@@ -479,5 +493,6 @@ Cuentanos:
 "browser_forward" = "Adelante";
 "browser_reload" = "Recargar";
 "browser_edit_address" = "Editar dirección o búsqueda";
+"current_page_link" = "Enlace de la página actual";
 "tab_limit_title" = "Límite de pestañas alcanzado";
 "tab_limit_message" = "Puedes mantener hasta 20 pestañas. Cierra una antes de abrir otra.";

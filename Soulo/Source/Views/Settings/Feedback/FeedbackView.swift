@@ -96,6 +96,11 @@ struct FeedbackView: View {
                                 .padding(12)
                                 .background(Color(uiColor: .tertiarySystemFill))
                                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                            Text(lm.localizedString("feedback_contact_reply_hint"))
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                                .padding(.horizontal, 4)
                         }
 
                         // App info

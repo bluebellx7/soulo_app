@@ -62,9 +62,6 @@ struct WebViewRepresentable: UIViewRepresentable {
 
     @ObservedObject var viewModel: WebViewModel
     @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = true
-    @AppStorage("ad_block_network_enabled") private var adBlockNetworkEnabled: Bool = true
-    @AppStorage("ad_block_cosmetic_enabled") private var adBlockCosmeticEnabled: Bool = true
-    @AppStorage("ad_block_popup_enabled") private var adBlockPopupEnabled: Bool = true
     @AppStorage("is_incognito") private var isIncognito: Bool = false
     @AppStorage("privacy_gpc_enabled") private var gpcEnabled: Bool = true
     @AppStorage("privacy_cookie_banner_enabled") private var cookieBannerEnabled: Bool = true
@@ -86,8 +83,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         let defaults = UserDefaults.standard
-        guard defaults.object(forKey: "ad_block_enabled") as? Bool ?? true,
-              defaults.object(forKey: "ad_block_network_enabled") as? Bool ?? true else {
+        guard defaults.object(forKey: "ad_block_enabled") as? Bool ?? true else {
             return
         }
 
@@ -157,14 +153,6 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         contentController.addUserScript(
             WKUserScript(
-                source: WebViewScripts.loginOverlayRemoval,
-                injectionTime: .atDocumentEnd,
-                forMainFrameOnly: false
-            )
-        )
-
-        contentController.addUserScript(
-            WKUserScript(
                 source: WebViewScripts.privacyProtection(
                     gpcEnabled: gpcEnabled,
                     cookieBannerHandling: cookieBannerEnabled,
@@ -190,11 +178,10 @@ struct WebViewRepresentable: UIViewRepresentable {
         let hostIsAllowlisted = shouldBypassWebProtection
             || adBlockSettings.isAllowlisted(viewModel.currentURL?.host)
             || privacyService.isProtectionDisabled(for: viewModel.currentURL?.host)
-        if adBlockEnabled && !hostIsAllowlisted && (adBlockCosmeticEnabled || adBlockPopupEnabled) {
+        if adBlockEnabled && !hostIsAllowlisted {
             let adScript = WKUserScript(
                 source: AdBlockService.adHidingScript(
-                    cosmetic: adBlockCosmeticEnabled,
-                    popups: adBlockPopupEnabled,
+                    cosmetic: true,
                     allowlistedHosts: protectionBypassHosts
                 ),
                 injectionTime: .atDocumentEnd,
@@ -204,7 +191,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         // Apply pre-compiled content rules before the first navigation whenever possible.
-        if adBlockEnabled && adBlockNetworkEnabled && !hostIsAllowlisted, let cached = Self.cachedAdBlockRules {
+        if adBlockEnabled && !hostIsAllowlisted, let cached = Self.cachedAdBlockRules {
             contentController.add(cached)
         }
 
@@ -248,12 +235,11 @@ struct WebViewRepresentable: UIViewRepresentable {
         context.coordinator.applyAdHidingIfNeeded(
             on: uiView,
             enabled: adBlockEnabled && !shouldBypassWebProtection,
-            cosmetic: adBlockCosmeticEnabled,
-            popups: adBlockPopupEnabled,
+            cosmetic: true,
             allowlistedHosts: adBlockAllowlist,
             host: host
         )
-        if adBlockEnabled && adBlockNetworkEnabled && !privacyService.isProtectionDisabled(for: host) && !shouldBypassWebProtection {
+        if adBlockEnabled && !privacyService.isProtectionDisabled(for: host) && !shouldBypassWebProtection {
             Self.ensureCurrentContentRules(on: uiView, allowlist: adBlockAllowlist)
         } else {
             uiView.configuration.userContentController.removeAllContentRuleLists()
@@ -627,7 +613,6 @@ struct WebViewRepresentable: UIViewRepresentable {
             on webView: WKWebView,
             enabled: Bool,
             cosmetic: Bool,
-            popups: Bool,
             allowlistedHosts: [String],
             host: String?
         ) {
@@ -635,7 +620,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                 host ?? "",
                 enabled ? "1" : "0",
                 cosmetic ? "1" : "0",
-                popups ? "1" : "0",
                 allowlistedHosts.joined(separator: ","),
                 (AdBlockSettingsService.isHostAllowlisted(host) || PrivacyProtectionService.isProtectionDisabled(host)) ? "1" : "0"
             ].joined(separator: "|")
@@ -645,11 +629,11 @@ struct WebViewRepresentable: UIViewRepresentable {
             guard enabled,
                   !AdBlockSettingsService.isHostAllowlisted(host),
                   !PrivacyProtectionService.isProtectionDisabled(host),
-                  cosmetic || popups else {
+                  cosmetic else {
                 return
             }
             webView.evaluateJavaScript(
-                AdBlockService.adHidingScript(cosmetic: cosmetic, popups: popups, allowlistedHosts: allowlistedHosts),
+                AdBlockService.adHidingScript(cosmetic: cosmetic, allowlistedHosts: allowlistedHosts),
                 completionHandler: nil
             )
         }
@@ -988,8 +972,6 @@ struct WebViewRepresentable: UIViewRepresentable {
             _ url: URL,
             explicitUserAction: Bool = false
         ) {
-            if !explicitUserAction,
-               ExternalNavigationService.shared.shouldSilentlyBlock(url) { return }
             NotificationCenter.default.post(
                 name: .webViewExternalURLRequest,
                 object: nil,
@@ -1015,8 +997,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             applyAdHidingIfNeeded(
                 on: webView,
                 enabled: defaults.object(forKey: "ad_block_enabled") as? Bool ?? true,
-                cosmetic: defaults.object(forKey: "ad_block_cosmetic_enabled") as? Bool ?? true,
-                popups: defaults.object(forKey: "ad_block_popup_enabled") as? Bool ?? true,
+                cosmetic: true,
                 allowlistedHosts: AdBlockSettingsService.shared.allowlistedHosts,
                 host: webView.url?.host
             )

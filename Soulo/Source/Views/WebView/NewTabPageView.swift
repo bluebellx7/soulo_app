@@ -9,6 +9,21 @@ struct NewTabPageView: View {
     @State private var urlText: String = ""
     @FocusState private var isSearchFocused: Bool
     @Environment(\.colorScheme) private var colorScheme
+    @ObservedObject private var wallpaperManager = WallpaperManager.shared
+
+    private var primaryTextColor: Color {
+        wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47") : .white
+    }
+
+    private var secondaryTextColor: Color {
+        primaryTextColor.opacity(0.62)
+    }
+
+    private var cardFillColor: Color {
+        wallpaperManager.isCurrentWallpaperLight
+            ? Color.white.opacity(0.68)
+            : Color.white.opacity(0.1)
+    }
 
     /// Detect the best region based on the current language.
     private var detectedRegion: PlatformRegion {
@@ -67,7 +82,7 @@ struct NewTabPageView: View {
 
                     Text(LanguageManager.shared.localizedString("tab_new_tab"))
                         .font(.system(size: 20, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(primaryTextColor)
                 }
 
                 // Search / URL bar
@@ -89,7 +104,7 @@ struct NewTabPageView: View {
                 Spacer(minLength: 60)
             }
         }
-        .background(Color(UIColor.systemBackground))
+        .onAppear { wallpaperManager.ensureLoaded() }
     }
 
     // MARK: - Search Bar
@@ -98,13 +113,14 @@ struct NewTabPageView: View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(secondaryTextColor)
 
             TextField(
                 LanguageManager.shared.localizedString("search_placeholder"),
                 text: $urlText
             )
             .font(.system(size: 15))
+            .foregroundStyle(primaryTextColor)
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
             .keyboardType(.webSearch)
@@ -115,9 +131,9 @@ struct NewTabPageView: View {
                 Button {
                     urlText = ""
                 } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(.tertiary)
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(secondaryTextColor.opacity(0.75))
                 }
             }
         }
@@ -125,14 +141,18 @@ struct NewTabPageView: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(UIColor.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(cardFillColor)
+                )
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(
                     isSearchFocused
                         ? Color(hex: "6366F1").opacity(0.5)
-                        : Color(UIColor.separator).opacity(0.3),
+                        : primaryTextColor.opacity(0.14),
                     lineWidth: 1
                 )
         )
@@ -144,7 +164,7 @@ struct NewTabPageView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(LanguageManager.shared.localizedString("ntp_quick_links"))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(secondaryTextColor)
                 .padding(.horizontal, 4)
 
             LazyVGrid(columns: [
@@ -165,7 +185,7 @@ struct NewTabPageView: View {
 
                             Text(LanguageManager.shared.localizedString(platform.name))
                                 .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(primaryTextColor)
                                 .lineLimit(1)
                         }
                         .frame(maxWidth: .infinity)
@@ -186,7 +206,7 @@ struct NewTabPageView: View {
                     systemImage: "clock.arrow.circlepath"
                 )
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(secondaryTextColor)
                 Spacer()
             }
             .padding(.horizontal, 4)
@@ -199,7 +219,7 @@ struct NewTabPageView: View {
                     HStack(spacing: 10) {
                         Image(systemName: "globe")
                             .font(.system(size: 14))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(secondaryTextColor)
                             .frame(width: 28, height: 28)
                             .background(
                                 Color(UIColor.tertiarySystemFill),
@@ -209,12 +229,12 @@ struct NewTabPageView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(closed.title)
                                 .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(primaryTextColor)
                                 .lineLimit(1)
                             if let host = closed.url?.host {
                                 Text(host)
                                     .font(.system(size: 11))
-                                    .foregroundStyle(.tertiary)
+                                    .foregroundStyle(secondaryTextColor.opacity(0.8))
                                     .lineLimit(1)
                             }
                         }
@@ -229,7 +249,7 @@ struct NewTabPageView: View {
                     .padding(.vertical, 10)
                     .background(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color(UIColor.secondarySystemBackground))
+                            .fill(cardFillColor)
                     )
                 }
                 .buttonStyle(.plain)

@@ -169,6 +169,11 @@
 "login_required_title" = "Yêu cầu đăng nhập";
 "login_required_message" = "Nền tảng này yêu cầu bạn đăng nhập trước. Vui lòng đăng nhập trên trang, sau đó tìm kiếm của bạn sẽ được thực hiện tự động.";
 "login_required_toast" = "Vui lòng đăng nhập trước, sau đó tìm kiếm lại";
+"status_enabled" = "Đã bật";
+"status_disabled" = "Đã tắt";
+"show_top_search_bar" = "Hiện thanh tìm kiếm phía trên";
+"show_top_search_bar_desc" = "Khi ẩn, dùng thanh địa chỉ phía dưới để tìm kiếm hoặc nhập bằng giọng nói";
+"ad_block_master_disabled_desc" = "Bật chặn quảng cáo để sử dụng và quản lý các đăng ký bộ lọc bên dưới.";
 
 /* Custom Groups */
 "custom_groups" = "Nhóm tùy chỉnh";
@@ -243,12 +248,15 @@
 "privacy_clear_bookmarks_confirm_title" = "Xóa tất cả dấu trang?";
 "privacy_clear_bookmarks_confirm_message" = "Tất cả dấu trang sẽ bị xóa vĩnh viễn.";
 "privacy_clear_cache" = "Xóa bộ nhớ cache trình duyệt";
-"privacy_clear_cache_desc" = "Xóa cookie, cache và bộ nhớ cục bộ";
+"privacy_clear_cache_desc" = "Xóa bộ nhớ đệm web và bản xem trước tab. Trạng thái đăng nhập được giữ lại";
 "privacy_clear_cache_confirm_title" = "Xóa bộ nhớ cache trình duyệt?";
-"privacy_clear_cache_confirm_message" = "Tất cả dữ liệu duyệt web sẽ bị xóa vĩnh viễn.";
+"privacy_clear_cache_confirm_message" = "Tài nguyên đã lưu trong bộ nhớ đệm sẽ bị xóa. Cookie và trạng thái đăng nhập được giữ lại.";
+
+"enter_fullscreen" = "Bật toàn màn hình";
+"exit_fullscreen" = "Thoát toàn màn hình";
 "privacy_clear_action" = "Xóa";
 "privacy_data_footer" = "Các hành động này không thể hoàn tác. Dữ liệu đã xóa không thể khôi phục.";
-"settings_privacy" = "Quyền riêng tư";
+"settings_privacy" = "Cài đặt quyền riêng tư";
 "platform_sort_options" = "Tùy chọn sắp xếp";
 
 /* Settings - Navigation & Titles */
@@ -268,6 +276,7 @@
 "settings_section_background" = "Hình nền";
 "settings_section_privacy" = "Quyền riêng tư";
 "settings_section_about" = "Giới thiệu";
+"settings_section_about_support" = "Giới thiệu và hỗ trợ";
 
 /* Platform Management */
 "platform_auto_sort" = "Tự động sắp xếp theo tần suất";
@@ -352,6 +361,7 @@ Hay cho chung toi biet:
 · Dieu gi co the tot hon?";
 "feedback_contact" = "Lien he";
 "feedback_contact_hint" = "Email hoac lien he khac";
+"feedback_contact_reply_hint" = "Bạn có thể để lại email để chúng tôi phản hồi.";
 "feedback_optional" = "tuy chon";
 "feedback_submit" = "Gui";
 "feedback_submitting" = "Dang gui...";
@@ -425,7 +435,10 @@ Hay cho chung toi biet:
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Site Privacy";
+"site_privacy" = "Bảo vệ trang hiện tại";
+"site_privacy_scope_desc" = "Chỉ áp dụng cho trang này. Thay đổi mặc định cho mọi trang trong Cài đặt quyền riêng tư.";
+"privacy_global_scope_desc" = "Các mặc định này áp dụng cho mọi trang. Dùng Bảo vệ trang hiện tại để đặt ngoại lệ riêng.";
+"site_privacy_compatibility_bypass" = "Đã tạm dừng bảo vệ để duy trì đăng nhập và các chức năng của trang.";
 "site_privacy_no_site" = "No Site";
 "site_privacy_protected" = "Protections are active";
 "site_privacy_unprotected" = "Protections are disabled for this site";
@@ -459,7 +472,7 @@ Hay cho chung toi biet:
 "wallpaper_color" = "Màu nền";
 "wallpaper_current_vibe" = "Phong cách hiện tại";
 "wallpaper_discover" = "Khám phá";
-"wallpaper_download" = "Lưu vào Ảnh";
+"wallpaper_download" = "Tải hình nền";
 "wallpaper_favorites" = "Yêu thích";
 "wallpaper_fetch_bing" = "Ảnh hôm nay";
 "wallpaper_gradient" = "Chuyển màu";
@@ -467,7 +480,8 @@ Hay cho chung toi biet:
 "wallpaper_pexels" = "Pexels (Chọn lọc)";
 "wallpaper_photo" = "Tường ảnh";
 "wallpaper_pixabay" = "Pixabay (Thiên nhiên)";
-"wallpaper_refresh" = "Ngẫu nhiên";
+"wallpaper_refresh" = "Đổi hình nền";
+"my_favorites" = "Mục yêu thích của tôi";
 "wallpaper_search_placeholder" = "Tìm phong cách (VD: Rừng, Tối giản)";
 "wallpaper_solid" = "Màu đơn sắc";
 "wallpaper_source" = "Nguồn hình nền";
@@ -479,5 +493,6 @@ Hay cho chung toi biet:
 "browser_forward" = "Tiếp theo";
 "browser_reload" = "Tải lại";
 "browser_edit_address" = "Sửa địa chỉ hoặc tìm kiếm";
+"current_page_link" = "Liên kết trang hiện tại";
 "tab_limit_title" = "Đã đạt giới hạn tab";
 "tab_limit_message" = "Bạn có thể giữ tối đa 20 tab. Hãy đóng một tab trước khi mở tab mới.";

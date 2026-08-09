@@ -89,8 +89,9 @@
 "wallpaper_solid" = "Solid Colors";
 "wallpaper_source" = "Wallpaper Source";
 "wallpaper_type" = "Background Type";
-"wallpaper_refresh" = "Randomize";
-"wallpaper_download" = "Download to Photos";
+"wallpaper_refresh" = "Change Wallpaper";
+"wallpaper_download" = "Download Wallpaper";
+"my_favorites" = "My Favorites";
 "wallpaper_saved" = "Wallpaper Saved";
 "wallpaper_fetch_bing" = "Fetch Daily Image";
 "wallpaper_choose_photo" = "Pick from Library";
@@ -147,12 +148,15 @@
 "privacy_clear_bookmarks_confirm_title" = "Clear All Bookmarks?";
 "privacy_clear_bookmarks_confirm_message" = "All bookmarks will be permanently deleted.";
 "privacy_clear_cache" = "Clear Browsing Cache";
-"privacy_clear_cache_desc" = "Clear cookies, cache, and local storage";
+"privacy_clear_cache_desc" = "Remove cached website resources and tab previews. Sign-ins are kept";
 "privacy_clear_cache_confirm_title" = "Clear Browsing Cache?";
-"privacy_clear_cache_confirm_message" = "All browsing data will be permanently deleted.";
+"privacy_clear_cache_confirm_message" = "Cached website resources will be removed. Cookies and sign-ins will be kept.";
+
+"enter_fullscreen" = "Enter Full Screen";
+"exit_fullscreen" = "Exit Full Screen";
 "privacy_clear_action" = "Clear";
 "privacy_data_footer" = "These actions cannot be undone. Cleared data cannot be recovered.";
-"settings_privacy" = "Privacy";
+"settings_privacy" = "Privacy Settings";
 "platform_sort_options" = "Sort Options";
 "cancel" = "Cancel";
 "confirm" = "Confirm";
@@ -235,6 +239,11 @@
 "login_required_title" = "Login Required";
 "login_required_message" = "This platform requires you to log in first. Please log in on the page, then your search will be executed automatically.";
 "login_required_toast" = "Please log in first, then search again";
+"status_enabled" = "Enabled";
+"status_disabled" = "Disabled";
+"show_top_search_bar" = "Show Top Search Bar";
+"show_top_search_bar_desc" = "When hidden, use the bottom address control to search or start voice input";
+"ad_block_master_disabled_desc" = "Turn on Ad Block to use and manage the filter subscriptions below.";
 /* Custom Groups */
 "custom_groups" = "Custom Groups";
 "no_groups" = "No Custom Groups";
@@ -321,6 +330,7 @@
 "settings_section_background" = "Background";
 "settings_section_privacy" = "Privacy";
 "settings_section_about" = "About";
+"settings_section_about_support" = "About & Support";
 
 /* Platform Management */
 "platform_auto_sort" = "Auto-Sort by Frequency";
@@ -401,6 +411,7 @@
 "feedback_placeholder" = "Your feedback helps us improve!\n\nTell us:\n· What issue did you encounter?\n· What feature would you like?\n· What could work better?";
 "feedback_contact" = "Contact";
 "feedback_contact_hint" = "Email or other contact";
+"feedback_contact_reply_hint" = "You can leave your email address so we can reply to you.";
 "feedback_optional" = "optional";
 "feedback_submit" = "Submit";
 "feedback_submitting" = "Submitting...";
@@ -470,7 +481,10 @@
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Site Privacy";
+"site_privacy" = "Current Site Protection";
+"site_privacy_scope_desc" = "Applies only to this site. Change defaults for all sites in Privacy Settings.";
+"privacy_global_scope_desc" = "These defaults apply to all sites. Use Current Site Protection for a site-specific exception.";
+"site_privacy_compatibility_bypass" = "Protection is paused to keep sign-in and site features working.";
 "site_privacy_no_site" = "No Site";
 "site_privacy_protected" = "Protections are active";
 "site_privacy_unprotected" = "Protections are disabled for this site";
@@ -546,5 +560,6 @@
 "browser_forward" = "Forward";
 "browser_reload" = "Reload";
 "browser_edit_address" = "Edit address or search";
+"current_page_link" = "Current page link";
 "tab_limit_title" = "Tab Limit Reached";
 "tab_limit_message" = "You can keep up to 20 tabs. Close a tab before opening another.";

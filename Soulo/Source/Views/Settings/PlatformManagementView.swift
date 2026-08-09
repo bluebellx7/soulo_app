@@ -77,13 +77,9 @@ struct PlatformManagementView: View {
                         }
                         .onMove { indices, destination in
                             if section.isBuiltIn, let region = section.region {
-                                var regionPlatforms = store.platforms
-                                    .filter { $0.region == region }
-                                    .sorted { $0.sortOrder < $1.sortOrder }
-                                regionPlatforms.move(fromOffsets: indices, toOffset: destination)
-                                for (i, p) in regionPlatforms.enumerated() {
-                                    store.movePlatform(id: p.id, toSortOrder: i)
-                                }
+                                store.movePlatform(from: indices, to: destination, within: region)
+                            } else if let groupID = section.customGroup?.id {
+                                store.movePlatform(from: indices, to: destination, withinGroup: groupID)
                             }
                         }
                     }
@@ -166,7 +162,9 @@ struct PlatformManagementView: View {
         .listStyle(.insetGrouped)
         .navigationTitle(LanguageManager.shared.localizedString("platform_management"))
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItemGroup(placement: .primaryAction) {
+                EditButton()
+
                 Menu {
                     Button {
                         showAddGroup = true
@@ -328,11 +326,11 @@ struct AddPlatformToGroupSheet: View {
     let group: CustomGroup
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var store = PlatformDataStore.shared
-    @State private var selectedIDs: Set<UUID>
+    @State private var selectedIDs: [UUID]
 
     init(group: CustomGroup) {
         self.group = group
-        self._selectedIDs = State(initialValue: Set(group.platformIDs))
+        self._selectedIDs = State(initialValue: group.platformIDs)
     }
 
     var body: some View {
@@ -343,9 +341,9 @@ struct AddPlatformToGroupSheet: View {
                         ForEach(store.platforms(for: region)) { platform in
                             Button {
                                 if selectedIDs.contains(platform.id) {
-                                    selectedIDs.remove(platform.id)
+                                    selectedIDs.removeAll { $0 == platform.id }
                                 } else {
-                                    selectedIDs.insert(platform.id)
+                                    selectedIDs.append(platform.id)
                                 }
                             } label: {
                                 HStack(spacing: 10) {
@@ -380,10 +378,7 @@ struct AddPlatformToGroupSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(LanguageManager.shared.localizedString("save")) {
-                        if let idx = store.customGroups.firstIndex(where: { $0.id == group.id }) {
-                            store.customGroups[idx].platformIDs = Array(selectedIDs)
-                            store.saveGroups()
-                        }
+                        store.setPlatforms(selectedIDs, inGroup: group.id)
                         dismiss()
                     }
                     .fontWeight(.semibold)

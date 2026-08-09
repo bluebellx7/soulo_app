@@ -88,8 +88,9 @@
 "wallpaper_solid" = "Düz Renkler";
 "wallpaper_source" = "Duvar Kağıdı Kaynağı";
 "wallpaper_type" = "Arka Plan Türü";
-"wallpaper_refresh" = "Rastgele";
-"wallpaper_download" = "Fotoğraflara Kaydet";
+"wallpaper_refresh" = "Duvar Kâğıdını Değiştir";
+"wallpaper_download" = "Duvar Kâğıdını İndir";
+"my_favorites" = "Favorilerim";
 "wallpaper_saved" = "Duvar kağıdı Fotoğraflara kaydedildi";
 "wallpaper_fetch_bing" = "Günlük Resmi Getir";
 "wallpaper_choose_photo" = "Kütüphaneden Seç";
@@ -146,12 +147,15 @@
 "privacy_clear_bookmarks_confirm_title" = "Tüm Yer İmleri Temizlensin mi?";
 "privacy_clear_bookmarks_confirm_message" = "Tüm yer imleri kalıcı olarak silinecek.";
 "privacy_clear_cache" = "Tarama Önbelleğini Temizle";
-"privacy_clear_cache_desc" = "Çerezleri, önbelleği ve yerel depolamayı temizle";
+"privacy_clear_cache_desc" = "Web önbelleğini ve sekme önizlemelerini temizle. Oturumlar korunur";
 "privacy_clear_cache_confirm_title" = "Tarama Önbelleği Temizlensin mi?";
-"privacy_clear_cache_confirm_message" = "Tüm tarama verileri kalıcı olarak silinecek.";
+"privacy_clear_cache_confirm_message" = "Önbelleğe alınan kaynaklar silinecek. Çerezler ve oturumlar korunacak.";
+
+"enter_fullscreen" = "Tam Ekrana Geç";
+"exit_fullscreen" = "Tam Ekrandan Çık";
 "privacy_clear_action" = "Temizle";
 "privacy_data_footer" = "Bu işlemler geri alınamaz. Silinen veriler kurtarılamaz.";
-"settings_privacy" = "Gizlilik";
+"settings_privacy" = "Gizlilik Ayarları";
 "platform_sort_options" = "Sıralama Seçenekleri";
 "cancel" = "İptal";
 "confirm" = "Onayla";
@@ -234,6 +238,11 @@
 "login_required_title" = "Giriş Gerekli";
 "login_required_message" = "Bu platform giriş yapmanızı gerektiriyor. Lütfen sayfada giriş yapın, ardından aramanız otomatik olarak yürütülecektir.";
 "login_required_toast" = "Lütfen önce giriş yapın, sonra tekrar arayın";
+"status_enabled" = "Etkin";
+"status_disabled" = "Devre dışı";
+"show_top_search_bar" = "Üst arama çubuğunu göster";
+"show_top_search_bar_desc" = "Gizliyken arama veya sesli giriş için alttaki adres çubuğunu kullanın";
+"ad_block_master_disabled_desc" = "Aşağıdaki filtre aboneliklerini kullanmak ve yönetmek için reklam engellemeyi açın.";
 /* Custom Groups */
 "custom_groups" = "Özel Gruplar";
 "no_groups" = "Özel Grup Yok";
@@ -307,6 +316,7 @@
 "settings_section_background" = "Arka Plan";
 "settings_section_privacy" = "Gizlilik";
 "settings_section_about" = "Hakkında";
+"settings_section_about_support" = "Hakkında ve Destek";
 
 /* Platform Management */
 "platform_auto_sort" = "Sıklığa Göre Otomatik Sırala";
@@ -386,6 +396,7 @@
 "feedback_placeholder" = "Geri bildiriminiz iyileştirmemize yardımcı olur!\n\nBize anlatın:\n· Hangi sorunla karşılaştınız?\n· Hangi özelliği istersiniz?\n· Ne daha iyi çalışabilir?";
 "feedback_contact" = "İletişim";
 "feedback_contact_hint" = "E-posta veya diğer iletişim bilgisi";
+"feedback_contact_reply_hint" = "Size yanıt verebilmemiz için e-posta adresinizi bırakabilirsiniz.";
 "feedback_optional" = "isteğe bağlı";
 "feedback_submit" = "Gönder";
 "feedback_submitting" = "Gönderiliyor...";
@@ -459,7 +470,10 @@
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Site Privacy";
+"site_privacy" = "Geçerli Site Koruması";
+"site_privacy_scope_desc" = "Yalnızca bu siteye uygulanır. Tüm sitelerin varsayılanlarını Gizlilik Ayarları’ndan değiştirin.";
+"privacy_global_scope_desc" = "Bu varsayılanlar tüm sitelere uygulanır. Siteye özel istisna için Geçerli Site Koruması’nı kullanın.";
+"site_privacy_compatibility_bypass" = "Oturum açma ve site özellikleri çalışsın diye koruma duraklatıldı.";
 "site_privacy_no_site" = "No Site";
 "site_privacy_protected" = "Protections are active";
 "site_privacy_unprotected" = "Protections are disabled for this site";
@@ -495,5 +509,6 @@
 "browser_forward" = "İleri";
 "browser_reload" = "Yeniden yükle";
 "browser_edit_address" = "Adresi veya aramayı düzenle";
+"current_page_link" = "Geçerli sayfa bağlantısı";
 "tab_limit_title" = "Sekme sınırına ulaşıldı";
 "tab_limit_message" = "En fazla 20 sekme açık tutabilirsiniz. Yeni bir sekme açmadan önce birini kapatın.";

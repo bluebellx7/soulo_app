@@ -423,16 +423,23 @@ final class TabManager: ObservableObject {
     // MARK: - Desktop Mode
 
     func toggleDesktopMode() {
-        guard let tab = activeTab, let webView = tab.webViewModel.webView else { return }
+        setDesktopModeEnabled(!isDesktopMode)
+    }
 
-        if desktopModeTabs.contains(tab.id) {
-            desktopModeTabs.remove(tab.id)
-            tab.webViewModel.setDesktopModeEnabled(false)
-        } else {
+    func setDesktopModeEnabled(_ enabled: Bool, reload: Bool = true) {
+        guard let tab = activeTab else { return }
+        let isCurrentlyEnabled = desktopModeTabs.contains(tab.id)
+        guard isCurrentlyEnabled != enabled else { return }
+
+        if enabled {
             desktopModeTabs.insert(tab.id)
-            tab.webViewModel.setDesktopModeEnabled(true)
+        } else {
+            desktopModeTabs.remove(tab.id)
         }
-        webView.reload()
+        tab.webViewModel.setDesktopModeEnabled(enabled)
+        if reload {
+            tab.webViewModel.webView?.reload()
+        }
     }
 
     // MARK: - Persistence

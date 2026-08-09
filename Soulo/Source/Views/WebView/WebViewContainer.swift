@@ -8,8 +8,10 @@ struct WebViewContainer: View {
     @Binding var isFullscreen: Bool
     var tabManager: TabManager? = nil
     var isActiveTab: Bool = true
+    var addressEditorText: String? = nil
     var onGoHome: (() -> Void)? = nil
-    var onAddressNavigate: ((URL) -> Void)? = nil
+    var onAddressSearch: ((String) -> Void)? = nil
+    var onRequestVoiceSearch: (() -> Void)? = nil
     var onPageStarted: (() -> Void)? = nil
     var onPageLoaded: (() -> Void)? = nil
     @Environment(\.modelContext) private var modelContext
@@ -29,8 +31,6 @@ struct WebViewContainer: View {
     @State private var showAdBlockManager = false
     @State private var showPrivacyPanel = false
     @State private var showDownloads = false
-    @State private var showFireConfirm = false
-    @State private var showFireComplete = false
     @State private var showExternalOpenFailed = false
     @State private var showDownloadFailed = false
     @State private var showAddressEditor = false
@@ -38,17 +38,18 @@ struct WebViewContainer: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
-                // Find in Page bar (only on active tab)
-                if isActiveTab, let tm = tabManager, tm.showFindInPage {
-                    FindInPageBar(tabManager: tm)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                }
-
-                WebViewProgressBar(
-                    progress: webViewModel.estimatedProgress,
-                    isLoading: webViewModel.isLoading
-                )
                 if !isFullscreen {
+                    // Find in Page bar (only on active tab)
+                    if isActiveTab, let tm = tabManager, tm.showFindInPage {
+                        FindInPageBar(tabManager: tm)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+
+                    WebViewProgressBar(
+                        progress: webViewModel.estimatedProgress,
+                        isLoading: webViewModel.isLoading
+                    )
+
                     Rectangle()
                         .fill(Color(UIColor.separator).opacity(0.2))
                         .frame(height: 0.5)
@@ -57,6 +58,8 @@ struct WebViewContainer: View {
                 ZStack {
                     WebViewRepresentable(viewModel: webViewModel)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .opacity(isShowingNewTabPage ? 0 : 1)
+                        .allowsHitTesting(!isShowingNewTabPage)
 
                     if webViewModel.showSnapshotWhileRestoring,
                        let snapshot = webViewModel.snapshot,
@@ -71,7 +74,7 @@ struct WebViewContainer: View {
                     }
 
                     // New Tab Page overlay
-                    if showNewTabPage && webViewModel.currentURL == nil && !webViewModel.isLoading {
+                    if isShowingNewTabPage {
                         NewTabPageView(tabManager: tabManager) { url in
                             webViewModel.loadURL(url)
                         }
@@ -95,11 +98,12 @@ struct WebViewContainer: View {
                 }
             }
 
-            // Floating toolbar (only on active tab)
+            // Floating toolbar (only on active tab). Full screen hides the top
+            // browser chrome but keeps these core navigation controls available.
             if isActiveTab {
                 VStack(spacing: 0) {
                     Spacer()
-                    if toolbarMinimized {
+                    if toolbarMinimized && !isFullscreen {
                         // Mini pill — domain + tab count
                         miniToolbarPill
                             .transition(.asymmetric(
@@ -121,9 +125,10 @@ struct WebViewContainer: View {
                             onShowPrivacy: { showPrivacyPanel = true },
                             onManageAdBlock: { showAdBlockManager = true },
                             onShowDownloads: { showDownloads = true },
-                            onFireButton: { showFireConfirm = true },
                             onGoHome: onGoHome,
                             onEditAddress: { showAddressEditor = true },
+                            isFullscreen: isFullscreen,
+                            onToggleFullscreen: { toggleFullscreen() },
                             onOpenSafariCompatibility: { openSafariCompatibilityMode() },
                             onOpenDefaultBrowser: { openCurrentPageInDefaultBrowser() }
                         )
@@ -139,6 +144,12 @@ struct WebViewContainer: View {
                 .zIndex(50)
             }
 
+            if isActiveTab && isFullscreen {
+                fullscreenExitButton
+                    .transition(.scale(scale: 0.8).combined(with: .opacity))
+                    .zIndex(70)
+            }
+
             // Toast overlays
             if showBookmarkToast {
                 toastView(
@@ -152,14 +163,6 @@ struct WebViewContainer: View {
                     icon: "checkmark",
                     text: LanguageManager.shared.localizedString("link_copied"),
                     iconColor: .green
-                )
-            }
-
-            if showFireComplete {
-                toastView(
-                    icon: "trash.fill",
-                    text: LanguageManager.shared.localizedString("fire_complete"),
-                    iconColor: .red
                 )
             }
 
@@ -192,7 +195,7 @@ struct WebViewContainer: View {
                                 Text(LanguageManager.shared.localizedString("open_external_title"))
                                     .font(.system(size: 13, weight: .semibold))
                                     .foregroundStyle(.white)
-                                Text(extURL.host ?? extURL.absoluteString)
+                                Text(WebNavigationPolicyService.shared.externalDestinationName(for: extURL))
                                     .font(.system(size: 11))
                                     .foregroundStyle(.white.opacity(0.6))
                                     .lineLimit(1)
@@ -210,22 +213,6 @@ struct WebViewContainer: View {
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 8)
                                     .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                            }
-                            if !externalRequestIsExplicit {
-                                Button {
-                                    if let extURL = externalURL {
-                                        ExternalNavigationService.shared.rememberBlock(for: extURL)
-                                    }
-                                    withAnimation { showExternalConfirm = false }
-                                    externalDismissTask?.cancel()
-                                } label: {
-                                    Text(LanguageManager.shared.localizedString("never_prompt"))
-                                        .font(.system(size: 13, weight: .medium))
-                                        .foregroundStyle(.white.opacity(0.9))
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 8)
-                                        .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                                }
                             }
                             Button {
                                 withAnimation { showExternalConfirm = false }
@@ -290,8 +277,8 @@ struct WebViewContainer: View {
         .animation(.easeOut(duration: 0.18), value: webViewModel.showSnapshotWhileRestoring)
         .onChange(of: webViewModel.isScrollingUp) { _, scrollingUp in
             if isActiveTab {
-                isFullscreen = scrollingUp
-                // Minimize toolbar when scrolling down to read
+                // Scrolling can compact browser controls, but full screen is an
+                // explicit user choice handled by the toolbar action.
                 if scrollingUp && !toolbarMinimized {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         toolbarMinimized = true
@@ -366,15 +353,20 @@ struct WebViewContainer: View {
         }
         .sheet(isPresented: $showAddressEditor) {
             BrowserAddressEditorSheet(
-                initialText: webViewModel.currentURL?.absoluteString ?? "",
-                preferredSearchPlatform: tabManager?.activeTab?.platform,
-                onOpen: { url in
+                initialText: addressEditorText ?? webViewModel.currentURL?.absoluteString ?? "",
+                initialURL: webViewModel.currentURL?.absoluteString ?? "",
+                onOpen: { value in
                     showAddressEditor = false
-                    onAddressNavigate?(url)
-                    webViewModel.loadURL(url)
+                    onAddressSearch?(value)
+                },
+                onVoiceInput: {
+                    showAddressEditor = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
+                        onRequestVoiceSearch?()
+                    }
                 }
             )
-            .presentationDetents([.height(176)])
+            .presentationDetents([.height(302)])
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showAdBlockManager) {
@@ -396,21 +388,6 @@ struct WebViewContainer: View {
                 DownloadManagerView()
             }
         }
-        .alert(LanguageManager.shared.localizedString("fire_button"), isPresented: $showFireConfirm) {
-            Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
-            Button(LanguageManager.shared.localizedString("fire_button_confirm"), role: .destructive) {
-                FireButtonService.burn(tabManager: tabManager) {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        showFireComplete = true
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
-                        withAnimation { showFireComplete = false }
-                    }
-                }
-            }
-        } message: {
-            Text(LanguageManager.shared.localizedString("fire_button_desc"))
-        }
     }
 
     // MARK: - Toast
@@ -426,6 +403,10 @@ struct WebViewContainer: View {
         WebNavigationPolicyService.shared.canUseSafariCompatibilityMode(
             for: webViewModel.currentURL
         )
+    }
+
+    private var isShowingNewTabPage: Bool {
+        showNewTabPage && webViewModel.currentURL == nil && !webViewModel.isLoading
     }
 
     private func openSafariCompatibilityMode() {
@@ -479,6 +460,40 @@ struct WebViewContainer: View {
     }
 
     // MARK: - Mini Toolbar Pill
+
+    private var fullscreenExitButton: some View {
+        VStack {
+            HStack {
+                Spacer()
+                Button {
+                    toggleFullscreen()
+                } label: {
+                    Image(systemName: "arrow.down.right.and.arrow.up.left")
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundStyle(.white)
+                        .frame(width: 30, height: 30)
+                        .background(.black.opacity(0.58), in: Circle())
+                        .overlay(Circle().stroke(.white.opacity(0.14), lineWidth: 0.5))
+                        .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
+                        .frame(width: 40, height: 40)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(LanguageManager.shared.localizedString("exit_fullscreen"))
+            }
+            Spacer()
+        }
+        .padding(.top, 12)
+        .padding(.trailing, 12)
+    }
+
+    private func toggleFullscreen() {
+        HapticsManager.light()
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+            isFullscreen.toggle()
+            toolbarMinimized = false
+        }
+    }
 
     private var miniToolbarPill: some View {
         Button {
@@ -558,39 +573,55 @@ struct WebViewContainer: View {
 // MARK: - Address Editor
 
 private struct BrowserAddressEditorSheet: View {
-    let preferredSearchPlatform: SearchPlatform?
-    let onOpen: (URL) -> Void
+    private enum Field: Hashable {
+        case query
+        case pageURL
+    }
+
+    let onOpen: (String) -> Void
+    let onVoiceInput: () -> Void
 
     @State private var text: String
-    @FocusState private var isFocused: Bool
+    @State private var pageURLText: String
+    @State private var didCopyLink = false
+    @FocusState private var focusedField: Field?
     @Environment(\.dismiss) private var dismiss
 
     init(
         initialText: String,
-        preferredSearchPlatform: SearchPlatform?,
-        onOpen: @escaping (URL) -> Void
+        initialURL: String,
+        onOpen: @escaping (String) -> Void,
+        onVoiceInput: @escaping () -> Void
     ) {
-        self.preferredSearchPlatform = preferredSearchPlatform
         self.onOpen = onOpen
+        self.onVoiceInput = onVoiceInput
         _text = State(initialValue: initialText)
+        _pageURLText = State(initialValue: initialURL)
     }
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(LanguageManager.shared.localizedString("browser_edit_address"))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(focusedField == .query ? Color.accentColor : Color.secondary)
+                    .frame(width: 30, height: 30)
+                    .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
 
                 TextField(
                     LanguageManager.shared.localizedString("search_placeholder"),
                     text: $text
                 )
-                .font(.system(size: 15))
+                .font(.system(size: 15, weight: .medium))
                 .keyboardType(.webSearch)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .submitLabel(.go)
-                .focused($isFocused)
+                .focused($focusedField, equals: .query)
                 .onSubmit(open)
 
                 if !text.isEmpty {
@@ -602,43 +633,159 @@ private struct BrowserAddressEditorSheet: View {
                     }
                     .accessibilityLabel(LanguageManager.shared.localizedString("fire_button_confirm"))
                 }
+
+                Rectangle()
+                    .fill(Color(UIColor.separator).opacity(0.35))
+                    .frame(width: 1, height: 20)
+
+                Button {
+                    HapticsManager.light()
+                    onVoiceInput()
+                } label: {
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 32, height: 32)
+                        .background(Color.accentColor.opacity(0.11), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(LanguageManager.shared.localizedString("voice_record"))
             }
-            .padding(.horizontal, 14)
-            .frame(height: 48)
-            .background(Color(UIColor.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .padding(.horizontal, 10)
+            .frame(height: 52)
+            .background(Color(UIColor.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color(hex: "6366F1").opacity(isFocused ? 0.55 : 0.2), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .stroke(focusedField == .query ? Color.accentColor.opacity(0.55) : Color(UIColor.separator).opacity(0.25), lineWidth: 1)
             )
 
-            HStack(spacing: 12) {
-                Button(LanguageManager.shared.localizedString("cancel")) {
-                    dismiss()
-                }
-                .buttonStyle(.bordered)
-                .frame(maxWidth: .infinity)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(LanguageManager.shared.localizedString("current_page_link"))
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
 
-                Button(LanguageManager.shared.localizedString("open_directly")) {
-                    open()
+                HStack(spacing: 8) {
+                    Image(systemName: "link")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(focusedField == .pageURL ? Color.accentColor : Color.secondary)
+
+                    TextField("https://", text: $pageURLText)
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .submitLabel(.go)
+                        .focused($focusedField, equals: .pageURL)
+                        .onSubmit(openPageURL)
+
+                    Button {
+                        let value = pageURLText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !value.isEmpty else { return }
+                        UIPasteboard.general.string = value
+                        HapticsManager.light()
+                        withAnimation(.easeInOut(duration: 0.18)) { didCopyLink = true }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                            withAnimation(.easeInOut(duration: 0.18)) { didCopyLink = false }
+                        }
+                    } label: {
+                        Image(systemName: didCopyLink ? "checkmark" : "doc.on.doc")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(didCopyLink ? Color.green : Color.secondary)
+                            .frame(width: 28, height: 28)
+                            .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(pageURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .accessibilityLabel(LanguageManager.shared.localizedString("copy_link"))
+
+                    Button(action: openPageURL) {
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 28, height: 28)
+                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(pageURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .opacity(pageURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.45 : 1)
+                    .accessibilityLabel(LanguageManager.shared.localizedString("open_directly"))
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Color(hex: "6366F1"))
-                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 11)
+                .frame(height: 42)
+                .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .stroke(focusedField == .pageURL ? Color.accentColor.opacity(0.45) : Color(UIColor.separator).opacity(0.2), lineWidth: 1)
+                )
+            }
+
+            HStack(spacing: 12) {
+                Button {
+                    dismiss()
+                } label: {
+                    Text(LanguageManager.shared.localizedString("cancel"))
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(Color(uiColor: .secondarySystemFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    open()
+                } label: {
+                    Text(
+                        LanguageManager.shared.localizedString(
+                            text.trimmingCharacters(in: .whitespacesAndNewlines).isValidURL
+                                ? "open_directly"
+                                : "search"
+                        )
+                    )
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
                 .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .opacity(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.45 : 1)
             }
         }
         .padding(.horizontal, 18)
-        .padding(.top, 16)
-        .onAppear { isFocused = true }
+        .padding(.top, 12)
+        .onAppear {
+            // Sheet presentation and keyboard activation happen on adjacent
+            // run-loop passes. Focus first, then select the active field once
+            // UIKit has installed its text input as first responder.
+            DispatchQueue.main.async {
+                focusedField = .query
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                    guard focusedField == .query else { return }
+                    UIApplication.shared.sendAction(
+                        #selector(UIResponder.selectAll(_:)),
+                        to: nil,
+                        from: nil,
+                        for: nil
+                    )
+                }
+            }
+        }
     }
 
     private func open() {
-        guard let url = BrowserNavigationResolver.resolve(
-            text,
-            preferredSearchPlatform: preferredSearchPlatform
-        ) else { return }
+        let value = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return }
         HapticsManager.selection()
-        onOpen(url)
+        onOpen(value)
+    }
+
+    private func openPageURL() {
+        let value = pageURLText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return }
+        HapticsManager.selection()
+        onOpen(value)
     }
 }
 

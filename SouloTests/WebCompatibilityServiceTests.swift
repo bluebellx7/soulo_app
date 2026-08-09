@@ -2,6 +2,61 @@ import XCTest
 @testable import Soulo
 
 final class WebCompatibilityServiceTests: XCTestCase {
+    func testXiaohongshuBypassesWebProtectionToPreserveAuthenticationUI() {
+        XCTAssertTrue(
+            WebCompatibilityService.shouldBypassWebProtection(
+                for: URL(string: "https://www.xiaohongshu.com/search_result/?keyword=test")
+            )
+        )
+        XCTAssertTrue(WebCompatibilityService.protectionBypassHosts().contains("xiaohongshu.com"))
+    }
+
+    func testOnlyXiaohongshuRequiresDesktopModeByHost() {
+        XCTAssertTrue(
+            WebCompatibilityService.requiresDesktopMode(
+                for: URL(string: "https://www.xiaohongshu.com/search_result?keyword=test")
+            )
+        )
+        XCTAssertFalse(
+            WebCompatibilityService.requiresDesktopMode(
+                for: URL(string: "https://www.baidu.com/s?wd=test")
+            )
+        )
+        XCTAssertFalse(
+            WebCompatibilityService.requiresDesktopMode(
+                for: URL(string: "https://weixin.qq.com")
+            )
+        )
+    }
+
+    func testDetectsAuthenticatedXiaohongshuSessionCookie() throws {
+        let authenticated = try XCTUnwrap(
+            HTTPCookie(properties: [
+                .domain: ".xiaohongshu.com",
+                .path: "/",
+                .name: "web_session",
+                .value: "active-session",
+                .secure: "TRUE",
+            ])
+        )
+        let anonymous = try XCTUnwrap(
+            HTTPCookie(properties: [
+                .domain: ".xiaohongshu.com",
+                .path: "/",
+                .name: "a1",
+                .value: "anonymous-device",
+                .secure: "TRUE",
+            ])
+        )
+
+        XCTAssertTrue(
+            WebCompatibilityService.hasAuthenticatedXiaohongshuSession(in: [authenticated])
+        )
+        XCTAssertFalse(
+            WebCompatibilityService.hasAuthenticatedXiaohongshuSession(in: [anonymous])
+        )
+    }
+
     func testBypassesProtectionForWeixinSubdomains() {
         let url = URL(string: "https://mp.weixin.qq.com/s/example")!
 

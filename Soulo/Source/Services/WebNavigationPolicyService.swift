@@ -55,4 +55,38 @@ struct WebNavigationPolicyService {
         }
         return true
     }
+
+    /// A user-facing destination for external navigation prompts. Custom URL
+    /// hosts such as `v1` are internal routes, so prefer the owning app scheme.
+    func externalDestinationName(for url: URL) -> String {
+        let scheme = url.scheme?.lowercased() ?? ""
+        let knownApps: [String: String] = [
+            "baiduboxapp": "百度 App",
+            "baiduboxlite": "百度 App",
+            "weixin": "微信",
+            "mqqapi": "QQ",
+            "sinaweibo": "微博",
+            "snssdk1128": "抖音",
+            "douyin": "抖音",
+            "xhsdiscover": "小红书",
+            "xiaohongshu": "小红书",
+            "bilibili": "B站",
+            "taobao": "淘宝",
+            "openapp.jdmobile": "京东",
+            "alipays": "支付宝",
+            "itms-apps": "App Store",
+            "spotify": "Spotify",
+            "tg": "Telegram",
+            "whatsapp": "WhatsApp",
+            "line": "LINE"
+        ]
+
+        if let appName = knownApps[scheme] {
+            return appName
+        }
+        if webSchemes.contains(scheme), let host = url.host, !host.isEmpty {
+            return host
+        }
+        return scheme.isEmpty ? url.absoluteString : scheme
+    }
 }

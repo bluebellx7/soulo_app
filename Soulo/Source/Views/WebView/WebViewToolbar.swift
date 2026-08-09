@@ -3,6 +3,10 @@ import SwiftUI
 struct WebViewToolbar: View {
     @ObservedObject var viewModel: WebViewModel
     @Binding var isBookmarked: Bool
+    @ObservedObject private var privacyService = PrivacyProtectionService.shared
+    @ObservedObject private var adBlockSettings = AdBlockSettingsService.shared
+    @ObservedObject private var downloadManager = DownloadManagerService.shared
+    @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = true
 
     var tabManager: TabManager?
     var onShare: (() -> Void)?
@@ -10,9 +14,10 @@ struct WebViewToolbar: View {
     var onShowPrivacy: (() -> Void)?
     var onManageAdBlock: (() -> Void)?
     var onShowDownloads: (() -> Void)?
-    var onFireButton: (() -> Void)?
     var onGoHome: (() -> Void)?
     var onEditAddress: (() -> Void)?
+    var isFullscreen: Bool = false
+    var onToggleFullscreen: (() -> Void)?
     var onOpenSafariCompatibility: (() -> Void)?
     var onOpenDefaultBrowser: (() -> Void)?
 
@@ -29,9 +34,6 @@ struct WebViewToolbar: View {
                 enabled: viewModel.currentURL != nil
             ) { viewModel.reload() }
 
-            // More actions menu
-            moreMenu
-
             // Tab count button
             if let tabManager = tabManager {
                 TabCountBadge(count: tabManager.tabCount) {
@@ -42,6 +44,10 @@ struct WebViewToolbar: View {
                     }
                 }
             }
+
+            // Keep the overflow menu at the trailing edge, matching common
+            // browser toolbar placement and making its position predictable.
+            moreMenu
         }
         .padding(.horizontal, 10)
     }
@@ -102,13 +108,67 @@ struct WebViewToolbar: View {
 
     // MARK: - More Actions Menu
 
+    private var siteProtectionEnabled: Bool {
+        guard viewModel.currentURL?.host != nil else { return false }
+        return !privacyService.isProtectionDisabled(for: viewModel.currentURL?.host)
+            && !WebCompatibilityService.shouldBypassWebProtection(for: viewModel.currentURL)
+    }
+
+    private var siteAdBlockingEnabled: Bool {
+        adBlockEnabled
+            && siteProtectionEnabled
+            && !adBlockSettings.isAllowlisted(viewModel.currentURL?.host)
+    }
+
+    private var hasDownloads: Bool {
+        viewModel.isDownloading || !downloadManager.downloads.isEmpty
+    }
+
+    private func menuLabel(
+        _ key: String,
+        systemImage: String,
+        isActive: Bool? = nil,
+        activeColor: UIColor = .systemBlue
+    ) -> some View {
+        Label {
+            Text(LanguageManager.shared.localizedString(key))
+                .foregroundStyle(.primary)
+        } icon: {
+            menuIcon(systemImage, isActive: isActive, activeColor: activeColor)
+        }
+    }
+
+    private func menuIcon(
+        _ systemName: String,
+        isActive: Bool?,
+        activeColor: UIColor
+    ) -> Image {
+        let color: UIColor
+        switch isActive {
+        case true:
+            color = activeColor
+        case false:
+            color = .label
+        case nil:
+            color = .label
+        }
+
+        guard let image = UIImage(systemName: systemName)?.withTintColor(
+            color,
+            renderingMode: .alwaysOriginal
+        ) else {
+            return Image(systemName: systemName)
+        }
+        return Image(uiImage: image)
+    }
+
     private var moreMenu: some View {
         Menu {
             if viewModel.canGoForward {
                 Button {
                     viewModel.goForward()
                 } label: {
-                    Label(LanguageManager.shared.localizedString("browser_forward"), systemImage: "chevron.right")
+                    menuLabel("browser_forward", systemImage: "chevron.right")
                 }
             }
 
@@ -117,7 +177,7 @@ struct WebViewToolbar: View {
                 Button {
                     onShare?()
                 } label: {
-                    Label(LanguageManager.shared.localizedString("share"), systemImage: "square.and.arrow.up")
+                    menuLabel("share", systemImage: "square.and.arrow.up")
                 }
             }
 
@@ -128,40 +188,52 @@ struct WebViewToolbar: View {
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
                     NotificationCenter.default.post(name: .linkCopied, object: nil)
                 } label: {
-                    Label(LanguageManager.shared.localizedString("copy_link"), systemImage: "doc.on.doc")
+                    menuLabel("copy_link", systemImage: "doc.on.doc")
                 }
             }
 
-            if WebNavigationPolicyService.shared.canUseSafariCompatibilityMode(for: viewModel.currentURL) {
-                Divider()
-
+            // Keep bookmark with the other page-saving/link actions.
+            if viewModel.currentURL != nil {
                 Button {
-                    onOpenSafariCompatibility?()
+                    onBookmarkToggle?()
                 } label: {
-                    Label(
-                        LanguageManager.shared.localizedString("safari_compatibility_mode"),
-                        systemImage: "safari"
-                    )
-                }
-
-                Button {
-                    onOpenDefaultBrowser?()
-                } label: {
-                    Label(
-                        LanguageManager.shared.localizedString("open_in_default_browser"),
-                        systemImage: "arrow.up.right.square"
+                    menuLabel(
+                        "bookmarks",
+                        systemImage: isBookmarked ? "bookmark.fill" : "bookmark",
+                        isActive: isBookmarked,
+                        activeColor: .systemOrange
                     )
                 }
             }
 
             if viewModel.currentURL != nil {
-                Button {
-                    onBookmarkToggle?()
-                } label: {
-                    Label(
-                        LanguageManager.shared.localizedString("bookmarks"),
-                        systemImage: isBookmarked ? "bookmark.fill" : "bookmark"
-                    )
+                Divider()
+
+                if WebNavigationPolicyService.shared.canUseSafariCompatibilityMode(for: viewModel.currentURL) {
+                    Button {
+                        onOpenSafariCompatibility?()
+                    } label: {
+                        menuLabel("safari_compatibility_mode", systemImage: "safari")
+                    }
+
+                    Button {
+                        onOpenDefaultBrowser?()
+                    } label: {
+                        menuLabel("open_in_default_browser", systemImage: "arrow.up.right.square")
+                    }
+                }
+
+                // Desktop mode belongs with the browser-opening/mode actions.
+                if let tabManager = tabManager {
+                    Button {
+                        tabManager.toggleDesktopMode()
+                    } label: {
+                        menuLabel(
+                            "desktop_mode",
+                            systemImage: "desktopcomputer",
+                            isActive: tabManager.isDesktopMode
+                        )
+                    }
                 }
             }
 
@@ -171,41 +243,55 @@ struct WebViewToolbar: View {
                 Button {
                     onShowPrivacy?()
                 } label: {
-                    Label(LanguageManager.shared.localizedString("site_privacy"), systemImage: "shield.checkered")
+                    menuLabel(
+                        "site_privacy",
+                        systemImage: "shield.checkered",
+                        isActive: siteProtectionEnabled,
+                        activeColor: .systemGreen
+                    )
                 }
             }
 
-            // Find in Page
-            if let tabManager = tabManager, viewModel.currentURL != nil {
-                Button {
-                    tabManager.startFindInPage()
-                } label: {
-                    Label(LanguageManager.shared.localizedString("find_in_page"), systemImage: "doc.text.magnifyingglass")
-                }
-            }
-
+            // SwiftUI presents this upward-opening menu in reverse visual order.
+            // Keep ad management first in the builder so Find in Page appears
+            // immediately above it on screen.
             if viewModel.currentURL?.host != nil {
                 Button {
                     onManageAdBlock?()
                 } label: {
-                    Label(LanguageManager.shared.localizedString("ad_block_management"), systemImage: "shield.lefthalf.filled")
+                    menuLabel(
+                        "ad_block_management",
+                        systemImage: "shield.lefthalf.filled",
+                        isActive: siteAdBlockingEnabled,
+                        activeColor: .systemGreen
+                    )
+                }
+            }
+
+            if let tabManager = tabManager, viewModel.currentURL != nil {
+                Button {
+                    tabManager.startFindInPage()
+                } label: {
+                    menuLabel("find_in_page", systemImage: "doc.text.magnifyingglass")
                 }
             }
 
             Button {
                 onShowDownloads?()
             } label: {
-                Label(LanguageManager.shared.localizedString("downloads"), systemImage: "arrow.down.circle")
+                menuLabel("downloads", systemImage: "arrow.down.circle", isActive: hasDownloads)
             }
 
-            // Desktop Mode
-            if let tabManager = tabManager {
+            if viewModel.currentURL != nil {
                 Button {
-                    tabManager.toggleDesktopMode()
+                    onToggleFullscreen?()
                 } label: {
-                    Label(
-                        LanguageManager.shared.localizedString(tabManager.isDesktopMode ? "mobile_mode" : "desktop_mode"),
-                        systemImage: tabManager.isDesktopMode ? "iphone" : "desktopcomputer"
+                    menuLabel(
+                        isFullscreen ? "exit_fullscreen" : "enter_fullscreen",
+                        systemImage: isFullscreen
+                            ? "arrow.down.right.and.arrow.up.left"
+                            : "arrow.up.left.and.arrow.down.right",
+                        isActive: isFullscreen
                     )
                 }
             }
@@ -217,13 +303,7 @@ struct WebViewToolbar: View {
                 Button {
                     tabManager.createTab()
                 } label: {
-                    Label(LanguageManager.shared.localizedString("tab_new_tab"), systemImage: "plus.square")
-                }
-
-                Button(role: .destructive) {
-                    onFireButton?()
-                } label: {
-                    Label(LanguageManager.shared.localizedString("fire_button"), systemImage: "trash.fill")
+                    menuLabel("tab_new_tab", systemImage: "plus.square")
                 }
 
                 // Restore Last Closed
@@ -231,7 +311,11 @@ struct WebViewToolbar: View {
                     Button {
                         tabManager.restoreLastClosedTab()
                     } label: {
-                        Label(LanguageManager.shared.localizedString("tab_restore_last"), systemImage: "arrow.uturn.backward")
+                        menuLabel(
+                            "tab_restore_last",
+                            systemImage: "arrow.uturn.backward",
+                            isActive: true
+                        )
                     }
                 }
             }

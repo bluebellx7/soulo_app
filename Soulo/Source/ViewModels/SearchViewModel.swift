@@ -109,9 +109,6 @@ class SearchViewModel: ObservableObject {
         return .international
     }
 
-    // MARK: - F5: Platform Recommendation
-    @Published var recommendedPlatforms: [SearchPlatform] = []
-
     // MARK: - F3: Spell Correction
     @Published var spellSuggestion: String? = nil
 
@@ -161,9 +158,6 @@ class SearchViewModel: ObservableObject {
             PlatformDataStore.shared.incrementUsage(for: platform.id)
         }
 
-        // F5: Platform recommendations
-        recommendedPlatforms = PlatformRecommendationService.recommend(for: trimmed)
-
         // F3: Spell correction (async-safe, UITextChecker is fast)
         spellSuggestion = SpellCorrectionService.suggest(for: trimmed)
 
@@ -200,6 +194,20 @@ class SearchViewModel: ObservableObject {
     }
 
     // MARK: - Region & Platform Selection
+
+    /// A search submitted from Home starts with the first platform in the user's
+    /// current ordering. `SearchViewModel` can outlive platform-management edits,
+    /// so its cached selection must be refreshed before entering results.
+    func prepareForHomeSearch(preferredRegion: PlatformRegion?, customGroup: CustomGroup?) {
+        if let customGroup,
+           let firstPlatform = PlatformDataStore.shared.platformsForGroup(customGroup).first {
+            selectedRegion = firstPlatform.region
+            selectedPlatform = firstPlatform
+            return
+        }
+
+        selectRegion(preferredRegion ?? selectedRegion)
+    }
 
     func selectRegion(_ region: PlatformRegion) {
         selectedRegion = region
@@ -278,7 +286,6 @@ class SearchViewModel: ObservableObject {
         searchText = ""
         isSearching = false
         currentKeyword = ""
-        recommendedPlatforms = []
         spellSuggestion = nil
         translatedKeyword = nil
         translationTargetLanguage = nil

@@ -3,21 +3,8 @@ import JavaScriptCore
 @testable import Soulo
 
 final class WebViewScriptsTests: XCTestCase {
-    func testLoginOverlayRemovalSkipsAuthenticatedAIPlatforms() {
-        let script = WebViewScripts.loginOverlayRemoval
-
-        XCTAssertTrue(script.contains("skipDomains"))
-        XCTAssertTrue(script.contains("deepseek.com"))
-        XCTAssertTrue(script.contains("weixin.qq.com"))
-        XCTAssertTrue(script.contains("isSensitiveChallengePage"))
-        XCTAssertTrue(script.contains("containsVerificationLanguage"))
-        XCTAssertTrue(script.contains("removeOverlays"))
-        XCTAssertTrue(script.contains("MutationObserver"))
-        XCTAssertFalse(script.contains("text.includes('验证码') || text.includes('手机号')"))
-    }
-
     func testAdHidingScriptPublishesHiddenElementStats() {
-        let script = AdBlockService.adHidingScript(cosmetic: true, popups: true)
+        let script = AdBlockService.adHidingScript(cosmetic: true)
 
         XCTAssertTrue(script.contains("souloAdBlocker"))
         XCTAssertTrue(script.contains("hiddenCount"))
@@ -29,12 +16,18 @@ final class WebViewScriptsTests: XCTestCase {
     }
 
     func testAdHidingScriptCoversChineseVideoSiteFloatingAds() {
-        let script = AdBlockService.adHidingScript(cosmetic: true, popups: true)
+        let script = AdBlockService.adHidingScript(cosmetic: true)
 
         XCTAssertTrue(script.contains(".cpcad"))
         XCTAssertTrue(script.contains("gudingwei"))
-        XCTAssertTrue(script.contains("isLikelyFloatingAd"))
-        XCTAssertTrue(script.contains("position !== 'fixed' && position !== 'absolute'"))
+        XCTAssertFalse(script.contains("isLikelyFloatingAd"))
+        XCTAssertFalse(script.contains("div, section, aside, iframe, a, img"))
+        XCTAssertTrue(script.contains("isAuthenticationElement"))
+        XCTAssertFalse(script.contains("text.includes('ad')"))
+        XCTAssertFalse(script.contains("iframe[src*=\"ad\"]"))
+        XCTAssertFalse(script.contains("img[src*=\"ad\"]"))
+        XCTAssertFalse(script.contains("a[href*=\"ad\"]"))
+        XCTAssertFalse(script.contains("[class*=\"interstitial\"]"))
     }
 
     func testPrivacyProtectionScriptIncludesGPCResourceObservationAndCookieHandling() {
@@ -89,10 +82,9 @@ final class WebViewScriptsTests: XCTestCase {
     }
 
     func testInjectedBrowserScriptsAreParsableJavaScript() {
-        assertJavaScriptParses(AdBlockService.adHidingScript(cosmetic: true, popups: true))
+        assertJavaScriptParses(AdBlockService.adHidingScript(cosmetic: true))
         assertJavaScriptParses(WebViewScripts.blankPageProbe)
         assertJavaScriptParses(WebViewScripts.privacyProtection(gpcEnabled: true, cookieBannerHandling: true))
-        assertJavaScriptParses(WebViewScripts.loginOverlayRemoval)
         assertJavaScriptParses(WebViewScripts.downloadBridge)
     }
 
