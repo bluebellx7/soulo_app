@@ -300,6 +300,31 @@ struct WallpaperSettingsView: View {
                 }
                 .padding(6)
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(wall.topic), \(wall.source)")
+            .accessibilityHint(
+                LanguageManager.shared.localizedString("accessibility_wallpaper_open_hint")
+            )
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction {
+                fullScreenContext = FullScreenContext(
+                    wallpapers: wallpaperManager.candidateWallpapers,
+                    initialSelection: wall.id
+                )
+            }
+            .accessibilityAction(
+                named: Text(
+                    LanguageManager.shared.localizedString(
+                        isFav ? "accessibility_remove_favorite" : "accessibility_add_favorite"
+                    )
+                )
+            ) {
+                wallpaperManager.toggleFavorite(wall)
+            }
+            .accessibilityAction(named: Text(LanguageManager.shared.localizedString("delete"))) {
+                wallpaperToDelete = wall
+                showDeleteConfirm = true
+            }
     }
 
     private func favoriteTile(_ wall: RemoteWallpaper) -> some View {
@@ -331,6 +356,23 @@ struct WallpaperSettingsView: View {
                     .frame(width: 34, height: 34)
                     .contentShape(Circle())
                     .onTapGesture { wallpaperManager.toggleFavorite(wall) }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(wall.topic), \(wall.source)")
+            .accessibilityHint(
+                LanguageManager.shared.localizedString("accessibility_wallpaper_open_hint")
+            )
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction {
+                fullScreenContext = FullScreenContext(
+                    wallpapers: wallpaperManager.favorites,
+                    initialSelection: wall.id
+                )
+            }
+            .accessibilityAction(
+                named: Text(LanguageManager.shared.localizedString("accessibility_remove_favorite"))
+            ) {
+                wallpaperManager.toggleFavorite(wall)
             }
     }
 

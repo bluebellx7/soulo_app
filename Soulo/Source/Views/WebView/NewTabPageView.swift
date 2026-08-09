@@ -79,10 +79,12 @@ struct NewTabPageView: View {
                                 endPoint: .bottomTrailing
                             )
                         )
+                        .accessibilityHidden(true)
 
                     Text(LanguageManager.shared.localizedString("tab_new_tab"))
                         .font(.system(size: 20, weight: .semibold, design: .rounded))
                         .foregroundStyle(primaryTextColor)
+                        .accessibilityAddTraits(.isHeader)
                 }
 
                 // Search / URL bar
@@ -114,6 +116,7 @@ struct NewTabPageView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(secondaryTextColor)
+                .accessibilityHidden(true)
 
             TextField(
                 LanguageManager.shared.localizedString("search_placeholder"),
@@ -126,6 +129,7 @@ struct NewTabPageView: View {
             .keyboardType(.webSearch)
             .focused($isSearchFocused)
             .onSubmit { navigateToInput() }
+            .accessibilityLabel(LanguageManager.shared.localizedString("search_placeholder"))
 
             if !urlText.isEmpty {
                 Button {
@@ -135,6 +139,7 @@ struct NewTabPageView: View {
                             .font(.system(size: 16))
                             .foregroundStyle(secondaryTextColor.opacity(0.75))
                 }
+                .accessibilityLabel(LanguageManager.shared.localizedString("accessibility_clear_search"))
             }
         }
         .padding(.horizontal, 14)
@@ -166,6 +171,7 @@ struct NewTabPageView: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(secondaryTextColor)
                 .padding(.horizontal, 4)
+                .accessibilityAddTraits(.isHeader)
 
             LazyVGrid(columns: [
                 GridItem(.flexible(), spacing: 12),
@@ -191,6 +197,10 @@ struct NewTabPageView: View {
                         .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(LanguageManager.shared.localizedString(platform.name))
+                    .accessibilityHint(
+                        LanguageManager.shared.localizedString("accessibility_open_platform_hint")
+                    )
                 }
             }
         }
@@ -207,6 +217,7 @@ struct NewTabPageView: View {
                 )
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(secondaryTextColor)
+                .accessibilityAddTraits(.isHeader)
                 Spacer()
             }
             .padding(.horizontal, 4)
@@ -253,6 +264,12 @@ struct NewTabPageView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(closed.title)
+                .accessibilityValue(closed.url?.host ?? "")
+                .accessibilityHint(
+                    LanguageManager.shared.localizedString("accessibility_restore_tab_hint")
+                )
             }
         }
     }

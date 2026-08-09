@@ -1,4 +1,32 @@
 import SwiftUI
+import UIKit
+
+// MARK: - Accessibility Support
+
+@MainActor
+enum AppAccessibility {
+    static var isVoiceOverRunning: Bool {
+        UIAccessibility.isVoiceOverRunning
+    }
+
+    static func announce(_ message: String, after delay: TimeInterval = 0) {
+        guard !message.isEmpty else { return }
+        if delay > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                guard UIAccessibility.isVoiceOverRunning else { return }
+                UIAccessibility.post(notification: .announcement, argument: message)
+            }
+        } else {
+            guard UIAccessibility.isVoiceOverRunning else { return }
+            UIAccessibility.post(notification: .announcement, argument: message)
+        }
+    }
+
+    static func formatted(_ key: String, _ arguments: CVarArg...) -> String {
+        let format = LanguageManager.shared.localizedString(key)
+        return String(format: format, locale: Locale.current, arguments: arguments)
+    }
+}
 
 // MARK: - Card Style
 
@@ -86,6 +114,7 @@ struct ShimmerModifier: ViewModifier {
 
 struct PressEffectModifier: ViewModifier {
     @State private var isPressed = false
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
 
     func body(content: Content) -> some View {
         content
@@ -93,8 +122,14 @@ struct PressEffectModifier: ViewModifier {
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
             .simultaneousGesture(
                 DragGesture(minimumDistance: 0)
-                    .onChanged { _ in isPressed = true }
-                    .onEnded { _ in isPressed = false }
+                    .onChanged { _ in
+                        guard !voiceOverEnabled else { return }
+                        isPressed = true
+                    }
+                    .onEnded { _ in
+                        guard !voiceOverEnabled else { return }
+                        isPressed = false
+                    }
             )
     }
 }

@@ -86,6 +86,8 @@ struct WebViewToolbar: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(LanguageManager.shared.localizedString("browser_edit_address"))
+        .accessibilityValue(displayHost)
+        .accessibilityHint(LanguageManager.shared.localizedString("accessibility_edit_address_hint"))
         .contextMenu {
             if let url = viewModel.currentURL {
                 Button {
@@ -136,6 +138,14 @@ struct WebViewToolbar: View {
         } icon: {
             menuIcon(systemImage, isActive: isActive, activeColor: activeColor)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(
+            isActive.map {
+                LanguageManager.shared.localizedString(
+                    $0 ? "accessibility_enabled" : "accessibility_disabled"
+                )
+            } ?? ""
+        )
     }
 
     private func menuIcon(

@@ -1,5 +1,18 @@
 import SwiftUI
 
+enum PlatformAccessibilityNavigation {
+    static func adjacentIndex(
+        currentIndex: Int,
+        count: Int,
+        direction: AccessibilityPlatformPagingDirection
+    ) -> Int? {
+        guard count > 0, currentIndex >= 0, currentIndex < count else { return nil }
+        let target = currentIndex + (direction == .next ? 1 : -1)
+        guard target >= 0, target < count else { return nil }
+        return target
+    }
+}
+
 struct PlatformTabBar: View {
     let platforms: [SearchPlatform]
     @Binding var selectedPlatform: SearchPlatform?
@@ -14,10 +27,15 @@ struct PlatformTabBar: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(platforms) { platform in
+                            let index = platforms.firstIndex(where: { $0.id == platform.id }) ?? 0
                             PlatformTab(
                                 platform: platform,
                                 isSelected: selectedPlatform?.id == platform.id,
-                                namespace: platformNamespace
+                                namespace: platformNamespace,
+                                position: index + 1,
+                                total: platforms.count,
+                                onPrevious: { selectAdjacentPlatform(.previous) },
+                                onNext: { selectAdjacentPlatform(.next) }
                             ) {
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                     selectedPlatform = platform
@@ -57,12 +75,49 @@ struct PlatformTabBar: View {
             .padding(.trailing, 4)
         }
     }
+
+    @discardableResult
+    private func selectAdjacentPlatform(
+        _ direction: AccessibilityPlatformPagingDirection
+    ) -> Bool {
+        guard let selectedPlatform,
+              let currentIndex = platforms.firstIndex(where: { $0.id == selectedPlatform.id }),
+              let targetIndex = PlatformAccessibilityNavigation.adjacentIndex(
+                currentIndex: currentIndex,
+                count: platforms.count,
+                direction: direction
+              ) else {
+            let key = direction == .next
+                ? "accessibility_last_platform"
+                : "accessibility_first_platform"
+            AppAccessibility.announce(languageManager.localizedString(key))
+            return false
+        }
+
+        let target = platforms[targetIndex]
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            self.selectedPlatform = target
+        }
+        AppAccessibility.announce(
+            AppAccessibility.formatted(
+                "accessibility_platform_position",
+                languageManager.localizedString(target.name),
+                targetIndex + 1,
+                platforms.count
+            )
+        )
+        return true
+    }
 }
 
 private struct PlatformTab: View {
     let platform: SearchPlatform
     let isSelected: Bool
     let namespace: Namespace.ID
+    let position: Int
+    let total: Int
+    let onPrevious: () -> Void
+    let onNext: () -> Void
     let action: () -> Void
 
     @EnvironmentObject var languageManager: LanguageManager
@@ -86,5 +141,32 @@ private struct PlatformTab: View {
                 .animation(.easeInOut(duration: 0.2), value: isSelected)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(languageManager.localizedString(platform.name))
+        .accessibilityValue(
+            isSelected
+                ? AppAccessibility.formatted("accessibility_selected_position", position, total)
+                : AppAccessibility.formatted("accessibility_item_position", position, total)
+        )
+        .accessibilityHint(languageManager.localizedString("accessibility_platform_hint"))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment:
+                onNext()
+            case .decrement:
+                onPrevious()
+            @unknown default:
+                break
+            }
+        }
+        .accessibilityAction(
+            named: Text(languageManager.localizedString("accessibility_previous_platform")),
+            onPrevious
+        )
+        .accessibilityAction(
+            named: Text(languageManager.localizedString("accessibility_next_platform")),
+            onNext
+        )
     }
 }

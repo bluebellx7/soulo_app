@@ -56,11 +56,132 @@ enum BrowserDownloadPolicy {
     }
 }
 
+enum AccessibilityPlatformPagingDirection {
+    case previous
+    case next
+}
+
+enum WebAccessibilityPaging {
+    enum VerticalDirection {
+        case backward
+        case forward
+    }
+
+    static func targetOffset(
+        current: CGFloat,
+        minimum: CGFloat,
+        maximum: CGFloat,
+        viewportHeight: CGFloat,
+        direction: VerticalDirection
+    ) -> CGFloat? {
+        guard maximum > minimum, viewportHeight > 1 else { return nil }
+        let distance = max(viewportHeight * 0.82, 1)
+        let proposed = current + (direction == .forward ? distance : -distance)
+        let target = min(max(proposed, minimum), maximum)
+        guard abs(target - current) > 1 else { return nil }
+        return target
+    }
+
+    static func pagePosition(
+        offset: CGFloat,
+        minimum: CGFloat,
+        maximum: CGFloat,
+        viewportHeight: CGFloat
+    ) -> (current: Int, total: Int) {
+        let distance = max(viewportHeight * 0.82, 1)
+        let scrollableDistance = max(maximum - minimum, 0)
+        let total = max(Int(ceil(scrollableDistance / distance)) + 1, 1)
+        let progress = min(max(offset - minimum, 0), scrollableDistance)
+        let current = min(max(Int(round(progress / distance)) + 1, 1), total)
+        return (current, total)
+    }
+}
+
+/// WKWebView already exposes semantic HTML to VoiceOver. This subclass adds
+/// deterministic page scrolling and horizontal platform paging when a site or
+/// custom browser gesture does not respond to VoiceOver's three-finger swipe.
+final class AccessibleWebView: WKWebView {
+    var onAccessibilityPlatformPage: ((AccessibilityPlatformPagingDirection) -> Bool)?
+
+    override func accessibilityScroll(_ direction: UIAccessibilityScrollDirection) -> Bool {
+        guard UIAccessibility.isVoiceOverRunning else {
+            return super.accessibilityScroll(direction)
+        }
+
+        switch direction {
+        case .left:
+            let pagingDirection: AccessibilityPlatformPagingDirection =
+                effectiveUserInterfaceLayoutDirection == .rightToLeft ? .previous : .next
+            return onAccessibilityPlatformPage?(pagingDirection) ?? false
+        case .right:
+            let pagingDirection: AccessibilityPlatformPagingDirection =
+                effectiveUserInterfaceLayoutDirection == .rightToLeft ? .next : .previous
+            return onAccessibilityPlatformPage?(pagingDirection) ?? false
+        case .next:
+            return onAccessibilityPlatformPage?(.next) ?? false
+        case .previous:
+            return onAccessibilityPlatformPage?(.previous) ?? false
+        case .up:
+            return scrollVertically(.forward)
+        case .down:
+            return scrollVertically(.backward)
+        @unknown default:
+            return super.accessibilityScroll(direction)
+        }
+    }
+
+    private func scrollVertically(_ direction: WebAccessibilityPaging.VerticalDirection) -> Bool {
+        let scrollView = scrollView
+        let minimum = -scrollView.adjustedContentInset.top
+        let maximum = max(
+            minimum,
+            scrollView.contentSize.height
+                - scrollView.bounds.height
+                + scrollView.adjustedContentInset.bottom
+        )
+
+        guard let target = WebAccessibilityPaging.targetOffset(
+            current: scrollView.contentOffset.y,
+            minimum: minimum,
+            maximum: maximum,
+            viewportHeight: scrollView.bounds.height,
+            direction: direction
+        ) else {
+            let key = direction == .forward
+                ? "accessibility_page_bottom"
+                : "accessibility_page_top"
+            AppAccessibility.announce(LanguageManager.shared.localizedString(key))
+            return true
+        }
+
+        scrollView.setContentOffset(
+            CGPoint(x: scrollView.contentOffset.x, y: target),
+            animated: true
+        )
+        let position = WebAccessibilityPaging.pagePosition(
+            offset: target,
+            minimum: minimum,
+            maximum: maximum,
+            viewportHeight: scrollView.bounds.height
+        )
+        AppAccessibility.announce(
+            AppAccessibility.formatted(
+                "accessibility_page_position",
+                position.current,
+                position.total
+            ),
+            after: 0.3
+        )
+        return true
+    }
+}
+
 // MARK: - WebViewRepresentable
 
 struct WebViewRepresentable: UIViewRepresentable {
 
     @ObservedObject var viewModel: WebViewModel
+    var onAccessibilityPlatformPage: ((AccessibilityPlatformPagingDirection) -> Bool)?
     @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = true
     @AppStorage("is_incognito") private var isIncognito: Bool = false
     @AppStorage("privacy_gpc_enabled") private var gpcEnabled: Bool = true
@@ -123,7 +244,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         configuration.userContentController = contentController
 
         // Build the WKWebView
-        let webView = WKWebView(frame: .zero, configuration: configuration)
+        let webView = AccessibleWebView(frame: .zero, configuration: configuration)
         configureWebView(webView, context: context)
 
         // Hand the webView reference back to the ViewModel. This triggers any pending initial load.
@@ -148,6 +269,14 @@ struct WebViewRepresentable: UIViewRepresentable {
                 source: WebViewScripts.downloadBridge,
                 injectionTime: .atDocumentStart,
                 forMainFrameOnly: false
+            )
+        )
+
+        contentController.addUserScript(
+            WKUserScript(
+                source: WebViewScripts.accessibilityEnhancements,
+                injectionTime: .atDocumentEnd,
+                forMainFrameOnly: true
             )
         )
 
@@ -206,6 +335,13 @@ struct WebViewRepresentable: UIViewRepresentable {
         webView.backgroundColor = UIColor.systemBackground
         webView.scrollView.backgroundColor = UIColor.systemBackground
         webView.isOpaque = true
+        webView.isAccessibilityElement = false
+        webView.accessibilityElementsHidden = false
+        webView.scrollView.isAccessibilityElement = false
+        webView.scrollView.accessibilityElementsHidden = false
+        if let accessibleWebView = webView as? AccessibleWebView {
+            accessibleWebView.onAccessibilityPlatformPage = onAccessibilityPlatformPage
+        }
 
         // Apply per-tab UA/content-mode preferences before each navigation or restore.
         viewModel.applyWebPreferences(to: webView)
@@ -225,6 +361,9 @@ struct WebViewRepresentable: UIViewRepresentable {
     func updateUIView(_ uiView: WKWebView, context: Context) {
         // URL loading is driven imperatively via viewModel.loadURL(_:)
         let host = uiView.url?.host ?? viewModel.currentURL?.host
+        if let accessibleWebView = uiView as? AccessibleWebView {
+            accessibleWebView.onAccessibilityPlatformPage = onAccessibilityPlatformPage
+        }
         let shouldBypassWebProtection = WebCompatibilityService.shouldBypassWebProtection(
             for: uiView.url ?? viewModel.currentURL,
             fallbackHost: host
@@ -684,6 +823,23 @@ struct WebViewRepresentable: UIViewRepresentable {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                     self?.viewModel.takeSnapshot()
                 }
+                self.focusAccessibilityOnLoadedPage(webView)
+            }
+        }
+
+        @MainActor
+        private func focusAccessibilityOnLoadedPage(_ webView: WKWebView) {
+            guard UIAccessibility.isVoiceOverRunning else { return }
+            let fallback = webView.url?.host ?? LanguageManager.shared.localizedString("accessibility_search_results")
+            let pageName = webView.title?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let announcement = AppAccessibility.formatted(
+                "accessibility_page_loaded",
+                pageName?.isEmpty == false ? pageName! : fallback
+            )
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak webView] in
+                guard let webView, UIAccessibility.isVoiceOverRunning else { return }
+                UIAccessibility.post(notification: .screenChanged, argument: webView)
+                AppAccessibility.announce(announcement, after: 0.35)
             }
         }
 
@@ -1214,6 +1370,13 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func scrollViewDidScroll(_ scrollView: UIScrollView) {
             let currentOffset = scrollView.contentOffset.y
+
+            guard !UIAccessibility.isVoiceOverRunning else {
+                setScrollingUpIfNeeded(false)
+                accumulatedScrollDelta = 0
+                lastContentOffset = currentOffset
+                return
+            }
 
             guard !isUserZooming,
                   !scrollView.isZooming,

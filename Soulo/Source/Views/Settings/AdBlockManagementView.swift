@@ -59,6 +59,12 @@ struct AdBlockManagementView: View {
                     Toggle("", isOn: $adBlockEnabled)
                         .labelsHidden()
                         .tint(.green)
+                        .accessibilityLabel(LanguageManager.shared.localizedString("ad_block"))
+                        .accessibilityValue(
+                            LanguageManager.shared.localizedString(
+                                adBlockEnabled ? "accessibility_enabled" : "accessibility_disabled"
+                            )
+                        )
                 }
                 .padding(.vertical, 6)
                 .listRowBackground(
@@ -194,6 +200,14 @@ struct AdBlockManagementView: View {
                             .labelsHidden()
                             .tint(.green)
                             .disabled(!adBlockEnabled)
+                            .accessibilityLabel(subscription.name)
+                            .accessibilityValue(
+                                LanguageManager.shared.localizedString(
+                                    subscription.isEnabled
+                                        ? "accessibility_enabled"
+                                        : "accessibility_disabled"
+                                )
+                            )
                         }
 
                         HStack(spacing: 8) {
@@ -319,5 +333,6 @@ private struct AdBlockMetricRow: View {
                 .foregroundStyle(isHighlighted ? highlightColor : Color.secondary)
                 .monospacedDigit()
         }
+        .accessibilityElement(children: .combine)
     }
 }

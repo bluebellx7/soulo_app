@@ -58,6 +58,7 @@ struct SearchHistoryView: View {
                         Image(systemName: "magnifyingglass")
                             .foregroundStyle(.tertiary)
                             .font(.system(size: 13))
+                            .accessibilityHidden(true)
                         TextField(LanguageManager.shared.localizedString("search_placeholder"), text: $filterText)
                             .font(.system(size: 14))
                             .autocorrectionDisabled()
@@ -65,6 +66,9 @@ struct SearchHistoryView: View {
                             Button { filterText = "" } label: {
                                 Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
                             }
+                            .accessibilityLabel(
+                                LanguageManager.shared.localizedString("accessibility_clear_search")
+                            )
                         }
                     }
                     .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
@@ -110,6 +114,7 @@ struct SearchHistoryView: View {
                         Image(systemName: "trash")
                     }
                     .disabled(allHistory.isEmpty)
+                    .accessibilityLabel(LanguageManager.shared.localizedString("clear_all"))
                 }
             }
             .alert(LanguageManager.shared.localizedString("confirm_clear_history"), isPresented: $showClearAlert) {
@@ -153,6 +158,17 @@ struct SearchHistoryView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(item.keyword)
+        .accessibilityValue(formatTime(item.timestamp))
+        .accessibilityHint(
+            LanguageManager.shared.localizedString("accessibility_search_history_hint")
+        )
+        .accessibilityAction(named: Text(LanguageManager.shared.localizedString("delete"))) {
+            for history in allHistory where history.keyword.lowercased() == item.keyword.lowercased() {
+                SearchHistoryService.deleteEntry(history, context: modelContext)
+            }
+        }
         .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
         .swipeActions(edge: .trailing) {
             Button(role: .destructive) {

@@ -12,9 +12,11 @@ struct WebViewContainer: View {
     var onGoHome: (() -> Void)? = nil
     var onAddressSearch: ((String) -> Void)? = nil
     var onRequestVoiceSearch: (() -> Void)? = nil
+    var onAccessibilityPlatformPage: ((AccessibilityPlatformPagingDirection) -> Bool)? = nil
     var onPageStarted: (() -> Void)? = nil
     var onPageLoaded: (() -> Void)? = nil
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @StateObject private var safariCompatibilityPresenter = SafariCompatibilityPresenter()
 
     @State private var isBookmarked: Bool = false
@@ -56,7 +58,10 @@ struct WebViewContainer: View {
                 }
 
                 ZStack {
-                    WebViewRepresentable(viewModel: webViewModel)
+                    WebViewRepresentable(
+                        viewModel: webViewModel,
+                        onAccessibilityPlatformPage: onAccessibilityPlatformPage
+                    )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .opacity(isShowingNewTabPage ? 0 : 1)
                         .allowsHitTesting(!isShowingNewTabPage)
@@ -70,6 +75,7 @@ struct WebViewContainer: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .clipped()
                             .allowsHitTesting(false)
+                            .accessibilityHidden(true)
                             .transition(.opacity)
                     }
 
@@ -245,6 +251,12 @@ struct WebViewContainer: View {
                     .padding(.bottom, 72)
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
+                .accessibilityElement(children: .contain)
+                .onAppear {
+                    AppAccessibility.announce(
+                        "\(LanguageManager.shared.localizedString("open_external_title")), \(WebNavigationPolicyService.shared.externalDestinationName(for: extURL))"
+                    )
+                }
             }
 
             // Download indicator
@@ -277,6 +289,10 @@ struct WebViewContainer: View {
         .animation(.easeOut(duration: 0.18), value: webViewModel.showSnapshotWhileRestoring)
         .onChange(of: webViewModel.isScrollingUp) { _, scrollingUp in
             if isActiveTab {
+                guard !voiceOverEnabled else {
+                    toolbarMinimized = false
+                    return
+                }
                 // Scrolling can compact browser controls, but full screen is an
                 // explicit user choice handled by the toolbar action.
                 if scrollingUp && !toolbarMinimized {
@@ -288,6 +304,11 @@ struct WebViewContainer: View {
                         toolbarMinimized = false
                     }
                 }
+            }
+        }
+        .onChange(of: voiceOverEnabled) { _, enabled in
+            if enabled {
+                toolbarMinimized = false
             }
         }
         .onChange(of: webViewModel.isLoading) { _, loading in
@@ -315,7 +336,7 @@ struct WebViewContainer: View {
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 externalDismissTask?.cancel()
                 externalDismissTask = nil
-                if !externalRequestIsExplicit {
+                if !externalRequestIsExplicit && !voiceOverEnabled {
                     // Unsolicited app-jump prompts remain lightweight. A prompt
                     // caused by an explicit download waits for the user's choice.
                     externalDismissTask = DispatchWorkItem { [self] in
@@ -457,6 +478,11 @@ struct WebViewContainer: View {
             .padding(.bottom, 72)
         }
         .allowsHitTesting(false)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(text)
+        .onAppear {
+            AppAccessibility.announce(text)
+        }
     }
 
     // MARK: - Mini Toolbar Pill
@@ -611,6 +637,7 @@ private struct BrowserAddressEditorSheet: View {
                     .foregroundStyle(focusedField == .query ? Color.accentColor : Color.secondary)
                     .frame(width: 30, height: 30)
                     .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                    .accessibilityHidden(true)
 
                 TextField(
                     LanguageManager.shared.localizedString("search_placeholder"),
@@ -623,6 +650,7 @@ private struct BrowserAddressEditorSheet: View {
                 .submitLabel(.go)
                 .focused($focusedField, equals: .query)
                 .onSubmit(open)
+                .accessibilityLabel(LanguageManager.shared.localizedString("search_placeholder"))
 
                 if !text.isEmpty {
                     Button {
@@ -631,12 +659,13 @@ private struct BrowserAddressEditorSheet: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(.tertiary)
                     }
-                    .accessibilityLabel(LanguageManager.shared.localizedString("fire_button_confirm"))
+                    .accessibilityLabel(LanguageManager.shared.localizedString("accessibility_clear_search"))
                 }
 
                 Rectangle()
                     .fill(Color(UIColor.separator).opacity(0.35))
                     .frame(width: 1, height: 20)
+                    .accessibilityHidden(true)
 
                 Button {
                     HapticsManager.light()
@@ -650,6 +679,7 @@ private struct BrowserAddressEditorSheet: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(LanguageManager.shared.localizedString("voice_record"))
+                .accessibilityHint(LanguageManager.shared.localizedString("accessibility_voice_search_hint"))
             }
             .padding(.horizontal, 10)
             .frame(height: 52)
@@ -668,6 +698,7 @@ private struct BrowserAddressEditorSheet: View {
                     Image(systemName: "link")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(focusedField == .pageURL ? Color.accentColor : Color.secondary)
+                        .accessibilityHidden(true)
 
                     TextField("https://", text: $pageURLText)
                         .font(.system(size: 12, weight: .medium, design: .rounded))
@@ -677,6 +708,7 @@ private struct BrowserAddressEditorSheet: View {
                         .submitLabel(.go)
                         .focused($focusedField, equals: .pageURL)
                         .onSubmit(openPageURL)
+                        .accessibilityLabel(LanguageManager.shared.localizedString("current_page_link"))
 
                     Button {
                         let value = pageURLText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -917,6 +949,7 @@ struct FindInPageBar: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
 
                 TextField(
                     LanguageManager.shared.localizedString("find_in_page"),
@@ -930,6 +963,7 @@ struct FindInPageBar: View {
                 .onChange(of: tabManager.findText) { _, _ in
                     tabManager.performFind()
                 }
+                .accessibilityLabel(LanguageManager.shared.localizedString("find_in_page"))
 
                 if !tabManager.findText.isEmpty {
                     Text("\(tabManager.findMatchCount)")
@@ -950,6 +984,7 @@ struct FindInPageBar: View {
                     .foregroundStyle(tabManager.findMatchCount > 0 ? .primary : .tertiary)
             }
             .disabled(tabManager.findMatchCount == 0)
+            .accessibilityLabel(LanguageManager.shared.localizedString("accessibility_previous_match"))
 
             Button { tabManager.findNext() } label: {
                 Image(systemName: "chevron.down")
@@ -957,6 +992,7 @@ struct FindInPageBar: View {
                     .foregroundStyle(tabManager.findMatchCount > 0 ? .primary : .tertiary)
             }
             .disabled(tabManager.findMatchCount == 0)
+            .accessibilityLabel(LanguageManager.shared.localizedString("accessibility_next_match"))
 
             Button {
                 tabManager.dismissFindInPage()

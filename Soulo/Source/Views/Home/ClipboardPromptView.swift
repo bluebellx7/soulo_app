@@ -5,6 +5,7 @@ struct ClipboardPromptView: View {
     @EnvironmentObject var searchVM: SearchViewModel
     @EnvironmentObject var languageManager: LanguageManager
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
 
     @State private var offset: CGFloat = -100
     @State private var opacity: Double = 0
@@ -58,6 +59,7 @@ struct ClipboardPromptView: View {
                         .frame(width: 28, height: 28)
                         .background(Color.primary.opacity(0.05), in: Circle())
                 }
+                .accessibilityLabel(languageManager.localizedString("cancel"))
             }
             .padding(16)
             .glassCard(cornerRadius: 16)
@@ -69,13 +71,16 @@ struct ClipboardPromptView: View {
             Spacer()
         }
         .onAppear {
+            AppAccessibility.announce(
+                "\(languageManager.localizedString("clipboard_detected")), \(searchVM.clipboardContent ?? languageManager.localizedString("clipboard_tap_to_search"))"
+            )
             withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                 offset = 0
                 opacity = 1
             }
             // Auto dismiss after 8 seconds
             DispatchQueue.main.asyncAfter(deadline: .now() + 8) {
-                if searchVM.showClipboardPrompt {
+                if searchVM.showClipboardPrompt && !voiceOverEnabled {
                     withAnimation(.easeOut(duration: 0.3)) {
                         offset = -100
                         opacity = 0

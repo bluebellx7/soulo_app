@@ -53,6 +53,7 @@ struct VoiceInputView: View {
             // Semi-transparent dark background
             Color.black.opacity(0.4)
                 .ignoresSafeArea()
+                .accessibilityHidden(true)
 
             VStack(spacing: 0) {
                 // Drag handle
@@ -60,6 +61,7 @@ struct VoiceInputView: View {
                     .fill(.white.opacity(0.2))
                     .frame(width: 36, height: 4)
                     .padding(.top, 10)
+                    .accessibilityHidden(true)
 
                 // Title
                 Text(languageManager.localizedString("voice_listening"))
@@ -67,6 +69,7 @@ struct VoiceInputView: View {
                     .foregroundStyle(.secondary)
                     .padding(.top, 20)
                     .opacity(speechService.isRecording && speechService.recognizedText.isEmpty ? 1 : 0)
+                    .accessibilityAddTraits(.isHeader)
 
                 Spacer()
 
@@ -95,6 +98,8 @@ struct VoiceInputView: View {
                     .padding(.vertical, 8)
                     .background(.white.opacity(0.1), in: Capsule())
                     .padding(.bottom, 8)
+                    .accessibilityElement(children: .combine)
+                    .onAppear { AppAccessibility.announce(error) }
                 }
 
                 // Action buttons
@@ -167,6 +172,9 @@ struct VoiceInputView: View {
                     .shadow(color: .black.opacity(0.06), radius: 8, y: 4)
                     .transition(.scale(scale: 0.95).combined(with: .opacity))
                     .animation(.spring(response: 0.3, dampingFraction: 0.8), value: speechService.recognizedText.isEmpty)
+                    .accessibilityLabel(
+                        languageManager.localizedString("accessibility_recognized_text")
+                    )
             }
         }
     }
@@ -196,6 +204,7 @@ struct VoiceInputView: View {
                     )
             }
         }
+        .accessibilityHidden(true)
     }
 
     private func barHeight(for index: Int) -> CGFloat {
@@ -278,6 +287,18 @@ struct VoiceInputView: View {
                 }
             }
             .onAppear { pulseScale = 1.5 }
+            .accessibilityLabel(
+                languageManager.localizedString(
+                    speechService.isRecording ? "voice_stop" : "voice_record"
+                )
+            )
+            .accessibilityValue(
+                languageManager.localizedString(
+                    speechService.isRecording
+                        ? "accessibility_voice_recording"
+                        : "accessibility_voice_idle"
+                )
+            )
 
             // Confirm / Search
             Button {

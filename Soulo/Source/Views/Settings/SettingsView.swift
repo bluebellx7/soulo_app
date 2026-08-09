@@ -130,35 +130,39 @@ struct SettingsView: View {
 
                     // MARK: - Home
                     Section {
-                        HStack {
-                            Label {
-                                Text(LanguageManager.shared.localizedString("edit_title"))
-                            } icon: {
-                                IconBadge(systemName: "pencil.line", color: .purple)
+                        Button { showHomeTitleEdit = true } label: {
+                            HStack {
+                                Label {
+                                    Text(LanguageManager.shared.localizedString("edit_title"))
+                                } icon: {
+                                    IconBadge(systemName: "pencil.line", color: .purple)
+                                }
+                                Spacer()
+                                Text(homeTitle)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
                             }
-                            Spacer()
-                            Text(homeTitle)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
+                            .contentShape(Rectangle())
                         }
-                        .contentShape(Rectangle())
-                        .onTapGesture { showHomeTitleEdit = true }
+                        .buttonStyle(.plain)
 
-                        HStack {
-                            Label {
-                                Text(LanguageManager.shared.localizedString("edit_subtitle"))
-                            } icon: {
-                                IconBadge(systemName: "text.alignleft", color: .cyan)
+                        Button { showHomeSubtitleEdit = true } label: {
+                            HStack {
+                                Label {
+                                    Text(LanguageManager.shared.localizedString("edit_subtitle"))
+                                } icon: {
+                                    IconBadge(systemName: "text.alignleft", color: .cyan)
+                                }
+                                Spacer()
+                                Text(homeSubtitle)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
                             }
-                            Spacer()
-                            Text(homeSubtitle)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
+                            .contentShape(Rectangle())
                         }
-                        .contentShape(Rectangle())
-                        .onTapGesture { showHomeSubtitleEdit = true }
+                        .buttonStyle(.plain)
 
                         Toggle(isOn: $showBookmarksOnHome) {
                             Label {

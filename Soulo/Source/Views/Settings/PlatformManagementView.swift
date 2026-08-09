@@ -66,6 +66,11 @@ struct PlatformManagementView: View {
                             }
                             .contentShape(Rectangle())
                             .onTapGesture { editingPlatform = platform }
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityHint(
+                                LanguageManager.shared.localizedString("accessibility_edit_platform_hint")
+                            )
+                            .accessibilityAction { editingPlatform = platform }
                             .listRowInsets(EdgeInsets(top: 3, leading: 16, bottom: 3, trailing: 16))
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
@@ -305,6 +310,14 @@ private struct PlatformCompactRow: View {
                     .foregroundStyle(platform.isVisible ? .blue : Color(UIColor.quaternaryLabel))
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(
+                LanguageManager.shared.localizedString("accessibility_platform_visibility")
+            )
+            .accessibilityValue(
+                LanguageManager.shared.localizedString(
+                    platform.isVisible ? "accessibility_enabled" : "accessibility_disabled"
+                )
+            )
         }
     }
 }

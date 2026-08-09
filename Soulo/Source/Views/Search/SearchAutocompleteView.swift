@@ -38,39 +38,50 @@ struct SearchAutocompleteView: View {
     // MARK: - Row
 
     private func row(suggestion: String, index: Int) -> some View {
-        Button {
-            HapticsManager.light()
-            onSelect(suggestion)
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(iconColor)
-                    .frame(width: 20)
-
-                // Highlighted query part
-                highlightedText(suggestion)
-
-                Spacer(minLength: 4)
-
-                // Arrow to fill input (edit before searching)
-                Button {
-                    HapticsManager.light()
-                    onFill(suggestion)
-                } label: {
-                    Image(systemName: "arrow.up.left")
-                        .font(.system(size: 12, weight: .semibold))
+        HStack(spacing: 0) {
+            Button {
+                HapticsManager.light()
+                onSelect(suggestion)
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(iconColor)
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
+                        .frame(width: 20)
+                        .accessibilityHidden(true)
+
+                    highlightedText(suggestion)
+
+                    Spacer(minLength: 4)
                 }
-                .buttonStyle(.plain)
+                .padding(.leading, 12)
+                .padding(.vertical, 11)
+                .contentShape(Rectangle())
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 11)
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .accessibilityLabel(suggestion)
+            .accessibilityHint(
+                LanguageManager.shared.localizedString("accessibility_search_suggestion_hint")
+            )
+
+            Button {
+                HapticsManager.light()
+                onFill(suggestion)
+            } label: {
+                Image(systemName: "arrow.up.left")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(iconColor)
+                    .frame(width: 36, height: 42)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(
+                AppAccessibility.formatted("accessibility_fill_search", suggestion)
+            )
+            .accessibilityHint(
+                LanguageManager.shared.localizedString("accessibility_fill_search_hint")
+            )
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Highlighted text

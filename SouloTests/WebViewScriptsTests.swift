@@ -81,11 +81,101 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertFalse(script.contains("readAsDataURL"))
     }
 
+    func testAccessibilityEnhancementsAreConservativeAndIdempotent() {
+        let script = WebViewScripts.accessibilityEnhancements
+
+        XCTAssertTrue(script.contains("__souloAccessibilityInstalled"))
+        XCTAssertTrue(script.contains("__souloAccessibilityScan"))
+        XCTAssertTrue(script.contains("MutationObserver"))
+        XCTAssertTrue(script.contains("data-soulo-accessible-result"))
+        XCTAssertTrue(script.contains("aria-label"))
+        XCTAssertTrue(script.contains("aria-level"))
+        XCTAssertTrue(script.contains("role', 'button"))
+        XCTAssertFalse(script.contains("style.display = '"))
+        XCTAssertFalse(script.contains("style.setProperty"))
+        XCTAssertFalse(script.contains("removeChild"))
+    }
+
+    func testAccessibilityPlatformNavigationStopsAtBoundaries() {
+        XCTAssertEqual(
+            PlatformAccessibilityNavigation.adjacentIndex(
+                currentIndex: 1,
+                count: 3,
+                direction: .previous
+            ),
+            0
+        )
+        XCTAssertEqual(
+            PlatformAccessibilityNavigation.adjacentIndex(
+                currentIndex: 1,
+                count: 3,
+                direction: .next
+            ),
+            2
+        )
+        XCTAssertNil(
+            PlatformAccessibilityNavigation.adjacentIndex(
+                currentIndex: 0,
+                count: 3,
+                direction: .previous
+            )
+        )
+        XCTAssertNil(
+            PlatformAccessibilityNavigation.adjacentIndex(
+                currentIndex: 2,
+                count: 3,
+                direction: .next
+            )
+        )
+    }
+
+    func testAccessibilityWebPagingClampsAndReportsPosition() {
+        XCTAssertEqual(
+            WebAccessibilityPaging.targetOffset(
+                current: 100,
+                minimum: 0,
+                maximum: 1_000,
+                viewportHeight: 500,
+                direction: .forward
+            ),
+            510
+        )
+        XCTAssertEqual(
+            WebAccessibilityPaging.targetOffset(
+                current: 900,
+                minimum: 0,
+                maximum: 1_000,
+                viewportHeight: 500,
+                direction: .forward
+            ),
+            1_000
+        )
+        XCTAssertNil(
+            WebAccessibilityPaging.targetOffset(
+                current: 1_000,
+                minimum: 0,
+                maximum: 1_000,
+                viewportHeight: 500,
+                direction: .forward
+            )
+        )
+
+        let position = WebAccessibilityPaging.pagePosition(
+            offset: 820,
+            minimum: 0,
+            maximum: 1_640,
+            viewportHeight: 500
+        )
+        XCTAssertEqual(position.current, 3)
+        XCTAssertEqual(position.total, 5)
+    }
+
     func testInjectedBrowserScriptsAreParsableJavaScript() {
         assertJavaScriptParses(AdBlockService.adHidingScript(cosmetic: true))
         assertJavaScriptParses(WebViewScripts.blankPageProbe)
         assertJavaScriptParses(WebViewScripts.privacyProtection(gpcEnabled: true, cookieBannerHandling: true))
         assertJavaScriptParses(WebViewScripts.downloadBridge)
+        assertJavaScriptParses(WebViewScripts.accessibilityEnhancements)
     }
 
     private func assertJavaScriptParses(_ script: String, file: StaticString = #filePath, line: UInt = #line) {

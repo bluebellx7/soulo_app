@@ -70,6 +70,12 @@ struct HomeView: View {
                     }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .zIndex(100)
+                    .accessibilityElement(children: .combine)
+                    .onAppear {
+                        AppAccessibility.announce(
+                            LanguageManager.shared.localizedString("wallpaper_saved")
+                        )
+                    }
                 }
             }
             .tabOverviewScale(isActive: showTabOverviewFromHome)
@@ -174,12 +180,33 @@ struct HomeView: View {
                         .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47") : .white)
                         .shadow(color: wallpaperManager.isCurrentWallpaperLight ? .black.opacity(0.05) : .black.opacity(0.2), radius: 4, x: 0, y: 2)
                         .onTapGesture { showTitleEditor = true }
+                        .accessibilityLabel(
+                            AppAccessibility.formatted("accessibility_home_title", homeTitle)
+                        )
+                        .accessibilityHint(
+                            languageManager.localizedString("accessibility_edit_title_hint")
+                        )
+                        .accessibilityAddTraits([.isHeader, .isButton])
+                        .accessibilityAction { showTitleEditor = true }
 
                     Text(homeSubtitle.isEmpty ? languageManager.localizedString("app_subtitle") : homeSubtitle)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.6) : .white.opacity(0.4))
                         .tracking(1.5)
                         .onTapGesture { showSubtitleEditor = true }
+                        .accessibilityLabel(
+                            AppAccessibility.formatted(
+                                "accessibility_home_subtitle",
+                                homeSubtitle.isEmpty
+                                    ? languageManager.localizedString("app_subtitle")
+                                    : homeSubtitle
+                            )
+                        )
+                        .accessibilityHint(
+                            languageManager.localizedString("accessibility_edit_subtitle_hint")
+                        )
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityAction { showSubtitleEditor = true }
                 }
 
                 // Search bar
@@ -294,6 +321,12 @@ struct HomeView: View {
                                     : Capsule().fill(wallpaperManager.isCurrentWallpaperLight ? Color.black.opacity(0.04) : .white.opacity(0.06))
                             )
                     }
+                    .accessibilityAddTraits(isSelected ? .isSelected : [])
+                    .accessibilityValue(
+                        isSelected
+                            ? languageManager.localizedString("accessibility_selected")
+                            : ""
+                    )
                 }
                 ForEach(PlatformDataStore.shared.customGroups) { group in
                     let isSelected = lastGroupID == group.id.uuidString
@@ -316,6 +349,12 @@ struct HomeView: View {
                                     : Capsule().fill(wallpaperManager.isCurrentWallpaperLight ? Color.black.opacity(0.04) : .white.opacity(0.06))
                             )
                     }
+                    .accessibilityAddTraits(isSelected ? .isSelected : [])
+                    .accessibilityValue(
+                        isSelected
+                            ? languageManager.localizedString("accessibility_selected")
+                            : ""
+                    )
                 }
             }
             .frame(maxWidth: isIPad ? 600 : .infinity)
@@ -342,6 +381,12 @@ struct HomeView: View {
                                 .frame(width: 38)
                         }
                     }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(bookmark.title)
+                    .accessibilityValue(URL(string: bookmark.urlString)?.host ?? bookmark.urlString)
+                    .accessibilityHint(
+                        languageManager.localizedString("accessibility_open_bookmark_hint")
+                    )
                 }
             }
             .frame(maxWidth: isIPad ? 600 : .infinity)
@@ -360,7 +405,7 @@ struct HomeView: View {
         HStack(spacing: 10) {
             // Incognito indicator
             if searchVM.isIncognito {
-                miniButton(icon: "eye.slash.fill", opacity: 0.5)
+                incognitoIndicator
             }
 
             // Tab indicator — show when there are loaded tabs
@@ -395,6 +440,13 @@ struct HomeView: View {
                         }
                     }
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(
+                    "\(tabManager.tabCount) \(LanguageManager.shared.localizedString("tab_tabs"))"
+                )
+                .accessibilityHint(
+                    languageManager.localizedString("accessibility_tab_overview_hint")
+                )
             }
 
             Spacer()
@@ -459,24 +511,25 @@ struct HomeView: View {
         .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
     }
 
-    // FocusLock-style mini button: ultraThinMaterial, 0.3 opacity, small circle
-    private func miniButton(icon: String, opacity: Double = 0.3, action: (() -> Void)? = nil) -> some View {
-        Button {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            action?()
-        } label: {
-            Image(systemName: icon)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.85) : .white.opacity(opacity))
-                .frame(width: 34, height: 34)
-                .background {
-                    if wallpaperManager.isCurrentWallpaperLight {
-                        Circle().fill(Color.black.opacity(0.04))
-                    } else {
-                        Circle().fill(.ultraThinMaterial.opacity(0.3))
-                    }
+    private var incognitoIndicator: some View {
+        Image(systemName: "eye.slash.fill")
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(
+                wallpaperManager.isCurrentWallpaperLight
+                    ? Color(hex: "2E2A47").opacity(0.85)
+                    : .white.opacity(0.5)
+            )
+            .frame(width: 34, height: 34)
+            .background {
+                if wallpaperManager.isCurrentWallpaperLight {
+                    Circle().fill(Color.black.opacity(0.04))
+                } else {
+                    Circle().fill(.ultraThinMaterial.opacity(0.3))
                 }
-        }
+            }
+            .accessibilityLabel(
+                languageManager.localizedString("accessibility_incognito_active")
+            )
     }
 
     // MARK: - Actions

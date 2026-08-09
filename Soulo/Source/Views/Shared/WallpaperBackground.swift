@@ -12,6 +12,7 @@ struct WallpaperBackground: View {
             }
         }
         .ignoresSafeArea()
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder

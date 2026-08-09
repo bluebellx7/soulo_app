@@ -43,6 +43,42 @@ struct WallpaperEditorView: View {
                     )
             }
             .ignoresSafeArea()
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(
+                LanguageManager.shared.localizedString("accessibility_wallpaper_preview")
+            )
+            .accessibilityValue(
+                AppAccessibility.formatted(
+                    "accessibility_wallpaper_zoom",
+                    Int((scale * 100).rounded())
+                )
+            )
+            .accessibilityHint(
+                LanguageManager.shared.localizedString("accessibility_wallpaper_adjust_hint")
+            )
+            .accessibilityAdjustableAction { direction in
+                switch direction {
+                case .increment:
+                    scale = min(scale + 0.1, 3)
+                case .decrement:
+                    scale = max(scale - 0.1, 0.5)
+                @unknown default:
+                    break
+                }
+                lastScale = scale
+            }
+            .accessibilityAction(
+                named: Text(LanguageManager.shared.localizedString("accessibility_move_left"))
+            ) { moveWallpaper(dx: -24, dy: 0) }
+            .accessibilityAction(
+                named: Text(LanguageManager.shared.localizedString("accessibility_move_right"))
+            ) { moveWallpaper(dx: 24, dy: 0) }
+            .accessibilityAction(
+                named: Text(LanguageManager.shared.localizedString("accessibility_move_up"))
+            ) { moveWallpaper(dx: 0, dy: -24) }
+            .accessibilityAction(
+                named: Text(LanguageManager.shared.localizedString("accessibility_move_down"))
+            ) { moveWallpaper(dx: 0, dy: 24) }
 
             // UI overlay
             VStack(spacing: 0) {
@@ -116,5 +152,11 @@ struct WallpaperEditorView: View {
             let y = (screenSize.height - drawH) / 2 + offset.height
             image.draw(in: CGRect(x: x, y: y, width: drawW, height: drawH))
         }
+    }
+
+    private func moveWallpaper(dx: CGFloat, dy: CGFloat) {
+        offset.width += dx
+        offset.height += dy
+        lastOffset = offset
     }
 }

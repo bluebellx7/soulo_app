@@ -1,6 +1,155 @@
 import Foundation
 
 enum WebViewScripts {
+    /// Adds conservative ARIA metadata to third-party pages without changing
+    /// their layout or click behavior. Search engines frequently render result
+    /// cards as generic containers, which makes direct-touch navigation vague
+    /// or skips the card entirely in VoiceOver.
+    static let accessibilityEnhancements = """
+    (function() {
+        if (window.__souloAccessibilityInstalled) {
+            if (typeof window.__souloAccessibilityScan === 'function') {
+                window.__souloAccessibilityScan();
+            }
+            return;
+        }
+        window.__souloAccessibilityInstalled = true;
+
+        function visible(element) {
+            if (!element || !element.getBoundingClientRect) return false;
+            var style = window.getComputedStyle(element);
+            if (style.display === 'none' || style.visibility === 'hidden') return false;
+            var rect = element.getBoundingClientRect();
+            return rect.width > 1 && rect.height > 1;
+        }
+
+        function cleanText(value) {
+            return String(value || '').replace(/\\s+/g, ' ').trim();
+        }
+
+        function accessibleName(element) {
+            if (!element) return '';
+            var explicit = cleanText(
+                element.getAttribute('aria-label') ||
+                element.getAttribute('title') ||
+                element.getAttribute('alt')
+            );
+            if (explicit) return explicit;
+            var labelledBy = element.getAttribute('aria-labelledby');
+            if (labelledBy) {
+                var labelledText = labelledBy.split(/\\s+/).map(function(identifier) {
+                    var label = document.getElementById(identifier);
+                    return label ? cleanText(label.innerText || label.textContent) : '';
+                }).filter(Boolean).join(' ');
+                if (labelledText) return labelledText;
+            }
+            var image = element.querySelector && element.querySelector('img[alt]');
+            var text = cleanText(element.innerText || element.textContent);
+            return text || (image ? cleanText(image.getAttribute('alt')) : '');
+        }
+
+        function labelInteractiveElements(root) {
+            var elements = root.querySelectorAll(
+                'a[href], button, input, select, textarea, [role="button"], [role="link"]'
+            );
+            Array.prototype.forEach.call(elements, function(element) {
+                if (!visible(element) || accessibleName(element)) return;
+                var icon = element.querySelector && element.querySelector('img[alt], svg[aria-label]');
+                var name = icon && cleanText(
+                    icon.getAttribute('alt') || icon.getAttribute('aria-label')
+                );
+                if (name) element.setAttribute('aria-label', name);
+            });
+        }
+
+        function markResultCards(root) {
+            var selectors = [
+                'article', '[role="article"]',
+                '.search-result', '[class*="search-result"]',
+                '[data-testid*="result"]'
+            ];
+            var host = String(location.hostname || '').toLowerCase();
+            var path = String(location.pathname || '').toLowerCase();
+            if (host.indexOf('google.') >= 0) selectors.push('.g', '[data-snhf="0"]');
+            if (host.indexOf('bing.com') >= 0) selectors.push('.b_algo');
+            if (/search|result|query/.test(path)) selectors.push('.result');
+            var cards;
+            try { cards = root.querySelectorAll(selectors.join(',')); } catch (_) { return; }
+            Array.prototype.forEach.call(cards, function(card) {
+                if (!visible(card) || card.hasAttribute('aria-label')) return;
+                var primary = card.querySelector('h1, h2, h3, [role="heading"], a[href]');
+                var label = accessibleName(primary);
+                if (!label) return;
+                if (!card.hasAttribute('role') && card.tagName !== 'ARTICLE') {
+                    card.setAttribute('role', 'group');
+                }
+                card.setAttribute('aria-label', label);
+                card.setAttribute('data-soulo-accessible-result', 'true');
+            });
+        }
+
+        function markResultHeadings(root) {
+            var selectors = [
+                '.g h3', '.b_algo h2', '.result h2', '.result h3',
+                '.search-result h2', '.search-result h3',
+                '[class*="search-result"] h2', '[class*="search-result"] h3'
+            ];
+            var headings;
+            try { headings = root.querySelectorAll(selectors.join(',')); } catch (_) { return; }
+            Array.prototype.forEach.call(headings, function(heading) {
+                if (!visible(heading)) return;
+                if (!heading.hasAttribute('role')) heading.setAttribute('role', 'heading');
+                if (!heading.hasAttribute('aria-level')) heading.setAttribute('aria-level', '2');
+            });
+        }
+
+        function markClickableContainers(root) {
+            var elements = root.querySelectorAll('[onclick]:not(a):not(button):not(input)');
+            Array.prototype.forEach.call(elements, function(element) {
+                if (!visible(element) || element.hasAttribute('role')) return;
+                var name = accessibleName(element);
+                if (!name || name.length > 180) return;
+                element.setAttribute('role', 'button');
+                element.setAttribute('tabindex', '0');
+                element.setAttribute('aria-label', name);
+            });
+        }
+
+        window.__souloAccessibilityScan = function() {
+            var root = document;
+            labelInteractiveElements(root);
+            markResultCards(root);
+            markResultHeadings(root);
+            markClickableContainers(root);
+        };
+
+        window.__souloAccessibilityScan();
+
+        function installObserver() {
+            if (!document.body || window.__souloAccessibilityObserver) return;
+            window.__souloAccessibilityObserver = new MutationObserver(function(mutations) {
+                var hasAddedContent = mutations.some(function(mutation) {
+                    return mutation.addedNodes && mutation.addedNodes.length > 0;
+                });
+                if (!hasAddedContent) return;
+                clearTimeout(window.__souloAccessibilityTimer);
+                window.__souloAccessibilityTimer = setTimeout(function() {
+                    window.__souloAccessibilityScan();
+                }, 300);
+            });
+            window.__souloAccessibilityObserver.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+
+        installObserver();
+        if (!document.body) {
+            document.addEventListener('DOMContentLoaded', installObserver, { once: true });
+        }
+    })();
+    """
+
     static let blankPageProbe = """
     (function() {
         var body = document.body;

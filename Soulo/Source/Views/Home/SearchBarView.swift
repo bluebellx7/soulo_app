@@ -42,6 +42,7 @@ struct SearchBarView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(isFocused ? iconActiveColor : iconColor)
+                .accessibilityHidden(true)
 
             TextField(
                 "",
@@ -56,6 +57,7 @@ struct SearchBarView: View {
             .onSubmit(onSubmit)
             .autocorrectionDisabled()
             .textInputAutocapitalization(.never)
+            .accessibilityLabel(LanguageManager.shared.localizedString("search_placeholder"))
 
             if !text.isEmpty {
                 Button {
@@ -67,11 +69,13 @@ struct SearchBarView: View {
                         .foregroundStyle(clearColor)
                 }
                 .transition(.scale.combined(with: .opacity))
+                .accessibilityLabel(LanguageManager.shared.localizedString("accessibility_clear_search"))
             }
 
             Rectangle()
                 .fill(dividerColor)
                 .frame(width: 1, height: 16)
+                .accessibilityHidden(true)
 
             Button(action: onMicTap) {
                 ZStack {
@@ -97,6 +101,15 @@ struct SearchBarView: View {
                     animateGlow = false
                 }
             }
+            .accessibilityLabel(
+                LanguageManager.shared.localizedString(isRecording ? "voice_stop" : "voice_record")
+            )
+            .accessibilityValue(
+                LanguageManager.shared.localizedString(
+                    isRecording ? "accessibility_voice_recording" : "accessibility_voice_idle"
+                )
+            )
+            .accessibilityHint(LanguageManager.shared.localizedString("accessibility_voice_search_hint"))
 
         }
         .padding(.horizontal, 14)

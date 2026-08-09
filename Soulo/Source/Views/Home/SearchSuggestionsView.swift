@@ -69,41 +69,55 @@ private struct SuggestionChip: View {
     private var isLight: Bool { WallpaperManager.shared.isCurrentWallpaperLight }
 
     var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 4) {
-                Image(systemName: "clock")
-                    .font(.system(size: 10))
+        HStack(spacing: 4) {
+            Image(systemName: "clock")
+                .font(.system(size: 10))
+                .accessibilityHidden(true)
 
-                Text(text)
-                    .font(.system(size: 12, weight: .medium))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: 150)
+            Text(text)
+                .font(.system(size: 12, weight: .medium))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: 150)
 
-                if showDelete {
-                    Button(action: onDelete) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 7, weight: .bold))
-                            .padding(2)
-                    }
-                    .transition(.scale.combined(with: .opacity))
+            if showDelete {
+                Button(action: onDelete) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 7, weight: .bold))
+                        .padding(2)
                 }
+                .buttonStyle(.plain)
+                .accessibilityHidden(true)
+                .transition(.scale.combined(with: .opacity))
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(isLight ? Color.black.opacity(0.04) : .white.opacity(0.06))
-            .foregroundStyle(isLight ? Color(hex: "2E2A47").opacity(0.75) : .white.opacity(0.7))
-            .clipShape(Capsule())
-            .overlay(
-                Capsule().stroke(isLight ? Color(hex: "2E2A47").opacity(0.12) : .white.opacity(0.08), lineWidth: 0.5)
-            )
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(isLight ? Color.black.opacity(0.04) : .white.opacity(0.06))
+        .foregroundStyle(isLight ? Color(hex: "2E2A47").opacity(0.75) : .white.opacity(0.7))
+        .clipShape(Capsule())
+        .overlay(
+            Capsule().stroke(isLight ? Color(hex: "2E2A47").opacity(0.12) : .white.opacity(0.08), lineWidth: 0.5)
+        )
+        .contentShape(Capsule())
+        .onTapGesture(perform: onTap)
         .onLongPressGesture {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 showDelete.toggle()
             }
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            AppAccessibility.formatted("accessibility_recent_search", text)
+        )
+        .accessibilityHint(
+            LanguageManager.shared.localizedString("accessibility_recent_search_hint")
+        )
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { onTap() }
+        .accessibilityAction(named: Text(LanguageManager.shared.localizedString("delete"))) {
+            onDelete()
         }
     }
 }

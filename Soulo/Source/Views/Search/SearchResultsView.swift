@@ -11,6 +11,7 @@ struct SearchResultsView: View {
     @EnvironmentObject var tabManager: TabManager
     @StateObject private var bookmarkVM = BookmarkViewModel()
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
 
     @State private var showBookmarkToast = false
     @State private var isFullscreen: Bool = false
@@ -163,6 +164,9 @@ struct SearchResultsView: View {
                             onRequestVoiceSearch: {
                                 showVoiceInput = true
                             },
+                            onAccessibilityPlatformPage: { direction in
+                                switchPlatformForAccessibility(direction)
+                            },
                             onPageStarted: {
                                 if pageReady { pageReady = false }
                             },
@@ -176,53 +180,12 @@ struct SearchResultsView: View {
 
                     // Loading — thin overlay spinner at top, WebView visible underneath
                     if shouldShowLoadingOverlay {
-                        VStack {
-                            HStack(spacing: 8) {
-                                ProgressView()
-                                    .controlSize(.small)
-                                    .tint(Color(hex: "7C3AED"))
-                                Text(languageManager.localizedString("loading"))
-                                    .font(.system(size: 13))
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 16)
-                            .background(.ultraThinMaterial, in: Capsule())
-                            .padding(.top, 12)
-                            Spacer()
-                        }
-                        .transition(.opacity)
+                        loadingOverlay
                     }
 
                     // AI loading overlay
                     if showAILoading {
-                        ZStack {
-                            VStack(spacing: 16) {
-                                Image(systemName: "brain.head.profile")
-                                    .font(.system(size: 32, weight: .medium))
-                                    .foregroundStyle(
-                                        LinearGradient(
-                                            colors: [.indigo, .purple],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-                                    .symbolEffect(.pulse.wholeSymbol, options: .repeating)
-
-                                Text(aiLoadingText)
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundStyle(.primary)
-                                    .multilineTextAlignment(.center)
-                            }
-                            .padding(.horizontal, 28)
-                            .padding(.vertical, 24)
-                            .background(.ultraThinMaterial.opacity(0.8), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                            .shadow(color: .black.opacity(0.08), radius: 16, x: 0, y: 6)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .allowsHitTesting(false)
-                        .transition(.scale(scale: 0.85).combined(with: .opacity))
-                        .animation(.spring(response: 0.45, dampingFraction: 0.8), value: showAILoading)
+                        aiLoadingOverlay
                     }
 
                     // Bookmark toast
@@ -241,7 +204,14 @@ struct SearchResultsView: View {
                             .padding(.bottom, 80)
                         }
                         .frame(maxWidth: .infinity)
+                        .allowsHitTesting(false)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .accessibilityHidden(true)
+                        .onAppear {
+                            AppAccessibility.announce(
+                                languageManager.localizedString("bookmark_added")
+                            )
+                        }
                     }
                 }
                 // Extend WebView into the bottom safe area
@@ -307,8 +277,13 @@ struct SearchResultsView: View {
                 .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
                 .padding(.top, 60)
                 .transition(.move(edge: .top).combined(with: .opacity))
+                .accessibilityElement(children: .combine)
                 .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                    AppAccessibility.announce(
+                        LanguageManager.shared.localizedString("login_required_toast")
+                    )
+                    let delay: TimeInterval = voiceOverEnabled ? 8 : 3
+                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                         withAnimation(.easeOut(duration: 0.3)) { showLoginAlert = false }
                     }
                 }
@@ -390,6 +365,68 @@ struct SearchResultsView: View {
 
     // MARK: - Top Search Bar
 
+    private var loadingOverlay: some View {
+        VStack {
+            HStack(spacing: 8) {
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(Color(hex: "7C3AED"))
+                Text(languageManager.localizedString("loading"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 16)
+            .background(.ultraThinMaterial, in: Capsule())
+            .padding(.top, 12)
+            Spacer()
+        }
+        .transition(.opacity)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .onAppear {
+            AppAccessibility.announce(languageManager.localizedString("loading"))
+        }
+    }
+
+    private var aiLoadingOverlay: some View {
+        ZStack {
+            VStack(spacing: 16) {
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 32, weight: .medium))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.indigo, .purple],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .symbolEffect(.pulse.wholeSymbol, options: .repeating)
+                    .accessibilityHidden(true)
+
+                Text(aiLoadingText)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, 28)
+            .padding(.vertical, 24)
+            .background(
+                .ultraThinMaterial.opacity(0.8),
+                in: RoundedRectangle(cornerRadius: 20, style: .continuous)
+            )
+            .shadow(color: .black.opacity(0.08), radius: 16, x: 0, y: 6)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .onAppear {
+            AppAccessibility.announce(aiLoadingText)
+        }
+        .transition(.scale(scale: 0.85).combined(with: .opacity))
+        .animation(.spring(response: 0.45, dampingFraction: 0.8), value: showAILoading)
+    }
+
     private var topSearchBar: some View {
         SearchBarView(
             text: $searchVM.searchText,
@@ -462,6 +499,11 @@ struct SearchResultsView: View {
                 .contentShape(Rectangle())
         }
         .accessibilityLabel(LanguageManager.shared.localizedString("select_region"))
+        .accessibilityValue(
+            selectedCustomGroup?.name
+                ?? PlatformDataStore.shared.regionDisplayName(for: searchVM.selectedRegion)
+        )
+        .accessibilityHint(languageManager.localizedString("accessibility_group_picker_hint"))
     }
 
     // Computed: platforms for current selection (region or custom group)
@@ -470,6 +512,41 @@ struct SearchResultsView: View {
             return PlatformDataStore.shared.platformsForGroup(group)
         }
         return PlatformDataStore.shared.visiblePlatforms(for: searchVM.selectedRegion)
+    }
+
+    @discardableResult
+    private func switchPlatformForAccessibility(
+        _ direction: AccessibilityPlatformPagingDirection
+    ) -> Bool {
+        let platforms = currentPlatforms
+        guard !platforms.isEmpty else { return false }
+
+        let currentIndex = searchVM.selectedPlatform
+            .flatMap { selected in platforms.firstIndex(where: { $0.id == selected.id }) }
+            ?? 0
+        guard let targetIndex = PlatformAccessibilityNavigation.adjacentIndex(
+            currentIndex: currentIndex,
+            count: platforms.count,
+            direction: direction
+        ) else {
+            let key = direction == .next
+                ? "accessibility_last_platform"
+                : "accessibility_first_platform"
+            AppAccessibility.announce(languageManager.localizedString(key))
+            return true
+        }
+
+        let target = platforms[targetIndex]
+        searchVM.selectedPlatform = target
+        AppAccessibility.announce(
+            AppAccessibility.formatted(
+                "accessibility_platform_loading",
+                languageManager.localizedString(target.name),
+                targetIndex + 1,
+                platforms.count
+            )
+        )
+        return true
     }
 
     private var isShowingNewTabPage: Bool {

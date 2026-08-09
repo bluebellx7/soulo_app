@@ -13,10 +13,12 @@ struct PlatformIconView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(width: size, height: size)
                     .clipShape(RoundedRectangle(cornerRadius: size * 0.2, style: .continuous))
+                    .accessibilityHidden(true)
             } else if platform.faviconURL != nil || platform.isCustom {
                 // Custom platform — fetch favicon from site
                 let urlStr = platform.homeURL.isEmpty ? platform.searchURLTemplate : platform.homeURL
                 BookmarkFaviconView(urlString: urlStr, size: size)
+                    .accessibilityHidden(true)
             } else {
                 sfSymbolFallback
             }
@@ -37,6 +39,7 @@ struct PlatformIconView: View {
             .frame(width: size, height: size)
             .background(Color.primary.opacity(0.06))
             .clipShape(RoundedRectangle(cornerRadius: size * 0.2, style: .continuous))
+            .accessibilityHidden(true)
     }
 
     private var platformSFSymbol: String {

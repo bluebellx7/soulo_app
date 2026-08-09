@@ -17,6 +17,8 @@ struct BrowserTabBar: View {
                             webViewModel: tab.webViewModel,
                             keyword: tab.keyword,
                             isActive: index == tabManager.activeTabIndex,
+                            position: index + 1,
+                            total: tabManager.tabs.count,
                             onTap: {
                                 HapticsManager.selection()
                                 tabManager.switchToTab(at: index)
@@ -47,6 +49,7 @@ struct BrowserTabBar: View {
                             .frame(width: 30, height: 30)
                             .background(Color(UIColor.tertiarySystemFill), in: Circle())
                     }
+                    .accessibilityLabel(LanguageManager.shared.localizedString("tab_new_tab"))
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
@@ -68,6 +71,8 @@ private struct BrowserTabChip: View {
     @ObservedObject var webViewModel: WebViewModel
     let keyword: String?
     let isActive: Bool
+    let position: Int
+    let total: Int
     let onTap: () -> Void
     let onClose: () -> Void
 
@@ -79,62 +84,84 @@ private struct BrowserTabChip: View {
         return LanguageManager.shared.localizedString("tab_new_tab")
     }
 
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 6) {
-                Image(systemName: webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(isActive ? Color.primary.opacity(0.86) : Color.secondary)
-                    .frame(width: 14, height: 14)
+    private var chipVisual: some View {
+        HStack(spacing: 6) {
+            Image(systemName: webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(isActive ? Color.primary.opacity(0.86) : Color.secondary)
+                .frame(width: 14, height: 14)
 
-                // Title — reactively updates from webViewModel
-                Text(displayTitle)
-                    .font(.system(size: 12, weight: isActive ? .semibold : .regular))
-                    .foregroundStyle(isActive ? Color.primary.opacity(0.9) : Color.primary.opacity(0.6))
-                    .lineLimit(1)
-                    .frame(maxWidth: 120)
+            Text(displayTitle)
+                .font(.system(size: 12, weight: isActive ? .semibold : .regular))
+                .foregroundStyle(isActive ? Color.primary.opacity(0.9) : Color.primary.opacity(0.6))
+                .lineLimit(1)
+                .frame(maxWidth: 120)
 
-                // Close button
-                Button(action: onClose) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundStyle(isActive ? Color.primary.opacity(0.58) : Color.secondary)
-                        .frame(width: 16, height: 16)
-                        .background(
-                            Circle().fill(
-                                isActive
-                                    ? Color.primary.opacity(0.09)
-                                    : Color(UIColor.tertiarySystemFill)
-                            )
-                        )
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.leading, 10)
-            .padding(.trailing, 6)
-            .padding(.vertical, 7)
-            .background(
-                Capsule()
-                    .fill(.ultraThinMaterial)
-                    .overlay(
-                        Capsule().fill(
+            Button(action: onClose) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(isActive ? Color.primary.opacity(0.58) : Color.secondary)
+                    .frame(width: 16, height: 16)
+                    .background(
+                        Circle().fill(
                             isActive
-                                ? Color.primary.opacity(0.10)
-                                : Color.primary.opacity(0.025)
+                                ? Color.primary.opacity(0.09)
+                                : Color(UIColor.tertiarySystemFill)
                         )
                     )
-            )
-            .overlay(
-                Capsule()
-                    .stroke(
-                        isActive
-                            ? Color.primary.opacity(0.18)
-                            : Color(UIColor.separator).opacity(0.22),
-                        lineWidth: isActive ? 0.8 : 0.5
-                    )
-            )
+            }
+            .buttonStyle(.plain)
+            .accessibilityHidden(true)
         }
-        .buttonStyle(.plain)
+        .padding(.leading, 10)
+        .padding(.trailing, 6)
+        .padding(.vertical, 7)
+        .background(
+            Capsule()
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    Capsule().fill(
+                        isActive
+                            ? Color.primary.opacity(0.10)
+                            : Color.primary.opacity(0.025)
+                    )
+                )
+        )
+        .overlay(
+            Capsule()
+                .stroke(
+                    isActive
+                        ? Color.primary.opacity(0.18)
+                        : Color(UIColor.separator).opacity(0.22),
+                    lineWidth: isActive ? 0.8 : 0.5
+                )
+        )
+        .contentShape(Capsule())
+    }
+
+    var body: some View {
+        chipVisual
+        .onTapGesture(perform: onTap)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            AppAccessibility.formatted(
+                "accessibility_tab_position",
+                displayTitle,
+                position,
+                total
+            )
+        )
+        .accessibilityValue(
+            isActive
+                ? LanguageManager.shared.localizedString("accessibility_active_tab")
+                : ""
+        )
+        .accessibilityHint(LanguageManager.shared.localizedString("accessibility_open_tab_hint"))
+        .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : [.isButton])
+        .accessibilityAction { onTap() }
+        .accessibilityAction(named: Text(LanguageManager.shared.localizedString("tab_close"))) {
+            onClose()
+        }
         .contextMenu {
             Button {
                 onClose()
@@ -170,6 +197,7 @@ struct TabSwitcherOverlay: View {
                             dismiss()
                         }
                     }
+                    .accessibilityHidden(true)
 
                 VStack(spacing: 0) {
                     Spacer(minLength: max(geo.safeAreaInsets.top, 12) + 36)
@@ -216,14 +244,14 @@ struct TabSwitcherOverlay: View {
 
     private var bottomDock: some View {
         HStack(spacing: 14) {
-            iconButton("plus") {
+            iconButton("plus", label: "tab_new_tab") {
                 HapticsManager.light()
                 onNewTab()
                 dismiss()
             }
 
             if let closed = tabManager.recentlyClosed.first {
-                iconButton("arrow.uturn.backward") {
+                iconButton("arrow.uturn.backward", label: "tab_restore_last") {
                     HapticsManager.selection()
                     tabManager.restoreClosedTab(closed)
                     dismiss()
@@ -252,8 +280,9 @@ struct TabSwitcherOverlay: View {
                     .background(.black.opacity(0.34), in: Circle())
                     .overlay(Circle().stroke(.white.opacity(0.14), lineWidth: 0.5))
             }
+            .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
 
-            iconButton("xmark") {
+            iconButton("xmark", label: "done") {
                 dismiss()
             }
         }
@@ -274,9 +303,14 @@ struct TabSwitcherOverlay: View {
                 .foregroundStyle(.white.opacity(0.85))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .combine)
     }
 
-    private func iconButton(_ systemName: String, action: @escaping () -> Void) -> some View {
+    private func iconButton(
+        _ systemName: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 17, weight: .semibold))
@@ -286,6 +320,7 @@ struct TabSwitcherOverlay: View {
                 .overlay(Circle().stroke(.white.opacity(0.14), lineWidth: 0.5))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(LanguageManager.shared.localizedString(label))
     }
 
     private func dismiss() {
@@ -311,6 +346,7 @@ private struct TabSwitcherCarousel: View {
 
     @State private var dragOffset: CGFloat = 0
     @State private var isHorizontalDragging = false
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
 
     var body: some View {
         GeometryReader { geo in
@@ -342,7 +378,9 @@ private struct TabSwitcherCarousel: View {
             .simultaneousGesture(
                 DragGesture(minimumDistance: 8)
                     .onChanged { value in
-                        guard !isExpanding, tabManager.tabs.count > 1 else { return }
+                        guard !voiceOverEnabled,
+                              !isExpanding,
+                              tabManager.tabs.count > 1 else { return }
                         let isHorizontal = abs(value.translation.width) > abs(value.translation.height)
 
                         if !isHorizontalDragging && isHorizontal {
@@ -354,6 +392,10 @@ private struct TabSwitcherCarousel: View {
                         }
                     }
                     .onEnded { value in
+                        guard !voiceOverEnabled else {
+                            resetDrag()
+                            return
+                        }
                         guard isHorizontalDragging else {
                             resetDrag()
                             return
@@ -468,6 +510,8 @@ private struct TabSwitcherCardItem: View {
                         keyword: tab.keyword,
                         isActive: isActive,
                         isExpanding: isThisExpanding,
+                        position: index + 1,
+                        total: tabManager.tabs.count,
                         onTap: { onSelect(index) },
                         onClose: { onClose(index) }
                     )
@@ -495,6 +539,7 @@ struct CardSwipeWrapper<Content: View>: View {
     @State private var dragOffset: CGSize = .zero
     @State private var isDismissed = false
     @State private var isDraggingVertically = false
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
 
     init(index: Int, onClose: @escaping () -> Void, onTap: @escaping () -> Void, @ViewBuilder content: () -> Content) {
         self.index = index
@@ -511,6 +556,7 @@ struct CardSwipeWrapper<Content: View>: View {
             .simultaneousGesture(
                 DragGesture(minimumDistance: 8)
                     .onChanged { value in
+                        guard !voiceOverEnabled else { return }
                         let isVertical = abs(value.translation.height) > abs(value.translation.width)
 
                         if !isDraggingVertically && isVertical {
@@ -533,6 +579,11 @@ struct CardSwipeWrapper<Content: View>: View {
                         }
                     }
                     .onEnded { value in
+                        guard !voiceOverEnabled else {
+                            dragOffset = .zero
+                            isDraggingVertically = false
+                            return
+                        }
                         if isDraggingVertically {
                             let velocity = value.predictedEndLocation.y - value.location.y
                             if value.translation.height < -100 || velocity < -150 {
@@ -566,6 +617,8 @@ private struct TabOverviewCard: View {
     let keyword: String?
     let isActive: Bool
     let isExpanding: Bool
+    let position: Int
+    let total: Int
     let onTap: () -> Void
     let onClose: () -> Void
 
@@ -625,6 +678,28 @@ private struct TabOverviewCard: View {
                     }
                 }
             }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            AppAccessibility.formatted(
+                "accessibility_tab_position",
+                displayTitle,
+                position,
+                total
+            )
+        )
+        .accessibilityValue(
+            isActive
+                ? LanguageManager.shared.localizedString("accessibility_active_tab")
+                : subtitle
+        )
+        .accessibilityHint(LanguageManager.shared.localizedString("accessibility_open_tab_hint"))
+        .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : [.isButton])
+        .accessibilityAction {
+            if !isExpanding { onTap() }
+        }
+        .accessibilityAction(named: Text(LanguageManager.shared.localizedString("tab_close"))) {
+            if !isExpanding { onClose() }
         }
     }
 
@@ -756,6 +831,7 @@ struct TabCountBadge: View {
             .contentShape(Circle())
         }
         .accessibilityLabel("\(count) \(LanguageManager.shared.localizedString("tab_tabs"))")
+        .accessibilityHint(LanguageManager.shared.localizedString("accessibility_tab_overview_hint"))
     }
 }
 

@@ -1,3 +1,4 @@
+import Foundation
 @_exported import DKlugeI18n
 
 // MARK: - Soulo-specific compatibility
@@ -41,6 +42,19 @@ extension LanguageManager {
 
     /// Convenience: localized string with single-param signature.
     func localizedString(_ key: String) -> String {
-        localizedString(for: key)
+        let localized = localizedString(for: key)
+        guard localized == key,
+              currentLanguage != "en",
+              let path = Bundle.main.path(forResource: "en", ofType: "lproj"),
+              let bundle = Bundle(path: path) else {
+            return localized
+        }
+        return NSLocalizedString(
+            key,
+            tableName: nil,
+            bundle: bundle,
+            value: key,
+            comment: ""
+        )
     }
 }

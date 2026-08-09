@@ -161,6 +161,7 @@ struct SitePrivacyPanelView: View {
                             }
                             Spacer()
                         }
+                        .accessibilityElement(children: .combine)
                     }
                 } header: {
                     SectionHeader(title: LanguageManager.shared.localizedString("site_tracker_requests"))
