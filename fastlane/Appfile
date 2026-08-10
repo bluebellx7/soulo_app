@@ -1,0 +1,6 @@
+app_identifier("com.dkluge.Soulo")
+team_id("7S2LBJA9VA")
+
+# Authentication stays outside the repository. Set FASTLANE_USER for an
+# Apple-ID session, or the ASC_KEY_* variables documented in README.md.
+apple_id(ENV["FASTLANE_USER"]) if ENV["FASTLANE_USER"]

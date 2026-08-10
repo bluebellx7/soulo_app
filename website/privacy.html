@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#101112" media="(prefers-color-scheme: dark)">
+    <meta name="apple-mobile-web-app-title" content="Soulo">
     <meta
         name="description"
         content="Privacy policy for Soulo, a privacy-first multi-search browser that keeps search history, bookmarks, and preferences on-device."
@@ -24,7 +27,10 @@
         content="Privacy policy for Soulo, a privacy-first multi-search browser that keeps search history, bookmarks, and preferences on-device."
     >
     <meta property="og:url" content="https://soulo.dkluge.com/privacy.html">
-    <meta property="og:image" content="https://soulo.dkluge.com/app-icon.png">
+    <meta property="og:image" content="https://soulo.dkluge.com/app-icon.png?v=1.0.7">
+    <meta property="og:image:width" content="1024">
+    <meta property="og:image:height" content="1024">
+    <meta property="og:image:alt" content="Soulo App icon">
     <meta property="og:locale" content="en_US">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Privacy Policy - Soulo">
@@ -32,10 +38,29 @@
         name="twitter:description"
         content="Privacy policy for Soulo, a privacy-first multi-search browser that keeps search history, bookmarks, and preferences on-device."
     >
-    <meta name="twitter:image" content="https://soulo.dkluge.com/app-icon.png">
-    <title>Privacy Policy - Soulo (搜罗)</title>
-    <link rel="icon" type="image/png" href="app-icon.png">
-    <link rel="apple-touch-icon" href="app-icon.png">
+    <meta name="twitter:image" content="https://soulo.dkluge.com/app-icon.png?v=1.0.7">
+    <meta name="twitter:image:alt" content="Soulo App icon">
+    <title>Privacy Policy - Soulo</title>
+    <link rel="icon" type="image/png" href="app-icon.png?v=1.0.7">
+    <link rel="apple-touch-icon" href="app-icon.png?v=1.0.7">
+    <script>
+        (function () {
+            var selectedTheme = 'system';
+            try {
+                var savedTheme = localStorage.getItem('soulo-theme');
+                selectedTheme = savedTheme === 'light' || savedTheme === 'dark'
+                    ? savedTheme
+                    : 'system';
+            } catch (error) {}
+            var prefersDark = window.matchMedia
+                && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var resolvedTheme = selectedTheme === 'system'
+                ? (prefersDark ? 'dark' : 'light')
+                : selectedTheme;
+            document.documentElement.setAttribute('data-theme', selectedTheme);
+            document.documentElement.setAttribute('data-resolved-theme', resolvedTheme);
+        })();
+    </script>
     <script type="application/ld+json">
         {
             "@context": "https://schema.org",
@@ -102,13 +127,25 @@
             h1 { font-size: 24px; }
         }
     </style>
+    <link rel="stylesheet" href="site.css?v=1.0.7">
 </head>
-<body>
-    <div class="container">
+<body class="privacy-page">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <div class="privacy-topbar">
+        <a class="privacy-brand" href="/">
+            <img src="app-icon.png?v=1.0.7" alt="" width="34" height="34">
+            <span>Soulo</span>
+        </a>
+        <a class="privacy-back" href="/">
+            <span aria-hidden="true">←</span>
+            <span>Back to Soulo</span>
+        </a>
+    </div>
+    <main class="container" id="main-content">
         <header>
             <h1>Privacy Policy</h1>
-            <p class="last-updated">Last Updated: March 2026</p>
-            <p><strong>App Name:</strong> Soulo (搜罗)</p>
+            <p class="last-updated">Last Updated: August 2026</p>
+            <p><strong>App Name:</strong> Soulo</p>
         </header>
 
         <section>
@@ -127,7 +164,7 @@
             </ul>
 
             <h2>3. Local Data Storage</h2>
-            <p>The following data is stored locally on your device and never leaves it:</p>
+            <p>The following data is stored locally on your device by default. Data you explicitly enable for iCloud sync is described in the next section:</p>
             <ul>
                 <li><strong>Search History:</strong> Your recent search keywords are saved using SwiftData for quick access. You can clear this at any time in Settings → Privacy.</li>
                 <li><strong>Bookmarks:</strong> Pages you bookmark are stored locally. You can delete them individually or clear all.</li>
@@ -140,13 +177,13 @@
 
             <h2>5. Permissions</h2>
             <ul>
-                <li><strong>Microphone:</strong> Used only for voice search. Audio is processed on-device using Apple's Speech framework and is never recorded or transmitted.</li>
+                <li><strong>Microphone:</strong> Used only while voice input is active. Soulo passes audio to Apple's Speech framework for transcription. Depending on the device, language, and operating system, Apple may process recognition on-device or through its speech service. Soulo does not record or store the audio, and it is never sent to a Soulo server.</li>
                 <li><strong>Camera:</strong> Used only for image-based text search (OCR). Photos are processed locally using Apple's Vision framework.</li>
                 <li><strong>Photo Library:</strong> Used to set custom wallpapers and save wallpaper images. Photos are never uploaded.</li>
             </ul>
 
             <h2>6. Third-Party Content</h2>
-            <p>Search results are displayed from third-party platforms via WebView. Each platform has its own privacy policy and data practices. Soulo does not control, modify, or intercept the content displayed by these platforms, beyond optional ad filtering and login popup removal for improved user experience.</p>
+            <p>Search results are displayed from third-party platforms via WebView. Each platform has its own privacy policy and data practices. Soulo does not control the content provided by these platforms. If you enable ad filtering, Soulo may block known advertising requests and hide matching ad elements inside its WebView.</p>
 
             <h2>7. Ad Filtering</h2>
             <p>Soulo includes an optional ad blocker that can be enabled in Settings. When enabled, it blocks network requests to known advertising domains and hides ad elements using CSS/JavaScript injection. This feature operates entirely within the app's WebView and does not affect other apps or browsers.</p>
@@ -165,7 +202,7 @@
             <p>Soulo does not collect any personal data and is safe for users of all ages. We do not knowingly collect information from children under 13.</p>
 
             <h2>10. Data Deletion</h2>
-            <p>Deleting the app removes all locally stored data instantly. Since we store nothing on our servers, there is nothing to request deletion of. You can also selectively clear search history, bookmarks, and WebView cache in Settings → Privacy.</p>
+            <p>Deleting the app removes its locally stored data from the device. Since Soulo stores nothing on its own servers, there is no server-side Soulo account to delete. You can also selectively clear search history, bookmarks, and WebView cache from Settings.</p>
 
             <h2>11. Changes to This Policy</h2>
             <p>We may update this privacy policy from time to time. Changes will be reflected in the "Last Updated" date above.</p>
@@ -177,6 +214,6 @@
         <footer>
             &copy; 2025-2026 DKluge.com. All Rights Reserved.
         </footer>
-    </div>
+    </main>
 </body>
 </html>

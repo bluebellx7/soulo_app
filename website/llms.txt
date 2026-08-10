@@ -13,7 +13,6 @@ Soulo lets users enter one query and quickly switch between 40+ global platforms
 ## Product Facts
 
 - Product name: Soulo
-- Chinese name: 搜罗
 - Platform: iOS app
 - Category: Multi-platform search browser
 - Website languages: Chinese and English

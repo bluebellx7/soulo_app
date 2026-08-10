@@ -1,0 +1,91 @@
+opt_out_usage
+default_platform(:ios)
+
+APP_IDENTIFIER = "com.dkluge.Soulo"
+APP_VERSION = "1.0.7"
+SCHEME = "Soulo"
+PROJECT = "Soulo.xcodeproj"
+
+platform :ios do
+  desc "Run the complete unit-test suite"
+  lane :tests do
+    prepare_project
+    run_tests(
+      project: PROJECT,
+      scheme: SCHEME,
+      device: "iPhone 17 Pro",
+      clean: true
+    )
+  end
+
+  desc "Upload localized App Store metadata for version 1.0.7"
+  lane :metadata do
+    upload_to_app_store(
+      api_key: app_store_api_key,
+      app_identifier: APP_IDENTIFIER,
+      app_version: APP_VERSION,
+      metadata_path: File.expand_path("metadata", __dir__),
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      submit_for_review: false,
+      automatic_release: false,
+      force: true,
+      run_precheck_before_submit: false
+    )
+  end
+
+  desc "Build and upload Build 9 to TestFlight"
+  lane :beta do
+    prepare_project
+    build_app(
+      project: PROJECT,
+      scheme: SCHEME,
+      clean: true,
+      export_method: "app-store"
+    )
+    upload_to_testflight(
+      api_key: app_store_api_key,
+      app_identifier: APP_IDENTIFIER,
+      skip_waiting_for_build_processing: true
+    )
+  end
+
+  desc "Build and upload version 1.0.7 without submitting it for review"
+  lane :release do
+    prepare_project
+    build_app(
+      project: PROJECT,
+      scheme: SCHEME,
+      clean: true,
+      export_method: "app-store"
+    )
+    upload_to_app_store(
+      api_key: app_store_api_key,
+      app_identifier: APP_IDENTIFIER,
+      app_version: APP_VERSION,
+      metadata_path: File.expand_path("metadata", __dir__),
+      skip_screenshots: true,
+      submit_for_review: false,
+      automatic_release: false,
+      force: true,
+      run_precheck_before_submit: false
+    )
+  end
+
+  private_lane :prepare_project do
+    sh("xcodegen generate")
+  end
+
+  private_lane :app_store_api_key do
+    key_id = ENV["ASC_KEY_ID"]
+    issuer_id = ENV["ASC_ISSUER_ID"]
+    key_filepath = ENV["ASC_KEY_FILEPATH"]
+    next nil if [key_id, issuer_id, key_filepath].any? { |value| value.to_s.empty? }
+
+    app_store_connect_api_key(
+      key_id: key_id,
+      issuer_id: issuer_id,
+      key_filepath: key_filepath
+    )
+  end
+end

@@ -3,10 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>搜罗 Soulo - 多平台搜索浏览器 | 一次输入，切换 40+ 平台</title>
+    <meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101112" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-title" content="Soulo" />
+    <title>Soulo - 多平台搜索浏览器 | 一次输入，切换 40+ 平台</title>
     <meta
       name="description"
-      content="搜罗 (Soulo) 是一款多平台搜索浏览器。一次输入关键词，即可在 40+ 搜索、视频、社区、购物与 AI 平台之间快速切换，搜索历史默认保存在本地设备。"
+      content="Soulo 是一款多平台搜索浏览器。一次输入关键词，即可在 40+ 搜索、视频、社区、购物与 AI 平台之间快速切换，搜索历史默认保存在本地设备。"
     />
     <meta
       name="robots"
@@ -21,44 +24,50 @@
     <meta property="og:type" content="website" />
     <meta
       property="og:title"
-      content="搜罗 Soulo - 多平台搜索浏览器 | 一次输入，切换 40+ 平台"
+      content="Soulo - 多平台搜索浏览器 | 一次输入，切换 40+ 平台"
     />
     <meta
       property="og:description"
-      content="搜罗 (Soulo) 是一款多平台搜索浏览器。一次输入关键词，即可在 40+ 搜索、视频、社区、购物与 AI 平台之间快速切换，搜索历史默认保存在本地设备。"
+      content="Soulo 是一款多平台搜索浏览器。一次输入关键词，即可在 40+ 搜索、视频、社区、购物与 AI 平台之间快速切换，搜索历史默认保存在本地设备。"
     />
     <meta property="og:url" content="https://soulo.dkluge.com/" />
     <meta
       property="og:image"
-      content="https://soulo.dkluge.com/app-icon.png"
+      content="https://soulo.dkluge.com/app-icon.png?v=1.0.7"
     />
+    <meta property="og:image:width" content="1024" />
+    <meta property="og:image:height" content="1024" />
+    <meta property="og:image:alt" content="Soulo App icon" />
     <meta property="og:locale" content="zh_CN" />
     <meta name="twitter:card" content="summary" />
     <meta
       name="twitter:title"
-      content="搜罗 Soulo - 多平台搜索浏览器 | 一次输入，切换 40+ 平台"
+      content="Soulo - 多平台搜索浏览器 | 一次输入，切换 40+ 平台"
     />
     <meta
       name="twitter:description"
-      content="搜罗 (Soulo) 是一款多平台搜索浏览器。一次输入关键词，即可在 40+ 搜索、视频、社区、购物与 AI 平台之间快速切换，搜索历史默认保存在本地设备。"
+      content="Soulo 是一款多平台搜索浏览器。一次输入关键词，即可在 40+ 搜索、视频、社区、购物与 AI 平台之间快速切换，搜索历史默认保存在本地设备。"
     />
     <meta
       name="twitter:image"
-      content="https://soulo.dkluge.com/app-icon.png"
+      content="https://soulo.dkluge.com/app-icon.png?v=1.0.7"
     />
-    <link rel="icon" type="image/png" href="app-icon.png" />
-    <link rel="apple-touch-icon" href="app-icon.png" />
+    <meta name="twitter:image:alt" content="Soulo App icon" />
+    <link rel="icon" type="image/png" href="app-icon.png?v=1.0.7" />
+    <link rel="apple-touch-icon" href="app-icon.png?v=1.0.7" />
+    <link rel="preload" as="image" href="app-icon.png?v=1.0.7" />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="preconnect" href="https://tools.applemediaservices.com" crossorigin />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
         "name": "Soulo",
-        "alternateName": "搜罗",
         "applicationCategory": "UtilitiesApplication",
         "operatingSystem": "iOS",
         "description": "Soulo is a privacy-first multi-search browser for quickly switching between 40+ search, video, social, shopping, and AI platforms.",
         "url": "https://soulo.dkluge.com/",
-        "image": "https://soulo.dkluge.com/app-icon.png",
+        "image": "https://soulo.dkluge.com/app-icon.png?v=1.0.7",
         "inLanguage": ["zh-CN", "en"],
         "featureList": [
           "Search across 40+ platforms",
@@ -277,23 +286,27 @@
       }
       @media(prefers-reduced-motion:reduce){.hero::before,.hero::after{animation:none}}
     </style>
+    <link rel="stylesheet" href="site.css?v=1.0.7" />
   </head>
-  <body>
-    <nav>
+  <body class="home-page">
+    <a class="skip-link" href="#main-content" data-i18n="skipToContent">跳到主要内容</a>
+    <nav aria-label="主导航">
       <div class="nav-inner">
         <a class="brand" href="/">
+          <img class="brand-icon" src="app-icon.png?v=1.0.7" alt="" width="30" height="30" />
           <span class="brand-primary">Soulo</span>
-          <span class="brand-secondary" data-i18n="brandSecondary"></span>
         </a>
         <button
           class="hamburger"
           id="navToggle"
-          onclick="this.parentElement.querySelector('.nav-links').classList.toggle('active')"
           aria-label="菜单"
+          aria-controls="primaryNavigation"
+          aria-expanded="false"
+          type="button"
         >
-          ☰
+          <span class="hamburger-lines" aria-hidden="true"></span>
         </button>
-        <div class="nav-links">
+        <div class="nav-links" id="primaryNavigation">
           <a href="#platforms" data-i18n="navPlatforms">平台</a>
           <a href="#features" data-i18n="navFeatures">功能</a>
           <a href="#film" data-i18n="navFilm">影视搜索</a>
@@ -330,6 +343,14 @@
               <button
                 class="segmented-btn"
                 type="button"
+                data-theme-option="system"
+                data-i18n="themeSystem"
+              >
+                跟随系统
+              </button>
+              <button
+                class="segmented-btn"
+                type="button"
                 data-theme-option="light"
                 data-i18n="themeLight"
               >
@@ -349,25 +370,45 @@
       </div>
     </nav>
 
+    <main id="main-content">
     <section class="hero">
+      <p class="hero-eyebrow" data-i18n="heroEyebrow">更快抵达你要的信息</p>
       <div class="app-icon">
-        <img id="appIconImg" src="app-icon.png" alt="Soulo" />
+        <img
+          id="appIconImg"
+          src="app-icon.png?v=1.0.7"
+          alt="Soulo"
+          width="112"
+          height="112"
+        />
       </div>
       <h1>
-        <span class="hero-title-secondary" data-i18n="heroNameSecondary"></span>
         <span class="hero-title-primary">Soulo</span>
       </h1>
       <p class="tagline" data-i18n="heroTagline">一次输入，快速切换全球搜索平台</p>
       <p class="sub-tagline" data-i18n="heroSubTagline">
         40+ 搜索与 AI 平台 &middot; 本地历史 &middot; 15 种语言 &middot; 广告拦截
       </p>
-      <a class="app-store-badge" href="https://apps.apple.com/cn/app/soulo-%E6%90%9C%E7%BD%97-ai%E8%81%9A%E5%90%88%E6%90%9C%E7%B4%A2%E5%BC%95%E6%93%8E/id6761165330" target="_blank">
-        <img
-          id="appStoreBadgeImg"
-          src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/zh-cn?size=250x83"
-          alt="在 App Store 下载"
-        />
-      </a>
+      <div class="hero-actions">
+        <a
+          class="app-store-badge"
+          href="https://apps.apple.com/cn/app/soulo-%E6%90%9C%E7%BD%97-ai%E8%81%9A%E5%90%88%E6%90%9C%E7%B4%A2%E5%BC%95%E6%93%8E/id6761165330"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img
+            id="appStoreBadgeImg"
+            src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/zh-cn?size=250x83"
+            alt="在 App Store 下载"
+            width="151"
+            height="50"
+          />
+        </a>
+        <a class="secondary-cta" href="#features">
+          <span data-i18n="heroLearnMore">了解功能</span>
+          <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
+        </a>
+      </div>
     </section>
 
     <!-- Stats -->
@@ -633,20 +674,17 @@
     <!-- Film Search -->
     <div class="section-title" id="film">
       <h2 data-i18n="filmSectionTitle">影视资源搜索</h2>
-      <p data-i18n="filmSectionDesc">一键导入影视资源站，用搜罗搜索全网片源</p>
+      <p data-i18n="filmSectionDesc">一键导入影视资源站，用 Soulo 搜索全网片源</p>
     </div>
 
     <section class="usecase-section">
       <div class="usecase-card">
         <h2>
-          <i
-            class="fa-solid fa-clapperboard"
-            style="margin-right: 10px; color: #a78bfa"
-          ></i
+          <i class="fa-solid fa-clapperboard" aria-hidden="true"></i
           ><span data-i18n="filmUsecaseTitle">影视资源站合集</span>
         </h2>
         <p class="subtitle" data-i18n="filmUsecaseSubtitle">
-          以下资源站已整理为可导入格式，点击复制后在搜罗 App 中批量导入即可使用
+          以下资源站已整理为可导入格式，点击复制后在 Soulo App 中批量导入即可使用
         </p>
 
         <!-- Steps with screenshots -->
@@ -676,21 +714,36 @@
 
         <div class="screenshots-row">
           <div class="screenshot-item">
-            <img src="step-batch-menu.jpeg" alt="打开批量导入菜单" />
+            <img
+              src="step-batch-menu.jpeg"
+              alt="打开批量导入菜单"
+              loading="lazy"
+              decoding="async"
+            />
             <span data-i18n="filmShot1">打开批量导入</span>
           </div>
           <div class="screenshot-item">
-            <img src="step-paste-json.jpeg" alt="粘贴JSON配置" />
+            <img
+              src="step-paste-json.jpeg"
+              alt="粘贴JSON配置"
+              loading="lazy"
+              decoding="async"
+            />
             <span data-i18n="filmShot2">粘贴 JSON 导入</span>
           </div>
           <div class="screenshot-item">
-            <img src="step-search-result.jpeg" alt="搜索影视结果" />
+            <img
+              src="step-search-result.jpeg"
+              alt="搜索影视结果"
+              loading="lazy"
+              decoding="async"
+            />
             <span data-i18n="filmShot3">搜索影视结果</span>
           </div>
         </div>
 
         <!-- Resource list -->
-        <div class="example-table" style="margin-top: 20px">
+        <div class="example-table resource-list">
           <div class="example-row">
             <img
               src="favicons/pianbs.com.ico"
@@ -756,13 +809,19 @@
             <h3 data-i18n="filmBatchTitle">一键批量导入</h3>
           </div>
           <p class="batch-desc" data-i18n="filmBatchDesc">
-            点击下方按钮复制全部资源站的 JSON 配置，然后在搜罗 App 中「设置 >
+            点击下方按钮复制全部资源站的 JSON 配置，然后在 Soulo App 中「设置 >
             平台管理 > 右上角菜单 > 批量导入」粘贴即可一次性添加所有影视资源站。
           </p>
-          <button class="copy-json-btn" onclick="copyJSON()">
-            <i class="fa-solid fa-copy"></i>
+          <button
+            class="copy-json-btn"
+            type="button"
+            onclick="copyJSON()"
+            aria-describedby="filmCopyStatus"
+          >
+            <i class="fa-solid fa-copy" aria-hidden="true"></i>
             <span id="copyBtnText" data-i18n="filmCopyButton">复制 JSON 配置</span>
           </button>
+          <span class="copy-status" id="filmCopyStatus" role="status" aria-live="polite"></span>
           <pre class="json-preview" id="jsonPreview">
 [
   {"name": "片吧搜索", "url": "https://www.pianbs.com/sou/-------------.html?wd=%@&amp;submit="},
@@ -779,7 +838,7 @@
         <div class="usecase-tip">
           <i class="fa-solid fa-lightbulb"></i>
           <p data-i18n="filmTip">
-            点击上方「复制 JSON 配置」按钮，然后打开搜罗 App > 设置 > 平台管理 >
+            点击上方「复制 JSON 配置」按钮，然后打开 Soulo App > 设置 > 平台管理 >
             右上角菜单 > 批量导入 >
             粘贴并导入。建议选择或新建一个「影视」分组，方便管理。导入后即可在首页搜索任意影视剧名。
           </p>
@@ -790,24 +849,21 @@
     <!-- Book Search -->
     <div class="section-title" id="books">
       <h2 data-i18n="booksSectionTitle">书籍资源搜索</h2>
-      <p data-i18n="booksSectionDesc">一键导入电子书资源站，用搜罗搜索全网书籍</p>
+      <p data-i18n="booksSectionDesc">一键导入电子书资源站，用 Soulo 搜索全网书籍</p>
     </div>
 
     <section class="usecase-section">
       <div class="usecase-card usecase-card-book">
         <h2>
-          <i
-            class="fa-solid fa-book-open"
-            style="margin-right: 10px; color: #c4b5fd"
-          ></i
+          <i class="fa-solid fa-book-open" aria-hidden="true"></i
           ><span data-i18n="bookUsecaseTitle">电子书资源站合集</span>
         </h2>
         <p class="subtitle" data-i18n="bookUsecaseSubtitle">
-          以下书籍资源站已整理为可导入格式，点击复制后在搜罗 App
+          以下书籍资源站已整理为可导入格式，点击复制后在 Soulo App
           中批量导入即可使用
         </p>
 
-        <div class="example-table" style="margin-top: 20px">
+        <div class="example-table resource-list">
           <div class="example-row">
             <img
               src="favicons/z-library.sk.png"
@@ -835,29 +891,25 @@
         </div>
 
         <!-- Batch import -->
-        <div
-          class="batch-import-box"
-          style="
-            background: rgba(196, 181, 253, 0.1);
-            border-color: rgba(196, 181, 253, 0.18);
-          "
-        >
+        <div class="batch-import-box">
           <div class="batch-header">
-            <i class="fa-solid fa-bolt" style="color: #c4b5fd"></i>
+            <i class="fa-solid fa-bolt" aria-hidden="true"></i>
             <h3 data-i18n="bookBatchTitle">一键批量导入</h3>
           </div>
           <p class="batch-desc" data-i18n="bookBatchDesc">
-            点击下方按钮复制全部书籍资源站的 JSON 配置，然后在搜罗 App
+            点击下方按钮复制全部书籍资源站的 JSON 配置，然后在 Soulo App
             中批量导入。
           </p>
           <button
             class="copy-json-btn"
-            style="background: linear-gradient(135deg, #4f46e5, #7c3aed)"
+            type="button"
             onclick="copyBookJSON()"
+            aria-describedby="bookCopyStatus"
           >
-            <i class="fa-solid fa-copy"></i>
+            <i class="fa-solid fa-copy" aria-hidden="true"></i>
             <span id="copyBookBtnText" data-i18n="bookCopyButton">复制 JSON 配置</span>
           </button>
+          <span class="copy-status" id="bookCopyStatus" role="status" aria-live="polite"></span>
           <pre class="json-preview" id="bookJsonPreview">
 [
   {"name": "Z-Library", "url": "https://zh.z-library.sk/s/%@?"},
@@ -868,15 +920,16 @@
         </div>
 
         <div class="usecase-tip">
-          <i class="fa-solid fa-lightbulb" style="color: #c4b5fd"></i>
+          <i class="fa-solid fa-lightbulb" aria-hidden="true"></i>
           <p data-i18n="bookTip">
-            点击「复制 JSON 配置」按钮，然后打开搜罗 App > 设置 > 平台管理 >
+            点击「复制 JSON 配置」按钮，然后打开 Soulo App > 设置 > 平台管理 >
             右上角菜单 > 批量导入 >
             粘贴并导入。建议选择或新建一个「书籍」分组，方便管理。
           </p>
         </div>
       </div>
     </section>
+    </main>
 
     <!-- Footer -->
     <footer>
@@ -906,6 +959,8 @@
           'meta[name="twitter:description"]'
         );
         var navToggle = document.getElementById('navToggle');
+        var pageNavigation = document.querySelector('nav');
+        var primaryNavigation = document.getElementById('primaryNavigation');
         var appIconImg = document.getElementById('appIconImg');
         var appStoreBadgeImg = document.getElementById('appStoreBadgeImg');
         var languageSwitch = document.getElementById('languageSwitch');
@@ -914,25 +969,28 @@
         var currentLanguage = 'zh';
         var translations = {
           zh: {
-            metaTitle: '搜罗 Soulo - 多平台搜索浏览器 | 一次输入，切换 40+ 平台',
+            metaTitle: 'Soulo - 多平台搜索浏览器 | 一次输入，切换 40+ 平台',
             metaDescription:
-              '搜罗 (Soulo) 是一款多平台搜索浏览器。一次输入关键词，即可在 40+ 搜索、视频、社区、购物与 AI 平台之间快速切换，搜索历史默认保存在本地设备。',
+              'Soulo 是一款多平台搜索浏览器。一次输入关键词，即可在 40+ 搜索、视频、社区、购物与 AI 平台之间快速切换，搜索历史默认保存在本地设备。',
             metaLocale: 'zh_CN',
+            skipToContent: '跳到主要内容',
+            navLabel: '主导航',
             navPlatforms: '平台',
             navFeatures: '功能',
             navFilm: '影视搜索',
             navBooks: '书籍搜索',
             navPrivacy: '隐私政策',
-            brandSecondary: '搜罗',
             navMenuLabel: '菜单',
             languageSwitchLabel: '语言切换',
             themeSwitchLabel: '主题切换',
+            themeSystem: '跟随系统',
             themeLight: '浅色',
             themeDark: '深色',
-            heroNameSecondary: '搜罗',
+            heroEyebrow: '更快抵达你要的信息',
             heroTagline: '一次输入，快速切换全球搜索平台',
             heroSubTagline: '40+ 搜索与 AI 平台 · 本地历史 · 15 种语言 · 广告拦截',
-            appIconAlt: '搜罗 Soulo',
+            heroLearnMore: '了解功能',
+            appIconAlt: 'Soulo',
             appStoreBadgeAlt: '在 App Store 下载',
             appStoreBadgeSrc:
               'https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/zh-cn?size=250x83',
@@ -981,10 +1039,10 @@
             featurePrivacyDesc:
               '无需 Soulo 账号，搜索历史和收藏默认保存在本地。查询仅发送给你选择的平台，并支持隐身模式。',
             filmSectionTitle: '影视资源搜索',
-            filmSectionDesc: '一键导入影视资源站，用搜罗搜索全网片源',
+            filmSectionDesc: '一键导入影视资源站，用 Soulo 搜索全网片源',
             filmUsecaseTitle: '影视资源站合集',
             filmUsecaseSubtitle:
-              '以下资源站已整理为可导入格式，点击复制后在搜罗 App 中批量导入即可使用',
+              '以下资源站已整理为可导入格式，点击复制后在 Soulo App 中批量导入即可使用',
             filmStep1Title: '复制下方 JSON 配置',
             filmStep1Desc: '点击「复制 JSON 配置」按钮',
             filmStep2Title: '打开批量导入',
@@ -1003,23 +1061,26 @@
             filmResourceJisu: '极速资源',
             filmBatchTitle: '一键批量导入',
             filmBatchDesc:
-              '点击下方按钮复制全部资源站的 JSON 配置，然后在搜罗 App 中「设置 > 平台管理 > 右上角菜单 > 批量导入」粘贴即可一次性添加所有影视资源站。',
+              '点击下方按钮复制全部资源站的 JSON 配置，然后在 Soulo App 中「设置 > 平台管理 > 右上角菜单 > 批量导入」粘贴即可一次性添加所有影视资源站。',
             filmCopyButton: '复制 JSON 配置',
             copyButtonCopied: '已复制',
+            copyButtonFailed: '复制失败',
+            copySuccessDetail: 'JSON 配置已复制到剪贴板',
+            copyErrorDetail: '无法访问剪贴板，请手动选择下方内容复制',
             booksSectionTitle: '书籍资源搜索',
-            booksSectionDesc: '一键导入电子书资源站，用搜罗搜索全网书籍',
+            booksSectionDesc: '一键导入电子书资源站，用 Soulo 搜索全网书籍',
             bookUsecaseTitle: '电子书资源站合集',
             bookUsecaseSubtitle:
-              '以下书籍资源站已整理为可导入格式，点击复制后在搜罗 App 中批量导入即可使用',
+              '以下书籍资源站已整理为可导入格式，点击复制后在 Soulo App 中批量导入即可使用',
             bookResourceMirror: 'Z-Library (镜像)',
             bookBatchTitle: '一键批量导入',
             bookBatchDesc:
-              '点击下方按钮复制全部书籍资源站的 JSON 配置，然后在搜罗 App 中批量导入。',
+              '点击下方按钮复制全部书籍资源站的 JSON 配置，然后在 Soulo App 中批量导入。',
             bookCopyButton: '复制 JSON 配置',
             filmTip:
-              '点击上方「复制 JSON 配置」按钮，然后打开搜罗 App > 设置 > 平台管理 > 右上角菜单 > 批量导入 > 粘贴并导入。建议选择或新建一个「影视」分组，方便管理。导入后即可在首页搜索任意影视剧名。',
+              '点击上方「复制 JSON 配置」按钮，然后打开 Soulo App > 设置 > 平台管理 > 右上角菜单 > 批量导入 > 粘贴并导入。建议选择或新建一个「影视」分组，方便管理。导入后即可在首页搜索任意影视剧名。',
             bookTip:
-              '点击「复制 JSON 配置」按钮，然后打开搜罗 App > 设置 > 平台管理 > 右上角菜单 > 批量导入 > 粘贴并导入。建议选择或新建一个「书籍」分组，方便管理。',
+              '点击「复制 JSON 配置」按钮，然后打开 Soulo App > 设置 > 平台管理 > 右上角菜单 > 批量导入 > 粘贴并导入。建议选择或新建一个「书籍」分组，方便管理。',
             footerPrivacy: '隐私政策',
             footerSupport: '技术支持',
           },
@@ -1028,6 +1089,8 @@
             metaDescription:
               'Soulo is a privacy-first multi-search browser. Enter one query and quickly switch between 40+ search, video, social, shopping, and AI platforms.',
             metaLocale: 'en_US',
+            skipToContent: 'Skip to main content',
+            navLabel: 'Primary navigation',
             navPlatforms: 'Platforms',
             navFeatures: 'Features',
             navFilm: 'Movie Search',
@@ -1037,11 +1100,14 @@
             navMenuLabel: 'Menu',
             languageSwitchLabel: 'Language switch',
             themeSwitchLabel: 'Theme switch',
+            themeSystem: 'System',
             themeLight: 'Light',
             themeDark: 'Dark',
+            heroEyebrow: 'A faster path to the right information',
             heroNameSecondary: '',
             heroTagline: 'Search once. Switch across global platforms.',
             heroSubTagline: '40+ search & AI platforms · Local history · 15 languages · Ad blocking',
+            heroLearnMore: 'Explore features',
             appIconAlt: 'Soulo',
             appStoreBadgeAlt: 'Download on the App Store',
             appStoreBadgeSrc:
@@ -1116,6 +1182,9 @@
               'Copy the full JSON below, then paste it into Soulo: Settings > Platform Manager > Top-right menu > Batch import.',
             filmCopyButton: 'Copy JSON',
             copyButtonCopied: 'Copied',
+            copyButtonFailed: 'Copy failed',
+            copySuccessDetail: 'JSON configuration copied to the clipboard',
+            copyErrorDetail: 'Clipboard access failed. Select and copy the content below manually.',
             booksSectionTitle: 'Book Resource Search',
             booksSectionDesc: 'Batch import ebook sites and search across libraries with Soulo',
             bookUsecaseTitle: 'Ebook site pack',
@@ -1168,11 +1237,9 @@
         }
 
         function syncThemeButtons() {
-          var activeTheme =
-            currentTheme === 'system' ? resolveTheme('system') : currentTheme;
           document.querySelectorAll('[data-theme-option]').forEach(function (button) {
             var isActive =
-              button.getAttribute('data-theme-option') === activeTheme;
+              button.getAttribute('data-theme-option') === currentTheme;
             button.classList.toggle('is-active', isActive);
             button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
           });
@@ -1201,16 +1268,32 @@
         }
 
         function syncCopyButtonLabels() {
-          ['copyBtnText', 'copyBookBtnText'].forEach(function (id) {
+          [
+            ['copyBtnText', 'filmCopyStatus'],
+            ['copyBookBtnText', 'bookCopyStatus'],
+          ].forEach(function (item) {
+            var id = item[0];
+            var status = document.getElementById(item[1]);
             var label = document.getElementById(id);
             if (!label) {
               return;
             }
-            var key =
-              label.dataset.copied === 'true'
-                ? 'copyButtonCopied'
-                : label.getAttribute('data-i18n');
+            var state = label.dataset.state || 'idle';
+            var key = label.getAttribute('data-i18n');
+            if (state === 'copied') {
+              key = 'copyButtonCopied';
+            } else if (state === 'error') {
+              key = 'copyButtonFailed';
+            }
             label.textContent = translations[currentLanguage][key];
+            if (status) {
+              status.textContent =
+                state === 'copied'
+                  ? translations[currentLanguage].copySuccessDetail
+                  : state === 'error'
+                    ? translations[currentLanguage].copyErrorDetail
+                    : '';
+            }
           });
         }
 
@@ -1240,6 +1323,9 @@
           if (navToggle) {
             navToggle.setAttribute('aria-label', dict.navMenuLabel);
           }
+          if (pageNavigation) {
+            pageNavigation.setAttribute('aria-label', dict.navLabel);
+          }
           if (languageSwitch) {
             languageSwitch.setAttribute('aria-label', dict.languageSwitchLabel);
           }
@@ -1266,50 +1352,114 @@
           }
         }
 
-        function copyText(sourceId, labelId) {
+        function copyText(sourceId, labelId, statusId) {
           var source = document.getElementById(sourceId);
           var label = document.getElementById(labelId);
           if (!source || !label) {
             return;
           }
 
-          function showCopiedState() {
-            label.dataset.copied = 'true';
+          function showCopyState(state) {
+            label.dataset.state = state;
             syncCopyButtonLabels();
             window.setTimeout(function () {
-              label.dataset.copied = 'false';
+              label.dataset.state = 'idle';
               syncCopyButtonLabels();
-            }, 2000);
+            }, state === 'copied' ? 2400 : 4200);
+          }
+
+          function copyWithTextarea(text) {
+            var textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.setAttribute('readonly', '');
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            var copied = false;
+            try {
+              copied = document.execCommand('copy');
+            } catch (error) {
+              copied = false;
+            } finally {
+              document.body.removeChild(textarea);
+            }
+            showCopyState(copied ? 'copied' : 'error');
           }
 
           var text = source.textContent;
           if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(showCopiedState);
+            navigator.clipboard
+              .writeText(text)
+              .then(function () {
+                showCopyState('copied');
+              })
+              .catch(function () {
+                copyWithTextarea(text);
+              });
             return;
           }
 
-          var textarea = document.createElement('textarea');
-          textarea.value = text;
-          textarea.setAttribute('readonly', '');
-          textarea.style.position = 'absolute';
-          textarea.style.left = '-9999px';
-          document.body.appendChild(textarea);
-          textarea.select();
-          try {
-            document.execCommand('copy');
-            showCopiedState();
-          } finally {
-            document.body.removeChild(textarea);
-          }
+          copyWithTextarea(text);
         }
 
         window.copyJSON = function () {
-          copyText('jsonPreview', 'copyBtnText');
+          copyText('jsonPreview', 'copyBtnText', 'filmCopyStatus');
         };
 
         window.copyBookJSON = function () {
-          copyText('bookJsonPreview', 'copyBookBtnText');
+          copyText('bookJsonPreview', 'copyBookBtnText', 'bookCopyStatus');
         };
+
+        function setNavigationOpen(isOpen) {
+          if (!navToggle || !primaryNavigation) {
+            return;
+          }
+          primaryNavigation.classList.toggle('active', isOpen);
+          navToggle.classList.toggle('is-open', isOpen);
+          navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        }
+
+        if (navToggle && primaryNavigation) {
+          navToggle.addEventListener('click', function () {
+            setNavigationOpen(
+              navToggle.getAttribute('aria-expanded') !== 'true'
+            );
+          });
+
+          primaryNavigation.querySelectorAll('a').forEach(function (link) {
+            link.addEventListener('click', function () {
+              setNavigationOpen(false);
+            });
+          });
+
+          document.addEventListener('click', function (event) {
+            if (
+              navToggle.getAttribute('aria-expanded') === 'true' &&
+              pageNavigation &&
+              !pageNavigation.contains(event.target)
+            ) {
+              setNavigationOpen(false);
+            }
+          });
+
+          document.addEventListener('keydown', function (event) {
+            if (
+              event.key === 'Escape' &&
+              navToggle.getAttribute('aria-expanded') === 'true'
+            ) {
+              setNavigationOpen(false);
+              navToggle.focus();
+            }
+          });
+
+          window.addEventListener('resize', function () {
+            if (window.innerWidth > 860) {
+              setNavigationOpen(false);
+            }
+          });
+        }
 
         document.querySelectorAll('[data-lang-option]').forEach(function (button) {
           button.addEventListener('click', function () {
