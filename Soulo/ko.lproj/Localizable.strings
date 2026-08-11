@@ -43,7 +43,7 @@
 "no_bookmarks_desc" = "브라우징 중 북마크 버튼을 탭하여 페이지를 저장하세요";
 "search_history" = "검색 기록";
 "no_history" = "검색 기록 없음";
-"no_history_desc" = "검색한 키워드가 여기에 표시됩니다";
+"no_history_desc" = "최근 검색어와 방문한 페이지가 여기에 표시됩니다";
 "today" = "오늘";
 "yesterday" = "어제";
 "earlier" = "이전";
@@ -240,20 +240,23 @@
 "privacy_strip_tracking" = "추적 매개변수 제거";
 "privacy_strip_tracking_desc" = "URL에서 일반적인 클릭 및 캠페인 ID 제거";
 "privacy_clear_history" = "검색 기록 삭제";
-"privacy_clear_history_desc" = "저장된 모든 검색 키워드 삭제";
+"privacy_clear_history_desc" = "저장된 모든 검색과 방문 페이지 삭제";
 "privacy_clear_history_confirm_title" = "검색 기록을 삭제하시겠습니까?";
-"privacy_clear_history_confirm_message" = "모든 검색 기록이 영구적으로 삭제됩니다.";
+"privacy_clear_history_confirm_message" = "모든 검색과 방문 페이지가 영구적으로 삭제됩니다.";
 "privacy_clear_bookmarks" = "북마크 모두 삭제";
 "privacy_clear_bookmarks_desc" = "저장된 모든 북마크 삭제";
 "privacy_clear_bookmarks_confirm_title" = "모든 북마크를 삭제하시겠습니까?";
 "privacy_clear_bookmarks_confirm_message" = "모든 북마크가 영구적으로 삭제됩니다.";
 "privacy_clear_cache" = "브라우저 캐시 삭제";
-"privacy_clear_cache_desc" = "웹 캐시와 탭 미리보기를 삭제합니다. 로그인 상태는 유지됩니다";
+"privacy_clear_cache_desc" = "웹 캐시, 탭 미리보기와 최근 3일간의 방문 기록을 삭제합니다. 로그인 상태는 유지됩니다";
 "privacy_clear_cache_confirm_title" = "브라우저 캐시를 삭제하시겠습니까?";
-"privacy_clear_cache_confirm_message" = "웹사이트 캐시를 삭제합니다. 쿠키와 로그인 상태는 유지됩니다.";
+"privacy_clear_cache_confirm_message" = "웹 캐시와 최근 3일간의 방문 기록을 삭제합니다. 쿠키와 로그인 상태는 유지됩니다.";
 
 "enter_fullscreen" = "전체 화면 시작";
 "exit_fullscreen" = "전체 화면 종료";
+"fullscreen_exit_hint" = "탭하거나 아래로 당겨 종료";
+"restore_browser_toolbar" = "브라우저 도구 막대 복원";
+"hide_browser_toolbar" = "브라우저 도구 막대 숨기기";
 "privacy_clear_action" = "삭제";
 "privacy_data_footer" = "이 작업은 취소할 수 없습니다. 삭제된 데이터는 복구할 수 없습니다.";
 "settings_privacy" = "개인정보 보호 설정";

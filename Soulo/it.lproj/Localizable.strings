@@ -57,7 +57,7 @@
 /* History */
 "search_history" = "Cronologia Ricerche";
 "no_history" = "Nessuna Cronologia Ricerche";
-"no_history_desc" = "Le tue ricerche recenti appariranno qui";
+"no_history_desc" = "Le ricerche recenti e le pagine visitate appariranno qui";
 "today" = "Oggi";
 "yesterday" = "Ieri";
 "earlier" = "Precedenti";
@@ -139,20 +139,23 @@
 "privacy_strip_tracking" = "Rimuovi parametri di tracciamento";
 "privacy_strip_tracking_desc" = "Rimuovi dagli URL gli ID comuni di clic e campagne";
 "privacy_clear_history" = "Cancella Cronologia Ricerche";
-"privacy_clear_history_desc" = "Rimuovi tutte le parole chiave di ricerca salvate";
+"privacy_clear_history_desc" = "Rimuovi tutte le ricerche e le pagine visitate salvate";
 "privacy_clear_history_confirm_title" = "Cancellare la Cronologia Ricerche?";
-"privacy_clear_history_confirm_message" = "Tutta la cronologia delle ricerche verrà eliminata permanentemente.";
+"privacy_clear_history_confirm_message" = "Tutte le ricerche e le pagine visitate verranno eliminate definitivamente.";
 "privacy_clear_bookmarks" = "Cancella Tutti i Segnalibri";
 "privacy_clear_bookmarks_desc" = "Rimuovi tutti i segnalibri salvati";
 "privacy_clear_bookmarks_confirm_title" = "Cancellare Tutti i Segnalibri?";
 "privacy_clear_bookmarks_confirm_message" = "Tutti i segnalibri verranno eliminati permanentemente.";
 "privacy_clear_cache" = "Cancella Cache di Navigazione";
-"privacy_clear_cache_desc" = "Cancella cache web e anteprime delle schede. Gli accessi restano attivi";
+"privacy_clear_cache_desc" = "Cancella cache, anteprime e pagine visitate negli ultimi 3 giorni. Gli accessi restano attivi";
 "privacy_clear_cache_confirm_title" = "Cancellare la Cache di Navigazione?";
-"privacy_clear_cache_confirm_message" = "Le risorse nella cache verranno eliminate. Cookie e accessi saranno mantenuti.";
+"privacy_clear_cache_confirm_message" = "La cache e le pagine visitate negli ultimi 3 giorni verranno eliminate. Cookie e accessi saranno mantenuti.";
 
 "enter_fullscreen" = "Attiva schermo intero";
 "exit_fullscreen" = "Esci da schermo intero";
+"fullscreen_exit_hint" = "Tocca o trascina verso il basso";
+"restore_browser_toolbar" = "Ripristina barra del browser";
+"hide_browser_toolbar" = "Nascondi barra del browser";
 "privacy_clear_action" = "Cancella";
 "privacy_data_footer" = "Queste azioni non possono essere annullate. I dati cancellati non possono essere recuperati.";
 "settings_privacy" = "Impostazioni privacy";

@@ -43,7 +43,7 @@
 "no_bookmarks_desc" = "Tippen Sie beim Surfen auf die Lesezeichen-Schaltfläche, um Seiten zu speichern";
 "search_history" = "Suchverlauf";
 "no_history" = "Kein Suchverlauf";
-"no_history_desc" = "Ihre Suchbegriffe werden hier angezeigt";
+"no_history_desc" = "Ihre letzten Suchen und besuchten Seiten werden hier angezeigt";
 "today" = "Heute";
 "yesterday" = "Gestern";
 "earlier" = "Früher";
@@ -240,20 +240,23 @@
 "privacy_strip_tracking" = "Tracking-Parameter entfernen";
 "privacy_strip_tracking_desc" = "Häufige Klick- und Kampagnen-IDs aus URLs entfernen";
 "privacy_clear_history" = "Suchverlauf löschen";
-"privacy_clear_history_desc" = "Alle gespeicherten Suchbegriffe entfernen";
+"privacy_clear_history_desc" = "Alle gespeicherten Suchen und besuchten Seiten entfernen";
 "privacy_clear_history_confirm_title" = "Suchverlauf löschen?";
-"privacy_clear_history_confirm_message" = "Der gesamte Suchverlauf wird dauerhaft gelöscht.";
+"privacy_clear_history_confirm_message" = "Alle Suchen und besuchten Seiten werden dauerhaft gelöscht.";
 "privacy_clear_bookmarks" = "Alle Lesezeichen löschen";
 "privacy_clear_bookmarks_desc" = "Alle gespeicherten Lesezeichen entfernen";
 "privacy_clear_bookmarks_confirm_title" = "Alle Lesezeichen löschen?";
 "privacy_clear_bookmarks_confirm_message" = "Alle Lesezeichen werden dauerhaft gelöscht.";
 "privacy_clear_cache" = "Browser-Cache leeren";
-"privacy_clear_cache_desc" = "Web-Cache und Tab-Vorschauen löschen. Anmeldungen bleiben erhalten";
+"privacy_clear_cache_desc" = "Web-Cache, Tab-Vorschauen und Seitenaufrufe der letzten 3 Tage löschen. Anmeldungen bleiben erhalten";
 "privacy_clear_cache_confirm_title" = "Browser-Cache leeren?";
-"privacy_clear_cache_confirm_message" = "Zwischengespeicherte Webinhalte werden gelöscht. Cookies und Anmeldungen bleiben erhalten.";
+"privacy_clear_cache_confirm_message" = "Zwischengespeicherte Inhalte und Seitenaufrufe der letzten 3 Tage werden gelöscht. Cookies und Anmeldungen bleiben erhalten.";
 
 "enter_fullscreen" = "Vollbild aktivieren";
 "exit_fullscreen" = "Vollbild beenden";
+"fullscreen_exit_hint" = "Tippen oder nach unten ziehen";
+"restore_browser_toolbar" = "Browserleiste wiederherstellen";
+"hide_browser_toolbar" = "Browserleiste ausblenden";
 "privacy_clear_action" = "Löschen";
 "privacy_data_footer" = "Diese Aktionen können nicht rückgängig gemacht werden. Gelöschte Daten können nicht wiederhergestellt werden.";
 "settings_privacy" = "Datenschutzeinstellungen";

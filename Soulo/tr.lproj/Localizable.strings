@@ -57,7 +57,7 @@
 /* History */
 "search_history" = "Arama Geçmişi";
 "no_history" = "Arama Geçmişi Yok";
-"no_history_desc" = "Son aramalarınız burada görünecek";
+"no_history_desc" = "Son aramalarınız ve ziyaret ettiğiniz sayfalar burada görünecek";
 "today" = "Bugün";
 "yesterday" = "Dün";
 "earlier" = "Daha Önce";
@@ -139,20 +139,23 @@
 "privacy_strip_tracking" = "Takip parametrelerini kaldır";
 "privacy_strip_tracking_desc" = "URL'lerden yaygın tıklama ve kampanya kimliklerini kaldır";
 "privacy_clear_history" = "Arama Geçmişini Temizle";
-"privacy_clear_history_desc" = "Kaydedilmiş tüm arama anahtar kelimelerini kaldır";
+"privacy_clear_history_desc" = "Kaydedilmiş tüm aramaları ve ziyaret edilen sayfaları kaldır";
 "privacy_clear_history_confirm_title" = "Arama Geçmişi Temizlensin mi?";
-"privacy_clear_history_confirm_message" = "Tüm arama geçmişi kalıcı olarak silinecek.";
+"privacy_clear_history_confirm_message" = "Tüm aramalar ve ziyaret edilen sayfalar kalıcı olarak silinecek.";
 "privacy_clear_bookmarks" = "Tüm Yer İmlerini Temizle";
 "privacy_clear_bookmarks_desc" = "Kaydedilmiş tüm yer imlerini kaldır";
 "privacy_clear_bookmarks_confirm_title" = "Tüm Yer İmleri Temizlensin mi?";
 "privacy_clear_bookmarks_confirm_message" = "Tüm yer imleri kalıcı olarak silinecek.";
 "privacy_clear_cache" = "Tarama Önbelleğini Temizle";
-"privacy_clear_cache_desc" = "Web önbelleğini ve sekme önizlemelerini temizle. Oturumlar korunur";
+"privacy_clear_cache_desc" = "Önbelleği, sekme önizlemelerini ve son 3 günlük sayfa geçmişini temizle. Oturumlar korunur";
 "privacy_clear_cache_confirm_title" = "Tarama Önbelleği Temizlensin mi?";
-"privacy_clear_cache_confirm_message" = "Önbelleğe alınan kaynaklar silinecek. Çerezler ve oturumlar korunacak.";
+"privacy_clear_cache_confirm_message" = "Önbellek ve son 3 günlük sayfa geçmişi silinecek. Çerezler ve oturumlar korunacak.";
 
 "enter_fullscreen" = "Tam Ekrana Geç";
 "exit_fullscreen" = "Tam Ekrandan Çık";
+"fullscreen_exit_hint" = "Dokunun veya aşağı çekin";
+"restore_browser_toolbar" = "Tarayıcı araç çubuğunu geri yükle";
+"hide_browser_toolbar" = "Tarayıcı araç çubuğunu gizle";
 "privacy_clear_action" = "Temizle";
 "privacy_data_footer" = "Bu işlemler geri alınamaz. Silinen veriler kurtarılamaz.";
 "settings_privacy" = "Gizlilik Ayarları";

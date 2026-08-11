@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import PhotosUI
 import StoreKit
 
@@ -7,6 +8,7 @@ struct SettingsView: View {
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var tabManager: TabManager
+    @Environment(\.modelContext) private var modelContext
 
     @State private var selectedAppearance: String = ThemeManager.shared.appearance
     @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = true
@@ -457,7 +459,10 @@ struct SettingsView: View {
     private func clearBrowserCache() {
         clearingCache = true
         Task {
-            await BrowserCacheService.clear(tabManager: tabManager)
+            await BrowserCacheService.clear(
+                tabManager: tabManager,
+                historyContext: modelContext
+            )
             clearingCache = false
             cacheSizeText = nil
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {

@@ -10,14 +10,22 @@ struct SearchHistoryView: View {
     @State private var filterText = ""
     @State private var showClearAlert = false
 
+    private var visibleHistory: [SearchHistoryItem] {
+        allHistory.filter { SearchHistoryService.isVisibleInHistory($0) }
+    }
+
     private var deduped: [SearchHistoryItem] {
         var seen = Set<String>()
         var result: [SearchHistoryItem] = []
         let source = filterText.trimmingCharacters(in: .whitespaces).isEmpty
-            ? allHistory
-            : allHistory.filter { $0.keyword.localizedCaseInsensitiveContains(filterText) }
+            ? visibleHistory
+            : visibleHistory.filter {
+                $0.keyword.localizedCaseInsensitiveContains(filterText)
+                    || ($0.visitedURLString?.localizedCaseInsensitiveContains(filterText) == true)
+            }
         for item in source {
-            let key = item.keyword.lowercased()
+            let key = item.visitedURLString.map { "url:\($0.lowercased())" }
+                ?? "search:\(item.keyword.lowercased())"
             if !seen.contains(key) {
                 seen.insert(key)
                 result.append(item)
@@ -53,7 +61,7 @@ struct SearchHistoryView: View {
         NavigationStack {
             List {
                 // Filter bar — always visible when there's history
-                if !allHistory.isEmpty {
+                if !visibleHistory.isEmpty {
                     HStack(spacing: 8) {
                         Image(systemName: "magnifyingglass")
                             .foregroundStyle(.tertiary)
@@ -75,7 +83,7 @@ struct SearchHistoryView: View {
                 }
 
                 // Content
-                if allHistory.isEmpty {
+                if visibleHistory.isEmpty {
                     // No history at all
                     ContentUnavailableView(
                         LanguageManager.shared.localizedString("no_history"),
@@ -113,7 +121,7 @@ struct SearchHistoryView: View {
                     Button(role: .destructive) { showClearAlert = true } label: {
                         Image(systemName: "trash")
                     }
-                    .disabled(allHistory.isEmpty)
+                    .disabled(visibleHistory.isEmpty)
                     .accessibilityLabel(LanguageManager.shared.localizedString("clear_all"))
                 }
             }
@@ -124,26 +132,39 @@ struct SearchHistoryView: View {
                 }
                 Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
             }
+            .onAppear {
+                SearchHistoryService.purgeExpiredBrowsingHistory(context: modelContext)
+            }
         }
     }
 
     private func historyRow(_ item: SearchHistoryItem) -> some View {
         Button {
-            searchVM.searchText = item.keyword
+            searchVM.searchText = item.visitedURLString ?? item.keyword
             dismiss()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 searchVM.performSearch(context: modelContext)
             }
         } label: {
             HStack(spacing: 10) {
-                Image(systemName: "clock")
+                Image(systemName: item.isWebVisit ? "globe" : "clock")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
 
-                Text(item.keyword)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.keyword)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+
+                    if let host = item.visitedURLString
+                        .flatMap({ URL(string: $0)?.host }) {
+                        Text(host)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.tertiary)
+                            .lineLimit(1)
+                    }
+                }
 
                 Spacer()
 
@@ -151,7 +172,7 @@ struct SearchHistoryView: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.quaternary)
 
-                Image(systemName: "arrow.up.left")
+                Image(systemName: item.isWebVisit ? "arrow.up.right" : "arrow.up.left")
                     .font(.system(size: 10))
                     .foregroundStyle(.quaternary)
             }
@@ -162,22 +183,33 @@ struct SearchHistoryView: View {
         .accessibilityLabel(item.keyword)
         .accessibilityValue(formatTime(item.timestamp))
         .accessibilityHint(
-            LanguageManager.shared.localizedString("accessibility_search_history_hint")
+            LanguageManager.shared.localizedString(
+                item.isWebVisit ? "current_page_link" : "accessibility_search_history_hint"
+            )
         )
         .accessibilityAction(named: Text(LanguageManager.shared.localizedString("delete"))) {
-            for history in allHistory where history.keyword.lowercased() == item.keyword.lowercased() {
+            for history in matchingHistoryEntries(for: item) {
                 SearchHistoryService.deleteEntry(history, context: modelContext)
             }
         }
         .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
         .swipeActions(edge: .trailing) {
             Button(role: .destructive) {
-                for h in allHistory where h.keyword.lowercased() == item.keyword.lowercased() {
+                for h in matchingHistoryEntries(for: item) {
                     SearchHistoryService.deleteEntry(h, context: modelContext)
                 }
             } label: {
                 Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
             }
+        }
+    }
+
+    private func matchingHistoryEntries(for item: SearchHistoryItem) -> [SearchHistoryItem] {
+        if let url = item.visitedURLString {
+            return allHistory.filter { $0.visitedURLString == url }
+        }
+        return allHistory.filter {
+            !$0.isWebVisit && $0.keyword.caseInsensitiveCompare(item.keyword) == .orderedSame
         }
     }
 

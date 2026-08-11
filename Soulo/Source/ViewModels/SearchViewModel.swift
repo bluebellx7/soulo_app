@@ -305,6 +305,7 @@ class SearchViewModel: ObservableObject {
             var seen = Set<String>()
             var unique: [String] = []
             for item in items {
+                guard !item.isWebVisit else { continue }
                 if !seen.contains(item.keyword) {
                     seen.insert(item.keyword)
                     unique.append(item.keyword)
@@ -318,10 +319,11 @@ class SearchViewModel: ObservableObject {
     }
 
     func deleteHistoryItem(keyword: String, context: ModelContext) {
-        let predicate = #Predicate<SearchHistoryItem> { $0.keyword == keyword }
-        let descriptor = FetchDescriptor<SearchHistoryItem>(predicate: predicate)
+        let descriptor = FetchDescriptor<SearchHistoryItem>()
         do {
-            let items = try context.fetch(descriptor)
+            let items = try context.fetch(descriptor).filter {
+                !$0.isWebVisit && $0.keyword == keyword
+            }
             for item in items {
                 context.delete(item)
                 // F2: Deindex from Spotlight

@@ -18,7 +18,10 @@ class SettingsViewModel: ObservableObject {
         }
     }
 
-    func clearWebViewCache() {
+    func clearWebViewCache(context: ModelContext? = nil) {
+        if let context {
+            SearchHistoryService.clearBrowsingHistory(context: context)
+        }
         let dataStore = WKWebsiteDataStore.default()
         let dataTypes = WKWebsiteDataStore.allWebsiteDataTypes()
         let since = Date.distantPast

@@ -58,7 +58,7 @@
 /* History */
 "search_history" = "Search History";
 "no_history" = "No Search History";
-"no_history_desc" = "Your recent searches will appear here";
+"no_history_desc" = "Your recent searches and visited pages will appear here";
 "today" = "Today";
 "yesterday" = "Yesterday";
 "earlier" = "Earlier";
@@ -140,20 +140,23 @@
 "privacy_strip_tracking" = "Remove Tracking Parameters";
 "privacy_strip_tracking_desc" = "Strip common click and campaign IDs from URLs";
 "privacy_clear_history" = "Clear Search History";
-"privacy_clear_history_desc" = "Remove all saved search keywords";
+"privacy_clear_history_desc" = "Remove all saved searches and visited pages";
 "privacy_clear_history_confirm_title" = "Clear Search History?";
-"privacy_clear_history_confirm_message" = "All search history will be permanently deleted.";
+"privacy_clear_history_confirm_message" = "All saved searches and visited pages will be permanently deleted.";
 "privacy_clear_bookmarks" = "Clear All Bookmarks";
 "privacy_clear_bookmarks_desc" = "Remove all saved bookmarks";
 "privacy_clear_bookmarks_confirm_title" = "Clear All Bookmarks?";
 "privacy_clear_bookmarks_confirm_message" = "All bookmarks will be permanently deleted.";
 "privacy_clear_cache" = "Clear Browsing Cache";
-"privacy_clear_cache_desc" = "Remove cached website resources and tab previews. Sign-ins are kept";
+"privacy_clear_cache_desc" = "Remove cached resources, tab previews, and page visits from the last 3 days. Sign-ins are kept";
 "privacy_clear_cache_confirm_title" = "Clear Browsing Cache?";
-"privacy_clear_cache_confirm_message" = "Cached website resources will be removed. Cookies and sign-ins will be kept.";
+"privacy_clear_cache_confirm_message" = "Cached resources and page visits from the last 3 days will be removed. Cookies and sign-ins will be kept.";
 
 "enter_fullscreen" = "Enter Full Screen";
 "exit_fullscreen" = "Exit Full Screen";
+"fullscreen_exit_hint" = "Tap or pull down to exit";
+"restore_browser_toolbar" = "Restore browser toolbar";
+"hide_browser_toolbar" = "Hide browser toolbar";
 "privacy_clear_action" = "Clear";
 "privacy_data_footer" = "These actions cannot be undone. Cleared data cannot be recovered.";
 "settings_privacy" = "Privacy Settings";

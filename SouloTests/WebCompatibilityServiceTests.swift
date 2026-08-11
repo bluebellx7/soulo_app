@@ -74,4 +74,41 @@ final class WebCompatibilityServiceTests: XCTestCase {
 
         XCTAssertFalse(WebCompatibilityService.shouldBypassWebProtection(for: url))
     }
+
+    func testNativeViewportInsetRecognizesDouyinVideoSurfaces() {
+        XCTAssertTrue(
+            WebCompatibilityService.isDouyinVideoSurface(
+                URL(string: "https://www.douyin.com/video/7670376559123115750")
+            )
+        )
+        XCTAssertTrue(
+            WebCompatibilityService.isDouyinVideoSurface(
+                URL(string: "https://so.douyin.com/s?keyword=vitas&actv_aid=7670376559123115750")
+            )
+        )
+        XCTAssertTrue(
+            WebCompatibilityService.isDouyinVideoSurface(
+                URL(string: "https://www.douyin.com/search/vitas?modal_id=7670376559123115750")
+            )
+        )
+        XCTAssertTrue(
+            WebCompatibilityService.isDouyinVideoSurface(
+                URL(string: "https://so.douyin.com/s?keyword=vitas&aweme_id=7670376559123115750")
+            )
+        )
+    }
+
+    func testNativeViewportInsetRejectsOrdinaryAndNonDouyinPages() {
+        XCTAssertFalse(
+            WebCompatibilityService.isDouyinVideoSurface(
+                URL(string: "https://so.douyin.com/s?keyword=vitas")
+            )
+        )
+        XCTAssertFalse(
+            WebCompatibilityService.isDouyinVideoSurface(
+                URL(string: "https://example.com/video/7670376559123115750")
+            )
+        )
+        XCTAssertFalse(WebCompatibilityService.isDouyinVideoSurface(nil))
+    }
 }

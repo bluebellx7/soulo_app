@@ -17,7 +17,7 @@ struct PrivacyPolicyView: View {
                     Text("When you search, Soulo constructs a URL using your keyword and opens it within an embedded browser. Your search terms are sent directly to the selected platform (e.g., Google, Baidu, YouTube) — Soulo does not intercept or store these queries on any server.")
 
                     sectionTitle("3. Local Storage")
-                    Text("The app stores the following data locally on your device:\n• Search history (can be cleared at any time)\n• Bookmarked pages\n• Platform configuration and preferences\n• Language and appearance settings\n\nThis data never leaves your device unless you enable iCloud sync.")
+                    Text("The app stores the following data locally on your device:\n• Search history (can be cleared at any time)\n• Web pages visited in the last 3 days (cleared with browsing cache)\n• Bookmarked pages\n• Platform configuration and preferences\n• Language and appearance settings\n\nThis data never leaves your device unless you enable iCloud sync.")
                 }
 
                 Group {

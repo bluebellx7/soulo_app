@@ -30,14 +30,19 @@ struct HomeView: View {
 
     var body: some View {
         ZStack {
-            Group {
-                // Background from DklugeClock
-                WallpaperBackground()
+            // Keep the wallpaper outside every content transition and tab-card
+            // transform. Scaling the wallpaper with the page exposes the hosting
+            // controller's default background around the safe-area edges.
+            WallpaperBackground()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .ignoresSafeArea()
 
+            Group {
                 if searchVM.isSearching {
                     SearchResultsView(
                         searchBarNamespace: searchBarNamespace,
-                        speechService: speechService
+                        speechService: speechService,
+                        onOpenSettings: { showSettings = true }
                     )
                     .transition(.identity)
                 } else {
@@ -97,6 +102,12 @@ struct HomeView: View {
                     }
                 )
             }
+        }
+        .background {
+            // A non-white first frame while an image/Canvas wallpaper is being
+            // decoded or the app is returning from a sheet/background state.
+            Color(red: 0.05, green: 0.07, blue: 0.16)
+                .ignoresSafeArea()
         }
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)

@@ -57,7 +57,7 @@
 /* History */
 "search_history" = "Histórico de Pesquisa";
 "no_history" = "Sem Histórico de Pesquisa";
-"no_history_desc" = "Suas pesquisas recentes aparecerão aqui";
+"no_history_desc" = "Suas pesquisas e páginas visitadas recentemente aparecerão aqui";
 "today" = "Hoje";
 "yesterday" = "Ontem";
 "earlier" = "Anteriores";
@@ -139,20 +139,23 @@
 "privacy_strip_tracking" = "Remover parâmetros de rastreamento";
 "privacy_strip_tracking_desc" = "Remover IDs comuns de cliques e campanhas das URLs";
 "privacy_clear_history" = "Limpar Histórico de Pesquisa";
-"privacy_clear_history_desc" = "Remover todas as palavras-chave salvas";
+"privacy_clear_history_desc" = "Remover todas as pesquisas e páginas visitadas salvas";
 "privacy_clear_history_confirm_title" = "Limpar Histórico de Pesquisa?";
-"privacy_clear_history_confirm_message" = "Todo o histórico de pesquisa será excluído permanentemente.";
+"privacy_clear_history_confirm_message" = "Todas as pesquisas e páginas visitadas serão excluídas permanentemente.";
 "privacy_clear_bookmarks" = "Limpar Todos os Favoritos";
 "privacy_clear_bookmarks_desc" = "Remover todos os favoritos salvos";
 "privacy_clear_bookmarks_confirm_title" = "Limpar Todos os Favoritos?";
 "privacy_clear_bookmarks_confirm_message" = "Todos os favoritos serão excluídos permanentemente.";
 "privacy_clear_cache" = "Limpar Cache de Navegação";
-"privacy_clear_cache_desc" = "Limpar o cache da web e as prévias das abas. Os logins são mantidos";
+"privacy_clear_cache_desc" = "Limpar cache, prévias e páginas visitadas nos últimos 3 dias. Os logins são mantidos";
 "privacy_clear_cache_confirm_title" = "Limpar Cache de Navegação?";
-"privacy_clear_cache_confirm_message" = "Os recursos em cache serão removidos. Cookies e logins serão mantidos.";
+"privacy_clear_cache_confirm_message" = "O cache e as páginas visitadas nos últimos 3 dias serão removidos. Cookies e logins serão mantidos.";
 
 "enter_fullscreen" = "Entrar em Tela Cheia";
 "exit_fullscreen" = "Sair da Tela Cheia";
+"fullscreen_exit_hint" = "Toque ou puxe para baixo";
+"restore_browser_toolbar" = "Restaurar barra do navegador";
+"hide_browser_toolbar" = "Ocultar barra do navegador";
 "privacy_clear_action" = "Limpar";
 "privacy_data_footer" = "Estas ações não podem ser desfeitas. Os dados excluídos não podem ser recuperados.";
 "settings_privacy" = "Ajustes de privacidade";

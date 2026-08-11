@@ -57,7 +57,7 @@
 /* History */
 "search_history" = "سجل البحث";
 "no_history" = "لا يوجد سجل بحث";
-"no_history_desc" = "ستظهر عمليات البحث الأخيرة هنا";
+"no_history_desc" = "ستظهر عمليات البحث والصفحات التي زرتها مؤخراً هنا";
 "today" = "اليوم";
 "yesterday" = "أمس";
 "earlier" = "سابقاً";
@@ -139,20 +139,23 @@
 "privacy_strip_tracking" = "إزالة معلمات التتبع";
 "privacy_strip_tracking_desc" = "إزالة معرفات النقر والحملات الشائعة من الروابط";
 "privacy_clear_history" = "مسح سجل البحث";
-"privacy_clear_history_desc" = "إزالة جميع كلمات البحث المحفوظة";
+"privacy_clear_history_desc" = "إزالة جميع عمليات البحث والصفحات التي تمت زيارتها";
 "privacy_clear_history_confirm_title" = "مسح سجل البحث؟";
-"privacy_clear_history_confirm_message" = "سيتم حذف جميع سجلات البحث نهائياً.";
+"privacy_clear_history_confirm_message" = "سيتم حذف جميع عمليات البحث والصفحات التي تمت زيارتها نهائياً.";
 "privacy_clear_bookmarks" = "مسح جميع الإشارات المرجعية";
 "privacy_clear_bookmarks_desc" = "إزالة جميع الإشارات المرجعية المحفوظة";
 "privacy_clear_bookmarks_confirm_title" = "مسح جميع الإشارات المرجعية؟";
 "privacy_clear_bookmarks_confirm_message" = "سيتم حذف جميع الإشارات المرجعية نهائياً.";
 "privacy_clear_cache" = "مسح ذاكرة التصفح المؤقتة";
-"privacy_clear_cache_desc" = "مسح ذاكرة الويب المؤقتة ومعاينات علامات التبويب مع الاحتفاظ بتسجيل الدخول";
+"privacy_clear_cache_desc" = "مسح ذاكرة الويب المؤقتة ومعاينات علامات التبويب وسجل الصفحات لآخر 3 أيام مع الاحتفاظ بتسجيل الدخول";
 "privacy_clear_cache_confirm_title" = "مسح ذاكرة التصفح المؤقتة؟";
-"privacy_clear_cache_confirm_message" = "ستتم إزالة موارد الويب المؤقتة مع الاحتفاظ بملفات تعريف الارتباط وتسجيل الدخول.";
+"privacy_clear_cache_confirm_message" = "ستتم إزالة ذاكرة الويب المؤقتة وسجل الصفحات لآخر 3 أيام مع الاحتفاظ بملفات تعريف الارتباط وتسجيل الدخول.";
 
 "enter_fullscreen" = "الدخول إلى ملء الشاشة";
 "exit_fullscreen" = "الخروج من ملء الشاشة";
+"fullscreen_exit_hint" = "اضغط أو اسحب لأسفل للخروج";
+"restore_browser_toolbar" = "استعادة شريط أدوات المتصفح";
+"hide_browser_toolbar" = "إخفاء شريط أدوات المتصفح";
 "privacy_clear_action" = "مسح";
 "privacy_data_footer" = "لا يمكن التراجع عن هذه الإجراءات. لا يمكن استرداد البيانات المحذوفة.";
 "settings_privacy" = "إعدادات الخصوصية";

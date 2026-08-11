@@ -1,5 +1,31 @@
 import SwiftUI
 
+enum BrowserAddressDisplay {
+    static func text(keyword: String?, host: String, maximumKeywordLength: Int) -> String {
+        guard maximumKeywordLength > 0,
+              let keyword = normalizedKeyword(keyword) else {
+            return host
+        }
+        let prefix = String(keyword.prefix(maximumKeywordLength))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !prefix.isEmpty else { return host }
+        return "\(prefix)/\(host)"
+    }
+
+    static func fullText(keyword: String?, host: String) -> String {
+        guard let keyword = normalizedKeyword(keyword) else { return host }
+        return "\(keyword)/\(host)"
+    }
+
+    private static func normalizedKeyword(_ value: String?) -> String? {
+        let normalized = (value ?? "")
+            .split(whereSeparator: \Character.isWhitespace)
+            .joined(separator: " ")
+        guard !normalized.isEmpty, !normalized.isValidURL else { return nil }
+        return normalized
+    }
+}
+
 struct WebViewToolbar: View {
     @ObservedObject var viewModel: WebViewModel
     @Binding var isBookmarked: Bool
@@ -16,6 +42,8 @@ struct WebViewToolbar: View {
     var onShowDownloads: (() -> Void)?
     var onGoHome: (() -> Void)?
     var onEditAddress: (() -> Void)?
+    var onHideToolbar: (() -> Void)?
+    var onOpenSettings: (() -> Void)?
     var isFullscreen: Bool = false
     var onToggleFullscreen: (() -> Void)?
     var onOpenSafariCompatibility: (() -> Void)?
@@ -26,7 +54,7 @@ struct WebViewToolbar: View {
             btn("house.fill", labelKey: "home_screen", enabled: onGoHome != nil) { onGoHome?() }
             btn("chevron.left", labelKey: "browser_back", enabled: viewModel.canGoBack) { viewModel.goBack() }
 
-            addressButton
+            addressControl
 
             btn(
                 viewModel.isLoading ? "xmark" : "arrow.clockwise",
@@ -52,53 +80,82 @@ struct WebViewToolbar: View {
         .padding(.horizontal, 10)
     }
 
-    private var addressButton: some View {
-        Button {
-            HapticsManager.light()
-            onEditAddress?()
-        } label: {
-            HStack(spacing: 5) {
-                Image(systemName: viewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+    private var addressControl: some View {
+        HStack(spacing: 0) {
+            Button {
+                HapticsManager.light()
+                onEditAddress?()
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: viewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.62))
 
-                Text(displayHost)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.9))
-                    .lineLimit(1)
+                    ViewThatFits(in: .horizontal) {
+                        compactAddressText(maximumKeywordLength: 6)
+                        compactAddressText(maximumKeywordLength: 4)
+                        compactAddressText(maximumKeywordLength: 2)
 
-                Spacer(minLength: 0)
+                        Text(displayHost)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.78)
+                    }
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.9))
 
-                if viewModel.isLoading {
-                    ProgressView()
-                        .controlSize(.mini)
-                        .tint(.white.opacity(0.75))
+                    Spacer(minLength: 0)
+
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .controlSize(.mini)
+                            .tint(.white.opacity(0.75))
+                    }
+                }
+                .padding(.leading, 8)
+                .padding(.trailing, 6)
+                .frame(maxWidth: .infinity, minHeight: 32)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(LanguageManager.shared.localizedString("browser_edit_address"))
+            .accessibilityValue(fullAddressDisplayText)
+            .accessibilityHint(LanguageManager.shared.localizedString("accessibility_edit_address_hint"))
+            .contextMenu {
+                if let url = viewModel.currentURL {
+                    Button {
+                        UIPasteboard.general.url = url
+                        UINotificationFeedbackGenerator().notificationOccurred(.success)
+                        NotificationCenter.default.post(name: .linkCopied, object: nil)
+                    } label: {
+                        Label(LanguageManager.shared.localizedString("copy_link"), systemImage: "doc.on.doc")
+                    }
                 }
             }
-            .padding(.horizontal, 8)
-            .frame(maxWidth: 144, minHeight: 32)
-            .background(
-                Capsule()
-                    .fill(.black.opacity(0.4))
-                    .overlay(Capsule().stroke(.white.opacity(0.12), lineWidth: 0.5))
-            )
-            .frame(minHeight: 40)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(LanguageManager.shared.localizedString("browser_edit_address"))
-        .accessibilityValue(displayHost)
-        .accessibilityHint(LanguageManager.shared.localizedString("accessibility_edit_address_hint"))
-        .contextMenu {
-            if let url = viewModel.currentURL {
-                Button {
-                    UIPasteboard.general.url = url
-                    UINotificationFeedbackGenerator().notificationOccurred(.success)
-                    NotificationCenter.default.post(name: .linkCopied, object: nil)
-                } label: {
-                    Label(LanguageManager.shared.localizedString("copy_link"), systemImage: "doc.on.doc")
-                }
+
+            Rectangle()
+                .fill(.white.opacity(0.12))
+                .frame(width: 0.5, height: 16)
+                .accessibilityHidden(true)
+
+            Button {
+                onHideToolbar?()
+            } label: {
+                Image(systemName: BrowserChromeSymbol.toolbarVisibility)
+                    .font(.system(size: 12, weight: .medium))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.white.opacity(0.68))
+                    .frame(width: 27, height: 32)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(LanguageManager.shared.localizedString("hide_browser_toolbar"))
         }
+        .frame(minWidth: 80, maxWidth: 150, minHeight: 32)
+        .background(
+            Capsule()
+                .fill(.black.opacity(0.4))
+                .overlay(Capsule().stroke(.white.opacity(0.12), lineWidth: 0.5))
+        )
+        .frame(minHeight: 40)
     }
 
     private var displayHost: String {
@@ -106,6 +163,26 @@ struct WebViewToolbar: View {
             return LanguageManager.shared.localizedString("tab_new_tab")
         }
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+    }
+
+    private var displayKeyword: String? {
+        tabManager?.activeTab?.keyword
+    }
+
+    private var fullAddressDisplayText: String {
+        BrowserAddressDisplay.fullText(keyword: displayKeyword, host: displayHost)
+    }
+
+    private func compactAddressText(maximumKeywordLength: Int) -> some View {
+        Text(
+            BrowserAddressDisplay.text(
+                keyword: displayKeyword,
+                host: displayHost,
+                maximumKeywordLength: maximumKeywordLength
+            )
+        )
+        .lineLimit(1)
+        .fixedSize(horizontal: true, vertical: false)
     }
 
     // MARK: - More Actions Menu
@@ -328,6 +405,17 @@ struct WebViewToolbar: View {
                         )
                     }
                 }
+            }
+
+            Divider()
+
+            // The menu opens upward, so the final builder item is presented at
+            // the visual top. Keep Settings easy to reach and separate from
+            // tab-management actions.
+            Button {
+                onOpenSettings?()
+            } label: {
+                menuLabel("settings", systemImage: "gearshape")
             }
         } label: {
             Image(systemName: "ellipsis")

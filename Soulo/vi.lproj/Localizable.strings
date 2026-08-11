@@ -43,7 +43,7 @@
 "no_bookmarks_desc" = "Nhấn nút dấu trang khi duyệt web để lưu trang";
 "search_history" = "Lịch sử tìm kiếm";
 "no_history" = "Không có lịch sử tìm kiếm";
-"no_history_desc" = "Các từ khóa tìm kiếm của bạn sẽ xuất hiện ở đây";
+"no_history_desc" = "Các tìm kiếm và trang đã truy cập gần đây sẽ xuất hiện ở đây";
 "today" = "Hôm nay";
 "yesterday" = "Hôm qua";
 "earlier" = "Trước đó";
@@ -240,20 +240,23 @@
 "privacy_strip_tracking" = "Xóa tham số theo dõi";
 "privacy_strip_tracking_desc" = "Xóa các ID nhấp chuột và chiến dịch phổ biến khỏi URL";
 "privacy_clear_history" = "Xóa lịch sử tìm kiếm";
-"privacy_clear_history_desc" = "Xóa tất cả từ khóa tìm kiếm đã lưu";
+"privacy_clear_history_desc" = "Xóa tất cả tìm kiếm và trang đã truy cập đã lưu";
 "privacy_clear_history_confirm_title" = "Xóa lịch sử tìm kiếm?";
-"privacy_clear_history_confirm_message" = "Toàn bộ lịch sử tìm kiếm sẽ bị xóa vĩnh viễn.";
+"privacy_clear_history_confirm_message" = "Tất cả tìm kiếm và trang đã truy cập sẽ bị xóa vĩnh viễn.";
 "privacy_clear_bookmarks" = "Xóa tất cả dấu trang";
 "privacy_clear_bookmarks_desc" = "Xóa tất cả dấu trang đã lưu";
 "privacy_clear_bookmarks_confirm_title" = "Xóa tất cả dấu trang?";
 "privacy_clear_bookmarks_confirm_message" = "Tất cả dấu trang sẽ bị xóa vĩnh viễn.";
 "privacy_clear_cache" = "Xóa bộ nhớ cache trình duyệt";
-"privacy_clear_cache_desc" = "Xóa bộ nhớ đệm web và bản xem trước tab. Trạng thái đăng nhập được giữ lại";
+"privacy_clear_cache_desc" = "Xóa bộ nhớ đệm, bản xem trước tab và lịch sử truy cập 3 ngày gần nhất. Trạng thái đăng nhập được giữ lại";
 "privacy_clear_cache_confirm_title" = "Xóa bộ nhớ cache trình duyệt?";
-"privacy_clear_cache_confirm_message" = "Tài nguyên đã lưu trong bộ nhớ đệm sẽ bị xóa. Cookie và trạng thái đăng nhập được giữ lại.";
+"privacy_clear_cache_confirm_message" = "Bộ nhớ đệm và lịch sử truy cập 3 ngày gần nhất sẽ bị xóa. Cookie và trạng thái đăng nhập được giữ lại.";
 
 "enter_fullscreen" = "Bật toàn màn hình";
 "exit_fullscreen" = "Thoát toàn màn hình";
+"fullscreen_exit_hint" = "Chạm hoặc kéo xuống để thoát";
+"restore_browser_toolbar" = "Khôi phục thanh công cụ trình duyệt";
+"hide_browser_toolbar" = "Ẩn thanh công cụ trình duyệt";
 "privacy_clear_action" = "Xóa";
 "privacy_data_footer" = "Các hành động này không thể hoàn tác. Dữ liệu đã xóa không thể khôi phục.";
 "settings_privacy" = "Cài đặt quyền riêng tư";

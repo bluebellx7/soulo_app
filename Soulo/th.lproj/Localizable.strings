@@ -57,7 +57,7 @@
 /* History */
 "search_history" = "ประวัติการค้นหา";
 "no_history" = "ไม่มีประวัติการค้นหา";
-"no_history_desc" = "การค้นหาล่าสุดของคุณจะปรากฏที่นี่";
+"no_history_desc" = "การค้นหาและหน้าที่เยี่ยมชมล่าสุดจะปรากฏที่นี่";
 "today" = "วันนี้";
 "yesterday" = "เมื่อวาน";
 "earlier" = "ก่อนหน้า";
@@ -139,20 +139,23 @@
 "privacy_strip_tracking" = "ลบพารามิเตอร์ติดตาม";
 "privacy_strip_tracking_desc" = "ลบ ID การคลิกและแคมเปญที่พบบ่อยออกจาก URL";
 "privacy_clear_history" = "ล้างประวัติการค้นหา";
-"privacy_clear_history_desc" = "ลบคำค้นหาที่บันทึกไว้ทั้งหมด";
+"privacy_clear_history_desc" = "ลบการค้นหาและหน้าที่เยี่ยมชมทั้งหมด";
 "privacy_clear_history_confirm_title" = "ล้างประวัติการค้นหา?";
-"privacy_clear_history_confirm_message" = "ประวัติการค้นหาทั้งหมดจะถูกลบอย่างถาวร";
+"privacy_clear_history_confirm_message" = "การค้นหาและหน้าที่เยี่ยมชมทั้งหมดจะถูกลบอย่างถาวร";
 "privacy_clear_bookmarks" = "ล้างบุ๊กมาร์กทั้งหมด";
 "privacy_clear_bookmarks_desc" = "ลบบุ๊กมาร์กที่บันทึกไว้ทั้งหมด";
 "privacy_clear_bookmarks_confirm_title" = "ล้างบุ๊กมาร์กทั้งหมด?";
 "privacy_clear_bookmarks_confirm_message" = "บุ๊กมาร์กทั้งหมดจะถูกลบอย่างถาวร";
 "privacy_clear_cache" = "ล้างแคชการเรียกดู";
-"privacy_clear_cache_desc" = "ล้างแคชเว็บและตัวอย่างแท็บ โดยยังคงสถานะการเข้าสู่ระบบไว้";
+"privacy_clear_cache_desc" = "ล้างแคช ตัวอย่างแท็บ และประวัติการเข้าชม 3 วันที่ผ่านมา โดยยังคงสถานะการเข้าสู่ระบบไว้";
 "privacy_clear_cache_confirm_title" = "ล้างแคชการเรียกดู?";
-"privacy_clear_cache_confirm_message" = "ทรัพยากรเว็บที่แคชไว้จะถูกลบ โดยยังคงคุกกี้และสถานะการเข้าสู่ระบบไว้";
+"privacy_clear_cache_confirm_message" = "แคชและประวัติการเข้าชม 3 วันที่ผ่านมาจะถูกลบ โดยยังคงคุกกี้และสถานะการเข้าสู่ระบบไว้";
 
 "enter_fullscreen" = "เข้าสู่โหมดเต็มหน้าจอ";
 "exit_fullscreen" = "ออกจากโหมดเต็มหน้าจอ";
+"fullscreen_exit_hint" = "แตะหรือลากลงเพื่อออก";
+"restore_browser_toolbar" = "คืนค่าแถบเครื่องมือเบราว์เซอร์";
+"hide_browser_toolbar" = "ซ่อนแถบเครื่องมือเบราว์เซอร์";
 "privacy_clear_action" = "ล้าง";
 "privacy_data_footer" = "การดำเนินการเหล่านี้ไม่สามารถยกเลิกได้ ข้อมูลที่ล้างแล้วไม่สามารถกู้คืนได้";
 "settings_privacy" = "การตั้งค่าความเป็นส่วนตัว";

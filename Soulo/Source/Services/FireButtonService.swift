@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 import WebKit
 
 enum FireButtonService {
@@ -32,13 +33,17 @@ enum BrowserCacheService {
         WKWebsiteDataTypeServiceWorkerRegistrations
     ]
 
-    /// Clears recreatable browser resources while deliberately preserving
-    /// cookies, local storage, bookmarks, history, and downloads.
+    /// Clears recreatable browser resources and Soulo's recent page visits while
+    /// deliberately preserving cookies, local storage, bookmarks, search terms,
+    /// and downloads.
     @MainActor
-    static func clear(tabManager: TabManager?) async {
+    static func clear(tabManager: TabManager?, historyContext: ModelContext? = nil) async {
         URLCache.shared.removeAllCachedResponses()
         WebViewModel.deleteAllPersistedSnapshots()
         tabManager?.tabs.forEach { $0.webViewModel.snapshot = nil }
+        if let historyContext {
+            SearchHistoryService.clearBrowsingHistory(context: historyContext)
+        }
 
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             WKWebsiteDataStore.default().removeData(
@@ -51,7 +56,7 @@ enum BrowserCacheService {
     }
 
     /// Returns an estimate of the recreatable browser data cleared by
-    /// `clear(tabManager:)`. WebKit does not expose byte counts for its data
+    /// `clear(tabManager:historyContext:)`. WebKit does not expose byte counts for its data
     /// records, so cache-only WebKit folders are measured on disk without
     /// including cookies, local storage, downloads, or wallpaper files.
     static func currentSizeInBytes() async -> Int64 {

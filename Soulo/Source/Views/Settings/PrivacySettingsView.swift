@@ -260,7 +260,10 @@ struct PrivacySettingsView: View {
     private func clearWebViewCache() {
         clearingCache = true
         Task {
-            await BrowserCacheService.clear(tabManager: tabManager)
+            await BrowserCacheService.clear(
+                tabManager: tabManager,
+                historyContext: modelContext
+            )
             clearingCache = false
             cacheSizeText = nil
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {

@@ -43,7 +43,7 @@
 "no_bookmarks_desc" = "Toca el botón de marcador mientras navegas para guardar páginas";
 "search_history" = "Historial de búsqueda";
 "no_history" = "Sin historial de búsqueda";
-"no_history_desc" = "Tus palabras clave de búsqueda aparecerán aquí";
+"no_history_desc" = "Tus búsquedas y páginas visitadas recientemente aparecerán aquí";
 "today" = "Hoy";
 "yesterday" = "Ayer";
 "earlier" = "Antes";
@@ -240,20 +240,23 @@
 "privacy_strip_tracking" = "Eliminar parámetros de seguimiento";
 "privacy_strip_tracking_desc" = "Quitar IDs comunes de clics y campañas de las URL";
 "privacy_clear_history" = "Borrar historial de búsqueda";
-"privacy_clear_history_desc" = "Eliminar todas las palabras clave de búsqueda guardadas";
+"privacy_clear_history_desc" = "Eliminar todas las búsquedas y páginas visitadas guardadas";
 "privacy_clear_history_confirm_title" = "¿Borrar historial de búsqueda?";
-"privacy_clear_history_confirm_message" = "Todo el historial de búsqueda será eliminado permanentemente.";
+"privacy_clear_history_confirm_message" = "Todas las búsquedas y páginas visitadas se eliminarán permanentemente.";
 "privacy_clear_bookmarks" = "Eliminar todos los marcadores";
 "privacy_clear_bookmarks_desc" = "Eliminar todos los marcadores guardados";
 "privacy_clear_bookmarks_confirm_title" = "¿Eliminar todos los marcadores?";
 "privacy_clear_bookmarks_confirm_message" = "Todos los marcadores serán eliminados permanentemente.";
 "privacy_clear_cache" = "Limpiar caché del navegador";
-"privacy_clear_cache_desc" = "Eliminar la caché web y las vistas previas. Se mantienen las sesiones";
+"privacy_clear_cache_desc" = "Eliminar la caché, las vistas previas y las páginas visitadas en los últimos 3 días. Se mantienen las sesiones";
 "privacy_clear_cache_confirm_title" = "¿Limpiar caché del navegador?";
-"privacy_clear_cache_confirm_message" = "Se eliminarán los recursos en caché. Se conservarán las cookies y las sesiones.";
+"privacy_clear_cache_confirm_message" = "Se eliminarán la caché y las páginas visitadas en los últimos 3 días. Se conservarán las cookies y las sesiones.";
 
 "enter_fullscreen" = "Activar pantalla completa";
 "exit_fullscreen" = "Salir de pantalla completa";
+"fullscreen_exit_hint" = "Toca o desliza hacia abajo";
+"restore_browser_toolbar" = "Restaurar barra del navegador";
+"hide_browser_toolbar" = "Ocultar barra del navegador";
 "privacy_clear_action" = "Borrar";
 "privacy_data_footer" = "Estas acciones no se pueden deshacer. Los datos borrados no se pueden recuperar.";
 "settings_privacy" = "Ajustes de privacidad";

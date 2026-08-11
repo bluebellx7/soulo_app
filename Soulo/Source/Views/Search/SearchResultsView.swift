@@ -5,6 +5,7 @@ import WebKit
 struct SearchResultsView: View {
     var searchBarNamespace: Namespace.ID
     var speechService: SpeechRecognitionService
+    var onOpenSettings: (() -> Void)? = nil
 
     @EnvironmentObject var searchVM: SearchViewModel
     @EnvironmentObject var languageManager: LanguageManager
@@ -164,6 +165,7 @@ struct SearchResultsView: View {
                             onRequestVoiceSearch: {
                                 showVoiceInput = true
                             },
+                            onOpenSettings: onOpenSettings,
                             onAccessibilityPlatformPage: { direction in
                                 switchPlatformForAccessibility(direction)
                             },
@@ -172,7 +174,10 @@ struct SearchResultsView: View {
                             },
                             onPageLoaded: {
                                 if !pageReady { pageReady = true }
-                            }
+                                recordCurrentPageVisit(from: activeTab.webViewModel)
+                            },
+                            topSafeAreaInset: geo.safeAreaInsets.top,
+                            bottomSafeAreaInset: geo.safeAreaInsets.bottom
                         )
                         .id(activeTab.id)
                         .transition(.opacity)
@@ -214,7 +219,7 @@ struct SearchResultsView: View {
                         }
                     }
                 }
-                // Extend WebView into the bottom safe area
+                // Extend WebView into the bottom safe area.
                 .padding(.bottom, -geo.safeAreaInsets.bottom)
             }
         }
@@ -224,7 +229,11 @@ struct SearchResultsView: View {
                     // Keep the new-tab wallpaper continuous behind the top
                     // platform controls instead of starting below them.
                     Color.clear
-                } else if pageReady {
+                } else {
+                    // The browser chrome background belongs to the navigation
+                    // state, not the document render state. Show it as soon as
+                    // a URL starts loading so the top safe area never flashes
+                    // the opaque system background while WebKit is rendering.
                     VStack(spacing: 0) {
                         LinearGradient(
                             colors: [
@@ -250,13 +259,11 @@ struct SearchResultsView: View {
                         )
                         .frame(height: 100)
                     }
-                } else {
-                    Color(UIColor.systemBackground)
                 }
             }
             .ignoresSafeArea()
         )
-        .ignoresSafeArea(isFullscreen ? .container : [], edges: .top)
+        .ignoresSafeArea(isFullscreen ? .container : [], edges: .all)
         .statusBarHidden(isFullscreen)
         .persistentSystemOverlays(isFullscreen ? .hidden : .automatic)
         .tabOverviewScale(isActive: tabManager.showTabOverview)
@@ -650,6 +657,18 @@ struct SearchResultsView: View {
                 webVM.loadURL(url)
             }
         }
+    }
+
+    private func recordCurrentPageVisit(from webViewModel: WebViewModel) {
+        guard !searchVM.isIncognito,
+              let url = webViewModel.currentURL
+        else { return }
+
+        SearchHistoryService.recordWebVisit(
+            url: url,
+            title: webViewModel.pageTitle,
+            context: modelContext
+        )
     }
 
     private func showXiaohongshuLoginHintIfNeeded(

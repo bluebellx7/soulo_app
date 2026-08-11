@@ -2,6 +2,60 @@ import SwiftUI
 import SwiftData
 import SafariServices
 
+enum BrowserChromeLayout {
+    static let controlHeight: CGFloat = 40
+    static let bottomSpacing: CGFloat = 16
+    static let pageContentClearance: CGFloat = 8
+
+    static func showsBottomToolbar(isActiveTab: Bool, isFullscreen: Bool) -> Bool {
+        isActiveTab && !isFullscreen
+    }
+
+    static func bottomToolbarHeight(
+        isActiveTab: Bool,
+        isFullscreen: Bool
+    ) -> CGFloat {
+        guard showsBottomToolbar(isActiveTab: isActiveTab, isFullscreen: isFullscreen) else {
+            return 0
+        }
+        return controlHeight + bottomSpacing
+    }
+
+    static func pageBottomClearance(
+        reportedSafeArea: CGFloat,
+        windowSafeArea: CGFloat,
+        visibleToolbarHeight: CGFloat
+    ) -> CGFloat {
+        let safeArea = max(max(reportedSafeArea, windowSafeArea), 0)
+        let toolbarClearance = max(visibleToolbarHeight, 0) > 0
+            ? visibleToolbarHeight + pageContentClearance
+            : 0
+        return max(safeArea, toolbarClearance)
+    }
+
+    static func videoViewportBottomInset(
+        isActiveTab: Bool,
+        isVideoPage: Bool,
+        bottomClearance: CGFloat
+    ) -> CGFloat {
+        guard isActiveTab, isVideoPage else { return 0 }
+        return max(bottomClearance, 0)
+    }
+}
+
+enum BrowserChromeSymbol {
+    /// A browser viewport with its bottom control area highlighted. Using the
+    /// same object symbol for both states avoids implying navigation direction.
+    static let toolbarVisibility = "rectangle.bottomthird.inset.filled"
+}
+
+enum FullscreenExitGesture {
+    static func shouldExit(translation: CGSize) -> Bool {
+        translation.height >= 28
+            && abs(translation.height) > abs(translation.width) * 1.2
+    }
+}
+
 struct WebViewContainer: View {
     @ObservedObject var webViewModel: WebViewModel
     @ObservedObject var bookmarkViewModel: BookmarkViewModel
@@ -12,11 +66,15 @@ struct WebViewContainer: View {
     var onGoHome: (() -> Void)? = nil
     var onAddressSearch: ((String) -> Void)? = nil
     var onRequestVoiceSearch: (() -> Void)? = nil
+    var onOpenSettings: (() -> Void)? = nil
     var onAccessibilityPlatformPage: ((AccessibilityPlatformPagingDirection) -> Bool)? = nil
     var onPageStarted: (() -> Void)? = nil
     var onPageLoaded: (() -> Void)? = nil
+    var topSafeAreaInset: CGFloat = 0
+    var bottomSafeAreaInset: CGFloat = 0
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var safariCompatibilityPresenter = SafariCompatibilityPresenter()
 
     @State private var isBookmarked: Bool = false
@@ -30,12 +88,15 @@ struct WebViewContainer: View {
     @State private var externalDismissTask: DispatchWorkItem? = nil
     @State private var showNewTabPage: Bool = true
     @State private var toolbarMinimized: Bool = false
+    @State private var toolbarManuallyHidden: Bool = false
     @State private var showAdBlockManager = false
     @State private var showPrivacyPanel = false
     @State private var showDownloads = false
     @State private var showExternalOpenFailed = false
     @State private var showDownloadFailed = false
     @State private var showAddressEditor = false
+    @State private var showFullscreenExitHint = false
+    @State private var fullscreenHintDismissTask: Task<Void, Never>?
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -102,57 +163,28 @@ struct WebViewContainer: View {
                         .transition(.opacity)
                     }
                 }
+                .padding(.bottom, videoViewportBottomInset)
             }
 
-            // Floating toolbar (only on active tab). Full screen hides the top
-            // browser chrome but keeps these core navigation controls available.
-            if isActiveTab {
-                VStack(spacing: 0) {
-                    Spacer()
-                    if toolbarMinimized && !isFullscreen {
-                        // Mini pill — domain + tab count
-                        miniToolbarPill
-                            .transition(.asymmetric(
-                                insertion: .scale(scale: 0.6).combined(with: .opacity),
-                                removal: .scale(scale: 0.8).combined(with: .opacity)
-                            ))
-                    } else {
-                        WebViewToolbar(
-                            viewModel: webViewModel,
-                            isBookmarked: $isBookmarked,
-                            tabManager: tabManager,
-                            onShare: {
-                                if let url = webViewModel.currentURL {
-                                    shareItems = [url]
-                                    showShareSheet = true
-                                }
-                            },
-                            onBookmarkToggle: { handleBookmarkToggle() },
-                            onShowPrivacy: { showPrivacyPanel = true },
-                            onManageAdBlock: { showAdBlockManager = true },
-                            onShowDownloads: { showDownloads = true },
-                            onGoHome: onGoHome,
-                            onEditAddress: { showAddressEditor = true },
-                            isFullscreen: isFullscreen,
-                            onToggleFullscreen: { toggleFullscreen() },
-                            onOpenSafariCompatibility: { openSafariCompatibilityMode() },
-                            onOpenDefaultBrowser: { openCurrentPageInDefaultBrowser() }
-                        )
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .bottom).combined(with: .opacity),
-                            removal: .scale(scale: 0.8).combined(with: .opacity)
-                        ))
-                        .zIndex(60)
-                    }
-                }
-                .padding(.bottom, 16)
-                .animation(.spring(response: 0.35, dampingFraction: 0.8), value: toolbarMinimized)
-                .zIndex(50)
+            if videoViewportBottomInset > 0 {
+                videoBottomChromeBackdrop
+                    .zIndex(40)
+            }
+
+            if BrowserChromeLayout.showsBottomToolbar(
+                isActiveTab: isActiveTab,
+                isFullscreen: isFullscreen
+            ) {
+                browserToolbarChrome
+                    .frame(height: bottomToolbarHeight, alignment: .top)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .animation(.spring(response: 0.35, dampingFraction: 0.8), value: toolbarMinimized)
+                    .zIndex(50)
             }
 
             if isActiveTab && isFullscreen {
-                fullscreenExitButton
-                    .transition(.scale(scale: 0.8).combined(with: .opacity))
+                fullscreenExitHandle
+                    .transition(.move(edge: .top).combined(with: .opacity))
                     .zIndex(70)
             }
 
@@ -248,7 +280,7 @@ struct WebViewContainer: View {
                     .padding(14)
                     .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .padding(.horizontal, 16)
-                    .padding(.bottom, 72)
+                    .padding(.bottom, bottomOverlayClearance)
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .accessibilityElement(children: .contain)
@@ -280,7 +312,7 @@ struct WebViewContainer: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .padding(.bottom, 72)
+                    .padding(.bottom, bottomOverlayClearance)
                 }
                 .allowsHitTesting(false)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -295,11 +327,11 @@ struct WebViewContainer: View {
                 }
                 // Scrolling can compact browser controls, but full screen is an
                 // explicit user choice handled by the toolbar action.
-                if scrollingUp && !toolbarMinimized {
+                if scrollingUp && !toolbarMinimized && !toolbarManuallyHidden {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         toolbarMinimized = true
                     }
-                } else if !scrollingUp && toolbarMinimized {
+                } else if !scrollingUp && toolbarMinimized && !toolbarManuallyHidden {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         toolbarMinimized = false
                     }
@@ -309,6 +341,22 @@ struct WebViewContainer: View {
         .onChange(of: voiceOverEnabled) { _, enabled in
             if enabled {
                 toolbarMinimized = false
+                toolbarManuallyHidden = false
+            }
+        }
+        .onChange(of: isFullscreen) { _, fullscreen in
+            updateFullscreenPresentation(isFullscreen: fullscreen)
+        }
+        .onAppear {
+            updateFullscreenPresentation(isFullscreen: isFullscreen)
+        }
+        .onDisappear {
+            fullscreenHintDismissTask?.cancel()
+            fullscreenHintDismissTask = nil
+        }
+        .accessibilityAction(.escape) {
+            if isFullscreen {
+                exitFullscreen()
             }
         }
         .onChange(of: webViewModel.isLoading) { _, loading in
@@ -475,7 +523,7 @@ struct WebViewContainer: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
             .background(.black.opacity(0.6), in: Capsule())
-            .padding(.bottom, 72)
+            .padding(.bottom, bottomOverlayClearance)
         }
         .allowsHitTesting(false)
         .accessibilityElement(children: .combine)
@@ -485,39 +533,238 @@ struct WebViewContainer: View {
         }
     }
 
-    // MARK: - Mini Toolbar Pill
+    // MARK: - Browser Chrome
 
-    private var fullscreenExitButton: some View {
-        VStack {
-            HStack {
-                Spacer()
-                Button {
-                    toggleFullscreen()
-                } label: {
-                    Image(systemName: "arrow.down.right.and.arrow.up.left")
-                        .font(.system(size: 14, weight: .regular))
-                        .foregroundStyle(.white)
-                        .frame(width: 30, height: 30)
-                        .background(.black.opacity(0.58), in: Circle())
-                        .overlay(Circle().stroke(.white.opacity(0.14), lineWidth: 0.5))
-                        .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
-                        .frame(width: 40, height: 40)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(LanguageManager.shared.localizedString("exit_fullscreen"))
-            }
-            Spacer()
+    private var bottomToolbarHeight: CGFloat {
+        BrowserChromeLayout.bottomToolbarHeight(
+            isActiveTab: isActiveTab,
+            isFullscreen: isFullscreen
+        )
+    }
+
+    private var bottomOverlayClearance: CGFloat {
+        if isFullscreen {
+            return max(bottomSafeAreaInset, windowSafeAreaInsets.bottom, 12) + 12
         }
-        .padding(.top, 12)
-        .padding(.trailing, 12)
+        return bottomToolbarHeight + 12
+    }
+
+    private var pageBottomClearance: CGFloat {
+        BrowserChromeLayout.pageBottomClearance(
+            reportedSafeArea: bottomSafeAreaInset,
+            windowSafeArea: windowSafeAreaInsets.bottom,
+            visibleToolbarHeight: toolbarManuallyHidden ? 0 : bottomToolbarHeight
+        )
+    }
+
+    private var videoViewportBottomInset: CGFloat {
+        BrowserChromeLayout.videoViewportBottomInset(
+            isActiveTab: isActiveTab,
+            isVideoPage: WebCompatibilityService.isDouyinVideoSurface(webViewModel.currentURL),
+            bottomClearance: pageBottomClearance
+        )
+    }
+
+    private var videoBottomChromeBackdrop: some View {
+        Rectangle()
+            .fill(Color.black)
+            .frame(maxWidth: .infinity)
+            .frame(height: videoViewportBottomInset)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+
+    private var windowSafeAreaInsets: UIEdgeInsets {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }?
+            .keyWindow?
+            .safeAreaInsets ?? .zero
+    }
+
+    private var browserToolbarChrome: some View {
+        VStack(spacing: 0) {
+            Group {
+                if toolbarManuallyHidden {
+                    toolbarRestoreButton
+                        .transition(.scale(scale: 0.72).combined(with: .opacity))
+                } else if toolbarMinimized {
+                    miniToolbarPill
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.6).combined(with: .opacity),
+                            removal: .scale(scale: 0.8).combined(with: .opacity)
+                        ))
+                } else {
+                    WebViewToolbar(
+                        viewModel: webViewModel,
+                        isBookmarked: $isBookmarked,
+                        tabManager: tabManager,
+                        onShare: {
+                            if let url = webViewModel.currentURL {
+                                shareItems = [url]
+                                showShareSheet = true
+                            }
+                        },
+                        onBookmarkToggle: { handleBookmarkToggle() },
+                        onShowPrivacy: { showPrivacyPanel = true },
+                        onManageAdBlock: { showAdBlockManager = true },
+                        onShowDownloads: { showDownloads = true },
+                        onGoHome: onGoHome,
+                        onEditAddress: { showAddressEditor = true },
+                        onHideToolbar: { hideToolbar() },
+                        onOpenSettings: onOpenSettings,
+                        isFullscreen: false,
+                        onToggleFullscreen: { toggleFullscreen() },
+                        onOpenSafariCompatibility: { openSafariCompatibilityMode() },
+                        onOpenDefaultBrowser: { openCurrentPageInDefaultBrowser() }
+                    )
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                        removal: .scale(scale: 0.8).combined(with: .opacity)
+                    ))
+                }
+            }
+            .frame(minHeight: BrowserChromeLayout.controlHeight)
+        }
+        .padding(.bottom, BrowserChromeLayout.bottomSpacing)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var toolbarRestoreButton: some View {
+        HStack(spacing: 0) {
+            Button {
+                HapticsManager.light()
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.84)) {
+                    toolbarManuallyHidden = false
+                    toolbarMinimized = false
+                }
+            } label: {
+                Image(systemName: BrowserChromeSymbol.toolbarVisibility)
+                    .font(.system(size: 15, weight: .medium))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.white.opacity(0.9))
+                    .frame(width: 30, height: 30)
+                    .background(
+                        Circle()
+                            .fill(.black.opacity(0.45))
+                            .overlay(Circle().stroke(.white.opacity(0.1), lineWidth: 0.5))
+                    )
+                    .frame(width: 40, height: 40)
+                    .contentShape(Circle())
+                    .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(LanguageManager.shared.localizedString("restore_browser_toolbar"))
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 4)
+        // Keep the recovery control at the physical left edge so it remains
+        // predictable and away from the common right-side video action stack.
+        .environment(\.layoutDirection, .leftToRight)
+    }
+
+    private func hideToolbar() {
+        HapticsManager.selection()
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.84)) {
+            toolbarMinimized = false
+            toolbarManuallyHidden = true
+        }
+    }
+
+    private var fullscreenExitHandle: some View {
+        VStack(spacing: 0) {
+            Button {
+                exitFullscreen()
+            } label: {
+                VStack(spacing: 5) {
+                    Capsule()
+                        .fill(.white.opacity(showFullscreenExitHint ? 0.94 : 0.72))
+                        .frame(width: 36, height: 4)
+
+                    if showFullscreenExitHint {
+                        Text(LanguageManager.shared.localizedString("fullscreen_exit_hint"))
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.94))
+                            .lineLimit(1)
+                            .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                    }
+                }
+                .padding(.horizontal, showFullscreenExitHint ? 13 : 10)
+                .padding(.vertical, 8)
+                .background(
+                    .black.opacity(showFullscreenExitHint ? 0.58 : 0.28),
+                    in: Capsule()
+                )
+                .overlay(
+                    Capsule().stroke(.white.opacity(0.13), lineWidth: 0.5)
+                )
+                .shadow(color: .black.opacity(0.2), radius: 7, y: 3)
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 10)
+                    .onEnded { value in
+                        if FullscreenExitGesture.shouldExit(translation: value.translation) {
+                            exitFullscreen()
+                        }
+                    }
+            )
+            .accessibilityLabel(LanguageManager.shared.localizedString("exit_fullscreen"))
+            .accessibilityHint(LanguageManager.shared.localizedString("fullscreen_exit_hint"))
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Geometry safe-area values can become zero after the parent enters an
+        // edge-to-edge presentation. Keep the handle below a notch or Dynamic
+        // Island by falling back to the active window's physical safe area.
+        .padding(.top, max(topSafeAreaInset, windowSafeAreaInsets.top, 8) + 4)
     }
 
     private func toggleFullscreen() {
+        if isFullscreen {
+            exitFullscreen()
+            return
+        }
         HapticsManager.light()
-        withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
-            isFullscreen.toggle()
+        withAnimation(reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.86)) {
+            isFullscreen = true
             toolbarMinimized = false
+        }
+    }
+
+    private func exitFullscreen() {
+        guard isFullscreen else { return }
+        HapticsManager.light()
+        withAnimation(reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.86)) {
+            isFullscreen = false
+            toolbarMinimized = false
+        }
+    }
+
+    private func updateFullscreenPresentation(isFullscreen: Bool) {
+        fullscreenHintDismissTask?.cancel()
+        fullscreenHintDismissTask = nil
+
+        guard isFullscreen else {
+            showFullscreenExitHint = false
+            return
+        }
+
+        toolbarManuallyHidden = false
+        toolbarMinimized = false
+
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+            showFullscreenExitHint = true
+        }
+        fullscreenHintDismissTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_400_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) {
+                showFullscreenExitHint = false
+            }
         }
     }
 

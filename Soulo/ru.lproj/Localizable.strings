@@ -57,7 +57,7 @@
 /* History */
 "search_history" = "История поиска";
 "no_history" = "Нет истории поиска";
-"no_history_desc" = "Ваши недавние запросы появятся здесь";
+"no_history_desc" = "Здесь появятся недавние запросы и посещённые страницы";
 "today" = "Сегодня";
 "yesterday" = "Вчера";
 "earlier" = "Ранее";
@@ -139,20 +139,23 @@
 "privacy_strip_tracking" = "Удалять параметры отслеживания";
 "privacy_strip_tracking_desc" = "Удалять из URL распространённые идентификаторы кликов и кампаний";
 "privacy_clear_history" = "Очистить историю поиска";
-"privacy_clear_history_desc" = "Удалить все сохранённые поисковые запросы";
+"privacy_clear_history_desc" = "Удалить все сохранённые запросы и посещённые страницы";
 "privacy_clear_history_confirm_title" = "Очистить историю поиска?";
-"privacy_clear_history_confirm_message" = "Вся история поиска будет безвозвратно удалена.";
+"privacy_clear_history_confirm_message" = "Все запросы и посещённые страницы будут безвозвратно удалены.";
 "privacy_clear_bookmarks" = "Очистить все закладки";
 "privacy_clear_bookmarks_desc" = "Удалить все сохранённые закладки";
 "privacy_clear_bookmarks_confirm_title" = "Очистить все закладки?";
 "privacy_clear_bookmarks_confirm_message" = "Все закладки будут безвозвратно удалены.";
 "privacy_clear_cache" = "Очистить кэш браузера";
-"privacy_clear_cache_desc" = "Удалить веб-кэш и превью вкладок. Вход в аккаунты сохранится";
+"privacy_clear_cache_desc" = "Удалить веб-кэш, превью и посещения страниц за последние 3 дня. Вход в аккаунты сохранится";
 "privacy_clear_cache_confirm_title" = "Очистить кэш браузера?";
-"privacy_clear_cache_confirm_message" = "Кэшированные ресурсы будут удалены. Cookie и вход в аккаунты сохранятся.";
+"privacy_clear_cache_confirm_message" = "Кэш и посещения страниц за последние 3 дня будут удалены. Cookie и вход в аккаунты сохранятся.";
 
 "enter_fullscreen" = "Включить полноэкранный режим";
 "exit_fullscreen" = "Выйти из полноэкранного режима";
+"fullscreen_exit_hint" = "Нажмите или потяните вниз";
+"restore_browser_toolbar" = "Восстановить панель браузера";
+"hide_browser_toolbar" = "Скрыть панель браузера";
 "privacy_clear_action" = "Очистить";
 "privacy_data_footer" = "Эти действия нельзя отменить. Удалённые данные невозможно восстановить.";
 "settings_privacy" = "Настройки конфиденциальности";

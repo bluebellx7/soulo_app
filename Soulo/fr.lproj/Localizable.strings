@@ -43,7 +43,7 @@
 "no_bookmarks_desc" = "Appuyez sur le bouton favori lors de la navigation pour sauvegarder des pages";
 "search_history" = "Historique de recherche";
 "no_history" = "Aucun historique";
-"no_history_desc" = "Vos mots-clés de recherche apparaîtront ici";
+"no_history_desc" = "Vos recherches et pages récemment consultées apparaîtront ici";
 "today" = "Aujourd'hui";
 "yesterday" = "Hier";
 "earlier" = "Plus tôt";
@@ -240,20 +240,23 @@
 "privacy_strip_tracking" = "Supprimer les paramètres de suivi";
 "privacy_strip_tracking_desc" = "Retirer les identifiants courants de clics et de campagnes des URL";
 "privacy_clear_history" = "Effacer l'historique de recherche";
-"privacy_clear_history_desc" = "Supprimer tous les mots-clés de recherche enregistrés";
+"privacy_clear_history_desc" = "Supprimer toutes les recherches et pages consultées enregistrées";
 "privacy_clear_history_confirm_title" = "Effacer l'historique de recherche ?";
-"privacy_clear_history_confirm_message" = "Tout l'historique de recherche sera définitivement supprimé.";
+"privacy_clear_history_confirm_message" = "Toutes les recherches et pages consultées seront définitivement supprimées.";
 "privacy_clear_bookmarks" = "Supprimer tous les favoris";
 "privacy_clear_bookmarks_desc" = "Supprimer tous les favoris enregistrés";
 "privacy_clear_bookmarks_confirm_title" = "Supprimer tous les favoris ?";
 "privacy_clear_bookmarks_confirm_message" = "Tous les favoris seront définitivement supprimés.";
 "privacy_clear_cache" = "Vider le cache du navigateur";
-"privacy_clear_cache_desc" = "Supprimer le cache web et les aperçus d’onglets. Les connexions sont conservées";
+"privacy_clear_cache_desc" = "Supprimer le cache, les aperçus et les pages consultées ces 3 derniers jours. Les connexions sont conservées";
 "privacy_clear_cache_confirm_title" = "Vider le cache du navigateur ?";
-"privacy_clear_cache_confirm_message" = "Les ressources en cache seront supprimées. Les cookies et connexions seront conservés.";
+"privacy_clear_cache_confirm_message" = "Le cache et les pages consultées ces 3 derniers jours seront supprimés. Les cookies et connexions seront conservés.";
 
 "enter_fullscreen" = "Activer le plein écran";
 "exit_fullscreen" = "Quitter le plein écran";
+"fullscreen_exit_hint" = "Touchez ou tirez vers le bas";
+"restore_browser_toolbar" = "Restaurer la barre du navigateur";
+"hide_browser_toolbar" = "Masquer la barre du navigateur";
 "privacy_clear_action" = "Effacer";
 "privacy_data_footer" = "Ces actions sont irréversibles. Les données effacées ne peuvent pas être récupérées.";
 "settings_privacy" = "Réglages de confidentialité";

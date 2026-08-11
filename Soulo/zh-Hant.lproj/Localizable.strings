@@ -57,7 +57,7 @@
 /* History */
 "search_history" = "搜尋歷史";
 "no_history" = "暫無搜尋歷史";
-"no_history_desc" = "搜尋過的關鍵詞會顯示在這裡";
+"no_history_desc" = "最近的搜尋與瀏覽過的網頁會顯示在這裡";
 "today" = "今天";
 "yesterday" = "昨天";
 "earlier" = "更早";
@@ -139,20 +139,23 @@
 "privacy_strip_tracking" = "移除追蹤參數";
 "privacy_strip_tracking_desc" = "從網址中清除常見點擊和行銷追蹤 ID";
 "privacy_clear_history" = "清除搜尋歷史";
-"privacy_clear_history_desc" = "刪除所有已儲存的搜尋關鍵詞";
+"privacy_clear_history_desc" = "刪除所有已儲存的搜尋與網頁瀏覽記錄";
 "privacy_clear_history_confirm_title" = "清除搜尋歷史？";
-"privacy_clear_history_confirm_message" = "所有搜尋歷史將被永久刪除。";
+"privacy_clear_history_confirm_message" = "所有搜尋與網頁瀏覽記錄將被永久刪除。";
 "privacy_clear_bookmarks" = "清除所有收藏";
 "privacy_clear_bookmarks_desc" = "刪除所有已儲存的收藏";
 "privacy_clear_bookmarks_confirm_title" = "清除所有收藏？";
 "privacy_clear_bookmarks_confirm_message" = "所有收藏將被永久刪除。";
 "privacy_clear_cache" = "清除瀏覽快取";
-"privacy_clear_cache_desc" = "清除網頁快取與分頁預覽，保留登入狀態";
+"privacy_clear_cache_desc" = "清除網頁快取、分頁預覽與最近 3 天的網頁瀏覽記錄，保留登入狀態";
 "privacy_clear_cache_confirm_title" = "清除瀏覽快取？";
-"privacy_clear_cache_confirm_message" = "將清除網頁快取資源，但保留 Cookie 與登入狀態。";
+"privacy_clear_cache_confirm_message" = "將清除網頁快取與最近 3 天的網頁瀏覽記錄，但保留 Cookie 與登入狀態。";
 
 "enter_fullscreen" = "進入全螢幕";
 "exit_fullscreen" = "退出全螢幕";
+"fullscreen_exit_hint" = "輕點或下拉退出";
+"restore_browser_toolbar" = "恢復瀏覽器工具列";
+"hide_browser_toolbar" = "隱藏瀏覽器工具列";
 "privacy_clear_action" = "清除";
 "privacy_data_footer" = "以上操作不可撤銷，清除的資料無法恢復。";
 "settings_privacy" = "隱私設定";
