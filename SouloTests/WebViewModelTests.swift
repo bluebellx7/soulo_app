@@ -1,6 +1,8 @@
 import XCTest
 import UIKit
 import SwiftData
+import CoreImage
+import WebKit
 @testable import Soulo
 
 @MainActor
@@ -591,32 +593,120 @@ final class WebViewModelTests: XCTestCase {
             WebPageCaptureService.maximumFullPageHeight
         )
         let longPageScale = WebPageCaptureService.fullPageCaptureScale(
-            width: WebPageCaptureService.fullPageOutputWidth(viewportWidth: 390),
+            width: WebPageCaptureService.fullPageCaptureWidth(
+                contentWidth: 390,
+                viewportWidth: 390
+            ),
             height: WebPageCaptureService.maximumFullPageHeight,
             displayScale: 3
         )
         XCTAssertGreaterThan(longPageScale, 1)
         XCTAssertLessThanOrEqual(longPageScale, 3)
         XCTAssertLessThanOrEqual(
-            WebPageCaptureService.fullPageOutputWidth(viewportWidth: 390)
+            WebPageCaptureService.fullPageCaptureWidth(
+                contentWidth: 390,
+                viewportWidth: 390
+            )
                 * WebPageCaptureService.maximumFullPageHeight
                 * longPageScale
                 * longPageScale,
             WebPageCaptureService.maximumFullPagePixelCount + 1
         )
         XCTAssertEqual(
-            WebPageCaptureService.fullPageOutputWidth(viewportWidth: 390),
-            422
+            WebPageCaptureService.fullPageCaptureWidth(contentWidth: 980, viewportWidth: 390),
+            980
+        )
+        XCTAssertEqual(
+            WebPageCaptureService.fullPageCaptureWidth(contentWidth: 8_000, viewportWidth: 390),
+            WebPageCaptureService.maximumFullPageWidth
         )
     }
 
     func testWebCaptureKeepsSnapshotWidthInViewCoordinates() {
-        let bounds = CGRect(x: 0, y: 0, width: 390, height: 720)
+        let bounds = CGRect(x: 18, y: 24, width: 390, height: 720)
         let configuration = WebPageCaptureService.snapshotConfiguration(for: bounds)
 
-        XCTAssertEqual(configuration.rect, bounds)
-        XCTAssertNil(configuration.snapshotWidth)
+        XCTAssertEqual(configuration.rect, CGRect(x: 0, y: 0, width: 390, height: 720))
+        XCTAssertEqual(configuration.snapshotWidth?.doubleValue, 390)
         XCTAssertTrue(configuration.afterScreenUpdates)
+    }
+
+    func testWebCaptureTilesCoverTheEntireHorizontalDocument() {
+        let spans = WebPageCaptureService.tileSpans(
+            totalLength: 980,
+            viewportLength: 390,
+            maximumContentOffset: 590
+        )
+
+        XCTAssertEqual(
+            spans,
+            [
+                .init(destinationOrigin: 0, contentOffset: 0, sourceOrigin: 0, length: 390),
+                .init(destinationOrigin: 390, contentOffset: 390, sourceOrigin: 0, length: 390),
+                .init(destinationOrigin: 780, contentOffset: 590, sourceOrigin: 190, length: 200)
+            ]
+        )
+        XCTAssertEqual(spans.reduce(0) { $0 + $1.length }, 980)
+    }
+
+    func testViewportCaptureIncludesAllFourVisibleEdges() async throws {
+        let html = #"""
+        <!doctype html><html><head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+        html,body{margin:0;width:100%;min-height:1200px;background:#fff;overflow-x:hidden}
+        .m{position:fixed;width:36px;height:36px;z-index:9999}
+        #tl{left:0;top:0;background:#ff0000} #tr{right:0;top:0;background:#0000ff}
+        #bl{left:0;bottom:0;background:#00ff00} #br{right:0;bottom:0;background:#ff00ff}
+        </style></head><body>
+        <div id="tl" class="m"></div><div id="tr" class="m"></div>
+        <div id="bl" class="m"></div><div id="br" class="m"></div>
+        </body></html>
+        """#
+        let (window, webView) = try await makeCaptureWebView(
+            html: html,
+            size: CGSize(width: 390, height: 500)
+        )
+        defer { window.isHidden = true }
+
+        let result = try await WebPageCaptureService.capture(.viewport, from: webView)
+
+        XCTAssertEqual(result.image.size.width, 390, accuracy: 0.5)
+        XCTAssertEqual(result.image.size.height, 500, accuracy: 0.5)
+        assertPixel(result.image, at: CGPoint(x: 12, y: 12), resembles: (255, 0, 0))
+        assertPixel(result.image, at: CGPoint(x: 378, y: 12), resembles: (0, 0, 255))
+        assertPixel(result.image, at: CGPoint(x: 12, y: 488), resembles: (0, 255, 0))
+        assertPixel(result.image, at: CGPoint(x: 378, y: 488), resembles: (255, 0, 255))
+    }
+
+    func testFullPageCaptureIncludesHorizontalAndVerticalEdges() async throws {
+        let html = #"""
+        <!doctype html><html><head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+        html,body{margin:0;padding:0;width:780px;min-width:780px;height:1200px;background:#fff}
+        .edge{position:absolute;z-index:1}
+        #left{left:0;top:0;width:36px;height:1200px;background:#ff0000}
+        #right{left:744px;top:0;width:36px;height:1200px;background:#0000ff}
+        #bottom{left:0;top:1164px;width:780px;height:36px;background:#00ff00;z-index:2}
+        </style></head><body>
+        <div id="left" class="edge"></div><div id="right" class="edge"></div>
+        <div id="bottom" class="edge"></div>
+        </body></html>
+        """#
+        let (window, webView) = try await makeCaptureWebView(
+            html: html,
+            size: CGSize(width: 390, height: 500)
+        )
+        defer { window.isHidden = true }
+
+        let result = try await WebPageCaptureService.capture(.fullPage, from: webView)
+
+        XCTAssertEqual(result.image.size.width, 780, accuracy: 1)
+        XCTAssertEqual(result.image.size.height, 1200, accuracy: 1)
+        assertPixel(result.image, at: CGPoint(x: 12, y: 100), resembles: (255, 0, 0))
+        assertPixel(result.image, at: CGPoint(x: 768, y: 100), resembles: (0, 0, 255))
+        assertPixel(result.image, at: CGPoint(x: 390, y: 1188), resembles: (0, 255, 0))
     }
 
     func testWebCaptureUsesThePageBackgroundForItsHorizontalFrame() throws {
@@ -634,6 +724,85 @@ final class WebViewModelTests: XCTestCase {
         XCTAssertEqual(alpha, 0.9, accuracy: 0.001)
         XCTAssertTrue(WebPageCaptureService.pageBackgroundColorScript.contains("document.body"))
         XCTAssertTrue(WebPageCaptureService.pageBackgroundColorScript.contains("document.documentElement"))
+    }
+
+    private func makeCaptureWebView(
+        html: String,
+        size: CGSize
+    ) async throws -> (UIWindow, WKWebView) {
+        let scene = try XCTUnwrap(
+            UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .first
+        )
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(origin: .zero, size: size)
+        window.windowLevel = .alert + 1
+        let viewController = UIViewController()
+        let webView = WKWebView(frame: CGRect(origin: .zero, size: size))
+        webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
+        viewController.loadViewIfNeeded()
+        viewController.view.frame = window.bounds
+        viewController.view.addSubview(webView)
+        window.rootViewController = viewController
+        window.makeKeyAndVisible()
+        viewController.view.layoutIfNeeded()
+        webView.loadHTMLString(html, baseURL: URL(string: "https://capture.test"))
+
+        var didFinish = false
+        for _ in 0..<80 {
+            let state = try? await webView.evaluateJavaScript("document.readyState") as? String
+            if state == "complete" {
+                didFinish = true
+                break
+            }
+            try await Task.sleep(nanoseconds: 25_000_000)
+        }
+        XCTAssertTrue(didFinish)
+        try await Task.sleep(nanoseconds: 150_000_000)
+        return (window, webView)
+    }
+
+    private func assertPixel(
+        _ image: UIImage,
+        at point: CGPoint,
+        resembles expected: (UInt8, UInt8, UInt8),
+        tolerance: Int = 24,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        guard let ciImage = CIImage(image: image) else {
+            XCTFail("Unable to create CIImage", file: file, line: line)
+            return
+        }
+        let scale = image.scale
+        let pixelX = ciImage.extent.minX + point.x * scale
+        let pixelY = ciImage.extent.maxY - point.y * scale - 1
+        var pixel = [UInt8](repeating: 0, count: 4)
+        CIContext(options: [.cacheIntermediates: false]).render(
+            ciImage,
+            toBitmap: &pixel,
+            rowBytes: 4,
+            bounds: CGRect(x: pixelX, y: pixelY, width: 1, height: 1),
+            format: .RGBA8,
+            colorSpace: CGColorSpaceCreateDeviceRGB()
+        )
+        XCTAssertLessThanOrEqual(abs(Int(pixel[0]) - Int(expected.0)), tolerance, file: file, line: line)
+        XCTAssertLessThanOrEqual(
+            abs(Int(pixel[1]) - Int(expected.1)),
+            tolerance,
+            "Pixel was \(pixel)",
+            file: file,
+            line: line
+        )
+        XCTAssertLessThanOrEqual(
+            abs(Int(pixel[2]) - Int(expected.2)),
+            tolerance,
+            "Pixel was \(pixel)",
+            file: file,
+            line: line
+        )
     }
 
     func testGoogleTranslationURLMapsSimplifiedChineseAndPreservesPageURL() throws {

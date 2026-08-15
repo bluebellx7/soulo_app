@@ -52,7 +52,7 @@ struct BrowserToolbarSettingsView: View {
                     }
                     .buttonStyle(.borderedProminent)
 
-                    Button(role: .destructive) {
+                    Button {
                         service.reset()
                         draftActions = service.actions
                         draftAddressAction = service.addressAction
@@ -60,9 +60,20 @@ struct BrowserToolbarSettingsView: View {
                         HapticsManager.selection()
                     } label: {
                         Label(LanguageManager.shared.localizedString("toolbar_restore_default"), systemImage: "arrow.counterclockwise")
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(Color.primary)
                             .frame(maxWidth: .infinity)
+                            .frame(height: 48)
+                            .background(
+                                Color(uiColor: .secondarySystemGroupedBackground),
+                                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            )
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5)
+                            }
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.plain)
                 }
             }
             .padding(20)

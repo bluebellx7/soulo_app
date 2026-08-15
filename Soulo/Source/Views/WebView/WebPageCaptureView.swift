@@ -35,13 +35,13 @@ enum WebPageCaptureError: LocalizedError {
 @MainActor
 enum WebPageCaptureService {
     static let maximumFullPageHeight: CGFloat = 12_000
+    /// Avoid pathological pages creating a bitmap wider than Core Graphics can
+    /// safely allocate. Ordinary mobile and desktop layouts remain uncapped.
+    static let maximumFullPageWidth: CGFloat = 4_096
     /// Keeps the finished bitmap near 80 MB while retaining Retina detail for
     /// ordinary pages. Very long pages scale down gradually instead of always
     /// being flattened to a blurry 1× canvas.
     static let maximumFullPagePixelCount: CGFloat = 20_000_000
-    /// Matches the breathing room around the live browser page so a stitched
-    /// image does not look horizontally cropped when viewed on its own.
-    static let fullPageHorizontalInset: CGFloat = 16
     static let pageBackgroundColorScript = #"""
     (function() {
         function usable(color) {
@@ -105,8 +105,10 @@ enum WebPageCaptureService {
 
     static func capture(_ mode: WebPageCaptureMode, from webView: WKWebView?) async throws -> WebPageCaptureResult {
         guard let webView else { throw WebPageCaptureError.unavailable }
-        let bounds = webView.bounds
+        let bounds = captureBounds(for: webView.bounds)
         guard bounds.width > 1, bounds.height > 1 else { throw WebPageCaptureError.emptyPage }
+        webView.layoutIfNeeded()
+        await waitForRenderingCycle(in: webView)
 
         switch mode {
         case .viewport:
@@ -115,12 +117,19 @@ enum WebPageCaptureService {
             return WebPageCaptureResult(image: image, mode: mode, wasHeightLimited: false)
         case .fullPage:
             await prepareResourcesForFullPageCapture(in: webView)
-            let contentHeight = max(webView.scrollView.contentSize.height, bounds.height)
+            let contentSize = webView.scrollView.contentSize
+            let contentWidth = max(contentSize.width, bounds.width)
+            let contentHeight = max(contentSize.height, bounds.height)
+            let captureWidth = fullPageCaptureWidth(
+                contentWidth: contentWidth,
+                viewportWidth: bounds.width
+            )
             let captureHeight = fullPageCaptureHeight(contentHeight: contentHeight, viewportHeight: bounds.height)
             let image = try await captureFullPage(
                 webView,
                 bounds: bounds,
-                captureHeight: captureHeight
+                contentSize: contentSize,
+                captureSize: CGSize(width: captureWidth, height: captureHeight)
             )
             return WebPageCaptureResult(
                 image: image,
@@ -148,19 +157,20 @@ enum WebPageCaptureService {
     private static func captureFullPage(
         _ webView: WKWebView,
         bounds: CGRect,
-        captureHeight: CGFloat
+        contentSize: CGSize,
+        captureSize: CGSize
     ) async throws -> UIImage {
         let originalOffset = webView.scrollView.contentOffset
-        let maximumOffsetY = max(0, webView.scrollView.contentSize.height - bounds.height)
-        let outputWidth = fullPageOutputWidth(viewportWidth: bounds.width)
+        let maximumOffsetX = max(0, contentSize.width - bounds.width)
+        let maximumOffsetY = max(0, contentSize.height - bounds.height)
         let pageBackground = await pageBackgroundColor(in: webView)
         let captureScale = fullPageCaptureScale(
-            width: outputWidth,
-            height: captureHeight,
+            width: captureSize.width,
+            height: captureSize.height,
             displayScale: UIScreen.main.scale
         )
-        let pixelWidth = max(Int(ceil(outputWidth * captureScale)), 1)
-        let pixelHeight = max(Int(ceil(captureHeight * captureScale)), 1)
+        let pixelWidth = max(Int(ceil(captureSize.width * captureScale)), 1)
+        let pixelHeight = max(Int(ceil(captureSize.height * captureScale)), 1)
         guard let canvas = CGContext(
             data: nil,
             width: pixelWidth,
@@ -178,54 +188,58 @@ enum WebPageCaptureService {
         canvas.translateBy(x: 0, y: CGFloat(pixelHeight))
         canvas.scaleBy(x: captureScale, y: -captureScale)
         canvas.setFillColor(pageBackground.cgColor)
-        canvas.fill(CGRect(x: 0, y: 0, width: outputWidth, height: captureHeight))
+        canvas.fill(CGRect(origin: .zero, size: captureSize))
         canvas.interpolationQuality = .high
 
-        var destinationY: CGFloat = 0
+        let horizontalTiles = tileSpans(
+            totalLength: captureSize.width,
+            viewportLength: bounds.width,
+            maximumContentOffset: maximumOffsetX
+        )
+        let verticalTiles = tileSpans(
+            totalLength: captureSize.height,
+            viewportLength: bounds.height,
+            maximumContentOffset: maximumOffsetY
+        )
         var renderedTileCount = 0
 
         do {
-            while destinationY < captureHeight - 0.5 {
-                let offsetY = min(destinationY, maximumOffsetY)
-                webView.scrollView.setContentOffset(
-                    CGPoint(x: originalOffset.x, y: offsetY),
-                    animated: false
-                )
-                webView.layoutIfNeeded()
-                try? await Task.sleep(nanoseconds: 130_000_000)
-
-                let configuration = snapshotConfiguration(for: bounds)
-                let image = try await snapshot(webView, configuration: configuration)
-
-                let sourceStartY = max(0, destinationY - offsetY)
-                let visibleHeight = min(
-                    bounds.height - sourceStartY,
-                    captureHeight - destinationY
-                )
-                guard visibleHeight > 0.5 else { break }
-
-                let destinationRect = CGRect(
-                    x: fullPageHorizontalInset,
-                    y: destinationY,
-                    width: bounds.width,
-                    height: visibleHeight
-                )
-                canvas.saveGState()
-                canvas.clip(to: destinationRect)
-                UIGraphicsPushContext(canvas)
-                image.draw(
-                    in: CGRect(
-                        x: fullPageHorizontalInset,
-                        y: destinationY - sourceStartY,
-                        width: bounds.width,
-                        height: bounds.height
+            for horizontalTile in horizontalTiles {
+                for verticalTile in verticalTiles {
+                    webView.scrollView.setContentOffset(
+                        CGPoint(
+                            x: horizontalTile.contentOffset,
+                            y: verticalTile.contentOffset
+                        ),
+                        animated: false
                     )
-                )
-                UIGraphicsPopContext()
-                canvas.restoreGState()
+                    webView.layoutIfNeeded()
+                    try? await Task.sleep(nanoseconds: 130_000_000)
 
-                renderedTileCount += 1
-                destinationY += visibleHeight
+                    let configuration = snapshotConfiguration(for: bounds)
+                    let image = try await snapshot(webView, configuration: configuration)
+                    let destinationRect = CGRect(
+                        x: horizontalTile.destinationOrigin,
+                        y: verticalTile.destinationOrigin,
+                        width: horizontalTile.length,
+                        height: verticalTile.length
+                    )
+
+                    canvas.saveGState()
+                    canvas.clip(to: destinationRect)
+                    UIGraphicsPushContext(canvas)
+                    image.draw(
+                        in: CGRect(
+                            x: horizontalTile.destinationOrigin - horizontalTile.sourceOrigin,
+                            y: verticalTile.destinationOrigin - verticalTile.sourceOrigin,
+                            width: bounds.width,
+                            height: bounds.height
+                        )
+                    )
+                    UIGraphicsPopContext()
+                    canvas.restoreGState()
+                    renderedTileCount += 1
+                }
             }
         } catch {
             webView.scrollView.setContentOffset(originalOffset, animated: false)
@@ -244,8 +258,8 @@ enum WebPageCaptureService {
         min(max(contentHeight, viewportHeight), maximumFullPageHeight)
     }
 
-    static func fullPageOutputWidth(viewportWidth: CGFloat) -> CGFloat {
-        max(viewportWidth, 0) + fullPageHorizontalInset * 2
+    static func fullPageCaptureWidth(contentWidth: CGFloat, viewportWidth: CGFloat) -> CGFloat {
+        min(max(contentWidth, viewportWidth), maximumFullPageWidth)
     }
 
     static func fullPageCaptureScale(
@@ -255,20 +269,61 @@ enum WebPageCaptureService {
     ) -> CGFloat {
         guard width > 0, height > 0 else { return 1 }
         let pixelBudgetScale = sqrt(maximumFullPagePixelCount / (width * height))
-        return max(1, min(max(displayScale, 1), 3, pixelBudgetScale))
+        return max(0.5, min(max(displayScale, 1), 3, pixelBudgetScale))
     }
 
-    /// Keep WebKit's capture rectangle in view coordinates. `snapshotWidth` is
-    /// expressed in points, not pixels; multiplying it by the display scale
-    /// changes the logical output size and can make a viewport capture appear
-    /// cropped or alter a page's horizontal margins. WebKit already returns a
-    /// Retina UIImage, while the long-image canvas controls final pixel density.
+    static func captureBounds(for bounds: CGRect) -> CGRect {
+        CGRect(
+            origin: .zero,
+            size: CGSize(width: max(bounds.width, 0), height: max(bounds.height, 0))
+        )
+    }
+
+    /// `snapshotWidth` is measured in points. Setting it to the WebView width
+    /// makes WebKit return the complete viewport deterministically without
+    /// accidentally multiplying the logical width by the display scale.
     static func snapshotConfiguration(for bounds: CGRect) -> WKSnapshotConfiguration {
+        let rect = captureBounds(for: bounds)
         let configuration = WKSnapshotConfiguration()
-        configuration.rect = bounds
-        configuration.snapshotWidth = nil
+        configuration.rect = rect
+        configuration.snapshotWidth = NSNumber(value: Double(rect.width))
         configuration.afterScreenUpdates = true
         return configuration
+    }
+
+    struct TileSpan: Equatable {
+        let destinationOrigin: CGFloat
+        let contentOffset: CGFloat
+        let sourceOrigin: CGFloat
+        let length: CGFloat
+    }
+
+    static func tileSpans(
+        totalLength: CGFloat,
+        viewportLength: CGFloat,
+        maximumContentOffset: CGFloat
+    ) -> [TileSpan] {
+        guard totalLength > 0, viewportLength > 0 else { return [] }
+        var result: [TileSpan] = []
+        var destination: CGFloat = 0
+        let maximumOffset = max(maximumContentOffset, 0)
+
+        while destination < totalLength - 0.5 {
+            let offset = min(destination, maximumOffset)
+            let source = max(destination - offset, 0)
+            let length = min(viewportLength - source, totalLength - destination)
+            guard length > 0.5 else { break }
+            result.append(
+                TileSpan(
+                    destinationOrigin: destination,
+                    contentOffset: offset,
+                    sourceOrigin: source,
+                    length: length
+                )
+            )
+            destination += length
+        }
+        return result
     }
 
     static func colorFromComputedCSS(_ value: String?) -> UIColor? {
@@ -301,6 +356,19 @@ enum WebPageCaptureService {
         )
     }
 
+    private static func waitForRenderingCycle(in webView: WKWebView) async {
+        let script = #"""
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        return true;
+        """#
+        _ = try? await webView.callAsyncJavaScript(
+            script,
+            arguments: [:],
+            in: nil,
+            contentWorld: .page
+        )
+    }
+
     static func saveToPhotoLibrary(_ image: UIImage) async throws {
         let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
         guard status == .authorized || status == .limited else {
@@ -327,37 +395,44 @@ struct WebPageCapturePreview: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color(uiColor: .secondarySystemBackground).ignoresSafeArea()
-                ScrollView([.vertical, .horizontal]) {
-                    VStack(spacing: 12) {
-                        if result.wasHeightLimited {
+            GeometryReader { proxy in
+                ZStack {
+                    Color(uiColor: .secondarySystemBackground).ignoresSafeArea()
+                    ScrollView(.vertical) {
+                        let size = previewSize(in: proxy.size)
+                        VStack(spacing: 12) {
+                            if result.wasHeightLimited {
+                                Label(
+                                    LanguageManager.shared.localizedString("web_capture_height_limited"),
+                                    systemImage: "scissors"
+                                )
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .padding(12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            }
+
                             Label(
-                                LanguageManager.shared.localizedString("web_capture_height_limited"),
-                                systemImage: "scissors"
+                                LanguageManager.shared.localizedString("web_capture_live_text_hint"),
+                                systemImage: "text.viewfinder"
                             )
                             .font(.footnote)
                             .foregroundStyle(.secondary)
-                            .padding(12)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                            LiveTextCaptureImage(image: result.image)
+                                .frame(width: size.width, height: size.height)
+                                .background(Color.white)
+                                .overlay {
+                                    Rectangle()
+                                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
+                                }
+                                .shadow(color: .black.opacity(0.12), radius: 12, y: 5)
+                                .frame(maxWidth: .infinity)
                         }
-
-                        Label(
-                            LanguageManager.shared.localizedString("web_capture_live_text_hint"),
-                            systemImage: "text.viewfinder"
-                        )
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                        LiveTextCaptureImage(image: result.image)
-                            .frame(width: previewSize.width, height: previewSize.height)
-                            .background(Color.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .shadow(color: .black.opacity(0.12), radius: 12, y: 5)
+                        .padding(16)
                     }
-                    .padding(16)
                 }
             }
             .navigationTitle(LanguageManager.shared.localizedString(result.mode.titleKey))
@@ -386,8 +461,19 @@ struct WebPageCapturePreview: View {
                     } label: {
                         Label(LanguageManager.shared.localizedString("share"), systemImage: "square.and.arrow.up")
                             .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .foregroundStyle(Color.primary)
+                            .background(
+                                Color(uiColor: .secondarySystemBackground),
+                                in: Capsule(style: .continuous)
+                            )
+                            .overlay {
+                                Capsule(style: .continuous)
+                                    .strokeBorder(Color.primary.opacity(0.14), lineWidth: 1)
+                            }
+                            .contentShape(Capsule(style: .continuous))
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
@@ -417,18 +503,19 @@ struct WebPageCapturePreview: View {
         }
     }
 
-    private var previewSize: CGSize {
-        let maximumWidth = max(UIScreen.main.bounds.width - 32, 240)
+    private func previewSize(in availableSize: CGSize) -> CGSize {
+        let maximumWidth = max(availableSize.width - 32, 1)
         let aspectRatio = result.image.size.height / max(result.image.size.width, 1)
         let width: CGFloat
         if result.mode == .viewport {
-            // A viewport screenshot should be visible in full on first open;
-            // reserve room for the title, Live Text hint, and bottom actions.
-            let maximumHeight = max(UIScreen.main.bounds.height - 270, 300)
+            // Fit against the sheet's actual content area rather than the
+            // device screen. This keeps every edge visible in compact sheets,
+            // split view, landscape, and devices with horizontal safe areas.
+            let maximumHeight = max(availableSize.height - 96, 220)
             width = min(result.image.size.width, maximumWidth, maximumHeight / max(aspectRatio, 0.01))
         } else {
-            // Full-page captures intentionally use the available width and
-            // remain vertically scrollable so their details stay readable.
+            // Long captures remain vertically scrollable and always scale the
+            // complete bitmap width into the actual presentation container.
             width = min(result.image.size.width, maximumWidth)
         }
         return CGSize(width: width, height: width * aspectRatio)
