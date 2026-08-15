@@ -55,6 +55,12 @@ class PlatformDataStore: ObservableObject {
         }
     }
 
+    func reloadFromDefaults() {
+        load()
+        loadGroups()
+        loadRegionNames()
+    }
+
     // MARK: - Queries
 
     func allPlatforms() -> [SearchPlatform] {

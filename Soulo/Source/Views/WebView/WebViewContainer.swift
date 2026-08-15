@@ -56,6 +56,13 @@ enum FullscreenExitGesture {
     }
 }
 
+enum FullscreenHandleRevealGesture {
+    static func shouldReveal(translation: CGSize) -> Bool {
+        translation.height >= 24
+            && abs(translation.height) > abs(translation.width) * 1.2
+    }
+}
+
 struct WebViewContainer: View {
     @ObservedObject var webViewModel: WebViewModel
     @ObservedObject var bookmarkViewModel: BookmarkViewModel
@@ -73,8 +80,10 @@ struct WebViewContainer: View {
     var topSafeAreaInset: CGFloat = 0
     var bottomSafeAreaInset: CGFloat = 0
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var searchVM: SearchViewModel
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage(AppConstants.StorageKeys.keepFullscreenBrowsing) private var keepFullscreenBrowsing = false
     @StateObject private var safariCompatibilityPresenter = SafariCompatibilityPresenter()
 
     @State private var isBookmarked: Bool = false
@@ -89,14 +98,24 @@ struct WebViewContainer: View {
     @State private var showNewTabPage: Bool = true
     @State private var toolbarMinimized: Bool = false
     @State private var toolbarManuallyHidden: Bool = false
+    @State private var toolbarInteractionLocked: Bool = false
     @State private var showAdBlockManager = false
     @State private var showPrivacyPanel = false
-    @State private var showDownloads = false
+    @State private var librarySection: LibrarySection?
+    @State private var showExtensionCenter = false
+    @State private var extensionInstallCandidate: BrowserExtensionInstallCandidate?
     @State private var showExternalOpenFailed = false
     @State private var showDownloadFailed = false
     @State private var showAddressEditor = false
+    @State private var showFullscreenExitHandle = false
     @State private var showFullscreenExitHint = false
+    @State private var showFullscreenMenu = false
     @State private var fullscreenHintDismissTask: Task<Void, Never>?
+    @State private var showCaptureOptions = false
+    @State private var isCapturingPage = false
+    @State private var captureResult: WebPageCaptureResult?
+    @State private var captureError: String?
+    @State private var showTranslationSheet = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -183,9 +202,20 @@ struct WebViewContainer: View {
             }
 
             if isActiveTab && isFullscreen {
-                fullscreenExitHandle
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                    .zIndex(70)
+                fullscreenHandleRevealArea
+                    .zIndex(69)
+
+                if showFullscreenMenu {
+                    fullscreenMenuDismissBackdrop
+                        .transition(.opacity)
+                        .zIndex(69.5)
+                }
+
+                if showFullscreenExitHandle {
+                    fullscreenExitHandle
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .zIndex(70)
+                }
             }
 
             // Toast overlays
@@ -325,6 +355,14 @@ struct WebViewContainer: View {
                     toolbarMinimized = false
                     return
                 }
+                // A visible More menu or tool sheet owns the browser chrome.
+                // The first real page scroll after dismissal releases the lock,
+                // but must not also compact the toolbar in the same event.
+                if toolbarInteractionLocked {
+                    toolbarInteractionLocked = false
+                    toolbarMinimized = false
+                    return
+                }
                 // Scrolling can compact browser controls, but full screen is an
                 // explicit user choice handled by the toolbar action.
                 if scrollingUp && !toolbarMinimized && !toolbarManuallyHidden {
@@ -370,6 +408,15 @@ struct WebViewContainer: View {
             syncBookmarkState(for: url)
             if url != nil {
                 withAnimation(.easeOut(duration: 0.2)) { showNewTabPage = false }
+            }
+        }
+        .onChange(of: videoViewportBottomInset) { _, _ in
+            guard WebCompatibilityService.isDouyinVideoSurface(webViewModel.currentURL) else { return }
+            DispatchQueue.main.async {
+                webViewModel.synchronizePageViewport()
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                webViewModel.synchronizePageViewport()
             }
         }
         // Scoped notifications — only process when this is the active tab
@@ -452,10 +499,66 @@ struct WebViewContainer: View {
                 }
             }
         }
-        .sheet(isPresented: $showDownloads) {
+        .sheet(item: $librarySection) { section in
+            LibraryView(
+                initialSection: section,
+                searchVM: searchVM,
+                onOpen: { value in
+                    if let onAddressSearch {
+                        onAddressSearch(value)
+                    } else if value.isValidURL, let url = value.asURL {
+                        webViewModel.loadURL(url)
+                    }
+                }
+            )
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showExtensionCenter) {
             NavigationStack {
-                DownloadManagerView()
+                ExtensionCenterView(onOpenInBrowser: { url in
+                    webViewModel.loadURL(url)
+                    showExtensionCenter = false
+                })
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(LanguageManager.shared.localizedString("done")) {
+                                showExtensionCenter = false
+                            }
+                        }
+                    }
             }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $extensionInstallCandidate) { candidate in
+            BrowserPackageInstallView(candidate: candidate)
+                .presentationDetents([.height(430)])
+                .presentationDragIndicator(.visible)
+        }
+        .modifier(
+            WebToolsPresentationModifier(
+                webViewModel: webViewModel,
+                showCaptureOptions: $showCaptureOptions,
+                isCapturingPage: isCapturingPage,
+                captureResult: $captureResult,
+                captureError: $captureError,
+                showTranslationSheet: $showTranslationSheet,
+                onCapture: capturePage
+            )
+        )
+        .onReceive(NotificationCenter.default.publisher(for: .browserExtensionInstallCandidate)) { notification in
+            guard isActiveTab,
+                  notification.object as AnyObject? === webViewModel,
+                  let candidate = notification.userInfo?["candidate"] as? BrowserExtensionInstallCandidate else {
+                return
+            }
+            extensionInstallCandidate = candidate
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .browserExtensionsChanged)) { _ in
+            guard isActiveTab, webViewModel.currentURL != nil else { return }
+            webViewModel.reload()
         }
     }
 
@@ -476,6 +579,22 @@ struct WebViewContainer: View {
 
     private var isShowingNewTabPage: Bool {
         showNewTabPage && webViewModel.currentURL == nil && !webViewModel.isLoading
+    }
+
+    private func setPrivateMode(_ enabled: Bool) {
+        guard searchVM.isIncognito != enabled else { return }
+        let pageURL = webViewModel.currentURL
+        searchVM.isIncognito = enabled
+
+        guard let tabManager else { return }
+        tabManager.resetTabsForPrivacy()
+        if enabled, let pageURL {
+            tabManager.activeWebViewModel?.loadURL(pageURL)
+            searchVM.isSearching = true
+        } else if !enabled {
+            // Never carry a private page or its query into the normal session.
+            searchVM.clearSearch()
+        }
     }
 
     private func openSafariCompatibilityMode() {
@@ -607,8 +726,12 @@ struct WebViewContainer: View {
                         },
                         onBookmarkToggle: { handleBookmarkToggle() },
                         onShowPrivacy: { showPrivacyPanel = true },
+                        onSetPrivateMode: { enabled in
+                            setPrivateMode(enabled)
+                        },
                         onManageAdBlock: { showAdBlockManager = true },
-                        onShowDownloads: { showDownloads = true },
+                        onShowLibrary: { librarySection = .bookmarks },
+                        onShowExtensions: { showExtensionCenter = true },
                         onGoHome: onGoHome,
                         onEditAddress: { showAddressEditor = true },
                         onHideToolbar: { hideToolbar() },
@@ -616,8 +739,19 @@ struct WebViewContainer: View {
                         isFullscreen: false,
                         onToggleFullscreen: { toggleFullscreen() },
                         onOpenSafariCompatibility: { openSafariCompatibilityMode() },
-                        onOpenDefaultBrowser: { openCurrentPageInDefaultBrowser() }
+                        onOpenDefaultBrowser: { openCurrentPageInDefaultBrowser() },
+                        onCapturePage: { showCaptureOptions = true },
+                        onTranslatePage: { showTranslationSheet = true },
+                        onMoreMenuPresentationChange: { isPresented in
+                            toolbarInteractionLocked = isPresented
+                            if isPresented, toolbarMinimized {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) {
+                                    toolbarMinimized = false
+                                }
+                            }
+                        }
                     )
+                    .padding(.horizontal, 4)
                     .transition(.asymmetric(
                         insertion: .move(edge: .bottom).combined(with: .opacity),
                         removal: .scale(scale: 0.8).combined(with: .opacity)
@@ -673,13 +807,13 @@ struct WebViewContainer: View {
     }
 
     private var fullscreenExitHandle: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 8) {
             Button {
-                exitFullscreen()
+                toggleFullscreenMenu()
             } label: {
                 VStack(spacing: 5) {
                     Capsule()
-                        .fill(.white.opacity(showFullscreenExitHint ? 0.94 : 0.72))
+                        .fill(.white.opacity(showFullscreenExitHint || showFullscreenMenu ? 0.94 : 0.72))
                         .frame(width: 36, height: 4)
 
                     if showFullscreenExitHint {
@@ -693,7 +827,7 @@ struct WebViewContainer: View {
                 .padding(.horizontal, showFullscreenExitHint ? 13 : 10)
                 .padding(.vertical, 8)
                 .background(
-                    .black.opacity(showFullscreenExitHint ? 0.58 : 0.28),
+                    .black.opacity(showFullscreenExitHint || showFullscreenMenu ? 0.58 : 0.28),
                     in: Capsule()
                 )
                 .overlay(
@@ -711,8 +845,20 @@ struct WebViewContainer: View {
                         }
                     }
             )
-            .accessibilityLabel(LanguageManager.shared.localizedString("exit_fullscreen"))
+            .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
             .accessibilityHint(LanguageManager.shared.localizedString("fullscreen_exit_hint"))
+
+            if showFullscreenMenu {
+                fullscreenQuickMenu
+                    .transition(
+                        .asymmetric(
+                            insertion: .scale(scale: 0.94, anchor: .top)
+                                .combined(with: .opacity),
+                            removal: .scale(scale: 0.97, anchor: .top)
+                                .combined(with: .opacity)
+                        )
+                    )
+            }
 
             Spacer(minLength: 0)
         }
@@ -721,6 +867,389 @@ struct WebViewContainer: View {
         // edge-to-edge presentation. Keep the handle below a notch or Dynamic
         // Island by falling back to the active window's physical safe area.
         .padding(.top, max(topSafeAreaInset, windowSafeAreaInsets.top, 8) + 4)
+        .padding(.horizontal, 16)
+    }
+
+    private var fullscreenMenuDismissBackdrop: some View {
+        Color.black
+            .opacity(0.08)
+            .contentShape(Rectangle())
+            .ignoresSafeArea()
+            .onTapGesture {
+                closeFullscreenMenu()
+            }
+            .accessibilityHidden(true)
+    }
+
+    private var fullscreenQuickMenu: some View {
+        VStack(spacing: 0) {
+            fullscreenAddressHeader
+
+            Rectangle()
+                .fill(.white.opacity(0.1))
+                .frame(height: 0.5)
+
+            HStack(spacing: 8) {
+                fullscreenPrimaryAction(
+                    titleKey: "share",
+                    systemImage: "square.and.arrow.up"
+                ) {
+                    closeFullscreenMenu()
+                    if let url = webViewModel.currentURL {
+                        shareItems = [url]
+                        showShareSheet = true
+                    }
+                }
+
+                fullscreenPrimaryAction(
+                    titleKey: "copy_link",
+                    systemImage: "doc.on.doc"
+                ) {
+                    closeFullscreenMenu()
+                    copyCurrentPageLink()
+                }
+
+                fullscreenPrimaryAction(
+                    titleKey: "bookmarks",
+                    systemImage: isBookmarked ? "bookmark.fill" : "bookmark",
+                    tint: isBookmarked ? .orange : .white
+                ) {
+                    closeFullscreenMenu()
+                    handleBookmarkToggle()
+                }
+            }
+            .padding(10)
+
+            HStack(spacing: 8) {
+                fullscreenPrimaryAction(
+                    titleKey: "home_screen",
+                    systemImage: "house.fill"
+                ) {
+                    closeFullscreenMenu()
+                    onGoHome?()
+                }
+
+                fullscreenPrimaryAction(
+                    titleKey: "web_capture",
+                    systemImage: "camera.viewfinder"
+                ) {
+                    closeFullscreenMenu()
+                    showCaptureOptions = true
+                }
+
+                // Page translation is hidden in 1.1.0 and will return after the
+                // next round of webpage extraction and language-pack testing.
+
+                fullscreenPrimaryAction(
+                    titleKey: "settings",
+                    systemImage: "gearshape"
+                ) {
+                    closeFullscreenMenu()
+                    onOpenSettings?()
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.bottom, 10)
+
+            Rectangle()
+                .fill(.white.opacity(0.1))
+                .frame(height: 0.5)
+                .padding(.horizontal, 12)
+
+            fullscreenContentModePicker
+                .padding(10)
+
+            Rectangle()
+                .fill(.white.opacity(0.1))
+                .frame(height: 0.5)
+                .padding(.horizontal, 12)
+
+            fullscreenZoomControls
+                .padding(10)
+
+            Rectangle()
+                .fill(.white.opacity(0.1))
+                .frame(height: 0.5)
+                .padding(.horizontal, 12)
+
+            fullscreenNavigationActions
+                .padding(10)
+        }
+        .frame(maxWidth: 340)
+        .background {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(.black.opacity(0.56))
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(.white.opacity(0.14), lineWidth: 0.5)
+                }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .shadow(color: .black.opacity(0.3), radius: 18, y: 8)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var fullscreenAddressHeader: some View {
+        HStack(spacing: 9) {
+            Button {
+                closeFullscreenMenu()
+                showAddressEditor = true
+            } label: {
+                HStack(spacing: 9) {
+                    Image(systemName: webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.42))
+                        .frame(width: 20, height: 20)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(fullscreenDisplayTitle)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.72))
+                            .lineLimit(1)
+
+                        if let address = webViewModel.currentURL?.absoluteString {
+                            Text(address)
+                                .font(.system(size: 9.5, weight: .regular, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.32))
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                        }
+                    }
+
+                    Spacer(minLength: 8)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(LanguageManager.shared.localizedString("browser_edit_address"))
+            .accessibilityHint(LanguageManager.shared.localizedString("accessibility_edit_address_hint"))
+
+            Button {
+                closeFullscreenMenu()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.52))
+                    .frame(width: 28, height: 28)
+                    .background(.white.opacity(0.08), in: Circle())
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(LanguageManager.shared.localizedString("cancel"))
+        }
+        .padding(.leading, 12)
+        .padding(.trailing, 10)
+        .padding(.vertical, 10)
+    }
+
+    private func fullscreenPrimaryAction(
+        titleKey: String,
+        systemImage: String,
+        tint: Color = .white,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            HapticsManager.selection()
+            action()
+        } label: {
+            VStack(spacing: 6) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(tint.opacity(0.9))
+                    .frame(height: 20)
+
+                Text(LanguageManager.shared.localizedString(titleKey))
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 9)
+            .background(.white.opacity(0.075), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(webViewModel.currentURL == nil)
+        .opacity(webViewModel.currentURL == nil ? 0.35 : 1)
+    }
+
+    private var fullscreenContentModePicker: some View {
+        HStack(spacing: 6) {
+            fullscreenContentModeButton(
+                titleKey: "mobile_mode",
+                systemImage: "iphone",
+                isSelected: !(tabManager?.isDesktopMode ?? false)
+            ) {
+                setFullscreenDesktopMode(false)
+            }
+
+            fullscreenContentModeButton(
+                titleKey: "desktop_mode",
+                systemImage: "desktopcomputer",
+                isSelected: tabManager?.isDesktopMode ?? false
+            ) {
+                setFullscreenDesktopMode(true)
+            }
+        }
+        .padding(3)
+        .background(.black.opacity(0.22), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+    }
+
+    private func fullscreenContentModeButton(
+        titleKey: String,
+        systemImage: String,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            guard !isSelected else { return }
+            HapticsManager.selection()
+            action()
+        } label: {
+            Label(LanguageManager.shared.localizedString(titleKey), systemImage: systemImage)
+                .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
+                .foregroundStyle(.white.opacity(isSelected ? 0.9 : 0.48))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(
+                    isSelected ? .white.opacity(0.13) : .clear,
+                    in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                )
+                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(tabManager == nil)
+    }
+
+    private var fullscreenNavigationActions: some View {
+        HStack(spacing: 7) {
+            fullscreenCompactAction(
+                titleKey: "browser_back",
+                systemImage: "chevron.left",
+                enabled: webViewModel.canGoBack
+            ) {
+                closeFullscreenMenu()
+                webViewModel.goBack()
+            }
+
+            fullscreenCompactAction(
+                titleKey: "browser_reload",
+                systemImage: webViewModel.isLoading ? "xmark" : "arrow.clockwise",
+                enabled: webViewModel.currentURL != nil
+            ) {
+                closeFullscreenMenu()
+                webViewModel.reload()
+            }
+
+            fullscreenCompactAction(
+                titleKey: "browser_forward",
+                systemImage: "chevron.right",
+                enabled: webViewModel.canGoForward
+            ) {
+                closeFullscreenMenu()
+                webViewModel.goForward()
+            }
+
+            Button {
+                exitFullscreen()
+            } label: {
+                Label(
+                    LanguageManager.shared.localizedString("exit_fullscreen"),
+                    systemImage: "arrow.down.right.and.arrow.up.left"
+                )
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.red.opacity(0.88))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .background(.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var fullscreenZoomControls: some View {
+        HStack(spacing: 8) {
+            fullscreenCompactAction(
+                titleKey: "web_zoom_out",
+                systemImage: "minus",
+                enabled: webViewModel.pageZoom > 0.5
+            ) {
+                webViewModel.decreasePageZoom()
+            }
+
+            Button {
+                webViewModel.resetPageZoom()
+            } label: {
+                Text("\(Int((webViewModel.pageZoom * 100).rounded()))%")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.76))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 34)
+                    .background(.white.opacity(0.075), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(LanguageManager.shared.localizedString("web_zoom_reset"))
+
+            fullscreenCompactAction(
+                titleKey: "web_zoom_in",
+                systemImage: "plus",
+                enabled: webViewModel.pageZoom < 2
+            ) {
+                webViewModel.increasePageZoom()
+            }
+        }
+    }
+
+    private func fullscreenCompactAction(
+        titleKey: String,
+        systemImage: String,
+        enabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            guard enabled else { return }
+            HapticsManager.selection()
+            action()
+        } label: {
+            Image(systemName: systemImage)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(enabled ? 0.76 : 0.2))
+                .frame(width: 34, height: 34)
+                .background(.white.opacity(enabled ? 0.075 : 0.035), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .accessibilityLabel(LanguageManager.shared.localizedString(titleKey))
+    }
+
+    private var fullscreenHandleRevealArea: some View {
+        VStack(spacing: 0) {
+            Color.clear
+                .contentShape(Rectangle())
+                .frame(height: max(topSafeAreaInset, windowSafeAreaInsets.top, 8) + 36)
+                .gesture(
+                    DragGesture(minimumDistance: 10)
+                        .onEnded { value in
+                            if FullscreenHandleRevealGesture.shouldReveal(
+                                translation: value.translation
+                            ) {
+                                revealFullscreenExitHandle()
+                            }
+                        }
+                )
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .allowsHitTesting(!showFullscreenExitHandle)
+        .accessibilityHidden(true)
     }
 
     private func toggleFullscreen() {
@@ -737,8 +1266,13 @@ struct WebViewContainer: View {
 
     private func exitFullscreen() {
         guard isFullscreen else { return }
+        fullscreenHintDismissTask?.cancel()
+        if keepFullscreenBrowsing {
+            keepFullscreenBrowsing = false
+        }
         HapticsManager.light()
         withAnimation(reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.86)) {
+            showFullscreenMenu = false
             isFullscreen = false
             toolbarMinimized = false
         }
@@ -749,6 +1283,8 @@ struct WebViewContainer: View {
         fullscreenHintDismissTask = nil
 
         guard isFullscreen else {
+            showFullscreenMenu = false
+            showFullscreenExitHandle = false
             showFullscreenExitHint = false
             return
         }
@@ -757,13 +1293,99 @@ struct WebViewContainer: View {
         toolbarMinimized = false
 
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+            showFullscreenMenu = false
+            showFullscreenExitHandle = true
             showFullscreenExitHint = true
         }
+        scheduleFullscreenHandleDismiss()
+    }
+
+    private func revealFullscreenExitHandle() {
+        guard isFullscreen, !showFullscreenExitHandle else { return }
+        fullscreenHintDismissTask?.cancel()
+
+        HapticsManager.light()
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+            showFullscreenMenu = false
+            showFullscreenExitHint = false
+            showFullscreenExitHandle = true
+        }
+        scheduleFullscreenHandleDismiss()
+    }
+
+    private func toggleFullscreenMenu() {
+        guard isFullscreen, showFullscreenExitHandle else { return }
+        fullscreenHintDismissTask?.cancel()
+        fullscreenHintDismissTask = nil
+        HapticsManager.selection()
+
+        withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.86)) {
+            showFullscreenExitHint = false
+            showFullscreenMenu.toggle()
+        }
+
+        if !showFullscreenMenu {
+            scheduleFullscreenHandleDismiss()
+        }
+    }
+
+    private func closeFullscreenMenu() {
+        guard showFullscreenMenu else { return }
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) {
+            showFullscreenMenu = false
+        }
+        scheduleFullscreenHandleDismiss()
+    }
+
+    private func setFullscreenDesktopMode(_ enabled: Bool) {
+        guard let tabManager, tabManager.isDesktopMode != enabled else { return }
+        tabManager.setDesktopModeEnabled(enabled)
+    }
+
+    private var fullscreenDisplayTitle: String {
+        let pageTitle = webViewModel.pageTitle
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !pageTitle.isEmpty {
+            return pageTitle
+        }
+
+        guard let host = webViewModel.currentURL?.host else {
+            return LanguageManager.shared.localizedString("tab_new_tab")
+        }
+        return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+    }
+
+    private func copyCurrentPageLink() {
+        guard let url = webViewModel.currentURL else { return }
+        UIPasteboard.general.url = url
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        NotificationCenter.default.post(name: .linkCopied, object: nil)
+    }
+
+    private func capturePage(_ mode: WebPageCaptureMode) {
+        guard !isCapturingPage else { return }
+        isCapturingPage = true
+        Task { @MainActor in
+            do {
+                captureResult = try await WebPageCaptureService.capture(mode, from: webViewModel.webView)
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            } catch {
+                captureError = error.localizedDescription
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+            }
+            isCapturingPage = false
+        }
+    }
+
+    private func scheduleFullscreenHandleDismiss() {
+        fullscreenHintDismissTask?.cancel()
         fullscreenHintDismissTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 2_400_000_000)
             guard !Task.isCancelled else { return }
+            guard !showFullscreenMenu else { return }
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) {
                 showFullscreenExitHint = false
+                showFullscreenExitHandle = false
             }
         }
     }
@@ -840,6 +1462,74 @@ struct WebViewContainer: View {
     private func syncBookmarkState(for url: URL?) {
         guard let s = url?.absoluteString else { isBookmarked = false; return }
         isBookmarked = bookmarkViewModel.isBookmarked(url: s, context: modelContext)
+    }
+}
+
+private struct WebToolsPresentationModifier: ViewModifier {
+    @ObservedObject var webViewModel: WebViewModel
+    @Binding var showCaptureOptions: Bool
+    let isCapturingPage: Bool
+    @Binding var captureResult: WebPageCaptureResult?
+    @Binding var captureError: String?
+    @Binding var showTranslationSheet: Bool
+    let onCapture: (WebPageCaptureMode) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .confirmationDialog(
+                LanguageManager.shared.localizedString("web_capture"),
+                isPresented: $showCaptureOptions,
+                titleVisibility: .visible
+            ) {
+                Button(LanguageManager.shared.localizedString("web_capture_viewport")) {
+                    onCapture(.viewport)
+                }
+                Button(LanguageManager.shared.localizedString("web_capture_full_page")) {
+                    onCapture(.fullPage)
+                }
+                Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
+            } message: {
+                Text(LanguageManager.shared.localizedString("web_capture_full_page_limit_desc"))
+            }
+            .sheet(item: $captureResult) { result in
+                WebPageCapturePreview(result: result)
+            }
+            .sheet(isPresented: $showTranslationSheet) {
+                WebPageTranslationSheet(
+                    webView: webViewModel.webView,
+                    pageURL: webViewModel.currentURL,
+                    onOpenURL: { url in webViewModel.loadURL(url) }
+                )
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+            }
+            .alert(
+                LanguageManager.shared.localizedString("web_capture_failed"),
+                isPresented: Binding(
+                    get: { captureError != nil },
+                    set: { if !$0 { captureError = nil } }
+                )
+            ) {
+                Button(LanguageManager.shared.localizedString("confirm"), role: .cancel) {}
+            } message: {
+                Text(captureError ?? "")
+            }
+            .overlay {
+                if isCapturingPage {
+                    ZStack {
+                        Color.black.opacity(0.12).ignoresSafeArea()
+                        VStack(spacing: 10) {
+                            ProgressView()
+                            Text(LanguageManager.shared.localizedString("web_capture_processing"))
+                                .font(.subheadline.weight(.medium))
+                        }
+                        .padding(.horizontal, 22)
+                        .padding(.vertical, 18)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+                    }
+                    .transition(.opacity)
+                }
+            }
     }
 }
 

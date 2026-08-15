@@ -76,4 +76,52 @@ final class AdBlockSubscriptionServiceTests: XCTestCase {
         XCTAssertTrue(json.contains("ads\\\\.subscription\\\\.test"))
         XCTAssertTrue(json.contains(".subscription-ad"))
     }
+
+    @MainActor
+    func testSubscriptionCacheMergePreservesStructuredConstraints() throws {
+        let suiteName = "AdBlockSubscriptionServiceTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let subscriptionsKey = "subscriptions"
+        let cacheKey = "rules"
+        let subscriptions = [
+            AdBlockSubscription(
+                id: "test",
+                name: "Test",
+                urlString: "https://example.com/list.txt",
+                isEnabled: true,
+                lastUpdatedAt: nil,
+                networkRuleCount: 1,
+                cosmeticRuleCount: 1,
+                errorMessage: ""
+            )
+        ]
+        defaults.set(try JSONEncoder().encode(subscriptions), forKey: subscriptionsKey)
+        let networkRule = AdBlockNetworkRule(
+            urlFilter: "tracker\\.example",
+            resourceTypes: ["script"],
+            loadTypes: ["third-party"],
+            ifDomains: ["*example.com"]
+        )
+        let cosmeticRule = AdBlockCosmeticRule(selector: ".sponsor", ifDomains: ["*example.com"])
+        let stored = [
+            "test": ParsedAdBlockRules(
+                networkURLFilters: [networkRule.urlFilter],
+                networkRules: [networkRule],
+                cosmeticRules: [cosmeticRule]
+            )
+        ]
+        defaults.set(try JSONEncoder().encode(stored), forKey: "\(cacheKey)_by_id")
+
+        let service = AdBlockSubscriptionService(
+            subscriptionsKey: subscriptionsKey,
+            cachedRulesKey: cacheKey,
+            versionKey: "version",
+            autoUpdateCheckKey: "update",
+            userDefaults: defaults
+        )
+
+        XCTAssertEqual(service.enabledRuleSummary.networkRules, [networkRule])
+        XCTAssertEqual(service.enabledRuleSummary.cosmeticRules, [cosmeticRule])
+    }
 }

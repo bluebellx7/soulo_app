@@ -11,9 +11,10 @@ struct HomeView: View {
     @Namespace private var searchBarNamespace
 
     @State private var showSettings = false
-    @State private var showHistory = false
-    @State private var showBookmarks = false
+    @State private var showExtensionCenter = false
+    @State private var librarySection: LibrarySection?
     @State private var showVoiceInput = false
+    @State private var showAppShareSheet = false
     @State private var showTabOverviewFromHome = false
     @State private var showTitleEditor = false
     @State private var showSubtitleEditor = false
@@ -27,6 +28,14 @@ struct HomeView: View {
     @AppStorage("show_recent_searches_on_home") private var showRecentSearchesOnHome: Bool = true
     @Query(sort: \BookmarkItem.dateAdded, order: .reverse) private var bookmarks: [BookmarkItem]
     @State private var dynamicTheme: DynamicTheme = DynamicTheme(rawValue: UserDefaults.standard.string(forKey: "dynamic_theme") ?? "midnight") ?? .midnight
+
+    private var displayedHomeTitle: String {
+        homeTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var displayedHomeSubtitle: String {
+        homeSubtitle.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
     var body: some View {
         ZStack {
@@ -115,11 +124,28 @@ struct HomeView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView()
         }
-        .sheet(isPresented: $showHistory) {
-            SearchHistoryView(searchVM: searchVM)
+        .sheet(isPresented: $showExtensionCenter) {
+            NavigationStack {
+                ExtensionCenterView(onOpenInBrowser: { url in
+                    tabManager.activeWebViewModel?.loadURL(url)
+                    searchVM.isSearching = true
+                    showExtensionCenter = false
+                })
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(LanguageManager.shared.localizedString("done")) {
+                                showExtensionCenter = false
+                            }
+                        }
+                    }
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
-        .sheet(isPresented: $showBookmarks) {
-            BookmarksView(searchVM: searchVM)
+        .sheet(item: $librarySection) { section in
+            LibraryView(initialSection: section, searchVM: searchVM)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showVoiceInput) {
             VoiceInputView(
@@ -132,18 +158,23 @@ struct HomeView: View {
                 onDismiss: { showVoiceInput = false }
             )
         }
+        .sheet(isPresented: $showAppShareSheet) {
+            HomeActivityView(items: [
+                LanguageManager.shared.localizedString("share_app_message"),
+                URL(string: "https://apps.apple.com/app/id6761165330")!
+            ])
+        }
         .alert(LanguageManager.shared.localizedString("edit_title"), isPresented: $showTitleEditor) {
             TextField("Soulo", text: $editingTitle)
             Button(LanguageManager.shared.localizedString("save")) {
-                let trimmed = editingTitle.trimmingCharacters(in: .whitespaces)
-                if !trimmed.isEmpty { homeTitle = trimmed }
+                homeTitle = editingTitle.trimmingCharacters(in: .whitespacesAndNewlines)
             }
             Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
         }
         .alert(LanguageManager.shared.localizedString("edit_subtitle"), isPresented: $showSubtitleEditor) {
             TextField(languageManager.localizedString("app_subtitle"), text: $editingSubtitle)
             Button(LanguageManager.shared.localizedString("save")) {
-                homeSubtitle = editingSubtitle
+                homeSubtitle = editingSubtitle.trimmingCharacters(in: .whitespacesAndNewlines)
             }
             Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
         }
@@ -157,6 +188,9 @@ struct HomeView: View {
                 guard !Task.isCancelled else { return }
                 wallpaperManager.ensureLoaded()
             }
+            if let action = AppQuickActionService.shared.consumePendingAction() {
+                handleQuickAction(action)
+            }
         }
         .onDisappear {
             wallpaperLoadTask?.cancel()
@@ -165,6 +199,11 @@ struct HomeView: View {
             if !isSearching {
                 searchVM.loadRecentSearches(context: modelContext)
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .appQuickActionReceived)) { notification in
+            guard let action = notification.object as? AppQuickAction else { return }
+            _ = AppQuickActionService.shared.consumePendingAction()
+            handleQuickAction(action)
         }
     }
 
@@ -184,48 +223,53 @@ struct HomeView: View {
 
             // Center: App name + Search
             VStack(spacing: 24) {
-                // App name only
-                VStack(spacing: 6) {
-                    Text(homeTitle)
-                        .font(.system(size: 38, weight: .bold, design: .rounded))
-                        .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47") : .white)
-                        .shadow(color: wallpaperManager.isCurrentWallpaperLight ? .black.opacity(0.05) : .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                        .onTapGesture { showTitleEditor = true }
-                        .accessibilityLabel(
-                            AppAccessibility.formatted("accessibility_home_title", homeTitle)
-                        )
-                        .accessibilityHint(
-                            languageManager.localizedString("accessibility_edit_title_hint")
-                        )
-                        .accessibilityAddTraits([.isHeader, .isButton])
-                        .accessibilityAction { showTitleEditor = true }
+                if !displayedHomeTitle.isEmpty || !displayedHomeSubtitle.isEmpty {
+                    VStack(spacing: 6) {
+                        if !displayedHomeTitle.isEmpty {
+                            Text(displayedHomeTitle)
+                                .font(.system(size: 38, weight: .bold, design: .rounded))
+                                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47") : .white)
+                                .shadow(color: wallpaperManager.isCurrentWallpaperLight ? .black.opacity(0.05) : .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                .onTapGesture { showTitleEditor = true }
+                                .accessibilityLabel(
+                                    AppAccessibility.formatted("accessibility_home_title", displayedHomeTitle)
+                                )
+                                .accessibilityHint(
+                                    languageManager.localizedString("accessibility_edit_title_hint")
+                                )
+                                .accessibilityAddTraits([.isHeader, .isButton])
+                                .accessibilityAction { showTitleEditor = true }
+                        }
 
-                    Text(homeSubtitle.isEmpty ? languageManager.localizedString("app_subtitle") : homeSubtitle)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.6) : .white.opacity(0.4))
-                        .tracking(1.5)
-                        .onTapGesture { showSubtitleEditor = true }
-                        .accessibilityLabel(
-                            AppAccessibility.formatted(
-                                "accessibility_home_subtitle",
-                                homeSubtitle.isEmpty
-                                    ? languageManager.localizedString("app_subtitle")
-                                    : homeSubtitle
-                            )
-                        )
-                        .accessibilityHint(
-                            languageManager.localizedString("accessibility_edit_subtitle_hint")
-                        )
-                        .accessibilityAddTraits(.isButton)
-                        .accessibilityAction { showSubtitleEditor = true }
+                        if !displayedHomeSubtitle.isEmpty {
+                            Text(displayedHomeSubtitle)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.6) : .white.opacity(0.4))
+                                .tracking(1.5)
+                                .onTapGesture { showSubtitleEditor = true }
+                                .accessibilityLabel(
+                                    AppAccessibility.formatted(
+                                        "accessibility_home_subtitle",
+                                        displayedHomeSubtitle
+                                    )
+                                )
+                                .accessibilityHint(
+                                    languageManager.localizedString("accessibility_edit_subtitle_hint")
+                                )
+                                .accessibilityAddTraits(.isButton)
+                                .accessibilityAction { showSubtitleEditor = true }
+                        }
+                    }
                 }
 
                 // Search bar
                 SearchBarView(
                     text: $searchVM.searchText,
+                    isIncognito: searchVM.isIncognito,
                     isRecording: speechService.isRecording,
                     onSubmit: { performSearch() },
                     onMicTap: { showVoiceInput = true },
+                    onIncognitoTap: { togglePrivateModeFromSearchBar() }
                 )
                 .matchedGeometryEffect(id: "searchBar", in: searchBarNamespace)
                 .frame(maxWidth: isIPad ? 600 : .infinity)
@@ -271,7 +315,9 @@ struct HomeView: View {
                 }
 
                 // Recent searches (hidden while typing, shown when empty)
-                if showRecentSearchesOnHome && !searchVM.recentSearches.isEmpty && searchVM.searchText.isEmpty {
+                if showRecentSearchesOnHome
+                    && !searchVM.recentSearches.isEmpty
+                    && searchVM.searchText.isEmpty {
                     SearchSuggestionsView(
                         recentSearches: searchVM.recentSearches,
                         onTap: { keyword in
@@ -414,13 +460,9 @@ struct HomeView: View {
 
     private var topBar: some View {
         HStack(spacing: 10) {
-            // Incognito indicator
-            if searchVM.isIncognito {
-                incognitoIndicator
-            }
-
-            // Tab indicator — show when there are loaded tabs
-            if shouldShowTabEntry {
+            // Existing tabs and the tab switcher remain available in private mode.
+            // Privacy changes what is persisted, not which browser controls are shown.
+            if shouldShowTabEntry || searchVM.isIncognito {
                 Button {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     tabManager.refreshSnapshotsForSwitcher()
@@ -470,15 +512,21 @@ struct HomeView: View {
     private var homeMenu: some View {
         Menu {
             Button {
-                showHistory = true
+                librarySection = .history
             } label: {
                 Label(LanguageManager.shared.localizedString("search_history"), systemImage: "clock.arrow.circlepath")
             }
 
             Button {
-                showBookmarks = true
+                librarySection = .bookmarks
             } label: {
                 Label(LanguageManager.shared.localizedString("my_favorites"), systemImage: "bookmark")
+            }
+
+            Button {
+                librarySection = .downloads
+            } label: {
+                Label(LanguageManager.shared.localizedString("my_downloads"), systemImage: "arrow.down.circle")
             }
 
             Divider()
@@ -504,6 +552,12 @@ struct HomeView: View {
             } label: {
                 Label(LanguageManager.shared.localizedString("settings"), systemImage: "gearshape")
             }
+
+            Button {
+                showExtensionCenter = true
+            } label: {
+                Label(LanguageManager.shared.localizedString("userscripts"), systemImage: "chevron.left.forwardslash.chevron.right")
+            }
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: 13, weight: .semibold))
@@ -520,27 +574,6 @@ struct HomeView: View {
                 .contentShape(Circle())
         }
         .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
-    }
-
-    private var incognitoIndicator: some View {
-        Image(systemName: "eye.slash.fill")
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(
-                wallpaperManager.isCurrentWallpaperLight
-                    ? Color(hex: "2E2A47").opacity(0.85)
-                    : .white.opacity(0.5)
-            )
-            .frame(width: 34, height: 34)
-            .background {
-                if wallpaperManager.isCurrentWallpaperLight {
-                    Circle().fill(Color.black.opacity(0.04))
-                } else {
-                    Circle().fill(.ultraThinMaterial.opacity(0.3))
-                }
-            }
-            .accessibilityLabel(
-                languageManager.localizedString("accessibility_incognito_active")
-            )
     }
 
     // MARK: - Actions
@@ -576,4 +609,59 @@ struct HomeView: View {
         )
         searchVM.performSearch(context: modelContext)
     }
+
+    private func togglePrivateModeFromSearchBar() {
+        let isEnteringPrivateMode = !searchVM.isIncognito
+        searchVM.isIncognito = isEnteringPrivateMode
+        tabManager.resetTabsForPrivacy()
+        searchVM.clearSearch()
+        searchVM.showClipboardPrompt = false
+        LiveActivityService.shared.end()
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        AppAccessibility.announce(
+            languageManager.localizedString(
+                isEnteringPrivateMode ? "privacy_enter_incognito" : "privacy_exit_incognito"
+            )
+        )
+    }
+
+    private func handleQuickAction(_ action: AppQuickAction) {
+        switch action {
+        case .search:
+            searchVM.clearSearch()
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .focusHomeSearch, object: nil)
+            }
+        case .newPrivateTab:
+            searchVM.isIncognito = true
+            tabManager.resetTabsForPrivacy()
+            searchVM.clearSearch()
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .focusHomeSearch, object: nil)
+            }
+        case .clearCache:
+            Task {
+                await BrowserCacheService.clear(
+                    tabManager: tabManager,
+                    historyContext: modelContext
+                )
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                AppAccessibility.announce(
+                    LanguageManager.shared.localizedString("cache_cleared")
+                )
+            }
+        case .shareApp:
+            showAppShareSheet = true
+        }
+    }
+}
+
+private struct HomeActivityView: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

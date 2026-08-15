@@ -1,6 +1,193 @@
 import Foundation
 
 enum WebViewScripts {
+    /// WKWebView.pageZoom scales the document relative to the web view bounds,
+    /// which can make the root document wider than the visible viewport. Keep
+    /// the rendered page pinned to the device width while allowing all page
+    /// content (text, images, controls, and spacing) to scale together.
+    static func compensatePageZoomWidth(scale: CGFloat) -> String {
+        let normalizedScale = min(max(scale, 0.5), 2)
+        let scaleLiteral = String(format: "%.5f", Double(normalizedScale))
+        return """
+        (function() {
+            var root = document.documentElement;
+            if (!root) return;
+
+            var scale = \(scaleLiteral);
+            var stateKey = '__souloPageZoomWidthState';
+            var state = window[stateKey];
+            if (!state || state.element !== root) {
+                state = {
+                    element: root,
+                    width: root.style.getPropertyValue('width'),
+                    widthPriority: root.style.getPropertyPriority('width'),
+                    minWidth: root.style.getPropertyValue('min-width'),
+                    minWidthPriority: root.style.getPropertyPriority('min-width'),
+                    maxWidth: root.style.getPropertyValue('max-width'),
+                    maxWidthPriority: root.style.getPropertyPriority('max-width')
+                };
+                window[stateKey] = state;
+            }
+
+            function restore(property, value, priority) {
+                if (value) root.style.setProperty(property, value, priority || '');
+                else root.style.removeProperty(property);
+            }
+
+            if (Math.abs(scale - 1) < 0.001) {
+                restore('width', state.width, state.widthPriority);
+                restore('min-width', state.minWidth, state.minWidthPriority);
+                restore('max-width', state.maxWidth, state.maxWidthPriority);
+                delete window[stateKey];
+                return;
+            }
+
+            root.style.setProperty('width', (100 / scale).toFixed(5) + '%', 'important');
+            root.style.setProperty('min-width', '0', 'important');
+            root.style.setProperty('max-width', 'none', 'important');
+        })();
+        """
+    }
+
+    static let synchronizeViewport = """
+    (function() {
+        var height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        var width = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+        if (document.documentElement) {
+            document.documentElement.style.setProperty('--soulo-viewport-height', Math.round(height) + 'px');
+            document.documentElement.style.setProperty('--soulo-viewport-width', Math.round(width) + 'px');
+        }
+        try { window.dispatchEvent(new Event('resize')); } catch (_) {}
+        try { window.dispatchEvent(new Event('orientationchange')); } catch (_) {}
+        try {
+            if (window.visualViewport) window.visualViewport.dispatchEvent(new Event('resize'));
+        } catch (_) {}
+    })();
+    """
+
+    static let webAppearanceBootstrap = """
+    (function() {
+        if (window.__souloApplyWebAppearance) return;
+        var originalStyles = new Map();
+        var observer = null;
+        var scanTimer = null;
+
+        function luminance(color) {
+            var match = String(color || '').match(/rgba?\\((\\d+)[, ]+(\\d+)[, ]+(\\d+)/i);
+            if (!match) return null;
+            return (Number(match[1]) * 0.2126 + Number(match[2]) * 0.7152 + Number(match[3]) * 0.0722) / 255;
+        }
+
+        function remember(element) {
+            if (originalStyles.has(element)) return;
+            originalStyles.set(element, {
+                background: element.style.getPropertyValue('background-color'),
+                backgroundPriority: element.style.getPropertyPriority('background-color'),
+                color: element.style.getPropertyValue('color'),
+                colorPriority: element.style.getPropertyPriority('color'),
+                border: element.style.getPropertyValue('border-color'),
+                borderPriority: element.style.getPropertyPriority('border-color')
+            });
+        }
+
+        function darken(root) {
+            if (!root || !root.querySelectorAll) return;
+            var elements = [root].concat(Array.prototype.slice.call(root.querySelectorAll('*'), 0, 2800));
+            elements.forEach(function(element) {
+                if (!element || /^(IMG|VIDEO|CANVAS|SVG|PICTURE|IFRAME|SOURCE)$/.test(element.tagName || '')) return;
+                var style;
+                try { style = getComputedStyle(element); } catch (_) { return; }
+                var background = luminance(style.backgroundColor);
+                var foreground = luminance(style.color);
+                var border = luminance(style.borderColor);
+                if ((background !== null && background > 0.78) || (foreground !== null && foreground < 0.25) || (border !== null && border > 0.72)) {
+                    remember(element);
+                    if (background !== null && background > 0.78) {
+                        element.style.setProperty('background-color', background > 0.94 ? '#111113' : '#1c1c1f', 'important');
+                    }
+                    if (foreground !== null && foreground < 0.25) {
+                        element.style.setProperty('color', '#e7e7eb', 'important');
+                    }
+                    if (border !== null && border > 0.72) {
+                        element.style.setProperty('border-color', '#3a3a3f', 'important');
+                    }
+                }
+            });
+        }
+
+        function restore() {
+            originalStyles.forEach(function(value, element) {
+                if (!element || !element.style) return;
+                if (value.background) element.style.setProperty('background-color', value.background, value.backgroundPriority);
+                else element.style.removeProperty('background-color');
+                if (value.color) element.style.setProperty('color', value.color, value.colorPriority);
+                else element.style.removeProperty('color');
+                if (value.border) element.style.setProperty('border-color', value.border, value.borderPriority);
+                else element.style.removeProperty('border-color');
+            });
+            originalStyles.clear();
+        }
+
+        function setWarmOverlay(enabled) {
+            var overlay = document.getElementById('soulo-warm-color-overlay');
+            if (!enabled) {
+                if (overlay) overlay.remove();
+                return;
+            }
+            if (!document.documentElement || overlay) return;
+            overlay = document.createElement('div');
+            overlay.id = 'soulo-warm-color-overlay';
+            overlay.setAttribute('aria-hidden', 'true');
+            overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;background:rgba(255,154,61,.055);mix-blend-mode:multiply;z-index:2147483646;';
+            document.documentElement.appendChild(overlay);
+        }
+
+        function observeDarkContent(enabled) {
+            if (observer) { observer.disconnect(); observer = null; }
+            if (!enabled || !document.documentElement) return;
+            observer = new MutationObserver(function(mutations) {
+                clearTimeout(scanTimer);
+                scanTimer = setTimeout(function() {
+                    mutations.forEach(function(mutation) {
+                        Array.prototype.forEach.call(mutation.addedNodes || [], function(node) {
+                            if (node.nodeType === 1) darken(node);
+                        });
+                    });
+                }, 120);
+            });
+            observer.observe(document.documentElement, { childList: true, subtree: true });
+        }
+
+        window.__souloApplyWebAppearance = function(config) {
+            config = config || {};
+            var forceDark = !!config.forceDark;
+            if (document.documentElement) {
+                document.documentElement.classList.toggle('soulo-force-dark', forceDark);
+                document.documentElement.style.setProperty('color-scheme', forceDark ? 'dark' : '', forceDark ? 'important' : '');
+                if (forceDark) {
+                    document.documentElement.style.setProperty('background-color', '#0b0b0d', 'important');
+                    darken(document.documentElement);
+                } else {
+                    document.documentElement.style.removeProperty('background-color');
+                    restore();
+                }
+            }
+            setWarmOverlay(!!config.warmColorShift);
+            observeDarkContent(forceDark);
+        };
+    })();
+    """
+
+    static func applyWebAppearance(warmColorShift: Bool, forceDark: Bool) -> String {
+        """
+        \(webAppearanceBootstrap)
+        window.__souloApplyWebAppearance && window.__souloApplyWebAppearance({
+            warmColorShift: \(warmColorShift ? "true" : "false"),
+            forceDark: \(forceDark ? "true" : "false")
+        });
+        """
+    }
+
     /// Adds conservative ARIA metadata to third-party pages without changing
     /// their layout or click behavior. Search engines frequently render result
     /// cards as generic containers, which makes direct-touch navigation vague
@@ -184,6 +371,44 @@ enum WebViewScripts {
 
     /// Captures files created inside the page, which WKDownload cannot reliably
     /// receive because blob: and data: URLs do not have a network response.
+    static let extensionInstallBridge = """
+    (function() {
+        if (window.__souloExtensionInstallBridgeInstalled) return;
+        window.__souloExtensionInstallBridgeInstalled = true;
+
+        function chromeExtensionID() {
+            if (location.hostname !== 'chromewebstore.google.com') return null;
+            var segments = location.pathname.split('/').filter(Boolean);
+            for (var index = segments.length - 1; index >= 0; index--) {
+                if (/^[a-p]{32}$/i.test(segments[index])) return segments[index].toLowerCase();
+            }
+            return null;
+        }
+
+        document.addEventListener('click', function(event) {
+            var target = event.target;
+            if (target && target.nodeType !== 1) target = target.parentElement;
+            var control = target && target.closest ? target.closest('button, a, [role="button"]') : null;
+            if (!control) return;
+
+            var extensionID = chromeExtensionID();
+            if (!extensionID) return;
+            var label = String(
+                control.innerText || control.textContent || control.getAttribute('aria-label') || ''
+            ).replace(/\\s+/g, ' ').trim().toLowerCase();
+            var installLabel = /add to chrome|add extension|安装|添加至?\\s*chrome|添加扩展|获取/.test(label);
+            if (!installLabel) return;
+
+            var handler = window.webkit && window.webkit.messageHandlers
+                && window.webkit.messageHandlers.souloExtensionInstaller;
+            if (!handler) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            handler.postMessage({ provider: 'chrome', extensionID: extensionID });
+        }, true);
+    })();
+    """
+
     static let downloadBridge = """
     (function() {
         if (window.__souloDownloadBridgeInstalled) return;

@@ -4,6 +4,7 @@ import SwiftData
 struct PrivacySettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var tabManager: TabManager
+    @EnvironmentObject private var searchVM: SearchViewModel
 
     @AppStorage("is_incognito") private var isIncognito: Bool = false
     @AppStorage("privacy_https_upgrade_enabled") private var httpsUpgradeEnabled: Bool = true
@@ -47,12 +48,12 @@ struct PrivacySettingsView: View {
                                     .fontWeight(.medium)
                             } icon: {
                                 IconBadge(
-                                    systemName: "theatermasks.fill",
-                                    color: isIncognito ? .purple : Color(uiColor: .systemGray3)
+                                    systemName: "eye.slash.fill",
+                                    color: isIncognito ? .teal : Color(uiColor: .systemGray3)
                                 )
                             }
                         }
-                        .tint(.purple)
+                        .tint(.teal)
 
                         HStack(alignment: .top, spacing: 8) {
                             Image(systemName: "info.circle")
@@ -205,8 +206,16 @@ struct PrivacySettingsView: View {
             await refreshCacheSize()
         }
         .onChange(of: isIncognito) { _, enabled in
-            if enabled {
-                tabManager.resetTabsForPrivacy()
+            let pageURL = tabManager.activeWebViewModel?.currentURL
+            tabManager.resetTabsForPrivacy()
+            searchVM.showClipboardPrompt = false
+            LiveActivityService.shared.end()
+
+            if enabled, let pageURL {
+                tabManager.activeWebViewModel?.loadURL(pageURL)
+                searchVM.isSearching = true
+            } else if !enabled {
+                searchVM.clearSearch()
             }
         }
     }
@@ -301,6 +310,7 @@ struct PrivacyToggleRow: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                .padding(.top, 2)
             }
             .padding(.vertical, 4)
         }
@@ -320,15 +330,8 @@ struct DestructiveActionRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.red.opacity(0.1))
-                        .frame(width: 34, height: 34)
-                    Image(systemName: icon)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.red)
-                }
+            HStack(alignment: .top, spacing: 12) {
+                IconBadge(systemName: icon, color: .red)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
@@ -340,6 +343,7 @@ struct DestructiveActionRow: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
+                .padding(.top, 2)
 
                 Spacer()
 
@@ -357,6 +361,7 @@ struct DestructiveActionRow: View {
                     }
                 }
                 .frame(width: 24, height: 24)
+                .padding(.top, 3)
             }
             .padding(.vertical, 4)
             .contentShape(Rectangle())
@@ -379,15 +384,8 @@ struct CacheActionRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.teal.opacity(0.12))
-                        .frame(width: 34, height: 34)
-                    Image(systemName: icon)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.teal)
-                }
+            HStack(alignment: .top, spacing: 12) {
+                IconBadge(systemName: icon, color: Color(uiColor: .secondaryLabel))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
@@ -399,6 +397,7 @@ struct CacheActionRow: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
+                .padding(.top, 2)
 
                 Spacer()
 
@@ -415,7 +414,7 @@ struct CacheActionRow: View {
                         ProgressView()
                             .progressViewStyle(.circular)
                             .scaleEffect(0.85)
-                            .tint(.teal)
+                            .tint(.blue)
                     } else if isCompleted {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 18))
@@ -425,6 +424,7 @@ struct CacheActionRow: View {
                 }
                 .frame(minHeight: 24)
                 .fixedSize(horizontal: true, vertical: false)
+                .padding(.top, 3)
             }
             .padding(.vertical, 4)
             .contentShape(Rectangle())

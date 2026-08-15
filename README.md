@@ -142,8 +142,8 @@ Soulo/
 
 ### 个性化
 - [x] 深色/浅色/跟随系统
-- [x] 多语言 (8 种)
-- [x] iCloud 同步 (历史 + 平台配置)
+- [x] 多语言（15 种）
+- [x] iCloud 设置同步（外观、首页、浏览、隐私、壁纸偏好、平台配置与站点规则；不含历史、缓存、登录态和下载）
 
 ## 内置平台 (22 个)
 
@@ -207,7 +207,7 @@ SwiftData 持久化、搜索历史、收藏书签、首页建议
 完整设置页、语言切换、外观切换、无痕模式、数据清除
 
 ### Phase 7: iCloud 同步 & 精打磨
-iCloud KVS 同步、动画细节、长按保存图片、8 种语言翻译、边界处理
+iCloud KVS 同步、动画细节、长按保存图片、15 种语言翻译、边界处理
 
 ## 存储策略
 
@@ -223,6 +223,7 @@ iCloud KVS 同步、动画细节、长按保存图片、8 种语言翻译、边�
 
 ```xml
 NSSpeechRecognitionUsageDescription - 语音搜索
-NSMicrophoneUsageDescription - 录音用于语音识别
+NSMicrophoneUsageDescription - 语音搜索，以及用户允许后的网页通话或录音
+NSCameraUsageDescription - 用户允许后的网页视频通话、扫码或拍照
 NSPhotoLibraryAddUsageDescription - 保存网页图片到相册
 ```

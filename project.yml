@@ -94,11 +94,14 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         ITSAppUsesNonExemptEncryption: false
-        NSMicrophoneUsageDescription: "Soulo needs microphone access for voice search."
-        NSSpeechRecognitionUsageDescription: "Soulo needs speech recognition to convert your voice to search text."
+        NSCameraUsageDescription: "Allow camera access when you approve a website request, such as for video calls, scanning codes, or taking a photo."
+        NSMicrophoneUsageDescription: "Allow microphone access for voice search and, when you approve, website calls or recording."
+        NSSpeechRecognitionUsageDescription: "Allow speech recognition to turn your voice into search text."
         NSPhotoLibraryUsageDescription: "Soulo needs photo library access to set a custom wallpaper."
         NSPhotoLibraryAddUsageDescription: "Soulo needs permission to save web images to your photo library."
         NSSupportsLiveActivities: true
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
         CFBundleURLTypes:
           - CFBundleURLSchemes:
               - soulo
@@ -109,9 +112,10 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dkluge.Soulo
         CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: Soulo/Soulo.entitlements
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.0.8"
-        CURRENT_PROJECT_VERSION: 10
+        MARKETING_VERSION: "1.1.0"
+        CURRENT_PROJECT_VERSION: 11
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_PREVIEWS: "YES"
@@ -139,8 +143,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.dkluge.Soulo.Widget
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.0.8"
-        CURRENT_PROJECT_VERSION: 10
+        MARKETING_VERSION: "1.1.0"
+        CURRENT_PROJECT_VERSION: 11
         GENERATE_INFOPLIST_FILE: "YES"
         INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
         SKIP_INSTALL: "YES"

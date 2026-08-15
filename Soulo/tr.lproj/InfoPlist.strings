@@ -1,0 +1,5 @@
+NSCameraUsageDescription = "Bir web sitesinin isteğini onayladığınızda görüntülü arama, kod tarama veya fotoğraf çekme gibi işlemler için kamera erişimine izin verin.";
+NSMicrophoneUsageDescription = "Sesli arama ve onay verdiğinizde web sitelerindeki arama veya kayıt işlemleri için mikrofon erişimine izin verin.";
+NSSpeechRecognitionUsageDescription = "Sesinizi arama metnine dönüştürmek için konuşma tanımaya izin verin.";
+NSPhotoLibraryUsageDescription = "Soulo'nun özel bir duvar kağıdı ayarlamak için fotoğraf arşivine erişmesi gerekir.";
+NSPhotoLibraryAddUsageDescription = "Soulo'nun web görüntülerini fotoğraf arşivinize kaydetmek için izne ihtiyacı vardır.";

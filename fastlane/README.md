@@ -1,13 +1,13 @@
 # Soulo Fastlane
 
-本目录对应 App Store Connect 版本 **1.0.7（Build 9）**，使用 Fastlane 标准 locale code。
+本目录对应 App Store Connect 版本 **1.1.0（Build 11）**，使用 Fastlane 标准 locale code。
 
 元数据目录只同步四类版本相关字段：
 
 - `name.txt`：App 名称
 - `subtitle.txt`：副标题
 - `promotional_text.txt`：推广文本
-- `release_notes.txt`：1.0.7 新增内容
+- `release_notes.txt`：1.1.0 新增内容
 
 未放置 `description.txt` 与 `keywords.txt`，因此执行元数据 lane 时会保留 App Store Connect 里已有的描述和关键词。
 
@@ -24,7 +24,7 @@ bundle exec fastlane ios beta
 bundle exec fastlane ios release
 ```
 
-`metadata` 只上传元数据，不上传构建；`beta` 上传 Build 9 到 TestFlight；`release` 上传构建和元数据，但不会自动提交审核。
+`metadata` 只上传元数据，不上传构建；`beta` 上传 Build 11 到 TestFlight；`release` 上传构建和元数据，但不会自动提交审核。
 
 ## 认证
 

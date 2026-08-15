@@ -36,19 +36,47 @@ struct AdBlockService {
             return value
         }
 
+        func overlapsGlobalExclusion(_ domain: String) -> Bool {
+            let root = domain
+                .trimmingCharacters(in: CharacterSet(charactersIn: "*."))
+                .lowercased()
+            guard !root.isEmpty else { return true }
+            return excludedDomains.contains { excluded in
+                let excludedRoot = excluded
+                    .trimmingCharacters(in: CharacterSet(charactersIn: "*."))
+                    .lowercased()
+                return root == excludedRoot
+                    || root.hasSuffix(".\(excludedRoot)")
+                    || excludedRoot.hasSuffix(".\(root)")
+            }
+        }
+
         func trigger(for rule: AdBlockNetworkRule) -> [String: Any]? {
             guard let urlFilter = sanitizedContentBlockerURLFilter(rule.urlFilter) else { return nil }
             let resourceTypes = rule.resourceTypes.filter { $0 != "document" }
-            var value = trigger(urlFilter, resourceTypes: resourceTypes.isEmpty ? defaultBlockedResourceTypes : resourceTypes)
+            // WebKit accepts only one domain condition per trigger. ABP permits
+            // positive and negative domain constraints together, so rules that
+            // require both cannot be represented safely in a native rule list.
+            // Skip those individual rules instead of making the entire blocker
+            // fail to compile (the cosmetic JS layer still evaluates both).
+            guard rule.ifDomains.isEmpty || rule.unlessDomains.isEmpty else { return nil }
+
+            var value: [String: Any] = [
+                "url-filter": urlFilter,
+                "resource-type": resourceTypes.isEmpty ? defaultBlockedResourceTypes : resourceTypes
+            ]
             if !rule.loadTypes.isEmpty {
                 value["load-type"] = rule.loadTypes
             }
             if !rule.ifDomains.isEmpty {
-                value["if-domain"] = rule.ifDomains
-            }
-            if !rule.unlessDomains.isEmpty {
-                let domains = Set((value["unless-domain"] as? [String]) ?? []).union(rule.unlessDomains)
-                value["unless-domain"] = Array(domains).sorted()
+                let filteredDomains = rule.ifDomains.filter { !overlapsGlobalExclusion($0) }
+                guard !filteredDomains.isEmpty else { return nil }
+                value["if-domain"] = filteredDomains
+            } else {
+                let domains = Set(excludedDomains).union(rule.unlessDomains)
+                if !domains.isEmpty {
+                    value["unless-domain"] = Array(domains).sorted()
+                }
             }
             return value
         }
@@ -176,13 +204,19 @@ struct AdBlockService {
 
         for cosmeticRule in cachedRules.cosmeticRules where !cosmeticRule.ifDomains.isEmpty || !cosmeticRule.unlessDomains.isEmpty {
             guard let selector = sanitizedContentBlockerSelector(cosmeticRule.selector) else { continue }
-            var cosmeticTrigger = trigger(".*")
+            // As above, leave mixed positive/negative domain rules to the JS
+            // cosmetic engine so one unsupported trigger cannot disable all rules.
+            guard cosmeticRule.ifDomains.isEmpty || cosmeticRule.unlessDomains.isEmpty else { continue }
+            var cosmeticTrigger: [String: Any] = ["url-filter": ".*"]
             if !cosmeticRule.ifDomains.isEmpty {
-                cosmeticTrigger["if-domain"] = cosmeticRule.ifDomains
-            }
-            if !cosmeticRule.unlessDomains.isEmpty {
-                let domains = Set((cosmeticTrigger["unless-domain"] as? [String]) ?? []).union(cosmeticRule.unlessDomains)
-                cosmeticTrigger["unless-domain"] = Array(domains).sorted()
+                let filteredDomains = cosmeticRule.ifDomains.filter { !overlapsGlobalExclusion($0) }
+                guard !filteredDomains.isEmpty else { continue }
+                cosmeticTrigger["if-domain"] = filteredDomains
+            } else {
+                let domains = Set(excludedDomains).union(cosmeticRule.unlessDomains)
+                if !domains.isEmpty {
+                    cosmeticTrigger["unless-domain"] = Array(domains).sorted()
+                }
             }
             rulesArray.append([
                 "trigger": cosmeticTrigger,

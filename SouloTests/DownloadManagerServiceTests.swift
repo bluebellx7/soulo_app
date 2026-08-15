@@ -140,4 +140,16 @@ final class DownloadManagerServiceTests: XCTestCase {
 
         XCTAssertEqual(restored.downloads.first(where: { $0.id == item.id })?.status, .canceled)
     }
+
+    func testSharedDownloadLocationUsesDocumentsDownloadsFolder() {
+        XCTAssertEqual(DownloadManagerService.downloadsDirectory.lastPathComponent, "Downloads")
+        XCTAssertEqual(
+            Bundle.main.object(forInfoDictionaryKey: "UIFileSharingEnabled") as? Bool,
+            true
+        )
+        XCTAssertEqual(
+            Bundle.main.object(forInfoDictionaryKey: "LSSupportsOpeningDocumentsInPlace") as? Bool,
+            true
+        )
+    }
 }

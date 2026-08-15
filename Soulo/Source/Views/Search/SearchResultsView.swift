@@ -2,6 +2,16 @@ import SwiftUI
 import SwiftData
 import WebKit
 
+enum PersistentFullscreenBehavior {
+    static func shouldEnter(
+        enabled: Bool,
+        hasSearch: Bool,
+        voiceOverEnabled: Bool
+    ) -> Bool {
+        enabled && hasSearch && !voiceOverEnabled
+    }
+}
+
 struct SearchResultsView: View {
     var searchBarNamespace: Namespace.ID
     var speechService: SpeechRecognitionService
@@ -25,6 +35,8 @@ struct SearchResultsView: View {
     @AppStorage("last_selected_region") private var lastRegion: String = ""
     @AppStorage("last_selected_group_id") private var lastGroupID: String = ""
     @AppStorage("show_top_search_bar") private var showTopSearchBar = true
+    @AppStorage(AppConstants.StorageKeys.keepFullscreenBrowsing) private var keepFullscreenBrowsing = false
+    @AppStorage(AppConstants.StorageKeys.shakeAction) private var shakeAction = BrowserShakeAction.none.rawValue
 
     @State private var selectedCustomGroup: CustomGroup? = nil
 
@@ -86,12 +98,6 @@ struct SearchResultsView: View {
                             PlatformTabBar(
                                 platforms: currentPlatforms,
                                 selectedPlatform: $searchVM.selectedPlatform,
-                                onEnterFullscreen: {
-                                    HapticsManager.light()
-                                    withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
-                                        isFullscreen = true
-                                    }
-                                },
                                 usesContrastingControlSurface: !showTopSearchBar
                             )
                             .frame(maxWidth: .infinity)
@@ -344,6 +350,14 @@ struct SearchResultsView: View {
             )
         }
         .onAppear {
+            if PersistentFullscreenBehavior.shouldEnter(
+                enabled: keepFullscreenBrowsing,
+                hasSearch: !searchVM.currentKeyword.isEmpty,
+                voiceOverEnabled: voiceOverEnabled
+            ) {
+                isFullscreen = true
+            }
+
             // Restore last selected group and select first platform
             if !lastGroupID.isEmpty,
                let group = PlatformDataStore.shared.customGroups.first(where: { $0.id.uuidString == lastGroupID }) {
@@ -368,6 +382,25 @@ struct SearchResultsView: View {
             }
             // Otherwise: returning to existing tabs, keep as-is
         }
+        .onChange(of: keepFullscreenBrowsing) { _, enabled in
+            guard PersistentFullscreenBehavior.shouldEnter(
+                enabled: enabled,
+                hasSearch: !searchVM.currentKeyword.isEmpty,
+                voiceOverEnabled: voiceOverEnabled
+            ) else { return }
+            withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                isFullscreen = true
+            }
+        }
+        .background {
+            DeviceShakeDetector(
+                isEnabled: BrowserShakeAction(rawValue: shakeAction) != BrowserShakeAction.none
+            ) {
+                handleShakeAction()
+            }
+            .frame(width: 1, height: 1)
+            .allowsHitTesting(false)
+        }
     }
 
     // MARK: - Top Search Bar
@@ -377,7 +410,7 @@ struct SearchResultsView: View {
             HStack(spacing: 8) {
                 ProgressView()
                     .controlSize(.small)
-                    .tint(Color(hex: "7C3AED"))
+                    .tint(Color.primary.opacity(0.62))
                 Text(languageManager.localizedString("loading"))
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
@@ -438,6 +471,7 @@ struct SearchResultsView: View {
         SearchBarView(
             text: $searchVM.searchText,
             isCompact: true,
+            isIncognito: searchVM.isIncognito,
             isRecording: speechService.isRecording,
             onSubmit: {
                 searchVM.performSearch(context: modelContext)
@@ -656,6 +690,42 @@ struct SearchResultsView: View {
             if let url = platform.searchURL(for: keyword) {
                 webVM.loadURL(url)
             }
+        }
+    }
+
+    private func handleShakeAction() {
+        guard let action = BrowserShakeAction(rawValue: shakeAction), action != .none else { return }
+        var didPerformAction = true
+
+        switch action {
+        case .none:
+            break
+        case .fullscreen:
+            if isFullscreen && keepFullscreenBrowsing {
+                keepFullscreenBrowsing = false
+            }
+            withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                isFullscreen.toggle()
+            }
+        case .darkMode:
+            WebAppearanceService.shared.toggleForceDarkPages()
+            if let webView = tabManager.activeWebViewModel?.webView {
+                WebAppearanceService.shared.apply(to: webView)
+            }
+        case .reload:
+            if let viewModel = tabManager.activeWebViewModel,
+               viewModel.currentURL != nil {
+                // A shake always means refresh, even if the previous navigation is still loading.
+                viewModel.retryCurrentPage()
+            } else {
+                didPerformAction = false
+            }
+        case .closeTab:
+            tabManager.closeTab(at: tabManager.activeTabIndex)
+        }
+
+        if didPerformAction {
+            HapticsManager.success()
         }
     }
 

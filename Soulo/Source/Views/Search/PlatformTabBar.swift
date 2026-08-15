@@ -16,63 +16,44 @@ enum PlatformAccessibilityNavigation {
 struct PlatformTabBar: View {
     let platforms: [SearchPlatform]
     @Binding var selectedPlatform: SearchPlatform?
-    let onEnterFullscreen: () -> Void
     var usesContrastingControlSurface: Bool = false
     @EnvironmentObject var languageManager: LanguageManager
     @Namespace private var platformNamespace
 
     var body: some View {
-        HStack(spacing: 0) {
-            ScrollViewReader { proxy in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(platforms) { platform in
-                            let index = platforms.firstIndex(where: { $0.id == platform.id }) ?? 0
-                            PlatformTab(
-                                platform: platform,
-                                isSelected: selectedPlatform?.id == platform.id,
-                                namespace: platformNamespace,
-                                position: index + 1,
-                                total: platforms.count,
-                                onPrevious: { selectAdjacentPlatform(.previous) },
-                                onNext: { selectAdjacentPlatform(.next) }
-                            ) {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                    selectedPlatform = platform
-                                }
-                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(platforms) { platform in
+                        let index = platforms.firstIndex(where: { $0.id == platform.id }) ?? 0
+                        PlatformTab(
+                            platform: platform,
+                            isSelected: selectedPlatform?.id == platform.id,
+                            namespace: platformNamespace,
+                            position: index + 1,
+                            total: platforms.count,
+                            onPrevious: { selectAdjacentPlatform(.previous) },
+                            onNext: { selectAdjacentPlatform(.next) }
+                        ) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                selectedPlatform = platform
                             }
-                            .id(platform.id)
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         }
+                        .id(platform.id)
                     }
-                    .padding(.leading, 4)
-                    .padding(.trailing, 8)
-                    .padding(.vertical, 6)
                 }
-                .onChange(of: selectedPlatform) { _, newValue in
-                    if let id = newValue?.id {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            proxy.scrollTo(id, anchor: .center)
-                        }
+                .padding(.leading, 4)
+                .padding(.trailing, 12)
+                .padding(.vertical, 6)
+            }
+            .onChange(of: selectedPlatform) { _, newValue in
+                if let id = newValue?.id {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        proxy.scrollTo(id, anchor: .center)
                     }
                 }
             }
-
-            Button(action: onEnterFullscreen) {
-                Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(
-                        usesContrastingControlSurface
-                            ? Color(uiColor: .systemGray).opacity(0.88)
-                            : Color.primary.opacity(0.58)
-                    )
-                    .frame(width: 32, height: 32)
-                    .frame(width: 40, height: 36)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(LanguageManager.shared.localizedString("enter_fullscreen"))
-            .padding(.trailing, 4)
         }
     }
 

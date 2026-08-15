@@ -149,6 +149,10 @@ final class PrivacyProtectionService: ObservableObject {
         protectionDisabledHosts = userDefaults.stringArray(forKey: disabledHostsKey) ?? []
     }
 
+    func reloadFromDefaults() {
+        load()
+    }
+
     private func saveSummaries() {
         if let data = try? JSONEncoder().encode(summariesByHost) {
             userDefaults.set(data, forKey: summariesKey)

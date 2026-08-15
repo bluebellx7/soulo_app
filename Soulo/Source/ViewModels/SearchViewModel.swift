@@ -152,7 +152,7 @@ class SearchViewModel: ObservableObject {
             selectedPlatform = PlatformDataStore.shared.firstVisiblePlatform(for: selectedRegion)
         }
 
-        if var platform = selectedPlatform {
+        if !isIncognito, var platform = selectedPlatform {
             platform.usageCount += 1
             selectedPlatform = platform
             PlatformDataStore.shared.incrementUsage(for: platform.id)
@@ -168,7 +168,7 @@ class SearchViewModel: ObservableObject {
         }
 
         // F6: Live Activity
-        if let platform = selectedPlatform {
+        if !isIncognito, let platform = selectedPlatform {
             LiveActivityService.shared.startOrUpdate(
                 keyword: trimmed,
                 platformName: LanguageManager.shared.localizedString(platform.name)
@@ -216,10 +216,12 @@ class SearchViewModel: ObservableObject {
 
     func selectPlatform(_ platform: SearchPlatform) {
         selectedPlatform = platform
-        PlatformDataStore.shared.incrementUsage(for: platform.id)
+        if !isIncognito {
+            PlatformDataStore.shared.incrementUsage(for: platform.id)
+        }
 
         // F6: Update Live Activity
-        if !currentKeyword.isEmpty {
+        if !isIncognito, !currentKeyword.isEmpty {
             LiveActivityService.shared.startOrUpdate(
                 keyword: currentKeyword,
                 platformName: LanguageManager.shared.localizedString(platform.name)

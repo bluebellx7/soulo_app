@@ -254,7 +254,7 @@
 
 "enter_fullscreen" = "Bật toàn màn hình";
 "exit_fullscreen" = "Thoát toàn màn hình";
-"fullscreen_exit_hint" = "Chạm hoặc kéo xuống để thoát";
+"fullscreen_exit_hint" = "Chạm để mở điều khiển, kéo xuống để thoát";
 "restore_browser_toolbar" = "Khôi phục thanh công cụ trình duyệt";
 "hide_browser_toolbar" = "Ẩn thanh công cụ trình duyệt";
 "privacy_clear_action" = "Xóa";
@@ -424,14 +424,17 @@ Hay cho chung toi biet:
 "downloading" = "Đang tải xuống...";
 
 /* Browser Privacy */
-"downloads" = "Downloads";
-"downloads_empty" = "No Downloads";
-"downloads_empty_desc" = "Downloaded files will appear here.";
-"downloads_clear_finished" = "Clear Finished Downloads";
-"downloads_in_progress" = "Downloading";
-"downloads_finished" = "Finished";
-"downloads_failed" = "Failed";
-"downloads_canceled" = "Canceled";
+"downloads" = "Tệp tải xuống";
+"downloads_empty" = "Chưa có tệp tải xuống";
+"downloads_empty_desc" = "Các tệp đã tải xuống sẽ xuất hiện tại đây.";
+"downloads_clear_finished" = "Xóa các tệp đã tải xong";
+"downloads_in_progress" = "Đang tải xuống";
+"downloads_finished" = "Đã hoàn tất";
+"downloads_failed" = "Thất bại";
+"downloads_canceled" = "Đã hủy";
+"library" = "Thư viện";
+"my_downloads" = "Tệp tải xuống của tôi";
+"open_downloads_folder" = "Mở vị trí tải xuống";
 "live_activity" = "Dynamic Island";
 "live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
@@ -499,3 +502,12 @@ Hay cho chung toi biet:
 "current_page_link" = "Liên kết trang hiện tại";
 "tab_limit_title" = "Đã đạt giới hạn tab";
 "tab_limit_message" = "Bạn có thể giữ tối đa 20 tab. Hãy đóng một tab trước khi mở tab mới.";
+"browser_page_tools" = "Công cụ trang";
+"browser_open_page" = "Mở trang";
+"keep_fullscreen_browsing" = "Duy trì toàn màn hình";
+"keep_fullscreen_browsing_desc" = "Tìm kiếm mới sẽ mở toàn màn hình; thoát thủ công sẽ tắt cài đặt này";
+"icloud_settings_sync" = "Đồng bộ cài đặt iCloud";
+"icloud_settings_sync_desc" = "Đồng bộ giao diện, trang chủ, duyệt web, quyền riêng tư và nền tảng; không gồm lịch sử, bộ nhớ đệm, đăng nhập và tải xuống";
+"settings_section_sync" = "Đồng bộ";
+"privacy_exit_incognito" = "Tắt chế độ riêng tư";
+"privacy_enter_incognito" = "Bật chế độ riêng tư";

@@ -27,7 +27,7 @@
         content="Privacy policy for Soulo, a privacy-first multi-search browser that keeps search history, bookmarks, and preferences on-device."
     >
     <meta property="og:url" content="https://soulo.dkluge.com/privacy.html">
-    <meta property="og:image" content="https://soulo.dkluge.com/app-icon.png?v=1.0.7">
+    <meta property="og:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.0">
     <meta property="og:image:width" content="1024">
     <meta property="og:image:height" content="1024">
     <meta property="og:image:alt" content="Soulo App icon">
@@ -38,11 +38,11 @@
         name="twitter:description"
         content="Privacy policy for Soulo, a privacy-first multi-search browser that keeps search history, bookmarks, and preferences on-device."
     >
-    <meta name="twitter:image" content="https://soulo.dkluge.com/app-icon.png?v=1.0.7">
+    <meta name="twitter:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.0">
     <meta name="twitter:image:alt" content="Soulo App icon">
     <title>Privacy Policy - Soulo</title>
-    <link rel="icon" type="image/png" href="app-icon.png?v=1.0.7">
-    <link rel="apple-touch-icon" href="app-icon.png?v=1.0.7">
+    <link rel="icon" type="image/png" href="app-icon.png?v=1.1.0">
+    <link rel="apple-touch-icon" href="app-icon.png?v=1.1.0">
     <script>
         (function () {
             var selectedTheme = 'system';
@@ -127,13 +127,13 @@
             h1 { font-size: 24px; }
         }
     </style>
-    <link rel="stylesheet" href="site.css?v=1.0.7">
+    <link rel="stylesheet" href="site.css?v=1.1.0">
 </head>
 <body class="privacy-page">
     <a class="skip-link" href="#main-content">Skip to main content</a>
     <div class="privacy-topbar">
         <a class="privacy-brand" href="/">
-            <img src="app-icon.png?v=1.0.7" alt="" width="34" height="34">
+            <img src="app-icon.png?v=1.1.0" alt="" width="34" height="34">
             <span>Soulo</span>
         </a>
         <a class="privacy-back" href="/">
@@ -173,17 +173,18 @@
             </ul>
 
             <h2>4. iCloud Sync</h2>
-            <p>If you enable iCloud sync in Settings, your platform configuration and recent search keywords are synced via Apple's iCloud Key-Value Store. This data is encrypted by Apple and only accessible with your Apple ID. Soulo does not have access to your iCloud credentials.</p>
+            <p>If you enable iCloud sync in Settings, appearance, home-screen, browser, privacy, wallpaper preferences, platform configuration, toolbar layout, and site rules are synced through Apple's iCloud Key-Value Store. Search and browsing history, bookmarks, cache, cookies and login data, downloads, private-browsing state, usage statistics, and wallpaper image files are never synced. Synced settings are protected by Apple and accessible only through your Apple ID. Soulo does not have access to your iCloud credentials.</p>
 
             <h2>5. Permissions</h2>
             <ul>
-                <li><strong>Microphone:</strong> Used only while voice input is active. Soulo passes audio to Apple's Speech framework for transcription. Depending on the device, language, and operating system, Apple may process recognition on-device or through its speech service. Soulo does not record or store the audio, and it is never sent to a Soulo server.</li>
-                <li><strong>Camera:</strong> Used only for image-based text search (OCR). Photos are processed locally using Apple's Vision framework.</li>
+                <li><strong>Microphone:</strong> Used for voice search and, after you approve a secure website's request, for website features such as calls or recording. Depending on the device, language, and operating system, Apple may process voice-search transcription on-device or through its speech service. Soulo never grants website access automatically and does not record, store, or send the audio to a Soulo server. A website you approve may process it under that website's privacy policy.</li>
+                <li><strong>Camera:</strong> Available only after you approve a secure website's request, for features such as video calls, scanning codes, or taking a photo. Soulo never grants website access automatically and does not record, store, or send the video to a Soulo server. A website you approve may process it under that website's privacy policy.</li>
                 <li><strong>Photo Library:</strong> Used to set custom wallpapers and save wallpaper images. Photos are never uploaded.</li>
             </ul>
 
             <h2>6. Third-Party Content</h2>
             <p>Search results are displayed from third-party platforms via WebView. Each platform has its own privacy policy and data practices. Soulo does not control the content provided by these platforms. If you enable ad filtering, Soulo may block known advertising requests and hide matching ad elements inside its WebView.</p>
+            <p><strong>User-installed scripts:</strong> UserScript is an experimental, opt-in browser feature. A script you choose to install can read or modify matching web pages and may make network requests according to its code. Soulo does not install scripts automatically or send their data to a Soulo server. Only install and enable scripts from authors you trust.</p>
 
             <h2>7. Ad Filtering</h2>
             <p>Soulo includes an optional ad blocker that can be enabled in Settings. When enabled, it blocks network requests to known advertising domains and hides ad elements using CSS/JavaScript injection. This feature operates entirely within the app's WebView and does not affect other apps or browsers.</p>

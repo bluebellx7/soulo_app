@@ -1,6 +1,30 @@
 import Foundation
 @_exported import DKlugeI18n
 
+/// Thread-safe localization for error descriptions and other protocol
+/// requirements that cannot call the main-actor LanguageManager directly.
+/// Missing strings fall back to English instead of exposing an internal key.
+enum AppLocalization {
+    static func string(_ key: String) -> String {
+        let selectedLanguage = UserDefaults.standard.string(forKey: "app_language")
+        let selectedBundle = selectedLanguage
+            .flatMap { Bundle.main.path(forResource: $0, ofType: "lproj") }
+            .flatMap(Bundle.init(path:))
+        let localized = (selectedBundle ?? .main).localizedString(
+            forKey: key,
+            value: key,
+            table: nil
+        )
+        guard localized == key,
+              selectedLanguage != "en",
+              let englishPath = Bundle.main.path(forResource: "en", ofType: "lproj"),
+              let englishBundle = Bundle(path: englishPath) else {
+            return localized
+        }
+        return englishBundle.localizedString(forKey: key, value: key, table: nil)
+    }
+}
+
 // MARK: - Soulo-specific compatibility
 
 extension LanguageManager {

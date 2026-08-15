@@ -1,79 +1,264 @@
 import Foundation
 
-@MainActor
-class CloudSyncService {
-    static let shared = CloudSyncService()
+struct CloudSettingsPayload: Codable {
+    let version: Int
+    let modifiedAt: Date
+    let propertyList: Data
+    let missingKeys: [String]
+}
 
-    private let kvStore = NSUbiquitousKeyValueStore.default
-    private let platformKey = "icloud_platform_config"
-    private let recentKeywordsKey = "icloud_recent_keywords"
+enum CloudSettingsPayloadCodec {
+    static func encode(
+        defaults: UserDefaults,
+        keys: [String],
+        date: Date = Date()
+    ) throws -> Data {
+        var values: [String: Any] = [:]
+        var missingKeys: [String] = []
 
-    private init() {
-        registerForChanges()
+        for key in keys {
+            if let value = defaults.object(forKey: key) {
+                values[key] = value
+            } else {
+                missingKeys.append(key)
+            }
+        }
+
+        let propertyList = try PropertyListSerialization.data(
+            fromPropertyList: values,
+            format: .binary,
+            options: 0
+        )
+        return try JSONEncoder().encode(
+            CloudSettingsPayload(
+                version: 2,
+                modifiedAt: date,
+                propertyList: propertyList,
+                missingKeys: missingKeys
+            )
+        )
     }
 
-    // MARK: - Platform Config Sync
+    @discardableResult
+    static func apply(
+        _ data: Data,
+        defaults: UserDefaults,
+        allowedKeys: Set<String>
+    ) throws -> CloudSettingsPayload {
+        let payload = try JSONDecoder().decode(CloudSettingsPayload.self, from: data)
+        guard payload.version == 2 else {
+            throw CocoaError(.coderReadCorrupt)
+        }
 
-    func syncPlatformConfig() {
-        guard UserDefaults.standard.bool(forKey: AppConstants.StorageKeys.iCloudSyncEnabled) else { return }
+        guard let values = try PropertyListSerialization.propertyList(
+            from: payload.propertyList,
+            options: [],
+            format: nil
+        ) as? [String: Any] else {
+            throw CocoaError(.coderReadCorrupt)
+        }
 
-        let store = PlatformDataStore.shared
-        let platforms = store.allPlatforms()
+        for (key, value) in values where allowedKeys.contains(key) {
+            defaults.set(value, forKey: key)
+        }
+        for key in payload.missingKeys where allowedKeys.contains(key) {
+            defaults.removeObject(forKey: key)
+        }
+        return payload
+    }
+}
 
-        if let data = try? JSONEncoder().encode(platforms) {
-            kvStore.set(data, forKey: platformKey)
-            kvStore.synchronize()
+@MainActor
+final class CloudSyncService: NSObject {
+    static let shared = CloudSyncService()
+
+    private lazy var kvStore = NSUbiquitousKeyValueStore.default
+    private let defaults = UserDefaults.standard
+    private let payloadKey = "soulo_settings_payload_v2"
+    private var defaultsObserver: NSObjectProtocol?
+    private var pendingUpload: DispatchWorkItem?
+    private var isApplyingRemote = false
+    private var isObservingRemote = false
+
+    /// Intentionally excludes history, bookmarks, cache, cookies, downloads,
+    /// private-browsing state, tab state, wallpaper images, and usage statistics.
+    static let syncedKeys: [String] = [
+        "appearance",
+        "theme_color",
+        "app_language",
+        "dynamic_theme",
+        "home_title",
+        "home_subtitle",
+        "show_bookmarks_on_home",
+        "show_group_picker_on_home",
+        "show_recent_searches_on_home",
+        "show_top_search_bar",
+        "keep_fullscreen_browsing",
+        "web_follows_app_color_scheme",
+        "web_warm_color_shift",
+        "web_force_dark_pages",
+        "browser_shake_action",
+        "browser_toolbar_actions",
+        "browser_toolbar_address_action",
+        "ad_block_enabled",
+        LiveActivityService.enabledKey,
+        "privacy_https_upgrade_enabled",
+        "privacy_strip_tracking_parameters",
+        "privacy_gpc_enabled",
+        "privacy_cookie_banner_enabled",
+        "privacy_https_upgrade_excluded_hosts",
+        "soulo_privacy_disabled_hosts",
+        "soulo_ad_block_allowlisted_hosts",
+        "soulo_ad_block_subscriptions",
+        "soulo_external_navigation_blocked_hosts",
+        "soulo_external_navigation_suppress_prompts",
+        "wallpaper_source",
+        "wallpaper_gradient_id",
+        "wallpaper_solid_color",
+        "wallpaper_topic",
+        "wallpaper_vibe_tags",
+        "wallpaper_refresh_interval",
+        "wallpaper_auto_random_sources",
+        "wallpaper_auto_sources",
+        "wallpaper_auto_random_topics",
+        "last_selected_region",
+        "last_selected_group_id",
+        "platform_config",
+        "custom_groups",
+        "region_name_overrides"
+    ]
+
+    private override init() {
+        super.init()
+
+        defaultsObserver = NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: defaults,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.scheduleUploadIfNeeded()
+            }
+        }
+
+        if isEnabled {
+            startSync()
         }
     }
 
-    func fetchRemotePlatformConfig() -> [SearchPlatform]? {
-        guard let data = kvStore.data(forKey: platformKey) else { return nil }
-        return try? JSONDecoder().decode([SearchPlatform].self, from: data)
+    func setEnabled(_ enabled: Bool) {
+        pendingUpload?.cancel()
+        pendingUpload = nil
+        guard enabled else {
+            stopObservingRemoteChanges()
+            return
+        }
+        startSync()
     }
 
-    // MARK: - Recent Keywords Sync
+    private var isEnabled: Bool {
+        defaults.bool(forKey: AppConstants.StorageKeys.iCloudSyncEnabled)
+    }
 
-    func syncRecentKeywords(_ keywords: [String]) {
-        guard UserDefaults.standard.bool(forKey: AppConstants.StorageKeys.iCloudSyncEnabled) else { return }
-
-        let limited = Array(keywords.prefix(50))
-        kvStore.set(limited, forKey: recentKeywordsKey)
+    private func startSync() {
+        guard isEnabled else { return }
+        startObservingRemoteChanges()
         kvStore.synchronize()
+
+        if let remoteData = kvStore.data(forKey: payloadKey) {
+            applyRemote(remoteData)
+        } else {
+            uploadLocalSettings()
+        }
     }
 
-    func fetchRemoteKeywords() -> [String] {
-        kvStore.array(forKey: recentKeywordsKey) as? [String] ?? []
-    }
-
-    // MARK: - Change Notification
-
-    private func registerForChanges() {
+    private func startObservingRemoteChanges() {
+        guard !isObservingRemote else { return }
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(handleRemoteChange),
+            selector: #selector(handleRemoteChange(_:)),
             name: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
             object: kvStore
         )
+        isObservingRemote = true
+    }
+
+    private func stopObservingRemoteChanges() {
+        guard isObservingRemote else { return }
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+            object: kvStore
+        )
+        isObservingRemote = false
+    }
+
+    private func scheduleUploadIfNeeded() {
+        guard isEnabled, !isApplyingRemote else { return }
+        pendingUpload?.cancel()
+
+        let work = DispatchWorkItem { [weak self] in
+            Task { @MainActor in
+                self?.uploadLocalSettings()
+            }
+        }
+        pendingUpload = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7, execute: work)
+    }
+
+    private func uploadLocalSettings() {
+        guard isEnabled, !isApplyingRemote else { return }
+        guard let data = try? CloudSettingsPayloadCodec.encode(
+            defaults: defaults,
+            keys: Self.syncedKeys
+        ) else { return }
+
+        kvStore.set(data, forKey: payloadKey)
         kvStore.synchronize()
     }
 
     @objc private func handleRemoteChange(_ notification: Notification) {
-        guard UserDefaults.standard.bool(forKey: AppConstants.StorageKeys.iCloudSyncEnabled) else { return }
-
-        // Merge remote platform config
-        if let remotePlatforms = fetchRemotePlatformConfig() {
-            let store = PlatformDataStore.shared
-            let localPlatforms = store.allPlatforms()
-
-            // Simple strategy: if remote has custom platforms we don't have, add them
-            var merged = localPlatforms
-            for remote in remotePlatforms where remote.isCustom {
-                if !merged.contains(where: { $0.id == remote.id }) {
-                    merged.append(remote)
-                }
-            }
-            store.platforms = merged
-            store.savePlatforms()
+        guard isEnabled else { return }
+        if let changedKeys = notification.userInfo?[NSUbiquitousKeyValueStoreChangedKeysKey] as? [String],
+           !changedKeys.contains(payloadKey) {
+            return
         }
+        guard let data = kvStore.data(forKey: payloadKey) else { return }
+        applyRemote(data)
+    }
+
+    private func applyRemote(_ data: Data) {
+        pendingUpload?.cancel()
+        pendingUpload = nil
+        isApplyingRemote = true
+        defer { isApplyingRemote = false }
+
+        guard (try? CloudSettingsPayloadCodec.apply(
+            data,
+            defaults: defaults,
+            allowedKeys: Set(Self.syncedKeys)
+        )) != nil else { return }
+
+        reloadRuntimeSettings()
+    }
+
+    private func reloadRuntimeSettings() {
+        let appearance = defaults.string(forKey: AppConstants.StorageKeys.appearance) ?? "system"
+        ThemeManager.shared.setAppearance(appearance)
+
+        if let language = defaults.string(forKey: AppConstants.StorageKeys.selectedLanguage) {
+            LanguageManager.shared.setLanguage(language)
+        }
+
+        PlatformDataStore.shared.reloadFromDefaults()
+        WallpaperManager.shared.reloadPreferencesFromDefaults()
+        AdBlockSettingsService.shared.reloadFromDefaults()
+        PrivacyProtectionService.shared.reloadFromDefaults()
+        ExternalNavigationService.shared.reloadFromDefaults()
+        AdBlockSubscriptionService.shared.reloadFromDefaults()
+        BrowserToolbarConfigurationService.shared.reloadFromDefaults()
+
+        let liveActivityEnabled = defaults.object(forKey: LiveActivityService.enabledKey) as? Bool ?? true
+        LiveActivityService.shared.setEnabled(liveActivityEnabled)
     }
 }

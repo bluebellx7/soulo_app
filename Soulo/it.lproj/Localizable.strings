@@ -77,7 +77,6 @@
 "about" = "Informazioni";
 "version" = "Versione";
 "reset_to_defaults" = "Ripristina Predefiniti";
-"confirm_reset" = "Ripristinare le impostazioni predefinite? Tutte le configurazioni delle piattaforme verranno reimpostate.";
 
 /* Wallpaper */
 "wallpaper_bing" = "Bing Giornaliero";
@@ -91,18 +90,14 @@
 "wallpaper_refresh" = "Cambia sfondo";
 "wallpaper_download" = "Scarica sfondo";
 "my_favorites" = "I miei preferiti";
-"wallpaper_saved" = "Sfondo salvato nelle Foto";
 "wallpaper_fetch_bing" = "Ottieni Immagine del Giorno";
-"wallpaper_choose_photo" = "Scegli dalla Libreria";
 "wallpaper_color" = "Colore di Sfondo";
 "wallpaper_load_error" = "Caricamento fallito";
 "wallpaper_favorites" = "I Miei Preferiti";
 "wallpaper_search_placeholder" = "Cerca stile (es. Foresta, Minimal)";
-"wallpaper_discover" = "Scopri Nuovi";
 "wallpaper_pexels" = "Pexels (Curati)";
 "wallpaper_pixabay" = "Pixabay (Natura)";
 "wallpaper_current_vibe" = "Stile Attuale";
-"settings_wallpaper" = "Sfondo e Stile";
 "wallpaper_discover" = "Esplora Sfondi";
 "choose_photo" = "Scegli Foto";
 
@@ -112,7 +107,6 @@
 "search_url_template" = "Modello URL di Ricerca";
 "search_url_hint" = "Usa %@ come segnaposto per la parola chiave\nEsempio: https://example.com/search?q=%@";
 "home_url" = "URL Home";
-"select_region" = "Seleziona Gruppo";
 "auto_sort_by_frequency" = "Ordina automaticamente per frequenza d'uso";
 "custom_platform" = "Piattaforma Personalizzata";
 "delete_platform" = "Elimina Piattaforma";
@@ -153,7 +147,7 @@
 
 "enter_fullscreen" = "Attiva schermo intero";
 "exit_fullscreen" = "Esci da schermo intero";
-"fullscreen_exit_hint" = "Tocca o trascina verso il basso";
+"fullscreen_exit_hint" = "Tocca per i controlli, trascina per uscire";
 "restore_browser_toolbar" = "Ripristina barra del browser";
 "hide_browser_toolbar" = "Nascondi barra del browser";
 "privacy_clear_action" = "Cancella";
@@ -459,14 +453,17 @@
 "downloading" = "Download in corso...";
 
 /* Browser Privacy */
-"downloads" = "Downloads";
-"downloads_empty" = "No Downloads";
-"downloads_empty_desc" = "Downloaded files will appear here.";
-"downloads_clear_finished" = "Clear Finished Downloads";
-"downloads_in_progress" = "Downloading";
-"downloads_finished" = "Finished";
-"downloads_failed" = "Failed";
-"downloads_canceled" = "Canceled";
+"downloads" = "Download";
+"downloads_empty" = "Nessun download";
+"downloads_empty_desc" = "I file scaricati appariranno qui.";
+"downloads_clear_finished" = "Cancella i download completati";
+"downloads_in_progress" = "Download in corso";
+"downloads_finished" = "Completato";
+"downloads_failed" = "Non riuscito";
+"downloads_canceled" = "Annullato";
+"library" = "Raccolta";
+"my_downloads" = "I miei download";
+"open_downloads_folder" = "Apri posizione download";
 "live_activity" = "Dynamic Island";
 "live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
@@ -515,3 +512,12 @@
 "current_page_link" = "Link della pagina corrente";
 "tab_limit_title" = "Limite schede raggiunto";
 "tab_limit_message" = "Puoi tenere aperte fino a 20 schede. Chiudine una prima di aprirne un’altra.";
+"browser_page_tools" = "Strumenti pagina";
+"browser_open_page" = "Apri pagina";
+"keep_fullscreen_browsing" = "Mantieni schermo intero";
+"keep_fullscreen_browsing_desc" = "Le nuove ricerche si aprono a schermo intero; l’uscita manuale disattiva l’opzione";
+"icloud_settings_sync" = "Sincronizzazione impostazioni iCloud";
+"icloud_settings_sync_desc" = "Sincronizza aspetto, home, navigazione, privacy e piattaforme; esclude cronologia, cache, accessi e download";
+"settings_section_sync" = "Sincronizzazione";
+"privacy_exit_incognito" = "Disattiva navigazione privata";
+"privacy_enter_incognito" = "Attiva navigazione privata";

@@ -76,6 +76,38 @@ extension View {
     func shimmer(isActive: Bool = true) -> some View {
         modifier(ShimmerModifier(isActive: isActive))
     }
+
+    @ViewBuilder
+    func browserToolbarButtonGlass() -> some View {
+        modifier(BrowserToolbarButtonGlassModifier())
+    }
+
+    @ViewBuilder
+    func browserToolbarCapsuleGlass() -> some View {
+        modifier(BrowserToolbarCapsuleGlassModifier())
+    }
+}
+
+private struct BrowserToolbarButtonGlassModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content.background {
+            Circle()
+                .fill(.ultraThinMaterial)
+                .overlay(Circle().fill(Color.black.opacity(0.58)))
+                .overlay(Circle().stroke(Color.white.opacity(0.16), lineWidth: 0.6))
+        }
+    }
+}
+
+private struct BrowserToolbarCapsuleGlassModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content.background {
+            Capsule()
+                .fill(.ultraThinMaterial)
+                .overlay(Capsule().fill(Color.black.opacity(0.58)))
+                .overlay(Capsule().stroke(Color.white.opacity(0.16), lineWidth: 0.6))
+        }
+    }
 }
 
 // MARK: - Shimmer Loading

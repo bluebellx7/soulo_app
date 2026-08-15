@@ -52,6 +52,11 @@ final class ExternalNavigationService: ObservableObject {
         userDefaults.removeObject(forKey: blockedHostsKey)
     }
 
+    func reloadFromDefaults() {
+        blockedHosts = Set(userDefaults.stringArray(forKey: blockedHostsKey) ?? [])
+        suppressPrompts = userDefaults.bool(forKey: suppressPromptsKey)
+    }
+
     private func normalizedHost(from url: URL) -> String? {
         if let host = url.host {
             return normalizedHost(host)

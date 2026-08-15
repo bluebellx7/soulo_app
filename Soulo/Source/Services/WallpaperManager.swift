@@ -93,6 +93,32 @@ class WallpaperManager: ObservableObject {
         setupAutoRefreshTimer(startPreloadImmediately: false)
     }
 
+    func reloadPreferencesFromDefaults() {
+        let defaults = UserDefaults.standard
+        let nextSource = WallpaperSource(rawValue: defaults.string(forKey: "wallpaper_source") ?? "pexels") ?? .pexels
+        let nextGradientID = defaults.string(forKey: "wallpaper_gradient_id") ?? "aurora"
+        let nextSolidColor = defaults.string(forKey: "wallpaper_solid_color") ?? "#FFFFFF"
+        let nextTopic = defaults.string(forKey: "wallpaper_topic") ?? "Nature"
+        let nextVibeTags = defaults.stringArray(forKey: "wallpaper_vibe_tags") ?? ["Nature", "Ocean", "Forest", "Night Sky", "Mountains", "Minimal", "Cyberpunk"]
+        let savedInterval = defaults.object(forKey: "wallpaper_refresh_interval") as? Int
+        let nextInterval = WallpaperRefreshInterval(rawValue: savedInterval ?? WallpaperRefreshInterval.none.rawValue) ?? .none
+        let nextRandomSources = defaults.object(forKey: "wallpaper_auto_random_sources") as? Bool ?? true
+        let savedSources = defaults.stringArray(forKey: "wallpaper_auto_sources") ?? []
+        let remoteSources = savedSources.compactMap(WallpaperSource.init(rawValue:)).filter(\.isRemote)
+        let nextSources = Set(remoteSources.isEmpty ? [.pexels, .pixabay, .bing] : remoteSources)
+        let nextRandomTopics = defaults.object(forKey: "wallpaper_auto_random_topics") as? Bool ?? true
+
+        if source != nextSource { source = nextSource }
+        if selectedGradientId != nextGradientID { selectedGradientId = nextGradientID }
+        if solidColor != nextSolidColor { solidColor = nextSolidColor }
+        if searchTopic != nextTopic { searchTopic = nextTopic }
+        if vibeTags != nextVibeTags { vibeTags = nextVibeTags }
+        if autoRefreshInterval != nextInterval { autoRefreshInterval = nextInterval }
+        if autoRandomizeRemoteSources != nextRandomSources { autoRandomizeRemoteSources = nextRandomSources }
+        if autoRemoteSources != nextSources { autoRemoteSources = nextSources }
+        if autoRandomizeTopics != nextRandomTopics { autoRandomizeTopics = nextRandomTopics }
+    }
+
     private func initialFetch() async {
         switch source {
         case .bing:    await fetchBingWallpaper()

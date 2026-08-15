@@ -3,10 +3,12 @@ import SwiftUI
 struct SearchBarView: View {
     @Binding var text: String
     var isCompact: Bool = false
+    var isIncognito: Bool = false
     var isRecording: Bool = false
     var onSubmit: () -> Void
     var onMicTap: () -> Void
     var onClear: (() -> Void)?
+    var onIncognitoTap: (() -> Void)?
 
     @ObservedObject var wallpaperManager = WallpaperManager.shared
 
@@ -39,10 +41,40 @@ struct SearchBarView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(isFocused ? iconActiveColor : iconColor)
-                .accessibilityHidden(true)
+            if let onIncognitoTap {
+                Menu {
+                    Button(action: onIncognitoTap) {
+                        Label(
+                            LanguageManager.shared.localizedString(
+                                isIncognito ? "privacy_exit_incognito" : "privacy_enter_incognito"
+                            ),
+                            systemImage: isIncognito ? "eye" : "eye.slash"
+                        )
+                    }
+                } label: {
+                    Image(systemName: isIncognito ? "eye.slash.fill" : "magnifyingglass")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(isFocused ? iconActiveColor : iconColor)
+                        .frame(width: 26, height: 26)
+                        .contentShape(Circle())
+                }
+                .accessibilityLabel(
+                    LanguageManager.shared.localizedString(
+                        isIncognito ? "accessibility_incognito_active" : "search"
+                    )
+                )
+                .accessibilityHint(
+                    LanguageManager.shared.localizedString(
+                        isIncognito ? "privacy_exit_incognito" : "privacy_enter_incognito"
+                    )
+                )
+            } else {
+                Image(systemName: isIncognito ? "eye.slash.fill" : "magnifyingglass")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(isFocused ? iconActiveColor : iconColor)
+                    .frame(width: 26, height: 26)
+                    .accessibilityHidden(true)
+            }
 
             TextField(
                 "",
@@ -57,7 +89,15 @@ struct SearchBarView: View {
             .onSubmit(onSubmit)
             .autocorrectionDisabled()
             .textInputAutocapitalization(.never)
-            .accessibilityLabel(LanguageManager.shared.localizedString("search_placeholder"))
+            .accessibilityLabel(
+                LanguageManager.shared.localizedString(
+                    isIncognito ? "privacy_search_placeholder" : "search_placeholder"
+                )
+            )
+            .onReceive(NotificationCenter.default.publisher(for: .focusHomeSearch)) { _ in
+                guard !isCompact else { return }
+                isFocused = true
+            }
 
             if !text.isEmpty {
                 Button {

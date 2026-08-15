@@ -1,5 +1,6 @@
 import XCTest
 import JavaScriptCore
+import WebKit
 @testable import Soulo
 
 final class WebViewScriptsTests: XCTestCase {
@@ -175,7 +176,133 @@ final class WebViewScriptsTests: XCTestCase {
         assertJavaScriptParses(WebViewScripts.blankPageProbe)
         assertJavaScriptParses(WebViewScripts.privacyProtection(gpcEnabled: true, cookieBannerHandling: true))
         assertJavaScriptParses(WebViewScripts.downloadBridge)
+        assertJavaScriptParses(WebViewScripts.extensionInstallBridge)
         assertJavaScriptParses(WebViewScripts.accessibilityEnhancements)
+        assertJavaScriptParses(WebViewScripts.webAppearanceBootstrap)
+        assertJavaScriptParses(WebViewScripts.applyWebAppearance(warmColorShift: true, forceDark: true))
+        assertJavaScriptParses(WebViewScripts.synchronizeViewport)
+        assertJavaScriptParses(WebViewScripts.compensatePageZoomWidth(scale: 1.2))
+    }
+
+    func testPageZoomCompensationKeepsTheRenderedDocumentAtViewportWidth() {
+        let enlarged = WebViewScripts.compensatePageZoomWidth(scale: 1.2)
+        let reset = WebViewScripts.compensatePageZoomWidth(scale: 1)
+
+        XCTAssertTrue(enlarged.contains("var scale = 1.20000"))
+        XCTAssertTrue(enlarged.contains("100 / scale"))
+        XCTAssertTrue(enlarged.contains("root.style.setProperty('width'"))
+        XCTAssertTrue(enlarged.contains("'important'"))
+        XCTAssertTrue(reset.contains("Math.abs(scale - 1)"))
+        XCTAssertTrue(reset.contains("delete window[stateKey]"))
+    }
+
+    func testUserScriptURLMatchingSupportsManifestGlobsAndAllURLs() {
+        XCTAssertTrue(
+            UserScriptURLMatcher.matches(
+                url: URL(string: "https://news.example.com/article/42")!,
+                patterns: ["*://*.example.com/*"]
+            )
+        )
+        XCTAssertTrue(
+            UserScriptURLMatcher.matches(
+                url: URL(string: "http://localhost/page")!,
+                patterns: ["<all_urls>"]
+            )
+        )
+        XCTAssertTrue(
+            UserScriptURLMatcher.matches(
+                url: URL(string: "https://example.com/article")!,
+                patterns: ["*://*.example.com/*"]
+            )
+        )
+        XCTAssertFalse(
+            UserScriptURLMatcher.matches(
+                url: URL(string: "https://example.org/")!,
+                patterns: ["*://*.example.com/*"]
+            )
+        )
+    }
+
+    func testUserScriptCompatibilityBridgeAndDocumentEndSchedulingAreValidJavaScript() {
+        let script = UserScriptRecord(
+            name: "Load Timing",
+            source: "window.onload = function() { window.__loaded = true; };",
+            injectionTime: .documentEnd
+        )
+        let wrapped = UserScriptRuntime.wrappedSource(for: script)
+
+        XCTAssertTrue(wrapped.contains("DOMContentLoaded"))
+        XCTAssertTrue(wrapped.contains("document.readyState === 'loading'"))
+        XCTAssertTrue(UserScriptRuntime.compatibilityBootstrap.contains("GM_xmlhttpRequest"))
+        XCTAssertTrue(UserScriptRuntime.compatibilityBootstrap.contains("souloUserScriptXHR"))
+        XCTAssertTrue(UserScriptRuntime.compatibilityBootstrap.contains("unsafeWindow"))
+        assertJavaScriptParses(wrapped)
+        assertJavaScriptParses(UserScriptRuntime.compatibilityBootstrap)
+    }
+
+    func testFullPageCapturePreparationLoadsLazyResourcesAndRestoresScrollPosition() {
+        let script = WebPageCaptureService.resourcePreparationScript
+
+        XCTAssertTrue(script.contains("document.images"))
+        XCTAssertTrue(script.contains("document.fonts"))
+        XCTAssertTrue(script.contains("window.scrollTo(originalX, originalY)"))
+        assertAsyncJavaScriptParses(script)
+    }
+
+    @MainActor
+    func testUserScriptRuntimeActuallyExecutesInsideWKWebView() async throws {
+        let webView = WKWebView(frame: .zero)
+        _ = try await evaluate("globalThis.__souloUserScriptProbe = 0", in: webView)
+        let script = UserScriptRecord(
+            name: "Runtime Probe",
+            source: "globalThis.__souloUserScriptProbe += 1;",
+            matchPatterns: ["*://*/*"]
+        )
+
+        let result: Result<Any?, Error> = await withCheckedContinuation { continuation in
+            UserScriptRuntime.execute(script, on: webView) { result in
+                continuation.resume(returning: result)
+            }
+        }
+        if case let .failure(error) = result { throw error }
+
+        let value = try await evaluate("globalThis.__souloUserScriptProbe", in: webView)
+        XCTAssertEqual((value as? NSNumber)?.intValue, 1)
+    }
+
+    @MainActor
+    func testUserScriptInstallParsesMetadataAndEnableSwitchControlsSelection() throws {
+        let marker = UUID().uuidString
+        let source = """
+        // ==UserScript==
+        // @name Selection Probe \(marker)
+        // @match https://example.com/*
+        // @run-at document-start
+        // ==/UserScript==
+        globalThis.__souloSelectionProbe = true;
+        """
+        let service = BrowserExtensionService.shared
+        let record = try service.saveUserScript(
+            id: nil,
+            fallbackName: "Fallback",
+            source: source,
+            explicitPatterns: nil,
+            injectionTime: nil
+        )
+        defer { service.deleteUserScript(record.id) }
+
+        XCTAssertEqual(record.name, "Selection Probe \(marker)")
+        XCTAssertEqual(record.injectionTime, .documentStart)
+        XCTAssertTrue(service.scripts(
+            for: URL(string: "https://example.com/article")!,
+            at: .documentStart
+        ).contains { $0.id == record.id })
+
+        service.setUserScriptEnabled(record.id, enabled: false)
+        XCTAssertFalse(service.scripts(
+            for: URL(string: "https://example.com/article")!,
+            at: .documentStart
+        ).contains { $0.id == record.id })
     }
 
     private func assertJavaScriptParses(_ script: String, file: StaticString = #filePath, line: UInt = #line) {
@@ -184,10 +311,30 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertNil(context.exception, file: file, line: line)
     }
 
+    private func assertAsyncJavaScriptParses(_ script: String, file: StaticString = #filePath, line: UInt = #line) {
+        let context = JSContext()!
+        let wrapped = "return (async () => {\n\(script)\n})();"
+        context.evaluateScript("new Function(\(javaScriptStringLiteral(wrapped)))")
+        XCTAssertNil(context.exception, file: file, line: line)
+    }
+
     private func javaScriptStringLiteral(_ value: String) -> String {
         let data = try! JSONSerialization.data(withJSONObject: [value], options: [])
         let arrayLiteral = String(data: data, encoding: .utf8)!
         return "(\(arrayLiteral))[0]"
+    }
+
+    @MainActor
+    private func evaluate(_ script: String, in webView: WKWebView) async throws -> Any? {
+        try await withCheckedThrowingContinuation { continuation in
+            webView.evaluateJavaScript(script) { value, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: value)
+                }
+            }
+        }
     }
 
 }

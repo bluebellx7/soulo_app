@@ -31,6 +31,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -38,14 +40,16 @@
 		<key>NSAllowsArbitraryLoadsInWebContent</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Allow camera access when you approve a website request, such as for video calls, scanning codes, or taking a photo.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Soulo needs microphone access for voice search.</string>
+	<string>Allow microphone access for voice search and, when you approve, website calls or recording.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Soulo needs permission to save web images to your photo library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Soulo needs photo library access to set a custom wallpaper.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Soulo needs speech recognition to convert your voice to search text.</string>
+	<string>Allow speech recognition to turn your voice into search text.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
@@ -53,6 +57,8 @@
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>
 	</dict>
+	<key>UIFileSharingEnabled</key>
+	<true/>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

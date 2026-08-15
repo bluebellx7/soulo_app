@@ -77,7 +77,6 @@
 "about" = "Hakkında";
 "version" = "Sürüm";
 "reset_to_defaults" = "Varsayılanlara Sıfırla";
-"confirm_reset" = "Varsayılan ayarlara sıfırlansın mı? Tüm platform yapılandırmaları sıfırlanacak.";
 
 /* Wallpaper */
 "wallpaper_bing" = "Bing Günlük";
@@ -91,18 +90,14 @@
 "wallpaper_refresh" = "Duvar Kâğıdını Değiştir";
 "wallpaper_download" = "Duvar Kâğıdını İndir";
 "my_favorites" = "Favorilerim";
-"wallpaper_saved" = "Duvar kağıdı Fotoğraflara kaydedildi";
 "wallpaper_fetch_bing" = "Günlük Resmi Getir";
-"wallpaper_choose_photo" = "Kütüphaneden Seç";
 "wallpaper_color" = "Arka Plan Rengi";
 "wallpaper_load_error" = "Yükleme başarısız";
 "wallpaper_favorites" = "Favorilerim";
 "wallpaper_search_placeholder" = "Tarz ara (ör. Orman, Minimal)";
-"wallpaper_discover" = "Yenileri Keşfet";
 "wallpaper_pexels" = "Pexels (Seçki)";
 "wallpaper_pixabay" = "Pixabay (Doğa)";
 "wallpaper_current_vibe" = "Mevcut Tarz";
-"settings_wallpaper" = "Duvar Kağıdı ve Stil";
 "wallpaper_discover" = "Duvar Kağıtlarını Keşfet";
 "choose_photo" = "Fotoğraf Seç";
 
@@ -112,7 +107,6 @@
 "search_url_template" = "Arama URL Şablonu";
 "search_url_hint" = "Anahtar kelime yer tutucusu olarak %@ kullanın\nÖrnek: https://example.com/search?q=%@";
 "home_url" = "Ana Sayfa URL";
-"select_region" = "Grup Seç";
 "auto_sort_by_frequency" = "Kullanım sıklığına göre otomatik sırala";
 "custom_platform" = "Özel Platform";
 "delete_platform" = "Platformu Sil";
@@ -153,7 +147,7 @@
 
 "enter_fullscreen" = "Tam Ekrana Geç";
 "exit_fullscreen" = "Tam Ekrandan Çık";
-"fullscreen_exit_hint" = "Dokunun veya aşağı çekin";
+"fullscreen_exit_hint" = "Denetimler için dokunun, çıkmak için aşağı çekin";
 "restore_browser_toolbar" = "Tarayıcı araç çubuğunu geri yükle";
 "hide_browser_toolbar" = "Tarayıcı araç çubuğunu gizle";
 "privacy_clear_action" = "Temizle";
@@ -459,14 +453,17 @@
 "downloading" = "İndiriliyor...";
 
 /* Browser Privacy */
-"downloads" = "Downloads";
-"downloads_empty" = "No Downloads";
-"downloads_empty_desc" = "Downloaded files will appear here.";
-"downloads_clear_finished" = "Clear Finished Downloads";
-"downloads_in_progress" = "Downloading";
-"downloads_finished" = "Finished";
-"downloads_failed" = "Failed";
-"downloads_canceled" = "Canceled";
+"downloads" = "İndirilenler";
+"downloads_empty" = "İndirilen dosya yok";
+"downloads_empty_desc" = "İndirilen dosyalar burada görünür.";
+"downloads_clear_finished" = "Tamamlanan indirmeleri temizle";
+"downloads_in_progress" = "İndiriliyor";
+"downloads_finished" = "Tamamlandı";
+"downloads_failed" = "Başarısız";
+"downloads_canceled" = "İptal edildi";
+"library" = "Arşiv";
+"my_downloads" = "İndirilenlerim";
+"open_downloads_folder" = "İndirme konumunu aç";
 "live_activity" = "Dynamic Island";
 "live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
@@ -515,3 +512,12 @@
 "current_page_link" = "Geçerli sayfa bağlantısı";
 "tab_limit_title" = "Sekme sınırına ulaşıldı";
 "tab_limit_message" = "En fazla 20 sekme açık tutabilirsiniz. Yeni bir sekme açmadan önce birini kapatın.";
+"browser_page_tools" = "Sayfa Araçları";
+"browser_open_page" = "Sayfayı Aç";
+"keep_fullscreen_browsing" = "Tam Ekranı Koru";
+"keep_fullscreen_browsing_desc" = "Yeni aramalar tam ekranda açılır; elle çıkmak bu ayarı kapatır";
+"icloud_settings_sync" = "iCloud Ayar Eşzamanlama";
+"icloud_settings_sync_desc" = "Görünüm, ana sayfa, gezinme, gizlilik ve platform ayarlarını eşzamanlar; geçmiş, önbellek, oturum ve indirmeler hariçtir";
+"settings_section_sync" = "Eşzamanlama";
+"privacy_exit_incognito" = "Gizli modu kapat";
+"privacy_enter_incognito" = "Gizli modu aç";

@@ -4,11 +4,13 @@ import CoreSpotlight
 
 @main
 struct SouloApp: App {
+    @UIApplicationDelegateAdaptor(SouloAppDelegate.self) private var appDelegate
     @StateObject private var languageManager = LanguageManager.shared
     @StateObject private var themeManager = ThemeManager.shared
     @StateObject private var searchVM = SearchViewModel()
     @StateObject private var tabManager = TabManager()
     @StateObject private var wallpaperManager = WallpaperManager.shared
+    private let cloudSyncService = CloudSyncService.shared
     @Environment(\.scenePhase) private var scenePhase
     @State private var activationTask: Task<Void, Never>?
 
@@ -24,6 +26,8 @@ struct SouloApp: App {
                 // Appearance controlled by UIKit overrideUserInterfaceStyle via ThemeManager.applyAppearance()
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {
+                        AppQuickActionService.shared.configureShortcuts()
+                        applyWebAppearanceToOpenTabs()
                         schedulePostActivationWork()
                     } else if newPhase == .background {
                         activationTask?.cancel()
@@ -31,6 +35,9 @@ struct SouloApp: App {
                         // Persist tab state when app goes to background
                         tabManager.saveToDisk()
                     }
+                }
+                .onChange(of: themeManager.appearance) { _, _ in
+                    applyWebAppearanceToOpenTabs()
                 }
                 // Handle URL scheme (soulo://search from widget)
                 .onOpenURL { url in
@@ -90,6 +97,15 @@ struct SouloApp: App {
             try? await Task.sleep(nanoseconds: 700_000_000)
             guard !Task.isCancelled else { return }
             await AdBlockSubscriptionService.shared.updateEnabledSubscriptionsIfNeeded()
+        }
+    }
+
+    @MainActor
+    private func applyWebAppearanceToOpenTabs() {
+        for tab in tabManager.tabs {
+            if let webView = tab.webViewModel.webView {
+                WebAppearanceService.shared.apply(to: webView)
+            }
         }
     }
 }

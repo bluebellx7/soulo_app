@@ -77,7 +77,6 @@
 "about" = "О приложении";
 "version" = "Версия";
 "reset_to_defaults" = "Сбросить настройки";
-"confirm_reset" = "Сбросить настройки по умолчанию? Все настройки платформ будут сброшены.";
 
 /* Wallpaper */
 "wallpaper_bing" = "Bing ежедневно";
@@ -91,18 +90,14 @@
 "wallpaper_refresh" = "Сменить обои";
 "wallpaper_download" = "Скачать обои";
 "my_favorites" = "Моё избранное";
-"wallpaper_saved" = "Обои сохранены в Фото";
 "wallpaper_fetch_bing" = "Получить изображение дня";
-"wallpaper_choose_photo" = "Выбрать из библиотеки";
 "wallpaper_color" = "Цвет фона";
 "wallpaper_load_error" = "Ошибка загрузки";
 "wallpaper_favorites" = "Избранное";
 "wallpaper_search_placeholder" = "Поиск стиля (напр. Лес, Минимализм)";
-"wallpaper_discover" = "Новые обои";
 "wallpaper_pexels" = "Pexels (подборка)";
 "wallpaper_pixabay" = "Pixabay (природа)";
 "wallpaper_current_vibe" = "Текущий стиль";
-"settings_wallpaper" = "Обои и стиль";
 "wallpaper_discover" = "Обзор обоев";
 "choose_photo" = "Выбрать фото";
 
@@ -112,7 +107,6 @@
 "search_url_template" = "Шаблон URL поиска";
 "search_url_hint" = "Используйте %@ как заполнитель ключевого слова\nПример: https://example.com/search?q=%@";
 "home_url" = "Домашний URL";
-"select_region" = "Выбрать группу";
 "auto_sort_by_frequency" = "Автосортировка по частоте использования";
 "custom_platform" = "Пользовательская платформа";
 "delete_platform" = "Удалить платформу";
@@ -153,7 +147,7 @@
 
 "enter_fullscreen" = "Включить полноэкранный режим";
 "exit_fullscreen" = "Выйти из полноэкранного режима";
-"fullscreen_exit_hint" = "Нажмите или потяните вниз";
+"fullscreen_exit_hint" = "Нажмите для меню, потяните вниз для выхода";
 "restore_browser_toolbar" = "Восстановить панель браузера";
 "hide_browser_toolbar" = "Скрыть панель браузера";
 "privacy_clear_action" = "Очистить";
@@ -459,14 +453,17 @@
 "downloading" = "Загрузка...";
 
 /* Browser Privacy */
-"downloads" = "Downloads";
-"downloads_empty" = "No Downloads";
-"downloads_empty_desc" = "Downloaded files will appear here.";
-"downloads_clear_finished" = "Clear Finished Downloads";
-"downloads_in_progress" = "Downloading";
-"downloads_finished" = "Finished";
-"downloads_failed" = "Failed";
-"downloads_canceled" = "Canceled";
+"downloads" = "Загрузки";
+"downloads_empty" = "Нет загрузок";
+"downloads_empty_desc" = "Загруженные файлы появятся здесь.";
+"downloads_clear_finished" = "Очистить завершённые загрузки";
+"downloads_in_progress" = "Загрузка";
+"downloads_finished" = "Завершено";
+"downloads_failed" = "Ошибка";
+"downloads_canceled" = "Отменено";
+"library" = "Библиотека";
+"my_downloads" = "Мои загрузки";
+"open_downloads_folder" = "Открыть папку загрузок";
 "live_activity" = "Dynamic Island";
 "live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
@@ -515,3 +512,12 @@
 "current_page_link" = "Ссылка текущей страницы";
 "tab_limit_title" = "Достигнут лимит вкладок";
 "tab_limit_message" = "Можно держать открытыми до 20 вкладок. Закройте одну, прежде чем открыть новую.";
+"browser_page_tools" = "Инструменты страницы";
+"browser_open_page" = "Открыть страницу";
+"keep_fullscreen_browsing" = "Сохранять полноэкранный режим";
+"keep_fullscreen_browsing_desc" = "Новые поиски открываются на весь экран; ручной выход отключает эту настройку";
+"icloud_settings_sync" = "Синхронизация настроек iCloud";
+"icloud_settings_sync_desc" = "Синхронизирует оформление, главную, браузер, конфиденциальность и платформы; без истории, кэша, входов и загрузок";
+"settings_section_sync" = "Синхронизация";
+"privacy_exit_incognito" = "Выключить приватный режим";
+"privacy_enter_incognito" = "Включить приватный режим";

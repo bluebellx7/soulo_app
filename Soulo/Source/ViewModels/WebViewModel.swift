@@ -18,6 +18,7 @@ final class WebViewModel: ObservableObject {
     @Published var isScrollingUp: Bool = false
     @Published var snapshot: UIImage?
     @Published var showSnapshotWhileRestoring: Bool = false
+    @Published private(set) var pageZoom: CGFloat = 1
     var isWebViewRuntimeInstalled: Bool = false
     var isDesktopModeEnabled: Bool = false
     private var snapshotPersistenceID: String?
@@ -88,6 +89,39 @@ final class WebViewModel: ObservableObject {
         webView.configuration.defaultWebpagePreferences.preferredContentMode = isDesktopModeEnabled
             ? .desktop
             : .mobile
+        applyPageZoom(to: webView)
+    }
+
+    func decreasePageZoom() {
+        setPageZoom(pageZoom - 0.1)
+    }
+
+    func increasePageZoom() {
+        setPageZoom(pageZoom + 0.1)
+    }
+
+    func resetPageZoom() {
+        setPageZoom(1)
+    }
+
+    func setPageZoom(_ value: CGFloat) {
+        let normalized = min(max((value * 10).rounded() / 10, 0.5), 2)
+        pageZoom = normalized
+        if let webView {
+            applyPageZoom(to: webView)
+        }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
+    /// Preserve the web view's physical viewport width while scaling its
+    /// contents. Native pageZoom alone can let the document root grow past the
+    /// right edge on mobile pages, so compensate the root width inversely.
+    func applyPageZoom(to webView: WKWebView) {
+        webView.pageZoom = pageZoom
+        webView.evaluateJavaScript(
+            WebViewScripts.compensatePageZoomWidth(scale: pageZoom),
+            completionHandler: nil
+        )
     }
 
     func loadCachedURL(_ url: URL) {
@@ -110,6 +144,15 @@ final class WebViewModel: ObservableObject {
         } else {
             webView?.reload()
         }
+    }
+
+    func synchronizePageViewport() {
+        guard let webView else { return }
+        webView.setNeedsLayout()
+        webView.scrollView.setNeedsLayout()
+        webView.layoutIfNeeded()
+        webView.scrollView.layoutIfNeeded()
+        webView.evaluateJavaScript(WebViewScripts.synchronizeViewport, completionHandler: nil)
     }
 
     func retryCurrentPage() {

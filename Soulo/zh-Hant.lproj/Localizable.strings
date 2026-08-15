@@ -77,7 +77,6 @@
 "about" = "關於";
 "version" = "版本";
 "reset_to_defaults" = "恢復預設設定";
-"confirm_reset" = "確認恢復預設設定？這將重設所有平台配置。";
 
 /* Wallpaper */
 "wallpaper_bing" = "Bing 每日";
@@ -91,18 +90,14 @@
 "wallpaper_refresh" = "更換桌布";
 "wallpaper_download" = "下載桌布";
 "my_favorites" = "我的收藏";
-"wallpaper_saved" = "已儲存到相簿";
 "wallpaper_fetch_bing" = "取得今日桌布";
-"wallpaper_choose_photo" = "選擇照片";
 "wallpaper_color" = "背景顏色";
 "wallpaper_load_error" = "圖片載入失敗";
 "wallpaper_favorites" = "我的收藏";
 "wallpaper_search_placeholder" = "搜尋氛圍（如：森林、極簡）";
-"wallpaper_discover" = "探索發現";
 "wallpaper_pexels" = "Pexels 精選";
 "wallpaper_pixabay" = "Pixabay 攝影";
 "wallpaper_current_vibe" = "當前氛圍";
-"settings_wallpaper" = "桌布與背景";
 "wallpaper_discover" = "發現美圖";
 "choose_photo" = "選擇照片";
 
@@ -112,7 +107,6 @@
 "search_url_template" = "搜尋 URL 範本";
 "search_url_hint" = "使用 %@ 作為關鍵詞佔位符\n例如: https://example.com/search?q=%@";
 "home_url" = "首頁網址";
-"select_region" = "選擇群組";
 "auto_sort_by_frequency" = "依使用頻率自動排序";
 "custom_platform" = "自訂平台";
 "delete_platform" = "刪除平台";
@@ -153,7 +147,7 @@
 
 "enter_fullscreen" = "進入全螢幕";
 "exit_fullscreen" = "退出全螢幕";
-"fullscreen_exit_hint" = "輕點或下拉退出";
+"fullscreen_exit_hint" = "輕點展開，下拉退出";
 "restore_browser_toolbar" = "恢復瀏覽器工具列";
 "hide_browser_toolbar" = "隱藏瀏覽器工具列";
 "privacy_clear_action" = "清除";
@@ -459,14 +453,17 @@
 "downloading" = "下載中...";
 
 /* Browser Privacy */
-"downloads" = "Downloads";
-"downloads_empty" = "No Downloads";
-"downloads_empty_desc" = "Downloaded files will appear here.";
-"downloads_clear_finished" = "Clear Finished Downloads";
-"downloads_in_progress" = "Downloading";
-"downloads_finished" = "Finished";
-"downloads_failed" = "Failed";
-"downloads_canceled" = "Canceled";
+"downloads" = "下載項目";
+"downloads_empty" = "尚無下載項目";
+"downloads_empty_desc" = "下載完成的檔案會顯示在這裡。";
+"downloads_clear_finished" = "清除已完成的下載項目";
+"downloads_in_progress" = "下載中";
+"downloads_finished" = "已完成";
+"downloads_failed" = "失敗";
+"downloads_canceled" = "已取消";
+"library" = "資料庫";
+"my_downloads" = "我的下載";
+"open_downloads_folder" = "開啟下載位置";
 "live_activity" = "動態島";
 "live_activity_desc" = "在即時動態和動態島中顯示目前搜尋內容。";
 "fire_button" = "隱私清理";
@@ -573,3 +570,12 @@
 "accessibility_move_right" = "向右移動";
 "accessibility_move_up" = "向上移動";
 "accessibility_move_down" = "向下移動";
+"browser_page_tools" = "網頁工具";
+"browser_open_page" = "開啟網頁";
+"keep_fullscreen_browsing" = "保持全螢幕瀏覽";
+"keep_fullscreen_browsing_desc" = "新搜尋自動進入全螢幕；手動退出後自動關閉此設定";
+"icloud_settings_sync" = "iCloud 設定同步";
+"icloud_settings_sync_desc" = "同步外觀、首頁、瀏覽、隱私和平台設定；不含記錄、快取、登入資料和下載檔案";
+"settings_section_sync" = "同步";
+"privacy_exit_incognito" = "關閉無痕模式";
+"privacy_enter_incognito" = "開啟無痕模式";

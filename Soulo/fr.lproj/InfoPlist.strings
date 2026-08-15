@@ -1,4 +1,5 @@
-NSMicrophoneUsageDescription = "Soulo a besoin d'accéder au microphone pour la recherche vocale.";
-NSSpeechRecognitionUsageDescription = "Soulo a besoin de la reconnaissance vocale pour convertir votre voix en texte de recherche.";
+NSCameraUsageDescription = "Autorisez l'accès à la caméra lorsque vous acceptez la demande d'un site, par exemple pour un appel vidéo, scanner un code ou prendre une photo.";
+NSMicrophoneUsageDescription = "Autorisez l'accès au microphone pour la recherche vocale et, avec votre accord, les appels ou enregistrements sur les sites web.";
+NSSpeechRecognitionUsageDescription = "Autorisez la reconnaissance vocale pour convertir votre voix en texte de recherche.";
 NSPhotoLibraryUsageDescription = "Soulo a besoin d'accéder à la photothèque pour définir un fond d'écran personnalisé.";
 NSPhotoLibraryAddUsageDescription = "Soulo a besoin d'une autorisation pour enregistrer des images web dans votre photothèque.";

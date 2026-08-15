@@ -91,7 +91,7 @@ final class AdBlockServiceTests: XCTestCase {
         XCTAssertTrue(unlessDomain.contains("weixin.qq.com"))
     }
 
-    func testEncodedContentRulesPreserveStructuredSubscriptionConditions() throws {
+    func testEncodedContentRulesPreserveSupportedStructuredConditionsAndSkipUnsupportedMixedDomains() throws {
         let defaults = UserDefaults.standard
         let key = "soulo_ad_block_subscription_rules"
         let oldData = defaults.data(forKey: key)
@@ -113,6 +113,12 @@ final class AdBlockServiceTests: XCTestCase {
                     loadTypes: ["third-party"],
                     ifDomains: ["*example.com"],
                     unlessDomains: ["*admin.example.com"]
+                ),
+                AdBlockNetworkRule(
+                    urlFilter: "scoped\\.example",
+                    resourceTypes: ["script"],
+                    loadTypes: ["third-party"],
+                    ifDomains: ["*example.com"]
                 )
             ],
             cosmeticRules: [
@@ -126,13 +132,18 @@ final class AdBlockServiceTests: XCTestCase {
         let jsonData = try XCTUnwrap(json.data(using: .utf8))
         let rules = try XCTUnwrap(JSONSerialization.jsonObject(with: jsonData) as? [[String: Any]])
 
-        XCTAssertTrue(rules.contains { rule in
+        XCTAssertFalse(rules.contains { rule in
             guard let trigger = rule["trigger"] as? [String: Any] else { return false }
             return (trigger["url-filter"] as? String) == "tracker\\.example"
+        })
+
+        XCTAssertTrue(rules.contains { rule in
+            guard let trigger = rule["trigger"] as? [String: Any] else { return false }
+            return (trigger["url-filter"] as? String) == "scoped\\.example"
                 && (trigger["resource-type"] as? [String]) == ["script"]
                 && (trigger["load-type"] as? [String]) == ["third-party"]
                 && ((trigger["if-domain"] as? [String])?.contains("*example.com") == true)
-                && ((trigger["unless-domain"] as? [String])?.contains("*admin.example.com") == true)
+                && trigger["unless-domain"] == nil
         })
 
         XCTAssertTrue(rules.contains { rule in
@@ -141,7 +152,16 @@ final class AdBlockServiceTests: XCTestCase {
             return (action["type"] as? String) == "css-display-none"
                 && (action["selector"] as? String) == ".site-ad"
                 && ((trigger["if-domain"] as? [String])?.contains("*example.com") == true)
+                && trigger["unless-domain"] == nil
         })
+
+        for rule in rules {
+            guard let trigger = rule["trigger"] as? [String: Any] else { continue }
+            let domainConditionCount = ["if-domain", "unless-domain", "if-top-url", "unless-top-url"]
+                .filter { trigger[$0] != nil }
+                .count
+            XCTAssertLessThanOrEqual(domainConditionCount, 1)
+        }
     }
 
     func testEncodedContentRulesCoverChineseVideoSiteAdPatterns() throws {

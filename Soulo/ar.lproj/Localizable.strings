@@ -77,7 +77,6 @@
 "about" = "حول";
 "version" = "الإصدار";
 "reset_to_defaults" = "إعادة التعيين للافتراضي";
-"confirm_reset" = "إعادة التعيين إلى الإعدادات الافتراضية؟ سيتم إعادة تعيين جميع تكوينات المنصات.";
 
 /* Wallpaper */
 "wallpaper_bing" = "Bing اليومي";
@@ -91,18 +90,14 @@
 "wallpaper_refresh" = "تغيير خلفية الشاشة";
 "wallpaper_download" = "تنزيل خلفية الشاشة";
 "my_favorites" = "مفضلاتي";
-"wallpaper_saved" = "تم حفظ الخلفية في الصور";
 "wallpaper_fetch_bing" = "جلب صورة اليوم";
-"wallpaper_choose_photo" = "اختر من المكتبة";
 "wallpaper_color" = "لون الخلفية";
 "wallpaper_load_error" = "فشل التحميل";
 "wallpaper_favorites" = "مفضلاتي";
 "wallpaper_search_placeholder" = "ابحث عن نمط (مثل: غابة، بسيط)";
-"wallpaper_discover" = "اكتشف جديد";
 "wallpaper_pexels" = "Pexels (مختارات)";
 "wallpaper_pixabay" = "Pixabay (طبيعة)";
 "wallpaper_current_vibe" = "النمط الحالي";
-"settings_wallpaper" = "الخلفية والنمط";
 "wallpaper_discover" = "استكشاف الخلفيات";
 "choose_photo" = "اختر صورة";
 
@@ -112,7 +107,6 @@
 "search_url_template" = "قالب عنوان URL للبحث";
 "search_url_hint" = "استخدم %@ كعنصر نائب للكلمة المفتاحية\nمثال: https://example.com/search?q=%@";
 "home_url" = "عنوان URL الرئيسي";
-"select_region" = "اختر مجموعة";
 "auto_sort_by_frequency" = "ترتيب تلقائي حسب تكرار الاستخدام";
 "custom_platform" = "منصة مخصصة";
 "delete_platform" = "حذف المنصة";
@@ -153,7 +147,7 @@
 
 "enter_fullscreen" = "الدخول إلى ملء الشاشة";
 "exit_fullscreen" = "الخروج من ملء الشاشة";
-"fullscreen_exit_hint" = "اضغط أو اسحب لأسفل للخروج";
+"fullscreen_exit_hint" = "اضغط لعناصر التحكم واسحب لأسفل للخروج";
 "restore_browser_toolbar" = "استعادة شريط أدوات المتصفح";
 "hide_browser_toolbar" = "إخفاء شريط أدوات المتصفح";
 "privacy_clear_action" = "مسح";
@@ -459,14 +453,17 @@
 "downloading" = "جارٍ التحميل...";
 
 /* Browser Privacy */
-"downloads" = "Downloads";
-"downloads_empty" = "No Downloads";
-"downloads_empty_desc" = "Downloaded files will appear here.";
-"downloads_clear_finished" = "Clear Finished Downloads";
-"downloads_in_progress" = "Downloading";
-"downloads_finished" = "Finished";
-"downloads_failed" = "Failed";
-"downloads_canceled" = "Canceled";
+"downloads" = "التنزيلات";
+"downloads_empty" = "لا توجد تنزيلات";
+"downloads_empty_desc" = "ستظهر الملفات التي تم تنزيلها هنا.";
+"downloads_clear_finished" = "مسح التنزيلات المكتملة";
+"downloads_in_progress" = "جارٍ التنزيل";
+"downloads_finished" = "مكتمل";
+"downloads_failed" = "فشل";
+"downloads_canceled" = "ملغى";
+"library" = "المكتبة";
+"my_downloads" = "تنزيلاتي";
+"open_downloads_folder" = "فتح موقع التنزيلات";
 "live_activity" = "Dynamic Island";
 "live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
@@ -515,3 +512,12 @@
 "current_page_link" = "رابط الصفحة الحالية";
 "tab_limit_title" = "تم بلوغ حد علامات التبويب";
 "tab_limit_message" = "يمكنك الاحتفاظ بما يصل إلى 20 علامة تبويب. أغلق واحدة قبل فتح علامة جديدة.";
+"browser_page_tools" = "أدوات الصفحة";
+"browser_open_page" = "فتح الصفحة";
+"keep_fullscreen_browsing" = "إبقاء التصفح بملء الشاشة";
+"keep_fullscreen_browsing_desc" = "تُفتح عمليات البحث الجديدة بملء الشاشة؛ ويؤدي الخروج يدويًا إلى إيقاف هذا الخيار";
+"icloud_settings_sync" = "مزامنة إعدادات iCloud";
+"icloud_settings_sync_desc" = "مزامنة المظهر والرئيسية والتصفح والخصوصية والمنصات؛ دون السجل وذاكرة التخزين وتسجيلات الدخول والتنزيلات";
+"settings_section_sync" = "المزامنة";
+"privacy_exit_incognito" = "إيقاف التصفح الخاص";
+"privacy_enter_incognito" = "تشغيل التصفح الخاص";

@@ -254,7 +254,7 @@
 
 "enter_fullscreen" = "전체 화면 시작";
 "exit_fullscreen" = "전체 화면 종료";
-"fullscreen_exit_hint" = "탭하거나 아래로 당겨 종료";
+"fullscreen_exit_hint" = "탭하여 메뉴 열기, 아래로 당겨 종료";
 "restore_browser_toolbar" = "브라우저 도구 막대 복원";
 "hide_browser_toolbar" = "브라우저 도구 막대 숨기기";
 "privacy_clear_action" = "삭제";
@@ -424,14 +424,17 @@
 "downloading" = "다운로드 중...";
 
 /* Browser Privacy */
-"downloads" = "Downloads";
-"downloads_empty" = "No Downloads";
-"downloads_empty_desc" = "Downloaded files will appear here.";
-"downloads_clear_finished" = "Clear Finished Downloads";
-"downloads_in_progress" = "Downloading";
-"downloads_finished" = "Finished";
-"downloads_failed" = "Failed";
-"downloads_canceled" = "Canceled";
+"downloads" = "다운로드";
+"downloads_empty" = "다운로드 없음";
+"downloads_empty_desc" = "다운로드한 파일이 여기에 표시됩니다.";
+"downloads_clear_finished" = "완료된 다운로드 지우기";
+"downloads_in_progress" = "다운로드 중";
+"downloads_finished" = "완료됨";
+"downloads_failed" = "실패";
+"downloads_canceled" = "취소됨";
+"library" = "보관함";
+"my_downloads" = "내 다운로드";
+"open_downloads_folder" = "다운로드 위치 열기";
 "live_activity" = "Dynamic Island";
 "live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
@@ -499,3 +502,12 @@
 "current_page_link" = "현재 페이지 링크";
 "tab_limit_title" = "탭 한도에 도달했습니다";
 "tab_limit_message" = "탭은 최대 20개까지 유지할 수 있습니다. 새 탭을 열기 전에 하나를 닫아 주세요.";
+"browser_page_tools" = "페이지 도구";
+"browser_open_page" = "페이지 열기";
+"keep_fullscreen_browsing" = "전체 화면 탐색 유지";
+"keep_fullscreen_browsing_desc" = "새 검색을 전체 화면으로 열며, 직접 종료하면 이 설정이 꺼집니다";
+"icloud_settings_sync" = "iCloud 설정 동기화";
+"icloud_settings_sync_desc" = "모양, 홈, 탐색, 개인정보 및 플랫폼 설정을 동기화합니다. 기록, 캐시, 로그인 및 다운로드는 제외됩니다";
+"settings_section_sync" = "동기화";
+"privacy_exit_incognito" = "시크릿 모드 끄기";
+"privacy_enter_incognito" = "시크릿 모드 켜기";

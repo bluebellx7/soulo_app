@@ -254,7 +254,7 @@
 
 "enter_fullscreen" = "Activer le plein écran";
 "exit_fullscreen" = "Quitter le plein écran";
-"fullscreen_exit_hint" = "Touchez ou tirez vers le bas";
+"fullscreen_exit_hint" = "Touchez pour les commandes, tirez pour quitter";
 "restore_browser_toolbar" = "Restaurer la barre du navigateur";
 "hide_browser_toolbar" = "Masquer la barre du navigateur";
 "privacy_clear_action" = "Effacer";
@@ -423,14 +423,17 @@ Dites-nous :
 "downloading" = "Téléchargement...";
 
 /* Browser Privacy */
-"downloads" = "Downloads";
-"downloads_empty" = "No Downloads";
-"downloads_empty_desc" = "Downloaded files will appear here.";
-"downloads_clear_finished" = "Clear Finished Downloads";
-"downloads_in_progress" = "Downloading";
-"downloads_finished" = "Finished";
-"downloads_failed" = "Failed";
-"downloads_canceled" = "Canceled";
+"downloads" = "Téléchargements";
+"downloads_empty" = "Aucun téléchargement";
+"downloads_empty_desc" = "Les fichiers téléchargés apparaîtront ici.";
+"downloads_clear_finished" = "Effacer les téléchargements terminés";
+"downloads_in_progress" = "Téléchargement";
+"downloads_finished" = "Terminé";
+"downloads_failed" = "Échec";
+"downloads_canceled" = "Annulé";
+"library" = "Bibliothèque";
+"my_downloads" = "Mes téléchargements";
+"open_downloads_folder" = "Ouvrir l’emplacement des téléchargements";
 "live_activity" = "Dynamic Island";
 "live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
@@ -498,3 +501,12 @@ Dites-nous :
 "current_page_link" = "Lien de la page actuelle";
 "tab_limit_title" = "Limite d’onglets atteinte";
 "tab_limit_message" = "Vous pouvez conserver jusqu’à 20 onglets. Fermez-en un avant d’en ouvrir un autre.";
+"browser_page_tools" = "Outils de la page";
+"browser_open_page" = "Ouvrir la page";
+"keep_fullscreen_browsing" = "Conserver le plein écran";
+"keep_fullscreen_browsing_desc" = "Les nouvelles recherches s’ouvrent en plein écran ; une sortie manuelle désactive ce réglage";
+"icloud_settings_sync" = "Synchronisation des réglages iCloud";
+"icloud_settings_sync_desc" = "Synchronise l’apparence, l’accueil, la navigation, la confidentialité et les plateformes ; exclut historique, cache, connexions et téléchargements";
+"settings_section_sync" = "Synchronisation";
+"privacy_exit_incognito" = "Désactiver la navigation privée";
+"privacy_enter_incognito" = "Activer la navigation privée";

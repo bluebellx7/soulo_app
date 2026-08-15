@@ -287,10 +287,6 @@ struct TabSwitcherOverlay: View {
             }
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay(Capsule().stroke(.white.opacity(0.12), lineWidth: 0.5))
-        .shadow(color: .black.opacity(0.22), radius: 18, y: 8)
     }
 
     private var emptyState: some View {
@@ -757,13 +753,6 @@ private struct TabOverviewCard: View {
                     .clipped()
             }
             .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 34, style: .continuous)
-                    .stroke(
-                        isActive ? Color.white.opacity(0.55) : Color.white.opacity(0.22),
-                        lineWidth: isActive ? 1.4 : 0.8
-                    )
-            )
             .shadow(
                 color: .black.opacity(isActive ? 0.34 : 0.24),
                 radius: isActive ? 30 : 18,
@@ -814,21 +803,17 @@ struct TabCountBadge: View {
         Button(action: action) {
             ZStack {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .stroke(.white.opacity(0.7), lineWidth: 1.5)
+                    .stroke(Color.white.opacity(0.72), lineWidth: 1.5)
                     .frame(width: 18, height: 18)
 
                 Text("\(min(count, 99))")
                     .font(.system(size: 10, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .foregroundStyle(Color.white.opacity(0.86))
             }
-            .frame(width: 30, height: 30)
-            .background(
-                Circle()
-                    .fill(.black.opacity(0.35))
-                    .overlay(Circle().stroke(.white.opacity(0.1), lineWidth: 0.5))
-            )
             .frame(width: 40, height: 40)
             .contentShape(Circle())
+            .browserToolbarButtonGlass()
+            .shadow(color: .black.opacity(0.13), radius: 7, y: 3)
         }
         .accessibilityLabel("\(count) \(LanguageManager.shared.localizedString("tab_tabs"))")
         .accessibilityHint(LanguageManager.shared.localizedString("accessibility_tab_overview_hint"))

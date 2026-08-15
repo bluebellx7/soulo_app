@@ -6,6 +6,7 @@ struct ClipboardPromptView: View {
     @EnvironmentObject var languageManager: LanguageManager
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var offset: CGFloat = -100
     @State private var opacity: Double = 0
@@ -14,8 +15,10 @@ struct ClipboardPromptView: View {
         VStack {
             HStack(spacing: 12) {
                 Image(systemName: "doc.on.clipboard")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(Color(hex: "7C3AED"))
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Color(uiColor: .secondaryLabel))
+                    .frame(width: 36, height: 36)
+                    .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(languageManager.localizedString("clipboard_detected"))
@@ -36,18 +39,12 @@ struct ClipboardPromptView: View {
                 } label: {
                     Text(languageManager.localizedString("search"))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(
-                            LinearGradient(
-                                colors: [Color(hex: "4F46E5"), Color(hex: "7C3AED")],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            ),
-                            in: Capsule()
-                        )
+                        .foregroundStyle(Color(uiColor: .systemBackground))
+                        .padding(.horizontal, 18)
+                        .frame(minHeight: 40)
+                        .background(Color(uiColor: .label).opacity(colorScheme == .dark ? 0.9 : 0.82), in: Capsule())
                 }
+                .buttonStyle(.plain)
 
                 // Dismiss
                 Button {
@@ -56,13 +53,14 @@ struct ClipboardPromptView: View {
                     Image(systemName: "xmark")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.secondary)
-                        .frame(width: 28, height: 28)
-                        .background(Color.primary.opacity(0.05), in: Circle())
+                        .frame(width: 36, height: 36)
+                        .background(Color(uiColor: .tertiarySystemFill), in: Circle())
                 }
+                .buttonStyle(.plain)
                 .accessibilityLabel(languageManager.localizedString("cancel"))
             }
-            .padding(16)
-            .glassCard(cornerRadius: 16)
+            .padding(14)
+            .glassCard(cornerRadius: 20)
             .padding(.horizontal, 16)
             .padding(.top, 60)
             .offset(y: offset)

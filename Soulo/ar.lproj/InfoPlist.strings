@@ -1,0 +1,5 @@
+NSCameraUsageDescription = "السماح بالوصول إلى الكاميرا عندما توافق على طلب موقع ويب، مثل مكالمات الفيديو أو مسح الرموز أو التقاط صورة.";
+NSMicrophoneUsageDescription = "السماح بالوصول إلى الميكروفون للبحث الصوتي، وبعد موافقتك، لمكالمات مواقع الويب أو التسجيل.";
+NSSpeechRecognitionUsageDescription = "السماح بالتعرف على الكلام لتحويل صوتك إلى نص للبحث.";
+NSPhotoLibraryUsageDescription = "يحتاج Soulo إلى الوصول إلى مكتبة الصور لتعيين خلفية مخصصة.";
+NSPhotoLibraryAddUsageDescription = "يحتاج Soulo إلى إذن لحفظ صور الويب في مكتبة الصور.";

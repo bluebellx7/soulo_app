@@ -8,11 +8,36 @@ final class WebViewModelTests: XCTestCase {
     override func setUp() {
         super.setUp()
         UserDefaults.standard.removeObject(forKey: LiveActivityService.enabledKey)
+        UserDefaults.standard.set(false, forKey: AppConstants.StorageKeys.isIncognito)
     }
 
     override func tearDown() {
         UserDefaults.standard.removeObject(forKey: LiveActivityService.enabledKey)
+        UserDefaults.standard.set(false, forKey: AppConstants.StorageKeys.isIncognito)
         super.tearDown()
+    }
+
+    func testLanguageSettingsExposeEveryRuntimeSupportedLanguage() {
+        let settingsLanguages = Set(AppConstants.supportedLanguages.map(\.code))
+        let runtimeLanguages = Set(LanguageManager.supportedLanguages.map(\.id))
+
+        XCTAssertEqual(settingsLanguages, runtimeLanguages)
+        XCTAssertEqual(settingsLanguages.count, 15)
+    }
+
+    func testProtocolErrorLocalizationFallsBackToEnglishInsteadOfInternalKey() {
+        let defaults = UserDefaults.standard
+        let previousLanguage = defaults.string(forKey: "app_language")
+        defaults.set("de", forKey: "app_language")
+        defer {
+            if let previousLanguage {
+                defaults.set(previousLanguage, forKey: "app_language")
+            } else {
+                defaults.removeObject(forKey: "app_language")
+            }
+        }
+
+        XCTAssertNotEqual(AppLocalization.string("web_capture_failed"), "web_capture_failed")
     }
 
     func testLoadURLImmediatelyMarksPageAsLoadingBeforeWebViewExists() {
@@ -51,6 +76,28 @@ final class WebViewModelTests: XCTestCase {
         XCTAssertNil(model.errorMessage)
     }
 
+    func testModerateShakePeaksTriggerRepeatedActionsAfterCooldown() {
+        var classifier = ShakeMotionClassifier()
+
+        XCTAssertFalse(classifier.register(magnitude: 0.64, at: 1.00))
+        XCTAssertTrue(classifier.register(magnitude: 0.68, at: 1.12))
+
+        // Motion from the same physical shake is ignored during the short cooldown.
+        XCTAssertFalse(classifier.register(magnitude: 0.72, at: 1.30))
+
+        // A later, second shake is detected normally instead of being lost.
+        XCTAssertFalse(classifier.register(magnitude: 0.63, at: 2.00))
+        XCTAssertTrue(classifier.register(magnitude: 0.66, at: 2.11))
+    }
+
+    func testShakeClassifierIgnoresEverydayMovementAndWidelySpacedPeaks() {
+        var classifier = ShakeMotionClassifier()
+
+        XCTAssertFalse(classifier.register(magnitude: 0.35, at: 1.00))
+        XCTAssertFalse(classifier.register(magnitude: 0.65, at: 1.10))
+        XCTAssertFalse(classifier.register(magnitude: 0.66, at: 1.70))
+    }
+
     func testBrowserNavigationResolverAcceptsWebURLsAndBareHosts() {
         XCTAssertEqual(
             BrowserNavigationResolver.resolve("https://example.com/path"),
@@ -68,6 +115,72 @@ final class WebViewModelTests: XCTestCase {
         XCTAssertEqual(result?.scheme, "https")
         XCTAssertEqual(result?.host, "www.google.com")
         XCTAssertTrue(result?.query?.contains("javascript") == true)
+    }
+
+    func testWebMediaCapturePermissionPromptsOnlyForSecureOrigins() {
+        XCTAssertEqual(
+            WebMediaCapturePermissionPolicy.decision(forScheme: "https"),
+            .prompt
+        )
+        XCTAssertEqual(
+            WebMediaCapturePermissionPolicy.decision(forScheme: "HTTPS"),
+            .prompt
+        )
+        XCTAssertEqual(
+            WebMediaCapturePermissionPolicy.decision(forScheme: "http"),
+            .deny
+        )
+        XCTAssertEqual(
+            WebMediaCapturePermissionPolicy.decision(forScheme: nil),
+            .deny
+        )
+    }
+
+    func testLibrarySectionsKeepTheExpectedThreeWayOrder() {
+        XCTAssertEqual(
+            LibrarySection.allCases.map(\.rawValue),
+            ["bookmarks", "history", "downloads"]
+        )
+        XCTAssertEqual(
+            LibrarySection.allCases.map(\.titleKey),
+            ["bookmarks", "search_history", "downloads"]
+        )
+    }
+
+    func testSiteAdBlockCardEnablesGlobalFilteringWhenItWasOff() {
+        XCTAssertEqual(
+            SiteAdBlockTogglePolicy.nextState(
+                isGloballyEnabled: false,
+                isAllowlisted: true
+            ),
+            SiteAdBlockToggleState(
+                isGloballyEnabled: true,
+                isAllowlisted: false
+            )
+        )
+    }
+
+    func testSiteAdBlockCardTogglesCurrentSiteWhenGlobalFilteringIsOn() {
+        XCTAssertEqual(
+            SiteAdBlockTogglePolicy.nextState(
+                isGloballyEnabled: true,
+                isAllowlisted: false
+            ),
+            SiteAdBlockToggleState(
+                isGloballyEnabled: true,
+                isAllowlisted: true
+            )
+        )
+        XCTAssertEqual(
+            SiteAdBlockTogglePolicy.nextState(
+                isGloballyEnabled: true,
+                isAllowlisted: true
+            ),
+            SiteAdBlockToggleState(
+                isGloballyEnabled: true,
+                isAllowlisted: false
+            )
+        )
     }
 
     func testBrowsingHistoryUpsertsCanonicalURLAndRefreshesTitle() throws {
@@ -213,6 +326,29 @@ final class WebViewModelTests: XCTestCase {
         )
     }
 
+    func testFullscreenHandleRevealGestureRequiresAnIntentionalDownwardPull() {
+        XCTAssertTrue(
+            FullscreenHandleRevealGesture.shouldReveal(
+                translation: CGSize(width: 3, height: 30)
+            )
+        )
+        XCTAssertFalse(
+            FullscreenHandleRevealGesture.shouldReveal(
+                translation: CGSize(width: 28, height: 26)
+            )
+        )
+        XCTAssertFalse(
+            FullscreenHandleRevealGesture.shouldReveal(
+                translation: CGSize(width: 2, height: -30)
+            )
+        )
+        XCTAssertFalse(
+            FullscreenHandleRevealGesture.shouldReveal(
+                translation: CGSize(width: 2, height: 18)
+            )
+        )
+    }
+
     func testPageBottomClearanceCoversVisibleToolbarAndSystemGestureArea() {
         XCTAssertEqual(
             BrowserChromeLayout.pageBottomClearance(
@@ -323,5 +459,193 @@ final class WebViewModelTests: XCTestCase {
             BrowserAddressDisplay.fullText(keyword: "   ", host: "example.com"),
             "example.com"
         )
+    }
+
+    func testPersistentFullscreenOnlyEntersForAnActiveAccessibleSearch() {
+        XCTAssertTrue(
+            PersistentFullscreenBehavior.shouldEnter(
+                enabled: true,
+                hasSearch: true,
+                voiceOverEnabled: false
+            )
+        )
+        XCTAssertFalse(
+            PersistentFullscreenBehavior.shouldEnter(
+                enabled: false,
+                hasSearch: true,
+                voiceOverEnabled: false
+            )
+        )
+        XCTAssertFalse(
+            PersistentFullscreenBehavior.shouldEnter(
+                enabled: true,
+                hasSearch: false,
+                voiceOverEnabled: false
+            )
+        )
+        XCTAssertFalse(
+            PersistentFullscreenBehavior.shouldEnter(
+                enabled: true,
+                hasSearch: true,
+                voiceOverEnabled: true
+            )
+        )
+    }
+
+    func testCloudSettingsPayloadRoundTripsWhitelistedValuesAndMissingKeys() throws {
+        let sourceSuite = "CloudSettingsPayload.source.\(UUID().uuidString)"
+        let targetSuite = "CloudSettingsPayload.target.\(UUID().uuidString)"
+        let source = try XCTUnwrap(UserDefaults(suiteName: sourceSuite))
+        let target = try XCTUnwrap(UserDefaults(suiteName: targetSuite))
+        defer {
+            source.removePersistentDomain(forName: sourceSuite)
+            target.removePersistentDomain(forName: targetSuite)
+        }
+
+        source.set("dark", forKey: "appearance")
+        source.set(["example.com"], forKey: "allowlist")
+        target.set("stale", forKey: "missing_setting")
+
+        let data = try CloudSettingsPayloadCodec.encode(
+            defaults: source,
+            keys: ["appearance", "allowlist", "missing_setting"]
+        )
+        try CloudSettingsPayloadCodec.apply(
+            data,
+            defaults: target,
+            allowedKeys: ["appearance", "allowlist", "missing_setting"]
+        )
+
+        XCTAssertEqual(target.string(forKey: "appearance"), "dark")
+        XCTAssertEqual(target.stringArray(forKey: "allowlist"), ["example.com"])
+        XCTAssertNil(target.object(forKey: "missing_setting"))
+    }
+
+    func testPageZoomUsesTenPercentStepsAndSafeBounds() {
+        let model = WebViewModel()
+
+        model.setPageZoom(0.01)
+        XCTAssertEqual(model.pageZoom, 0.5)
+
+        model.increasePageZoom()
+        XCTAssertEqual(model.pageZoom, 0.6)
+
+        model.setPageZoom(4)
+        XCTAssertEqual(model.pageZoom, 2)
+
+        model.resetPageZoom()
+        XCTAssertEqual(model.pageZoom, 1)
+    }
+
+    func testPrivateSearchDoesNotStoreHistoryOrUsageButKeepsExistingRecentsVisible() throws {
+        let context = try makeHistoryContext()
+        context.insert(SearchHistoryItem(keyword: "existing search"))
+        try context.save()
+
+        let model = SearchViewModel()
+        model.isIncognito = true
+        model.searchText = "private query"
+        let usageBefore = model.selectedPlatform?.usageCount
+
+        model.performSearch(context: context)
+        model.loadRecentSearches(context: context)
+
+        let items = try context.fetch(FetchDescriptor<SearchHistoryItem>())
+        XCTAssertEqual(items.map(\.keyword), ["existing search"])
+        XCTAssertEqual(model.selectedPlatform?.usageCount, usageBefore)
+        XCTAssertEqual(model.recentSearches, ["existing search"])
+    }
+
+    func testToolbarConfigurationNormalizesFourSlotsAndAddressAction() throws {
+        let suite = "BrowserToolbarConfiguration.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let service = BrowserToolbarConfigurationService(defaults: defaults)
+        service.save(actions: [.share, .screenshot], addressAction: .more)
+
+        XCTAssertEqual(service.actions, [.share, .screenshot, .tabs, .more])
+        XCTAssertEqual(service.addressAction, .hideToolbar)
+        XCTAssertEqual(defaults.string(forKey: BrowserToolbarConfigurationService.addressActionKey), "hideToolbar")
+        XCTAssertEqual(
+            BrowserToolbarAction.allCases.first,
+            Optional(BrowserToolbarAction.none)
+        )
+
+        service.save(actions: [.none, .share, .none, .more], addressAction: .none)
+        XCTAssertEqual(service.actions, [.none, .share, .none, .more])
+        XCTAssertEqual(service.addressAction, .none)
+
+        service.save(actions: [.translate, .share, .tabs, .more], addressAction: .translate)
+        XCTAssertEqual(service.actions, [.none, .share, .tabs, .more])
+        XCTAssertEqual(service.addressAction, .none)
+    }
+
+    func testScrollingCaptureUsesViewportFloorAndMaximumHeight() {
+        XCTAssertEqual(
+            WebPageCaptureService.fullPageCaptureHeight(contentHeight: 300, viewportHeight: 800),
+            800
+        )
+        XCTAssertEqual(
+            WebPageCaptureService.fullPageCaptureHeight(contentHeight: 25_000, viewportHeight: 800),
+            WebPageCaptureService.maximumFullPageHeight
+        )
+        let longPageScale = WebPageCaptureService.fullPageCaptureScale(
+            width: WebPageCaptureService.fullPageOutputWidth(viewportWidth: 390),
+            height: WebPageCaptureService.maximumFullPageHeight,
+            displayScale: 3
+        )
+        XCTAssertGreaterThan(longPageScale, 1)
+        XCTAssertLessThanOrEqual(longPageScale, 3)
+        XCTAssertLessThanOrEqual(
+            WebPageCaptureService.fullPageOutputWidth(viewportWidth: 390)
+                * WebPageCaptureService.maximumFullPageHeight
+                * longPageScale
+                * longPageScale,
+            WebPageCaptureService.maximumFullPagePixelCount + 1
+        )
+        XCTAssertEqual(
+            WebPageCaptureService.fullPageOutputWidth(viewportWidth: 390),
+            422
+        )
+    }
+
+    func testWebCaptureKeepsSnapshotWidthInViewCoordinates() {
+        let bounds = CGRect(x: 0, y: 0, width: 390, height: 720)
+        let configuration = WebPageCaptureService.snapshotConfiguration(for: bounds)
+
+        XCTAssertEqual(configuration.rect, bounds)
+        XCTAssertNil(configuration.snapshotWidth)
+        XCTAssertTrue(configuration.afterScreenUpdates)
+    }
+
+    func testWebCaptureUsesThePageBackgroundForItsHorizontalFrame() throws {
+        let color = try XCTUnwrap(
+            WebPageCaptureService.colorFromComputedCSS("rgba(245, 246, 248, 0.9)")
+        )
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        XCTAssertTrue(color.getRed(&red, green: &green, blue: &blue, alpha: &alpha))
+        XCTAssertEqual(red, 245 / 255, accuracy: 0.001)
+        XCTAssertEqual(green, 246 / 255, accuracy: 0.001)
+        XCTAssertEqual(blue, 248 / 255, accuracy: 0.001)
+        XCTAssertEqual(alpha, 0.9, accuracy: 0.001)
+        XCTAssertTrue(WebPageCaptureService.pageBackgroundColorScript.contains("document.body"))
+        XCTAssertTrue(WebPageCaptureService.pageBackgroundColorScript.contains("document.documentElement"))
+    }
+
+    func testGoogleTranslationURLMapsSimplifiedChineseAndPreservesPageURL() throws {
+        let pageURL = try XCTUnwrap(URL(string: "https://example.com/article?q=hello world"))
+        let url = try XCTUnwrap(googleTranslationURL(pageURL: pageURL, target: "zh-Hans"))
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        let values = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).compactMap { item in
+            item.value.map { (item.name, $0) }
+        })
+
+        XCTAssertEqual(values["sl"], "auto")
+        XCTAssertEqual(values["tl"], "zh-CN")
+        XCTAssertEqual(values["u"], pageURL.absoluteString)
     }
 }

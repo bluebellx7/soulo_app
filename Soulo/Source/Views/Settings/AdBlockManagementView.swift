@@ -24,15 +24,6 @@ struct AdBlockManagementView: View {
         )
     }
 
-    private var subscriptionRuleCount: Int {
-        let rules = subscriptionService.enabledRuleSummary
-        return rules.networkRules.count + rules.cosmeticRules.count
-    }
-
-    private var totalHiddenElementCount: Int {
-        service.hiddenElementCountByHost.values.reduce(0, +)
-    }
-
     private var currentHostHiddenElementCount: Int {
         service.hiddenElementCount(for: currentHost)
     }
@@ -124,42 +115,6 @@ struct AdBlockManagementView: View {
                         )
                     )
                 }
-            }
-
-            Section {
-                AdBlockMetricRow(
-                    title: LanguageManager.shared.localizedString("ad_block_total_hidden"),
-                    systemImage: "eye.slash.fill",
-                    value: totalHiddenElementCount,
-                    isHighlighted: totalHiddenElementCount > 0
-                )
-
-                AdBlockMetricRow(
-                    title: LanguageManager.shared.localizedString("ad_block_allowlisted_count"),
-                    systemImage: "shield.slash",
-                    value: service.allowlistedHosts.count,
-                    isHighlighted: service.allowlistedHosts.count > 0,
-                    highlightColor: .orange
-                )
-
-                AdBlockMetricRow(
-                    title: LanguageManager.shared.localizedString("ad_block_subscription_rules"),
-                    systemImage: "shield.lefthalf.filled",
-                    value: subscriptionRuleCount,
-                    isHighlighted: adBlockEnabled && subscriptionRuleCount > 0
-                )
-
-                if totalHiddenElementCount > 0 {
-                    Button(role: .destructive) {
-                        service.resetStats()
-                    } label: {
-                        Label(LanguageManager.shared.localizedString("ad_block_reset_stats"), systemImage: "arrow.counterclockwise")
-                    }
-                }
-            } header: {
-                SectionHeader(title: LanguageManager.shared.localizedString("ad_block_stats"))
-            } footer: {
-                Text(LanguageManager.shared.localizedString("ad_block_stats_desc"))
             }
 
             Section {

@@ -24,11 +24,22 @@ enum BrowserPopupPolicy {
     }
 }
 
+enum WebMediaCapturePermissionPolicy {
+    /// Web media capture is allowed to reach WebKit's site permission prompt
+    /// only from secure origins. Soulo never grants camera or microphone
+    /// access on a site's behalf.
+    static func decision(forScheme scheme: String?) -> WKPermissionDecision {
+        scheme?.lowercased() == "https" ? .prompt : .deny
+    }
+}
+
 enum BrowserDownloadPolicy {
     private static let downloadableMIMEPrefixes = [
         "application/pdf",
         "application/zip",
         "application/x-zip-compressed",
+        "application/x-chrome-extension",
+        "application/x-xpinstall",
         "application/octet-stream",
         "application/msword",
         "application/vnd.openxmlformats-officedocument",
@@ -188,6 +199,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     @AppStorage("privacy_cookie_banner_enabled") private var cookieBannerEnabled: Bool = true
     @ObservedObject private var adBlockSettings = AdBlockSettingsService.shared
     @ObservedObject private var privacyService = PrivacyProtectionService.shared
+    @ObservedObject private var webAppearance = WebAppearanceService.shared
 
     // MARK: - Make View
 
@@ -225,10 +237,19 @@ struct WebViewRepresentable: UIViewRepresentable {
         if let existingWebView = viewModel.webView {
             installRuntimeIfNeeded(on: existingWebView.configuration.userContentController, context: context)
             configureWebView(existingWebView, context: context)
+            if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
+               !isIncognito, #available(iOS 18.4, *) {
+                NativeWebExtensionRuntime.shared.register(existingWebView)
+            }
             return existingWebView
         }
 
         let configuration = WKWebViewConfiguration()
+
+        if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
+           !isIncognito, #available(iOS 18.4, *) {
+            NativeWebExtensionRuntime.shared.apply(to: configuration)
+        }
 
         // Custom user agent
         configuration.applicationNameForUserAgent = nil
@@ -246,6 +267,10 @@ struct WebViewRepresentable: UIViewRepresentable {
         // Build the WKWebView
         let webView = AccessibleWebView(frame: .zero, configuration: configuration)
         configureWebView(webView, context: context)
+        if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
+           !isIncognito, #available(iOS 18.4, *) {
+            NativeWebExtensionRuntime.shared.register(webView)
+        }
 
         // Hand the webView reference back to the ViewModel. This triggers any pending initial load.
         viewModel.webView = webView
@@ -258,11 +283,52 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         contentController.add(context.coordinator, name: "souloAdBlocker")
         contentController.add(context.coordinator, name: "souloPrivacy")
+        if !isIncognito {
+            contentController.addScriptMessageHandler(
+                context.coordinator,
+                contentWorld: .page,
+                name: "souloUserScriptXHR"
+            )
+        }
+        if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled {
+            contentController.add(context.coordinator, name: "souloExtensionInstaller")
+        }
         contentController.addScriptMessageHandler(
             context.coordinator,
             contentWorld: .page,
             name: "souloDownload"
         )
+
+        contentController.addUserScript(
+            WKUserScript(
+                source: WebViewScripts.applyWebAppearance(
+                    warmColorShift: webAppearance.warmColorShift,
+                    forceDark: webAppearance.forceDarkPages
+                ),
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: true
+            )
+        )
+
+        if !isIncognito {
+            contentController.addUserScript(
+                WKUserScript(
+                    source: UserScriptRuntime.compatibilityBootstrap,
+                    injectionTime: .atDocumentStart,
+                    forMainFrameOnly: true
+                )
+            )
+        }
+
+        if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled {
+            contentController.addUserScript(
+                WKUserScript(
+                    source: WebViewScripts.extensionInstallBridge,
+                    injectionTime: .atDocumentStart,
+                    forMainFrameOnly: true
+                )
+            )
+        }
 
         contentController.addUserScript(
             WKUserScript(
@@ -306,7 +372,6 @@ struct WebViewRepresentable: UIViewRepresentable {
         )
         let hostIsAllowlisted = shouldBypassWebProtection
             || adBlockSettings.isAllowlisted(viewModel.currentURL?.host)
-            || privacyService.isProtectionDisabled(for: viewModel.currentURL?.host)
         if adBlockEnabled && !hostIsAllowlisted {
             let adScript = WKUserScript(
                 source: AdBlockService.adHidingScript(
@@ -345,6 +410,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         // Apply per-tab UA/content-mode preferences before each navigation or restore.
         viewModel.applyWebPreferences(to: webView)
+        webAppearance.apply(to: webView)
 
         // KVO observations
         context.coordinator.observe(webView: webView, viewModel: viewModel)
@@ -364,6 +430,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         if let accessibleWebView = uiView as? AccessibleWebView {
             accessibleWebView.onAccessibilityPlatformPage = onAccessibilityPlatformPage
         }
+        webAppearance.apply(to: uiView)
         let shouldBypassWebProtection = WebCompatibilityService.shouldBypassWebProtection(
             for: uiView.url ?? viewModel.currentURL,
             fallbackHost: host
@@ -378,7 +445,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             allowlistedHosts: adBlockAllowlist,
             host: host
         )
-        if adBlockEnabled && !privacyService.isProtectionDisabled(for: host) && !shouldBypassWebProtection {
+        if adBlockEnabled && !shouldBypassWebProtection {
             Self.ensureCurrentContentRules(on: uiView, allowlist: adBlockAllowlist)
         } else {
             uiView.configuration.userContentController.removeAllContentRuleLists()
@@ -428,16 +495,21 @@ struct WebViewRepresentable: UIViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(viewModel: viewModel)
+        Coordinator(viewModel: viewModel, allowsUserScripts: !isIncognito)
     }
 
     // MARK: - Cleanup
 
     static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) {
+        if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
+           #available(iOS 18.4, *) {
+            NativeWebExtensionRuntime.shared.unregister(uiView)
+        }
         coordinator.invalidateObservations()
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloAdBlocker")
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloPrivacy")
-        uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloDownload")
+        uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloDownload", contentWorld: .page)
+        uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloUserScriptXHR", contentWorld: .page)
         uiView.configuration.userContentController.removeAllUserScripts()
         uiView.configuration.userContentController.removeAllContentRuleLists()
         installedContentRuleSignatures.removeValue(forKey: ObjectIdentifier(uiView))
@@ -461,6 +533,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var accumulatedScrollDelta: CGFloat = 0
 
         private let viewModel: WebViewModel
+        private let allowsUserScripts: Bool
         private var observations: [NSKeyValueObservation] = []
         private var downloadIDs: [ObjectIdentifier: UUID] = [:]
         private var activeDownloads: [ObjectIdentifier: WKDownload] = [:]
@@ -474,9 +547,11 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var blankPageRecoveryAttempts: [String: Int] = [:]
         private var terminatedProcessRecoveryURLs = Set<String>()
         private var navigationGeneration = UUID()
+        private var executedUserScripts: Set<String> = []
 
-        init(viewModel: WebViewModel) {
+        init(viewModel: WebViewModel, allowsUserScripts: Bool) {
             self.viewModel = viewModel
+            self.allowsUserScripts = allowsUserScripts
             super.init()
             downloadCancelObserver = NotificationCenter.default.addObserver(
                 forName: .cancelActiveDownloads,
@@ -493,6 +568,11 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             guard let body = message.body as? [String: Any] else { return }
+
+            if message.name == "souloExtensionInstaller" {
+                handleExtensionInstallRequest(body, webView: message.webView)
+                return
+            }
 
             if message.name == "souloAdBlocker" {
                 let count = body["hiddenCount"] as? Int ?? 0
@@ -523,11 +603,39 @@ struct WebViewRepresentable: UIViewRepresentable {
             }
         }
 
+        private func handleExtensionInstallRequest(_ body: [String: Any], webView: WKWebView?) {
+            guard body["provider"] as? String == "chrome",
+                  let extensionID = body["extensionID"] as? String,
+                  extensionID.range(of: "^[a-p]{32}$", options: .regularExpression) != nil,
+                  var components = URLComponents(string: "https://clients2.google.com/service/update2/crx") else {
+                return
+            }
+            components.queryItems = [
+                URLQueryItem(name: "response", value: "redirect"),
+                URLQueryItem(name: "prodversion", value: "130.0.0.0"),
+                URLQueryItem(name: "acceptformat", value: "crx2,crx3"),
+                URLQueryItem(name: "x", value: "id=\(extensionID)&uc")
+            ]
+            guard let packageURL = components.url else { return }
+            webView?.load(URLRequest(url: packageURL))
+        }
+
         func userContentController(
             _ userContentController: WKUserContentController,
             didReceive message: WKScriptMessage,
             replyHandler: @escaping (Any?, String?) -> Void
         ) {
+            if message.name == "souloUserScriptXHR",
+               let body = message.body as? [String: Any] {
+                Task {
+                    do {
+                        replyHandler(try await UserScriptHTTPBridge.response(for: body), nil)
+                    } catch {
+                        replyHandler(nil, error.localizedDescription)
+                    }
+                }
+                return
+            }
             guard message.name == "souloDownload",
                   let body = message.body as? [String: Any] else {
                 replyHandler(nil, "Invalid download message")
@@ -623,7 +731,10 @@ struct WebViewRepresentable: UIViewRepresentable {
                     manager.markFinished(id: transfer.itemID)
                     refreshDownloadPresentation()
                     replyHandler(["finished": true], nil)
-                    presentDownloadedFile(transfer.fileURL)
+                    let sourceURL = manager.downloads
+                        .first(where: { $0.id == transfer.itemID })
+                        .flatMap { URL(string: $0.sourceURLString) }
+                    presentDownloadedFile(transfer.fileURL, sourceURL: sourceURL)
                 } catch {
                     try? FileManager.default.removeItem(at: transfer.fileURL)
                     manager.markFailed(id: transfer.itemID, error: error)
@@ -760,14 +871,13 @@ struct WebViewRepresentable: UIViewRepresentable {
                 enabled ? "1" : "0",
                 cosmetic ? "1" : "0",
                 allowlistedHosts.joined(separator: ","),
-                (AdBlockSettingsService.isHostAllowlisted(host) || PrivacyProtectionService.isProtectionDisabled(host)) ? "1" : "0"
+                AdBlockSettingsService.isHostAllowlisted(host) ? "1" : "0"
             ].joined(separator: "|")
             guard signature != lastAdHidingSignature else { return }
             lastAdHidingSignature = signature
 
             guard enabled,
                   !AdBlockSettingsService.isHostAllowlisted(host),
-                  !PrivacyProtectionService.isProtectionDisabled(host),
                   cosmetic else {
                 return
             }
@@ -795,6 +905,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
             navigationGeneration = UUID()
+            executedUserScripts.removeAll()
             resetScrollChromeState()
             Task { @MainActor in
                 viewModel.errorMessage = nil
@@ -804,9 +915,17 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
             Task { @MainActor [weak self] in
-                self?.viewModel.updateCurrentURL(webView.url)
+                guard let self else { return }
+                self.viewModel.updateCurrentURL(webView.url)
+                self.viewModel.applyPageZoom(to: webView)
             }
             applyCurrentAdHidingIfNeeded(on: webView)
+            Task { @MainActor in
+                WebAppearanceService.shared.apply(to: webView)
+            }
+            scheduleVideoViewportSynchronization(on: webView)
+            runUserScripts(on: webView, at: .documentStart)
+            runUserScripts(on: webView, at: .documentEnd)
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -816,14 +935,44 @@ struct WebViewRepresentable: UIViewRepresentable {
                 self.viewModel.updateLoading(false)
                 self.viewModel.updateCurrentURL(webView.url)
                 self.viewModel.updateTitle(webView.title)
+                self.viewModel.applyPageZoom(to: webView)
                 self.applyCurrentAdHidingIfNeeded(on: webView)
                 self.applyPrivacyProtectionIfNeeded(on: webView)
+                WebAppearanceService.shared.apply(to: webView)
                 self.scheduleBlankPageRecovery(on: webView)
                 // Capture snapshot for tab preview (slight delay for render)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                     self?.viewModel.takeSnapshot()
                 }
                 self.focusAccessibilityOnLoadedPage(webView)
+                self.scheduleVideoViewportSynchronization(on: webView)
+                self.runUserScripts(on: webView, at: .documentEnd)
+            }
+        }
+
+        @MainActor
+        private func runUserScripts(on webView: WKWebView, at injectionTime: UserScriptInjectionTime) {
+            guard allowsUserScripts else { return }
+            let scripts = BrowserExtensionService.shared.scripts(for: webView.url, at: injectionTime)
+            for script in scripts {
+                let executionKey = "\(navigationGeneration.uuidString):\(injectionTime.rawValue):\(script.id.uuidString)"
+                guard executedUserScripts.insert(executionKey).inserted else { continue }
+                UserScriptRuntime.execute(script, on: webView)
+            }
+        }
+
+        private func scheduleVideoViewportSynchronization(on webView: WKWebView) {
+            guard WebCompatibilityService.isDouyinVideoSurface(webView.url) else { return }
+            let generation = navigationGeneration
+            let urlString = webView.url?.absoluteString
+            for delay in [0.05, 0.25, 0.7, 1.4, 2.4] {
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self, weak webView] in
+                    guard let self,
+                          let webView,
+                          self.navigationGeneration == generation,
+                          webView.url?.absoluteString == urlString else { return }
+                    self.viewModel.synchronizePageViewport()
+                }
             }
         }
 
@@ -1009,6 +1158,11 @@ struct WebViewRepresentable: UIViewRepresentable {
                 return
             }
 
+            if BrowserExtensionInstallCandidate.recognizedDownloadURL(url) {
+                decisionHandler(.download)
+                return
+            }
+
             if BrowserDownloadPolicy.shouldDownload(requestedByPage: navigationAction.shouldPerformDownload) {
                 decisionHandler(.download)
                 return
@@ -1169,7 +1323,8 @@ struct WebViewRepresentable: UIViewRepresentable {
             let response = navigationResponse.response
             let contentDisposition = (response as? HTTPURLResponse)?
                 .value(forHTTPHeaderField: "Content-Disposition")
-            if BrowserDownloadPolicy.shouldDownload(
+            if response.url.map(BrowserExtensionInstallCandidate.recognizedDownloadURL) == true
+                || BrowserDownloadPolicy.shouldDownload(
                 canShowMIMEType: navigationResponse.canShowMIMEType,
                 mimeType: response.mimeType,
                 contentDisposition: contentDisposition
@@ -1280,6 +1435,20 @@ struct WebViewRepresentable: UIViewRepresentable {
         func webViewDidClose(_ webView: WKWebView) {
             guard webView !== viewModel.webView else { return }
             webView.superview?.removeFromSuperview()
+        }
+
+        // MARK: WKUIDelegate — camera / microphone permission
+
+        func webView(
+            _ webView: WKWebView,
+            requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+            initiatedByFrame frame: WKFrameInfo,
+            type: WKMediaCaptureType,
+            decisionHandler: @escaping (WKPermissionDecision) -> Void
+        ) {
+            decisionHandler(
+                WebMediaCapturePermissionPolicy.decision(forScheme: origin.protocol)
+            )
         }
 
         // MARK: WKUIDelegate — JS alert / confirm / prompt
@@ -1525,7 +1694,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         ) {
             let (item, fileURL) = DownloadManagerService.shared.beginDownload(
                 suggestedFilename: suggestedFilename,
-                sourceURL: response.url
+                sourceURL: viewModel.currentURL ?? response.url
             )
             downloadIDs[ObjectIdentifier(download)] = item.id
             activeDownloads[ObjectIdentifier(download)] = download
@@ -1543,20 +1712,33 @@ struct WebViewRepresentable: UIViewRepresentable {
             activeDownloads.removeValue(forKey: identifier)
             activeDownloadNames.removeValue(forKey: identifier)
             let downloadID = downloadIDs.removeValue(forKey: identifier)
-            let fileURL = downloadID.flatMap { id in
-                DownloadManagerService.shared.downloads.first(where: { $0.id == id })?.localURL
+            let downloadedItem = downloadID.flatMap { id in
+                DownloadManagerService.shared.downloads.first(where: { $0.id == id })
             }
+            let fileURL = downloadedItem?.localURL
+            let sourceURL = downloadedItem.flatMap { URL(string: $0.sourceURLString) }
             if let downloadID {
                 DownloadManagerService.shared.markFinished(id: downloadID)
             }
             Task { @MainActor in
                 refreshDownloadPresentation()
                 guard let fileURL else { return }
-                presentDownloadedFile(fileURL)
+                presentDownloadedFile(fileURL, sourceURL: sourceURL)
             }
         }
 
-        private func presentDownloadedFile(_ fileURL: URL) {
+        private func presentDownloadedFile(_ fileURL: URL, sourceURL: URL? = nil) {
+            if let candidate = BrowserExtensionInstallCandidate.detect(
+                fileURL: fileURL,
+                sourceURL: sourceURL
+            ) {
+                NotificationCenter.default.post(
+                    name: .browserExtensionInstallCandidate,
+                    object: viewModel,
+                    userInfo: ["candidate": candidate]
+                )
+                return
+            }
             presentActivityController(items: [fileURL], sourceView: viewModel.webView)
         }
 

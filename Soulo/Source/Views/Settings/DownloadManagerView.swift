@@ -1,9 +1,27 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct DownloadManagerView: View {
-    @ObservedObject private var downloadManager = DownloadManagerService.shared
     @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            DownloadManagerContentView()
+                .navigationTitle(LanguageManager.shared.localizedString("downloads"))
+                .navigationBarTitleDisplayMode(.large)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(LanguageManager.shared.localizedString("done")) { dismiss() }
+                    }
+                }
+        }
+    }
+}
+
+struct DownloadManagerContentView: View {
+    @ObservedObject private var downloadManager = DownloadManagerService.shared
     @State private var shareItem: BrowserDownloadItem?
+    @State private var showDownloadsFolder = false
 
     var body: some View {
         List {
@@ -25,19 +43,33 @@ struct DownloadManagerView: View {
                     Button(role: .destructive) {
                         downloadManager.clearFinished()
                     } label: {
-                        Label(LanguageManager.shared.localizedString("downloads_clear_finished"), systemImage: "trash")
+                        Label(
+                            LanguageManager.shared.localizedString("downloads_clear_finished"),
+                            systemImage: "trash"
+                        )
                     }
                 }
             }
         }
-        .navigationTitle(LanguageManager.shared.localizedString("downloads"))
+        .listStyle(.insetGrouped)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(LanguageManager.shared.localizedString("done")) { dismiss() }
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    showDownloadsFolder = true
+                } label: {
+                    Image(systemName: "folder.fill")
+                }
+                .accessibilityLabel(
+                    LanguageManager.shared.localizedString("open_downloads_folder")
+                )
             }
         }
         .sheet(item: $shareItem) { item in
             DownloadShareSheet(items: [item.localURL])
+        }
+        .sheet(isPresented: $showDownloadsFolder) {
+            DownloadFolderBrowser(isPresented: $showDownloadsFolder)
+                .ignoresSafeArea()
         }
         .onAppear {
             downloadManager.removeMissingFiles()
@@ -50,7 +82,10 @@ struct DownloadManagerView: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(color(for: item.status))
                 .frame(width: 34, height: 34)
-                .background(Color(UIColor.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .background(
+                    Color(UIColor.tertiarySystemFill),
+                    in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                )
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.fileName)
@@ -76,6 +111,7 @@ struct DownloadManagerView: View {
                     Image(systemName: "square.and.arrow.up")
                 }
                 .buttonStyle(.borderless)
+                .accessibilityLabel(LanguageManager.shared.localizedString("share"))
             }
         }
         .swipeActions(edge: .trailing) {
@@ -123,6 +159,50 @@ struct DownloadManagerView: View {
         case .finished: LanguageManager.shared.localizedString("downloads_finished")
         case .failed: LanguageManager.shared.localizedString("downloads_failed")
         case .canceled: LanguageManager.shared.localizedString("downloads_canceled")
+        }
+    }
+}
+
+private struct DownloadFolderBrowser: UIViewControllerRepresentable {
+    @Binding var isPresented: Bool
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(isPresented: $isPresented)
+    }
+
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let picker = UIDocumentPickerViewController(
+            forOpeningContentTypes: [.item],
+            asCopy: false
+        )
+        picker.directoryURL = DownloadManagerService.downloadsDirectory
+        picker.delegate = context.coordinator
+        picker.allowsMultipleSelection = false
+        picker.shouldShowFileExtensions = true
+        return picker
+    }
+
+    func updateUIViewController(
+        _ uiViewController: UIDocumentPickerViewController,
+        context: Context
+    ) {}
+
+    final class Coordinator: NSObject, UIDocumentPickerDelegate {
+        private var isPresented: Binding<Bool>
+
+        init(isPresented: Binding<Bool>) {
+            self.isPresented = isPresented
+        }
+
+        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+            isPresented.wrappedValue = false
+        }
+
+        func documentPicker(
+            _ controller: UIDocumentPickerViewController,
+            didPickDocumentsAt urls: [URL]
+        ) {
+            isPresented.wrappedValue = false
         }
     }
 }

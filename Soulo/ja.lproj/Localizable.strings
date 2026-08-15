@@ -254,7 +254,7 @@
 
 "enter_fullscreen" = "フルスクリーンにする";
 "exit_fullscreen" = "フルスクリーンを終了";
-"fullscreen_exit_hint" = "タップまたは下に引いて終了";
+"fullscreen_exit_hint" = "タップでメニュー、下に引いて終了";
 "restore_browser_toolbar" = "ブラウザツールバーを復元";
 "hide_browser_toolbar" = "ブラウザツールバーを隠す";
 "privacy_clear_action" = "削除";
@@ -424,14 +424,17 @@
 "downloading" = "ダウンロード中...";
 
 /* Browser Privacy */
-"downloads" = "Downloads";
-"downloads_empty" = "No Downloads";
-"downloads_empty_desc" = "Downloaded files will appear here.";
-"downloads_clear_finished" = "Clear Finished Downloads";
-"downloads_in_progress" = "Downloading";
-"downloads_finished" = "Finished";
-"downloads_failed" = "Failed";
-"downloads_canceled" = "Canceled";
+"downloads" = "ダウンロード";
+"downloads_empty" = "ダウンロードはありません";
+"downloads_empty_desc" = "ダウンロードしたファイルがここに表示されます。";
+"downloads_clear_finished" = "完了したダウンロードを消去";
+"downloads_in_progress" = "ダウンロード中";
+"downloads_finished" = "完了";
+"downloads_failed" = "失敗";
+"downloads_canceled" = "キャンセル済み";
+"library" = "ライブラリ";
+"my_downloads" = "マイダウンロード";
+"open_downloads_folder" = "ダウンロード場所を開く";
 "live_activity" = "Dynamic Island";
 "live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
@@ -499,3 +502,12 @@
 "current_page_link" = "現在のページリンク";
 "tab_limit_title" = "タブの上限に達しました";
 "tab_limit_message" = "最大20個のタブを保持できます。新しいタブを開く前に1つ閉じてください。";
+"browser_page_tools" = "ページツール";
+"browser_open_page" = "ページを開く";
+"keep_fullscreen_browsing" = "フルスクリーンを維持";
+"keep_fullscreen_browsing_desc" = "新しい検索をフルスクリーンで開きます。手動で終了するとオフになります";
+"icloud_settings_sync" = "iCloud設定同期";
+"icloud_settings_sync_desc" = "外観、ホーム、ブラウズ、プライバシー、プラットフォーム設定を同期します。履歴、キャッシュ、ログイン、ダウンロードは含みません";
+"settings_section_sync" = "同期";
+"privacy_exit_incognito" = "プライベートブラウズをオフ";
+"privacy_enter_incognito" = "プライベートブラウズをオン";

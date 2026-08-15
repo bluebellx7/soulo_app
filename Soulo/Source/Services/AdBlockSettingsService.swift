@@ -103,6 +103,10 @@ final class AdBlockSettingsService: ObservableObject {
         }
     }
 
+    func reloadFromDefaults() {
+        load()
+    }
+
     private func saveAllowlist() {
         userDefaults.set(allowlistedHosts, forKey: allowlistKey)
     }

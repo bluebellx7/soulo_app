@@ -2,7 +2,8 @@ import SwiftUI
 
 // MARK: - WebViewProgressBar
 
-/// A beautiful animated progress bar with gradient fill and glow effect.
+/// A quiet neutral progress indicator that adapts to light and dark browser
+/// chrome without competing with page content.
 struct WebViewProgressBar: View {
 
     // MARK: - Bindings
@@ -13,46 +14,27 @@ struct WebViewProgressBar: View {
     // MARK: - Private State
 
     @State private var opacity: Double = 0
-    @State private var shimmerOffset: CGFloat = -200
 
     // MARK: - Constants
 
-    private let barHeight: CGFloat = 2.5
-    private let gradientColors: [Color] = [
-        Color(red: 0.27, green: 0.53, blue: 1.00),   // vivid blue
-        Color(red: 0.55, green: 0.33, blue: 0.98),   // deep purple
-        Color(red: 0.84, green: 0.37, blue: 0.95)    // magenta accent
-    ]
+    private let barHeight: CGFloat = 2
 
     // MARK: - Body
 
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
-                // Track (transparent)
-                Color.clear
+                Color.primary.opacity(0.06)
                     .frame(height: barHeight)
 
                 // Filled bar
                 let filledWidth = geometry.size.width * min(max(progress, 0), 1)
 
-                ZStack(alignment: .leading) {
-                    // Gradient fill
-                    LinearGradient(
-                        colors: gradientColors,
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
+                Color.primary
+                    .opacity(0.68)
                     .frame(width: filledWidth, height: barHeight)
                     .clipShape(Capsule())
-
-                    // Shimmer overlay
-                    if isLoading {
-                        shimmerView(parentWidth: geometry.size.width)
-                            .frame(width: filledWidth, height: barHeight)
-                            .clipShape(Capsule())
-                    }
-                }
+                    .shadow(color: Color.primary.opacity(0.12), radius: 1, y: 0.5)
             }
         }
         .frame(height: barHeight)
@@ -63,7 +45,6 @@ struct WebViewProgressBar: View {
                 withAnimation(.easeIn(duration: 0.15)) {
                     opacity = 1
                 }
-                startShimmer()
             } else {
                 // Delay fade-out so the bar reaches 100% visually
                 withAnimation(.easeOut(duration: 0.35).delay(0.30)) {
@@ -80,38 +61,6 @@ struct WebViewProgressBar: View {
         }
     }
 
-    // MARK: - Shimmer
-
-    @ViewBuilder
-    private func shimmerView(parentWidth: CGFloat) -> some View {
-        let shimmerWidth: CGFloat = 80
-        LinearGradient(
-            colors: [
-                Color.white.opacity(0),
-                Color.white.opacity(0.45),
-                Color.white.opacity(0)
-            ],
-            startPoint: .leading,
-            endPoint: .trailing
-        )
-        .frame(width: shimmerWidth, height: barHeight)
-        .offset(x: shimmerOffset)
-        .animation(
-            Animation.linear(duration: 1.1)
-                .repeatForever(autoreverses: false),
-            value: shimmerOffset
-        )
-    }
-
-    private func startShimmer() {
-        shimmerOffset = -200
-        withAnimation(
-            Animation.linear(duration: 1.1)
-                .repeatForever(autoreverses: false)
-        ) {
-            shimmerOffset = UIScreen.main.bounds.width + 200
-        }
-    }
 }
 
 // MARK: - Preview

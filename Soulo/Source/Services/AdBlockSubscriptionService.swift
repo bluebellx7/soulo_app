@@ -374,6 +374,10 @@ final class AdBlockSubscriptionService: ObservableObject {
         self.userDefaults = userDefaults
         self.session = session
         load()
+        let storedRules = storedParsedRulesByID()
+        if !storedRules.isEmpty {
+            rebuildCacheFrom(parsedByID: storedRules)
+        }
     }
 
     var enabledRuleSummary: ParsedAdBlockRules {
@@ -466,6 +470,11 @@ final class AdBlockSubscriptionService: ObservableObject {
         }
     }
 
+    func reloadFromDefaults() {
+        load()
+        rebuildCacheFromStoredSubscriptions()
+    }
+
     private func mergeMissingDefaultSubscriptions() {
         let defaults = Self.defaultSubscriptions()
         var changed = false
@@ -507,14 +516,23 @@ final class AdBlockSubscriptionService: ObservableObject {
     private func rebuildCacheFrom(parsedByID: [String: ParsedAdBlockRules]) {
         var network = OrderedStringSet(limit: 4_000)
         var cosmetic = OrderedStringSet(limit: 2_000)
+        var structuredNetwork = OrderedNetworkRuleSet(limit: 4_000)
+        var structuredCosmetic = OrderedCosmeticRuleSet(limit: 2_000)
 
         for subscription in subscriptions where subscription.isEnabled {
             guard let parsed = parsedByID[subscription.id] else { continue }
             parsed.networkURLFilters.forEach { network.insert($0) }
             parsed.cosmeticSelectors.forEach { cosmetic.insert($0) }
+            parsed.networkRules.forEach { structuredNetwork.insert($0) }
+            parsed.cosmeticRules.forEach { structuredCosmetic.insert($0) }
         }
 
-        let merged = ParsedAdBlockRules(networkURLFilters: network.values, cosmeticSelectors: cosmetic.values)
+        let merged = ParsedAdBlockRules(
+            networkURLFilters: network.values,
+            cosmeticSelectors: cosmetic.values,
+            networkRules: structuredNetwork.values,
+            cosmeticRules: structuredCosmetic.values
+        )
         if let data = try? JSONEncoder().encode(merged) {
             userDefaults.set(data, forKey: cachedRulesKey)
         }

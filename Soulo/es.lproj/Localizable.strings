@@ -254,7 +254,7 @@
 
 "enter_fullscreen" = "Activar pantalla completa";
 "exit_fullscreen" = "Salir de pantalla completa";
-"fullscreen_exit_hint" = "Toca o desliza hacia abajo";
+"fullscreen_exit_hint" = "Toca para ver controles; desliza para salir";
 "restore_browser_toolbar" = "Restaurar barra del navegador";
 "hide_browser_toolbar" = "Ocultar barra del navegador";
 "privacy_clear_action" = "Borrar";
@@ -424,14 +424,17 @@ Cuentanos:
 "downloading" = "Descargando...";
 
 /* Browser Privacy */
-"downloads" = "Downloads";
-"downloads_empty" = "No Downloads";
-"downloads_empty_desc" = "Downloaded files will appear here.";
-"downloads_clear_finished" = "Clear Finished Downloads";
-"downloads_in_progress" = "Downloading";
-"downloads_finished" = "Finished";
-"downloads_failed" = "Failed";
-"downloads_canceled" = "Canceled";
+"downloads" = "Descargas";
+"downloads_empty" = "No hay descargas";
+"downloads_empty_desc" = "Los archivos descargados aparecerán aquí.";
+"downloads_clear_finished" = "Borrar descargas finalizadas";
+"downloads_in_progress" = "Descargando";
+"downloads_finished" = "Finalizada";
+"downloads_failed" = "Fallida";
+"downloads_canceled" = "Cancelada";
+"library" = "Biblioteca";
+"my_downloads" = "Mis descargas";
+"open_downloads_folder" = "Abrir ubicación de descargas";
 "live_activity" = "Dynamic Island";
 "live_activity_desc" = "Show current searches in Live Activities and Dynamic Island.";
 "fire_button" = "Clear Privacy Data";
@@ -499,3 +502,12 @@ Cuentanos:
 "current_page_link" = "Enlace de la página actual";
 "tab_limit_title" = "Límite de pestañas alcanzado";
 "tab_limit_message" = "Puedes mantener hasta 20 pestañas. Cierra una antes de abrir otra.";
+"browser_page_tools" = "Herramientas de página";
+"browser_open_page" = "Abrir página";
+"keep_fullscreen_browsing" = "Mantener pantalla completa";
+"keep_fullscreen_browsing_desc" = "Las nuevas búsquedas se abren a pantalla completa; salir manualmente desactiva esta opción";
+"icloud_settings_sync" = "Sincronizar ajustes con iCloud";
+"icloud_settings_sync_desc" = "Sincroniza apariencia, inicio, navegación, privacidad y plataformas; excluye historial, caché, inicios de sesión y descargas";
+"settings_section_sync" = "Sincronización";
+"privacy_exit_incognito" = "Desactivar navegación privada";
+"privacy_enter_incognito" = "Activar navegación privada";

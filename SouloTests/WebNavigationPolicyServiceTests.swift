@@ -116,4 +116,19 @@ final class WebNavigationPolicyServiceTests: XCTestCase {
             contentDisposition: "inline"
         ))
     }
+
+    func testOnlyUserScriptInstallURLsAreRecognizedWhileWebExtensionsAreHidden() {
+        XCTAssertTrue(BrowserExtensionInstallCandidate.recognizedDownloadURL(
+            URL(string: "https://example.com/tools/helper.user.js")!
+        ))
+        XCTAssertFalse(BrowserExtensionInstallCandidate.recognizedDownloadURL(
+            URL(string: "https://example.com/extension.xpi")!
+        ))
+        XCTAssertFalse(BrowserExtensionInstallCandidate.recognizedDownloadURL(
+            URL(string: "https://clients2.google.com/service/update2/crx?response=redirect")!
+        ))
+        XCTAssertFalse(BrowserExtensionInstallCandidate.recognizedDownloadURL(
+            URL(string: "https://example.com/app.js")!
+        ))
+    }
 }
