@@ -63,6 +63,12 @@ enum FullscreenHandleRevealGesture {
     }
 }
 
+enum FullscreenHandleLayout {
+    /// Keep the indicator visually compact while providing a forgiving target.
+    static let indicatorSize = CGSize(width: 36, height: 4)
+    static let minimumHitSize = CGSize(width: 104, height: 52)
+}
+
 struct WebViewContainer: View {
     @ObservedObject var webViewModel: WebViewModel
     @ObservedObject var bookmarkViewModel: BookmarkViewModel
@@ -142,6 +148,7 @@ struct WebViewContainer: View {
                         viewModel: webViewModel,
                         onAccessibilityPlatformPage: onAccessibilityPlatformPage
                     )
+                        .id(webViewModel.runtimeRevision)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .opacity(isShowingNewTabPage ? 0 : 1)
                         .allowsHitTesting(!isShowingNewTabPage)
@@ -557,8 +564,10 @@ struct WebViewContainer: View {
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         }
         .onReceive(NotificationCenter.default.publisher(for: .browserExtensionsChanged)) { _ in
-            guard isActiveTab, webViewModel.currentURL != nil else { return }
-            webViewModel.reload()
+            // Rebuild every loaded tab. Otherwise an inactive tab would keep
+            // the old WKUserScript set when it becomes active later.
+            guard webViewModel.currentURL != nil else { return }
+            webViewModel.rebuildWebViewRuntime()
         }
     }
 
@@ -777,14 +786,9 @@ struct WebViewContainer: View {
                     .font(.system(size: 15, weight: .medium))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(.white.opacity(0.9))
-                    .frame(width: 30, height: 30)
-                    .background(
-                        Circle()
-                            .fill(.black.opacity(0.45))
-                            .overlay(Circle().stroke(.white.opacity(0.1), lineWidth: 0.5))
-                    )
                     .frame(width: 40, height: 40)
                     .contentShape(Circle())
+                    .browserToolbarButtonGlass()
                     .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
             }
             .buttonStyle(.plain)
@@ -814,7 +818,10 @@ struct WebViewContainer: View {
                 VStack(spacing: 5) {
                     Capsule()
                         .fill(.white.opacity(showFullscreenExitHint || showFullscreenMenu ? 0.94 : 0.72))
-                        .frame(width: 36, height: 4)
+                        .frame(
+                            width: FullscreenHandleLayout.indicatorSize.width,
+                            height: FullscreenHandleLayout.indicatorSize.height
+                        )
 
                     if showFullscreenExitHint {
                         Text(LanguageManager.shared.localizedString("fullscreen_exit_hint"))
@@ -834,7 +841,11 @@ struct WebViewContainer: View {
                     Capsule().stroke(.white.opacity(0.13), lineWidth: 0.5)
                 )
                 .shadow(color: .black.opacity(0.2), radius: 7, y: 3)
-                .contentShape(Capsule())
+                .frame(
+                    minWidth: FullscreenHandleLayout.minimumHitSize.width,
+                    minHeight: FullscreenHandleLayout.minimumHitSize.height
+                )
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .simultaneousGesture(
@@ -937,7 +948,7 @@ struct WebViewContainer: View {
                     showCaptureOptions = true
                 }
 
-                // Page translation is hidden in 1.1.0 and will return after the
+                // Page translation is hidden in 1.1.1 and will return after the
                 // next round of webpage extraction and language-pack testing.
 
                 fullscreenPrimaryAction(
@@ -1430,11 +1441,7 @@ struct WebViewContainer: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
-            .background(
-                Capsule()
-                    .fill(.black.opacity(0.45))
-                    .overlay(Capsule().stroke(.white.opacity(0.1), lineWidth: 0.5))
-            )
+            .browserToolbarCapsuleGlass()
             .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
         }
         .buttonStyle(.plain)

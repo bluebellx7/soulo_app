@@ -455,7 +455,7 @@ struct WebViewToolbar: View {
                         menuLabel("web_capture", systemImage: "camera.viewfinder")
                     }
 
-                    // Page translation is intentionally hidden in 1.1.0. Keep
+                    // Page translation is intentionally hidden in 1.1.1. Keep
                     // the implementation for the next version's compatibility work.
 
                     Button {
@@ -549,6 +549,7 @@ struct WebViewToolbar: View {
                 .browserToolbarButtonGlass()
                 .shadow(color: .black.opacity(0.13), radius: 7, y: 3)
         }
+        .buttonStyle(.plain)
         .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
         .simultaneousGesture(
             TapGesture().onEnded {

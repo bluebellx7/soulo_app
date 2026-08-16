@@ -19,6 +19,7 @@ final class WebViewModel: ObservableObject {
     @Published var snapshot: UIImage?
     @Published var showSnapshotWhileRestoring: Bool = false
     @Published private(set) var pageZoom: CGFloat = 1
+    @Published private(set) var runtimeRevision = UUID()
     var isWebViewRuntimeInstalled: Bool = false
     var isDesktopModeEnabled: Bool = false
     private var snapshotPersistenceID: String?
@@ -170,6 +171,21 @@ final class WebViewModel: ObservableObject {
         isLoading = false
         estimatedProgress = currentURL == nil ? 0 : 1
         showSnapshotWhileRestoring = false
+    }
+
+    /// Recreates WebKit so document-start UserScripts and their permissions are
+    /// rebuilt before the next navigation, while preserving the current page.
+    func rebuildWebViewRuntime() {
+        webView?.stopLoading()
+        webView = nil
+        pendingRequest = nil
+        isWebViewRuntimeInstalled = false
+        runtimeRevision = UUID()
+        if currentURL != nil {
+            isLoading = true
+            estimatedProgress = 0
+            showSnapshotWhileRestoring = snapshot != nil
+        }
     }
 
     func loadSearchURL(keyword: String, platform: SearchPlatform) {

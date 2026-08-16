@@ -1,5 +1,13 @@
 import Foundation
 
+enum PrivacyFeatureDefaults {
+    /// These features can alter requests or page content, so users opt in.
+    static let httpsUpgradeEnabled = false
+    static let stripTrackingParameters = false
+    static let gpcEnabled = false
+    static let cookieBannerHandling = false
+}
+
 enum PrivacyNavigationDecision: Equatable {
     case allow
     case redirect(URL)
@@ -96,11 +104,13 @@ struct PrivacyNavigationService {
     }
 
     private var isHTTPSUpgradeEnabled: Bool {
-        userDefaults.object(forKey: httpsUpgradeKey) as? Bool ?? true
+        userDefaults.object(forKey: httpsUpgradeKey) as? Bool
+            ?? PrivacyFeatureDefaults.httpsUpgradeEnabled
     }
 
     private var isTrackingParameterStrippingEnabled: Bool {
-        userDefaults.object(forKey: stripTrackingParametersKey) as? Bool ?? true
+        userDefaults.object(forKey: stripTrackingParametersKey) as? Bool
+            ?? PrivacyFeatureDefaults.stripTrackingParameters
     }
 
     func strippedTrackingParameterCount(from originalURL: URL, to transformedURL: URL) -> Int {

@@ -160,10 +160,18 @@ struct ExtensionCenterView: View {
             if !service.userScripts.isEmpty {
                 Section {
                     ForEach(service.userScripts) { script in
-                        NavigationLink {
-                            UserScriptEditorView(script: script)
-                        } label: {
-                            userScriptRow(script)
+                        HStack(spacing: 12) {
+                            NavigationLink {
+                                UserScriptEditorView(script: script)
+                            } label: {
+                                userScriptRow(script)
+                            }
+
+                            Toggle("", isOn: Binding(
+                                get: { script.isEnabled },
+                                set: { service.setUserScriptEnabled(script.id, enabled: $0) }
+                            ))
+                            .labelsHidden()
                         }
                         .swipeActions {
                             Button(role: .destructive) {
@@ -211,18 +219,26 @@ struct ExtensionCenterView: View {
         HStack(spacing: 12) {
             extensionIcon(systemName: "chevron.left.forwardslash.chevron.right", tint: .orange)
             VStack(alignment: .leading, spacing: 3) {
-                Text(script.name).font(.body.weight(.medium)).lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(script.name).font(.body.weight(.medium)).lineLimit(1)
+                    if let version = script.version, !version.isEmpty {
+                        Text("v\(version)")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 Text(script.matchPatterns.prefix(2).joined(separator: ", "))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                Text(LanguageManager.shared.localizedString(
+                    script.injectionTime == .documentStart
+                        ? "userscript_document_start"
+                        : "userscript_document_end"
+                ))
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
             }
-            Spacer()
-            Toggle("", isOn: Binding(
-                get: { script.isEnabled },
-                set: { service.setUserScriptEnabled(script.id, enabled: $0) }
-            ))
-            .labelsHidden()
         }
         .padding(.vertical, 3)
     }

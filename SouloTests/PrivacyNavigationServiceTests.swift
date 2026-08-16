@@ -18,8 +18,22 @@ final class PrivacyNavigationServiceTests: XCTestCase {
         super.tearDown()
     }
 
-    func testUpgradesHTTPAndStripsTrackingParametersByDefault() {
+    func testPrivacyFeaturesAreOffByDefault() {
+        XCTAssertFalse(PrivacyFeatureDefaults.httpsUpgradeEnabled)
+        XCTAssertFalse(PrivacyFeatureDefaults.stripTrackingParameters)
+        XCTAssertFalse(PrivacyFeatureDefaults.gpcEnabled)
+        XCTAssertFalse(PrivacyFeatureDefaults.cookieBannerHandling)
+
         let service = PrivacyNavigationService(userDefaults: defaults)
+        let url = URL(string: "http://example.com/path?utm_source=newsletter")!
+
+        XCTAssertNil(service.transformedURL(for: url))
+    }
+
+    func testUpgradesHTTPAndStripsTrackingParametersWhenEnabled() {
+        let service = PrivacyNavigationService(userDefaults: defaults)
+        defaults.set(true, forKey: "privacy_https_upgrade_enabled")
+        defaults.set(true, forKey: "privacy_strip_tracking_parameters")
         let url = URL(string: "http://example.com/path?utm_source=newsletter&id=42&fbclid=abc#section")!
 
         let transformed = service.transformedURL(for: url)
@@ -39,6 +53,7 @@ final class PrivacyNavigationServiceTests: XCTestCase {
     func testTrackingParameterStrippingPreservesBusinessQueryParameters() {
         let service = PrivacyNavigationService(userDefaults: defaults)
         defaults.set(false, forKey: "privacy_https_upgrade_enabled")
+        defaults.set(true, forKey: "privacy_strip_tracking_parameters")
         let url = URL(string: "https://shop.example/product?sku=abc&utm_campaign=sale&quantity=2&gclid=click")!
 
         let transformed = service.transformedURL(for: url)
@@ -64,6 +79,8 @@ final class PrivacyNavigationServiceTests: XCTestCase {
 
     func testSiteProtectionDisableBypassesPrivacyNavigation() {
         let service = PrivacyNavigationService(userDefaults: defaults)
+        defaults.set(true, forKey: "privacy_https_upgrade_enabled")
+        defaults.set(true, forKey: "privacy_strip_tracking_parameters")
         defaults.set(["example.com"], forKey: "soulo_privacy_disabled_hosts")
         let url = URL(string: "http://news.example.com/?utm_source=x&id=1")!
 
@@ -72,6 +89,8 @@ final class PrivacyNavigationServiceTests: XCTestCase {
 
     func testCompatibilityBypassSkipsPrivacyNavigation() {
         let service = PrivacyNavigationService(userDefaults: defaults)
+        defaults.set(true, forKey: "privacy_https_upgrade_enabled")
+        defaults.set(true, forKey: "privacy_strip_tracking_parameters")
         let url = URL(string: "https://mp.weixin.qq.com/mp/wappoc_appmsgcaptcha?poc_token=abc&utm_source=x")!
 
         XCTAssertNil(service.transformedURL(for: url))
@@ -79,6 +98,7 @@ final class PrivacyNavigationServiceTests: XCTestCase {
 
     func testHTTPSUpgradeFailureExcludesHostAndSubdomains() {
         let service = PrivacyNavigationService(userDefaults: defaults)
+        defaults.set(true, forKey: "privacy_https_upgrade_enabled")
 
         service.recordHTTPSUpgradeFailure(for: "example.com")
 

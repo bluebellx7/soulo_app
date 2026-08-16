@@ -19,6 +19,12 @@ struct UserScriptRecord: Codable, Identifiable, Equatable {
     var name: String
     var source: String
     var matchPatterns: [String]
+    /// Optional keeps stores written by earlier builds decodable.
+    var excludePatterns: [String]?
+    var grants: [String]?
+    var connectDomains: [String]?
+    var namespace: String?
+    var version: String?
     var injectionTime: UserScriptInjectionTime
     var isEnabled: Bool
     var installedAt: Date
@@ -28,6 +34,11 @@ struct UserScriptRecord: Codable, Identifiable, Equatable {
         name: String,
         source: String,
         matchPatterns: [String] = ["*://*/*"],
+        excludePatterns: [String] = [],
+        grants: [String] = [],
+        connectDomains: [String] = [],
+        namespace: String? = nil,
+        version: String? = nil,
         injectionTime: UserScriptInjectionTime = .documentEnd,
         isEnabled: Bool = true,
         installedAt: Date = Date()
@@ -36,9 +47,25 @@ struct UserScriptRecord: Codable, Identifiable, Equatable {
         self.name = name
         self.source = source
         self.matchPatterns = matchPatterns
+        self.excludePatterns = excludePatterns
+        self.grants = grants
+        self.connectDomains = connectDomains
+        self.namespace = namespace
+        self.version = version
         self.injectionTime = injectionTime
         self.isEnabled = isEnabled
         self.installedAt = installedAt
+    }
+
+    var allowsXMLHTTPRequests: Bool {
+        let declaredGrants = grants ?? []
+        guard !declaredGrants.contains(where: { $0.caseInsensitiveCompare("none") == .orderedSame }) else {
+            return false
+        }
+        // Older and hand-written scripts without @grant keep their existing behavior.
+        return declaredGrants.isEmpty || declaredGrants.contains {
+            ["GM_xmlhttpRequest", "GM.xmlHttpRequest"].contains($0)
+        }
     }
 }
 
@@ -128,6 +155,7 @@ enum BrowserExtensionError: LocalizedError {
     case unsupportedSystem
     case unreadableScript
     case emptyScript
+    case invalidMatchPattern(String)
     case invalidExtension
 
     var errorDescription: String? {
@@ -140,6 +168,12 @@ enum BrowserExtensionError: LocalizedError {
             AppLocalization.string("userscript_unreadable")
         case .emptyScript:
             AppLocalization.string("userscript_empty")
+        case let .invalidMatchPattern(pattern):
+            String(
+                format: AppLocalization.string("userscript_invalid_match_pattern"),
+                locale: Locale.current,
+                arguments: [pattern]
+            )
         case .invalidExtension:
             AppLocalization.string("web_extension_invalid")
         }
@@ -170,7 +204,12 @@ final class BrowserExtensionService: ObservableObject {
             $0.isEnabled
                 && $0.injectionTime == injectionTime
                 && UserScriptURLMatcher.matches(url: url, patterns: $0.matchPatterns)
+                && !UserScriptURLMatcher.matches(url: url, patterns: $0.excludePatterns ?? [])
         }
+    }
+
+    func userScript(id: UUID) -> UserScriptRecord? {
+        userScripts.first { $0.id == id }
     }
 
     @discardableResult
@@ -203,20 +242,45 @@ final class BrowserExtensionService: ObservableObject {
         guard !trimmedSource.isEmpty else { throw BrowserExtensionError.emptyScript }
 
         let metadata = Self.parseMetadata(from: source)
-        let normalizedPatterns = (explicitPatterns ?? metadata.patterns)
+        let requestedPatterns = (explicitPatterns ?? metadata.patterns)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
+        let normalizedPatterns = requestedPatterns.isEmpty ? ["*://*/*"] : requestedPatterns
+        let normalizedExcludes = metadata.excludePatterns
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        if let invalid = (normalizedPatterns + normalizedExcludes).first(where: {
+            !UserScriptURLMatcher.isValid(pattern: $0)
+        }) {
+            throw BrowserExtensionError.invalidMatchPattern(invalid)
+        }
+
+        let resolvedName = explicitName?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
+            ?? metadata.name?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
+            ?? fallbackName.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
+            ?? LanguageManager.shared.localizedString("userscript_untitled")
+        let normalizedNamespace = metadata.namespace?
+            .trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
+        let existingRecord = id.flatMap { existingID in userScripts.first { $0.id == existingID } }
+            ?? normalizedNamespace.flatMap { namespace in
+                userScripts.first {
+                    $0.name.caseInsensitiveCompare(resolvedName) == .orderedSame
+                        && $0.namespace?.caseInsensitiveCompare(namespace) == .orderedSame
+                }
+            }
         let record = UserScriptRecord(
-            id: id ?? UUID(),
-            name: explicitName?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
-                ?? metadata.name?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
-                ?? fallbackName.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
-                ?? LanguageManager.shared.localizedString("userscript_untitled"),
+            id: existingRecord?.id ?? id ?? UUID(),
+            name: resolvedName,
             source: source,
-            matchPatterns: normalizedPatterns.isEmpty ? ["*://*/*"] : normalizedPatterns,
+            matchPatterns: normalizedPatterns,
+            excludePatterns: normalizedExcludes,
+            grants: metadata.grants,
+            connectDomains: metadata.connectDomains,
+            namespace: normalizedNamespace,
+            version: metadata.version?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty,
             injectionTime: injectionTime ?? metadata.injectionTime,
-            isEnabled: id.flatMap { existingID in userScripts.first { $0.id == existingID }?.isEnabled } ?? true,
-            installedAt: id.flatMap { existingID in userScripts.first { $0.id == existingID }?.installedAt } ?? Date()
+            isEnabled: existingRecord?.isEnabled ?? true,
+            installedAt: existingRecord?.installedAt ?? Date()
         )
 
         if let index = userScripts.firstIndex(where: { $0.id == record.id }) {
@@ -375,14 +439,32 @@ final class BrowserExtensionService: ObservableObject {
     private static func parseMetadata(from source: String) -> (
         name: String?,
         patterns: [String],
+        excludePatterns: [String],
+        grants: [String],
+        connectDomains: [String],
+        namespace: String?,
+        version: String?,
         injectionTime: UserScriptInjectionTime
     ) {
         var name: String?
         var patterns: [String] = []
+        var excludePatterns: [String] = []
+        var grants: [String] = []
+        var connectDomains: [String] = []
+        var namespace: String?
+        var version: String?
         var injectionTime: UserScriptInjectionTime = .documentEnd
+        var isInsideMetadata = false
 
-        for line in source.split(separator: "\n", omittingEmptySubsequences: false).prefix(160) {
+        for line in source.split(separator: "\n", omittingEmptySubsequences: false).prefix(320) {
             let value = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            if value.contains("==UserScript==") {
+                isInsideMetadata = true
+                continue
+            }
+            if value.contains("==/UserScript==") { break }
+            guard isInsideMetadata else { continue }
+
             if value.range(of: #"^//\s*@name\s+(.+)$"#, options: .regularExpression) != nil {
                 name = value.replacingOccurrences(
                     of: #"^//\s*@name\s+"#,
@@ -396,11 +478,50 @@ final class BrowserExtensionService: ObservableObject {
                     options: .regularExpression
                 )
                 patterns.append(pattern)
+            } else if value.range(of: #"^//\s*@(exclude|exclude-match)\s+(.+)$"#, options: .regularExpression) != nil {
+                excludePatterns.append(value.replacingOccurrences(
+                    of: #"^//\s*@(exclude|exclude-match)\s+"#,
+                    with: "",
+                    options: .regularExpression
+                ))
+            } else if value.range(of: #"^//\s*@grant\s+(.+)$"#, options: .regularExpression) != nil {
+                grants.append(value.replacingOccurrences(
+                    of: #"^//\s*@grant\s+"#,
+                    with: "",
+                    options: .regularExpression
+                ))
+            } else if value.range(of: #"^//\s*@connect\s+(.+)$"#, options: .regularExpression) != nil {
+                connectDomains.append(value.replacingOccurrences(
+                    of: #"^//\s*@connect\s+"#,
+                    with: "",
+                    options: .regularExpression
+                ))
+            } else if value.range(of: #"^//\s*@namespace\s+(.+)$"#, options: .regularExpression) != nil {
+                namespace = value.replacingOccurrences(
+                    of: #"^//\s*@namespace\s+"#,
+                    with: "",
+                    options: .regularExpression
+                )
+            } else if value.range(of: #"^//\s*@version\s+(.+)$"#, options: .regularExpression) != nil {
+                version = value.replacingOccurrences(
+                    of: #"^//\s*@version\s+"#,
+                    with: "",
+                    options: .regularExpression
+                )
             } else if value.range(of: #"^//\s*@run-at\s+document-start"#, options: .regularExpression) != nil {
                 injectionTime = .documentStart
             }
         }
-        return (name, patterns, injectionTime)
+        return (
+            name,
+            patterns,
+            excludePatterns,
+            grants,
+            connectDomains,
+            namespace,
+            version,
+            injectionTime
+        )
     }
 
     private static func convertCRXToZIP(sourceURL: URL, destinationURL: URL) throws {
@@ -450,12 +571,16 @@ final class BrowserExtensionService: ObservableObject {
 }
 
 enum UserScriptRuntime {
-    static let compatibilityBootstrap = #"""
-    (function() {
-        if (window.__souloUserScriptCompatibilityInstalled) return;
-        window.__souloUserScriptCompatibilityInstalled = true;
-        window.unsafeWindow = window;
-
+    static func compatibilityBootstrap(
+        bridgeToken: String,
+        scriptID: UUID,
+        allowsXMLHTTPRequests: Bool
+    ) -> String {
+        guard allowsXMLHTTPRequests else {
+            return "var unsafeWindow = window; var GM = Object.freeze({});"
+        }
+        return #"""
+        var unsafeWindow = window;
         function base64Blob(value, mimeType) {
             var binary = atob(value || '');
             var bytes = new Uint8Array(binary.length);
@@ -477,6 +602,8 @@ enum UserScriptRuntime {
             }
 
             var payload = {
+                __souloToken: '\#(bridgeToken.escapedForJS)',
+                __souloScriptID: '\#(scriptID.uuidString)',
                 url: String(details.url || ''),
                 method: String(details.method || 'GET'),
                 headers: details.headers || {},
@@ -494,6 +621,13 @@ enum UserScriptRuntime {
                 var response = responseText;
                 if (payload.responseType === 'blob') {
                     response = base64Blob(result.base64, result.mimeType);
+                } else if (payload.responseType === 'arraybuffer') {
+                    var binary = atob(result.base64 || '');
+                    var bytes = new Uint8Array(binary.length);
+                    for (var index = 0; index < binary.length; index += 1) {
+                        bytes[index] = binary.charCodeAt(index);
+                    }
+                    response = bytes.buffer;
                 } else if (payload.responseType === 'json') {
                     try { response = JSON.parse(responseText); } catch (_) { response = null; }
                 }
@@ -519,19 +653,27 @@ enum UserScriptRuntime {
             return { abort: function() { aborted = true; } };
         }
 
-        window.GM_xmlhttpRequest = request;
-        window.GM = window.GM || {};
-        if (typeof window.GM.xmlHttpRequest !== 'function') {
-            window.GM.xmlHttpRequest = request;
-        }
-    })();
-    """#
+        var GM_xmlhttpRequest = request;
+        var GM = Object.freeze({ xmlHttpRequest: request });
+        """#
+    }
 
-    static func wrappedSource(for script: UserScriptRecord) -> String {
+    static func wrappedSource(for script: UserScriptRecord, bridgeToken: String = "") -> String {
+        let includeLiteral = jsonLiteral(
+            script.matchPatterns.compactMap(UserScriptURLMatcher.regularExpression)
+        )
+        let excludeLiteral = jsonLiteral(
+            (script.excludePatterns ?? []).compactMap(UserScriptURLMatcher.regularExpression)
+        )
+        let compatibility = compatibilityBootstrap(
+            bridgeToken: bridgeToken,
+            scriptID: script.id,
+            allowsXMLHTTPRequests: script.allowsXMLHTTPRequests
+        )
         let execution = """
         function __souloRunUserScript() {
             try {
-                var unsafeWindow = window;
+                \(compatibility)
                 \(script.source)
             } catch (error) {
                 console.error('Soulo UserScript \(script.name.escapedForJS):', error);
@@ -551,11 +693,29 @@ enum UserScriptRuntime {
 
         return """
         (function() {
+            var __souloURL = String(window.location.href || '');
+            var __souloIncludes = \(includeLiteral);
+            var __souloExcludes = \(excludeLiteral);
+            function __souloMatches(expressions) {
+                return expressions.some(function(expression) {
+                    try { return new RegExp(expression, 'i').test(__souloURL); }
+                    catch (_) { return false; }
+                });
+            }
+            if (!__souloMatches(__souloIncludes) || __souloMatches(__souloExcludes)) return;
             \(execution)
             \(schedule)
         })();
         //# sourceURL=soulo-userscript-\(script.id.uuidString).js
         """
+    }
+
+    private static func jsonLiteral(_ values: [String]) -> String {
+        guard let data = try? JSONSerialization.data(withJSONObject: values),
+              let value = String(data: data, encoding: .utf8) else {
+            return "[]"
+        }
+        return value
     }
 
     @MainActor
@@ -579,13 +739,14 @@ enum UserScriptHTTPBridge {
     private static let allowedMethods = Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"])
     private static let forbiddenHeaders = Set(["cookie", "host", "content-length", "origin"])
 
-    static func response(for body: [String: Any]) async throws -> [String: Any] {
+    static func response(
+        for body: [String: Any],
+        script: UserScriptRecord,
+        pageURL: URL?
+    ) async throws -> [String: Any] {
         guard let rawURL = body["url"] as? String,
               let url = URL(string: rawURL),
-              let scheme = url.scheme?.lowercased(),
-              ["http", "https"].contains(scheme),
-              let host = url.host,
-              !isLocalOrPrivateHost(host) else {
+              isAllowedTarget(url, script: script, pageURL: pageURL) else {
             throw URLError(.unsupportedURL)
         }
 
@@ -613,7 +774,12 @@ enum UserScriptHTTPBridge {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.httpShouldSetCookies = false
         configuration.httpCookieAcceptPolicy = .never
-        let session = URLSession(configuration: configuration)
+        let redirectDelegate = UserScriptURLSessionDelegate(script: script, pageURL: pageURL)
+        let session = URLSession(
+            configuration: configuration,
+            delegate: redirectDelegate,
+            delegateQueue: nil
+        )
         defer { session.finishTasksAndInvalidate() }
         let (data, response) = try await session.data(for: request)
         guard data.count <= maximumResponseSize else {
@@ -638,78 +804,167 @@ enum UserScriptHTTPBridge {
             "responseText": responseText,
             "mimeType": http.mimeType ?? "application/octet-stream"
         ]
-        if (body["responseType"] as? String)?.lowercased() == "blob" {
+        if ["blob", "arraybuffer"].contains((body["responseType"] as? String)?.lowercased() ?? "") {
             result["base64"] = data.base64EncodedString()
         }
         return result
     }
 
+    static func isAllowedTarget(_ url: URL, script: UserScriptRecord, pageURL: URL?) -> Bool {
+        guard let scheme = url.scheme?.lowercased(),
+              ["http", "https"].contains(scheme),
+              let host = url.host,
+              !isLocalOrPrivateHost(host) else {
+            return false
+        }
+        return UserScriptConnectPolicy.allows(url: url, script: script, pageURL: pageURL)
+    }
+
     private static func isLocalOrPrivateHost(_ host: String) -> Bool {
-        let cleanHost = host.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+        let cleanHost = host.lowercased()
+            .trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+            .trimmingCharacters(in: CharacterSet(charactersIn: "."))
+        let isPrivateIPv6 = cleanHost.contains(":") && (
+            cleanHost.hasPrefix("fc")
+                || cleanHost.hasPrefix("fd")
+                || cleanHost.range(of: #"^fe[89ab]"#, options: .regularExpression) != nil
+                || cleanHost.hasPrefix("::ffff:127.")
+        )
         if cleanHost == "localhost"
             || cleanHost == "::1"
             || cleanHost.hasSuffix(".local")
+            || isPrivateIPv6
             || cleanHost.hasPrefix("127.")
+            || cleanHost.hasPrefix("0.")
             || cleanHost.hasPrefix("10.")
             || cleanHost.hasPrefix("192.168.")
             || cleanHost.hasPrefix("169.254.") {
             return true
         }
         let parts = cleanHost.split(separator: ".").compactMap { Int($0) }
-        return parts.count == 4 && parts[0] == 172 && (16...31).contains(parts[1])
+        guard parts.count == 4 else { return false }
+        return (parts[0] == 172 && (16...31).contains(parts[1]))
+            || (parts[0] == 100 && (64...127).contains(parts[1]))
+    }
+}
+
+private final class UserScriptURLSessionDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+    private let script: UserScriptRecord
+    private let pageURL: URL?
+
+    init(script: UserScriptRecord, pageURL: URL?) {
+        self.script = script
+        self.pageURL = pageURL
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        willPerformHTTPRedirection response: HTTPURLResponse,
+        newRequest request: URLRequest,
+        completionHandler: @escaping (URLRequest?) -> Void
+    ) {
+        guard let redirectURL = request.url,
+              UserScriptHTTPBridge.isAllowedTarget(
+                redirectURL,
+                script: script,
+                pageURL: pageURL
+              ) else {
+            completionHandler(nil)
+            return
+        }
+        completionHandler(request)
     }
 }
 
 enum UserScriptURLMatcher {
     static func matches(url: URL, patterns: [String]) -> Bool {
-        let value = url.absoluteString
-        return patterns.contains { pattern in
-            if pattern == "<all_urls>" {
-                return ["http", "https"].contains(url.scheme?.lowercased() ?? "")
-            }
-
-            if let separator = pattern.range(of: "://") {
-                let schemePattern = String(pattern[..<separator.lowerBound]).lowercased()
-                let remainder = String(pattern[separator.upperBound...])
-                let hostAndPath = remainder.split(separator: "/", maxSplits: 1, omittingEmptySubsequences: false)
-                guard let patternHost = hostAndPath.first.map(String.init),
-                      let urlScheme = url.scheme?.lowercased(),
-                      let urlHost = url.host?.lowercased(),
-                      schemePattern == "*" ? ["http", "https"].contains(urlScheme) : schemePattern == urlScheme,
-                      hostMatches(urlHost, pattern: patternHost.lowercased()) else {
-                    return false
-                }
-
-                let pathPattern = "/" + (hostAndPath.count > 1 ? String(hostAndPath[1]) : "")
-                let targetPath = url.path + (url.query.map { "?" + $0 } ?? "")
-                return wildcardMatches(targetPath, pattern: pathPattern)
-            }
-
-            let escaped = NSRegularExpression.escapedPattern(for: pattern)
-                .replacingOccurrences(of: "\\*", with: ".*")
-            return value.range(
-                of: "^\(escaped)$",
+        patterns.contains { pattern in
+            guard let expression = regularExpression(for: pattern) else { return false }
+            return url.absoluteString.range(
+                of: expression,
                 options: [.regularExpression, .caseInsensitive]
             ) != nil
         }
     }
 
-    private static func hostMatches(_ host: String, pattern: String) -> Bool {
-        if pattern == "*" { return true }
-        if pattern.hasPrefix("*.") {
-            let base = String(pattern.dropFirst(2))
-            return host == base || host.hasSuffix("." + base)
-        }
-        return host == pattern
+    static func isValid(pattern: String) -> Bool {
+        guard let expression = regularExpression(for: pattern) else { return false }
+        return (try? NSRegularExpression(pattern: expression, options: [.caseInsensitive])) != nil
     }
 
-    private static func wildcardMatches(_ value: String, pattern: String) -> Bool {
-        let expression = NSRegularExpression.escapedPattern(for: pattern)
+    static func regularExpression(for rawPattern: String) -> String? {
+        let pattern = rawPattern.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !pattern.isEmpty else { return nil }
+        if pattern == "<all_urls>" { return #"^https?://"# }
+
+        // @include also accepts regular-expression literals.
+        if pattern.count > 2, pattern.hasPrefix("/"), pattern.hasSuffix("/") {
+            return String(pattern.dropFirst().dropLast())
+        }
+
+        guard let separator = pattern.range(of: "://") else {
+            return anchoredWildcardExpression(pattern)
+        }
+
+        let schemePattern = String(pattern[..<separator.lowerBound]).lowercased()
+        let remainder = String(pattern[separator.upperBound...])
+        let hostAndPath = remainder.split(separator: "/", maxSplits: 1, omittingEmptySubsequences: false)
+        guard let rawHost = hostAndPath.first.map(String.init), !rawHost.isEmpty else { return nil }
+
+        let schemeExpression: String
+        switch schemePattern {
+        case "*", "http*": schemeExpression = "https?"
+        case "http", "https": schemeExpression = NSRegularExpression.escapedPattern(for: schemePattern)
+        default: return nil
+        }
+
+        let hostExpression: String
+        if rawHost == "*" {
+            hostExpression = "[^/:]+"
+        } else if rawHost.hasPrefix("*.") {
+            let base = String(rawHost.dropFirst(2))
+            guard !base.isEmpty, !base.contains("*") else { return nil }
+            hostExpression = "(?:[^/:]+\\.)?" + NSRegularExpression.escapedPattern(for: base)
+        } else {
+            guard !rawHost.contains("*") else { return nil }
+            hostExpression = NSRegularExpression.escapedPattern(for: rawHost)
+        }
+
+        let rawPath = "/" + (hostAndPath.count > 1 ? String(hostAndPath[1]) : "")
+        let pathExpression = wildcardFragment(rawPath)
+        // Match patterns do not constrain an explicitly supplied web port.
+        return "^\(schemeExpression)://\(hostExpression)(?::[0-9]+)?\(pathExpression)$"
+    }
+
+    private static func anchoredWildcardExpression(_ pattern: String) -> String {
+        "^\(wildcardFragment(pattern))$"
+    }
+
+    private static func wildcardFragment(_ value: String) -> String {
+        NSRegularExpression.escapedPattern(for: value)
             .replacingOccurrences(of: "\\*", with: ".*")
-        return value.range(
-            of: "^\(expression)$",
-            options: [.regularExpression, .caseInsensitive]
-        ) != nil
+    }
+}
+
+enum UserScriptConnectPolicy {
+    static func allows(url: URL, script: UserScriptRecord, pageURL: URL?) -> Bool {
+        let declarations = script.connectDomains ?? []
+        guard !declarations.isEmpty else { return true }
+        guard let host = url.host?.lowercased() else { return false }
+
+        return declarations.contains { rawValue in
+            let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            if value == "*" { return true }
+            if value == "self" {
+                return pageURL?.host?.lowercased() == host
+            }
+            if value.contains("://") {
+                return UserScriptURLMatcher.matches(url: url, patterns: [value])
+            }
+            let domain = value.hasPrefix("*.") ? String(value.dropFirst(2)) : value
+            return !domain.isEmpty && (host == domain || host.hasSuffix("." + domain))
+        }
     }
 }
 

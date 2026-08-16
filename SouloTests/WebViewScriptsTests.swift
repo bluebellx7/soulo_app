@@ -221,6 +221,20 @@ final class WebViewScriptsTests: XCTestCase {
                 patterns: ["*://*.example.com/*"]
             )
         )
+        XCTAssertTrue(UserScriptURLMatcher.isValid(pattern: "/^https:\\/\\/example\\.com\\//"))
+        XCTAssertFalse(UserScriptURLMatcher.isValid(pattern: "ftp://example.com/*"))
+        XCTAssertTrue(
+            UserScriptURLMatcher.matches(
+                url: URL(string: "https://example.com:8443/path")!,
+                patterns: ["*://example.com/*"]
+            )
+        )
+        XCTAssertTrue(
+            UserScriptURLMatcher.matches(
+                url: URL(string: "https://example.com/path")!,
+                patterns: ["http*://example.com/*"]
+            )
+        )
     }
 
     func testUserScriptCompatibilityBridgeAndDocumentEndSchedulingAreValidJavaScript() {
@@ -229,17 +243,27 @@ final class WebViewScriptsTests: XCTestCase {
             source: "window.onload = function() { window.__loaded = true; };",
             injectionTime: .documentEnd
         )
-        let wrapped = UserScriptRuntime.wrappedSource(for: script)
+        let bridgeToken = "private-token"
+        let bootstrap = UserScriptRuntime.compatibilityBootstrap(
+            bridgeToken: bridgeToken,
+            scriptID: script.id,
+            allowsXMLHTTPRequests: true
+        )
+        let wrapped = UserScriptRuntime.wrappedSource(for: script, bridgeToken: bridgeToken)
 
         XCTAssertTrue(wrapped.contains("DOMContentLoaded"))
         XCTAssertTrue(wrapped.contains("document.readyState === 'loading'"))
-        XCTAssertTrue(UserScriptRuntime.compatibilityBootstrap.contains("GM_xmlhttpRequest"))
-        XCTAssertTrue(UserScriptRuntime.compatibilityBootstrap.contains("souloUserScriptXHR"))
-        XCTAssertTrue(UserScriptRuntime.compatibilityBootstrap.contains("unsafeWindow"))
+        XCTAssertTrue(wrapped.contains("__souloIncludes"))
+        XCTAssertTrue(bootstrap.contains("GM_xmlhttpRequest"))
+        XCTAssertTrue(bootstrap.contains("souloUserScriptXHR"))
+        XCTAssertTrue(bootstrap.contains("unsafeWindow"))
+        XCTAssertTrue(bootstrap.contains(bridgeToken))
+        XCTAssertFalse(bootstrap.contains("window.GM_xmlhttpRequest"))
         assertJavaScriptParses(wrapped)
-        assertJavaScriptParses(UserScriptRuntime.compatibilityBootstrap)
+        assertJavaScriptParses(bootstrap)
     }
 
+    @MainActor
     func testFullPageCapturePreparationLoadsLazyResourcesAndRestoresScrollPosition() {
         let script = WebPageCaptureService.resourcePreparationScript
 
@@ -256,7 +280,7 @@ final class WebViewScriptsTests: XCTestCase {
         let script = UserScriptRecord(
             name: "Runtime Probe",
             source: "globalThis.__souloUserScriptProbe += 1;",
-            matchPatterns: ["*://*/*"]
+            matchPatterns: ["*"]
         )
 
         let result: Result<Any?, Error> = await withCheckedContinuation { continuation in
@@ -276,7 +300,12 @@ final class WebViewScriptsTests: XCTestCase {
         let source = """
         // ==UserScript==
         // @name Selection Probe \(marker)
+        // @namespace com.soulo.tests.\(marker)
+        // @version 1.2.3
         // @match https://example.com/*
+        // @exclude https://example.com/private/*
+        // @grant GM_xmlhttpRequest
+        // @connect api.example.com
         // @run-at document-start
         // ==/UserScript==
         globalThis.__souloSelectionProbe = true;
@@ -292,9 +321,18 @@ final class WebViewScriptsTests: XCTestCase {
         defer { service.deleteUserScript(record.id) }
 
         XCTAssertEqual(record.name, "Selection Probe \(marker)")
+        XCTAssertEqual(record.namespace, "com.soulo.tests.\(marker)")
+        XCTAssertEqual(record.version, "1.2.3")
+        XCTAssertEqual(record.excludePatterns, ["https://example.com/private/*"])
+        XCTAssertEqual(record.grants, ["GM_xmlhttpRequest"])
+        XCTAssertEqual(record.connectDomains, ["api.example.com"])
         XCTAssertEqual(record.injectionTime, .documentStart)
         XCTAssertTrue(service.scripts(
             for: URL(string: "https://example.com/article")!,
+            at: .documentStart
+        ).contains { $0.id == record.id })
+        XCTAssertFalse(service.scripts(
+            for: URL(string: "https://example.com/private/account")!,
             at: .documentStart
         ).contains { $0.id == record.id })
 
@@ -303,6 +341,87 @@ final class WebViewScriptsTests: XCTestCase {
             for: URL(string: "https://example.com/article")!,
             at: .documentStart
         ).contains { $0.id == record.id })
+    }
+
+    @MainActor
+    func testUserScriptReinstallUpdatesNamespacedRecordWithoutCreatingADuplicate() throws {
+        let marker = UUID().uuidString
+        let service = BrowserExtensionService.shared
+        let firstSource = """
+        // ==UserScript==
+        // @name Update Probe \(marker)
+        // @namespace com.soulo.update.\(marker)
+        // @version 1.0
+        // @match https://example.com/*
+        // ==/UserScript==
+        globalThis.__version = 1;
+        """
+        let first = try service.saveUserScript(
+            id: nil,
+            fallbackName: "Probe",
+            source: firstSource,
+            explicitPatterns: nil,
+            injectionTime: nil
+        )
+        defer { service.deleteUserScript(first.id) }
+
+        let updated = try service.saveUserScript(
+            id: nil,
+            fallbackName: "Probe",
+            source: firstSource.replacingOccurrences(of: "@version 1.0", with: "@version 2.0"),
+            explicitPatterns: nil,
+            injectionTime: nil
+        )
+
+        XCTAssertEqual(updated.id, first.id)
+        XCTAssertEqual(updated.version, "2.0")
+        XCTAssertEqual(service.userScripts.filter { $0.id == first.id }.count, 1)
+    }
+
+    @MainActor
+    func testUserScriptRejectsInvalidWebsiteRule() {
+        XCTAssertThrowsError(
+            try BrowserExtensionService.shared.saveUserScript(
+                id: nil,
+                fallbackName: "Invalid",
+                source: "globalThis.invalid = true;",
+                explicitPatterns: ["ftp://example.com/*"],
+                injectionTime: .documentEnd
+            )
+        )
+    }
+
+    func testUserScriptConnectPolicyHonorsDeclaredDomains() {
+        let script = UserScriptRecord(
+            name: "Network",
+            source: "",
+            connectDomains: ["api.example.com", "self"]
+        )
+        XCTAssertTrue(UserScriptConnectPolicy.allows(
+            url: URL(string: "https://v2.api.example.com/data")!,
+            script: script,
+            pageURL: URL(string: "https://www.example.org")!
+        ))
+        XCTAssertTrue(UserScriptConnectPolicy.allows(
+            url: URL(string: "https://www.example.org/data")!,
+            script: script,
+            pageURL: URL(string: "https://www.example.org")!
+        ))
+        XCTAssertFalse(UserScriptConnectPolicy.allows(
+            url: URL(string: "https://tracker.invalid/data")!,
+            script: script,
+            pageURL: URL(string: "https://www.example.org")!
+        ))
+        XCTAssertFalse(UserScriptHTTPBridge.isAllowedTarget(
+            URL(string: "http://127.0.0.1/private")!,
+            script: script,
+            pageURL: URL(string: "https://www.example.org")!
+        ))
+        XCTAssertFalse(UserScriptHTTPBridge.isAllowedTarget(
+            URL(string: "https://api.example.com.evil.invalid/data")!,
+            script: script,
+            pageURL: URL(string: "https://www.example.org")!
+        ))
     }
 
     private func assertJavaScriptParses(_ script: String, file: StaticString = #filePath, line: UInt = #line) {

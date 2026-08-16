@@ -64,6 +64,22 @@ final class WebViewModelTests: XCTestCase {
         XCTAssertEqual(model.estimatedProgress, 1.0)
     }
 
+    func testRebuildingWebRuntimePreservesURLAndForcesFreshNavigation() {
+        let model = WebViewModel()
+        let url = URL(string: "https://example.com/article")!
+        model.loadURL(url)
+        model.updateProgress(1)
+        let previousRevision = model.runtimeRevision
+
+        model.rebuildWebViewRuntime()
+
+        XCTAssertEqual(model.currentURL, url)
+        XCTAssertNotEqual(model.runtimeRevision, previousRevision)
+        XCTAssertTrue(model.isLoading)
+        XCTAssertEqual(model.estimatedProgress, 0)
+        XCTAssertFalse(model.isWebViewRuntimeInstalled)
+    }
+
     func testRetryCurrentPageStartsFreshNavigationAndClearsError() {
         let model = WebViewModel()
         let url = URL(string: "https://example.com/article")!
@@ -348,6 +364,20 @@ final class WebViewModelTests: XCTestCase {
             FullscreenHandleRevealGesture.shouldReveal(
                 translation: CGSize(width: 2, height: 18)
             )
+        )
+    }
+
+    func testFullscreenHandleKeepsAComfortableTouchTarget() {
+        XCTAssertEqual(FullscreenHandleLayout.indicatorSize, CGSize(width: 36, height: 4))
+        XCTAssertGreaterThanOrEqual(FullscreenHandleLayout.minimumHitSize.width, 44)
+        XCTAssertGreaterThanOrEqual(FullscreenHandleLayout.minimumHitSize.height, 44)
+        XCTAssertGreaterThan(
+            FullscreenHandleLayout.minimumHitSize.width,
+            FullscreenHandleLayout.indicatorSize.width
+        )
+        XCTAssertGreaterThan(
+            FullscreenHandleLayout.minimumHitSize.height,
+            FullscreenHandleLayout.indicatorSize.height
         )
     }
 

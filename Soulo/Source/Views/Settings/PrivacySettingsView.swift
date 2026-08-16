@@ -7,10 +7,14 @@ struct PrivacySettingsView: View {
     @EnvironmentObject private var searchVM: SearchViewModel
 
     @AppStorage("is_incognito") private var isIncognito: Bool = false
-    @AppStorage("privacy_https_upgrade_enabled") private var httpsUpgradeEnabled: Bool = true
-    @AppStorage("privacy_strip_tracking_parameters") private var stripTrackingParameters: Bool = true
-    @AppStorage("privacy_gpc_enabled") private var gpcEnabled: Bool = true
-    @AppStorage("privacy_cookie_banner_enabled") private var cookieBannerEnabled: Bool = true
+    @AppStorage("privacy_https_upgrade_enabled")
+    private var httpsUpgradeEnabled = PrivacyFeatureDefaults.httpsUpgradeEnabled
+    @AppStorage("privacy_strip_tracking_parameters")
+    private var stripTrackingParameters = PrivacyFeatureDefaults.stripTrackingParameters
+    @AppStorage("privacy_gpc_enabled")
+    private var gpcEnabled = PrivacyFeatureDefaults.gpcEnabled
+    @AppStorage("privacy_cookie_banner_enabled")
+    private var cookieBannerEnabled = PrivacyFeatureDefaults.cookieBannerHandling
 
     @State private var showClearHistoryAlert = false
     @State private var showClearBookmarksAlert = false

@@ -669,7 +669,7 @@
 "userscripts_reload_note" = "脚本安装、编辑、启用、停用或删除后，已打开的网页会重新加载以应用新状态。";
 "userscript_experimental_badge" = "实验";
 "userscript_experimental_title" = "UserScript 功能仍在完善中";
-"userscript_experimental_desc" = "现已支持常用脚本及 GM_xmlhttpRequest；依赖其它 GM API、外部 @require 文件或特定网页结构的脚本仍可能无法正常运行。";
+"userscript_experimental_desc" = "现已支持网站包含/排除规则、真正的文档开始时运行，以及按脚本权限开放的 GM_xmlhttpRequest；依赖其它 GM API、外部 @require 文件或特定网页结构的脚本仍可能无法正常运行。";
 "extension_choose_file" = "选择扩展文件或文件夹…";
 "extension_installing" = "正在检查并安装扩展…";
 "extension_install_failed" = "无法安装扩展";
@@ -686,6 +686,7 @@
 "web_extension_temporarily_disabled" = "标准浏览器扩展正在进行兼容性测试，本版本暂不开放。";
 "userscript_unreadable" = "无法以 UTF-8 文本读取所选脚本。";
 "userscript_empty" = "脚本内容不能为空。";
+"userscript_invalid_match_pattern" = "网站规则无效：%@";
 "userscript_untitled" = "未命名脚本";
 "userscript_name" = "名称";
 "userscript_run_at" = "运行时机";

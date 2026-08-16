@@ -90,7 +90,7 @@ final class BrowserToolbarConfigurationService: ObservableObject {
     static let defaultAddressAction: BrowserToolbarAction = .hideToolbar
     static let unsupportedAddressActions: Set<BrowserToolbarAction> = [.tabs, .more]
     /// Page translation remains decoded for settings compatibility, but its UI
-    /// is intentionally hidden in 1.1.0 until the next compatibility pass.
+    /// is intentionally hidden in 1.1.1 until the next compatibility pass.
     static let temporarilyUnavailableActions: Set<BrowserToolbarAction> = [.translate]
 
     @Published private(set) var actions: [BrowserToolbarAction]

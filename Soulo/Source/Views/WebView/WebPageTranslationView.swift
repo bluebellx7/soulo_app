@@ -3,7 +3,7 @@ import Translation
 import WebKit
 
 // NEXT VERSION: The page-translation entry points are intentionally hidden in
-// 1.1.0 while webpage extraction, language-pack availability, and mixed-content
+// 1.1.1 while webpage extraction, language-pack availability, and mixed-content
 // restoration are hardened. Keep this implementation for the follow-up release.
 struct WebPageTranslationSheet: View {
     let webView: WKWebView?

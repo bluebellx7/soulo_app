@@ -2,7 +2,7 @@ opt_out_usage
 default_platform(:ios)
 
 APP_IDENTIFIER = "com.dkluge.Soulo"
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.1.1"
 SCHEME = "Soulo"
 PROJECT = "Soulo.xcodeproj"
 
@@ -18,7 +18,7 @@ platform :ios do
     )
   end
 
-  desc "Upload localized App Store metadata for version 1.1.0"
+  desc "Upload localized App Store metadata for version 1.1.1"
   lane :metadata do
     upload_to_app_store(
       api_key: app_store_api_key,
@@ -34,7 +34,7 @@ platform :ios do
     )
   end
 
-  desc "Build and upload Build 11 to TestFlight"
+  desc "Build and upload Build 12 to TestFlight"
   lane :beta do
     prepare_project
     build_app(
@@ -50,7 +50,7 @@ platform :ios do
     )
   end
 
-  desc "Build and upload version 1.1.0 without submitting it for review"
+  desc "Build and upload version 1.1.1 without submitting it for review"
   lane :release do
     prepare_project
     build_app(

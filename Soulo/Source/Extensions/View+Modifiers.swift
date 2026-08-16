@@ -93,8 +93,19 @@ private struct BrowserToolbarButtonGlassModifier: ViewModifier {
         content.background {
             Circle()
                 .fill(.ultraThinMaterial)
-                .overlay(Circle().fill(Color.black.opacity(0.58)))
-                .overlay(Circle().stroke(Color.white.opacity(0.16), lineWidth: 0.6))
+                .overlay(Circle().fill(Color.black.opacity(0.44)))
+                .overlay {
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.13), .clear, Color.black.opacity(0.08)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .clipShape(Circle())
+                }
+                .overlay {
+                    Circle()
+                        .strokeBorder(Color.white.opacity(0.2), lineWidth: 0.7)
+                }
         }
     }
 }
@@ -104,8 +115,19 @@ private struct BrowserToolbarCapsuleGlassModifier: ViewModifier {
         content.background {
             Capsule()
                 .fill(.ultraThinMaterial)
-                .overlay(Capsule().fill(Color.black.opacity(0.58)))
-                .overlay(Capsule().stroke(Color.white.opacity(0.16), lineWidth: 0.6))
+                .overlay(Capsule().fill(Color.black.opacity(0.44)))
+                .overlay {
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.13), .clear, Color.black.opacity(0.08)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .clipShape(Capsule())
+                }
+                .overlay {
+                    Capsule()
+                        .strokeBorder(Color.white.opacity(0.2), lineWidth: 0.7)
+                }
         }
     }
 }

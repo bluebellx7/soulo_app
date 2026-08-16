@@ -395,9 +395,8 @@ struct WebPageCapturePreview: View {
 
     var body: some View {
         NavigationStack {
-            GeometryReader { proxy in
-                ZStack {
-                    Color(uiColor: .secondarySystemBackground).ignoresSafeArea()
+            VStack(spacing: 0) {
+                GeometryReader { proxy in
                     ScrollView(.vertical) {
                         let size = previewSize(in: proxy.size)
                         VStack(spacing: 12) {
@@ -434,50 +433,17 @@ struct WebPageCapturePreview: View {
                         .padding(16)
                     }
                 }
+                .frame(maxHeight: .infinity)
+
+                captureActions
             }
+            .background(Color(uiColor: .secondarySystemBackground).ignoresSafeArea())
             .navigationTitle(LanguageManager.shared.localizedString(result.mode.titleKey))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(LanguageManager.shared.localizedString("done")) { dismiss() }
                 }
-            }
-            .safeAreaInset(edge: .bottom) {
-                HStack(spacing: 12) {
-                    Button {
-                        saveImage()
-                    } label: {
-                        Label(
-                            LanguageManager.shared.localizedString("web_capture_save"),
-                            systemImage: saveSucceeded ? "checkmark.circle.fill" : "square.and.arrow.down"
-                        )
-                        .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(isSaving || saveSucceeded)
-
-                    Button {
-                        showShareSheet = true
-                    } label: {
-                        Label(LanguageManager.shared.localizedString("share"), systemImage: "square.and.arrow.up")
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .foregroundStyle(Color.primary)
-                            .background(
-                                Color(uiColor: .secondarySystemBackground),
-                                in: Capsule(style: .continuous)
-                            )
-                            .overlay {
-                                Capsule(style: .continuous)
-                                    .strokeBorder(Color.primary.opacity(0.14), lineWidth: 1)
-                            }
-                            .contentShape(Capsule(style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(.ultraThinMaterial)
             }
             .overlay {
                 if isSaving {
@@ -500,6 +466,47 @@ struct WebPageCapturePreview: View {
             .sheet(isPresented: $showShareSheet) {
                 CaptureShareSheet(items: [result.image])
             }
+        }
+    }
+
+    private var captureActions: some View {
+        HStack(spacing: 12) {
+            Button {
+                saveImage()
+            } label: {
+                Label(
+                    LanguageManager.shared.localizedString("web_capture_save"),
+                    systemImage: saveSucceeded ? "checkmark.circle.fill" : "square.and.arrow.down"
+                )
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(isSaving || saveSucceeded)
+
+            Button {
+                showShareSheet = true
+            } label: {
+                Label(LanguageManager.shared.localizedString("share"), systemImage: "square.and.arrow.up")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .foregroundStyle(Color.primary)
+                    .background(
+                        Color(uiColor: .secondarySystemBackground),
+                        in: Capsule(style: .continuous)
+                    )
+                    .overlay {
+                        Capsule(style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.14), lineWidth: 1)
+                    }
+                    .contentShape(Capsule(style: .continuous))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .top) {
+            Divider()
         }
     }
 

@@ -195,8 +195,9 @@ struct WebViewRepresentable: UIViewRepresentable {
     var onAccessibilityPlatformPage: ((AccessibilityPlatformPagingDirection) -> Bool)?
     @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = true
     @AppStorage("is_incognito") private var isIncognito: Bool = false
-    @AppStorage("privacy_gpc_enabled") private var gpcEnabled: Bool = true
-    @AppStorage("privacy_cookie_banner_enabled") private var cookieBannerEnabled: Bool = true
+    @AppStorage("privacy_gpc_enabled") private var gpcEnabled = PrivacyFeatureDefaults.gpcEnabled
+    @AppStorage("privacy_cookie_banner_enabled")
+    private var cookieBannerEnabled = PrivacyFeatureDefaults.cookieBannerHandling
     @ObservedObject private var adBlockSettings = AdBlockSettingsService.shared
     @ObservedObject private var privacyService = PrivacyProtectionService.shared
     @ObservedObject private var webAppearance = WebAppearanceService.shared
@@ -289,6 +290,21 @@ struct WebViewRepresentable: UIViewRepresentable {
                 contentWorld: .page,
                 name: "souloUserScriptXHR"
             )
+            for script in BrowserExtensionService.shared.userScripts where script.isEnabled {
+                let injectionTime: WKUserScriptInjectionTime = script.injectionTime == .documentStart
+                    ? .atDocumentStart
+                    : .atDocumentEnd
+                contentController.addUserScript(
+                    WKUserScript(
+                        source: UserScriptRuntime.wrappedSource(
+                            for: script,
+                            bridgeToken: context.coordinator.userScriptBridgeToken
+                        ),
+                        injectionTime: injectionTime,
+                        forMainFrameOnly: true
+                    )
+                )
+            }
         }
         if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled {
             contentController.add(context.coordinator, name: "souloExtensionInstaller")
@@ -309,16 +325,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                 forMainFrameOnly: true
             )
         )
-
-        if !isIncognito {
-            contentController.addUserScript(
-                WKUserScript(
-                    source: UserScriptRuntime.compatibilityBootstrap,
-                    injectionTime: .atDocumentStart,
-                    forMainFrameOnly: true
-                )
-            )
-        }
 
         if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled {
             contentController.addUserScript(
@@ -495,7 +501,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(viewModel: viewModel, allowsUserScripts: !isIncognito)
+        Coordinator(viewModel: viewModel)
     }
 
     // MARK: - Cleanup
@@ -533,7 +539,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var accumulatedScrollDelta: CGFloat = 0
 
         private let viewModel: WebViewModel
-        private let allowsUserScripts: Bool
+        let userScriptBridgeToken = UUID().uuidString
         private var observations: [NSKeyValueObservation] = []
         private var downloadIDs: [ObjectIdentifier: UUID] = [:]
         private var activeDownloads: [ObjectIdentifier: WKDownload] = [:]
@@ -547,11 +553,9 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var blankPageRecoveryAttempts: [String: Int] = [:]
         private var terminatedProcessRecoveryURLs = Set<String>()
         private var navigationGeneration = UUID()
-        private var executedUserScripts: Set<String> = []
 
-        init(viewModel: WebViewModel, allowsUserScripts: Bool) {
+        init(viewModel: WebViewModel) {
             self.viewModel = viewModel
-            self.allowsUserScripts = allowsUserScripts
             super.init()
             downloadCancelObserver = NotificationCenter.default.addObserver(
                 forName: .cancelActiveDownloads,
@@ -626,14 +630,31 @@ struct WebViewRepresentable: UIViewRepresentable {
             replyHandler: @escaping (Any?, String?) -> Void
         ) {
             if message.name == "souloUserScriptXHR",
-               let body = message.body as? [String: Any] {
+               let body = message.body as? [String: Any],
+               body["__souloToken"] as? String == userScriptBridgeToken,
+               let rawScriptID = body["__souloScriptID"] as? String,
+               let scriptID = UUID(uuidString: rawScriptID),
+               let script = BrowserExtensionService.shared.userScript(id: scriptID),
+               script.isEnabled,
+               script.allowsXMLHTTPRequests {
                 Task {
                     do {
-                        replyHandler(try await UserScriptHTTPBridge.response(for: body), nil)
+                        replyHandler(
+                            try await UserScriptHTTPBridge.response(
+                                for: body,
+                                script: script,
+                                pageURL: message.webView?.url
+                            ),
+                            nil
+                        )
                     } catch {
                         replyHandler(nil, error.localizedDescription)
                     }
                 }
+                return
+            }
+            if message.name == "souloUserScriptXHR" {
+                replyHandler(nil, "Unauthorized UserScript request")
                 return
             }
             guard message.name == "souloDownload",
@@ -891,8 +912,10 @@ struct WebViewRepresentable: UIViewRepresentable {
             let defaults = UserDefaults.standard
             webView.evaluateJavaScript(
                 WebViewScripts.privacyProtection(
-                    gpcEnabled: defaults.object(forKey: "privacy_gpc_enabled") as? Bool ?? true,
-                    cookieBannerHandling: defaults.object(forKey: "privacy_cookie_banner_enabled") as? Bool ?? true,
+                    gpcEnabled: defaults.object(forKey: "privacy_gpc_enabled") as? Bool
+                        ?? PrivacyFeatureDefaults.gpcEnabled,
+                    cookieBannerHandling: defaults.object(forKey: "privacy_cookie_banner_enabled") as? Bool
+                        ?? PrivacyFeatureDefaults.cookieBannerHandling,
                     disabledHosts: WebCompatibilityService.protectionBypassHosts(
                         adding: defaults.stringArray(forKey: "soulo_privacy_disabled_hosts") ?? []
                     )
@@ -905,7 +928,6 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
             navigationGeneration = UUID()
-            executedUserScripts.removeAll()
             resetScrollChromeState()
             Task { @MainActor in
                 viewModel.errorMessage = nil
@@ -924,8 +946,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                 WebAppearanceService.shared.apply(to: webView)
             }
             scheduleVideoViewportSynchronization(on: webView)
-            runUserScripts(on: webView, at: .documentStart)
-            runUserScripts(on: webView, at: .documentEnd)
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -946,18 +966,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                 }
                 self.focusAccessibilityOnLoadedPage(webView)
                 self.scheduleVideoViewportSynchronization(on: webView)
-                self.runUserScripts(on: webView, at: .documentEnd)
-            }
-        }
-
-        @MainActor
-        private func runUserScripts(on webView: WKWebView, at injectionTime: UserScriptInjectionTime) {
-            guard allowsUserScripts else { return }
-            let scripts = BrowserExtensionService.shared.scripts(for: webView.url, at: injectionTime)
-            for script in scripts {
-                let executionKey = "\(navigationGeneration.uuidString):\(injectionTime.rawValue):\(script.id.uuidString)"
-                guard executedUserScripts.insert(executionKey).inserted else { continue }
-                UserScriptRuntime.execute(script, on: webView)
             }
         }
 
@@ -1235,7 +1243,8 @@ struct WebViewRepresentable: UIViewRepresentable {
             }
 
             let defaults = UserDefaults.standard
-            let gpcEnabled = defaults.object(forKey: "privacy_gpc_enabled") as? Bool ?? true
+            let gpcEnabled = defaults.object(forKey: "privacy_gpc_enabled") as? Bool
+                ?? PrivacyFeatureDefaults.gpcEnabled
             return GPCRequestFactory(userDefaults: defaults).requestForGPC(basedOn: request, gpcEnabled: gpcEnabled)
         }
 

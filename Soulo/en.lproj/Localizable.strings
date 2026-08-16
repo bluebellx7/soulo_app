@@ -667,7 +667,7 @@
 "userscripts_reload_note" = "Open pages reload after a script is installed, edited, enabled, disabled, or removed.";
 "userscript_experimental_badge" = "Experimental";
 "userscript_experimental_title" = "UserScript is still evolving";
-"userscript_experimental_desc" = "Core scripts and GM_xmlhttpRequest are supported, but scripts that depend on additional GM APIs, external @require files, or specific page structures may not work yet.";
+"userscript_experimental_desc" = "Website include/exclude rules, true document-start execution and permission-scoped GM_xmlhttpRequest are supported. Scripts that depend on additional GM APIs, external @require files, or specific page structures may not work yet.";
 "extension_choose_file" = "Choose Extension File or Folder…";
 "extension_installing" = "Checking and installing extension…";
 "extension_install_failed" = "Extension Could Not Be Installed";
@@ -684,6 +684,7 @@
 "web_extension_temporarily_disabled" = "Standard browser extensions are temporarily unavailable while compatibility testing is completed.";
 "userscript_unreadable" = "The selected script could not be read as UTF-8 text.";
 "userscript_empty" = "The script cannot be empty.";
+"userscript_invalid_match_pattern" = "Invalid website rule: %@";
 "userscript_untitled" = "Untitled Script";
 "userscript_name" = "Name";
 "userscript_run_at" = "Run At";
