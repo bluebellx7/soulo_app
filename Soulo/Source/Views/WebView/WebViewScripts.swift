@@ -158,6 +158,21 @@ enum WebViewScripts {
             observer.observe(document.documentElement, { childList: true, subtree: true });
         }
 
+        function setPreferenceStyle(identifier, css, enabled) {
+            var style = document.getElementById(identifier);
+            if (!enabled) {
+                if (style) style.remove();
+                return;
+            }
+            if (!document.documentElement) return;
+            if (!style) {
+                style = document.createElement('style');
+                style.id = identifier;
+                document.documentElement.appendChild(style);
+            }
+            if (style.textContent !== css) style.textContent = css;
+        }
+
         window.__souloApplyWebAppearance = function(config) {
             config = config || {};
             var forceDark = !!config.forceDark;
@@ -174,16 +189,33 @@ enum WebViewScripts {
             }
             setWarmOverlay(!!config.warmColorShift);
             observeDarkContent(forceDark);
+            setPreferenceStyle(
+                'soulo-reduce-motion-style',
+                '*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}',
+                !!config.reduceMotion
+            );
+            setPreferenceStyle(
+                'soulo-underline-links-style',
+                'a[href]{text-decoration-line:underline!important;text-decoration-thickness:max(1px,.08em)!important;text-underline-offset:.14em!important}',
+                !!config.underlineLinks
+            );
         };
     })();
     """
 
-    static func applyWebAppearance(warmColorShift: Bool, forceDark: Bool) -> String {
+    static func applyWebAppearance(
+        warmColorShift: Bool,
+        forceDark: Bool,
+        reduceMotion: Bool,
+        underlineLinks: Bool
+    ) -> String {
         """
         \(webAppearanceBootstrap)
         window.__souloApplyWebAppearance && window.__souloApplyWebAppearance({
             warmColorShift: \(warmColorShift ? "true" : "false"),
-            forceDark: \(forceDark ? "true" : "false")
+            forceDark: \(forceDark ? "true" : "false"),
+            reduceMotion: \(reduceMotion ? "true" : "false"),
+            underlineLinks: \(underlineLinks ? "true" : "false")
         });
         """
     }
@@ -546,6 +578,103 @@ enum WebViewScripts {
         }, true);
     })();
     """
+
+    static let contextMenuResourceTracking = #"""
+    (function() {
+        if (window.__souloContextResourceTrackingInstalled) return;
+        window.__souloContextResourceTrackingInstalled = true;
+        var lastResource = null;
+
+        function absoluteWebURL(value) {
+            if (!value) return '';
+            try {
+                var url = new URL(String(value), document.baseURI).href;
+                return /^https?:\/\//i.test(url) ? url : '';
+            } catch (_) {
+                return '';
+            }
+        }
+
+        function filenameFor(value) {
+            try {
+                var name = new URL(value).pathname.split('/').pop() || '';
+                return decodeURIComponent(name) || 'Download';
+            } catch (_) {
+                return 'Download';
+            }
+        }
+
+        function resource(kind, value) {
+            var url = absoluteWebURL(value);
+            return url ? { kind: kind, url: url, filename: filenameFor(url) } : null;
+        }
+
+        function resourceForElement(target) {
+            if (!target || target.nodeType !== 1) return null;
+
+            var image = target.closest && target.closest('img');
+            if (!image && target.querySelector) image = target.querySelector('img');
+            if (image) {
+                var imageResource = resource('image', image.currentSrc || image.src);
+                if (imageResource) return imageResource;
+            }
+
+            var video = target.closest && target.closest('video');
+            if (!video && target.querySelector) video = target.querySelector('video');
+            if (video) {
+                var videoSource = video.currentSrc || video.src;
+                if (!videoSource && video.querySelector('source')) videoSource = video.querySelector('source').src;
+                var videoResource = resource('video', videoSource);
+                if (videoResource) return videoResource;
+            }
+
+            var audio = target.closest && target.closest('audio');
+            if (!audio && target.querySelector) audio = target.querySelector('audio');
+            if (audio) {
+                var audioSource = audio.currentSrc || audio.src;
+                if (!audioSource && audio.querySelector('source')) audioSource = audio.querySelector('source').src;
+                var audioResource = resource('audio', audioSource);
+                if (audioResource) return audioResource;
+            }
+
+            var current = target;
+            for (var depth = 0; current && depth < 4; depth++, current = current.parentElement) {
+                try {
+                    var background = getComputedStyle(current).backgroundImage || '';
+                    var match = background.match(/url\(["']?([^"')]+)["']?\)/);
+                    if (match) {
+                        var backgroundResource = resource('image', match[1]);
+                        if (backgroundResource) return backgroundResource;
+                    }
+                } catch (_) {}
+            }
+
+            var link = target.closest && target.closest('a[href]');
+            if (link && /\.(pdf|docx?|xlsx?|pptx?|zip|rar|7z|tar|gz|csv|epub)(?:$|[?#])/i.test(link.href)) {
+                return resource('file', link.href);
+            }
+            return null;
+        }
+
+        function remember(target) {
+            lastResource = resourceForElement(target);
+        }
+
+        document.addEventListener('touchstart', function(event) {
+            remember(event.touches && event.touches[0]
+                ? document.elementFromPoint(event.touches[0].clientX, event.touches[0].clientY)
+                : event.target);
+        }, true);
+        document.addEventListener('pointerdown', function(event) {
+            remember(document.elementFromPoint(event.clientX, event.clientY) || event.target);
+        }, true);
+        document.addEventListener('contextmenu', function(event) {
+            remember(event.target);
+        }, true);
+
+        window.__souloContextResourceInfo = function() { return lastResource; };
+    })();
+    """#
 
     static func privacyProtection(gpcEnabled: Bool, cookieBannerHandling: Bool, disabledHosts: [String] = []) -> String {
         let disabledHostsJSON = (try? JSONSerialization.data(withJSONObject: disabledHosts))

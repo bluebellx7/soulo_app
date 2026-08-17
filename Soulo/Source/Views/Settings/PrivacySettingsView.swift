@@ -44,35 +44,23 @@ struct PrivacySettingsView: View {
             List {
                 // MARK: - Incognito Mode
                 Section {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Toggle(isOn: $isIncognito) {
-                            Label {
-                                Text(LanguageManager.shared.localizedString("privacy_incognito"))
-                                    .font(.body)
-                                    .fontWeight(.medium)
-                            } icon: {
-                                IconBadge(
-                                    systemName: "eye.slash.fill",
-                                    color: isIncognito ? .teal : Color(uiColor: .systemGray3)
-                                )
-                            }
-                        }
-                        .tint(.teal)
+                    PrivacyToggleRow(
+                        icon: "eye.slash.fill",
+                        color: .teal,
+                        title: LanguageManager.shared.localizedString("privacy_incognito"),
+                        description: LanguageManager.shared.localizedString("privacy_incognito_desc"),
+                        isOn: $isIncognito
+                    )
+                } header: {
+                    SectionHeader(
+                        title: LanguageManager.shared.localizedString(
+                            "privacy_section_private_browsing"
+                        )
+                    )
+                }
 
-                        HStack(alignment: .top, spacing: 8) {
-                            Image(systemName: "info.circle")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.top, 1)
-                            Text(LanguageManager.shared.localizedString("privacy_incognito_desc"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        .padding(.leading, 2)
-                    }
-                    .padding(.vertical, 4)
-
+                // MARK: - Browsing Protection
+                Section {
                     PrivacyToggleRow(
                         icon: "lock.fill",
                         color: .green,
@@ -210,13 +198,16 @@ struct PrivacySettingsView: View {
             await refreshCacheSize()
         }
         .onChange(of: isIncognito) { _, enabled in
+            let wasBrowsing = searchVM.isSearching
             let pageURL = tabManager.activeWebViewModel?.currentURL
             tabManager.resetTabsForPrivacy()
             searchVM.showClipboardPrompt = false
             LiveActivityService.shared.end()
 
-            if enabled, let pageURL {
-                tabManager.activeWebViewModel?.loadURL(pageURL)
+            if wasBrowsing {
+                if let pageURL {
+                    tabManager.activeWebViewModel?.loadURL(pageURL)
+                }
                 searchVM.isSearching = true
             } else if !enabled {
                 searchVM.clearSearch()

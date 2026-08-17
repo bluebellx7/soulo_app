@@ -52,6 +52,7 @@ private enum Provider {
     static func forRegion(_ region: PlatformRegion) -> Provider {
         switch region {
         case .china:  return .baidu
+        case .korea:  return .naver
         case .russia: return .yandex
         case .japan, .international: return .google
         }

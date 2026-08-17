@@ -6,6 +6,7 @@ struct BrowserToolbarSettingsView: View {
     @State private var draftAddressAction = BrowserToolbarConfigurationService.defaultAddressAction
     @State private var selectedSlot = 0
     @State private var showSaved = false
+    @State private var showRestoreConfirmation = false
 
     private let columns = [GridItem(.adaptive(minimum: 92), spacing: 10)]
 
@@ -39,46 +40,13 @@ struct BrowserToolbarSettingsView: View {
                     }
                 }
 
-                VStack(spacing: 10) {
-                    Button {
-                        service.save(actions: draftActions, addressAction: draftAddressAction)
-                        showSaved = true
-                        UINotificationFeedbackGenerator().notificationOccurred(.success)
-                    } label: {
-                        Label(LanguageManager.shared.localizedString("save"), systemImage: "checkmark")
-                            .font(.body.weight(.semibold))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 48)
-                    }
-                    .buttonStyle(.borderedProminent)
-
-                    Button {
-                        service.reset()
-                        draftActions = service.actions
-                        draftAddressAction = service.addressAction
-                        selectedSlot = 0
-                        HapticsManager.selection()
-                    } label: {
-                        Label(LanguageManager.shared.localizedString("toolbar_restore_default"), systemImage: "arrow.counterclockwise")
-                            .font(.body.weight(.medium))
-                            .foregroundStyle(Color.primary)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 48)
-                            .background(
-                                Color(uiColor: .secondarySystemGroupedBackground),
-                                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            )
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5)
-                            }
-                    }
-                    .buttonStyle(.plain)
-                }
             }
             .padding(20)
         }
         .background(Color(uiColor: .systemGroupedBackground))
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            bottomActionBar
+        }
         .navigationTitle(LanguageManager.shared.localizedString("toolbar_customize"))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -88,6 +56,80 @@ struct BrowserToolbarSettingsView: View {
         .alert(LanguageManager.shared.localizedString("toolbar_saved"), isPresented: $showSaved) {
             Button(LanguageManager.shared.localizedString("done"), role: .cancel) {}
         }
+        .alert(
+            LanguageManager.shared.localizedString("toolbar_restore_confirm_title"),
+            isPresented: $showRestoreConfirmation
+        ) {
+            Button(
+                LanguageManager.shared.localizedString("toolbar_restore_default"),
+                role: .destructive
+            ) {
+                restoreDefaults()
+            }
+            Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
+        } message: {
+            Text(LanguageManager.shared.localizedString("toolbar_restore_confirm_message"))
+        }
+    }
+
+    private var bottomActionBar: some View {
+        HStack(spacing: 10) {
+            Button {
+                showRestoreConfirmation = true
+            } label: {
+                Label(
+                    LanguageManager.shared.localizedString("toolbar_restore_default"),
+                    systemImage: "arrow.counterclockwise"
+                )
+                .font(.subheadline.weight(.medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 42)
+                .background(
+                    Color(uiColor: .secondarySystemGroupedBackground),
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5)
+                }
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                service.save(actions: draftActions, addressAction: draftAddressAction)
+                showSaved = true
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            } label: {
+                Label(LanguageManager.shared.localizedString("save"), systemImage: "checkmark")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 42)
+                    .background(
+                        Color.accentColor,
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+        .background(.regularMaterial)
+        .overlay(alignment: .top) {
+            Divider()
+        }
+    }
+
+    private func restoreDefaults() {
+        service.reset()
+        draftActions = service.actions
+        draftAddressAction = service.addressAction
+        selectedSlot = 0
+        HapticsManager.selection()
     }
 
     private var toolbarPreview: some View {

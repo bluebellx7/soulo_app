@@ -22,7 +22,7 @@ class PlatformDataStore: ObservableObject {
 
     // MARK: - Persistence
 
-    private let platformVersion = 37 // Increment when cached built-in defaults need migration
+    private let platformVersion = 38 // Increment when cached built-in defaults need migration
 
     private func load() {
         let savedVersion = UserDefaults.standard.integer(forKey: "platform_config_version")
@@ -280,6 +280,30 @@ class PlatformDataStore: ObservableObject {
            let index = platforms.firstIndex(where: { $0.name == "platform_xiaohongshu" && $0.isBuiltIn }) {
             platforms[index].requiresLogin = true
         }
+        if version < 38 {
+            let authenticatedPlatformNames: Set<String> = [
+                "platform_twitter", "platform_twitter_jp", "platform_you"
+            ]
+            for index in platforms.indices
+            where platforms[index].isBuiltIn && authenticatedPlatformNames.contains(platforms[index].name) {
+                platforms[index].requiresLogin = true
+            }
+
+            let addedNames: Set<String> = [
+                "platform_naver",
+                "platform_daum",
+                "platform_google_kr",
+                "platform_youtube_kr"
+            ]
+            let additions = Self.defaultPlatforms().filter { addedNames.contains($0.name) }
+            for var platform in additions where !platforms.contains(where: { $0.name == platform.name }) {
+                platform.sortOrder = (platforms
+                    .filter { $0.region == platform.region }
+                    .map(\.sortOrder)
+                    .max() ?? -1) + 1
+                platforms.append(platform)
+            }
+        }
     }
 
     @discardableResult
@@ -522,7 +546,31 @@ class PlatformDataStore: ObservableObject {
             ))
         }
 
-        // MARK: Russia (2)
+        // MARK: Korea
+        let koreaData: [(String, String, String, String)] = [
+            ("platform_naver",     "icon_naver",   "https://search.naver.com/search.naver?query=%@",               "https://www.naver.com"),
+            ("platform_daum",      "icon_daum",    "https://search.daum.net/search?w=tot&q=%@",                   "https://www.daum.net"),
+            ("platform_google_kr", "icon_google",  "https://www.google.co.kr/search?q=%@",                         "https://www.google.co.kr"),
+            ("platform_youtube_kr","icon_youtube", "https://www.youtube.com/results?search_query=%@&gl=KR",       "https://www.youtube.com"),
+        ]
+        for (order, entry) in koreaData.enumerated() {
+            all.append(SearchPlatform(
+                id: UUID(),
+                name: entry.0,
+                iconName: entry.1,
+                searchURLTemplate: entry.2,
+                homeURL: entry.3,
+                region: .korea,
+                isBuiltIn: true,
+                isVisible: true,
+                sortOrder: order,
+                usageCount: 0,
+                isCustom: false,
+                faviconURL: entry.3
+            ))
+        }
+
+        // MARK: Russia
         let russiaData: [(String, String, String, String)] = [
             ("platform_yandex", "icon_yandex", "https://yandex.ru/search/?text=%@",  "https://yandex.ru"),
             ("platform_vk",     "icon_vk",     "https://m.vk.com/search?q=%@",       "https://m.vk.com"),
@@ -546,7 +594,8 @@ class PlatformDataStore: ObservableObject {
         // Mark platforms that require login
         let loginRequired: Set<String> = [
             "platform_xiaohongshu", "platform_taobao", "platform_jd",
-            "platform_instagram", "platform_linkedin"
+            "platform_instagram", "platform_linkedin", "platform_twitter",
+            "platform_twitter_jp", "platform_you"
         ]
         // Hide less important platforms by default (user can enable in settings)
         let hiddenByDefault = Self.defaultHiddenPlatformNames.union([

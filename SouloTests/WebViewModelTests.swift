@@ -597,8 +597,8 @@ final class WebViewModelTests: XCTestCase {
         service.save(actions: [.share, .screenshot], addressAction: .more)
 
         XCTAssertEqual(service.actions, [.share, .screenshot, .tabs, .more])
-        XCTAssertEqual(service.addressAction, .hideToolbar)
-        XCTAssertEqual(defaults.string(forKey: BrowserToolbarConfigurationService.addressActionKey), "hideToolbar")
+        XCTAssertEqual(service.addressAction, .darkMode)
+        XCTAssertEqual(defaults.string(forKey: BrowserToolbarConfigurationService.addressActionKey), "darkMode")
         XCTAssertEqual(
             BrowserToolbarAction.allCases.first,
             Optional(BrowserToolbarAction.none)
@@ -611,6 +611,17 @@ final class WebViewModelTests: XCTestCase {
         service.save(actions: [.translate, .share, .tabs, .more], addressAction: .translate)
         XCTAssertEqual(service.actions, [.none, .share, .tabs, .more])
         XCTAssertEqual(service.addressAction, .none)
+
+        service.save(actions: [.home, .back, .tabs, .more], addressAction: .hideToolbar)
+        XCTAssertEqual(service.addressAction, .hideToolbar)
+
+        service.reset()
+        XCTAssertEqual(service.actions, BrowserToolbarConfigurationService.defaultActions)
+        XCTAssertEqual(service.addressAction, .darkMode)
+        XCTAssertEqual(
+            defaults.string(forKey: BrowserToolbarConfigurationService.addressActionKey),
+            "darkMode"
+        )
     }
 
     func testScrollingCaptureUsesViewportFloorAndMaximumHeight() {

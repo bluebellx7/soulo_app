@@ -27,6 +27,7 @@ struct SearchResultsView: View {
     @State private var showBookmarkToast = false
     @State private var isFullscreen: Bool = false
     @State private var showVoiceInput = false
+    @State private var showPlatformManagement = false
     @State private var pageReady = false
     /// Incremented each time performSearch runs; compared to detect new vs. returning
     @State private var lastSearchID: UUID = UUID()
@@ -37,6 +38,7 @@ struct SearchResultsView: View {
     @AppStorage("show_top_search_bar") private var showTopSearchBar = true
     @AppStorage(AppConstants.StorageKeys.keepFullscreenBrowsing) private var keepFullscreenBrowsing = false
     @AppStorage(AppConstants.StorageKeys.shakeAction) private var shakeAction = BrowserShakeAction.none.rawValue
+    @AppStorage(AppConstants.StorageKeys.browserToolbarHidden) private var toolbarManuallyHidden = false
 
     @State private var selectedCustomGroup: CustomGroup? = nil
 
@@ -88,13 +90,6 @@ struct SearchResultsView: View {
 
                     if !searchVM.currentKeyword.isValidURL {
                         HStack(spacing: 2) {
-                            groupPickerMenu
-                                .padding(.leading, 12)
-
-                            Rectangle()
-                                .fill(Color(UIColor.separator).opacity(0.35))
-                                .frame(width: 0.5, height: 18)
-
                             PlatformTabBar(
                                 platforms: currentPlatforms,
                                 selectedPlatform: $searchVM.selectedPlatform,
@@ -104,6 +99,13 @@ struct SearchResultsView: View {
                             .onChange(of: searchVM.selectedPlatform) { _, _ in
                                 loadCurrentPlatformURL()
                             }
+
+                            Rectangle()
+                                .fill(Color(UIColor.separator).opacity(0.35))
+                                .frame(width: 0.5, height: 18)
+
+                            groupPickerMenu
+                                .padding(.trailing, 6)
                         }
                     }
 
@@ -153,6 +155,7 @@ struct SearchResultsView: View {
                             bookmarkViewModel: bookmarkVM,
                             isFullscreen: $isFullscreen,
                             tabManager: tabManager,
+                            toolbarManuallyHiddenBinding: $toolbarManuallyHidden,
                             isActiveTab: true,
                             addressEditorText: searchVM.searchText.isEmpty
                                 ? searchVM.currentKeyword
@@ -349,6 +352,18 @@ struct SearchResultsView: View {
                 onDismiss: { showVoiceInput = false }
             )
         }
+        .sheet(isPresented: $showPlatformManagement) {
+            NavigationStack {
+                PlatformManagementView()
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(languageManager.localizedString("done")) {
+                                showPlatformManagement = false
+                            }
+                        }
+                    }
+            }
+        }
         .onAppear {
             if PersistentFullscreenBehavior.shouldEnter(
                 enabled: keepFullscreenBrowsing,
@@ -520,8 +535,19 @@ struct SearchResultsView: View {
                     }
                 }
             }
+
+            Divider()
+
+            Button {
+                showPlatformManagement = true
+            } label: {
+                Label(
+                    languageManager.localizedString("platform_management"),
+                    systemImage: "slider.horizontal.3"
+                )
+            }
         } label: {
-            Image(systemName: selectedCustomGroup != nil ? "folder.fill" : "globe")
+            Image(systemName: selectedCustomGroup != nil ? "folder.fill" : "square.stack.3d.up.fill")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(
                     showTopSearchBar

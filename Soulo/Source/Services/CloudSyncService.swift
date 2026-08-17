@@ -97,6 +97,8 @@ final class CloudSyncService: NSObject {
         "web_follows_app_color_scheme",
         "web_warm_color_shift",
         "web_force_dark_pages",
+        "web_reduce_page_motion",
+        "web_underline_links",
         "browser_shake_action",
         "browser_toolbar_actions",
         "browser_toolbar_address_action",

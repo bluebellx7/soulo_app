@@ -1,5 +1,97 @@
 import Foundation
 
+enum DownloadFilenameSanitizer {
+    static let maximumUTF8ByteCount = 180
+
+    static func sanitize(
+        _ filename: String,
+        fallbackBaseName: String = "Download",
+        preferredExtension: String? = nil
+    ) -> String {
+        let decoded = decodePercentEncoding(filename)
+            .precomposedStringWithCanonicalMapping
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let nsFilename = decoded as NSString
+        let originalExtension = safeExtension(nsFilename.pathExtension)
+        let fileExtension = originalExtension ?? safeExtension(preferredExtension ?? "")
+
+        var baseName = safeBaseName(nsFilename.deletingPathExtension)
+        if baseName.isEmpty {
+            baseName = safeBaseName(fallbackBaseName)
+        }
+        if baseName.isEmpty {
+            baseName = "Download"
+        }
+
+        let suffix = fileExtension.map { ".\($0)" } ?? ""
+        let byteBudget = max(1, maximumUTF8ByteCount - suffix.utf8.count)
+        baseName = prefix(baseName, fittingUTF8ByteCount: byteBudget)
+            .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(
+                CharacterSet(charactersIn: ".-_")
+            ))
+        if baseName.isEmpty {
+            baseName = "Download"
+        }
+        return baseName + suffix
+    }
+
+    private static func decodePercentEncoding(_ value: String) -> String {
+        var result = value
+        for _ in 0..<2 {
+            guard let decoded = result.removingPercentEncoding, decoded != result else { break }
+            result = decoded
+        }
+        return result
+    }
+
+    private static func safeBaseName(_ value: String) -> String {
+        let allowedPunctuation = Set<Character>(["-", "_", "(", ")", "[", "]"])
+        var result = ""
+        for character in value {
+            let scalars = character.unicodeScalars
+            if scalars.allSatisfy({ CharacterSet.alphanumerics.contains($0) }) {
+                result.append(character)
+            } else if allowedPunctuation.contains(character) {
+                result.append(character)
+            } else if scalars.allSatisfy({ CharacterSet.whitespacesAndNewlines.contains($0) }) {
+                result.append(" ")
+            } else {
+                result.append("-")
+            }
+        }
+
+        result = result.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+        result = result.replacingOccurrences(of: "-+", with: "-", options: .regularExpression)
+        return result.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(
+            CharacterSet(charactersIn: ".-_")
+        ))
+    }
+
+    private static func safeExtension(_ value: String) -> String? {
+        let extensionValue = value.lowercased()
+        guard (1...12).contains(extensionValue.count),
+              extensionValue.unicodeScalars.allSatisfy({ scalar in
+                  (97...122).contains(scalar.value)
+                      || (48...57).contains(scalar.value)
+              }) else {
+            return nil
+        }
+        return extensionValue
+    }
+
+    private static func prefix(_ value: String, fittingUTF8ByteCount limit: Int) -> String {
+        var result = ""
+        var byteCount = 0
+        for character in value {
+            let characterByteCount = String(character).utf8.count
+            guard byteCount + characterByteCount <= limit else { break }
+            result.append(character)
+            byteCount += characterByteCount
+        }
+        return result
+    }
+}
+
 @MainActor
 final class DownloadManagerService: ObservableObject {
     static let shared = DownloadManagerService()
@@ -23,7 +115,7 @@ final class DownloadManagerService: ObservableObject {
     }
 
     func beginDownload(suggestedFilename: String, sourceURL: URL?) -> (BrowserDownloadItem, URL) {
-        let fileName = uniqueFilename(for: sanitizedFilename(suggestedFilename))
+        let fileName = uniqueFilename(for: DownloadFilenameSanitizer.sanitize(suggestedFilename))
         let destination = storageDirectory.appendingPathComponent(fileName)
         try? FileManager.default.removeItem(at: destination)
 
@@ -124,13 +216,6 @@ final class DownloadManagerService: ObservableObject {
             counter += 1
         }
         return candidate
-    }
-
-    private func sanitizedFilename(_ filename: String) -> String {
-        let trimmed = filename.trimmingCharacters(in: .whitespacesAndNewlines)
-        let fallback = trimmed.isEmpty ? "Download" : trimmed
-        let invalid = CharacterSet(charactersIn: "/\\?%*|\"<>:")
-        return fallback.components(separatedBy: invalid).joined(separator: "-")
     }
 
     private func load() {

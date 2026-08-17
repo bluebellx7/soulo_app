@@ -176,12 +176,104 @@ final class WebViewScriptsTests: XCTestCase {
         assertJavaScriptParses(WebViewScripts.blankPageProbe)
         assertJavaScriptParses(WebViewScripts.privacyProtection(gpcEnabled: true, cookieBannerHandling: true))
         assertJavaScriptParses(WebViewScripts.downloadBridge)
+        assertJavaScriptParses(WebViewScripts.contextMenuResourceTracking)
+        assertJavaScriptParses(WebResourceInspectionService.extractionScript)
         assertJavaScriptParses(WebViewScripts.extensionInstallBridge)
         assertJavaScriptParses(WebViewScripts.accessibilityEnhancements)
         assertJavaScriptParses(WebViewScripts.webAppearanceBootstrap)
-        assertJavaScriptParses(WebViewScripts.applyWebAppearance(warmColorShift: true, forceDark: true))
+        assertJavaScriptParses(
+            WebViewScripts.applyWebAppearance(
+                warmColorShift: true,
+                forceDark: true,
+                reduceMotion: true,
+                underlineLinks: true
+            )
+        )
         assertJavaScriptParses(WebViewScripts.synchronizeViewport)
         assertJavaScriptParses(WebViewScripts.compensatePageZoomWidth(scale: 1.2))
+    }
+
+    func testResourceSnapshotParsesSupportedWebResourcesAndRejectsUnsafeSchemes() {
+        let snapshot = WebResourceSnapshot(dictionary: [
+            "pageTitle": "Resource Test",
+            "pageURL": "https://example.com/page",
+            "images": [
+                ["url": "https://example.com/photo.jpg", "width": 640, "height": 480, "title": "Photo"],
+                ["url": "data:image/png;base64,abc", "width": 1, "height": 1, "title": "Inline"]
+            ],
+            "videos": [["url": "https://cdn.example.com/movie.mp4", "title": "Movie"]],
+            "audio": [["url": "https://cdn.example.com/audio.mp3", "title": "Audio"]],
+            "links": [
+                ["url": "https://EXAMPLE.com/story/#intro", "title": "Story"],
+                ["url": "https://example.com/story", "title": "Duplicate"],
+                ["url": "https://example.com/story?chapter=2", "title": "Distinct query"]
+            ],
+            "texts": ["  Useful   text  ", "Useful text"],
+            "colors": [["value": "#aabbcc", "count": 4]],
+            "documents": [["url": "https://example.com/file.pdf", "title": "PDF"]]
+        ])
+
+        XCTAssertEqual(snapshot.images.count, 1)
+        XCTAssertEqual(snapshot.images.first?.width, 640)
+        XCTAssertEqual(snapshot.videos.count, 1)
+        XCTAssertEqual(snapshot.audio.count, 1)
+        XCTAssertEqual(snapshot.links.count, 2)
+        XCTAssertEqual(snapshot.links.first?.title, "Story")
+        XCTAssertEqual(snapshot.textFragments.map(\.text), ["Useful text"])
+        XCTAssertEqual(snapshot.colors.first?.value, "#AABBCC")
+        XCTAssertEqual(snapshot.documents.count, 1)
+        XCTAssertFalse(snapshot.isEmpty)
+    }
+
+    func testResourceInspectorDefaultsAndExtractionKeepOnlyLoadedImages() {
+        XCTAssertEqual(WebResourceInspectorDefaults.minimumImageWidth, 200)
+        XCTAssertTrue(WebResourceInspectionService.extractionScript.contains("image.complete"))
+        XCTAssertTrue(WebResourceInspectionService.extractionScript.contains("image.naturalWidth <= 0"))
+        XCTAssertFalse(WebResourceInspectionService.extractionScript.contains("sourceSet.split"))
+    }
+
+    func testContextResourceRecognizesDownloadableKinds() throws {
+        let image = try XCTUnwrap(WebContextResource(dictionary: [
+            "kind": "image",
+            "url": "https://example.com/photo.jpg",
+            "filename": "photo.jpg"
+        ]))
+
+        XCTAssertEqual(image.kind, .image)
+        XCTAssertEqual(image.suggestedFilename, "photo.jpg")
+        XCTAssertTrue(image.kind.allowsDirectDownload)
+        XCTAssertFalse(WebContextResource.Kind.video.allowsDirectDownload)
+        XCTAssertFalse(WebContextResource.Kind.audio.allowsDirectDownload)
+        XCTAssertTrue(WebContextResource.Kind.file.allowsDirectDownload)
+        XCTAssertTrue(WebViewScripts.contextMenuResourceTracking.contains("csv|epub"))
+        XCTAssertFalse(WebViewScripts.contextMenuResourceTracking.contains("epub|mp4"))
+        XCTAssertNil(WebContextResource(dictionary: [
+            "kind": "image",
+            "url": "javascript:alert(1)"
+        ]))
+    }
+
+    func testWebAppearanceReadabilityPreferencesCanBeAppliedAndRemoved() {
+        let enabled = WebViewScripts.applyWebAppearance(
+            warmColorShift: false,
+            forceDark: false,
+            reduceMotion: true,
+            underlineLinks: true
+        )
+        let disabled = WebViewScripts.applyWebAppearance(
+            warmColorShift: false,
+            forceDark: false,
+            reduceMotion: false,
+            underlineLinks: false
+        )
+
+        XCTAssertTrue(WebViewScripts.webAppearanceBootstrap.contains("soulo-reduce-motion-style"))
+        XCTAssertTrue(WebViewScripts.webAppearanceBootstrap.contains("soulo-underline-links-style"))
+        XCTAssertTrue(WebViewScripts.webAppearanceBootstrap.contains("style.remove()"))
+        XCTAssertTrue(enabled.contains("reduceMotion: true"))
+        XCTAssertTrue(enabled.contains("underlineLinks: true"))
+        XCTAssertTrue(disabled.contains("reduceMotion: false"))
+        XCTAssertTrue(disabled.contains("underlineLinks: false"))
     }
 
     func testPageZoomCompensationKeepsTheRenderedDocumentAtViewportWidth() {

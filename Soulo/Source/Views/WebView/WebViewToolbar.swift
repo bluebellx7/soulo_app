@@ -1,5 +1,89 @@
 import SwiftUI
 
+private final class DraggableNativeMenuControl: UIButton {
+    var onTap: (() -> Void)?
+    var onDragChanged: ((CGSize) -> Void)?
+    var onDragEnded: ((CGSize) -> Void)?
+
+    private let dragRecognizer = UIPanGestureRecognizer()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        configureControl()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        configureControl()
+    }
+
+    private func configureControl() {
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+
+        var buttonConfiguration: UIButton.Configuration
+        if #available(iOS 26.0, *) {
+            buttonConfiguration = .glass()
+        } else {
+            buttonConfiguration = .plain()
+            buttonConfiguration.background.backgroundColor = .secondarySystemBackground
+            buttonConfiguration.background.cornerRadius = 20
+        }
+        buttonConfiguration.image = UIImage(systemName: "ellipsis")
+        buttonConfiguration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
+            pointSize: 14,
+            weight: .regular
+        )
+        buttonConfiguration.baseForegroundColor = UIColor.label.withAlphaComponent(0.85)
+        buttonConfiguration.contentInsets = .zero
+        configuration = buttonConfiguration
+        addTarget(self, action: #selector(handleTap), for: .touchUpInside)
+
+        dragRecognizer.addTarget(self, action: #selector(handlePan(_:)))
+        dragRecognizer.cancelsTouchesInView = true
+        addGestureRecognizer(dragRecognizer)
+    }
+
+    @objc private func handleTap() {
+        onTap?()
+    }
+
+    @objc private func handlePan(_ recognizer: UIPanGestureRecognizer) {
+        let translation = recognizer.translation(in: superview)
+        switch recognizer.state {
+        case .began, .changed:
+            onDragChanged?(CGSize(width: translation.x, height: translation.y))
+        case .ended, .cancelled, .failed:
+            onDragEnded?(CGSize(width: translation.x, height: translation.y))
+        default:
+            break
+        }
+    }
+}
+
+private struct NativeMoreMenuButton: UIViewRepresentable {
+    let accessibilityLabel: String
+    let onTap: () -> Void
+    let onDragChanged: (CGSize) -> Void
+    let onDragEnded: (CGSize) -> Void
+
+    func makeUIView(context: Context) -> DraggableNativeMenuControl {
+        let control = DraggableNativeMenuControl()
+        control.accessibilityLabel = accessibilityLabel
+        control.onTap = onTap
+        control.onDragChanged = onDragChanged
+        control.onDragEnded = onDragEnded
+        return control
+    }
+
+    func updateUIView(_ control: DraggableNativeMenuControl, context: Context) {
+        control.accessibilityLabel = accessibilityLabel
+        control.onTap = onTap
+        control.onDragChanged = onDragChanged
+        control.onDragEnded = onDragEnded
+    }
+}
+
 enum BrowserAddressDisplay {
     static func text(keyword: String?, host: String, maximumKeywordLength: Int) -> String {
         guard maximumKeywordLength > 0,
@@ -37,6 +121,7 @@ struct WebViewToolbar: View {
     @AppStorage(AppConstants.StorageKeys.isIncognito) private var isIncognito = false
     @State private var showSiteInformation = false
     @State private var showZoomControls = false
+    @State private var showMoreMenu = false
 
     var tabManager: TabManager?
     var onShare: (() -> Void)?
@@ -55,10 +140,28 @@ struct WebViewToolbar: View {
     var onOpenSafariCompatibility: (() -> Void)?
     var onOpenDefaultBrowser: (() -> Void)?
     var onCapturePage: (() -> Void)?
+    var onInspectResources: (() -> Void)?
     var onTranslatePage: (() -> Void)?
     var onMoreMenuPresentationChange: ((Bool) -> Void)?
+    var showsOnlyMore: Bool = false
+    var onRestoreToolbar: (() -> Void)?
+    var onFloatingMoreDragChanged: ((CGSize) -> Void)?
+    var onFloatingMoreDragEnded: ((CGSize) -> Void)?
 
+    @ViewBuilder
     var body: some View {
+        if showsOnlyMore {
+            moreMenu
+        } else if #available(iOS 26.0, *) {
+            GlassEffectContainer(spacing: 4) {
+                toolbarContent
+            }
+        } else {
+            toolbarContent
+        }
+    }
+
+    private var toolbarContent: some View {
         HStack(spacing: 4) {
             if toolbarConfiguration.actions[0] != .none {
                 toolbarAction(toolbarConfiguration.actions[0])
@@ -94,7 +197,7 @@ struct WebViewToolbar: View {
                     .foregroundStyle(
                         isIncognito
                             ? Color.teal.opacity(0.9)
-                            : Color.white.opacity(viewModel.currentURL?.host == nil ? 0.25 : 0.68)
+                            : Color.primary.opacity(viewModel.currentURL?.host == nil ? 0.25 : 0.68)
                     )
                     .frame(width: 27, height: 32)
                     .contentShape(Rectangle())
@@ -133,7 +236,7 @@ struct WebViewToolbar: View {
             }
 
             Rectangle()
-                .fill(Color.white.opacity(0.12))
+                .fill(Color.primary.opacity(0.12))
                 .frame(width: 0.5, height: 16)
                 .accessibilityHidden(true)
 
@@ -152,38 +255,28 @@ struct WebViewToolbar: View {
                             .minimumScaleFactor(0.78)
                     }
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.white.opacity(0.9))
+                        .foregroundStyle(Color.primary.opacity(0.9))
 
                     Spacer(minLength: 0)
 
                     if viewModel.isLoading {
                         ProgressView()
                             .controlSize(.mini)
-                            .tint(Color.white.opacity(0.75))
+                            .tint(Color.primary.opacity(0.75))
                     }
                 }
                 .padding(.leading, 7)
                 .padding(.trailing, 6)
                 .frame(maxWidth: .infinity, minHeight: 32)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(LanguageManager.shared.localizedString("browser_edit_address"))
             .accessibilityValue(fullAddressDisplayText)
             .accessibilityHint(LanguageManager.shared.localizedString("accessibility_edit_address_hint"))
-            .contextMenu {
-                if let url = viewModel.currentURL {
-                    Button {
-                        UIPasteboard.general.url = url
-                        UINotificationFeedbackGenerator().notificationOccurred(.success)
-                        NotificationCenter.default.post(name: .linkCopied, object: nil)
-                    } label: {
-                        Label(LanguageManager.shared.localizedString("copy_link"), systemImage: "doc.on.doc")
-                    }
-                }
-            }
 
             Rectangle()
-                .fill(Color.white.opacity(0.12))
+                .fill(Color.primary.opacity(0.12))
                 .frame(width: 0.5, height: 16)
                 .accessibilityHidden(true)
 
@@ -194,7 +287,7 @@ struct WebViewToolbar: View {
             } label: {
                 Image(systemName: viewModel.isLoading ? "xmark" : "arrow.clockwise")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Color.white.opacity(viewModel.currentURL == nil ? 0.24 : 0.72))
+                    .foregroundStyle(Color.primary.opacity(viewModel.currentURL == nil ? 0.24 : 0.72))
                     .frame(width: 29, height: 32)
                     .contentShape(Rectangle())
             }
@@ -208,7 +301,7 @@ struct WebViewToolbar: View {
 
             if toolbarConfiguration.addressAction != .none {
                 Rectangle()
-                    .fill(Color.white.opacity(0.12))
+                    .fill(Color.primary.opacity(0.12))
                     .frame(width: 0.5, height: 16)
                     .accessibilityHidden(true)
 
@@ -218,7 +311,7 @@ struct WebViewToolbar: View {
                     Image(systemName: toolbarSymbol(for: toolbarConfiguration.addressAction))
                         .font(.system(size: 12, weight: .medium))
                         .symbolRenderingMode(.hierarchical)
-                        .foregroundStyle(Color.white.opacity(0.68))
+                        .foregroundStyle(Color.primary.opacity(0.68))
                         .frame(width: 27, height: 32)
                         .contentShape(Rectangle())
                 }
@@ -231,9 +324,12 @@ struct WebViewToolbar: View {
         }
         .frame(minWidth: 120, maxWidth: 190, minHeight: 32)
         .frame(minHeight: 40)
-        .browserToolbarCapsuleGlass()
-        .shadow(color: .black.opacity(0.13), radius: 7, y: 3)
+        .browserToolbarCapsuleGlass(tint: toolbarGlassTint)
         .layoutPriority(1)
+    }
+
+    private var toolbarGlassTint: Color? {
+        isIncognito ? Color.teal.opacity(0.14) : nil
     }
 
     private var displayHost: String {
@@ -324,247 +420,525 @@ struct WebViewToolbar: View {
     }
 
     private var moreMenu: some View {
-        Menu {
-            // This menu opens upward, so builder order is the reverse of its
-            // visual order. Keep the compact page actions at the visual bottom.
-            if let url = viewModel.currentURL {
-                ControlGroup {
-                    Button {
-                        onShare?()
-                    } label: {
-                        menuLabel("share", systemImage: "square.and.arrow.up")
-                    }
-
-                    Button {
-                        UIPasteboard.general.url = url
-                        UINotificationFeedbackGenerator().notificationOccurred(.success)
-                        NotificationCenter.default.post(name: .linkCopied, object: nil)
-                    } label: {
-                        menuLabel("copy_link", systemImage: "doc.on.doc")
-                    }
-
-                    Button {
-                        onBookmarkToggle?()
-                    } label: {
-                        menuLabel(
-                            "bookmarks",
-                            systemImage: isBookmarked ? "bookmark.fill" : "bookmark",
-                            isActive: isBookmarked,
-                            activeColor: .systemOrange
-                        )
-                    }
-                }
-            }
-
-            Divider()
-
-            if viewModel.currentURL != nil {
-                ControlGroup {
-                    Button {
-                        onToggleFullscreen?()
-                    } label: {
-                        menuLabel(
-                            isFullscreen ? "exit_fullscreen" : "enter_fullscreen",
-                            systemImage: isFullscreen
-                                ? "arrow.down.right.and.arrow.up.left"
-                                : "arrow.up.left.and.arrow.down.right",
-                            isActive: isFullscreen
-                        )
-                    }
-
-                    if let tabManager {
-                        Button {
-                            tabManager.toggleDesktopMode()
-                        } label: {
-                            menuLabel(
-                                "desktop_mode",
-                                systemImage: "desktopcomputer",
-                                isActive: tabManager.isDesktopMode
-                            )
-                        }
-                    }
-
-                    Button {
-                        webAppearance.toggleForceDarkPages()
-                        if let webView = viewModel.webView {
-                            webAppearance.apply(to: webView)
-                        }
-                    } label: {
-                        menuLabel(
-                            "web_force_dark_short",
-                            systemImage: "moon.fill",
-                            isActive: webAppearance.forceDarkPages
-                        )
-                    }
-                }
-            }
-
-            ControlGroup {
-                Button {
-                    onGoHome?()
-                } label: {
-                    menuLabel("home_screen", systemImage: "house.fill")
-                }
-
-                if let tabManager {
-                    Button {
-                        tabManager.createTab()
-                    } label: {
-                        menuLabel("tab_new_tab", systemImage: "plus.square")
-                    }
-                }
-
-                Button {
-                    onShowLibrary?()
-                } label: {
-                    menuLabel("library", systemImage: "books.vertical")
-                }
-            }
-
-            if viewModel.currentURL != nil {
-                Menu {
-                    Button {
-                        onOpenDefaultBrowser?()
-                    } label: {
-                        menuLabel("open_in_default_browser", systemImage: "arrow.up.right.square")
-                    }
-
-                    if WebNavigationPolicyService.shared.canUseSafariCompatibilityMode(for: viewModel.currentURL) {
-                        Button {
-                            onOpenSafariCompatibility?()
-                        } label: {
-                            menuLabel("safari_compatibility_mode", systemImage: "safari")
-                        }
-                    }
-                } label: {
-                    menuLabel("browser_open_page", systemImage: "safari")
-                }
-            }
-
-            Button {
-                onShowExtensions?()
-            } label: {
-                menuLabel("userscripts", systemImage: "chevron.left.forwardslash.chevron.right")
-            }
-
-            Menu {
-                if viewModel.currentURL != nil {
-                    Button {
-                        onCapturePage?()
-                    } label: {
-                        menuLabel("web_capture", systemImage: "camera.viewfinder")
-                    }
-
-                    // Page translation is intentionally hidden in 1.1.1. Keep
-                    // the implementation for the next version's compatibility work.
-
-                    Button {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                            showZoomControls = true
-                        }
-                    } label: {
-                        Label {
-                            Text(
-                                "\(LanguageManager.shared.localizedString("web_zoom")) · "
-                                    + "\(Int((viewModel.pageZoom * 100).rounded()))%"
-                            )
-                        } icon: {
-                            menuIcon("plus.magnifyingglass", isActive: nil, activeColor: .label)
-                        }
-                    }
-                }
-
-                if viewModel.canGoForward {
-                    Button {
-                        viewModel.goForward()
-                    } label: {
-                        menuLabel("browser_forward", systemImage: "chevron.right")
-                    }
-                }
-
-                if let tabManager = tabManager, viewModel.currentURL != nil {
-                    Button {
-                        tabManager.startFindInPage()
-                    } label: {
-                        menuLabel("find_in_page", systemImage: "doc.text.magnifyingglass")
-                    }
-                }
-
-                if viewModel.currentURL?.host != nil {
-                    Button {
-                        onShowPrivacy?()
-                    } label: {
-                        menuLabel(
-                            "site_privacy",
-                            systemImage: "shield.checkered",
-                            isActive: siteProtectionEnabled,
-                            activeColor: .systemGreen
-                        )
-                    }
-
-                    Button {
-                        onManageAdBlock?()
-                    } label: {
-                        menuLabel(
-                            "ad_block_management",
-                            systemImage: "shield.lefthalf.filled",
-                            isActive: siteAdBlockingEnabled,
-                            activeColor: .systemGreen
-                        )
-                    }
-                }
-            } label: {
-                menuLabel("browser_page_tools", systemImage: "wrench.and.screwdriver")
-            }
-
-            Divider()
-
-            if let tabManager = tabManager {
-                if !tabManager.recentlyClosed.isEmpty {
-                    Button {
-                        tabManager.restoreLastClosedTab()
-                    } label: {
-                        menuLabel(
-                            "tab_restore_last",
-                            systemImage: "arrow.uturn.backward",
-                            isActive: true
-                        )
-                    }
-                }
-            }
-
-            Divider()
-
-            Button {
-                onOpenSettings?()
-            } label: {
-                menuLabel("settings", systemImage: "gearshape")
-            }
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.system(size: 14, weight: .regular))
-                .foregroundStyle(Color.white.opacity(0.85))
+        Group {
+            if showsOnlyMore,
+               let onFloatingMoreDragChanged,
+               let onFloatingMoreDragEnded {
+                NativeMoreMenuButton(
+                    accessibilityLabel: LanguageManager.shared.localizedString("show_more"),
+                    onTap: presentMoreMenu,
+                    onDragChanged: onFloatingMoreDragChanged,
+                    onDragEnded: onFloatingMoreDragEnded
+                )
                 .frame(width: 40, height: 40)
                 .contentShape(Circle())
-                .browserToolbarButtonGlass()
-                .shadow(color: .black.opacity(0.13), radius: 7, y: 3)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
-        .simultaneousGesture(
-            TapGesture().onEnded {
-                onMoreMenuPresentationChange?(true)
+            } else {
+                Button(action: presentMoreMenu) {
+                    moreMenuLauncherLabel
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
             }
-        )
+        }
+        .popover(
+            isPresented: $showMoreMenu,
+            attachmentAnchor: .rect(.bounds),
+            arrowEdge: .bottom
+        ) {
+            moreMenuPanel
+                .presentationCompactAdaptation(.popover)
+                .presentationBackground(.ultraThinMaterial)
+                .presentationCornerRadius(26)
+        }
         .sheet(isPresented: $showZoomControls) {
             persistentZoomPanel
                 .presentationDetents([.height(190)])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(.ultraThinMaterial)
         }
-        .onChange(of: showZoomControls) { _, isPresented in
-            onMoreMenuPresentationChange?(isPresented)
+        .onChange(of: showMoreMenu) { _, _ in
+            reportMoreMenuPresentationState()
         }
+        .onChange(of: showZoomControls) { _, _ in
+            reportMoreMenuPresentationState()
+        }
+    }
+
+    private var moreMenuLauncherLabel: some View {
+        Image(systemName: "ellipsis")
+            .font(.system(size: 14, weight: .regular))
+            .foregroundStyle(Color.primary.opacity(0.85))
+            .frame(width: 40, height: 40)
+            .contentShape(Circle())
+            .browserToolbarButtonGlass(tint: toolbarGlassTint)
+    }
+
+    private var moreMenuPanel: some View {
+        VStack(spacing: 0) {
+            moreMenuActionRow(
+                "settings",
+                systemImage: "gearshape"
+            ) {
+                onOpenSettings?()
+            }
+
+            if showsOnlyMore {
+                moreMenuActionRow(
+                    "restore_browser_toolbar",
+                    systemImage: BrowserChromeSymbol.toolbarVisibility
+                ) {
+                    onRestoreToolbar?()
+                }
+            } else if onHideToolbar != nil {
+                moreMenuActionRow(
+                    "hide_browser_toolbar",
+                    systemImage: BrowserChromeSymbol.toolbarVisibility
+                ) {
+                    onHideToolbar?()
+                }
+            }
+
+            if let tabManager, !tabManager.recentlyClosed.isEmpty {
+                moreMenuDivider
+                moreMenuActionRow(
+                    "tab_restore_last",
+                    systemImage: "arrow.uturn.backward",
+                    isActive: true
+                ) {
+                    tabManager.restoreLastClosedTab()
+                }
+            }
+
+            moreMenuDivider
+            pageToolsMenu
+
+            if viewModel.currentURL != nil {
+                openPageMenu
+            }
+
+            moreMenuDivider
+            moreMenuShortcutGrid
+
+            if showsOnlyMore {
+                moreMenuDivider
+                hiddenToolbarAddressRow
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 10)
+        .frame(width: 320)
+        .fixedSize(horizontal: true, vertical: true)
+    }
+
+    private var hiddenToolbarAddressRow: some View {
+        let isSecurePage = viewModel.currentURL?.scheme == "https"
+        let urlText = viewModel.currentURL?.absoluteString
+
+        return Button {
+            performMoreMenuAction {
+                onEditAddress?()
+            }
+        } label: {
+            HStack(spacing: 10) {
+                Image(
+                    systemName: isIncognito
+                        ? "eye.slash.fill"
+                        : isSecurePage ? "lock.fill" : "globe"
+                )
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(isIncognito ? Color.teal : Color.primary.opacity(0.72))
+                .frame(width: 28, height: 28)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(fullAddressDisplayText)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+
+                    if let urlText, !urlText.isEmpty {
+                        Text(urlText)
+                            .font(.system(size: 10, weight: .regular))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+
+                Spacer(minLength: 8)
+
+                Image(systemName: "pencil")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 8)
+            .frame(maxWidth: .infinity, minHeight: 48)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(onEditAddress == nil)
+        .opacity(onEditAddress == nil ? 0.35 : 1)
+        .accessibilityLabel(LanguageManager.shared.localizedString("browser_edit_address"))
+        .accessibilityValue(urlText ?? fullAddressDisplayText)
+        .accessibilityHint(LanguageManager.shared.localizedString("accessibility_edit_address_hint"))
+    }
+
+    private var pageToolsMenu: some View {
+        Menu {
+            if let tabManager, viewModel.currentURL != nil {
+                Button {
+                    performMoreMenuAction {
+                        tabManager.startFindInPage()
+                    }
+                } label: {
+                    menuLabel("find_in_page", systemImage: "doc.text.magnifyingglass")
+                }
+            }
+
+            if viewModel.currentURL?.host != nil {
+                Button {
+                    performMoreMenuAction {
+                        onShowPrivacy?()
+                    }
+                } label: {
+                    menuLabel(
+                        "site_privacy",
+                        systemImage: "shield.checkered",
+                        isActive: siteProtectionEnabled,
+                        activeColor: .systemGreen
+                    )
+                }
+
+                Button {
+                    performMoreMenuAction {
+                        onManageAdBlock?()
+                    }
+                } label: {
+                    menuLabel(
+                        "ad_block_management",
+                        systemImage: "shield.lefthalf.filled",
+                        isActive: siteAdBlockingEnabled,
+                        activeColor: .systemGreen
+                    )
+                }
+            }
+
+            Divider()
+
+            Button {
+                performMoreMenuAction {
+                    onShowExtensions?()
+                }
+            } label: {
+                menuLabel(
+                    "userscripts",
+                    systemImage: "chevron.left.forwardslash.chevron.right"
+                )
+            }
+            .disabled(onShowExtensions == nil)
+
+            Button {
+                performMoreMenuAction {
+                    showZoomControls = true
+                }
+            } label: {
+                menuLabel("web_zoom", systemImage: "plus.magnifyingglass")
+            }
+
+            Button {
+                performMoreMenuAction {
+                    onCapturePage?()
+                }
+            } label: {
+                menuLabel("web_capture", systemImage: "camera.viewfinder")
+            }
+            .disabled(onCapturePage == nil)
+
+            Button {
+                performMoreMenuAction {
+                    onInspectResources?()
+                }
+            } label: {
+                menuLabel(
+                    "resource_inspector_title",
+                    systemImage: "dot.radiowaves.left.and.right"
+                )
+            }
+            .disabled(onInspectResources == nil)
+        } label: {
+            moreMenuRowLabel(
+                "browser_page_tools",
+                systemImage: "wrench.and.screwdriver",
+                showsDisclosure: true
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(viewModel.currentURL == nil)
+        .opacity(viewModel.currentURL == nil ? 0.35 : 1)
+    }
+
+    private var openPageMenu: some View {
+        Menu {
+            Button {
+                performMoreMenuAction {
+                    onOpenDefaultBrowser?()
+                }
+            } label: {
+                menuLabel("open_in_default_browser", systemImage: "arrow.up.right.square")
+            }
+
+            if WebNavigationPolicyService.shared.canUseSafariCompatibilityMode(
+                for: viewModel.currentURL
+            ) {
+                Button {
+                    performMoreMenuAction {
+                        onOpenSafariCompatibility?()
+                    }
+                } label: {
+                    menuLabel("safari_compatibility_mode", systemImage: "safari")
+                }
+            }
+        } label: {
+            moreMenuRowLabel(
+                "browser_open_page",
+                systemImage: "safari",
+                showsDisclosure: true
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var moreMenuShortcutGrid: some View {
+        Grid(horizontalSpacing: 0, verticalSpacing: 2) {
+            GridRow {
+                moreMenuShortcut(
+                    "home_screen",
+                    systemImage: "house.fill",
+                    isEnabled: onGoHome != nil
+                ) {
+                    onGoHome?()
+                }
+                moreMenuShortcut(
+                    "browser_reload",
+                    systemImage: "arrow.clockwise",
+                    isEnabled: viewModel.currentURL != nil
+                ) {
+                    viewModel.reload()
+                }
+                moreMenuShortcut(
+                    "browser_back",
+                    systemImage: "chevron.left",
+                    isEnabled: viewModel.canGoBack
+                ) {
+                    viewModel.goBack()
+                }
+                moreMenuShortcut(
+                    "browser_forward",
+                    systemImage: "chevron.right",
+                    isEnabled: viewModel.canGoForward
+                ) {
+                    viewModel.goForward()
+                }
+            }
+
+            GridRow {
+                moreMenuShortcut(
+                    isFullscreen ? "exit_fullscreen" : "enter_fullscreen",
+                    systemImage: isFullscreen
+                        ? "arrow.down.right.and.arrow.up.left"
+                        : "arrow.up.left.and.arrow.down.right",
+                    isEnabled: viewModel.currentURL != nil && onToggleFullscreen != nil,
+                    isActive: isFullscreen
+                ) {
+                    onToggleFullscreen?()
+                }
+                moreMenuShortcut(
+                    "desktop_mode",
+                    systemImage: "desktopcomputer",
+                    isEnabled: viewModel.currentURL != nil && tabManager != nil,
+                    isActive: tabManager?.isDesktopMode ?? false
+                ) {
+                    tabManager?.toggleDesktopMode()
+                }
+                moreMenuShortcut(
+                    "web_force_dark_short",
+                    systemImage: webAppearance.forceDarkPages ? "moon.fill" : "moon",
+                    isEnabled: viewModel.currentURL != nil,
+                    isActive: webAppearance.forceDarkPages
+                ) {
+                    webAppearance.toggleForceDarkPages()
+                    if let webView = viewModel.webView {
+                        webAppearance.apply(to: webView)
+                    }
+                }
+                moreMenuShortcut(
+                    "browser_tabs",
+                    systemImage: "square.on.square",
+                    isEnabled: tabManager != nil
+                ) {
+                    guard let tabManager else { return }
+                    tabManager.refreshSnapshotsForSwitcher()
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
+                        tabManager.showTabOverview = true
+                    }
+                }
+            }
+
+            GridRow {
+                moreMenuShortcut(
+                    "share",
+                    systemImage: "square.and.arrow.up",
+                    isEnabled: viewModel.currentURL != nil && onShare != nil
+                ) {
+                    onShare?()
+                }
+                moreMenuShortcut(
+                    "copy_link",
+                    systemImage: "doc.on.doc",
+                    isEnabled: viewModel.currentURL != nil
+                ) {
+                    guard let url = viewModel.currentURL else { return }
+                    UIPasteboard.general.url = url
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    NotificationCenter.default.post(name: .linkCopied, object: nil)
+                }
+                moreMenuShortcut(
+                    "bookmarks",
+                    systemImage: isBookmarked ? "bookmark.fill" : "bookmark",
+                    isEnabled: viewModel.currentURL != nil && onBookmarkToggle != nil,
+                    isActive: isBookmarked,
+                    activeColor: .systemOrange
+                ) {
+                    onBookmarkToggle?()
+                }
+                moreMenuShortcut(
+                    "library",
+                    systemImage: "books.vertical",
+                    isEnabled: onShowLibrary != nil
+                ) {
+                    onShowLibrary?()
+                }
+            }
+        }
+        .padding(.horizontal, 2)
+    }
+
+    private func moreMenuActionRow(
+        _ titleKey: String,
+        systemImage: String,
+        isEnabled: Bool = true,
+        isActive: Bool = false,
+        activeColor: UIColor = .systemBlue,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            performMoreMenuAction(action)
+        } label: {
+            moreMenuRowLabel(
+                titleKey,
+                systemImage: systemImage,
+                isActive: isActive,
+                activeColor: activeColor
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : 0.35)
+    }
+
+    private func moreMenuRowLabel(
+        _ titleKey: String,
+        systemImage: String,
+        showsDisclosure: Bool = false,
+        isActive: Bool = false,
+        activeColor: UIColor = .systemBlue
+    ) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .regular))
+                .foregroundStyle(isActive ? Color(uiColor: activeColor) : Color.primary)
+                .frame(width: 28, height: 28)
+
+            Text(LanguageManager.shared.localizedString(titleKey))
+                .font(.system(size: 16, weight: .regular))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+
+            Spacer(minLength: 8)
+
+            if showsDisclosure {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 8)
+        .frame(maxWidth: .infinity, minHeight: 43)
+        .contentShape(Rectangle())
+    }
+
+    private func moreMenuShortcut(
+        _ titleKey: String,
+        systemImage: String,
+        isEnabled: Bool = true,
+        isActive: Bool = false,
+        activeColor: UIColor = .systemBlue,
+        action: @escaping () -> Void
+    ) -> some View {
+        let title = LanguageManager.shared.localizedString(titleKey)
+        return Button {
+            performMoreMenuAction(action)
+        } label: {
+            VStack(spacing: 5) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 19, weight: .regular))
+                    .foregroundStyle(isActive ? Color(uiColor: activeColor) : Color.primary)
+                    .frame(height: 23)
+
+                Text(title)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.58)
+                    .allowsTightening(true)
+                    .frame(maxWidth: .infinity)
+            }
+            .frame(width: 74)
+            .frame(minHeight: 57)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : 0.32)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityValue(
+            isActive
+                ? LanguageManager.shared.localizedString("accessibility_enabled")
+                : ""
+        )
+    }
+
+    private var moreMenuDivider: some View {
+        Divider()
+            .padding(.horizontal, 6)
+            .padding(.vertical, 5)
+    }
+
+    private func presentMoreMenu() {
+        HapticsManager.light()
+        showMoreMenu = true
+    }
+
+    private func performMoreMenuAction(_ action: @escaping () -> Void) {
+        showMoreMenu = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            action()
+        }
+    }
+
+    private func reportMoreMenuPresentationState() {
+        onMoreMenuPresentationChange?(showMoreMenu || showZoomControls)
     }
 
     private var persistentZoomPanel: some View {
@@ -656,7 +1030,7 @@ struct WebViewToolbar: View {
             EmptyView()
         case .tabs:
             if let tabManager {
-                TabCountBadge(count: tabManager.tabCount) {
+                TabCountBadge(count: tabManager.tabCount, glassTint: toolbarGlassTint) {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     tabManager.refreshSnapshotsForSwitcher()
                     withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
@@ -781,13 +1155,12 @@ struct WebViewToolbar: View {
             Image(systemName: icon)
                 .font(.system(size: 14, weight: .regular))
                 .foregroundStyle(
-                    !enabled ? Color.white.opacity(0.35) :
-                    tint ?? Color.white.opacity(0.85)
+                    !enabled ? Color.primary.opacity(0.35) :
+                    tint ?? Color.primary.opacity(0.85)
                 )
                 .frame(width: 40, height: 40)
                 .contentShape(Circle())
-                .browserToolbarButtonGlass()
-                .shadow(color: .black.opacity(0.13), radius: 7, y: 3)
+                .browserToolbarButtonGlass(tint: toolbarGlassTint)
         }
         .disabled(!enabled)
         .accessibilityLabel(LanguageManager.shared.localizedString(labelKey))

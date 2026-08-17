@@ -4,6 +4,7 @@ enum PlatformRegion: String, Codable, CaseIterable, Identifiable {
     case china = "china"
     case international = "international"
     case japan = "japan"
+    case korea = "korea"
     case russia = "russia"
 
     var id: String { rawValue }
@@ -13,6 +14,7 @@ enum PlatformRegion: String, Codable, CaseIterable, Identifiable {
         case .china:         return "region_china"
         case .international: return "region_international"
         case .japan:         return "region_japan"
+        case .korea:         return "region_korea"
         case .russia:        return "region_russia"
         }
     }
@@ -22,6 +24,7 @@ enum PlatformRegion: String, Codable, CaseIterable, Identifiable {
         case .china:         return "globe.asia.australia.fill"
         case .international: return "globe.americas.fill"
         case .japan:         return "globe.asia.australia.fill"
+        case .korea:         return "globe.asia.australia.fill"
         case .russia:        return "globe.europe.africa.fill"
         }
     }
@@ -31,6 +34,7 @@ enum PlatformRegion: String, Codable, CaseIterable, Identifiable {
         case .china:         return "flag.fill"
         case .international: return "globe"
         case .japan:         return "flag.fill"
+        case .korea:         return "flag.fill"
         case .russia:        return "flag.fill"
         }
     }
@@ -50,6 +54,7 @@ enum PlatformRegion: String, Codable, CaseIterable, Identifiable {
         case .china:         return .red
         case .international: return .blue
         case .japan:         return .pink
+        case .korea:         return .cyan
         case .russia:        return .purple
         }
     }

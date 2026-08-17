@@ -2,7 +2,7 @@ import Foundation
 
 enum AppConstants {
     static let appName = "Soulo"
-    static let appVersion = "1.1.1"
+    static let appVersion = "1.1.2"
     static let maxSearchHistoryCount = 500
     static let clipboardMaxLength = 200
     static let mobileWebViewUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
@@ -38,9 +38,12 @@ enum AppConstants {
         static let webFollowsAppColorScheme = "web_follows_app_color_scheme"
         static let webWarmColorShift = "web_warm_color_shift"
         static let webForceDarkPages = "web_force_dark_pages"
+        static let webReducePageMotion = "web_reduce_page_motion"
+        static let webUnderlineLinks = "web_underline_links"
         static let shakeAction = "browser_shake_action"
         static let browserToolbarActions = "browser_toolbar_actions"
         static let browserToolbarAddressAction = "browser_toolbar_address_action"
+        static let browserToolbarHidden = "browser_toolbar_hidden"
         static let wallpaperMode = "wallpaper_mode"
         static let customWallpaperData = "custom_wallpaper_data"
         static let bingWallpaperCache = "bing_wallpapers_cache"

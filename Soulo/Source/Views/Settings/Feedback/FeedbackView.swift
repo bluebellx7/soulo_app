@@ -15,6 +15,11 @@ struct FeedbackView: View {
 
     private let types = ["bug", "feature", "question", "other"]
 
+    init(initialType: String = "other", initialContent: String = "") {
+        _feedbackType = State(initialValue: initialType)
+        _content = State(initialValue: initialContent)
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {

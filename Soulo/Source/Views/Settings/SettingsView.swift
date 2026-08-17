@@ -8,6 +8,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var themeManager: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject var tabManager: TabManager
     @EnvironmentObject var searchVM: SearchViewModel
     @Environment(\.modelContext) private var modelContext
@@ -50,10 +51,15 @@ struct SettingsView: View {
             ZStack {
                 // Background gradient
                 LinearGradient(
-                    colors: [
-                        Color(uiColor: .systemBackground),
-                        Color(uiColor: .secondarySystemBackground)
-                    ],
+                    colors: colorScheme == .light
+                        ? [
+                            Color(red: 0.965, green: 0.965, blue: 0.975),
+                            Color(red: 0.925, green: 0.925, blue: 0.945)
+                        ]
+                        : [
+                            Color(uiColor: .systemBackground),
+                            Color(uiColor: .secondarySystemBackground)
+                        ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -161,36 +167,32 @@ struct SettingsView: View {
                     // MARK: - Home
                     Section {
                         Button { showHomeTitleEdit = true } label: {
-                            HStack {
-                                Label {
-                                    Text(LanguageManager.shared.localizedString("edit_title"))
-                                } icon: {
-                                    IconBadge(systemName: "pencil.line", color: neutralIconColor)
-                                }
-                                Spacer()
-                                Text(homeTitle)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                            }
-                            .contentShape(Rectangle())
+                            SettingsDetailActionLabel(
+                                icon: "pencil.line",
+                                color: neutralIconColor,
+                                title: LanguageManager.shared.localizedString("edit_title"),
+                                description: LanguageManager.shared.localizedString(
+                                    "home_title_edit_desc"
+                                ),
+                                detail: homeTitle.isEmpty
+                                    ? LanguageManager.shared.localizedString("none")
+                                    : homeTitle
+                            )
                         }
                         .buttonStyle(.plain)
 
                         Button { showHomeSubtitleEdit = true } label: {
-                            HStack {
-                                Label {
-                                    Text(LanguageManager.shared.localizedString("edit_subtitle"))
-                                } icon: {
-                                    IconBadge(systemName: "text.alignleft", color: neutralIconColor)
-                                }
-                                Spacer()
-                                Text(homeSubtitle)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                            }
-                            .contentShape(Rectangle())
+                            SettingsDetailActionLabel(
+                                icon: "text.alignleft",
+                                color: neutralIconColor,
+                                title: LanguageManager.shared.localizedString("edit_subtitle"),
+                                description: LanguageManager.shared.localizedString(
+                                    "home_subtitle_edit_desc"
+                                ),
+                                detail: homeSubtitle.isEmpty
+                                    ? LanguageManager.shared.localizedString("none")
+                                    : homeSubtitle
+                            )
                         }
                         .buttonStyle(.plain)
 
@@ -384,22 +386,20 @@ struct SettingsView: View {
                     // MARK: - About & Support
                     Section {
                         Button { requestReview() } label: {
-                            Label {
-                                Text(LanguageManager.shared.localizedString("settings_rate"))
-                                    .foregroundStyle(.primary)
-                            } icon: {
-                                IconBadge(systemName: "star.bubble.fill", color: neutralIconColor)
-                            }
+                            SettingsActionLabel(
+                                icon: "star.bubble.fill",
+                                color: neutralIconColor,
+                                title: LanguageManager.shared.localizedString("settings_rate")
+                            )
                         }
                         .buttonStyle(.plain)
 
                         Button { showFeedback = true } label: {
-                            Label {
-                                Text(LanguageManager.shared.localizedString("settings_feedback"))
-                                    .foregroundStyle(.primary)
-                            } icon: {
-                                IconBadge(systemName: "envelope.fill", color: neutralIconColor)
-                            }
+                            SettingsActionLabel(
+                                icon: "envelope.fill",
+                                color: neutralIconColor,
+                                title: LanguageManager.shared.localizedString("settings_feedback")
+                            )
                         }
                         .buttonStyle(.plain)
 
@@ -560,6 +560,72 @@ struct SettingsNavigationLabel: View {
                 .padding(.top, 3)
         }
         .padding(.vertical, 1)
+    }
+}
+
+struct SettingsActionLabel: View {
+    let icon: String
+    let color: Color
+    let title: String
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            IconBadge(systemName: icon, color: color)
+            Text(title)
+                .font(.body)
+                .foregroundStyle(.primary)
+            Spacer(minLength: 12)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 1)
+        .contentShape(Rectangle())
+    }
+}
+
+struct SettingsDetailActionLabel: View {
+    let icon: String
+    let color: Color
+    let title: String
+    let description: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            IconBadge(systemName: icon, color: color)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.top, 2)
+
+            Spacer(minLength: 8)
+
+            HStack(spacing: 6) {
+                Text(detail)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .frame(maxWidth: 96, alignment: .trailing)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
+            .padding(.top, 5)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 4)
+        .contentShape(Rectangle())
     }
 }
 

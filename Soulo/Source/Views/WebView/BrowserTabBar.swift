@@ -370,7 +370,6 @@ private struct TabSwitcherCarousel: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .contentShape(Rectangle())
             .simultaneousGesture(
                 DragGesture(minimumDistance: 8)
                     .onChanged { value in
@@ -797,23 +796,23 @@ private struct TabOverviewCard: View {
 
 struct TabCountBadge: View {
     let count: Int
+    var glassTint: Color? = nil
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             ZStack {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .stroke(Color.white.opacity(0.72), lineWidth: 1.5)
+                    .stroke(Color.primary.opacity(0.72), lineWidth: 1.5)
                     .frame(width: 18, height: 18)
 
                 Text("\(min(count, 99))")
                     .font(.system(size: 10, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.white.opacity(0.86))
+                    .foregroundStyle(Color.primary.opacity(0.86))
             }
             .frame(width: 40, height: 40)
             .contentShape(Circle())
-            .browserToolbarButtonGlass()
-            .shadow(color: .black.opacity(0.13), radius: 7, y: 3)
+            .browserToolbarButtonGlass(tint: glassTint)
         }
         .accessibilityLabel("\(count) \(LanguageManager.shared.localizedString("tab_tabs"))")
         .accessibilityHint(LanguageManager.shared.localizedString("accessibility_tab_overview_hint"))

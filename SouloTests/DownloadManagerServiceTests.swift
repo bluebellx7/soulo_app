@@ -58,6 +58,36 @@ final class DownloadManagerServiceTests: XCTestCase {
         XCTAssertEqual(fileURL.lastPathComponent, "Report 1.pdf")
     }
 
+    func testFilenameSanitizerRemovesUnsafeCharactersAndLimitsLength() {
+        let unsafeName = String(repeating: "超长图片名称", count: 60)
+            + "/\\:*?\"<>|😀%23.jpeg"
+
+        let sanitized = DownloadFilenameSanitizer.sanitize(
+            unsafeName,
+            fallbackBaseName: "Image"
+        )
+
+        XCTAssertLessThanOrEqual(
+            sanitized.utf8.count,
+            DownloadFilenameSanitizer.maximumUTF8ByteCount
+        )
+        XCTAssertTrue(sanitized.hasSuffix(".jpeg"))
+        ["/", "\\", ":", "*", "?", "\"", "<", ">", "|", "😀", "#"].forEach {
+            XCTAssertFalse(sanitized.contains($0))
+        }
+    }
+
+    func testFilenameSanitizerUsesImageFallbackAndPreferredExtension() {
+        XCTAssertEqual(
+            DownloadFilenameSanitizer.sanitize(
+                "////",
+                fallbackBaseName: "Image",
+                preferredExtension: "PNG"
+            ),
+            "Image.png"
+        )
+    }
+
     func testConcurrentDownloadsReserveDifferentFilenamesBeforeFilesExist() {
         let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
         let first = service.beginDownload(
@@ -151,5 +181,77 @@ final class DownloadManagerServiceTests: XCTestCase {
             Bundle.main.object(forInfoDictionaryKey: "LSSupportsOpeningDocumentsInPlace") as? Bool,
             true
         )
+    }
+
+    func testWebResourceCookiesRespectDomainPathSecureAndExpiration() throws {
+        let now = Date()
+        let cookies = [
+            try makeCookie(name: "domain", domain: ".example.com", path: "/account", secure: true),
+            try makeCookie(name: "hostOnly", domain: "example.com", path: "/"),
+            try makeCookie(name: "wrongPath", domain: ".example.com", path: "/private"),
+            try makeCookie(
+                name: "expired",
+                domain: ".example.com",
+                path: "/account",
+                expires: now.addingTimeInterval(-60)
+            )
+        ]
+
+        let secureURL = try XCTUnwrap(URL(string: "https://sub.example.com/account/profile"))
+        XCTAssertEqual(
+            WebResourceDownloadService.matchingCookies(from: cookies, for: secureURL, now: now).map(\.name),
+            ["domain"]
+        )
+
+        let insecureURL = try XCTUnwrap(URL(string: "http://sub.example.com/account/profile"))
+        XCTAssertTrue(
+            WebResourceDownloadService.matchingCookies(from: cookies, for: insecureURL, now: now).isEmpty
+        )
+
+        let pathBoundaryURL = try XCTUnwrap(URL(string: "https://sub.example.com/accounting"))
+        XCTAssertTrue(
+            WebResourceDownloadService.matchingCookies(from: cookies, for: pathBoundaryURL, now: now).isEmpty
+        )
+    }
+
+    func testWebResourceReferrerUsesStrictOriginBehavior() throws {
+        let pageURL = try XCTUnwrap(URL(string: "https://example.com/private?q=secret"))
+        let sameOrigin = try XCTUnwrap(URL(string: "https://example.com/image.jpg"))
+        let crossOrigin = try XCTUnwrap(URL(string: "https://cdn.example.net/image.jpg"))
+        let downgrade = try XCTUnwrap(URL(string: "http://cdn.example.net/image.jpg"))
+
+        XCTAssertEqual(
+            WebResourceDownloadService.referrerHeader(pageURL: pageURL, resourceURL: sameOrigin),
+            pageURL.absoluteString
+        )
+        XCTAssertEqual(
+            WebResourceDownloadService.referrerHeader(pageURL: pageURL, resourceURL: crossOrigin),
+            "https://example.com/"
+        )
+        XCTAssertNil(
+            WebResourceDownloadService.referrerHeader(pageURL: pageURL, resourceURL: downgrade)
+        )
+    }
+
+    private func makeCookie(
+        name: String,
+        domain: String,
+        path: String,
+        secure: Bool = false,
+        expires: Date? = nil
+    ) throws -> HTTPCookie {
+        var properties: [HTTPCookiePropertyKey: Any] = [
+            .name: name,
+            .value: "value",
+            .domain: domain,
+            .path: path
+        ]
+        if secure {
+            properties[.secure] = "TRUE"
+        }
+        if let expires {
+            properties[.expires] = expires
+        }
+        return try XCTUnwrap(HTTPCookie(properties: properties))
     }
 }

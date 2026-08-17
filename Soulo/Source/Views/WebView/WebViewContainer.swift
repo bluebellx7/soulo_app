@@ -49,6 +49,11 @@ enum BrowserChromeSymbol {
     static let toolbarVisibility = "rectangle.bottomthird.inset.filled"
 }
 
+private enum FloatingMoreAttachment: Equatable {
+    case left
+    case right
+}
+
 enum FullscreenExitGesture {
     static func shouldExit(translation: CGSize) -> Bool {
         translation.height >= 28
@@ -74,6 +79,7 @@ struct WebViewContainer: View {
     @ObservedObject var bookmarkViewModel: BookmarkViewModel
     @Binding var isFullscreen: Bool
     var tabManager: TabManager? = nil
+    var toolbarManuallyHiddenBinding: Binding<Bool>? = nil
     var isActiveTab: Bool = true
     var addressEditorText: String? = nil
     var onGoHome: (() -> Void)? = nil
@@ -103,8 +109,11 @@ struct WebViewContainer: View {
     @State private var externalDismissTask: DispatchWorkItem? = nil
     @State private var showNewTabPage: Bool = true
     @State private var toolbarMinimized: Bool = false
-    @State private var toolbarManuallyHidden: Bool = false
+    @State private var localToolbarManuallyHidden: Bool = false
     @State private var toolbarInteractionLocked: Bool = false
+    @State private var floatingMoreAttachment: FloatingMoreAttachment = .left
+    @State private var floatingMoreVerticalFraction: CGFloat = 0.88
+    @State private var floatingMoreDragTranslation: CGSize = .zero
     @State private var showAdBlockManager = false
     @State private var showPrivacyPanel = false
     @State private var librarySection: LibrarySection?
@@ -113,15 +122,31 @@ struct WebViewContainer: View {
     @State private var showExternalOpenFailed = false
     @State private var showDownloadFailed = false
     @State private var showAddressEditor = false
+    @State private var addressEditorDetent: PresentationDetent = .height(302)
+    @State private var requestVoiceAfterAddressEditorDismisses = false
     @State private var showFullscreenExitHandle = false
     @State private var showFullscreenExitHint = false
     @State private var showFullscreenMenu = false
     @State private var fullscreenHintDismissTask: Task<Void, Never>?
     @State private var showCaptureOptions = false
+    @State private var showResourceInspector = false
     @State private var isCapturingPage = false
     @State private var captureResult: WebPageCaptureResult?
     @State private var captureError: String?
     @State private var showTranslationSheet = false
+
+    private var toolbarManuallyHidden: Bool {
+        get {
+            toolbarManuallyHiddenBinding?.wrappedValue ?? localToolbarManuallyHidden
+        }
+        nonmutating set {
+            if let toolbarManuallyHiddenBinding {
+                toolbarManuallyHiddenBinding.wrappedValue = newValue
+            } else {
+                localToolbarManuallyHidden = newValue
+            }
+        }
+    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -200,12 +225,21 @@ struct WebViewContainer: View {
             if BrowserChromeLayout.showsBottomToolbar(
                 isActiveTab: isActiveTab,
                 isFullscreen: isFullscreen
-            ) {
+            ), !toolbarManuallyHidden {
                 browserToolbarChrome
                     .frame(height: bottomToolbarHeight, alignment: .top)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .animation(.spring(response: 0.35, dampingFraction: 0.8), value: toolbarMinimized)
                     .zIndex(50)
+            }
+
+            if BrowserChromeLayout.showsBottomToolbar(
+                isActiveTab: isActiveTab,
+                isFullscreen: isFullscreen
+            ), toolbarManuallyHidden {
+                floatingMoreOverlay
+                    .transition(.opacity.combined(with: .scale(scale: 0.72)))
+                    .zIndex(51)
             }
 
             if isActiveTab && isFullscreen {
@@ -474,7 +508,10 @@ struct WebViewContainer: View {
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(items: shareItems)
         }
-        .sheet(isPresented: $showAddressEditor) {
+        .sheet(
+            isPresented: $showAddressEditor,
+            onDismiss: handleAddressEditorDismissal
+        ) {
             BrowserAddressEditorSheet(
                 initialText: addressEditorText ?? webViewModel.currentURL?.absoluteString ?? "",
                 initialURL: webViewModel.currentURL?.absoluteString ?? "",
@@ -483,13 +520,18 @@ struct WebViewContainer: View {
                     onAddressSearch?(value)
                 },
                 onVoiceInput: {
+                    requestVoiceAfterAddressEditorDismisses = true
                     showAddressEditor = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
-                        onRequestVoiceSearch?()
-                    }
+                },
+                onFocusChange: { isFocused in
+                    guard isFocused, isIPadLandscapeWindow else { return }
+                    addressEditorDetent = .medium
                 }
             )
-            .presentationDetents([.height(302)])
+            .presentationDetents(
+                [.height(302), .medium],
+                selection: $addressEditorDetent
+            )
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showAdBlockManager) {
@@ -542,6 +584,11 @@ struct WebViewContainer: View {
             BrowserPackageInstallView(candidate: candidate)
                 .presentationDetents([.height(430)])
                 .presentationDragIndicator(.visible)
+        }
+        .fullScreenCover(isPresented: $showResourceInspector) {
+            NavigationStack {
+                WebResourceInspectorView(webViewModel: webViewModel)
+            }
         }
         .modifier(
             WebToolsPresentationModifier(
@@ -597,13 +644,10 @@ struct WebViewContainer: View {
 
         guard let tabManager else { return }
         tabManager.resetTabsForPrivacy()
-        if enabled, let pageURL {
+        if let pageURL {
             tabManager.activeWebViewModel?.loadURL(pageURL)
-            searchVM.isSearching = true
-        } else if !enabled {
-            // Never carry a private page or its query into the normal session.
-            searchVM.clearSearch()
         }
+        searchVM.isSearching = true
     }
 
     private func openSafariCompatibilityMode() {
@@ -674,6 +718,9 @@ struct WebViewContainer: View {
         if isFullscreen {
             return max(bottomSafeAreaInset, windowSafeAreaInsets.bottom, 12) + 12
         }
+        if toolbarManuallyHidden {
+            return max(bottomSafeAreaInset, windowSafeAreaInsets.bottom, 12) + 12
+        }
         return bottomToolbarHeight + 12
     }
 
@@ -710,56 +757,32 @@ struct WebViewContainer: View {
             .safeAreaInsets ?? .zero
     }
 
+    private var isIPadLandscapeWindow: Bool {
+        guard UIDevice.current.userInterfaceIdiom == .pad,
+              let window = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .first(where: { $0.activationState == .foregroundActive })?
+                .keyWindow else {
+            return false
+        }
+        return window.bounds.width > window.bounds.height
+    }
+
+    private var toolbarGlassTint: Color? {
+        searchVM.isIncognito ? Color.teal.opacity(0.14) : nil
+    }
+
     private var browserToolbarChrome: some View {
         VStack(spacing: 0) {
             Group {
-                if toolbarManuallyHidden {
-                    toolbarRestoreButton
-                        .transition(.scale(scale: 0.72).combined(with: .opacity))
-                } else if toolbarMinimized {
+                if toolbarMinimized {
                     miniToolbarPill
                         .transition(.asymmetric(
                             insertion: .scale(scale: 0.6).combined(with: .opacity),
                             removal: .scale(scale: 0.8).combined(with: .opacity)
                         ))
                 } else {
-                    WebViewToolbar(
-                        viewModel: webViewModel,
-                        isBookmarked: $isBookmarked,
-                        tabManager: tabManager,
-                        onShare: {
-                            if let url = webViewModel.currentURL {
-                                shareItems = [url]
-                                showShareSheet = true
-                            }
-                        },
-                        onBookmarkToggle: { handleBookmarkToggle() },
-                        onShowPrivacy: { showPrivacyPanel = true },
-                        onSetPrivateMode: { enabled in
-                            setPrivateMode(enabled)
-                        },
-                        onManageAdBlock: { showAdBlockManager = true },
-                        onShowLibrary: { librarySection = .bookmarks },
-                        onShowExtensions: { showExtensionCenter = true },
-                        onGoHome: onGoHome,
-                        onEditAddress: { showAddressEditor = true },
-                        onHideToolbar: { hideToolbar() },
-                        onOpenSettings: onOpenSettings,
-                        isFullscreen: false,
-                        onToggleFullscreen: { toggleFullscreen() },
-                        onOpenSafariCompatibility: { openSafariCompatibilityMode() },
-                        onOpenDefaultBrowser: { openCurrentPageInDefaultBrowser() },
-                        onCapturePage: { showCaptureOptions = true },
-                        onTranslatePage: { showTranslationSheet = true },
-                        onMoreMenuPresentationChange: { isPresented in
-                            toolbarInteractionLocked = isPresented
-                            if isPresented, toolbarMinimized {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) {
-                                    toolbarMinimized = false
-                                }
-                            }
-                        }
-                    )
+                    configuredBrowserToolbar()
                     .padding(.horizontal, 4)
                     .transition(.asymmetric(
                         insertion: .move(edge: .bottom).combined(with: .opacity),
@@ -773,33 +796,155 @@ struct WebViewContainer: View {
         .frame(maxWidth: .infinity)
     }
 
-    private var toolbarRestoreButton: some View {
-        HStack(spacing: 0) {
-            Button {
-                HapticsManager.light()
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.84)) {
-                    toolbarManuallyHidden = false
-                    toolbarMinimized = false
+    private func configuredBrowserToolbar(
+        showsOnlyMore: Bool = false,
+        onFloatingMoreDragChanged: ((CGSize) -> Void)? = nil,
+        onFloatingMoreDragEnded: ((CGSize) -> Void)? = nil
+    ) -> some View {
+        WebViewToolbar(
+            viewModel: webViewModel,
+            isBookmarked: $isBookmarked,
+            tabManager: tabManager,
+            onShare: {
+                if let url = webViewModel.currentURL {
+                    shareItems = [url]
+                    showShareSheet = true
                 }
-            } label: {
-                Image(systemName: BrowserChromeSymbol.toolbarVisibility)
-                    .font(.system(size: 15, weight: .medium))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.white.opacity(0.9))
-                    .frame(width: 40, height: 40)
-                    .contentShape(Circle())
-                    .browserToolbarButtonGlass()
-                    .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(LanguageManager.shared.localizedString("restore_browser_toolbar"))
+            },
+            onBookmarkToggle: { handleBookmarkToggle() },
+            onShowPrivacy: { showPrivacyPanel = true },
+            onSetPrivateMode: { enabled in
+                setPrivateMode(enabled)
+            },
+            onManageAdBlock: { showAdBlockManager = true },
+            onShowLibrary: { librarySection = .bookmarks },
+            onShowExtensions: { showExtensionCenter = true },
+            onGoHome: onGoHome,
+            onEditAddress: { presentAddressEditor() },
+            onHideToolbar: { hideToolbar() },
+            onOpenSettings: onOpenSettings,
+            isFullscreen: false,
+            onToggleFullscreen: { toggleFullscreen() },
+            onOpenSafariCompatibility: { openSafariCompatibilityMode() },
+            onOpenDefaultBrowser: { openCurrentPageInDefaultBrowser() },
+            onCapturePage: { showCaptureOptions = true },
+            onInspectResources: { showResourceInspector = true },
+            onTranslatePage: { showTranslationSheet = true },
+            onMoreMenuPresentationChange: { isPresented in
+                toolbarInteractionLocked = isPresented
+                if isPresented, toolbarMinimized {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) {
+                        toolbarMinimized = false
+                    }
+                }
+            },
+            showsOnlyMore: showsOnlyMore,
+            onRestoreToolbar: { restoreToolbar() },
+            onFloatingMoreDragChanged: onFloatingMoreDragChanged,
+            onFloatingMoreDragEnded: onFloatingMoreDragEnded
+        )
+    }
 
-            Spacer(minLength: 0)
+    private var floatingMoreOverlay: some View {
+        GeometryReader { proxy in
+            let bounds = floatingMoreBounds(
+                in: proxy.size,
+                safeAreaInsets: proxy.safeAreaInsets
+            )
+            let basePosition = floatingMorePosition(in: bounds)
+            let dragPosition = clampedFloatingMorePosition(
+                CGPoint(
+                    x: basePosition.x + floatingMoreDragTranslation.width,
+                    y: basePosition.y + floatingMoreDragTranslation.height
+                ),
+                in: bounds
+            )
+
+            configuredBrowserToolbar(
+                showsOnlyMore: true,
+                onFloatingMoreDragChanged: { translation in
+                    floatingMoreDragTranslation = translation
+                },
+                onFloatingMoreDragEnded: { translation in
+                    finishFloatingMoreDrag(
+                        from: basePosition,
+                        translation: translation,
+                        in: bounds
+                    )
+                }
+            )
+                .position(dragPosition)
         }
-        .padding(.horizontal, 4)
-        // Keep the recovery control at the physical left edge so it remains
-        // predictable and away from the common right-side video action stack.
-        .environment(\.layoutDirection, .leftToRight)
+        .accessibilityElement(children: .contain)
+    }
+
+    private func floatingMoreBounds(
+        in size: CGSize,
+        safeAreaInsets: EdgeInsets
+    ) -> CGRect {
+        let buttonCenterInset: CGFloat = 28
+        let minimumX = safeAreaInsets.leading + buttonCenterInset
+        let maximumX = max(minimumX, size.width - safeAreaInsets.trailing - buttonCenterInset)
+        let minimumY = safeAreaInsets.top + buttonCenterInset
+        let maximumY = max(minimumY, size.height - safeAreaInsets.bottom - buttonCenterInset)
+        return CGRect(
+            x: minimumX,
+            y: minimumY,
+            width: maximumX - minimumX,
+            height: maximumY - minimumY
+        )
+    }
+
+    private func floatingMorePosition(in bounds: CGRect) -> CGPoint {
+        let verticalFraction = min(max(floatingMoreVerticalFraction, 0), 1)
+        let y = bounds.minY + bounds.height * verticalFraction
+        let x: CGFloat = switch floatingMoreAttachment {
+        case .left:
+            bounds.minX
+        case .right:
+            bounds.maxX
+        }
+        return CGPoint(x: x, y: y)
+    }
+
+    private func clampedFloatingMorePosition(
+        _ position: CGPoint,
+        in bounds: CGRect
+    ) -> CGPoint {
+        CGPoint(
+            x: min(max(position.x, bounds.minX), bounds.maxX),
+            y: min(max(position.y, bounds.minY), bounds.maxY)
+        )
+    }
+
+    private func finishFloatingMoreDrag(
+        from start: CGPoint,
+        translation: CGSize,
+        in bounds: CGRect
+    ) {
+        let position = clampedFloatingMorePosition(
+            CGPoint(
+                x: start.x + translation.width,
+                y: start.y + translation.height
+            ),
+            in: bounds
+        )
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+            floatingMoreDragTranslation = .zero
+            if bounds.height > 0 {
+                floatingMoreVerticalFraction = (position.y - bounds.minY) / bounds.height
+            }
+            floatingMoreAttachment = position.x <= bounds.midX ? .left : .right
+        }
+        HapticsManager.selection()
+    }
+
+    private func restoreToolbar() {
+        HapticsManager.light()
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.84)) {
+            toolbarManuallyHidden = false
+            toolbarMinimized = false
+        }
     }
 
     private func hideToolbar() {
@@ -1008,7 +1153,7 @@ struct WebViewContainer: View {
         HStack(spacing: 9) {
             Button {
                 closeFullscreenMenu()
-                showAddressEditor = true
+                presentAddressEditor()
             } label: {
                 HStack(spacing: 9) {
                     Image(systemName: webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
@@ -1409,16 +1554,23 @@ struct WebViewContainer: View {
             }
         } label: {
             HStack(spacing: 8) {
-                // Lock / globe icon
-                Image(systemName: webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
+                // Privacy / lock / globe icon
+                Image(systemName: searchVM.isIncognito
+                    ? "eye.slash.fill"
+                    : webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe"
+                )
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(
+                        searchVM.isIncognito
+                            ? Color.teal.opacity(0.9)
+                            : Color.primary.opacity(0.6)
+                    )
 
                 // Domain
                 if let host = webViewModel.currentURL?.host {
                     Text(host.hasPrefix("www.") ? String(host.dropFirst(4)) : host)
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.85))
+                        .foregroundStyle(Color.primary.opacity(0.85))
                         .lineLimit(1)
                 }
 
@@ -1426,23 +1578,22 @@ struct WebViewContainer: View {
                 if webViewModel.isLoading {
                     ProgressView()
                         .controlSize(.mini)
-                        .tint(.white.opacity(0.6))
+                        .tint(Color.primary.opacity(0.6))
                 }
 
                 // Tab count
                 if let tm = tabManager, tm.tabCount > 1 {
                     Text("\(tm.tabCount)")
                         .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(0.7))
                         .padding(.horizontal, 5)
                         .padding(.vertical, 2)
-                        .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                        .background(Color.primary.opacity(0.1), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
                 }
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
-            .browserToolbarCapsuleGlass()
-            .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+            .browserToolbarCapsuleGlass(tint: toolbarGlassTint)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(LanguageManager.shared.localizedString("browser_edit_address"))
@@ -1469,6 +1620,20 @@ struct WebViewContainer: View {
     private func syncBookmarkState(for url: URL?) {
         guard let s = url?.absoluteString else { isBookmarked = false; return }
         isBookmarked = bookmarkViewModel.isBookmarked(url: s, context: modelContext)
+    }
+
+    private func presentAddressEditor() {
+        addressEditorDetent = isIPadLandscapeWindow ? .medium : .height(302)
+        showAddressEditor = true
+    }
+
+    private func handleAddressEditorDismissal() {
+        addressEditorDetent = .height(302)
+        guard requestVoiceAfterAddressEditorDismisses else { return }
+        requestVoiceAfterAddressEditorDismisses = false
+        DispatchQueue.main.async {
+            onRequestVoiceSearch?()
+        }
     }
 }
 
@@ -1550,6 +1715,7 @@ private struct BrowserAddressEditorSheet: View {
 
     let onOpen: (String) -> Void
     let onVoiceInput: () -> Void
+    let onFocusChange: (Bool) -> Void
 
     @State private var text: String
     @State private var pageURLText: String
@@ -1561,17 +1727,20 @@ private struct BrowserAddressEditorSheet: View {
         initialText: String,
         initialURL: String,
         onOpen: @escaping (String) -> Void,
-        onVoiceInput: @escaping () -> Void
+        onVoiceInput: @escaping () -> Void,
+        onFocusChange: @escaping (Bool) -> Void
     ) {
         self.onOpen = onOpen
         self.onVoiceInput = onVoiceInput
+        self.onFocusChange = onFocusChange
         _text = State(initialValue: initialText)
         _pageURLText = State(initialValue: initialURL)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(LanguageManager.shared.localizedString("browser_edit_address"))
+        ScrollView(.vertical) {
+            VStack(alignment: .leading, spacing: 14) {
+                Text(LanguageManager.shared.localizedString("browser_edit_address"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.secondary)
 
@@ -1728,9 +1897,14 @@ private struct BrowserAddressEditorSheet: View {
                 .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 .opacity(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.45 : 1)
             }
+            }
+            .padding(.horizontal, 18)
+            .padding(.top, 12)
+            .padding(.bottom, 18)
         }
-        .padding(.horizontal, 18)
-        .padding(.top, 12)
+        .scrollIndicators(.hidden)
+        .scrollBounceBehavior(.basedOnSize)
+        .scrollDismissesKeyboard(.interactively)
         .onAppear {
             // Sheet presentation and keyboard activation happen on adjacent
             // run-loop passes. Focus first, then select the active field once
@@ -1747,6 +1921,9 @@ private struct BrowserAddressEditorSheet: View {
                     )
                 }
             }
+        }
+        .onChange(of: focusedField) { _, field in
+            onFocusChange(field != nil)
         }
     }
 

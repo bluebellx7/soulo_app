@@ -78,56 +78,66 @@ extension View {
     }
 
     @ViewBuilder
-    func browserToolbarButtonGlass() -> some View {
-        modifier(BrowserToolbarButtonGlassModifier())
+    func browserToolbarButtonGlass(tint: Color? = nil) -> some View {
+        modifier(BrowserToolbarButtonGlassModifier(tint: tint))
     }
 
     @ViewBuilder
-    func browserToolbarCapsuleGlass() -> some View {
-        modifier(BrowserToolbarCapsuleGlassModifier())
+    func browserToolbarCapsuleGlass(tint: Color? = nil) -> some View {
+        modifier(BrowserToolbarCapsuleGlassModifier(tint: tint))
     }
 }
 
 private struct BrowserToolbarButtonGlassModifier: ViewModifier {
+    let tint: Color?
+
+    @ViewBuilder
     func body(content: Content) -> some View {
-        content.background {
-            Circle()
-                .fill(.ultraThinMaterial)
-                .overlay(Circle().fill(Color.black.opacity(0.44)))
-                .overlay {
-                    LinearGradient(
-                        colors: [Color.white.opacity(0.13), .clear, Color.black.opacity(0.08)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                    .clipShape(Circle())
-                }
-                .overlay {
-                    Circle()
-                        .strokeBorder(Color.white.opacity(0.2), lineWidth: 0.7)
-                }
+        if #available(iOS 26.0, *) {
+            content
+                .glassEffect(.regular.tint(tint).interactive(), in: Circle())
+        } else {
+            content.background {
+                Circle()
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        if let tint {
+                            Circle().fill(tint)
+                        }
+                    }
+                    .overlay {
+                        Circle()
+                            .strokeBorder(Color.primary.opacity(0.14), lineWidth: 0.6)
+                    }
+                    .shadow(color: .black.opacity(0.12), radius: 7, y: 3)
+            }
         }
     }
 }
 
 private struct BrowserToolbarCapsuleGlassModifier: ViewModifier {
+    let tint: Color?
+
+    @ViewBuilder
     func body(content: Content) -> some View {
-        content.background {
-            Capsule()
-                .fill(.ultraThinMaterial)
-                .overlay(Capsule().fill(Color.black.opacity(0.44)))
-                .overlay {
-                    LinearGradient(
-                        colors: [Color.white.opacity(0.13), .clear, Color.black.opacity(0.08)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                    .clipShape(Capsule())
-                }
-                .overlay {
-                    Capsule()
-                        .strokeBorder(Color.white.opacity(0.2), lineWidth: 0.7)
-                }
+        if #available(iOS 26.0, *) {
+            content
+                .glassEffect(.regular.tint(tint).interactive(), in: Capsule())
+        } else {
+            content.background {
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        if let tint {
+                            Capsule().fill(tint)
+                        }
+                    }
+                    .overlay {
+                        Capsule()
+                            .strokeBorder(Color.primary.opacity(0.14), lineWidth: 0.6)
+                    }
+                    .shadow(color: .black.opacity(0.12), radius: 7, y: 3)
+            }
         }
     }
 }

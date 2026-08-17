@@ -33,6 +33,24 @@ struct WebAppearanceSettingsView: View {
             } footer: {
                 Text(LanguageManager.shared.localizedString("web_force_dark_footer"))
             }
+
+            Section {
+                appearanceToggle(
+                    isOn: $appearance.reducePageMotion,
+                    icon: "figure.walk.motion",
+                    titleKey: "web_reduce_motion",
+                    descriptionKey: "web_reduce_motion_desc"
+                )
+
+                appearanceToggle(
+                    isOn: $appearance.underlineLinks,
+                    icon: "link",
+                    titleKey: "web_underline_links",
+                    descriptionKey: "web_underline_links_desc"
+                )
+            } header: {
+                Text(LanguageManager.shared.localizedString("web_readability"))
+            }
         }
         .listStyle(.insetGrouped)
         .navigationTitle(LanguageManager.shared.localizedString("web_appearance"))

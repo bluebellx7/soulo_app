@@ -80,6 +80,61 @@ final class TabManagerTests: XCTestCase {
 
 @MainActor
 final class PlatformDataStoreTests: XCTestCase {
+    func testEveryBuiltInPlatformProducesARealSecureSearchURL() throws {
+        let query = "Soulo browser test"
+        let encodedQuery = "Soulo%20browser%20test"
+        let platforms = PlatformDataStore.shared.allPlatforms().filter(\.isBuiltIn)
+
+        XCTAssertGreaterThanOrEqual(platforms.count, 49)
+        for platform in platforms {
+            let url = try XCTUnwrap(
+                platform.searchURL(for: query),
+                "Invalid search URL for \(platform.name)"
+            )
+            XCTAssertEqual(url.scheme, "https", "Insecure search URL for \(platform.name)")
+            XCTAssertNotNil(url.host, "Missing search host for \(platform.name)")
+            XCTAssertFalse(url.absoluteString.contains("%@"), "Unexpanded query for \(platform.name)")
+            switch platform.interactionType {
+            case .urlSearch:
+                XCTAssertTrue(
+                    url.absoluteString.contains(encodedQuery),
+                    "Search query was not encoded into \(platform.name)"
+                )
+            case .aiChat:
+                XCTAssertTrue(platform.requiresLogin)
+                XCTAssertEqual(url, platform.homePageURL)
+            }
+
+            let homeURL = try XCTUnwrap(
+                platform.homePageURL,
+                "Invalid home URL for \(platform.name)"
+            )
+            XCTAssertEqual(homeURL.scheme, "https", "Insecure home URL for \(platform.name)")
+            XCTAssertNotNil(homeURL.host, "Missing home host for \(platform.name)")
+        }
+    }
+
+    func testKoreanSearchPlatformsUseRealQueryURLs() throws {
+        let koreanPlatforms = PlatformDataStore.shared.platforms(for: .korea)
+
+        XCTAssertEqual(
+            Set(koreanPlatforms.map(\.name)),
+            Set([
+                "platform_naver",
+                "platform_daum",
+                "platform_google_kr",
+                "platform_youtube_kr"
+            ])
+        )
+        XCTAssertTrue(koreanPlatforms.allSatisfy { $0.isBuiltIn && $0.isVisible })
+        for platform in koreanPlatforms {
+            let url = try XCTUnwrap(platform.searchURL(for: "서울 카페"))
+            XCTAssertEqual(url.scheme, "https")
+            XCTAssertFalse(url.absoluteString.contains("%@"))
+            XCTAssertTrue(url.absoluteString.contains("%EC%84%9C%EC%9A%B8"))
+        }
+    }
+
     func testXiaohongshuIsAvailableAsBuiltInChinaPlatform() throws {
         let platform = try XCTUnwrap(
             PlatformDataStore.shared.allPlatforms().first { $0.name == "platform_xiaohongshu" }

@@ -6,13 +6,20 @@ import CoreSpotlight
 struct SouloApp: App {
     @UIApplicationDelegateAdaptor(SouloAppDelegate.self) private var appDelegate
     @StateObject private var languageManager = LanguageManager.shared
-    @StateObject private var themeManager = ThemeManager.shared
+    @StateObject private var themeManager: ThemeManager
     @StateObject private var searchVM = SearchViewModel()
     @StateObject private var tabManager = TabManager()
     @StateObject private var wallpaperManager = WallpaperManager.shared
     private let cloudSyncService = CloudSyncService.shared
     @Environment(\.scenePhase) private var scenePhase
     @State private var activationTask: Task<Void, Never>?
+
+    init() {
+        UserDefaults.standard.register(defaults: [
+            AppConstants.StorageKeys.appearance: "dark"
+        ])
+        _themeManager = StateObject(wrappedValue: ThemeManager.shared)
+    }
 
     var body: some Scene {
         WindowGroup {

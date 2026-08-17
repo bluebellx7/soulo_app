@@ -17,6 +17,14 @@ final class WebAppearanceService: ObservableObject {
         didSet { persist(forceDarkPages, key: AppConstants.StorageKeys.webForceDarkPages) }
     }
 
+    @Published var reducePageMotion: Bool {
+        didSet { persist(reducePageMotion, key: AppConstants.StorageKeys.webReducePageMotion) }
+    }
+
+    @Published var underlineLinks: Bool {
+        didSet { persist(underlineLinks, key: AppConstants.StorageKeys.webUnderlineLinks) }
+    }
+
     private let defaults = UserDefaults.standard
     private var defaultsObserver: NSObjectProtocol?
 
@@ -26,6 +34,8 @@ final class WebAppearanceService: ObservableObject {
         ) as? Bool ?? true
         warmColorShift = defaults.bool(forKey: AppConstants.StorageKeys.webWarmColorShift)
         forceDarkPages = defaults.bool(forKey: AppConstants.StorageKeys.webForceDarkPages)
+        reducePageMotion = defaults.bool(forKey: AppConstants.StorageKeys.webReducePageMotion)
+        underlineLinks = defaults.bool(forKey: AppConstants.StorageKeys.webUnderlineLinks)
         defaultsObserver = NotificationCenter.default.addObserver(
             forName: UserDefaults.didChangeNotification,
             object: defaults,
@@ -54,7 +64,9 @@ final class WebAppearanceService: ObservableObject {
         webView.evaluateJavaScript(
             WebViewScripts.applyWebAppearance(
                 warmColorShift: warmColorShift,
-                forceDark: forceDarkPages
+                forceDark: forceDarkPages,
+                reduceMotion: reducePageMotion,
+                underlineLinks: underlineLinks
             ),
             completionHandler: nil
         )
@@ -78,9 +90,13 @@ final class WebAppearanceService: ObservableObject {
         let follows = defaults.object(forKey: AppConstants.StorageKeys.webFollowsAppColorScheme) as? Bool ?? true
         let warm = defaults.bool(forKey: AppConstants.StorageKeys.webWarmColorShift)
         let dark = defaults.bool(forKey: AppConstants.StorageKeys.webForceDarkPages)
+        let reduceMotion = defaults.bool(forKey: AppConstants.StorageKeys.webReducePageMotion)
+        let links = defaults.bool(forKey: AppConstants.StorageKeys.webUnderlineLinks)
         if followsAppColorScheme != follows { followsAppColorScheme = follows }
         if warmColorShift != warm { warmColorShift = warm }
         if forceDarkPages != dark { forceDarkPages = dark }
+        if reducePageMotion != reduceMotion { reducePageMotion = reduceMotion }
+        if underlineLinks != links { underlineLinks = links }
     }
 }
 

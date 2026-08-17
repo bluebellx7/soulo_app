@@ -319,7 +319,9 @@ struct WebViewRepresentable: UIViewRepresentable {
             WKUserScript(
                 source: WebViewScripts.applyWebAppearance(
                     warmColorShift: webAppearance.warmColorShift,
-                    forceDark: webAppearance.forceDarkPages
+                    forceDark: webAppearance.forceDarkPages,
+                    reduceMotion: webAppearance.reducePageMotion,
+                    underlineLinks: webAppearance.underlineLinks
                 ),
                 injectionTime: .atDocumentStart,
                 forMainFrameOnly: true
@@ -339,6 +341,14 @@ struct WebViewRepresentable: UIViewRepresentable {
         contentController.addUserScript(
             WKUserScript(
                 source: WebViewScripts.downloadBridge,
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: false
+            )
+        )
+
+        contentController.addUserScript(
+            WKUserScript(
+                source: WebViewScripts.contextMenuResourceTracking,
                 injectionTime: .atDocumentStart,
                 forMainFrameOnly: false
             )
@@ -1653,14 +1663,37 @@ struct WebViewRepresentable: UIViewRepresentable {
             contextMenuConfigurationForElement elementInfo: WKContextMenuElementInfo,
             completionHandler: @escaping (UIContextMenuConfiguration?) -> Void
         ) {
-            // Only customize for links — images use the default WKWebView menu
-            // which already has "Save to Photos", "Copy", "Share"
-            guard let linkURL = elementInfo.linkURL else {
-                completionHandler(nil) // default behavior for images, text, etc.
-                return
+            webView.evaluateJavaScript(
+                "window.__souloContextResourceInfo ? window.__souloContextResourceInfo() : null"
+            ) { [weak self, weak webView] value, _ in
+                guard let self, let webView else {
+                    completionHandler(nil)
+                    return
+                }
+                let resource = (value as? [String: Any]).flatMap(WebContextResource.init(dictionary:))
+                guard elementInfo.linkURL != nil || resource != nil else {
+                    completionHandler(nil)
+                    return
+                }
+                completionHandler(
+                    self.contextMenuConfiguration(
+                        linkURL: elementInfo.linkURL,
+                        resource: resource,
+                        webView: webView
+                    )
+                )
             }
+        }
 
-            let config = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+        private func contextMenuConfiguration(
+            linkURL: URL?,
+            resource: WebContextResource?,
+            webView: WKWebView
+        ) -> UIContextMenuConfiguration {
+            UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+                var actions: [UIMenuElement] = []
+
+                if let linkURL {
                 let openInNewTab = UIAction(
                     title: LanguageManager.shared.localizedString("tab_open_new"),
                     image: UIImage(systemName: "plus.square.on.square")
@@ -1688,9 +1721,76 @@ struct WebViewRepresentable: UIViewRepresentable {
                     self.presentActivityController(items: [linkURL], sourceView: webView)
                 }
 
-                return UIMenu(children: [openInNewTab, copyLink, share])
+                    actions.append(contentsOf: [openInNewTab, copyLink, share])
+                }
+
+                if let resource {
+                    if resource.kind == .image {
+                        actions.append(UIAction(
+                            title: LanguageManager.shared.localizedString("save_to_photos"),
+                            image: UIImage(systemName: "photo.badge.arrow.down")
+                        ) { _ in
+                            self.downloadContextResource(resource, webView: webView, saveToPhotos: true)
+                        })
+                    }
+
+                    if resource.kind.allowsDirectDownload {
+                        actions.append(UIAction(
+                            title: LanguageManager.shared.localizedString("download"),
+                            image: UIImage(systemName: "arrow.down.circle")
+                        ) { _ in
+                            self.downloadContextResource(resource, webView: webView, saveToPhotos: false)
+                        })
+                    }
+
+                    if resource.url != linkURL {
+                        actions.append(UIAction(
+                            title: LanguageManager.shared.localizedString("resource_copy_url"),
+                            image: UIImage(systemName: "doc.on.doc")
+                        ) { _ in
+                            UIPasteboard.general.url = resource.url
+                            UINotificationFeedbackGenerator().notificationOccurred(.success)
+                            NotificationCenter.default.post(name: .linkCopied, object: nil)
+                        })
+                    }
+                }
+
+                return UIMenu(children: actions)
             }
-            completionHandler(config)
+        }
+
+        private func downloadContextResource(
+            _ resource: WebContextResource,
+            webView: WKWebView,
+            saveToPhotos: Bool
+        ) {
+            Task { @MainActor [weak self, weak webView] in
+                guard let self, let webView else { return }
+                do {
+                    if saveToPhotos {
+                        try await WebResourceDownloadService.shared.saveImageToPhotos(
+                            resource.url,
+                            preferredFilename: resource.suggestedFilename,
+                            pageURL: webView.url,
+                            webView: webView
+                        )
+                        UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    } else {
+                        let fileURL = try await WebResourceDownloadService.shared.download(
+                            resource.url,
+                            preferredFilename: resource.suggestedFilename,
+                            pageURL: webView.url,
+                            webView: webView
+                        )
+                        self.presentDownloadedFile(fileURL, sourceURL: resource.url)
+                    }
+                } catch {
+                    NotificationCenter.default.post(
+                        name: .browserDownloadFailed,
+                        object: self.viewModel
+                    )
+                }
+            }
         }
 
         // MARK: WKDownloadDelegate

@@ -87,7 +87,7 @@ final class BrowserToolbarConfigurationService: ObservableObject {
     static let actionsKey = "browser_toolbar_actions"
     static let addressActionKey = "browser_toolbar_address_action"
     static let defaultActions: [BrowserToolbarAction] = [.home, .back, .tabs, .more]
-    static let defaultAddressAction: BrowserToolbarAction = .hideToolbar
+    static let defaultAddressAction: BrowserToolbarAction = .darkMode
     static let unsupportedAddressActions: Set<BrowserToolbarAction> = [.tabs, .more]
     /// Page translation remains decoded for settings compatibility, but its UI
     /// is intentionally hidden in 1.1.1 until the next compatibility pass.
