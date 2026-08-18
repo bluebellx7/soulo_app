@@ -1,0 +1,904 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101112" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-title" content="Soulo" />
+    <title>Soulo 搜索源目录 - 可直接导入的搜索模板</title>
+    <meta
+      name="description"
+      content="Soulo 精选搜索源目录。所有 URL 均包含 %@ 关键词占位符，可直接复制 JSON 并批量导入 Soulo。"
+    />
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1" />
+    <link rel="canonical" href="https://soulo.dkluge.com/sources.html" />
+    <meta property="og:site_name" content="Soulo" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Soulo 可导入搜索源目录" />
+    <meta property="og:description" content="精选可搜索平台，每条 URL 都带 %@ 关键词占位符。" />
+    <meta property="og:url" content="https://soulo.dkluge.com/sources.html" />
+    <meta property="og:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.2" />
+    <link rel="icon" type="image/png" href="app-icon.png?v=1.1.2" />
+    <link rel="apple-touch-icon" href="app-icon.png?v=1.1.2" />
+    <link rel="stylesheet" href="site.css?v=1.1.3" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('soulo-theme');
+          var theme = saved === 'light' || saved === 'dark' ? saved : 'system';
+          var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.setAttribute('data-theme', theme);
+          document.documentElement.setAttribute(
+            'data-resolved-theme',
+            theme === 'system' ? (dark ? 'dark' : 'light') : theme
+          );
+        } catch (error) {}
+      })();
+    </script>
+    <style>
+      .sources-page {
+        --catalog-width: 1120px;
+        margin: 0;
+        box-sizing: border-box;
+        color: var(--text);
+      }
+
+      .sources-page *,
+      .sources-page *::before,
+      .sources-page *::after {
+        box-sizing: inherit;
+      }
+
+      .sources-page nav {
+        position: fixed;
+        inset: 0 0 auto;
+        z-index: 100;
+        padding: 10px max(14px, env(safe-area-inset-right)) 0 max(14px, env(safe-area-inset-left));
+        background: transparent;
+      }
+
+      .sources-page .nav-inner {
+        width: min(100%, var(--catalog-width));
+        min-height: 58px;
+        margin: 0 auto;
+        padding: 7px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        border: 1px solid var(--nav-border);
+        border-radius: 18px;
+        background: var(--nav-bg);
+        box-shadow: var(--shadow-sm);
+        backdrop-filter: blur(22px) saturate(145%);
+        -webkit-backdrop-filter: blur(22px) saturate(145%);
+      }
+
+      .sources-page .brand {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        flex: 0 0 auto;
+        color: var(--nav-text);
+        font-size: 15px;
+        font-weight: 650;
+      }
+
+      .sources-page .brand img {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(77, 59, 28, 0.12);
+      }
+
+      .sources-page .nav-links {
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 4px;
+      }
+
+      .sources-page .nav-links a {
+        min-height: 42px;
+        padding: 11px 12px;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 11px;
+        color: var(--nav-link);
+        font-size: 14px;
+        font-weight: 520;
+        white-space: nowrap;
+      }
+
+      .sources-page .nav-links a:hover,
+      .sources-page .nav-links a.is-active {
+        color: var(--nav-text);
+        background: var(--nav-control-bg);
+      }
+
+      .sources-hero {
+        width: min(100%, 900px);
+        margin: 0 auto;
+        padding: 146px 24px 48px;
+        text-align: center;
+      }
+
+      .sources-eyebrow {
+        width: fit-content;
+        margin: 0 auto 18px;
+        padding: 7px 12px;
+        border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border));
+        border-radius: 999px;
+        color: var(--primary);
+        background: color-mix(in srgb, var(--primary) 7%, transparent);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+      }
+
+      .sources-hero h1 {
+        margin: 0;
+        font-family: "Iowan Old Style", "Songti SC", "Noto Serif CJK SC", serif;
+        font-size: clamp(34px, 6vw, 58px);
+        font-weight: 650;
+        letter-spacing: -0.04em;
+        line-height: 1.08;
+      }
+
+      .sources-hero p {
+        max-width: 670px;
+        margin: 18px auto 0;
+        color: var(--text-secondary);
+        font-size: 16px;
+        line-height: 1.75;
+      }
+
+      .stat-row {
+        margin-top: 24px;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .stat {
+        min-height: 34px;
+        padding: 7px 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        color: var(--text-secondary);
+        background: var(--card);
+        font-size: 12px;
+      }
+
+      .stat strong { color: var(--text); font-weight: 700; }
+
+      .catalog-tools,
+      #catalog,
+      .catalog-note {
+        width: min(calc(100% - 40px), var(--catalog-width));
+        margin-inline: auto;
+      }
+
+      .catalog-tools {
+        position: relative;
+        z-index: 3;
+        margin-bottom: 42px;
+        padding: 18px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: color-mix(in srgb, var(--card) 94%, transparent);
+        box-shadow: var(--shadow-sm);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+      }
+
+      .filter-wrap { position: relative; }
+      .filter-wrap i {
+        position: absolute;
+        top: 50%;
+        left: 16px;
+        color: var(--text-secondary);
+        transform: translateY(-50%);
+        pointer-events: none;
+      }
+
+      .filter-input {
+        width: 100%;
+        min-height: 50px;
+        padding: 12px 16px 12px 44px;
+        border: 1px solid var(--border);
+        border-radius: 13px;
+        outline: 0;
+        color: var(--text);
+        background: var(--bg);
+        font: inherit;
+        font-size: 15px;
+      }
+
+      .filter-input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 16%, transparent);
+      }
+
+      .tool-row {
+        margin-top: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .filter-meta { color: var(--text-secondary); font-size: 13px; }
+      .filter-meta strong { color: var(--text); }
+
+      .copy-button,
+      .category-copy {
+        min-height: 44px;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .copy-button {
+        padding: 10px 16px;
+        color: var(--copy-btn-text);
+        background: var(--copy-btn-bg);
+        box-shadow: var(--copy-btn-shadow);
+      }
+
+      .copy-button[data-state="copied"],
+      .category-copy[data-state="copied"] {
+        color: #fff;
+        border-color: #178153;
+        background: #178153;
+      }
+
+      .json-panel {
+        margin-top: 14px;
+        border-top: 1px solid var(--border);
+        padding-top: 14px;
+      }
+
+      .json-panel summary {
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-secondary);
+        font-size: 13px;
+        font-weight: 650;
+        cursor: pointer;
+      }
+
+      .json-preview {
+        max-height: 240px;
+        margin-top: 10px;
+        padding: 14px;
+        overflow: auto;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        color: var(--json-text);
+        background: var(--json-bg);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 11px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+
+      .category {
+        margin-bottom: 52px;
+        scroll-margin-top: 92px;
+      }
+
+      .category[hidden] { display: none; }
+
+      .category-head {
+        margin-bottom: 15px;
+        padding-bottom: 13px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 18px;
+      }
+
+      .category-kicker {
+        margin-bottom: 5px;
+        color: var(--primary);
+        font-size: 11px;
+        font-weight: 750;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+      }
+
+      .category-title {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 21px;
+        font-weight: 680;
+      }
+
+      .category-title i { color: var(--primary); font-size: 17px; }
+      .category-desc { margin-top: 4px; color: var(--text-secondary); font-size: 13px; }
+
+      .category-actions { display: flex; align-items: center; gap: 8px; }
+      .category-count {
+        min-width: 32px;
+        min-height: 32px;
+        padding: 6px 9px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        color: var(--text-secondary);
+        background: var(--card);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .category-copy {
+        padding: 8px 11px;
+        color: var(--text-secondary);
+        border-color: var(--border);
+        background: var(--card);
+      }
+
+      .source-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .source-card {
+        min-width: 0;
+        min-height: 78px;
+        padding: 13px;
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr) 18px;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid var(--border);
+        border-radius: 15px;
+        color: var(--text);
+        background: var(--card);
+        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .source-card:hover {
+        border-color: color-mix(in srgb, var(--primary) 54%, var(--border));
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .favicon {
+        width: 34px;
+        height: 34px;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        object-fit: contain;
+        background: #fff;
+      }
+
+      .source-info { min-width: 0; }
+      .source-name {
+        display: block;
+        overflow: hidden;
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 650;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .source-template {
+        margin-top: 3px;
+        display: block;
+        overflow: hidden;
+        color: var(--text-secondary);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 10px;
+        line-height: 1.35;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .source-card .external { color: var(--text-secondary); font-size: 11px; }
+
+      .catalog-note {
+        margin-top: 6px;
+        margin-bottom: 54px;
+        padding: 18px 20px;
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--primary);
+        border-radius: 14px;
+        color: var(--text-secondary);
+        background: var(--card);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .catalog-note strong { color: var(--text); }
+      .catalog-note code {
+        padding: 2px 5px;
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        color: var(--text);
+        background: var(--bg);
+      }
+
+      .empty-state {
+        width: min(calc(100% - 40px), var(--catalog-width));
+        margin: 0 auto 54px;
+        padding: 48px 20px;
+        border: 1px dashed var(--border);
+        border-radius: 18px;
+        color: var(--text-secondary);
+        text-align: center;
+      }
+
+      .sources-page footer { padding: 38px 20px max(38px, env(safe-area-inset-bottom)); }
+      .sources-page .footer-inner {
+        width: min(100%, var(--catalog-width));
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .sources-page footer,
+      .sources-page footer a { color: var(--footer-link); }
+      .sources-page .copyright { color: var(--footer-text); font-size: 13px; }
+      .sources-page .footer-links { display: flex; flex-wrap: wrap; gap: 18px; }
+      .sources-page .footer-links a { font-size: 13px; }
+
+      .toast {
+        position: fixed;
+        top: max(86px, calc(env(safe-area-inset-top) + 70px));
+        left: 50%;
+        z-index: 200;
+        width: max-content;
+        max-width: calc(100vw - 32px);
+        padding: 12px 16px;
+        border-radius: 12px;
+        color: #fff;
+        background: #178153;
+        box-shadow: 0 16px 44px rgba(0, 0, 0, 0.24);
+        font-size: 13px;
+        font-weight: 700;
+        transform: translate(-50%, -12px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+      }
+      .toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+
+      @media (max-width: 860px) {
+        .sources-page .nav-inner { gap: 10px; }
+        .sources-page .nav-links {
+          justify-content: flex-start;
+          overflow-x: auto;
+          overscroll-behavior-inline: contain;
+          scrollbar-width: none;
+        }
+        .sources-page .nav-links::-webkit-scrollbar { display: none; }
+        .sources-page .nav-links a { padding-inline: 10px; }
+        .source-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+
+      @media (max-width: 620px) {
+        .sources-page nav {
+          padding-top: max(8px, env(safe-area-inset-top));
+          padding-inline: max(8px, env(safe-area-inset-left)) max(8px, env(safe-area-inset-right));
+        }
+        .sources-page .nav-inner { padding: 6px 8px; border-radius: 15px; }
+        .sources-page .brand span { display: none; }
+        .sources-page .brand { min-width: 40px; }
+        .sources-page .nav-links { gap: 2px; }
+        .sources-page .nav-links a { min-height: 40px; padding: 10px 9px; font-size: 13px; }
+        .sources-hero { padding: 126px 18px 36px; text-align: left; }
+        .sources-eyebrow { margin-left: 0; }
+        .sources-hero h1 { font-size: clamp(34px, 11vw, 46px); }
+        .sources-hero p { font-size: 14px; }
+        .stat-row { justify-content: flex-start; }
+        .catalog-tools,
+        #catalog,
+        .catalog-note,
+        .empty-state { width: min(calc(100% - 24px), var(--catalog-width)); }
+        .catalog-tools {
+          position: sticky;
+          top: calc(max(8px, env(safe-area-inset-top)) + 68px);
+          margin-bottom: 34px;
+          padding: 12px;
+          border-radius: 16px;
+        }
+        .tool-row { align-items: stretch; flex-direction: column; gap: 10px; }
+        .copy-button { width: 100%; }
+        .category { margin-bottom: 38px; }
+        .category-head { align-items: flex-start; flex-direction: column; gap: 12px; }
+        .category-actions { width: 100%; }
+        .category-copy { flex: 1; }
+        .source-grid { grid-template-columns: 1fr; gap: 8px; }
+        .source-card { min-height: 72px; }
+        .source-template { white-space: normal; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .sources-page .footer-inner { align-items: flex-start; flex-direction: column; }
+        .sources-page .footer-links { gap: 14px; }
+      }
+
+      @media (hover: none) {
+        .source-card:hover { transform: none; box-shadow: none; }
+      }
+    </style>
+  </head>
+  <body class="sources-page">
+    <a class="skip-link" href="#catalog">跳到搜索源目录</a>
+    <nav aria-label="主导航">
+      <div class="nav-inner">
+        <a class="brand" href="/">
+          <img src="app-icon.png?v=1.1.2" width="30" height="30" alt="" />
+          <span>Soulo</span>
+        </a>
+        <div class="nav-links">
+          <a href="/">首页</a>
+          <a href="sources.html" class="is-active" aria-current="page">搜索源</a>
+          <a href="privacy.html">隐私政策</a>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <header class="sources-hero">
+        <div class="sources-eyebrow">IMPORT-READY DIRECTORY</div>
+        <h1>搜索源，不只是首页链接</h1>
+        <p>
+          每条地址都包含 <code>%@</code> 关键词占位符，可直接复制 JSON 并导入 Soulo。
+          点击卡片会用 “Soulo” 作为示例关键词打开真实搜索页。
+        </p>
+        <div class="stat-row" id="statRow" aria-live="polite"></div>
+      </header>
+
+      <section class="catalog-tools" aria-label="目录工具">
+        <label class="filter-wrap">
+          <span class="visually-hidden">搜索平台、域名或类别</span>
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          <input
+            id="filterInput"
+            class="filter-input"
+            type="search"
+            inputmode="search"
+            placeholder="搜索平台、域名或类别…"
+            autocomplete="off"
+          />
+        </label>
+        <div class="tool-row">
+          <div class="filter-meta" id="filterMeta"></div>
+          <button class="copy-button" id="copyVisibleButton" type="button">
+            <i class="fa-solid fa-copy" aria-hidden="true"></i>
+            <span>复制当前可见 JSON</span>
+          </button>
+        </div>
+        <details class="json-panel" id="jsonPanel">
+          <summary><i class="fa-solid fa-code" aria-hidden="true"></i>查看 JSON</summary>
+          <pre class="json-preview" id="jsonPreview">点击复制按钮后在这里预览。</pre>
+        </details>
+      </section>
+
+      <div id="catalog"></div>
+      <div class="empty-state" id="emptyState" hidden>
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <p>没有匹配的搜索源。</p>
+      </div>
+
+      <aside class="catalog-note">
+        <strong>可用性说明：</strong>模板于 2026 年 8 月核对。目录已移除无搜索参数、明确失效、TLS
+        异常或跳转到停放页的站点。部分平台仍可能要求登录、进行地区跳转或显示验证码；这些属于平台自身策略。
+        复制得到的 <code>%@</code> 会由 Soulo 替换为经过 URL 编码的关键词。
+      </aside>
+    </main>
+
+    <footer>
+      <div class="footer-inner">
+        <span class="copyright">&copy; 2025-2026 Dkluge.com. All Rights Reserved.</span>
+        <div class="footer-links">
+          <a href="/">首页</a>
+          <a href="sources.html">搜索源</a>
+          <a href="privacy.html">隐私政策</a>
+          <a href="https://www.dkluge.com/contact-us">技术支持</a>
+        </div>
+      </div>
+    </footer>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script>
+      const SOURCES = [
+        // AI 搜索
+        { c: 'ai', n: 'ChatGPT Search', u: 'https://chatgpt.com/?hints=search&q=%@' },
+        { c: 'ai', n: 'Perplexity', u: 'https://www.perplexity.ai/search?q=%@' },
+        { c: 'ai', n: 'Andi', u: 'https://andisearch.com/?q=%@' },
+        { c: 'ai', n: 'Felo Search', u: 'https://felo.ai/search?q=%@' },
+        { c: 'ai', n: 'Consensus', u: 'https://consensus.app/results/?q=%@' },
+        { c: 'ai', n: 'You.com', u: 'https://you.com/search?q=%@' },
+        { c: 'ai', n: 'iAsk.AI', u: 'https://iask.ai/?q=%@' },
+        { c: 'ai', n: 'Semantic Scholar', u: 'https://www.semanticscholar.org/search?q=%@' },
+
+        // 通用搜索
+        { c: 'general', n: '百度', u: 'https://www.baidu.com/s?wd=%@' },
+        { c: 'general', n: '搜狗', u: 'https://www.sogou.com/web?query=%@' },
+        { c: 'general', n: 'Google', u: 'https://www.google.com/search?q=%@' },
+        { c: 'general', n: 'Bing', u: 'https://www.bing.com/search?q=%@' },
+        { c: 'general', n: 'DuckDuckGo', u: 'https://duckduckgo.com/?q=%@' },
+        { c: 'general', n: '360 搜索', u: 'https://www.so.com/s?q=%@' },
+        { c: 'general', n: 'Yandex', u: 'https://yandex.com/search/?text=%@' },
+        { c: 'general', n: 'Startpage', u: 'https://www.startpage.com/sp/search?query=%@' },
+        { c: 'general', n: 'Yahoo!', u: 'https://search.yahoo.com/search?p=%@' },
+        { c: 'general', n: 'Mojeek', u: 'https://www.mojeek.com/search?q=%@' },
+        { c: 'general', n: 'Brave Search', u: 'https://search.brave.com/search?q=%@' },
+        { c: 'general', n: 'Ecosia', u: 'https://www.ecosia.org/search?q=%@' },
+        { c: 'general', n: 'Qwant', u: 'https://www.qwant.com/?q=%@&t=web' },
+        { c: 'general', n: 'Naver', u: 'https://search.naver.com/search.naver?query=%@' },
+        { c: 'general', n: 'Daum', u: 'https://search.daum.net/search?w=tot&q=%@' },
+        { c: 'general', n: 'Google 日本', u: 'https://www.google.co.jp/search?q=%@' },
+        { c: 'general', n: 'Yahoo! 日本', u: 'https://search.yahoo.co.jp/search?p=%@' },
+        { c: 'general', n: '中文维基百科', u: 'https://zh.wikipedia.org/w/index.php?search=%@' },
+        { c: 'general', n: 'Wikipedia', u: 'https://en.wikipedia.org/w/index.php?search=%@' },
+
+        // 学术搜索
+        { c: 'academic', n: '百度学术', u: 'https://xueshu.baidu.com/s?wd=%@' },
+        { c: 'academic', n: 'Google Scholar', u: 'https://scholar.google.com/scholar?q=%@' },
+        { c: 'academic', n: 'PubMed', u: 'https://pubmed.ncbi.nlm.nih.gov/?term=%@' },
+        { c: 'academic', n: 'PubMed Central', u: 'https://pmc.ncbi.nlm.nih.gov/search/?term=%@' },
+        { c: 'academic', n: 'DOAJ', u: 'https://doaj.org/search/articles/%@' },
+        { c: 'academic', n: 'arXiv', u: 'https://arxiv.org/search/?query=%@&searchtype=all' },
+        { c: 'academic', n: 'BASE', u: 'https://www.base-search.net/Search/Results?lookfor=%@&type=all' },
+        { c: 'academic', n: 'OALib', u: 'https://www.oalib.com/search?kw=%@' },
+        { c: 'academic', n: 'PLOS ONE', u: 'https://journals.plos.org/plosone/search?q=%@' },
+        { c: 'academic', n: 'Nature', u: 'https://www.nature.com/search?q=%@' },
+        { c: 'academic', n: 'ResearchGate', u: 'https://www.researchgate.net/search/publication?q=%@' },
+        { c: 'academic', n: 'JSTOR', u: 'https://www.jstor.org/action/doBasicSearch?Query=%@' },
+        { c: 'academic', n: 'SpringerLink', u: 'https://link.springer.com/search?query=%@' },
+        { c: 'academic', n: 'Wiley Online Library', u: 'https://onlinelibrary.wiley.com/action/doSearch?AllField=%@' },
+        { c: 'academic', n: 'MIT DSpace', u: 'https://dspace.mit.edu/search?query=%@' },
+        { c: 'academic', n: 'ScienceDirect', u: 'https://www.sciencedirect.com/search?qs=%@' },
+        { c: 'academic', n: 'AMiner', u: 'https://www.aminer.cn/search/pub?q=%@' },
+        { c: 'academic', n: 'Thèses.fr', u: 'https://theses.fr/?q=%@' },
+
+        // 社交与内容
+        { c: 'social', n: '小红书', u: 'https://www.xiaohongshu.com/search_result?keyword=%@&source=web_explore_feed&type=51' },
+        { c: 'social', n: '抖音', u: 'https://www.douyin.com/search/%@' },
+        { c: 'social', n: 'X', u: 'https://x.com/search?q=%@' },
+        { c: 'social', n: 'YouTube', u: 'https://www.youtube.com/results?search_query=%@' },
+        { c: 'social', n: 'Product Hunt', u: 'https://www.producthunt.com/search?q=%@' },
+        { c: 'social', n: 'Facebook', u: 'https://www.facebook.com/search/top?q=%@' },
+        { c: 'social', n: 'Instagram', u: 'https://www.instagram.com/explore/tags/%@/' },
+        { c: 'social', n: 'Bilibili', u: 'https://search.bilibili.com/all?keyword=%@' },
+        { c: 'social', n: '知乎', u: 'https://www.zhihu.com/search?type=content&q=%@' },
+        { c: 'social', n: '微博', u: 'https://s.weibo.com/weibo?q=%@' },
+        { c: 'social', n: '今日头条', u: 'https://so.toutiao.com/search?keyword=%@' },
+        { c: 'social', n: 'Threads', u: 'https://www.threads.com/search?q=%@' },
+        { c: 'social', n: 'Reddit', u: 'https://www.reddit.com/search/?q=%@&type=link' },
+        { c: 'social', n: 'Pinterest', u: 'https://www.pinterest.com/search/pins/?q=%@' },
+        { c: 'social', n: 'LinkedIn', u: 'https://www.linkedin.com/search/results/all/?keywords=%@' },
+        { c: 'social', n: '微信文章', u: 'https://weixin.sogou.com/weixinwap?type=2&ie=utf8&s_from=input&query=%@' },
+
+        // 开发者
+        { c: 'developer', n: 'GitHub', u: 'https://github.com/search?q=%@&type=repositories' },
+        { c: 'developer', n: 'Stack Overflow', u: 'https://stackoverflow.com/search?q=%@' },
+        { c: 'developer', n: 'CSDN', u: 'https://so.csdn.net/so/search?q=%@' },
+        { c: 'developer', n: '掘金', u: 'https://juejin.cn/search?query=%@' },
+
+        // 购物
+        { c: 'shopping', n: '淘宝', u: 'https://s.m.taobao.com/h5?q=%@' },
+        { c: 'shopping', n: '京东', u: 'https://so.m.jd.com/ware/search.action?keyword=%@' },
+        { c: 'shopping', n: 'Amazon', u: 'https://www.amazon.com/s?k=%@&i=mobile' },
+        { c: 'shopping', n: 'eBay', u: 'https://www.ebay.com/sch/i.html?_nkw=%@' },
+
+        // 漫画与插画
+        { c: 'comic', n: 'AcFun', u: 'https://www.acfun.cn/search?keyword=%@' },
+        { c: 'comic', n: 'pixiv', u: 'https://www.pixiv.net/tags/%@/artworks' },
+        { c: 'comic', n: '哔哩哔哩漫画', u: 'https://manga.bilibili.com/search?from=manga_homepage&keyword=%@' },
+
+        // 影视
+        { c: 'video', n: '优酷', u: 'https://search.youku.com/search_video?keyword=%@' },
+        { c: 'video', n: '爱奇艺', u: 'https://m.iqiyi.com/search.html?source=input&key=%@' },
+        { c: 'video', n: '腾讯视频', u: 'https://v.qq.com/x/search/?q=%@' },
+        { c: 'video', n: '芒果 TV', u: 'https://so.mgtv.com/so?k=%@' },
+        { c: 'video', n: '片吧搜索', u: 'https://www.pianbs.com/sou/-------------.html?wd=%@&submit=' },
+        { c: 'video', n: '最大资源', u: 'https://www.zuidazy.co/vodsearch/-------------.html?wd=%@&submit=search' },
+        { c: 'video', n: '优酷资源', u: 'https://ukuzy0.com/index.php/vod/search.html?wd=%@&submit=search' },
+        { c: 'video', n: '光速资源', u: 'https://guangsuzy.com/index.php/vod/search.html?wd=%@' },
+        { c: 'video', n: '金鹰资源', u: 'https://jinyingzy.com/index.php/vod/search.html?wd=%@&submit=search' },
+        { c: 'video', n: '木头资源', u: 'https://mtzy.me/vod/mysearch.html?wd=%@&submit=search' },
+        { c: 'video', n: '极速资源', u: 'https://jszy333.com/index.php/vod/search.html?wd=%@' },
+
+        // 图书
+        { c: 'book', n: 'Z-Library', u: 'https://zh.z-library.sk/s/%@?' },
+        { c: 'book', n: 'iBooks', u: 'https://ibooks.org.cn/?s=%@' },
+      ];
+
+      const CATEGORIES = {
+        ai: { title: 'AI 搜索', icon: 'fa-wand-magic-sparkles', desc: '可通过 URL 直接携带问题的 AI 搜索服务。' },
+        general: { title: '通用搜索', icon: 'fa-magnifying-glass', desc: '覆盖中文、英文、日文和韩文的网页搜索。' },
+        academic: { title: '学术搜索', icon: 'fa-graduation-cap', desc: '论文、期刊、预印本和机构知识库。' },
+        social: { title: '社交与内容', icon: 'fa-hashtag', desc: '站内内容搜索，部分平台需要登录。' },
+        developer: { title: '开发者', icon: 'fa-code', desc: '代码仓库、技术问答和中文开发社区。' },
+        shopping: { title: '购物', icon: 'fa-bag-shopping', desc: '商品与二手交易平台搜索。' },
+        comic: { title: '漫画与插画', icon: 'fa-palette', desc: '视频、漫画与插画站内搜索。' },
+        video: { title: '影视', icon: 'fa-film', desc: '官方视频平台及已验证的影视资源搜索。' },
+        book: { title: '图书', icon: 'fa-book-open', desc: '电子书与图书资源搜索。' },
+      };
+
+      const invalidTemplates = SOURCES.filter((source) => !source.u.includes('%@'));
+      if (invalidTemplates.length) {
+        throw new Error('Every source URL must contain %@');
+      }
+
+      const catalog = document.getElementById('catalog');
+      const filterInput = document.getElementById('filterInput');
+      const filterMeta = document.getElementById('filterMeta');
+      const statRow = document.getElementById('statRow');
+      const emptyState = document.getElementById('emptyState');
+      const jsonPreview = document.getElementById('jsonPreview');
+      const jsonPanel = document.getElementById('jsonPanel');
+      const copyVisibleButton = document.getElementById('copyVisibleButton');
+      const toast = document.getElementById('toast');
+      let toastTimer;
+
+      function domainFor(template) {
+        try { return new URL(template).hostname.replace(/^www\./, ''); }
+        catch (error) { return ''; }
+      }
+
+      function previewURL(template) {
+        return template.replace('%@', encodeURIComponent('Soulo'));
+      }
+
+      function faviconURL(template) {
+        return `https://www.google.com/s2/favicons?domain=${domainFor(template)}&sz=64`;
+      }
+
+      function buildJSON(items) {
+        return JSON.stringify(items.map((source) => ({ name: source.n, url: source.u })), null, 2);
+      }
+
+      function visibleSources() {
+        return [...document.querySelectorAll('.source-card:not([hidden])')]
+          .map((card) => SOURCES[Number(card.dataset.index)]);
+      }
+
+      function showToast(message) {
+        window.clearTimeout(toastTimer);
+        toast.textContent = message;
+        toast.classList.add('is-visible');
+        toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 2300);
+      }
+
+      async function copyText(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          try { await navigator.clipboard.writeText(text); return; } catch (error) {}
+        }
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        textarea.remove();
+      }
+
+      async function copySources(items, button, label) {
+        const json = buildJSON(items);
+        jsonPreview.textContent = json;
+        jsonPanel.open = true;
+        await copyText(json);
+        button.dataset.state = 'copied';
+        showToast(`已复制 ${items.length} 个${label}搜索源`);
+        window.setTimeout(() => { button.dataset.state = ''; }, 1800);
+      }
+
+      Object.entries(CATEGORIES).forEach(([key, meta], sectionIndex) => {
+        const items = SOURCES.map((source, index) => ({ source, index }))
+          .filter((item) => item.source.c === key);
+        if (!items.length) return;
+        const section = document.createElement('section');
+        section.className = 'category';
+        section.id = `category-${key}`;
+        section.dataset.category = key;
+        section.innerHTML = `
+          <div class="category-head">
+            <div>
+              <div class="category-kicker">Collection ${String(sectionIndex + 1).padStart(2, '0')}</div>
+              <h2 class="category-title"><i class="fa-solid ${meta.icon}" aria-hidden="true"></i>${meta.title}</h2>
+              <p class="category-desc">${meta.desc}</p>
+            </div>
+            <div class="category-actions">
+              <span class="category-count">${items.length}</span>
+              <button class="category-copy" type="button"><i class="fa-solid fa-copy" aria-hidden="true"></i>复制本分类</button>
+            </div>
+          </div>
+          <div class="source-grid"></div>
+        `;
+        const grid = section.querySelector('.source-grid');
+        items.forEach(({ source, index }) => {
+          const card = document.createElement('a');
+          card.className = 'source-card';
+          card.href = previewURL(source.u);
+          card.target = '_blank';
+          card.rel = 'noopener noreferrer';
+          card.dataset.index = String(index);
+          card.dataset.search = `${source.n} ${domainFor(source.u)} ${meta.title}`.toLowerCase();
+          card.setAttribute('aria-label', `${source.n}，使用示例关键词打开搜索`);
+          card.innerHTML = `
+            <img class="favicon" src="${faviconURL(source.u)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='favicons/default-site.svg'" />
+            <span class="source-info">
+              <span class="source-name">${source.n}</span>
+              <code class="source-template">${source.u}</code>
+            </span>
+            <i class="fa-solid fa-arrow-up-right-from-square external" aria-hidden="true"></i>
+          `;
+          grid.appendChild(card);
+        });
+        section.querySelector('.category-copy').addEventListener('click', (event) => {
+          copySources(items.map((item) => item.source), event.currentTarget, `${meta.title} `);
+        });
+        catalog.appendChild(section);
+      });
+
+      function applyFilter() {
+        const query = filterInput.value.trim().toLowerCase();
+        let count = 0;
+        document.querySelectorAll('.category').forEach((section) => {
+          let categoryCount = 0;
+          section.querySelectorAll('.source-card').forEach((card) => {
+            const matches = !query || card.dataset.search.includes(query);
+            card.hidden = !matches;
+            if (matches) { categoryCount += 1; count += 1; }
+          });
+          section.hidden = categoryCount === 0;
+          section.querySelector('.category-count').textContent = String(categoryCount);
+        });
+        filterMeta.innerHTML = query
+          ? `匹配 <strong>${count}</strong> / ${SOURCES.length} 个搜索源`
+          : `共 <strong>${SOURCES.length}</strong> 个可直接导入的搜索源`;
+        copyVisibleButton.querySelector('span').textContent = `复制当前可见 JSON (${count})`;
+        emptyState.hidden = count !== 0;
+      }
+
+      statRow.innerHTML = `
+        <span class="stat"><strong>${SOURCES.length}</strong> 个搜索源</span>
+        <span class="stat"><strong>${Object.keys(CATEGORIES).length}</strong> 个分类</span>
+        <span class="stat"><strong>100%</strong> 含 %@</span>
+      `;
+      filterInput.addEventListener('input', applyFilter);
+      copyVisibleButton.addEventListener('click', () => {
+        const items = visibleSources();
+        if (items.length) copySources(items, copyVisibleButton, '');
+      });
+      applyFilter();
+    </script>
+  </body>
+</html>

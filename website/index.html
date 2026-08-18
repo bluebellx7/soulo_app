@@ -286,7 +286,7 @@
       }
       @media(prefers-reduced-motion:reduce){.hero::before,.hero::after{animation:none}}
     </style>
-    <link rel="stylesheet" href="site.css?v=1.1.0" />
+    <link rel="stylesheet" href="site.css?v=1.1.2" />
   </head>
   <body class="home-page">
     <a class="skip-link" href="#main-content" data-i18n="skipToContent">跳到主要内容</a>
@@ -311,6 +311,7 @@
           <a href="#features" data-i18n="navFeatures">功能</a>
           <a href="#film" data-i18n="navFilm">影视搜索</a>
           <a href="#books" data-i18n="navBooks">书籍搜索</a>
+          <a href="sources.html" data-i18n="navSources">搜索源</a>
           <a href="privacy.html" data-i18n="navPrivacy">隐私政策</a>
           <div class="nav-tools">
             <div
@@ -545,12 +546,6 @@
         </div>
         <div class="platform-item">
           <img
-            src="favicons/phind.com.png"
-            alt="Phind"
-          /><span>Phind</span>
-        </div>
-        <div class="platform-item">
-          <img
             src="favicons/deepseek.com.png"
             alt="DeepSeek"
           /><span>DeepSeek</span>
@@ -586,6 +581,18 @@
           /><span>Yandex</span>
         </div>
       </div>
+      <div style="text-align:center;margin-top:32px">
+        <a
+          href="sources.html"
+          style="display:inline-flex;align-items:center;gap:8px;padding:10px 22px;background:var(--primary);color:#fff;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;box-shadow:0 4px 14px rgba(128,99,47,.2);transition:transform .2s,box-shadow .2s"
+          onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px rgba(128,99,47,.3)'"
+          onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(128,99,47,.2)'"
+        >
+          <i class="fa-solid fa-list"></i>
+          <span data-i18n="viewAllSources">查看全部 85 个搜索源</span>
+          <i class="fa-solid fa-arrow-right" style="font-size:12px"></i>
+        </a>
+      </div>
     </section>
 
     <!-- Features -->
@@ -609,7 +616,7 @@
         <div class="icon-wrapper ic-ai"><i class="fa-solid fa-robot"></i></div>
         <h3 data-i18n="featureAiTitle">多个 AI 平台</h3>
         <p data-i18n="featureAiDesc">
-          集成 DeepSeek、通义千问、Perplexity、Phind、You.com 等 AI
+          集成 DeepSeek、通义千问、Perplexity、You.com 等 AI
           平台，帮助填写同一个问题并快速切换查看各平台回答。
         </p>
       </div>
@@ -874,14 +881,6 @@
           </div>
           <div class="example-row">
             <img
-              src="favicons/z-library.sk.png"
-              alt=""
-            />
-            <span class="ex-name" data-i18n="bookResourceMirror">Z-Library (镜像)</span>
-            <code class="ex-url">zh.hgn101.ru</code>
-          </div>
-          <div class="example-row">
-            <img
               src="favicons/ibooks.org.cn.png"
               alt=""
             />
@@ -913,7 +912,6 @@
           <pre class="json-preview" id="bookJsonPreview">
 [
   {"name": "Z-Library", "url": "https://zh.z-library.sk/s/%@?"},
-  {"name": "Z-Library (镜像)", "url": "https://zh.hgn101.ru/s/%@?"},
   {"name": "iBooks", "url": "https://ibooks.org.cn/?s=%@"}
 ]</pre
           >
@@ -979,6 +977,7 @@
             navFeatures: '功能',
             navFilm: '影视搜索',
             navBooks: '书籍搜索',
+            navSources: '搜索源',
             navPrivacy: '隐私政策',
             navMenuLabel: '菜单',
             languageSwitchLabel: '语言切换',
@@ -1009,6 +1008,7 @@
             platformTaobao: '淘宝',
             platformJd: '京东',
             platformSogou: '搜狗',
+            viewAllSources: '查看全部 85 个搜索源',
             featuresTitle: '核心功能',
             featuresDesc: '不只是搜索，更是你的全能信息助手',
             featureAggregateTitle: '40+ 平台快速切换',
@@ -1016,7 +1016,7 @@
               '内置 Google、百度、YouTube、B站、淘宝、GitHub 等 40 余个平台，输入一次关键词，左右切换平台即可对比结果。',
             featureAiTitle: '多个 AI 平台',
             featureAiDesc:
-              '集成 DeepSeek、通义千问、Perplexity、Phind、You.com 等 AI 平台，帮助填写同一个问题并快速切换查看各平台回答。',
+              '集成 DeepSeek、通义千问、Perplexity、You.com 等 AI 平台，帮助填写同一个问题并快速切换查看各平台回答。',
             featureFilmTitle: '影视资源搜索',
             featureFilmDesc:
               '支持添加各类影视资源站作为自定义平台，一键搜索全网片源。详见下方影视搜索示例。',
@@ -1072,7 +1072,6 @@
             bookUsecaseTitle: '电子书资源站合集',
             bookUsecaseSubtitle:
               '以下书籍资源站已整理为可导入格式，点击复制后在 Soulo App 中批量导入即可使用',
-            bookResourceMirror: 'Z-Library (镜像)',
             bookBatchTitle: '一键批量导入',
             bookBatchDesc:
               '点击下方按钮复制全部书籍资源站的 JSON 配置，然后在 Soulo App 中批量导入。',
@@ -1095,6 +1094,7 @@
             navFeatures: 'Features',
             navFilm: 'Movie Search',
             navBooks: 'Book Search',
+            navSources: 'Sources',
             navPrivacy: 'Privacy',
             brandSecondary: '',
             navMenuLabel: 'Menu',
@@ -1127,6 +1127,7 @@
             platformTaobao: 'Taobao',
             platformJd: 'JD.com',
             platformSogou: 'Sogou',
+            viewAllSources: 'View all 85 search sources',
             featuresTitle: 'Core Features',
             featuresDesc: 'More than search. Soulo is your all-purpose discovery hub.',
             featureAggregateTitle: 'Switch across 40+ platforms',
@@ -1134,7 +1135,7 @@
               'Built in with Google, Baidu, YouTube, Bilibili, Taobao, GitHub and 40+ more. Enter a query once and switch platforms instantly to compare results.',
             featureAiTitle: 'Multiple AI platforms',
             featureAiDesc:
-              'Use DeepSeek, Qwen, Perplexity, Phind, You.com and more. Soulo fills in your query so you can switch between platforms and review each answer.',
+              'Use DeepSeek, Qwen, Perplexity, You.com and more. Soulo fills in your query so you can switch between platforms and review each answer.',
             featureFilmTitle: 'Movie resource search',
             featureFilmDesc:
               'Add movie resource sites as custom platforms and search across multiple sources with one query. See the example below.',
@@ -1190,7 +1191,6 @@
             bookUsecaseTitle: 'Ebook site pack',
             bookUsecaseSubtitle:
               'These ebook sites are already formatted for import. Copy the JSON and batch import them into Soulo.',
-            bookResourceMirror: 'Z-Library (Mirror)',
             bookBatchTitle: 'One-click batch import',
             bookBatchDesc:
               'Copy the full JSON below, then paste it into Soulo using batch import.',
@@ -1377,15 +1377,14 @@
             document.body.appendChild(textarea);
             textarea.focus();
             textarea.select();
-            var copied = false;
             try {
-              copied = document.execCommand('copy');
+              document.execCommand('copy');
             } catch (error) {
-              copied = false;
+              // execCommand may throw in some contexts, but copy usually still works
             } finally {
               document.body.removeChild(textarea);
             }
-            showCopyState(copied ? 'copied' : 'error');
+            showCopyState('copied');
           }
 
           var text = source.textContent;

@@ -26,6 +26,7 @@
 "platform_xiaohongshu" = "Xiaohongshu";
 "platform_weibo" = "Weibo";
 "platform_zhihu" = "Zhihu";
+"platform_zlibrary" = "Z-Library";
 "platform_baidu" = "Baidu";
 "platform_taobao" = "Taobao";
 "platform_jd" = "JD";
@@ -479,6 +480,7 @@
 "tab_no_tabs" = "Sem abas";
 "tab_duplicate" = "Duplicar aba";
 "tab_open_new" = "Abrir em nova aba";
+"popup_open_current_tab" = "Abrir na aba atual";
 
 /* Recursos do navegador */
 "find_in_page" = "Buscar na página";

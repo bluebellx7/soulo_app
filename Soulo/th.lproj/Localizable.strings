@@ -26,6 +26,7 @@
 "platform_xiaohongshu" = "Xiaohongshu";
 "platform_weibo" = "Weibo";
 "platform_zhihu" = "Zhihu";
+"platform_zlibrary" = "Z-Library";
 "platform_baidu" = "Baidu";
 "platform_taobao" = "Taobao";
 "platform_jd" = "JD";
@@ -479,6 +480,7 @@
 "tab_no_tabs" = "ไม่มีแท็บ";
 "tab_duplicate" = "ทำซ้ำแท็บ";
 "tab_open_new" = "เปิดในแท็บใหม่";
+"popup_open_current_tab" = "เปิดในแท็บปัจจุบัน";
 
 /* ฟีเจอร์เบราว์เซอร์ */
 "find_in_page" = "ค้นหาในหน้า";

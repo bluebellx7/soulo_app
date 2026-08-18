@@ -58,7 +58,7 @@ final class WebNavigationPolicyServiceTests: XCTestCase {
         XCTAssertFalse(service.canUseSafariCompatibilityMode(for: nil))
     }
 
-    func testJavaScriptWindowsPreservePopupContextButNormalLinksUseTabs() {
+    func testOnlyAuthenticationWindowsPreservePopupContext() {
         let webURL = URL(string: "https://accounts.example.com/oauth")!
         XCTAssertTrue(BrowserPopupPolicy.shouldPreserveJavaScriptContext(
             navigationType: .other,
@@ -70,7 +70,15 @@ final class WebNavigationPolicyServiceTests: XCTestCase {
         ))
         XCTAssertFalse(BrowserPopupPolicy.shouldPreserveJavaScriptContext(
             navigationType: .linkActivated,
-            url: webURL
+            url: URL(string: "https://example.com/article")!
+        ))
+        XCTAssertFalse(BrowserPopupPolicy.shouldPreserveJavaScriptContext(
+            navigationType: .other,
+            url: URL(string: "https://example.com/script-created-page")!
+        ))
+        XCTAssertTrue(BrowserPopupPolicy.shouldPreserveJavaScriptContext(
+            navigationType: .linkActivated,
+            url: URL(string: "https://accounts.google.com/o/oauth2/auth")!
         ))
     }
 

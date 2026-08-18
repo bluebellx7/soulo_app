@@ -26,6 +26,7 @@
 "platform_xiaohongshu" = "Xiaohongshu";
 "platform_weibo" = "Weibo";
 "platform_zhihu" = "Zhihu";
+"platform_zlibrary" = "Z-Library";
 "platform_baidu" = "Baidu";
 "platform_taobao" = "Taobao";
 "platform_jd" = "JD";
@@ -479,6 +480,7 @@
 "tab_no_tabs" = "Sekme yok";
 "tab_duplicate" = "Sekmeyi çoğalt";
 "tab_open_new" = "Yeni sekmede aç";
+"popup_open_current_tab" = "Geçerli sekmede aç";
 
 /* Tarayıcı özellikleri */
 "find_in_page" = "Sayfada bul";

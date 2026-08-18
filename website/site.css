@@ -966,7 +966,38 @@ button:focus-visible {
   }
 
   .home-page .example-row {
+    align-items: flex-start;
     padding: 10px;
+  }
+
+  .home-page .example-row .ex-name {
+    width: 88px;
+  }
+
+  .home-page .example-row .ex-url {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .home-page .film-sources {
+    grid-template-columns: 1fr;
+  }
+
+  .home-page .copy-json-btn {
+    width: 100%;
+    min-height: 46px;
+    justify-content: center;
+  }
+
+  .home-page .url-example {
+    margin-left: 0;
+    padding: 14px;
+  }
+
+  .home-page .url-example code,
+  .home-page .json-preview {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   .home-page .batch-import-box {
@@ -1014,6 +1045,43 @@ button:focus-visible {
 
   .home-page .platform-item {
     width: 68px;
+  }
+
+  .home-page .hero {
+    min-height: 0;
+    padding-inline: 16px;
+  }
+
+  .home-page .hero-actions,
+  .home-page .hero-actions > * {
+    width: 100%;
+  }
+
+  .home-page .usecase-section {
+    padding-inline: 8px;
+  }
+
+  .home-page .usecase-card {
+    padding: 24px 16px;
+    border-radius: 18px;
+  }
+
+  .home-page .example-row {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+  }
+
+  .home-page .example-row .ex-name {
+    width: auto;
+  }
+
+  .home-page .example-row .ex-url {
+    grid-column: 1 / -1;
+  }
+
+  .privacy-page .container {
+    margin-inline: 8px;
+    padding: 28px 18px;
   }
 
   .home-page footer .footer-links {

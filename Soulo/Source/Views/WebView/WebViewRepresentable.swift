@@ -16,12 +16,43 @@ enum WebNavigationErrorClassifier {
 }
 
 enum BrowserPopupPolicy {
+    private static let authenticationHostSuffixes = [
+        "accounts.google.com",
+        "appleid.apple.com",
+        "login.microsoftonline.com",
+        "login.live.com",
+        "auth0.com",
+        "okta.com"
+    ]
+
+    private static let authenticationURLMarkers = [
+        "/oauth", "/authorize", "/authorization", "/auth/",
+        "/login", "/signin", "/sign-in", "/sso/"
+    ]
+
     static func shouldPreserveJavaScriptContext(
         navigationType: WKNavigationType,
         url: URL
     ) -> Bool {
-        navigationType == .other || url.scheme?.lowercased() == "about"
+        if url.scheme?.lowercased() == "about" {
+            return true
+        }
+        guard navigationType == .other || navigationType == .linkActivated,
+              let host = url.host?.lowercased() else {
+            return false
+        }
+        if authenticationHostSuffixes.contains(where: {
+            host == $0 || host.hasSuffix(".\($0)")
+        }) {
+            return true
+        }
+        let normalizedURL = url.absoluteString.lowercased()
+        return authenticationURLMarkers.contains { normalizedURL.contains($0) }
     }
+}
+
+private enum EmbeddedBrowserPopupTag {
+    static let container = 0x534F554C
 }
 
 enum WebMediaCapturePermissionPolicy {
@@ -522,6 +553,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             NativeWebExtensionRuntime.shared.unregister(uiView)
         }
         coordinator.invalidateObservations()
+        coordinator.dismissEmbeddedPopups(in: uiView)
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloAdBlocker")
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloPrivacy")
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloDownload", contentWorld: .page)
@@ -937,6 +969,9 @@ struct WebViewRepresentable: UIViewRepresentable {
         // MARK: WKNavigationDelegate
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+            if webView === viewModel.webView {
+                dismissEmbeddedPopups(in: webView)
+            }
             navigationGeneration = UUID()
             resetScrollChromeState()
             Task { @MainActor in
@@ -1387,13 +1422,11 @@ struct WebViewRepresentable: UIViewRepresentable {
                                 configuration: configuration
                             )
                         } else {
-                            // Regular target="_blank" links are easier to manage as
-                            // Soulo tabs and do not require a JavaScript opener.
-                            NotificationCenter.default.post(
-                                name: .openInNewTab,
-                                object: nil,
-                                userInfo: ["url": url]
-                            )
+                            // Regular target="_blank" and script-created links do
+                            // not need a separate browser surface. Keep navigation
+                            // in the current Soulo tab; explicit context-menu actions
+                            // can still create a real new tab.
+                            webView.load(navigationAction.request)
                         }
                     case .cancel:
                         break
@@ -1417,14 +1450,44 @@ struct WebViewRepresentable: UIViewRepresentable {
             in parentWebView: WKWebView,
             configuration: WKWebViewConfiguration
         ) -> WKWebView {
+            // WebKit supplies a new-window configuration, but per-view settings
+            // such as the custom user agent are not copied automatically. Match
+            // the parent tab so iPad does not silently promote a mobile popup to
+            // desktop mode.
+            configuration.defaultWebpagePreferences.preferredContentMode = viewModel.isDesktopModeEnabled
+                ? .desktop
+                : .mobile
+
             let container = UIView(frame: parentWebView.bounds)
+            container.tag = EmbeddedBrowserPopupTag.container
             container.backgroundColor = .systemBackground
             container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
 
             let popupWebView = WKWebView(frame: container.bounds, configuration: configuration)
+            popupWebView.customUserAgent = parentWebView.customUserAgent
+            popupWebView.pageZoom = parentWebView.pageZoom
             popupWebView.uiDelegate = self
             popupWebView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             container.addSubview(popupWebView)
+
+            var openConfiguration = UIButton.Configuration.filled()
+            openConfiguration.image = UIImage(systemName: "arrow.right.square")
+            openConfiguration.imagePadding = 6
+            openConfiguration.title = LanguageManager.shared.localizedString("popup_open_current_tab")
+            openConfiguration.baseForegroundColor = .label
+            openConfiguration.baseBackgroundColor = .secondarySystemBackground
+            openConfiguration.cornerStyle = .capsule
+            let openInCurrentTabButton = UIButton(configuration: openConfiguration)
+            openInCurrentTabButton.translatesAutoresizingMaskIntoConstraints = false
+            openInCurrentTabButton.titleLabel?.lineBreakMode = .byTruncatingTail
+            openInCurrentTabButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            openInCurrentTabButton.accessibilityLabel = LanguageManager.shared.localizedString("popup_open_current_tab")
+            openInCurrentTabButton.addTarget(
+                self,
+                action: #selector(openEmbeddedPopupInCurrentTab(_:)),
+                for: .touchUpInside
+            )
+            container.addSubview(openInCurrentTabButton)
 
             var buttonConfiguration = UIButton.Configuration.filled()
             buttonConfiguration.image = UIImage(systemName: "xmark")
@@ -1438,6 +1501,10 @@ struct WebViewRepresentable: UIViewRepresentable {
             container.addSubview(closeButton)
 
             NSLayoutConstraint.activate([
+                openInCurrentTabButton.topAnchor.constraint(equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 10),
+                openInCurrentTabButton.leadingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.leadingAnchor, constant: 12),
+                openInCurrentTabButton.trailingAnchor.constraint(lessThanOrEqualTo: closeButton.leadingAnchor, constant: -8),
+                openInCurrentTabButton.heightAnchor.constraint(equalToConstant: 44),
                 closeButton.topAnchor.constraint(equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 10),
                 closeButton.trailingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.trailingAnchor, constant: -12),
                 closeButton.widthAnchor.constraint(equalToConstant: 44),
@@ -1447,8 +1514,24 @@ struct WebViewRepresentable: UIViewRepresentable {
             return popupWebView
         }
 
+        @objc private func openEmbeddedPopupInCurrentTab(_ sender: UIButton) {
+            guard let container = sender.superview,
+                  let popupWebView = container.subviews.compactMap({ $0 as? WKWebView }).first,
+                  let url = popupWebView.url else {
+                return
+            }
+            container.removeFromSuperview()
+            viewModel.loadURL(url)
+        }
+
         @objc private func closeEmbeddedPopup(_ sender: UIButton) {
             sender.superview?.removeFromSuperview()
+        }
+
+        func dismissEmbeddedPopups(in webView: WKWebView) {
+            webView.subviews
+                .filter { $0.tag == EmbeddedBrowserPopupTag.container }
+                .forEach { $0.removeFromSuperview() }
         }
 
         func webViewDidClose(_ webView: WKWebView) {

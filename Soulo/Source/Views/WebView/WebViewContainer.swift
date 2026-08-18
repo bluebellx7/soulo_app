@@ -7,8 +7,20 @@ enum BrowserChromeLayout {
     static let bottomSpacing: CGFloat = 16
     static let pageContentClearance: CGFloat = 8
 
-    static func showsBottomToolbar(isActiveTab: Bool, isFullscreen: Bool) -> Bool {
-        isActiveTab && !isFullscreen
+    static func showsBottomToolbar(
+        isActiveTab: Bool,
+        isFullscreen: Bool,
+        isManuallyHidden: Bool = false
+    ) -> Bool {
+        isActiveTab && !isFullscreen && !isManuallyHidden
+    }
+
+    static func showsFloatingMore(
+        isActiveTab: Bool,
+        isFullscreen: Bool,
+        isManuallyHidden: Bool
+    ) -> Bool {
+        isActiveTab && !isFullscreen && isManuallyHidden
     }
 
     static func bottomToolbarHeight(
@@ -224,8 +236,9 @@ struct WebViewContainer: View {
 
             if BrowserChromeLayout.showsBottomToolbar(
                 isActiveTab: isActiveTab,
-                isFullscreen: isFullscreen
-            ), !toolbarManuallyHidden {
+                isFullscreen: isFullscreen,
+                isManuallyHidden: toolbarManuallyHidden
+            ) {
                 browserToolbarChrome
                     .frame(height: bottomToolbarHeight, alignment: .top)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -233,10 +246,11 @@ struct WebViewContainer: View {
                     .zIndex(50)
             }
 
-            if BrowserChromeLayout.showsBottomToolbar(
+            if BrowserChromeLayout.showsFloatingMore(
                 isActiveTab: isActiveTab,
-                isFullscreen: isFullscreen
-            ), toolbarManuallyHidden {
+                isFullscreen: isFullscreen,
+                isManuallyHidden: toolbarManuallyHidden
+            ) {
                 floatingMoreOverlay
                     .transition(.opacity.combined(with: .scale(scale: 0.72)))
                     .zIndex(51)
@@ -1445,7 +1459,8 @@ struct WebViewContainer: View {
             return
         }
 
-        toolbarManuallyHidden = false
+        // Full screen temporarily replaces browser chrome, but it must not
+        // overwrite the user's persisted toolbar visibility preference.
         toolbarMinimized = false
 
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {

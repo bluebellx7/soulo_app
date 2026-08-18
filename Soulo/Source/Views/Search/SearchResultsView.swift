@@ -20,6 +20,7 @@ struct SearchResultsView: View {
     @EnvironmentObject var searchVM: SearchViewModel
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var tabManager: TabManager
+    @ObservedObject private var platformStore = PlatformDataStore.shared
     @StateObject private var bookmarkVM = BookmarkViewModel()
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
@@ -375,9 +376,9 @@ struct SearchResultsView: View {
 
             // Restore last selected group and select first platform
             if !lastGroupID.isEmpty,
-               let group = PlatformDataStore.shared.customGroups.first(where: { $0.id.uuidString == lastGroupID }) {
+               let group = platformStore.customGroups.first(where: { $0.id.uuidString == lastGroupID }) {
                 selectedCustomGroup = group
-                let platforms = PlatformDataStore.shared.platformsForGroup(group)
+                let platforms = platformStore.platformsForGroup(group)
                 if let first = platforms.first {
                     searchVM.selectedPlatform = first
                 }
@@ -406,6 +407,9 @@ struct SearchResultsView: View {
             withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
                 isFullscreen = true
             }
+        }
+        .onChange(of: platformStore.platforms) { _, _ in
+            synchronizeSelectedPlatformAfterStoreChange()
         }
         .background {
             DeviceShakeDetector(
@@ -501,8 +505,8 @@ struct SearchResultsView: View {
 
     private var groupPickerMenu: some View {
         Menu {
-            ForEach(PlatformRegion.sortedCases(preferring: searchVM.selectedRegion).filter { !PlatformDataStore.shared.visiblePlatforms(for: $0).isEmpty }) { region in
-                let count = PlatformDataStore.shared.visiblePlatforms(for: region).count
+            ForEach(PlatformRegion.sortedCases(preferring: searchVM.selectedRegion).filter { !platformStore.visiblePlatforms(for: $0).isEmpty }) { region in
+                let count = platformStore.visiblePlatforms(for: region).count
                 Button {
                     selectedCustomGroup = nil
                     lastGroupID = ""
@@ -511,7 +515,7 @@ struct SearchResultsView: View {
                     loadCurrentPlatformURL()
                 } label: {
                     HStack {
-                        Text("\(PlatformDataStore.shared.regionDisplayName(for: region)) (\(count))")
+                        Text("\(platformStore.regionDisplayName(for: region)) (\(count))")
                         if selectedCustomGroup == nil && searchVM.selectedRegion == region {
                             Image(systemName: "checkmark")
                         }
@@ -519,8 +523,8 @@ struct SearchResultsView: View {
                 }
             }
 
-            ForEach(PlatformDataStore.shared.customGroups.filter { !PlatformDataStore.shared.platformsForGroup($0).isEmpty }) { group in
-                let count = PlatformDataStore.shared.platformsForGroup(group).count
+            ForEach(platformStore.customGroups.filter { !platformStore.platformsForGroup($0).isEmpty }) { group in
+                let count = platformStore.platformsForGroup(group).count
                 Button {
                     selectedCustomGroup = group
                     lastGroupID = group.id.uuidString
@@ -568,7 +572,7 @@ struct SearchResultsView: View {
         .accessibilityLabel(LanguageManager.shared.localizedString("select_region"))
         .accessibilityValue(
             selectedCustomGroup?.name
-                ?? PlatformDataStore.shared.regionDisplayName(for: searchVM.selectedRegion)
+                ?? platformStore.regionDisplayName(for: searchVM.selectedRegion)
         )
         .accessibilityHint(languageManager.localizedString("accessibility_group_picker_hint"))
     }
@@ -576,9 +580,22 @@ struct SearchResultsView: View {
     // Computed: platforms for current selection (region or custom group)
     private var currentPlatforms: [SearchPlatform] {
         if let group = selectedCustomGroup {
-            return PlatformDataStore.shared.platformsForGroup(group)
+            return platformStore.platformsForGroup(group)
         }
-        return PlatformDataStore.shared.visiblePlatforms(for: searchVM.selectedRegion)
+        return platformStore.visiblePlatforms(for: searchVM.selectedRegion)
+    }
+
+    private func synchronizeSelectedPlatformAfterStoreChange() {
+        let availablePlatforms = currentPlatforms
+        guard !availablePlatforms.isEmpty else {
+            searchVM.selectedPlatform = nil
+            return
+        }
+        guard let selectedID = searchVM.selectedPlatform?.id,
+              availablePlatforms.contains(where: { $0.id == selectedID }) else {
+            searchVM.selectedPlatform = availablePlatforms[0]
+            return
+        }
     }
 
     @discardableResult

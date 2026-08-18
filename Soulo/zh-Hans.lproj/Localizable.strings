@@ -28,6 +28,7 @@
 "platform_xiaohongshu" = "小红书";
 "platform_weibo" = "微博";
 "platform_zhihu" = "知乎";
+"platform_zlibrary" = "Z-Library";
 "platform_baidu" = "百度";
 "platform_taobao" = "淘宝";
 "platform_jd" = "京东";
@@ -497,6 +498,7 @@
 "tab_no_tabs" = "暂无标签页";
 "tab_duplicate" = "复制标签页";
 "tab_open_new" = "在新标签页中打开";
+"popup_open_current_tab" = "在当前标签页打开";
 
 /* 浏览器功能 */
 "find_in_page" = "页内查找";

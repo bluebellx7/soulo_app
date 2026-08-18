@@ -22,7 +22,7 @@ class PlatformDataStore: ObservableObject {
 
     // MARK: - Persistence
 
-    private let platformVersion = 38 // Increment when cached built-in defaults need migration
+    private let platformVersion = 41 // Increment when cached built-in defaults need migration
 
     private func load() {
         let savedVersion = UserDefaults.standard.integer(forKey: "platform_config_version")
@@ -304,6 +304,25 @@ class PlatformDataStore: ObservableObject {
                 platforms.append(platform)
             }
         }
+        if version < 39 {
+            platforms.removeAll { platform in
+                platform.isBuiltIn && platform.name == "platform_phind"
+            }
+        }
+        if version < 40,
+           let index = platforms.firstIndex(where: { $0.isBuiltIn && $0.name == "platform_zhihu" }) {
+            platforms[index].searchURLTemplate = "https://www.zhihu.com/search?type=content&q=%@"
+            platforms[index].homeURL = "https://www.zhihu.com"
+            platforms[index].requiresLogin = true
+        }
+        if version < 41,
+           !platforms.contains(where: { $0.isBuiltIn && $0.name == "platform_zlibrary" }) {
+            let nextOrder = (platforms
+                .filter { $0.region == .international }
+                .map(\.sortOrder)
+                .max() ?? -1) + 1
+            platforms.append(Self.zLibraryPlatform(sortOrder: nextOrder))
+        }
     }
 
     @discardableResult
@@ -442,7 +461,7 @@ class PlatformDataStore: ObservableObject {
             ))
         }
 
-        // MARK: International (6)
+        // MARK: International
         let internationalData: [(String, String, String, String)] = [
             ("platform_google",   "icon_google",   "https://www.google.com/search?q=%@",              "https://www.google.com"),
             ("platform_youtube",  "icon_youtube",  "https://www.youtube.com/results?search_query=%@", "https://www.youtube.com"),
@@ -455,7 +474,6 @@ class PlatformDataStore: ObservableObject {
             ("platform_github",      "icon_github",      "https://github.com/search?q=%@&type=repositories","https://github.com"),
             ("platform_wikipedia",   "icon_wikipedia",   "https://en.wikipedia.org/w/index.php?search=%@",  "https://en.wikipedia.org"),
             ("platform_perplexity",  "icon_perplexity",  "https://www.perplexity.ai/search?q=%@",           "https://www.perplexity.ai"),
-            ("platform_phind",       "icon_phind",       "https://www.phind.com/search?q=%@",               "https://www.phind.com"),
             ("platform_you",         "icon_you",         "https://you.com/search?q=%@",                     "https://you.com"),
             ("platform_instagram",   "icon_instagram",   "https://www.instagram.com/explore/tags/%@/",      "https://www.instagram.com"),
             ("platform_linkedin",    "icon_linkedin",    "https://www.linkedin.com/search/results/all/?keywords=%@", "https://www.linkedin.com"),
@@ -479,21 +497,23 @@ class PlatformDataStore: ObservableObject {
                 isCustom: false
             ))
         }
+        all.append(Self.zLibraryPlatform(sortOrder: internationalData.count))
 
 
-        // MARK: Zhihu (via Baidu site search)
+        // MARK: Zhihu
         all.append(SearchPlatform(
             id: UUID(),
             name: "platform_zhihu",
             iconName: "icon_zhihu",
-            searchURLTemplate: "https://www.baidu.com/s?wd=site:zhihu.com+%@",
+            searchURLTemplate: "https://www.zhihu.com/search?type=content&q=%@",
             homeURL: "https://www.zhihu.com",
             region: .china,
             isBuiltIn: true,
             isVisible: true,
             sortOrder: chinaData.count,
             usageCount: 0,
-            isCustom: false
+            isCustom: false,
+            requiresLogin: true
         ))
 
         // MARK: AI Platforms (requires login, chat interaction)
@@ -633,6 +653,23 @@ class PlatformDataStore: ObservableObject {
             usageCount: 0,
             isCustom: false,
             requiresLogin: true
+        )
+    }
+
+    private static func zLibraryPlatform(sortOrder: Int) -> SearchPlatform {
+        SearchPlatform(
+            id: UUID(),
+            name: "platform_zlibrary",
+            iconName: "icon_zlibrary",
+            searchURLTemplate: "https://z-library.sk/s/book?keyword=%@",
+            homeURL: "https://z-library.sk",
+            region: .international,
+            isBuiltIn: true,
+            isVisible: true,
+            sortOrder: sortOrder,
+            usageCount: 0,
+            isCustom: false,
+            faviconURL: "https://z-library.sk"
         )
     }
 

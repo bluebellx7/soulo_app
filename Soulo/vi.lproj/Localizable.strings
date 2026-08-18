@@ -18,6 +18,7 @@
 "platform_xiaohongshu" = "Xiaohongshu";
 "platform_weibo" = "Weibo";
 "platform_zhihu" = "Zhihu";
+"platform_zlibrary" = "Z-Library";
 "platform_baidu" = "Baidu";
 "platform_taobao" = "Taobao";
 "platform_jd" = "JD";
@@ -450,6 +451,7 @@ Hay cho chung toi biet:
 "tab_no_tabs" = "Không có tab";
 "tab_duplicate" = "Nhân đôi tab";
 "tab_open_new" = "Mở trong tab mới";
+"popup_open_current_tab" = "Mở trong tab hiện tại";
 
 /* Tính năng trình duyệt */
 "find_in_page" = "Tìm trong trang";

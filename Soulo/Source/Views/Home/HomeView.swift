@@ -5,6 +5,7 @@ struct HomeView: View {
     @EnvironmentObject var searchVM: SearchViewModel
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var tabManager: TabManager
+    @ObservedObject private var platformStore = PlatformDataStore.shared
     @ObservedObject var wallpaperManager = WallpaperManager.shared
     @StateObject private var speechService = SpeechRecognitionService()
     @Environment(\.modelContext) private var modelContext
@@ -363,7 +364,7 @@ struct HomeView: View {
                         lastRegion = region.rawValue
                         lastGroupID = ""
                     } label: {
-                        Text(PlatformDataStore.shared.regionDisplayName(for: region))
+                        Text(platformStore.regionDisplayName(for: region))
                             .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
                             .foregroundStyle(
                                 isSelected
@@ -385,7 +386,7 @@ struct HomeView: View {
                             : ""
                     )
                 }
-                ForEach(PlatformDataStore.shared.customGroups) { group in
+                ForEach(platformStore.customGroups) { group in
                     let isSelected = lastGroupID == group.id.uuidString
                     Button {
                         lastGroupID = group.id.uuidString
@@ -601,7 +602,7 @@ struct HomeView: View {
 
         let selectedGroup = lastGroupID.isEmpty
             ? nil
-            : PlatformDataStore.shared.customGroups.first { $0.id.uuidString == lastGroupID }
+            : platformStore.customGroups.first { $0.id.uuidString == lastGroupID }
         let selectedRegion = PlatformRegion(rawValue: lastRegion)
         searchVM.prepareForHomeSearch(
             preferredRegion: selectedRegion,

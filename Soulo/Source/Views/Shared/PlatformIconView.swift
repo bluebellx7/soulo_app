@@ -59,6 +59,7 @@ struct PlatformIconView: View {
         case "icon_ebay":        return "cart.fill"
         case "icon_stackoverflow":return "text.bubble.fill"
         case "icon_scholar":     return "graduationcap.fill"
+        case "icon_zlibrary":    return "books.vertical.fill"
         case "icon_sogou":       return "magnifyingglass"
         case "icon_360":         return "shield.fill"
         case "icon_toutiao":     return "newspaper.fill"

@@ -86,6 +86,7 @@ final class PlatformDataStoreTests: XCTestCase {
         let platforms = PlatformDataStore.shared.allPlatforms().filter(\.isBuiltIn)
 
         XCTAssertGreaterThanOrEqual(platforms.count, 49)
+        XCTAssertFalse(platforms.contains { $0.name == "platform_phind" })
         for platform in platforms {
             let url = try XCTUnwrap(
                 platform.searchURL(for: query),
@@ -151,6 +152,38 @@ final class PlatformDataStoreTests: XCTestCase {
         let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
         XCTAssertEqual(url.host, "www.xiaohongshu.com")
         XCTAssertEqual(components.queryItems?.first(where: { $0.name == "keyword" })?.value, "上海 咖啡")
+    }
+
+    func testZhihuUsesOfficialContentSearchAndRequiresLogin() throws {
+        let platform = try XCTUnwrap(
+            PlatformDataStore.shared.allPlatforms().first { $0.name == "platform_zhihu" }
+        )
+
+        XCTAssertTrue(platform.isBuiltIn)
+        XCTAssertTrue(platform.requiresLogin)
+
+        let url = try XCTUnwrap(platform.searchURL(for: "搜索"))
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        XCTAssertEqual(url.host, "www.zhihu.com")
+        XCTAssertEqual(url.path, "/search")
+        XCTAssertEqual(components.queryItems?.first(where: { $0.name == "type" })?.value, "content")
+        XCTAssertEqual(components.queryItems?.first(where: { $0.name == "q" })?.value, "搜索")
+    }
+
+    func testZLibraryUsesInternationalBookSearch() throws {
+        let platform = try XCTUnwrap(
+            PlatformDataStore.shared.allPlatforms().first { $0.name == "platform_zlibrary" }
+        )
+
+        XCTAssertTrue(platform.isBuiltIn)
+        XCTAssertTrue(platform.isVisible)
+        XCTAssertEqual(platform.region, .international)
+
+        let url = try XCTUnwrap(platform.searchURL(for: "Swift 编程"))
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        XCTAssertEqual(url.host, "z-library.sk")
+        XCTAssertEqual(url.path, "/s/book")
+        XCTAssertEqual(components.queryItems?.first(where: { $0.name == "keyword" })?.value, "Swift 编程")
     }
 
     func testOnlyXiaohongshuRequiresDesktopMode() throws {

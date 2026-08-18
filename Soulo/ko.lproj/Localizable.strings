@@ -18,6 +18,7 @@
 "platform_xiaohongshu" = "Xiaohongshu";
 "platform_weibo" = "Weibo";
 "platform_zhihu" = "Zhihu";
+"platform_zlibrary" = "Z-Library";
 "platform_baidu" = "Baidu";
 "platform_taobao" = "Taobao";
 "platform_jd" = "JD";
@@ -450,6 +451,7 @@
 "tab_no_tabs" = "탭 없음";
 "tab_duplicate" = "탭 복제";
 "tab_open_new" = "새 탭에서 열기";
+"popup_open_current_tab" = "현재 탭에서 열기";
 
 /* 브라우저 기능 */
 "find_in_page" = "페이지에서 찾기";

@@ -10,6 +10,7 @@ struct NewTabPageView: View {
     @FocusState private var isSearchFocused: Bool
     @Environment(\.colorScheme) private var colorScheme
     @ObservedObject private var wallpaperManager = WallpaperManager.shared
+    @ObservedObject private var platformStore = PlatformDataStore.shared
 
     private var primaryTextColor: Color {
         wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47") : .white
@@ -38,14 +39,14 @@ struct NewTabPageView: View {
 
     /// Platforms for the primary (detected) region — shown first.
     private var primaryPlatforms: [SearchPlatform] {
-        PlatformDataStore.shared.visiblePlatforms(for: detectedRegion)
+        platformStore.visiblePlatforms(for: detectedRegion)
             .filter { $0.interactionType == .urlSearch }
     }
 
     /// A few international platforms to supplement when the primary region is small.
     private var supplementaryPlatforms: [SearchPlatform] {
         guard detectedRegion != .international else { return [] }
-        return PlatformDataStore.shared.visiblePlatforms(for: .international)
+        return platformStore.visiblePlatforms(for: .international)
             .filter { $0.interactionType == .urlSearch }
             .prefix(4)
             .map { $0 }

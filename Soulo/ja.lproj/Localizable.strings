@@ -18,6 +18,7 @@
 "platform_xiaohongshu" = "Xiaohongshu";
 "platform_weibo" = "Weibo";
 "platform_zhihu" = "Zhihu";
+"platform_zlibrary" = "Z-Library";
 "platform_baidu" = "Baidu";
 "platform_taobao" = "Taobao";
 "platform_jd" = "JD";
@@ -450,6 +451,7 @@
 "tab_no_tabs" = "タブがありません";
 "tab_duplicate" = "タブを複製";
 "tab_open_new" = "新しいタブで開く";
+"popup_open_current_tab" = "現在のタブで開く";
 
 /* ブラウザ機能 */
 "find_in_page" = "ページ内検索";

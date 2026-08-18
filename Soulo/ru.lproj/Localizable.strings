@@ -26,6 +26,7 @@
 "platform_xiaohongshu" = "Xiaohongshu";
 "platform_weibo" = "Weibo";
 "platform_zhihu" = "Zhihu";
+"platform_zlibrary" = "Z-Library";
 "platform_baidu" = "Baidu";
 "platform_taobao" = "Taobao";
 "platform_jd" = "JD";
@@ -479,6 +480,7 @@
 "tab_no_tabs" = "Нет вкладок";
 "tab_duplicate" = "Дублировать вкладку";
 "tab_open_new" = "Открыть в новой вкладке";
+"popup_open_current_tab" = "Открыть в текущей вкладке";
 
 /* Функции браузера */
 "find_in_page" = "Найти на странице";

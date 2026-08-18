@@ -329,6 +329,38 @@ final class WebViewModelTests: XCTestCase {
         )
     }
 
+    func testFullscreenTransitionPreservesManuallyHiddenToolbarPresentation() {
+        XCTAssertFalse(
+            BrowserChromeLayout.showsBottomToolbar(
+                isActiveTab: true,
+                isFullscreen: true,
+                isManuallyHidden: true
+            )
+        )
+        XCTAssertFalse(
+            BrowserChromeLayout.showsFloatingMore(
+                isActiveTab: true,
+                isFullscreen: true,
+                isManuallyHidden: true
+            )
+        )
+
+        XCTAssertFalse(
+            BrowserChromeLayout.showsBottomToolbar(
+                isActiveTab: true,
+                isFullscreen: false,
+                isManuallyHidden: true
+            )
+        )
+        XCTAssertTrue(
+            BrowserChromeLayout.showsFloatingMore(
+                isActiveTab: true,
+                isFullscreen: false,
+                isManuallyHidden: true
+            )
+        )
+    }
+
     func testFullscreenExitGestureRequiresAnIntentionalDownwardDrag() {
         XCTAssertTrue(
             FullscreenExitGesture.shouldExit(translation: CGSize(width: 4, height: 34))
