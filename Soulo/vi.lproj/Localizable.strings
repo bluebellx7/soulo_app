@@ -160,9 +160,6 @@
 "clipboard_person_detected" = "Đã phát hiện người";
 "open_directly" = "Mở";
 
-/* F8: Cross-language */
-"also_search_in" = "Cũng tìm kiếm trong %@";
-
 /* F9: Image Search */
 "image_search" = "Tìm kiếm hình ảnh";
 "extracting_text" = "Đang trích xuất văn bản...";
@@ -567,3 +564,28 @@ Hay cho chung toi biet:
 "web_underline_links_desc" = "Gạch chân các liên kết trên trang web để dễ nhận biết hơn.";
 "home_title_edit_desc" = "Hiển thị làm tiêu đề chính ở giữa màn hình chính.";
 "home_subtitle_edit_desc" = "Hiển thị bên dưới tiêu đề chính; để trống để ẩn.";
+"userscript_too_large" = "Tập lệnh đã chọn vượt quá giới hạn 2 MB.";
+"userscript_invalid_connect_domain" = "Quy tắc truy cập mạng không hợp lệ: %@";
+"userscript_storage_invalid" = "Tập lệnh đã cố lưu một giá trị không hợp lệ hoặc quá lớn.";
+"userscript_delete_title" = "Xóa UserScript?";
+"userscript_delete_message" = "Xóa “%@”? Dữ liệu đã lưu cũng sẽ bị xóa.";
+"userscript_access_title" = "Quyền truy cập trang web";
+"userscript_access_all_sites" = "Tất cả trang web";
+"userscript_permissions_title" = "Quyền";
+"userscript_no_extra_permissions" = "Không có quyền bổ sung";
+"userscript_network_title" = "Truy cập mạng";
+"userscript_external_requirements" = "Phần phụ thuộc bên ngoài";
+"userscript_external_requirements_desc" = "Tập lệnh này khai báo tệp @require bên ngoài. Soulo không tự động tải chúng.";
+"userscript_metadata_title" = "Chi tiết tập lệnh";
+"userscript_sample_name" = "Thanh tiến trình đọc";
+"userscript_sample_desc" = "Hiển thị tiến trình đọc gọn nhẹ ở đầu mỗi trang web.";
+"userscript_builtin_badge" = "Ví dụ tích hợp";
+"userscript_description" = "Mô tả";
+"userscript_copy_javascript" = "Sao chép JavaScript";
+"userscripts_documentation" = "Hướng dẫn phát triển";
+"userscript_docs_ai_title" = "Tạo tập lệnh bằng AI";
+"userscript_docs_ai_desc" = "Sao chép prompt tương thích đầy đủ của Soulo, thêm yêu cầu của bạn rồi gửi cho AI để tạo tập lệnh có thể cài đặt.";
+"userscript_docs_copy_prompt" = "Sao chép prompt AI";
+"userscript_commands" = "Lệnh tập lệnh";
+"userscript_page_marker_name" = "Trích xuất văn bản";
+"userscript_page_marker_desc" = "Chạm nút có thể di chuyển, rồi chạm một vùng trang để trích xuất và sao chép văn bản hiển thị.";

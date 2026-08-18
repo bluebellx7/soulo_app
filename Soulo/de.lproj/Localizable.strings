@@ -160,9 +160,6 @@
 "clipboard_person_detected" = "Person erkannt";
 "open_directly" = "Öffnen";
 
-/* F8: Cross-language */
-"also_search_in" = "Auch in %@ suchen";
-
 /* F9: Image Search */
 "image_search" = "Bildersuche";
 "extracting_text" = "Text wird extrahiert...";
@@ -566,3 +563,28 @@ Erzahlen Sie uns:
 "web_underline_links_desc" = "Unterstreicht Links auf Webseiten, damit sie leichter zu erkennen sind.";
 "home_title_edit_desc" = "Wird als Hauptüberschrift in der Mitte des Startbildschirms angezeigt.";
 "home_subtitle_edit_desc" = "Wird unter der Hauptüberschrift angezeigt; leer lassen, um ihn auszublenden.";
+"userscript_too_large" = "Das ausgewählte Skript überschreitet das Limit von 2 MB.";
+"userscript_invalid_connect_domain" = "Ungültige Netzwerkzugriffsregel: %@";
+"userscript_storage_invalid" = "Das Skript wollte einen ungültigen oder zu großen Wert speichern.";
+"userscript_delete_title" = "UserScript löschen?";
+"userscript_delete_message" = "„%@“ löschen? Gespeicherte Daten werden ebenfalls entfernt.";
+"userscript_access_title" = "Websitezugriff";
+"userscript_access_all_sites" = "Alle Websites";
+"userscript_permissions_title" = "Berechtigungen";
+"userscript_no_extra_permissions" = "Keine zusätzlichen Berechtigungen";
+"userscript_network_title" = "Netzwerkzugriff";
+"userscript_external_requirements" = "Externe Abhängigkeiten";
+"userscript_external_requirements_desc" = "Dieses Skript deklariert externe @require-Dateien. Soulo lädt sie nicht automatisch.";
+"userscript_metadata_title" = "Skriptdetails";
+"userscript_sample_name" = "Lesefortschrittsbalken";
+"userscript_sample_desc" = "Zeigt oben auf jeder Webseite einen dezenten Lesefortschritt.";
+"userscript_builtin_badge" = "Integriertes Beispiel";
+"userscript_description" = "Beschreibung";
+"userscript_copy_javascript" = "JavaScript kopieren";
+"userscripts_documentation" = "Entwicklerhandbuch";
+"userscript_docs_ai_title" = "Skript mit KI erstellen";
+"userscript_docs_ai_desc" = "Kopiere den vollständigen Soulo-Kompatibilitätsprompt, ergänze deine Anforderung und sende ihn an eine KI, um ein installierbares Skript zu erstellen.";
+"userscript_docs_copy_prompt" = "KI-Prompt kopieren";
+"userscript_commands" = "Skriptbefehle";
+"userscript_page_marker_name" = "Bereichstext extrahieren";
+"userscript_page_marker_desc" = "Die verschiebbare Taste und dann einen Seitenbereich antippen, um sichtbaren Text zu extrahieren und zu kopieren.";

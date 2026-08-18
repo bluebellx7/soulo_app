@@ -29,6 +29,9 @@ targets:
       - Soulo/Source
       - Soulo/Assets.xcassets
       - Soulo/PrivacyInfo.xcprivacy
+      - path: Soulo/Resources/UserScripts
+        type: folder
+        buildPhase: resources
       - path: Soulo/en.lproj
         type: folder
         buildPhase: resources
@@ -114,8 +117,8 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: Soulo/Soulo.entitlements
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.1.2"
-        CURRENT_PROJECT_VERSION: 14
+        MARKETING_VERSION: "1.1.3"
+        CURRENT_PROJECT_VERSION: 17
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_PREVIEWS: "YES"
@@ -143,8 +146,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.dkluge.Soulo.Widget
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.1.2"
-        CURRENT_PROJECT_VERSION: 14
+        MARKETING_VERSION: "1.1.3"
+        CURRENT_PROJECT_VERSION: 17
         GENERATE_INFOPLIST_FILE: "YES"
         INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
         SKIP_INSTALL: "YES"

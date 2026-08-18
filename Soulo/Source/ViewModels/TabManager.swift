@@ -513,6 +513,9 @@ extension String {
 
 extension Notification.Name {
     static let openInNewTab = Notification.Name("soulo.openInNewTab")
+    static let closeUserScriptTab = Notification.Name("soulo.closeUserScriptTab")
+    static let closeUserScriptCurrentTab = Notification.Name("soulo.closeUserScriptCurrentTab")
+    static let focusUserScriptCurrentTab = Notification.Name("soulo.focusUserScriptCurrentTab")
     static let cancelActiveDownloads = Notification.Name("soulo.cancelActiveDownloads")
     static let linkCopied = Notification.Name("soulo.linkCopied")
     static let browserDownloadFailed = Notification.Name("soulo.browserDownloadFailed")

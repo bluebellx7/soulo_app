@@ -236,9 +236,6 @@
 "clipboard_person_detected" = "Kişi algılandı";
 "open_directly" = "Aç";
 
-/* F8: Cross-language */
-"also_search_in" = "%@ ile de ara";
-
 /* F9: Image Search */
 "image_search" = "Görsel Arama";
 "extracting_text" = "Metin çıkarılıyor...";
@@ -577,3 +574,28 @@
 "web_underline_links_desc" = "Daha kolay ayırt edilmeleri için web sayfası bağlantılarının altını çizer.";
 "home_title_edit_desc" = "Ana ekranın ortasında ana başlık olarak gösterilir.";
 "home_subtitle_edit_desc" = "Ana başlığın altında gösterilir; gizlemek için boş bırakın.";
+"userscript_too_large" = "Seçilen komut dosyası 2 MB sınırını aşıyor.";
+"userscript_invalid_connect_domain" = "Geçersiz ağ erişimi kuralı: %@";
+"userscript_storage_invalid" = "Komut dosyası geçersiz veya çok büyük bir değer kaydetmeye çalıştı.";
+"userscript_delete_title" = "UserScript silinsin mi?";
+"userscript_delete_message" = "“%@” silinsin mi? Kaydedilen verileri de kaldırılacak.";
+"userscript_access_title" = "Web Sitesi Erişimi";
+"userscript_access_all_sites" = "Tüm web siteleri";
+"userscript_permissions_title" = "İzinler";
+"userscript_no_extra_permissions" = "Ek izin yok";
+"userscript_network_title" = "Ağ Erişimi";
+"userscript_external_requirements" = "Harici Bağımlılıklar";
+"userscript_external_requirements_desc" = "Bu komut dosyası harici @require dosyaları bildiriyor. Soulo bunları otomatik yüklemez.";
+"userscript_metadata_title" = "Komut Dosyası Ayrıntıları";
+"userscript_sample_name" = "Okuma İlerleme Çubuğu";
+"userscript_sample_desc" = "Her web sayfasının üstünde sade bir okuma ilerlemesi gösterir.";
+"userscript_builtin_badge" = "Yerleşik Örnek";
+"userscript_description" = "Açıklama";
+"userscript_copy_javascript" = "JavaScript'i Kopyala";
+"userscripts_documentation" = "Geliştirme Kılavuzu";
+"userscript_docs_ai_title" = "AI ile komut dosyası oluştur";
+"userscript_docs_ai_desc" = "Soulo’nun eksiksiz uyumluluk istemini kopyalayın, gereksiniminizi ekleyin ve yüklenebilir bir komut dosyası üretmesi için AI’a gönderin.";
+"userscript_docs_copy_prompt" = "AI İstemini Kopyala";
+"userscript_commands" = "Betik komutları";
+"userscript_page_marker_name" = "Alan metni çıkarıcı";
+"userscript_page_marker_desc" = "Taşınabilir düğmeye, ardından görünür metni çıkarmak ve kopyalamak için bir sayfa alanına dokunun.";

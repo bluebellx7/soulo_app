@@ -397,6 +397,19 @@ final class WebViewModelTests: XCTestCase {
                 translation: CGSize(width: 2, height: 18)
             )
         )
+
+        XCTAssertTrue(
+            FullscreenHandleRevealGesture.beginsNearTop(
+                startY: 42,
+                maximumStartY: 80
+            )
+        )
+        XCTAssertFalse(
+            FullscreenHandleRevealGesture.beginsNearTop(
+                startY: 120,
+                maximumStartY: 80
+            )
+        )
     }
 
     func testFullscreenHandleKeepsAComfortableTouchTarget() {
@@ -889,5 +902,38 @@ final class WebViewModelTests: XCTestCase {
         XCTAssertEqual(values["sl"], "auto")
         XCTAssertEqual(values["tl"], "zh-CN")
         XCTAssertEqual(values["u"], pageURL.absoluteString)
+    }
+
+    @MainActor
+    func testUserScriptMenuCommandsRegisterUpdateAndClearPerScript() {
+        let viewModel = WebViewModel()
+        let scriptID = UUID()
+
+        viewModel.registerUserScriptMenuCommand(
+            id: "reader-toggle",
+            scriptID: scriptID,
+            scriptName: "Reader",
+            title: "Enable Reader"
+        )
+        viewModel.registerUserScriptMenuCommand(
+            id: "reader-toggle",
+            scriptID: scriptID,
+            scriptName: "Reader",
+            title: "Disable Reader"
+        )
+
+        XCTAssertEqual(viewModel.userScriptMenuCommands.count, 1)
+        XCTAssertEqual(viewModel.userScriptMenuCommands.first?.title, "Disable Reader")
+        viewModel.unregisterUserScriptMenuCommand(id: "reader-toggle", scriptID: scriptID)
+        XCTAssertTrue(viewModel.userScriptMenuCommands.isEmpty)
+
+        viewModel.registerUserScriptMenuCommand(
+            id: "again",
+            scriptID: scriptID,
+            scriptName: "Reader",
+            title: "Again"
+        )
+        viewModel.clearUserScriptMenuCommands()
+        XCTAssertTrue(viewModel.userScriptMenuCommands.isEmpty)
     }
 }

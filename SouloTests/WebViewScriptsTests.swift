@@ -338,8 +338,7 @@ final class WebViewScriptsTests: XCTestCase {
         let bridgeToken = "private-token"
         let bootstrap = UserScriptRuntime.compatibilityBootstrap(
             bridgeToken: bridgeToken,
-            scriptID: script.id,
-            allowsXMLHTTPRequests: true
+            script: script
         )
         let wrapped = UserScriptRuntime.wrappedSource(for: script, bridgeToken: bridgeToken)
 
@@ -348,11 +347,58 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertTrue(wrapped.contains("__souloIncludes"))
         XCTAssertTrue(bootstrap.contains("GM_xmlhttpRequest"))
         XCTAssertTrue(bootstrap.contains("souloUserScriptXHR"))
+        XCTAssertTrue(bootstrap.contains("GM_getValue"))
+        XCTAssertTrue(bootstrap.contains("GM_addStyle"))
+        XCTAssertTrue(bootstrap.contains("GM_info"))
         XCTAssertTrue(bootstrap.contains("unsafeWindow"))
         XCTAssertTrue(bootstrap.contains(bridgeToken))
         XCTAssertFalse(bootstrap.contains("window.GM_xmlhttpRequest"))
         assertJavaScriptParses(wrapped)
         assertJavaScriptParses(bootstrap)
+    }
+
+    func testUserScriptExplicitGrantsLimitRuntimeAPIsAndRestoreStoredValues() {
+        let script = UserScriptRecord(
+            name: "Storage",
+            source: "",
+            grants: ["GM_getValue", "GM_setValue"],
+            storedValues: ["theme": #"{"value":"dark"}"#]
+        )
+        let bootstrap = UserScriptRuntime.compatibilityBootstrap(bridgeToken: "token", script: script)
+
+        XCTAssertTrue(bootstrap.contains("GM_getValue"))
+        XCTAssertTrue(bootstrap.contains("GM_setValue"))
+        XCTAssertTrue(bootstrap.contains(#""theme":{"value":"dark"}"#))
+        XCTAssertFalse(bootstrap.contains("var GM_addStyle"))
+        XCTAssertFalse(bootstrap.contains("var GM_xmlhttpRequest"))
+        assertJavaScriptParses(bootstrap)
+    }
+
+    @MainActor
+    func testUserScriptMetadataParsesIdentityDescriptionAndRequirements() {
+        let metadata = BrowserExtensionService.parseMetadata(from: """
+        // ==UserScript==
+        // @name Metadata Probe
+        // @description Improves the page
+        // @author Soulo
+        // @homepageURL https://example.com/home
+        // @updateURL https://example.com/update.user.js
+        // @downloadURL https://example.com/download.user.js
+        // @match https://example.com/*
+        // @match https://example.com/*
+        // @require https://cdn.example.com/helper.js
+        // @resource theme https://cdn.example.com/theme.css
+        // ==/UserScript==
+        """)
+
+        XCTAssertEqual(metadata.description, "Improves the page")
+        XCTAssertEqual(metadata.author, "Soulo")
+        XCTAssertEqual(metadata.homepageURL, "https://example.com/home")
+        XCTAssertEqual(metadata.updateURL, "https://example.com/update.user.js")
+        XCTAssertEqual(metadata.downloadURL, "https://example.com/download.user.js")
+        XCTAssertEqual(metadata.patterns, ["https://example.com/*"])
+        XCTAssertEqual(metadata.requiredURLs, ["https://cdn.example.com/helper.js"])
+        XCTAssertEqual(metadata.resources, ["theme": "https://cdn.example.com/theme.css"])
     }
 
     @MainActor
@@ -384,6 +430,294 @@ final class WebViewScriptsTests: XCTestCase {
 
         let value = try await evaluate("globalThis.__souloUserScriptProbe", in: webView)
         XCTAssertEqual((value as? NSNumber)?.intValue, 1)
+    }
+
+    @MainActor
+    func testExpandedUserScriptDOMStorageAndURLAPIsExecuteInsideWKWebView() async throws {
+        let webView = WKWebView(frame: .zero)
+        let script = UserScriptRecord(
+            name: "Expanded API Probe",
+            source: """
+            var __changes = [];
+            var __listener = GM_addValueChangeListener('theme', function(key, oldValue, newValue, remote) {
+                __changes.push([key, oldValue, newValue, remote]);
+            });
+            GM_setValues({ theme: 'dark', count: 2 });
+            var __values = GM_getValues({ theme: 'light', missing: 7 });
+            GM_deleteValues(['count']);
+            GM_removeValueChangeListener(__listener);
+            var __element = GM_addElement('button', { id: 'soulo-expanded-probe', textContent: 'Ready' });
+            globalThis.__expandedResult = {
+                values: __values,
+                keys: GM_listValues(),
+                changes: __changes,
+                elementText: __element.textContent
+            };
+            """,
+            matchPatterns: ["*"],
+            grants: [
+                "GM_getValues", "GM_setValues", "GM_deleteValues", "GM_listValues",
+                "GM_addValueChangeListener", "GM_removeValueChangeListener",
+                "GM_addElement", "window.onurlchange"
+            ]
+        )
+
+        let result: Result<Any?, Error> = await withCheckedContinuation { continuation in
+            UserScriptRuntime.execute(script, on: webView) { continuation.resume(returning: $0) }
+        }
+        if case let .failure(error) = result { throw error }
+
+        let rawProbe = try await evaluate("globalThis.__expandedResult", in: webView)
+        let probe = try XCTUnwrap(rawProbe as? [String: Any])
+        let values = try XCTUnwrap(probe["values"] as? [String: Any])
+        XCTAssertEqual(values["theme"] as? String, "dark")
+        XCTAssertEqual((values["missing"] as? NSNumber)?.intValue, 7)
+        XCTAssertEqual(probe["elementText"] as? String, "Ready")
+        XCTAssertEqual((probe["changes"] as? [Any])?.count, 1)
+        XCTAssertEqual(probe["keys"] as? [String], ["theme"])
+        let bootstrap = UserScriptRuntime.compatibilityBootstrap(bridgeToken: "", script: script)
+        XCTAssertTrue(bootstrap.contains("window.dispatchEvent(new CustomEvent('urlchange'"))
+        XCTAssertTrue(bootstrap.contains("['pushState', 'replaceState']"))
+    }
+
+    @MainActor
+    func testExpandedUserScriptAPIsArePermissionScopedAndParseAsJavaScript() {
+        let grants = [
+            "GM_registerMenuCommand", "GM_unregisterMenuCommand", "GM_notification",
+            "GM_openInTab", "GM_closeTab", "GM_focusTab", "GM_download",
+            "GM_getTab", "GM_saveTab", "GM_getTabs", "GM_cookie",
+            "GM_getResourceText", "GM_getResourceURL"
+        ]
+        let script = UserScriptRecord(
+            name: "Native API Probe",
+            source: "",
+            grants: grants,
+            connectDomains: ["example.com"],
+            resources: ["fixture": "https://example.com/fixture.txt"]
+        )
+        let bootstrap = UserScriptRuntime.compatibilityBootstrap(
+            bridgeToken: "native-api-token",
+            script: script
+        )
+        XCTAssertTrue(script.unsupportedGrants.isEmpty)
+
+        for symbol in [
+            "GM_registerMenuCommand", "GM_notification", "GM_openInTab", "GM_closeTab",
+            "GM_focusTab", "GM_download", "GM_getTab", "GM_cookie",
+            "GM_getResourceText", "GM_getResourceURL"
+        ] {
+            XCTAssertTrue(bootstrap.contains(symbol), "Missing \(symbol)")
+        }
+        XCTAssertTrue(bootstrap.contains("fixture.txt"))
+        assertJavaScriptParses(bootstrap)
+    }
+
+    @MainActor
+    func testUserScriptBulkStorageIsValidatedAtomically() throws {
+        let marker = UUID().uuidString
+        let source = """
+        // ==UserScript==
+        // @name Bulk Storage \(marker)
+        // @namespace com.soulo.tests.bulk.\(marker)
+        // @match https://example.com/*
+        // @grant GM_setValues
+        // ==/UserScript==
+        """
+        let service = BrowserExtensionService.shared
+        let record = try service.saveUserScript(
+            id: nil,
+            fallbackName: marker,
+            source: source,
+            explicitPatterns: nil,
+            injectionTime: nil
+        )
+        defer { service.deleteUserScript(record.id) }
+
+        try service.setStoredValues(
+            ["theme": #"{"value":"dark"}"#, "count": #"{"value":2}"#],
+            scriptID: record.id
+        )
+        XCTAssertEqual(service.userScript(id: record.id)?.storedValues?.count, 2)
+
+        XCTAssertThrowsError(
+            try service.setStoredValues(
+                ["valid": #"{"value":true}"#, "invalid": "not-json"],
+                scriptID: record.id
+            )
+        )
+        XCTAssertNil(service.userScript(id: record.id)?.storedValues?["valid"])
+        XCTAssertEqual(service.userScript(id: record.id)?.storedValues?.count, 2)
+    }
+
+    @MainActor
+    func testBuiltInReadingProgressSampleIsDisabledAndRunsInWKWebView() async throws {
+        let service = BrowserExtensionService.shared
+        let definition = try XCTUnwrap(BuiltInUserScripts.definition(
+            namespace: "com.dkluge.soulo.examples.reading-progress"
+        ))
+        let installed = try XCTUnwrap(service.userScripts.first {
+            $0.namespace == definition.namespace
+        })
+        XCTAssertTrue(installed.isBuiltIn == true)
+        XCTAssertFalse(installed.isEnabled)
+        XCTAssertEqual(installed.matchPatterns, ["*://*/*"])
+        XCTAssertEqual(installed.grants, ["GM_addStyle"])
+
+        let webView = WKWebView(frame: .zero)
+        let script = UserScriptRecord(
+            name: installed.name,
+            source: definition.source,
+            matchPatterns: ["*"],
+            grants: ["GM_addStyle"],
+            injectionTime: .documentStart
+        )
+        let result: Result<Any?, Error> = await withCheckedContinuation { continuation in
+            UserScriptRuntime.execute(script, on: webView) { result in
+                continuation.resume(returning: result)
+            }
+        }
+        if case let .failure(error) = result { throw error }
+
+        let exists = try await evaluate(
+            "document.getElementById('soulo-reading-progress') !== null",
+            in: webView
+        )
+        XCTAssertEqual(exists as? Bool, true)
+    }
+
+    @MainActor
+    func testBuiltInAreaTextExtractorShowsLauncherAndStartsPicking() async throws {
+        let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        _ = try await evaluate(
+            "document.open(); document.write('<p>Important text for this page.</p>'); document.close();",
+            in: webView
+        )
+        let definition = try XCTUnwrap(BuiltInUserScripts.definition(
+            namespace: "com.dkluge.soulo.examples.page-marker"
+        ))
+        var script = definition.makeRecord()
+        script.matchPatterns = ["*"]
+        let result: Result<Any?, Error> = await withCheckedContinuation { continuation in
+            UserScriptRuntime.execute(script, on: webView) { result in
+                continuation.resume(returning: result)
+            }
+        }
+        if case let .failure(error) = result { throw error }
+
+        let launcherExists = try await evaluate(
+            "document.getElementById('soulo-area-text-extractor-host')?.shadowRoot.querySelector('.launcher') !== null",
+            in: webView
+        )
+        XCTAssertEqual(launcherExists as? Bool, true)
+        _ = try await evaluate(
+            "document.getElementById('soulo-area-text-extractor-host').shadowRoot.querySelector('.launcher').click()",
+            in: webView
+        )
+        let pickingIsActive = try await evaluate(
+            "document.getElementById('soulo-area-text-extractor-host').shadowRoot.querySelector('.guide').classList.contains('visible')",
+            in: webView
+        )
+        XCTAssertEqual(pickingIsActive as? Bool, true)
+    }
+
+    @MainActor
+    func testBuiltInAreaTextExtractorExtractsTappedRegion() async throws {
+        let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        _ = try await evaluate(
+            "document.open(); document.write('<section id=content><h2>Important title</h2><p>Text from this region.</p></section>'); document.close();",
+            in: webView
+        )
+        let definition = try XCTUnwrap(BuiltInUserScripts.definition(
+            namespace: "com.dkluge.soulo.examples.page-marker"
+        ))
+        var script = definition.makeRecord()
+        script.matchPatterns = ["*"]
+        let result: Result<Any?, Error> = await withCheckedContinuation { continuation in
+            UserScriptRuntime.execute(script, on: webView) { result in
+                continuation.resume(returning: result)
+            }
+        }
+        if case let .failure(error) = result { throw error }
+
+        _ = try await evaluate(
+            """
+            (function() {
+              var host = document.getElementById('soulo-area-text-extractor-host');
+              host.shadowRoot.querySelector('.launcher').click();
+              document.getElementById('content').dispatchEvent(new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                clientX: 20,
+                clientY: 20
+              }));
+            })();
+            """,
+            in: webView
+        )
+
+        let extractedText = try await evaluate(
+            "document.getElementById('soulo-area-text-extractor-host').shadowRoot.querySelector('.preview').textContent",
+            in: webView
+        )
+        XCTAssertEqual(extractedText as? String, "Important title\nText from this region.")
+        let panelIsVisible = try await evaluate(
+            "document.getElementById('soulo-area-text-extractor-host').shadowRoot.querySelector('.panel').classList.contains('visible')",
+            in: webView
+        )
+        XCTAssertEqual(panelIsVisible as? Bool, true)
+    }
+
+    @MainActor
+    func testBuiltInAreaTextExtractorLauncherCanBeDragged() async throws {
+        let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        _ = try await evaluate(
+            "document.open(); document.write('<p>Drag test</p>'); document.close();",
+            in: webView
+        )
+        let definition = try XCTUnwrap(BuiltInUserScripts.definition(
+            namespace: "com.dkluge.soulo.examples.page-marker"
+        ))
+        var script = definition.makeRecord()
+        script.matchPatterns = ["*"]
+        let result: Result<Any?, Error> = await withCheckedContinuation { continuation in
+            UserScriptRuntime.execute(script, on: webView) { result in
+                continuation.resume(returning: result)
+            }
+        }
+        if case let .failure(error) = result { throw error }
+
+        let position = try await evaluate(
+            """
+            (function() {
+              var button = document.getElementById('soulo-area-text-extractor-host').shadowRoot.querySelector('.launcher');
+              var rect = button.getBoundingClientRect();
+              button.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 9, button: 0, clientX: rect.left + 20, clientY: rect.top + 20 }));
+              button.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 9, button: 0, clientX: 90, clientY: 160 }));
+              button.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 9, button: 0, clientX: 90, clientY: 160 }));
+              return { left: parseFloat(button.style.left), top: parseFloat(button.style.top) };
+            })();
+            """,
+            in: webView
+        ) as? [String: Any]
+        XCTAssertNotNil(position?["left"] as? Double)
+        XCTAssertNotNil(position?["top"] as? Double)
+    }
+
+    @MainActor
+    func testBuiltInScriptRefreshPreservesUserState() throws {
+        let definition = try XCTUnwrap(BuiltInUserScripts.definition(
+            namespace: "com.dkluge.soulo.examples.page-marker"
+        ))
+        var existing = definition.makeRecord()
+        existing.isEnabled = true
+        existing.storedValues = ["theme": #"{"value":"dark"}"#]
+        let refreshed = definition.makeRecord(preserving: existing)
+
+        XCTAssertEqual(refreshed.id, existing.id)
+        XCTAssertTrue(refreshed.isEnabled)
+        XCTAssertEqual(refreshed.storedValues, existing.storedValues)
+        XCTAssertEqual(refreshed.source, definition.source)
+        XCTAssertEqual(refreshed.version, "2.0.0")
     }
 
     @MainActor
@@ -513,6 +847,22 @@ final class WebViewScriptsTests: XCTestCase {
             URL(string: "https://api.example.com.evil.invalid/data")!,
             script: script,
             pageURL: URL(string: "https://www.example.org")!
+        ))
+    }
+
+    func testUserScriptWithoutConnectIsRestrictedToCurrentHost() {
+        let script = UserScriptRecord(name: "Same Site", source: "")
+        let pageURL = URL(string: "https://www.example.org/article")!
+
+        XCTAssertTrue(UserScriptConnectPolicy.allows(
+            url: URL(string: "https://www.example.org/api")!,
+            script: script,
+            pageURL: pageURL
+        ))
+        XCTAssertFalse(UserScriptConnectPolicy.allows(
+            url: URL(string: "https://api.example.org/data")!,
+            script: script,
+            pageURL: pageURL
         ))
     }
 

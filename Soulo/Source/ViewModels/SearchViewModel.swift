@@ -116,10 +116,6 @@ class SearchViewModel: ObservableObject {
     @Published var clipboardContentType: ClipboardContentType = .generalText
     @Published var suggestedClipboardPlatforms: [SearchPlatform] = []
 
-    // MARK: - F8: Cross-language
-    @Published var translatedKeyword: String? = nil
-    @Published var translationTargetLanguage: String? = nil
-
     @AppStorage("is_incognito") var isIncognito: Bool = false
     @AppStorage("last_clipboard_hash") private var lastClipboardHash: String = ""
     @AppStorage("last_clipboard_change_count") private var lastClipboardChangeCount: Int = 0
@@ -137,8 +133,6 @@ class SearchViewModel: ObservableObject {
 
         // Clear previous suggestions
         spellSuggestion = nil
-        translatedKeyword = nil
-        translationTargetLanguage = nil
 
         if trimmed.isValidURL {
             // URL detected — caller handles direct load
@@ -160,12 +154,6 @@ class SearchViewModel: ObservableObject {
 
         // F3: Spell correction (async-safe, UITextChecker is fast)
         spellSuggestion = SpellCorrectionService.suggest(for: trimmed)
-
-        // F8: Cross-language translation
-        if let result = TranslationService.translate(trimmed) {
-            translatedKeyword = result.translated
-            translationTargetLanguage = result.targetLanguageName
-        }
 
         // F6: Live Activity
         if !isIncognito, let platform = selectedPlatform {
@@ -289,9 +277,6 @@ class SearchViewModel: ObservableObject {
         isSearching = false
         currentKeyword = ""
         spellSuggestion = nil
-        translatedKeyword = nil
-        translationTargetLanguage = nil
-
         // F6: End Live Activity
         LiveActivityService.shared.end()
     }

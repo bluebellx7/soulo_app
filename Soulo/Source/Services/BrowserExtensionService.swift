@@ -14,6 +14,31 @@ enum UserScriptInjectionTime: String, Codable {
     case documentEnd
 }
 
+struct UserScriptMetadata: Equatable {
+    var name: String?
+    var description: String?
+    var author: String?
+    var namespace: String?
+    var version: String?
+    var homepageURL: String?
+    var updateURL: String?
+    var downloadURL: String?
+    var patterns: [String]
+    var excludePatterns: [String]
+    var grants: [String]
+    var connectDomains: [String]
+    var requiredURLs: [String]
+    var resources: [String: String]
+    var injectionTime: UserScriptInjectionTime
+}
+
+struct UserScriptInstallPreview: Equatable {
+    let name: String
+    let source: String
+    let sourceURL: URL?
+    let metadata: UserScriptMetadata
+}
+
 struct UserScriptRecord: Codable, Identifiable, Equatable {
     let id: UUID
     var name: String
@@ -25,9 +50,22 @@ struct UserScriptRecord: Codable, Identifiable, Equatable {
     var connectDomains: [String]?
     var namespace: String?
     var version: String?
+    var scriptDescription: String?
+    var author: String?
+    var homepageURL: String?
+    var updateURL: String?
+    var downloadURL: String?
+    var requiredURLs: [String]?
+    var resources: [String: String]?
+    var sourceURL: String?
+    /// JSON object wrappers keyed by storage name. Optional keeps old stores decodable.
+    var storedValues: [String: String]?
+    /// Built-in examples stay available for learning and can be enabled like normal scripts.
+    var isBuiltIn: Bool?
     var injectionTime: UserScriptInjectionTime
     var isEnabled: Bool
     var installedAt: Date
+    var updatedAt: Date?
 
     init(
         id: UUID = UUID(),
@@ -39,9 +77,20 @@ struct UserScriptRecord: Codable, Identifiable, Equatable {
         connectDomains: [String] = [],
         namespace: String? = nil,
         version: String? = nil,
+        scriptDescription: String? = nil,
+        author: String? = nil,
+        homepageURL: String? = nil,
+        updateURL: String? = nil,
+        downloadURL: String? = nil,
+        requiredURLs: [String] = [],
+        resources: [String: String] = [:],
+        sourceURL: String? = nil,
+        storedValues: [String: String] = [:],
+        isBuiltIn: Bool = false,
         injectionTime: UserScriptInjectionTime = .documentEnd,
         isEnabled: Bool = true,
-        installedAt: Date = Date()
+        installedAt: Date = Date(),
+        updatedAt: Date? = nil
     ) {
         self.id = id
         self.name = name
@@ -52,9 +101,20 @@ struct UserScriptRecord: Codable, Identifiable, Equatable {
         self.connectDomains = connectDomains
         self.namespace = namespace
         self.version = version
+        self.scriptDescription = scriptDescription
+        self.author = author
+        self.homepageURL = homepageURL
+        self.updateURL = updateURL
+        self.downloadURL = downloadURL
+        self.requiredURLs = requiredURLs
+        self.resources = resources
+        self.sourceURL = sourceURL
+        self.storedValues = storedValues
+        self.isBuiltIn = isBuiltIn
         self.injectionTime = injectionTime
         self.isEnabled = isEnabled
         self.installedAt = installedAt
+        self.updatedAt = updatedAt
     }
 
     var allowsXMLHTTPRequests: Bool {
@@ -63,9 +123,27 @@ struct UserScriptRecord: Codable, Identifiable, Equatable {
             return false
         }
         // Older and hand-written scripts without @grant keep their existing behavior.
-        return declaredGrants.isEmpty || declaredGrants.contains {
-            ["GM_xmlhttpRequest", "GM.xmlHttpRequest"].contains($0)
+        return declaredGrants.isEmpty || declaredGrants.contains { grant in
+            ["GM_xmlhttpRequest", "GM.xmlHttpRequest"].contains {
+                grant.caseInsensitiveCompare($0) == .orderedSame
+            }
         }
+    }
+
+    func hasGrant(_ names: String...) -> Bool {
+        let declaredGrants = grants ?? []
+        guard !declaredGrants.contains(where: { $0.caseInsensitiveCompare("none") == .orderedSame }) else {
+            return false
+        }
+        // Preserve compatibility for older hand-written records that predate
+        // grant parsing while honoring explicit modern permission declarations.
+        return declaredGrants.isEmpty || declaredGrants.contains { grant in
+            names.contains { grant.caseInsensitiveCompare($0) == .orderedSame }
+        }
+    }
+
+    var unsupportedGrants: [String] {
+        (grants ?? []).filter { !UserScriptRuntime.supportedGrantNames.contains($0.lowercased()) }
     }
 }
 
@@ -155,7 +233,10 @@ enum BrowserExtensionError: LocalizedError {
     case unsupportedSystem
     case unreadableScript
     case emptyScript
+    case scriptTooLarge
     case invalidMatchPattern(String)
+    case invalidConnectDomain(String)
+    case invalidStorageValue
     case invalidExtension
 
     var errorDescription: String? {
@@ -168,12 +249,22 @@ enum BrowserExtensionError: LocalizedError {
             AppLocalization.string("userscript_unreadable")
         case .emptyScript:
             AppLocalization.string("userscript_empty")
+        case .scriptTooLarge:
+            AppLocalization.string("userscript_too_large")
         case let .invalidMatchPattern(pattern):
             String(
                 format: AppLocalization.string("userscript_invalid_match_pattern"),
                 locale: Locale.current,
                 arguments: [pattern]
             )
+        case let .invalidConnectDomain(domain):
+            String(
+                format: AppLocalization.string("userscript_invalid_connect_domain"),
+                locale: Locale.current,
+                arguments: [domain]
+            )
+        case .invalidStorageValue:
+            AppLocalization.string("userscript_storage_invalid")
         case .invalidExtension:
             AppLocalization.string("web_extension_invalid")
         }
@@ -183,7 +274,9 @@ enum BrowserExtensionError: LocalizedError {
 @MainActor
 final class BrowserExtensionService: ObservableObject {
     static let shared = BrowserExtensionService()
-
+    static let maximumUserScriptSize = 2 * 1_024 * 1_024
+    static let maximumStoredValueSize = 256 * 1_024
+    static let maximumStoredValuesSize = 1 * 1_024 * 1_024
     @Published private(set) var userScripts: [UserScriptRecord] = []
     @Published private(set) var webExtensions: [WebExtensionRecord] = []
 
@@ -191,6 +284,7 @@ final class BrowserExtensionService: ObservableObject {
 
     private init() {
         loadStore()
+        installBuiltInExamplesIfNeeded()
         if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled {
             Task { [weak self] in
                 await self?.restoreEnabledNativeExtensions()
@@ -213,19 +307,30 @@ final class BrowserExtensionService: ObservableObject {
     }
 
     @discardableResult
-    func importUserScript(from sourceURL: URL) throws -> UserScriptRecord {
-        let didAccess = sourceURL.startAccessingSecurityScopedResource()
-        defer { if didAccess { sourceURL.stopAccessingSecurityScopedResource() } }
+    func previewUserScript(from fileURL: URL, sourceURL: URL? = nil) throws -> UserScriptInstallPreview {
+        let source = try Self.readUserScriptSource(from: fileURL)
+        let metadata = Self.parseMetadata(from: source)
+        try Self.validate(metadata: metadata)
+        return UserScriptInstallPreview(
+            name: Self.resolvedUserScriptName(
+                metadata: metadata,
+                fallbackName: Self.fallbackName(for: fileURL)
+            ),
+            source: source,
+            sourceURL: sourceURL,
+            metadata: metadata
+        )
+    }
 
-        guard let source = try? String(contentsOf: sourceURL, encoding: .utf8) else {
-            throw BrowserExtensionError.unreadableScript
-        }
+    func importUserScript(from fileURL: URL, sourceURL: URL? = nil) throws -> UserScriptRecord {
+        let preview = try previewUserScript(from: fileURL, sourceURL: sourceURL)
         return try saveUserScript(
             id: nil,
-            fallbackName: sourceURL.deletingPathExtension().lastPathComponent,
-            source: source,
+            fallbackName: preview.name,
+            source: preview.source,
             explicitPatterns: nil,
-            injectionTime: nil
+            injectionTime: nil,
+            sourceURL: sourceURL
         )
     }
 
@@ -236,7 +341,8 @@ final class BrowserExtensionService: ObservableObject {
         source: String,
         explicitPatterns: [String]?,
         injectionTime: UserScriptInjectionTime?,
-        explicitName: String? = nil
+        explicitName: String? = nil,
+        sourceURL: URL? = nil
     ) throws -> UserScriptRecord {
         let trimmedSource = source.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedSource.isEmpty else { throw BrowserExtensionError.emptyScript }
@@ -245,7 +351,7 @@ final class BrowserExtensionService: ObservableObject {
         let requestedPatterns = (explicitPatterns ?? metadata.patterns)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-        let normalizedPatterns = requestedPatterns.isEmpty ? ["*://*/*"] : requestedPatterns
+        let normalizedPatterns = Self.deduplicated(requestedPatterns.isEmpty ? ["*://*/*"] : requestedPatterns)
         let normalizedExcludes = metadata.excludePatterns
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
@@ -254,14 +360,23 @@ final class BrowserExtensionService: ObservableObject {
         }) {
             throw BrowserExtensionError.invalidMatchPattern(invalid)
         }
+        try Self.validate(metadata: metadata)
 
         let resolvedName = explicitName?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
-            ?? metadata.name?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
-            ?? fallbackName.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
-            ?? LanguageManager.shared.localizedString("userscript_untitled")
+            ?? Self.resolvedUserScriptName(metadata: metadata, fallbackName: fallbackName)
         let normalizedNamespace = metadata.namespace?
             .trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
+        let normalizedSourceURL = sourceURL?.absoluteString
+        let identityURLs = Set(
+            [normalizedSourceURL, metadata.updateURL, metadata.downloadURL]
+                .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty }
+        )
         let existingRecord = id.flatMap { existingID in userScripts.first { $0.id == existingID } }
+            ?? (!identityURLs.isEmpty ? userScripts.first { existing in
+                !identityURLs.isDisjoint(with: Set(
+                    [existing.sourceURL, existing.updateURL, existing.downloadURL].compactMap { $0 }
+                ))
+            } : nil)
             ?? normalizedNamespace.flatMap { namespace in
                 userScripts.first {
                     $0.name.caseInsensitiveCompare(resolvedName) == .orderedSame
@@ -278,9 +393,20 @@ final class BrowserExtensionService: ObservableObject {
             connectDomains: metadata.connectDomains,
             namespace: normalizedNamespace,
             version: metadata.version?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty,
+            scriptDescription: metadata.description?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty,
+            author: metadata.author?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty,
+            homepageURL: metadata.homepageURL,
+            updateURL: metadata.updateURL,
+            downloadURL: metadata.downloadURL,
+            requiredURLs: metadata.requiredURLs,
+            resources: metadata.resources,
+            sourceURL: normalizedSourceURL ?? existingRecord?.sourceURL,
+            storedValues: existingRecord?.storedValues ?? [:],
+            isBuiltIn: existingRecord?.isBuiltIn ?? false,
             injectionTime: injectionTime ?? metadata.injectionTime,
             isEnabled: existingRecord?.isEnabled ?? true,
-            installedAt: existingRecord?.installedAt ?? Date()
+            installedAt: existingRecord?.installedAt ?? Date(),
+            updatedAt: Date()
         )
 
         if let index = userScripts.firstIndex(where: { $0.id == record.id }) {
@@ -299,8 +425,51 @@ final class BrowserExtensionService: ObservableObject {
     }
 
     func deleteUserScript(_ id: UUID) {
+        guard userScripts.first(where: { $0.id == id })?.isBuiltIn != true else { return }
         userScripts.removeAll { $0.id == id }
         persistAndNotify()
+    }
+
+    func setStoredValue(_ encodedValue: String, forKey key: String, scriptID: UUID) throws {
+        try setStoredValues([key: encodedValue], scriptID: scriptID)
+    }
+
+    func setStoredValues(_ encodedValues: [String: String], scriptID: UUID) throws {
+        guard let index = userScripts.firstIndex(where: { $0.id == scriptID }),
+              !encodedValues.isEmpty,
+              encodedValues.allSatisfy({ key, encodedValue in
+                  guard !key.isEmpty,
+                        key.utf8.count <= 256,
+                        encodedValue.utf8.count <= Self.maximumStoredValueSize,
+                        let data = encodedValue.data(using: .utf8),
+                        let wrapper = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+                  else { return false }
+                  return wrapper.keys.allSatisfy { $0 == "value" }
+              }) else {
+            throw BrowserExtensionError.invalidStorageValue
+        }
+        var values = userScripts[index].storedValues ?? [:]
+        values.merge(encodedValues) { _, new in new }
+        let totalSize = values.reduce(0) { result, item in
+            result + item.key.utf8.count + item.value.utf8.count
+        }
+        guard totalSize <= Self.maximumStoredValuesSize else {
+            throw BrowserExtensionError.invalidStorageValue
+        }
+        userScripts[index].storedValues = values
+        persistAndNotify(reloadPages: false)
+    }
+
+    func deleteStoredValue(forKey key: String, scriptID: UUID) {
+        deleteStoredValues(forKeys: [key], scriptID: scriptID)
+    }
+
+    func deleteStoredValues(forKeys keys: [String], scriptID: UUID) {
+        guard let index = userScripts.firstIndex(where: { $0.id == scriptID }) else { return }
+        for key in keys {
+            userScripts[index].storedValues?.removeValue(forKey: key)
+        }
+        persistAndNotify(reloadPages: false)
     }
 
     @discardableResult
@@ -411,6 +580,34 @@ final class BrowserExtensionService: ObservableObject {
         webExtensions = store.webExtensions
     }
 
+    private func installBuiltInExamplesIfNeeded() {
+        let originalCount = userScripts.count
+        userScripts.removeAll { script in
+            script.isBuiltIn == true
+                && BuiltInUserScripts.retiredNamespaces.contains(script.namespace ?? "")
+        }
+        var didChange = userScripts.count != originalCount
+        for definition in BuiltInUserScripts.all {
+            if let index = userScripts.firstIndex(where: {
+                $0.namespace?.caseInsensitiveCompare(definition.namespace) == .orderedSame
+            }) {
+                // A user-authored script may intentionally share a namespace;
+                // only bundled records are refreshed from app resources.
+                guard userScripts[index].isBuiltIn == true else { continue }
+                let refreshed = definition.makeRecord(preserving: userScripts[index])
+                if refreshed != userScripts[index] {
+                    userScripts[index] = refreshed
+                    didChange = true
+                }
+            } else {
+                userScripts.append(definition.makeRecord())
+                didChange = true
+            }
+        }
+        guard didChange else { return }
+        persistAndNotify(reloadPages: false)
+    }
+
     private func persistAndNotify(reloadPages: Bool = true) {
         let store = BrowserExtensionStore(userScripts: userScripts, webExtensions: webExtensions)
         try? fileManager.createDirectory(at: extensionRoot, withIntermediateDirectories: true)
@@ -436,33 +633,35 @@ final class BrowserExtensionService: ObservableObject {
         extensionRoot.appendingPathComponent("extensions.json")
     }
 
-    private static func parseMetadata(from source: String) -> (
-        name: String?,
-        patterns: [String],
-        excludePatterns: [String],
-        grants: [String],
-        connectDomains: [String],
-        namespace: String?,
-        version: String?,
-        injectionTime: UserScriptInjectionTime
-    ) {
+    static func parseMetadata(from source: String) -> UserScriptMetadata {
         var name: String?
+        var description: String?
+        var author: String?
         var patterns: [String] = []
         var excludePatterns: [String] = []
         var grants: [String] = []
         var connectDomains: [String] = []
+        var requiredURLs: [String] = []
+        var resources: [String: String] = [:]
         var namespace: String?
         var version: String?
+        var homepageURL: String?
+        var updateURL: String?
+        var downloadURL: String?
         var injectionTime: UserScriptInjectionTime = .documentEnd
         var isInsideMetadata = false
+        let trimSet = CharacterSet.whitespacesAndNewlines
+            .union(CharacterSet(charactersIn: "\u{FEFF}"))
 
-        for line in source.split(separator: "\n", omittingEmptySubsequences: false).prefix(320) {
-            let value = line.trimmingCharacters(in: .whitespacesAndNewlines)
-            if value.contains("==UserScript==") {
+        for line in source.split(separator: "\n", omittingEmptySubsequences: false).prefix(512) {
+            let value = line.trimmingCharacters(in: trimSet)
+            if value.range(of: #"^//\s*==UserScript==\s*$"#, options: .regularExpression) != nil {
                 isInsideMetadata = true
                 continue
             }
-            if value.contains("==/UserScript==") { break }
+            if value.range(of: #"^//\s*==/UserScript==\s*$"#, options: .regularExpression) != nil {
+                break
+            }
             guard isInsideMetadata else { continue }
 
             if value.range(of: #"^//\s*@name\s+(.+)$"#, options: .regularExpression) != nil {
@@ -471,6 +670,10 @@ final class BrowserExtensionService: ObservableObject {
                     with: "",
                     options: .regularExpression
                 )
+            } else if value.range(of: #"^//\s*@description\s+(.+)$"#, options: .regularExpression) != nil {
+                description = metadataValue(value, keyPattern: "description")
+            } else if value.range(of: #"^//\s*@author\s+(.+)$"#, options: .regularExpression) != nil {
+                author = metadataValue(value, keyPattern: "author")
             } else if value.range(of: #"^//\s*@(match|include)\s+(.+)$"#, options: .regularExpression) != nil {
                 let pattern = value.replacingOccurrences(
                     of: #"^//\s*@(match|include)\s+"#,
@@ -508,20 +711,109 @@ final class BrowserExtensionService: ObservableObject {
                     with: "",
                     options: .regularExpression
                 )
+            } else if value.range(of: #"^//\s*@(homepage|homepageURL|website|source)\s+(.+)$"#, options: .regularExpression) != nil {
+                homepageURL = metadataValue(value, keyPattern: "(homepage|homepageURL|website|source)")
+            } else if value.range(of: #"^//\s*@updateURL\s+(.+)$"#, options: .regularExpression) != nil {
+                updateURL = metadataValue(value, keyPattern: "updateURL")
+            } else if value.range(of: #"^//\s*@downloadURL\s+(.+)$"#, options: .regularExpression) != nil {
+                downloadURL = metadataValue(value, keyPattern: "downloadURL")
+            } else if value.range(of: #"^//\s*@require\s+(.+)$"#, options: .regularExpression) != nil {
+                requiredURLs.append(metadataValue(value, keyPattern: "require"))
+            } else if value.range(of: #"^//\s*@resource\s+\S+\s+\S+"#, options: .regularExpression) != nil {
+                let resource = metadataValue(value, keyPattern: "resource")
+                    .split(maxSplits: 1, whereSeparator: \Character.isWhitespace)
+                if resource.count == 2 {
+                    resources[String(resource[0])] = String(resource[1])
+                }
             } else if value.range(of: #"^//\s*@run-at\s+document-start"#, options: .regularExpression) != nil {
                 injectionTime = .documentStart
             }
         }
-        return (
-            name,
-            patterns,
-            excludePatterns,
-            grants,
-            connectDomains,
-            namespace,
-            version,
-            injectionTime
+        return UserScriptMetadata(
+            name: name,
+            description: description,
+            author: author,
+            namespace: namespace,
+            version: version,
+            homepageURL: homepageURL,
+            updateURL: updateURL,
+            downloadURL: downloadURL,
+            patterns: deduplicated(patterns),
+            excludePatterns: deduplicated(excludePatterns),
+            grants: deduplicated(grants),
+            connectDomains: deduplicated(connectDomains),
+            requiredURLs: deduplicated(requiredURLs),
+            resources: resources,
+            injectionTime: injectionTime
         )
+    }
+
+    private static func metadataValue(_ line: String, keyPattern: String) -> String {
+        line.replacingOccurrences(
+            of: "^//\\s*@\(keyPattern)\\s+",
+            with: "",
+            options: .regularExpression
+        ).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func readUserScriptSource(from fileURL: URL) throws -> String {
+        let didAccess = fileURL.startAccessingSecurityScopedResource()
+        defer { if didAccess { fileURL.stopAccessingSecurityScopedResource() } }
+
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
+              let fileSize = attributes[.size] as? NSNumber else {
+            throw BrowserExtensionError.unreadableScript
+        }
+        guard fileSize.intValue <= maximumUserScriptSize else {
+            throw BrowserExtensionError.scriptTooLarge
+        }
+        guard let data = try? Data(contentsOf: fileURL, options: .mappedIfSafe),
+              data.count <= maximumUserScriptSize,
+              let source = String(data: data, encoding: .utf8) else {
+            throw BrowserExtensionError.unreadableScript
+        }
+        return source
+    }
+
+    private static func fallbackName(for fileURL: URL) -> String {
+        let filename = fileURL.lastPathComponent
+        if filename.lowercased().hasSuffix(".user.js") {
+            return String(filename.dropLast(".user.js".count))
+        }
+        return fileURL.deletingPathExtension().lastPathComponent
+    }
+
+    private static func resolvedUserScriptName(
+        metadata: UserScriptMetadata,
+        fallbackName: String
+    ) -> String {
+        metadata.name?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
+            ?? fallbackName.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
+            ?? LanguageManager.shared.localizedString("userscript_untitled")
+    }
+
+    private static func validate(metadata: UserScriptMetadata) throws {
+        if let invalid = (metadata.patterns + metadata.excludePatterns).first(where: {
+            !UserScriptURLMatcher.isValid(pattern: $0)
+        }) {
+            throw BrowserExtensionError.invalidMatchPattern(invalid)
+        }
+        if let invalid = metadata.connectDomains.first(where: {
+            !UserScriptConnectPolicy.isValid(declaration: $0)
+        }) {
+            throw BrowserExtensionError.invalidConnectDomain(invalid)
+        }
+    }
+
+    private static func deduplicated(_ values: [String]) -> [String] {
+        var seen = Set<String>()
+        return values.compactMap { rawValue in
+            let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !value.isEmpty else { return nil }
+            let key = value.lowercased()
+            guard seen.insert(key).inserted else { return nil }
+            return value
+        }
     }
 
     private static func convertCRXToZIP(sourceURL: URL, destinationURL: URL) throws {
@@ -571,16 +863,387 @@ final class BrowserExtensionService: ObservableObject {
 }
 
 enum UserScriptRuntime {
+    static let supportedGrantNames: Set<String> = [
+        "none", "unsafewindow", "gm_info", "gm.info",
+        "gm_xmlhttprequest", "gm.xmlhttprequest",
+        "gm_addstyle", "gm.addstyle", "gm_addelement", "gm.addelement",
+        "gm_log", "gm.log",
+        "gm_getvalue", "gm.getvalue", "gm_setvalue", "gm.setvalue",
+        "gm_deletevalue", "gm.deletevalue", "gm_listvalues", "gm.listvalues",
+        "gm_getvalues", "gm.getvalues", "gm_setvalues", "gm.setvalues",
+        "gm_deletevalues", "gm.deletevalues",
+        "gm_addvaluechangelistener", "gm.addvaluechangelistener",
+        "gm_removevaluechangelistener", "gm.removevaluechangelistener",
+        "gm_setclipboard", "gm.setclipboard",
+        "gm_registermenucommand", "gm.registermenucommand",
+        "gm_unregistermenucommand", "gm.unregistermenucommand",
+        "gm_notification", "gm.notification",
+        "gm_openintab", "gm.openintab",
+        "gm_closetab", "gm.closetab", "gm_focustab", "gm.focustab",
+        "gm_download", "gm.download",
+        "gm_getresourcetext", "gm.getresourcetext",
+        "gm_getresourceurl", "gm.getresourceurl",
+        "gm_gettab", "gm.gettab", "gm_savetab", "gm.savetab",
+        "gm_gettabs", "gm.gettabs", "gm_cookie", "gm.cookie",
+        "window.onurlchange"
+    ]
+
     static func compatibilityBootstrap(
         bridgeToken: String,
-        scriptID: UUID,
-        allowsXMLHTTPRequests: Bool
+        script: UserScriptRecord
     ) -> String {
-        guard allowsXMLHTTPRequests else {
-            return "var unsafeWindow = window; var GM = Object.freeze({});"
-        }
+        let allowsUnsafeWindow = script.hasGrant("unsafeWindow")
+        let allowsXHR = script.allowsXMLHTTPRequests
+        let allowsAddStyle = script.hasGrant("GM_addStyle", "GM.addStyle")
+        let allowsAddElement = script.hasGrant("GM_addElement", "GM.addElement")
+        let allowsLog = script.hasGrant("GM_log", "GM.log")
+        let allowsGetValue = script.hasGrant("GM_getValue", "GM.getValue")
+        let allowsSetValue = script.hasGrant("GM_setValue", "GM.setValue")
+        let allowsDeleteValue = script.hasGrant("GM_deleteValue", "GM.deleteValue")
+        let allowsListValues = script.hasGrant("GM_listValues", "GM.listValues")
+        let allowsGetValues = script.hasGrant("GM_getValues", "GM.getValues")
+        let allowsSetValues = script.hasGrant("GM_setValues", "GM.setValues")
+        let allowsDeleteValues = script.hasGrant("GM_deleteValues", "GM.deleteValues")
+        let allowsAddValueListener = script.hasGrant(
+            "GM_addValueChangeListener", "GM.addValueChangeListener"
+        )
+        let allowsRemoveValueListener = script.hasGrant(
+            "GM_removeValueChangeListener", "GM.removeValueChangeListener"
+        )
+        let allowsClipboard = script.hasGrant("GM_setClipboard", "GM.setClipboard")
+        let allowsRegisterMenu = script.hasGrant(
+            "GM_registerMenuCommand", "GM.registerMenuCommand"
+        )
+        let allowsUnregisterMenu = script.hasGrant(
+            "GM_unregisterMenuCommand", "GM.unregisterMenuCommand"
+        )
+        let allowsNotification = script.hasGrant("GM_notification", "GM.notification")
+        let allowsOpenInTab = script.hasGrant("GM_openInTab", "GM.openInTab")
+        let allowsCloseTab = script.hasGrant("GM_closeTab", "GM.closeTab")
+        let allowsFocusTab = script.hasGrant("GM_focusTab", "GM.focusTab")
+        let allowsDownload = script.hasGrant("GM_download", "GM.download")
+        let allowsGetResourceText = script.hasGrant(
+            "GM_getResourceText", "GM.getResourceText"
+        )
+        let allowsGetResourceURL = script.hasGrant(
+            "GM_getResourceURL", "GM.getResourceUrl", "GM.getResourceURL"
+        )
+        let allowsGetTab = script.hasGrant("GM_getTab", "GM.getTab")
+        let allowsSaveTab = script.hasGrant("GM_saveTab", "GM.saveTab")
+        let allowsGetTabs = script.hasGrant("GM_getTabs", "GM.getTabs")
+        let allowsCookie = script.hasGrant("GM_cookie", "GM.cookie")
+        let allowsURLChange = script.hasGrant("window.onurlchange")
+        let storageLiteral = storedValuesLiteral(script.storedValues ?? [:])
+        let resourcesLiteral = dictionaryLiteral(script.resources ?? [:])
+        let infoLiteral = userScriptInfoLiteral(script)
+
         return #"""
-        var unsafeWindow = window;
+        var __souloStorage = \#(storageLiteral);
+        var __souloResources = \#(resourcesLiteral);
+        var __souloGM = {};
+        var GM_info = \#(infoLiteral);
+        __souloGM.info = GM_info;
+
+        function __souloBridge(action, details) {
+            var bridge = window.webkit && window.webkit.messageHandlers
+                && window.webkit.messageHandlers.souloUserScriptAPI;
+            if (!bridge || typeof bridge.postMessage !== 'function') {
+                return Promise.reject(new Error('Soulo UserScript bridge is unavailable'));
+            }
+            var payload = Object.assign({
+                __souloToken: '\#(bridgeToken.escapedForJS)',
+                __souloScriptID: '\#(script.id.uuidString)',
+                action: action
+            }, details || {});
+            return bridge.postMessage(payload);
+        }
+
+        function __souloStoredValue(key, fallback) {
+            key = String(key);
+            if (!Object.prototype.hasOwnProperty.call(__souloStorage, key)) return fallback;
+            return __souloStorage[key].value;
+        }
+
+        var __souloValueListeners = Object.create(null);
+        var __souloNextValueListenerID = 1;
+        function __souloNotifyValueListeners(key, oldValue, newValue, remote) {
+            Object.keys(__souloValueListeners).forEach(function(id) {
+                var item = __souloValueListeners[id];
+                if (item.key !== key) return;
+                try { item.callback(key, oldValue, newValue, Boolean(remote)); }
+                catch (error) { console.error(error); }
+            });
+        }
+        function __souloEncodeValue(value) {
+            var encoded = JSON.stringify({ value: value });
+            if (typeof encoded !== 'string') throw new TypeError('Value is not JSON serializable');
+            return encoded;
+        }
+        function __souloSetValue(key, value) {
+            key = String(key);
+            var oldValue = __souloStoredValue(key, undefined);
+            var encoded = __souloEncodeValue(value);
+            __souloStorage[key] = { value: value };
+            __souloNotifyValueListeners(key, oldValue, value, false);
+            return __souloBridge('setValue', { key: key, value: encoded });
+        }
+        function __souloDeleteValue(key) {
+            key = String(key);
+            var oldValue = __souloStoredValue(key, undefined);
+            var existed = Object.prototype.hasOwnProperty.call(__souloStorage, key);
+            delete __souloStorage[key];
+            if (existed) __souloNotifyValueListeners(key, oldValue, undefined, false);
+            return __souloBridge('deleteValue', { key: key });
+        }
+        function __souloGetValues(keysOrDefaults) {
+            var result = {};
+            if (Array.isArray(keysOrDefaults)) {
+                keysOrDefaults.forEach(function(key) {
+                    key = String(key);
+                    if (Object.prototype.hasOwnProperty.call(__souloStorage, key)) {
+                        result[key] = __souloStorage[key].value;
+                    }
+                });
+                return result;
+            }
+            var defaults = keysOrDefaults && typeof keysOrDefaults === 'object'
+                ? keysOrDefaults : {};
+            Object.keys(defaults).forEach(function(key) {
+                result[key] = __souloStoredValue(key, defaults[key]);
+            });
+            if (!keysOrDefaults) {
+                Object.keys(__souloStorage).forEach(function(key) {
+                    result[key] = __souloStorage[key].value;
+                });
+            }
+            return result;
+        }
+        function __souloSetValues(values) {
+            values = values && typeof values === 'object' ? values : {};
+            var encodedValues = {};
+            Object.keys(values).forEach(function(key) {
+                encodedValues[key] = __souloEncodeValue(values[key]);
+            });
+            Object.keys(values).forEach(function(key) {
+                var oldValue = __souloStoredValue(key, undefined);
+                __souloStorage[key] = { value: values[key] };
+                __souloNotifyValueListeners(key, oldValue, values[key], false);
+            });
+            if (!Object.keys(encodedValues).length) return Promise.resolve(true);
+            return __souloBridge('setValues', { values: encodedValues });
+        }
+        function __souloDeleteValues(keys) {
+            keys = Array.isArray(keys) ? keys.map(String) : [];
+            keys.forEach(function(key) {
+                var oldValue = __souloStoredValue(key, undefined);
+                var existed = Object.prototype.hasOwnProperty.call(__souloStorage, key);
+                delete __souloStorage[key];
+                if (existed) __souloNotifyValueListeners(key, oldValue, undefined, false);
+            });
+            if (!keys.length) return Promise.resolve(true);
+            return __souloBridge('deleteValues', { keys: keys });
+        }
+        function __souloAddValueChangeListener(key, callback) {
+            if (typeof callback !== 'function') throw new TypeError('callback must be a function');
+            var id = __souloNextValueListenerID++;
+            __souloValueListeners[id] = { key: String(key), callback: callback };
+            return id;
+        }
+        function __souloRemoveValueChangeListener(id) {
+            var existed = Object.prototype.hasOwnProperty.call(__souloValueListeners, id);
+            delete __souloValueListeners[id];
+            return existed;
+        }
+        function __souloAddElement(parent, tagName, attributes) {
+            if (typeof parent === 'string') {
+                attributes = tagName;
+                tagName = parent;
+                parent = document.head || document.body || document.documentElement;
+            }
+            parent = parent || document.head || document.body || document.documentElement;
+            var element = document.createElement(String(tagName));
+            Object.keys(attributes || {}).forEach(function(name) {
+                var value = attributes[name];
+                if (name === 'textContent' || name === 'innerHTML') element[name] = String(value);
+                else if (name.slice(0, 2) === 'on' && typeof value === 'function') element[name] = value;
+                else if (value === true) element.setAttribute(name, '');
+                else if (value !== false && value != null) element.setAttribute(name, String(value));
+            });
+            if (!parent) throw new Error('No parent is available for GM_addElement');
+            parent.appendChild(element);
+            return element;
+        }
+
+        \#(allowsUnsafeWindow ? "var unsafeWindow = window;" : "")
+        \#(allowsGetValue ? "var GM_getValue = function(key, fallback) { return __souloStoredValue(key, fallback); }; __souloGM.getValue = function(key, fallback) { return Promise.resolve(__souloStoredValue(key, fallback)); };" : "")
+        \#(allowsSetValue ? "var GM_setValue = function(key, value) { __souloSetValue(key, value).catch(console.error); }; __souloGM.setValue = __souloSetValue;" : "")
+        \#(allowsDeleteValue ? "var GM_deleteValue = function(key) { __souloDeleteValue(key).catch(console.error); }; __souloGM.deleteValue = __souloDeleteValue;" : "")
+        \#(allowsListValues ? "var GM_listValues = function() { return Object.keys(__souloStorage); }; __souloGM.listValues = function() { return Promise.resolve(GM_listValues()); };" : "")
+        \#(allowsGetValues ? "var GM_getValues = __souloGetValues; __souloGM.getValues = function(keysOrDefaults) { return Promise.resolve(__souloGetValues(keysOrDefaults)); };" : "")
+        \#(allowsSetValues ? "var GM_setValues = function(values) { __souloSetValues(values).catch(console.error); }; __souloGM.setValues = __souloSetValues;" : "")
+        \#(allowsDeleteValues ? "var GM_deleteValues = function(keys) { __souloDeleteValues(keys).catch(console.error); }; __souloGM.deleteValues = __souloDeleteValues;" : "")
+        \#(allowsAddValueListener ? "var GM_addValueChangeListener = __souloAddValueChangeListener; __souloGM.addValueChangeListener = function(key, callback) { return Promise.resolve(__souloAddValueChangeListener(key, callback)); };" : "")
+        \#(allowsRemoveValueListener ? "var GM_removeValueChangeListener = __souloRemoveValueChangeListener; __souloGM.removeValueChangeListener = function(id) { return Promise.resolve(__souloRemoveValueChangeListener(id)); };" : "")
+        \#(allowsAddStyle ? "var GM_addStyle = function(css) { var style = document.createElement('style'); style.textContent = String(css); var attach = function() { var parent = document.head || document.documentElement; if (parent && !style.isConnected) parent.appendChild(style); }; attach(); if (!style.isConnected) document.addEventListener('DOMContentLoaded', attach, { once: true }); return style; }; __souloGM.addStyle = function(css) { return Promise.resolve(GM_addStyle(css)); };" : "")
+        \#(allowsAddElement ? "var GM_addElement = __souloAddElement; __souloGM.addElement = function(parent, tagName, attributes) { return Promise.resolve(__souloAddElement(parent, tagName, attributes)); };" : "")
+        \#(allowsLog ? "var GM_log = function() { console.log.apply(console, arguments); }; __souloGM.log = GM_log;" : "")
+        \#(allowsClipboard ? "var GM_setClipboard = function(value) { __souloBridge('setClipboard', { value: String(value) }).catch(console.error); }; __souloGM.setClipboard = function(value) { return __souloBridge('setClipboard', { value: String(value) }); };" : "")
+
+        function __souloNotification(details, onDone) {
+            if (typeof details === 'string') details = { text: details };
+            details = details || {};
+            return new Promise(function(resolve) {
+                var host = document.createElement('div');
+                host.style.cssText = 'all:initial;position:fixed;z-index:2147483647;right:max(16px,env(safe-area-inset-right));top:max(16px,env(safe-area-inset-top));max-width:min(360px,calc(100vw - 32px));';
+                var root = host.attachShadow ? host.attachShadow({ mode: 'closed' }) : host;
+                var card = document.createElement('button');
+                card.type = 'button';
+                card.style.cssText = 'all:initial;box-sizing:border-box;display:block;width:100%;padding:14px 16px;border-radius:16px;background:rgba(28,28,30,.94);color:white;box-shadow:0 12px 36px rgba(0,0,0,.28);font:14px -apple-system,BlinkMacSystemFont,sans-serif;cursor:pointer;backdrop-filter:blur(20px);';
+                var title = details.title || GM_info.script.name || 'UserScript';
+                card.innerHTML = '<strong style="display:block;font-size:15px;margin-bottom:4px"></strong><span style="display:block;line-height:1.4;opacity:.84"></span>';
+                card.querySelector('strong').textContent = String(title);
+                card.querySelector('span').textContent = String(details.text || details.message || '');
+                root.appendChild(card);
+                function finish(clicked) {
+                    if (!host.isConnected) return;
+                    host.remove();
+                    if (clicked && typeof details.onclick === 'function') details.onclick();
+                    if (clicked && typeof details.onClick === 'function') details.onClick();
+                    if (typeof details.ondone === 'function') details.ondone();
+                    if (typeof onDone === 'function') onDone();
+                    resolve(clicked);
+                }
+                card.addEventListener('click', function() { finish(true); });
+                (document.body || document.documentElement).appendChild(host);
+                var timeout = Number(details.timeout);
+                setTimeout(function() { finish(false); }, Number.isFinite(timeout) && timeout > 0 ? timeout : 5000);
+            });
+        }
+
+        var __souloGlobalMenuCallbacks = window.__souloUserScriptMenuCallbacks;
+        if (!__souloGlobalMenuCallbacks) {
+            __souloGlobalMenuCallbacks = Object.create(null);
+            Object.defineProperty(window, '__souloUserScriptMenuCallbacks', {
+                value: __souloGlobalMenuCallbacks, configurable: true
+            });
+        }
+        window.__souloDispatchUserScriptMenuCommand = function(id) {
+            var callback = __souloGlobalMenuCallbacks[String(id)];
+            if (typeof callback !== 'function') return false;
+            try { callback(); return true; }
+            catch (error) { console.error(error); return false; }
+        };
+        function __souloRegisterMenuCommand(caption, commandFunc) {
+            if (typeof commandFunc !== 'function') throw new TypeError('commandFunc must be a function');
+            var id = '\#(script.id.uuidString)-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+            __souloGlobalMenuCallbacks[id] = commandFunc;
+            __souloBridge('registerMenuCommand', { id: id, title: String(caption) }).catch(function(error) {
+                delete __souloGlobalMenuCallbacks[id];
+                console.error(error);
+            });
+            return id;
+        }
+        function __souloUnregisterMenuCommand(id) {
+            id = String(id);
+            delete __souloGlobalMenuCallbacks[id];
+            return __souloBridge('unregisterMenuCommand', { id: id });
+        }
+        function __souloOpenInTab(url, options) {
+            options = typeof options === 'object' && options ? options : { active: options !== true };
+            var absoluteURL = new URL(String(url), location.href).href;
+            var id = '\#(script.id.uuidString)-tab-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+            var closed = false;
+            var handle = {
+                close: function() {
+                    if (closed) return;
+                    closed = true;
+                    handle.closed = true;
+                    __souloBridge('closeTab', { id: id }).catch(console.error);
+                    if (typeof handle.onclose === 'function') handle.onclose();
+                },
+                onclose: null,
+                closed: false
+            };
+            __souloBridge('openInTab', {
+                id: id, url: absoluteURL, active: options.active !== false
+            }).catch(console.error);
+            return handle;
+        }
+        function __souloDownload(details, name) {
+            if (typeof details === 'string') details = { url: details, name: name };
+            details = details || {};
+            var aborted = false;
+            var promise = __souloBridge('download', {
+                url: new URL(String(details.url || ''), location.href).href,
+                name: details.name == null ? '' : String(details.name)
+            }).then(function(result) {
+                if (aborted) return result;
+                if (typeof details.onload === 'function') details.onload(result);
+                return result;
+            }).catch(function(error) {
+                if (!aborted && typeof details.onerror === 'function') details.onerror(error);
+                throw error;
+            });
+            return { abort: function() { aborted = true; }, promise: promise };
+        }
+        function __souloGetResource(name) {
+            name = String(name);
+            if (!Object.prototype.hasOwnProperty.call(__souloResources, name)) {
+                return Promise.reject(new Error('Unknown @resource: ' + name));
+            }
+            return __souloBridge('getResource', { name: name });
+        }
+        function __souloGetTab(callback) {
+            return __souloBridge('getTab').then(function(tab) {
+                if (typeof callback === 'function') callback(tab || {});
+                return tab || {};
+            });
+        }
+        function __souloSaveTab(tab) {
+            var encoded = JSON.stringify(tab || {});
+            if (typeof encoded !== 'string') throw new TypeError('Tab data is not JSON serializable');
+            return __souloBridge('saveTab', { value: encoded });
+        }
+        function __souloGetTabs(callback) {
+            return __souloBridge('getTabs').then(function(tabs) {
+                tabs = tabs || {};
+                if (typeof callback === 'function') callback(tabs);
+                return tabs;
+            });
+        }
+        var __souloCookieAPI = {
+            list: function(details, callback) {
+                var promise = __souloBridge('cookieList', { details: details || {} });
+                if (typeof callback === 'function') promise.then(callback, function(error) { callback([], error); });
+                return promise;
+            },
+            set: function(details, callback) {
+                var promise = __souloBridge('cookieSet', { details: details || {} });
+                if (typeof callback === 'function') promise.then(function() { callback(); }, callback);
+                return promise;
+            },
+            delete: function(details, callback) {
+                var promise = __souloBridge('cookieDelete', { details: details || {} });
+                if (typeof callback === 'function') promise.then(function() { callback(); }, callback);
+                return promise;
+            }
+        };
+
+        \#(allowsRegisterMenu ? "var GM_registerMenuCommand = __souloRegisterMenuCommand; __souloGM.registerMenuCommand = function(caption, commandFunc) { return Promise.resolve(__souloRegisterMenuCommand(caption, commandFunc)); };" : "")
+        \#(allowsUnregisterMenu ? "var GM_unregisterMenuCommand = function(id) { __souloUnregisterMenuCommand(id).catch(console.error); }; __souloGM.unregisterMenuCommand = __souloUnregisterMenuCommand;" : "")
+        \#(allowsNotification ? "var GM_notification = function(details, onDone) { __souloNotification(details, onDone).catch(console.error); }; __souloGM.notification = __souloNotification;" : "")
+        \#(allowsOpenInTab ? "var GM_openInTab = __souloOpenInTab; __souloGM.openInTab = function(url, options) { return Promise.resolve(__souloOpenInTab(url, options)); };" : "")
+        \#(allowsCloseTab ? "var GM_closeTab = function() { __souloBridge('closeCurrentTab').catch(console.error); }; __souloGM.closeTab = function() { return __souloBridge('closeCurrentTab'); };" : "")
+        \#(allowsFocusTab ? "var GM_focusTab = function() { __souloBridge('focusCurrentTab').catch(console.error); }; __souloGM.focusTab = function() { return __souloBridge('focusCurrentTab'); };" : "")
+        \#(allowsDownload ? "var GM_download = __souloDownload; __souloGM.download = function(details, name) { return __souloDownload(details, name).promise; };" : "")
+        \#(allowsGetResourceText ? "var GM_getResourceText = function(name) { return __souloGetResource(name).then(function(result) { return result.responseText || ''; }); }; __souloGM.getResourceText = GM_getResourceText;" : "")
+        \#(allowsGetResourceURL ? "var GM_getResourceURL = function(name) { return __souloGetResource(name).then(function(result) { return 'data:' + (result.mimeType || 'application/octet-stream') + ';base64,' + (result.base64 || ''); }); }; __souloGM.getResourceUrl = GM_getResourceURL; __souloGM.getResourceURL = GM_getResourceURL;" : "")
+        \#(allowsGetTab ? "var GM_getTab = function(callback) { __souloGetTab(callback).catch(console.error); }; __souloGM.getTab = __souloGetTab;" : "")
+        \#(allowsSaveTab ? "var GM_saveTab = function(tab) { __souloSaveTab(tab).catch(console.error); }; __souloGM.saveTab = __souloSaveTab;" : "")
+        \#(allowsGetTabs ? "var GM_getTabs = function(callback) { __souloGetTabs(callback).catch(console.error); }; __souloGM.getTabs = __souloGetTabs;" : "")
+        \#(allowsCookie ? "var GM_cookie = __souloCookieAPI; __souloGM.cookie = __souloCookieAPI;" : "")
+        \#(allowsURLChange ? "if (!window.__souloURLChangeInstalled) { window.__souloURLChangeInstalled = true; (function() { var lastURL = location.href; function emit() { var nextURL = location.href; if (nextURL === lastURL) return; lastURL = nextURL; window.dispatchEvent(new CustomEvent('urlchange', { detail: { url: nextURL } })); if (typeof window.onurlchange === 'function') window.onurlchange({ url: nextURL }); } ['pushState', 'replaceState'].forEach(function(name) { var original = history[name]; history[name] = function() { var result = original.apply(this, arguments); emit(); return result; }; }); addEventListener('popstate', emit); addEventListener('hashchange', emit); })(); }" : "")
+
         function base64Blob(value, mimeType) {
             var binary = atob(value || '');
             var bytes = new Uint8Array(binary.length);
@@ -603,7 +1266,7 @@ enum UserScriptRuntime {
 
             var payload = {
                 __souloToken: '\#(bridgeToken.escapedForJS)',
-                __souloScriptID: '\#(scriptID.uuidString)',
+                __souloScriptID: '\#(script.id.uuidString)',
                 url: String(details.url || ''),
                 method: String(details.method || 'GET'),
                 headers: details.headers || {},
@@ -653,8 +1316,8 @@ enum UserScriptRuntime {
             return { abort: function() { aborted = true; } };
         }
 
-        var GM_xmlhttpRequest = request;
-        var GM = Object.freeze({ xmlHttpRequest: request });
+        \#(allowsXHR ? "var GM_xmlhttpRequest = request; __souloGM.xmlHttpRequest = request;" : "")
+        var GM = Object.freeze(__souloGM);
         """#
     }
 
@@ -667,8 +1330,7 @@ enum UserScriptRuntime {
         )
         let compatibility = compatibilityBootstrap(
             bridgeToken: bridgeToken,
-            scriptID: script.id,
-            allowsXMLHTTPRequests: script.allowsXMLHTTPRequests
+            script: script
         )
         let execution = """
         function __souloRunUserScript() {
@@ -718,6 +1380,58 @@ enum UserScriptRuntime {
         return value
     }
 
+    private static func dictionaryLiteral(_ values: [String: String]) -> String {
+        guard let data = try? JSONSerialization.data(withJSONObject: values),
+              let value = String(data: data, encoding: .utf8) else {
+            return "{}"
+        }
+        return value
+    }
+
+    private static func storedValuesLiteral(_ values: [String: String]) -> String {
+        let object = values.reduce(into: [String: Any]()) { result, item in
+            guard let data = item.value.data(using: .utf8),
+                  let wrapper = try? JSONSerialization.jsonObject(with: data),
+                  JSONSerialization.isValidJSONObject(wrapper) else { return }
+            result[item.key] = wrapper
+        }
+        guard let data = try? JSONSerialization.data(withJSONObject: object),
+              let value = String(data: data, encoding: .utf8) else {
+            return "{}"
+        }
+        return value
+    }
+
+    private static func userScriptInfoLiteral(_ script: UserScriptRecord) -> String {
+        let runAt = script.injectionTime == .documentStart
+            ? "document-start" : "document-end"
+        let scriptInfo: [String: Any] = [
+            "name": script.name,
+            "namespace": script.namespace ?? "",
+            "version": script.version ?? "",
+            "description": script.scriptDescription ?? "",
+            "author": script.author ?? "",
+            "matches": script.matchPatterns,
+            "excludes": script.excludePatterns ?? [],
+            "grant": script.grants ?? [],
+            "connects": script.connectDomains ?? [],
+            "resources": script.resources ?? [:],
+            "require": script.requiredURLs ?? [],
+            "runAt": runAt
+        ]
+        let info: [String: Any] = [
+            "scriptHandler": "Soulo",
+            "version": AppConstants.appVersion,
+            "isIncognito": false,
+            "script": scriptInfo
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: info),
+              let value = String(data: data, encoding: .utf8) else {
+            return "{}"
+        }
+        return value
+    }
+
     @MainActor
     static func execute(
         _ script: UserScriptRecord,
@@ -745,7 +1459,7 @@ enum UserScriptHTTPBridge {
         pageURL: URL?
     ) async throws -> [String: Any] {
         guard let rawURL = body["url"] as? String,
-              let url = URL(string: rawURL),
+              let url = URL(string: rawURL, relativeTo: pageURL)?.absoluteURL,
               isAllowedTarget(url, script: script, pageURL: pageURL) else {
             throw URLError(.unsupportedURL)
         }
@@ -781,9 +1495,20 @@ enum UserScriptHTTPBridge {
             delegateQueue: nil
         )
         defer { session.finishTasksAndInvalidate() }
-        let (data, response) = try await session.data(for: request)
-        guard data.count <= maximumResponseSize else {
+        let (bytes, response) = try await session.bytes(for: request)
+        guard response.expectedContentLength <= Int64(maximumResponseSize)
+                || response.expectedContentLength == NSURLSessionTransferSizeUnknown else {
             throw URLError(.dataLengthExceedsMaximum)
+        }
+        var data = Data()
+        if response.expectedContentLength > 0 {
+            data.reserveCapacity(Int(response.expectedContentLength))
+        }
+        for try await byte in bytes {
+            guard data.count < maximumResponseSize else {
+                throw URLError(.dataLengthExceedsMaximum)
+            }
+            data.append(byte)
         }
         guard let http = response as? HTTPURLResponse else {
             throw URLError(.badServerResponse)
@@ -948,10 +1673,35 @@ enum UserScriptURLMatcher {
 }
 
 enum UserScriptConnectPolicy {
+    static func isValid(declaration rawValue: String) -> Bool {
+        let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !value.isEmpty else { return false }
+        if ["*", "self"].contains(value) { return true }
+        if value.contains("://") {
+            return UserScriptURLMatcher.isValid(pattern: value)
+        }
+        let domain = value.hasPrefix("*.") ? String(value.dropFirst(2)) : value
+        guard !domain.isEmpty,
+              !domain.contains("/"),
+              !domain.contains(" "),
+              !domain.hasPrefix("."),
+              !domain.hasSuffix(".") else {
+            return false
+        }
+        return domain == "localhost"
+            || domain.range(of: #"^[a-z0-9.-]+$"#, options: .regularExpression) != nil
+            || URL(string: "http://[\(domain)]")?.host != nil
+    }
+
     static func allows(url: URL, script: UserScriptRecord, pageURL: URL?) -> Bool {
         let declarations = script.connectDomains ?? []
-        guard !declarations.isEmpty else { return true }
         guard let host = url.host?.lowercased() else { return false }
+
+        // With no @connect declaration, constrain privileged requests to the
+        // page's own host. Cross-site access requires an explicit domain or *.
+        guard !declarations.isEmpty else {
+            return pageURL?.host?.lowercased() == host
+        }
 
         return declarations.contains { rawValue in
             let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()

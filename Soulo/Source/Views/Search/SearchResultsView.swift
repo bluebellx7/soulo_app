@@ -30,6 +30,7 @@ struct SearchResultsView: View {
     @State private var showVoiceInput = false
     @State private var showPlatformManagement = false
     @State private var pageReady = false
+    @State private var userScriptOpenedTabs: [String: UUID] = [:]
     /// Incremented each time performSearch runs; compared to detect new vs. returning
     @State private var lastSearchID: UUID = UUID()
 
@@ -123,20 +124,6 @@ struct SearchResultsView: View {
                         )
                     }
 
-                    if let translated = searchVM.translatedKeyword,
-                       let targetLang = searchVM.translationTargetLanguage {
-                        CrossLanguageBanner(
-                            translatedKeyword: translated,
-                            targetLanguage: targetLang,
-                            onTap: {
-                                searchVM.searchText = translated
-                                searchVM.translatedKeyword = nil
-                                searchVM.translationTargetLanguage = nil
-                                searchVM.performSearch(context: modelContext)
-                                loadCurrentPlatformURL()
-                            }
-                        )
-                    }
                 }
 
                 // WebView — mount only the active tab; WebViewModel keeps the WKWebView alive for instant restores.
@@ -330,8 +317,32 @@ struct SearchResultsView: View {
         // Handle "open in new tab" from WebView (target="_blank" links)
         .onReceive(NotificationCenter.default.publisher(for: .openInNewTab)) { notification in
             if let url = notification.userInfo?["url"] as? URL {
-                tabManager.createTab(url: url, keyword: searchVM.currentKeyword, platform: searchVM.selectedPlatform)
+                let tab = tabManager.createTab(
+                    url: url,
+                    keyword: searchVM.currentKeyword,
+                    platform: searchVM.selectedPlatform,
+                    switchTo: notification.userInfo?["switchTo"] as? Bool ?? true
+                )
+                if let scriptTabID = notification.userInfo?["userScriptTabID"] as? String,
+                   !scriptTabID.isEmpty {
+                    userScriptOpenedTabs[scriptTabID] = tab.id
+                }
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .closeUserScriptTab)) { notification in
+            guard let scriptTabID = notification.userInfo?["userScriptTabID"] as? String,
+                  let tabID = userScriptOpenedTabs.removeValue(forKey: scriptTabID) else { return }
+            tabManager.closeTab(id: tabID)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .closeUserScriptCurrentTab)) { notification in
+            guard let source = notification.object as? WebViewModel,
+                  let tab = tabManager.tabs.first(where: { $0.webViewModel === source }) else { return }
+            tabManager.closeTab(id: tab.id)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .focusUserScriptCurrentTab)) { notification in
+            guard let source = notification.object as? WebViewModel,
+                  let index = tabManager.tabs.firstIndex(where: { $0.webViewModel === source }) else { return }
+            tabManager.switchToTab(at: index)
         }
         .alert(
             languageManager.localizedString("tab_limit_title"),

@@ -236,9 +236,6 @@
 "clipboard_person_detected" = "Pessoa detectada";
 "open_directly" = "Abrir";
 
-/* F8: Cross-language */
-"also_search_in" = "Pesquisar também em %@";
-
 /* F9: Image Search */
 "image_search" = "Pesquisa por Imagem";
 "extracting_text" = "Extraindo texto...";
@@ -577,3 +574,28 @@
 "web_underline_links_desc" = "Sublinha os links das páginas para facilitar a identificação.";
 "home_title_edit_desc" = "Exibido como título principal no centro da tela inicial.";
 "home_subtitle_edit_desc" = "Exibido abaixo do título principal; deixe vazio para ocultar.";
+"userscript_too_large" = "O script selecionado excede o limite de 2 MB.";
+"userscript_invalid_connect_domain" = "Regra de acesso à rede inválida: %@";
+"userscript_storage_invalid" = "O script tentou salvar um valor inválido ou grande demais.";
+"userscript_delete_title" = "Excluir UserScript?";
+"userscript_delete_message" = "Excluir “%@”? Os dados salvos também serão removidos.";
+"userscript_access_title" = "Acesso a sites";
+"userscript_access_all_sites" = "Todos os sites";
+"userscript_permissions_title" = "Permissões";
+"userscript_no_extra_permissions" = "Sem permissões adicionais";
+"userscript_network_title" = "Acesso à rede";
+"userscript_external_requirements" = "Dependências externas";
+"userscript_external_requirements_desc" = "Este script declara arquivos @require externos. O Soulo não os carrega automaticamente.";
+"userscript_metadata_title" = "Detalhes do script";
+"userscript_sample_name" = "Barra de progresso de leitura";
+"userscript_sample_desc" = "Mostra um indicador discreto no topo de cada página web.";
+"userscript_builtin_badge" = "Exemplo integrado";
+"userscript_description" = "Descrição";
+"userscript_copy_javascript" = "Copiar JavaScript";
+"userscripts_documentation" = "Guia de desenvolvimento";
+"userscript_docs_ai_title" = "Criar um script com IA";
+"userscript_docs_ai_desc" = "Copie o prompt completo de compatibilidade do Soulo, adicione seu requisito e envie a uma IA para gerar um script instalável.";
+"userscript_docs_copy_prompt" = "Copiar prompt para IA";
+"userscript_commands" = "Comandos de script";
+"userscript_page_marker_name" = "Extrator de texto";
+"userscript_page_marker_desc" = "Toque no botão móvel e depois em uma área da página para extrair e copiar o texto visível.";

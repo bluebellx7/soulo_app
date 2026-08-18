@@ -236,9 +236,6 @@
 "clipboard_person_detected" = "تم اكتشاف شخص";
 "open_directly" = "فتح";
 
-/* F8: Cross-language */
-"also_search_in" = "ابحث أيضاً في %@";
-
 /* F9: Image Search */
 "image_search" = "البحث بالصور";
 "extracting_text" = "جارٍ استخراج النص...";
@@ -577,3 +574,28 @@
 "web_underline_links_desc" = "يضع خطًا تحت روابط صفحات الويب لتسهيل التعرّف عليها.";
 "home_title_edit_desc" = "يظهر كعنوان رئيسي في وسط الشاشة الرئيسية.";
 "home_subtitle_edit_desc" = "يظهر أسفل العنوان الرئيسي؛ اتركه فارغًا لإخفائه.";
+"userscript_too_large" = "يتجاوز البرنامج النصي المحدد حد 2 ميجابايت.";
+"userscript_invalid_connect_domain" = "قاعدة وصول غير صالحة للشبكة: %@";
+"userscript_storage_invalid" = "حاول البرنامج النصي حفظ قيمة غير صالحة أو كبيرة جدًا.";
+"userscript_delete_title" = "حذف UserScript؟";
+"userscript_delete_message" = "حذف «%@»؟ ستُحذف بياناته المحفوظة أيضًا.";
+"userscript_access_title" = "الوصول إلى المواقع";
+"userscript_access_all_sites" = "كل المواقع";
+"userscript_permissions_title" = "الأذونات";
+"userscript_no_extra_permissions" = "لا أذونات إضافية";
+"userscript_network_title" = "الوصول إلى الشبكة";
+"userscript_external_requirements" = "تبعيات خارجية";
+"userscript_external_requirements_desc" = "يعلن هذا البرنامج النصي ملفات @require خارجية. لا يحمّلها Soulo تلقائيًا.";
+"userscript_metadata_title" = "تفاصيل البرنامج النصي";
+"userscript_sample_name" = "شريط تقدم القراءة";
+"userscript_sample_desc" = "يعرض مؤشرًا بسيطًا لتقدم القراءة أعلى كل صفحة ويب.";
+"userscript_builtin_badge" = "مثال مضمّن";
+"userscript_description" = "الوصف";
+"userscript_copy_javascript" = "نسخ JavaScript";
+"userscripts_documentation" = "دليل التطوير";
+"userscript_docs_ai_title" = "إنشاء برنامج نصي باستخدام الذكاء الاصطناعي";
+"userscript_docs_ai_desc" = "انسخ مطالبة التوافق الكاملة لـ Soulo، وأضف متطلباتك، ثم أرسلها إلى الذكاء الاصطناعي لإنشاء برنامج نصي قابل للتثبيت.";
+"userscript_docs_copy_prompt" = "نسخ مطالبة الذكاء الاصطناعي";
+"userscript_commands" = "أوامر السكربت";
+"userscript_page_marker_name" = "استخراج نص المنطقة";
+"userscript_page_marker_desc" = "اضغط الزر القابل للتحريك ثم اضغط على منطقة في الصفحة لاستخراج النص الظاهر ونسخه.";

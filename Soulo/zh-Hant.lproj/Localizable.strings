@@ -236,9 +236,6 @@
 "clipboard_person_detected" = "偵測到人名";
 "open_directly" = "直接開啟";
 
-/* F8: 跨語言搜尋 */
-"also_search_in" = "同時用%@搜尋";
-
 /* F9: 圖片搜尋 */
 "image_search" = "圖片搜尋";
 "extracting_text" = "正在擷取文字...";
@@ -635,3 +632,28 @@
 "web_underline_links_desc" = "為網頁連結加上底線，讓連結更容易辨識。";
 "home_title_edit_desc" = "作為首頁中央顯示的主標題。";
 "home_subtitle_edit_desc" = "顯示在主標題下方，留空則隱藏。";
+"userscript_too_large" = "所選指令碼超過 2 MB 大小限制。";
+"userscript_invalid_connect_domain" = "網路存取規則無效：%@";
+"userscript_storage_invalid" = "指令碼嘗試儲存無效或過大的資料。";
+"userscript_delete_title" = "刪除 UserScript？";
+"userscript_delete_message" = "確定刪除「%@」嗎？其儲存的資料也會一併移除。";
+"userscript_access_title" = "網站存取範圍";
+"userscript_access_all_sites" = "所有網站";
+"userscript_permissions_title" = "權限";
+"userscript_no_extra_permissions" = "沒有額外權限";
+"userscript_network_title" = "網路存取";
+"userscript_external_requirements" = "外部相依項目";
+"userscript_external_requirements_desc" = "此指令碼宣告了外部 @require 檔案，Soulo 不會自動載入。";
+"userscript_metadata_title" = "指令碼詳細資料";
+"userscript_sample_name" = "閱讀進度列";
+"userscript_sample_desc" = "在每個網頁頂部顯示簡潔的閱讀進度提示。";
+"userscript_builtin_badge" = "內建範例";
+"userscript_description" = "描述";
+"userscript_copy_javascript" = "複製 JavaScript";
+"userscripts_documentation" = "開發文件";
+"userscript_docs_ai_title" = "使用 AI 建立腳本";
+"userscript_docs_ai_desc" = "複製包含 Soulo 完整相容規則的提示詞，補充你的需求後交給 AI，即可產生可安裝的腳本。";
+"userscript_docs_copy_prompt" = "複製 AI Prompt";
+"userscript_commands" = "腳本命令";
+"userscript_page_marker_name" = "區域文字擷取";
+"userscript_page_marker_desc" = "點擊可拖動按鈕，再點擊網頁中的任一區域，即可擷取並複製可見文字。";

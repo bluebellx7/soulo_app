@@ -78,6 +78,10 @@ enum FullscreenHandleRevealGesture {
         translation.height >= 24
             && abs(translation.height) > abs(translation.width) * 1.2
     }
+
+    static func beginsNearTop(startY: CGFloat, maximumStartY: CGFloat) -> Bool {
+        startY >= 0 && startY <= max(maximumStartY, 0)
+    }
 }
 
 enum FullscreenHandleLayout {
@@ -257,9 +261,6 @@ struct WebViewContainer: View {
             }
 
             if isActiveTab && isFullscreen {
-                fullscreenHandleRevealArea
-                    .zIndex(69)
-
                 if showFullscreenMenu {
                     fullscreenMenuDismissBackdrop
                         .transition(.opacity)
@@ -404,6 +405,12 @@ struct WebViewContainer: View {
             }
         }
         .animation(.easeOut(duration: 0.18), value: webViewModel.showSnapshotWhileRestoring)
+        .simultaneousGesture(
+            fullscreenHandleRevealGesture,
+            including: isActiveTab && isFullscreen && !showFullscreenExitHandle
+                ? .all
+                : .none
+        )
         .onChange(of: webViewModel.isScrollingUp) { _, scrollingUp in
             if isActiveTab {
                 guard !voiceOverEnabled else {
@@ -596,7 +603,7 @@ struct WebViewContainer: View {
         }
         .sheet(item: $extensionInstallCandidate) { candidate in
             BrowserPackageInstallView(candidate: candidate)
-                .presentationDetents([.height(430)])
+                .presentationDetents([.height(580), .large])
                 .presentationDragIndicator(.visible)
         }
         .fullScreenCover(isPresented: $showResourceInspector) {
@@ -627,8 +634,13 @@ struct WebViewContainer: View {
         .onReceive(NotificationCenter.default.publisher(for: .browserExtensionsChanged)) { _ in
             // Rebuild every loaded tab. Otherwise an inactive tab would keep
             // the old WKUserScript set when it becomes active later.
-            guard webViewModel.currentURL != nil else { return }
-            webViewModel.rebuildWebViewRuntime()
+            if let tabManager {
+                for tab in tabManager.tabs where tab.webViewModel.currentURL != nil {
+                    tab.webViewModel.rebuildWebViewRuntime()
+                }
+            } else if webViewModel.currentURL != nil {
+                webViewModel.rebuildWebViewRuntime()
+            }
         }
     }
 
@@ -1399,27 +1411,20 @@ struct WebViewContainer: View {
         .accessibilityLabel(LanguageManager.shared.localizedString(titleKey))
     }
 
-    private var fullscreenHandleRevealArea: some View {
-        VStack(spacing: 0) {
-            Color.clear
-                .contentShape(Rectangle())
-                .frame(height: max(topSafeAreaInset, windowSafeAreaInsets.top, 8) + 36)
-                .gesture(
-                    DragGesture(minimumDistance: 10)
-                        .onEnded { value in
-                            if FullscreenHandleRevealGesture.shouldReveal(
-                                translation: value.translation
-                            ) {
-                                revealFullscreenExitHandle()
-                            }
-                        }
-                )
-
-            Spacer(minLength: 0)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .allowsHitTesting(!showFullscreenExitHandle)
-        .accessibilityHidden(true)
+    private var fullscreenHandleRevealGesture: some Gesture {
+        DragGesture(minimumDistance: 10, coordinateSpace: .local)
+            .onEnded { value in
+                let maximumStartY = max(topSafeAreaInset, windowSafeAreaInsets.top, 8) + 36
+                guard FullscreenHandleRevealGesture.beginsNearTop(
+                    startY: value.startLocation.y,
+                    maximumStartY: maximumStartY
+                ), FullscreenHandleRevealGesture.shouldReveal(
+                    translation: value.translation
+                ) else {
+                    return
+                }
+                revealFullscreenExitHandle()
+            }
     }
 
     private func toggleFullscreen() {

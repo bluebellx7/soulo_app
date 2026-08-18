@@ -139,6 +139,38 @@ enum WebAccessibilityPaging {
     }
 }
 
+@MainActor
+private final class UserScriptTabStore {
+    static let shared = UserScriptTabStore()
+
+    private var values: [UUID: [String: String]] = [:]
+
+    func save(_ encodedValue: String, scriptID: UUID, tabID: String) throws {
+        guard encodedValue.utf8.count <= BrowserExtensionService.maximumStoredValueSize,
+              let data = encodedValue.data(using: .utf8),
+              (try? JSONSerialization.jsonObject(with: data)) != nil else {
+            throw BrowserExtensionError.invalidStorageValue
+        }
+        values[scriptID, default: [:]][tabID] = encodedValue
+    }
+
+    func value(scriptID: UUID, tabID: String) -> Any {
+        decode(values[scriptID]?[tabID]) ?? [:]
+    }
+
+    func allValues(scriptID: UUID) -> [String: Any] {
+        Dictionary(uniqueKeysWithValues: (values[scriptID] ?? [:]).compactMap { key, value in
+            decode(value).map { (key, $0) }
+        })
+    }
+
+    private func decode(_ encodedValue: String?) -> Any? {
+        guard let encodedValue,
+              let data = encodedValue.data(using: .utf8) else { return nil }
+        return try? JSONSerialization.jsonObject(with: data)
+    }
+}
+
 /// WKWebView already exposes semantic HTML to VoiceOver. This subclass adds
 /// deterministic page scrolling and horizontal platform paging when a site or
 /// custom browser gesture does not respond to VoiceOver's three-finger swipe.
@@ -320,6 +352,11 @@ struct WebViewRepresentable: UIViewRepresentable {
                 context.coordinator,
                 contentWorld: .page,
                 name: "souloUserScriptXHR"
+            )
+            contentController.addScriptMessageHandler(
+                context.coordinator,
+                contentWorld: .page,
+                name: "souloUserScriptAPI"
             )
             for script in BrowserExtensionService.shared.userScripts where script.isEnabled {
                 let injectionTime: WKUserScriptInjectionTime = script.injectionTime == .documentStart
@@ -558,6 +595,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloPrivacy")
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloDownload", contentWorld: .page)
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloUserScriptXHR", contentWorld: .page)
+        uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloUserScriptAPI", contentWorld: .page)
         uiView.configuration.userContentController.removeAllUserScripts()
         uiView.configuration.userContentController.removeAllContentRuleLists()
         installedContentRuleSignatures.removeValue(forKey: ObjectIdentifier(uiView))
@@ -671,14 +709,24 @@ struct WebViewRepresentable: UIViewRepresentable {
             didReceive message: WKScriptMessage,
             replyHandler: @escaping (Any?, String?) -> Void
         ) {
-            if message.name == "souloUserScriptXHR",
+            if ["souloUserScriptXHR", "souloUserScriptAPI"].contains(message.name),
                let body = message.body as? [String: Any],
-               body["__souloToken"] as? String == userScriptBridgeToken,
-               let rawScriptID = body["__souloScriptID"] as? String,
-               let scriptID = UUID(uuidString: rawScriptID),
-               let script = BrowserExtensionService.shared.userScript(id: scriptID),
-               script.isEnabled,
-               script.allowsXMLHTTPRequests {
+               let script = authorizedUserScript(for: body, pageURL: message.webView?.url) {
+                if message.name == "souloUserScriptAPI" {
+                    Task { @MainActor in
+                        await self.handleUserScriptAPI(
+                            body,
+                            script: script,
+                            webView: message.webView,
+                            replyHandler: replyHandler
+                        )
+                    }
+                    return
+                }
+                guard script.allowsXMLHTTPRequests else {
+                    replyHandler(nil, "Unauthorized UserScript request")
+                    return
+                }
                 Task {
                     do {
                         replyHandler(
@@ -695,7 +743,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 }
                 return
             }
-            if message.name == "souloUserScriptXHR" {
+            if ["souloUserScriptXHR", "souloUserScriptAPI"].contains(message.name) {
                 replyHandler(nil, "Unauthorized UserScript request")
                 return
             }
@@ -707,6 +755,305 @@ struct WebViewRepresentable: UIViewRepresentable {
             Task { @MainActor [weak self] in
                 self?.handlePageDownloadMessage(body, replyHandler: replyHandler)
             }
+        }
+
+        @MainActor
+        private func authorizedUserScript(
+            for body: [String: Any],
+            pageURL: URL?
+        ) -> UserScriptRecord? {
+            guard body["__souloToken"] as? String == userScriptBridgeToken,
+                  let rawScriptID = body["__souloScriptID"] as? String,
+                  let scriptID = UUID(uuidString: rawScriptID),
+                  let script = BrowserExtensionService.shared.userScript(id: scriptID),
+                  script.isEnabled,
+                  let pageURL,
+                  UserScriptURLMatcher.matches(url: pageURL, patterns: script.matchPatterns),
+                  !UserScriptURLMatcher.matches(url: pageURL, patterns: script.excludePatterns ?? []) else {
+                return nil
+            }
+            return script
+        }
+
+        @MainActor
+        private func handleUserScriptAPI(
+            _ body: [String: Any],
+            script: UserScriptRecord,
+            webView: WKWebView?,
+            replyHandler: @escaping (Any?, String?) -> Void
+        ) async {
+            do {
+                switch body["action"] as? String {
+                case "setValue" where script.hasGrant("GM_setValue", "GM.setValue"):
+                    guard let key = body["key"] as? String,
+                          let value = body["value"] as? String else {
+                        throw BrowserExtensionError.invalidStorageValue
+                    }
+                    try BrowserExtensionService.shared.setStoredValue(value, forKey: key, scriptID: script.id)
+                case "deleteValue" where script.hasGrant("GM_deleteValue", "GM.deleteValue"):
+                    guard let key = body["key"] as? String else {
+                        throw BrowserExtensionError.invalidStorageValue
+                    }
+                    BrowserExtensionService.shared.deleteStoredValue(forKey: key, scriptID: script.id)
+                case "setValues" where script.hasGrant("GM_setValues", "GM.setValues"):
+                    guard let values = body["values"] as? [String: String] else {
+                        throw BrowserExtensionError.invalidStorageValue
+                    }
+                    try BrowserExtensionService.shared.setStoredValues(values, scriptID: script.id)
+                case "deleteValues" where script.hasGrant("GM_deleteValues", "GM.deleteValues"):
+                    guard let keys = body["keys"] as? [String] else {
+                        throw BrowserExtensionError.invalidStorageValue
+                    }
+                    BrowserExtensionService.shared.deleteStoredValues(forKeys: keys, scriptID: script.id)
+                case "setClipboard" where script.hasGrant("GM_setClipboard", "GM.setClipboard"):
+                    guard let value = body["value"] as? String else {
+                        throw BrowserExtensionError.invalidStorageValue
+                    }
+                    UIPasteboard.general.string = value
+                case "registerMenuCommand" where script.hasGrant(
+                    "GM_registerMenuCommand", "GM.registerMenuCommand"
+                ):
+                    guard let id = (body["id"] as? String)?.prefix(180),
+                          let title = (body["title"] as? String)?
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                            .prefix(120),
+                          !id.isEmpty, !title.isEmpty else {
+                        throw BrowserExtensionError.invalidStorageValue
+                    }
+                    viewModel.registerUserScriptMenuCommand(
+                        id: String(id),
+                        scriptID: script.id,
+                        scriptName: script.name,
+                        title: String(title)
+                    )
+                case "unregisterMenuCommand" where script.hasGrant(
+                    "GM_unregisterMenuCommand", "GM.unregisterMenuCommand"
+                ):
+                    guard let id = body["id"] as? String else {
+                        throw BrowserExtensionError.invalidStorageValue
+                    }
+                    viewModel.unregisterUserScriptMenuCommand(id: id, scriptID: script.id)
+                case "openInTab" where script.hasGrant("GM_openInTab", "GM.openInTab"):
+                    guard let url = resolvedUserScriptURL(body["url"], relativeTo: webView?.url),
+                          ["http", "https"].contains(url.scheme?.lowercased() ?? "") else {
+                        throw WebResourceDownloadError.invalidResponse
+                    }
+                    NotificationCenter.default.post(
+                        name: .openInNewTab,
+                        object: nil,
+                        userInfo: [
+                            "url": url,
+                            "switchTo": body["active"] as? Bool ?? true,
+                            "userScriptTabID": body["id"] as? String ?? ""
+                        ]
+                    )
+                case "closeTab" where script.hasGrant("GM_openInTab", "GM.openInTab"):
+                    guard let id = body["id"] as? String, !id.isEmpty else {
+                        throw BrowserExtensionError.invalidStorageValue
+                    }
+                    NotificationCenter.default.post(
+                        name: .closeUserScriptTab,
+                        object: nil,
+                        userInfo: ["userScriptTabID": id]
+                    )
+                case "closeCurrentTab" where script.hasGrant("GM_closeTab", "GM.closeTab"):
+                    NotificationCenter.default.post(
+                        name: .closeUserScriptCurrentTab,
+                        object: viewModel
+                    )
+                case "focusCurrentTab" where script.hasGrant("GM_focusTab", "GM.focusTab"):
+                    NotificationCenter.default.post(
+                        name: .focusUserScriptCurrentTab,
+                        object: viewModel
+                    )
+                case "download" where script.hasGrant("GM_download", "GM.download"):
+                    guard let url = resolvedUserScriptURL(body["url"], relativeTo: webView?.url),
+                          UserScriptHTTPBridge.isAllowedTarget(
+                            url,
+                            script: script,
+                            pageURL: webView?.url
+                          ) else {
+                        throw WebResourceDownloadError.invalidResponse
+                    }
+                    let rawPreferredName = (body["name"] as? String)?
+                        .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                    let preferredName = rawPreferredName.isEmpty ? nil : rawPreferredName
+                    let fileURL = try await WebResourceDownloadService.shared.download(
+                        url,
+                        preferredFilename: preferredName,
+                        pageURL: webView?.url,
+                        webView: webView,
+                        fallbackBaseName: script.name
+                    )
+                    replyHandler(["success": true, "name": fileURL.lastPathComponent], nil)
+                    return
+                case "getResource" where script.hasGrant(
+                    "GM_getResourceText", "GM.getResourceText",
+                    "GM_getResourceURL", "GM.getResourceUrl", "GM.getResourceURL"
+                ):
+                    guard let name = body["name"] as? String,
+                          let resourceURL = script.resources?[name] else {
+                        throw WebResourceDownloadError.invalidResponse
+                    }
+                    let response = try await UserScriptHTTPBridge.response(
+                        for: [
+                            "url": resourceURL,
+                            "method": "GET",
+                            "timeout": 30_000,
+                            "responseType": "arraybuffer"
+                        ],
+                        script: script,
+                        pageURL: webView?.url
+                    )
+                    replyHandler(response, nil)
+                    return
+                case "saveTab" where script.hasGrant("GM_saveTab", "GM.saveTab"):
+                    guard let value = body["value"] as? String else {
+                        throw BrowserExtensionError.invalidStorageValue
+                    }
+                    try UserScriptTabStore.shared.save(
+                        value,
+                        scriptID: script.id,
+                        tabID: userScriptTabIdentifier
+                    )
+                case "getTab" where script.hasGrant("GM_getTab", "GM.getTab"):
+                    replyHandler(
+                        UserScriptTabStore.shared.value(
+                            scriptID: script.id,
+                            tabID: userScriptTabIdentifier
+                        ),
+                        nil
+                    )
+                    return
+                case "getTabs" where script.hasGrant("GM_getTabs", "GM.getTabs"):
+                    replyHandler(UserScriptTabStore.shared.allValues(scriptID: script.id), nil)
+                    return
+                case "cookieList" where script.hasGrant("GM_cookie", "GM.cookie"):
+                    guard let webView else { throw WebResourceDownloadError.invalidResponse }
+                    let cookies = await allCookies(in: webView)
+                    let details = body["details"] as? [String: Any] ?? [:]
+                    replyHandler(
+                        cookies
+                            .filter { matchesCookie($0, details: details, pageURL: webView.url) }
+                            .map(cookieDictionary),
+                        nil
+                    )
+                    return
+                case "cookieSet" where script.hasGrant("GM_cookie", "GM.cookie"):
+                    guard let webView,
+                          let details = body["details"] as? [String: Any],
+                          let cookie = makeCookie(from: details, pageURL: webView.url) else {
+                        throw BrowserExtensionError.invalidStorageValue
+                    }
+                    await setCookie(cookie, in: webView)
+                case "cookieDelete" where script.hasGrant("GM_cookie", "GM.cookie"):
+                    guard let webView else { throw WebResourceDownloadError.invalidResponse }
+                    let details = body["details"] as? [String: Any] ?? [:]
+                    for candidate in await allCookies(in: webView)
+                    where matchesCookie(candidate, details: details, pageURL: webView.url) {
+                        await deleteCookie(candidate, in: webView)
+                    }
+                default:
+                    replyHandler(nil, "Unsupported or unauthorized UserScript API")
+                    return
+                }
+                replyHandler(true, nil)
+            } catch {
+                replyHandler(nil, error.localizedDescription)
+            }
+        }
+
+        @MainActor
+        private var userScriptTabIdentifier: String {
+            String(describing: ObjectIdentifier(viewModel))
+        }
+
+        private func resolvedUserScriptURL(_ value: Any?, relativeTo baseURL: URL?) -> URL? {
+            guard let rawValue = value as? String,
+                  let url = URL(string: rawValue, relativeTo: baseURL)?.absoluteURL else { return nil }
+            return url
+        }
+
+        private func allCookies(in webView: WKWebView) async -> [HTTPCookie] {
+            await withCheckedContinuation { continuation in
+                webView.configuration.websiteDataStore.httpCookieStore.getAllCookies {
+                    continuation.resume(returning: $0)
+                }
+            }
+        }
+
+        private func setCookie(_ cookie: HTTPCookie, in webView: WKWebView) async {
+            await withCheckedContinuation { continuation in
+                webView.configuration.websiteDataStore.httpCookieStore.setCookie(cookie) {
+                    continuation.resume()
+                }
+            }
+        }
+
+        private func deleteCookie(_ cookie: HTTPCookie, in webView: WKWebView) async {
+            await withCheckedContinuation { continuation in
+                webView.configuration.websiteDataStore.httpCookieStore.delete(cookie) {
+                    continuation.resume()
+                }
+            }
+        }
+
+        private func matchesCookie(
+            _ cookie: HTTPCookie,
+            details: [String: Any],
+            pageURL: URL?
+        ) -> Bool {
+            guard let host = pageURL?.host?.lowercased() else { return false }
+            let domain = cookie.domain.lowercased().trimmingCharacters(
+                in: CharacterSet(charactersIn: ".")
+            )
+            guard host == domain || host.hasSuffix(".\(domain)") else { return false }
+            if let name = details["name"] as? String, cookie.name != name { return false }
+            if let path = details["path"] as? String, cookie.path != path { return false }
+            if let requestedDomain = (details["domain"] as? String)?.lowercased()
+                .trimmingCharacters(in: CharacterSet(charactersIn: ".")),
+               domain != requestedDomain { return false }
+            return true
+        }
+
+        private func makeCookie(from details: [String: Any], pageURL: URL?) -> HTTPCookie? {
+            guard let pageURL,
+                  let host = pageURL.host?.lowercased(),
+                  let rawName = details["name"] as? String,
+                  !rawName.isEmpty,
+                  let value = details["value"] as? String else { return nil }
+            let requestedDomain = ((details["domain"] as? String) ?? host)
+                .lowercased()
+                .trimmingCharacters(in: CharacterSet(charactersIn: "."))
+            guard host == requestedDomain || host.hasSuffix(".\(requestedDomain)") else { return nil }
+            let rawPath = details["path"] as? String ?? ""
+            var properties: [HTTPCookiePropertyKey: Any] = [
+                .name: rawName,
+                .value: value,
+                .domain: requestedDomain,
+                .path: rawPath.isEmpty ? "/" : rawPath
+            ]
+            if details["secure"] as? Bool == true { properties[.secure] = "TRUE" }
+            if let expiration = details["expirationDate"] as? Double {
+                properties[.expires] = Date(timeIntervalSince1970: expiration)
+            }
+            return HTTPCookie(properties: properties)
+        }
+
+        private func cookieDictionary(_ cookie: HTTPCookie) -> [String: Any] {
+            var result: [String: Any] = [
+                "name": cookie.name,
+                "value": cookie.value,
+                "domain": cookie.domain,
+                "path": cookie.path,
+                "secure": cookie.isSecure,
+                "session": cookie.isSessionOnly,
+                "httpOnly": cookie.isHTTPOnly
+            ]
+            if let expiration = cookie.expiresDate {
+                result["expirationDate"] = expiration.timeIntervalSince1970
+            }
+            return result
         }
 
         @MainActor
@@ -976,6 +1323,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             resetScrollChromeState()
             Task { @MainActor in
                 viewModel.errorMessage = nil
+                viewModel.clearUserScriptMenuCommands()
             }
             lastAdHidingSignature = ""
         }

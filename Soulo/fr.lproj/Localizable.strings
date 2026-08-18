@@ -160,9 +160,6 @@
 "clipboard_person_detected" = "Personne détectée";
 "open_directly" = "Ouvrir";
 
-/* F8: Cross-language */
-"also_search_in" = "Chercher aussi dans %@";
-
 /* F9: Image Search */
 "image_search" = "Recherche d'images";
 "extracting_text" = "Extraction du texte...";
@@ -566,3 +563,28 @@ Dites-nous :
 "web_underline_links_desc" = "Souligne les liens des pages web pour les rendre plus faciles à reconnaître.";
 "home_title_edit_desc" = "Affiché comme titre principal au centre de l’écran d’accueil.";
 "home_subtitle_edit_desc" = "Affiché sous le titre principal ; laissez vide pour le masquer.";
+"userscript_too_large" = "Le script sélectionné dépasse la limite de 2 Mo.";
+"userscript_invalid_connect_domain" = "Règle d’accès réseau non valide : %@";
+"userscript_storage_invalid" = "Le script a tenté d’enregistrer une valeur non valide ou trop volumineuse.";
+"userscript_delete_title" = "Supprimer le UserScript ?";
+"userscript_delete_message" = "Supprimer « %@ » ? Ses données enregistrées seront aussi supprimées.";
+"userscript_access_title" = "Accès aux sites";
+"userscript_access_all_sites" = "Tous les sites";
+"userscript_permissions_title" = "Autorisations";
+"userscript_no_extra_permissions" = "Aucune autorisation supplémentaire";
+"userscript_network_title" = "Accès réseau";
+"userscript_external_requirements" = "Dépendances externes";
+"userscript_external_requirements_desc" = "Ce script déclare des fichiers @require externes. Soulo ne les charge pas automatiquement.";
+"userscript_metadata_title" = "Détails du script";
+"userscript_sample_name" = "Barre de progression de lecture";
+"userscript_sample_desc" = "Affiche une progression discrète en haut de chaque page web.";
+"userscript_builtin_badge" = "Exemple intégré";
+"userscript_description" = "Description";
+"userscript_copy_javascript" = "Copier le JavaScript";
+"userscripts_documentation" = "Guide de développement";
+"userscript_docs_ai_title" = "Créer un script avec l’IA";
+"userscript_docs_ai_desc" = "Copiez le prompt de compatibilité complet de Soulo, ajoutez votre besoin et envoyez-le à une IA pour générer un script installable.";
+"userscript_docs_copy_prompt" = "Copier le prompt IA";
+"userscript_commands" = "Commandes de script";
+"userscript_page_marker_name" = "Extracteur de texte";
+"userscript_page_marker_desc" = "Touchez le bouton déplaçable, puis une zone de la page pour extraire et copier son texte visible.";

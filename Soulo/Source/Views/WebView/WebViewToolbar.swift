@@ -512,6 +512,10 @@ struct WebViewToolbar: View {
             moreMenuDivider
             pageToolsMenu
 
+            if !viewModel.userScriptMenuCommands.isEmpty {
+                userScriptCommandsMenu
+            }
+
             if viewModel.currentURL != nil {
                 openPageMenu
             }
@@ -675,6 +679,40 @@ struct WebViewToolbar: View {
         .buttonStyle(.plain)
         .disabled(viewModel.currentURL == nil)
         .opacity(viewModel.currentURL == nil ? 0.35 : 1)
+    }
+
+    private var userScriptCommandsMenu: some View {
+        Menu {
+            ForEach(viewModel.userScriptMenuCommands) { command in
+                Button {
+                    performMoreMenuAction {
+                        viewModel.executeUserScriptMenuCommand(command)
+                    }
+                } label: {
+                    Label {
+                        VStack(alignment: .leading) {
+                            Text(command.title)
+                            Text(command.scriptName)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        menuIcon(
+                            "chevron.left.forwardslash.chevron.right",
+                            isActive: nil,
+                            activeColor: .systemBlue
+                        )
+                    }
+                }
+            }
+        } label: {
+            moreMenuRowLabel(
+                "userscript_commands",
+                systemImage: "play.square.stack",
+                showsDisclosure: true
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private var openPageMenu: some View {

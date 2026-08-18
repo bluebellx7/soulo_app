@@ -236,9 +236,6 @@
 "clipboard_person_detected" = "ตรวจพบบุคคล";
 "open_directly" = "เปิด";
 
-/* F8: Cross-language */
-"also_search_in" = "ค้นหาใน %@ ด้วย";
-
 /* F9: Image Search */
 "image_search" = "ค้นหาด้วยรูปภาพ";
 "extracting_text" = "กำลังดึงข้อความ...";
@@ -577,3 +574,28 @@
 "web_underline_links_desc" = "ขีดเส้นใต้ลิงก์บนหน้าเว็บเพื่อให้สังเกตได้ง่ายขึ้น";
 "home_title_edit_desc" = "แสดงเป็นหัวเรื่องหลักตรงกลางหน้าจอหลัก";
 "home_subtitle_edit_desc" = "แสดงใต้หัวเรื่องหลัก เว้นว่างไว้เพื่อซ่อน";
+"userscript_too_large" = "สคริปต์ที่เลือกเกินขีดจำกัด 2 MB";
+"userscript_invalid_connect_domain" = "กฎการเข้าถึงเครือข่ายไม่ถูกต้อง: %@";
+"userscript_storage_invalid" = "สคริปต์พยายามบันทึกค่าที่ไม่ถูกต้องหรือมีขนาดใหญ่เกินไป";
+"userscript_delete_title" = "ลบ UserScript หรือไม่";
+"userscript_delete_message" = "ลบ “%@” หรือไม่ ข้อมูลที่บันทึกไว้จะถูกลบด้วย";
+"userscript_access_title" = "การเข้าถึงเว็บไซต์";
+"userscript_access_all_sites" = "เว็บไซต์ทั้งหมด";
+"userscript_permissions_title" = "สิทธิ์";
+"userscript_no_extra_permissions" = "ไม่มีสิทธิ์เพิ่มเติม";
+"userscript_network_title" = "การเข้าถึงเครือข่าย";
+"userscript_external_requirements" = "การพึ่งพาภายนอก";
+"userscript_external_requirements_desc" = "สคริปต์นี้ประกาศไฟล์ @require ภายนอก Soulo จะไม่โหลดไฟล์เหล่านี้โดยอัตโนมัติ";
+"userscript_metadata_title" = "รายละเอียดสคริปต์";
+"userscript_sample_name" = "แถบความคืบหน้าการอ่าน";
+"userscript_sample_desc" = "แสดงความคืบหน้าการอ่านแบบเรียบง่ายที่ด้านบนของทุกหน้าเว็บ";
+"userscript_builtin_badge" = "ตัวอย่างในตัว";
+"userscript_description" = "คำอธิบาย";
+"userscript_copy_javascript" = "คัดลอก JavaScript";
+"userscripts_documentation" = "คู่มือการพัฒนา";
+"userscript_docs_ai_title" = "สร้างสคริปต์ด้วย AI";
+"userscript_docs_ai_desc" = "คัดลอกพรอมต์ความเข้ากันได้ฉบับเต็มของ Soulo เพิ่มความต้องการของคุณ แล้วส่งให้ AI เพื่อสร้างสคริปต์ที่ติดตั้งได้";
+"userscript_docs_copy_prompt" = "คัดลอกพรอมต์ AI";
+"userscript_commands" = "คำสั่งสคริปต์";
+"userscript_page_marker_name" = "ดึงข้อความจากพื้นที่";
+"userscript_page_marker_desc" = "แตะปุ่มที่ลากย้ายได้ แล้วแตะพื้นที่บนหน้าเพื่อดึงและคัดลอกข้อความที่มองเห็น";

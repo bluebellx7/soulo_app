@@ -236,9 +236,6 @@
 "clipboard_person_detected" = "Обнаружено имя";
 "open_directly" = "Открыть";
 
-/* F8: Cross-language */
-"also_search_in" = "Искать также на %@";
-
 /* F9: Image Search */
 "image_search" = "Поиск по изображению";
 "extracting_text" = "Извлечение текста...";
@@ -577,3 +574,28 @@
 "web_underline_links_desc" = "Подчёркивает ссылки на веб-страницах, чтобы их было легче распознавать.";
 "home_title_edit_desc" = "Отображается как основной заголовок в центре главного экрана.";
 "home_subtitle_edit_desc" = "Отображается под заголовком; оставьте пустым, чтобы скрыть.";
+"userscript_too_large" = "Выбранный скрипт превышает ограничение 2 МБ.";
+"userscript_invalid_connect_domain" = "Недопустимое правило доступа к сети: %@";
+"userscript_storage_invalid" = "Скрипт попытался сохранить недопустимое или слишком большое значение.";
+"userscript_delete_title" = "Удалить UserScript?";
+"userscript_delete_message" = "Удалить «%@»? Сохранённые данные также будут удалены.";
+"userscript_access_title" = "Доступ к сайтам";
+"userscript_access_all_sites" = "Все сайты";
+"userscript_permissions_title" = "Разрешения";
+"userscript_no_extra_permissions" = "Нет дополнительных разрешений";
+"userscript_network_title" = "Доступ к сети";
+"userscript_external_requirements" = "Внешние зависимости";
+"userscript_external_requirements_desc" = "Скрипт объявляет внешние файлы @require. Soulo не загружает их автоматически.";
+"userscript_metadata_title" = "Сведения о скрипте";
+"userscript_sample_name" = "Индикатор чтения";
+"userscript_sample_desc" = "Показывает аккуратный индикатор чтения вверху каждой страницы.";
+"userscript_builtin_badge" = "Встроенный пример";
+"userscript_description" = "Описание";
+"userscript_copy_javascript" = "Копировать JavaScript";
+"userscripts_documentation" = "Руководство разработчика";
+"userscript_docs_ai_title" = "Создать скрипт с помощью ИИ";
+"userscript_docs_ai_desc" = "Скопируйте полный промпт совместимости Soulo, добавьте свои требования и отправьте его ИИ для создания устанавливаемого скрипта.";
+"userscript_docs_copy_prompt" = "Копировать промпт для ИИ";
+"userscript_commands" = "Команды скрипта";
+"userscript_page_marker_name" = "Извлечение текста";
+"userscript_page_marker_desc" = "Нажмите перемещаемую кнопку, затем область страницы, чтобы извлечь и скопировать видимый текст.";

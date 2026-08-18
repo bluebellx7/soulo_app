@@ -2,6 +2,13 @@ import UIKit
 import WebKit
 import Combine
 
+struct UserScriptMenuCommand: Identifiable, Equatable {
+    let id: String
+    let scriptID: UUID
+    let scriptName: String
+    let title: String
+}
+
 @MainActor
 final class WebViewModel: ObservableObject {
 
@@ -20,6 +27,7 @@ final class WebViewModel: ObservableObject {
     @Published var showSnapshotWhileRestoring: Bool = false
     @Published private(set) var pageZoom: CGFloat = 1
     @Published private(set) var runtimeRevision = UUID()
+    @Published private(set) var userScriptMenuCommands: [UserScriptMenuCommand] = []
     var isWebViewRuntimeInstalled: Bool = false
     var isDesktopModeEnabled: Bool = false
     private var snapshotPersistenceID: String?
@@ -186,6 +194,44 @@ final class WebViewModel: ObservableObject {
             estimatedProgress = 0
             showSnapshotWhileRestoring = snapshot != nil
         }
+    }
+
+    func registerUserScriptMenuCommand(
+        id: String,
+        scriptID: UUID,
+        scriptName: String,
+        title: String
+    ) {
+        let command = UserScriptMenuCommand(
+            id: id,
+            scriptID: scriptID,
+            scriptName: scriptName,
+            title: title
+        )
+        if let index = userScriptMenuCommands.firstIndex(where: {
+            $0.id == id && $0.scriptID == scriptID
+        }) {
+            userScriptMenuCommands[index] = command
+        } else {
+            userScriptMenuCommands.append(command)
+        }
+    }
+
+    func unregisterUserScriptMenuCommand(id: String, scriptID: UUID) {
+        userScriptMenuCommands.removeAll { $0.id == id && $0.scriptID == scriptID }
+    }
+
+    func clearUserScriptMenuCommands() {
+        userScriptMenuCommands.removeAll()
+    }
+
+    func executeUserScriptMenuCommand(_ command: UserScriptMenuCommand) {
+        guard userScriptMenuCommands.contains(command), let webView else { return }
+        let commandID = command.id.escapedForJS
+        webView.evaluateJavaScript(
+            "window.__souloDispatchUserScriptMenuCommand && window.__souloDispatchUserScriptMenuCommand('\(commandID)')",
+            completionHandler: nil
+        )
     }
 
     func loadSearchURL(keyword: String, platform: SearchPlatform) {

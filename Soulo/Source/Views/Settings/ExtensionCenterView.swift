@@ -20,6 +20,7 @@ struct ExtensionCenterView: View {
     @State private var isInstalling = false
     @State private var errorMessage: String?
     @State private var successMessage: String?
+    @State private var scriptPendingDeletion: UserScriptRecord?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -109,6 +110,21 @@ struct ExtensionCenterView: View {
         } message: {
             Text(successMessage ?? "")
         }
+        .alert(
+            LanguageManager.shared.localizedString("userscript_delete_title"),
+            isPresented: Binding(
+                get: { scriptPendingDeletion != nil },
+                set: { if !$0 { scriptPendingDeletion = nil } }
+            ),
+            presenting: scriptPendingDeletion
+        ) { script in
+            Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
+            Button(LanguageManager.shared.localizedString("delete"), role: .destructive) {
+                service.deleteUserScript(script.id)
+            }
+        } message: { script in
+            Text(AppAccessibility.formatted("userscript_delete_message", script.name))
+        }
         .overlay {
             if isInstalling {
                 ZStack {
@@ -174,10 +190,12 @@ struct ExtensionCenterView: View {
                             .labelsHidden()
                         }
                         .swipeActions {
-                            Button(role: .destructive) {
-                                service.deleteUserScript(script.id)
-                            } label: {
-                                Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
+                            if script.isBuiltIn != true {
+                                Button(role: .destructive) {
+                                    scriptPendingDeletion = script
+                                } label: {
+                                    Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
+                                }
                             }
                         }
                     }
@@ -220,14 +238,26 @@ struct ExtensionCenterView: View {
             extensionIcon(systemName: "chevron.left.forwardslash.chevron.right", tint: .orange)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(script.name).font(.body.weight(.medium)).lineLimit(1)
+                    Text(BuiltInUserScripts.displayName(for: script))
+                        .font(.body.weight(.medium))
+                        .lineLimit(1)
+                    if script.isBuiltIn == true {
+                        Text(LanguageManager.shared.localizedString("userscript_builtin_badge"))
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.purple)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(.purple.opacity(0.11), in: Capsule())
+                    }
                     if let version = script.version, !version.isEmpty {
                         Text("v\(version)")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
                     }
                 }
-                Text(script.matchPatterns.prefix(2).joined(separator: ", "))
+                Text((BuiltInUserScripts.displayDescription(for: script)
+                    .flatMap { $0.isEmpty ? nil : $0 })
+                    ?? script.matchPatterns.prefix(2).joined(separator: ", "))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -281,6 +311,14 @@ struct ExtensionCenterView: View {
                 Button { importUserScript = true } label: {
                     Label(LanguageManager.shared.localizedString("userscript_choose_file"), systemImage: "doc.badge.plus")
                 }
+                NavigationLink {
+                    UserScriptDocumentationView()
+                } label: {
+                    Label(
+                        LanguageManager.shared.localizedString("userscripts_documentation"),
+                        systemImage: "book.pages"
+                    )
+                }
             } header: {
                 userScriptSectionHeader
             } footer: {
@@ -304,7 +342,7 @@ struct ExtensionCenterView: View {
 
     private var userScriptExperimentalNotice: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "flask.fill")
+            Image(systemName: "shield.lefthalf.filled")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(.orange)
                 .frame(width: 32, height: 32)
@@ -391,10 +429,12 @@ struct BrowserPackageInstallView: View {
     @State private var installedName = ""
     @State private var showSuccess = false
     @State private var errorMessage: String?
+    @State private var scriptPreview: UserScriptInstallPreview?
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
+            ScrollView {
+              VStack(spacing: 20) {
                 Image(systemName: candidate.kind == .userScript
                     ? "chevron.left.forwardslash.chevron.right"
                     : "puzzlepiece.extension.fill")
@@ -414,7 +454,7 @@ struct BrowserPackageInstallView: View {
                     ))
                     .font(.title3.weight(.semibold))
 
-                    Text(candidate.fileURL.lastPathComponent)
+                    Text(scriptPreview?.name ?? candidate.fileURL.lastPathComponent)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
@@ -437,6 +477,43 @@ struct BrowserPackageInstallView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 18)
 
+                if let preview = scriptPreview {
+                    VStack(spacing: 0) {
+                        previewRow(
+                            icon: "globe",
+                            title: LanguageManager.shared.localizedString("userscript_access_title"),
+                            detail: preview.metadata.patterns.isEmpty
+                                ? LanguageManager.shared.localizedString("userscript_access_all_sites")
+                                : preview.metadata.patterns.joined(separator: "\n")
+                        )
+                        Divider().padding(.leading, 42)
+                        previewRow(
+                            icon: "checkmark.shield",
+                            title: LanguageManager.shared.localizedString("userscript_permissions_title"),
+                            detail: permissionSummary(preview.metadata)
+                        )
+                        if !preview.metadata.connectDomains.isEmpty {
+                            Divider().padding(.leading, 42)
+                            previewRow(
+                                icon: "network",
+                                title: LanguageManager.shared.localizedString("userscript_network_title"),
+                                detail: preview.metadata.connectDomains.joined(separator: ", ")
+                            )
+                        }
+                        if !preview.metadata.requiredURLs.isEmpty {
+                            Divider().padding(.leading, 42)
+                            previewRow(
+                                icon: "exclamationmark.triangle",
+                                title: LanguageManager.shared.localizedString("userscript_external_requirements"),
+                                detail: preview.metadata.requiredURLs.joined(separator: "\n"),
+                                tint: .orange
+                            )
+                        }
+                    }
+                    .background(.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .padding(.horizontal, 20)
+                }
+
                 Button(action: install) {
                     HStack(spacing: 9) {
                         if isInstalling {
@@ -453,10 +530,11 @@ struct BrowserPackageInstallView: View {
                     .frame(height: 50)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(isInstalling)
+                .disabled(isInstalling || (candidate.kind == .userScript && scriptPreview == nil))
                 .padding(.horizontal, 20)
 
-                Spacer(minLength: 0)
+                Spacer(minLength: 8)
+              }
             }
             .padding(.top, 24)
             .navigationTitle(LanguageManager.shared.localizedString(
@@ -468,6 +546,17 @@ struct BrowserPackageInstallView: View {
                     Button(LanguageManager.shared.localizedString("cancel")) { dismiss() }
                         .disabled(isInstalling)
                 }
+            }
+        }
+        .task {
+            guard candidate.kind == .userScript, scriptPreview == nil else { return }
+            do {
+                scriptPreview = try BrowserExtensionService.shared.previewUserScript(
+                    from: candidate.fileURL,
+                    sourceURL: candidate.sourceURL
+                )
+            } catch {
+                errorMessage = error.localizedDescription
             }
         }
         .interactiveDismissDisabled(isInstalling)
@@ -494,6 +583,43 @@ struct BrowserPackageInstallView: View {
         }
     }
 
+    private func previewRow(
+        icon: String,
+        title: String,
+        detail: String,
+        tint: Color = .secondary
+    ) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .foregroundStyle(tint)
+                .frame(width: 26)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.subheadline.weight(.semibold))
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+    }
+
+    private func permissionSummary(_ metadata: UserScriptMetadata) -> String {
+        let grants = metadata.grants.filter { $0.caseInsensitiveCompare("none") != .orderedSame }
+        let summary = grants.isEmpty
+            ? LanguageManager.shared.localizedString("userscript_no_extra_permissions")
+            : grants.joined(separator: ", ")
+        let unsupported = grants.filter {
+            !UserScriptRuntime.supportedGrantNames.contains($0.lowercased())
+        }
+        guard !unsupported.isEmpty else { return summary }
+        return summary + "\n" + AppAccessibility.formatted(
+            "userscript_unsupported_permissions",
+            unsupported.joined(separator: ", ")
+        )
+    }
+
     private func install() {
         guard !isInstalling else { return }
         isInstalling = true
@@ -501,7 +627,10 @@ struct BrowserPackageInstallView: View {
             do {
                 switch candidate.kind {
                 case .userScript:
-                    let script = try BrowserExtensionService.shared.importUserScript(from: candidate.fileURL)
+                    let script = try BrowserExtensionService.shared.importUserScript(
+                        from: candidate.fileURL,
+                        sourceURL: candidate.sourceURL
+                    )
                     installedName = script.name
                 case .webExtension:
                     let item = try await BrowserExtensionService.shared.installWebExtension(from: candidate.fileURL)
@@ -520,51 +649,161 @@ struct BrowserPackageInstallView: View {
 
 struct UserScriptEditorView: View {
     private let scriptID: UUID?
+    private let isBuiltIn: Bool
+    private let builtInDescription: String?
     @State private var name: String
     @State private var patternsText: String
     @State private var source: String
     @State private var injectionTime: UserScriptInjectionTime
     @State private var errorMessage: String?
+    @State private var sourceCopied = false
     @Environment(\.dismiss) private var dismiss
 
     init(script: UserScriptRecord?) {
         scriptID = script?.id
-        _name = State(initialValue: script?.name ?? LanguageManager.shared.localizedString("userscript_untitled"))
+        isBuiltIn = script?.isBuiltIn == true
+        builtInDescription = script.flatMap { record in
+            record.isBuiltIn == true ? BuiltInUserScripts.displayDescription(for: record) : nil
+        }
+        _name = State(initialValue: script.map(BuiltInUserScripts.displayName)
+            ?? LanguageManager.shared.localizedString("userscript_untitled"))
         _patternsText = State(initialValue: script?.matchPatterns.joined(separator: "\n") ?? "*://*/*")
         _source = State(initialValue: script?.source ?? "// ==UserScript==\n// @name New Script\n// @match *://*/*\n// @run-at document-end\n// ==/UserScript==\n\n")
         _injectionTime = State(initialValue: script?.injectionTime ?? .documentEnd)
     }
 
     var body: some View {
+        let metadata = BrowserExtensionService.parseMetadata(from: source)
+        let description = (isBuiltIn ? builtInDescription : metadata.description)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
         Form {
-            Section {
-                TextField(LanguageManager.shared.localizedString("userscript_name"), text: $name)
-                Picker(LanguageManager.shared.localizedString("userscript_run_at"), selection: $injectionTime) {
-                    Text(LanguageManager.shared.localizedString("userscript_document_start")).tag(UserScriptInjectionTime.documentStart)
-                    Text(LanguageManager.shared.localizedString("userscript_document_end")).tag(UserScriptInjectionTime.documentEnd)
+            if isBuiltIn {
+                Section {
+                    LabeledContent(LanguageManager.shared.localizedString("userscript_name"), value: name)
+                    LabeledContent(
+                        LanguageManager.shared.localizedString("userscript_run_at"),
+                        value: LanguageManager.shared.localizedString(
+                            injectionTime == .documentStart
+                                ? "userscript_document_start"
+                                : "userscript_document_end"
+                        )
+                    )
+                } footer: {
+                    Text(LanguageManager.shared.localizedString("userscript_builtin_readonly_desc"))
+                }
+            } else {
+                Section {
+                    TextField(LanguageManager.shared.localizedString("userscript_name"), text: $name)
+                    Picker(LanguageManager.shared.localizedString("userscript_run_at"), selection: $injectionTime) {
+                        Text(LanguageManager.shared.localizedString("userscript_document_start")).tag(UserScriptInjectionTime.documentStart)
+                        Text(LanguageManager.shared.localizedString("userscript_document_end")).tag(UserScriptInjectionTime.documentEnd)
+                    }
+                }
+            }
+
+            if let description, !description.isEmpty {
+                Section(LanguageManager.shared.localizedString("userscript_description")) {
+                    Text(description)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .textSelection(.enabled)
+                }
+            }
+
+            Section(LanguageManager.shared.localizedString("userscript_metadata_title")) {
+                LabeledContent(LanguageManager.shared.localizedString("userscript_permissions_title")) {
+                    Text(metadata.grants.isEmpty ? LanguageManager.shared.localizedString("userscript_no_extra_permissions") : metadata.grants.joined(separator: ", "))
+                        .multilineTextAlignment(.trailing)
+                }
+                if !metadata.connectDomains.isEmpty {
+                    LabeledContent(LanguageManager.shared.localizedString("userscript_network_title")) {
+                        Text(metadata.connectDomains.joined(separator: ", "))
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+                if !metadata.requiredURLs.isEmpty {
+                    Label(
+                        LanguageManager.shared.localizedString("userscript_external_requirements_desc"),
+                        systemImage: "exclamationmark.triangle.fill"
+                    )
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+                }
+                let unsupported = metadata.grants.filter {
+                    !UserScriptRuntime.supportedGrantNames.contains($0.lowercased())
+                }
+                if !unsupported.isEmpty {
+                    Label(
+                        AppAccessibility.formatted(
+                            "userscript_unsupported_permissions",
+                            unsupported.joined(separator: ", ")
+                        ),
+                        systemImage: "exclamationmark.circle.fill"
+                    )
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
                 }
             }
 
             Section(LanguageManager.shared.localizedString("userscript_matches")) {
-                TextEditor(text: $patternsText)
-                    .font(.system(.footnote, design: .monospaced))
-                    .frame(minHeight: 80)
+                if isBuiltIn {
+                    Text(patternsText)
+                        .font(.system(.footnote, design: .monospaced))
+                        .textSelection(.enabled)
+                } else {
+                    TextEditor(text: $patternsText)
+                        .font(.system(.footnote, design: .monospaced))
+                        .frame(minHeight: 80)
+                }
             }
 
-            Section(LanguageManager.shared.localizedString("userscript_code")) {
-                TextEditor(text: $source)
-                    .font(.system(.footnote, design: .monospaced))
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .frame(minHeight: 280)
+            Section {
+                if isBuiltIn {
+                    ScrollView(.horizontal) {
+                        Text(source)
+                            .font(.system(.footnote, design: .monospaced))
+                            .textSelection(.enabled)
+                    }
+                    .frame(minHeight: 280, alignment: .topLeading)
+                } else {
+                    TextEditor(text: $source)
+                        .font(.system(.footnote, design: .monospaced))
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .frame(minHeight: 280)
+                }
+            } header: {
+                HStack {
+                    Text(LanguageManager.shared.localizedString("userscript_code"))
+                    Spacer()
+                    Button {
+                        copySource()
+                    } label: {
+                        Label(
+                            LanguageManager.shared.localizedString(
+                                sourceCopied ? "copied" : "userscript_copy_javascript"
+                            ),
+                            systemImage: sourceCopied ? "checkmark" : "doc.on.doc"
+                        )
+                    }
+                    .font(.caption.weight(.semibold))
+                    .buttonStyle(.borderless)
+                    .disabled(source.isEmpty)
+                }
             }
         }
-        .navigationTitle(scriptID == nil ? LanguageManager.shared.localizedString("userscript_new") : LanguageManager.shared.localizedString("userscript_edit"))
+        .navigationTitle(isBuiltIn
+            ? LanguageManager.shared.localizedString("userscript_metadata_title")
+            : LanguageManager.shared.localizedString(scriptID == nil ? "userscript_new" : "userscript_edit"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button(LanguageManager.shared.localizedString("save")) { save() }
-                    .fontWeight(.semibold)
+                if !isBuiltIn {
+                    Button(LanguageManager.shared.localizedString("save")) { save() }
+                        .fontWeight(.semibold)
+                }
             }
         }
         .alert(
@@ -577,6 +816,16 @@ struct UserScriptEditorView: View {
             Button(LanguageManager.shared.localizedString("confirm"), role: .cancel) {}
         } message: {
             Text(errorMessage ?? "")
+        }
+    }
+
+    private func copySource() {
+        UIPasteboard.general.string = source
+        sourceCopied = true
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.5))
+            sourceCopied = false
         }
     }
 

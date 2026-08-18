@@ -160,9 +160,6 @@
 "clipboard_person_detected" = "Persona detectada";
 "open_directly" = "Abrir";
 
-/* F8: Cross-language */
-"also_search_in" = "También buscar en %@";
-
 /* F9: Image Search */
 "image_search" = "Búsqueda de imágenes";
 "extracting_text" = "Extrayendo texto...";
@@ -567,3 +564,28 @@ Cuentanos:
 "web_underline_links_desc" = "Subraya los enlaces de las páginas web para reconocerlos con mayor facilidad.";
 "home_title_edit_desc" = "Se muestra como título principal en el centro de la pantalla de inicio.";
 "home_subtitle_edit_desc" = "Se muestra bajo el título principal; déjalo vacío para ocultarlo.";
+"userscript_too_large" = "El script seleccionado supera el límite de 2 MB.";
+"userscript_invalid_connect_domain" = "Regla de acceso a la red no válida: %@";
+"userscript_storage_invalid" = "El script intentó guardar un valor no válido o demasiado grande.";
+"userscript_delete_title" = "¿Eliminar UserScript?";
+"userscript_delete_message" = "¿Eliminar «%@»? También se borrarán sus datos guardados.";
+"userscript_access_title" = "Acceso a sitios web";
+"userscript_access_all_sites" = "Todos los sitios web";
+"userscript_permissions_title" = "Permisos";
+"userscript_no_extra_permissions" = "Sin permisos adicionales";
+"userscript_network_title" = "Acceso a la red";
+"userscript_external_requirements" = "Dependencias externas";
+"userscript_external_requirements_desc" = "Este script declara archivos @require externos. Soulo no los carga automáticamente.";
+"userscript_metadata_title" = "Detalles del script";
+"userscript_sample_name" = "Barra de progreso de lectura";
+"userscript_sample_desc" = "Muestra un indicador discreto en la parte superior de cada página web.";
+"userscript_builtin_badge" = "Ejemplo integrado";
+"userscript_description" = "Descripción";
+"userscript_copy_javascript" = "Copiar JavaScript";
+"userscripts_documentation" = "Guía de desarrollo";
+"userscript_docs_ai_title" = "Crear un script con IA";
+"userscript_docs_ai_desc" = "Copia el prompt completo de compatibilidad de Soulo, añade tu requisito y envíalo a una IA para generar un script instalable.";
+"userscript_docs_copy_prompt" = "Copiar prompt para IA";
+"userscript_commands" = "Comandos de script";
+"userscript_page_marker_name" = "Extractor de texto";
+"userscript_page_marker_desc" = "Toca el botón móvil y después un área de la página para extraer y copiar el texto visible.";

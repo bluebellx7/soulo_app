@@ -160,9 +160,6 @@
 "clipboard_person_detected" = "인물 감지됨";
 "open_directly" = "열기";
 
-/* F8: Cross-language */
-"also_search_in" = "%@에서도 검색";
-
 /* F9: Image Search */
 "image_search" = "이미지 검색";
 "extracting_text" = "텍스트 추출 중...";
@@ -567,3 +564,28 @@
 "web_underline_links_desc" = "웹페이지 링크를 더 쉽게 구분할 수 있도록 밑줄을 표시합니다.";
 "home_title_edit_desc" = "홈 화면 중앙의 기본 제목으로 표시됩니다.";
 "home_subtitle_edit_desc" = "기본 제목 아래에 표시되며 비워 두면 숨겨집니다.";
+"userscript_too_large" = "선택한 스크립트가 2MB 제한을 초과합니다.";
+"userscript_invalid_connect_domain" = "잘못된 네트워크 접근 규칙: %@";
+"userscript_storage_invalid" = "스크립트가 잘못되었거나 너무 큰 값을 저장하려 했습니다.";
+"userscript_delete_title" = "UserScript를 삭제할까요?";
+"userscript_delete_message" = "‘%@’을(를) 삭제할까요? 저장된 데이터도 삭제됩니다.";
+"userscript_access_title" = "웹사이트 접근";
+"userscript_access_all_sites" = "모든 웹사이트";
+"userscript_permissions_title" = "권한";
+"userscript_no_extra_permissions" = "추가 권한 없음";
+"userscript_network_title" = "네트워크 접근";
+"userscript_external_requirements" = "외부 종속 항목";
+"userscript_external_requirements_desc" = "이 스크립트는 외부 @require 파일을 선언합니다. Soulo는 자동으로 불러오지 않습니다.";
+"userscript_metadata_title" = "스크립트 세부 정보";
+"userscript_sample_name" = "읽기 진행 막대";
+"userscript_sample_desc" = "모든 웹페이지 상단에 간결한 읽기 진행 표시를 보여 줍니다.";
+"userscript_builtin_badge" = "내장 예제";
+"userscript_description" = "설명";
+"userscript_copy_javascript" = "JavaScript 복사";
+"userscripts_documentation" = "개발 가이드";
+"userscript_docs_ai_title" = "AI로 스크립트 만들기";
+"userscript_docs_ai_desc" = "Soulo의 전체 호환성 프롬프트를 복사하고 요구 사항을 추가한 뒤 AI에 보내 설치 가능한 스크립트를 생성하세요.";
+"userscript_docs_copy_prompt" = "AI 프롬프트 복사";
+"userscript_commands" = "스크립트 명령";
+"userscript_page_marker_name" = "영역 텍스트 추출";
+"userscript_page_marker_desc" = "이동 가능한 버튼을 누른 다음 페이지 영역을 눌러 표시된 텍스트를 추출하고 복사합니다.";
