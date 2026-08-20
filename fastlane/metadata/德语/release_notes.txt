@@ -1,0 +1,9 @@
+Was ist neu:
+
+• Teilen Sie Links und Text von anderen Apps mit Soulo.
+• Extrahieren Sie Text aus Webseitenbildern mit Live Text.
+• Aktionen Control Center, Bildschirm sperren, Aktionsschaltfläche, Siri und Shortcuts hinzugefügt.
+• Downloads werden jetzt im Hintergrund mit echtem Fortschritt fortgesetzt und angehalten/fortgesetzt.
+• Unabhängiges Multi-Window-Browsing auf dem iPad hinzugefügt.
+• Kompatible native WebExtensions neben UserScripts aktiviert.
+• Die App und die App Store-Informationen wurden auf alle 50 unterstützten App Store-Gebietsschemata erweitert.

@@ -100,6 +100,13 @@ struct DownloadManagerContentView: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                if item.status == .inProgress || item.status == .paused {
+                    ProgressView(value: item.progress)
+                        .progressViewStyle(.linear)
+                    Text(progressText(item))
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.tertiary)
+                }
             }
 
             Spacer()
@@ -112,6 +119,30 @@ struct DownloadManagerContentView: View {
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel(LanguageManager.shared.localizedString("share"))
+            } else if item.status == .inProgress {
+                Button {
+                    if item.transport == .background {
+                        BackgroundDownloadService.shared.pause(id: item.id)
+                    } else {
+                        NotificationCenter.default.post(name: .pauseBrowserDownload, object: nil, userInfo: ["id": item.id])
+                    }
+                } label: {
+                    Image(systemName: "pause.circle")
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(LanguageManager.shared.localizedString("pause"))
+            } else if item.status == .paused {
+                Button {
+                    if item.transport == .background {
+                        BackgroundDownloadService.shared.resume(id: item.id)
+                    } else {
+                        NotificationCenter.default.post(name: .resumeBrowserDownload, object: nil, userInfo: ["id": item.id])
+                    }
+                } label: {
+                    Image(systemName: "play.circle")
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(LanguageManager.shared.localizedString("resume"))
             }
         }
         .swipeActions(edge: .trailing) {
@@ -138,6 +169,7 @@ struct DownloadManagerContentView: View {
     private func icon(for status: BrowserDownloadStatus) -> String {
         switch status {
         case .inProgress: "arrow.down.circle"
+        case .paused: "pause.circle.fill"
         case .finished: "checkmark.circle.fill"
         case .failed: "exclamationmark.triangle.fill"
         case .canceled: "xmark.circle.fill"
@@ -147,6 +179,7 @@ struct DownloadManagerContentView: View {
     private func color(for status: BrowserDownloadStatus) -> Color {
         switch status {
         case .inProgress: .blue
+        case .paused: .blue
         case .finished: .green
         case .failed: .orange
         case .canceled: .secondary
@@ -156,11 +189,23 @@ struct DownloadManagerContentView: View {
     private func statusText(for status: BrowserDownloadStatus) -> String {
         switch status {
         case .inProgress: LanguageManager.shared.localizedString("downloads_in_progress")
+        case .paused: LanguageManager.shared.localizedString("downloads_paused")
         case .finished: LanguageManager.shared.localizedString("downloads_finished")
         case .failed: LanguageManager.shared.localizedString("downloads_failed")
         case .canceled: LanguageManager.shared.localizedString("downloads_canceled")
         }
     }
+
+    private func progressText(_ item: BrowserDownloadItem) -> String {
+        let percent = Int((item.progress * 100).rounded())
+        guard item.expectedBytes > 0 else { return "\(percent)%" }
+        return "\(percent)% · \(ByteCountFormatter.string(fromByteCount: item.receivedBytes, countStyle: .file)) / \(ByteCountFormatter.string(fromByteCount: item.expectedBytes, countStyle: .file))"
+    }
+}
+
+extension Notification.Name {
+    static let pauseBrowserDownload = Notification.Name("soulo.pauseBrowserDownload")
+    static let resumeBrowserDownload = Notification.Name("soulo.resumeBrowserDownload")
 }
 
 private struct DownloadFolderBrowser: UIViewControllerRepresentable {

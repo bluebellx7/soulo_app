@@ -206,6 +206,9 @@ struct HomeView: View {
             _ = AppQuickActionService.shared.consumePendingAction()
             handleQuickAction(action)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .openSouloDownloads)) { _ in
+            librarySection = .downloads
+        }
     }
 
     // MARK: - Home Content
@@ -557,7 +560,7 @@ struct HomeView: View {
             Button {
                 showExtensionCenter = true
             } label: {
-                Label(LanguageManager.shared.localizedString("userscripts"), systemImage: "chevron.left.forwardslash.chevron.right")
+                Label(LanguageManager.shared.localizedString("userscripts"), systemImage: "puzzlepiece.extension.fill")
             }
         } label: {
             Image(systemName: "ellipsis")

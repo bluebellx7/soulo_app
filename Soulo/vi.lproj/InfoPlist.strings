@@ -1,5 +1,8 @@
-NSCameraUsageDescription = "Cho phép truy cập camera khi bạn chấp thuận yêu cầu của trang web, chẳng hạn để gọi video, quét mã hoặc chụp ảnh.";
-NSMicrophoneUsageDescription = "Cho phép truy cập micrô để tìm kiếm bằng giọng nói và, khi bạn chấp thuận, để gọi hoặc ghi âm trên trang web.";
-NSSpeechRecognitionUsageDescription = "Cho phép nhận dạng giọng nói để chuyển giọng nói của bạn thành văn bản tìm kiếm.";
-NSPhotoLibraryUsageDescription = "Soulo cần quyền truy cập thư viện ảnh để đặt hình nền tùy chỉnh.";
-NSPhotoLibraryAddUsageDescription = "Soulo cần quyền để lưu ảnh web vào thư viện ảnh của bạn.";
+/* Soulo — generated and validated localization */
+
+"CFBundleDisplayName" = "Soulo";
+"NSCameraUsageDescription" = "Cho phép truy cập vào máy ảnh khi bạn phê duyệt yêu cầu trang web, chẳng hạn như cuộc gọi điện video, quét mã hoặc chụp ảnh.";
+"NSMicrophoneUsageDescription" = "Cho phép truy cập micrô để tìm kiếm bằng giọng nói và khi bạn phê duyệt, thực hiện cuộc gọi hoặc ghi âm trên trang web.";
+"NSSpeechRecognitionUsageDescription" = "Cho phép nhận dạng giọng nói để biến giọng nói của bạn thành văn bản tìm kiếm.";
+"NSPhotoLibraryUsageDescription" = "Soulo cần quyền truy cập vào thư viện ảnh để đặt hình nền tùy chỉnh.";
+"NSPhotoLibraryAddUsageDescription" = "Soulo cần có quyền lưu hình ảnh trên web vào thư viện ảnh của bạn.";

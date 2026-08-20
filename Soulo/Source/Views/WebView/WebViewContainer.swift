@@ -55,6 +55,16 @@ enum BrowserChromeLayout {
     }
 }
 
+enum BrowserAddressEditorLayout {
+    static let compactHeight: CGFloat = 252
+}
+
+private struct WebExtensionInstallPresentation: Identifiable {
+    let id = UUID()
+    let link: String
+    let autoStart: Bool
+}
+
 enum BrowserChromeSymbol {
     /// A browser viewport with its bottom control area highlighted. Using the
     /// same object symbol for both states avoids implying navigation direction.
@@ -134,11 +144,12 @@ struct WebViewContainer: View {
     @State private var showPrivacyPanel = false
     @State private var librarySection: LibrarySection?
     @State private var showExtensionCenter = false
+    @State private var remoteExtensionInstallPresentation: WebExtensionInstallPresentation?
     @State private var extensionInstallCandidate: BrowserExtensionInstallCandidate?
     @State private var showExternalOpenFailed = false
     @State private var showDownloadFailed = false
     @State private var showAddressEditor = false
-    @State private var addressEditorDetent: PresentationDetent = .height(302)
+    @State private var addressEditorDetent: PresentationDetent = .height(BrowserAddressEditorLayout.compactHeight)
     @State private var requestVoiceAfterAddressEditorDismisses = false
     @State private var showFullscreenExitHandle = false
     @State private var showFullscreenExitHint = false
@@ -146,6 +157,8 @@ struct WebViewContainer: View {
     @State private var fullscreenHintDismissTask: Task<Void, Never>?
     @State private var showCaptureOptions = false
     @State private var showResourceInspector = false
+    @State private var imageTextResult: ImageTextRecognitionResult?
+    @State private var imageTextError: String?
     @State private var isCapturingPage = false
     @State private var captureResult: WebPageCaptureResult?
     @State private var captureError: String?
@@ -550,7 +563,7 @@ struct WebViewContainer: View {
                 }
             )
             .presentationDetents(
-                [.height(302), .medium],
+                [.height(BrowserAddressEditorLayout.compactHeight), .medium],
                 selection: $addressEditorDetent
             )
             .presentationDragIndicator(.visible)
@@ -601,6 +614,14 @@ struct WebViewContainer: View {
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
+        .sheet(item: $remoteExtensionInstallPresentation) { presentation in
+            WebExtensionStoreInstallView(
+                initialValue: presentation.link,
+                autoStart: presentation.autoStart
+            )
+                .presentationDetents([.height(390), .large])
+                .presentationDragIndicator(.visible)
+        }
         .sheet(item: $extensionInstallCandidate) { candidate in
             BrowserPackageInstallView(candidate: candidate)
                 .presentationDetents([.height(580), .large])
@@ -611,6 +632,13 @@ struct WebViewContainer: View {
                 WebResourceInspectorView(webViewModel: webViewModel)
             }
         }
+        .modifier(ImageTextRecognitionPresentationModifier(
+            webViewModel: webViewModel,
+            isActiveTab: isActiveTab,
+            result: $imageTextResult,
+            errorMessage: $imageTextError,
+            onSearch: { onAddressSearch?($0) }
+        ))
         .modifier(
             WebToolsPresentationModifier(
                 webViewModel: webViewModel,
@@ -629,6 +657,16 @@ struct WebViewContainer: View {
                 return
             }
             extensionInstallCandidate = candidate
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .webExtensionStoreInstallRequested)) { notification in
+            guard isActiveTab,
+                  notification.object as AnyObject? === webViewModel,
+                  let value = notification.userInfo?["url"] as? String else { return }
+            remoteExtensionInstallPresentation = WebExtensionInstallPresentation(
+                link: value,
+                autoStart: true
+            )
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         }
         .onReceive(NotificationCenter.default.publisher(for: .browserExtensionsChanged)) { _ in
@@ -1643,12 +1681,14 @@ struct WebViewContainer: View {
     }
 
     private func presentAddressEditor() {
-        addressEditorDetent = isIPadLandscapeWindow ? .medium : .height(302)
+        addressEditorDetent = isIPadLandscapeWindow
+            ? .medium
+            : .height(BrowserAddressEditorLayout.compactHeight)
         showAddressEditor = true
     }
 
     private func handleAddressEditorDismissal() {
-        addressEditorDetent = .height(302)
+        addressEditorDetent = .height(BrowserAddressEditorLayout.compactHeight)
         guard requestVoiceAfterAddressEditorDismisses else { return }
         requestVoiceAfterAddressEditorDismisses = false
         DispatchQueue.main.async {
@@ -1759,7 +1799,7 @@ private struct BrowserAddressEditorSheet: View {
 
     var body: some View {
         ScrollView(.vertical) {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 10) {
                 Text(LanguageManager.shared.localizedString("browser_edit_address"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.secondary)
@@ -1919,8 +1959,8 @@ private struct BrowserAddressEditorSheet: View {
             }
             }
             .padding(.horizontal, 18)
-            .padding(.top, 12)
-            .padding(.bottom, 18)
+            .padding(.top, 9)
+            .padding(.bottom, 12)
         }
         .scrollIndicators(.hidden)
         .scrollBounceBehavior(.basedOnSize)

@@ -15,12 +15,14 @@ struct ExtensionCenterView: View {
     @ObservedObject private var service = BrowserExtensionService.shared
     @State private var selectedTab: ExtensionCenterTab = .installed
     @State private var importWebExtension = false
+    @State private var showStoreLinkInstaller = false
     @State private var importUserScript = false
     @State private var showNewScript = false
     @State private var isInstalling = false
     @State private var errorMessage: String?
     @State private var successMessage: String?
     @State private var scriptPendingDeletion: UserScriptRecord?
+    @State private var extensionActionRevision = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -65,6 +67,11 @@ struct ExtensionCenterView: View {
                 }
                 isInstalling = false
             }
+        }
+        .sheet(isPresented: $showStoreLinkInstaller) {
+            WebExtensionStoreInstallView()
+                .presentationDetents([.height(390), .large])
+                .presentationDragIndicator(.visible)
         }
         .fileImporter(
             isPresented: $importUserScript,
@@ -140,6 +147,9 @@ struct ExtensionCenterView: View {
                 }
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .browserExtensionActionsChanged)) { _ in
+            extensionActionRevision &+= 1
+        }
     }
 
     private var installedContent: some View {
@@ -151,7 +161,7 @@ struct ExtensionCenterView: View {
             if service.userScripts.isEmpty {
                 ContentUnavailableView(
                     LanguageManager.shared.localizedString("userscripts_empty"),
-                    systemImage: "chevron.left.forwardslash.chevron.right",
+                    systemImage: "puzzlepiece.extension.fill",
                     description: Text(LanguageManager.shared.localizedString("userscripts_empty_desc"))
                 )
             }
@@ -214,16 +224,22 @@ struct ExtensionCenterView: View {
     }
 
     private func webExtensionRow(_ item: WebExtensionRecord) -> some View {
-        HStack(spacing: 12) {
-            extensionIcon(systemName: "puzzlepiece.extension.fill", tint: .blue)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(item.name).font(.body.weight(.medium)).lineLimit(1)
-                Text(webExtensionDetail(item))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+        let action = service.webExtensionAction(for: item.id)
+        return HStack(spacing: 12) {
+            if let action {
+                Button {
+                    service.performWebExtensionAction(item.id)
+                } label: {
+                    webExtensionActionLabel(item, action: action)
+                }
+                .buttonStyle(.plain)
+                .disabled(!action.isEnabled)
+                .accessibilityLabel(action.label)
+                .id("\(item.id.uuidString)-\(extensionActionRevision)")
+            } else {
+                webExtensionActionLabel(item, action: nil)
             }
-            Spacer()
+
             Toggle("", isOn: Binding(
                 get: { item.isEnabled },
                 set: { service.setWebExtensionEnabled(item.id, enabled: $0) }
@@ -231,6 +247,33 @@ struct ExtensionCenterView: View {
             .labelsHidden()
         }
         .padding(.vertical, 3)
+    }
+
+    private func webExtensionActionLabel(
+        _ item: WebExtensionRecord,
+        action: WebExtensionActionPresentation?
+    ) -> some View {
+        HStack(spacing: 12) {
+            if let image = action?.icon {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 34, height: 34)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            } else {
+                extensionIcon(systemName: "puzzlepiece.extension.fill", tint: .blue)
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(item.name).font(.body.weight(.medium)).lineLimit(1)
+                Text(webExtensionDetail(item))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+            Spacer(minLength: 8)
+        }
+        .contentShape(Rectangle())
     }
 
     private func userScriptRow(_ script: UserScriptRecord) -> some View {
@@ -283,10 +326,12 @@ struct ExtensionCenterView: View {
             // this release. The implementation stays compiled for later tests.
             if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled {
                 Section {
-                    installSourceRow("Chrome Web Store", icon: "safari.fill", tint: .blue, url: "https://chromewebstore.google.com/category/extensions")
-                    installSourceRow("Microsoft Edge Extensions", icon: "globe", tint: .cyan, url: "https://microsoftedge.microsoft.com/addons/Microsoft-Edge-Extensions-Home")
-                    installSourceRow("Firefox Add-ons", icon: "flame.fill", tint: .orange, url: "https://addons.mozilla.org/")
-                    installSourceRow("GitHub · Browser Extensions", icon: "chevron.left.forwardslash.chevron.right", tint: .primary, url: "https://github.com/topics/browser-extension")
+                    Button { showStoreLinkInstaller = true } label: {
+                        Label(
+                            LanguageManager.shared.localizedString("web_extension_install_store_link"),
+                            systemImage: "link.badge.plus"
+                        )
+                    }
 
                     Button { importWebExtension = true } label: {
                         Label(LanguageManager.shared.localizedString("extension_choose_file"), systemImage: "folder.badge.plus")
@@ -296,6 +341,17 @@ struct ExtensionCenterView: View {
                     Text(LanguageManager.shared.localizedString("web_extensions"))
                 } footer: {
                     Text(LanguageManager.shared.localizedString(nativeWebExtensionsAvailable ? "web_extension_install_footer" : "web_extension_requires_ios"))
+                }
+
+                Section {
+                    installSourceRow("Chrome Web Store", icon: "safari.fill", tint: .blue, url: "https://chromewebstore.google.com/category/extensions")
+                    installSourceRow("Microsoft Edge Extensions", icon: "globe", tint: .cyan, url: "https://microsoftedge.microsoft.com/addons/Microsoft-Edge-Extensions-Home")
+                    installSourceRow("Firefox Add-ons", icon: "flame.fill", tint: .orange, url: "https://addons.mozilla.org/")
+                    installSourceRow("GitHub · Browser Extensions", icon: "chevron.left.forwardslash.chevron.right", tint: .primary, url: "https://github.com/topics/browser-extension")
+                } header: {
+                    Text(LanguageManager.shared.localizedString("web_extension_browse_sources"))
+                } footer: {
+                    Text(LanguageManager.shared.localizedString("web_extension_browse_sources_footer"))
                 }
             }
 
@@ -418,6 +474,137 @@ struct ExtensionCenterView: View {
 
     private var userScriptContentTypes: [UTType] {
         [UTType(filenameExtension: "js") ?? .sourceCode, .sourceCode, .plainText]
+    }
+}
+
+struct WebExtensionStoreInstallView: View {
+    let initialValue: String
+    let autoStart: Bool
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var linkText: String
+    @State private var isInstalling = false
+    @State private var installedName: String?
+    @State private var errorMessage: String?
+    @State private var didAutoStart = false
+
+    init(initialValue: String = "", autoStart: Bool = false) {
+        self.initialValue = initialValue
+        self.autoStart = autoStart
+        _linkText = State(initialValue: initialValue)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    Label(
+                        LanguageManager.shared.localizedString("web_extension_store_install_title"),
+                        systemImage: "puzzlepiece.extension.fill"
+                    )
+                    .font(.title3.weight(.semibold))
+
+                    Text(LanguageManager.shared.localizedString("web_extension_store_install_desc"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    VStack(spacing: 10) {
+                        TextField(
+                            LanguageManager.shared.localizedString("web_extension_store_link_placeholder"),
+                            text: $linkText,
+                            axis: .vertical
+                        )
+                        .lineLimit(2...4)
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .padding(12)
+                        .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+
+                        Button {
+                            if let value = UIPasteboard.general.string {
+                                linkText = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                            }
+                        } label: {
+                            Label(LanguageManager.shared.localizedString("paste_from_clipboard"), systemImage: "doc.on.clipboard")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+
+                    Button(action: install) {
+                        HStack(spacing: 9) {
+                            if isInstalling {
+                                ProgressView().tint(.white)
+                            } else {
+                                Image(systemName: "arrow.down.app.fill")
+                            }
+                            Text(LanguageManager.shared.localizedString(
+                                isInstalling ? "extension_installing_short" : "install"
+                            ))
+                        }
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isInstalling || linkText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                .padding(20)
+            }
+            .navigationTitle(LanguageManager.shared.localizedString("extensions_install"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(LanguageManager.shared.localizedString("cancel")) { dismiss() }
+                        .disabled(isInstalling)
+                }
+            }
+        }
+        .interactiveDismissDisabled(isInstalling)
+        .task {
+            guard autoStart, !didAutoStart else { return }
+            didAutoStart = true
+            install()
+        }
+        .alert(
+            LanguageManager.shared.localizedString("extension_install_success"),
+            isPresented: Binding(
+                get: { installedName != nil },
+                set: { if !$0 { installedName = nil } }
+            )
+        ) {
+            Button(LanguageManager.shared.localizedString("done")) { dismiss() }
+        } message: {
+            Text(AppAccessibility.formatted("extension_installed_success_desc", installedName ?? ""))
+        }
+        .alert(
+            LanguageManager.shared.localizedString("extension_install_failed"),
+            isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            )
+        ) {
+            Button(LanguageManager.shared.localizedString("confirm"), role: .cancel) {}
+        } message: {
+            Text(errorMessage ?? "")
+        }
+    }
+
+    private func install() {
+        guard !isInstalling else { return }
+        isInstalling = true
+        Task { @MainActor in
+            do {
+                let item = try await WebExtensionStoreInstallService.shared.install(from: linkText)
+                installedName = item.name
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            } catch {
+                errorMessage = error.localizedDescription
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+            }
+            isInstalling = false
+        }
     }
 }
 

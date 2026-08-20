@@ -403,18 +403,116 @@ enum WebViewScripts {
 
     /// Captures files created inside the page, which WKDownload cannot reliably
     /// receive because blob: and data: URLs do not have a network response.
-    static let extensionInstallBridge = """
+    static func extensionInstallBridge(
+        title: String,
+        message: String,
+        installButton: String,
+        installingButton: String,
+        logoDataURL: String
+    ) -> String {
+        let escapedTitle = title.escapedForJavaScriptString
+        let escapedMessage = message.escapedForJavaScriptString
+        let escapedInstallButton = installButton.escapedForJavaScriptString
+        let escapedInstallingButton = installingButton.escapedForJavaScriptString
+        let escapedLogoDataURL = logoDataURL.escapedForJavaScriptString
+        return """
     (function() {
         if (window.__souloExtensionInstallBridgeInstalled) return;
         window.__souloExtensionInstallBridgeInstalled = true;
 
-        function chromeExtensionID() {
-            if (location.hostname !== 'chromewebstore.google.com') return null;
-            var segments = location.pathname.split('/').filter(Boolean);
-            for (var index = segments.length - 1; index >= 0; index--) {
-                if (/^[a-p]{32}$/i.test(segments[index])) return segments[index].toLowerCase();
+        function supportedExtensionPage() {
+            var host = String(location.hostname || '').toLowerCase();
+            var path = String(location.pathname || '');
+            if (host === 'chromewebstore.google.com' || host === 'chrome.google.com') {
+                return /\\/detail\\/[^/]+\\/[a-p]{32}(?:\\/|$)/i.test(path);
             }
-            return null;
+            if (host === 'microsoftedge.microsoft.com') {
+                return /\\/addons\\/detail\\/[^/]+\\/[a-z]{32}(?:\\/|$)/i.test(path);
+            }
+            if (host === 'addons.mozilla.org' || host === 'www.addons.mozilla.org') {
+                return /\\/firefox\\/addon\\/[A-Za-z0-9._-]+(?:\\/|$)/i.test(path);
+            }
+            return false;
+        }
+
+        function supportedStoreHost() {
+            var host = String(location.hostname || '').toLowerCase();
+            return host === 'chromewebstore.google.com'
+                || host === 'chrome.google.com'
+                || host === 'microsoftedge.microsoft.com'
+                || host === 'addons.mozilla.org'
+                || host === 'www.addons.mozilla.org';
+        }
+
+        function requestInstall(button) {
+            var handler = window.webkit && window.webkit.messageHandlers
+                && window.webkit.messageHandlers.souloExtensionInstaller;
+            if (!handler || !supportedExtensionPage()) return;
+            if (button) {
+                var originalLabel = String(button.textContent || '');
+                button.disabled = true;
+                button.textContent = '\(escapedInstallingButton)';
+                window.setTimeout(function() {
+                    button.disabled = false;
+                    button.textContent = originalLabel || '\(escapedInstallButton)';
+                }, 1200);
+            }
+            handler.postMessage({ pageURL: String(location.href || '') });
+        }
+
+        function addInstallBar() {
+            if (!supportedExtensionPage() || document.getElementById('__soulo-extension-install-host')) return;
+            var host = document.createElement('div');
+            host.id = '__soulo-extension-install-host';
+            host.style.cssText = 'all:initial;position:fixed;z-index:2147483647;left:12px;right:12px;top:max(10px,env(safe-area-inset-top));pointer-events:auto;';
+            var shadow = host.attachShadow ? host.attachShadow({mode:'closed'}) : host;
+            var bar = document.createElement('div');
+            bar.setAttribute('role', 'banner');
+            bar.style.cssText = 'box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;max-width:760px;margin:0 auto;padding:10px 11px 10px 14px;border:1px solid rgba(128,128,128,.24);border-radius:16px;color:#111;background:rgba(250,250,252,.94);box-shadow:0 8px 28px rgba(0,0,0,.16);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;';
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                bar.style.color = '#f5f5f7';
+                bar.style.background = 'rgba(35,35,38,.94)';
+                bar.style.borderColor = 'rgba(255,255,255,.13)';
+            }
+            var icon = document.createElement('img');
+            icon.src = '\(escapedLogoDataURL)';
+            icon.alt = '';
+            icon.draggable = false;
+            icon.setAttribute('aria-hidden', 'true');
+            icon.style.cssText = 'box-sizing:border-box;display:block;flex:0 0 34px;width:34px;height:34px;border:1px solid rgba(128,128,128,.18);border-radius:10px;object-fit:cover;background:#fff;box-shadow:0 2px 7px rgba(0,0,0,.12);';
+            var copy = document.createElement('div');
+            copy.style.cssText = 'min-width:0;flex:1;';
+            var title = document.createElement('div');
+            title.textContent = '\(escapedTitle)';
+            title.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;line-height:18px;';
+            var message = document.createElement('div');
+            message.textContent = '\(escapedMessage)';
+            message.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;opacity:.66;font-size:11px;font-weight:450;line-height:15px;';
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = '\(escapedInstallButton)';
+            button.style.cssText = 'all:unset;box-sizing:border-box;flex:0 0 auto;min-height:34px;padding:0 14px;border-radius:10px;color:white;background:#5b55e7;cursor:pointer;font-size:13px;font-weight:700;text-align:center;-webkit-tap-highlight-color:transparent;';
+            button.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                requestInstall(button);
+            });
+            copy.appendChild(title);
+            copy.appendChild(message);
+            bar.appendChild(icon);
+            bar.appendChild(copy);
+            bar.appendChild(button);
+            shadow.appendChild(bar);
+            (document.documentElement || document.body).appendChild(host);
+        }
+
+        function syncInstallBar() {
+            var host = document.getElementById('__soulo-extension-install-host');
+            if (!supportedExtensionPage()) {
+                if (host) host.remove();
+                return;
+            }
+            if (!host) addInstallBar();
         }
 
         document.addEventListener('click', function(event) {
@@ -423,23 +521,39 @@ enum WebViewScripts {
             var control = target && target.closest ? target.closest('button, a, [role="button"]') : null;
             if (!control) return;
 
-            var extensionID = chromeExtensionID();
-            if (!extensionID) return;
+            if (!supportedExtensionPage()) return;
             var label = String(
                 control.innerText || control.textContent || control.getAttribute('aria-label') || ''
             ).replace(/\\s+/g, ' ').trim().toLowerCase();
-            var installLabel = /add to chrome|add extension|安装|添加至?\\s*chrome|添加扩展|获取/.test(label);
+            var installLabel = /add to chrome|add to edge|add to firefox|add extension|install|安装|添加至?\\s*(chrome|edge|firefox)|添加扩展|获取/.test(label);
             if (!installLabel) return;
-
-            var handler = window.webkit && window.webkit.messageHandlers
-                && window.webkit.messageHandlers.souloExtensionInstaller;
-            if (!handler) return;
             event.preventDefault();
             event.stopImmediatePropagation();
-            handler.postMessage({ provider: 'chrome', extensionID: extensionID });
+            requestInstall(control);
         }, true);
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', syncInstallBar, {once:true});
+        } else {
+            syncInstallBar();
+        }
+
+        if (supportedStoreHost()) {
+            var routeTimer = 0;
+            var scheduleSync = function() {
+                window.clearTimeout(routeTimer);
+                routeTimer = window.setTimeout(syncInstallBar, 80);
+            };
+            window.addEventListener('popstate', scheduleSync);
+            window.addEventListener('hashchange', scheduleSync);
+            var root = document.body || document.documentElement;
+            if (root) {
+                new MutationObserver(scheduleSync).observe(root, {childList:true, subtree:true});
+            }
+        }
     })();
     """
+    }
 
     static let downloadBridge = """
     (function() {
@@ -982,4 +1096,15 @@ enum WebViewScripts {
         """
     }
 
+}
+
+private extension String {
+    var escapedForJavaScriptString: String {
+        replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "'", with: "\\'")
+            .replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\r", with: "\\r")
+            .replacingOccurrences(of: "\u{2028}", with: "\\u2028")
+            .replacingOccurrences(of: "\u{2029}", with: "\\u2029")
+    }
 }

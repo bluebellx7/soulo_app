@@ -1,5 +1,21 @@
 import SwiftUI
+import UIKit
 import WebKit
+
+enum WebExtensionInstallBrandAssets {
+    static let logoDataURL: String = {
+        guard let image = UIImage(named: "SouloLogo"),
+              let data = image.pngData() else { return "" }
+        return "data:image/png;base64,\(data.base64EncodedString())"
+    }()
+}
+
+@MainActor
+private enum BrowserDownloadResumeClaims {
+    private static var ids = Set<UUID>()
+    static func claim(_ id: UUID) -> Bool { ids.insert(id).inserted }
+    static func release(_ id: UUID) { ids.remove(id) }
+}
 
 enum WebNavigationErrorClassifier {
     static func isExpectedInterruption(_ error: Error) -> Bool {
@@ -308,11 +324,18 @@ struct WebViewRepresentable: UIViewRepresentable {
             return existingWebView
         }
 
-        let configuration = WKWebViewConfiguration()
-
+        let configuration: WKWebViewConfiguration
         if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
-           !isIncognito, #available(iOS 18.4, *) {
-            NativeWebExtensionRuntime.shared.apply(to: configuration)
+           !isIncognito, #available(iOS 18.4, *),
+           let extensionConfiguration = NativeWebExtensionRuntime.shared
+            .webViewConfiguration(for: viewModel.currentURL) {
+            configuration = extensionConfiguration
+        } else {
+            configuration = WKWebViewConfiguration()
+            if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
+               !isIncognito, #available(iOS 18.4, *) {
+                NativeWebExtensionRuntime.shared.apply(to: configuration)
+            }
         }
 
         // Custom user agent
@@ -399,8 +422,14 @@ struct WebViewRepresentable: UIViewRepresentable {
         if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled {
             contentController.addUserScript(
                 WKUserScript(
-                    source: WebViewScripts.extensionInstallBridge,
-                    injectionTime: .atDocumentStart,
+                    source: WebViewScripts.extensionInstallBridge(
+                        title: LanguageManager.shared.localizedString("extension_page_banner_title"),
+                        message: LanguageManager.shared.localizedString("extension_page_banner_desc"),
+                        installButton: LanguageManager.shared.localizedString("install"),
+                        installingButton: LanguageManager.shared.localizedString("extension_installing_short"),
+                        logoDataURL: WebExtensionInstallBrandAssets.logoDataURL
+                    ),
+                    injectionTime: .atDocumentEnd,
                     forMainFrameOnly: true
                 )
             )
@@ -510,6 +539,10 @@ struct WebViewRepresentable: UIViewRepresentable {
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
         // URL loading is driven imperatively via viewModel.loadURL(_:)
+        if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
+           !isIncognito, #available(iOS 18.4, *) {
+            NativeWebExtensionRuntime.shared.activate(uiView)
+        }
         let host = uiView.url?.host ?? viewModel.currentURL?.host
         if let accessibleWebView = uiView as? AccessibleWebView {
             accessibleWebView.onAccessibilityPlatformPage = onAccessibilityPlatformPage
@@ -585,14 +618,14 @@ struct WebViewRepresentable: UIViewRepresentable {
     // MARK: - Cleanup
 
     static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) {
-        if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
-           #available(iOS 18.4, *) {
-            NativeWebExtensionRuntime.shared.unregister(uiView)
-        }
+        // A SwiftUI tab switch dismantles this wrapper even though TabManager keeps the
+        // WKWebView alive. Keep the native extension tab registered until the browser tab
+        // is actually closed or suspended so extensions can still enumerate all tabs.
         coordinator.invalidateObservations()
         coordinator.dismissEmbeddedPopups(in: uiView)
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloAdBlocker")
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloPrivacy")
+        uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloExtensionInstaller")
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloDownload", contentWorld: .page)
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloUserScriptXHR", contentWorld: .page)
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloUserScriptAPI", contentWorld: .page)
@@ -624,8 +657,11 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var downloadIDs: [ObjectIdentifier: UUID] = [:]
         private var activeDownloads: [ObjectIdentifier: WKDownload] = [:]
         private var activeDownloadNames: [ObjectIdentifier: String] = [:]
+        private var downloadProgressObservations: [ObjectIdentifier: NSKeyValueObservation] = [:]
         private var pageDownloadTransfers: [String: PageDownloadTransfer] = [:]
         private var downloadCancelObserver: NSObjectProtocol?
+        private var downloadPauseObserver: NSObjectProtocol?
+        private var downloadResumeObserver: NSObjectProtocol?
         private var lastAdHidingSignature = ""
         private var httpsUpgradeFallbacks: [String: URL] = [:]
         private var oneShotHTTPFallbacks = Set<String>()
@@ -643,6 +679,22 @@ struct WebViewRepresentable: UIViewRepresentable {
                 queue: .main
             ) { [weak self] _ in
                 self?.cancelActiveDownloads()
+            }
+            downloadPauseObserver = NotificationCenter.default.addObserver(
+                forName: .pauseBrowserDownload,
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                guard let id = notification.userInfo?["id"] as? UUID else { return }
+                self?.pauseDownload(id: id)
+            }
+            downloadResumeObserver = NotificationCenter.default.addObserver(
+                forName: .resumeBrowserDownload,
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                guard let id = notification.userInfo?["id"] as? UUID else { return }
+                self?.resumeDownload(id: id)
             }
         }
 
@@ -688,20 +740,17 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         private func handleExtensionInstallRequest(_ body: [String: Any], webView: WKWebView?) {
-            guard body["provider"] as? String == "chrome",
-                  let extensionID = body["extensionID"] as? String,
-                  extensionID.range(of: "^[a-p]{32}$", options: .regularExpression) != nil,
-                  var components = URLComponents(string: "https://clients2.google.com/service/update2/crx") else {
+            let value = (body["pageURL"] as? String) ?? webView?.url?.absoluteString
+            guard let value,
+                  let url = URL(string: value),
+                  WebExtensionStoreLinkResolver.canInstall(from: url) else {
                 return
             }
-            components.queryItems = [
-                URLQueryItem(name: "response", value: "redirect"),
-                URLQueryItem(name: "prodversion", value: "130.0.0.0"),
-                URLQueryItem(name: "acceptformat", value: "crx2,crx3"),
-                URLQueryItem(name: "x", value: "id=\(extensionID)&uc")
-            ]
-            guard let packageURL = components.url else { return }
-            webView?.load(URLRequest(url: packageURL))
+            NotificationCenter.default.post(
+                name: .webExtensionStoreInstallRequested,
+                object: viewModel,
+                userInfo: ["url": value]
+            )
         }
 
         func userContentController(
@@ -1267,6 +1316,16 @@ struct WebViewRepresentable: UIViewRepresentable {
                 NotificationCenter.default.removeObserver(downloadCancelObserver)
                 self.downloadCancelObserver = nil
             }
+            if let downloadPauseObserver {
+                NotificationCenter.default.removeObserver(downloadPauseObserver)
+                self.downloadPauseObserver = nil
+            }
+            if let downloadResumeObserver {
+                NotificationCenter.default.removeObserver(downloadResumeObserver)
+                self.downloadResumeObserver = nil
+            }
+            downloadProgressObservations.values.forEach { $0.invalidate() }
+            downloadProgressObservations.removeAll()
         }
 
         func applyAdHidingIfNeeded(
@@ -2158,6 +2217,12 @@ struct WebViewRepresentable: UIViewRepresentable {
                 if let resource {
                     if resource.kind == .image {
                         actions.append(UIAction(
+                            title: LanguageManager.shared.localizedString("image_extract_text"),
+                            image: UIImage(systemName: "text.viewfinder")
+                        ) { _ in
+                            self.extractText(from: resource, webView: webView)
+                        })
+                        actions.append(UIAction(
                             title: LanguageManager.shared.localizedString("save_to_photos"),
                             image: UIImage(systemName: "photo.badge.arrow.down")
                         ) { _ in
@@ -2187,6 +2252,31 @@ struct WebViewRepresentable: UIViewRepresentable {
                 }
 
                 return UIMenu(children: actions)
+            }
+        }
+
+        private func extractText(from resource: WebContextResource, webView: WKWebView) {
+            Task { @MainActor [weak self, weak webView] in
+                guard let self, let webView else { return }
+                do {
+                    let image = try await WebResourceDownloadService.shared.loadImage(
+                        resource.url,
+                        pageURL: webView.url,
+                        webView: webView
+                    )
+                    let result = try await ImageTextRecognitionService.recognize(image, sourceURL: resource.url)
+                    NotificationCenter.default.post(
+                        name: .imageTextRecognitionCompleted,
+                        object: self.viewModel,
+                        userInfo: ["result": result]
+                    )
+                } catch {
+                    NotificationCenter.default.post(
+                        name: .imageTextRecognitionFailed,
+                        object: self.viewModel,
+                        userInfo: ["error": error]
+                    )
+                }
             }
         }
 
@@ -2232,13 +2322,33 @@ struct WebViewRepresentable: UIViewRepresentable {
             suggestedFilename: String,
             completionHandler: @escaping (URL?) -> Void
         ) {
+            let identifier = ObjectIdentifier(download)
+            if let existingID = downloadIDs[identifier],
+               let existing = DownloadManagerService.shared.downloads.first(where: { $0.id == existingID }) {
+                activeDownloads[identifier] = download
+                activeDownloadNames[identifier] = existing.fileName
+                completionHandler(existing.localURL)
+                return
+            }
             let (item, fileURL) = DownloadManagerService.shared.beginDownload(
                 suggestedFilename: suggestedFilename,
                 sourceURL: viewModel.currentURL ?? response.url
             )
-            downloadIDs[ObjectIdentifier(download)] = item.id
-            activeDownloads[ObjectIdentifier(download)] = download
-            activeDownloadNames[ObjectIdentifier(download)] = item.fileName
+            downloadIDs[identifier] = item.id
+            activeDownloads[identifier] = download
+            activeDownloadNames[identifier] = item.fileName
+            downloadProgressObservations[identifier] = download.progress.observe(
+                \.fractionCompleted,
+                options: [.initial, .new]
+            ) { progress, _ in
+                Task { @MainActor in
+                    DownloadManagerService.shared.updateProgress(
+                        id: item.id,
+                        completed: progress.completedUnitCount,
+                        total: progress.totalUnitCount
+                    )
+                }
+            }
 
             Task { @MainActor in
                 refreshDownloadPresentation(preferredFilename: item.fileName)
@@ -2250,6 +2360,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         func downloadDidFinish(_ download: WKDownload) {
             let identifier = ObjectIdentifier(download)
             activeDownloads.removeValue(forKey: identifier)
+            downloadProgressObservations.removeValue(forKey: identifier)?.invalidate()
             activeDownloadNames.removeValue(forKey: identifier)
             let downloadID = downloadIDs.removeValue(forKey: identifier)
             let downloadedItem = downloadID.flatMap { id in
@@ -2259,6 +2370,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             let sourceURL = downloadedItem.flatMap { URL(string: $0.sourceURLString) }
             if let downloadID {
                 DownloadManagerService.shared.markFinished(id: downloadID)
+                BrowserDownloadResumeClaims.release(downloadID)
             }
             Task { @MainActor in
                 refreshDownloadPresentation()
@@ -2285,13 +2397,69 @@ struct WebViewRepresentable: UIViewRepresentable {
         func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
             let identifier = ObjectIdentifier(download)
             activeDownloads.removeValue(forKey: identifier)
+            downloadProgressObservations.removeValue(forKey: identifier)?.invalidate()
             activeDownloadNames.removeValue(forKey: identifier)
             let downloadID = downloadIDs.removeValue(forKey: identifier)
             Task { @MainActor in
                 refreshDownloadPresentation()
                 guard let downloadID else { return }
-                DownloadManagerService.shared.markFailed(id: downloadID, error: error)
+                if let resumeData, !resumeData.isEmpty {
+                    DownloadManagerService.shared.markPaused(id: downloadID, resumeData: resumeData)
+                } else {
+                    DownloadManagerService.shared.markFailed(id: downloadID, error: error)
+                }
+                BrowserDownloadResumeClaims.release(downloadID)
                 finishPageDownloadWithError()
+            }
+        }
+
+        private func pauseDownload(id: UUID) {
+            guard let pair = downloadIDs.first(where: { $0.value == id }),
+                  let download = activeDownloads[pair.key] else { return }
+            activeDownloads.removeValue(forKey: pair.key)
+            activeDownloadNames.removeValue(forKey: pair.key)
+            downloadIDs.removeValue(forKey: pair.key)
+            downloadProgressObservations.removeValue(forKey: pair.key)?.invalidate()
+            download.cancel { resumeData in
+                Task { @MainActor in
+                    if let resumeData, !resumeData.isEmpty {
+                        DownloadManagerService.shared.markPaused(id: id, resumeData: resumeData)
+                    } else {
+                        DownloadManagerService.shared.markCanceled(id: id)
+                    }
+                    BrowserDownloadResumeClaims.release(id)
+                    self.refreshDownloadPresentation()
+                }
+            }
+        }
+
+        private func resumeDownload(id: UUID) {
+            guard let webView = viewModel.webView,
+                  let resumeData = DownloadManagerService.shared.resumeData(id: id),
+                  BrowserDownloadResumeClaims.claim(id) else { return }
+            webView.resumeDownload(fromResumeData: resumeData) { [weak self] download in
+                guard let self else { return }
+                DownloadManagerService.shared.removeResumeData(id: id)
+                DownloadManagerService.shared.markResumed(id: id)
+                let identifier = ObjectIdentifier(download)
+                self.downloadIDs[identifier] = id
+                self.activeDownloads[identifier] = download
+                self.activeDownloadNames[identifier] = DownloadManagerService.shared.downloads
+                    .first(where: { $0.id == id })?.fileName ?? ""
+                download.delegate = self
+                self.downloadProgressObservations[identifier] = download.progress.observe(
+                    \.fractionCompleted,
+                    options: [.initial, .new]
+                ) { progress, _ in
+                    Task { @MainActor in
+                        DownloadManagerService.shared.updateProgress(
+                            id: id,
+                            completed: progress.completedUnitCount,
+                            total: progress.totalUnitCount
+                        )
+                    }
+                }
+                self.refreshDownloadPresentation()
             }
         }
 
@@ -2300,6 +2468,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             activeDownloads.removeAll()
             activeDownloadNames.removeAll()
             for (identifier, download) in downloadsToCancel {
+                downloadProgressObservations.removeValue(forKey: identifier)?.invalidate()
                 if let downloadID = downloadIDs.removeValue(forKey: identifier) {
                     DownloadManagerService.shared.markCanceled(id: downloadID)
                 }

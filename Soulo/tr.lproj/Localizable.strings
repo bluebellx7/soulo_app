@@ -1,26 +1,21 @@
-/* App */
+/* Soulo — generated and validated localization */
+
 "app_name" = "Soulo";
 "app_subtitle" = "Tek sorgu, 40'tan fazla platform";
-
-/* Search */
 "search_placeholder" = "Arama yapın veya URL girin";
+"privacy_search_placeholder" = "Özel arama yapın veya URL girin";
 "search" = "Ara";
 "recent_searches" = "Son Aramalar";
 "show_more" = "Daha Fazla";
 "show_less" = "Daha Az";
 "clear_all" = "Tümünü Temizle";
 "no_results" = "Sonuç Yok";
-
-/* Clipboard */
 "clipboard_detected" = "Pano içeriği algılandı";
-
-/* Regions */
+"clipboard_tap_to_search" = "Panoyu kullanmak için Ara'ya dokunun";
 "region_china" = "Çin";
 "region_international" = "Uluslararası";
 "region_japan" = "Japonya";
 "region_russia" = "Rusya";
-
-/* Platforms - ALL 22 */
 "platform_douyin" = "Douyin";
 "platform_bilibili" = "Bilibili";
 "platform_xiaohongshu" = "Xiaohongshu";
@@ -43,19 +38,13 @@
 "platform_youtube_jp" = "YouTube Japonya";
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
-
-/* WebView */
 "loading" = "Yükleniyor...";
 "load_error" = "Yükleme Başarısız";
 "bookmark_added" = "Yer İmi Eklendi";
 "bookmark_removed" = "Yer İmi Kaldırıldı";
-
-/* Bookmarks */
 "bookmarks" = "Yer İmleri";
 "no_bookmarks" = "Yer İmi Yok";
 "no_bookmarks_desc" = "Sayfaları kaydetmek için göz atarken yer imi düğmesine dokunun";
-
-/* History */
 "search_history" = "Arama Geçmişi";
 "no_history" = "Arama Geçmişi Yok";
 "no_history_desc" = "Son aramalarınız ve ziyaret ettiğiniz sayfalar burada görünecek";
@@ -64,8 +53,6 @@
 "earlier" = "Daha Önce";
 "confirm_clear_history" = "Tüm arama geçmişi temizlensin mi?";
 "confirm_clear_bookmarks" = "Tüm yer imleri temizlensin mi?";
-
-/* Settings */
 "settings" = "Ayarlar";
 "platform_management" = "Platform Yönetimi";
 "region_korea" = "Kore";
@@ -115,8 +102,6 @@
 "about" = "Hakkında";
 "version" = "Sürüm";
 "reset_to_defaults" = "Varsayılanlara Sıfırla";
-
-/* Wallpaper */
 "wallpaper_bing" = "Bing Günlük";
 "wallpaper_custom" = "Özel Fotoğraf";
 "wallpaper_none" = "Dinamik Arka Plan";
@@ -138,8 +123,6 @@
 "wallpaper_current_vibe" = "Mevcut Tarz";
 "wallpaper_discover" = "Duvar Kağıtlarını Keşfet";
 "choose_photo" = "Fotoğraf Seç";
-
-/* Platform Management */
 "add_platform" = "Platform Ekle";
 "platform_name" = "Platform Adı";
 "search_url_template" = "Arama URL Şablonu";
@@ -150,8 +133,6 @@
 "delete_platform" = "Platformu Sil";
 "confirm_delete_platform" = "Bu özel platform silinsin mi?";
 "url_template_error" = "URL şablonu %@ yer tutucusunu içermelidir";
-
-/* Privacy */
 "incognito_mode" = "Gizli Mod";
 "incognito_desc" = "Etkinleştirildiğinde aramalar geçmişe kaydedilmez";
 "clear_search_history" = "Arama Geçmişini Temizle";
@@ -160,8 +141,6 @@
 "clear_cache_desc" = "WebView çerezlerini ve önbellek verilerini temizle";
 "clear_all_data" = "Tüm Verileri Temizle";
 "action_irreversible" = "Bu işlem geri alınamaz";
-
-/* Privacy Settings (extended keys) */
 "privacy_section_browsing" = "Göz Atma";
 "privacy_section_data" = "Veri Yönetimi";
 "privacy_incognito" = "Gizli Mod";
@@ -182,7 +161,6 @@
 "privacy_clear_cache_desc" = "Önbelleği, sekme önizlemelerini ve son 3 günlük sayfa geçmişini temizle. Oturumlar korunur";
 "privacy_clear_cache_confirm_title" = "Tarama Önbelleği Temizlensin mi?";
 "privacy_clear_cache_confirm_message" = "Önbellek ve son 3 günlük sayfa geçmişi silinecek. Çerezler ve oturumlar korunacak.";
-
 "enter_fullscreen" = "Tam Ekrana Geç";
 "exit_fullscreen" = "Tam Ekrandan Çık";
 "fullscreen_exit_hint" = "Denetimler için dokunun, çıkmak için aşağı çekin";
@@ -204,49 +182,29 @@
 "save" = "Kaydet";
 "edit" = "Düzenle";
 "share" = "Paylaş";
-
-/* Permissions */
 "speech_permission" = "Sesli arama için konuşma tanıma izni gereklidir";
 "microphone_permission" = "Sesli giriş için mikrofon izni gereklidir";
-
-/* Errors */
 "error_occurred" = "Bir Hata Oluştu";
 "network_error" = "Ağ Bağlantısı Başarısız";
 "try_again" = "Tekrar Dene";
-
-/* Voice Input */
 "voice_listening" = "Dinleniyor...";
 "voice_tap_to_speak" = "Konuşmaya başlamak için düğmeye dokunun";
-
-/* F3: Spell Correction */
 "did_you_mean" = "Bunu mu demek istediniz:";
-
-/* F4: Page Summary */
 "summarize" = "Özetle";
 "summary_title" = "Sayfa Özeti";
 "summarizing" = "Özetleniyor...";
 "copy_summary" = "Kopyala";
-
-/* F5: Platform Recommendation */
 "suggested_platforms" = "Önerilen";
-
-/* F7: Clipboard Intelligence */
 "clipboard_url_detected" = "URL algılandı";
 "clipboard_product_detected" = "Ürün algılandı";
 "clipboard_person_detected" = "Kişi algılandı";
 "open_directly" = "Aç";
-
-/* F9: Image Search */
 "image_search" = "Görsel Arama";
 "extracting_text" = "Metin çıkarılıyor...";
 "no_text_found" = "Görselde metin bulunamadı";
 "detected_objects" = "Algılanan:";
 "photo_library" = "Fotoğraf Kütüphanesi";
-
-/* F1: Siri */
 "siri_search_tip" = "Deneyin: \"Soulo'da kedileri ara\"";
-
-/* AI Platforms */
 "platform_deepseek" = "DeepSeek";
 "platform_qianwen" = "Qianwen";
 "platform_bing" = "Bing";
@@ -280,15 +238,12 @@
 "show_top_search_bar" = "Üst arama çubuğunu göster";
 "show_top_search_bar_desc" = "Gizliyken arama veya sesli giriş için alttaki adres çubuğunu kullanın";
 "ad_block_master_disabled_desc" = "Aşağıdaki filtre aboneliklerini kullanmak ve yönetmek için reklam engellemeyi açın.";
-/* Custom Groups */
 "custom_groups" = "Özel Gruplar";
 "no_groups" = "Özel Grup Yok";
 "no_groups_desc" = "Favori platformlarınızı düzenlemek için gruplar oluşturun";
 "add_group" = "Yeni Grup";
 "group_name" = "Grup Adı";
 "platforms_count" = "platform";
-
-/* Dynamic Themes */
 "dynamic_theme" = "Tema";
 "theme_midnight" = "Gece Yarısı";
 "theme_ocean" = "Okyanus";
@@ -304,6 +259,19 @@
 "copied" = "Kopyalandı!";
 "ad_block" = "Reklam Engelleyici";
 "ad_block_desc" = "Arama sonuçlarındaki reklamları ve izleyicileri gizle (uygulamak için aramayı yeniden başlatın)";
+"ad_block_network" = "Reklam Ağı İsteklerini Engelle";
+"ad_block_cosmetic" = "Reklam Yer Tutucularını Gizle";
+"ad_block_popups" = "Açılır Pencereleri ve Kaplamaları Temizleme";
+"ad_block_management" = "Reklam Bloğu Yönetimi";
+"ad_block_allowlist" = "İzin Verilen Siteler";
+"ad_block_disable_current_site" = "Bu Sitede Reklam Engellemeyi Devre Dışı Bırak";
+"ad_block_enable_current_site" = "Bu Sitede Reklam Engellemeyi Etkinleştir";
+"ad_block_site_toggle_desc" = "Bunu değiştirmek, yeni reklam engelleme ayarının uygulanabilmesi için mevcut sayfayı yeniden yükler.";
+"ad_block_no_allowlisted_sites" = "İzin verilen site yok.";
+"ad_block_stats" = "Gizli Öğeler";
+"ad_block_stats_desc" = "Sayılar yaklaşıktır ve yalnızca kozmetik temizlemeyle gizlenen sayfa öğelerini içerir.";
+"ad_block_no_stats" = "Henüz gizli öğe istatistiği yok.";
+"ad_block_reset_stats" = "İstatistikleri Sıfırla";
 "browsing" = "Göz Atma";
 "no_platforms_in_group" = "Henüz platform yok";
 "add_to_group" = "Gruba Platform Ekle";
@@ -322,21 +290,15 @@
 "image_uploading" = "Görsel yükleniyor...";
 "switch_to_bing" = "Bing Duvar Kağıdına Geçilsin mi?";
 "switch_to_bing_desc" = "Rüzgar gülü ile güzel arka planları keşfetmek için Bing günlük duvar kağıdını etkinleştirin.";
-
 "open_external_title" = "Harici Uygulama Açılsın mı?";
 "open_external_failed" = "Harici uygulama açılamadı";
 "safari_compatibility_mode" = "Safari Uyumluluk Modu";
 "open_in_default_browser" = "Varsayılan Tarayıcıda Aç";
 "open_external_message" = "Bu bağlantı başka bir uygulama açacak. Devam etmek istiyor musunuz?";
-
 "ai_loading_page" = "AI platformu yükleniyor...";
 "ai_loading_input" = "Sorunuz yazılıyor ve gönderiliyor...";
-
-/* Widget */
 "widget_search" = "Hızlı Arama";
 "widget_description" = "Birden fazla platformda anında arama yapın";
-
-/* Settings - Navigation & Titles */
 "settings_title" = "Ayarlar";
 "settings_platforms" = "Platformlar";
 "settings_appearance" = "Görünüm";
@@ -345,8 +307,6 @@
 "settings_version" = "Sürüm";
 "settings_privacy_policy" = "Gizlilik Politikası";
 "settings_terms" = "Hizmet Şartları";
-
-/* Settings - Section Headers */
 "settings_section_platforms" = "Platformlar";
 "settings_section_appearance" = "Görünüm";
 "settings_section_language" = "Dil";
@@ -354,8 +314,6 @@
 "settings_section_privacy" = "Gizlilik";
 "settings_section_about" = "Hakkında";
 "settings_section_about_support" = "Hakkında ve Destek";
-
-/* Platform Management */
 "platform_auto_sort" = "Sıklığa Göre Otomatik Sırala";
 "platform_auto_sort_desc" = "Platformları kullanım sıklığına göre otomatik olarak yeniden sırala";
 "platform_custom_badge" = "Özel";
@@ -364,8 +322,6 @@
 "platform_reset_confirm_title" = "Platformlar Sıfırlansın mı?";
 "platform_reset_confirm_action" = "Sıfırla";
 "platform_reset_confirm_message" = "Tüm platform yapılandırmaları varsayılanlara geri yüklenecek. Bu işlem geri alınamaz.";
-
-/* Add Custom Platform */
 "add_platform_title" = "Özel Platform Ekle";
 "add_platform_subtitle" = "Herhangi bir arama motoru veya web sitesini platform olarak ekleyin";
 "add_platform_name" = "Platform Adı";
@@ -378,22 +334,14 @@
 "add_platform_url_help_title" = "URL Şablonları Nasıl Çalışır";
 "add_platform_url_help_desc" = "URL'deki arama anahtar kelimesini %@ ile değiştirin, arama yaptığınızda otomatik olarak doldururuz.";
 "add_platform_url_help_examples" = "Örnekler";
-
-/* Wallpaper (extended) */
 "wallpaper_choose_photo" = "Fotoğraf Seç";
-
-/* Language Settings */
 "language_select_title" = "Dil Seç";
 "language_footer" = "Dili değiştirmek uygulama genelindeki tüm metinleri güncelleyecektir.";
-
-/* Home Bookmarks */
 "show_bookmarks_home" = "Ana Ekranda Yer İmlerini Göster";
 "show_bookmarks_home_desc" = "Yer imli siteleri ana ekranda simge olarak göster";
 "show_recent_searches_home" = "Ana ekranda son aramaları göster";
 "show_recent_searches_home_desc" = "Son arama kelimelerini ana ekrandaki arama çubuğunun altında göster";
 "home_screen" = "Ana Ekran";
-
-/* AI Search Platforms */
 "platform_metaso" = "Metaso";
 "platform_tiangong" = "Tiangong AI";
 "platform_phind" = "Phind";
@@ -401,12 +349,11 @@
 "platform_kimi" = "Kimi Search";
 "voice_stop" = "Durdur";
 "voice_record" = "Kaydet";
-
-/* Batch Import */
 "batch_import" = "Toplu İçe Aktar";
 "batch_import_format" = "Aşağıdaki formatta JSON yapıştırın";
 "batch_import_group" = "Gruba Ekle (İsteğe Bağlı)";
 "batch_import_group_placeholder" = "ör. Filmler";
+"batch_import_film_entry" = "Film platformu ön ayarlarını aç";
 "batch_import_action" = "İçe Aktar";
 "batch_import_result" = "%d platform başarıyla içe aktarıldı";
 "paste_from_clipboard" = "Panodan Yapıştır";
@@ -417,8 +364,6 @@
 "error_timeout" = "Bağlantı zaman aşımına uğradı. Lütfen tekrar deneyin.";
 "error_ssl" = "Güvenli bağlantı başarısız. Bu site güvenli olmayabilir.";
 "retry" = "Tekrar Dene";
-
-/* Support & Feedback */
 "settings_rate" = "Bu Uygulamayı Değerlendir";
 "settings_feedback" = "Geri Bildirim Gönder";
 "settings_help" = "Yardım Merkezi";
@@ -440,8 +385,6 @@
 "feedback_success_title" = "Teşekkürler";
 "feedback_success_msg" = "Geri bildiriminiz gönderildi!";
 "feedback_error" = "Hata";
-
-/* Help Center */
 "help_title" = "Yardım Merkezi";
 "help_welcome_title" = "Size nasıl yardımcı olabiliriz?";
 "help_welcome_subtitle" = "Soulo hakkında bilmeniz gereken her şey burada.";
@@ -462,13 +405,9 @@
 "theme_system" = "Sistem";
 "theme_light" = "Açık";
 "theme_dark" = "Koyu";
-
-/* Wallpaper Delete Confirmation */
 "wallpaper_delete_title" = "Duvar kağıdını kaldır";
 "wallpaper_delete_confirm" = "Kaldır";
 "wallpaper_delete_msg" = "Bu duvar kağıdı listenizden gizlenecek.";
-
-/* Tarayıcı sekmeleri */
 "tab_new_tab" = "Yeni sekme";
 "tab_tabs" = "Sekme";
 "tab_close" = "Sekmeyi kapat";
@@ -478,8 +417,6 @@
 "tab_duplicate" = "Sekmeyi çoğalt";
 "tab_open_new" = "Yeni sekmede aç";
 "popup_open_current_tab" = "Geçerli sekmede aç";
-
-/* Tarayıcı özellikleri */
 "find_in_page" = "Sayfada bul";
 "desktop_mode" = "Masaüstü modu";
 "mobile_mode" = "Mobil mod";
@@ -492,8 +429,6 @@
 "image_saved" = "Fotoğraflara kaydedildi";
 "save_failed" = "Kaydetme başarısız";
 "downloading" = "İndiriliyor...";
-
-/* Browser Privacy */
 "downloads" = "İndirilenler";
 "downloads_empty" = "İndirilen dosya yok";
 "downloads_empty_desc" = "İndirilen dosyalar burada görünür.";
@@ -505,8 +440,6 @@
 "library" = "Arşiv";
 "my_downloads" = "İndirilenlerim";
 "open_downloads_folder" = "İndirme konumunu aç";
-"live_activity" = "Dynamic Island";
-"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island—the black pill around the camera at the top of supported iPhones.";
 "fire_button" = "Clear Privacy Data";
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
@@ -543,9 +476,43 @@
 "privacy_gpc_desc" = "Ask websites not to sell or share your data when they support GPC.";
 "privacy_cookie_banners" = "Handle Cookie Prompts";
 "privacy_cookie_banners_desc" = "Try to reject or dismiss common cookie consent banners.";
+"ad_block_allowlisted_count" = "İzin Verilenler Listesindeki Siteler";
+"ad_block_total_hidden" = "Gizli Öğeler";
+"ad_block_current_site_hidden" = "Bu Site";
+"ad_block_search_allowlist" = "İzin verilenler listesinde ara";
+"ad_block_subscriptions" = "Abonelikleri Filtrele";
+"ad_block_subscriptions_desc" = "Soulo ABP filtre listelerinin pratik bir alt kümesini destekler ve bunları WebKit kurallarına ve ayrıca kozmetik gizlemeye dönüştürür. Kaynaklar arasında EasyList, EasyList China ve AdGuard filtreleri bulunur.";
+"ad_block_subscription_enabled" = "Etkin Listeler";
+"ad_block_subscription_rules" = "Önbelleğe Alınmış Kurallar";
+"ad_block_subscription_rules_suffix" = "kurallar";
+"ad_block_subscription_update" = "Etkin Listeleri Güncelle";
+"ad_block_subscription_updating" = "Güncelleniyor...";
+"ad_block_subscription_reset" = "Abonelikleri Sıfırla";
+"wallpaper_remote_error" = "Duvar kağıdı kaynağı kullanılamıyor. Yenilemeyi veya kaynağı değiştirmeyi deneyin.";
+"restore" = "Geri yükle";
+"never_prompt" = "Asla İsteme";
+"live_activity" = "Dynamic Island";
+"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island—the black pill around the camera at the top of supported iPhones.";
+"external_navigation" = "Harici Uygulama Bağlantıları";
+"never_prompt_external" = "Harici uygulama bağlantılarını sessizce engelleyin";
+"never_prompt_external_desc" = "Etkinleştirildiğinde, Soulo herhangi bir istem göstermeden harici uygulama atlamalarını iptal eder.";
+"blocked_external_hosts" = "Engellenen Ana Bilgisayarlar";
+"no_external_hosts" = "Engellenen Ana Bilgisayar Yok";
+"no_external_hosts_desc" = "Harici bir uygulama bağlantısında Asla İsteme'yi seçtiğinizde toplantı sahipleri burada görünür.";
+"wallpaper_auto_refresh_header" = "Otomatik Yenileme";
+"wallpaper_auto_refresh" = "Yenileme Aralığı";
+"wallpaper_auto_refresh_desc" = "Soulo mümkün olduğunda otomatik yenilemeden önce bir sonraki uzak duvar kağıdını önceden yükler.";
+"wallpaper_random_sources" = "Kaynakları Rastgeleleştir";
+"wallpaper_random_sources_desc" = "Seçilen uzak kaynaklar arasında otomatik yenileme ve rastgele yenileme geçişi. En az bir kaynak tutulur.";
+"wallpaper_random_topics" = "Konuları Rastgele Seç";
+"wallpaper_interval_none" = "Asla";
+"wallpaper_interval_1min" = "Her Dakika";
+"wallpaper_interval_5min" = "Her 5 Dakikada Bir";
+"wallpaper_interval_15min" = "Her 15 Dakikada Bir";
+"wallpaper_interval_30min" = "Her 30 Dakikada Bir";
+"wallpaper_interval_1hour" = "Her Saat";
+"wallpaper_interval_1day" = "Her Gün";
 "example" = "Örnek";
-
-/* Tarayıcı gezintisi */
 "browser_back" = "Geri";
 "browser_forward" = "İleri";
 "browser_reload" = "Yeniden yükle";
@@ -553,6 +520,62 @@
 "current_page_link" = "Geçerli sayfa bağlantısı";
 "tab_limit_title" = "Sekme sınırına ulaşıldı";
 "tab_limit_message" = "En fazla 20 sekme açık tutabilirsiniz. Yeni bir sekme açmadan önce birini kapatın.";
+"accessibility_selected" = "Seçildi";
+"accessibility_enabled" = "Etkin";
+"accessibility_disabled" = "Devre dışı";
+"accessibility_item_position" = "%d / %d";
+"accessibility_selected_position" = "Seçildi, %d / %d";
+"accessibility_clear_search" = "Arama metnini temizle";
+"accessibility_voice_recording" = "Kayıt";
+"accessibility_voice_idle" = "Kayıt yapılmıyor";
+"accessibility_voice_search_hint" = "Ses girişini başlatmak için iki kez dokunun.";
+"accessibility_recognized_text" = "Tanınan metin";
+"accessibility_recent_search" = "Son arama, %@";
+"accessibility_recent_search_hint" = "Aramak için iki kez dokunun. Kaldırmak için Sil eylemini kullanın.";
+"accessibility_search_suggestion_hint" = "Bu öneriyi aramak için iki kez dokunun.";
+"accessibility_fill_search" = "Arama alanını %@ ile doldurun";
+"accessibility_fill_search_hint" = "Aramadan önce bu öneriyi düzenlemek için iki kez dokunun.";
+"accessibility_home_title" = "Ana başlık, %@";
+"accessibility_home_subtitle" = "Ana altyazı, %@";
+"accessibility_edit_title_hint" = "Ana başlığı düzenlemek için iki kez dokunun.";
+"accessibility_edit_subtitle_hint" = "Ana altyazıyı düzenlemek için iki kez dokunun.";
+"accessibility_incognito_active" = "Özel tarama açık";
+"accessibility_open_bookmark_hint" = "Bu yer işaretini açmak için iki kez dokunun.";
+"accessibility_group_picker_hint" = "Bir arama grubu veya bölgesi seçmek için iki kez dokunun.";
+"accessibility_platform_hint" = "Sonuçları açmak için iki kez dokunun. Platformu değiştirmek için yukarı veya aşağı kaydırın.";
+"accessibility_previous_platform" = "Önceki platform";
+"accessibility_next_platform" = "Sonraki platform";
+"accessibility_first_platform" = "İlk platform";
+"accessibility_last_platform" = "Son platform";
+"accessibility_platform_position" = "%@, %d / %d";
+"accessibility_platform_loading" = "%@, yükleniyor, %d / %d";
+"accessibility_page_position" = "%d / %d sayfası";
+"accessibility_page_top" = "Sayfanın başı";
+"accessibility_page_bottom" = "Sayfanın alt kısmı";
+"accessibility_page_loaded" = "%@ yüklendi";
+"accessibility_search_results" = "Arama sonuçları";
+"accessibility_active_tab" = "Etkin sekme";
+"accessibility_tab_position" = "%@, %d sekmesi %d";
+"accessibility_open_tab_hint" = "Bu sekmeyi açmak için iki kez dokunun. Kapatmak için Kapat eylemini kullanın.";
+"accessibility_tab_overview_hint" = "Sekmeleri görüntülemek ve yönetmek için iki kez dokunun.";
+"accessibility_open_platform_hint" = "Bu platformu açmak için iki kez dokunun.";
+"accessibility_restore_tab_hint" = "Bu kapalı sekmeyi geri yüklemek için iki kez dokunun.";
+"accessibility_edit_address_hint" = "Adresi düzenlemek veya metni aramak için iki kez dokunun.";
+"accessibility_previous_match" = "Önceki maç";
+"accessibility_next_match" = "Sonraki maç";
+"accessibility_search_history_hint" = "Tekrar aramak için iki kez dokunun. Kaldırmak için Sil eylemini kullanın.";
+"accessibility_edit_platform_hint" = "Bu platformu düzenlemek için iki kez dokunun.";
+"accessibility_platform_visibility" = "Platformu göster";
+"accessibility_wallpaper_open_hint" = "Bu duvar kağıdının önizlemesini görmek için iki kez dokunun. Daha fazla eylem mevcut.";
+"accessibility_add_favorite" = "Favorilere ekle";
+"accessibility_remove_favorite" = "Favorilerden kaldır";
+"accessibility_wallpaper_preview" = "Duvar kağıdı önizlemesi";
+"accessibility_wallpaper_zoom" = "Yüzde %d yakınlaştır";
+"accessibility_wallpaper_adjust_hint" = "Yakınlaştırmak için yukarı veya aşağı kaydırın. Duvar kağıdını taşımak için eylemleri kullanın.";
+"accessibility_move_left" = "Sola taşı";
+"accessibility_move_right" = "Sağa hareket et";
+"accessibility_move_up" = "Yukarı taşı";
+"accessibility_move_down" = "Aşağı taşı";
 "browser_page_tools" = "Sayfa Araçları";
 "browser_open_page" = "Sayfayı Aç";
 "keep_fullscreen_browsing" = "Tam Ekranı Koru";
@@ -560,20 +583,150 @@
 "icloud_settings_sync" = "iCloud Ayar Eşzamanlama";
 "icloud_settings_sync_desc" = "Görünüm, ana sayfa, gezinme, gizlilik ve platform ayarlarını eşzamanlar; geçmiş, önbellek, oturum ve indirmeler hariçtir";
 "settings_section_sync" = "Eşzamanlama";
-"privacy_exit_incognito" = "Gizli modu kapat";
-"privacy_enter_incognito" = "Gizli modu aç";
-
-/* Ayar iyileştirmeleri */
-"privacy_section_private_browsing" = "Gizli Gezinme";
-"toolbar_restore_confirm_title" = "Varsayılan araç çubuğu geri yüklensin mi?";
-"toolbar_restore_confirm_message" = "Geçerli araç çubuğu düzeni varsayılan düzenle değiştirilecek.";
-"web_readability" = "Okunabilirlik";
-"web_reduce_motion" = "Web Sayfası Hareketini Azalt";
-"web_reduce_motion_desc" = "Web sayfası animasyonlarını, geçişlerini ve yumuşak kaydırmayı sınırlar.";
-"web_underline_links" = "Bağlantıların Altını Çiz";
-"web_underline_links_desc" = "Daha kolay ayırt edilmeleri için web sayfası bağlantılarının altını çizer.";
-"home_title_edit_desc" = "Ana ekranın ortasında ana başlık olarak gösterilir.";
-"home_subtitle_edit_desc" = "Ana başlığın altında gösterilir; gizlemek için boş bırakın.";
+"quick_action_clear_cache" = "Önbelleği Temizle";
+"quick_action_private_tab" = "Yeni Özel Sekme";
+"quick_action_share_app" = "Uygulamayı Paylaş";
+"share_app_message" = "Odaklanmış bir arama ve göz atma uygulaması olan Soulo'yi deneyin.";
+"cache_cleared" = "Tarama önbelleği temizlendi";
+"web_appearance" = "Web Görünümü";
+"web_page_colors" = "Sayfa Renkleri";
+"web_follow_app_scheme" = "Web Sitesi Temasını Eşleştir";
+"web_follow_app_scheme_desc" = "Desteklenen web sitelerine Soulo öğesinin şu anda açık mı yoksa karanlık mı olduğunu bildirin, böylece eşleşen bir tema seçebilirler. Desteklenmeyen siteler değişmeden kalır.";
+"web_warm_color_shift" = "Sıcak Okuma Tonu";
+"web_warm_color_shift_desc" = "Geceleri soğuk beyaz ekranları yumuşatmak için sayfaya hafif, sıcak bir renk tonu ekleyin. Resimler ve videolar da biraz daha sıcak görünecektir.";
+"web_force_dark" = "Karanlık Web Sayfalarını Zorla";
+"web_force_dark_short" = "Karanlık Mod";
+"web_force_dark_desc" = "Web sitesinin kendine ait karanlık bir teması olmasa bile parlak arka planları, koyu metinleri ve kenarlıkları düşük ışıkta koyu bir palete dönüştürmeye çalışın.";
+"web_force_dark_footer" = "Bu ayarlar bağımsız olarak birleştirilebilir. Dönüştürme sayfa içeriğini değiştirmez ancak karmaşık sayfalar, tuvaller ve özel kontroller orijinal renklerini koruyabilir. Bir sayfa yanlış görünüyorsa alttaki Diğer menüsünden hızlıca kapatın.";
+"site_information" = "Site Bilgileri";
+"shake_action" = "Sallama Eylemi";
+"shake_action_none" = "Yok";
+"shake_action_fullscreen" = "Tam Ekrana Geçiş Yap";
+"shake_action_dark" = "Karanlık Modu Değiştir";
+"shake_action_reload" = "Sayfayı Yeniden Yükle";
+"shake_action_close_tab" = "Geçerli Sekmeyi Kapat";
+"shake_action_footer" = "Seçilen eylem bir web sayfası açıkken çalışır. Bir geçiş eyleminin seçilmesi, bir sonraki sallamada bunu tersine çevirir.";
+"shake_intensity" = "Sarsıntı Yoğunluğu";
+"shake_intensity_light" = "Işık";
+"shake_intensity_standard" = "Standart";
+"shake_intensity_firm" = "Firma";
+"shake_intensity_strong" = "Güçlü";
+"shake_intensity_footer" = "Cihazın ne kadar sıkı sallanması gerektiğini seçin. Işık tetiklenmesi en kolay olanıdır; Güçlü, kazara yapılan eylemlerin önlenmesine yardımcı olur.";
+"extensions" = "Uzantılar";
+"extensions_installed" = "Uzantılarım";
+"extensions_install" = "Uzantıları Yükle";
+"extensions_empty" = "Uzantı Yok";
+"extensions_empty_desc" = "Burada görmek için bir web uzantısı veya UserScript yükleyin.";
+"extensions_reload_note" = "Açık sayfalar, bir uzantı veya komut dosyası değiştirildikten sonra yeni durumun geçerli olması için yeniden yüklenir.";
+"web_extensions" = "Web Uzantıları";
+"userscripts" = "Komut Dosyaları ve Uzantılar";
+"userscripts_installed" = "Senaryolarım";
+"userscripts_install" = "Komut Dosyalarını Yükle";
+"userscripts_empty" = "UserScript yok";
+"userscripts_empty_desc" = "Burada görmek için bir .user.js dosyası yükleyin veya bir komut dosyası oluşturun.";
+"userscripts_reload_note" = "Açık sayfalar, bir komut dosyası yüklendikten, düzenlendikten, etkinleştirildikten, devre dışı bırakıldıktan veya kaldırıldıktan sonra yeniden yüklenir.";
+"userscript_experimental_badge" = "Uyumluluk";
+"userscript_experimental_title" = "UserScript uyumluluğu";
+"userscript_experimental_desc" = "Site kurallarını, belge başlangıç/bitişini, kapsamlı GM depolama ve sayfa API'lerini, komut dosyası komutlarını, bildirimleri, sekmeleri, indirmeleri, çerezleri, kaynakları ve izin kapsamlı istekleri destekler. Yüklemeden önce her komut dosyasını inceleyin; harici @require dosyaları yürütülmez.";
+"extension_choose_file" = "Uzantı Dosyasını veya Klasörünü Seçin…";
+"extension_installing" = "Uzantı kontrol ediliyor ve yükleniyor…";
+"extension_install_failed" = "Uzantı Yüklenemedi";
+"extension_permissions_summary" = "%d izinleri · %d web sitesi kuralları";
+"extension_untitled" = "Başlıksız Uzantı";
+"web_extension_install_footer" = "Geçerli Soulo sekmesinde açmak için kaynak satırında herhangi bir yere dokunun. Soulo CRX, XPI, ZIP ve desteklenen mağaza yükleme işlemlerini tanır ve yüklemeden önce sorar. Yalnızca masaüstüne yönelik bazı API'ler kullanılamayabilir.";
+"web_extension_install_store_link" = "Mağaza Bağlantısından yükleyin…";
+"web_extension_browse_sources" = "Uzantı Mağazalarına Göz Atın";
+"web_extension_browse_sources_footer" = "Mağaza Al düğmeleri yalnızca kendi masaüstü tarayıcılarını destekler. Bir uzantı ayrıntı sayfası bağlantısını kopyalayın ve ardından Soulo'deki Mağaza Bağlantısından Yükle'yi kullanın.";
+"web_extension_store_install_title" = "Mağaza Uzantısı Yükleme";
+"extension_page_banner_title" = "Soulo ile yükleyin";
+"extension_page_banner_desc" = "Soulo bu uzantıyı doğrudan yükleyebilir.";
+"web_extension_store_install_desc" = "Bir Chrome Web Mağazası, Microsoft Edge Eklentileri veya Firefox Eklentileri ayrıntı sayfası bağlantısını yapıştırın. Soulo paketi kendisi indirdiğinden mağazanın uyumsuz Al düğmesi kullanılmaz.";
+"web_extension_store_link_placeholder" = "Uzantı sayfası bağlantısı veya Chrome uzantı kimliği";
+"web_extension_store_invalid_link" = "Chrome, Edge veya Firefox'tan bir uzantı ayrıntı sayfası bağlantısını, bir Chrome uzantı kimliğini ya da doğrudan CRX, XPI ya da ZIP bağlantısını yapıştırın.";
+"web_extension_store_https_required" = "Uzantı paketleri güvenli bir HTTPS bağlantısı kullanmalıdır.";
+"web_extension_store_insecure_redirect" = "Uzantı mağazası, indirme işlemini iOS'un güvenli bir şekilde doğrulayamadığı bir sunucu üzerinden yönlendirdi.";
+"web_extension_store_download_failed" = "Soulo bu bağlantıdan geçerli bir uzantı paketi indiremedi.";
+"web_extension_store_package_too_large" = "Uzantı paketi 100 MB güvenlik sınırından daha büyük.";
+"web_extension_requires_ios" = "Standart Web Uzantıları iOS 18.4 veya üstünü gerektirir. UserScript'ler bu cihazda kullanılabilir durumda kalacak.";
+"web_extension_invalid" = "Seçilen öğe geçerli, desteklenen bir Web Uzantısı değil.";
+"web_extension_persistent_background_unsupported" = "Bu uzantı, iOS Web Uzantılarının desteklemediği kalıcı bir arka plan sayfası kullanıyor. Manifest V3 veya Safari uyumlu bir sürümü deneyin.";
+"userscript_new" = "Yeni Komut Dosyası";
+"userscript_edit" = "Komut Dosyasını Düzenle";
+"userscript_choose_file" = "UserScript Dosya (.js)'yi seçin…";
+"userscript_install_footer" = "Geçerli Soulo sekmesinde açmak için bir kaynak satırına dokunun. Bir .user.js bağlantısı bir yükleme onayını açar. Standart JavaScript ve geniş bir GM API kümesi desteklenir; komut dosyaları Özel Tarama'da çalışmaz ve harici @require dosyaları yürütülmez.";
+"userscript_install_failed" = "UserScript Yüklenemedi";
+"web_extension_temporarily_disabled" = "Uyumluluk testi tamamlanırken standart tarayıcı uzantıları geçici olarak kullanılamıyor.";
+"userscript_unreadable" = "Seçilen komut dosyası UTF-8 metni olarak okunamadı.";
+"userscript_empty" = "Komut dosyası boş olamaz.";
+"userscript_invalid_match_pattern" = "Geçersiz web sitesi kuralı: %@";
+"userscript_untitled" = "Başlıksız Komut Dosyası";
+"userscript_name" = "İsim";
+"userscript_run_at" = "Çalıştır";
+"userscript_document_start" = "Belge Başlangıcı";
+"userscript_document_end" = "Belge Sonu";
+"userscript_matches" = "Web Sitesi Kuralları (her satıra bir tane)";
+"userscript_code" = "JavaScript";
+"userscript_description" = "Açıklama";
+"userscript_copy_javascript" = "JavaScript'i Kopyala";
+"userscripts_documentation" = "Geliştirme Kılavuzu";
+"userscript_docs_ai_title" = "AI ile komut dosyası oluştur";
+"userscript_docs_ai_desc" = "Soulo’nun eksiksiz uyumluluk istemini kopyalayın, gereksiniminizi ekleyin ve yüklenebilir bir komut dosyası üretmesi için AI’a gönderin.";
+"userscript_docs_copy_prompt" = "AI İstemini Kopyala";
+"userscript_docs_status_title" = "Uyumluluk durumu";
+"userscript_docs_supported_title" = "Destekleniyor";
+"userscript_docs_supported_desc" = "Çekirdek eşleştirme, belge başlangıç/bitiş, stiller/öğeler, tek ve toplu depolama, yerel değer dinleyicileri, pano, menüler, sayfa içi bildirimler, sekmeler, indirmeler, sekme verileri, çerezler, kaynaklar, URL değişiklikleri ve izin kapsamlı istekler.";
+"userscript_docs_partial_title" = "Kısmen destekleniyor";
+"userscript_docs_partial_desc" = "Ağ istekleri, yükleme/ilerleme ve çerez aktarımını atlar. Bildirimler sayfa içidir, kaynak API'leri eşzamansızdır ve değer değişikliği dinleyicileri geçerli sayfa tarafından yapılan değişiklikleri bildirir. Güncelleme kontrolleri manueldir.";
+"userscript_docs_unsupported_title" = "Şu anda desteklenmiyor";
+"userscript_docs_unsupported_desc" = "Harici @require yürütme, GM_webRequest müdahalesi, GM_audio, sandbox/run-in izolasyonu, otomatik güncelleme kontrolleri ve WKWebView'ün sağlayamadığı tam olarak yalnızca masaüstüne yönelik davranışlar.";
+"userscript_docs_metadata_title" = "Meta veriler";
+"userscript_docs_metadata_identity" = "İnsan tarafından okunabilen komut dosyası adı ve isteğe bağlı açıklama, kurulumdan önce ve komut dosyası ayrıntılarında gösterilir.";
+"userscript_docs_metadata_version" = "Sabit, benzersiz bir ad alanı kullanın ve paketteki komut dosyası değiştiğinde sürümü artırın.";
+"userscript_docs_metadata_match" = "http/https joker karakter kurallarını, <all_urls> veya normal ifade @include değişmez değerini kullanarak sayfaları seçin.";
+"userscript_docs_metadata_exclude" = "Eşleşen sayfaları komut dosyasının web sitesi erişim aralığından kaldırın.";
+"userscript_docs_metadata_run_at" = "Belge başlangıcında veya DOMContentLoaded'dan sonra çalıştırın. Varsayılan belge sonudur.";
+"userscript_docs_metadata_grant" = "Kullanılan her ayrıcalıklı API'yi bildirin. Komut dosyası yalnızca standart web sayfası API'lerine ihtiyaç duyduğunda @grant none'u kullanın.";
+"userscript_docs_metadata_connect" = "Ayrıcalıklı ağ istekleri tarafından kullanılan ana bilgisayarları yetkilendirin. Bu olmadan, istekler geçerli sayfa ana bilgisayarıyla sınırlıdır.";
+"userscript_docs_metadata_urls" = "İsteğe bağlı kimlik ve güncelleme meta verileri. Soulo bunları aynı betiğin yeniden kurulumunu tanımak için kullanır.";
+"userscript_docs_metadata_resource" = "Adlandırılmış bir kaynak bildirir. Eşleşen bir @connect ana bilgisayarı ekleyin; modern kaynak API'si beklenene kadar getirme işlemi ertelenir.";
+"userscript_docs_metadata_require" = "Harici gereksinimler kurulum sırasında açıklanır ancak indirilmez veya yürütülmez; komut dosyaları bağımsız olmalıdır.";
+"userscript_docs_api_title" = "Desteklenen ayrıcalıklı API'ler";
+"userscript_docs_api_info" = "Komut dosyası işleyicisini, Soulo sürümünü ve ayrıştırılmış komut dosyası meta verilerini okur. Eski ve modern formda mevcuttur.";
+"userscript_docs_api_unsafe_window" = "unsafeWindow izni açıkça bildirildiğinde geçerli sayfa penceresini sağlar.";
+"userscript_docs_api_style" = "Belgenin başlatılması sırasında güvenli bir şekilde dahil olmak üzere sayfaya bir stil öğesi ekler. Modern biçim bir Söz verir.";
+"userscript_docs_api_log" = "Web sayfası konsoluna bir veya daha fazla değer yazar.";
+"userscript_docs_api_get" = "Kalıcı bir JSON serileştirilebilir değeri okur ve anahtar mevcut olmadığında geri dönüşü döndürür.";
+"userscript_docs_api_set" = "JSON ile serileştirilebilir bir değeri korur. Modern form, depolama hatalarını bildirebilen bir Promise döndürür.";
+"userscript_docs_api_delete" = "Bu komut dosyası için kalıcı bir değeri siler.";
+"userscript_docs_api_list" = "Bu betiğin sahip olduğu tüm kalıcı depolama anahtarlarını döndürür.";
+"userscript_docs_api_bulk" = "Tek bir işlemde birden fazla JSON değerini okur, yazar veya siler; yazma işlemleri yerel mağaza tarafından atomik olarak doğrulanır.";
+"userscript_docs_api_listener" = "Geçerli web sayfasında komut dosyası tarafından yapılan depolama değişikliklerini gözlemler. Çapraz sekme uzaktan bildirimleri yayınlanmaz.";
+"userscript_docs_api_element" = "Belge başlatma sırasında güvenli bir şekilde dahil olmak üzere özniteliklere sahip bir öğe oluşturur ve ekler.";
+"userscript_docs_api_clipboard" = "Metni Soulo'nin yerel köprüsü aracılığıyla sistem panosuna kopyalar.";
+"userscript_docs_extended_title" = "Menüler, sekmeler, dosyalar ve sayfa entegrasyonu";
+"userscript_docs_api_menu" = "Soulo'nin Diğer menüsüne komut dosyası eylemleri ekler ve istendiğinde veya gezinme başladığında bunları kaldırır.";
+"userscript_docs_api_notification" = "Yalıtılmış, erişilebilir bir sayfa içi bildirim gösterir ve tıklama/tamamlama geri aramalarını destekler.";
+"userscript_docs_api_tabs" = "Ön planda veya arka planda bir Soulo sekmesi açar, döndürülen tanıtıcıyı kapatır veya geçerli sekmeyi kapatır/odaklanır.";
+"userscript_docs_api_download" = "Soulo İndirilenler'e yetkili bir genel URL indirir. Hedef @connect şartını karşılamalı ve dosya adları temizlenmelidir.";
+"userscript_docs_api_tabdata" = "JSON ile serileştirilebilir verileri, aynı betiğe ait sayfalar ve canlı sekmeler arasında paylaşır.";
+"userscript_docs_api_cookie" = "Geçerli web sayfası alanıyla sınırlı çerezleri listeler, oluşturur ve siler.";
+"userscript_docs_api_resource" = "Bildirilen bir @resource'u metin veya veri URL'si olarak getirir. Hem eski isimli hem de modern formlar Soulo cinsinden bir Promise döndürür.";
+"userscript_docs_api_urlchange" = "Tek sayfalı uygulamalarda Geçmiş API'si, geri/ileri ve karma değişiklikleri için urlchange'i yayınlar.";
+"userscript_commands" = "Betik komutları";
+"userscript_docs_network_title" = "Ağ istekleri";
+"userscript_docs_network_legacy" = "Ayrıcalıklı bir istek başlatır ve bir iptal tanıtıcısı döndürür. Eşleşen hibe ve @connect ana bilgisayarlarını bildirin.";
+"userscript_docs_network_modern" = "Ayrıcalıklı istek API'sinin aynı ayrıntılar nesnesine ve geri çağırma davranışına sahip modern takma adı.";
+"userscript_docs_network_details" = "URL, yöntem, başlıklar, veriler, zaman aşımı, ResponseType, onloadstart, onreadystatechange, onload, onerror ve onloadend'i destekler.";
+"userscript_docs_network_response" = "Json, blob, arraybuffer kullanın veya metin için boş bırakın. Yanıtlar; durumu, finalUrl'yi, başlıkları, ResponseText'i ve yanıtı içerir.";
+"userscript_docs_network_connect" = "Sayfa ana bilgisayarı için self, kendisi ve alt alanları için bir alan adı, bir joker karakter alanı veya yalnızca gerçekten gerekli olduğunda * kullanın.";
+"userscript_docs_limits_title" = "Davranış ve sınırlar";
+"userscript_docs_limits_web" = "Standart DOM, olaylar, MutationObserver, fetch, zamanlayıcılar ve diğer WKWebView API'leri mevcuttur. Normal getirme hala CORS'u takip ediyor.";
+"userscript_docs_limits_storage" = "Saklanan değerler JSON ile serileştirilebilir olmalıdır: değer başına en fazla 256 KB ve komut dosyası başına toplam 1 MB.";
+"userscript_docs_limits_network" = "Ayrıcalıklı yanıtlar 20 MB ile sınırlıdır, zaman aşımı 1-60 saniyeye sabitlenir ve Cookie/Host/Origin başlıkları kabul edilmez.";
+"userscript_docs_limits_private" = "UserScript'ler Özel Dolaşma'da çalışmaz.";
+"userscript_docs_limits_require" = "Harici @require dosyaları hiçbir zaman yürütülmez. CDN bağımlılıklarından kaçının ve gerekli tüm mantığı komut dosyasına ekleyin.";
+"userscript_docs_template_title" = "Minimum şablon";
+"userscript_docs_template_footer" = "Benzersiz bir ad alanı ve mümkün olan en dar @match ve @grant bildirimlerini kullanın.";
 "userscript_too_large" = "Seçilen komut dosyası 2 MB sınırını aşıyor.";
 "userscript_invalid_connect_domain" = "Geçersiz ağ erişimi kuralı: %@";
 "userscript_storage_invalid" = "Komut dosyası geçersiz veya çok büyük bir değer kaydetmeye çalıştı.";
@@ -587,15 +740,110 @@
 "userscript_external_requirements" = "Harici Bağımlılıklar";
 "userscript_external_requirements_desc" = "Bu komut dosyası harici @require dosyaları bildiriyor. Soulo bunları otomatik yüklemez.";
 "userscript_metadata_title" = "Komut Dosyası Ayrıntıları";
+"userscript_unsupported_permissions" = "Henüz desteklenmiyor: %@";
 "userscript_sample_name" = "Okuma İlerleme Çubuğu";
 "userscript_sample_desc" = "Her web sayfasının üstünde sade bir okuma ilerlemesi gösterir.";
 "userscript_builtin_badge" = "Yerleşik Örnek";
-"userscript_description" = "Açıklama";
-"userscript_copy_javascript" = "JavaScript'i Kopyala";
-"userscripts_documentation" = "Geliştirme Kılavuzu";
-"userscript_docs_ai_title" = "AI ile komut dosyası oluştur";
-"userscript_docs_ai_desc" = "Soulo’nun eksiksiz uyumluluk istemini kopyalayın, gereksiniminizi ekleyin ve yüklenebilir bir komut dosyası üretmesi için AI’a gönderin.";
-"userscript_docs_copy_prompt" = "AI İstemini Kopyala";
-"userscript_commands" = "Betik komutları";
 "userscript_page_marker_name" = "Alan metni çıkarıcı";
 "userscript_page_marker_desc" = "Taşınabilir düğmeye, ardından görünür metni çıkarmak ve kopyalamak için bir sayfa alanına dokunun.";
+"userscript_builtin_readonly_desc" = "Yerleşik örnekler salt okunurdur ve siz onları açana kadar devre dışı kalır.";
+"site_connection_secure" = "Bağlantı güvenli";
+"site_connection_not_secure" = "Bağlantı güvenli değil";
+"site_https_verified_desc" = "Bu sayfa şifrelenmiş HTTPS kullanıyor. iOS web sitesi sertifikasını doğrular.";
+"site_http_warning_desc" = "Bu sayfa güvenli bir HTTPS bağlantısı kullanmıyor. Şifreleri veya hassas bilgileri girmekten kaçının.";
+"site_tracking_protection" = "Takip Koruması";
+"site_private_mode_desc" = "Geçmişi kaydetmeyin; geçici web sitesi verilerini kullan";
+"site_privacy_details" = "Site Koruma Ayrıntıları";
+"site_protection_explanation" = "Etkinleştirildiğinde, Soulo bilinen izleme isteklerini engeller, yaygın izleme parametrelerini kaldırır ve reklam filtrelemesi uygular. Kapatılması yalnızca bu web sitesini etkiler.";
+"site_protection_summary" = "Koruma Özeti";
+"site_protection_summary_desc" = "Bu sayfa için yalnızca anlaşılır sonuçlar gösterilmektedir. Sayımlar, göz atma oturumu tahminleridir ve asla profilinizi oluşturmak için kullanılmaz.";
+"site_privacy_actions" = "Tamamlanan Koruma Eylemleri";
+"site_request_details_count" = "İstek Ayrıntıları (%d)";
+"extension_source_open_hint" = "Bu kaynağı geçerli Soulo sekmesinde açar";
+"extension_detected_title" = "Uzantı Paketi Algılandı";
+"userscript_detected_title" = "UserScript Algılandı";
+"extension_detected_desc" = "Soulo yüklemeden önce bildirimi doğrulayacak ve bu uzantı tarafından bildirilen izinleri ve web sitesi erişimini etkinleştirecek.";
+"userscript_detected_desc" = "Bu komut dosyası, web sitesi kurallarıyla eşleşen sayfaları okuyabilir ve değiştirebilir. Yalnızca kaynağına güveniyorsanız yükleyin.";
+"install" = "Yükle";
+"extension_installing_short" = "Yükleniyor…";
+"extension_install_success" = "Başarıyla Yüklendi";
+"extension_installed_success_desc" = "%@ yüklendi ve etkinleştirildi. Açık sayfalar, uygulamanın uygulanması için yeniden yüklenecektir.";
+"browser_tabs" = "Sekmeler";
+"web_capture" = "Sayfayı Yakala";
+"web_capture_viewport" = "Geçerli Ekranı Yakala";
+"web_capture_full_page" = "Kayan Sayfayı Yakala";
+"web_capture_full_page_limit_desc" = "Kaydırmalı yakalamaların, bellek kullanımını güvenli tutmak için maksimum yüksekliği vardır. Çok uzun sayfalar otomatik olarak kesilir.";
+"web_capture_processing" = "Sayfa kaynakları yükleniyor ve yakalama oluşturuluyor…";
+"web_capture_unavailable" = "Geçerli sayfa yakalanmaya hazır değil.";
+"web_capture_empty" = "Yakalanacak görünür sayfa içeriği yok.";
+"web_capture_failed" = "Sayfa Yakalama Başarısız";
+"web_capture_save" = "Fotoğraflara Kaydet";
+"web_capture_saved" = "Kaydedildi";
+"web_capture_saved_desc" = "Sayfa yakalama Fotoğraflar'a kaydedildi.";
+"web_capture_photo_permission" = "Soulo'in sayfa yakalamayı Ayarlar'daki Fotoğraflar'a eklemesine izin verin, ardından tekrar deneyin.";
+"web_capture_height_limited" = "Bu sayfa kayan yakalama sınırını aştığı için görüntü maksimum yükseklikte kırpıldı.";
+"web_capture_live_text_hint" = "Live Text ile seçmek veya kopyalamak için resimde tanınan metne dokunup basılı tutun.";
+"web_translate" = "Sayfayı Çevir";
+"web_translate_target" = "Çevir";
+"web_translate_target_desc" = "Soulo sayfa dilini otomatik olarak algılar.";
+"web_translate_system" = "Cihaz Üzerinde Çeviri";
+"web_translate_system_desc" = "Sayfa metnini Apple Translation ile çevirir ve geçerli sayfaya geri yazar. İlk seferde dil indirmesi talep edilebilir.";
+"web_translate_google" = "Google Çeviri";
+"web_translate_google_desc" = "Bu Soulo sekmesinde geçerli adresin çevrilmiş bir kopyasını açar.";
+"web_translate_restore" = "Orijinal Sayfayı Geri Yükle";
+"web_translate_system_requires_ios18" = "Cihazdaki sayfa çevirisi iOS 18 veya üzerini gerektirir. Google Çeviri hâlâ kullanılabilir durumda.";
+"web_translate_failed" = "Çeviri Başarısız";
+"web_translate_no_text" = "Çevirmek için uygun sayfa metni bulunamadı.";
+"web_zoom_out" = "Uzaklaştır";
+"web_zoom" = "Sayfa Yakınlaştırma";
+"web_zoom_in" = "Yakınlaştır";
+"web_zoom_reset" = "%100'e sıfırla";
+"toolbar_customize" = "Tarayıcı Araç Çubuğunu Özelleştir";
+"toolbar_action_empty" = "Boş";
+"toolbar_preview" = "Araç Çubuğu Önizlemesi";
+"toolbar_customize_hint" = "Önizlemenin altında bir konum seçin ve eylemini değiştirin. Boş, yer ayırmadan o öğeyi tamamen kaldırır; adres kapsülü eylemi de değiştirilebilir.";
+"toolbar_replace_action" = "Şununla Değiştir:";
+"toolbar_restore_default" = "Varsayılan Araç Çubuğunu Geri Yükle";
+"toolbar_saved" = "Araç Çubuğu Kaydedildi";
+"privacy_exit_incognito" = "Gizli modu kapat";
+"privacy_enter_incognito" = "Gizli modu aç";
+"share_extension_title" = "Soulo ile arayın";
+"share_search_in_soulo" = "Soulo içinde ara";
+"share_private_search" = "Özel Olarak Ara";
+"share_extension_unsupported" = "Bu öğe aranamaz.";
+"image_extract_text" = "Görüntüden Metni Çıkart";
+"image_text_unavailable" = "Live Text bu cihazda mevcut değil.";
+"image_text_none" = "Bu resimde okunabilir metin bulunamadı.";
+"copy_all" = "Tümünü Kopyala";
+"pause" = "Duraklat";
+"resume" = "Devam et";
+"downloads_paused" = "Duraklatıldı";
+"downloads_background_interrupted" = "Arka planda indirme işlemi tamamlanamadan kesintiye uğradı.";
+"intent_open_soulo_title" = "Soulo'yi açın";
+"intent_search_title" = "Soulo ile arayın";
+"intent_search_description" = "Birden fazla platformda arama yapın.";
+"intent_search_query" = "Arama Sorgusu";
+"intent_search_platform" = "platformu";
+"intent_open_soulo_description" = "Soulo dosyasını açın ve yeni bir arama başlatın.";
+"intent_open_downloads_title" = "İndirilenleri Aç";
+"intent_open_downloads_description" = "Soulo indirmelerinizi açın.";
+"intent_paste_search_title" = "Yapıştır ve Ara";
+"intent_paste_search_description" = "Pano metnini Soulo içinde arayın.";
+"intent_private_search_title" = "Yeni Özel Arama";
+"intent_private_search_description" = "Soulo'yi özel modda açın.";
+"control_search_title" = "Soulo ara";
+"control_search_description" = "Soulo dosyasını açın ve aramaya başlayın.";
+"control_private_search_title" = "Özel Arama";
+"control_private_search_description" = "Özel bir Soulo araması açın.";
+"control_downloads_title" = "İndirilenler";
+"control_downloads_description" = "İndirilenleri Soulo konumunda açın.";
+"privacy_section_private_browsing" = "Gizli Gezinme";
+"toolbar_restore_confirm_title" = "Varsayılan araç çubuğu geri yüklensin mi?";
+"toolbar_restore_confirm_message" = "Geçerli araç çubuğu düzeni varsayılan düzenle değiştirilecek.";
+"web_readability" = "Okunabilirlik";
+"web_reduce_motion" = "Web Sayfası Hareketini Azalt";
+"web_reduce_motion_desc" = "Web sayfası animasyonlarını, geçişlerini ve yumuşak kaydırmayı sınırlar.";
+"web_underline_links" = "Bağlantıların Altını Çiz";
+"web_underline_links_desc" = "Daha kolay ayırt edilmeleri için web sayfası bağlantılarının altını çizer.";
+"home_title_edit_desc" = "Ana ekranın ortasında ana başlık olarak gösterilir.";
+"home_subtitle_edit_desc" = "Ana başlığın altında gösterilir; gizlemek için boş bırakın.";

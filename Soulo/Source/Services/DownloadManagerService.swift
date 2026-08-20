@@ -114,7 +114,11 @@ final class DownloadManagerService: ObservableObject {
         load()
     }
 
-    func beginDownload(suggestedFilename: String, sourceURL: URL?) -> (BrowserDownloadItem, URL) {
+    func beginDownload(
+        suggestedFilename: String,
+        sourceURL: URL?,
+        transport: BrowserDownloadItem.Transport = .webKit
+    ) -> (BrowserDownloadItem, URL) {
         let fileName = uniqueFilename(for: DownloadFilenameSanitizer.sanitize(suggestedFilename))
         let destination = storageDirectory.appendingPathComponent(fileName)
         try? FileManager.default.removeItem(at: destination)
@@ -127,7 +131,11 @@ final class DownloadManagerService: ObservableObject {
             startedAt: Date(),
             completedAt: nil,
             status: .inProgress,
-            errorMessage: ""
+            errorMessage: "",
+            progress: 0,
+            receivedBytes: 0,
+            expectedBytes: 0,
+            transport: transport
         )
         downloads.insert(item, at: 0)
         save()
@@ -140,7 +148,43 @@ final class DownloadManagerService: ObservableObject {
         downloads[index].status = .finished
         downloads[index].completedAt = Date()
         downloads[index].errorMessage = ""
+        downloads[index].progress = 1
         save()
+    }
+
+    func updateProgress(id: UUID, completed: Int64, total: Int64) {
+        guard let index = downloads.firstIndex(where: { $0.id == id }),
+              downloads[index].status == .inProgress else { return }
+        downloads[index].receivedBytes = max(0, completed)
+        downloads[index].expectedBytes = max(0, total)
+        if total > 0 {
+            downloads[index].progress = min(max(Double(completed) / Double(total), 0), 1)
+        }
+        save()
+    }
+
+    func markPaused(id: UUID, resumeData: Data?) {
+        guard let resumeData, !resumeData.isEmpty,
+              let index = downloads.firstIndex(where: { $0.id == id }) else { return }
+        downloads[index].status = .paused
+        downloads[index].completedAt = nil
+        saveResumeData(resumeData, id: id)
+        save()
+    }
+
+    func markResumed(id: UUID) {
+        guard let index = downloads.firstIndex(where: { $0.id == id }) else { return }
+        downloads[index].status = .inProgress
+        downloads[index].errorMessage = ""
+        save()
+    }
+
+    func resumeData(id: UUID) -> Data? {
+        try? Data(contentsOf: resumeDataURL(id: id))
+    }
+
+    func removeResumeData(id: UUID) {
+        try? FileManager.default.removeItem(at: resumeDataURL(id: id))
     }
 
     func markFailed(id: UUID, error: Error) {
@@ -150,6 +194,7 @@ final class DownloadManagerService: ObservableObject {
         downloads[index].completedAt = Date()
         downloads[index].errorMessage = error.localizedDescription
         try? FileManager.default.removeItem(at: downloads[index].localURL)
+        removeResumeData(id: id)
         save()
     }
 
@@ -160,13 +205,15 @@ final class DownloadManagerService: ObservableObject {
         downloads[index].completedAt = Date()
         downloads[index].errorMessage = ""
         try? FileManager.default.removeItem(at: downloads[index].localURL)
+        removeResumeData(id: id)
         save()
     }
 
     func cancelAllDownloads() {
         var changed = false
-        for index in downloads.indices where downloads[index].status == .inProgress {
-            downloads[index].status = .canceled
+        for index in downloads.indices
+        where downloads[index].status == .inProgress && downloads[index].transport == .webKit {
+            downloads[index].status = resumeData(id: downloads[index].id) == nil ? .canceled : .paused
             downloads[index].completedAt = Date()
             downloads[index].errorMessage = ""
             try? FileManager.default.removeItem(at: downloads[index].localURL)
@@ -177,9 +224,23 @@ final class DownloadManagerService: ObservableObject {
         }
     }
 
+    private func saveResumeData(_ data: Data?, id: UUID) {
+        guard let data, !data.isEmpty else { return }
+        try? FileManager.default.createDirectory(at: Self.resumeDataDirectory, withIntermediateDirectories: true)
+        try? data.write(to: resumeDataURL(id: id), options: .atomic)
+    }
+
+    private func resumeDataURL(id: UUID) -> URL {
+        Self.resumeDataDirectory.appendingPathComponent(id.uuidString).appendingPathExtension("resume")
+    }
+
     func delete(_ item: BrowserDownloadItem) {
         guard item.status != .inProgress else { return }
+        if item.transport == .background {
+            BackgroundDownloadService.shared.abandon(id: item.id)
+        }
         try? FileManager.default.removeItem(at: item.localURL)
+        removeResumeData(id: item.id)
         downloads.removeAll { $0.id == item.id }
         save()
     }
@@ -224,7 +285,11 @@ final class DownloadManagerService: ObservableObject {
             downloads = decoded
         }
         var restoredInterruptedDownload = false
-        for index in downloads.indices where downloads[index].status == .inProgress {
+        // WebKit downloads are owned by the web view process and cannot continue after
+        // relaunch. Background URLSession tasks are reattached and reconciled separately.
+        for index in downloads.indices
+        where downloads[index].status == .inProgress
+            && downloads[index].transport == .webKit {
             downloads[index].status = .canceled
             downloads[index].completedAt = Date()
             downloads[index].errorMessage = ""
@@ -235,6 +300,21 @@ final class DownloadManagerService: ObservableObject {
             save()
         }
         removeMissingFiles()
+    }
+
+    func reconcileBackgroundDownloads(activeIDs: Set<UUID>, now: Date = Date()) {
+        var changed = false
+        for index in downloads.indices
+        where downloads[index].status == .inProgress
+            && downloads[index].transport == .background
+            && !activeIDs.contains(downloads[index].id)
+            && now.timeIntervalSince(downloads[index].startedAt) > 5 {
+            downloads[index].status = .failed
+            downloads[index].completedAt = now
+            downloads[index].errorMessage = AppLocalization.string("downloads_background_interrupted")
+            changed = true
+        }
+        if changed { save() }
     }
 
     private func save() {
@@ -248,5 +328,10 @@ final class DownloadManagerService: ObservableObject {
             .appendingPathComponent("Downloads", isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return directory
+    }
+
+    static var resumeDataDirectory: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("DownloadResumeData", isDirectory: true)
     }
 }

@@ -1,0 +1,9 @@
+Có gì mới:
+
+• Chia sẻ liên kết và văn bản tới Soulo từ các ứng dụng khác.
+• Trích xuất văn bản từ hình ảnh trang web bằng Live Text.
+• Đã thêm các hành động Control Center, Màn hình khóa, Nút hành động, Siri và Shortcuts.
+• Giờ đây, quá trình tải xuống tiếp tục ở chế độ nền với tiến trình thực và tạm dừng/tiếp tục.
+• Đã thêm tính năng duyệt nhiều cửa sổ độc lập trên iPad.
+• Đã bật các WebExtension gốc tương thích cùng với UserScripts.
+• Đã mở rộng ứng dụng và thông tin App Store tới tất cả 50 ngôn ngữ App Store được hỗ trợ.

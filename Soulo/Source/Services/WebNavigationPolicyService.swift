@@ -9,7 +9,13 @@ enum WebNavigationDecision: Equatable {
 struct WebNavigationPolicyService {
     static let shared = WebNavigationPolicyService()
 
-    private let webSchemes: Set<String> = ["http", "https", "about", "blob", "data"]
+    private let webSchemes: Set<String> = [
+        "http", "https", "about", "blob", "data",
+        // WKWebExtension uses this internal origin for popup, options, and
+        // extension-created tabs. Sending it to UIApplication produces an
+        // incorrect “open external app” prompt and breaks extension flows.
+        "webkit-extension"
+    ]
     private let appStoreDomains: Set<String> = ["apps.apple.com", "itunes.apple.com"]
     private let externalDomains: [String] = [
         "apps.apple.com", "itunes.apple.com",

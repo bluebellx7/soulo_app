@@ -1,0 +1,20 @@
+Soulo je hiter zasebni brskalnik za več iskanj za iPhone in iPad. Vnesite eno poizvedbo, nato preklapljajte med več kot 40 platformami za iskanje, družabna omrežja, video, nakupovanje, znanje in AI brez ponovnega tipkanja.
+
+BRSKAJTE NA SVOJO POT
+• Zavihki, zaznamki, zgodovina, prenosi in prilagodljive iskalne platforme
+• Zasebno brskanje, zaščita sledilnika, blokiranje oglasov in nadzor na spletnem mestu
+• Mobilni in namizni način spletnega mesta, povečava strani, prevod in zajem celotne strani
+• Prenesite slike, video, zvok in dokumente z inšpektorjem virov spletne strani
+• Izvlecite besedilo iz slik spletnih strani z Live Text
+
+Ustvarjen za iPhone in iPad
+• Več neodvisnih oken na iPadu
+• Delite povezave ali besedilo neposredno na Soulo
+• Iščite in odprite prenose iz Siri, Shortcuts, Control Center, zaklenjenega zaslona in gumba za dejanja
+• Prenosi v ozadju z resničnim napredkom in premorom/nadaljevanjem
+• Dejavnosti v živo in stanje Dynamic Island
+
+RAZŠIRITE SPLET
+Namestite UserScripts ali združljive WebExtensions, jasno upravljajte dovoljenja in ustvarite lastne skripte z vgrajeno dokumentacijo API-ja.
+
+Soulo shrani podatke o brskanju lokalno, razen če omogočite iCloud sinhronizacijo nastavitev. Zasebno brskanje ne shranjuje zgodovine.

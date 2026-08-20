@@ -154,12 +154,14 @@ struct SitePrivacySummary: Codable, Equatable {
 
 enum BrowserDownloadStatus: String, Codable {
     case inProgress
+    case paused
     case finished
     case failed
     case canceled
 }
 
 struct BrowserDownloadItem: Identifiable, Codable, Equatable {
+    enum Transport: String, Codable { case webKit, background }
     let id: UUID
     var fileName: String
     var sourceURLString: String
@@ -168,6 +170,59 @@ struct BrowserDownloadItem: Identifiable, Codable, Equatable {
     var completedAt: Date?
     var status: BrowserDownloadStatus
     var errorMessage: String
+    var progress: Double
+    var receivedBytes: Int64
+    var expectedBytes: Int64
+    var transport: Transport
+
+    init(
+        id: UUID,
+        fileName: String,
+        sourceURLString: String,
+        localPath: String,
+        startedAt: Date,
+        completedAt: Date?,
+        status: BrowserDownloadStatus,
+        errorMessage: String,
+        progress: Double = 0,
+        receivedBytes: Int64 = 0,
+        expectedBytes: Int64 = 0,
+        transport: Transport = .webKit
+    ) {
+        self.id = id
+        self.fileName = fileName
+        self.sourceURLString = sourceURLString
+        self.localPath = localPath
+        self.startedAt = startedAt
+        self.completedAt = completedAt
+        self.status = status
+        self.errorMessage = errorMessage
+        self.progress = progress
+        self.receivedBytes = receivedBytes
+        self.expectedBytes = expectedBytes
+        self.transport = transport
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, fileName, sourceURLString, localPath, startedAt, completedAt, status
+        case errorMessage, progress, receivedBytes, expectedBytes, transport
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        fileName = try container.decode(String.self, forKey: .fileName)
+        sourceURLString = try container.decode(String.self, forKey: .sourceURLString)
+        localPath = try container.decode(String.self, forKey: .localPath)
+        startedAt = try container.decode(Date.self, forKey: .startedAt)
+        completedAt = try container.decodeIfPresent(Date.self, forKey: .completedAt)
+        status = try container.decode(BrowserDownloadStatus.self, forKey: .status)
+        errorMessage = try container.decodeIfPresent(String.self, forKey: .errorMessage) ?? ""
+        progress = try container.decodeIfPresent(Double.self, forKey: .progress) ?? (status == .finished ? 1 : 0)
+        receivedBytes = try container.decodeIfPresent(Int64.self, forKey: .receivedBytes) ?? 0
+        expectedBytes = try container.decodeIfPresent(Int64.self, forKey: .expectedBytes) ?? 0
+        transport = try container.decodeIfPresent(Transport.self, forKey: .transport) ?? .webKit
+    }
 
     var localURL: URL {
         URL(fileURLWithPath: localPath)

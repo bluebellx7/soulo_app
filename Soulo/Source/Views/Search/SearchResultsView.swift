@@ -40,6 +40,7 @@ struct SearchResultsView: View {
     @AppStorage("show_top_search_bar") private var showTopSearchBar = true
     @AppStorage(AppConstants.StorageKeys.keepFullscreenBrowsing) private var keepFullscreenBrowsing = false
     @AppStorage(AppConstants.StorageKeys.shakeAction) private var shakeAction = BrowserShakeAction.none.rawValue
+    @AppStorage(AppConstants.StorageKeys.shakeIntensity) private var shakeIntensity = BrowserShakeIntensity.standard.rawValue
     @AppStorage(AppConstants.StorageKeys.browserToolbarHidden) private var toolbarManuallyHidden = false
 
     @State private var selectedCustomGroup: CustomGroup? = nil
@@ -377,6 +378,10 @@ struct SearchResultsView: View {
             }
         }
         .onAppear {
+            if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
+               !searchVM.isIncognito, #available(iOS 18.4, *) {
+                NativeWebExtensionRuntime.shared.attach(tabManager: tabManager)
+            }
             if PersistentFullscreenBehavior.shouldEnter(
                 enabled: keepFullscreenBrowsing,
                 hasSearch: !searchVM.currentKeyword.isEmpty,
@@ -424,7 +429,8 @@ struct SearchResultsView: View {
         }
         .background {
             DeviceShakeDetector(
-                isEnabled: BrowserShakeAction(rawValue: shakeAction) != BrowserShakeAction.none
+                isEnabled: BrowserShakeAction(rawValue: shakeAction) != BrowserShakeAction.none,
+                intensity: BrowserShakeIntensity(rawValue: shakeIntensity) ?? .standard
             ) {
                 handleShakeAction()
             }

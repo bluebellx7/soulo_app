@@ -1,0 +1,20 @@
+Soulo, iPhone ve iPad için hızlı, özel bir çoklu arama tarayıcısıdır. Bir sorgu girin, ardından yeniden yazmaya gerek kalmadan 40'tan fazla arama, sosyal, video, alışveriş, bilgi ve yapay zeka platformu arasında geçiş yapın.
+
+YOLUNUZA GÖZ ATIN
+• Sekmeler, yer imleri, geçmiş, indirmeler ve özelleştirilebilir arama platformları
+• Özel tarama, izleyici koruması, reklam engelleme ve site bazında kontroller
+• Mobil ve masaüstü web sitesi modları, sayfa yakınlaştırma, çeviri ve tam sayfa yakalama
+• Web sayfası kaynak denetçisi ile görselleri, videoları, sesleri ve belgeleri indirin
+• Live Text ile web sayfası görüntülerinden metin çıkarın
+
+iPHONE VE iPAD İÇİN ÜRETİLDİ
+• iPad'de birden çok bağımsız pencere
+• Bağlantıları veya metni doğrudan Soulo ile paylaşın
+• Siri, Shortcuts, Control Center, Kilit Ekranı ve Eylem Düğmesinden indirilenleri arayın ve açın
+• Gerçek ilerleme ve duraklatma/devam ettirme özelliğiyle arka planda indirmeler
+• Canlı Etkinlikler ve Dynamic Island durumu
+
+WEB'İ GENİŞLETİN
+UserScript'leri veya uyumlu WebExtension'leri yükleyin, izinleri net bir şekilde yönetin ve yerleşik API belgeleriyle kendi komut dosyalarınızı oluşturun.
+
+Soulo, iCloud ayarların senkronizasyonunu etkinleştirmediğiniz sürece tarama verilerini yerel olarak depolar. Özel tarama geçmişi kaydetmez.

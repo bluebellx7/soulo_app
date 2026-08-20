@@ -4,21 +4,56 @@ options:
   deploymentTarget:
     iOS: "17.0"
   knownRegions:
-    - en
+    - ar-SA
+    - bn-BD
+    - ca
     - zh-Hans
-    - ja
-    - ko
-    - fr
-    - de
-    - es
-    - vi
     - zh-Hant
-    - pt-BR
-    - ru
-    - tr
+    - hr
+    - cs
+    - da
+    - nl-NL
+    - en-AU
+    - en-CA
+    - en-GB
+    - en-US
+    - fi
+    - fr-FR
+    - fr-CA
+    - de-DE
+    - el
+    - gu-IN
+    - he
+    - hi
+    - hu
+    - id
     - it
-    - ar
+    - ja
+    - kn-IN
+    - ko
+    - ms
+    - ml-IN
+    - mr-IN
+    - no
+    - or-IN
+    - pl
+    - pt-BR
+    - pt-PT
+    - pa-IN
+    - ro
+    - ru
+    - sk
+    - sl-SI
+    - es-MX
+    - es-ES
+    - sv
+    - ta-IN
+    - te-IN
     - th
+    - tr
+    - uk
+    - ur-PK
+    - vi
     - Base
 
 targets:
@@ -32,50 +67,9 @@ targets:
       - path: Soulo/Resources/UserScripts
         type: folder
         buildPhase: resources
-      - path: Soulo/en.lproj
-        type: folder
-        buildPhase: resources
-      - path: Soulo/zh-Hans.lproj
-        type: folder
-        buildPhase: resources
-      - path: Soulo/ja.lproj
-        type: folder
-        buildPhase: resources
-      - path: Soulo/ko.lproj
-        type: folder
-        buildPhase: resources
-      - path: Soulo/fr.lproj
-        type: folder
-        buildPhase: resources
-      - path: Soulo/de.lproj
-        type: folder
-        buildPhase: resources
-      - path: Soulo/es.lproj
-        type: folder
-        buildPhase: resources
-      - path: Soulo/vi.lproj
-        type: folder
-        buildPhase: resources
-      - path: Soulo/zh-Hant.lproj
-        type: folder
-        buildPhase: resources
-      - path: Soulo/pt-BR.lproj
-        type: folder
-        buildPhase: resources
-      - path: Soulo/ru.lproj
-        type: folder
-        buildPhase: resources
-      - path: Soulo/tr.lproj
-        type: folder
-        buildPhase: resources
-      - path: Soulo/it.lproj
-        type: folder
-        buildPhase: resources
-      - path: Soulo/ar.lproj
-        type: folder
-        buildPhase: resources
-      - path: Soulo/th.lproj
-        type: folder
+      - path: Soulo
+        includes:
+          - "*.lproj"
         buildPhase: resources
     info:
       path: Soulo/Info.plist
@@ -84,7 +78,7 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleDisplayName: Soulo
         UIApplicationSceneManifest:
-          UIApplicationSupportsMultipleScenes: false
+          UIApplicationSupportsMultipleScenes: true
         UILaunchScreen:
           UIColorName: LaunchScreenColor
         UISupportedInterfaceOrientations:
@@ -109,22 +103,26 @@ targets:
           - CFBundleURLSchemes:
               - soulo
         NSAppTransportSecurity:
-          NSAllowsArbitraryLoads: true
           NSAllowsArbitraryLoadsInWebContent: true
+          NSExceptionDomains:
+            delivery.mp.microsoft.com:
+              NSIncludesSubdomains: true
+              NSExceptionAllowsInsecureHTTPLoads: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dkluge.Soulo
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: Soulo/Soulo.entitlements
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.1.3"
-        CURRENT_PROJECT_VERSION: 17
+        MARKETING_VERSION: "1.1.4"
+        CURRENT_PROJECT_VERSION: 18
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_PREVIEWS: "YES"
         SWIFT_EMIT_LOC_STRINGS: "YES"
     dependencies:
       - target: SouloWidgetExtension
+      - target: SouloShareExtension
       - package: DKlugeKit
         product: DKlugeCore
       - package: DKlugeKit
@@ -141,15 +139,59 @@ targets:
       - path: SouloWidget
         excludes:
           - Info.plist
+          - SouloWidget.entitlements
+      - path: Soulo/Source/Shared/SouloSharedAction.swift
+      - path: Soulo/Source/Shared/SouloSystemIntents.swift
+      - path: Soulo
+        includes:
+          - "*.lproj"
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dkluge.Soulo.Widget
+        CODE_SIGN_ENTITLEMENTS: SouloWidget/SouloWidget.entitlements
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.1.3"
-        CURRENT_PROJECT_VERSION: 17
+        MARKETING_VERSION: "1.1.4"
+        CURRENT_PROJECT_VERSION: 18
         GENERATE_INFOPLIST_FILE: "YES"
         INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        SKIP_INSTALL: "YES"
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
+
+  SouloShareExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: SouloShareExtension
+        excludes:
+          - SouloShareExtension.entitlements
+      - path: Soulo/Source/Shared/SouloSharedAction.swift
+      - path: Soulo
+        includes:
+          - "*.lproj"
+        buildPhase: resources
+    info:
+      path: SouloShareExtension/Info.plist
+      properties:
+        CFBundleDisplayName: Soulo
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+              NSExtensionActivationSupportsText: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dkluge.Soulo.ShareExtension
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: SouloShareExtension/SouloShareExtension.entitlements
+        DEVELOPMENT_TEAM: 7S2LBJA9VA
+        MARKETING_VERSION: "1.1.4"
+        CURRENT_PROJECT_VERSION: 18
         SKIP_INSTALL: "YES"
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
 

@@ -1,0 +1,8 @@
+/* Soulo — generated and validated localization */
+
+"CFBundleDisplayName" = "Soulo";
+"NSCameraUsageDescription" = "Povolte přístup k fotoaparátu, když schválíte webovou žádost, například pro videohovory, skenování kódů nebo pořízení fotografie.";
+"NSMicrophoneUsageDescription" = "Povolte přístup k mikrofonu pro hlasové vyhledávání a, když to schválíte, volání na webové stránky nebo nahrávání.";
+"NSSpeechRecognitionUsageDescription" = "Povolte rozpoznávání řeči, aby se váš hlas změnil na hledaný text.";
+"NSPhotoLibraryUsageDescription" = "Soulo potřebuje k nastavení vlastní tapety přístup do knihovny fotografií.";
+"NSPhotoLibraryAddUsageDescription" = "Soulo potřebuje oprávnění k ukládání webových obrázků do vaší knihovny fotografií.";

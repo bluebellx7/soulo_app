@@ -1,0 +1,9 @@
+新消息：
+
+• 從其他應用程式共用連結和文字到Soulo。
+• 使用Live Text 從網頁圖片中擷取文字。
+• 新增了Control Center、鎖定畫面、操作按鈕、Siri 和Shortcuts 操作。
+• 下載現在在背景繼續進行，並具有實際進度和暫停/恢復。
+• 在iPad 上新增了獨立的多視窗瀏覽。
+• 啟用相容的本機WebExtension 和UserScript。
+• 將應用程式和App Store 資訊擴展到所有50 個受支援的App Store 區域設定。

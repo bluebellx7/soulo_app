@@ -1,0 +1,9 @@
+Apa yang Baru:
+
+• Bagikan tautan dan SMS ke Soulo dari aplikasi lain.
+• Ekstrak teks dari gambar halaman web dengan Live Text.
+• Menambahkan tindakan Control Center, Layar Kunci, Tombol Tindakan, Siri dan Shortcuts.
+• Pengunduhan sekarang dilanjutkan di latar belakang dengan kemajuan nyata dan jeda/lanjutkan.
+• Menambahkan penjelajahan multi-jendela independen di iPad.
+• Mengaktifkan WebExtensions asli yang kompatibel bersama dengan UserScripts.
+• Memperluas aplikasi dan informasi App Store ke 50 lokal App Store yang didukung.

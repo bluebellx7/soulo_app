@@ -1,5 +1,8 @@
-NSCameraUsageDescription = "Consenti l'accesso alla fotocamera quando approvi la richiesta di un sito, ad esempio per videochiamate, scansione di codici o foto.";
-NSMicrophoneUsageDescription = "Consenti l'accesso al microfono per la ricerca vocale e, con la tua approvazione, per chiamate o registrazioni sui siti web.";
-NSSpeechRecognitionUsageDescription = "Consenti il riconoscimento vocale per trasformare la tua voce in testo di ricerca.";
-NSPhotoLibraryUsageDescription = "Soulo deve accedere alla libreria foto per impostare uno sfondo personalizzato.";
-NSPhotoLibraryAddUsageDescription = "Soulo necessita dell'autorizzazione per salvare le immagini web nella libreria foto.";
+/* Soulo — generated and validated localization */
+
+"CFBundleDisplayName" = "Soulo";
+"NSCameraUsageDescription" = "Consenti l'accesso alla fotocamera quando approvi una richiesta del sito web, ad esempio per videochiamate, scansione di codici o scatto di una foto.";
+"NSMicrophoneUsageDescription" = "Consenti l'accesso al microfono per la ricerca vocale e, previa approvazione, per le chiamate o la registrazione sul sito web.";
+"NSSpeechRecognitionUsageDescription" = "Consenti il riconoscimento vocale per trasformare la tua voce nel testo di ricerca.";
+"NSPhotoLibraryUsageDescription" = "Soulo necessita dell'accesso alla libreria di foto per impostare uno sfondo personalizzato.";
+"NSPhotoLibraryAddUsageDescription" = "Soulo necessita dell'autorizzazione per salvare immagini web nella tua libreria fotografica.";

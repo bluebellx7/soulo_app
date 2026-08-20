@@ -1,0 +1,8 @@
+/* Soulo — generated and validated localization */
+
+"CFBundleDisplayName" = "Soulo";
+"NSCameraUsageDescription" = "Επιτρέψτε την πρόσβαση στην κάμερα όταν εγκρίνετε ένα αίτημα ιστότοπου, όπως για βιντεοκλήσεις, σάρωση κωδικών ή λήψη φωτογραφίας.";
+"NSMicrophoneUsageDescription" = "Επιτρέψτε την πρόσβαση στο μικρόφωνο για φωνητική αναζήτηση και, όταν το εγκρίνετε, για κλήσεις ή ηχογράφηση ιστότοπου.";
+"NSSpeechRecognitionUsageDescription" = "Επιτρέψτε στην αναγνώριση ομιλίας να μετατρέψει τη φωνή σας σε κείμενο αναζήτησης.";
+"NSPhotoLibraryUsageDescription" = "Το Soulo χρειάζεται πρόσβαση στη βιβλιοθήκη φωτογραφιών για να ορίσει μια προσαρμοσμένη ταπετσαρία.";
+"NSPhotoLibraryAddUsageDescription" = "Το Soulo χρειάζεται άδεια για την αποθήκευση εικόνων ιστού στη βιβλιοθήκη φωτογραφιών σας.";

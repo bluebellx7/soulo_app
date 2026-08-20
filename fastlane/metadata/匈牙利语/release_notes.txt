@@ -1,0 +1,9 @@
+Újdonságok:
+
+• Linkek és szövegek megosztása a(z) Soulo címre más alkalmazásokból.
+• Szöveg kinyerése a weboldal képeiből a Live Text segítségével.
+• Hozzáadott Control Center, képernyőzár, műveletgomb, Siri és Shortcuts művelet.
+• A letöltések most a háttérben folytatódnak, valódi előrehaladással és szüneteltetéssel/folytatással.
+• Független többablakos böngészés hozzáadva az iPaden.
+• Engedélyezett kompatibilis natív WebExtensions a UserScripts mellett.
+• Az alkalmazás és a App Store információ kiterjesztése mind az 50 támogatott App Store területre.

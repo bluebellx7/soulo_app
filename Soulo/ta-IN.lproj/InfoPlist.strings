@@ -1,0 +1,8 @@
+/* Soulo — generated and validated localization */
+
+"CFBundleDisplayName" = "Soulo";
+"NSCameraUsageDescription" = "வீடியோ அழைப்புகள், குறியீடுகளை ஸ்கேன் செய்தல் அல்லது புகைப்படம் எடுப்பது போன்ற இணையதளக் கோரிக்கையை நீங்கள் அங்கீகரிக்கும்போது கேமரா அணுகலை அனுமதிக்கவும்.";
+"NSMicrophoneUsageDescription" = "குரல் தேடலுக்கு மைக்ரோஃபோன் அணுகலை அனுமதிக்கவும், நீங்கள் அங்கீகரிக்கும் போது, இணையதள அழைப்புகள் அல்லது பதிவு செய்யவும்.";
+"NSSpeechRecognitionUsageDescription" = "உங்கள் குரலை தேடல் உரையாக மாற்ற பேச்சு அங்கீகாரத்தை அனுமதிக்கவும்.";
+"NSPhotoLibraryUsageDescription" = "தனிப்பயன் வால்பேப்பரை அமைக்க, Souloக்கு புகைப்பட நூலக அணுகல் தேவை.";
+"NSPhotoLibraryAddUsageDescription" = "உங்கள் புகைப்பட நூலகத்தில் இணையப் படங்களைச் சேமிக்க Souloக்கு அனுமதி தேவை.";

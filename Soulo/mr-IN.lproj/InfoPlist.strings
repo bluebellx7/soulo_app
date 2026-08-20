@@ -1,0 +1,8 @@
+/* Soulo — generated and validated localization */
+
+"CFBundleDisplayName" = "Soulo";
+"NSCameraUsageDescription" = "जेव्हा तुम्ही वेबसाइट विनंती मंजूर करता, जसे की व्हिडिओ कॉलसाठी, कोड स्कॅन करण्यासाठी किंवा फोटो काढण्यासाठी कॅमेरा ऍक्सेस करण्याची अनुमती द्या.";
+"NSMicrophoneUsageDescription" = "व्हॉइस शोध आणि तुम्ही मंजूरी देता तेव्हा, वेबसाइट कॉल किंवा रेकॉर्डिंगसाठी मायक्रोफोनला प्रवेश द्या.";
+"NSSpeechRecognitionUsageDescription" = "तुमचा आवाज शोध मजकूरात बदलण्यासाठी स्पीच रेकग्निशनला अनुमती द्या.";
+"NSPhotoLibraryUsageDescription" = "सानुकूल वॉलपेपर सेट करण्यासाठी Soulo ला फोटो लायब्ररी प्रवेश आवश्यक आहे.";
+"NSPhotoLibraryAddUsageDescription" = "Soulo ला तुमच्या फोटो लायब्ररीमध्ये वेब इमेज सेव्ह करण्यासाठी परवानगी आवश्यक आहे.";

@@ -1,7 +1,9 @@
-/* App */
+/* Soulo — generated and validated localization */
+
 "app_name" = "Soulo";
 "app_subtitle" = "1回の入力で40以上のサービス";
 "search_placeholder" = "検索またはURLを入力";
+"privacy_search_placeholder" = "プライベート検索または URL を入力してください";
 "search" = "検索";
 "recent_searches" = "最近の検索";
 "show_more" = "もっと見る";
@@ -9,6 +11,7 @@
 "clear_all" = "すべて削除";
 "no_results" = "結果なし";
 "clipboard_detected" = "クリップボードの内容を検出しました";
+"clipboard_tap_to_search" = "クリップボードを使用するには「検索」をタップします";
 "region_china" = "中国";
 "region_international" = "インターナショナル";
 "region_japan" = "日本";
@@ -99,17 +102,32 @@
 "about" = "このアプリについて";
 "version" = "バージョン";
 "reset_to_defaults" = "デフォルトに戻す";
-"confirm_reset" = "すべてのプラットフォーム設定をデフォルトに戻しますか？";
 "wallpaper_bing" = "Bingデイリー壁紙";
 "wallpaper_custom" = "カスタム壁紙";
 "wallpaper_none" = "アニメーション背景";
+"wallpaper_gradient" = "グラデーション";
+"wallpaper_photo" = "フォトウォール";
+"wallpaper_solid" = "単色";
+"wallpaper_source" = "壁紙のソース";
+"wallpaper_type" = "背景タイプ";
+"wallpaper_refresh" = "壁紙を変更";
+"wallpaper_download" = "壁紙をダウンロード";
+"my_favorites" = "お気に入り";
+"wallpaper_fetch_bing" = "今日の画像を取得";
+"wallpaper_color" = "背景色";
+"wallpaper_load_error" = "読み込み失敗";
+"wallpaper_favorites" = "お気に入り";
+"wallpaper_search_placeholder" = "雰囲気で検索（例：森、ミニマル）";
+"wallpaper_pexels" = "Pexels（厳選）";
+"wallpaper_pixabay" = "Pixabay（自然）";
+"wallpaper_current_vibe" = "現在の雰囲気";
+"wallpaper_discover" = "新しい発見";
 "choose_photo" = "写真を選択";
 "add_platform" = "プラットフォームを追加";
 "platform_name" = "プラットフォーム名";
 "search_url_template" = "検索URLテンプレート";
 "search_url_hint" = "キーワードの代わりに %@ を使用してください\n例: https://example.com/search?q=%@";
 "home_url" = "ホームURL";
-"select_region" = "地域を選択";
 "auto_sort_by_frequency" = "使用頻度で自動並び替え";
 "custom_platform" = "カスタムプラットフォーム";
 "delete_platform" = "プラットフォームを削除";
@@ -123,6 +141,40 @@
 "clear_cache_desc" = "WebViewのCookieとキャッシュを削除します";
 "clear_all_data" = "すべてのデータを削除";
 "action_irreversible" = "この操作は元に戻せません";
+"privacy_section_browsing" = "ブラウジング";
+"privacy_section_data" = "データ管理";
+"privacy_incognito" = "シークレットモード";
+"privacy_incognito_desc" = "検索が履歴に保存されません";
+"privacy_https_upgrade" = "HTTPをHTTPSに自動アップグレード";
+"privacy_https_upgrade_desc" = "HTTPサイトを開く前に安全なHTTPSを試します";
+"privacy_strip_tracking" = "トラッキングパラメータを削除";
+"privacy_strip_tracking_desc" = "URLから一般的なクリックIDやキャンペーンIDを削除します";
+"privacy_clear_history" = "検索履歴を削除";
+"privacy_clear_history_desc" = "保存された検索と閲覧ページをすべて削除";
+"privacy_clear_history_confirm_title" = "検索履歴を削除しますか？";
+"privacy_clear_history_confirm_message" = "すべての検索と閲覧ページが完全に削除されます。";
+"privacy_clear_bookmarks" = "ブックマークをすべて削除";
+"privacy_clear_bookmarks_desc" = "保存されたブックマークをすべて削除";
+"privacy_clear_bookmarks_confirm_title" = "すべてのブックマークを削除しますか？";
+"privacy_clear_bookmarks_confirm_message" = "すべてのブックマークが完全に削除されます。";
+"privacy_clear_cache" = "ブラウザキャッシュを削除";
+"privacy_clear_cache_desc" = "Webキャッシュ、タブのプレビュー、過去3日間の閲覧履歴を削除します。ログイン状態は保持されます";
+"privacy_clear_cache_confirm_title" = "ブラウザキャッシュを削除しますか？";
+"privacy_clear_cache_confirm_message" = "Webキャッシュと過去3日間の閲覧履歴を削除します。Cookieとログイン状態は保持されます。";
+"enter_fullscreen" = "フルスクリーンにする";
+"exit_fullscreen" = "フルスクリーンを終了";
+"fullscreen_exit_hint" = "タップでメニュー、下に引いて終了";
+"restore_browser_toolbar" = "ツールバーを復元";
+"floating_more_detach" = "吸着を解除";
+"floating_more_snap" = "画面端に吸着";
+"more_navigation" = "ナビゲーション";
+"more_page_actions" = "ページ";
+"more_browser_actions" = "ブラウザ";
+"hide_browser_toolbar" = "ツールバーを隠す";
+"privacy_clear_action" = "削除";
+"privacy_data_footer" = "これらの操作は元に戻せません。削除されたデータは復元できません。";
+"settings_privacy" = "プライバシー設定";
+"platform_sort_options" = "並び替えオプション";
 "cancel" = "キャンセル";
 "confirm" = "確認";
 "delete" = "削除";
@@ -135,42 +187,24 @@
 "error_occurred" = "エラーが発生しました";
 "network_error" = "ネットワーク接続に失敗しました";
 "try_again" = "再試行";
-"widget_search" = "クイック検索";
-"widget_description" = "複数のプラットフォームで検索";
-
-/* Voice Input */
 "voice_listening" = "聞いています...";
 "voice_tap_to_speak" = "ボタンをタップして話してください";
-
-/* F3: Spell Correction */
 "did_you_mean" = "もしかして：";
-
-/* F4: Page Summary */
 "summarize" = "要約";
 "summary_title" = "ページの要約";
 "summarizing" = "要約中...";
 "copy_summary" = "コピー";
-
-/* F5: Platform Recommendation */
 "suggested_platforms" = "おすすめ";
-
-/* F7: Clipboard Intelligence */
 "clipboard_url_detected" = "URLを検出";
 "clipboard_product_detected" = "商品を検出";
 "clipboard_person_detected" = "人物を検出";
 "open_directly" = "開く";
-
-/* F9: Image Search */
 "image_search" = "画像検索";
 "extracting_text" = "テキストを抽出中...";
 "no_text_found" = "画像内にテキストが見つかりません";
 "detected_objects" = "検出：";
 "photo_library" = "フォトライブラリ";
-
-/* F1: Siri */
 "siri_search_tip" = "試してみる：「Souloで猫を検索」";
-
-/* AI Platforms */
 "platform_deepseek" = "DeepSeek";
 "platform_qianwen" = "Qianwen";
 "platform_bing" = "Bing";
@@ -196,11 +230,6 @@
 "platform_niconico" = "Niconico";
 "platform_yuanbao" = "Tencent Yuanbao";
 "platform_doubao" = "Doubao";
-"platform_google_lens" = "Google Lens";
-"platform_baidu_image" = "Baidu Image";
-"platform_yandex_image" = "Yandex Images";
-
-/* Login Required */
 "login_required_title" = "ログインが必要です";
 "login_required_message" = "このプラットフォームには最初にログインが必要です。ページでログインしてから、検索が自動的に実行されます。";
 "login_required_toast" = "先にログインしてから再度検索してください";
@@ -209,16 +238,12 @@
 "show_top_search_bar" = "上部の検索バーを表示";
 "show_top_search_bar_desc" = "非表示でも、下部のアドレス欄から検索や音声入力ができます";
 "ad_block_master_disabled_desc" = "広告ブロックを有効にすると、下のフィルター購読を使用・管理できます。";
-
-/* Custom Groups */
 "custom_groups" = "カスタムグループ";
 "no_groups" = "カスタムグループなし";
 "no_groups_desc" = "グループを作成してお気に入りのプラットフォームを整理しましょう";
 "add_group" = "新しいグループ";
 "group_name" = "グループ名";
 "platforms_count" = "プラットフォーム";
-
-/* Dynamic Themes */
 "dynamic_theme" = "テーマ";
 "theme_midnight" = "ミッドナイト";
 "theme_ocean" = "オーシャン";
@@ -232,77 +257,48 @@
 "link_copied" = "リンクをコピーしました";
 "copy_link" = "リンクをコピー";
 "copied" = "コピーしました！";
-
-/* Ad Blocker */
 "ad_block" = "広告ブロック";
 "ad_block_desc" = "検索結果の広告とトラッカーを非表示にします（適用するには検索を再起動してください）";
+"ad_block_network" = "広告ネットワークリクエストのブロック";
+"ad_block_cosmetic" = "広告プレースホルダーを非表示にする";
+"ad_block_popups" = "クリーンなポップアップとオーバーレイ";
+"ad_block_management" = "広告ブロック管理";
+"ad_block_allowlist" = "許可されたサイト";
+"ad_block_disable_current_site" = "このサイトの広告ブロックを無効にする";
+"ad_block_enable_current_site" = "このサイトで広告ブロックを有効にする";
+"ad_block_site_toggle_desc" = "これを変更すると、現在のページがリロードされ、新しい広告ブロック設定が適用できるようになります。";
+"ad_block_no_allowlisted_sites" = "許可されたサイトはありません。";
+"ad_block_stats" = "隠し要素";
+"ad_block_stats_desc" = "数は概算であり、表示上のクリーンアップによって非表示になったページ要素のみが含まれます。";
+"ad_block_no_stats" = "隠し要素の統計情報はまだありません。";
+"ad_block_reset_stats" = "統計のリセット";
 "browsing" = "ブラウジング";
-
-/* Groups */
 "no_platforms_in_group" = "プラットフォームがありません";
 "add_to_group" = "グループにプラットフォームを追加";
-"add_existing" = "既存を追加";
-"confirm_delete_group" = "このグループを削除しますか？";
-
-/* Wallpaper */
 "wallpaper_saved" = "壁紙を写真に保存しました";
+"add_existing" = "既存を追加";
 "region_image_search" = "画像検索";
+"platform_google_lens" = "Google Lens";
+"platform_baidu_image" = "Baidu Image";
+"platform_yandex_image" = "Yandex Images";
+"confirm_delete_group" = "このグループを削除しますか？";
+"confirm_reset" = "すべてのプラットフォーム設定をデフォルトに戻しますか？";
 "camera" = "カメラ";
+"select_region" = "地域を選択";
 "add_platform_region" = "グループ";
 "image_search_desc" = "画像検索プラットフォームで検索する写真を選択してください";
 "image_uploading" = "画像をアップロード中...";
 "switch_to_bing" = "Bingの壁紙に切り替えますか？";
 "switch_to_bing_desc" = "Bingのデイリー壁紙を有効にして、ピンホイールで美しい背景を閲覧しましょう。";
-
-/* External URL */
 "open_external_title" = "外部アプリを開きますか？";
 "open_external_failed" = "外部アプリを開けませんでした";
 "safari_compatibility_mode" = "Safari互換モード";
 "open_in_default_browser" = "デフォルトブラウザで開く";
 "open_external_message" = "このリンクは別のアプリを開きます。続行しますか？";
-
-/* AI Loading */
 "ai_loading_page" = "AIプラットフォームを読み込み中...";
 "ai_loading_input" = "質問を入力して送信中...";
-
-/* Privacy Settings (extended keys) */
-"privacy_section_browsing" = "ブラウジング";
-"privacy_section_data" = "データ管理";
-"privacy_incognito" = "シークレットモード";
-"privacy_incognito_desc" = "検索が履歴に保存されません";
-"privacy_https_upgrade" = "HTTPをHTTPSに自動アップグレード";
-"privacy_https_upgrade_desc" = "HTTPサイトを開く前に安全なHTTPSを試します";
-"privacy_strip_tracking" = "トラッキングパラメータを削除";
-"privacy_strip_tracking_desc" = "URLから一般的なクリックIDやキャンペーンIDを削除します";
-"privacy_clear_history" = "検索履歴を削除";
-"privacy_clear_history_desc" = "保存された検索と閲覧ページをすべて削除";
-"privacy_clear_history_confirm_title" = "検索履歴を削除しますか？";
-"privacy_clear_history_confirm_message" = "すべての検索と閲覧ページが完全に削除されます。";
-"privacy_clear_bookmarks" = "ブックマークをすべて削除";
-"privacy_clear_bookmarks_desc" = "保存されたブックマークをすべて削除";
-"privacy_clear_bookmarks_confirm_title" = "すべてのブックマークを削除しますか？";
-"privacy_clear_bookmarks_confirm_message" = "すべてのブックマークが完全に削除されます。";
-"privacy_clear_cache" = "ブラウザキャッシュを削除";
-"privacy_clear_cache_desc" = "Webキャッシュ、タブのプレビュー、過去3日間の閲覧履歴を削除します。ログイン状態は保持されます";
-"privacy_clear_cache_confirm_title" = "ブラウザキャッシュを削除しますか？";
-"privacy_clear_cache_confirm_message" = "Webキャッシュと過去3日間の閲覧履歴を削除します。Cookieとログイン状態は保持されます。";
-
-"enter_fullscreen" = "フルスクリーンにする";
-"exit_fullscreen" = "フルスクリーンを終了";
-"fullscreen_exit_hint" = "タップでメニュー、下に引いて終了";
-"restore_browser_toolbar" = "ツールバーを復元";
-"floating_more_detach" = "吸着を解除";
-"floating_more_snap" = "画面端に吸着";
-"more_navigation" = "ナビゲーション";
-"more_page_actions" = "ページ";
-"more_browser_actions" = "ブラウザ";
-"hide_browser_toolbar" = "ツールバーを隠す";
-"privacy_clear_action" = "削除";
-"privacy_data_footer" = "これらの操作は元に戻せません。削除されたデータは復元できません。";
-"settings_privacy" = "プライバシー設定";
-"platform_sort_options" = "並び替えオプション";
-
-/* Settings - Navigation & Titles */
+"widget_search" = "クイック検索";
+"widget_description" = "複数のプラットフォームで検索";
 "settings_title" = "設定";
 "settings_platforms" = "プラットフォーム";
 "settings_appearance" = "外観";
@@ -311,8 +307,6 @@
 "settings_version" = "バージョン";
 "settings_privacy_policy" = "プライバシーポリシー";
 "settings_terms" = "利用規約";
-
-/* Settings - Section Headers */
 "settings_section_platforms" = "プラットフォーム";
 "settings_section_appearance" = "外観";
 "settings_section_language" = "言語";
@@ -320,8 +314,6 @@
 "settings_section_privacy" = "プライバシー";
 "settings_section_about" = "このアプリについて";
 "settings_section_about_support" = "情報とサポート";
-
-/* Platform Management */
 "platform_auto_sort" = "頻度で自動並び替え";
 "platform_auto_sort_desc" = "使用頻度に基づいてプラットフォームを自動的に並び替えます";
 "platform_custom_badge" = "カスタム";
@@ -330,8 +322,6 @@
 "platform_reset_confirm_title" = "プラットフォームをリセットしますか？";
 "platform_reset_confirm_action" = "リセット";
 "platform_reset_confirm_message" = "すべてのプラットフォーム設定がデフォルトに戻ります。この操作は元に戻せません。";
-
-/* Add Custom Platform */
 "add_platform_title" = "カスタムプラットフォームを追加";
 "add_platform_subtitle" = "任意の検索エンジンやウェブサイトをプラットフォームとして追加";
 "add_platform_name" = "プラットフォーム名";
@@ -344,22 +334,14 @@
 "add_platform_url_help_title" = "URLテンプレートの使い方";
 "add_platform_url_help_desc" = "URLの検索キーワード部分を %@ に置き換えると、検索時に自動的に入力されます。";
 "add_platform_url_help_examples" = "例";
-
-/* Wallpaper (extended) */
 "wallpaper_choose_photo" = "写真を選択";
-
-/* Language Settings */
 "language_select_title" = "言語を選択";
 "language_footer" = "言語を変更するとアプリ全体のテキストが更新されます。";
-
-/* Home Bookmarks */
 "show_bookmarks_home" = "ホームにブックマーク表示";
 "show_bookmarks_home_desc" = "ブックマークしたサイトをホーム画面にアイコン表示";
 "show_recent_searches_home" = "ホームに最近の検索を表示";
 "show_recent_searches_home_desc" = "ホームの検索バー下に最近の検索キーワードを表示";
 "home_screen" = "ホーム画面";
-
-/* AI Search Platforms */
 "platform_metaso" = "Metaso";
 "platform_tiangong" = "Tiangong AI";
 "platform_phind" = "Phind";
@@ -367,12 +349,11 @@
 "platform_kimi" = "Kimi Search";
 "voice_stop" = "停止";
 "voice_record" = "録音";
-
-/* Batch Import */
 "batch_import" = "Batch Import";
 "batch_import_format" = "Paste JSON in the format below";
 "batch_import_group" = "Add to Group (Optional)";
 "batch_import_group_placeholder" = "e.g. Movies";
+"batch_import_film_entry" = "ムービープラットフォームのプリセットを開く";
 "batch_import_action" = "Import";
 "batch_import_result" = "Successfully imported %d platforms";
 "paste_from_clipboard" = "Paste from Clipboard";
@@ -383,8 +364,6 @@
 "error_timeout" = "Connection timed out. Please try again.";
 "error_ssl" = "Secure connection failed.";
 "retry" = "Retry";
-
-/* Support & Feedback */
 "settings_rate" = "アプリを評価";
 "settings_feedback" = "フィードバック";
 "settings_help" = "ヘルプ";
@@ -396,12 +375,7 @@
 "feedback_type_question" = "質問";
 "feedback_type_other" = "その他";
 "feedback_content" = "内容";
-"feedback_placeholder" = "フィードバックがアプリ改善の力になります！
-
-お聞かせください：
-· どんな問題がありましたか？
-· どんな機能が欲しいですか？
-· どこを改善できますか？";
+"feedback_placeholder" = "フィードバックがアプリ改善の力になります！\n\nお聞かせください：\n· どんな問題がありましたか？\n· どんな機能が欲しいですか？\n· どこを改善できますか？";
 "feedback_contact" = "連絡先";
 "feedback_contact_hint" = "メールまたは連絡先";
 "feedback_contact_reply_hint" = "返信のため、メールアドレスをご記入いただけます。";
@@ -411,8 +385,6 @@
 "feedback_success_title" = "ありがとうございます";
 "feedback_success_msg" = "フィードバックが送信されました！";
 "feedback_error" = "送信失敗";
-
-/* Help Center */
 "help_title" = "ヘルプセンター";
 "help_welcome_title" = "お困りですか？";
 "help_welcome_subtitle" = "Soulo について知っておくべきことをご紹介。";
@@ -433,13 +405,9 @@
 "theme_system" = "システム";
 "theme_light" = "ライト";
 "theme_dark" = "ダーク";
-
-/* Wallpaper Delete Confirmation */
 "wallpaper_delete_title" = "壁紙を削除";
 "wallpaper_delete_confirm" = "削除";
 "wallpaper_delete_msg" = "この壁紙はリストから非表示になります。";
-
-/* ブラウザタブ */
 "tab_new_tab" = "新しいタブ";
 "tab_tabs" = "個のタブ";
 "tab_close" = "タブを閉じる";
@@ -449,8 +417,6 @@
 "tab_duplicate" = "タブを複製";
 "tab_open_new" = "新しいタブで開く";
 "popup_open_current_tab" = "現在のタブで開く";
-
-/* ブラウザ機能 */
 "find_in_page" = "ページ内検索";
 "desktop_mode" = "デスクトップモード";
 "mobile_mode" = "モバイルモード";
@@ -463,8 +429,6 @@
 "image_saved" = "写真に保存しました";
 "save_failed" = "保存に失敗しました";
 "downloading" = "ダウンロード中...";
-
-/* Browser Privacy */
 "downloads" = "ダウンロード";
 "downloads_empty" = "ダウンロードはありません";
 "downloads_empty_desc" = "ダウンロードしたファイルがここに表示されます。";
@@ -476,8 +440,6 @@
 "library" = "ライブラリ";
 "my_downloads" = "マイダウンロード";
 "open_downloads_folder" = "ダウンロード場所を開く";
-"live_activity" = "Dynamic Island";
-"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island—the black pill around the camera at the top of supported iPhones.";
 "fire_button" = "Clear Privacy Data";
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
@@ -514,28 +476,43 @@
 "privacy_gpc_desc" = "Ask websites not to sell or share your data when they support GPC.";
 "privacy_cookie_banners" = "Handle Cookie Prompts";
 "privacy_cookie_banners_desc" = "Try to reject or dismiss common cookie consent banners.";
-
-/* 壁紙（追加） */
-"wallpaper_color" = "背景色";
-"wallpaper_current_vibe" = "現在の雰囲気";
-"wallpaper_discover" = "新しい発見";
-"wallpaper_download" = "壁紙をダウンロード";
-"wallpaper_favorites" = "お気に入り";
-"wallpaper_fetch_bing" = "今日の画像を取得";
-"wallpaper_gradient" = "グラデーション";
-"wallpaper_load_error" = "読み込み失敗";
-"wallpaper_pexels" = "Pexels（厳選）";
-"wallpaper_photo" = "フォトウォール";
-"wallpaper_pixabay" = "Pixabay（自然）";
-"wallpaper_refresh" = "壁紙を変更";
-"my_favorites" = "お気に入り";
-"wallpaper_search_placeholder" = "雰囲気で検索（例：森、ミニマル）";
-"wallpaper_solid" = "単色";
-"wallpaper_source" = "壁紙のソース";
-"wallpaper_type" = "背景タイプ";
+"ad_block_allowlisted_count" = "許可リストに登録されたサイト";
+"ad_block_total_hidden" = "隠し要素";
+"ad_block_current_site_hidden" = "このサイト";
+"ad_block_search_allowlist" = "検索許可リスト";
+"ad_block_subscriptions" = "フィルターサブスクリプション";
+"ad_block_subscriptions_desc" = "Soulo は、ABP フィルタ リストの実用的なサブセットをサポートし、それらを WebKit ルールと表示上の非表示に変換します。ソースには、EasyList、EasyList China、AdGuard フィルターが含まれます。";
+"ad_block_subscription_enabled" = "有効なリスト";
+"ad_block_subscription_rules" = "キャッシュされたルール";
+"ad_block_subscription_rules_suffix" = "ルール";
+"ad_block_subscription_update" = "有効なリストの更新";
+"ad_block_subscription_updating" = "更新中...";
+"ad_block_subscription_reset" = "サブスクリプションをリセットする";
+"wallpaper_remote_error" = "壁紙のソースが利用できません。更新するかソースを切り替えてみてください。";
+"restore" = "復元";
+"never_prompt" = "プロンプトを表示しない";
+"live_activity" = "Dynamic Island";
+"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island—the black pill around the camera at the top of supported iPhones.";
+"external_navigation" = "外部アプリリンク";
+"never_prompt_external" = "外部アプリのリンクをサイレントにブロックする";
+"never_prompt_external_desc" = "有効にすると、Soulo はプロンプトを表示せずに外部アプリのジャンプをキャンセルします。";
+"blocked_external_hosts" = "ブロックされたホスト";
+"no_external_hosts" = "ブロックされたホストはありません";
+"no_external_hosts_desc" = "外部アプリのリンクで [プロンプトを表示しない] を選択すると、ホストがここに表示されます。";
+"wallpaper_auto_refresh_header" = "自動更新";
+"wallpaper_auto_refresh" = "リフレッシュ間隔";
+"wallpaper_auto_refresh_desc" = "Soulo は、可能な場合、自動更新の前に次のリモート壁紙をプリロードします。";
+"wallpaper_random_sources" = "ソースをランダム化する";
+"wallpaper_random_sources_desc" = "選択したリモート ソース間で自動更新とランダム更新が切り替わります。少なくとも 1 つのソースが保持されます。";
+"wallpaper_random_topics" = "トピックをランダム化する";
+"wallpaper_interval_none" = "決してしない";
+"wallpaper_interval_1min" = "毎分";
+"wallpaper_interval_5min" = "5分ごと";
+"wallpaper_interval_15min" = "15分ごと";
+"wallpaper_interval_30min" = "30分ごと";
+"wallpaper_interval_1hour" = "毎時";
+"wallpaper_interval_1day" = "毎日";
 "example" = "例";
-
-/* Browser Navigation */
 "browser_back" = "戻る";
 "browser_forward" = "進む";
 "browser_reload" = "再読み込み";
@@ -543,6 +520,62 @@
 "current_page_link" = "現在のページリンク";
 "tab_limit_title" = "タブの上限に達しました";
 "tab_limit_message" = "最大20個のタブを保持できます。新しいタブを開く前に1つ閉じてください。";
+"accessibility_selected" = "選択済み";
+"accessibility_enabled" = "有効";
+"accessibility_disabled" = "障害者";
+"accessibility_item_position" = "%d/%d";
+"accessibility_selected_position" = "%d の %d が選択されました";
+"accessibility_clear_search" = "検索テキストをクリアする";
+"accessibility_voice_recording" = "録音";
+"accessibility_voice_idle" = "録画していない";
+"accessibility_voice_search_hint" = "ダブルタップすると音声入力が始まります。";
+"accessibility_recognized_text" = "認識されたテキスト";
+"accessibility_recent_search" = "最近の検索、%@";
+"accessibility_recent_search_hint" = "ダブルタップして検索します。削除するには、「削除」アクションを使用します。";
+"accessibility_search_suggestion_hint" = "ダブルタップしてこの候補を検索します。";
+"accessibility_fill_search" = "検索フィールドに %@ を入力します。";
+"accessibility_fill_search_hint" = "検索する前にダブルタップしてこの候補を編集します。";
+"accessibility_home_title" = "ホームのタイトル、%@";
+"accessibility_home_subtitle" = "ホームのサブタイトル、%@";
+"accessibility_edit_title_hint" = "ダブルタップしてホームのタイトルを編集します。";
+"accessibility_edit_subtitle_hint" = "ダブルタップしてホーム字幕を編集します。";
+"accessibility_incognito_active" = "プライベートブラウジングがオンになっています";
+"accessibility_open_bookmark_hint" = "ダブルタップしてこのブックマークを開きます。";
+"accessibility_group_picker_hint" = "ダブルタップして検索グループまたは地域を選択します。";
+"accessibility_platform_hint" = "ダブルタップして結果を開きます。上下にスワイプしてプラットフォームを変更します。";
+"accessibility_previous_platform" = "以前のプラットフォーム";
+"accessibility_next_platform" = "次のプラットフォーム";
+"accessibility_first_platform" = "最初のプラットフォーム";
+"accessibility_last_platform" = "最後のプラットフォーム";
+"accessibility_platform_position" = "%@、%d/%d";
+"accessibility_platform_loading" = "%@、読み込み中、%d/%d";
+"accessibility_page_position" = "ページ %d/%d";
+"accessibility_page_top" = "ページの先頭へ";
+"accessibility_page_bottom" = "ページの下部";
+"accessibility_page_loaded" = "%@ がロードされました";
+"accessibility_search_results" = "検索結果";
+"accessibility_active_tab" = "アクティブなタブ";
+"accessibility_tab_position" = "%@、%d のタブ %d";
+"accessibility_open_tab_hint" = "ダブルタップしてこのタブを開きます。閉じるには、「閉じる」アクションを使用します。";
+"accessibility_tab_overview_hint" = "ダブルタップしてタブを表示および管理します。";
+"accessibility_open_platform_hint" = "ダブルタップしてこのプラットフォームを開きます。";
+"accessibility_restore_tab_hint" = "ダブルタップすると、この閉じたタブが復元されます。";
+"accessibility_edit_address_hint" = "ダブルタップしてアドレスを編集するか、テキストを検索します。";
+"accessibility_previous_match" = "前回の試合";
+"accessibility_next_match" = "次の試合";
+"accessibility_search_history_hint" = "ダブルタップして再検索します。削除するには、「削除」アクションを使用します。";
+"accessibility_edit_platform_hint" = "ダブルタップしてこのプラットフォームを編集します。";
+"accessibility_platform_visibility" = "ショープラットフォーム";
+"accessibility_wallpaper_open_hint" = "ダブルタップしてこの壁紙をプレビューします。さらに多くのアクションが利用可能です。";
+"accessibility_add_favorite" = "お気に入りに追加";
+"accessibility_remove_favorite" = "お気に入りから削除";
+"accessibility_wallpaper_preview" = "壁紙プレビュー";
+"accessibility_wallpaper_zoom" = "%d パーセントズーム";
+"accessibility_wallpaper_adjust_hint" = "上下にスワイプしてズームします。アクションを使用して壁紙を移動します。";
+"accessibility_move_left" = "左に移動";
+"accessibility_move_right" = "右に移動";
+"accessibility_move_up" = "上に移動";
+"accessibility_move_down" = "下に移動";
 "browser_page_tools" = "ページツール";
 "browser_open_page" = "ページを開く";
 "keep_fullscreen_browsing" = "フルスクリーンを維持";
@@ -550,20 +583,150 @@
 "icloud_settings_sync" = "iCloud設定同期";
 "icloud_settings_sync_desc" = "外観、ホーム、ブラウズ、プライバシー、プラットフォーム設定を同期します。履歴、キャッシュ、ログイン、ダウンロードは含みません";
 "settings_section_sync" = "同期";
-"privacy_exit_incognito" = "プライベートブラウズをオフ";
-"privacy_enter_incognito" = "プライベートブラウズをオン";
-
-/* 設定の改善 */
-"privacy_section_private_browsing" = "プライベートブラウズ";
-"toolbar_restore_confirm_title" = "デフォルトのツールバーに戻しますか？";
-"toolbar_restore_confirm_message" = "現在のツールバー配置がデフォルト配置に置き換わります。";
-"web_readability" = "読みやすさ";
-"web_reduce_motion" = "Webページの動きを減らす";
-"web_reduce_motion_desc" = "Webページのアニメーション、切り替え効果、スムーズスクロールを制限します。";
-"web_underline_links" = "リンクに下線を表示";
-"web_underline_links_desc" = "Webページのリンクを見分けやすくするために下線を表示します。";
-"home_title_edit_desc" = "ホーム画面中央のメイン見出しとして表示します。";
-"home_subtitle_edit_desc" = "メイン見出しの下に表示します。空欄にすると非表示になります。";
+"quick_action_clear_cache" = "キャッシュのクリア";
+"quick_action_private_tab" = "新しいプライベートタブ";
+"quick_action_share_app" = "アプリを共有する";
+"share_app_message" = "Soulo — 焦点を絞った検索および閲覧アプリをお試しください。";
+"cache_cleared" = "閲覧キャッシュがクリアされました";
+"web_appearance" = "ウェブ上の外観";
+"web_page_colors" = "ページの色";
+"web_follow_app_scheme" = "ウェブサイトのテーマに一致";
+"web_follow_app_scheme_desc" = "サポートされている Web サイトに Soulo が現在明るいか暗いかを知らせ、一致するテーマを選択できるようにします。サポートされていないサイトは変更されません。";
+"web_warm_color_shift" = "ウォームリーディングティント";
+"web_warm_color_shift_desc" = "ページ全体に微妙な温かみのある色合いを追加して、夜の冷たい白い画面を和らげます。画像やビデオも少し暖かく見えます。";
+"web_force_dark" = "ダークウェブページを強制する";
+"web_force_dark_short" = "ダークモード";
+"web_force_dark_desc" = "Web サイトに独自の暗いテーマがない場合でも、明るい背景、暗いテキスト、境界線を低光量の暗いパレットに変換するようにしてください。";
+"web_force_dark_footer" = "これらの設定は個別に組み合わせることができます。変換によってページのコンテンツは変更されませんが、複雑なページ、キャンバス、カスタム コントロールは元の色を保持する場合があります。ページが間違っていると思われる場合は、下部の「その他」メニューからすぐにオフにします。";
+"site_information" = "サイト情報";
+"shake_action" = "シェイクアクション";
+"shake_action_none" = "なし";
+"shake_action_fullscreen" = "全画面表示の切り替え";
+"shake_action_dark" = "ダークモードの切り替え";
+"shake_action_reload" = "ページをリロードする";
+"shake_action_close_tab" = "現在のタブを閉じる";
+"shake_action_footer" = "選択したアクションは、Web ページが開いているときに実行されます。トグルアクションを選択すると、次のシェイクでそのアクションが反転します。";
+"shake_intensity" = "シェイク強度";
+"shake_intensity_light" = "ライト";
+"shake_intensity_standard" = "標準";
+"shake_intensity_firm" = "しっかりした";
+"shake_intensity_strong" = "強い";
+"shake_intensity_footer" = "デバイスをどの程度強く振るかを選択します。光はトリガーするのが最も簡単です。強力は偶発的な動作を防ぐのに役立ちます。";
+"extensions" = "拡張機能";
+"extensions_installed" = "私の拡張機能";
+"extensions_install" = "拡張機能のインストール";
+"extensions_empty" = "拡張子なし";
+"extensions_empty_desc" = "Web 拡張機能または UserScript をインストールすると、ここで表示されます。";
+"extensions_reload_note" = "拡張機能またはスクリプトが変更された後、開いているページがリロードされ、新しい状態が有効になります。";
+"web_extensions" = "ウェブ拡張機能";
+"userscripts" = "スクリプトと拡張機能";
+"userscripts_installed" = "私のスクリプト";
+"userscripts_install" = "インストールスクリプト";
+"userscripts_empty" = "UserScript はありません";
+"userscripts_empty_desc" = ".user.js ファイルをインストールするか、ここで表示するスクリプトを作成します。";
+"userscripts_reload_note" = "スクリプトがインストール、編集、有効化、無効化、または削除された後、開いているページがリロードされます。";
+"userscript_experimental_badge" = "互換性";
+"userscript_experimental_title" = "UserScript 互換性";
+"userscript_experimental_desc" = "サイト ルール、ドキュメントの開始/終了、広範な GM ストレージとページ API、スクリプト コマンド、通知、タブ、ダウンロード、Cookie、リソース、および権限スコープのリクエストをサポートします。インストールする前にすべてのスクリプトを確認してください。外部 @require ファイルは実行されません。";
+"extension_choose_file" = "拡張ファイルまたはフォルダーを選択してください…";
+"extension_installing" = "拡張機能を確認してインストールしています…";
+"extension_install_failed" = "拡張機能をインストールできませんでした";
+"extension_permissions_summary" = "%d 権限 · %d ウェブサイト ルール";
+"extension_untitled" = "無題の拡張機能";
+"web_extension_install_footer" = "ソース行の任意の場所をタップして、現在の Soulo タブで開きます。 Soulo は CRX、XPI、ZIP、およびサポートされているストア インストール アクションを認識し、インストール前に質問します。一部のデスクトップ専用 API は利用できない場合があります。";
+"web_extension_install_store_link" = "ストアリンクからインストール…";
+"web_extension_browse_sources" = "拡張機能ストアを参照する";
+"web_extension_browse_sources_footer" = "Store Get ボタンは、独自のデスクトップ ブラウザーのみをサポートします。拡張機能の詳細ページのリンクをコピーし、Soulo のストア リンクからインストールを使用します。";
+"web_extension_store_install_title" = "ストア拡張機能をインストールする";
+"extension_page_banner_title" = "Soulo でインストールします";
+"extension_page_banner_desc" = "Soulo は、この拡張機能を直接インストールできます。";
+"web_extension_store_install_desc" = "Chrome Web ストア、Microsoft Edge アドオン、または Firefox アドオンの詳細ページのリンクを貼り付けます。 Soulo はパッケージ自体をダウンロードするため、ストアの互換性のない [取得] ボタンは使用されません。";
+"web_extension_store_link_placeholder" = "拡張機能ページのリンクまたは Chrome 拡張機能 ID";
+"web_extension_store_invalid_link" = "Chrome、Edge、Firefox の拡張機能の詳細ページのリンク、Chrome 拡張機能 ID、または CRX、XPI、または ZIP の直接リンクを貼り付けます。";
+"web_extension_store_https_required" = "拡張パッケージは安全な HTTPS リンクを使用する必要があります。";
+"web_extension_store_insecure_redirect" = "拡張機能ストアは、iOS が安全に検証できないサーバー経由でダウンロードをリダイレクトしました。";
+"web_extension_store_download_failed" = "Soulo は、このリンクから有効な拡張機能パッケージをダウンロードできませんでした。";
+"web_extension_store_package_too_large" = "拡張パッケージは 100 MB の安全制限を超えています。";
+"web_extension_requires_ios" = "標準 Web 拡張機能には iOS 18.4 以降が必要です。 UserScript はこのデバイスで引き続き使用できます。";
+"web_extension_invalid" = "選択したアイテムは、サポートされている有効な Web 拡張機能ではありません。";
+"web_extension_persistent_background_unsupported" = "この拡張機能は、iOS Web 拡張機能がサポートしていない永続的な背景ページを使用します。 Manifest V3 または Safari 互換バージョンを試してください。";
+"userscript_new" = "新しいスクリプト";
+"userscript_edit" = "スクリプトの編集";
+"userscript_choose_file" = "UserScript ファイル (.js) を選択します…";
+"userscript_install_footer" = "ソース行をタップして、現在の Soulo タブで開きます。 .user.js リンクをクリックすると、インストールの確認が開きます。標準の JavaScript と幅広い GM API がサポートされています。スクリプトはプライベート ブラウズでは実行されず、外部の @require ファイルも実行されません。";
+"userscript_install_failed" = "UserScript をインストールできませんでした";
+"web_extension_temporarily_disabled" = "互換性テストが完了するまで、標準のブラウザ拡張機能は一時的に利用できなくなります。";
+"userscript_unreadable" = "選択したスクリプトを UTF-8 テキストとして読み取ることができませんでした。";
+"userscript_empty" = "スクリプトを空にすることはできません。";
+"userscript_invalid_match_pattern" = "無効な Web サイト ルール: %@";
+"userscript_untitled" = "無題のスクリプト";
+"userscript_name" = "名前";
+"userscript_run_at" = "実行時";
+"userscript_document_start" = "ドキュメントの開始";
+"userscript_document_end" = "ドキュメントの終わり";
+"userscript_matches" = "ウェブサイトのルール (1 行に 1 つ)";
+"userscript_code" = "JavaScript";
+"userscript_description" = "説明";
+"userscript_copy_javascript" = "JavaScriptをコピー";
+"userscripts_documentation" = "開発ガイド";
+"userscript_docs_ai_title" = "AIでスクリプトを作成";
+"userscript_docs_ai_desc" = "Souloの完全な互換性プロンプトをコピーし、要件を追加してAIに送ると、インストール可能なスクリプトを生成できます。";
+"userscript_docs_copy_prompt" = "AIプロンプトをコピー";
+"userscript_docs_status_title" = "互換性ステータス";
+"userscript_docs_supported_title" = "サポートされています";
+"userscript_docs_supported_desc" = "コアのマッチング、ドキュメントの開始/終了、スタイル/要素、単一および一括ストレージ、ローカル値リスナー、クリップボード、メニュー、ページ内通知、タブ、ダウンロード、タブ データ、Cookie、リソース、URL 変更、および権限スコープのリクエスト。";
+"userscript_docs_partial_title" = "部分的にサポートされています";
+"userscript_docs_partial_desc" = "ネットワーク リクエストでは、アップロード/進行状況と Cookie の転送が省略されます。通知はページ内で行われ、リソース API は非同期で、値変更リスナーは現在のページで行われた変更を報告します。更新チェックは手動です。";
+"userscript_docs_unsupported_title" = "現在サポートされていません";
+"userscript_docs_unsupported_desc" = "外部 @require 実行、GM_webRequest インターセプト、GM_audio、サンドボックス/ランイン分離、自動更新チェック、および WKWebView では提供できない厳密なデスクトップのみの動作。";
+"userscript_docs_metadata_title" = "メタデータ";
+"userscript_docs_metadata_identity" = "インストール前およびスクリプトの詳細に人間が判読できるスクリプト名とオプションの説明が表示されます。";
+"userscript_docs_metadata_version" = "安定した一意の名前空間を使用し、バンドルされたスクリプトが変更されるたびにバージョンを増やします。";
+"userscript_docs_metadata_match" = "http/https ワイルドカード ルール、<all_urls>、または正規表現 @include リテラルを使用してページを選択します。";
+"userscript_docs_metadata_exclude" = "一致するページをスクリプトの Web サイトのアクセス範囲から削除します。";
+"userscript_docs_metadata_run_at" = "ドキュメントの開始時または DOMContentLoaded 後に実行します。デフォルトはドキュメント終了です。";
+"userscript_docs_metadata_grant" = "使用されるすべての特権 API を宣言します。スクリプトに標準の Web ページ API のみが必要な場合は、 @grant none を使用します。";
+"userscript_docs_metadata_connect" = "特権ネットワーク要求で使用されるホストを承認します。これがないと、リクエストは現在のページホストに限定されます。";
+"userscript_docs_metadata_urls" = "オプションの ID および更新メタデータ。 Soulo はこれらを使用して、同じスクリプトの再インストールを認識します。";
+"userscript_docs_metadata_resource" = "名前付きリソースを宣言します。一致する @connect ホストを追加します。最新のリソース API が待機するまで、取得は延期されます。";
+"userscript_docs_metadata_require" = "外部要件はインストール中に開示されますが、ダウンロードまたは実行されません。スクリプトは自己完結型である必要があります。";
+"userscript_docs_api_title" = "サポートされている特権API";
+"userscript_docs_api_info" = "スクリプト ハンドラー、Soulo バージョン、および解析されたスクリプト メタデータを読み取ります。従来の形式と最新の形式で利用可能です。";
+"userscript_docs_api_unsafe_window" = "unsafeWindow 許可が明示的に宣言されている場合に、現在のページ ウィンドウを提供します。";
+"userscript_docs_api_style" = "ドキュメントの開始時も含めて、スタイル要素をページに追加します。現代的な形式は Promise を返します。";
+"userscript_docs_api_log" = "1 つ以上の値を Web ページ コンソールに書き込みます。";
+"userscript_docs_api_get" = "永続的な JSON シリアル化可能な値を読み取り、キーが存在しない場合はフォールバックを返します。";
+"userscript_docs_api_set" = "JSON シリアル化可能な値を保持します。最新の形式は、ストレージ エラーを報告できる Promise を返します。";
+"userscript_docs_api_delete" = "このスクリプトの永続値を 1 つ削除します。";
+"userscript_docs_api_list" = "このスクリプトが所有するすべての永続ストレージ キーを返します。";
+"userscript_docs_api_bulk" = "1 回の操作で複数の JSON 値の読み取り、書き込み、または削除を行います。書き込みはネイティブ ストアによってアトミックに検証されます。";
+"userscript_docs_api_listener" = "現在の Web ページのスクリプトによって行われたストレージの変更を監視します。クロス集計のリモート通知は発行されません。";
+"userscript_docs_api_element" = "ドキュメントの開始時も含めて、属性を持つ要素を作成して追加します。";
+"userscript_docs_api_clipboard" = "Soulo のネイティブ ブリッジを介してテキストをシステム クリップボードにコピーします。";
+"userscript_docs_extended_title" = "メニュー、タブ、ファイル、ページの統合";
+"userscript_docs_api_menu" = "Soulo の [その他] メニューにスクリプト アクションを追加し、要求されたとき、またはナビゲーションが開始されたときに削除します。";
+"userscript_docs_api_notification" = "分離されたアクセス可能なページ内通知を表示し、クリック/完了コールバックをサポートします。";
+"userscript_docs_api_tabs" = "Soulo タブをフォアグラウンドまたはバックグラウンドで開き、返されたハンドルを閉じるか、現在のタブを閉じるかフォーカスします。";
+"userscript_docs_api_download" = "承認されたパブリック URL を Soulo ダウンロードにダウンロードします。ターゲットは @connect を満たす必要があり、ファイル名はサニタイズされます。";
+"userscript_docs_api_tabdata" = "同じスクリプトに属するページとライブタブ間で JSON シリアル化可能なデータを共有します。";
+"userscript_docs_api_cookie" = "現在の Web ページ ドメインに限定された Cookie を一覧表示、作成、削除します。";
+"userscript_docs_api_resource" = "宣言された @resource をテキストまたはデータ URL として取得します。従来の名前のフォームと最新のフォームはどちらも Soulo で Promise を返します。";
+"userscript_docs_api_urlchange" = "History API の urlchange、バック/フォワード、およびシングルページ アプリケーションのハッシュ変更を発行します。";
+"userscript_commands" = "スクリプトコマンド";
+"userscript_docs_network_title" = "ネットワークリクエスト";
+"userscript_docs_network_legacy" = "特権リクエストを開始し、中止ハンドルを返します。一致する許可と @connect ホストを宣言します。";
+"userscript_docs_network_modern" = "同じ詳細オブジェクトとコールバック動作を持つ特権リクエスト API の最新のエイリアス。";
+"userscript_docs_network_details" = "URL、メソッド、ヘッダー、データ、タイムアウト、responseType、onloadstart、onreadystatechange、onload、onerror、onloadend をサポートします。";
+"userscript_docs_network_response" = "json、blob、arraybuffer を使用するか、テキストを空のままにしてください。応答には、ステータス、finalUrl、ヘッダー、responseText、および応答が含まれます。";
+"userscript_docs_network_connect" = "ページ ホストには self、ページ ホストとそのサブドメインのドメイン、ワイルドカード ドメイン、または本当に必要な場合にのみ * を使用します。";
+"userscript_docs_limits_title" = "行動と制限";
+"userscript_docs_limits_web" = "標準 DOM、イベント、MutationObserver、フェッチ、タイマー、およびその他の WKWebView API が利用可能です。通常のフェッチは引き続き CORS に従います。";
+"userscript_docs_limits_storage" = "保存される値は JSON シリアル化可能である必要があります。値ごとに最大 256 KB、スクリプトごとに合計 1 MB までです。";
+"userscript_docs_limits_network" = "特権応答は 20 MB に制限され、タイムアウトは 1 ～ 60 秒に制限され、Cookie/ホスト/オリジン ヘッダーは受け入れられません。";
+"userscript_docs_limits_private" = "UserScript はプライベート ブラウズでは実行されません。";
+"userscript_docs_limits_require" = "外部の @require ファイルは実行されません。 CDN への依存関係を回避し、必要なロジックをすべてスクリプトに含めます。";
+"userscript_docs_template_title" = "最小限のテンプレート";
+"userscript_docs_template_footer" = "一意の名前空間と、可能な限り狭い @match および @grant 宣言を使用します。";
 "userscript_too_large" = "選択したスクリプトは 2 MB の上限を超えています。";
 "userscript_invalid_connect_domain" = "ネットワークアクセス規則が無効です：%@";
 "userscript_storage_invalid" = "スクリプトが無効または大きすぎる値を保存しようとしました。";
@@ -577,15 +740,110 @@
 "userscript_external_requirements" = "外部依存関係";
 "userscript_external_requirements_desc" = "このスクリプトは外部 @require ファイルを宣言しています。Soulo は自動読み込みしません。";
 "userscript_metadata_title" = "スクリプトの詳細";
+"userscript_unsupported_permissions" = "まだサポートされていません: %@";
 "userscript_sample_name" = "読書進捗バー";
 "userscript_sample_desc" = "すべてのWebページ上部に控えめな読書進捗を表示します。";
 "userscript_builtin_badge" = "内蔵サンプル";
-"userscript_description" = "説明";
-"userscript_copy_javascript" = "JavaScriptをコピー";
-"userscripts_documentation" = "開発ガイド";
-"userscript_docs_ai_title" = "AIでスクリプトを作成";
-"userscript_docs_ai_desc" = "Souloの完全な互換性プロンプトをコピーし、要件を追加してAIに送ると、インストール可能なスクリプトを生成できます。";
-"userscript_docs_copy_prompt" = "AIプロンプトをコピー";
-"userscript_commands" = "スクリプトコマンド";
 "userscript_page_marker_name" = "範囲テキスト抽出";
 "userscript_page_marker_desc" = "移動できるボタンをタップしてからページ内の範囲をタップし、表示テキストを抽出してコピーします。";
+"userscript_builtin_readonly_desc" = "組み込みサンプルは読み取り専用で、オンにするまで無効のままです。";
+"site_connection_secure" = "接続は安全です";
+"site_connection_not_secure" = "接続が安全ではありません";
+"site_https_verified_desc" = "このページは暗号化されたHTTPSを使用しています。 iOS は Web サイトの証明書を検証します。";
+"site_http_warning_desc" = "このページは安全な HTTPS 接続を使用しません。パスワードや機密情報を入力しないでください。";
+"site_tracking_protection" = "トラッキング防止";
+"site_private_mode_desc" = "履歴を保存しないでください。一時的な Web サイト データを使用する";
+"site_privacy_details" = "サイト保護の詳細";
+"site_protection_explanation" = "有効にすると、Soulo は既知の追跡リクエストをブロックし、一般的な追跡パラメータを削除し、広告フィルタリングを適用します。これをオフにすると、この Web サイトのみに影響します。";
+"site_protection_summary" = "保護の概要";
+"site_protection_summary_desc" = "このページでは理解できる結果のみが表示されます。カウントは閲覧セッションの推定値であり、ユーザーのプロファイリングに使用されることはありません。";
+"site_privacy_actions" = "保護アクションが完了しました";
+"site_request_details_count" = "リクエストの詳細 (%d)";
+"extension_source_open_hint" = "このソースを現在の Soulo タブで開きます";
+"extension_detected_title" = "拡張パッケージが検出されました";
+"userscript_detected_title" = "UserScript が検出されました";
+"extension_detected_desc" = "Soulo はインストール前にマニフェストを検証し、この拡張機能によって宣言された権限と Web サイトへのアクセスを有効にします。";
+"userscript_detected_desc" = "このスクリプトは、Web サイトのルールに一致するページを読み取り、変更できます。ソースを信頼できる場合にのみインストールしてください。";
+"install" = "インストール";
+"extension_installing_short" = "インストール中…";
+"extension_install_success" = "正常にインストールされました";
+"extension_installed_success_desc" = "%@ がインストールされ、有効になっています。開いているページが再読み込みされて適用されます。";
+"browser_tabs" = "タブ";
+"web_capture" = "ページのキャプチャ";
+"web_capture_viewport" = "現在の画面をキャプチャ";
+"web_capture_full_page" = "スクロールページのキャプチャ";
+"web_capture_full_page_limit_desc" = "スクロール キャプチャには、メモリの使用を安全に保つための最大高さがあります。非常に長いページは自動的にトリミングされます。";
+"web_capture_processing" = "ページリソースをロードし、キャプチャを作成しています…";
+"web_capture_unavailable" = "現在のページをキャプチャする準備ができていません。";
+"web_capture_empty" = "キャプチャする表示可能なページ コンテンツがありません。";
+"web_capture_failed" = "ページのキャプチャに失敗しました";
+"web_capture_save" = "写真に保存";
+"web_capture_saved" = "保存されました";
+"web_capture_saved_desc" = "ページ キャプチャは写真に保存されました。";
+"web_capture_photo_permission" = "Soulo が [設定] の [写真] にページ キャプチャを追加できるようにしてから、もう一度お試しください。";
+"web_capture_height_limited" = "このページはスクロール キャプチャの制限を超えたため、画像は最大高さでトリミングされました。";
+"web_capture_live_text_hint" = "画像内の認識されたテキストを長押しして、Live Text を使用して選択またはコピーします。";
+"web_translate" = "ページを翻訳する";
+"web_translate_target" = "翻訳先";
+"web_translate_target_desc" = "Soulo はページの言語を自動的に検出します。";
+"web_translate_system" = "オンデバイス翻訳";
+"web_translate_system_desc" = "Apple Translation を使用してページのテキストを翻訳し、現在のページに書き戻します。初めて言語のダウンロードが要求される場合があります。";
+"web_translate_google" = "Google翻訳";
+"web_translate_google_desc" = "この Soulo タブで現在のアドレスの翻訳されたコピーを開きます。";
+"web_translate_restore" = "元のページを復元する";
+"web_translate_system_requires_ios18" = "オンデバイスのページ翻訳には iOS 18 以降が必要です。 Google 翻訳は引き続き利用可能です。";
+"web_translate_failed" = "翻訳に失敗しました";
+"web_translate_no_text" = "翻訳に適したページ テキストが見つかりませんでした。";
+"web_zoom_out" = "ズームアウト";
+"web_zoom" = "ページズーム";
+"web_zoom_in" = "ズームイン";
+"web_zoom_reset" = "100%にリセット";
+"toolbar_customize" = "ブラウザツールバーのカスタマイズ";
+"toolbar_action_empty" = "空の";
+"toolbar_preview" = "ツールバーのプレビュー";
+"toolbar_customize_hint" = "プレビューの下の位置を選択し、そのアクションを置き換えます。 Empty は、スペースを確保せずにその項目を完全に削除します。アドレス カプセル アクションも置き換えることができます。";
+"toolbar_replace_action" = "次で置換";
+"toolbar_restore_default" = "デフォルトのツールバーを復元";
+"toolbar_saved" = "ツールバーが保存されました";
+"privacy_exit_incognito" = "プライベートブラウズをオフ";
+"privacy_enter_incognito" = "プライベートブラウズをオン";
+"share_extension_title" = "Souloで検索";
+"share_search_in_soulo" = "Souloで検索";
+"share_private_search" = "プライベート検索";
+"share_extension_unsupported" = "この項目は検索できません。";
+"image_extract_text" = "画像からテキストを抽出";
+"image_text_unavailable" = "Live Text はこのデバイスでは使用できません。";
+"image_text_none" = "この画像には判読可能なテキストが見つかりませんでした。";
+"copy_all" = "すべてコピー";
+"pause" = "一時停止";
+"resume" = "再開";
+"downloads_paused" = "一時停止中";
+"downloads_background_interrupted" = "バックグラウンドのダウンロードが完了する前に中断されました。";
+"intent_open_soulo_title" = "Soulo を開く";
+"intent_search_title" = "Souloで検索";
+"intent_search_description" = "複数のプラットフォームにわたって検索します。";
+"intent_search_query" = "検索クエリ";
+"intent_search_platform" = "プラットフォーム";
+"intent_open_soulo_description" = "Soulo を開いて、新しい検索を開始します。";
+"intent_open_downloads_title" = "ダウンロードを開く";
+"intent_open_downloads_description" = "Soulo ダウンロードを開きます。";
+"intent_paste_search_title" = "貼り付けて検索";
+"intent_paste_search_description" = "Soulo でクリップボードのテキストを検索します。";
+"intent_private_search_title" = "新しいプライベート検索";
+"intent_private_search_description" = "Soulo をプライベート モードで開きます。";
+"control_search_title" = "Soulo を検索";
+"control_search_description" = "Soulo を開いて検索を開始します。";
+"control_private_search_title" = "プライベート検索";
+"control_private_search_description" = "プライベート Soulo 検索を開きます。";
+"control_downloads_title" = "ダウンロード";
+"control_downloads_description" = "Soulo でダウンロードを開きます。";
+"privacy_section_private_browsing" = "プライベートブラウズ";
+"toolbar_restore_confirm_title" = "デフォルトのツールバーに戻しますか？";
+"toolbar_restore_confirm_message" = "現在のツールバー配置がデフォルト配置に置き換わります。";
+"web_readability" = "読みやすさ";
+"web_reduce_motion" = "Webページの動きを減らす";
+"web_reduce_motion_desc" = "Webページのアニメーション、切り替え効果、スムーズスクロールを制限します。";
+"web_underline_links" = "リンクに下線を表示";
+"web_underline_links_desc" = "Webページのリンクを見分けやすくするために下線を表示します。";
+"home_title_edit_desc" = "ホーム画面中央のメイン見出しとして表示します。";
+"home_subtitle_edit_desc" = "メイン見出しの下に表示します。空欄にすると非表示になります。";

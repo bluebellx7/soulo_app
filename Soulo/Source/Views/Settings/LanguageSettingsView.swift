@@ -2,9 +2,10 @@ import SwiftUI
 
 struct LanguageSettingsView: View {
     @State private var selectedLanguageCode: String = {
-        UserDefaults.standard.string(forKey: AppConstants.StorageKeys.selectedLanguage)
-        ?? Locale.current.language.languageCode?.identifier
-        ?? "en"
+        let saved = UserDefaults.standard.string(forKey: AppConstants.StorageKeys.selectedLanguage)
+        return AppConstants.canonicalLanguageCode(
+            saved ?? Locale.preferredLanguages.first ?? "en-US"
+        )
     }()
     @State private var animatingCode: String? = nil
 

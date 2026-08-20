@@ -1,0 +1,20 @@
+Soulo je brz, privatni preglednik za višestruko pretraživanje za iPhone i iPad. Unesite jedan upit, a zatim se prebacite između više od 40 platformi za pretraživanje, društvene mreže, video, kupnju, znanje i AI bez ponovnog upisivanja.
+
+PREGLEDAJTE SVOJ PUT
+• Kartice, oznake, povijest, preuzimanja i prilagodljive platforme za pretraživanje
+• Privatno pregledavanje, zaštita od praćenja, blokiranje oglasa i kontrole po web-mjestu
+• Mobilni i stolni način rada web stranice, zumiranje stranice, prijevod i snimanje cijele stranice
+• Preuzmite slike, video, audio i dokumente pomoću inspektora resursa web stranice
+• Ekstrahirajte tekst sa slika web stranica pomoću Live Text
+
+IZRAĐEN ZA iPhone I iPad
+• Više neovisnih prozora na iPadu
+• Podijelite veze ili tekst izravno na Soulo
+• Pretražujte i otvarajte preuzimanja s Siri, Shortcuts, Control Center, zaključanog zaslona i gumba za radnju
+• Pozadinska preuzimanja sa stvarnim napretkom i pauzom/nastavkom
+• Aktivnosti uživo i status Dynamic Island
+
+PROŠIRI WEB
+Instalirajte UserScripts ili kompatibilne WebExtensions, jasno upravljajte dopuštenjima i izradite vlastite skripte s ugrađenom API dokumentacijom.
+
+Soulo pohranjuje podatke o pregledavanju lokalno osim ako ne omogućite iCloud sinkronizaciju postavki. Privatno pregledavanje ne sprema povijest.

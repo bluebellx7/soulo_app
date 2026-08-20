@@ -1,7 +1,9 @@
-/* App */
+/* Soulo — generated and validated localization */
+
 "app_name" = "Soulo";
 "app_subtitle" = "Một lần nhập, hơn 40 nền tảng";
 "search_placeholder" = "Tìm kiếm hoặc nhập URL";
+"privacy_search_placeholder" = "Tìm kiếm riêng tư hoặc nhập URL";
 "search" = "Tìm kiếm";
 "recent_searches" = "Tìm kiếm gần đây";
 "show_more" = "Xem thêm";
@@ -9,6 +11,7 @@
 "clear_all" = "Xóa tất cả";
 "no_results" = "Không có kết quả";
 "clipboard_detected" = "Đã phát hiện nội dung clipboard";
+"clipboard_tap_to_search" = "Nhấn vào Tìm kiếm để sử dụng khay nhớ tạm";
 "region_china" = "Trung Quốc";
 "region_international" = "Quốc tế";
 "region_japan" = "Nhật Bản";
@@ -99,17 +102,32 @@
 "about" = "Giới thiệu";
 "version" = "Phiên bản";
 "reset_to_defaults" = "Đặt lại mặc định";
-"confirm_reset" = "Đặt lại tất cả cài đặt nền tảng về mặc định?";
 "wallpaper_bing" = "Hình nền hàng ngày của Bing";
 "wallpaper_custom" = "Hình nền tùy chỉnh";
 "wallpaper_none" = "Nền động";
+"wallpaper_gradient" = "Chuyển màu";
+"wallpaper_photo" = "Tường ảnh";
+"wallpaper_solid" = "Màu đơn sắc";
+"wallpaper_source" = "Nguồn hình nền";
+"wallpaper_type" = "Kiểu nền";
+"wallpaper_refresh" = "Đổi hình nền";
+"wallpaper_download" = "Tải hình nền";
+"my_favorites" = "Mục yêu thích của tôi";
+"wallpaper_fetch_bing" = "Ảnh hôm nay";
+"wallpaper_color" = "Màu nền";
+"wallpaper_load_error" = "Không thể tải";
+"wallpaper_favorites" = "Yêu thích";
+"wallpaper_search_placeholder" = "Tìm phong cách (VD: Rừng, Tối giản)";
+"wallpaper_pexels" = "Pexels (Chọn lọc)";
+"wallpaper_pixabay" = "Pixabay (Thiên nhiên)";
+"wallpaper_current_vibe" = "Phong cách hiện tại";
+"wallpaper_discover" = "Khám phá";
 "choose_photo" = "Chọn ảnh";
 "add_platform" = "Thêm nền tảng";
 "platform_name" = "Tên nền tảng";
 "search_url_template" = "Mẫu URL tìm kiếm";
 "search_url_hint" = "Dùng %@ làm chỗ giữ chỗ cho từ khóa\nvd: https://example.com/search?q=%@";
 "home_url" = "URL trang chủ";
-"select_region" = "Chọn khu vực";
 "auto_sort_by_frequency" = "Tự động sắp xếp theo tần suất sử dụng";
 "custom_platform" = "Nền tảng tùy chỉnh";
 "delete_platform" = "Xóa nền tảng";
@@ -123,6 +141,40 @@
 "clear_cache_desc" = "Xóa cookie và bộ nhớ cache WebView";
 "clear_all_data" = "Xóa tất cả dữ liệu";
 "action_irreversible" = "Hành động này không thể hoàn tác";
+"privacy_section_browsing" = "Duyệt web";
+"privacy_section_data" = "Quản lý dữ liệu";
+"privacy_incognito" = "Chế độ ẩn danh";
+"privacy_incognito_desc" = "Các tìm kiếm sẽ không được lưu vào lịch sử";
+"privacy_https_upgrade" = "Tự nâng cấp HTTP lên HTTPS";
+"privacy_https_upgrade_desc" = "Thử HTTPS an toàn trước khi tải trang HTTP";
+"privacy_strip_tracking" = "Xóa tham số theo dõi";
+"privacy_strip_tracking_desc" = "Xóa các ID nhấp chuột và chiến dịch phổ biến khỏi URL";
+"privacy_clear_history" = "Xóa lịch sử tìm kiếm";
+"privacy_clear_history_desc" = "Xóa tất cả tìm kiếm và trang đã truy cập đã lưu";
+"privacy_clear_history_confirm_title" = "Xóa lịch sử tìm kiếm?";
+"privacy_clear_history_confirm_message" = "Tất cả tìm kiếm và trang đã truy cập sẽ bị xóa vĩnh viễn.";
+"privacy_clear_bookmarks" = "Xóa tất cả dấu trang";
+"privacy_clear_bookmarks_desc" = "Xóa tất cả dấu trang đã lưu";
+"privacy_clear_bookmarks_confirm_title" = "Xóa tất cả dấu trang?";
+"privacy_clear_bookmarks_confirm_message" = "Tất cả dấu trang sẽ bị xóa vĩnh viễn.";
+"privacy_clear_cache" = "Xóa bộ nhớ cache trình duyệt";
+"privacy_clear_cache_desc" = "Xóa bộ nhớ đệm, bản xem trước tab và lịch sử truy cập 3 ngày gần nhất. Trạng thái đăng nhập được giữ lại";
+"privacy_clear_cache_confirm_title" = "Xóa bộ nhớ cache trình duyệt?";
+"privacy_clear_cache_confirm_message" = "Bộ nhớ đệm và lịch sử truy cập 3 ngày gần nhất sẽ bị xóa. Cookie và trạng thái đăng nhập được giữ lại.";
+"enter_fullscreen" = "Bật toàn màn hình";
+"exit_fullscreen" = "Thoát toàn màn hình";
+"fullscreen_exit_hint" = "Chạm để mở điều khiển, kéo xuống để thoát";
+"restore_browser_toolbar" = "Khôi phục thanh công cụ";
+"floating_more_detach" = "Bỏ ghim nút Thêm";
+"floating_more_snap" = "Ghim nút Thêm vào cạnh";
+"more_navigation" = "Điều hướng";
+"more_page_actions" = "Trang";
+"more_browser_actions" = "Trình duyệt";
+"hide_browser_toolbar" = "Ẩn thanh công cụ";
+"privacy_clear_action" = "Xóa";
+"privacy_data_footer" = "Các hành động này không thể hoàn tác. Dữ liệu đã xóa không thể khôi phục.";
+"settings_privacy" = "Cài đặt quyền riêng tư";
+"platform_sort_options" = "Tùy chọn sắp xếp";
 "cancel" = "Hủy";
 "confirm" = "Xác nhận";
 "delete" = "Xóa";
@@ -135,42 +187,24 @@
 "error_occurred" = "Đã xảy ra lỗi";
 "network_error" = "Kết nối mạng thất bại";
 "try_again" = "Thử lại";
-"widget_search" = "Tìm kiếm nhanh";
-"widget_description" = "Tìm kiếm trên nhiều nền tảng";
-
-/* Voice Input */
 "voice_listening" = "Đang nghe...";
 "voice_tap_to_speak" = "Nhấn nút để bắt đầu nói";
-
-/* F3: Spell Correction */
 "did_you_mean" = "Bạn có muốn nói:";
-
-/* F4: Page Summary */
 "summarize" = "Tóm tắt";
 "summary_title" = "Tóm tắt trang";
 "summarizing" = "Đang tóm tắt...";
 "copy_summary" = "Sao chép";
-
-/* F5: Platform Recommendation */
 "suggested_platforms" = "Gợi ý";
-
-/* F7: Clipboard Intelligence */
 "clipboard_url_detected" = "Đã phát hiện URL";
 "clipboard_product_detected" = "Đã phát hiện sản phẩm";
 "clipboard_person_detected" = "Đã phát hiện người";
 "open_directly" = "Mở";
-
-/* F9: Image Search */
 "image_search" = "Tìm kiếm hình ảnh";
 "extracting_text" = "Đang trích xuất văn bản...";
 "no_text_found" = "Không tìm thấy văn bản trong ảnh";
 "detected_objects" = "Phát hiện:";
 "photo_library" = "Thư viện ảnh";
-
-/* F1: Siri */
 "siri_search_tip" = "Thử: \"Tìm kiếm mèo trên Soulo\"";
-
-/* AI Platforms */
 "platform_deepseek" = "DeepSeek";
 "platform_qianwen" = "Qianwen";
 "platform_bing" = "Bing";
@@ -196,11 +230,6 @@
 "platform_niconico" = "Niconico";
 "platform_yuanbao" = "Tencent Yuanbao";
 "platform_doubao" = "Doubao";
-"platform_google_lens" = "Google Lens";
-"platform_baidu_image" = "Baidu Image";
-"platform_yandex_image" = "Yandex Images";
-
-/* Login Required */
 "login_required_title" = "Yêu cầu đăng nhập";
 "login_required_message" = "Nền tảng này yêu cầu bạn đăng nhập trước. Vui lòng đăng nhập trên trang, sau đó tìm kiếm của bạn sẽ được thực hiện tự động.";
 "login_required_toast" = "Vui lòng đăng nhập trước, sau đó tìm kiếm lại";
@@ -209,16 +238,12 @@
 "show_top_search_bar" = "Hiện thanh tìm kiếm phía trên";
 "show_top_search_bar_desc" = "Khi ẩn, dùng thanh địa chỉ phía dưới để tìm kiếm hoặc nhập bằng giọng nói";
 "ad_block_master_disabled_desc" = "Bật chặn quảng cáo để sử dụng và quản lý các đăng ký bộ lọc bên dưới.";
-
-/* Custom Groups */
 "custom_groups" = "Nhóm tùy chỉnh";
 "no_groups" = "Không có nhóm tùy chỉnh";
 "no_groups_desc" = "Tạo nhóm để sắp xếp các nền tảng yêu thích của bạn";
 "add_group" = "Nhóm mới";
 "group_name" = "Tên nhóm";
 "platforms_count" = "nền tảng";
-
-/* Dynamic Themes */
 "dynamic_theme" = "Chủ đề";
 "theme_midnight" = "Nửa đêm";
 "theme_ocean" = "Đại dương";
@@ -232,77 +257,48 @@
 "link_copied" = "Đã sao chép liên kết";
 "copy_link" = "Sao chép liên kết";
 "copied" = "Đã sao chép!";
-
-/* Ad Blocker */
 "ad_block" = "Chặn quảng cáo";
 "ad_block_desc" = "Ẩn quảng cáo và trình theo dõi trong kết quả tìm kiếm (khởi động lại tìm kiếm để áp dụng)";
+"ad_block_network" = "Chặn yêu cầu mạng quảng cáo";
+"ad_block_cosmetic" = "Ẩn phần giữ chỗ quảng cáo";
+"ad_block_popups" = "Làm sạch cửa sổ bật lên và lớp phủ";
+"ad_block_management" = "Quản lý khối quảng cáo";
+"ad_block_allowlist" = "Trang web được phép";
+"ad_block_disable_current_site" = "Tắt tính năng chặn quảng cáo trên trang web này";
+"ad_block_enable_current_site" = "Bật tính năng chặn quảng cáo trên trang web này";
+"ad_block_site_toggle_desc" = "Thay đổi này sẽ tải lại trang hiện tại để có thể áp dụng cài đặt chặn quảng cáo mới.";
+"ad_block_no_allowlisted_sites" = "Không có trang web được phép.";
+"ad_block_stats" = "Yếu tố ẩn";
+"ad_block_stats_desc" = "Số lượng mang tính tương đối và chỉ bao gồm các thành phần trang bị ẩn do quá trình dọn dẹp thẩm mỹ.";
+"ad_block_no_stats" = "Chưa có số liệu thống kê yếu tố ẩn.";
+"ad_block_reset_stats" = "Đặt lại số liệu thống kê";
 "browsing" = "Duyệt web";
-
-/* Groups */
 "no_platforms_in_group" = "Chưa có nền tảng";
 "add_to_group" = "Thêm nền tảng vào nhóm";
-"add_existing" = "Thêm hiện có";
-"confirm_delete_group" = "Xóa nhóm này?";
-
-/* Wallpaper */
 "wallpaper_saved" = "Đã lưu hình nền vào Ảnh";
+"add_existing" = "Thêm hiện có";
 "region_image_search" = "Tìm kiếm hình ảnh";
+"platform_google_lens" = "Google Lens";
+"platform_baidu_image" = "Baidu Image";
+"platform_yandex_image" = "Yandex Images";
+"confirm_delete_group" = "Xóa nhóm này?";
+"confirm_reset" = "Đặt lại tất cả cài đặt nền tảng về mặc định?";
 "camera" = "Máy ảnh";
+"select_region" = "Chọn khu vực";
 "add_platform_region" = "Nhóm";
 "image_search_desc" = "Chọn ảnh để tìm kiếm trên các nền tảng tìm kiếm hình ảnh";
 "image_uploading" = "Đang tải ảnh lên...";
 "switch_to_bing" = "Chuyển sang hình nền Bing?";
 "switch_to_bing_desc" = "Bật hình nền hàng ngày của Bing để khám phá những hình nền đẹp với bánh xe.";
-
-/* External URL */
 "open_external_title" = "Mở ứng dụng bên ngoài?";
 "open_external_failed" = "Không thể mở ứng dụng bên ngoài";
 "safari_compatibility_mode" = "Chế độ tương thích Safari";
 "open_in_default_browser" = "Mở trong trình duyệt mặc định";
 "open_external_message" = "Liên kết này sẽ mở một ứng dụng khác. Bạn có muốn tiếp tục không?";
-
-/* AI Loading */
 "ai_loading_page" = "Đang tải nền tảng AI...";
 "ai_loading_input" = "Đang nhập và gửi câu hỏi...";
-
-/* Privacy Settings (extended keys) */
-"privacy_section_browsing" = "Duyệt web";
-"privacy_section_data" = "Quản lý dữ liệu";
-"privacy_incognito" = "Chế độ ẩn danh";
-"privacy_incognito_desc" = "Các tìm kiếm sẽ không được lưu vào lịch sử";
-"privacy_https_upgrade" = "Tự nâng cấp HTTP lên HTTPS";
-"privacy_https_upgrade_desc" = "Thử HTTPS an toàn trước khi tải trang HTTP";
-"privacy_strip_tracking" = "Xóa tham số theo dõi";
-"privacy_strip_tracking_desc" = "Xóa các ID nhấp chuột và chiến dịch phổ biến khỏi URL";
-"privacy_clear_history" = "Xóa lịch sử tìm kiếm";
-"privacy_clear_history_desc" = "Xóa tất cả tìm kiếm và trang đã truy cập đã lưu";
-"privacy_clear_history_confirm_title" = "Xóa lịch sử tìm kiếm?";
-"privacy_clear_history_confirm_message" = "Tất cả tìm kiếm và trang đã truy cập sẽ bị xóa vĩnh viễn.";
-"privacy_clear_bookmarks" = "Xóa tất cả dấu trang";
-"privacy_clear_bookmarks_desc" = "Xóa tất cả dấu trang đã lưu";
-"privacy_clear_bookmarks_confirm_title" = "Xóa tất cả dấu trang?";
-"privacy_clear_bookmarks_confirm_message" = "Tất cả dấu trang sẽ bị xóa vĩnh viễn.";
-"privacy_clear_cache" = "Xóa bộ nhớ cache trình duyệt";
-"privacy_clear_cache_desc" = "Xóa bộ nhớ đệm, bản xem trước tab và lịch sử truy cập 3 ngày gần nhất. Trạng thái đăng nhập được giữ lại";
-"privacy_clear_cache_confirm_title" = "Xóa bộ nhớ cache trình duyệt?";
-"privacy_clear_cache_confirm_message" = "Bộ nhớ đệm và lịch sử truy cập 3 ngày gần nhất sẽ bị xóa. Cookie và trạng thái đăng nhập được giữ lại.";
-
-"enter_fullscreen" = "Bật toàn màn hình";
-"exit_fullscreen" = "Thoát toàn màn hình";
-"fullscreen_exit_hint" = "Chạm để mở điều khiển, kéo xuống để thoát";
-"restore_browser_toolbar" = "Khôi phục thanh công cụ";
-"floating_more_detach" = "Bỏ ghim nút Thêm";
-"floating_more_snap" = "Ghim nút Thêm vào cạnh";
-"more_navigation" = "Điều hướng";
-"more_page_actions" = "Trang";
-"more_browser_actions" = "Trình duyệt";
-"hide_browser_toolbar" = "Ẩn thanh công cụ";
-"privacy_clear_action" = "Xóa";
-"privacy_data_footer" = "Các hành động này không thể hoàn tác. Dữ liệu đã xóa không thể khôi phục.";
-"settings_privacy" = "Cài đặt quyền riêng tư";
-"platform_sort_options" = "Tùy chọn sắp xếp";
-
-/* Settings - Navigation & Titles */
+"widget_search" = "Tìm kiếm nhanh";
+"widget_description" = "Tìm kiếm trên nhiều nền tảng";
 "settings_title" = "Cài đặt";
 "settings_platforms" = "Nền tảng";
 "settings_appearance" = "Giao diện";
@@ -311,8 +307,6 @@
 "settings_version" = "Phiên bản";
 "settings_privacy_policy" = "Chính sách quyền riêng tư";
 "settings_terms" = "Điều khoản dịch vụ";
-
-/* Settings - Section Headers */
 "settings_section_platforms" = "Nền tảng";
 "settings_section_appearance" = "Giao diện";
 "settings_section_language" = "Ngôn ngữ";
@@ -320,8 +314,6 @@
 "settings_section_privacy" = "Quyền riêng tư";
 "settings_section_about" = "Giới thiệu";
 "settings_section_about_support" = "Giới thiệu và hỗ trợ";
-
-/* Platform Management */
 "platform_auto_sort" = "Tự động sắp xếp theo tần suất";
 "platform_auto_sort_desc" = "Tự động sắp xếp lại các nền tảng dựa trên tần suất sử dụng";
 "platform_custom_badge" = "Tùy chỉnh";
@@ -330,8 +322,6 @@
 "platform_reset_confirm_title" = "Đặt lại nền tảng?";
 "platform_reset_confirm_action" = "Đặt lại";
 "platform_reset_confirm_message" = "Tất cả cấu hình nền tảng sẽ được khôi phục về mặc định. Không thể hoàn tác.";
-
-/* Add Custom Platform */
 "add_platform_title" = "Thêm nền tảng tùy chỉnh";
 "add_platform_subtitle" = "Thêm bất kỳ công cụ tìm kiếm hoặc trang web nào làm nền tảng";
 "add_platform_name" = "Tên nền tảng";
@@ -344,22 +334,14 @@
 "add_platform_url_help_title" = "Cách hoạt động của mẫu URL";
 "add_platform_url_help_desc" = "Thay thế từ khóa tìm kiếm trong URL bằng %@ và chúng tôi sẽ tự động điền vào khi bạn tìm kiếm.";
 "add_platform_url_help_examples" = "Ví dụ";
-
-/* Wallpaper (extended) */
 "wallpaper_choose_photo" = "Chọn ảnh";
-
-/* Language Settings */
 "language_select_title" = "Chọn ngôn ngữ";
 "language_footer" = "Thay đổi ngôn ngữ sẽ cập nhật toàn bộ văn bản trong ứng dụng.";
-
-/* Home Bookmarks */
 "show_bookmarks_home" = "Hiện bookmark trên trang chủ";
 "show_bookmarks_home_desc" = "Hiển thị các trang đã lưu dưới dạng biểu tượng trên màn hình chính";
 "show_recent_searches_home" = "Hiện tìm kiếm gần đây trên trang chủ";
 "show_recent_searches_home_desc" = "Hiển thị từ khóa tìm kiếm gần đây bên dưới thanh tìm kiếm trên màn hình chính";
 "home_screen" = "Màn hình chính";
-
-/* AI Search Platforms */
 "platform_metaso" = "Metaso";
 "platform_tiangong" = "Tiangong AI";
 "platform_phind" = "Phind";
@@ -367,12 +349,11 @@
 "platform_kimi" = "Kimi Search";
 "voice_stop" = "Dừng";
 "voice_record" = "Ghi âm";
-
-/* Batch Import */
 "batch_import" = "Batch Import";
 "batch_import_format" = "Paste JSON in the format below";
 "batch_import_group" = "Add to Group (Optional)";
 "batch_import_group_placeholder" = "e.g. Movies";
+"batch_import_film_entry" = "Mở cài đặt trước nền tảng phim";
 "batch_import_action" = "Import";
 "batch_import_result" = "Successfully imported %d platforms";
 "paste_from_clipboard" = "Paste from Clipboard";
@@ -383,8 +364,6 @@
 "error_timeout" = "Connection timed out. Please try again.";
 "error_ssl" = "Secure connection failed.";
 "retry" = "Retry";
-
-/* Support & Feedback */
 "settings_rate" = "Danh gia ung dung";
 "settings_feedback" = "Gui phan hoi";
 "settings_help" = "Trung tam tro giup";
@@ -396,12 +375,7 @@
 "feedback_type_question" = "Cau hoi";
 "feedback_type_other" = "Khac";
 "feedback_content" = "Noi dung";
-"feedback_placeholder" = "Moi y kien phan hoi giup chung toi cai thien!
-
-Hay cho chung toi biet:
-· Ban gap van de gi?
-· Ban muon them tinh nang gi?
-· Dieu gi co the tot hon?";
+"feedback_placeholder" = "Moi y kien phan hoi giup chung toi cai thien!\n\nHay cho chung toi biet:\n· Ban gap van de gi?\n· Ban muon them tinh nang gi?\n· Dieu gi co the tot hon?";
 "feedback_contact" = "Lien he";
 "feedback_contact_hint" = "Email hoac lien he khac";
 "feedback_contact_reply_hint" = "Bạn có thể để lại email để chúng tôi phản hồi.";
@@ -411,8 +385,6 @@ Hay cho chung toi biet:
 "feedback_success_title" = "Cam on";
 "feedback_success_msg" = "Phan hoi da duoc gui!";
 "feedback_error" = "Loi gui";
-
-/* Help Center */
 "help_title" = "Trung tam tro giup";
 "help_welcome_title" = "Chung toi co the giup gi?";
 "help_welcome_subtitle" = "Tat ca nhung gi ban can biet ve Soulo.";
@@ -433,13 +405,9 @@ Hay cho chung toi biet:
 "theme_system" = "He thong";
 "theme_light" = "Sang";
 "theme_dark" = "Toi";
-
-/* Wallpaper Delete Confirmation */
 "wallpaper_delete_title" = "Xóa hình nền";
 "wallpaper_delete_confirm" = "Xóa";
 "wallpaper_delete_msg" = "Hình nền này sẽ bị ẩn khỏi danh sách.";
-
-/* Tab trình duyệt */
 "tab_new_tab" = "Tab mới";
 "tab_tabs" = "Tab";
 "tab_close" = "Đóng tab";
@@ -449,8 +417,6 @@ Hay cho chung toi biet:
 "tab_duplicate" = "Nhân đôi tab";
 "tab_open_new" = "Mở trong tab mới";
 "popup_open_current_tab" = "Mở trong tab hiện tại";
-
-/* Tính năng trình duyệt */
 "find_in_page" = "Tìm trong trang";
 "desktop_mode" = "Chế độ máy tính";
 "mobile_mode" = "Chế độ di động";
@@ -463,8 +429,6 @@ Hay cho chung toi biet:
 "image_saved" = "Đã lưu vào Ảnh";
 "save_failed" = "Lưu thất bại";
 "downloading" = "Đang tải xuống...";
-
-/* Browser Privacy */
 "downloads" = "Tệp tải xuống";
 "downloads_empty" = "Chưa có tệp tải xuống";
 "downloads_empty_desc" = "Các tệp đã tải xuống sẽ xuất hiện tại đây.";
@@ -476,8 +440,6 @@ Hay cho chung toi biet:
 "library" = "Thư viện";
 "my_downloads" = "Tệp tải xuống của tôi";
 "open_downloads_folder" = "Mở vị trí tải xuống";
-"live_activity" = "Dynamic Island";
-"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island—the black pill around the camera at the top of supported iPhones.";
 "fire_button" = "Clear Privacy Data";
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
@@ -514,28 +476,43 @@ Hay cho chung toi biet:
 "privacy_gpc_desc" = "Ask websites not to sell or share your data when they support GPC.";
 "privacy_cookie_banners" = "Handle Cookie Prompts";
 "privacy_cookie_banners_desc" = "Try to reject or dismiss common cookie consent banners.";
-
-/* Hình nền (bổ sung) */
-"wallpaper_color" = "Màu nền";
-"wallpaper_current_vibe" = "Phong cách hiện tại";
-"wallpaper_discover" = "Khám phá";
-"wallpaper_download" = "Tải hình nền";
-"wallpaper_favorites" = "Yêu thích";
-"wallpaper_fetch_bing" = "Ảnh hôm nay";
-"wallpaper_gradient" = "Chuyển màu";
-"wallpaper_load_error" = "Không thể tải";
-"wallpaper_pexels" = "Pexels (Chọn lọc)";
-"wallpaper_photo" = "Tường ảnh";
-"wallpaper_pixabay" = "Pixabay (Thiên nhiên)";
-"wallpaper_refresh" = "Đổi hình nền";
-"my_favorites" = "Mục yêu thích của tôi";
-"wallpaper_search_placeholder" = "Tìm phong cách (VD: Rừng, Tối giản)";
-"wallpaper_solid" = "Màu đơn sắc";
-"wallpaper_source" = "Nguồn hình nền";
-"wallpaper_type" = "Kiểu nền";
+"ad_block_allowlisted_count" = "Trang web được phép";
+"ad_block_total_hidden" = "Yếu tố ẩn";
+"ad_block_current_site_hidden" = "Trang web này";
+"ad_block_search_allowlist" = "Tìm kiếm danh sách cho phép";
+"ad_block_subscriptions" = "Lọc đăng ký";
+"ad_block_subscriptions_desc" = "Soulo hỗ trợ một tập hợp con thực tế của danh sách bộ lọc ABP và chuyển đổi chúng thành các quy tắc WebKit cùng với tính năng ẩn mỹ phẩm. Các nguồn bao gồm các bộ lọc EasyList, EasyList China và AdGuard.";
+"ad_block_subscription_enabled" = "Danh sách đã bật";
+"ad_block_subscription_rules" = "Quy tắc được lưu trong bộ nhớ đệm";
+"ad_block_subscription_rules_suffix" = "quy tắc";
+"ad_block_subscription_update" = "Cập nhật danh sách đã bật";
+"ad_block_subscription_updating" = "Đang cập nhật...";
+"ad_block_subscription_reset" = "Đặt lại đăng ký";
+"wallpaper_remote_error" = "Nguồn hình nền không có sẵn. Hãy thử làm mới hoặc chuyển đổi nguồn.";
+"restore" = "Khôi phục";
+"never_prompt" = "Không bao giờ nhắc";
+"live_activity" = "Dynamic Island";
+"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island—the black pill around the camera at the top of supported iPhones.";
+"external_navigation" = "Liên kết ứng dụng bên ngoài";
+"never_prompt_external" = "Âm thầm chặn các liên kết ứng dụng bên ngoài";
+"never_prompt_external_desc" = "Khi được bật, Soulo sẽ hủy việc nhảy ứng dụng bên ngoài mà không hiển thị lời nhắc.";
+"blocked_external_hosts" = "Máy chủ bị chặn";
+"no_external_hosts" = "Không có máy chủ nào bị chặn";
+"no_external_hosts_desc" = "Máy chủ xuất hiện ở đây sau khi bạn chọn Không bao giờ nhắc trên liên kết ứng dụng bên ngoài.";
+"wallpaper_auto_refresh_header" = "Tự động làm mới";
+"wallpaper_auto_refresh" = "Khoảng thời gian làm mới";
+"wallpaper_auto_refresh_desc" = "Soulo tải trước hình nền từ xa tiếp theo trước khi tự động làm mới khi có thể.";
+"wallpaper_random_sources" = "Nguồn ngẫu nhiên";
+"wallpaper_random_sources_desc" = "Tự động làm mới và chuyển đổi làm mới ngẫu nhiên giữa các nguồn từ xa được chọn. Ít nhất một nguồn được giữ lại.";
+"wallpaper_random_topics" = "Chọn ngẫu nhiên chủ đề";
+"wallpaper_interval_none" = "không bao giờ";
+"wallpaper_interval_1min" = "Mỗi phút";
+"wallpaper_interval_5min" = "Cứ sau 5 phút";
+"wallpaper_interval_15min" = "Cứ sau 15 phút";
+"wallpaper_interval_30min" = "Cứ sau 30 phút";
+"wallpaper_interval_1hour" = "Mỗi giờ";
+"wallpaper_interval_1day" = "mỗi ngày";
 "example" = "Ví dụ";
-
-/* Điều hướng trình duyệt */
 "browser_back" = "Quay lại";
 "browser_forward" = "Tiếp theo";
 "browser_reload" = "Tải lại";
@@ -543,6 +520,62 @@ Hay cho chung toi biet:
 "current_page_link" = "Liên kết trang hiện tại";
 "tab_limit_title" = "Đã đạt giới hạn tab";
 "tab_limit_message" = "Bạn có thể giữ tối đa 20 tab. Hãy đóng một tab trước khi mở tab mới.";
+"accessibility_selected" = "Đã chọn";
+"accessibility_enabled" = "Đã bật";
+"accessibility_disabled" = "Đã tắt";
+"accessibility_item_position" = "%d của %d";
+"accessibility_selected_position" = "Đã chọn, %d trong số %d";
+"accessibility_clear_search" = "Xóa văn bản tìm kiếm";
+"accessibility_voice_recording" = "ghi âm";
+"accessibility_voice_idle" = "Không ghi âm";
+"accessibility_voice_search_hint" = "Nhấn đúp để bắt đầu nhập giọng nói.";
+"accessibility_recognized_text" = "Văn bản được nhận dạng";
+"accessibility_recent_search" = "Tìm kiếm gần đây, %@";
+"accessibility_recent_search_hint" = "Nhấn đúp để tìm kiếm. Sử dụng hành động Xóa để xóa nó.";
+"accessibility_search_suggestion_hint" = "Nhấn đúp để tìm kiếm đề xuất này.";
+"accessibility_fill_search" = "Điền vào trường tìm kiếm với %@";
+"accessibility_fill_search_hint" = "Nhấn đúp để chỉnh sửa đề xuất này trước khi tìm kiếm.";
+"accessibility_home_title" = "Tiêu đề trang chủ, %@";
+"accessibility_home_subtitle" = "Phụ đề trang chủ, %@";
+"accessibility_edit_title_hint" = "Nhấn đúp để chỉnh sửa tiêu đề nhà.";
+"accessibility_edit_subtitle_hint" = "Nhấn đúp để chỉnh sửa phụ đề chính.";
+"accessibility_incognito_active" = "Duyệt web riêng tư đang bật";
+"accessibility_open_bookmark_hint" = "Nhấn đúp để mở dấu trang này.";
+"accessibility_group_picker_hint" = "Nhấn đúp để chọn nhóm tìm kiếm hoặc khu vực.";
+"accessibility_platform_hint" = "Nhấn đúp để mở kết quả. Vuốt lên hoặc xuống để thay đổi nền tảng.";
+"accessibility_previous_platform" = "Nền tảng trước đó";
+"accessibility_next_platform" = "Nền tảng tiếp theo";
+"accessibility_first_platform" = "Nền tảng đầu tiên";
+"accessibility_last_platform" = "Nền tảng cuối cùng";
+"accessibility_platform_position" = "%@, %d của %d";
+"accessibility_platform_loading" = "%@, đang tải, %d của %d";
+"accessibility_page_position" = "Trang %d của %d";
+"accessibility_page_top" = "Đầu trang";
+"accessibility_page_bottom" = "Cuối trang";
+"accessibility_page_loaded" = "%@ đã tải";
+"accessibility_search_results" = "Kết quả tìm kiếm";
+"accessibility_active_tab" = "Tab hoạt động";
+"accessibility_tab_position" = "%@, tab %d của %d";
+"accessibility_open_tab_hint" = "Nhấn đúp để mở tab này. Sử dụng hành động Đóng để đóng nó.";
+"accessibility_tab_overview_hint" = "Nhấn đúp để xem và quản lý các tab.";
+"accessibility_open_platform_hint" = "Nhấn đúp để mở nền tảng này.";
+"accessibility_restore_tab_hint" = "Nhấn đúp để khôi phục tab đã đóng này.";
+"accessibility_edit_address_hint" = "Nhấn đúp để chỉnh sửa địa chỉ hoặc văn bản tìm kiếm.";
+"accessibility_previous_match" = "Trận đấu trước";
+"accessibility_next_match" = "Trận đấu tiếp theo";
+"accessibility_search_history_hint" = "Nhấn đúp để tìm kiếm lại. Sử dụng hành động Xóa để xóa nó.";
+"accessibility_edit_platform_hint" = "Nhấn đúp để chỉnh sửa nền tảng này.";
+"accessibility_platform_visibility" = "Hiển thị nền tảng";
+"accessibility_wallpaper_open_hint" = "Nhấn đúp để xem trước hình nền này. Nhiều hành động hơn có sẵn.";
+"accessibility_add_favorite" = "Thêm vào mục yêu thích";
+"accessibility_remove_favorite" = "Xóa khỏi mục yêu thích";
+"accessibility_wallpaper_preview" = "Xem trước hình nền";
+"accessibility_wallpaper_zoom" = "Thu phóng %d phần trăm";
+"accessibility_wallpaper_adjust_hint" = "Vuốt lên hoặc xuống để thu phóng. Sử dụng các hành động để di chuyển hình nền.";
+"accessibility_move_left" = "Di chuyển sang trái";
+"accessibility_move_right" = "Di chuyển sang phải";
+"accessibility_move_up" = "Di chuyển lên";
+"accessibility_move_down" = "Di chuyển xuống";
 "browser_page_tools" = "Công cụ trang";
 "browser_open_page" = "Mở trang";
 "keep_fullscreen_browsing" = "Duy trì toàn màn hình";
@@ -550,20 +583,150 @@ Hay cho chung toi biet:
 "icloud_settings_sync" = "Đồng bộ cài đặt iCloud";
 "icloud_settings_sync_desc" = "Đồng bộ giao diện, trang chủ, duyệt web, quyền riêng tư và nền tảng; không gồm lịch sử, bộ nhớ đệm, đăng nhập và tải xuống";
 "settings_section_sync" = "Đồng bộ";
-"privacy_exit_incognito" = "Tắt chế độ riêng tư";
-"privacy_enter_incognito" = "Bật chế độ riêng tư";
-
-/* Cải thiện cài đặt */
-"privacy_section_private_browsing" = "Duyệt web riêng tư";
-"toolbar_restore_confirm_title" = "Khôi phục thanh công cụ mặc định?";
-"toolbar_restore_confirm_message" = "Bố cục thanh công cụ hiện tại sẽ được thay bằng bố cục mặc định.";
-"web_readability" = "Khả năng đọc";
-"web_reduce_motion" = "Giảm chuyển động trang web";
-"web_reduce_motion_desc" = "Hạn chế hoạt ảnh, hiệu ứng chuyển tiếp và cuộn mượt trên trang web.";
-"web_underline_links" = "Gạch chân liên kết";
-"web_underline_links_desc" = "Gạch chân các liên kết trên trang web để dễ nhận biết hơn.";
-"home_title_edit_desc" = "Hiển thị làm tiêu đề chính ở giữa màn hình chính.";
-"home_subtitle_edit_desc" = "Hiển thị bên dưới tiêu đề chính; để trống để ẩn.";
+"quick_action_clear_cache" = "Xóa bộ nhớ đệm";
+"quick_action_private_tab" = "Tab riêng tư mới";
+"quick_action_share_app" = "Chia sẻ ứng dụng";
+"share_app_message" = "Hãy dùng thử Soulo — một ứng dụng duyệt và tìm kiếm tập trung.";
+"cache_cleared" = "Đã xóa bộ nhớ đệm duyệt web";
+"web_appearance" = "Giao diện web";
+"web_page_colors" = "Màu trang";
+"web_follow_app_scheme" = "Chủ đề trang web phù hợp";
+"web_follow_app_scheme_desc" = "Cho các trang web được hỗ trợ biết Soulo hiện có màu sáng hay tối để họ có thể chọn chủ đề phù hợp. Các trang web không được hỗ trợ sẽ không thay đổi.";
+"web_warm_color_shift" = "Màu đọc ấm áp";
+"web_warm_color_shift_desc" = "Thêm tông màu ấm tinh tế trên trang để làm dịu màn hình trắng lạnh vào ban đêm. Hình ảnh và video cũng sẽ có vẻ ấm hơn một chút.";
+"web_force_dark" = "Buộc các trang web tối";
+"web_force_dark_short" = "Chế độ tối";
+"web_force_dark_desc" = "Cố gắng chuyển đổi nền sáng, văn bản tối và đường viền thành bảng màu tối, ánh sáng yếu ngay cả khi trang web không có chủ đề tối riêng.";
+"web_force_dark_footer" = "Các cài đặt này có thể được kết hợp độc lập. Chuyển đổi không thay đổi nội dung trang nhưng các trang, khung vẽ và điều khiển tùy chỉnh phức tạp có thể giữ lại màu gốc của chúng. Tắt nhanh tính năng này từ phía dưới Menu Thêm nếu một trang trông có vẻ sai.";
+"site_information" = "Thông tin trang web";
+"shake_action" = "Lắc hành động";
+"shake_action_none" = "không có";
+"shake_action_fullscreen" = "Chuyển đổi toàn màn hình";
+"shake_action_dark" = "Chuyển đổi chế độ tối";
+"shake_action_reload" = "Tải lại trang";
+"shake_action_close_tab" = "Đóng tab hiện tại";
+"shake_action_footer" = "Hành động đã chọn sẽ chạy khi trang web đang mở. Việc chọn một hành động chuyển đổi sẽ đảo ngược hành động đó ở lần lắc tiếp theo.";
+"shake_intensity" = "Cường độ lắc";
+"shake_intensity_light" = "Ánh sáng";
+"shake_intensity_standard" = "Tiêu chuẩn";
+"shake_intensity_firm" = "công ty";
+"shake_intensity_strong" = "mạnh mẽ";
+"shake_intensity_footer" = "Chọn mức độ rung thiết bị chắc chắn. Ánh sáng dễ kích hoạt nhất; Mạnh mẽ giúp ngăn chặn các hành động vô tình.";
+"extensions" = "Tiện ích mở rộng";
+"extensions_installed" = "Tiện ích mở rộng của tôi";
+"extensions_install" = "Cài đặt tiện ích mở rộng";
+"extensions_empty" = "Không có tiện ích mở rộng";
+"extensions_empty_desc" = "Cài đặt tiện ích mở rộng web hoặc UserScript để xem tiện ích mở rộng này tại đây.";
+"extensions_reload_note" = "Mở các trang tải lại sau khi phần mở rộng hoặc tập lệnh được thay đổi để trạng thái mới có hiệu lực.";
+"web_extensions" = "Tiện ích mở rộng web";
+"userscripts" = "Tập lệnh & Tiện ích mở rộng";
+"userscripts_installed" = "Tập lệnh của tôi";
+"userscripts_install" = "Cài đặt tập lệnh";
+"userscripts_empty" = "Không có UserScripts";
+"userscripts_empty_desc" = "Cài đặt tệp .user.js hoặc tạo tập lệnh để xem tệp tại đây.";
+"userscripts_reload_note" = "Mở các trang tải lại sau khi tập lệnh được cài đặt, chỉnh sửa, bật, tắt hoặc xóa.";
+"userscript_experimental_badge" = "Khả năng tương thích";
+"userscript_experimental_title" = "Khả năng tương thích UserScript";
+"userscript_experimental_desc" = "Hỗ trợ các quy tắc trang web, bắt đầu/kết thúc tài liệu, API trang và lưu trữ GM mở rộng, lệnh tập lệnh, thông báo, tab, tải xuống, cookie, tài nguyên và các yêu cầu trong phạm vi quyền. Xem lại mọi tập lệnh trước khi cài đặt; các tệp @require bên ngoài không được thực thi.";
+"extension_choose_file" = "Chọn Tệp hoặc Thư mục Tiện ích mở rộng…";
+"extension_installing" = "Đang kiểm tra và cài đặt tiện ích mở rộng…";
+"extension_install_failed" = "Không thể cài đặt tiện ích mở rộng";
+"extension_permissions_summary" = "%d quyền · %d quy tắc trang web";
+"extension_untitled" = "Tiện ích mở rộng không có tiêu đề";
+"web_extension_install_footer" = "Nhấn vào bất kỳ đâu trên hàng nguồn để mở nó trong tab Soulo hiện tại. Soulo nhận dạng CRX, XPI, ZIP và các hành động cài đặt cửa hàng được hỗ trợ, sau đó hỏi trước khi cài đặt. Một số API chỉ dành cho máy tính để bàn có thể không có sẵn.";
+"web_extension_install_store_link" = "Cài đặt từ Liên kết cửa hàng…";
+"web_extension_browse_sources" = "Duyệt qua các cửa hàng tiện ích mở rộng";
+"web_extension_browse_sources_footer" = "Nút Store Get chỉ hỗ trợ các trình duyệt trên máy tính để bàn của riêng họ. Sao chép liên kết trang chi tiết tiện ích mở rộng, sau đó sử dụng Cài đặt từ Liên kết cửa hàng trong Soulo.";
+"web_extension_store_install_title" = "Cài đặt tiện ích mở rộng cửa hàng";
+"extension_page_banner_title" = "Cài đặt với Soulo";
+"extension_page_banner_desc" = "Soulo có thể cài đặt trực tiếp tiện ích mở rộng này.";
+"web_extension_store_install_desc" = "Dán liên kết trang chi tiết về Tiện ích bổ sung của Chrome, Cửa hàng Chrome trực tuyến, Tiện ích bổ sung của Microsoft Edge hoặc Tiện ích Firefox. Soulo tự tải xuống gói nên nút Nhận không tương thích của cửa hàng sẽ không được sử dụng.";
+"web_extension_store_link_placeholder" = "Liên kết trang tiện ích mở rộng hoặc ID tiện ích mở rộng của Chrome";
+"web_extension_store_invalid_link" = "Dán liên kết trang chi tiết tiện ích mở rộng từ Chrome, Edge hoặc Firefox, ID tiện ích mở rộng Chrome hoặc liên kết CRX, XPI hoặc ZIP trực tiếp.";
+"web_extension_store_https_required" = "Các gói tiện ích mở rộng phải sử dụng liên kết HTTPS an toàn.";
+"web_extension_store_insecure_redirect" = "Cửa hàng tiện ích mở rộng đã chuyển hướng tải xuống thông qua máy chủ mà iOS không thể xác minh an toàn.";
+"web_extension_store_download_failed" = "Soulo không thể tải xuống gói tiện ích mở rộng hợp lệ từ liên kết này.";
+"web_extension_store_package_too_large" = "Gói mở rộng lớn hơn giới hạn an toàn 100 MB.";
+"web_extension_requires_ios" = "Tiện ích mở rộng web tiêu chuẩn yêu cầu iOS 18.4 trở lên. UserScriptvẫn khả dụng trên thiết bị này.";
+"web_extension_invalid" = "Mục đã chọn không phải là Tiện ích mở rộng web được hỗ trợ hợp lệ.";
+"web_extension_persistent_background_unsupported" = "Tiện ích mở rộng này sử dụng trang nền liên tục mà Tiện ích mở rộng web iOS không hỗ trợ. Hãy dùng thử phiên bản tương thích với Manifest V3 hoặc Safari.";
+"userscript_new" = "Tập lệnh mới";
+"userscript_edit" = "Chỉnh sửa tập lệnh";
+"userscript_choose_file" = "Chọn tệp UserScript (.js)…";
+"userscript_install_footer" = "Nhấn vào hàng nguồn để mở nó trong tab Soulo hiện tại. Liên kết .user.js sẽ mở ra xác nhận cài đặt. Hỗ trợ JavaScript tiêu chuẩn và một loạt API GM; tập lệnh không chạy trong Duyệt web riêng tư và các tệp @require bên ngoài không được thực thi.";
+"userscript_install_failed" = "UserScript Không thể cài đặt được";
+"web_extension_temporarily_disabled" = "Tiện ích mở rộng trình duyệt tiêu chuẩn tạm thời không khả dụng trong khi quá trình kiểm tra khả năng tương thích hoàn tất.";
+"userscript_unreadable" = "Không thể đọc tập lệnh đã chọn dưới dạng văn bản UTF-8.";
+"userscript_empty" = "Tập lệnh không được để trống.";
+"userscript_invalid_match_pattern" = "Quy tắc trang web không hợp lệ: %@";
+"userscript_untitled" = "Tập lệnh không có tiêu đề";
+"userscript_name" = "Tên";
+"userscript_run_at" = "Chạy Tại";
+"userscript_document_start" = "Bắt đầu tài liệu";
+"userscript_document_end" = "Kết thúc tài liệu";
+"userscript_matches" = "Quy tắc trang web (mỗi dòng một quy tắc)";
+"userscript_code" = "JavaScript";
+"userscript_description" = "Mô tả";
+"userscript_copy_javascript" = "Sao chép JavaScript";
+"userscripts_documentation" = "Hướng dẫn phát triển";
+"userscript_docs_ai_title" = "Tạo tập lệnh bằng AI";
+"userscript_docs_ai_desc" = "Sao chép prompt tương thích đầy đủ của Soulo, thêm yêu cầu của bạn rồi gửi cho AI để tạo tập lệnh có thể cài đặt.";
+"userscript_docs_copy_prompt" = "Sao chép prompt AI";
+"userscript_docs_status_title" = "Trạng thái tương thích";
+"userscript_docs_supported_title" = "Được hỗ trợ";
+"userscript_docs_supported_desc" = "So khớp cốt lõi, bắt đầu/kết thúc tài liệu, kiểu/thành phần, lưu trữ đơn lẻ và hàng loạt, trình xử lý giá trị cục bộ, bảng tạm, menu, thông báo trong trang, tab, nội dung tải xuống, dữ liệu tab, cookie, tài nguyên, thay đổi URL và yêu cầu trong phạm vi quyền.";
+"userscript_docs_partial_title" = "Được hỗ trợ một phần";
+"userscript_docs_partial_desc" = "Yêu cầu mạng bỏ qua quá trình tải lên/tiến trình và truyền tải cookie. Thông báo nằm trong trang, API tài nguyên không đồng bộ và trình xử lý thay đổi giá trị báo cáo các thay đổi do trang hiện tại thực hiện. Kiểm tra cập nhật là thủ công.";
+"userscript_docs_unsupported_title" = "Hiện không được hỗ trợ";
+"userscript_docs_unsupported_desc" = "Thực thi @require bên ngoài, chặn GM_webRequest, GM_audio, cách ly sandbox/run-in, kiểm tra cập nhật tự động và các hành vi chính xác chỉ dành cho máy tính để bàn mà WKWebView không thể cung cấp.";
+"userscript_docs_metadata_title" = "Siêu dữ liệu";
+"userscript_docs_metadata_identity" = "Tên tập lệnh mà con người có thể đọc được và mô tả tùy chọn được hiển thị trước khi cài đặt và trong chi tiết tập lệnh.";
+"userscript_docs_metadata_version" = "Sử dụng một không gian tên ổn định, duy nhất và tăng phiên bản bất cứ khi nào tập lệnh đi kèm thay đổi.";
+"userscript_docs_metadata_match" = "Chọn các trang sử dụng quy tắc ký tự đại diện http/https, <all_urls> hoặc @include biểu thức chính quy.";
+"userscript_docs_metadata_exclude" = "Xóa các trang phù hợp khỏi phạm vi truy cập trang web của tập lệnh.";
+"userscript_docs_metadata_run_at" = "Chạy khi bắt đầu tài liệu hoặc sau DOMContentLoaded. Mặc định là kết thúc tài liệu.";
+"userscript_docs_metadata_grant" = "Khai báo mọi API đặc quyền được sử dụng. Sử dụng @grant none khi tập lệnh chỉ cần API trang web tiêu chuẩn.";
+"userscript_docs_metadata_connect" = "Cho phép các máy chủ được sử dụng bởi các yêu cầu mạng đặc quyền. Không có nó, các yêu cầu sẽ bị giới hạn ở máy chủ trang hiện tại.";
+"userscript_docs_metadata_urls" = "Tùy chọn nhận dạng và cập nhật siêu dữ liệu. Soulo sử dụng những thông tin này để nhận dạng các bản cài đặt lại của cùng một tập lệnh.";
+"userscript_docs_metadata_resource" = "Khai báo một tài nguyên được đặt tên. Thêm máy chủ @connect phù hợp; quá trình tìm nạp bị trì hoãn cho đến khi chờ đợi API tài nguyên hiện đại.";
+"userscript_docs_metadata_require" = "Các yêu cầu bên ngoài được tiết lộ trong quá trình cài đặt nhưng không được tải xuống hoặc thực thi; các kịch bản phải được khép kín.";
+"userscript_docs_api_title" = "API đặc quyền được hỗ trợ";
+"userscript_docs_api_info" = "Đọc trình xử lý tập lệnh, phiên bản Soulo và siêu dữ liệu tập lệnh được phân tích cú pháp. Có sẵn ở dạng cũ và hiện đại.";
+"userscript_docs_api_unsafe_window" = "Cung cấp cửa sổ trang hiện tại khi mức cấp phép safeWindow được khai báo rõ ràng.";
+"userscript_docs_api_style" = "Thêm phần tử kiểu vào trang, bao gồm cả phần tử an toàn trong quá trình bắt đầu tài liệu. Hình thức hiện đại trả về một Promise.";
+"userscript_docs_api_log" = "Ghi một hoặc nhiều giá trị vào bảng điều khiển trang web.";
+"userscript_docs_api_get" = "Đọc một giá trị có thể tuần tự hóa JSON liên tục, trả về giá trị dự phòng khi khóa không tồn tại.";
+"userscript_docs_api_set" = "Duy trì một giá trị có thể tuần tự hóa JSON. Biểu mẫu hiện đại trả về một Promise có thể báo cáo lỗi lưu trữ.";
+"userscript_docs_api_delete" = "Xóa một giá trị cố định cho tập lệnh này.";
+"userscript_docs_api_list" = "Trả về tất cả các khóa lưu trữ liên tục do tập lệnh này sở hữu.";
+"userscript_docs_api_bulk" = "Đọc, ghi hoặc xóa nhiều giá trị JSON trong một thao tác; ghi được xác nhận nguyên tử bởi cửa hàng gốc.";
+"userscript_docs_api_listener" = "Quan sát các thay đổi lưu trữ được thực hiện bởi tập lệnh trong trang web hiện tại. Thông báo từ xa trên nhiều tab không được phát ra.";
+"userscript_docs_api_element" = "Tạo và nối thêm một phần tử với các thuộc tính, bao gồm cả thuộc tính an toàn trong quá trình bắt đầu tài liệu.";
+"userscript_docs_api_clipboard" = "Sao chép văn bản vào bảng nhớ tạm hệ thống thông qua cầu nối gốc của Soulo.";
+"userscript_docs_extended_title" = "Tích hợp menu, tab, tập tin và trang";
+"userscript_docs_api_menu" = "Thêm hành động tập lệnh vào menu Thêm của Soulo và xóa chúng khi được yêu cầu hoặc khi bắt đầu điều hướng.";
+"userscript_docs_api_notification" = "Hiển thị thông báo trong trang riêng biệt, có thể truy cập và hỗ trợ gọi lại nhấp chuột/hoàn thành.";
+"userscript_docs_api_tabs" = "Mở tab Soulo ở nền trước hoặc nền sau, đóng tay cầm được trả về của nó hoặc đóng/tập trung vào tab hiện tại.";
+"userscript_docs_api_download" = "Tải xuống URL công khai được ủy quyền xuống Soulo Tải xuống. Mục tiêu phải đáp ứng @connect và tên tệp được lọc sạch.";
+"userscript_docs_api_tabdata" = "Chia sẻ dữ liệu có thể tuần tự hóa JSON giữa các trang và tab trực tiếp thuộc cùng một tập lệnh.";
+"userscript_docs_api_cookie" = "Liệt kê, tạo và xóa các cookie bị giới hạn trong miền trang web hiện tại.";
+"userscript_docs_api_resource" = "Tìm nạp @resource đã khai báo dưới dạng văn bản hoặc URL dữ liệu. Cả hai biểu mẫu có tên cũ và hiện đại đều trả về Promise trong Soulo.";
+"userscript_docs_api_urlchange" = "Phát ra thay đổi url cho API Lịch sử, tiến/lùi và thay đổi hàm băm trên các ứng dụng một trang.";
+"userscript_commands" = "Lệnh tập lệnh";
+"userscript_docs_network_title" = "Yêu cầu mạng";
+"userscript_docs_network_legacy" = "Bắt đầu một yêu cầu đặc quyền và trả về một điều khiển hủy bỏ. Khai báo khoản trợ cấp phù hợp và máy chủ @connect.";
+"userscript_docs_network_modern" = "Bí danh hiện đại của API yêu cầu đặc quyền có cùng đối tượng chi tiết và hành vi gọi lại.";
+"userscript_docs_network_details" = "Hỗ trợ url, phương thức, tiêu đề, dữ liệu, thời gian chờ, loại phản hồi, onloadstart, onreadystatechange, onload, onerror và onloadend.";
+"userscript_docs_network_response" = "Sử dụng json, blob, bộ đệm mảng hoặc để trống cho văn bản. Phản hồi bao gồm trạng thái, URL cuối cùng, tiêu đề, văn bản phản hồi và phản hồi.";
+"userscript_docs_network_connect" = "Hãy sử dụng self cho máy chủ trang, tên miền cho trang đó và các tên miền phụ của nó, tên miền ký tự đại diện hoặc chỉ * khi thực sự cần thiết.";
+"userscript_docs_limits_title" = "Hành vi và giới hạn";
+"userscript_docs_limits_web" = "DOM tiêu chuẩn, sự kiện, MutationObserver, tìm nạp, bộ hẹn giờ và các API WKWebView khác đều có sẵn. Tìm nạp bình thường vẫn tuân theo CORS.";
+"userscript_docs_limits_storage" = "Các giá trị được lưu trữ phải có khả năng tuần tự hóa JSON: tối đa 256 KB mỗi giá trị và tổng cộng 1 MB cho mỗi tập lệnh.";
+"userscript_docs_limits_network" = "Phản hồi đặc quyền được giới hạn ở 20 MB, thời gian chờ được giới hạn ở mức 1–60 giây và tiêu đề Cookie/Máy chủ/Nguồn gốc không được chấp nhận.";
+"userscript_docs_limits_private" = "UserScriptkhông chạy trong Duyệt web riêng tư.";
+"userscript_docs_limits_require" = "Các tệp @require bên ngoài không bao giờ được thực thi. Tránh phụ thuộc vào CDN và đưa tất cả logic cần thiết vào tập lệnh.";
+"userscript_docs_template_title" = "Mẫu tối thiểu";
+"userscript_docs_template_footer" = "Sử dụng một không gian tên duy nhất và các khai báo @match và @grant hẹp nhất có thể.";
 "userscript_too_large" = "Tập lệnh đã chọn vượt quá giới hạn 2 MB.";
 "userscript_invalid_connect_domain" = "Quy tắc truy cập mạng không hợp lệ: %@";
 "userscript_storage_invalid" = "Tập lệnh đã cố lưu một giá trị không hợp lệ hoặc quá lớn.";
@@ -577,15 +740,110 @@ Hay cho chung toi biet:
 "userscript_external_requirements" = "Phần phụ thuộc bên ngoài";
 "userscript_external_requirements_desc" = "Tập lệnh này khai báo tệp @require bên ngoài. Soulo không tự động tải chúng.";
 "userscript_metadata_title" = "Chi tiết tập lệnh";
+"userscript_unsupported_permissions" = "Chưa được hỗ trợ: %@";
 "userscript_sample_name" = "Thanh tiến trình đọc";
 "userscript_sample_desc" = "Hiển thị tiến trình đọc gọn nhẹ ở đầu mỗi trang web.";
 "userscript_builtin_badge" = "Ví dụ tích hợp";
-"userscript_description" = "Mô tả";
-"userscript_copy_javascript" = "Sao chép JavaScript";
-"userscripts_documentation" = "Hướng dẫn phát triển";
-"userscript_docs_ai_title" = "Tạo tập lệnh bằng AI";
-"userscript_docs_ai_desc" = "Sao chép prompt tương thích đầy đủ của Soulo, thêm yêu cầu của bạn rồi gửi cho AI để tạo tập lệnh có thể cài đặt.";
-"userscript_docs_copy_prompt" = "Sao chép prompt AI";
-"userscript_commands" = "Lệnh tập lệnh";
 "userscript_page_marker_name" = "Trích xuất văn bản";
 "userscript_page_marker_desc" = "Chạm nút có thể di chuyển, rồi chạm một vùng trang để trích xuất và sao chép văn bản hiển thị.";
+"userscript_builtin_readonly_desc" = "Các ví dụ tích hợp ở dạng chỉ đọc và vẫn bị tắt cho đến khi bạn bật chúng.";
+"site_connection_secure" = "Kết nối được an toàn";
+"site_connection_not_secure" = "Kết nối không an toàn";
+"site_https_verified_desc" = "Trang này sử dụng HTTPS được mã hóa. iOS xác minh chứng chỉ trang web.";
+"site_http_warning_desc" = "Trang này không sử dụng kết nối HTTPS an toàn. Tránh nhập mật khẩu hoặc thông tin nhạy cảm.";
+"site_tracking_protection" = "Bảo vệ theo dõi";
+"site_private_mode_desc" = "Đừng lưu lịch sử; sử dụng dữ liệu trang web tạm thời";
+"site_privacy_details" = "Chi tiết bảo vệ trang web";
+"site_protection_explanation" = "Khi được bật, Soulo sẽ chặn các yêu cầu theo dõi đã biết, xóa các thông số theo dõi phổ biến và áp dụng tính năng lọc quảng cáo. Việc tắt nó chỉ ảnh hưởng đến trang web này.";
+"site_protection_summary" = "Tóm tắt bảo vệ";
+"site_protection_summary_desc" = "Chỉ những kết quả dễ hiểu cho trang này mới được hiển thị. Số lượng là ước tính phiên duyệt web và không bao giờ được sử dụng để lập hồ sơ cho bạn.";
+"site_privacy_actions" = "Hành động bảo vệ đã hoàn thành";
+"site_request_details_count" = "Chi tiết yêu cầu (%d)";
+"extension_source_open_hint" = "Mở nguồn này trong tab Soulo hiện tại";
+"extension_detected_title" = "Đã phát hiện gói tiện ích mở rộng";
+"userscript_detected_title" = "UserScript Đã phát hiện";
+"extension_detected_desc" = "Soulo sẽ xác minh tệp kê khai trước khi cài đặt và bật các quyền cũng như quyền truy cập trang web được tiện ích mở rộng này khai báo.";
+"userscript_detected_desc" = "Tập lệnh này có thể đọc và thay đổi các trang phù hợp với quy tắc trang web của nó. Chỉ cài đặt nó nếu bạn tin tưởng vào nguồn của nó.";
+"install" = "cài đặt";
+"extension_installing_short" = "Đang cài đặt…";
+"extension_install_success" = "Đã cài đặt thành công";
+"extension_installed_success_desc" = "%@ đã được cài đặt và kích hoạt. Các trang mở sẽ tải lại để áp dụng nó.";
+"browser_tabs" = "Tab";
+"web_capture" = "Trang chụp";
+"web_capture_viewport" = "Chụp màn hình hiện tại";
+"web_capture_full_page" = "Chụp trang cuộn";
+"web_capture_full_page_limit_desc" = "Ảnh chụp cuộn có chiều cao tối đa để giữ an toàn cho việc sử dụng bộ nhớ. Các trang rất dài sẽ được tự động cắt bớt.";
+"web_capture_processing" = "Đang tải tài nguyên trang và tạo bản chụp…";
+"web_capture_unavailable" = "Trang hiện tại chưa sẵn sàng để chụp.";
+"web_capture_empty" = "Không có nội dung trang hiển thị để chụp.";
+"web_capture_failed" = "Chụp trang không thành công";
+"web_capture_save" = "Lưu vào Ảnh";
+"web_capture_saved" = "Đã lưu";
+"web_capture_saved_desc" = "Ảnh chụp trang đã được lưu vào Ảnh.";
+"web_capture_photo_permission" = "Cho phép Soulo thêm ảnh chụp trang vào Ảnh trong Cài đặt, sau đó thử lại.";
+"web_capture_height_limited" = "Trang này đã vượt quá giới hạn chụp cuộn nên hình ảnh đã bị cắt ở độ cao tối đa.";
+"web_capture_live_text_hint" = "Chạm và giữ văn bản được nhận dạng trong hình ảnh để chọn hoặc sao chép văn bản đó bằng Live Text.";
+"web_translate" = "Dịch trang";
+"web_translate_target" = "Dịch sang";
+"web_translate_target_desc" = "Soulo tự động phát hiện ngôn ngữ trang.";
+"web_translate_system" = "Dịch trên thiết bị";
+"web_translate_system_desc" = "Dịch văn bản trang bằng Apple Translation và ghi lại văn bản đó vào trang hiện tại. Tải xuống ngôn ngữ có thể được yêu cầu lần đầu tiên.";
+"web_translate_google" = "Google Dịch";
+"web_translate_google_desc" = "Mở bản sao đã dịch của địa chỉ hiện tại trong tab Soulo này.";
+"web_translate_restore" = "Khôi phục trang gốc";
+"web_translate_system_requires_ios18" = "Dịch trang trên thiết bị yêu cầu iOS 18 trở lên. Google Dịch vẫn khả dụng.";
+"web_translate_failed" = "Dịch không thành công";
+"web_translate_no_text" = "Không tìm thấy văn bản trang phù hợp để dịch.";
+"web_zoom_out" = "Thu nhỏ";
+"web_zoom" = "Thu phóng trang";
+"web_zoom_in" = "Phóng to";
+"web_zoom_reset" = "Đặt lại về 100%";
+"toolbar_customize" = "Tùy chỉnh thanh công cụ của trình duyệt";
+"toolbar_action_empty" = "trống";
+"toolbar_preview" = "Xem trước thanh công cụ";
+"toolbar_customize_hint" = "Chọn một vị trí bên dưới bản xem trước, sau đó thay thế hành động của nó. Trống loại bỏ hoàn toàn mục đó mà không dành chỗ; hành động của hộp địa chỉ cũng có thể được thay thế.";
+"toolbar_replace_action" = "Thay thế bằng";
+"toolbar_restore_default" = "Khôi phục thanh công cụ mặc định";
+"toolbar_saved" = "Đã lưu thanh công cụ";
+"privacy_exit_incognito" = "Tắt chế độ riêng tư";
+"privacy_enter_incognito" = "Bật chế độ riêng tư";
+"share_extension_title" = "Tìm kiếm với Soulo";
+"share_search_in_soulo" = "Tìm kiếm trong Soulo";
+"share_private_search" = "Tìm kiếm riêng tư";
+"share_extension_unsupported" = "Mục này không thể được tìm kiếm.";
+"image_extract_text" = "Trích xuất văn bản từ hình ảnh";
+"image_text_unavailable" = "Live Text không khả dụng trên thiết bị này.";
+"image_text_none" = "Không tìm thấy văn bản có thể đọc được trong hình ảnh này.";
+"copy_all" = "Sao chép tất cả";
+"pause" = "Tạm dừng";
+"resume" = "Tiếp tục";
+"downloads_paused" = "Đã tạm dừng";
+"downloads_background_interrupted" = "Quá trình tải xuống nền bị gián đoạn trước khi có thể hoàn tất.";
+"intent_open_soulo_title" = "Mở Soulo";
+"intent_search_title" = "Tìm kiếm với Soulo";
+"intent_search_description" = "Tìm kiếm trên nhiều nền tảng.";
+"intent_search_query" = "Truy vấn tìm kiếm";
+"intent_search_platform" = "Nền tảng";
+"intent_open_soulo_description" = "Mở Soulo và bắt đầu tìm kiếm mới.";
+"intent_open_downloads_title" = "Mở tải xuống";
+"intent_open_downloads_description" = "Mở Soulo nội dung tải xuống của bạn.";
+"intent_paste_search_title" = "Dán và tìm kiếm";
+"intent_paste_search_description" = "Tìm kiếm văn bản bảng nhớ tạm trong Soulo.";
+"intent_private_search_title" = "Tìm kiếm riêng tư mới";
+"intent_private_search_description" = "Mở Soulo ở chế độ riêng tư.";
+"control_search_title" = "Tìm kiếm Soulo";
+"control_search_description" = "Mở Soulo và bắt đầu tìm kiếm.";
+"control_private_search_title" = "Tìm kiếm riêng tư";
+"control_private_search_description" = "Mở tìm kiếm Soulo riêng tư.";
+"control_downloads_title" = "Tải xuống";
+"control_downloads_description" = "Mở các bản tải xuống trong Soulo.";
+"privacy_section_private_browsing" = "Duyệt web riêng tư";
+"toolbar_restore_confirm_title" = "Khôi phục thanh công cụ mặc định?";
+"toolbar_restore_confirm_message" = "Bố cục thanh công cụ hiện tại sẽ được thay bằng bố cục mặc định.";
+"web_readability" = "Khả năng đọc";
+"web_reduce_motion" = "Giảm chuyển động trang web";
+"web_reduce_motion_desc" = "Hạn chế hoạt ảnh, hiệu ứng chuyển tiếp và cuộn mượt trên trang web.";
+"web_underline_links" = "Gạch chân liên kết";
+"web_underline_links_desc" = "Gạch chân các liên kết trên trang web để dễ nhận biết hơn.";
+"home_title_edit_desc" = "Hiển thị làm tiêu đề chính ở giữa màn hình chính.";
+"home_subtitle_edit_desc" = "Hiển thị bên dưới tiêu đề chính; để trống để ẩn.";

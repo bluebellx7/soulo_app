@@ -117,11 +117,13 @@ struct WebViewToolbar: View {
     @ObservedObject private var adBlockSettings = AdBlockSettingsService.shared
     @ObservedObject private var webAppearance = WebAppearanceService.shared
     @ObservedObject private var toolbarConfiguration = BrowserToolbarConfigurationService.shared
+    @ObservedObject private var extensionService = BrowserExtensionService.shared
     @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = true
     @AppStorage(AppConstants.StorageKeys.isIncognito) private var isIncognito = false
     @State private var showSiteInformation = false
     @State private var showZoomControls = false
     @State private var showMoreMenu = false
+    @State private var extensionActionRevision = 0
 
     var tabManager: TabManager?
     var onShare: (() -> Void)?
@@ -510,14 +512,20 @@ struct WebViewToolbar: View {
             }
 
             moreMenuDivider
-            pageToolsMenu
-
-            if !viewModel.userScriptMenuCommands.isEmpty {
-                userScriptCommandsMenu
-            }
 
             if viewModel.currentURL != nil {
                 openPageMenu
+            }
+
+            pageToolsMenu
+
+            if !webExtensionActionItems.isEmpty {
+                moreMenuDivider
+                webExtensionActionStrip
+            }
+
+            if !viewModel.userScriptMenuCommands.isEmpty {
+                userScriptCommandsMenu
             }
 
             moreMenuDivider
@@ -532,6 +540,9 @@ struct WebViewToolbar: View {
         .padding(.vertical, 10)
         .frame(width: 320)
         .fixedSize(horizontal: true, vertical: true)
+        .onReceive(NotificationCenter.default.publisher(for: .browserExtensionActionsChanged)) { _ in
+            extensionActionRevision &+= 1
+        }
     }
 
     private var hiddenToolbarAddressRow: some View {
@@ -636,7 +647,7 @@ struct WebViewToolbar: View {
             } label: {
                 menuLabel(
                     "userscripts",
-                    systemImage: "chevron.left.forwardslash.chevron.right"
+                    systemImage: "puzzlepiece.extension.fill"
                 )
             }
             .disabled(onShowExtensions == nil)
@@ -713,6 +724,86 @@ struct WebViewToolbar: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    private var webExtensionActionItems: [(record: WebExtensionRecord, action: WebExtensionActionPresentation)] {
+        _ = extensionActionRevision
+        return extensionService.webExtensions.compactMap { record in
+            guard record.isEnabled,
+                  let action = extensionService.webExtensionAction(for: record.id) else { return nil }
+            return (record, action)
+        }
+    }
+
+    private var webExtensionActionStrip: some View {
+        HStack(spacing: 4) {
+            ScrollView(.horizontal) {
+                HStack(spacing: 4) {
+                    ForEach(webExtensionActionItems, id: \.record.id) { item in
+                        Button {
+                            performWebExtensionAction(item.record.id)
+                        } label: {
+                            ZStack(alignment: .topTrailing) {
+                                if let icon = item.action.icon {
+                                    Image(uiImage: icon)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 18, height: 18)
+                                        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                                } else {
+                                    Image(systemName: "puzzlepiece.extension.fill")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundStyle(.secondary)
+                                        .frame(width: 18, height: 18)
+                                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                                }
+
+                                if !item.action.badgeText.isEmpty {
+                                    Text(item.action.badgeText)
+                                        .font(.system(size: 7, weight: .bold))
+                                        .foregroundStyle(.white)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.6)
+                                        .padding(.horizontal, 3)
+                                        .frame(minWidth: 11, minHeight: 11)
+                                        .background(.red, in: Capsule())
+                                        .offset(x: 5, y: -5)
+                                }
+                            }
+                            .frame(width: 40, height: 40)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!item.action.isEnabled)
+                        .opacity(item.action.isEnabled ? 1 : 0.38)
+                        .accessibilityLabel(item.action.label)
+                        .accessibilityValue(item.action.badgeText)
+                        .help(item.action.label)
+                    }
+                }
+                .padding(.leading, 4)
+            }
+            .scrollIndicators(.hidden)
+
+            Divider()
+                .frame(height: 24)
+
+            Button {
+                performMoreMenuAction {
+                    onShowExtensions?()
+                }
+            } label: {
+                Image(systemName: "puzzlepiece.extension.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 40, height: 40)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(onShowExtensions == nil)
+            .accessibilityLabel(LanguageManager.shared.localizedString("userscripts"))
+        }
+        .frame(width: 288, height: 48)
     }
 
     private var openPageMenu: some View {
@@ -972,6 +1063,14 @@ struct WebViewToolbar: View {
         showMoreMenu = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             action()
+        }
+    }
+
+    private func performWebExtensionAction(_ id: UUID) {
+        showMoreMenu = false
+        // Let the native More popover finish dismissing before an extension presents its popup.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            extensionService.performWebExtensionAction(id)
         }
     }
 

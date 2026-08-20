@@ -1,0 +1,9 @@
+Wat is er nieuw:
+
+• Deel links en tekst met Soulo vanuit andere apps.
+• Extraheer tekst uit webpagina-afbeeldingen met Live Text.
+• Acties Control Center, Vergrendelscherm, Actieknop, Siri en Shortcuts toegevoegd.
+• Downloads gaan nu door op de achtergrond met echte voortgang en pauzeren/hervatten.
+• Onafhankelijk browsen in meerdere vensters op iPad toegevoegd.
+• Compatibele native WebExtensions ingeschakeld naast UserScripts.
+• De app en App Store-informatie uitgebreid naar alle 50 ondersteunde App Store-landinstellingen.

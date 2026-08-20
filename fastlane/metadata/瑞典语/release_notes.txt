@@ -1,0 +1,9 @@
+Vad är nytt:
+
+• Dela länkar och text till Soulo från andra appar.
+• Extrahera text från webbsidors bilder med Live Text.
+• Lade till åtgärder Control Center, låsskärm, åtgärdsknapp, Siri och Shortcuts.
+• Nedladdningar fortsätter nu i bakgrunden med verkliga framsteg och pausa/återuppta.
+• Lade till oberoende surfning i flera fönster på iPad.
+• Aktiverade kompatibla inbyggda WebExtensions tillsammans med UserScripts.
+• Utökade appen och App Store information till alla 50 stödda App Store språk.

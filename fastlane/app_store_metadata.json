@@ -1,0 +1,769 @@
+{
+  "schemaVersion": 1,
+  "app": {
+    "id": "6761165330",
+    "platform": "ios",
+    "version": "1.1.4",
+    "appStoreConnectUrl": "https://appstoreconnect.apple.com/apps/6761165330/distribution/ios/version/inflight"
+  },
+  "fieldLimits": {
+    "name": 30,
+    "subtitle": 30,
+    "promotionalText": 170,
+    "description": 4000,
+    "whatsNew": 4000,
+    "keywords": 100
+  },
+  "locales": [
+    {
+      "locale": "ar-SA",
+      "appStoreConnectNames": [
+        "阿拉伯语",
+        "Arabic"
+      ],
+      "fields": {
+        "name": "Soulo: متصفح متعدد البحث",
+        "subtitle": "البحث في الويب والوسائط الاجتم",
+        "promotionalText": "ابحث في أكثر من 40 منصة للويب ووسائل التواصل الاجتماعي والفيديو والتسوق والذكاء الاصطناعي في متصفح خاص واحد مع علامات التبويب والإضافات وحظر الإعلانات وأدوات صفحات الويب",
+        "description": "Soulo هو متصفح سريع وخاص ومتعدد البحث لأجهزة iPhone وiPad. أدخل استعلامًا واحدًا، ثم قم بالتبديل بين أكثر من 40 منصة للبحث والتواصل الاجتماعي والفيديو والتسوق والمعرفة والذكاء الاصطناعي دون إعادة الكتابة.\n\nتصفح طريقك\n• علامات التبويب، والإشارات المرجعية، والتاريخ، والتنزيلات ومنصات البحث القابلة للتخصيص\n• التصفح الخاص، وحماية المتتبع، وحظر الإعلانات، وعناصر التحكم لكل موقع\n• أوضاع موقع الويب للجوال وسطح المكتب، وتكبير الصفحة، والترجمة، والتقاط صفحة كاملة\n• قم بتنزيل الصور والفيديو والصوت والمستندات باستخدام مفتش موارد صفحة الويب\n• استخرج النص من صور صفحات الويب باستخدام Live Text\n\nمصمم لأجهزة iPhone وiPad\n• نوافذ مستقلة متعددة على جهاز iPad\n• مشاركة الروابط أو الرسائل النصية مباشرة إلى Soulo\n• ابحث عن التنزيلات وافتحها من Siri، وShortcuts، وControl Center، وشاشة القفل وزر الإجراء\n• التنزيلات في الخلفية مع تقدم حقيقي وإيقاف مؤقت/استئناف\n• الأنشطة المباشرة وحالة Dynamic Island\n\nتمديد الويب\nقم بتثبيت UserScripts أو WebExtensions المتوافقة، وقم بإدارة الأذونات بوضوح، وقم بإنشاء البرامج النصية الخاصة بك باستخدام وثائق API المضمنة.\n\nيقوم Soulo بتخزين بيانات التصفح محليًا ما لم تقم بتمكين مزامنة إعدادات iCloud. التصفح الخاص لا يحفظ التاريخ.",
+        "whatsNew": "ما هو الجديد:\n\n• مشاركة الروابط والنصوص إلى Soulo من التطبيقات الأخرى.\n• استخرج النص من صور صفحات الويب باستخدام Live Text.\n• تمت إضافة إجراءات Control Center وشاشة القفل وزر الإجراء وSiri وShortcuts.\n• تستمر التنزيلات الآن في الخلفية مع تقدم حقيقي وإيقاف مؤقت/استئناف.\n• تمت إضافة تصفح مستقل متعدد النوافذ على جهاز iPad.\n• تمكين WebExtensions الأصلي المتوافق إلى جانب UserScripts.\n• تم توسيع التطبيق ومعلومات App Store ليشمل جميع لغات App Store الخمسين المدعومة.",
+        "keywords": "متصفح،بحث،خاص،علامات تبويب،ويب،ذكاء اصطناعي،اجتماعي،فيديو،تنزيل،adblock،userscript،ترجمة"
+      }
+    },
+    {
+      "locale": "bn-BD",
+      "appStoreConnectNames": [
+        "孟加拉语",
+        "Bengali"
+      ],
+      "fields": {
+        "name": "Soulo: মাল্টি-সার্চ ব্রাউজার",
+        "subtitle": "ওয়েব, সামাজিক এবং এআই অনুসন্ধ",
+        "promotionalText": "ট্যাব, এক্সটেনশন, বিজ্ঞাপন ব্লকিং এবং শক্তিশালী ওয়েবপেজ টুল সহ একটি ব্যক্তিগত ব্রাউজারে 40+ ওয়েব, সামাজিক, ভিডিও, শপিং এবং AI প্ল্যাটফর্ম অনুসন্ধান করুন।",
+        "description": "Soulo হল iPhone এবং iPad-এর জন্য একটি দ্রুত, ব্যক্তিগত মাল্টি-সার্চ ব্রাউজার৷ একটি ক্যোয়ারী লিখুন, তারপরে পুনরায় টাইপ না করে 40টির বেশি অনুসন্ধান, সামাজিক, ভিডিও, কেনাকাটা, জ্ঞান এবং AI প্ল্যাটফর্মের মধ্যে স্যুইচ করুন।\n\nআপনার পথ ব্রাউজ করুন\n• ট্যাব, বুকমার্ক, ইতিহাস, ডাউনলোড এবং কাস্টমাইজযোগ্য অনুসন্ধান প্ল্যাটফর্ম\n• ব্যক্তিগত ব্রাউজিং, ট্র্যাকার সুরক্ষা, বিজ্ঞাপন ব্লকিং এবং প্রতি-সাইট নিয়ন্ত্রণ\n• মোবাইল এবং ডেস্কটপ ওয়েবসাইট মোড, পৃষ্ঠা জুম, অনুবাদ এবং পূর্ণ-পৃষ্ঠা ক্যাপচার\n• ওয়েবপেজ রিসোর্স ইন্সপেক্টরের মাধ্যমে ছবি, ভিডিও, অডিও এবং ডকুমেন্ট ডাউনলোড করুন\n• Live Text দিয়ে ওয়েবপেজের ছবি থেকে পাঠ্য বের করুন\n\nআইফোন এবং আইপ্যাডের জন্য নির্মিত\n• আইপ্যাডে একাধিক স্বাধীন উইন্ডো\n• সরাসরি Soulo-এ লিঙ্ক বা টেক্সট শেয়ার করুন\n• Siri, Shortcuts, Control Center, লক স্ক্রিন এবং অ্যাকশন বোতাম থেকে ডাউনলোডগুলি খুঁজুন এবং খুলুন\n• বাস্তব অগ্রগতি এবং বিরতি/পুনরায় শুরু সহ পটভূমি ডাউনলোড\n• লাইভ অ্যাক্টিভিটি এবং Dynamic Island স্ট্যাটাস\n\nওয়েব প্রসারিত করুন\nUserScripts বা সামঞ্জস্যপূর্ণ WebExtensions ইনস্টল করুন, স্পষ্টভাবে অনুমতিগুলি পরিচালনা করুন এবং অন্তর্নির্মিত API ডকুমেন্টেশনের সাথে আপনার নিজস্ব স্ক্রিপ্ট তৈরি করুন৷\n\nআপনি iCloud সেটিংস সিঙ্ক সক্ষম না করলে iCloud স্থানীয়ভাবে ব্রাউজিং ডেটা সঞ্চয় করে। ব্যক্তিগত ব্রাউজিং ইতিহাস সংরক্ষণ করে না.",
+        "whatsNew": "নতুন কি:\n\n• অন্যান্য অ্যাপ থেকে Soulo-এ লিঙ্ক এবং টেক্সট শেয়ার করুন।\n• Live Text দিয়ে ওয়েবপেজের ছবি থেকে পাঠ্য বের করুন।\n• যোগ করা হয়েছে Control Center, লক স্ক্রীন, অ্যাকশন বোতাম, Siri এবং Shortcuts অ্যাকশন।\n• ডাউনলোডগুলি এখন বাস্তব অগ্রগতি এবং বিরতি/পুনরায় শুরু করার সাথে পটভূমিতে চলতে থাকে।\n• আইপ্যাডে স্বাধীন মাল্টি-উইন্ডো ব্রাউজিং যোগ করা হয়েছে।\n• সক্ষম করা হয়েছে সামঞ্জস্যপূর্ণ নেটিভ WebExtensions পাশাপাশি UserScripts৷\n• সমস্ত 50টি সমর্থিত App Store লোকেলে অ্যাপ এবং App Store তথ্য প্রসারিত করা হয়েছে।",
+        "keywords": "ব্রাউজার,সার্চ,প্রাইভেট,ট্যাব,ওয়েব,এআই,সামাজিক,ভিডিও,ডাউনলোড,অ্যাডব্লক,ইউজারস্ক্রিপ্ট,অনুবাদ"
+      }
+    },
+    {
+      "locale": "ca",
+      "appStoreConnectNames": [
+        "加泰罗尼亚语",
+        "Catalan"
+      ],
+      "fields": {
+        "name": "Soulo: Navegador de cerca múlt",
+        "subtitle": "Cerca web, socials i IA",
+        "promotionalText": "Cerqueu més de 40 plataformes web, socials, de vídeo, compres i IA en un navegador privat amb pestanyes, extensions, bloqueig d'anuncis i potents eines de pàgines web.",
+        "description": "Soulo és un navegador ràpid i privat de cerca múltiple per a iPhone i iPad. Introduïu una consulta i, a continuació, canvieu entre més de 40 plataformes de cerca, socials, vídeos, compres, coneixement i IA sense tornar a escriure.\n\nNAVEGA EL SEU CAMÍ\n• Pestanyes, adreces d'interès, historial, descàrregues i plataformes de cerca personalitzables\n• Navegació privada, protecció de seguiment, bloqueig d'anuncis i controls per lloc\n• Modes de lloc web per a mòbils i d'escriptori, zoom de pàgina, traducció i captura de pàgina sencera\n• Descarregar imatges, vídeos, àudio i documents amb l'inspector de recursos de la pàgina web\n• Extreu text d'imatges de pàgines web amb Live Text\n\nCONSTRUït PER IPHONE I iPad\n• Múltiples finestres independents a l'iPad\n• Comparteix enllaços o text directament a Soulo\n• Cerca i obre baixades des de Siri, Shortcuts, Control Center, la pantalla de bloqueig i el botó d'acció\n• Descàrregues en segon pla amb progrés real i pausa/reprèn\n• Activitats en directe i estat Dynamic Island\n\nAMPLIA LA WEB\nInstal·leu UserScripto WebExtensions compatibles, gestioneu els permisos amb claredat i creeu els vostres propis scripts amb la documentació de l'API integrada.\n\nSoulo emmagatzema les dades de navegació localment tret que activeu la sincronització de la configuració de iCloud. La navegació privada no guarda l'historial.",
+        "whatsNew": "Novetats:\n\n• Comparteix enllaços i text a Soulo des d'altres aplicacions.\n• Extreu text d'imatges de pàgines web amb Live Text.\n• S'han afegit accions Control Center, pantalla de bloqueig, botó d'acció, Siri i Shortcuts.\n• Ara les descàrregues continuen en segon pla amb progrés real i pausa/reprèn.\n• S'ha afegit la navegació independent de diverses finestres a l'iPad.\n• S'han activat els WebExtensions nadius compatibles juntament amb els UserScripts.\n• S'ha ampliat l'aplicació i la informació App Store a les 50 configuracions regionals App Store compatibles.",
+        "keywords": "navegador,cerca,privada,pestanyes,web,AI,social,vídeo,baixa,adblock,userscript,tradueix"
+      }
+    },
+    {
+      "locale": "zh-Hans",
+      "appStoreConnectNames": [
+        "简体中文",
+        "Chinese (Simplified)"
+      ],
+      "fields": {
+        "name": "Soulo：多重搜索浏览器",
+        "subtitle": "搜索网络、社交和人工智能",
+        "promotionalText": "在一款带有选项卡、扩展程序、广告拦截和强大网页工具的私人浏览器中搜索 40 多个网络、社交、视频、购物和人工智能平台。",
+        "description": "Soulo 是一款适用于 iPhone 和 iPad 的快速、私密的多重搜索浏览器。输入一个查询，然后在 40 多个搜索、社交、视频、购物、知识和人工智能平台之间切换，无需重新输入。\n\n浏览您的方式\n• 选项卡、书签、历史记录、下载和可定制的搜索平台\n• 隐私浏览、跟踪器保护、广告拦截和每个站点控制\n• 移动和桌面网站模式、页面缩放、翻译和全页捕获\n• 使用网页资源检查器下载图像、视频、音频和文档\n• 使用Live Text 从网页图像中提取文本\n\n专为 iPhone 和 iPad 打造\n• iPad 上的多个独立窗口\n• 直接分享链接或文本至Soulo\n• 从Siri、Shortcuts、Control Center、锁定屏幕和操作按钮搜索并打开下载\n• 具有实际进度和暂停/恢复的后台下载\n• 实时活动和Dynamic Island 状态\n\n扩展网络\n安装 UserScript 或兼容的 WebExtension，明确管理权限，并使用内置 API 文档创建您自己的脚本。\n\nSoulo 会在本地存储浏览数据，除非您启用 iCloud 设置同步。隐私浏览不保存历史记录。",
+        "whatsNew": "新消息：\n\n• 从其他应用程序共享链接和文本到Soulo。\n• 使用Live Text 从网页图像中提取文本。\n• 添加了Control Center、锁定屏幕、操作按钮、Siri 和Shortcuts 操作。\n• 下载现在在后台继续进行，并具有实际进度和暂停/恢复。\n• 在iPad 上添加了独立的多窗口浏览。\n• 启用兼容的本机WebExtension 和UserScript。\n• 将应用程序和App Store 信息扩展到所有50 个受支持的App Store 区域设置。",
+        "keywords": "浏览器、搜索、私人、标签、网络、AI、社交、视频、下载、广告拦截、用户脚本、翻译"
+      }
+    },
+    {
+      "locale": "zh-Hant",
+      "appStoreConnectNames": [
+        "繁体中文",
+        "Chinese (Traditional)"
+      ],
+      "fields": {
+        "name": "Soulo：多重搜尋瀏覽器",
+        "subtitle": "搜尋網路、社交和人工智慧",
+        "promotionalText": "在一款帶有選項卡、擴充功能、廣告攔截和強大網頁工具的私人瀏覽器中搜尋 40 多個網路、社交、影片、購物和人工智慧平台。",
+        "description": "Soulo 是一款適用於 iPhone 和 iPad 的快速、私密的多重搜尋瀏覽器。輸入一個查詢，然後在 40 多個搜尋、社交、影片、購物、知識和人工智慧平台之間切換，無需重新輸入。\n\n瀏覽您的方式\n• 選項卡、書籤、歷史記錄、下載和可自訂的搜尋平台\n• 隱私瀏覽、追蹤器保護、廣告攔截和每個網站控制\n• 行動和桌面網站模式、頁面縮放、翻譯和全頁捕獲\n• 使用網頁資源檢查器下載圖像、視訊、音訊和文檔\n• 使用Live Text 從網頁圖片中擷取文字\n\n專為 iPhone 和 iPad 打造\n• iPad 上的多個獨立視窗\n• 直接分享連結或文字至Soulo\n• 從Siri、Shortcuts、Control Center、鎖定螢幕和操作按鈕搜尋並開啟下載\n• 具有實際進度和暫停/恢復的背景下載\n• 即時活動與Dynamic Island 狀態\n\n擴充網路\n安裝 UserScript 或相容的 WebExtension，明確管理權限，並使用內建 API 文件建立您自己的腳本。\n\nSoulo 會在本地儲存瀏覽數據，除非您啟用 iCloud 設定同步。隱私瀏覽不保存紀錄。",
+        "whatsNew": "新消息：\n\n• 從其他應用程式共用連結和文字到Soulo。\n• 使用Live Text 從網頁圖片中擷取文字。\n• 新增了Control Center、鎖定畫面、操作按鈕、Siri 和Shortcuts 操作。\n• 下載現在在背景繼續進行，並具有實際進度和暫停/恢復。\n• 在iPad 上新增了獨立的多視窗瀏覽。\n• 啟用相容的本機WebExtension 和UserScript。\n• 將應用程式和App Store 資訊擴展到所有50 個受支援的App Store 區域設定。",
+        "keywords": "瀏覽器、搜尋、私人、標籤、網路、AI、社交、影片、下載、廣告攔截、使用者腳本、翻譯"
+      }
+    },
+    {
+      "locale": "hr",
+      "appStoreConnectNames": [
+        "克罗地亚语",
+        "Croatian"
+      ],
+      "fields": {
+        "name": "Soulo: Preglednik s višestruki",
+        "subtitle": "Pretraživanje weba, društvenih",
+        "promotionalText": "Pretražujte preko 40 web, društvenih, video, shopping i AI platformi u jednom privatnom pregledniku s karticama, proširenjima, blokiranjem oglasa i moćnim alatima za web",
+        "description": "Soulo je brz, privatni preglednik za višestruko pretraživanje za iPhone i iPad. Unesite jedan upit, a zatim se prebacite između više od 40 platformi za pretraživanje, društvene mreže, video, kupnju, znanje i AI bez ponovnog upisivanja.\n\nPREGLEDAJTE SVOJ PUT\n• Kartice, oznake, povijest, preuzimanja i prilagodljive platforme za pretraživanje\n• Privatno pregledavanje, zaštita od praćenja, blokiranje oglasa i kontrole po web-mjestu\n• Mobilni i stolni način rada web stranice, zumiranje stranice, prijevod i snimanje cijele stranice\n• Preuzmite slike, video, audio i dokumente pomoću inspektora resursa web stranice\n• Ekstrahirajte tekst sa slika web stranica pomoću Live Text\n\nIZRAĐEN ZA iPhone I iPad\n• Više neovisnih prozora na iPadu\n• Podijelite veze ili tekst izravno na Soulo\n• Pretražujte i otvarajte preuzimanja s Siri, Shortcuts, Control Center, zaključanog zaslona i gumba za radnju\n• Pozadinska preuzimanja sa stvarnim napretkom i pauzom/nastavkom\n• Aktivnosti uživo i status Dynamic Island\n\nPROŠIRI WEB\nInstalirajte UserScripts ili kompatibilne WebExtensions, jasno upravljajte dopuštenjima i izradite vlastite skripte s ugrađenom API dokumentacijom.\n\nSoulo pohranjuje podatke o pregledavanju lokalno osim ako ne omogućite iCloud sinkronizaciju postavki. Privatno pregledavanje ne sprema povijest.",
+        "whatsNew": "Što je novo:\n\n• Dijelite veze i tekst na Soulo iz drugih aplikacija.\n• Ekstrahirajte tekst sa slika web stranica pomoću Live Text.\n• Dodane radnje Control Center, zaključani zaslon, gumb za radnju, Siri i Shortcuts.\n• Preuzimanja se sada nastavljaju u pozadini sa stvarnim napredovanjem i pauzom/nastavkom.\n• Dodano neovisno pregledavanje s više prozora na iPadu.\n• Omogućeni kompatibilni izvorni WebExtension uz UserScript.\n• Proširili su aplikaciju i App Store informacije na svih 50 podržanih App Store jezika.",
+        "keywords": "preglednik,pretraživanje,privatno,kartice,web,AI,društveno,video,preuzmi,adblock,userscript,prevedi"
+      }
+    },
+    {
+      "locale": "cs",
+      "appStoreConnectNames": [
+        "捷克语",
+        "Czech"
+      ],
+      "fields": {
+        "name": "Soulo: Prohlížeč pro více vyhl",
+        "subtitle": "Prohledejte web, sociální sítě",
+        "promotionalText": "Prohledávejte více než 40 webů, sociálních sítí, videí, nákupů a platforem AI v jednom soukromém prohlížeči s kartami, rozšířeními, blokováním reklam a výkonnými nástroji",
+        "description": "Soulo je rychlý soukromý prohlížeč pro více vyhledávání pro iPhone a iPad. Zadejte jeden dotaz a poté bez přepisování přepínejte mezi více než 40 platformami pro vyhledávání, sociální sítě, video, nakupování, znalosti a AI.\n\nPROCHÁZEJTE SI CESTU\n• Karty, záložky, historie, stahování a přizpůsobitelné vyhledávací platformy\n• Soukromé procházení, ochrana trackerem, blokování reklam a ovládání jednotlivých stránek\n• Režimy mobilních a stolních webových stránek, přiblížení stránky, překlad a snímání celé stránky\n• Stahujte obrázky, video, zvuk a dokumenty pomocí inspektora zdrojů webové stránky\n• Extrahujte text z obrázků webových stránek pomocí Live Text\n\nURČENO PRO IPHONE A iPad\n• Více nezávislých oken na iPadu\n• Sdílejte odkazy nebo text přímo s Soulo\n• Vyhledávejte a otevírejte stažené soubory z Siri, Shortcuts, Control Center, obrazovka uzamčení a tlačítko akce\n• Stahování na pozadí se skutečným postupem a pozastavením/obnovením\n• Živé aktivity a stav Dynamic Island\n\nROZŠÍŘIT WEB\nNainstalujte UserScripts nebo kompatibilní WebExtension, spravujte přehledně oprávnění a vytvářejte si vlastní skripty pomocí vestavěné dokumentace API.\n\nSoulo ukládá údaje o prohlížení místně, pokud nepovolíte synchronizaci nastavení iCloud. Soukromé prohlížení neukládá historii.",
+        "whatsNew": "Co je nového:\n\n• Sdílejte odkazy a text na Soulo z jiných aplikací.\n• Extrahujte text z obrázků webových stránek pomocí Live Text.\n• Přidány akce Control Center, Uzamknout obrazovku, Akční tlačítko, Siri a Shortcuts.\n• Stahování nyní pokračuje na pozadí se skutečným pokrokem a pozastavením/obnovením.\n• Přidáno nezávislé procházení více oken na iPadu.\n• Povoleny kompatibilní nativní WebExtensions vedle UserScripts.\n• Rozšíření informací o aplikaci a App Store na všech 50 podporovaných národních prostředí App Store.",
+        "keywords": "prohlížeč,hledat,soukromé,karty,web,AI,sociální,video,stáhnout,adblock,uživatelský skript,přeložit"
+      }
+    },
+    {
+      "locale": "da",
+      "appStoreConnectNames": [
+        "丹麦语",
+        "Danish"
+      ],
+      "fields": {
+        "name": "Soulo: Multisøgningsbrowser",
+        "subtitle": "Søg på nettet, socialt og kuns",
+        "promotionalText": "Søg i mere end 40 web-, social-, video-, shopping- og AI-platforme i én privat browser med faner, udvidelser, annonceblokering og kraftfulde websideværktøjer.",
+        "description": "Soulo er en hurtig, privat multisøgningsbrowser til iPhone og iPad. Indtast én forespørgsel, og skift derefter mellem mere end 40 søge-, social-, video-, shopping-, videns- og AI-platforme uden at indtaste igen.\n\nBROWSE DIN VEJ\n• Faner, bogmærker, historik, downloads og tilpassede søgeplatforme\n• Privat browsing, tracker-beskyttelse, annonceblokering og kontrol pr. websted\n• Mobil- og desktop-webstedstilstande, sidezoom, oversættelse og helsidesoptagelse\n• Download billeder, video, lyd og dokumenter med websideressourceinspektøren\n• Udtræk tekst fra websidebilleder med Live Text\n\nBYGGET TIL iPHONE OG iPAD\n• Flere uafhængige vinduer på iPad\n• Del links eller tekst direkte til Soulo\n• Søg og åbn downloads fra Siri, Shortcuts, Control Center, låseskærmen og handlingsknappen\n• Baggrundsdownloads med reelle fremskridt og pause/genoptag\n• Liveaktiviteter og Dynamic Island status\n\nUDVID WEBNET\nInstaller UserScripts eller kompatible WebExtensions, administrer tilladelser tydeligt, og opret dine egne scripts med den indbyggede API-dokumentation.\n\nSoulo gemmer browserdata lokalt, medmindre du aktiverer synkronisering af iCloud indstillinger. Privat browsing gemmer ikke historik.",
+        "whatsNew": "Hvad er nyt:\n\n• Del links og tekst til Soulo fra andre apps.\n• Udtræk tekst fra websidebilleder med Live Text.\n• Tilføjet Control Center, låseskærm, handlingsknap, Siri og Shortcuts handlinger.\n• Downloads fortsætter nu i baggrunden med reelle fremskridt og pause/genoptag.\n• Tilføjet uafhængig browsing i flere vinduer på iPad.\n• Aktiverede kompatible native WebExtensions sammen med UserScripts.\n• Udvidede appen og App Store-oplysninger til alle 50 understøttede App Store-lokaliteter.",
+        "keywords": "browser,søgning,privat,faner,web,AI,social,video,download,adblock,brugerskrift,oversæt"
+      }
+    },
+    {
+      "locale": "nl-NL",
+      "appStoreConnectNames": [
+        "荷兰语",
+        "Dutch"
+      ],
+      "fields": {
+        "name": "Soulo: browser voor meerdere z",
+        "subtitle": "Zoek op internet, sociaal en A",
+        "promotionalText": "Doorzoek meer dan 40 web-, sociale, video-, winkel- en AI-platforms in één privébrowser met tabbladen, extensies, advertentieblokkering en krachtige webpaginatools.",
+        "description": "Soulo is een snelle privébrowser met meerdere zoekopdrachten voor iPhone en iPad. Voer één zoekopdracht in en schakel vervolgens tussen meer dan 40 zoek-, sociale, video-, winkel-, kennis- en AI-platforms zonder opnieuw te typen.\n\nBLADEREN OP UW MANIER\n• Tabbladen, bladwijzers, geschiedenis, downloads en aanpasbare zoekplatforms\n• Privé browsen, trackerbescherming, advertentieblokkering en controles per site\n• Mobiele en desktop websitemodi, paginazoom, vertaling en vastleggen van volledige pagina's\n• Download afbeeldingen, video, audio en documenten met de webpaginabroninspecteur\n• Extraheer tekst uit webpagina-afbeeldingen met Live Text\n\nGEBOUWD VOOR iPhone EN iPad\n• Meerdere onafhankelijke vensters op iPad\n• Deel links of tekst rechtstreeks met Soulo\n• Zoek en open downloads van Siri, Shortcuts, Control Center, het vergrendelscherm en de actieknop\n• Achtergronddownloads met echte voortgang en pauzeren/hervatten\n• Live activiteiten en Dynamic Island status\n\nBREI HET WEB UIT\nInstalleer UserScripts of compatibele WebExtensions, beheer rechten duidelijk en maak uw eigen scripts met de ingebouwde API-documentatie.\n\nSoulo slaat browsegegevens lokaal op, tenzij je iCloud instellingensynchronisatie inschakelt. Bij privé browsen wordt de geschiedenis niet opgeslagen.",
+        "whatsNew": "Wat is er nieuw:\n\n• Deel links en tekst met Soulo vanuit andere apps.\n• Extraheer tekst uit webpagina-afbeeldingen met Live Text.\n• Acties Control Center, Vergrendelscherm, Actieknop, Siri en Shortcuts toegevoegd.\n• Downloads gaan nu door op de achtergrond met echte voortgang en pauzeren/hervatten.\n• Onafhankelijk browsen in meerdere vensters op iPad toegevoegd.\n• Compatibele native WebExtensions ingeschakeld naast UserScripts.\n• De app en App Store-informatie uitgebreid naar alle 50 ondersteunde App Store-landinstellingen.",
+        "keywords": "browser,zoeken,privé,tabbladen,web,AI,sociaal,video,downloaden,adblock,gebruikersscript,vertalen"
+      }
+    },
+    {
+      "locale": "en-AU",
+      "appStoreConnectNames": [
+        "英语（澳大利亚）",
+        "English (Australia)"
+      ],
+      "fields": {
+        "name": "Soulo: Multi-Search Browser",
+        "subtitle": "Search Web, Social & AI",
+        "promotionalText": "Search 40+ web, social, video, shopping and AI platforms in one private browser with tabs, extensions, ad blocking and powerful webpage tools.",
+        "description": "Soulo is a fast, private multi-search browser for iPhone and iPad. Enter one query, then switch between more than 40 search, social, video, shopping, knowledge and AI platforms without retyping.\n\nBROWSE YOUR WAY\n• Tabs, bookmarks, history, downloads and customizable search platforms\n• Private browsing, tracker protection, ad blocking and per-site controls\n• Mobile and desktop website modes, page zoom, translation and full-page capture\n• Download images, video, audio and documents with the webpage resource inspector\n• Extract text from webpage images with Live Text\n\nBUILT FOR iPHONE AND iPAD\n• Multiple independent windows on iPad\n• Share links or text directly to Soulo\n• Search and open downloads from Siri, Shortcuts, Control Center, the Lock Screen and Action Button\n• Background downloads with real progress and pause/resume\n• Live Activities and Dynamic Island status\n\nEXTEND THE WEB\nInstall UserScripts or compatible WebExtensions, manage permissions clearly, and create your own scripts with the built-in API documentation.\n\nSoulo stores browsing data locally unless you enable iCloud settings sync. Private browsing does not save history.",
+        "whatsNew": "What’s New:\n\n• Share links and text to Soulo from other apps.\n• Extract text from webpage images with Live Text.\n• Added Control Center, Lock Screen, Action Button, Siri and Shortcuts actions.\n• Downloads now continue in the background with real progress and pause/resume.\n• Added independent multi-window browsing on iPad.\n• Enabled compatible native WebExtensions alongside UserScripts.\n• Expanded the app and App Store information to all 50 supported App Store locales.",
+        "keywords": "browser,search,private,tabs,web,AI,social,video,download,adblock,userscript,translate"
+      }
+    },
+    {
+      "locale": "en-CA",
+      "appStoreConnectNames": [
+        "英语（加拿大）",
+        "English (Canada)"
+      ],
+      "fields": {
+        "name": "Soulo: Multi-Search Browser",
+        "subtitle": "Search Web, Social & AI",
+        "promotionalText": "Search 40+ web, social, video, shopping and AI platforms in one private browser with tabs, extensions, ad blocking and powerful webpage tools.",
+        "description": "Soulo is a fast, private multi-search browser for iPhone and iPad. Enter one query, then switch between more than 40 search, social, video, shopping, knowledge and AI platforms without retyping.\n\nBROWSE YOUR WAY\n• Tabs, bookmarks, history, downloads and customizable search platforms\n• Private browsing, tracker protection, ad blocking and per-site controls\n• Mobile and desktop website modes, page zoom, translation and full-page capture\n• Download images, video, audio and documents with the webpage resource inspector\n• Extract text from webpage images with Live Text\n\nBUILT FOR iPHONE AND iPAD\n• Multiple independent windows on iPad\n• Share links or text directly to Soulo\n• Search and open downloads from Siri, Shortcuts, Control Center, the Lock Screen and Action Button\n• Background downloads with real progress and pause/resume\n• Live Activities and Dynamic Island status\n\nEXTEND THE WEB\nInstall UserScripts or compatible WebExtensions, manage permissions clearly, and create your own scripts with the built-in API documentation.\n\nSoulo stores browsing data locally unless you enable iCloud settings sync. Private browsing does not save history.",
+        "whatsNew": "What’s New:\n\n• Share links and text to Soulo from other apps.\n• Extract text from webpage images with Live Text.\n• Added Control Center, Lock Screen, Action Button, Siri and Shortcuts actions.\n• Downloads now continue in the background with real progress and pause/resume.\n• Added independent multi-window browsing on iPad.\n• Enabled compatible native WebExtensions alongside UserScripts.\n• Expanded the app and App Store information to all 50 supported App Store locales.",
+        "keywords": "browser,search,private,tabs,web,AI,social,video,download,adblock,userscript,translate"
+      }
+    },
+    {
+      "locale": "en-GB",
+      "appStoreConnectNames": [
+        "英语（英国）",
+        "English (U.K.)"
+      ],
+      "fields": {
+        "name": "Soulo: Multi-Search Browser",
+        "subtitle": "Search Web, Social & AI",
+        "promotionalText": "Search 40+ web, social, video, shopping and AI platforms in one private browser with tabs, extensions, ad blocking and powerful webpage tools.",
+        "description": "Soulo is a fast, private multi-search browser for iPhone and iPad. Enter one query, then switch between more than 40 search, social, video, shopping, knowledge and AI platforms without retyping.\n\nBROWSE YOUR WAY\n• Tabs, bookmarks, history, downloads and customizable search platforms\n• Private browsing, tracker protection, ad blocking and per-site controls\n• Mobile and desktop website modes, page zoom, translation and full-page capture\n• Download images, video, audio and documents with the webpage resource inspector\n• Extract text from webpage images with Live Text\n\nBUILT FOR iPHONE AND iPAD\n• Multiple independent windows on iPad\n• Share links or text directly to Soulo\n• Search and open downloads from Siri, Shortcuts, Control Center, the Lock Screen and Action Button\n• Background downloads with real progress and pause/resume\n• Live Activities and Dynamic Island status\n\nEXTEND THE WEB\nInstall UserScripts or compatible WebExtensions, manage permissions clearly, and create your own scripts with the built-in API documentation.\n\nSoulo stores browsing data locally unless you enable iCloud settings sync. Private browsing does not save history.",
+        "whatsNew": "What’s New:\n\n• Share links and text to Soulo from other apps.\n• Extract text from webpage images with Live Text.\n• Added Control Center, Lock Screen, Action Button, Siri and Shortcuts actions.\n• Downloads now continue in the background with real progress and pause/resume.\n• Added independent multi-window browsing on iPad.\n• Enabled compatible native WebExtensions alongside UserScripts.\n• Expanded the app and App Store information to all 50 supported App Store locales.",
+        "keywords": "browser,search,private,tabs,web,AI,social,video,download,adblock,userscript,translate"
+      }
+    },
+    {
+      "locale": "en-US",
+      "appStoreConnectNames": [
+        "英语（美国）",
+        "English (U.S.)"
+      ],
+      "fields": {
+        "name": "Soulo: Multi-Search Browser",
+        "subtitle": "Search Web, Social & AI",
+        "promotionalText": "Search 40+ web, social, video, shopping and AI platforms in one private browser with tabs, extensions, ad blocking and powerful webpage tools.",
+        "description": "Soulo is a fast, private multi-search browser for iPhone and iPad. Enter one query, then switch between more than 40 search, social, video, shopping, knowledge and AI platforms without retyping.\n\nBROWSE YOUR WAY\n• Tabs, bookmarks, history, downloads and customizable search platforms\n• Private browsing, tracker protection, ad blocking and per-site controls\n• Mobile and desktop website modes, page zoom, translation and full-page capture\n• Download images, video, audio and documents with the webpage resource inspector\n• Extract text from webpage images with Live Text\n\nBUILT FOR iPHONE AND iPAD\n• Multiple independent windows on iPad\n• Share links or text directly to Soulo\n• Search and open downloads from Siri, Shortcuts, Control Center, the Lock Screen and Action Button\n• Background downloads with real progress and pause/resume\n• Live Activities and Dynamic Island status\n\nEXTEND THE WEB\nInstall UserScripts or compatible WebExtensions, manage permissions clearly, and create your own scripts with the built-in API documentation.\n\nSoulo stores browsing data locally unless you enable iCloud settings sync. Private browsing does not save history.",
+        "whatsNew": "What’s New:\n\n• Share links and text to Soulo from other apps.\n• Extract text from webpage images with Live Text.\n• Added Control Center, Lock Screen, Action Button, Siri and Shortcuts actions.\n• Downloads now continue in the background with real progress and pause/resume.\n• Added independent multi-window browsing on iPad.\n• Enabled compatible native WebExtensions alongside UserScripts.\n• Expanded the app and App Store information to all 50 supported App Store locales.",
+        "keywords": "browser,search,private,tabs,web,AI,social,video,download,adblock,userscript,translate"
+      }
+    },
+    {
+      "locale": "fi",
+      "appStoreConnectNames": [
+        "芬兰语",
+        "Finnish"
+      ],
+      "fields": {
+        "name": "Soulo: Monihakuselain",
+        "subtitle": "Hae verkosta, sosiaalisista pa",
+        "promotionalText": "Hae yli 40 verkko-, sosiaali-, video-, ostos- ja tekoälyalustasta yhdessä yksityisessä selaimessa välilehtien, laajennuksien, mainosten eston ja tehokkaiden verkkosivutyö",
+        "description": "Soulo on nopea, yksityinen usean haun selain iPhonelle ja iPadille. Kirjoita yksi kysely ja vaihda sitten yli 40 haku-, sosiaali-, video-, ostos-, tieto- ja tekoälyalustan välillä kirjoittamatta uudelleen.\n\nSELAA TEISI\n• Välilehdet, kirjanmerkit, historia, lataukset ja mukautettavat hakuympäristöt\n• Yksityinen selaus, seurantasuojaus, mainosten esto ja sivustokohtainen hallinta\n• Mobiili- ja työpöytäsivuston tilat, sivun zoomaus, käännös ja koko sivun kaappaus\n• Lataa kuvia, videoita, ääntä ja asiakirjoja verkkosivun resurssien tarkastajalla\n• Poimi tekstiä verkkosivun kuvista komennolla Live Text\n\nRAKENNETTU iPHONELLE JA iPadILLE\n• Useita itsenäisiä ikkunoita iPadissa\n• Jaa linkkejä tai tekstiä suoraan osoitteeseen Soulo\n• Hae ja avaa latauksia kohdista Siri, Shortcuts, Control Center, Lukitusnäyttö ja toimintopainike\n• Taustalataukset todellisella edistymisellä ja tauko/jatkaminen\n• Live-tapahtumat ja Dynamic Island tila\n\nLAAJENTAA VERKKAA\nAsenna UserScripts tai yhteensopivat WebExtensions, hallitse käyttöoikeuksia selkeästi ja luo omia skriptejäsi sisäänrakennetun API-dokumentaation avulla.\n\nSoulo tallentaa selaustiedot paikallisesti, ellet ota käyttöön iCloud asetusten synkronointia. Yksityinen selaus ei tallenna historiaa.",
+        "whatsNew": "Mitä uutta:\n\n• Jaa linkkejä ja tekstiä osoitteeseen Soulo muista sovelluksista.\n• Poimi tekstiä verkkosivun kuvista komennolla Live Text.\n• Lisätty toimintoa Control Center, lukitusnäyttö, toimintopainike, Siri ja Shortcuts.\n• Lataukset jatkuvat nyt taustalla todellisen edistymisen ja tauon/jatkamisen kanssa.\n• Lisätty itsenäinen usean ikkunan selaus iPadiin.\n• Käytössä yhteensopivat alkuperäiset WebExtensions UserScripts rinnalla.\n• Laajennettiin sovellus ja App Store tiedot kaikkiin 50 tuettuun App Store alueeseen.",
+        "keywords": "selain,haku,yksityinen,välilehdet,verkko,AI,sosiaalinen,video,lataa,mainosblokki,käyttäjäkoodi,käänn"
+      }
+    },
+    {
+      "locale": "fr-FR",
+      "appStoreConnectNames": [
+        "法语",
+        "French"
+      ],
+      "fields": {
+        "name": "Soulo : Navigateur multi-reche",
+        "subtitle": "Recherche sur le Web, les rése",
+        "promotionalText": "Recherchez plus de 40 plateformes Web, sociales, vidéo, d'achat et d'IA dans un seul navigateur privé avec des onglets, des extensions, un blocage des publicités et de pu",
+        "description": "Soulo est un navigateur multi-recherche rapide et privé pour iPhone et iPad. Saisissez une requête, puis basculez entre plus de 40 plateformes de recherche, de réseaux sociaux, de vidéo, d'achat, de connaissances et d'IA sans avoir à retaper.\n\nPARCOUREZ À VOTRE MANIÈRE\n• Onglets, signets, historique, téléchargements et plateformes de recherche personnalisables\n• Navigation privée, protection contre les trackers, blocage des publicités et contrôles par site\n• Modes de site Web mobile et de bureau, zoom de page, traduction et capture de page entière\n• Téléchargez des images, des vidéos, des fichiers audio et des documents avec l'inspecteur de ressources de pages Web.\n• Extrayez le texte des images de pages Web avec Live Text\n\nCONÇU POUR IPHONE ET iPad\n• Plusieurs fenêtres indépendantes sur iPad\n• Partagez des liens ou du texte directement avec Soulo\n• Recherchez et ouvrez des téléchargements depuis Siri, Shortcuts, Control Center, l'écran de verrouillage et le bouton d'action.\n• Téléchargements en arrière-plan avec progression réelle et pause/reprise\n• Activités en direct et statut Dynamic Island\n\nÉLARGIR LE WEB\nInstallez des UserScript ou des WebExtension compatibles, gérez clairement les autorisations et créez vos propres scripts avec la documentation de l'API intégrée.\n\nSoulo stocke les données de navigation localement, sauf si vous activez la synchronisation des paramètres iCloud. La navigation privée n'enregistre pas l'historique.",
+        "whatsNew": "Quoi de neuf :\n\n• Partagez des liens et du texte vers Soulo à partir d'autres applications.\n• Extrayez le texte des images de pages Web avec Live Text.\n• Ajout des actions Control Center, écran de verrouillage, bouton d'action, Siri et Shortcuts.\n• Les téléchargements se poursuivent désormais en arrière-plan avec une progression réelle et une pause/reprise.\n• Ajout de la navigation multi-fenêtres indépendante sur iPad.\n• Activation des WebExtension natifs compatibles aux côtés des UserScript.\n• Extension de l'application et des informations App Store aux 50 paramètres régionaux App Store pris en charge.",
+        "keywords": "navigateur,recherche,privé,onglets,web,IA,social,vidéo,téléchargement,adblock,script utilisateur,tra"
+      }
+    },
+    {
+      "locale": "fr-CA",
+      "appStoreConnectNames": [
+        "法语（加拿大）",
+        "French (Canada)"
+      ],
+      "fields": {
+        "name": "Soulo : Navigateur multi-reche",
+        "subtitle": "Recherche sur le Web, les rése",
+        "promotionalText": "Recherchez plus de 40 plateformes Web, sociales, vidéo, d'achat et d'IA dans un seul navigateur privé avec des onglets, des extensions, un blocage des publicités et de pu",
+        "description": "Soulo est un navigateur multi-recherche rapide et privé pour iPhone et iPad. Saisissez une requête, puis basculez entre plus de 40 plateformes de recherche, de réseaux sociaux, de vidéo, d'achat, de connaissances et d'IA sans avoir à retaper.\n\nPARCOUREZ À VOTRE MANIÈRE\n• Onglets, signets, historique, téléchargements et plateformes de recherche personnalisables\n• Navigation privée, protection contre les trackers, blocage des publicités et contrôles par site\n• Modes de site Web mobile et de bureau, zoom de page, traduction et capture de page entière\n• Téléchargez des images, des vidéos, des fichiers audio et des documents avec l'inspecteur de ressources de pages Web.\n• Extrayez le texte des images de pages Web avec Live Text\n\nCONÇU POUR IPHONE ET iPad\n• Plusieurs fenêtres indépendantes sur iPad\n• Partagez des liens ou du texte directement avec Soulo\n• Recherchez et ouvrez des téléchargements depuis Siri, Shortcuts, Control Center, l'écran de verrouillage et le bouton d'action.\n• Téléchargements en arrière-plan avec progression réelle et pause/reprise\n• Activités en direct et statut Dynamic Island\n\nÉLARGIR LE WEB\nInstallez des UserScript ou des WebExtension compatibles, gérez clairement les autorisations et créez vos propres scripts avec la documentation de l'API intégrée.\n\nSoulo stocke les données de navigation localement, sauf si vous activez la synchronisation des paramètres iCloud. La navigation privée n'enregistre pas l'historique.",
+        "whatsNew": "Quoi de neuf :\n\n• Partagez des liens et du texte vers Soulo à partir d'autres applications.\n• Extrayez le texte des images de pages Web avec Live Text.\n• Ajout des actions Control Center, écran de verrouillage, bouton d'action, Siri et Shortcuts.\n• Les téléchargements se poursuivent désormais en arrière-plan avec une progression réelle et une pause/reprise.\n• Ajout de la navigation multi-fenêtres indépendante sur iPad.\n• Activation des WebExtension natifs compatibles aux côtés des UserScript.\n• Extension de l'application et des informations App Store aux 50 paramètres régionaux App Store pris en charge.",
+        "keywords": "navigateur,recherche,privé,onglets,web,IA,social,vidéo,téléchargement,adblock,script utilisateur,tra"
+      }
+    },
+    {
+      "locale": "de-DE",
+      "appStoreConnectNames": [
+        "德语",
+        "German"
+      ],
+      "fields": {
+        "name": "Soulo: Multi-Suchbrowser",
+        "subtitle": "Suchen Sie im Web, in sozialen",
+        "promotionalText": "Durchsuchen Sie über 40 Web-, Social-, Video-, Shopping- und KI-Plattformen in einem privaten Browser mit Tabs, Erweiterungen, Werbeblocker und leistungsstarken Webseiten",
+        "description": "Soulo ist ein schneller, privater Multisuchbrowser für iPhone und iPad. Geben Sie eine Suchanfrage ein und wechseln Sie dann ohne erneutes Eintippen zwischen mehr als 40 Such-, Social-, Video-, Shopping-, Wissens- und KI-Plattformen.\n\nSUCHEN SIE IHREN WEG\n• Registerkarten, Lesezeichen, Verlauf, Downloads und anpassbare Suchplattformen\n• Privates Surfen, Tracker-Schutz, Werbeblocker und Kontrollen pro Website\n• Website-Modi für Mobilgeräte und Desktops, Seitenzoom, Übersetzung und Ganzseitenerfassung\n• Laden Sie Bilder, Videos, Audiodateien und Dokumente mit dem Webseiten-Ressourceninspektor herunter\n• Extrahieren Sie Text aus Webseitenbildern mit Live Text\n\nGebaut für iPhone und iPad\n• Mehrere unabhängige Fenster auf dem iPad\n• Teilen Sie Links oder Texte direkt mit Soulo\n• Suchen und öffnen Sie Downloads von Siri, Shortcuts, Control Center, dem Sperrbildschirm und der Aktionsschaltfläche\n• Hintergrund-Downloads mit echtem Fortschritt und Pause/Fortsetzung\n• Live-Aktivitäten und Dynamic Island-Status\n\nERWEITERN SIE DAS WEB\nInstallieren Sie UserScripts oder kompatible WebExtensions, verwalten Sie Berechtigungen klar und erstellen Sie Ihre eigenen Skripte mit der integrierten API-Dokumentation.\n\nSoulo speichert Browserdaten lokal, es sei denn, Sie aktivieren die Synchronisierung der iCloud-Einstellungen. Beim privaten Surfen wird der Verlauf nicht gespeichert.",
+        "whatsNew": "Was ist neu:\n\n• Teilen Sie Links und Text von anderen Apps mit Soulo.\n• Extrahieren Sie Text aus Webseitenbildern mit Live Text.\n• Aktionen Control Center, Bildschirm sperren, Aktionsschaltfläche, Siri und Shortcuts hinzugefügt.\n• Downloads werden jetzt im Hintergrund mit echtem Fortschritt fortgesetzt und angehalten/fortgesetzt.\n• Unabhängiges Multi-Window-Browsing auf dem iPad hinzugefügt.\n• Kompatible native WebExtensions neben UserScripts aktiviert.\n• Die App und die App Store-Informationen wurden auf alle 50 unterstützten App Store-Gebietsschemata erweitert.",
+        "keywords": "Browser,Suche,Privat,Tabs,Web,KI,Soziales,Video,Herunterladen,Adblock,Userscript,Übersetzen"
+      }
+    },
+    {
+      "locale": "el",
+      "appStoreConnectNames": [
+        "希腊语",
+        "Greek"
+      ],
+      "fields": {
+        "name": "Soulo: Πρόγραμμα περιήγησης πο",
+        "subtitle": "Αναζήτηση στο Web, Social & AI",
+        "promotionalText": "Αναζητήστε 40+ πλατφόρμες ιστού, κοινωνικών δικτύων, βίντεο, αγορών και AI σε ένα ιδιωτικό πρόγραμμα περιήγησης με καρτέλες, επεκτάσεις, αποκλεισμό διαφημίσεων και ισχυρά",
+        "description": "Το Soulo είναι ένα γρήγορο, ιδιωτικό πρόγραμμα περιήγησης πολλαπλών αναζητήσεων για iPhone και iPad. Εισαγάγετε ένα ερώτημα και, στη συνέχεια, κάντε εναλλαγή μεταξύ περισσότερων από 40 πλατφορμών αναζήτησης, κοινωνικής δικτύωσης, βίντεο, αγορών, γνώσης και τεχνητής νοημοσύνης χωρίς να πληκτρολογήσετε ξανά.\n\nΠΕΡΙΗΓΗΣΤΕ ΤΟΝ ΔΡΟΜΟ ΣΑΣ\n• Καρτέλες, σελιδοδείκτες, ιστορικό, λήψεις και προσαρμόσιμες πλατφόρμες αναζήτησης\n• Ιδιωτική περιήγηση, προστασία παρακολούθησης, αποκλεισμός διαφημίσεων και έλεγχοι ανά ιστότοπο\n• Λειτουργίες ιστότοπου για κινητά και επιτραπέζιους υπολογιστές, ζουμ σελίδας, μετάφραση και λήψη πλήρους σελίδας\n• Λήψη εικόνων, βίντεο, ήχου και εγγράφων με τον επιθεωρητή πόρων ιστοσελίδας\n• Εξαγωγή κειμένου από εικόνες ιστοσελίδας με Live Text\n\nΚΑΤΑΣΚΕΥΑΣΜΕΝΟ ΓΙΑ iPHONE ΚΑΙ iPad\n• Πολλά ανεξάρτητα παράθυρα στο iPad\n• Μοιραστείτε συνδέσμους ή κείμενο απευθείας στο Soulo\n• Αναζήτηση και άνοιγμα λήψεων από Siri, Shortcuts, Control Center, την οθόνη κλειδώματος και το κουμπί δράσης\n• Λήψεις στο παρασκήνιο με πραγματική πρόοδο και παύση/συνέχιση\n• Ζωντανές δραστηριότητες και κατάσταση Dynamic Island\n\nΕΠΕΚΤΑΣΗ ΤΟΥ ΙΣΤΟΥ\nΕγκαταστήστε UserScript ή συμβατά WebExtension, διαχειριστείτε τα δικαιώματα με σαφήνεια και δημιουργήστε τα δικά σας σενάρια με την ενσωματωμένη τεκμηρίωση του API.\n\nΤο Soulo αποθηκεύει δεδομένα περιήγησης τοπικά, εκτός εάν ενεργοποιήσετε τον συγχρονισμό ρυθμίσεων iCloud. Η ιδιωτική περιήγηση δεν αποθηκεύει το ιστορικό.",
+        "whatsNew": "Τι νέο υπάρχει:\n\n• Μοιραστείτε συνδέσμους και κείμενο σε Soulo από άλλες εφαρμογές.\n• Εξαγωγή κειμένου από εικόνες ιστοσελίδας με Live Text.\n• Προστέθηκαν ενέργειες Control Center, Κλείδωμα οθόνης, Κουμπί δράσης, Siri και Shortcuts.\n• Οι λήψεις συνεχίζονται τώρα στο παρασκήνιο με πραγματική πρόοδο και παύση/συνέχιση.\n• Προστέθηκε ανεξάρτητη περιήγηση σε πολλά παράθυρα στο iPad.\n• Ενεργοποιήθηκαν συμβατά εγγενή WebExtension μαζί με UserScript.\n• Επέκτασε την εφαρμογή και τις πληροφορίες App Store και στις 50 υποστηριζόμενες App Store τοπικές ρυθμίσεις.",
+        "keywords": "πρόγραμμα περιήγησης,αναζήτηση,ιδιωτικές,καρτέλες,ιστός,AI,κοινωνικά,βίντεο,λήψη,αποκλεισμός διαφημί"
+      }
+    },
+    {
+      "locale": "gu-IN",
+      "appStoreConnectNames": [
+        "古吉拉特语",
+        "Gujarati"
+      ],
+      "fields": {
+        "name": "Soulo: મલ્ટી-સર્ચ બ્રાઉઝર",
+        "subtitle": "વેબ, સામાજિક અને AI શોધો",
+        "promotionalText": "એક ખાનગી બ્રાઉઝરમાં 40+ વેબ, સામાજિક, વિડિયો, શોપિંગ અને AI પ્લેટફોર્મને ટેબ્સ, એક્સ્ટેન્શન્સ, એડ બ્લોકિંગ અને શક્તિશાળી વેબપેજ ટૂલ્સ સાથે શોધો.",
+        "description": "Soulo એ iPhone અને iPad માટે ઝડપી, ખાનગી મલ્ટિ-સર્ચ બ્રાઉઝર છે. એક ક્વેરી દાખલ કરો, પછી ફરીથી ટાઇપ કર્યા વિના 40 થી વધુ શોધ, સામાજિક, વિડિઓ, શોપિંગ, જ્ઞાન અને AI પ્લેટફોર્મ વચ્ચે સ્વિચ કરો.\n\nતમારી રીતે બ્રાઉઝ કરો\n• ટૅબ્સ, બુકમાર્ક્સ, ઇતિહાસ, ડાઉનલોડ્સ અને કસ્ટમાઇઝ કરી શકાય તેવા શોધ પ્લેટફોર્મ\n• ખાનગી બ્રાઉઝિંગ, ટ્રેકર સંરક્ષણ, જાહેરાત અવરોધિત અને પ્રતિ-સાઇટ નિયંત્રણો\n• મોબાઈલ અને ડેસ્કટોપ વેબસાઈટ મોડ્સ, પેજ ઝૂમ, ટ્રાન્સલેશન અને ફુલ-પેજ કેપ્ચર\n• વેબપેજ સંસાધન નિરીક્ષક સાથે છબીઓ, વિડિયો, ઑડિયો અને દસ્તાવેજો ડાઉનલોડ કરો\n• Live Text વડે વેબપેજની છબીઓમાંથી ટેક્સ્ટ કાઢો\n\nઆઇફોન અને આઇપેડ માટે બિલ્ટ\n• iPad પર બહુવિધ સ્વતંત્ર વિન્ડો\n• લિંક્સ અથવા ટેક્સ્ટને સીધા જ Soulo પર શેર કરો\n• Siri, Shortcuts, Control Center, લૉક સ્ક્રીન અને ઍક્શન બટનમાંથી ડાઉનલોડ શોધો અને ખોલો\n• વાસ્તવિક પ્રગતિ અને વિરામ/ફરી શરૂ સાથે પૃષ્ઠભૂમિ ડાઉનલોડ\n• જીવંત પ્રવૃત્તિઓ અને Dynamic Island સ્થિતિ\n\nવેબને વિસ્તૃત કરો\nUserScripts અથવા સુસંગત WebExtensions ઇન્સ્ટોલ કરો, સ્પષ્ટ રીતે પરવાનગીઓનું સંચાલન કરો અને બિલ્ટ-ઇન API દસ્તાવેજો સાથે તમારી પોતાની સ્ક્રિપ્ટ્સ બનાવો.\n\nજ્યાં સુધી તમે iCloud સેટિંગ્સ સમન્વયનને સક્ષમ ન કરો ત્યાં સુધી Soulo બ્રાઉઝિંગ ડેટાને સ્થાનિક રીતે સંગ્રહિત કરે છે. ખાનગી બ્રાઉઝિંગ ઇતિહાસ સાચવતું નથી.",
+        "whatsNew": "નવું શું છે:\n\n• અન્ય એપમાંથી Soulo પર લિંક્સ અને ટેક્સ્ટ શેર કરો.\n• Live Text વડે વેબપેજની છબીઓમાંથી ટેક્સ્ટ કાઢો.\n• ઉમેરાયેલ Control Center, લોક સ્ક્રીન, એક્શન બટન, Siri અને Shortcuts ક્રિયાઓ.\n• ડાઉનલોડ્સ હવે વાસ્તવિક પ્રગતિ અને વિરામ/ફરી શરૂ સાથે પૃષ્ઠભૂમિમાં ચાલુ રહે છે.\n• આઈપેડ પર સ્વતંત્ર મલ્ટી-વિન્ડો બ્રાઉઝિંગ ઉમેર્યું.\n• સક્ષમ સુસંગત મૂળ WebExtensions સાથે UserScripts.\n• એપ અને App Store માહિતીને તમામ 50 સમર્થિત App Store લોકેલમાં વિસ્તૃત કરી.",
+        "keywords": "બ્રાઉઝર,શોધ,ખાનગી,ટેબ્સ,વેબ,એઆઈ,સામાજિક,વિડિયો,ડાઉનલોડ,એડબ્લોક,યુઝરસ્ક્રીપ્ટ,અનુવાદ"
+      }
+    },
+    {
+      "locale": "he",
+      "appStoreConnectNames": [
+        "希伯来语",
+        "Hebrew"
+      ],
+      "fields": {
+        "name": "Soulo: דפדפן ריבוי חיפושים",
+        "subtitle": "חפש באינטרנט, חברתי ובינה מלאכ",
+        "promotionalText": "חפש יותר מ-40 פלטפורמות אינטרנט, רשתות חברתיות, וידאו, קניות ובינה מלאכותית בדפדפן פרטי אחד עם כרטיסיות, הרחבות, חסימת מודעות וכלים רבי עוצמה של דפי אינטרנט.",
+        "description": "Soulo הוא דפדפן מהיר ופרטי לחיפוש מרובה עבור iPhone ו-iPad. הזן שאילתה אחת, ולאחר מכן עבור בין יותר מ-40 פלטפורמות חיפוש, רשתות חברתיות, וידאו, קניות, ידע ובינה מלאכותית מבלי להקליד מחדש.\n\nדפדף בדרך שלך\n• כרטיסיות, סימניות, היסטוריה, הורדות ופלטפורמות חיפוש הניתנות להתאמה אישית\n• גלישה פרטית, הגנת עוקבים, חסימת מודעות ובקרות לכל אתר\n• מצבי אתרים ניידים ושולחניים, זום עמודים, תרגום ולכידת עמוד מלא\n• הורד תמונות, וידאו, אודיו ומסמכים עם מפקח המשאבים של דפי האינטרנט\n• חלץ טקסט מתמונות דפי אינטרנט באמצעות Live Text\n\nבנוי לאייפון ולאייפד\n• חלונות עצמאיים מרובים באייפד\n• שתף קישורים או טקסט ישירות אל Soulo\n• חפש ופתח הורדות מ-Siri, Shortcuts, Control Center, מסך הנעילה וכפתור הפעולה\n• הורדות ברקע עם התקדמות אמיתית והשהייה/המשך\n• פעילויות חיות וסטטוס Dynamic Island\n\nהרחיב את האינטרנט\nהתקן UserScripts או WebExtension תואמים, נהל הרשאות בצורה ברורה וצור סקריפטים משלך עם תיעוד ה-API המובנה.\n\nSoulo מאחסן נתוני גלישה באופן מקומי אלא אם תפעיל את סנכרון ההגדרות iCloud. גלישה פרטית אינה שומרת היסטוריה.",
+        "whatsNew": "מה חדש:\n\n• שתף קישורים וטקסט אל Soulo מאפליקציות אחרות.\n• חלץ טקסט מתמונות דפי אינטרנט באמצעות Live Text.\n• נוספו פעולות Control Center, מסך נעילה, לחצן פעולה, Siri ו-Shortcuts.\n• ההורדות נמשכות כעת ברקע עם התקדמות אמיתית והשהייה/המשך.\n• נוסף גלישה עצמאית מרובה חלונות באייפד.\n• תואם תואם מקורי WebExtensions לצד UserScripts.\n• הרחיב את האפליקציה ומידע App Store לכל 50 המקומות הנתמכים של App Store.",
+        "keywords": "דפדפן,חיפוש,פרטי,כרטיסיות,אינטרנט,AI,חברתי,וידאו,הורדה,חסימת מודעות,כתב משתמש,תרגום"
+      }
+    },
+    {
+      "locale": "hi",
+      "appStoreConnectNames": [
+        "北印度语",
+        "Hindi"
+      ],
+      "fields": {
+        "name": "Soulo: मल्टी-सर्च ब्राउज़र",
+        "subtitle": "वेब, सोशल और एआई खोजें",
+        "promotionalText": "टैब, एक्सटेंशन, विज्ञापन अवरोधक और शक्तिशाली वेबपेज टूल के साथ एक निजी ब्राउज़र में 40+ वेब, सोशल, वीडियो, शॉपिंग और एआई प्लेटफ़ॉर्म खोजें।",
+        "description": "Soulo iPhone और iPad के लिए एक तेज़, निजी बहु-खोज ब्राउज़र है। एक क्वेरी दर्ज करें, फिर दोबारा टाइप किए बिना 40 से अधिक खोज, सामाजिक, वीडियो, शॉपिंग, ज्ञान और एआई प्लेटफार्मों के बीच स्विच करें।\n\nअपना रास्ता ब्राउज़ करें\n• टैब, बुकमार्क, इतिहास, डाउनलोड और अनुकूलन योग्य खोज प्लेटफ़ॉर्म\n• निजी ब्राउज़िंग, ट्रैकर सुरक्षा, विज्ञापन अवरोधन और प्रति-साइट नियंत्रण\n• मोबाइल और डेस्कटॉप वेबसाइट मोड, पेज ज़ूम, अनुवाद और पूर्ण-पेज कैप्चर\n• वेबपेज संसाधन निरीक्षक के साथ चित्र, वीडियो, ऑडियो और दस्तावेज़ डाउनलोड करें\n• Live Text के साथ वेबपेज छवियों से टेक्स्ट निकालें\n\nआईफोन और आईपैड के लिए निर्मित\n• आईपैड पर एकाधिक स्वतंत्र विंडो\n• लिंक या टेक्स्ट सीधे Soulo पर साझा करें\n• Siri, Shortcuts, Control Center, लॉक स्क्रीन और एक्शन बटन से डाउनलोड खोजें और खोलें\n• वास्तविक प्रगति और रोक/फिर से शुरू करने के साथ पृष्ठभूमि डाउनलोड\n• लाइव गतिविधियाँ और Dynamic Island स्थिति\n\nवेब का विस्तार करें\nUserScripts या संगत WebExtensions इंस्टॉल करें, अनुमतियों को स्पष्ट रूप से प्रबंधित करें, और अंतर्निहित API दस्तावेज़ के साथ अपनी स्वयं की स्क्रिप्ट बनाएं।\n\nSoulo ब्राउज़िंग डेटा को स्थानीय रूप से संग्रहीत करता है जब तक कि आप iCloud सेटिंग्स सिंक को सक्षम नहीं करते। निजी ब्राउज़िंग इतिहास सहेजती नहीं है.",
+        "whatsNew": "नया क्या है:\n\n• अन्य ऐप्स से Soulo पर लिंक और टेक्स्ट साझा करें।\n• Live Text के साथ वेबपेज छवियों से टेक्स्ट निकालें।\n• Control Center, लॉक स्क्रीन, एक्शन बटन, Siri और Shortcuts क्रियाएँ जोड़ी गईं।\n• डाउनलोड अब वास्तविक प्रगति और ठहराव/फिर से शुरू होने के साथ पृष्ठभूमि में जारी रहेगा।\n• iPad पर स्वतंत्र मल्टी-विंडो ब्राउज़िंग जोड़ी गई।\n• UserScripts के साथ संगत मूल WebExtensions सक्षम किया गया।\n• ऐप और App Store जानकारी को सभी 50 समर्थित App Store स्थानों तक विस्तारित किया गया।",
+        "keywords": "ब्राउज़र,खोज,निजी,टैब,वेब,एआई,सामाजिक,वीडियो,डाउनलोड,एडब्लॉक,उपयोगकर्तास्क्रिप्ट,अनुवाद"
+      }
+    },
+    {
+      "locale": "hu",
+      "appStoreConnectNames": [
+        "匈牙利语",
+        "Hungarian"
+      ],
+      "fields": {
+        "name": "Soulo: Többkeresős böngésző",
+        "subtitle": "Keresés a weben, a közösségi o",
+        "promotionalText": "Keressen több mint 40 internetes, közösségi, videó-, vásárlási és mesterséges intelligencia platformon egyetlen privát böngészőben lapokkal, bővítményekkel, hirdetésblokk",
+        "description": "A Soulo egy gyors, privát többkeresős böngésző iPhone és iPad készülékekhez. Adjon meg egy lekérdezést, majd váltson több mint 40 keresési, közösségi, videós, vásárlási, tudás- és mesterséges intelligencia platform között anélkül, hogy újragépelne.\n\nBÖNGÉSZEN ÚTJÁT\n• Lapok, könyvjelzők, előzmények, letöltések és testreszabható keresési platformok\n• Privát böngészés, nyomkövető védelem, hirdetések blokkolása és webhelyenkénti vezérlés\n• Mobil és asztali webhelymódok, oldalnagyítás, fordítás és teljes oldal rögzítése\n• Töltse le a képeket, videókat, hanganyagokat és dokumentumokat a weboldal erőforrás-ellenőrzőjével\n• Szöveg kinyerése a weboldal képeiből a Live Text segítségével\n\niPHONE-HOZ ÉS iPAD-HOZ ÉPÍTETT\n• Több független ablak az iPaden\n• Ossza meg a linkeket vagy szöveget közvetlenül a következővel: Soulo\n• Letöltések keresése és megnyitása innen: Siri, Shortcuts, Control Center, a Lezárási képernyő és a Művelet gomb\n• Háttérletöltések valós előrehaladással és szüneteltetéssel/folytatással\n• Élő tevékenységek és Dynamic Island állapot\n\nBŐVÍTSD KI A WELT\nTelepítse a(z) UserScripts vagy kompatibilis WebExtensions, kezelje egyértelműen az engedélyeket, és hozza létre saját szkriptjeit a beépített API-dokumentáció segítségével.\n\nA Soulo helyileg tárolja a böngészési adatokat, hacsak nem engedélyezi a iCloud beállítások szinkronizálását. A privát böngészés nem menti az előzményeket.",
+        "whatsNew": "Újdonságok:\n\n• Linkek és szövegek megosztása a(z) Soulo címre más alkalmazásokból.\n• Szöveg kinyerése a weboldal képeiből a Live Text segítségével.\n• Hozzáadott Control Center, képernyőzár, műveletgomb, Siri és Shortcuts művelet.\n• A letöltések most a háttérben folytatódnak, valódi előrehaladással és szüneteltetéssel/folytatással.\n• Független többablakos böngészés hozzáadva az iPaden.\n• Engedélyezett kompatibilis natív WebExtensions a UserScripts mellett.\n• Az alkalmazás és a App Store információ kiterjesztése mind az 50 támogatott App Store területre.",
+        "keywords": "böngésző,keresés,privát,lapok,web,AI,közösségi,videó,letöltés,hirdetésblokkolás,felhasználói szkript"
+      }
+    },
+    {
+      "locale": "id",
+      "appStoreConnectNames": [
+        "印度尼西亚语",
+        "Indonesian"
+      ],
+      "fields": {
+        "name": "Soulo: Browser Multi-Pencarian",
+        "subtitle": "Telusuri Web, Sosial & AI",
+        "promotionalText": "Telusuri 40+ platform web, sosial, video, belanja, dan AI dalam satu browser pribadi dengan tab, ekstensi, pemblokiran iklan, dan alat laman web canggih.",
+        "description": "Soulo adalah browser multi-pencarian pribadi yang cepat untuk iPhone dan iPad. Masukkan satu kueri, lalu beralih di antara lebih dari 40 platform pencarian, sosial, video, belanja, pengetahuan, dan AI tanpa mengetik ulang.\n\nJELAJAHI CARA ANDA\n• Tab, bookmark, riwayat, unduhan, dan platform pencarian yang dapat disesuaikan\n• Penjelajahan pribadi, perlindungan pelacak, pemblokiran iklan, dan kontrol per situs\n• Mode situs web seluler dan desktop, zoom halaman, terjemahan, dan pengambilan halaman penuh\n• Unduh gambar, video, audio, dan dokumen dengan pemeriksa sumber daya halaman web\n• Ekstrak teks dari gambar halaman web dengan Live Text\n\nDIBANGUN UNTUK iPhone DAN iPad\n• Beberapa jendela independen di iPad\n• Bagikan tautan atau SMS langsung ke Soulo\n• Cari dan buka download dari Siri, Shortcuts, Control Center, Layar Kunci dan Tombol Tindakan\n• Unduhan latar belakang dengan kemajuan nyata dan jeda/lanjutkan\n• Aktivitas Langsung dan status Dynamic Island\n\nPERPANJANG WEB\nInstal UserScripts atau WebExtensions yang kompatibel, kelola izin dengan jelas, dan buat skrip Anda sendiri dengan dokumentasi API bawaan.\n\nSoulo menyimpan data penjelajahan secara lokal kecuali Anda mengaktifkan sinkronisasi pengaturan iCloud. Penjelajahan pribadi tidak menyimpan riwayat.",
+        "whatsNew": "Apa yang Baru:\n\n• Bagikan tautan dan SMS ke Soulo dari aplikasi lain.\n• Ekstrak teks dari gambar halaman web dengan Live Text.\n• Menambahkan tindakan Control Center, Layar Kunci, Tombol Tindakan, Siri dan Shortcuts.\n• Pengunduhan sekarang dilanjutkan di latar belakang dengan kemajuan nyata dan jeda/lanjutkan.\n• Menambahkan penjelajahan multi-jendela independen di iPad.\n• Mengaktifkan WebExtensions asli yang kompatibel bersama dengan UserScripts.\n• Memperluas aplikasi dan informasi App Store ke 50 lokal App Store yang didukung.",
+        "keywords": "browser,penelusuran,pribadi,tab,web,AI,sosial,video,unduh,adblock,skrip pengguna,terjemahkan"
+      }
+    },
+    {
+      "locale": "it",
+      "appStoreConnectNames": [
+        "意大利语",
+        "Italian"
+      ],
+      "fields": {
+        "name": "Soulo: browser per la ricerca",
+        "subtitle": "Cerca sul Web, sui social e su",
+        "promotionalText": "Cerca oltre 40 piattaforme web, social, video, di shopping e AI in un browser privato con schede, estensioni, blocco degli annunci e potenti strumenti per le pagine web.",
+        "description": "Soulo è un browser multi-ricerca veloce e privato per iPhone e iPad. Inserisci una query, quindi passa tra più di 40 piattaforme di ricerca, social, video, shopping, conoscenza e intelligenza artificiale senza dover riscrivere.\n\nSFOGLIA A MODO TUO\n• Schede, segnalibri, cronologia, download e piattaforme di ricerca personalizzabili\n• Navigazione privata, protezione tracker, blocco degli annunci pubblicitari e controlli per sito\n• Modalità sito Web mobile e desktop, zoom della pagina, traduzione e acquisizione dell'intera pagina\n• Scarica immagini, video, audio e documenti con l'ispettore delle risorse della pagina web\n• Estrai testo dalle immagini delle pagine web con Live Text\n\nCOSTRUITO PER iPhone E iPad\n• Finestre multiple indipendenti su iPad\n• Condividi link o testo direttamente su Soulo\n• Cerca e apri download da Siri, Shortcuts, Control Center, dalla schermata di blocco e dal pulsante di azione\n• Download in background con progressi reali e pausa/ripresa\n• Attività in tempo reale e stato Dynamic Island\n\nESTENDERE IL WEB\nInstalla UserScript o WebExtension compatibili, gestisci le autorizzazioni in modo chiaro e crea i tuoi script con la documentazione API integrata.\n\nSoulo memorizza i dati di navigazione localmente a meno che non abiliti la sincronizzazione delle impostazioni iCloud. La navigazione privata non salva la cronologia.",
+        "whatsNew": "Novità:\n\n• Condividi link e testo su Soulo da altre app.\n• Estrai testo dalle immagini delle pagine web con Live Text.\n• Aggiunte azioni Control Center, schermata di blocco, pulsante di azione, Siri e Shortcuts.\n• I download ora continuano in background con progressi reali e mettono in pausa/riprendi.\n• Aggiunta la navigazione multi-finestra indipendente su iPad.\n• Abilitati i WebExtension nativi compatibili insieme ai UserScript.\n• Esteso l'app e le informazioni App Store a tutte le 50 versioni locali App Store supportate.",
+        "keywords": "browser,ricerca,privato,schede,web,AI,social,video,download,adblock,userscript,traduci"
+      }
+    },
+    {
+      "locale": "ja",
+      "appStoreConnectNames": [
+        "日语",
+        "Japanese"
+      ],
+      "fields": {
+        "name": "Soulo: マルチ検索ブラウザ",
+        "subtitle": "ウェブ、ソーシャル、AI を検索",
+        "promotionalText": "タブ、拡張機能、広告ブロック、強力な Web ページ ツールを備えた 1 つのプライベート ブラウザーで、40 以上の Web、ソーシャル、ビデオ、ショッピング、AI プラットフォームを検索できます。",
+        "description": "Soulo は、iPhone および iPad 用の高速でプライベートなマルチ検索ブラウザです。 1 つのクエリを入力すると、再入力することなく 40 以上の検索、ソーシャル、ビデオ、ショッピング、ナレッジ、AI プラットフォームを切り替えることができます。\n\n自分らしくブラウジング\n• タブ、ブックマーク、履歴、ダウンロード、カスタマイズ可能な検索プラットフォーム\n• プライベート ブラウジング、トラッカー保護、広告ブロック、サイトごとの制御\n• モバイルおよびデスクトップ Web サイト モード、ページ ズーム、翻訳、全ページ キャプチャ\n• Webページリソースインスペクターを使用して画像、ビデオ、オーディオ、ドキュメントをダウンロード\n• Live Text を使用して Web ページ画像からテキストを抽出する\n\niPhone と iPad 用に構築\n• iPad上の複数の独立したウィンドウ\n• Soulo にリンクまたはテキストを直接共有します。\n• Siri、Shortcuts、Control Center、ロック画面およびアクション ボタンからダウンロードを検索して開きます。\n• 実際の進行状況と一時停止/再開を伴うバックグラウンドダウンロード\n• ライブ アクティビティと Dynamic Island ステータス\n\nウェブを拡張する\nUserScript または互換性のある WebExtension をインストールし、権限を明確に管理し、組み込みの API ドキュメントを使用して独自のスクリプトを作成します。\n\niCloud 設定の同期を有効にしない限り、Soulo は閲覧データをローカルに保存します。プライベートブラウジングでは履歴は保存されません。",
+        "whatsNew": "新機能:\n\n• 他のアプリから Soulo へのリンクとテキストを共有します。\n• Live Text を使用して Web ページ画像からテキストを抽出します。\n• Control Center、ロック画面、アクション ボタン、Siri および Shortcuts アクションを追加しました。\n• ダウンロードは実際に進行し、一時停止/再開しながらバックグラウンドで続行されるようになりました。\n• iPad に独立したマルチウィンドウ ブラウジングを追加しました。\n• UserScript と互換性のあるネイティブ WebExtension を有効にしました。\n• アプリと App Store 情報を、サポートされている 50 の App Store ロケールすべてに拡張しました。",
+        "keywords": "ブラウザ、検索、プライベート、タブ、ウェブ、AI、ソーシャル、ビデオ、ダウンロード、広告ブロック、ユーザー スクリプト、翻訳"
+      }
+    },
+    {
+      "locale": "kn-IN",
+      "appStoreConnectNames": [
+        "坎纳达语",
+        "Kannada"
+      ],
+      "fields": {
+        "name": "Soulo: ಬಹು-ಹುಡುಕಾಟ ಬ್ರೌಸರ್",
+        "subtitle": "ವೆಬ್, ಸಾಮಾಜಿಕ ಮತ್ತು AI ಅನ್ನು ಹ",
+        "promotionalText": "ಟ್ಯಾಬ್‌ಗಳು, ವಿಸ್ತರಣೆಗಳು, ಜಾಹೀರಾತು ನಿರ್ಬಂಧಿಸುವಿಕೆ ಮತ್ತು ಪ್ರಬಲ ವೆಬ್‌ಪುಟ ಪರಿಕರಗಳೊಂದಿಗೆ ಒಂದು ಖಾಸಗಿ ಬ್ರೌಸರ್‌ನಲ್ಲಿ 40+ ವೆಬ್, ಸಾಮಾಜಿಕ, ವೀಡಿಯೊ, ಶಾಪಿಂಗ್ ಮತ್ತು AI ಪ್ಲಾಟ್‌ಫಾರ್ಮ್‌ಗಳನ",
+        "description": "Soulo iPhone ಮತ್ತು iPad ಗಾಗಿ ವೇಗವಾದ, ಖಾಸಗಿ ಬಹು-ಹುಡುಕಾಟ ಬ್ರೌಸರ್ ಆಗಿದೆ. ಒಂದು ಪ್ರಶ್ನೆಯನ್ನು ನಮೂದಿಸಿ, ನಂತರ 40 ಕ್ಕೂ ಹೆಚ್ಚು ಹುಡುಕಾಟ, ಸಾಮಾಜಿಕ, ವೀಡಿಯೊ, ಶಾಪಿಂಗ್, ಜ್ಞಾನ ಮತ್ತು AI ಪ್ಲಾಟ್‌ಫಾರ್ಮ್‌ಗಳ ನಡುವೆ ಮರು ಟೈಪ್ ಮಾಡದೆಯೇ ಬದಲಿಸಿ.\n\nನಿಮ್ಮ ಮಾರ್ಗವನ್ನು ಬ್ರೌಸ್ ಮಾಡಿ\n• ಟ್ಯಾಬ್‌ಗಳು, ಬುಕ್‌ಮಾರ್ಕ್‌ಗಳು, ಇತಿಹಾಸ, ಡೌನ್‌ಲೋಡ್‌ಗಳು ಮತ್ತು ಗ್ರಾಹಕೀಯಗೊಳಿಸಬಹುದಾದ ಹುಡುಕಾಟ ವೇದಿಕೆಗಳು\n• ಖಾಸಗಿ ಬ್ರೌಸಿಂಗ್, ಟ್ರ್ಯಾಕರ್ ರಕ್ಷಣೆ, ಜಾಹೀರಾತು ನಿರ್ಬಂಧಿಸುವಿಕೆ ಮತ್ತು ಪ್ರತಿ-ಸೈಟ್ ನಿಯಂತ್ರಣಗಳು\n• ಮೊಬೈಲ್ ಮತ್ತು ಡೆಸ್ಕ್‌ಟಾಪ್ ವೆಬ್‌ಸೈಟ್ ಮೋಡ್‌ಗಳು, ಪುಟ ಜೂಮ್, ಅನುವಾದ ಮತ್ತು ಪೂರ್ಣ-ಪುಟ ಸೆರೆಹಿಡಿಯುವಿಕೆ\n• ವೆಬ್‌ಪುಟ ಸಂಪನ್ಮೂಲ ನಿರೀಕ್ಷಕರೊಂದಿಗೆ ಚಿತ್ರಗಳು, ವೀಡಿಯೊ, ಆಡಿಯೋ ಮತ್ತು ದಾಖಲೆಗಳನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ\n• Live Text ನೊಂದಿಗೆ ವೆಬ್‌ಪುಟ ಚಿತ್ರಗಳಿಂದ ಪಠ್ಯವನ್ನು ಹೊರತೆಗೆಯಿರಿ\n\nಐಫೋನ್ ಮತ್ತು ಐಪ್ಯಾಡ್‌ಗಾಗಿ ನಿರ್ಮಿಸಲಾಗಿದೆ\n• iPad ನಲ್ಲಿ ಬಹು ಸ್ವತಂತ್ರ ವಿಂಡೋಗಳು\n• ಲಿಂಕ್‌ಗಳು ಅಥವಾ ಪಠ್ಯವನ್ನು ನೇರವಾಗಿ Soulo ಗೆ ಹಂಚಿಕೊಳ್ಳಿ\n• Siri, Shortcuts, Control Center, ಲಾಕ್ ಸ್ಕ್ರೀನ್ ಮತ್ತು ಆಕ್ಷನ್ ಬಟನ್‌ನಿಂದ ಡೌನ್‌ಲೋಡ್‌ಗಳನ್ನು ಹುಡುಕಿ ಮತ್ತು ತೆರೆಯಿರಿ\n• ನೈಜ ಪ್ರಗತಿ ಮತ್ತು ವಿರಾಮ/ಪುನರಾರಂಭದೊಂದಿಗೆ ಹಿನ್ನೆಲೆ ಡೌನ್‌ಲೋಡ್‌ಗಳು\n• ಲೈವ್ ಚಟುವಟಿಕೆಗಳು ಮತ್ತು Dynamic Island ಸ್ಥಿತಿ\n\nವೆಬ್ ಅನ್ನು ವಿಸ್ತರಿಸಿ\nUserScriptಗಳು ಅಥವಾ ಹೊಂದಾಣಿಕೆಯ WebExtensionಗಳನ್ನು ಸ್ಥಾಪಿಸಿ, ಅನುಮತಿಗಳನ್ನು ಸ್ಪಷ್ಟವಾಗಿ ನಿರ್ವಹಿಸಿ ಮತ್ತು ಅಂತರ್ನಿರ್ಮಿತ API ದಾಖಲಾತಿಯೊಂದಿಗೆ ನಿಮ್ಮ ಸ್ವಂತ ಸ್ಕ್ರಿಪ್ಟ್‌ಗಳನ್ನು ರಚಿಸಿ.\n\nನೀವು iCloud ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಸಿಂಕ್ ಅನ್ನು ಸಕ್ರಿಯಗೊಳಿಸದ ಹೊರತು ಸ್ಥಳೀಯವಾಗಿ ಬ್ರೌಸಿಂಗ್ ಡೇಟಾವನ್ನು Soulo ಸಂಗ್ರಹಿಸುತ್ತದೆ. ಖಾಸಗಿ ಬ್ರೌಸಿಂಗ್ ಇತಿಹಾಸವನ್ನು ಉಳಿಸುವುದಿಲ್ಲ.",
+        "whatsNew": "ಹೊಸದೇನಿದೆ:\n\n• ಇತರ ಅಪ್ಲಿಕೇಶನ್‌ಗಳಿಂದ Soulo ಗೆ ಲಿಂಕ್‌ಗಳು ಮತ್ತು ಪಠ್ಯವನ್ನು ಹಂಚಿಕೊಳ್ಳಿ.\n• Live Text ನೊಂದಿಗೆ ವೆಬ್‌ಪುಟ ಚಿತ್ರಗಳಿಂದ ಪಠ್ಯವನ್ನು ಹೊರತೆಗೆಯಿರಿ.\n• Control Center, ಲಾಕ್ ಸ್ಕ್ರೀನ್, ಆಕ್ಷನ್ ಬಟನ್, Siri ಮತ್ತು Shortcuts ಕ್ರಿಯೆಗಳನ್ನು ಸೇರಿಸಲಾಗಿದೆ.\n• ಡೌನ್‌ಲೋಡ್‌ಗಳು ಈಗ ನೈಜ ಪ್ರಗತಿ ಮತ್ತು ವಿರಾಮ/ಪುನರಾರಂಭದೊಂದಿಗೆ ಹಿನ್ನೆಲೆಯಲ್ಲಿ ಮುಂದುವರಿಯುತ್ತವೆ.\n• iPad ನಲ್ಲಿ ಸ್ವತಂತ್ರ ಬಹು-ವಿಂಡೋ ಬ್ರೌಸಿಂಗ್ ಅನ್ನು ಸೇರಿಸಲಾಗಿದೆ.\n• UserScripts ಜೊತೆಗೆ ಹೊಂದಾಣಿಕೆಯ ಸ್ಥಳೀಯ WebExtensionಗಳನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ.\n• ಎಲ್ಲಾ 50 ಬೆಂಬಲಿತ App Store ಲೊಕೇಲ್‌ಗಳಿಗೆ ಅಪ್ಲಿಕೇಶನ್ ಮತ್ತು App Store ಮಾಹಿತಿಯನ್ನು ವಿಸ್ತರಿಸಲಾಗಿದೆ.",
+        "keywords": "ಬ್ರೌಸರ್,ಹುಡುಕಾಟ,ಖಾಸಗಿ,ಟ್ಯಾಬ್‌ಗಳು,ವೆಬ್,AI,ಸಾಮಾಜಿಕ,ವೀಡಿಯೊ,ಡೌನ್‌ಲೋಡ್,ಆಡ್‌ಬ್ಲಾಕ್,ಯೂಸರ್‌ಸ್ಕ್ರಿಪ್ಟ್,ಅನುವಾದ"
+      }
+    },
+    {
+      "locale": "ko",
+      "appStoreConnectNames": [
+        "韩语",
+        "Korean"
+      ],
+      "fields": {
+        "name": "Soulo: 다중 검색 브라우저",
+        "subtitle": "웹, 소셜 및 AI 검색",
+        "promotionalText": "탭, 확장 프로그램, 광고 차단 및 강력한 웹페이지 도구를 갖춘 하나의 개인 브라우저에서 40개 이상의 웹, 소셜, 비디오, 쇼핑 및 AI 플랫폼을 검색하세요.",
+        "description": "Soulo은 iPhone 및 iPad용 빠른 비공개 다중 검색 브라우저입니다. 하나의 검색어를 입력하면 다시 입력할 필요 없이 40개 이상의 검색, 소셜, 동영상, 쇼핑, 지식, AI 플랫폼 간을 전환할 수 있습니다.\n\n당신의 길을 찾아보세요\n• 탭, 북마크, 기록, 다운로드 및 사용자 정의 가능한 검색 플랫폼\n• 개인 정보 보호 브라우징, 추적기 보호, 광고 차단 및 사이트별 제어\n• 모바일 및 데스크톱 웹사이트 모드, 페이지 확대/축소, 번역 및 전체 페이지 캡처\n• 웹페이지 리소스 검사기를 사용하여 이미지, 비디오, 오디오 및 문서를 다운로드하세요.\n• Live Text을 사용하여 웹페이지 이미지에서 텍스트를 추출합니다.\n\niPhone 및 iPad용으로 제작됨\n• iPad의 여러 독립 창\n• 링크나 텍스트를 Soulo에 직접 공유\n• Siri, Shortcuts, Control Center, 잠금 화면 및 작업 버튼에서 다운로드 검색 및 열기\n• 실제 진행 및 일시중지/재개 기능이 포함된 백그라운드 다운로드\n• 실시간 활동 및 Dynamic Island 상태\n\n웹 확장\nUserScript 또는 호환되는 WebExtension을 설치하고, 권한을 명확하게 관리하고, 내장된 API 문서를 사용하여 자신만의 스크립트를 만드세요.\n\nSoulo는 iCloud 설정 동기화를 활성화하지 않는 한 검색 데이터를 로컬에 저장합니다. 비공개 브라우징은 기록을 저장하지 않습니다.",
+        "whatsNew": "새로운 소식:\n\n• 다른 앱에서 Soulo에 대한 링크와 텍스트를 공유합니다.\n• Live Text을 사용하여 웹페이지 이미지에서 텍스트를 추출합니다.\n• Control Center, 잠금 화면, 작업 버튼, Siri 및 Shortcuts 작업을 추가했습니다.\n• 이제 다운로드가 실제 진행 및 일시중지/재개와 함께 백그라운드에서 계속됩니다.\n• iPad에 독립적인 다중 창 탐색 기능이 추가되었습니다.\n• UserScript과 함께 호환 가능한 기본 WebExtension를 활성화했습니다.\n• 앱 및 App Store 정보를 지원되는 50개 App Store 로케일 모두로 확장했습니다.",
+        "keywords": "브라우저,검색,비공개,탭,웹,AI,소셜,동영상,다운로드,광고 차단,사용자 스크립트,번역"
+      }
+    },
+    {
+      "locale": "ms",
+      "appStoreConnectNames": [
+        "马来语",
+        "Malay"
+      ],
+      "fields": {
+        "name": "Soulo: Penyemak Imbas Berbilan",
+        "subtitle": "Carian Web, Sosial & AI",
+        "promotionalText": "Cari 40+ platform web, sosial, video, beli-belah dan AI dalam satu penyemak imbas peribadi dengan tab, sambungan, penyekatan iklan dan alatan halaman web yang berkuasa.",
+        "description": "Soulo ialah penyemak imbas berbilang carian peribadi yang pantas untuk iPhone dan iPad. Masukkan satu pertanyaan, kemudian tukar antara lebih daripada 40 platform carian, sosial, video, beli-belah, pengetahuan dan AI tanpa menaip semula.\n\nSEMAK JALAN ANDA\n• Tab, penanda halaman, sejarah, muat turun dan platform carian yang boleh disesuaikan\n• Penyemakan imbas peribadi, perlindungan penjejak, penyekatan iklan dan kawalan setiap tapak\n• Mod tapak web mudah alih dan desktop, zum halaman, terjemahan dan tangkapan halaman penuh\n• Muat turun imej, video, audio dan dokumen dengan pemeriksa sumber halaman web\n• Ekstrak teks daripada imej halaman web dengan Live Text\n\nDIBINA UNTUK iPhone DAN iPad\n• Berbilang tetingkap bebas pada iPad\n• Kongsi pautan atau teks terus ke Soulo\n• Cari dan buka muat turun daripada Siri, Shortcuts, Control Center, Skrin Kunci dan Butang Tindakan\n• Muat turun latar belakang dengan kemajuan sebenar dan jeda/sambung semula\n• Aktiviti Langsung dan status Dynamic Island\n\nLANJUTKAN WEB\nPasang UserScripts atau WebExtensions yang serasi, uruskan kebenaran dengan jelas dan buat skrip anda sendiri dengan dokumentasi API terbina dalam.\n\nSoulo menyimpan data penyemakan imbas secara setempat melainkan anda mendayakan penyegerakan tetapan iCloud. Penyemakan imbas peribadi tidak menyimpan sejarah.",
+        "whatsNew": "Apa yang Baharu:\n\n• Kongsi pautan dan teks ke Soulo daripada apl lain.\n• Ekstrak teks daripada imej halaman web dengan Live Text.\n• Menambah tindakan Control Center, Skrin Kunci, Butang Tindakan, Siri dan Shortcuts.\n• Muat turun kini diteruskan di latar belakang dengan kemajuan sebenar dan jeda/sambung semula.\n• Menambah penyemakan imbas berbilang tetingkap bebas pada iPad.\n• Mendayakan WebExtensions asli yang serasi bersama-sama UserScripts.\n• Kembangkan apl dan maklumat App Store ke semua 50 tempat App Store yang disokong.",
+        "keywords": "penyemak imbas,carian,peribadi,tab,web,AI,sosial,video,muat turun,sekatan iklan,skrip pengguna,terje"
+      }
+    },
+    {
+      "locale": "ml-IN",
+      "appStoreConnectNames": [
+        "马拉雅拉姆语",
+        "Malayalam"
+      ],
+      "fields": {
+        "name": "Soulo: മൾട്ടി-സെർച്ച് ബ്രൗസർ",
+        "subtitle": "വെബ്, സോഷ്യൽ, AI എന്നിവ തിരയുക",
+        "promotionalText": "ടാബുകൾ, വിപുലീകരണങ്ങൾ, പരസ്യ തടയൽ, ശക്തമായ വെബ്‌പേജ് ടൂളുകൾ എന്നിവ ഉപയോഗിച്ച് ഒരു സ്വകാര്യ ബ്രൗസറിൽ 40+ വെബ്, സോഷ്യൽ, വീഡിയോ, ഷോപ്പിംഗ്, AI പ്ലാറ്റ്‌ഫോമുകൾ എന്നിവ തിരയുക.",
+        "description": "Soulo iPhone, iPad എന്നിവയ്‌ക്കായുള്ള വേഗതയേറിയതും സ്വകാര്യവുമായ മൾട്ടി-സെർച്ച് ബ്രൗസറാണ്. ഒരു ചോദ്യം നൽകുക, തുടർന്ന് വീണ്ടും ടൈപ്പ് ചെയ്യാതെ 40-ലധികം തിരയൽ, സോഷ്യൽ, വീഡിയോ, ഷോപ്പിംഗ്, വിജ്ഞാനം, AI പ്ലാറ്റ്‌ഫോമുകൾ എന്നിവയ്ക്കിടയിൽ മാറുക.\n\nനിങ്ങളുടെ വഴി ബ്രൗസ് ചെയ്യുക\n• ടാബുകൾ, ബുക്ക്‌മാർക്കുകൾ, ചരിത്രം, ഡൗൺലോഡുകൾ, ഇഷ്ടാനുസൃതമാക്കാവുന്ന തിരയൽ പ്ലാറ്റ്‌ഫോമുകൾ\n• സ്വകാര്യ ബ്രൗസിംഗ്, ട്രാക്കർ പരിരക്ഷണം, പരസ്യം തടയൽ, ഓരോ സൈറ്റിനും നിയന്ത്രണങ്ങൾ\n• മൊബൈൽ, ഡെസ്ക്ടോപ്പ് വെബ്സൈറ്റ് മോഡുകൾ, പേജ് സൂം, വിവർത്തനം, മുഴുവൻ പേജ് ക്യാപ്ചർ\n• വെബ്‌പേജ് റിസോഴ്‌സ് ഇൻസ്പെക്ടർ ഉപയോഗിച്ച് ചിത്രങ്ങൾ, വീഡിയോ, ഓഡിയോ, ഡോക്യുമെൻ്റുകൾ എന്നിവ ഡൗൺലോഡ് ചെയ്യുക\n• വെബ്‌പേജ് ചിത്രങ്ങളിൽ നിന്ന് Live Text ഉപയോഗിച്ച് ടെക്‌സ്‌റ്റ് എക്‌സ്‌ട്രാക്‌റ്റ് ചെയ്യുക\n\nഐഫോണിനും ഐപാഡിനും വേണ്ടി നിർമ്മിച്ചത്\n• iPad-ൽ ഒന്നിലധികം സ്വതന്ത്ര വിൻഡോകൾ\n• ലിങ്കുകളോ ടെക്‌സ്‌റ്റോ നേരിട്ട് Soulo ലേക്ക് പങ്കിടുക\n• Siri, Shortcuts, Control Center, ലോക്ക് സ്‌ക്രീൻ, ആക്ഷൻ ബട്ടൺ എന്നിവയിൽ നിന്ന് ഡൗൺലോഡുകൾ തിരയുകയും തുറക്കുകയും ചെയ്യുക\n• യഥാർത്ഥ പുരോഗതിയും താൽക്കാലികമായി നിർത്തലും/പുനരാരംഭവും ഉള്ള പശ്ചാത്തല ഡൗൺലോഡുകൾ\n• തത്സമയ പ്രവർത്തനങ്ങളും Dynamic Island നിലയും\n\nവെബ് വിപുലീകരിക്കുക\nUserScriptകൾ അല്ലെങ്കിൽ അനുയോജ്യമായ WebExtensionകൾ ഇൻസ്റ്റാൾ ചെയ്യുക, അനുമതികൾ വ്യക്തമായി കൈകാര്യം ചെയ്യുക, ബിൽറ്റ്-ഇൻ API ഡോക്യുമെൻ്റേഷൻ ഉപയോഗിച്ച് നിങ്ങളുടെ സ്വന്തം സ്ക്രിപ്റ്റുകൾ സൃഷ്ടിക്കുക.\n\nനിങ്ങൾ iCloud ക്രമീകരണ സമന്വയം പ്രവർത്തനക്ഷമമാക്കിയില്ലെങ്കിൽ Soulo ബ്രൗസിംഗ് ഡാറ്റ പ്രാദേശികമായി സംഭരിക്കുന്നു. സ്വകാര്യ ബ്രൗസിംഗ് ചരിത്രം സംരക്ഷിക്കില്ല.",
+        "whatsNew": "എന്താണ് പുതിയത്:\n\n• മറ്റ് ആപ്പുകളിൽ നിന്ന് Soulo എന്നതിലേക്ക് ലിങ്കുകളും ടെക്‌സ്‌റ്റും പങ്കിടുക.\n• വെബ്‌പേജ് ചിത്രങ്ങളിൽ നിന്ന് Live Text ഉപയോഗിച്ച് ടെക്‌സ്‌റ്റ് എക്‌സ്‌ട്രാക്‌റ്റ് ചെയ്യുക.\n• Control Center, ലോക്ക് സ്‌ക്രീൻ, ആക്ഷൻ ബട്ടൺ, Siri, Shortcuts പ്രവർത്തനങ്ങൾ എന്നിവ ചേർത്തു.\n• ഇപ്പോൾ ഡൗൺലോഡുകൾ യഥാർത്ഥ പുരോഗതിയും താൽക്കാലികമായി നിർത്തലും/പുനരാരംഭിച്ചും പശ്ചാത്തലത്തിൽ തുടരുന്നു.\n• iPad-ൽ സ്വതന്ത്ര മൾട്ടി-വിൻഡോ ബ്രൗസിംഗ് ചേർത്തു.\n• UserScriptകൾക്കൊപ്പം അനുയോജ്യമായ നേറ്റീവ് WebExtensionകൾ പ്രവർത്തനക്ഷമമാക്കി.\n• പിന്തുണയ്ക്കുന്ന 50 App Store ലൊക്കേലുകളിലേക്കും ആപ്പും App Store വിവരങ്ങളും വികസിപ്പിച്ചു.",
+        "keywords": "ബ്രൗസർ,തിരയൽ,സ്വകാര്യ,ടാബുകൾ,വെബ്,AI,സോഷ്യൽ,വീഡിയോ,ഡൗൺലോഡ്,ആഡ്ബ്ലോക്ക്,ഉപയോക്തൃ സ്‌ക്രിപ്റ്റ്,വിവർത്"
+      }
+    },
+    {
+      "locale": "mr-IN",
+      "appStoreConnectNames": [
+        "马拉地语",
+        "Marathi"
+      ],
+      "fields": {
+        "name": "Soulo: मल्टी-सर्च ब्राउझर",
+        "subtitle": "वेब, सोशल आणि एआय शोधा",
+        "promotionalText": "एका खाजगी ब्राउझरमध्ये टॅब, विस्तार, जाहिरात ब्लॉकिंग आणि शक्तिशाली वेबपृष्ठ साधनांसह 40+ वेब, सामाजिक, व्हिडिओ, शॉपिंग आणि AI प्लॅटफॉर्म शोधा.",
+        "description": "Soulo हा iPhone आणि iPad साठी एक जलद, खाजगी मल्टी-सर्च ब्राउझर आहे. एक क्वेरी एंटर करा, नंतर पुन्हा टाइप न करता 40 हून अधिक शोध, सामाजिक, व्हिडिओ, खरेदी, ज्ञान आणि AI प्लॅटफॉर्ममध्ये स्विच करा.\n\nतुमचा मार्ग ब्राउझ करा\n• टॅब, बुकमार्क, इतिहास, डाउनलोड आणि सानुकूल शोध प्लॅटफॉर्म\n• खाजगी ब्राउझिंग, ट्रॅकर संरक्षण, जाहिरात अवरोधित करणे आणि प्रति-साइट नियंत्रणे\n• मोबाइल आणि डेस्कटॉप वेबसाइट मोड, पृष्ठ झूम, भाषांतर आणि पूर्ण-पृष्ठ कॅप्चर\n• वेबपृष्ठ संसाधन निरीक्षकासह प्रतिमा, व्हिडिओ, ऑडिओ आणि दस्तऐवज डाउनलोड करा\n• Live Text सह वेबपृष्ठ प्रतिमांमधून मजकूर काढा\n\nआयफोन आणि आयपॅडसाठी तयार केलेले\n• iPad वर एकाधिक स्वतंत्र विंडो\n• लिंक किंवा मजकूर थेट Soulo वर शेअर करा\n• Siri, Shortcuts, Control Center, लॉक स्क्रीन आणि ॲक्शन बटण वरून डाउनलोड शोधा आणि उघडा\n• वास्तविक प्रगतीसह पार्श्वभूमी डाउनलोड आणि विराम/रिझ्युम\n• थेट क्रियाकलाप आणि Dynamic Island स्थिती\n\nवेब विस्तारित करा\nUserScripts किंवा सुसंगत WebExtensions स्थापित करा, परवानग्या स्पष्टपणे व्यवस्थापित करा आणि अंगभूत API दस्तऐवजीकरणासह तुमच्या स्वतःच्या स्क्रिप्ट तयार करा.\n\nजोपर्यंत तुम्ही iCloud सेटिंग्ज समक्रमण सक्षम करत नाही तोपर्यंत iCloud स्थानिक पातळीवर ब्राउझिंग डेटा संचयित करते. खाजगी ब्राउझिंग इतिहास जतन करत नाही.",
+        "whatsNew": "नवीन काय आहे:\n\n• इतर ॲप्सवरून Soulo वर लिंक आणि मजकूर शेअर करा.\n• Live Text सह वेबपृष्ठ प्रतिमांमधून मजकूर काढा.\n• Control Center, लॉक स्क्रीन, क्रिया बटण, Siri आणि Shortcuts क्रिया जोडल्या.\n• डाउनलोड आता पार्श्वभूमीत वास्तविक प्रगतीसह सुरू राहतात आणि विराम द्या/पुनः सुरू करा.\n• iPad वर स्वतंत्र मल्टी-विंडो ब्राउझिंग जोडले.\n• UserScripts च्या बाजूने सुसंगत मूळ WebExtensions सक्षम केले.\n• ॲप आणि App Store माहिती सर्व 50 समर्थित App Store लोकेलमध्ये विस्तृत केली.",
+        "keywords": "ब्राउझर,शोध,खाजगी,टॅब,वेब,एआय,सामाजिक,व्हिडिओ,डाउनलोड,ॲडब्लॉक,वापरकर्ता स्क्रिप्ट,अनुवाद"
+      }
+    },
+    {
+      "locale": "no",
+      "appStoreConnectNames": [
+        "挪威语",
+        "Norwegian"
+      ],
+      "fields": {
+        "name": "Soulo: Nettleser for flere søk",
+        "subtitle": "Søk på Internett, sosiale medi",
+        "promotionalText": "Søk i 40+ nett-, sosiale-, video-, shopping- og AI-plattformer i én privat nettleser med faner, utvidelser, annonseblokkering og kraftige nettsideverktøy.",
+        "description": "Soulo er en rask, privat nettleser for flere søk for iPhone og iPad. Skriv inn ett søk, og bytt deretter mellom mer enn 40 søke-, sosiale-, video-, shopping-, kunnskaps- og AI-plattformer uten å skrive på nytt.\n\nBLAD PÅ DIN VEI\n• Faner, bokmerker, historikk, nedlastinger og tilpassbare søkeplattformer\n• Privat surfing, sporingsbeskyttelse, annonseblokkering og kontroller per nettsted\n• Mobil og stasjonær nettsidemodus, sidezoom, oversettelse og helsidesopptak\n• Last ned bilder, video, lyd og dokumenter med nettsideressursinspektøren\n• Trekk ut tekst fra nettsidebilder med Live Text\n\nBYGGET FOR iPhone OG iPad\n• Flere uavhengige vinduer på iPad\n• Del lenker eller tekst direkte til Soulo\n• Søk og åpne nedlastinger fra Siri, Shortcuts, Control Center, låseskjermen og handlingsknappen\n• Bakgrunnsnedlastinger med reell fremgang og pause/fortsett\n• Liveaktiviteter og Dynamic Island status\n\nUTVID NETTET\nInstaller UserScripter eller kompatible WebExtensioner, administrer tillatelser tydelig, og lag dine egne skript med den innebygde API-dokumentasjonen.\n\nSoulo lagrer nettleserdata lokalt med mindre du aktiverer synkronisering av iCloud innstillinger. Privat surfing lagrer ikke historikk.",
+        "whatsNew": "Hva er nytt:\n\n• Del lenker og tekst til Soulo fra andre apper.\n• Trekk ut tekst fra nettsidebilder med Live Text.\n• Lagt til Control Center, låseskjerm, handlingsknapp, Siri og Shortcuts handlinger.\n• Nedlastinger fortsetter nå i bakgrunnen med reell fremgang og pause/fortsett.\n• Lagt til uavhengig surfing med flere vinduer på iPad.\n• Aktiverte kompatible native WebExtensions sammen med UserScripts.\n• Utvidet appen og App Store-informasjonen til alle 50 støttede App Store-lokaliteter.",
+        "keywords": "nettleser,søk,privat,faner,nett,AI,sosial,video,nedlasting,adblock,brukerskript,oversett"
+      }
+    },
+    {
+      "locale": "or-IN",
+      "appStoreConnectNames": [
+        "奥里亚语",
+        "Odia"
+      ],
+      "fields": {
+        "name": "Soulo: ମଲ୍ଟି-ସର୍ଚ୍ଚ ବ୍ରାଉଜର |",
+        "subtitle": "|\nୱେବ୍, ସାମାଜିକ ଏବଂ AI ସନ୍ଧାନ",
+        "promotionalText": "|\nଟ୍ୟାବ, ଏକ୍ସଟେନ୍ସନ୍, ବିଜ୍ଞାପନ ଅବରୋଧ ଏବଂ ଶକ୍ତିଶାଳୀ ୱେବପୃଷ୍ଠା ସାଧନ ସହିତ ଗୋଟିଏ ବ୍ୟକ୍ତିଗତ ବ୍ରାଉଜରରେ 40+ ୱେବ୍, ସାମାଜିକ, ଭିଡିଓ, ସପିଂ ଏବଂ ଏଇ ପ୍ଲାଟଫର୍ମ ଖୋଜ |",
+        "description": "|\nSoulo ହେଉଛି ଆଇଫୋନ୍ ଏବଂ ଆଇପ୍ୟାଡ୍ ପାଇଁ ଏକ ଦ୍ରୁତ, ବ୍ୟକ୍ତିଗତ ମଲ୍ଟି ସର୍ଚ୍ଚ ବ୍ରାଉଜର୍ | ଗୋଟିଏ ଜିଜ୍ଞାସା ପ୍ରବିଷ୍ଟ କରନ୍ତୁ, ତାପରେ ପୁନ y ଟାଇପ୍ ନକରି 40 ରୁ ଅଧିକ ସନ୍ଧାନ, ସାମାଜିକ, ଭିଡିଓ, ସପିଂ, ଜ୍ଞାନ ଏବଂ ଏଇ ପ୍ଲାଟଫର୍ମ ମଧ୍ୟରେ ସୁଇଚ୍ କରନ୍ତୁ |\n\nଆପଣଙ୍କର ଉପାୟ ବ୍ରାଉଜ୍ କରନ୍ତୁ |\nଟ୍ୟାବ, ବୁକମାର୍କ, ଇତିହାସ, ଡାଉନଲୋଡ୍ ଏବଂ କଷ୍ଟମାଇଜେବଲ୍ ସର୍ଚ୍ଚ ପ୍ଲାଟଫର୍ମ |\nବ୍ୟକ୍ତିଗତ ବ୍ରାଉଜିଂ, ଟ୍ରାକର ସୁରକ୍ଷା, ବିଜ୍ଞାପନ ଅବରୋଧ ଏବଂ ପ୍ରତି ସାଇଟ୍ ନିୟନ୍ତ୍ରଣ |\nମୋବାଇଲ୍ ଏବଂ ଡେସ୍କଟପ୍ ୱେବସାଇଟ୍ ମୋଡ୍, ପେଜ୍ ଜୁମ୍, ଅନୁବାଦ ଏବଂ ଫୁଲ୍ ପେଜ୍ କ୍ୟାପଚର୍ |\nୱେବପୃଷ୍ଠା ଉତ୍ସ ଇନ୍ସପେକ୍ଟରଙ୍କ ସହିତ ପ୍ରତିଛବି, ଭିଡିଓ, ଅଡିଓ ଏବଂ ଡକ୍ୟୁମେଣ୍ଟ ଡାଉନଲୋଡ୍ କରନ୍ତୁ |\nୱେବପେଜ ପ୍ରତିଛବିଗୁଡ଼ିକରୁ Live Text ସହିତ ପାଠ ବାହାର କରନ୍ତୁ |\n\nIPHONE ଏବଂ iPAD ପାଇଁ ନିର୍ମାଣ କରନ୍ତୁ |\n• iPad ରେ ଏକାଧିକ ସ୍ୱାଧୀନ ୱିଣ୍ଡୋ |\nଲିଙ୍କ୍ କିମ୍ବା ପାଠ୍ୟକୁ ସିଧାସଳଖ Soulo ରେ ଅଂଶୀଦାର କରନ୍ତୁ |\nSiri, Shortcuts, Control Center, ଲକ୍ ସ୍କ୍ରିନ୍ ଏବଂ ଆକ୍ସନ୍ ବଟନ୍ ରୁ ଡାଉନଲୋଡ୍ ଖୋଜ ଏବଂ ଖୋଲ |\nପ୍ରକୃତ ପ୍ରଗତି ଏବଂ ବିରାମ / ପୁନ ume କାର୍ଯ୍ୟ ସହିତ ପୃଷ୍ଠଭୂମି ଡାଉନଲୋଡ୍ |\nଲାଇଭ୍ କାର୍ଯ୍ୟକଳାପ ଏବଂ Dynamic Island ସ୍ଥିତି |\n\nୱେବ୍ ବିସ୍ତାର କରନ୍ତୁ |\nUserScript s କିମ୍ବା ସୁସଙ୍ଗତ WebExtension s ସଂସ୍ଥାପନ କରନ୍ତୁ, ଅନୁମତିଗୁଡିକ ସ୍ପଷ୍ଟ ଭାବରେ ପରିଚାଳନା କରନ୍ତୁ ଏବଂ ବିଲ୍ଟ-ଇନ୍ API ଡକ୍ୟୁମେଣ୍ଟେସନ୍ ସହିତ ଆପଣଙ୍କର ସ୍କ୍ରିପ୍ଟ ସୃଷ୍ଟି କରନ୍ତୁ |\n\nSoulo ବ୍ରାଉଜିଂ ଡାଟା ସ୍ଥାନୀୟ ଭାବରେ ସଂରକ୍ଷଣ କରେ ଯଦି ଆପଣ iCloud ସେଟିଂସମୂହ ସିଙ୍କ୍ ସକ୍ଷମ ନକରନ୍ତି | ବ୍ୟକ୍ତିଗତ ବ୍ରାଉଜିଂ ଇତିହାସ ସଞ୍ଚୟ କରେ ନାହିଁ |",
+        "whatsNew": "|\nକ’ଣ ନୂଆ:\n\nଅନ୍ୟ ଆପ୍ସରୁ Soulo କୁ ଲିଙ୍କ୍ ଏବଂ ପାଠ୍ୟ ଅଂଶୀଦାର କରନ୍ତୁ |\nୱେବପେଜ ପ୍ରତିଛବିଗୁଡ଼ିକରୁ Live Text ସହିତ ପାଠ ବାହାର କରନ୍ତୁ |\n• Control Center, ଲକ୍ ସ୍କ୍ରିନ୍, ଆକ୍ସନ୍ ବଟନ୍, Siri ଏବଂ Shortcuts କ୍ରିୟାଗୁଡ଼ିକ ଯୋଗ କରାଯାଇଛି |\nପ୍ରକୃତ ଅଗ୍ରଗତି ଏବଂ ବିରାମ / ପୁନ ume କାର୍ଯ୍ୟ ସହିତ ଡାଉନଲୋଡ୍ ଗୁଡିକ ପୃଷ୍ଠଭୂମିରେ ଜାରି ରହିଛି |\nଆଇପ୍ୟାଡରେ ସ୍ independent ାଧୀନ ମଲ୍ଟି ୱିଣ୍ଡୋ ବ୍ରାଉଜିଙ୍ଗ୍ ଯୋଡିଛି |\nUserScript s ସହିତ ସୁସଙ୍ଗତ ଦେଶୀ WebExtension s ସକ୍ଷମ ହୋଇଛି |\nସମସ୍ତ 50 ସମର୍ଥିତ App Store ଲୋକାଲ୍ ପାଇଁ ଆପ୍ ଏବଂ App Store ସୂଚନାକୁ ବିସ୍ତାର କରିଛି |",
+        "keywords": "|\nବ୍ରାଉଜର୍,ସନ୍ଧାନ,ବ୍ୟକ୍ତିଗତ,ଟ୍ୟାବ୍,ୱେବ୍,ଏଇ,ସାମାଜିକ,ଭିଡିଓ,ଡାଉନଲୋଡ୍,ଆଡବ୍ଲକ୍,ୟୁଜର୍ ସ୍କ୍ରିପ୍ଟ,ଅନୁବାଦ"
+      }
+    },
+    {
+      "locale": "pl",
+      "appStoreConnectNames": [
+        "波兰语",
+        "Polish"
+      ],
+      "fields": {
+        "name": "Soulo: Przeglądarka z wieloma",
+        "subtitle": "Przeszukuj Internet, społeczno",
+        "promotionalText": "Przeszukuj ponad 40 platform internetowych, społecznościowych, wideo, handlowych i AI w jednej prywatnej przeglądarce z kartami, rozszerzeniami, blokowaniem reklam i potę",
+        "description": "Soulo to szybka, prywatna przeglądarka z wieloma wyszukiwaniami dla iPhone'a i iPada. Wpisz jedno zapytanie, a następnie przełączaj się między ponad 40 platformami wyszukiwania, społecznościowymi, wideo, zakupowymi, wiedzą i sztuczną inteligencją bez konieczności ponownego wpisywania.\n\nPRZEGLĄDAJ SWOJĄ DROGĘ\n• Karty, zakładki, historia, pliki do pobrania i konfigurowalne platformy wyszukiwania\n• Prywatne przeglądanie, ochrona modułów śledzących, blokowanie reklam i kontrola poszczególnych witryn\n• Tryby witryn mobilnych i stacjonarnych, powiększanie strony, tłumaczenie i przechwytywanie całej strony\n• Pobieraj obrazy, wideo, audio i dokumenty za pomocą inspektora zasobów strony internetowej\n• Wyodrębnij tekst z obrazów stron internetowych za pomocą Live Text\n\nZBUDOWANY DLA iPhone'a i iPada\n• Wiele niezależnych okien na iPadzie\n• Udostępniaj linki lub SMS-y bezpośrednio Soulo\n• Wyszukuj i otwieraj pliki do pobrania z Siri, Shortcuts, Control Center, ekranu blokady i przycisku akcji\n• Pobieranie w tle z rzeczywistym postępem i pauzą/wznawianiem\n• Aktywności na żywo i stan Dynamic Island\n\nROZSZERZAJ SIEĆ\nZainstaluj UserScript lub kompatybilne WebExtension, zarządzaj uprawnieniami w przejrzysty sposób i twórz własne skrypty dzięki wbudowanej dokumentacji API.\n\nSoulo przechowuje dane przeglądania lokalnie, chyba że włączysz synchronizację ustawień iCloud. Przeglądanie prywatne nie zapisuje historii.",
+        "whatsNew": "Co nowego:\n\n• Udostępniaj linki i tekst do Soulo z innych aplikacji.\n• Wyodrębnij tekst z obrazów stron internetowych za pomocą Live Text.\n• Dodano Control Center, ekran blokady, przycisk akcji, akcje Siri i Shortcuts.\n• Pobieranie jest teraz kontynuowane w tle z rzeczywistym postępem i wstrzymywane/wznawiane.\n• Dodano niezależne przeglądanie w wielu oknach na iPadzie.\n• Włączono kompatybilne natywne WebExtension wraz z UserScript.\n• Rozszerzono aplikację i informacje App Store na wszystkie 50 obsługiwanych lokalizacji App Store.",
+        "keywords": "przeglądarka,wyszukiwanie,prywatne,karty,internet,sztuczna inteligencja,społecznościowe,wideo,pobier"
+      }
+    },
+    {
+      "locale": "pt-BR",
+      "appStoreConnectNames": [
+        "葡萄牙语（巴西）",
+        "Portuguese (Brazil)"
+      ],
+      "fields": {
+        "name": "Soulo: navegador de pesquisa m",
+        "subtitle": "Pesquisa na Web, redes sociais",
+        "promotionalText": "Pesquise mais de 40 plataformas da web, sociais, de vídeo, de compras e de IA em um navegador privado com guias, extensões, bloqueio de anúncios e ferramentas poderosas d",
+        "description": "Soulo é um navegador rápido e privado de pesquisa múltipla para iPhone e iPad. Insira uma consulta e alterne entre mais de 40 plataformas de pesquisa, sociais, vídeo, compras, conhecimento e IA sem precisar digitar novamente.\n\nNAVEGUE SEU CAMINHO\n• Guias, favoritos, histórico, downloads e plataformas de pesquisa personalizáveis\n• Navegação privada, proteção contra rastreadores, bloqueio de anúncios e controles por site\n• Modos de site para celular e desktop, zoom de página, tradução e captura de página inteira\n• Baixe imagens, vídeos, áudio e documentos com o inspetor de recursos de páginas da web\n• Extraia texto de imagens de páginas da web com Live Text\n\nCONSTRUÍDO PARA iPhone E iPad\n• Várias janelas independentes no iPad\n• Compartilhe links ou texto diretamente para Soulo\n• Pesquise e abra downloads de Siri, Shortcuts, Control Center, tela de bloqueio e botão de ação\n• Downloads em segundo plano com progresso real e pausa/retomada\n• Atividades ao vivo e status Dynamic Island\n\nESTENDER A WEB\nInstale UserScripts ou WebExtensions compatíveis, gerencie permissões com clareza e crie seus próprios scripts com a documentação da API integrada.\n\nSoulo armazena dados de navegação localmente, a menos que você ative a sincronização de configurações de iCloud. A navegação privada não salva histórico.",
+        "whatsNew": "O que há de novo:\n\n• Compartilhe links e textos para Soulo de outros aplicativos.\n• Extraia texto de imagens de páginas da web com Live Text.\n• Adicionadas ações Control Center, tela de bloqueio, botão de ação, Siri e Shortcuts.\n• Os downloads agora continuam em segundo plano com progresso real e pausa/retomada.\n• Adicionada navegação independente em múltiplas janelas no iPad.\n• Habilitação de WebExtensions nativos compatíveis junto com UserScripts.\n• Expandimos o aplicativo e as informações de App Store para todas as 50 localidades App Store suportadas.",
+        "keywords": "navegador,pesquisa,privado,guias,web,IA,social,vídeo,download,adblock,userscript,traduzir"
+      }
+    },
+    {
+      "locale": "pt-PT",
+      "appStoreConnectNames": [
+        "葡萄牙语（葡萄牙）",
+        "Portuguese (Portugal)"
+      ],
+      "fields": {
+        "name": "Soulo: navegador de pesquisa m",
+        "subtitle": "Pesquisa na Web, redes sociais",
+        "promotionalText": "Pesquise mais de 40 plataformas da web, sociais, de vídeo, de compras e de IA em um navegador privado com guias, extensões, bloqueio de anúncios e ferramentas poderosas d",
+        "description": "Soulo é um navegador rápido e privado de pesquisa múltipla para iPhone e iPad. Insira uma consulta e alterne entre mais de 40 plataformas de pesquisa, sociais, vídeo, compras, conhecimento e IA sem precisar digitar novamente.\n\nNAVEGUE SEU CAMINHO\n• Guias, favoritos, histórico, downloads e plataformas de pesquisa personalizáveis\n• Navegação privada, proteção contra rastreadores, bloqueio de anúncios e controles por site\n• Modos de site para celular e desktop, zoom de página, tradução e captura de página inteira\n• Baixe imagens, vídeos, áudio e documentos com o inspetor de recursos de páginas da web\n• Extraia texto de imagens de páginas da web com Live Text\n\nCONSTRUÍDO PARA iPhone E iPad\n• Várias janelas independentes no iPad\n• Compartilhe links ou texto diretamente para Soulo\n• Pesquise e abra downloads de Siri, Shortcuts, Control Center, tela de bloqueio e botão de ação\n• Downloads em segundo plano com progresso real e pausa/retomada\n• Atividades ao vivo e status Dynamic Island\n\nESTENDER A WEB\nInstale UserScripts ou WebExtensions compatíveis, gerencie permissões com clareza e crie seus próprios scripts com a documentação da API integrada.\n\nSoulo armazena dados de navegação localmente, a menos que você ative a sincronização de configurações de iCloud. A navegação privada não salva histórico.",
+        "whatsNew": "O que há de novo:\n\n• Compartilhe links e textos para Soulo de outros aplicativos.\n• Extraia texto de imagens de páginas da web com Live Text.\n• Adicionadas ações Control Center, tela de bloqueio, botão de ação, Siri e Shortcuts.\n• Os downloads agora continuam em segundo plano com progresso real e pausa/retomada.\n• Adicionada navegação independente em múltiplas janelas no iPad.\n• Habilitação de WebExtensions nativos compatíveis junto com UserScripts.\n• Expandimos o aplicativo e as informações de App Store para todas as 50 localidades App Store suportadas.",
+        "keywords": "navegador,pesquisa,privado,guias,web,IA,social,vídeo,download,adblock,userscript,traduzir"
+      }
+    },
+    {
+      "locale": "pa-IN",
+      "appStoreConnectNames": [
+        "旁遮普语",
+        "Punjabi"
+      ],
+      "fields": {
+        "name": "Soulo: ਮਲਟੀ-ਸਰਚ ਬ੍ਰਾਊਜ਼ਰ",
+        "subtitle": "ਖੋਜ ਵੈੱਬ, ਸਮਾਜਿਕ ਅਤੇ AI",
+        "promotionalText": "ਟੈਬਾਂ, ਐਕਸਟੈਂਸ਼ਨਾਂ, ਵਿਗਿਆਪਨ ਬਲੌਕਿੰਗ ਅਤੇ ਸ਼ਕਤੀਸ਼ਾਲੀ ਵੈਬਪੇਜ ਟੂਲਸ ਦੇ ਨਾਲ ਇੱਕ ਨਿੱਜੀ ਬ੍ਰਾਊਜ਼ਰ ਵਿੱਚ 40+ ਵੈੱਬ, ਸੋਸ਼ਲ, ਵੀਡੀਓ, ਸ਼ਾਪਿੰਗ ਅਤੇ AI ਪਲੇਟਫਾਰਮ ਖੋਜੋ।",
+        "description": "Soulo iPhone ਅਤੇ iPad ਲਈ ਇੱਕ ਤੇਜ਼, ਨਿੱਜੀ ਬਹੁ-ਖੋਜ ਬ੍ਰਾਊਜ਼ਰ ਹੈ। ਇੱਕ ਪੁੱਛਗਿੱਛ ਦਾਖਲ ਕਰੋ, ਫਿਰ ਦੁਬਾਰਾ ਟਾਈਪ ਕੀਤੇ ਬਿਨਾਂ 40 ਤੋਂ ਵੱਧ ਖੋਜ, ਸਮਾਜਿਕ, ਵੀਡੀਓ, ਖਰੀਦਦਾਰੀ, ਗਿਆਨ ਅਤੇ AI ਪਲੇਟਫਾਰਮਾਂ ਵਿਚਕਾਰ ਸਵਿਚ ਕਰੋ।\n\nਆਪਣਾ ਰਾਹ ਬ੍ਰਾਊਜ਼ ਕਰੋ\n• ਟੈਬਾਂ, ਬੁੱਕਮਾਰਕਸ, ਇਤਿਹਾਸ, ਡਾਊਨਲੋਡ ਅਤੇ ਅਨੁਕੂਲਿਤ ਖੋਜ ਪਲੇਟਫਾਰਮ\n• ਪ੍ਰਾਈਵੇਟ ਬ੍ਰਾਊਜ਼ਿੰਗ, ਟਰੈਕਰ ਸੁਰੱਖਿਆ, ਵਿਗਿਆਪਨ ਬਲੌਕਿੰਗ ਅਤੇ ਪ੍ਰਤੀ-ਸਾਈਟ ਨਿਯੰਤਰਣ\n• ਮੋਬਾਈਲ ਅਤੇ ਡੈਸਕਟਾਪ ਵੈੱਬਸਾਈਟ ਮੋਡ, ਪੰਨਾ ਜ਼ੂਮ, ਅਨੁਵਾਦ ਅਤੇ ਪੂਰੇ ਪੰਨੇ ਕੈਪਚਰ\n• ਵੈਬਪੇਜ ਸਰੋਤ ਨਿਰੀਖਕ ਨਾਲ ਚਿੱਤਰ, ਵੀਡੀਓ, ਆਡੀਓ ਅਤੇ ਦਸਤਾਵੇਜ਼ ਡਾਊਨਲੋਡ ਕਰੋ\n• Live Text ਨਾਲ ਵੈੱਬਪੇਜ ਚਿੱਤਰਾਂ ਤੋਂ ਟੈਕਸਟ ਐਕਸਟਰੈਕਟ ਕਰੋ\n\nਆਈਫੋਨ ਅਤੇ ਆਈਪੈਡ ਲਈ ਬਣਾਇਆ ਗਿਆ\n• ਆਈਪੈਡ 'ਤੇ ਕਈ ਸੁਤੰਤਰ ਵਿੰਡੋਜ਼\n• ਲਿੰਕ ਜਾਂ ਟੈਕਸਟ ਨੂੰ ਸਿੱਧਾ Soulo 'ਤੇ ਸਾਂਝਾ ਕਰੋ\n• Siri, Shortcuts, Control Center, ਲੌਕ ਸਕ੍ਰੀਨ ਅਤੇ ਐਕਸ਼ਨ ਬਟਨ ਤੋਂ ਡਾਊਨਲੋਡ ਖੋਜੋ ਅਤੇ ਖੋਲ੍ਹੋ\n• ਅਸਲ ਪ੍ਰਗਤੀ ਅਤੇ ਵਿਰਾਮ/ਰੀਜ਼ਿਊਮ ਦੇ ਨਾਲ ਬੈਕਗ੍ਰਾਊਂਡ ਡਾਊਨਲੋਡ\n• ਲਾਈਵ ਗਤੀਵਿਧੀਆਂ ਅਤੇ Dynamic Island ਸਥਿਤੀ\n\nਵੈੱਬ ਦਾ ਵਿਸਤਾਰ ਕਰੋ\nUserScripts ਜਾਂ ਅਨੁਕੂਲ WebExtensions ਨੂੰ ਸਥਾਪਿਤ ਕਰੋ, ਸਪਸ਼ਟ ਤੌਰ 'ਤੇ ਇਜਾਜ਼ਤਾਂ ਦਾ ਪ੍ਰਬੰਧਨ ਕਰੋ, ਅਤੇ ਬਿਲਟ-ਇਨ API ਦਸਤਾਵੇਜ਼ਾਂ ਨਾਲ ਆਪਣੀਆਂ ਸਕ੍ਰਿਪਟਾਂ ਬਣਾਓ।\n\nSoulo ਸਥਾਨਕ ਤੌਰ 'ਤੇ ਬ੍ਰਾਊਜ਼ਿੰਗ ਡੇਟਾ ਨੂੰ ਸਟੋਰ ਕਰਦਾ ਹੈ ਜਦੋਂ ਤੱਕ ਤੁਸੀਂ iCloud ਸੈਟਿੰਗਾਂ ਸਿੰਕ ਨੂੰ ਸਮਰੱਥ ਨਹੀਂ ਕਰਦੇ। ਨਿੱਜੀ ਬ੍ਰਾਊਜ਼ਿੰਗ ਇਤਿਹਾਸ ਨੂੰ ਸੁਰੱਖਿਅਤ ਨਹੀਂ ਕਰਦੀ।",
+        "whatsNew": "ਨਵਾਂ ਕੀ ਹੈ:\n\n• ਹੋਰ ਐਪਾਂ ਤੋਂ Soulo 'ਤੇ ਲਿੰਕ ਅਤੇ ਟੈਕਸਟ ਸਾਂਝਾ ਕਰੋ।\n• Live Text ਨਾਲ ਵੈੱਬਪੇਜ ਚਿੱਤਰਾਂ ਤੋਂ ਟੈਕਸਟ ਐਕਸਟਰੈਕਟ ਕਰੋ।\n• Control Center, ਲਾਕ ਸਕ੍ਰੀਨ, ਐਕਸ਼ਨ ਬਟਨ, Siri ਅਤੇ Shortcuts ਕਾਰਵਾਈਆਂ ਸ਼ਾਮਲ ਕੀਤੀਆਂ ਗਈਆਂ।\n• ਅਸਲ ਪ੍ਰਗਤੀ ਅਤੇ ਵਿਰਾਮ/ਰੀਜ਼ਿਊਮ ਦੇ ਨਾਲ ਹੁਣ ਡਾਊਨਲੋਡ ਬੈਕਗ੍ਰਾਊਂਡ ਵਿੱਚ ਜਾਰੀ ਰਹਿੰਦੇ ਹਨ।\n• ਆਈਪੈਡ 'ਤੇ ਸੁਤੰਤਰ ਮਲਟੀ-ਵਿੰਡੋ ਬ੍ਰਾਊਜ਼ਿੰਗ ਸ਼ਾਮਲ ਕੀਤੀ ਗਈ।\n• UserScripts ਦੇ ਨਾਲ ਅਨੁਕੂਲ ਮੂਲ WebExtensions ਨੂੰ ਸਮਰੱਥ ਬਣਾਇਆ ਗਿਆ।\n• ਸਾਰੇ 50 ਸਮਰਥਿਤ App Store ਲੋਕੇਲਾਂ ਲਈ ਐਪ ਅਤੇ App Store ਜਾਣਕਾਰੀ ਦਾ ਵਿਸਤਾਰ ਕੀਤਾ ਗਿਆ।",
+        "keywords": "ਬ੍ਰਾਊਜ਼ਰ,ਖੋਜ,ਨਿੱਜੀ,ਟੈਬਸ,ਵੈੱਬ,AI,ਸਮਾਜਿਕ,ਵੀਡੀਓ,ਡਾਊਨਲੋਡ,ਐਡਬਲਾਕ,ਉਪਭੋਗਤਾ ਸਕ੍ਰਿਪਟ,ਅਨੁਵਾਦ"
+      }
+    },
+    {
+      "locale": "ro",
+      "appStoreConnectNames": [
+        "罗马尼亚语",
+        "Romanian"
+      ],
+      "fields": {
+        "name": "Soulo: Browser de căutare mult",
+        "subtitle": "Căutați pe web, social și AI",
+        "promotionalText": "Căutați peste 40 de platforme web, sociale, video, cumpărături și IA într-un singur browser privat cu file, extensii, blocare a anunțurilor și instrumente puternice pentr",
+        "description": "Soulo este un browser rapid, privat cu mai multe căutări pentru iPhone și iPad. Introduceți o interogare, apoi comutați între mai mult de 40 de platforme de căutare, socializare, video, cumpărături, cunoștințe și AI fără a reintroduce.\n\nRAUȚIȚI-ȚI CALUL\n• File, marcaje, istoric, descărcări și platforme de căutare personalizabile\n• Navigare privată, protecție tracker, blocare anunțuri și controale pe site\n• Moduri pentru site-ul web mobil și desktop, mărirea paginii, traducere și captură pe întreaga pagină\n• Descărcați imagini, videoclipuri, audio și documente cu ajutorul inspectorului de resurse pentru paginile web\n• Extrageți text din imaginile paginii web cu Live Text\n\nCONSTRUIT PENTRU IPHONE ȘI IPAD\n• Mai multe ferestre independente pe iPad\n• Partajați linkuri sau text direct către Soulo\n• Căutați și deschideți descărcări din Siri, Shortcuts, Control Center, ecranul de blocare și butonul de acțiune\n• Descărcări în fundal cu progres real și pauză/reluare\n• Activități live și starea Dynamic Island\n\nEXTINDEȚI WEB-UL\nInstalați UserScript-uri sau WebExtension-uri compatibile, gestionați permisiunile în mod clar și creați-vă propriile scripturi cu documentația API încorporată.\n\nSoulo stochează datele de navigare local, cu excepția cazului în care activați sincronizarea setărilor iCloud. Navigarea privată nu salvează istoricul.",
+        "whatsNew": "Ce este nou:\n\n• Partajați linkuri și text către Soulo din alte aplicații.\n• Extrageți text din imaginile paginii web cu Live Text.\n• S-au adăugat acțiuni Control Center, Ecran de blocare, Buton de acțiune, Siri și Shortcuts.\n• Descărcările continuă acum în fundal cu progrese reale și întrerupere/reluare.\n• S-a adăugat navigare independentă în mai multe ferestre pe iPad.\n• S-au activat WebExtension-urile native compatibile împreună cu UserScript-urile.\n• Am extins aplicația și informațiile App Store la toate cele 50 de localități acceptate App Store.",
+        "keywords": "browser,căutare,private,file,web,AI,social,video,descărcare,adblock,userscript,traducere"
+      }
+    },
+    {
+      "locale": "ru",
+      "appStoreConnectNames": [
+        "俄语",
+        "Russian"
+      ],
+      "fields": {
+        "name": "Soulo: Браузер с множественным",
+        "subtitle": "Поиск в Интернете, социальных",
+        "promotionalText": "Выполняйте поиск по более чем 40 веб-платформам, социальным сетям, видео, покупкам и платформам искусственного интеллекта в одном частном браузере с вкладками, расширения",
+        "description": "Soulo – это быстрый частный браузер с возможностью множественного поиска для iPhone и iPad. Введите один запрос, а затем переключайтесь между более чем 40 платформами поиска, социальных сетей, видео, покупок, знаний и искусственного интеллекта, не вводя повторно.\n\nПРОСМОТРИТЕ СВОЙ ПУТЬ\n• Вкладки, закладки, история, загрузки и настраиваемые поисковые платформы.\n• Приватный просмотр, защита от трекеров, блокировка рекламы и индивидуальный контроль для каждого сайта.\n• Режимы веб-сайта для мобильных устройств и компьютеров, масштабирование страниц, перевод и захват всей страницы.\n• Загружайте изображения, видео, аудио и документы с помощью инспектора ресурсов веб-страницы.\n• Извлекайте текст из изображений веб-страниц с помощью Live Text.\n\nСОЗДАНО ДЛЯ iPhone И iPad\n• Несколько независимых окон на iPad.\n• Делитесь ссылками или текстом непосредственно на Soulo.\n• Ищите и открывайте загрузки с Siri, Shortcuts, Control Center, экрана блокировки и кнопки действия.\n• Фоновые загрузки с реальным прогрессом, паузой/возобновлением.\n• Активности в реальном времени и статус Dynamic Island.\n\nРАСШИРЯЙТЕ САЙТ\nУстановите UserScript или совместимые WebExtension, четко управляйте разрешениями и создавайте свои собственные сценарии с помощью встроенной документации API.\n\nSoulo сохраняет данные просмотра локально, если вы не включите синхронизацию настроек iCloud. Приватный просмотр не сохраняет историю.",
+        "whatsNew": "Что нового:\n\n• Делитесь ссылками и текстом на Soulo из других приложений.\n• Извлекайте текст из изображений веб-страниц с помощью Live Text.\n• Добавлены Control Center, экран блокировки, кнопка действия, действия Siri и Shortcuts.\n• Загрузки теперь продолжаются в фоновом режиме с реальным прогрессом и приостанавливаются/возобновляются.\n• Добавлен независимый многооконный просмотр на iPad.\n• Включены совместимые собственные WebExtension вместе с UserScript.\n• Приложение и информация App Store расширены до всех 50 поддерживаемых языков App Store.",
+        "keywords": "браузер,поиск,частный,вкладки,Интернет,ИИ,социальные,видео,скачать,блокировка рекламы,пользовательск"
+      }
+    },
+    {
+      "locale": "sk",
+      "appStoreConnectNames": [
+        "斯洛伐克语",
+        "Slovak"
+      ],
+      "fields": {
+        "name": "Soulo: Prehliadač na viacnásob",
+        "subtitle": "Vyhľadávajte na webe, sociálny",
+        "promotionalText": "Hľadajte viac ako 40 webových, sociálnych, video, nákupných a AI platforiem v jednom súkromnom prehliadači s kartami, rozšíreniami, blokovaním reklám a výkonnými nástrojm",
+        "description": "Soulo je rýchly súkromný prehliadač s viacerými možnosťami vyhľadávania pre iPhone a iPad. Zadajte jeden dopyt a potom prepínajte medzi viac ako 40 platformami vyhľadávania, sociálnych sietí, videa, nakupovania, znalostí a AI bez prepisovania.\n\nPRECHÁDZAJTE SI CESTU\n• Karty, záložky, história, sťahovanie a prispôsobiteľné vyhľadávacie platformy\n• Súkromné prehliadanie, ochrana sledovania, blokovanie reklám a ovládacie prvky na jednotlivých stránkach\n• Režimy webových stránok pre mobilné zariadenia a počítače, priblíženie stránky, preklad a snímanie celej stránky\n• Stiahnite si obrázky, video, zvuk a dokumenty pomocou inšpektora zdrojov webovej stránky\n• Extrahujte text z obrázkov webových stránok pomocou Live Text\n\nVYTVORENÉ PRE IPHONE A iPad\n• Viac nezávislých okien na iPade\n• Zdieľajte odkazy alebo text priamo na Soulo\n• Vyhľadávajte a otvárajte stiahnuté súbory z Siri, Shortcuts, Control Center, uzamknutej obrazovky a tlačidla akcie\n• Sťahovanie na pozadí so skutočným priebehom a pozastavením/obnovením\n• Aktivity naživo a stav Dynamic Island\n\nROZŠÍRIŤ WEB\nNainštalujte UserScripts alebo kompatibilné WebExtension, spravujte prehľadne povolenia a vytvorte si vlastné skripty pomocou vstavanej dokumentácie API.\n\nSoulo ukladá údaje prehliadania lokálne, pokiaľ nepovolíte synchronizáciu nastavení iCloud. Súkromné prehliadanie neukladá históriu.",
+        "whatsNew": "Čo je nové:\n\n• Zdieľajte odkazy a text na Soulo z iných aplikácií.\n• Extrahujte text z obrázkov webových stránok pomocou Live Text.\n• Pridané akcie Control Center, uzamknutá obrazovka, tlačidlo akcie, Siri a Shortcuts.\n• Sťahovanie teraz pokračuje na pozadí so skutočným pokrokom a pozastavením/obnovením.\n• Pridané nezávislé prehliadanie viacerých okien na iPade.\n• Povolené kompatibilné natívne WebExtensions spolu s UserScripts.\n• Rozšírenie informácií o aplikácii a App Store na všetkých 50 podporovaných miestnych nastavení App Store.",
+        "keywords": "prehliadač,vyhľadávanie,súkromné,karty,web,AI,sociálne,video,stiahnuť,adblock,používateľský skript,p"
+      }
+    },
+    {
+      "locale": "sl-SI",
+      "appStoreConnectNames": [
+        "斯洛文尼亚语",
+        "Slovenian"
+      ],
+      "fields": {
+        "name": "Soulo: Brskalnik za več iskanj",
+        "subtitle": "Iskanje po spletu, družbenih o",
+        "promotionalText": "Iščite po več kot 40 spletnih, družabnih, video, nakupovalnih in AI platformah v enem zasebnem brskalniku z zavihki, razširitvami, blokiranjem oglasov in zmogljivimi orod",
+        "description": "Soulo je hiter zasebni brskalnik za več iskanj za iPhone in iPad. Vnesite eno poizvedbo, nato preklapljajte med več kot 40 platformami za iskanje, družabna omrežja, video, nakupovanje, znanje in AI brez ponovnega tipkanja.\n\nBRSKAJTE NA SVOJO POT\n• Zavihki, zaznamki, zgodovina, prenosi in prilagodljive iskalne platforme\n• Zasebno brskanje, zaščita sledilnika, blokiranje oglasov in nadzor na spletnem mestu\n• Mobilni in namizni način spletnega mesta, povečava strani, prevod in zajem celotne strani\n• Prenesite slike, video, zvok in dokumente z inšpektorjem virov spletne strani\n• Izvlecite besedilo iz slik spletnih strani z Live Text\n\nUstvarjen za iPhone in iPad\n• Več neodvisnih oken na iPadu\n• Delite povezave ali besedilo neposredno na Soulo\n• Iščite in odprite prenose iz Siri, Shortcuts, Control Center, zaklenjenega zaslona in gumba za dejanja\n• Prenosi v ozadju z resničnim napredkom in premorom/nadaljevanjem\n• Dejavnosti v živo in stanje Dynamic Island\n\nRAZŠIRITE SPLET\nNamestite UserScripts ali združljive WebExtensions, jasno upravljajte dovoljenja in ustvarite lastne skripte z vgrajeno dokumentacijo API-ja.\n\nSoulo shrani podatke o brskanju lokalno, razen če omogočite iCloud sinhronizacijo nastavitev. Zasebno brskanje ne shranjuje zgodovine.",
+        "whatsNew": "Kaj je novega:\n\n• Delite povezave in besedila na Soulo iz drugih aplikacij.\n• Izvlecite besedilo iz slik spletnih strani z Live Text.\n• Dodana dejanja Control Center, zaklenjen zaslon, gumb za dejanja, Siri in Shortcuts.\n• Prenosi se zdaj nadaljujejo v ozadju z resničnim napredovanjem in zaustavitvijo/nadaljevanjem.\n• Dodano neodvisno brskanje z več okni na iPadu.\n• Omogočeni združljivi izvorni WebExtension poleg UserScript.\n• Razširili aplikacijo in informacije App Store na vseh 50 podprtih App Store jezikov.",
+        "keywords": "brskalnik,iskanje,zasebno,zavihki,splet,umetna inteligenca,družabno,video,prenos,blokiranje oglasov"
+      }
+    },
+    {
+      "locale": "es-MX",
+      "appStoreConnectNames": [
+        "西班牙语（墨西哥）",
+        "Spanish (Mexico)"
+      ],
+      "fields": {
+        "name": "Soulo: Navegador de búsqueda m",
+        "subtitle": "Búsqueda web, redes sociales e",
+        "promotionalText": "Busque en más de 40 plataformas web, sociales, de vídeo, de compras y de IA en un navegador privado con pestañas, extensiones, bloqueo de anuncios y potentes herramientas",
+        "description": "Soulo es un navegador de búsqueda múltiple rápido y privado para iPhone y iPad. Ingrese una consulta y luego cambie entre más de 40 plataformas de búsqueda, redes sociales, videos, compras, conocimiento e inteligencia artificial sin volver a escribir.\n\nNAVEGA A TU MANERA\n• Pestañas, marcadores, historial, descargas y plataformas de búsqueda personalizables\n• Navegación privada, protección de rastreadores, bloqueo de anuncios y controles por sitio\n• Modos de sitio web móvil y de escritorio, zoom de página, traducción y captura de página completa\n• Descargue imágenes, videos, audio y documentos con el inspector de recursos de la página web\n• Extraiga texto de imágenes de páginas web con Live Text\n\nDISEÑADO PARA iPHONE Y iPAD\n• Múltiples ventanas independientes en iPad\n• Comparta enlaces o texto directamente a Soulo\n• Busque y abra descargas desde Siri, Shortcuts, Control Center, la pantalla de bloqueo y el botón de acción.\n• Descargas en segundo plano con progreso real y pausa/reanudación\n• Actividades en vivo y estado Dynamic Island\n\nAMPLIAR LA WEB\nInstale UserScripts o WebExtensions compatibles, administre los permisos con claridad y cree sus propios scripts con la documentación API incorporada.\n\nSoulo almacena los datos de navegación localmente a menos que habilites la sincronización de la configuración de iCloud. La navegación privada no guarda el historial.",
+        "whatsNew": "Qué hay de nuevo:\n\n• Comparta enlaces y texto a Soulo desde otras aplicaciones.\n• Extraiga texto de imágenes de páginas web con Live Text.\n• Se agregaron acciones Control Center, pantalla de bloqueo, botón de acción, Siri y Shortcuts.\n• Las descargas ahora continúan en segundo plano con progreso real y pausa/reanudación.\n• Se agregó navegación independiente en múltiples ventanas en iPad.\n• Se habilitaron WebExtensions nativos compatibles junto con UserScripts.\n• Se amplió la aplicación y la información de App Store a las 50 App Store configuraciones regionales admitidas.",
+        "keywords": "navegador,búsqueda,privado,pestañas,web,IA,redes sociales,vídeo,descarga,bloque de anuncios,script d"
+      }
+    },
+    {
+      "locale": "es-ES",
+      "appStoreConnectNames": [
+        "西班牙语（西班牙）",
+        "Spanish (Spain)"
+      ],
+      "fields": {
+        "name": "Soulo: Navegador de búsqueda m",
+        "subtitle": "Búsqueda web, redes sociales e",
+        "promotionalText": "Busque en más de 40 plataformas web, sociales, de vídeo, de compras y de IA en un navegador privado con pestañas, extensiones, bloqueo de anuncios y potentes herramientas",
+        "description": "Soulo es un navegador de búsqueda múltiple rápido y privado para iPhone y iPad. Ingrese una consulta y luego cambie entre más de 40 plataformas de búsqueda, redes sociales, videos, compras, conocimiento e inteligencia artificial sin volver a escribir.\n\nNAVEGA A TU MANERA\n• Pestañas, marcadores, historial, descargas y plataformas de búsqueda personalizables\n• Navegación privada, protección de rastreadores, bloqueo de anuncios y controles por sitio\n• Modos de sitio web móvil y de escritorio, zoom de página, traducción y captura de página completa\n• Descargue imágenes, videos, audio y documentos con el inspector de recursos de la página web\n• Extraiga texto de imágenes de páginas web con Live Text\n\nDISEÑADO PARA iPHONE Y iPAD\n• Múltiples ventanas independientes en iPad\n• Comparta enlaces o texto directamente a Soulo\n• Busque y abra descargas desde Siri, Shortcuts, Control Center, la pantalla de bloqueo y el botón de acción.\n• Descargas en segundo plano con progreso real y pausa/reanudación\n• Actividades en vivo y estado Dynamic Island\n\nAMPLIAR LA WEB\nInstale UserScripts o WebExtensions compatibles, administre los permisos con claridad y cree sus propios scripts con la documentación API incorporada.\n\nSoulo almacena los datos de navegación localmente a menos que habilites la sincronización de la configuración de iCloud. La navegación privada no guarda el historial.",
+        "whatsNew": "Qué hay de nuevo:\n\n• Comparta enlaces y texto a Soulo desde otras aplicaciones.\n• Extraiga texto de imágenes de páginas web con Live Text.\n• Se agregaron acciones Control Center, pantalla de bloqueo, botón de acción, Siri y Shortcuts.\n• Las descargas ahora continúan en segundo plano con progreso real y pausa/reanudación.\n• Se agregó navegación independiente en múltiples ventanas en iPad.\n• Se habilitaron WebExtensions nativos compatibles junto con UserScripts.\n• Se amplió la aplicación y la información de App Store a las 50 App Store configuraciones regionales admitidas.",
+        "keywords": "navegador,búsqueda,privado,pestañas,web,IA,redes sociales,vídeo,descarga,bloque de anuncios,script d"
+      }
+    },
+    {
+      "locale": "sv",
+      "appStoreConnectNames": [
+        "瑞典语",
+        "Swedish"
+      ],
+      "fields": {
+        "name": "Soulo: Flersökningswebbläsare",
+        "subtitle": "Sök på webben, socialt och AI",
+        "promotionalText": "Sök i 40+ webb-, sociala-, video-, shopping- och AI-plattformar i en privat webbläsare med flikar, tillägg, annonsblockering och kraftfulla webbsidesverktyg.",
+        "description": "Soulo är en snabb, privat webbläsare för flera sökningar för iPhone och iPad. Ange en fråga och växla sedan mellan mer än 40 sök-, sociala-, video-, shopping-, kunskaps- och AI-plattformar utan att skriva om.\n\nBLÄDDRA DIG\n• Flikar, bokmärken, historik, nedladdningar och anpassningsbara sökplattformar\n• Privat surfning, spårningsskydd, annonsblockering och kontroller per webbplats\n• Webbplatslägen för mobila och stationära datorer, sidzoom, översättning och helsidesfångst\n• Ladda ner bilder, video, ljud och dokument med webbsidans resursinspektör\n• Extrahera text från webbsidors bilder med Live Text\n\nBYGGT FÖR iPhone OCH iPad\n• Flera oberoende fönster på iPad\n• Dela länkar eller text direkt till Soulo\n• Sök och öppna nedladdningar från Siri, Shortcuts, Control Center, låsskärmen och åtgärdsknappen\n• Bakgrundsnedladdningar med verkliga framsteg och paus/återuppta\n• Liveaktiviteter och Dynamic Island status\n\nFÖRLÄNG WEBBEN\nInstallera UserScripts eller kompatibla WebExtensions, hantera behörigheter tydligt och skapa dina egna skript med den inbyggda API-dokumentationen.\n\nSoulo lagrar webbläsardata lokalt om du inte aktiverar synkronisering av iCloud inställningar. Privat surfning sparar inte historik.",
+        "whatsNew": "Vad är nytt:\n\n• Dela länkar och text till Soulo från andra appar.\n• Extrahera text från webbsidors bilder med Live Text.\n• Lade till åtgärder Control Center, låsskärm, åtgärdsknapp, Siri och Shortcuts.\n• Nedladdningar fortsätter nu i bakgrunden med verkliga framsteg och pausa/återuppta.\n• Lade till oberoende surfning i flera fönster på iPad.\n• Aktiverade kompatibla inbyggda WebExtensions tillsammans med UserScripts.\n• Utökade appen och App Store information till alla 50 stödda App Store språk.",
+        "keywords": "webbläsare,sök,privat,flikar,webb,AI,socialt,video,ladda ner,adblock,användarskript,översätt"
+      }
+    },
+    {
+      "locale": "ta-IN",
+      "appStoreConnectNames": [
+        "泰米尔语",
+        "Tamil"
+      ],
+      "fields": {
+        "name": "Soulo: பல தேடல் உலாவி",
+        "subtitle": "இணையம், சமூகம் & AI ஆகியவற்றைத",
+        "promotionalText": "தாவல்கள், நீட்டிப்புகள், விளம்பரத் தடுப்பு மற்றும் சக்திவாய்ந்த வலைப்பக்கக் கருவிகள் மூலம் ஒரு தனிப்பட்ட உலாவியில் 40+ இணையம், சமூகம், வீடியோ, ஷாப்பிங் மற்றும் AI தளங்களை",
+        "description": "Soulo என்பது iPhone மற்றும் iPadக்கான வேகமான, தனிப்பட்ட பல தேடல் உலாவியாகும். ஒரு வினவலை உள்ளிடவும், பின்னர் 40 க்கும் மேற்பட்ட தேடல், சமூக, வீடியோ, ஷாப்பிங், அறிவு மற்றும் AI தளங்களுக்கு இடையில் மீண்டும் தட்டச்சு செய்யாமல் மாறவும்.\n\nஉங்கள் வழியில் உலாவவும்\n• தாவல்கள், புக்மார்க்குகள், வரலாறு, பதிவிறக்கங்கள் மற்றும் தனிப்பயனாக்கக்கூடிய தேடல் தளங்கள்\n• தனிப்பட்ட உலாவல், டிராக்கர் பாதுகாப்பு, விளம்பரத் தடுப்பு மற்றும் ஒவ்வொரு தள கட்டுப்பாடுகள்\n• மொபைல் மற்றும் டெஸ்க்டாப் இணையதள முறைகள், பக்கத்தை பெரிதாக்குதல், மொழிபெயர்ப்பு மற்றும் முழு பக்க பிடிப்பு\n• வலைப்பக்க ஆதார ஆய்வாளருடன் படங்கள், வீடியோ, ஆடியோ மற்றும் ஆவணங்களைப் பதிவிறக்கவும்\n• Live Text மூலம் வலைப்பக்கப் படங்களிலிருந்து உரையைப் பிரித்தெடுக்கவும்\n\nஐபோன் மற்றும் ஐபாடிற்காக உருவாக்கப்பட்டது\n• iPad இல் பல சுயாதீன சாளரங்கள்\n• இணைப்புகள் அல்லது உரையை நேரடியாக Soulo க்கு பகிரவும்\n• Siri, Shortcuts, Control Center, பூட்டுத் திரை மற்றும் செயல் பட்டன் ஆகியவற்றிலிருந்து பதிவிறக்கங்களைத் தேடித் திறக்கவும்\n• உண்மையான முன்னேற்றத்துடன் பின்னணி பதிவிறக்கங்கள் மற்றும் இடைநிறுத்தம்/பயனாய்வு\n• நேரலை செயல்பாடுகள் மற்றும் Dynamic Island நிலை\n\nஇணையத்தை நீட்டிக்கவும்\nUserScriptகள் அல்லது இணக்கமான WebExtensionகளை நிறுவவும், அனுமதிகளை தெளிவாக நிர்வகிக்கவும் மற்றும் உள்ளமைக்கப்பட்ட API ஆவணத்துடன் உங்கள் சொந்த ஸ்கிரிப்ட்களை உருவாக்கவும்.\n\nநீங்கள் iCloud அமைப்புகளின் ஒத்திசைவை இயக்கும் வரை Soulo உலாவல் தரவை உள்ளூரில் சேமிக்கும். தனிப்பட்ட உலாவல் வரலாற்றைச் சேமிக்காது.",
+        "whatsNew": "புதியது என்ன:\n\n• பிற பயன்பாடுகளிலிருந்து Souloக்கு இணைப்புகள் மற்றும் உரையைப் பகிரவும்.\n• Live Text மூலம் வலைப்பக்கப் படங்களிலிருந்து உரையைப் பிரித்தெடுக்கவும்.\n• Control Center, பூட்டுத் திரை, செயல் பட்டன், Siri மற்றும் Shortcuts செயல்கள் சேர்க்கப்பட்டன.\n• பதிவிறக்கங்கள் இப்போது பின்னணியில் உண்மையான முன்னேற்றம் மற்றும் இடைநிறுத்தம்/பயனாய்வு ஆகியவற்றுடன் தொடர்கின்றன.\n• iPad இல் சுயாதீன பல சாளர உலாவல் சேர்க்கப்பட்டது.\n• UserScripts உடன் இணக்கமான சொந்த WebExtensionகள் இயக்கப்பட்டது.\n• ஆப்ஸ் மற்றும் App Store தகவலை அனைத்து 50 ஆதரிக்கப்படும் App Store மொழிகளுக்கும் விரிவுபடுத்தப்பட்டது.",
+        "keywords": "உலாவி,தேடல்,தனிப்பட்ட,தாவல்கள்,வலை,AI,சமூக,வீடியோ,பதிவிறக்கம்,adblock,பயனர் ஸ்கிரிப்ட்,மொழிபெயர்"
+      }
+    },
+    {
+      "locale": "te-IN",
+      "appStoreConnectNames": [
+        "泰卢固语",
+        "Telugu"
+      ],
+      "fields": {
+        "name": "Soulo: బహుళ-శోధన బ్రౌజర్",
+        "subtitle": "వెబ్, సామాజిక & AIని శోధించండి",
+        "promotionalText": "ట్యాబ్‌లు, ఎక్స్‌టెన్షన్‌లు, యాడ్ బ్లాకింగ్ మరియు శక్తివంతమైన వెబ్‌పేజీ సాధనాలతో ఒక ప్రైవేట్ బ్రౌజర్‌లో 40+ వెబ్, సోషల్, వీడియో, షాపింగ్ మరియు AI ప్లాట్‌ఫారమ్‌లను శోధించం",
+        "description": "Soulo అనేది iPhone మరియు iPad కోసం వేగవంతమైన, ప్రైవేట్ బహుళ-శోధన బ్రౌజర్. ఒక ప్రశ్నను నమోదు చేసి, మళ్లీ టైప్ చేయకుండానే 40 కంటే ఎక్కువ శోధన, సామాజిక, వీడియో, షాపింగ్, నాలెడ్జ్ మరియు AI ప్లాట్‌ఫారమ్‌ల మధ్య మారండి.\n\nమీ మార్గాన్ని బ్రౌజ్ చేయండి\n• ట్యాబ్‌లు, బుక్‌మార్క్‌లు, చరిత్ర, డౌన్‌లోడ్‌లు మరియు అనుకూలీకరించదగిన శోధన ప్లాట్‌ఫారమ్‌లు\n• ప్రైవేట్ బ్రౌజింగ్, ట్రాకర్ రక్షణ, ప్రకటన నిరోధించడం మరియు ప్రతి-సైట్ నియంత్రణలు\n• మొబైల్ మరియు డెస్క్‌టాప్ వెబ్‌సైట్ మోడ్‌లు, పేజీ జూమ్, అనువాదం మరియు పూర్తి-పేజీ క్యాప్చర్\n• వెబ్‌పేజీ రిసోర్స్ ఇన్‌స్పెక్టర్‌తో చిత్రాలు, వీడియో, ఆడియో మరియు పత్రాలను డౌన్‌లోడ్ చేయండి\n• Live Textతో వెబ్‌పేజీ చిత్రాల నుండి వచనాన్ని సంగ్రహించండి\n\nఐఫోన్ మరియు ఐప్యాడ్ కోసం నిర్మించబడింది\n• iPadలో బహుళ స్వతంత్ర విండోలు\n• లింక్‌లు లేదా వచనాన్ని నేరుగా Souloకి భాగస్వామ్యం చేయండి\n• Siri, Shortcuts, Control Center, లాక్ స్క్రీన్ మరియు యాక్షన్ బటన్ నుండి డౌన్‌లోడ్‌లను శోధించండి మరియు తెరవండి\n• నిజమైన పురోగతి మరియు పాజ్/రెస్యూమ్‌తో బ్యాక్‌గ్రౌండ్ డౌన్‌లోడ్‌లు\n• ప్రత్యక్ష కార్యకలాపాలు మరియు Dynamic Island స్థితి\n\nవెబ్‌ని విస్తరించండి\nUserScriptలు లేదా అనుకూల WebExtensionలను ఇన్‌స్టాల్ చేయండి, అనుమతులను స్పష్టంగా నిర్వహించండి మరియు అంతర్నిర్మిత API డాక్యుమెంటేషన్‌తో మీ స్వంత స్క్రిప్ట్‌లను సృష్టించండి.\n\nSoulo మీరు iCloud సెట్టింగ్‌ల సమకాలీకరణను ప్రారంభిస్తే మినహా బ్రౌజింగ్ డేటాను స్థానికంగా నిల్వ చేస్తుంది. ప్రైవేట్ బ్రౌజింగ్ చరిత్రను సేవ్ చేయదు.",
+        "whatsNew": "కొత్తవి ఏమిటి:\n\n• ఇతర యాప్‌ల నుండి Souloకి లింక్‌లు మరియు వచనాన్ని షేర్ చేయండి.\n• Live Textతో వెబ్‌పేజీ చిత్రాల నుండి వచనాన్ని సంగ్రహించండి.\n• Control Center, లాక్ స్క్రీన్, యాక్షన్ బటన్, Siri మరియు Shortcuts చర్యలు జోడించబడ్డాయి.\n• డౌన్‌లోడ్‌లు ఇప్పుడు నిజమైన పురోగతి మరియు పాజ్/రెస్యూమ్‌తో నేపథ్యంలో కొనసాగుతాయి.\n• iPadలో స్వతంత్ర బహుళ-విండో బ్రౌజింగ్ జోడించబడింది.\n• UserScriptలతో పాటుగా అనుకూల స్థానిక WebExtensionలు ప్రారంభించబడ్డాయి.\n• యాప్ మరియు App Store సమాచారం మొత్తం 50 మద్దతు ఉన్న App Store లొకేల్‌లకు విస్తరించబడింది.",
+        "keywords": "బ్రౌజర్,శోధన,ప్రైవేట్,ట్యాబ్‌లు,వెబ్,AI,సోషల్,వీడియో,డౌన్‌లోడ్,యాడ్‌బ్లాక్,యూజర్‌స్క్రిప్ట్,అనువాదం"
+      }
+    },
+    {
+      "locale": "th",
+      "appStoreConnectNames": [
+        "泰语",
+        "Thai"
+      ],
+      "fields": {
+        "name": "Soulo: เบราว์เซอร์ค้นหาหลายราย",
+        "subtitle": "ค้นหาเว็บ โซเชียล และ AI",
+        "promotionalText": "ค้นหาเว็บ โซเชียล วิดีโอ การช็อปปิ้ง และแพลตฟอร์ม AI มากกว่า 40 รายการในเบราว์เซอร์ส่วนตัวเพียงตัวเดียว พร้อมด้วยแท็บ ส่วนขยาย การบล็อกโฆษณา และเครื่องมือหน้าเว็บอันทรงพล",
+        "description": "Soulo เป็นเบราว์เซอร์ค้นหาหลายคำที่รวดเร็วและเป็นส่วนตัวสำหรับ iPhone และ iPad ป้อนหนึ่งคำค้นหา จากนั้นสลับระหว่างการค้นหา โซเชียล วิดีโอ ช้อปปิ้ง ความรู้ และแพลตฟอร์ม AI มากกว่า 40 รายการโดยไม่ต้องพิมพ์ซ้ำ\n\nเรียกดูวิธีการของคุณ\n• แท็บ บุ๊กมาร์ก ประวัติ การดาวน์โหลด และแพลตฟอร์มการค้นหาที่ปรับแต่งได้\n• การท่องเว็บแบบส่วนตัว การป้องกันตัวติดตาม การบล็อกโฆษณา และการควบคุมตามไซต์\n• โหมดเว็บไซต์บนมือถือและเดสก์ท็อป การซูมหน้า การแปล และการจับภาพแบบเต็มหน้า\n• ดาวน์โหลดรูปภาพ วิดีโอ เสียง และเอกสารด้วยเครื่องมือตรวจสอบทรัพยากรหน้าเว็บ\n• แยกข้อความจากรูปภาพหน้าเว็บด้วย Live Text\n\nสร้างขึ้นสำหรับ iPhone และ iPad\n• หน้าต่างอิสระหลายหน้าต่างบน iPad\n• แชร์ลิงก์หรือข้อความไปที่ Soulo โดยตรง\n• ค้นหาและเปิดการดาวน์โหลดจาก Siri, Shortcuts, Control Center, หน้าจอล็อคและปุ่มดำเนินการ\n• การดาวน์โหลดในเบื้องหลังมีความคืบหน้าจริงและหยุดชั่วคราว/เล่นต่อ\n• กิจกรรมสดและสถานะ Dynamic Island\n\nขยายเว็บ\nติดตั้ง UserScripts หรือ WebExtensions ที่เข้ากันได้ จัดการสิทธิ์อย่างชัดเจน และสร้างสคริปต์ของคุณเองด้วยเอกสารประกอบ API ในตัว\n\nSoulo เก็บข้อมูลการท่องเว็บไว้ในเครื่อง เว้นแต่คุณจะเปิดใช้งานการซิงค์การตั้งค่า iCloud การเรียกดูแบบส่วนตัวไม่ได้บันทึกประวัติ",
+        "whatsNew": "มีอะไรใหม่:\n\n• แชร์ลิงก์และข้อความถึง Soulo จากแอปอื่น\n• แยกข้อความจากรูปภาพหน้าเว็บด้วย Live Text\n• เพิ่มการกระทำ Control Center, หน้าจอล็อค, ปุ่มการดำเนินการ, Siri และ Shortcuts\n• การดาวน์โหลดจะดำเนินต่อไปในเบื้องหลังโดยมีความคืบหน้าจริงและหยุดชั่วคราว/เล่นต่อ\n• เพิ่มการเรียกดูแบบหลายหน้าต่างโดยอิสระบน iPad\n• เปิดใช้งาน WebExtensions ดั้งเดิมที่เข้ากันได้ควบคู่ไปกับ UserScripts\n• ขยายแอปและข้อมูล App Store ไปยังสถานที่ App Store ที่รองรับทั้งหมด 50 แห่ง",
+        "keywords": "เบราว์เซอร์,ค้นหา,ส่วนตัว,แท็บ,เว็บ,AI,โซเชียล,วิดีโอ,ดาวน์โหลด,adblock,userscript,แปล"
+      }
+    },
+    {
+      "locale": "tr",
+      "appStoreConnectNames": [
+        "土耳其语",
+        "Turkish"
+      ],
+      "fields": {
+        "name": "Soulo: Çoklu Arama Tarayıcısı",
+        "subtitle": "Web, Sosyal ve Yapay Zekada Ar",
+        "promotionalText": "Sekmeler, uzantılar, reklam engelleme ve güçlü web sayfası araçlarıyla tek bir özel tarayıcıda 40'tan fazla web, sosyal, video, alışveriş ve yapay zeka platformunda arama",
+        "description": "Soulo, iPhone ve iPad için hızlı, özel bir çoklu arama tarayıcısıdır. Bir sorgu girin, ardından yeniden yazmaya gerek kalmadan 40'tan fazla arama, sosyal, video, alışveriş, bilgi ve yapay zeka platformu arasında geçiş yapın.\n\nYOLUNUZA GÖZ ATIN\n• Sekmeler, yer imleri, geçmiş, indirmeler ve özelleştirilebilir arama platformları\n• Özel tarama, izleyici koruması, reklam engelleme ve site bazında kontroller\n• Mobil ve masaüstü web sitesi modları, sayfa yakınlaştırma, çeviri ve tam sayfa yakalama\n• Web sayfası kaynak denetçisi ile görselleri, videoları, sesleri ve belgeleri indirin\n• Live Text ile web sayfası görüntülerinden metin çıkarın\n\niPHONE VE iPAD İÇİN ÜRETİLDİ\n• iPad'de birden çok bağımsız pencere\n• Bağlantıları veya metni doğrudan Soulo ile paylaşın\n• Siri, Shortcuts, Control Center, Kilit Ekranı ve Eylem Düğmesinden indirilenleri arayın ve açın\n• Gerçek ilerleme ve duraklatma/devam ettirme özelliğiyle arka planda indirmeler\n• Canlı Etkinlikler ve Dynamic Island durumu\n\nWEB'İ GENİŞLETİN\nUserScript'leri veya uyumlu WebExtension'leri yükleyin, izinleri net bir şekilde yönetin ve yerleşik API belgeleriyle kendi komut dosyalarınızı oluşturun.\n\nSoulo, iCloud ayarların senkronizasyonunu etkinleştirmediğiniz sürece tarama verilerini yerel olarak depolar. Özel tarama geçmişi kaydetmez.",
+        "whatsNew": "Yenilikler:\n\n• Diğer uygulamalardan Soulo ile bağlantı ve metin paylaşın.\n• Live Text ile web sayfası görüntülerinden metin çıkarın.\n• Control Center, Kilit Ekranı, Eylem Düğmesi, Siri ve Shortcuts eylemleri eklendi.\n• İndirme işlemleri artık arka planda gerçek ilerleme ve duraklatma/devam ettirme ile devam ediyor.\n• iPad'e bağımsız çoklu pencere tarama eklendi.\n• Uyumlu yerel WebExtension'lerin yanı sıra UserScript'ler etkinleştirildi.\n• Uygulama ve App Store bilgileri, desteklenen 50 App Store yerel ayarının tümüne genişletildi.",
+        "keywords": "tarayıcı,arama,özel,sekmeler,web,AI,sosyal,video,indirme,adblock,kullanıcı komut dosyası,çevir"
+      }
+    },
+    {
+      "locale": "uk",
+      "appStoreConnectNames": [
+        "乌克兰语",
+        "Ukrainian"
+      ],
+      "fields": {
+        "name": "Soulo: багатофункціональний по",
+        "subtitle": "Пошук в Інтернеті, соціальних",
+        "promotionalText": "Шукайте понад 40 веб-платформ, платформ соціальних мереж, відео, покупок і AI в одному приватному браузері з вкладками, розширеннями, блокуванням реклами та потужними інс",
+        "description": "Soulo — це швидкий приватний веб-переглядач із кількома пошуковими функціями для iPhone та iPad. Введіть один запит, а потім перемикайтеся між більш ніж 40 платформами пошуку, соціальних мереж, відео, покупок, знань і штучного інтелекту без повторного введення.\n\nОГЛЯДАЙТЕ СВІЙ ШЛЯХ\n• Вкладки, закладки, історія, завантаження та настроювані пошукові платформи\n• Приватний перегляд, захист трекерів, блокування реклами та контроль на кожному сайті\n• Мобільний і настільний режими веб-сайту, масштабування сторінки, переклад і захоплення повної сторінки\n• Завантажуйте зображення, відео, аудіо та документи за допомогою інспектора ресурсів веб-сторінок\n• Витягніть текст із зображень веб-сторінки за допомогою Live Text\n\nСТВОРЕНО ДЛЯ iPhone ТА iPad\n• Кілька незалежних вікон на iPad\n• Діліться посиланнями або текстовими повідомленнями безпосередньо на Soulo\n• Шукайте та відкривайте завантаження з Siri, Shortcuts, Control Center, екрана блокування та кнопки дії\n• Завантаження у фоновому режимі з реальним прогресом і паузою/відновленням\n• Живі дії та статус Dynamic Island\n\nРОЗШИРИТИ МЕЖЕ\nУстановіть UserScript або сумісні WebExtension, чітко керуйте дозволами та створюйте власні сценарії за допомогою вбудованої документації API.\n\nSoulo зберігає дані веб-перегляду локально, якщо ви не ввімкнете iCloud синхронізацію налаштувань. Приватний перегляд не зберігає історію.",
+        "whatsNew": "Що нового:\n\n• Діліться посиланнями та текстом на Soulo з інших програм.\n• Витягніть текст із зображень веб-сторінки за допомогою Live Text.\n• Додано дії Control Center, екран блокування, кнопку дії, Siri і Shortcuts.\n• Завантаження тепер тривають у фоновому режимі з реальним прогресом і паузою/відновленням.\n• Додано незалежний багатовіконний перегляд на iPad.\n• Увімкнено сумісні рідні WebExtension разом із UserScript.\n• Розширено програму та інформацію App Store до всіх 50 підтримуваних App Store локалей.",
+        "keywords": "браузер,пошук,приватне,вкладки,веб,штучний інтелект,соціальна мережа,відео,завантаження,блокування р"
+      }
+    },
+    {
+      "locale": "ur-PK",
+      "appStoreConnectNames": [
+        "乌尔都语",
+        "Urdu"
+      ],
+      "fields": {
+        "name": "Soulo: ملٹی سرچ براؤزر",
+        "subtitle": "ویب، سوشل اور AI تلاش کریں۔",
+        "promotionalText": "40+ ویب، سوشل، ویڈیو، شاپنگ اور AI پلیٹ فارمز کو ایک پرائیویٹ براؤزر میں ٹیبز، ایکسٹینشنز، ایڈ بلاکنگ اور طاقتور ویب پیج ٹولز کے ساتھ تلاش کریں۔",
+        "description": "Soulo iPhone اور iPad کے لیے ایک تیز، نجی ملٹی سرچ براؤزر ہے۔ ایک سوال درج کریں، پھر دوبارہ ٹائپ کیے بغیر 40 سے زیادہ تلاش، سماجی، ویڈیو، شاپنگ، علم اور AI پلیٹ فارمز کے درمیان سوئچ کریں۔\n\nاپنا راستہ براؤز کریں۔\n• ٹیبز، بک مارکس، تاریخ، ڈاؤن لوڈز اور حسب ضرورت تلاش کے پلیٹ فارم\n• پرائیویٹ براؤزنگ، ٹریکر پروٹیکشن، ایڈ بلاکنگ اور فی سائٹ کنٹرول\n• موبائل اور ڈیسک ٹاپ ویب سائٹ موڈز، صفحہ زوم، ترجمہ اور مکمل صفحہ کیپچر\n• ویب پیج ریسورس انسپکٹر کے ساتھ تصاویر، ویڈیو، آڈیو اور دستاویزات ڈاؤن لوڈ کریں۔\n• Live Text کے ساتھ ویب صفحہ کی تصاویر سے متن نکالیں۔\n\nآئی فون اور آئی پیڈ کے لیے بنایا گیا ہے۔\n• آئی پیڈ پر متعدد آزاد ونڈوز\n• لنکس یا متن کا براہ راست Soulo پر اشتراک کریں۔\n• Siri, Shortcuts, Control Center، لاک اسکرین اور ایکشن بٹن سے ڈاؤن لوڈز تلاش کریں اور کھولیں۔\n• حقیقی پیشرفت اور موقوف/دوبارہ شروع کے ساتھ پس منظر میں ڈاؤن لوڈز\nلائیو سرگرمیاں اور Dynamic Island اسٹیٹس\n\nویب کو پھیلائیں۔\nانسٹال کریں UserScripts یا مطابقت پذیر WebExtensions، واضح طور پر اجازتوں کا نظم کریں، اور پہلے سے موجود API دستاویزات کے ساتھ اپنی اسکرپٹس بنائیں۔\n\nSoulo براؤزنگ ڈیٹا کو مقامی طور پر اسٹور کرتا ہے جب تک کہ آپ iCloud ترتیبات کی مطابقت پذیری کو فعال نہ کریں۔ نجی براؤزنگ تاریخ کو محفوظ نہیں کرتی ہے۔",
+        "whatsNew": "نیا کیا ہے:\n\n• دوسری ایپس سے Soulo پر لنکس اور ٹیکسٹ کا اشتراک کریں۔\n• Live Text کے ساتھ ویب صفحہ کی تصاویر سے متن نکالیں۔\n• شامل کیا گیا Control Center، لاک اسکرین، ایکشن بٹن، Siri اور Shortcuts کارروائیاں۔\n• ڈاؤن لوڈز اب پس منظر میں حقیقی پیشرفت اور توقف/دوبارہ شروع کے ساتھ جاری ہیں۔\n• آئی پیڈ پر آزاد ملٹی ونڈو براؤزنگ شامل کی گئی۔\n• فعال کردہ مطابقت پذیر مقامی WebExtensions کے ساتھ ساتھ UserScripts۔\n• ایپ اور App Store معلومات کو تمام 50 تعاون یافتہ App Store لوکیلز تک پھیلا دیا۔",
+        "keywords": "براؤزر، تلاش، نجی، ٹیبز، ویب، AI، سماجی، ویڈیو، ڈاؤن لوڈ، ایڈ بلاک، صارف اسکرپٹ، ترجمہ"
+      }
+    },
+    {
+      "locale": "vi",
+      "appStoreConnectNames": [
+        "越南语",
+        "Vietnamese"
+      ],
+      "fields": {
+        "name": "Soulo: Trình duyệt tìm kiếm đa",
+        "subtitle": "Tìm kiếm trên web, mạng xã hội",
+        "promotionalText": "Tìm kiếm hơn 40 nền tảng web, xã hội, video, mua sắm và AI trong một trình duyệt riêng tư với các tab, tiện ích mở rộng, chặn quảng cáo và các công cụ trang web mạnh mẽ.",
+        "description": "Soulo là trình duyệt đa tìm kiếm riêng tư, nhanh chóng dành cho iPhone và iPad. Nhập một truy vấn, sau đó chuyển đổi giữa hơn 40 nền tảng tìm kiếm, xã hội, video, mua sắm, kiến thức và AI mà không cần gõ lại.\n\nDUYỆT CÁCH CỦA BẠN\n• Tab, dấu trang, lịch sử, nội dung tải xuống và nền tảng tìm kiếm có thể tùy chỉnh\n• Duyệt web riêng tư, bảo vệ trình theo dõi, chặn quảng cáo và kiểm soát từng trang web\n• Chế độ trang web trên thiết bị di động và máy tính để bàn, thu phóng trang, dịch và chụp toàn trang\n• Tải xuống hình ảnh, video, âm thanh và tài liệu bằng trình kiểm tra tài nguyên trang web\n• Trích xuất văn bản từ hình ảnh trang web bằng Live Text\n\nĐƯỢC XÂY DỰNG CHO iPhone VÀ iPad\n• Nhiều cửa sổ độc lập trên iPad\n• Chia sẻ liên kết hoặc văn bản trực tiếp tới Soulo\n• Tìm kiếm và mở các bản tải xuống từ Siri, Shortcuts, Control Center, Màn hình khóa và Nút hành động\n• Tải xuống trong nền với tiến trình thực và tạm dừng/tiếp tục\n• Hoạt động trực tiếp và trạng thái Dynamic Island\n\nMỞ RỘNG WEB\nCài đặt UserScripts hoặc WebExtensions tương thích, quản lý quyền rõ ràng và tạo tập lệnh của riêng bạn bằng tài liệu API tích hợp.\n\nSoulo lưu trữ dữ liệu duyệt web cục bộ trừ khi bạn bật đồng bộ hóa cài đặt iCloud. Duyệt web riêng tư không lưu lịch sử.",
+        "whatsNew": "Có gì mới:\n\n• Chia sẻ liên kết và văn bản tới Soulo từ các ứng dụng khác.\n• Trích xuất văn bản từ hình ảnh trang web bằng Live Text.\n• Đã thêm các hành động Control Center, Màn hình khóa, Nút hành động, Siri và Shortcuts.\n• Giờ đây, quá trình tải xuống tiếp tục ở chế độ nền với tiến trình thực và tạm dừng/tiếp tục.\n• Đã thêm tính năng duyệt nhiều cửa sổ độc lập trên iPad.\n• Đã bật các WebExtension gốc tương thích cùng với UserScripts.\n• Đã mở rộng ứng dụng và thông tin App Store tới tất cả 50 ngôn ngữ App Store được hỗ trợ.",
+        "keywords": "trình duyệt,tìm kiếm,riêng tư,tab,web,AI,xã hội,video,tải xuống,chặn quảng cáo,bản mô tả người dùng"
+      }
+    }
+  ]
+}

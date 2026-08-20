@@ -1,15 +1,15 @@
 # Soulo Fastlane
 
-本目录对应 App Store Connect 版本 **1.1.1（Build 12）**，使用 Fastlane 标准 locale code。
+本目录对应 App Store Connect 版本 **1.1.4（Build 18）**。仓库使用 App Store Connect 中文语言名维护 50 个语言目录，上传时会自动导出为 Fastlane 所需的 locale code。
 
-元数据目录只同步四类版本相关字段：
+每个语言目录同步以下六类字段：
 
 - `name.txt`：App 名称
 - `subtitle.txt`：副标题
 - `promotional_text.txt`：推广文本
-- `release_notes.txt`：1.1.1 新增内容
-
-未放置 `description.txt` 与 `keywords.txt`，因此执行元数据 lane 时会保留 App Store Connect 里已有的描述和关键词。
+- `description.txt`：应用描述
+- `release_notes.txt`：1.1.4 新增内容
+- `keywords.txt`：关键词
 
 ## 使用
 
@@ -24,7 +24,7 @@ bundle exec fastlane ios beta
 bundle exec fastlane ios release
 ```
 
-`metadata` 只上传元数据，不上传构建；`beta` 上传 Build 12 到 TestFlight；`release` 上传构建和元数据，但不会自动提交审核。
+`metadata` 只上传元数据，不上传构建；`beta` 上传 Build 18 到 TestFlight；`release` 上传构建和元数据，但不会自动提交审核。
 
 ## 认证
 
@@ -40,20 +40,10 @@ export ASC_KEY_FILEPATH="/absolute/path/to/AuthKey_....p8"
 
 ## Locale
 
-| 目录 | App Store locale |
-|---|---|
-| `en-US` | English (U.S.) |
-| `zh-Hans` | 简体中文 |
-| `zh-Hant` | 繁體中文 |
-| `ja` | 日本語 |
-| `ko` | 한국어 |
-| `fr-FR` | Français |
-| `de-DE` | Deutsch |
-| `es-ES` | Español |
-| `vi` | Tiếng Việt |
-| `pt-BR` | Português (Brasil) |
-| `ru` | Русский |
-| `tr` | Türkçe |
-| `it` | Italiano |
-| `ar-SA` | العربية |
-| `th` | ไทย |
+完整的 50 种语言与 locale 对照见 `metadata/README.md`。上传前可运行：
+
+```bash
+python3 scripts/export_metadata_json.py
+python3 scripts/export_metadata_json.py --check
+python3 scripts/check_localization.py --strict
+```

@@ -15,10 +15,11 @@ enum AppLocalization {
             value: key,
             table: nil
         )
-        guard localized == key,
-              selectedLanguage != "en",
-              let englishPath = Bundle.main.path(forResource: "en", ofType: "lproj"),
-              let englishBundle = Bundle(path: englishPath) else {
+        let englishBundle = ["en-US", "en"]
+            .compactMap { Bundle.main.path(forResource: $0, ofType: "lproj") }
+            .compactMap(Bundle.init(path:))
+            .first
+        guard localized == key, let englishBundle else {
             return localized
         }
         return englishBundle.localizedString(forKey: key, value: key, table: nil)
@@ -35,11 +36,11 @@ extension LanguageManager {
     }
 
     var currentLanguageName: String {
-        Self.supportedLanguages.first { $0.id == currentLanguage }?.name ?? "English"
+        AppConstants.supportedLanguages.first { $0.code == currentLanguage }?.name ?? "English"
     }
 
     var currentFlag: String {
-        Self.supportedLanguages.first { $0.id == currentLanguage }?.flag ?? "🇺🇸"
+        AppConstants.supportedLanguages.first { $0.code == currentLanguage }?.flag ?? "🇺🇸"
     }
 
     /// Speech locale identifier for voice recognition.
@@ -47,18 +48,23 @@ extension LanguageManager {
         switch currentLanguage {
         case "zh-Hans": return "zh-Hans-CN"
         case "zh-Hant": return "zh-Hant-TW"
-        case "en":      return "en-US"
+        case "en", "en-US": return "en-US"
+        case "en-AU": return "en-AU"
+        case "en-CA": return "en-CA"
+        case "en-GB": return "en-GB"
         case "ja":      return "ja-JP"
         case "ko":      return "ko-KR"
-        case "fr":      return "fr-FR"
-        case "de":      return "de-DE"
-        case "es":      return "es-ES"
+        case "fr", "fr-FR": return "fr-FR"
+        case "fr-CA": return "fr-CA"
+        case "de", "de-DE": return "de-DE"
+        case "es", "es-ES": return "es-ES"
+        case "es-MX": return "es-MX"
         case "ru":      return "ru-RU"
         case "vi":      return "vi-VN"
         case "pt-BR":   return "pt-BR"
         case "it":      return "it-IT"
         case "tr":      return "tr-TR"
-        case "ar":      return "ar-SA"
+        case "ar", "ar-SA": return "ar-SA"
         case "th":      return "th-TH"
         default:        return "en-US"
         }
@@ -67,10 +73,11 @@ extension LanguageManager {
     /// Convenience: localized string with single-param signature.
     func localizedString(_ key: String) -> String {
         let localized = localizedString(for: key)
-        guard localized == key,
-              currentLanguage != "en",
-              let path = Bundle.main.path(forResource: "en", ofType: "lproj"),
-              let bundle = Bundle(path: path) else {
+        let bundle = ["en-US", "en"]
+            .compactMap { Bundle.main.path(forResource: $0, ofType: "lproj") }
+            .compactMap(Bundle.init(path:))
+            .first
+        guard localized == key, let bundle else {
             return localized
         }
         return NSLocalizedString(

@@ -1,26 +1,21 @@
-/* App */
+/* Soulo — generated and validated localization */
+
 "app_name" = "Soulo";
 "app_subtitle" = "一次輸入，切換 40+ 平台";
-
-/* Search */
 "search_placeholder" = "搜尋關鍵詞或輸入網址";
+"privacy_search_placeholder" = "私人搜尋或輸入網址";
 "search" = "搜尋";
 "recent_searches" = "最近搜尋";
 "show_more" = "更多";
 "show_less" = "收起";
 "clear_all" = "清除全部";
 "no_results" = "暫無結果";
-
-/* Clipboard */
 "clipboard_detected" = "偵測到剪貼簿內容";
-
-/* Regions */
+"clipboard_tap_to_search" = "點擊搜尋以使用剪貼簿";
 "region_china" = "中國";
 "region_international" = "國際";
 "region_japan" = "日本";
 "region_russia" = "俄羅斯";
-
-/* Platforms - ALL 22 */
 "platform_douyin" = "抖音";
 "platform_bilibili" = "B站";
 "platform_xiaohongshu" = "小紅書";
@@ -43,19 +38,13 @@
 "platform_youtube_jp" = "YouTube 日本";
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
-
-/* WebView */
 "loading" = "載入中...";
 "load_error" = "載入失敗";
 "bookmark_added" = "已加入收藏";
 "bookmark_removed" = "已從收藏移除";
-
-/* Bookmarks */
 "bookmarks" = "收藏";
 "no_bookmarks" = "暫無收藏";
 "no_bookmarks_desc" = "瀏覽網頁時點擊收藏按鈕儲存";
-
-/* History */
 "search_history" = "搜尋歷史";
 "no_history" = "暫無搜尋歷史";
 "no_history_desc" = "最近的搜尋與瀏覽過的網頁會顯示在這裡";
@@ -64,8 +53,6 @@
 "earlier" = "更早";
 "confirm_clear_history" = "確認清除所有搜尋歷史？";
 "confirm_clear_bookmarks" = "確認清除所有收藏？";
-
-/* Settings */
 "settings" = "設定";
 "platform_management" = "平台管理";
 "region_korea" = "韓國";
@@ -115,8 +102,6 @@
 "about" = "關於";
 "version" = "版本";
 "reset_to_defaults" = "恢復預設設定";
-
-/* Wallpaper */
 "wallpaper_bing" = "Bing 每日";
 "wallpaper_custom" = "自訂照片";
 "wallpaper_none" = "動態背景";
@@ -138,8 +123,6 @@
 "wallpaper_current_vibe" = "當前氛圍";
 "wallpaper_discover" = "發現美圖";
 "choose_photo" = "選擇照片";
-
-/* Platform Management */
 "add_platform" = "新增平台";
 "platform_name" = "平台名稱";
 "search_url_template" = "搜尋 URL 範本";
@@ -150,8 +133,6 @@
 "delete_platform" = "刪除平台";
 "confirm_delete_platform" = "確認刪除此自訂平台？";
 "url_template_error" = "URL 範本必須包含 %@ 佔位符";
-
-/* Privacy */
 "incognito_mode" = "無痕模式";
 "incognito_desc" = "開啟後搜尋不會記錄歷史";
 "clear_search_history" = "清除搜尋歷史";
@@ -160,8 +141,6 @@
 "clear_cache_desc" = "清除 WebView 的 Cookie 和快取資料";
 "clear_all_data" = "清除所有資料";
 "action_irreversible" = "此操作不可撤銷";
-
-/* Privacy Settings (extended keys) */
 "privacy_section_browsing" = "瀏覽";
 "privacy_section_data" = "資料管理";
 "privacy_incognito" = "無痕模式";
@@ -182,7 +161,6 @@
 "privacy_clear_cache_desc" = "清除網頁快取、分頁預覽與最近 3 天的網頁瀏覽記錄，保留登入狀態";
 "privacy_clear_cache_confirm_title" = "清除瀏覽快取？";
 "privacy_clear_cache_confirm_message" = "將清除網頁快取與最近 3 天的網頁瀏覽記錄，但保留 Cookie 與登入狀態。";
-
 "enter_fullscreen" = "進入全螢幕";
 "exit_fullscreen" = "退出全螢幕";
 "fullscreen_exit_hint" = "輕點展開，下拉退出";
@@ -204,49 +182,29 @@
 "save" = "儲存";
 "edit" = "編輯";
 "share" = "分享";
-
-/* Permissions */
 "speech_permission" = "需要語音辨識權限才能使用語音搜尋";
 "microphone_permission" = "需要麥克風權限進行語音輸入";
-
-/* Errors */
 "error_occurred" = "發生錯誤";
 "network_error" = "網路連線失敗";
 "try_again" = "重試";
-
-/* Voice Input */
 "voice_listening" = "正在聆聽...";
 "voice_tap_to_speak" = "點擊按鈕開始說話";
-
-/* F3: 拼寫糾錯 */
 "did_you_mean" = "你是不是要搜:";
-
-/* F4: 頁面摘要 */
 "summarize" = "摘要";
 "summary_title" = "頁面摘要";
 "summarizing" = "正在產生摘要...";
 "copy_summary" = "複製";
-
-/* F5: 平台推薦 */
 "suggested_platforms" = "推薦";
-
-/* F7: 剪貼簿智慧 */
 "clipboard_url_detected" = "偵測到連結";
 "clipboard_product_detected" = "偵測到商品";
 "clipboard_person_detected" = "偵測到人名";
 "open_directly" = "直接開啟";
-
-/* F9: 圖片搜尋 */
 "image_search" = "圖片搜尋";
 "extracting_text" = "正在擷取文字...";
 "no_text_found" = "未辨識到文字";
 "detected_objects" = "辨識到:";
 "photo_library" = "相簿";
-
-/* F1: Siri */
 "siri_search_tip" = "試試說：「用Soulo搜貓」";
-
-/* AI 平台 */
 "platform_deepseek" = "DeepSeek";
 "platform_qianwen" = "通義千問";
 "platform_bing" = "Bing";
@@ -280,15 +238,12 @@
 "show_top_search_bar" = "顯示頂部搜尋框";
 "show_top_search_bar_desc" = "隱藏後，可點擊底部網址列搜尋或使用語音輸入";
 "ad_block_master_disabled_desc" = "開啟廣告過濾後，才能使用和管理下方過濾規則訂閱。";
-/* 自訂群組 */
 "custom_groups" = "自訂群組";
 "no_groups" = "暫無自訂群組";
 "no_groups_desc" = "建立群組來整理你常用的平台";
 "add_group" = "新建群組";
 "group_name" = "群組名稱";
 "platforms_count" = "個平台";
-
-/* 動態主題 */
 "dynamic_theme" = "主題";
 "theme_midnight" = "午夜";
 "theme_ocean" = "海洋";
@@ -304,6 +259,19 @@
 "copied" = "已複製！";
 "ad_block" = "廣告過濾";
 "ad_block_desc" = "隱藏搜尋結果中的廣告和追蹤器（重新搜尋後生效）";
+"ad_block_network" = "阻止廣告網路請求";
+"ad_block_cosmetic" = "隱藏廣告佔位符";
+"ad_block_popups" = "清理彈出視窗和覆蓋層";
+"ad_block_management" = "廣告區塊管理";
+"ad_block_allowlist" = "允許的站點";
+"ad_block_disable_current_site" = "在此網站上停用廣告攔截";
+"ad_block_enable_current_site" = "在此網站啟用廣告攔截";
+"ad_block_site_toggle_desc" = "變更此設定會重新載入目前頁面，以便套用新的廣告攔截設定。";
+"ad_block_no_allowlisted_sites" = "沒有允許的站點。";
+"ad_block_stats" = "隱藏元素";
+"ad_block_stats_desc" = "計數為近似值，僅包含透過修飾清理隱藏的頁面元素。";
+"ad_block_no_stats" = "尚無隱藏元素統計資料。";
+"ad_block_reset_stats" = "重置統計數據";
 "browsing" = "瀏覽";
 "no_platforms_in_group" = "暫無平台";
 "add_to_group" = "新增平台到群組";
@@ -322,21 +290,15 @@
 "image_uploading" = "正在上傳圖片...";
 "switch_to_bing" = "切換到 Bing 桌布？";
 "switch_to_bing_desc" = "開啟 Bing 每日桌布後，點擊小風車即可瀏覽精美桌布。";
-
 "open_external_title" = "開啟外部應用程式？";
 "open_external_failed" = "無法開啟外部應用程式";
 "safari_compatibility_mode" = "Safari 相容模式";
 "open_in_default_browser" = "在預設瀏覽器中開啟";
 "open_external_message" = "此連結將開啟其他應用程式，是否繼續？";
-
 "ai_loading_page" = "正在載入 AI 平台...";
 "ai_loading_input" = "正在填寫並傳送問題...";
-
-/* Widget */
 "widget_search" = "快速搜尋";
 "widget_description" = "快速搜尋多個平台";
-
-/* Settings - Navigation & Titles */
 "settings_title" = "設定";
 "settings_platforms" = "平台";
 "settings_appearance" = "外觀";
@@ -345,8 +307,6 @@
 "settings_version" = "版本";
 "settings_privacy_policy" = "隱私權政策";
 "settings_terms" = "服務條款";
-
-/* Settings - Section Headers */
 "settings_section_platforms" = "平台";
 "settings_section_appearance" = "外觀";
 "settings_section_language" = "語言";
@@ -354,8 +314,6 @@
 "settings_section_privacy" = "隱私";
 "settings_section_about" = "關於";
 "settings_section_about_support" = "關於與支援";
-
-/* Platform Management */
 "platform_auto_sort" = "依使用頻率自動排序";
 "platform_auto_sort_desc" = "根據使用頻率自動調整平台順序";
 "platform_custom_badge" = "自訂";
@@ -364,8 +322,6 @@
 "platform_reset_confirm_title" = "重設平台配置？";
 "platform_reset_confirm_action" = "重設";
 "platform_reset_confirm_message" = "所有平台配置將恢復為預設設定，此操作不可撤銷。";
-
-/* Add Custom Platform */
 "add_platform_title" = "新增自訂平台";
 "add_platform_subtitle" = "將任意搜尋引擎或網站新增為平台";
 "add_platform_name" = "平台名稱";
@@ -378,22 +334,14 @@
 "add_platform_url_help_title" = "URL 範本說明";
 "add_platform_url_help_desc" = "將 URL 中的搜尋關鍵詞替換為 %@，搜尋時會自動填入你輸入的內容。";
 "add_platform_url_help_examples" = "範例";
-
-/* Wallpaper (extended) */
 "wallpaper_choose_photo" = "選擇照片";
-
-/* Language Settings */
 "language_select_title" = "選擇語言";
 "language_footer" = "更改語言將更新應用程式內的所有文字。";
-
-/* Home Bookmarks */
 "show_bookmarks_home" = "首頁顯示收藏";
 "show_bookmarks_home_desc" = "在首頁以圖示形式展示收藏的網站";
 "show_recent_searches_home" = "首頁顯示最近搜尋";
 "show_recent_searches_home_desc" = "在首頁搜尋框下方顯示最近搜尋關鍵字";
 "home_screen" = "首頁";
-
-/* AI Search Platforms */
 "platform_metaso" = "秘塔搜尋";
 "platform_tiangong" = "天工AI搜尋";
 "platform_phind" = "Phind";
@@ -401,12 +349,11 @@
 "platform_kimi" = "Kimi搜尋";
 "voice_stop" = "停止";
 "voice_record" = "錄音";
-
-/* Batch Import */
 "batch_import" = "批次匯入";
 "batch_import_format" = "貼上以下格式的 JSON";
 "batch_import_group" = "新增到群組（選填）";
 "batch_import_group_placeholder" = "如：影視";
+"batch_import_film_entry" = "打開電影平台預設";
 "batch_import_action" = "匯入";
 "batch_import_result" = "成功匯入 %d 個平台";
 "paste_from_clipboard" = "從剪貼簿貼上";
@@ -417,8 +364,6 @@
 "error_timeout" = "連線逾時，請重試";
 "error_ssl" = "安全連線失敗，該網站可能不安全";
 "retry" = "重試";
-
-/* Support & Feedback */
 "settings_rate" = "給個好評";
 "settings_feedback" = "傳送回饋";
 "settings_help" = "說明中心";
@@ -440,8 +385,6 @@
 "feedback_success_title" = "感謝回饋";
 "feedback_success_msg" = "您的回饋已提交成功！";
 "feedback_error" = "提交失敗";
-
-/* Help Center */
 "help_title" = "說明中心";
 "help_welcome_title" = "需要協助？";
 "help_welcome_subtitle" = "這裡是關於 Soulo 你需要了解的一切。";
@@ -462,13 +405,9 @@
 "theme_system" = "跟隨系統";
 "theme_light" = "淺色";
 "theme_dark" = "深色";
-
-/* Wallpaper Delete Confirmation */
 "wallpaper_delete_title" = "移除桌布";
 "wallpaper_delete_confirm" = "移除";
 "wallpaper_delete_msg" = "該桌布將從列表中隱藏。";
-
-/* 瀏覽器標籤 */
 "tab_new_tab" = "新標籤頁";
 "tab_tabs" = "個標籤頁";
 "tab_close" = "關閉標籤頁";
@@ -478,8 +417,6 @@
 "tab_duplicate" = "複製標籤頁";
 "tab_open_new" = "在新標籤頁中打開";
 "popup_open_current_tab" = "在目前標籤頁中打開";
-
-/* 瀏覽器功能 */
 "find_in_page" = "頁內查找";
 "desktop_mode" = "桌面模式";
 "mobile_mode" = "行動模式";
@@ -492,8 +429,6 @@
 "image_saved" = "已儲存到相簿";
 "save_failed" = "儲存失敗";
 "downloading" = "下載中...";
-
-/* Browser Privacy */
 "downloads" = "下載項目";
 "downloads_empty" = "尚無下載項目";
 "downloads_empty_desc" = "下載完成的檔案會顯示在這裡。";
@@ -505,8 +440,6 @@
 "library" = "資料庫";
 "my_downloads" = "我的下載";
 "open_downloads_folder" = "開啟下載位置";
-"live_activity" = "動態島";
-"live_activity_desc" = "在即時動態與動態島（支援機型頂部、攝影鏡頭周圍的黑色膠囊區域）中顯示目前搜尋內容。";
 "fire_button" = "隱私清理";
 "fire_button_confirm" = "清除";
 "fire_button_desc" = "關閉瀏覽器分頁，並清除網站資料、Cookie、快取和隱私統計。";
@@ -543,9 +476,43 @@
 "privacy_gpc_desc" = "Ask websites not to sell or share your data when they support GPC.";
 "privacy_cookie_banners" = "Handle Cookie Prompts";
 "privacy_cookie_banners_desc" = "Try to reject or dismiss common cookie consent banners.";
+"ad_block_allowlisted_count" = "列入許可名單的網站";
+"ad_block_total_hidden" = "隱藏元素";
+"ad_block_current_site_hidden" = "本網站";
+"ad_block_search_allowlist" = "搜尋白名單";
+"ad_block_subscriptions" = "過濾訂閱";
+"ad_block_subscriptions_desc" = "Soulo 支援 ABP 過濾器清單的實用子集，並將它們轉換為 WebKit 規則以及修飾隱藏。來源包括 EasyList、EasyList China 和 AdGuard 過濾器。";
+"ad_block_subscription_enabled" = "啟用列表";
+"ad_block_subscription_rules" = "快取規則";
+"ad_block_subscription_rules_suffix" = "規則";
+"ad_block_subscription_update" = "更新啟用列表";
+"ad_block_subscription_updating" = "更新中...";
+"ad_block_subscription_reset" = "重置訂閱";
+"wallpaper_remote_error" = "壁紙來源不可用。嘗試刷新或切換來源。";
+"restore" = "恢復";
+"never_prompt" = "從不提示";
+"live_activity" = "動態島";
+"live_activity_desc" = "在即時動態與動態島（支援機型頂部、攝影鏡頭周圍的黑色膠囊區域）中顯示目前搜尋內容。";
+"external_navigation" = "外部應用程式連結";
+"never_prompt_external" = "靜默阻止外部應用程式鏈接";
+"never_prompt_external_desc" = "啟用後，Soulo 會取消外部應用程式跳轉而不顯示提示。";
+"blocked_external_hosts" = "被封鎖的主機";
+"no_external_hosts" = "沒有被封鎖的主機";
+"no_external_hosts_desc" = "當您在外部應用程式連結上選擇“從不提示”後，主機將顯示在此處。";
+"wallpaper_auto_refresh_header" = "自動重新整理";
+"wallpaper_auto_refresh" = "刷新間隔";
+"wallpaper_auto_refresh_desc" = "Soulo 在可能的情況下在自動刷新之前預先加載下一個遠端壁紙。";
+"wallpaper_random_sources" = "隨機來源";
+"wallpaper_random_sources_desc" = "自動刷新和隨機刷新在選定的遠端來源之間切換。至少保留一個來源。";
+"wallpaper_random_topics" = "隨機主題";
+"wallpaper_interval_none" = "絕不";
+"wallpaper_interval_1min" = "每分鐘";
+"wallpaper_interval_5min" = "每 5 分鐘一班";
+"wallpaper_interval_15min" = "每 15 分鐘一班";
+"wallpaper_interval_30min" = "每 30 分鐘一班";
+"wallpaper_interval_1hour" = "每小時";
+"wallpaper_interval_1day" = "每天";
 "example" = "範例";
-
-/* 瀏覽器導覽 */
 "browser_back" = "返回";
 "browser_forward" = "前進";
 "browser_reload" = "重新載入";
@@ -553,8 +520,6 @@
 "current_page_link" = "目前網頁連結";
 "tab_limit_title" = "已達標籤頁上限";
 "tab_limit_message" = "最多可保留 20 個標籤頁。請先關閉一個再開啟新的標籤頁。";
-
-/* 旁白輔助使用 */
 "accessibility_selected" = "已選取";
 "accessibility_enabled" = "已開啟";
 "accessibility_disabled" = "已關閉";
@@ -618,20 +583,150 @@
 "icloud_settings_sync" = "iCloud 設定同步";
 "icloud_settings_sync_desc" = "同步外觀、首頁、瀏覽、隱私和平台設定；不含記錄、快取、登入資料和下載檔案";
 "settings_section_sync" = "同步";
-"privacy_exit_incognito" = "關閉無痕模式";
-"privacy_enter_incognito" = "開啟無痕模式";
-
-/* 設定最佳化 */
-"privacy_section_private_browsing" = "隱私瀏覽";
-"toolbar_restore_confirm_title" = "還原預設工具列？";
-"toolbar_restore_confirm_message" = "目前的工具列配置將替換為預設配置。";
-"web_readability" = "網頁可讀性";
-"web_reduce_motion" = "減少網頁動態效果";
-"web_reduce_motion_desc" = "限制網頁動畫、過場效果與平滑捲動。";
-"web_underline_links" = "突顯網頁連結";
-"web_underline_links_desc" = "為網頁連結加上底線，讓連結更容易辨識。";
-"home_title_edit_desc" = "作為首頁中央顯示的主標題。";
-"home_subtitle_edit_desc" = "顯示在主標題下方，留空則隱藏。";
+"quick_action_clear_cache" = "清除快取";
+"quick_action_private_tab" = "新的私人標籤";
+"quick_action_share_app" = "分享應用程式";
+"share_app_message" = "試試 Soulo — 一款專注於搜尋和瀏覽的應用程式。";
+"cache_cleared" = "瀏覽快取已清除";
+"web_appearance" = "網頁外觀";
+"web_page_colors" = "頁面顏色";
+"web_follow_app_scheme" = "匹配網站主題";
+"web_follow_app_scheme_desc" = "告訴支援的網站 Soulo 目前是淺色還是深色，以便他們選擇匹配的主題。不受支援的網站保持不變。";
+"web_warm_color_shift" = "溫暖的閱讀色調";
+"web_warm_color_shift_desc" = "在頁面上添加微妙的暖色調，以柔化夜間冷白色的螢幕。影像和影片也會顯得稍微溫暖一些。";
+"web_force_dark" = "強制黑暗網頁";
+"web_force_dark_short" = "深色模式";
+"web_force_dark_desc" = "即使網站沒有自己的深色主題，也請嘗試將明亮的背景、深色文字和邊框轉換為低光深色調色板。";
+"web_force_dark_footer" = "這些設定可以獨立組合。轉換不會更改頁面內容，但複雜的頁面、畫布和自訂控制項可能會保留其原始顏色。如果頁面看起來有問題，請從底部的「更多」功能表快速將其關閉。";
+"site_information" = "網站資訊";
+"shake_action" = "搖動動作";
+"shake_action_none" = "沒有任何";
+"shake_action_fullscreen" = "切換全螢幕";
+"shake_action_dark" = "切換暗模式";
+"shake_action_reload" = "重新載入頁面";
+"shake_action_close_tab" = "關閉目前選項卡";
+"shake_action_footer" = "所選操作在網頁開啟時執行。選擇切換操作會在下一次搖晃時反轉它。";
+"shake_intensity" = "搖動強度";
+"shake_intensity_light" = "輕柔";
+"shake_intensity_standard" = "標準";
+"shake_intensity_firm" = "較強";
+"shake_intensity_strong" = "強勁";
+"shake_intensity_footer" = "選擇觸發操作所需的搖動幅度。輕柔最容易觸發；強勁可減少誤觸。";
+"extensions" = "擴充";
+"extensions_installed" = "我的擴展";
+"extensions_install" = "安裝擴充";
+"extensions_empty" = "無擴充";
+"extensions_empty_desc" = "安裝網路擴充或 UserScript 即可在此處查看。";
+"extensions_reload_note" = "更改擴充功能或腳本後會重新載入開啟的頁面，以便新狀態生效。";
+"web_extensions" = "網路擴充";
+"userscripts" = "腳本與擴充功能";
+"userscripts_installed" = "我的腳本";
+"userscripts_install" = "安裝腳本";
+"userscripts_empty" = "沒有 UserScripts";
+"userscripts_empty_desc" = "安裝 .user.js 檔案或建立腳本以在此處查看。";
+"userscripts_reload_note" = "安裝、編輯、啟用、停用或刪除腳本後，開啟的頁面會重新載入。";
+"userscript_experimental_badge" = "相容性";
+"userscript_experimental_title" = "UserScript 相容性";
+"userscript_experimental_desc" = "支援網站規則、文件開始/結束、廣泛的 GM 儲存和頁面 API、腳本命令、通知、標籤、下載、cookie、資源和權限範圍的請求。安裝前檢查每個腳本；外部@require 檔案不會被執行。";
+"extension_choose_file" = "選擇擴充檔案或資料夾...";
+"extension_installing" = "檢查並安裝擴充功能...";
+"extension_install_failed" = "無法安裝擴充功能";
+"extension_permissions_summary" = "%d 權限 · %d 網站規則";
+"extension_untitled" = "無標題擴展";
+"web_extension_install_footer" = "貼上 Chrome、Edge 或 Firefox 擴充功能詳情頁連結，由 Soulo 直接下載安裝；也可以匯入 CRX、XPI、ZIP 或擴充功能資料夾。部分桌面專用 API 可能無法使用。";
+"web_extension_install_store_link" = "從商店連結安裝…";
+"web_extension_browse_sources" = "瀏覽擴充商店";
+"web_extension_browse_sources_footer" = "商店中的「取得」按鈕僅支援對應的桌面瀏覽器。請複製擴充功能詳情頁連結，再使用 Soulo 的「從商店連結安裝」。";
+"web_extension_store_install_title" = "安裝商店擴展";
+"extension_page_banner_title" = "使用 Soulo 安裝";
+"extension_page_banner_desc" = "Soulo 可以直接安裝此擴充功能。";
+"web_extension_store_install_desc" = "貼上 Chrome 線上應用程式商店、Microsoft Edge 擴充功能或 Firefox 附加元件的詳情頁連結。Soulo 會直接下載擴充套件，不依賴商店中不相容的「取得」按鈕。";
+"web_extension_store_link_placeholder" = "擴充功能頁面連結或 Chrome 擴充功能 ID";
+"web_extension_store_invalid_link" = "請貼上 Chrome、Edge 或 Firefox 擴充功能詳情頁連結、Chrome 擴充功能 ID，或者直接的 CRX、XPI、ZIP 連結。";
+"web_extension_store_https_required" = "擴充包必須使用安全的 HTTPS 連結。";
+"web_extension_store_insecure_redirect" = "擴充功能商店將下載重新導向到了 iOS 無法安全驗證的伺服器。";
+"web_extension_store_download_failed" = "Soulo 無法從此連結下載有效的擴充包。";
+"web_extension_store_package_too_large" = "擴充套件超過 100 MB 的安全限制。";
+"web_extension_requires_ios" = "標準 Web 擴充功能需要 iOS 18.4 或更高版本。 UserScripts 在此設備上仍然可用。";
+"web_extension_invalid" = "所選項目不是有效的受支援的 Web 擴充。";
+"web_extension_persistent_background_unsupported" = "此擴充功能使用了 iOS Web Extension 不支援的持續背景頁面。請嘗試 Manifest V3 或相容 Safari 的版本。";
+"userscript_new" = "新腳本";
+"userscript_edit" = "編輯腳本";
+"userscript_choose_file" = "選擇 UserScript 檔案 (.js)...";
+"userscript_install_footer" = "點選來源行可在目前 Soulo 標籤中開啟。 .user.js 連結會開啟安裝確認訊息。支援標準 JavaScript 和廣泛的 GM API；腳本不會在無痕瀏覽中運行，並且不會執行外部 @require 檔案。";
+"userscript_install_failed" = "UserScript 無法安裝";
+"web_extension_temporarily_disabled" = "相容性測試完成後，標準瀏覽器擴充功能暫時無法使用。";
+"userscript_unreadable" = "無法將所選腳本讀取為 UTF-8 文字。";
+"userscript_empty" = "腳本不能為空。";
+"userscript_invalid_match_pattern" = "無效網站規則：%@";
+"userscript_untitled" = "無標題腳本";
+"userscript_name" = "姓名";
+"userscript_run_at" = "運行於";
+"userscript_document_start" = "文件開始";
+"userscript_document_end" = "文件結束";
+"userscript_matches" = "網站規則（每行一條）";
+"userscript_code" = "JavaScript";
+"userscript_description" = "描述";
+"userscript_copy_javascript" = "複製 JavaScript";
+"userscripts_documentation" = "開發文件";
+"userscript_docs_ai_title" = "使用 AI 建立腳本";
+"userscript_docs_ai_desc" = "複製包含 Soulo 完整相容規則的提示詞，補充你的需求後交給 AI，即可產生可安裝的腳本。";
+"userscript_docs_copy_prompt" = "複製 AI Prompt";
+"userscript_docs_status_title" = "相容性狀態";
+"userscript_docs_supported_title" = "支援";
+"userscript_docs_supported_desc" = "核心比對、文件開始/結束、樣式/元素、單一和批次儲存、本機值偵聽器、剪貼簿、選單、頁內通知、標籤、下載、標籤資料、cookie、資源、URL 變更和權限範圍的請求。";
+"userscript_docs_partial_title" = "部分支持";
+"userscript_docs_partial_desc" = "網路請求省略上傳/進度和 cookie 傳輸。通知位於頁內，資源 API 是非同步的，值變更偵聽器報告目前頁面所做的變更。更新檢查是手動的。";
+"userscript_docs_unsupported_title" = "目前不支援";
+"userscript_docs_unsupported_desc" = "外部 @require 執行、GM_webRequest 攔截、GM_audio、沙箱/運行隔離、自動更新檢查以及 WKWebView 無法提供的精確的僅桌面行為。";
+"userscript_docs_metadata_title" = "元數據";
+"userscript_docs_metadata_identity" = "在安裝之前和腳本詳細資訊中顯示人類可讀的腳本名稱和可選描述。";
+"userscript_docs_metadata_version" = "使用穩定、唯一的命名空間，並在捆綁腳本發生變更時增加版本。";
+"userscript_docs_metadata_match" = "使用 http/https 通配符規則 <all_urls> 或正規表示式 @include 文字選擇頁面。";
+"userscript_docs_metadata_exclude" = "從腳本的網站存取範圍中刪除符合的頁面。";
+"userscript_docs_metadata_run_at" = "在文件開始時或 DOMContentLoaded 之後運行。預設為文檔結束。";
+"userscript_docs_metadata_grant" = "聲明使用的每個特權 API。當腳本只需要標準網頁 API 時，請使用 @grant none。";
+"userscript_docs_metadata_connect" = "授權特權網路請求使用的主機。如果沒有它，請求將僅限於目前頁面主機。";
+"userscript_docs_metadata_urls" = "可選身份和更新元資料。 Soulo 使用這些來識別相同腳本的重新安裝。";
+"userscript_docs_metadata_resource" = "聲明一個命名資源。新增匹配的@connect主機；獲取會被推遲，直到等待現代資源 API 為止。";
+"userscript_docs_metadata_require" = "外部要求在安裝期間公開，但不下載或執行；腳本必須是獨立的。";
+"userscript_docs_api_title" = "支援的特權 API";
+"userscript_docs_api_info" = "讀取腳本處理程序、Soulo 版本和解析的腳本元資料。有傳統形式和現代形式可供選擇。";
+"userscript_docs_api_unsafe_window" = "當明確聲明 unsafeWindow 授予時提供目前頁面視窗。";
+"userscript_docs_api_style" = "在頁面上新增樣式元素，包括在文件啟動期間安全地新增樣式元素。現代形式傳回一個 Promise。";
+"userscript_docs_api_log" = "將一個或多個值寫入網頁控制台。";
+"userscript_docs_api_get" = "讀取持久性 JSON 可序列化值，當鍵不存在時回退。";
+"userscript_docs_api_set" = "保留 JSON 可序列化值。現代形式傳回一個可以報告儲存錯誤的 Promise。";
+"userscript_docs_api_delete" = "刪除此腳本的一個持久值。";
+"userscript_docs_api_list" = "傳回此腳本擁有的所有持久性儲存金鑰。";
+"userscript_docs_api_bulk" = "在一次操作中讀取、寫入或刪除多個 JSON 值；寫入由本機儲存以原子方式驗證。";
+"userscript_docs_api_listener" = "觀察腳本在目前網頁中所做的儲存變更。不會發出跨選項卡遠端通知。";
+"userscript_docs_api_element" = "建立並附加帶有屬性的元素，包括在文件啟動期間安全地新增。";
+"userscript_docs_api_clipboard" = "透過 Soulo 的本機橋接器將文字複製到系統剪貼簿。";
+"userscript_docs_extended_title" = "選單、選項卡、文件和頁面集成";
+"userscript_docs_api_menu" = "將腳本操作新增至 Soulo 的「更多」選單，並在請求時或導覽開始時將其刪除。";
+"userscript_docs_api_notification" = "顯示獨立的、可存取的頁內通知並支援點擊/完成回調。";
+"userscript_docs_api_tabs" = "在前台或背景開啟 Soulo 選項卡，關閉其傳回的句柄，或關閉/聚焦目前標籤。";
+"userscript_docs_api_download" = "將授權的公共 URL 下載到 Soulo Downloads。目標必須滿足 @connect 並且檔案名稱已清理。";
+"userscript_docs_api_tabdata" = "在屬於相同腳本的頁面和即時標籤之間共用 JSON 可序列化資料。";
+"userscript_docs_api_cookie" = "列出、建立和刪除僅限於目前網頁網域的 cookie。";
+"userscript_docs_api_resource" = "以文字或資料 URL 的形式取得聲明的 @resource。傳統命名形式和現代形式都會傳回 Soulo 中的 Promise。";
+"userscript_docs_api_urlchange" = "為單頁應用程式上的 History API、後退/前進和雜湊變更發出 urlchange。";
+"userscript_commands" = "腳本命令";
+"userscript_docs_network_title" = "網路請求";
+"userscript_docs_network_legacy" = "啟動特權請求並傳回中止句柄。宣告符合的 grant 和 @connect 主機。";
+"userscript_docs_network_modern" = "特權請求 API 的現代別名，具有相同的詳細資訊物件和回調行為。";
+"userscript_docs_network_details" = "支援 url、方法、標頭、資料、逾時、responseType、onloadstart、onreadystatechange、onload、onerror 和 onloadend。";
+"userscript_docs_network_response" = "使用 json、blob、arraybuffer，或將文字留空。回應包括狀態、finalUrl、標頭、回應文字和回應。";
+"userscript_docs_network_connect" = "僅在真正必要時才使用 self 作為頁面主機、其網域及其子網域、通配符網域或 *。";
+"userscript_docs_limits_title" = "行為和限制";
+"userscript_docs_limits_web" = "標準 DOM、事件、MutationObserver、fetch、計時器和其他 WKWebView API 均可使用。正常的獲取仍然遵循 CORS。";
+"userscript_docs_limits_storage" = "儲存的值必須是 JSON 可序列化的：每個值最多 256 KB，每個腳本總共 1 MB。";
+"userscript_docs_limits_network" = "特權回應限制為 20 MB，超時限制為 1-60 秒，且不接受 Cookie/Host/Origin 標頭。";
+"userscript_docs_limits_private" = "UserScripts 不在無痕瀏覽中運作。";
+"userscript_docs_limits_require" = "外部 @require 檔案永遠不會被執行。避免 CDN 依賴性並在腳本中包含所有必需的邏輯。";
+"userscript_docs_template_title" = "最小模板";
+"userscript_docs_template_footer" = "使用唯一的命名空間和盡可能窄的 @match 和 @grant 聲明。";
 "userscript_too_large" = "所選指令碼超過 2 MB 大小限制。";
 "userscript_invalid_connect_domain" = "網路存取規則無效：%@";
 "userscript_storage_invalid" = "指令碼嘗試儲存無效或過大的資料。";
@@ -645,15 +740,110 @@
 "userscript_external_requirements" = "外部相依項目";
 "userscript_external_requirements_desc" = "此指令碼宣告了外部 @require 檔案，Soulo 不會自動載入。";
 "userscript_metadata_title" = "指令碼詳細資料";
+"userscript_unsupported_permissions" = "尚不支持：%@";
 "userscript_sample_name" = "閱讀進度列";
 "userscript_sample_desc" = "在每個網頁頂部顯示簡潔的閱讀進度提示。";
 "userscript_builtin_badge" = "內建範例";
-"userscript_description" = "描述";
-"userscript_copy_javascript" = "複製 JavaScript";
-"userscripts_documentation" = "開發文件";
-"userscript_docs_ai_title" = "使用 AI 建立腳本";
-"userscript_docs_ai_desc" = "複製包含 Soulo 完整相容規則的提示詞，補充你的需求後交給 AI，即可產生可安裝的腳本。";
-"userscript_docs_copy_prompt" = "複製 AI Prompt";
-"userscript_commands" = "腳本命令";
 "userscript_page_marker_name" = "區域文字擷取";
 "userscript_page_marker_desc" = "點擊可拖動按鈕，再點擊網頁中的任一區域，即可擷取並複製可見文字。";
+"userscript_builtin_readonly_desc" = "內建範例是唯讀的，並且在您打開它們之前保持停用狀態。";
+"site_connection_secure" = "連線安全";
+"site_connection_not_secure" = "連線不安全";
+"site_https_verified_desc" = "此頁面使用加密的 HTTPS。 iOS 驗證網站憑證。";
+"site_http_warning_desc" = "此頁面不使用安全的 HTTPS 連線。避免輸入密碼或敏感資訊。";
+"site_tracking_protection" = "追蹤保護";
+"site_private_mode_desc" = "不保存歷史記錄；使用臨時網站數據";
+"site_privacy_details" = "網站保護詳細信息";
+"site_protection_explanation" = "啟用後，Soulo 會阻止已知的追蹤請求、刪除常見的追蹤參數並套用廣告過濾。關閉它僅影響此網站。";
+"site_protection_summary" = "防護概要";
+"site_protection_summary_desc" = "僅顯示此頁面的可理解的結果。計數是瀏覽會話的估計值，絕不會用於分析您的情況。";
+"site_privacy_actions" = "保護行動已完成";
+"site_request_details_count" = "請求詳細資料 (%d)";
+"extension_source_open_hint" = "在目前 Soulo 標籤中開啟此來源";
+"extension_detected_title" = "偵測到擴充包";
+"userscript_detected_title" = "偵測到UserScript";
+"extension_detected_desc" = "Soulo 將在安裝之前驗證清單並啟用此擴充聲明的權限和網站存取權限。";
+"userscript_detected_desc" = "該腳本可以讀取和更改符合其網站規則的頁面。僅當您信任其來源時才安裝它。";
+"install" = "安裝";
+"extension_installing_short" = "正在安裝...";
+"extension_install_success" = "安裝成功";
+"extension_installed_success_desc" = "%@ 已安裝並啟用。打開的頁面將重新加載以應用它。";
+"browser_tabs" = "選項卡";
+"web_capture" = "捕獲頁面";
+"web_capture_viewport" = "捕獲當前螢幕";
+"web_capture_full_page" = "捕獲滾動頁面";
+"web_capture_full_page_limit_desc" = "滾動捕獲具有最大高度，以確保記憶體使用安全。非常長的頁面會被自動修剪。";
+"web_capture_processing" = "正在加載頁面資源並創建捕獲...";
+"web_capture_unavailable" = "當前頁面尚未準備好捕獲。";
+"web_capture_empty" = "沒有可見的頁面內容可供捕獲。";
+"web_capture_failed" = "頁面抓取失敗";
+"web_capture_save" = "儲存到照片";
+"web_capture_saved" = "已儲存";
+"web_capture_saved_desc" = "頁面擷取已儲存到照片中。";
+"web_capture_photo_permission" = "允許 Soulo 將頁面擷取新增至“設定”中的“照片”，然後重試。";
+"web_capture_height_limited" = "此頁面超出了滾動捕獲限制，因此圖像被修剪到最大高度。";
+"web_capture_live_text_hint" = "觸摸並按住圖像中已識別的文本，以使用 Live Text 選擇或複製它。";
+"web_translate" = "翻譯頁面";
+"web_translate_target" = "翻譯為";
+"web_translate_target_desc" = "Soulo 自動偵測頁面語言。";
+"web_translate_system" = "設備端翻譯";
+"web_translate_system_desc" = "使用 Apple Translation 翻譯頁面文字並將其寫回目前頁面。第一次可能會要求下載語言。";
+"web_translate_google" = "Google翻譯";
+"web_translate_google_desc" = "在此 Soulo 標籤中開啟目前位址的翻譯副本。";
+"web_translate_restore" = "恢復原始頁面";
+"web_translate_system_requires_ios18" = "裝置端頁面翻譯需要 iOS 18 或更高版本。谷歌翻譯仍然可用。";
+"web_translate_failed" = "翻譯失敗";
+"web_translate_no_text" = "找不到合適的頁面文字進行翻譯。";
+"web_zoom_out" = "縮小";
+"web_zoom" = "頁面縮放";
+"web_zoom_in" = "放大";
+"web_zoom_reset" = "重設為 100%";
+"toolbar_customize" = "自訂瀏覽器工具列";
+"toolbar_action_empty" = "空的";
+"toolbar_preview" = "工具列預覽";
+"toolbar_customize_hint" = "選擇預覽下方的位置，然後取代其動作。清空會完全刪除該項目而不保留空間；地址膠囊動作也可以被替換。";
+"toolbar_replace_action" = "替換為";
+"toolbar_restore_default" = "恢復預設工具列";
+"toolbar_saved" = "工具列已儲存";
+"privacy_exit_incognito" = "關閉無痕模式";
+"privacy_enter_incognito" = "開啟無痕模式";
+"share_extension_title" = "使用 Soulo 搜尋";
+"share_search_in_soulo" = "在 Soulo 中搜尋";
+"share_private_search" = "私人搜尋";
+"share_extension_unsupported" = "無法搜尋該項目。";
+"image_extract_text" = "從圖像中提取文本";
+"image_text_unavailable" = "Live Text 在此設備上不可用。";
+"image_text_none" = "在此圖像中找不到可讀的文字。";
+"copy_all" = "全部複製";
+"pause" = "暫停";
+"resume" = "恢復";
+"downloads_paused" = "已暫停";
+"downloads_background_interrupted" = "後台下載在完成之前被中斷。";
+"intent_open_soulo_title" = "打開Soulo";
+"intent_search_title" = "使用 Soulo 進行搜索";
+"intent_search_description" = "跨多個平台搜尋。";
+"intent_search_query" = "搜尋查詢";
+"intent_search_platform" = "平台";
+"intent_open_soulo_description" = "開啟 Soulo 並開始新的搜尋。";
+"intent_open_downloads_title" = "開啟下載";
+"intent_open_downloads_description" = "開啟您的 Soulo 下載。";
+"intent_paste_search_title" = "貼上和搜尋";
+"intent_paste_search_description" = "在 Soulo 中搜尋剪貼簿文字。";
+"intent_private_search_title" = "新的私人搜尋";
+"intent_private_search_description" = "在私密模式下開啟Soulo。";
+"control_search_title" = "搜尋Soulo";
+"control_search_description" = "開啟Soulo並開始搜尋。";
+"control_private_search_title" = "私人搜尋";
+"control_private_search_description" = "開啟私人 Soulo 搜尋。";
+"control_downloads_title" = "下載";
+"control_downloads_description" = "在 Soulo 中開啟下載。";
+"privacy_section_private_browsing" = "隱私瀏覽";
+"toolbar_restore_confirm_title" = "還原預設工具列？";
+"toolbar_restore_confirm_message" = "目前的工具列配置將替換為預設配置。";
+"web_readability" = "網頁可讀性";
+"web_reduce_motion" = "減少網頁動態效果";
+"web_reduce_motion_desc" = "限制網頁動畫、過場效果與平滑捲動。";
+"web_underline_links" = "突顯網頁連結";
+"web_underline_links_desc" = "為網頁連結加上底線，讓連結更容易辨識。";
+"home_title_edit_desc" = "作為首頁中央顯示的主標題。";
+"home_subtitle_edit_desc" = "顯示在主標題下方，留空則隱藏。";

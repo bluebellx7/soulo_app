@@ -1,0 +1,9 @@
+Quoi de neuf :
+
+• Partagez des liens et du texte vers Soulo à partir d'autres applications.
+• Extrayez le texte des images de pages Web avec Live Text.
+• Ajout des actions Control Center, écran de verrouillage, bouton d'action, Siri et Shortcuts.
+• Les téléchargements se poursuivent désormais en arrière-plan avec une progression réelle et une pause/reprise.
+• Ajout de la navigation multi-fenêtres indépendante sur iPad.
+• Activation des WebExtension natifs compatibles aux côtés des UserScript.
+• Extension de l'application et des informations App Store aux 50 paramètres régionaux App Store pris en charge.

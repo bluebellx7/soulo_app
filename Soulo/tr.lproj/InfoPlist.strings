@@ -1,5 +1,8 @@
-NSCameraUsageDescription = "Bir web sitesinin isteğini onayladığınızda görüntülü arama, kod tarama veya fotoğraf çekme gibi işlemler için kamera erişimine izin verin.";
-NSMicrophoneUsageDescription = "Sesli arama ve onay verdiğinizde web sitelerindeki arama veya kayıt işlemleri için mikrofon erişimine izin verin.";
-NSSpeechRecognitionUsageDescription = "Sesinizi arama metnine dönüştürmek için konuşma tanımaya izin verin.";
-NSPhotoLibraryUsageDescription = "Soulo'nun özel bir duvar kağıdı ayarlamak için fotoğraf arşivine erişmesi gerekir.";
-NSPhotoLibraryAddUsageDescription = "Soulo'nun web görüntülerini fotoğraf arşivinize kaydetmek için izne ihtiyacı vardır.";
+/* Soulo — generated and validated localization */
+
+"CFBundleDisplayName" = "Soulo";
+"NSCameraUsageDescription" = "Video görüşmeleri, kod tarama veya fotoğraf çekme gibi bir web sitesi isteğini onayladığınızda kamera erişimine izin verin.";
+"NSMicrophoneUsageDescription" = "Sesli arama ve onayladığınızda web sitesi aramaları veya kayıt için mikrofon erişimine izin verin.";
+"NSSpeechRecognitionUsageDescription" = "Konuşma tanımanın sesinizi arama metnine dönüştürmesine izin verin.";
+"NSPhotoLibraryUsageDescription" = "Soulo özel bir duvar kağıdı ayarlamak için fotoğraf kitaplığı erişimine ihtiyaç duyuyor.";
+"NSPhotoLibraryAddUsageDescription" = "Soulo, web resimlerini fotoğraf kitaplığınıza kaydetmek için izne ihtiyaç duyuyor.";

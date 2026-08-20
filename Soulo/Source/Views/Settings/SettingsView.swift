@@ -331,7 +331,7 @@ struct SettingsView: View {
                             dismiss()
                         })) {
                             SettingsNavigationLabel(
-                                icon: "chevron.left.forwardslash.chevron.right",
+                                icon: "puzzlepiece.extension.fill",
                                 color: neutralIconColor,
                                 title: LanguageManager.shared.localizedString("userscripts")
                             )

@@ -1,0 +1,9 @@
+Co je nového:
+
+• Sdílejte odkazy a text na Soulo z jiných aplikací.
+• Extrahujte text z obrázků webových stránek pomocí Live Text.
+• Přidány akce Control Center, Uzamknout obrazovku, Akční tlačítko, Siri a Shortcuts.
+• Stahování nyní pokračuje na pozadí se skutečným pokrokem a pozastavením/obnovením.
+• Přidáno nezávislé procházení více oken na iPadu.
+• Povoleny kompatibilní nativní WebExtensions vedle UserScripts.
+• Rozšíření informací o aplikaci a App Store na všech 50 podporovaných národních prostředí App Store.

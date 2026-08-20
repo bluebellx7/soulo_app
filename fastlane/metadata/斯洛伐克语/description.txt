@@ -1,0 +1,20 @@
+Soulo je rýchly súkromný prehliadač s viacerými možnosťami vyhľadávania pre iPhone a iPad. Zadajte jeden dopyt a potom prepínajte medzi viac ako 40 platformami vyhľadávania, sociálnych sietí, videa, nakupovania, znalostí a AI bez prepisovania.
+
+PRECHÁDZAJTE SI CESTU
+• Karty, záložky, história, sťahovanie a prispôsobiteľné vyhľadávacie platformy
+• Súkromné prehliadanie, ochrana sledovania, blokovanie reklám a ovládacie prvky na jednotlivých stránkach
+• Režimy webových stránok pre mobilné zariadenia a počítače, priblíženie stránky, preklad a snímanie celej stránky
+• Stiahnite si obrázky, video, zvuk a dokumenty pomocou inšpektora zdrojov webovej stránky
+• Extrahujte text z obrázkov webových stránok pomocou Live Text
+
+VYTVORENÉ PRE IPHONE A iPad
+• Viac nezávislých okien na iPade
+• Zdieľajte odkazy alebo text priamo na Soulo
+• Vyhľadávajte a otvárajte stiahnuté súbory z Siri, Shortcuts, Control Center, uzamknutej obrazovky a tlačidla akcie
+• Sťahovanie na pozadí so skutočným priebehom a pozastavením/obnovením
+• Aktivity naživo a stav Dynamic Island
+
+ROZŠÍRIŤ WEB
+Nainštalujte UserScripts alebo kompatibilné WebExtension, spravujte prehľadne povolenia a vytvorte si vlastné skripty pomocou vstavanej dokumentácie API.
+
+Soulo ukladá údaje prehliadania lokálne, pokiaľ nepovolíte synchronizáciu nastavení iCloud. Súkromné prehliadanie neukladá históriu.

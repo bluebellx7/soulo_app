@@ -1,0 +1,9 @@
+新消息：
+
+• 从其他应用程序共享链接和文本到Soulo。
+• 使用Live Text 从网页图像中提取文本。
+• 添加了Control Center、锁定屏幕、操作按钮、Siri 和Shortcuts 操作。
+• 下载现在在后台继续进行，并具有实际进度和暂停/恢复。
+• 在iPad 上添加了独立的多窗口浏览。
+• 启用兼容的本机WebExtension 和UserScript。
+• 将应用程序和App Store 信息扩展到所有50 个受支持的App Store 区域设置。

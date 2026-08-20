@@ -32,12 +32,55 @@ enum BrowserShakeAction: String, CaseIterable, Identifiable {
     }
 }
 
+enum BrowserShakeIntensity: String, CaseIterable, Identifiable {
+    case light
+    case standard
+    case firm
+    case strong
+
+    var id: String { rawValue }
+
+    var titleKey: String {
+        switch self {
+        case .light: "shake_intensity_light"
+        case .standard: "shake_intensity_standard"
+        case .firm: "shake_intensity_firm"
+        case .strong: "shake_intensity_strong"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .light: "waveform.path"
+        case .standard: "waveform.path.ecg"
+        case .firm: "waveform.path.ecg.rectangle"
+        case .strong: "burst.fill"
+        }
+    }
+
+    var peakThreshold: Double {
+        switch self {
+        case .light: 0.42
+        case .standard: 0.60
+        case .firm: 0.80
+        case .strong: 1.00
+        }
+    }
+
+    var strongPeakThreshold: Double {
+        switch self {
+        case .light: 1.00
+        case .standard: 1.35
+        case .firm: 1.65
+        case .strong: 1.95
+        }
+    }
+}
+
 /// Converts a short sequence of modest acceleration peaks into one deliberate shake.
 /// Using two peaks avoids accidental triggers while remaining more responsive than
 /// UIKit's fixed system shake threshold.
 struct ShakeMotionClassifier {
-    static let peakThreshold = 0.6
-    static let strongPeakThreshold = 1.35
     static let minimumPeakSpacing: TimeInterval = 0.07
     static let peakWindow: TimeInterval = 0.48
     static let cooldown: TimeInterval = 0.8
@@ -46,11 +89,16 @@ struct ShakeMotionClassifier {
     private var lastPeakTime: TimeInterval?
     private var peakCount = 0
     private var cooldownUntil: TimeInterval = 0
+    private let intensity: BrowserShakeIntensity
+
+    init(intensity: BrowserShakeIntensity = .standard) {
+        self.intensity = intensity
+    }
 
     mutating func register(magnitude: Double, at timestamp: TimeInterval) -> Bool {
-        guard timestamp >= cooldownUntil, magnitude >= Self.peakThreshold else { return false }
+        guard timestamp >= cooldownUntil, magnitude >= intensity.peakThreshold else { return false }
 
-        if magnitude >= Self.strongPeakThreshold {
+        if magnitude >= intensity.strongPeakThreshold {
             completeShake(at: timestamp)
             return true
         }
@@ -88,17 +136,20 @@ struct ShakeMotionClassifier {
 
 struct DeviceShakeDetector: UIViewControllerRepresentable {
     let isEnabled: Bool
+    let intensity: BrowserShakeIntensity
     let onShake: () -> Void
 
     func makeUIViewController(context: Context) -> ShakeViewController {
         let controller = ShakeViewController()
         controller.isEnabled = isEnabled
+        controller.intensity = intensity
         controller.onShake = onShake
         return controller
     }
 
     func updateUIViewController(_ uiViewController: ShakeViewController, context: Context) {
         uiViewController.onShake = onShake
+        uiViewController.intensity = intensity
         uiViewController.isEnabled = isEnabled
         if isEnabled {
             uiViewController.becomeFirstResponder()
@@ -108,6 +159,12 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
 
     final class ShakeViewController: UIViewController {
         var onShake: (() -> Void)?
+        var intensity: BrowserShakeIntensity = .standard {
+            didSet {
+                guard intensity != oldValue else { return }
+                motionClassifier = ShakeMotionClassifier(intensity: intensity)
+            }
+        }
         var isEnabled = false {
             didSet {
                 guard isEnabled != oldValue else { return }
@@ -139,7 +196,9 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
 
         override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
             super.motionEnded(motion, with: event)
-            guard isEnabled, motion == .motionShake else { return }
+            guard isEnabled,
+                  motion == .motionShake,
+                  !motionManager.isDeviceMotionActive else { return }
             deliverShake(at: ProcessInfo.processInfo.systemUptime)
         }
 
@@ -150,6 +209,7 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
                   !motionManager.isDeviceMotionActive else { return }
 
             motionManager.deviceMotionUpdateInterval = 1.0 / 40.0
+            motionClassifier = ShakeMotionClassifier(intensity: intensity)
             motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, _ in
                 guard let self, self.isEnabled, let acceleration = motion?.userAcceleration else { return }
                 let magnitude = sqrt(

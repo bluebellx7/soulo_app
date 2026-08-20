@@ -1,0 +1,1 @@
+browser,căutare,private,file,web,AI,social,video,descărcare,adblock,userscript,traducere

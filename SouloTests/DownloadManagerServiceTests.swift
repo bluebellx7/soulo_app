@@ -171,6 +171,66 @@ final class DownloadManagerServiceTests: XCTestCase {
         XCTAssertEqual(restored.downloads.first(where: { $0.id == item.id })?.status, .canceled)
     }
 
+    func testProgressPauseAndResumeStateArePersisted() throws {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let (item, _) = service.beginDownload(
+            suggestedFilename: "Archive.zip",
+            sourceURL: URL(string: "https://example.com/archive.zip"),
+            transport: .background
+        )
+
+        service.updateProgress(id: item.id, completed: 256, total: 1024)
+        var updated = try XCTUnwrap(service.downloads.first(where: { $0.id == item.id }))
+        XCTAssertEqual(updated.progress, 0.25, accuracy: 0.001)
+        XCTAssertEqual(updated.receivedBytes, 256)
+        XCTAssertEqual(updated.expectedBytes, 1024)
+        XCTAssertEqual(updated.transport, .background)
+
+        let resumeData = Data("resume".utf8)
+        service.markPaused(id: item.id, resumeData: resumeData)
+        updated = try XCTUnwrap(service.downloads.first(where: { $0.id == item.id }))
+        XCTAssertEqual(updated.status, .paused)
+        XCTAssertEqual(service.resumeData(id: item.id), resumeData)
+
+        let restored = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        XCTAssertEqual(restored.downloads.first(where: { $0.id == item.id })?.status, .paused)
+        restored.delete(updated)
+        XCTAssertNil(restored.resumeData(id: item.id))
+    }
+
+    func testMissingResumeDataDoesNotCreateAnUnresumablePausedDownload() throws {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let (item, _) = service.beginDownload(
+            suggestedFilename: "Archive.zip",
+            sourceURL: URL(string: "https://example.com/archive.zip"),
+            transport: .background
+        )
+
+        service.markPaused(id: item.id, resumeData: nil)
+
+        let updated = try XCTUnwrap(service.downloads.first(where: { $0.id == item.id }))
+        XCTAssertEqual(updated.status, .inProgress)
+        XCTAssertNil(service.resumeData(id: item.id))
+    }
+
+    func testBackgroundDownloadSurvivesReloadAndOrphansAreReconciled() throws {
+        let first = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let (item, _) = first.beginDownload(
+            suggestedFilename: "Video.mp4",
+            sourceURL: URL(string: "https://example.com/video.mp4"),
+            transport: .background
+        )
+
+        let restored = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        XCTAssertEqual(restored.downloads.first(where: { $0.id == item.id })?.status, .inProgress)
+
+        restored.reconcileBackgroundDownloads(
+            activeIDs: [],
+            now: item.startedAt.addingTimeInterval(10)
+        )
+        XCTAssertEqual(restored.downloads.first(where: { $0.id == item.id })?.status, .failed)
+    }
+
     func testSharedDownloadLocationUsesDocumentsDownloadsFolder() {
         XCTAssertEqual(DownloadManagerService.downloadsDirectory.lastPathComponent, "Downloads")
         XCTAssertEqual(

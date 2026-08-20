@@ -1,5 +1,8 @@
-NSCameraUsageDescription = "ウェブサイトからの要求を許可した場合に、ビデオ通話、コードのスキャン、写真撮影などでカメラを使用します。";
-NSMicrophoneUsageDescription = "音声検索と、許可したウェブサイトでの通話や録音のためにマイクを使用します。";
-NSSpeechRecognitionUsageDescription = "音声を検索テキストに変換するために音声認識を使用します。";
-NSPhotoLibraryUsageDescription = "Souloはカスタム壁紙を設定するためにフォトライブラリへのアクセスが必要です。";
-NSPhotoLibraryAddUsageDescription = "Souloはウェブ画像をフォトライブラリに保存するための権限が必要です。";
+/* Soulo — generated and validated localization */
+
+"CFBundleDisplayName" = "Soulo";
+"NSCameraUsageDescription" = "ビデオ通話、コードのスキャン、写真の撮影など、Web サイトのリクエストを承認するときにカメラへのアクセスを許可します。";
+"NSMicrophoneUsageDescription" = "音声検索のためのマイク アクセスを許可し、承認する場合は Web サイトでの通話や録音を許可します。";
+"NSSpeechRecognitionUsageDescription" = "音声認識により音声を検索テキストに変換できるようにします。";
+"NSPhotoLibraryUsageDescription" = "Soulo がカスタム壁紙を設定するには、フォト ライブラリへのアクセスが必要です。";
+"NSPhotoLibraryAddUsageDescription" = "Soulo は、Web 画像をフォト ライブラリに保存する権限が必要です。";

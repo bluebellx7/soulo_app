@@ -21,10 +21,25 @@ final class WebViewModelTests: XCTestCase {
 
     func testLanguageSettingsExposeEveryRuntimeSupportedLanguage() {
         let settingsLanguages = Set(AppConstants.supportedLanguages.map(\.code))
-        let runtimeLanguages = Set(LanguageManager.supportedLanguages.map(\.id))
+        XCTAssertEqual(settingsLanguages.count, 50)
+        for language in settingsLanguages {
+            XCTAssertNotNil(
+                Bundle.main.path(forResource: language, ofType: "lproj"),
+                "Missing runtime localization for \(language)"
+            )
+        }
+    }
 
-        XCTAssertEqual(settingsLanguages, runtimeLanguages)
-        XCTAssertEqual(settingsLanguages.count, 15)
+    func testLegacyAndRegionalLanguageCodesResolveToSupportedLocales() {
+        XCTAssertEqual(AppConstants.canonicalLanguageCode("en"), "en-US")
+        XCTAssertEqual(AppConstants.canonicalLanguageCode("fr"), "fr-FR")
+        XCTAssertEqual(AppConstants.canonicalLanguageCode("de"), "de-DE")
+        XCTAssertEqual(AppConstants.canonicalLanguageCode("es"), "es-ES")
+        XCTAssertEqual(AppConstants.canonicalLanguageCode("ar"), "ar-SA")
+        XCTAssertEqual(AppConstants.canonicalLanguageCode("zh-HK"), "zh-Hant")
+        XCTAssertEqual(AppConstants.canonicalLanguageCode("zh-CN"), "zh-Hans")
+        XCTAssertEqual(AppConstants.canonicalLanguageCode("pt-BR"), "pt-BR")
+        XCTAssertEqual(AppConstants.canonicalLanguageCode("en_NZ"), "en-US")
     }
 
     func testProtocolErrorLocalizationFallsBackToEnglishInsteadOfInternalKey() {
@@ -106,6 +121,28 @@ final class WebViewModelTests: XCTestCase {
         // A later, second shake is detected normally instead of being lost.
         XCTAssertFalse(classifier.register(magnitude: 0.63, at: 2.00))
         XCTAssertTrue(classifier.register(magnitude: 0.66, at: 2.11))
+    }
+
+    func testShakeIntensityProvidesFourIncreasingThresholds() {
+        let intensities = BrowserShakeIntensity.allCases
+
+        XCTAssertEqual(intensities.count, 4)
+        XCTAssertEqual(intensities.map(\.peakThreshold), intensities.map(\.peakThreshold).sorted())
+
+        var light = ShakeMotionClassifier(intensity: .light)
+        XCTAssertFalse(light.register(magnitude: 0.46, at: 1.00))
+        XCTAssertTrue(light.register(magnitude: 0.47, at: 1.12))
+
+        var strong = ShakeMotionClassifier(intensity: .strong)
+        XCTAssertFalse(strong.register(magnitude: 0.90, at: 1.00))
+        XCTAssertFalse(strong.register(magnitude: 0.95, at: 1.12))
+        XCTAssertFalse(strong.register(magnitude: 1.05, at: 2.00))
+        XCTAssertTrue(strong.register(magnitude: 1.08, at: 2.12))
+    }
+
+    func testPhoneAddressEditorUsesCompactDetent() {
+        XCTAssertLessThanOrEqual(BrowserAddressEditorLayout.compactHeight, 260)
+        XCTAssertGreaterThanOrEqual(BrowserAddressEditorLayout.compactHeight, 240)
     }
 
     func testShakeClassifierIgnoresEverydayMovementAndWidelySpacedPeaks() {
@@ -596,6 +633,17 @@ final class WebViewModelTests: XCTestCase {
         XCTAssertEqual(target.string(forKey: "appearance"), "dark")
         XCTAssertEqual(target.stringArray(forKey: "allowlist"), ["example.com"])
         XCTAssertNil(target.object(forKey: "missing_setting"))
+    }
+
+    func testCloudSyncInitializationDoesNotStartSynchronously() {
+        let suiteName = "CloudSyncService.startup.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.set(true, forKey: AppConstants.StorageKeys.iCloudSyncEnabled)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let service = CloudSyncService(defaults: defaults)
+
+        XCTAssertFalse(service.isStarted)
     }
 
     func testPageZoomUsesTenPercentStepsAndSafeBounds() {

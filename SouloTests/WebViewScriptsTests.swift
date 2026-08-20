@@ -4,6 +4,355 @@ import WebKit
 @testable import Soulo
 
 final class WebViewScriptsTests: XCTestCase {
+    @MainActor
+    func testNativeWebExtensionHostImplementsEveryWebKitInterface() throws {
+        guard #available(iOS 18.4, *) else {
+            throw XCTSkip("Native WebExtensions require iOS 18.4 or newer")
+        }
+        let coverage = NativeWebExtensionRuntime.shared.hostInterfaceCoverage()
+        XCTAssertTrue(
+            coverage.isComplete,
+            "Missing controller: \(coverage.missingControllerSelectors); "
+                + "window: \(coverage.missingWindowSelectors); "
+                + "tab: \(coverage.missingTabSelectors)"
+        )
+    }
+
+    @MainActor
+    func testWebKitKeepsExtensionUsableWhenOneWebAccessibleResourceEntryIsInvalid() async throws {
+        guard #available(iOS 18.4, *) else {
+            throw XCTSkip("Native WebExtensions require iOS 18.4 or newer")
+        }
+
+        let fixtureDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SouloInvalidWARFixture-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: fixtureDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: fixtureDirectory) }
+
+        let manifest = """
+        {
+          "manifest_version": 3,
+          "name": "Soulo Recoverable Manifest Fixture",
+          "version": "1.0.0",
+          "web_accessible_resources": [{
+            "resources": ["fixture.png"],
+            "use_dynamic_url": true
+          }]
+        }
+        """
+        try Data(manifest.utf8).write(
+            to: fixtureDirectory.appendingPathComponent("manifest.json"),
+            options: .atomic
+        )
+        try Data([0x89, 0x50, 0x4E, 0x47]).write(
+            to: fixtureDirectory.appendingPathComponent("fixture.png"),
+            options: .atomic
+        )
+
+        let extensionObject = try await WKWebExtension(resourceBaseURL: fixtureDirectory)
+        XCTAssertEqual(extensionObject.displayName, "Soulo Recoverable Manifest Fixture")
+        XCTAssertTrue(extensionObject.errors.contains { error in
+            let error = error as NSError
+            return error.domain == WKWebExtension.errorDomain && error.code == 6
+        })
+
+        let service = BrowserExtensionService.shared
+        let record = try await service.installWebExtension(from: fixtureDirectory)
+        defer { service.deleteWebExtension(record.id) }
+        XCTAssertGreaterThan(record.compatibilityWarningCount ?? 0, 0)
+    }
+
+    @MainActor
+    func testInstalledWebExtensionExposesItsActionPopup() async throws {
+        guard #available(iOS 18.4, *) else {
+            throw XCTSkip("Native WebExtensions require iOS 18.4 or newer")
+        }
+
+        let fixtureDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SouloActionPopupFixture-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: fixtureDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: fixtureDirectory) }
+
+        let manifest = """
+        {
+          "manifest_version": 3,
+          "name": "Soulo Action Popup Fixture",
+          "version": "1.0.0",
+          "action": {
+            "default_title": "Open Fixture",
+            "default_popup": "popup.html"
+          }
+        }
+        """
+        try Data(manifest.utf8).write(
+            to: fixtureDirectory.appendingPathComponent("manifest.json"),
+            options: .atomic
+        )
+        try Data("<html><body>Popup</body></html>".utf8).write(
+            to: fixtureDirectory.appendingPathComponent("popup.html"),
+            options: .atomic
+        )
+
+        let service = BrowserExtensionService.shared
+        let record = try await service.installWebExtension(from: fixtureDirectory)
+        defer { service.deleteWebExtension(record.id) }
+
+        let action = try XCTUnwrap(service.webExtensionAction(for: record.id))
+        XCTAssertEqual(action.label, "Open Fixture")
+        XCTAssertTrue(action.presentsPopup)
+        XCTAssertTrue(action.isEnabled)
+    }
+
+    @MainActor
+    func testWebExtensionCompatibilityLayerLoadsBeforeNotificationBackgroundWorker() async throws {
+        guard #available(iOS 18.4, *) else {
+            throw XCTSkip("Native WebExtensions require iOS 18.4 or newer")
+        }
+
+        let fixtureDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SouloCompatibilityFixture-\(UUID().uuidString)", isDirectory: true)
+        let installDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SouloCompatibilityInstall-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: fixtureDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: installDirectory, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: fixtureDirectory)
+            try? FileManager.default.removeItem(at: installDirectory)
+        }
+
+        let manifest = """
+        {
+          "manifest_version": 3,
+          "name": "Soulo Notification Compatibility Fixture",
+          "version": "1.0.0",
+          "permissions": ["notifications", "offscreen"],
+          "background": { "service_worker": "background/worker.js" },
+          "action": { "default_popup": "popup.html" }
+        }
+        """
+        try Data(manifest.utf8).write(
+            to: fixtureDirectory.appendingPathComponent("manifest.json"),
+            options: .atomic
+        )
+        try FileManager.default.createDirectory(
+            at: fixtureDirectory.appendingPathComponent("background", isDirectory: true),
+            withIntermediateDirectories: true
+        )
+        try Data("""
+        globalThis.__originalWorkerLoaded = true;
+        chrome.notifications.onClicked.addListener(function() {});
+        chrome.commands.onCommand.addListener(function() {});
+        """.utf8).write(
+            to: fixtureDirectory.appendingPathComponent("background/worker.js"),
+            options: .atomic
+        )
+        try Data("<html><head></head><body>Popup</body></html>".utf8).write(
+            to: fixtureDirectory.appendingPathComponent("popup.html"),
+            options: .atomic
+        )
+
+        let preparedURL = try WebExtensionPackagePreparer.prepare(
+            sourceURL: fixtureDirectory,
+            in: installDirectory
+        )
+        let preparedManifestData = try Data(
+            contentsOf: preparedURL.appendingPathComponent("manifest.json")
+        )
+        let preparedManifest = try XCTUnwrap(
+            try JSONSerialization.jsonObject(with: preparedManifestData) as? [String: Any]
+        )
+        let background = try XCTUnwrap(preparedManifest["background"] as? [String: Any])
+        XCTAssertEqual(background["service_worker"] as? String, "__soulo_webextension_background_v3.js")
+        XCTAssertTrue((preparedManifest["permissions"] as? [String])?.contains("nativeMessaging") == true)
+
+        let wrapper = try String(
+            contentsOf: preparedURL.appendingPathComponent("__soulo_webextension_background_v3.js"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(wrapper.contains("__soulo_webextension_compatibility.js"))
+        XCTAssertTrue(wrapper.contains("background/worker.js"))
+
+        let preparedWorker = try String(
+            contentsOf: preparedURL.appendingPathComponent("background/worker.js"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(preparedWorker.contains("notifications?.onClicked?.addListener"))
+        XCTAssertTrue(preparedWorker.contains("commands?.onCommand?.addListener"))
+
+        let compatibility = try String(
+            contentsOf: preparedURL.appendingPathComponent("__soulo_webextension_compatibility.js"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(compatibility.contains("chrome.notifications"))
+        XCTAssertTrue(compatibility.contains("chrome.offscreen"))
+
+        let popup = try String(
+            contentsOf: preparedURL.appendingPathComponent("popup.html"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(popup.contains("/__soulo_webextension_compatibility.js"))
+
+        let extensionObject = try await WKWebExtension(resourceBaseURL: preparedURL)
+        XCTAssertEqual(extensionObject.displayName, "Soulo Notification Compatibility Fixture")
+        XCTAssertNil(NativeWebExtensionIssuePolicy.firstFatalIssue(in: extensionObject.errors))
+    }
+
+    func testWebExtensionCompatibilityCompletesPartialNotificationAPI() throws {
+        let context = try XCTUnwrap(JSContext())
+        context.evaluateScript("""
+        var chrome = {
+          runtime: {
+            sendNativeMessage: function(identifier, message, callback) {
+              if (callback) callback({ success: true, id: 'fixture' });
+            },
+            sendMessage: function() {}
+          },
+          notifications: {}
+        };
+        """)
+
+        context.evaluateScript(WebExtensionPackagePreparer.compatibilitySourceForTesting)
+        XCTAssertNil(context.exception)
+        XCTAssertEqual(
+            context.evaluateScript("typeof chrome.notifications.onClicked.addListener")?.toString(),
+            "function"
+        )
+        XCTAssertEqual(
+            context.evaluateScript("typeof chrome.notifications.create")?.toString(),
+            "function"
+        )
+        XCTAssertEqual(
+            context.evaluateScript("typeof chrome.offscreen.hasDocument")?.toString(),
+            "function"
+        )
+
+        let browserOnlyContext = try XCTUnwrap(JSContext())
+        browserOnlyContext.evaluateScript("""
+        var browser = {
+          runtime: {
+            sendNativeMessage: function() { return Promise.resolve({ success: true }); },
+            sendMessage: function() { return Promise.resolve(); }
+          },
+          notifications: {}
+        };
+        """)
+        browserOnlyContext.evaluateScript(WebExtensionPackagePreparer.compatibilitySourceForTesting)
+        XCTAssertNil(browserOnlyContext.exception)
+        XCTAssertEqual(
+            browserOnlyContext.evaluateScript("typeof browser.notifications.onClicked.addListener")?.toString(),
+            "function"
+        )
+    }
+
+    func testWebExtensionCompatibilityProvidesTomatoClockTimerContract() throws {
+        let context = try XCTUnwrap(JSContext())
+        context.evaluateScript("""
+        var localValues = {};
+        var chrome = {
+          runtime: {
+            getManifest: function() { return { commands: {
+              'start-tomato': {}, 'start-short-break': {}, 'start-long-break': {}
+            } }; },
+            sendMessage: function() {}
+          },
+          storage: { local: {
+            get: function(key, callback) {
+              var result = {}; result[key] = localValues[key]; callback(result);
+            },
+            set: function(values, callback) {
+              Object.assign(localValues, values); if (callback) callback();
+            },
+            remove: function(key, callback) {
+              delete localValues[key]; if (callback) callback();
+            }
+          } }
+        };
+        """)
+        context.evaluateScript(WebExtensionPackagePreparer.compatibilitySourceForTesting)
+        context.evaluateScript("""
+        chrome.runtime.sendMessage({ action: 'setTimer', data: { type: 'tomato' } }, function() {});
+        """)
+        // Give JavaScriptCore's resolved promise jobs an evaluation boundary.
+        context.evaluateScript("0")
+        context.evaluateScript("0")
+
+        XCTAssertEqual(
+            context.evaluateScript("localValues.timer && localValues.timer.status")?.toString(),
+            "running"
+        )
+        XCTAssertEqual(
+            context.evaluateScript("localValues.timer && localValues.timer.type")?.toString(),
+            "tomato"
+        )
+        XCTAssertGreaterThan(
+            context.evaluateScript("localValues.timer && localValues.timer.scheduledTime")?.toDouble() ?? 0,
+            Date().timeIntervalSince1970 * 1_000
+        )
+    }
+
+    func testWebExtensionManifestIssuePolicyKeepsOnlyKnownRecoverableIssues() {
+        let domain = "WKWebExtensionErrorDomain"
+        let recoverable = NSError(domain: domain, code: 6)
+        let missingResource = NSError(domain: domain, code: 2)
+        let fatal = NSError(domain: domain, code: 4)
+
+        XCTAssertNil(NativeWebExtensionIssuePolicy.firstFatalIssue(in: [recoverable, missingResource]))
+        XCTAssertEqual(
+            NativeWebExtensionIssuePolicy.recoverableIssueCount(in: [recoverable, missingResource]),
+            2
+        )
+        XCTAssertEqual(
+            (NativeWebExtensionIssuePolicy.firstFatalIssue(in: [recoverable, fatal]) as NSError?)?.code,
+            4
+        )
+    }
+
+    @MainActor
+    func testManifestV3WebExtensionCanBeInstalledLocally() async throws {
+        guard #available(iOS 18.4, *) else {
+            throw XCTSkip("Native WebExtensions require iOS 18.4 or newer")
+        }
+
+        let fixtureDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SouloWebExtensionFixture-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: fixtureDirectory,
+            withIntermediateDirectories: true
+        )
+        defer { try? FileManager.default.removeItem(at: fixtureDirectory) }
+
+        let manifest = """
+        {
+          "manifest_version": 3,
+          "name": "Soulo Test Extension",
+          "description": "A local fixture for validating native WebExtension loading.",
+          "version": "1.0.0",
+          "content_scripts": [{
+            "matches": ["https://example.com/*"],
+            "js": ["content.js"]
+          }]
+        }
+        """
+        try Data(manifest.utf8).write(
+            to: fixtureDirectory.appendingPathComponent("manifest.json"),
+            options: .atomic
+        )
+        try Data("globalThis.__souloWebExtensionFixture = true;".utf8).write(
+            to: fixtureDirectory.appendingPathComponent("content.js"),
+            options: .atomic
+        )
+
+        let service = BrowserExtensionService.shared
+        let record = try await service.installWebExtension(from: fixtureDirectory)
+        defer { service.deleteWebExtension(record.id) }
+
+        XCTAssertEqual(record.name, "Soulo Test Extension")
+        XCTAssertEqual(record.version, "1.0.0")
+        XCTAssertTrue(record.isEnabled)
+        XCTAssertTrue(service.webExtensions.contains { $0.id == record.id })
+        XCTAssertNil(service.webExtensionAction(for: record.id))
+    }
+
     func testAdHidingScriptPublishesHiddenElementStats() {
         let script = AdBlockService.adHidingScript(cosmetic: true)
 
@@ -178,7 +527,15 @@ final class WebViewScriptsTests: XCTestCase {
         assertJavaScriptParses(WebViewScripts.downloadBridge)
         assertJavaScriptParses(WebViewScripts.contextMenuResourceTracking)
         assertJavaScriptParses(WebResourceInspectionService.extractionScript)
-        assertJavaScriptParses(WebViewScripts.extensionInstallBridge)
+        assertJavaScriptParses(
+            WebViewScripts.extensionInstallBridge(
+                title: "Install with Soulo",
+                message: "Soulo can install this extension directly.",
+                installButton: "Install",
+                installingButton: "Installing…",
+                logoDataURL: "data:image/png;base64,AA=="
+            )
+        )
         assertJavaScriptParses(WebViewScripts.accessibilityEnhancements)
         assertJavaScriptParses(WebViewScripts.webAppearanceBootstrap)
         assertJavaScriptParses(

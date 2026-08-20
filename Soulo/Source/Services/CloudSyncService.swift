@@ -73,12 +73,13 @@ final class CloudSyncService: NSObject {
     static let shared = CloudSyncService()
 
     private lazy var kvStore = NSUbiquitousKeyValueStore.default
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
     private let payloadKey = "soulo_settings_payload_v2"
     private var defaultsObserver: NSObjectProtocol?
     private var pendingUpload: DispatchWorkItem?
     private var isApplyingRemote = false
     private var isObservingRemote = false
+    private(set) var isStarted = false
 
     /// Intentionally excludes history, bookmarks, cache, cookies, downloads,
     /// private-browsing state, tab state, wallpaper images, and usage statistics.
@@ -100,6 +101,7 @@ final class CloudSyncService: NSObject {
         "web_reduce_page_motion",
         "web_underline_links",
         "browser_shake_action",
+        "browser_shake_intensity",
         "browser_toolbar_actions",
         "browser_toolbar_address_action",
         "ad_block_enabled",
@@ -130,7 +132,8 @@ final class CloudSyncService: NSObject {
         "region_name_overrides"
     ]
 
-    private override init() {
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         super.init()
 
         defaultsObserver = NotificationCenter.default.addObserver(
@@ -143,27 +146,34 @@ final class CloudSyncService: NSObject {
             }
         }
 
-        if isEnabled {
-            startSync()
-        }
+        // Do not start synchronously from the singleton initializer. Applying a
+        // remote appearance can touch ThemeManager, which writes UserDefaults
+        // and may re-enter CloudSyncService.shared before dispatch_once finishes.
+    }
+
+    func startIfEnabled() {
+        guard isEnabled else { return }
+        startSyncIfNeeded()
     }
 
     func setEnabled(_ enabled: Bool) {
         pendingUpload?.cancel()
         pendingUpload = nil
         guard enabled else {
+            isStarted = false
             stopObservingRemoteChanges()
             return
         }
-        startSync()
+        startSyncIfNeeded()
     }
 
     private var isEnabled: Bool {
         defaults.bool(forKey: AppConstants.StorageKeys.iCloudSyncEnabled)
     }
 
-    private func startSync() {
-        guard isEnabled else { return }
+    private func startSyncIfNeeded() {
+        guard isEnabled, !isStarted else { return }
+        isStarted = true
         startObservingRemoteChanges()
         kvStore.synchronize()
 
@@ -196,7 +206,7 @@ final class CloudSyncService: NSObject {
     }
 
     private func scheduleUploadIfNeeded() {
-        guard isEnabled, !isApplyingRemote else { return }
+        guard isEnabled, isStarted, !isApplyingRemote else { return }
         pendingUpload?.cancel()
 
         let work = DispatchWorkItem { [weak self] in
@@ -209,7 +219,7 @@ final class CloudSyncService: NSObject {
     }
 
     private func uploadLocalSettings() {
-        guard isEnabled, !isApplyingRemote else { return }
+        guard isEnabled, isStarted, !isApplyingRemote else { return }
         guard let data = try? CloudSettingsPayloadCodec.encode(
             defaults: defaults,
             keys: Self.syncedKeys
@@ -249,7 +259,11 @@ final class CloudSyncService: NSObject {
         ThemeManager.shared.setAppearance(appearance)
 
         if let language = defaults.string(forKey: AppConstants.StorageKeys.selectedLanguage) {
-            LanguageManager.shared.setLanguage(language)
+            let canonicalLanguage = AppConstants.canonicalLanguageCode(language)
+            if canonicalLanguage != language {
+                defaults.set(canonicalLanguage, forKey: AppConstants.StorageKeys.selectedLanguage)
+            }
+            LanguageManager.shared.setLanguage(canonicalLanguage)
         }
 
         PlatformDataStore.shared.reloadFromDefaults()

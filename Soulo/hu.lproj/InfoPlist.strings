@@ -1,0 +1,8 @@
+/* Soulo — generated and validated localization */
+
+"CFBundleDisplayName" = "Soulo";
+"NSCameraUsageDescription" = "Engedélyezze a kamera hozzáférését, amikor jóváhagy egy webhelykérést, például videohívásokhoz, kódok beolvasásához vagy fényképezéshez.";
+"NSMicrophoneUsageDescription" = "Engedélyezze a mikrofonhoz való hozzáférést a hangalapú kereséshez, és – ha jóváhagyja – a webhelyhívásokhoz vagy a felvételhez.";
+"NSSpeechRecognitionUsageDescription" = "Engedélyezze a beszédfelismerést, hogy hangját keresési szöveggé változtassa.";
+"NSPhotoLibraryUsageDescription" = "A(z) Soulo fotótárhoz való hozzáférésre van szüksége egyéni háttérkép beállításához.";
+"NSPhotoLibraryAddUsageDescription" = "A(z) Soulo engedélyre van szüksége ahhoz, hogy webes képeket menthessen a fotókönyvtárába.";

@@ -1,0 +1,9 @@
+Ce este nou:
+
+• Partajați linkuri și text către Soulo din alte aplicații.
+• Extrageți text din imaginile paginii web cu Live Text.
+• S-au adăugat acțiuni Control Center, Ecran de blocare, Buton de acțiune, Siri și Shortcuts.
+• Descărcările continuă acum în fundal cu progrese reale și întrerupere/reluare.
+• S-a adăugat navigare independentă în mai multe ferestre pe iPad.
+• S-au activat WebExtension-urile native compatibile împreună cu UserScript-urile.
+• Am extins aplicația și informațiile App Store la toate cele 50 de localități acceptate App Store.

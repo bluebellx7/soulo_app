@@ -1,0 +1,8 @@
+/* Soulo — generated and validated localization */
+
+"CFBundleDisplayName" = "Soulo";
+"NSCameraUsageDescription" = "Tillåt kameraåtkomst när du godkänner en webbplatsförfrågan, till exempel för videosamtal, skanna koder eller ta ett foto.";
+"NSMicrophoneUsageDescription" = "Tillåt mikrofonåtkomst för röstsökning och, när du godkänner, webbplatssamtal eller inspelning.";
+"NSSpeechRecognitionUsageDescription" = "Tillåt taligenkänning för att förvandla din röst till söktext.";
+"NSPhotoLibraryUsageDescription" = "Soulo behöver tillgång till fotobiblioteket för att ställa in en anpassad bakgrund.";
+"NSPhotoLibraryAddUsageDescription" = "Soulo behöver tillstånd för att spara webbbilder i ditt fotobibliotek.";

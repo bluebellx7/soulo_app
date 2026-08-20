@@ -1,5 +1,8 @@
-NSCameraUsageDescription = "在你允许网页请求时使用相机，例如视频通话、扫码或拍照上传。";
-NSMicrophoneUsageDescription = "用于语音搜索，以及在你允许时供网页通话或录音。";
-NSSpeechRecognitionUsageDescription = "用于将你的语音转换为搜索文字。";
-NSPhotoLibraryUsageDescription = "Soulo需要访问相册以设置自定义壁纸";
-NSPhotoLibraryAddUsageDescription = "Soulo需要权限将网页图片保存到相册";
+/* Soulo — generated and validated localization */
+
+"CFBundleDisplayName" = "Soulo";
+"NSCameraUsageDescription" = "当您批准网站请求（例如视频通话、扫描代码或拍照）时允许相机访问。";
+"NSMicrophoneUsageDescription" = "允许使用麦克风进行语音搜索，并在您批准后进行网站通话或录音。";
+"NSSpeechRecognitionUsageDescription" = "允许语音识别将您的声音转换为搜索文本。";
+"NSPhotoLibraryUsageDescription" = "Soulo 需要访问照片库才能设置自定义壁纸。";
+"NSPhotoLibraryAddUsageDescription" = "Soulo 需要权限才能将网络图像保存到您的照片库。";

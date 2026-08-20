@@ -1,0 +1,8 @@
+/* Soulo — generated and validated localization */
+
+"CFBundleDisplayName" = "Soulo";
+"NSCameraUsageDescription" = "Salli kameran käyttöoikeus, kun hyväksyt verkkosivustopyynnön, kuten videopuheluita, koodien skannausta tai valokuvan ottamista varten.";
+"NSMicrophoneUsageDescription" = "Salli mikrofonin käyttö puhehakua varten ja, kun hyväksyt, verkkosivustopuhelut tai äänitykset.";
+"NSSpeechRecognitionUsageDescription" = "Salli puheentunnistuksen muuttaa äänesi hakutekstiksi.";
+"NSPhotoLibraryUsageDescription" = "Soulo tarvitsee valokuvakirjaston käyttöoikeuden määrittääkseen mukautetun taustakuvan.";
+"NSPhotoLibraryAddUsageDescription" = "Soulo tarvitsee luvan tallentaa verkkokuvia valokuvakirjastoosi.";

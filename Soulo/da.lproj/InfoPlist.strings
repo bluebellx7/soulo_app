@@ -1,0 +1,8 @@
+/* Soulo — generated and validated localization */
+
+"CFBundleDisplayName" = "Soulo";
+"NSCameraUsageDescription" = "Tillad kameraadgang, når du godkender en webstedsanmodning, f.eks. til videoopkald, scanning af koder eller at tage et billede.";
+"NSMicrophoneUsageDescription" = "Tillad mikrofonadgang til stemmesøgning og, når du godkender, webstedsopkald eller optagelse.";
+"NSSpeechRecognitionUsageDescription" = "Tillad talegenkendelse for at omdanne din stemme til søgetekst.";
+"NSPhotoLibraryUsageDescription" = "Soulo har brug for adgang til fotobiblioteket for at indstille et brugerdefineret tapet.";
+"NSPhotoLibraryAddUsageDescription" = "Soulo skal have tilladelse til at gemme webbilleder i dit fotobibliotek.";

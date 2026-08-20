@@ -1,0 +1,8 @@
+/* Soulo — generated and validated localization */
+
+"CFBundleDisplayName" = "Soulo";
+"NSCameraUsageDescription" = "Zezwól na dostęp do aparatu po zatwierdzeniu żądania witryny internetowej, na przykład w przypadku rozmów wideo, skanowania kodów lub robienia zdjęcia.";
+"NSMicrophoneUsageDescription" = "Zezwól na dostęp do mikrofonu w celu wyszukiwania głosowego oraz, po zatwierdzeniu, połączeń internetowych lub nagrywania.";
+"NSSpeechRecognitionUsageDescription" = "Zezwól na rozpoznawanie mowy, aby zamienić Twój głos w wyszukiwany tekst.";
+"NSPhotoLibraryUsageDescription" = "Soulo potrzebuje dostępu do biblioteki zdjęć, aby ustawić niestandardową tapetę.";
+"NSPhotoLibraryAddUsageDescription" = "Soulo potrzebuje pozwolenia na zapisywanie obrazów internetowych w Twojej bibliotece zdjęć.";

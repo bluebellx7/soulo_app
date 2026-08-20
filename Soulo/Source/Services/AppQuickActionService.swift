@@ -78,11 +78,26 @@ final class SouloAppDelegate: NSObject, UIApplicationDelegate {
 
     func application(
         _ application: UIApplication,
+        handleEventsForBackgroundURLSession identifier: String,
+        completionHandler: @escaping () -> Void
+    ) {
+        guard identifier == BackgroundDownloadService.sessionIdentifier else {
+            completionHandler()
+            return
+        }
+        BackgroundDownloadService.shared.backgroundEventsCompletionHandler = completionHandler
+    }
+
+    func application(
+        _ application: UIApplication,
         configurationForConnecting connectingSceneSession: UISceneSession,
         options: UIScene.ConnectionOptions
     ) -> UISceneConfiguration {
+        // SwiftUI owns the WindowGroup scene configuration. Supplying an
+        // unregistered name makes UIKit search Info.plist for a configuration
+        // that does not exist, so keep the name nil and attach only our delegate.
         let configuration = UISceneConfiguration(
-            name: "Soulo Window",
+            name: nil,
             sessionRole: connectingSceneSession.role
         )
         configuration.delegateClass = SouloSceneDelegate.self

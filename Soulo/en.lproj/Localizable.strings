@@ -693,6 +693,12 @@
 "shake_action_reload" = "Reload Page";
 "shake_action_close_tab" = "Close Current Tab";
 "shake_action_footer" = "The selected action runs while a webpage is open. Selecting a toggle action reverses it with the next shake.";
+"shake_intensity" = "Shake Intensity";
+"shake_intensity_light" = "Light";
+"shake_intensity_standard" = "Standard";
+"shake_intensity_firm" = "Firm";
+"shake_intensity_strong" = "Strong";
+"shake_intensity_footer" = "Choose how firmly the device must be shaken. Light is easiest to trigger; Strong helps prevent accidental actions.";
 "extensions" = "Extensions";
 "extensions_installed" = "My Extensions";
 "extensions_install" = "Install Extensions";
@@ -700,7 +706,7 @@
 "extensions_empty_desc" = "Install a web extension or UserScript to see it here.";
 "extensions_reload_note" = "Open pages reload after an extension or script is changed so the new state takes effect.";
 "web_extensions" = "Web Extensions";
-"userscripts" = "UserScripts";
+"userscripts" = "Scripts & Extensions";
 "userscripts_installed" = "My Scripts";
 "userscripts_install" = "Install Scripts";
 "userscripts_empty" = "No UserScripts";
@@ -714,9 +720,23 @@
 "extension_install_failed" = "Extension Could Not Be Installed";
 "extension_permissions_summary" = "%d permissions · %d website rules";
 "extension_untitled" = "Untitled Extension";
-"web_extension_install_footer" = "Tap anywhere on a source row to open it in the current Soulo tab. Soulo recognizes CRX, XPI, ZIP and supported store install actions, then asks before installing. Some desktop-only APIs may be unavailable.";
+"web_extension_install_footer" = "Paste a Chrome, Edge, or Firefox extension page link for Soulo to download and install it directly. You can also import a CRX, XPI, ZIP, or extension folder. Some desktop-only APIs may be unavailable.";
+"web_extension_install_store_link" = "Install from Store Link…";
+"web_extension_browse_sources" = "Browse Extension Stores";
+"web_extension_browse_sources_footer" = "Store Get buttons only support their own desktop browsers. Copy an extension detail page link, then use Install from Store Link in Soulo.";
+"web_extension_store_install_title" = "Install a Store Extension";
+"extension_page_banner_title" = "Install with Soulo";
+"extension_page_banner_desc" = "Soulo can install this extension directly.";
+"web_extension_store_install_desc" = "Paste a Chrome Web Store, Microsoft Edge Add-ons, or Firefox Add-ons detail page link. Soulo downloads the package itself, so the store’s incompatible Get button is not used.";
+"web_extension_store_link_placeholder" = "Extension page link or Chrome extension ID";
+"web_extension_store_invalid_link" = "Paste an extension detail page link from Chrome, Edge, or Firefox, a Chrome extension ID, or a direct CRX, XPI, or ZIP link.";
+"web_extension_store_https_required" = "Extension packages must use a secure HTTPS link.";
+"web_extension_store_insecure_redirect" = "The extension store redirected the download through a server that iOS could not verify securely.";
+"web_extension_store_download_failed" = "Soulo could not download a valid extension package from this link.";
+"web_extension_store_package_too_large" = "The extension package is larger than the 100 MB safety limit.";
 "web_extension_requires_ios" = "Standard Web Extensions require iOS 18.4 or later. UserScripts remain available on this device.";
 "web_extension_invalid" = "The selected item is not a valid supported Web Extension.";
+"web_extension_persistent_background_unsupported" = "This extension uses a persistent background page that iOS Web Extensions do not support. Try a Manifest V3 or Safari-compatible version.";
 "userscript_new" = "New Script";
 "userscript_edit" = "Edit Script";
 "userscript_choose_file" = "Choose UserScript File (.js)…";
@@ -874,6 +894,38 @@
 "toolbar_saved" = "Toolbar Saved";
 "privacy_exit_incognito" = "Turn Off Private Browsing";
 "privacy_enter_incognito" = "Turn On Private Browsing";
+
+/* System integrations */
+"share_extension_title" = "Search with Soulo";
+"share_search_in_soulo" = "Search in Soulo";
+"share_private_search" = "Search Privately";
+"share_extension_unsupported" = "This item cannot be searched.";
+"image_extract_text" = "Extract Text from Image";
+"image_text_unavailable" = "Live Text is not available on this device.";
+"image_text_none" = "No readable text was found in this image.";
+"copy_all" = "Copy All";
+"pause" = "Pause";
+"resume" = "Resume";
+"downloads_paused" = "Paused";
+"downloads_background_interrupted" = "The background download was interrupted before it could finish.";
+"intent_open_soulo_title" = "Open Soulo";
+"intent_search_title" = "Search with Soulo";
+"intent_search_description" = "Search across multiple platforms.";
+"intent_search_query" = "Search Query";
+"intent_search_platform" = "Platform";
+"intent_open_soulo_description" = "Open Soulo and start a new search.";
+"intent_open_downloads_title" = "Open Downloads";
+"intent_open_downloads_description" = "Open your Soulo downloads.";
+"intent_paste_search_title" = "Paste and Search";
+"intent_paste_search_description" = "Search clipboard text in Soulo.";
+"intent_private_search_title" = "New Private Search";
+"intent_private_search_description" = "Open Soulo in private mode.";
+"control_search_title" = "Search Soulo";
+"control_search_description" = "Open Soulo and start searching.";
+"control_private_search_title" = "Private Search";
+"control_private_search_description" = "Open a private Soulo search.";
+"control_downloads_title" = "Downloads";
+"control_downloads_description" = "Open downloads in Soulo.";
 
 /* Settings refinements */
 "privacy_section_private_browsing" = "Private Browsing";

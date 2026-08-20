@@ -1,26 +1,21 @@
-/* App */
+/* Soulo — generated and validated localization */
+
 "app_name" = "Soulo";
 "app_subtitle" = "Una ricerca, oltre 40 piattaforme";
-
-/* Search */
 "search_placeholder" = "Cerca o inserisci URL";
+"privacy_search_placeholder" = "Ricerca privata o inserisci l'URL";
 "search" = "Cerca";
 "recent_searches" = "Ricerche Recenti";
 "show_more" = "Altro";
 "show_less" = "Meno";
 "clear_all" = "Cancella Tutto";
 "no_results" = "Nessun Risultato";
-
-/* Clipboard */
 "clipboard_detected" = "Contenuto degli appunti rilevato";
-
-/* Regions */
+"clipboard_tap_to_search" = "Tocca Cerca per utilizzare gli appunti";
 "region_china" = "Cina";
 "region_international" = "Internazionale";
 "region_japan" = "Giappone";
 "region_russia" = "Russia";
-
-/* Platforms - ALL 22 */
 "platform_douyin" = "Douyin";
 "platform_bilibili" = "Bilibili";
 "platform_xiaohongshu" = "Xiaohongshu";
@@ -43,19 +38,13 @@
 "platform_youtube_jp" = "YouTube Giappone";
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
-
-/* WebView */
 "loading" = "Caricamento...";
 "load_error" = "Caricamento Fallito";
 "bookmark_added" = "Segnalibro Aggiunto";
 "bookmark_removed" = "Segnalibro Rimosso";
-
-/* Bookmarks */
 "bookmarks" = "Segnalibri";
 "no_bookmarks" = "Nessun Segnalibro";
 "no_bookmarks_desc" = "Tocca il pulsante segnalibro durante la navigazione per salvare le pagine";
-
-/* History */
 "search_history" = "Cronologia Ricerche";
 "no_history" = "Nessuna Cronologia Ricerche";
 "no_history_desc" = "Le ricerche recenti e le pagine visitate appariranno qui";
@@ -64,8 +53,6 @@
 "earlier" = "Precedenti";
 "confirm_clear_history" = "Cancellare tutta la cronologia delle ricerche?";
 "confirm_clear_bookmarks" = "Cancellare tutti i segnalibri?";
-
-/* Settings */
 "settings" = "Impostazioni";
 "platform_management" = "Gestione Piattaforme";
 "region_korea" = "Corea";
@@ -115,8 +102,6 @@
 "about" = "Informazioni";
 "version" = "Versione";
 "reset_to_defaults" = "Ripristina Predefiniti";
-
-/* Wallpaper */
 "wallpaper_bing" = "Bing Giornaliero";
 "wallpaper_custom" = "Foto Personalizzata";
 "wallpaper_none" = "Sfondo Dinamico";
@@ -138,8 +123,6 @@
 "wallpaper_current_vibe" = "Stile Attuale";
 "wallpaper_discover" = "Esplora Sfondi";
 "choose_photo" = "Scegli Foto";
-
-/* Platform Management */
 "add_platform" = "Aggiungi Piattaforma";
 "platform_name" = "Nome Piattaforma";
 "search_url_template" = "Modello URL di Ricerca";
@@ -150,8 +133,6 @@
 "delete_platform" = "Elimina Piattaforma";
 "confirm_delete_platform" = "Eliminare questa piattaforma personalizzata?";
 "url_template_error" = "Il modello URL deve contenere il segnaposto %@";
-
-/* Privacy */
 "incognito_mode" = "Modalità Incognito";
 "incognito_desc" = "Le ricerche non verranno salvate nella cronologia quando attivata";
 "clear_search_history" = "Cancella Cronologia Ricerche";
@@ -160,8 +141,6 @@
 "clear_cache_desc" = "Cancella cookie e dati memorizzati nella cache del WebView";
 "clear_all_data" = "Cancella Tutti i Dati";
 "action_irreversible" = "Questa azione non può essere annullata";
-
-/* Privacy Settings (extended keys) */
 "privacy_section_browsing" = "Navigazione";
 "privacy_section_data" = "Gestione Dati";
 "privacy_incognito" = "Modalità Incognito";
@@ -182,7 +161,6 @@
 "privacy_clear_cache_desc" = "Cancella cache, anteprime e pagine visitate negli ultimi 3 giorni. Gli accessi restano attivi";
 "privacy_clear_cache_confirm_title" = "Cancellare la Cache di Navigazione?";
 "privacy_clear_cache_confirm_message" = "La cache e le pagine visitate negli ultimi 3 giorni verranno eliminate. Cookie e accessi saranno mantenuti.";
-
 "enter_fullscreen" = "Attiva schermo intero";
 "exit_fullscreen" = "Esci da schermo intero";
 "fullscreen_exit_hint" = "Tocca per i controlli, trascina per uscire";
@@ -204,49 +182,29 @@
 "save" = "Salva";
 "edit" = "Modifica";
 "share" = "Condividi";
-
-/* Permissions */
 "speech_permission" = "È necessaria l'autorizzazione al riconoscimento vocale per la ricerca vocale";
 "microphone_permission" = "È necessaria l'autorizzazione al microfono per l'input vocale";
-
-/* Errors */
 "error_occurred" = "Si è Verificato un Errore";
 "network_error" = "Connessione di Rete Fallita";
 "try_again" = "Riprova";
-
-/* Voice Input */
 "voice_listening" = "In Ascolto...";
 "voice_tap_to_speak" = "Tocca il pulsante per iniziare a parlare";
-
-/* F3: Spell Correction */
 "did_you_mean" = "Forse cercavi:";
-
-/* F4: Page Summary */
 "summarize" = "Riassumi";
 "summary_title" = "Riepilogo Pagina";
 "summarizing" = "Riepilogo in corso...";
 "copy_summary" = "Copia";
-
-/* F5: Platform Recommendation */
 "suggested_platforms" = "Suggeriti";
-
-/* F7: Clipboard Intelligence */
 "clipboard_url_detected" = "URL rilevato";
 "clipboard_product_detected" = "Prodotto rilevato";
 "clipboard_person_detected" = "Persona rilevata";
 "open_directly" = "Apri";
-
-/* F9: Image Search */
 "image_search" = "Ricerca per Immagini";
 "extracting_text" = "Estrazione del testo...";
 "no_text_found" = "Nessun testo trovato nell'immagine";
 "detected_objects" = "Rilevato:";
 "photo_library" = "Libreria Foto";
-
-/* F1: Siri */
 "siri_search_tip" = "Prova: \"Cerca gatti su Soulo\"";
-
-/* AI Platforms */
 "platform_deepseek" = "DeepSeek";
 "platform_qianwen" = "Qianwen";
 "platform_bing" = "Bing";
@@ -280,15 +238,12 @@
 "show_top_search_bar" = "Mostra la barra di ricerca superiore";
 "show_top_search_bar_desc" = "Se nascosta, usa la barra degli indirizzi in basso per cercare o avviare l’input vocale";
 "ad_block_master_disabled_desc" = "Attiva il blocco annunci per usare e gestire gli abbonamenti ai filtri qui sotto.";
-/* Custom Groups */
 "custom_groups" = "Gruppi Personalizzati";
 "no_groups" = "Nessun Gruppo Personalizzato";
 "no_groups_desc" = "Crea gruppi per organizzare le tue piattaforme preferite";
 "add_group" = "Nuovo Gruppo";
 "group_name" = "Nome Gruppo";
 "platforms_count" = "piattaforme";
-
-/* Dynamic Themes */
 "dynamic_theme" = "Tema";
 "theme_midnight" = "Mezzanotte";
 "theme_ocean" = "Oceano";
@@ -304,6 +259,19 @@
 "copied" = "Copiato!";
 "ad_block" = "Blocco Pubblicità";
 "ad_block_desc" = "Nascondi pubblicità e tracker nei risultati di ricerca (riavvia la ricerca per applicare)";
+"ad_block_network" = "Blocca le richieste della rete pubblicitaria";
+"ad_block_cosmetic" = "Nascondi segnaposto annunci";
+"ad_block_popups" = "Popup e overlay puliti";
+"ad_block_management" = "Gestione del blocco degli annunci";
+"ad_block_allowlist" = "Siti consentiti";
+"ad_block_disable_current_site" = "Disabilita il blocco degli annunci su questo sito";
+"ad_block_enable_current_site" = "Abilita il blocco degli annunci su questo sito";
+"ad_block_site_toggle_desc" = "La modifica di questa impostazione ricarica la pagina corrente in modo che possa essere applicata la nuova impostazione di blocco degli annunci.";
+"ad_block_no_allowlisted_sites" = "Nessun sito consentito.";
+"ad_block_stats" = "Elementi nascosti";
+"ad_block_stats_desc" = "I conteggi sono approssimativi e includono solo gli elementi della pagina nascosti dalla pulizia cosmetica.";
+"ad_block_no_stats" = "Nessuna statistica sugli elementi nascosti ancora.";
+"ad_block_reset_stats" = "Ripristina statistiche";
 "browsing" = "Navigazione";
 "no_platforms_in_group" = "Nessuna piattaforma ancora";
 "add_to_group" = "Aggiungi Piattaforma al Gruppo";
@@ -322,21 +290,15 @@
 "image_uploading" = "Caricamento immagine...";
 "switch_to_bing" = "Passare allo Sfondo Bing?";
 "switch_to_bing_desc" = "Attiva lo sfondo giornaliero di Bing per sfogliare bellissimi sfondi con la girandola.";
-
 "open_external_title" = "Aprire App Esterna?";
 "open_external_failed" = "Impossibile aprire l’app esterna";
 "safari_compatibility_mode" = "Modalità compatibilità Safari";
 "open_in_default_browser" = "Apri nel browser predefinito";
 "open_external_message" = "Questo link aprirà un'altra app. Vuoi continuare?";
-
 "ai_loading_page" = "Caricamento piattaforma AI...";
 "ai_loading_input" = "Inserimento e invio della domanda...";
-
-/* Widget */
 "widget_search" = "Ricerca Rapida";
 "widget_description" = "Cerca su più piattaforme istantaneamente";
-
-/* Settings - Navigation & Titles */
 "settings_title" = "Impostazioni";
 "settings_platforms" = "Piattaforme";
 "settings_appearance" = "Aspetto";
@@ -345,8 +307,6 @@
 "settings_version" = "Versione";
 "settings_privacy_policy" = "Informativa sulla Privacy";
 "settings_terms" = "Termini di Servizio";
-
-/* Settings - Section Headers */
 "settings_section_platforms" = "Piattaforme";
 "settings_section_appearance" = "Aspetto";
 "settings_section_language" = "Lingua";
@@ -354,8 +314,6 @@
 "settings_section_privacy" = "Privacy";
 "settings_section_about" = "Informazioni";
 "settings_section_about_support" = "Informazioni e supporto";
-
-/* Platform Management */
 "platform_auto_sort" = "Ordina Automaticamente per Frequenza";
 "platform_auto_sort_desc" = "Riordina automaticamente le piattaforme in base alla frequenza d'uso";
 "platform_custom_badge" = "Personalizzato";
@@ -364,8 +322,6 @@
 "platform_reset_confirm_title" = "Ripristinare le Piattaforme?";
 "platform_reset_confirm_action" = "Ripristina";
 "platform_reset_confirm_message" = "Tutte le configurazioni delle piattaforme verranno ripristinate ai valori predefiniti. Non è possibile annullare questa operazione.";
-
-/* Add Custom Platform */
 "add_platform_title" = "Aggiungi Piattaforma Personalizzata";
 "add_platform_subtitle" = "Aggiungi qualsiasi motore di ricerca o sito web come piattaforma";
 "add_platform_name" = "Nome Piattaforma";
@@ -378,22 +334,14 @@
 "add_platform_url_help_title" = "Come Funzionano i Modelli URL";
 "add_platform_url_help_desc" = "Sostituisci la parola chiave di ricerca nell'URL con %@ e la compileremo automaticamente quando cerchi.";
 "add_platform_url_help_examples" = "Esempi";
-
-/* Wallpaper (extended) */
 "wallpaper_choose_photo" = "Scegli Foto";
-
-/* Language Settings */
 "language_select_title" = "Seleziona Lingua";
 "language_footer" = "La modifica della lingua aggiornerà tutto il testo nell'app.";
-
-/* Home Bookmarks */
 "show_bookmarks_home" = "Mostra Segnalibri nella Home";
 "show_bookmarks_home_desc" = "Visualizza i siti preferiti come icone nella schermata home";
 "show_recent_searches_home" = "Mostra ricerche recenti nella Home";
 "show_recent_searches_home_desc" = "Mostra le parole chiave recenti sotto la barra di ricerca della Home";
 "home_screen" = "Schermata Home";
-
-/* AI Search Platforms */
 "platform_metaso" = "Metaso";
 "platform_tiangong" = "Tiangong AI";
 "platform_phind" = "Phind";
@@ -401,12 +349,11 @@
 "platform_kimi" = "Kimi Search";
 "voice_stop" = "Stop";
 "voice_record" = "Registra";
-
-/* Batch Import */
 "batch_import" = "Importazione in Blocco";
 "batch_import_format" = "Incolla il JSON nel formato seguente";
 "batch_import_group" = "Aggiungi al Gruppo (Facoltativo)";
 "batch_import_group_placeholder" = "es. Film";
+"batch_import_film_entry" = "Apri le preimpostazioni della piattaforma cinematografica";
 "batch_import_action" = "Importa";
 "batch_import_result" = "%d piattaforme importate con successo";
 "paste_from_clipboard" = "Incolla dagli Appunti";
@@ -417,8 +364,6 @@
 "error_timeout" = "Connessione scaduta. Riprova.";
 "error_ssl" = "Connessione sicura fallita. Questo sito potrebbe non essere sicuro.";
 "retry" = "Riprova";
-
-/* Support & Feedback */
 "settings_rate" = "Valuta questa App";
 "settings_feedback" = "Invia Feedback";
 "settings_help" = "Centro Assistenza";
@@ -440,8 +385,6 @@
 "feedback_success_title" = "Grazie";
 "feedback_success_msg" = "Il tuo feedback è stato inviato!";
 "feedback_error" = "Errore";
-
-/* Help Center */
 "help_title" = "Centro Assistenza";
 "help_welcome_title" = "Come possiamo aiutarti?";
 "help_welcome_subtitle" = "Ecco tutto ciò che devi sapere su Soulo.";
@@ -462,13 +405,9 @@
 "theme_system" = "Sistema";
 "theme_light" = "Chiaro";
 "theme_dark" = "Scuro";
-
-/* Wallpaper Delete Confirmation */
 "wallpaper_delete_title" = "Rimuovi sfondo";
 "wallpaper_delete_confirm" = "Rimuovi";
 "wallpaper_delete_msg" = "Questo sfondo verrà nascosto dalla lista.";
-
-/* Schede del browser */
 "tab_new_tab" = "Nuova scheda";
 "tab_tabs" = "Schede";
 "tab_close" = "Chiudi scheda";
@@ -478,8 +417,6 @@
 "tab_duplicate" = "Duplica scheda";
 "tab_open_new" = "Apri in nuova scheda";
 "popup_open_current_tab" = "Apri nella scheda attuale";
-
-/* Funzioni del browser */
 "find_in_page" = "Cerca nella pagina";
 "desktop_mode" = "Modalità desktop";
 "mobile_mode" = "Modalità mobile";
@@ -492,8 +429,6 @@
 "image_saved" = "Salvato in Foto";
 "save_failed" = "Salvataggio fallito";
 "downloading" = "Download in corso...";
-
-/* Browser Privacy */
 "downloads" = "Download";
 "downloads_empty" = "Nessun download";
 "downloads_empty_desc" = "I file scaricati appariranno qui.";
@@ -505,8 +440,6 @@
 "library" = "Raccolta";
 "my_downloads" = "I miei download";
 "open_downloads_folder" = "Apri posizione download";
-"live_activity" = "Dynamic Island";
-"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island—the black pill around the camera at the top of supported iPhones.";
 "fire_button" = "Clear Privacy Data";
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
@@ -543,9 +476,43 @@
 "privacy_gpc_desc" = "Ask websites not to sell or share your data when they support GPC.";
 "privacy_cookie_banners" = "Handle Cookie Prompts";
 "privacy_cookie_banners_desc" = "Try to reject or dismiss common cookie consent banners.";
+"ad_block_allowlisted_count" = "Siti consentiti";
+"ad_block_total_hidden" = "Elementi nascosti";
+"ad_block_current_site_hidden" = "Questo sito";
+"ad_block_search_allowlist" = "Cerca nella lista consentita";
+"ad_block_subscriptions" = "Filtra abbonamenti";
+"ad_block_subscriptions_desc" = "Soulo supporta un pratico sottoinsieme di elenchi di filtri ABP e li converte in regole WebKit più occultamenti cosmetici. Le fonti includono i filtri EasyList, EasyList China e AdGuard.";
+"ad_block_subscription_enabled" = "Elenchi abilitati";
+"ad_block_subscription_rules" = "Regole memorizzate nella cache";
+"ad_block_subscription_rules_suffix" = "regole";
+"ad_block_subscription_update" = "Aggiorna elenchi abilitati";
+"ad_block_subscription_updating" = "Aggiornamento...";
+"ad_block_subscription_reset" = "Reimposta abbonamenti";
+"wallpaper_remote_error" = "L'origine dello sfondo non è disponibile. Prova ad aggiornare o cambiare sorgente.";
+"restore" = "Ripristina";
+"never_prompt" = "Non chiedere mai";
+"live_activity" = "Dynamic Island";
+"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island—the black pill around the camera at the top of supported iPhones.";
+"external_navigation" = "Collegamenti ad app esterne";
+"never_prompt_external" = "Blocca silenziosamente i collegamenti alle app esterne";
+"never_prompt_external_desc" = "Se abilitato, Soulo annulla i collegamenti alle app esterne senza mostrare una richiesta.";
+"blocked_external_hosts" = "Host bloccati";
+"no_external_hosts" = "Nessun host bloccato";
+"no_external_hosts_desc" = "Gli host vengono visualizzati qui dopo aver scelto Non chiedere mai il collegamento a un'app esterna.";
+"wallpaper_auto_refresh_header" = "Aggiornamento automatico";
+"wallpaper_auto_refresh" = "Aggiorna intervallo";
+"wallpaper_auto_refresh_desc" = "Soulo precarica il successivo sfondo remoto prima dell'aggiornamento automatico, quando possibile.";
+"wallpaper_random_sources" = "Randomizzare le fonti";
+"wallpaper_random_sources_desc" = "Aggiornamento automatico e aggiornamento casuale tra le sorgenti remote selezionate. Viene mantenuta almeno una fonte.";
+"wallpaper_random_topics" = "Argomenti randomizzati";
+"wallpaper_interval_none" = "Mai";
+"wallpaper_interval_1min" = "Ogni minuto";
+"wallpaper_interval_5min" = "Ogni 5 minuti";
+"wallpaper_interval_15min" = "Ogni 15 minuti";
+"wallpaper_interval_30min" = "Ogni 30 minuti";
+"wallpaper_interval_1hour" = "Ogni ora";
+"wallpaper_interval_1day" = "Ogni giorno";
 "example" = "Esempio";
-
-/* Navigazione browser */
 "browser_back" = "Indietro";
 "browser_forward" = "Avanti";
 "browser_reload" = "Ricarica";
@@ -553,6 +520,62 @@
 "current_page_link" = "Link della pagina corrente";
 "tab_limit_title" = "Limite schede raggiunto";
 "tab_limit_message" = "Puoi tenere aperte fino a 20 schede. Chiudine una prima di aprirne un’altra.";
+"accessibility_selected" = "Selezionato";
+"accessibility_enabled" = "Abilitato";
+"accessibility_disabled" = "Disabilitato";
+"accessibility_item_position" = "%d di %d";
+"accessibility_selected_position" = "Selezionato, %d di %d";
+"accessibility_clear_search" = "Cancella il testo della ricerca";
+"accessibility_voice_recording" = "Registrazione";
+"accessibility_voice_idle" = "Non registrare";
+"accessibility_voice_search_hint" = "Tocca due volte per avviare l'input vocale.";
+"accessibility_recognized_text" = "Testo riconosciuto";
+"accessibility_recent_search" = "Ricerca recente, %@";
+"accessibility_recent_search_hint" = "Tocca due volte per cercare. Utilizzare l'azione Elimina per rimuoverlo.";
+"accessibility_search_suggestion_hint" = "Tocca due volte per cercare questo suggerimento.";
+"accessibility_fill_search" = "Compila il campo di ricerca con %@";
+"accessibility_fill_search_hint" = "Tocca due volte per modificare questo suggerimento prima della ricerca.";
+"accessibility_home_title" = "Titolo della casa, %@";
+"accessibility_home_subtitle" = "Sottotitolo home, %@";
+"accessibility_edit_title_hint" = "Tocca due volte per modificare il titolo della casa.";
+"accessibility_edit_subtitle_hint" = "Tocca due volte per modificare il sottotitolo della home.";
+"accessibility_incognito_active" = "La navigazione privata è attiva";
+"accessibility_open_bookmark_hint" = "Tocca due volte per aprire questo segnalibro.";
+"accessibility_group_picker_hint" = "Tocca due volte per scegliere un gruppo o una regione di ricerca.";
+"accessibility_platform_hint" = "Tocca due volte per aprire i risultati. Scorri verso l'alto o verso il basso per cambiare piattaforma.";
+"accessibility_previous_platform" = "Piattaforma precedente";
+"accessibility_next_platform" = "Prossima piattaforma";
+"accessibility_first_platform" = "Prima piattaforma";
+"accessibility_last_platform" = "Ultima piattaforma";
+"accessibility_platform_position" = "%@, %d di %d";
+"accessibility_platform_loading" = "%@, caricamento in corso, %d di %d";
+"accessibility_page_position" = "Pagina %d di %d";
+"accessibility_page_top" = "Inizio pagina";
+"accessibility_page_bottom" = "Fondo pagina";
+"accessibility_page_loaded" = "%@ caricato";
+"accessibility_search_results" = "Risultati della ricerca";
+"accessibility_active_tab" = "Scheda attiva";
+"accessibility_tab_position" = "%@, scheda %d di %d";
+"accessibility_open_tab_hint" = "Tocca due volte per aprire questa scheda. Utilizzare l'azione Chiudi per chiuderlo.";
+"accessibility_tab_overview_hint" = "Tocca due volte per visualizzare e gestire le schede.";
+"accessibility_open_platform_hint" = "Tocca due volte per aprire questa piattaforma.";
+"accessibility_restore_tab_hint" = "Tocca due volte per ripristinare questa scheda chiusa.";
+"accessibility_edit_address_hint" = "Tocca due volte per modificare l'indirizzo o cercare il testo.";
+"accessibility_previous_match" = "Partita precedente";
+"accessibility_next_match" = "Prossima partita";
+"accessibility_search_history_hint" = "Tocca due volte per eseguire nuovamente la ricerca. Utilizzare l'azione Elimina per rimuoverlo.";
+"accessibility_edit_platform_hint" = "Tocca due volte per modificare questa piattaforma.";
+"accessibility_platform_visibility" = "Mostra piattaforma";
+"accessibility_wallpaper_open_hint" = "Tocca due volte per visualizzare l'anteprima di questo sfondo. Sono disponibili più azioni.";
+"accessibility_add_favorite" = "Aggiungi ai preferiti";
+"accessibility_remove_favorite" = "Rimuovi dai preferiti";
+"accessibility_wallpaper_preview" = "Anteprima dello sfondo";
+"accessibility_wallpaper_zoom" = "Zoom %d percentuale";
+"accessibility_wallpaper_adjust_hint" = "Scorri verso l'alto o verso il basso per ingrandire. Utilizza le azioni per spostare lo sfondo.";
+"accessibility_move_left" = "Spostati a sinistra";
+"accessibility_move_right" = "Muoviti a destra";
+"accessibility_move_up" = "Vai su";
+"accessibility_move_down" = "Spostati giù";
 "browser_page_tools" = "Strumenti pagina";
 "browser_open_page" = "Apri pagina";
 "keep_fullscreen_browsing" = "Mantieni schermo intero";
@@ -560,20 +583,150 @@
 "icloud_settings_sync" = "Sincronizzazione impostazioni iCloud";
 "icloud_settings_sync_desc" = "Sincronizza aspetto, home, navigazione, privacy e piattaforme; esclude cronologia, cache, accessi e download";
 "settings_section_sync" = "Sincronizzazione";
-"privacy_exit_incognito" = "Disattiva navigazione privata";
-"privacy_enter_incognito" = "Attiva navigazione privata";
-
-/* Miglioramenti delle impostazioni */
-"privacy_section_private_browsing" = "Navigazione privata";
-"toolbar_restore_confirm_title" = "Ripristinare la barra predefinita?";
-"toolbar_restore_confirm_message" = "Il layout attuale verrà sostituito con quello predefinito.";
-"web_readability" = "Leggibilità";
-"web_reduce_motion" = "Riduci movimento delle pagine";
-"web_reduce_motion_desc" = "Limita animazioni, transizioni e scorrimento fluido delle pagine web.";
-"web_underline_links" = "Sottolinea i link";
-"web_underline_links_desc" = "Sottolinea i link delle pagine web per renderli più facili da riconoscere.";
-"home_title_edit_desc" = "Mostrato come titolo principale al centro della schermata Home.";
-"home_subtitle_edit_desc" = "Mostrato sotto il titolo principale; lascia vuoto per nasconderlo.";
+"quick_action_clear_cache" = "Cancella cache";
+"quick_action_private_tab" = "Nuova scheda privata";
+"quick_action_share_app" = "Condividi l'app";
+"share_app_message" = "Prova Soulo, un'app mirata per la ricerca e la navigazione.";
+"cache_cleared" = "La cache di navigazione è stata cancellata";
+"web_appearance" = "Aspetto sul web";
+"web_page_colors" = "Colori della pagina";
+"web_follow_app_scheme" = "Abbina il tema del sito web";
+"web_follow_app_scheme_desc" = "Comunica ai siti web supportati se Soulo è attualmente chiaro o scuro in modo che possano scegliere un tema corrispondente. I siti non supportati rimangono invariati.";
+"web_warm_color_shift" = "Tinta calda per la lettura";
+"web_warm_color_shift_desc" = "Aggiungi una delicata tinta calda sulla pagina per ammorbidire gli schermi bianchi freddi di notte. Anche le immagini e i video appariranno leggermente più caldi.";
+"web_force_dark" = "Forza le pagine Web oscure";
+"web_force_dark_short" = "Modalità oscura";
+"web_force_dark_desc" = "Prova a convertire sfondi luminosi, testo scuro e bordi in una tavolozza scura con scarsa illuminazione anche quando il sito Web non dispone di un proprio tema scuro.";
+"web_force_dark_footer" = "Queste impostazioni possono essere combinate in modo indipendente. La conversione non modifica il contenuto della pagina, ma pagine complesse, tele e controlli personalizzati potrebbero mantenere i colori originali. Disattivalo rapidamente dal menu Altro in basso se una pagina sembra sbagliata.";
+"site_information" = "Informazioni sul sito";
+"shake_action" = "Azione di agitazione";
+"shake_action_none" = "Nessuno";
+"shake_action_fullscreen" = "Attiva/Disattiva schermo intero";
+"shake_action_dark" = "Attiva/disattiva la modalità oscura";
+"shake_action_reload" = "Ricarica la pagina";
+"shake_action_close_tab" = "Chiudi la scheda corrente";
+"shake_action_footer" = "L'azione selezionata viene eseguita mentre una pagina Web è aperta. La selezione di un'azione di commutazione la inverte con la scossa successiva.";
+"shake_intensity" = "Intensità di agitazione";
+"shake_intensity_light" = "Luce";
+"shake_intensity_standard" = "Norma";
+"shake_intensity_firm" = "Fermo";
+"shake_intensity_strong" = "Forte";
+"shake_intensity_footer" = "Scegli la forza con cui il dispositivo deve essere scosso. La luce è più facile da attivare; Forte aiuta a prevenire azioni accidentali.";
+"extensions" = "Estensioni";
+"extensions_installed" = "Le mie estensioni";
+"extensions_install" = "Installa estensioni";
+"extensions_empty" = "Nessuna estensione";
+"extensions_empty_desc" = "Installa un'estensione web o UserScript per vederla qui.";
+"extensions_reload_note" = "Le pagine aperte vengono ricaricate dopo la modifica di un'estensione o di uno script in modo che il nuovo stato abbia effetto.";
+"web_extensions" = "Estensioni Web";
+"userscripts" = "Script ed estensioni";
+"userscripts_installed" = "I miei script";
+"userscripts_install" = "Installa script";
+"userscripts_empty" = "Nessun UserScript";
+"userscripts_empty_desc" = "Installa un file .user.js o crea uno script per vederlo qui.";
+"userscripts_reload_note" = "Le pagine aperte vengono ricaricate dopo che uno script è stato installato, modificato, abilitato, disabilitato o rimosso.";
+"userscript_experimental_badge" = "Compatibilità";
+"userscript_experimental_title" = "Compatibilità UserScript";
+"userscript_experimental_desc" = "Supporta regole del sito, inizio/fine documento, ampio spazio di archiviazione GM e API di pagina, comandi di script, notifiche, schede, download, cookie, risorse e richieste con ambito di autorizzazione. Rivedi ogni script prima dell'installazione; i file @require esterni non vengono eseguiti.";
+"extension_choose_file" = "Scegli il file o la cartella di estensione...";
+"extension_installing" = "Controllo e installazione dell'estensione…";
+"extension_install_failed" = "Impossibile installare l'estensione";
+"extension_permissions_summary" = "%d permessi · %d regole del sito web";
+"extension_untitled" = "Estensione senza titolo";
+"web_extension_install_footer" = "Tocca un punto qualsiasi della riga dell'origine per aprirla nella scheda Soulo corrente. Soulo riconosce CRX, XPI, ZIP e le azioni di installazione dello store supportate, quindi chiede informazioni prima dell'installazione. Alcune API solo desktop potrebbero non essere disponibili.";
+"web_extension_install_store_link" = "Installa dal collegamento dello Store...";
+"web_extension_browse_sources" = "Sfoglia i negozi di estensioni";
+"web_extension_browse_sources_footer" = "I pulsanti Ottieni del negozio supportano solo i propri browser desktop. Copia il collegamento alla pagina dei dettagli dell'estensione, quindi utilizza il collegamento Installa dal negozio in Soulo.";
+"web_extension_store_install_title" = "Installa un'estensione del negozio";
+"extension_page_banner_title" = "Installa con Soulo";
+"extension_page_banner_desc" = "Soulo può installare direttamente questa estensione.";
+"web_extension_store_install_desc" = "Incolla un collegamento alla pagina dei dettagli dei componenti aggiuntivi di Chrome Web Store, Microsoft Edge o Firefox. Soulo scarica il pacchetto stesso, quindi il pulsante Ottieni incompatibile dello store non viene utilizzato.";
+"web_extension_store_link_placeholder" = "Collegamento alla pagina dell'estensione o ID estensione di Chrome";
+"web_extension_store_invalid_link" = "Incolla il collegamento alla pagina dei dettagli dell'estensione da Chrome, Edge o Firefox, un ID di estensione di Chrome o un collegamento CRX, XPI o ZIP diretto.";
+"web_extension_store_https_required" = "I pacchetti di estensione devono utilizzare un collegamento HTTPS sicuro.";
+"web_extension_store_insecure_redirect" = "L'archivio estensioni ha reindirizzato il download tramite un server che iOS non è riuscito a verificare in modo sicuro.";
+"web_extension_store_download_failed" = "Soulo non è riuscito a scaricare un pacchetto di estensioni valido da questo collegamento.";
+"web_extension_store_package_too_large" = "Il pacchetto di estensione supera il limite di sicurezza di 100 MB.";
+"web_extension_requires_ios" = "Le estensioni web standard richiedono iOS 18.4 o versioni successive. UserScriptrimangono disponibili su questo dispositivo.";
+"web_extension_invalid" = "L'elemento selezionato non è un'estensione Web supportata valida.";
+"web_extension_persistent_background_unsupported" = "Questa estensione utilizza una pagina in background permanente che le estensioni web iOS non supportano. Prova una versione Manifest V3 o compatibile con Safari.";
+"userscript_new" = "Nuova sceneggiatura";
+"userscript_edit" = "Modifica sceneggiatura";
+"userscript_choose_file" = "Scegli UserScript File (.js)…";
+"userscript_install_footer" = "Tocca una riga di origine per aprirla nella scheda Soulo corrente. Un collegamento .user.js apre una conferma di installazione. Sono supportati JavaScript standard e un'ampia serie di API GM; gli script non vengono eseguiti nella Navigazione privata e i file @require esterni non vengono eseguiti.";
+"userscript_install_failed" = "Impossibile installare UserScript";
+"web_extension_temporarily_disabled" = "Le estensioni del browser standard sono temporaneamente non disponibili mentre viene completato il test di compatibilità.";
+"userscript_unreadable" = "Impossibile leggere lo script selezionato come testo UTF-8.";
+"userscript_empty" = "Lo script non può essere vuoto.";
+"userscript_invalid_match_pattern" = "Regola del sito web non valida: %@";
+"userscript_untitled" = "Sceneggiatura senza titolo";
+"userscript_name" = "Nome";
+"userscript_run_at" = "Corri a";
+"userscript_document_start" = "Inizio documento";
+"userscript_document_end" = "Fine del documento";
+"userscript_matches" = "Regole del sito web (una per riga)";
+"userscript_code" = "JavaScript";
+"userscript_description" = "Descrizione";
+"userscript_copy_javascript" = "Copia JavaScript";
+"userscripts_documentation" = "Guida allo sviluppo";
+"userscript_docs_ai_title" = "Crea uno script con l’IA";
+"userscript_docs_ai_desc" = "Copia il prompt completo di compatibilità Soulo, aggiungi il requisito e invialo a un’IA per generare uno script installabile.";
+"userscript_docs_copy_prompt" = "Copia prompt IA";
+"userscript_docs_status_title" = "Stato di compatibilità";
+"userscript_docs_supported_title" = "Supportato";
+"userscript_docs_supported_desc" = "Corrispondenza principale, inizio/fine documento, stili/elementi, archiviazione singola e in blocco, listener di valori locali, appunti, menu, notifiche in-page, schede, download, dati delle schede, cookie, risorse, modifiche URL e richieste con ambito di autorizzazione.";
+"userscript_docs_partial_title" = "Parzialmente supportato";
+"userscript_docs_partial_desc" = "Le richieste di rete omettono il caricamento/avanzamento e il trasporto dei cookie. Le notifiche sono in-page, le API delle risorse sono asincrone e i listener di modifica del valore segnalano le modifiche apportate dalla pagina corrente. I controlli degli aggiornamenti sono manuali.";
+"userscript_docs_unsupported_title" = "Attualmente non supportato";
+"userscript_docs_unsupported_desc" = "Esecuzione @require esterna, intercettazione GM_webRequest, GM_audio, isolamento sandbox/run-in, controlli di aggiornamento automatici e comportamenti esatti solo desktop che WKWebView non può fornire.";
+"userscript_docs_metadata_title" = "Metadati";
+"userscript_docs_metadata_identity" = "Nome dello script leggibile e descrizione opzionale mostrati prima dell'installazione e nei dettagli dello script.";
+"userscript_docs_metadata_version" = "Utilizza uno spazio dei nomi stabile e univoco e incrementa la versione ogni volta che lo script in bundle cambia.";
+"userscript_docs_metadata_match" = "Seleziona le pagine utilizzando le regole dei caratteri jolly http/https, <all_urls> o un valore letterale @include di un'espressione regolare.";
+"userscript_docs_metadata_exclude" = "Rimuovi le pagine corrispondenti dall'intervallo di accesso al sito Web dello script.";
+"userscript_docs_metadata_run_at" = "Esegui all'inizio del documento o dopo DOMContentLoaded. L'impostazione predefinita è fine documento.";
+"userscript_docs_metadata_grant" = "Dichiara ogni API privilegiata utilizzata. Utilizza @grant none quando lo script necessita solo di API di pagine Web standard.";
+"userscript_docs_metadata_connect" = "Autorizzare gli host utilizzati dalle richieste di rete privilegiate. Senza di esso, le richieste sono limitate all'host della pagina corrente.";
+"userscript_docs_metadata_urls" = "Identità facoltativa e metadati di aggiornamento. Soulo li utilizza per riconoscere le reinstallazioni dello stesso script.";
+"userscript_docs_metadata_resource" = "Dichiara una risorsa denominata. Aggiungi un host @connect corrispondente; il recupero viene rinviato fino all'attesa dell'API della risorsa moderna.";
+"userscript_docs_metadata_require" = "I requisiti esterni vengono divulgati durante l'installazione ma non vengono scaricati o eseguiti; gli script devono essere autonomi.";
+"userscript_docs_api_title" = "API privilegiate supportate";
+"userscript_docs_api_info" = "Legge il gestore dello script, la versione Soulo e i metadati dello script analizzati. Disponibile in versione legacy e moderna.";
+"userscript_docs_api_unsafe_window" = "Fornisce la finestra della pagina corrente quando la concessione unsafeWindow viene dichiarata esplicitamente.";
+"userscript_docs_api_style" = "Aggiunge un elemento di stile alla pagina, anche in modo sicuro durante l'avvio del documento. La forma moderna restituisce una Promessa.";
+"userscript_docs_api_log" = "Scrive uno o più valori nella console della pagina Web.";
+"userscript_docs_api_get" = "Legge un valore serializzabile JSON persistente, restituendo il fallback quando la chiave non esiste.";
+"userscript_docs_api_set" = "Persiste un valore serializzabile JSON. Il modulo moderno restituisce una Promise che può segnalare errori di archiviazione.";
+"userscript_docs_api_delete" = "Elimina un valore persistente per questo script.";
+"userscript_docs_api_list" = "Restituisce tutte le chiavi di archiviazione persistenti di proprietà di questo script.";
+"userscript_docs_api_bulk" = "Legge, scrive o elimina più valori JSON in un'unica operazione; le scritture vengono convalidate atomicamente dall'archivio nativo.";
+"userscript_docs_api_listener" = "Osserva le modifiche di archiviazione apportate dallo script nella pagina Web corrente. Non vengono emesse notifiche remote a campi incrociati.";
+"userscript_docs_api_element" = "Crea e aggiunge un elemento con attributi, anche in modo sicuro durante l'avvio del documento.";
+"userscript_docs_api_clipboard" = "Copia il testo negli appunti di sistema tramite il bridge nativo di Soulo.";
+"userscript_docs_extended_title" = "Menu, schede, file e integrazione delle pagine";
+"userscript_docs_api_menu" = "Aggiunge azioni script al menu Altro di Soulo e le rimuove quando richiesto o all'avvio della navigazione.";
+"userscript_docs_api_notification" = "Mostra una notifica in-page isolata e accessibile e supporta i callback di clic/completamento.";
+"userscript_docs_api_tabs" = "Apre una scheda Soulo in primo piano o sullo sfondo, ne chiude la maniglia restituita o chiude/mette a fuoco la scheda corrente.";
+"userscript_docs_api_download" = "Scarica un URL pubblico autorizzato per Soulo Download. La destinazione deve soddisfare @connect e i nomi dei file vengono ripuliti.";
+"userscript_docs_api_tabdata" = "Condivide i dati serializzabili JSON tra pagine e schede live appartenenti allo stesso script.";
+"userscript_docs_api_cookie" = "Elenca, crea ed elimina i cookie limitati al dominio della pagina Web corrente.";
+"userscript_docs_api_resource" = "Recupera una @resource dichiarata come testo o URL di dati. Sia i moduli con nome legacy che quelli moderni restituiscono una promessa in Soulo.";
+"userscript_docs_api_urlchange" = "Emette modifiche all'URL per l'API History, avanti/indietro e modifiche hash su applicazioni a pagina singola.";
+"userscript_commands" = "Comandi script";
+"userscript_docs_network_title" = "Richieste di rete";
+"userscript_docs_network_legacy" = "Avvia una richiesta privilegiata e restituisce un handle di interruzione. Dichiarare la concessione corrispondente e gli host @connect.";
+"userscript_docs_network_modern" = "Alias moderno dell'API di richiesta privilegiata con lo stesso oggetto dettagli e comportamento di callback.";
+"userscript_docs_network_details" = "Supporta URL, metodo, intestazioni, dati, timeout, ResponseType, onloadstart, onreadystatechange, onload, onerror e onloadend.";
+"userscript_docs_network_response" = "Utilizza json, blob, arraybuffer o lascia vuoto il testo. Le risposte includono status, finalUrl, intestazioni, ResponseText e risposta.";
+"userscript_docs_network_connect" = "Utilizza self per l'host della pagina, un dominio per essa e i suoi sottodomini, un dominio con caratteri jolly o * solo quando veramente necessario.";
+"userscript_docs_limits_title" = "Comportamento e limiti";
+"userscript_docs_limits_web" = "Sono disponibili DOM standard, eventi, MutationObserver, recupero, timer e altre API WKWebView. Il recupero normale segue ancora CORS.";
+"userscript_docs_limits_storage" = "I valori archiviati devono essere serializzabili JSON: fino a 256 KB per valore e 1 MB in totale per script.";
+"userscript_docs_limits_network" = "Le risposte privilegiate sono limitate a 20 MB, il timeout è limitato a 1-60 secondi e le intestazioni Cookie/Host/Origine non sono accettate.";
+"userscript_docs_limits_private" = "I UserScript non vengono eseguiti nella navigazione privata.";
+"userscript_docs_limits_require" = "I file @require esterni non vengono mai eseguiti. Evita le dipendenze CDN e includi tutta la logica richiesta nello script.";
+"userscript_docs_template_title" = "Modello minimo";
+"userscript_docs_template_footer" = "Utilizza uno spazio dei nomi univoco e le dichiarazioni @match e @grant più strette possibili.";
 "userscript_too_large" = "Lo script selezionato supera il limite di 2 MB.";
 "userscript_invalid_connect_domain" = "Regola di accesso alla rete non valida: %@";
 "userscript_storage_invalid" = "Lo script ha tentato di salvare un valore non valido o troppo grande.";
@@ -587,15 +740,110 @@
 "userscript_external_requirements" = "Dipendenze esterne";
 "userscript_external_requirements_desc" = "Questo script dichiara file @require esterni. Soulo non li carica automaticamente.";
 "userscript_metadata_title" = "Dettagli dello script";
+"userscript_unsupported_permissions" = "Non ancora supportato: %@";
 "userscript_sample_name" = "Barra di avanzamento lettura";
 "userscript_sample_desc" = "Mostra un indicatore discreto in alto su ogni pagina web.";
 "userscript_builtin_badge" = "Esempio integrato";
-"userscript_description" = "Descrizione";
-"userscript_copy_javascript" = "Copia JavaScript";
-"userscripts_documentation" = "Guida allo sviluppo";
-"userscript_docs_ai_title" = "Crea uno script con l’IA";
-"userscript_docs_ai_desc" = "Copia il prompt completo di compatibilità Soulo, aggiungi il requisito e invialo a un’IA per generare uno script installabile.";
-"userscript_docs_copy_prompt" = "Copia prompt IA";
-"userscript_commands" = "Comandi script";
 "userscript_page_marker_name" = "Estrai testo area";
 "userscript_page_marker_desc" = "Tocca il pulsante mobile e poi un'area della pagina per estrarre e copiare il testo visibile.";
+"userscript_builtin_readonly_desc" = "Gli esempi integrati sono di sola lettura e rimangono disabilitati finché non li attivi.";
+"site_connection_secure" = "La connessione è sicura";
+"site_connection_not_secure" = "La connessione non è sicura";
+"site_https_verified_desc" = "Questa pagina utilizza HTTPS crittografato. iOS verifica il certificato del sito web.";
+"site_http_warning_desc" = "Questa pagina non utilizza una connessione HTTPS sicura. Evita di inserire password o informazioni sensibili.";
+"site_tracking_protection" = "Protezione dal tracciamento";
+"site_private_mode_desc" = "Non salvare la cronologia; utilizzare i dati temporanei del sito web";
+"site_privacy_details" = "Dettagli sulla protezione del sito";
+"site_protection_explanation" = "Se abilitato, Soulo blocca le richieste di monitoraggio note, rimuove i parametri di monitoraggio comuni e applica il filtro degli annunci. La disattivazione influisce solo su questo sito web.";
+"site_protection_summary" = "Riepilogo della protezione";
+"site_protection_summary_desc" = "Vengono mostrati solo i risultati comprensibili per questa pagina. I conteggi sono stime della sessione di navigazione e non vengono mai utilizzati per profilarti.";
+"site_privacy_actions" = "Azioni di protezione completate";
+"site_request_details_count" = "Dettagli richiesta (%d)";
+"extension_source_open_hint" = "Apre questa origine nella scheda Soulo corrente";
+"extension_detected_title" = "Pacchetto di estensione rilevato";
+"userscript_detected_title" = "UserScript rilevato";
+"extension_detected_desc" = "Soulo verificherà il manifest prima dell'installazione e abiliterà le autorizzazioni e l'accesso al sito Web dichiarati da questa estensione.";
+"userscript_detected_desc" = "Questo script può leggere e modificare le pagine che corrispondono alle regole del suo sito web. Installalo solo se ti fidi della sua fonte.";
+"install" = "Installa";
+"extension_installing_short" = "Installazione…";
+"extension_install_success" = "Installato con successo";
+"extension_installed_success_desc" = "%@ è installato e abilitato. Le pagine aperte verranno ricaricate per applicarlo.";
+"browser_tabs" = "Schede";
+"web_capture" = "Cattura pagina";
+"web_capture_viewport" = "Cattura la schermata corrente";
+"web_capture_full_page" = "Cattura la pagina scorrevole";
+"web_capture_full_page_limit_desc" = "Le acquisizioni a scorrimento hanno un'altezza massima per mantenere sicuro l'utilizzo della memoria. Le pagine molto lunghe vengono ritagliate automaticamente.";
+"web_capture_processing" = "Caricamento delle risorse della pagina e creazione dell'acquisizione…";
+"web_capture_unavailable" = "La pagina corrente non è pronta per l'acquisizione.";
+"web_capture_empty" = "Non è presente alcun contenuto della pagina visibile da acquisire.";
+"web_capture_failed" = "Acquisizione della pagina non riuscita";
+"web_capture_save" = "Salva in Foto";
+"web_capture_saved" = "Salvato";
+"web_capture_saved_desc" = "L'acquisizione della pagina è stata salvata in Foto.";
+"web_capture_photo_permission" = "Consenti a Soulo di aggiungere l'acquisizione della pagina a Foto in Impostazioni, quindi riprova.";
+"web_capture_height_limited" = "Questa pagina ha superato il limite di acquisizione a scorrimento, quindi l'immagine è stata ritagliata all'altezza massima.";
+"web_capture_live_text_hint" = "Tocca e tieni premuto il testo riconosciuto nell'immagine per selezionarlo o copiarlo con Live Text.";
+"web_translate" = "Traduci pagina";
+"web_translate_target" = "Traduci in";
+"web_translate_target_desc" = "Soulo rileva automaticamente la lingua della pagina.";
+"web_translate_system" = "Traduzione sul dispositivo";
+"web_translate_system_desc" = "Traduce il testo della pagina con Apple Translation e lo riscrive nella pagina corrente. La prima volta potrebbe essere richiesto il download di una lingua.";
+"web_translate_google" = "Google Traduttore";
+"web_translate_google_desc" = "Apre una copia tradotta dell'indirizzo corrente in questa scheda Soulo.";
+"web_translate_restore" = "Ripristina la pagina originale";
+"web_translate_system_requires_ios18" = "La traduzione della pagina sul dispositivo richiede iOS 18 o versione successiva. Google Traduttore rimane disponibile.";
+"web_translate_failed" = "Traduzione fallita";
+"web_translate_no_text" = "Non è stato trovato alcun testo di pagina adatto da tradurre.";
+"web_zoom_out" = "Rimpicciolisci";
+"web_zoom" = "Zoom della pagina";
+"web_zoom_in" = "Zoom avanti";
+"web_zoom_reset" = "Ripristina al 100%";
+"toolbar_customize" = "Personalizza la barra degli strumenti del browser";
+"toolbar_action_empty" = "Vuoto";
+"toolbar_preview" = "Anteprima della barra degli strumenti";
+"toolbar_customize_hint" = "Scegli una posizione sotto l'anteprima, quindi sostituisci la sua azione. Svuota rimuove completamente l'elemento senza riservare spazio; anche l'azione della capsula dell'indirizzo può essere sostituita.";
+"toolbar_replace_action" = "Sostituisci con";
+"toolbar_restore_default" = "Ripristina la barra degli strumenti predefinita";
+"toolbar_saved" = "Barra degli strumenti salvata";
+"privacy_exit_incognito" = "Disattiva navigazione privata";
+"privacy_enter_incognito" = "Attiva navigazione privata";
+"share_extension_title" = "Cerca con Soulo";
+"share_search_in_soulo" = "Cerca in Soulo";
+"share_private_search" = "Cerca in privato";
+"share_extension_unsupported" = "Impossibile cercare questo elemento.";
+"image_extract_text" = "Estrai testo dall'immagine";
+"image_text_unavailable" = "Live Text non è disponibile su questo dispositivo.";
+"image_text_none" = "In questa immagine non è stato trovato testo leggibile.";
+"copy_all" = "Copia tutto";
+"pause" = "Pausa";
+"resume" = "Riprendi";
+"downloads_paused" = "In pausa";
+"downloads_background_interrupted" = "Il download in background è stato interrotto prima che potesse terminare.";
+"intent_open_soulo_title" = "Apri Soulo";
+"intent_search_title" = "Cerca con Soulo";
+"intent_search_description" = "Cerca su più piattaforme.";
+"intent_search_query" = "Domanda di ricerca";
+"intent_search_platform" = "Piattaforma";
+"intent_open_soulo_description" = "Apri Soulo e avvia una nuova ricerca.";
+"intent_open_downloads_title" = "Apri Download";
+"intent_open_downloads_description" = "Apri i tuoi download Soulo.";
+"intent_paste_search_title" = "Incolla e cerca";
+"intent_paste_search_description" = "Cerca il testo negli appunti in Soulo.";
+"intent_private_search_title" = "Nuova ricerca privata";
+"intent_private_search_description" = "Apri Soulo in modalità privata.";
+"control_search_title" = "Cerca Soulo";
+"control_search_description" = "Apri Soulo e inizia la ricerca.";
+"control_private_search_title" = "Ricerca privata";
+"control_private_search_description" = "Apri una ricerca Soulo privata.";
+"control_downloads_title" = "Download";
+"control_downloads_description" = "Apri i download in Soulo.";
+"privacy_section_private_browsing" = "Navigazione privata";
+"toolbar_restore_confirm_title" = "Ripristinare la barra predefinita?";
+"toolbar_restore_confirm_message" = "Il layout attuale verrà sostituito con quello predefinito.";
+"web_readability" = "Leggibilità";
+"web_reduce_motion" = "Riduci movimento delle pagine";
+"web_reduce_motion_desc" = "Limita animazioni, transizioni e scorrimento fluido delle pagine web.";
+"web_underline_links" = "Sottolinea i link";
+"web_underline_links_desc" = "Sottolinea i link delle pagine web per renderli più facili da riconoscere.";
+"home_title_edit_desc" = "Mostrato come titolo principale al centro della schermata Home.";
+"home_subtitle_edit_desc" = "Mostrato sotto il titolo principale; lascia vuoto per nasconderlo.";

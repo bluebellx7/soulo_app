@@ -1,25 +1,22 @@
 import AppIntents
 
 struct SouloSearchIntent: AppIntent {
-    static var title: LocalizedStringResource = "Search with Soulo"
-    static var description: IntentDescription = "Search across multiple platforms"
+    static var title: LocalizedStringResource = "intent_search_title"
+    static var description: IntentDescription = "intent_search_description"
     static var openAppWhenRun: Bool = true
 
-    @Parameter(title: "Search query")
+    @Parameter(title: "intent_search_query")
     var query: String
 
-    @Parameter(title: "Platform", optionsProvider: PlatformOptionsProvider())
+    @Parameter(title: "intent_search_platform", optionsProvider: PlatformOptionsProvider())
     var platformName: String?
 
     func perform() async throws -> some IntentResult {
-        // Post notification for the app to handle
-        await MainActor.run {
-            NotificationCenter.default.post(
-                name: .souloSearchFromIntent,
-                object: nil,
-                userInfo: ["query": query, "platform": platformName as Any]
-            )
-        }
+        await SouloSharedAction(
+            kind: .search,
+            text: query,
+            platformName: platformName
+        ).dispatch()
         return .result()
     }
 }
@@ -35,6 +32,5 @@ struct PlatformOptionsProvider: DynamicOptionsProvider {
 }
 
 extension Notification.Name {
-    static let souloSearchFromIntent = Notification.Name("souloSearchFromIntent")
     static let webViewExternalURLRequest = Notification.Name("webViewExternalURLRequest")
 }

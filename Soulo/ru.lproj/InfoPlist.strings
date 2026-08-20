@@ -1,5 +1,8 @@
-NSCameraUsageDescription = "Разрешите доступ к камере после одобрения запроса сайта, например для видеозвонков, сканирования кодов или съемки фото.";
-NSMicrophoneUsageDescription = "Разрешите доступ к микрофону для голосового поиска и, с вашего согласия, для звонков или записи на сайтах.";
-NSSpeechRecognitionUsageDescription = "Разрешите распознавание речи, чтобы преобразовать голос в текст поискового запроса.";
-NSPhotoLibraryUsageDescription = "Soulo требуется доступ к медиатеке для установки собственного фона.";
-NSPhotoLibraryAddUsageDescription = "Soulo требуется разрешение для сохранения изображений из интернета в медиатеку.";
+/* Soulo — generated and validated localization */
+
+"CFBundleDisplayName" = "Soulo";
+"NSCameraUsageDescription" = "Разрешите доступ к камере, когда вы одобряете запрос веб-сайта, например для видеозвонков, сканирования кодов или фотографирования.";
+"NSMicrophoneUsageDescription" = "Разрешите доступ к микрофону для голосового поиска и, если вы одобрите, звонков или записи на веб-сайте.";
+"NSSpeechRecognitionUsageDescription" = "Разрешите распознаванию речи превращать ваш голос в текст для поиска.";
+"NSPhotoLibraryUsageDescription" = "Soulo необходим доступ к библиотеке фотографий, чтобы установить собственные обои.";
+"NSPhotoLibraryAddUsageDescription" = "Soulo требуется разрешение на сохранение веб-изображений в вашей библиотеке фотографий.";

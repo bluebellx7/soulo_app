@@ -8,10 +8,12 @@ final class TabManagerTests: XCTestCase {
     override func setUp() {
         super.setUp()
         UserDefaults.standard.removeObject(forKey: storageKey)
+        UserDefaults.standard.set(false, forKey: "is_incognito")
     }
 
     override func tearDown() {
         UserDefaults.standard.removeObject(forKey: storageKey)
+        UserDefaults.standard.removeObject(forKey: "is_incognito")
         super.tearDown()
     }
 
@@ -75,6 +77,49 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(manager.tabs.count, 7)
         XCTAssertTrue(manager.tabs[0...3].allSatisfy { !$0.isAlive })
         XCTAssertTrue(manager.tabs[4...6].allSatisfy(\.isAlive))
+    }
+
+    @MainActor
+    func testIndependentWindowStorageKeepsTabSessionsSeparate() {
+        let firstKey = "soulo_saved_tabs.window-a.\(UUID().uuidString)"
+        let secondKey = "soulo_saved_tabs.window-b.\(UUID().uuidString)"
+        defer {
+            UserDefaults.standard.removeObject(forKey: firstKey)
+            UserDefaults.standard.removeObject(forKey: secondKey)
+        }
+
+        let first = TabManager(storageKey: firstKey)
+        first.createTab(url: URL(string: "https://example.com/window-a"))
+        first.saveToDisk()
+
+        let second = TabManager(storageKey: secondKey)
+        XCTAssertEqual(second.tabs.count, 1)
+        XCTAssertNil(second.activeWebViewModel?.currentURL)
+
+        let restoredFirst = TabManager(storageKey: firstKey)
+        XCTAssertEqual(restoredFirst.tabs.count, 2)
+        XCTAssertEqual(restoredFirst.activeWebViewModel?.currentURL?.absoluteString, "https://example.com/window-a")
+    }
+
+    @MainActor
+    func testWebExtensionPageTabsAreSessionOnly() {
+        let key = "soulo_saved_tabs.extension-pages.\(UUID().uuidString)"
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        let manager = TabManager(storageKey: key)
+        manager.createTab(url: URL(string: "https://example.com/article"))
+        manager.createTab(
+            url: URL(string: "webkit-extension://temporary/options/options.html")
+        )
+
+        manager.saveToDisk()
+        let restored = TabManager(storageKey: key)
+
+        XCTAssertEqual(restored.tabs.count, 2)
+        XCTAssertEqual(
+            restored.tabs.compactMap { $0.webViewModel.currentURL?.absoluteString },
+            ["https://example.com/article"]
+        )
+        XCTAssertEqual(restored.activeWebViewModel?.currentURL?.absoluteString, "https://example.com/article")
     }
 }
 

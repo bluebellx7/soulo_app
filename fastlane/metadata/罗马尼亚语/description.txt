@@ -1,0 +1,20 @@
+Soulo este un browser rapid, privat cu mai multe căutări pentru iPhone și iPad. Introduceți o interogare, apoi comutați între mai mult de 40 de platforme de căutare, socializare, video, cumpărături, cunoștințe și AI fără a reintroduce.
+
+RAUȚIȚI-ȚI CALUL
+• File, marcaje, istoric, descărcări și platforme de căutare personalizabile
+• Navigare privată, protecție tracker, blocare anunțuri și controale pe site
+• Moduri pentru site-ul web mobil și desktop, mărirea paginii, traducere și captură pe întreaga pagină
+• Descărcați imagini, videoclipuri, audio și documente cu ajutorul inspectorului de resurse pentru paginile web
+• Extrageți text din imaginile paginii web cu Live Text
+
+CONSTRUIT PENTRU IPHONE ȘI IPAD
+• Mai multe ferestre independente pe iPad
+• Partajați linkuri sau text direct către Soulo
+• Căutați și deschideți descărcări din Siri, Shortcuts, Control Center, ecranul de blocare și butonul de acțiune
+• Descărcări în fundal cu progres real și pauză/reluare
+• Activități live și starea Dynamic Island
+
+EXTINDEȚI WEB-UL
+Instalați UserScript-uri sau WebExtension-uri compatibile, gestionați permisiunile în mod clar și creați-vă propriile scripturi cu documentația API încorporată.
+
+Soulo stochează datele de navigare local, cu excepția cazului în care activați sincronizarea setărilor iCloud. Navigarea privată nu salvează istoricul.

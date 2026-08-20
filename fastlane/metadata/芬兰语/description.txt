@@ -1,0 +1,20 @@
+Soulo on nopea, yksityinen usean haun selain iPhonelle ja iPadille. Kirjoita yksi kysely ja vaihda sitten yli 40 haku-, sosiaali-, video-, ostos-, tieto- ja tekoälyalustan välillä kirjoittamatta uudelleen.
+
+SELAA TEISI
+• Välilehdet, kirjanmerkit, historia, lataukset ja mukautettavat hakuympäristöt
+• Yksityinen selaus, seurantasuojaus, mainosten esto ja sivustokohtainen hallinta
+• Mobiili- ja työpöytäsivuston tilat, sivun zoomaus, käännös ja koko sivun kaappaus
+• Lataa kuvia, videoita, ääntä ja asiakirjoja verkkosivun resurssien tarkastajalla
+• Poimi tekstiä verkkosivun kuvista komennolla Live Text
+
+RAKENNETTU iPHONELLE JA iPadILLE
+• Useita itsenäisiä ikkunoita iPadissa
+• Jaa linkkejä tai tekstiä suoraan osoitteeseen Soulo
+• Hae ja avaa latauksia kohdista Siri, Shortcuts, Control Center, Lukitusnäyttö ja toimintopainike
+• Taustalataukset todellisella edistymisellä ja tauko/jatkaminen
+• Live-tapahtumat ja Dynamic Island tila
+
+LAAJENTAA VERKKAA
+Asenna UserScripts tai yhteensopivat WebExtensions, hallitse käyttöoikeuksia selkeästi ja luo omia skriptejäsi sisäänrakennetun API-dokumentaation avulla.
+
+Soulo tallentaa selaustiedot paikallisesti, ellet ota käyttöön iCloud asetusten synkronointia. Yksityinen selaus ei tallenna historiaa.

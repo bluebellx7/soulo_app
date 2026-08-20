@@ -62,7 +62,7 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .desktopMode: "desktopcomputer"
         case .darkMode: "moon.fill"
         case .settings: "gearshape"
-        case .extensions: "chevron.left.forwardslash.chevron.right"
+        case .extensions: "puzzlepiece.extension.fill"
         case .library: "books.vertical"
         case .reload: "arrow.clockwise"
         case .hideToolbar: BrowserChromeSymbol.toolbarVisibility

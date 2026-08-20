@@ -1,6 +1,7 @@
 import Foundation
 import Photos
 import UniformTypeIdentifiers
+import UIKit
 import WebKit
 
 enum WebResourceDownloadError: LocalizedError {
@@ -37,33 +38,23 @@ final class WebResourceDownloadService {
         webView: WKWebView? = nil,
         fallbackBaseName: String = "Download"
     ) async throws -> URL {
-        let (temporaryURL, response) = try await temporaryDownload(
-            url,
-            pageURL: pageURL,
-            webView: webView
-        )
-
         let suggestedFilename = normalizedFilename(
             preferredFilename,
-            responseFilename: response.suggestedFilename,
-            responseMIMEType: response.mimeType,
+            responseFilename: nil,
+            responseMIMEType: nil,
             fallbackBaseName: fallbackBaseName,
             sourceURL: url
         )
         let manager = DownloadManagerService.shared
         let (item, destinationURL) = manager.beginDownload(
             suggestedFilename: suggestedFilename,
-            sourceURL: url
+            sourceURL: url,
+            transport: .background
         )
 
-        do {
-            try FileManager.default.moveItem(at: temporaryURL, to: destinationURL)
-            manager.markFinished(id: item.id)
-            return destinationURL
-        } catch {
-            manager.markFailed(id: item.id, error: error)
-            throw error
-        }
+        _ = destinationURL
+        let request = await resourceRequest(url, pageURL: pageURL, webView: webView)
+        return try await BackgroundDownloadService.shared.start(request: request, item: item)
     }
 
     func saveImageToPhotos(
@@ -120,6 +111,19 @@ final class WebResourceDownloadService {
                 }
             }
         }
+    }
+
+    func loadImage(
+        _ url: URL,
+        pageURL: URL? = nil,
+        webView: WKWebView? = nil
+    ) async throws -> UIImage {
+        let (temporaryURL, _) = try await temporaryDownload(url, pageURL: pageURL, webView: webView)
+        defer { try? FileManager.default.removeItem(at: temporaryURL) }
+        guard let image = UIImage(contentsOfFile: temporaryURL.path) else {
+            throw WebResourceDownloadError.invalidResponse
+        }
+        return image
     }
 
     static func matchingCookies(
@@ -187,23 +191,7 @@ final class WebResourceDownloadService {
         pageURL: URL?,
         webView: WKWebView?
     ) async throws -> (URL, URLResponse) {
-        var request = URLRequest(url: url)
-        request.timeoutInterval = 60
-        request.setValue(AppConstants.mobileWebViewUserAgent, forHTTPHeaderField: "User-Agent")
-        if let pageURL,
-           let referrer = Self.referrerHeader(pageURL: pageURL, resourceURL: url) {
-            request.setValue(referrer, forHTTPHeaderField: "Referer")
-        }
-
-        if let webView {
-            let cookies = await allCookies(in: webView)
-            let fields = HTTPCookie.requestHeaderFields(
-                with: Self.matchingCookies(from: cookies, for: url)
-            )
-            for (field, value) in fields {
-                request.setValue(value, forHTTPHeaderField: field)
-            }
-        }
+        let request = await resourceRequest(url, pageURL: pageURL, webView: webView)
 
         let (temporaryURL, response) = try await session.download(for: request)
         if let httpResponse = response as? HTTPURLResponse,
@@ -212,6 +200,22 @@ final class WebResourceDownloadService {
             throw WebResourceDownloadError.invalidResponse
         }
         return (temporaryURL, response)
+    }
+
+    private func resourceRequest(_ url: URL, pageURL: URL?, webView: WKWebView?) async -> URLRequest {
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 60
+        request.setValue(AppConstants.mobileWebViewUserAgent, forHTTPHeaderField: "User-Agent")
+        if let pageURL, let referrer = Self.referrerHeader(pageURL: pageURL, resourceURL: url) {
+            request.setValue(referrer, forHTTPHeaderField: "Referer")
+        }
+        if let webView {
+            let cookies = await allCookies(in: webView)
+            for (field, value) in HTTPCookie.requestHeaderFields(with: Self.matchingCookies(from: cookies, for: url)) {
+                request.setValue(value, forHTTPHeaderField: field)
+            }
+        }
+        return request
     }
 
     private func allCookies(in webView: WKWebView) async -> [HTTPCookie] {

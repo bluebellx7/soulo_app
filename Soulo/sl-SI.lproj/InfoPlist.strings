@@ -1,0 +1,8 @@
+/* Soulo — generated and validated localization */
+
+"CFBundleDisplayName" = "Soulo";
+"NSCameraUsageDescription" = "Dovolite dostop do kamere, ko odobrite zahtevo spletnega mesta, na primer za video klice, skeniranje kod ali fotografiranje.";
+"NSMicrophoneUsageDescription" = "Omogočite dostop do mikrofona za glasovno iskanje in, ko to odobrite, klice ali snemanje spletnih mest.";
+"NSSpeechRecognitionUsageDescription" = "Dovolite prepoznavanju govora, da vaš glas pretvori v iskalno besedilo.";
+"NSPhotoLibraryUsageDescription" = "Soulo potrebuje dostop do knjižnice fotografij za nastavitev ozadja po meri.";
+"NSPhotoLibraryAddUsageDescription" = "Soulo potrebuje dovoljenje za shranjevanje spletnih slik v vašo knjižnico fotografij.";

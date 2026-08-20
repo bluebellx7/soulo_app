@@ -1,0 +1,20 @@
+A Soulo egy gyors, privát többkeresős böngésző iPhone és iPad készülékekhez. Adjon meg egy lekérdezést, majd váltson több mint 40 keresési, közösségi, videós, vásárlási, tudás- és mesterséges intelligencia platform között anélkül, hogy újragépelne.
+
+BÖNGÉSZEN ÚTJÁT
+• Lapok, könyvjelzők, előzmények, letöltések és testreszabható keresési platformok
+• Privát böngészés, nyomkövető védelem, hirdetések blokkolása és webhelyenkénti vezérlés
+• Mobil és asztali webhelymódok, oldalnagyítás, fordítás és teljes oldal rögzítése
+• Töltse le a képeket, videókat, hanganyagokat és dokumentumokat a weboldal erőforrás-ellenőrzőjével
+• Szöveg kinyerése a weboldal képeiből a Live Text segítségével
+
+iPHONE-HOZ ÉS iPAD-HOZ ÉPÍTETT
+• Több független ablak az iPaden
+• Ossza meg a linkeket vagy szöveget közvetlenül a következővel: Soulo
+• Letöltések keresése és megnyitása innen: Siri, Shortcuts, Control Center, a Lezárási képernyő és a Művelet gomb
+• Háttérletöltések valós előrehaladással és szüneteltetéssel/folytatással
+• Élő tevékenységek és Dynamic Island állapot
+
+BŐVÍTSD KI A WELT
+Telepítse a(z) UserScripts vagy kompatibilis WebExtensions, kezelje egyértelműen az engedélyeket, és hozza létre saját szkriptjeit a beépített API-dokumentáció segítségével.
+
+A Soulo helyileg tárolja a böngészési adatokat, hacsak nem engedélyezi a iCloud beállítások szinkronizálását. A privát böngészés nem menti az előzményeket.

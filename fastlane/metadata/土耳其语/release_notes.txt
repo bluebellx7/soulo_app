@@ -1,0 +1,9 @@
+Yenilikler:
+
+• Diğer uygulamalardan Soulo ile bağlantı ve metin paylaşın.
+• Live Text ile web sayfası görüntülerinden metin çıkarın.
+• Control Center, Kilit Ekranı, Eylem Düğmesi, Siri ve Shortcuts eylemleri eklendi.
+• İndirme işlemleri artık arka planda gerçek ilerleme ve duraklatma/devam ettirme ile devam ediyor.
+• iPad'e bağımsız çoklu pencere tarama eklendi.
+• Uyumlu yerel WebExtension'lerin yanı sıra UserScript'ler etkinleştirildi.
+• Uygulama ve App Store bilgileri, desteklenen 50 App Store yerel ayarının tümüne genişletildi.

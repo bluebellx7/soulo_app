@@ -1,0 +1,8 @@
+/* Soulo — generated and validated localization */
+
+"CFBundleDisplayName" = "Soulo";
+"NSCameraUsageDescription" = "Autorisez l'accès à la caméra lorsque vous approuvez une demande de site Web, par exemple pour des appels vidéo, la numérisation de codes ou la prise de photo.";
+"NSMicrophoneUsageDescription" = "Autorisez l'accès au microphone pour la recherche vocale et, lorsque vous approuvez, les appels ou l'enregistrement sur le site Web.";
+"NSSpeechRecognitionUsageDescription" = "Autorisez la reconnaissance vocale à transformer votre voix en texte de recherche.";
+"NSPhotoLibraryUsageDescription" = "Soulo nécessite un accès à la photothèque pour définir un fond d'écran personnalisé.";
+"NSPhotoLibraryAddUsageDescription" = "Soulo a besoin d'une autorisation pour enregistrer des images Web dans votre photothèque.";

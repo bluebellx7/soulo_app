@@ -1,0 +1,20 @@
+Soulo là trình duyệt đa tìm kiếm riêng tư, nhanh chóng dành cho iPhone và iPad. Nhập một truy vấn, sau đó chuyển đổi giữa hơn 40 nền tảng tìm kiếm, xã hội, video, mua sắm, kiến thức và AI mà không cần gõ lại.
+
+DUYỆT CÁCH CỦA BẠN
+• Tab, dấu trang, lịch sử, nội dung tải xuống và nền tảng tìm kiếm có thể tùy chỉnh
+• Duyệt web riêng tư, bảo vệ trình theo dõi, chặn quảng cáo và kiểm soát từng trang web
+• Chế độ trang web trên thiết bị di động và máy tính để bàn, thu phóng trang, dịch và chụp toàn trang
+• Tải xuống hình ảnh, video, âm thanh và tài liệu bằng trình kiểm tra tài nguyên trang web
+• Trích xuất văn bản từ hình ảnh trang web bằng Live Text
+
+ĐƯỢC XÂY DỰNG CHO iPhone VÀ iPad
+• Nhiều cửa sổ độc lập trên iPad
+• Chia sẻ liên kết hoặc văn bản trực tiếp tới Soulo
+• Tìm kiếm và mở các bản tải xuống từ Siri, Shortcuts, Control Center, Màn hình khóa và Nút hành động
+• Tải xuống trong nền với tiến trình thực và tạm dừng/tiếp tục
+• Hoạt động trực tiếp và trạng thái Dynamic Island
+
+MỞ RỘNG WEB
+Cài đặt UserScripts hoặc WebExtensions tương thích, quản lý quyền rõ ràng và tạo tập lệnh của riêng bạn bằng tài liệu API tích hợp.
+
+Soulo lưu trữ dữ liệu duyệt web cục bộ trừ khi bạn bật đồng bộ hóa cài đặt iCloud. Duyệt web riêng tư không lưu lịch sử.

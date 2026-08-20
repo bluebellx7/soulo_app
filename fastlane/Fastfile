@@ -2,7 +2,7 @@ opt_out_usage
 default_platform(:ios)
 
 APP_IDENTIFIER = "com.dkluge.Soulo"
-APP_VERSION = "1.1.1"
+APP_VERSION = "1.1.4"
 SCHEME = "Soulo"
 PROJECT = "Soulo.xcodeproj"
 
@@ -18,13 +18,14 @@ platform :ios do
     )
   end
 
-  desc "Upload localized App Store metadata for version 1.1.1"
+  desc "Upload localized App Store metadata for version 1.1.4"
   lane :metadata do
+    localized_metadata_path = sh("python3 #{File.expand_path('../scripts/export_fastlane_metadata.py', __dir__)}").strip
     upload_to_app_store(
       api_key: app_store_api_key,
       app_identifier: APP_IDENTIFIER,
       app_version: APP_VERSION,
-      metadata_path: File.expand_path("metadata", __dir__),
+      metadata_path: localized_metadata_path,
       skip_binary_upload: true,
       skip_screenshots: true,
       submit_for_review: false,
@@ -34,7 +35,7 @@ platform :ios do
     )
   end
 
-  desc "Build and upload Build 12 to TestFlight"
+  desc "Build and upload Build 18 to TestFlight"
   lane :beta do
     prepare_project
     build_app(
@@ -50,9 +51,10 @@ platform :ios do
     )
   end
 
-  desc "Build and upload version 1.1.1 without submitting it for review"
+  desc "Build and upload version 1.1.4 without submitting it for review"
   lane :release do
     prepare_project
+    localized_metadata_path = sh("python3 #{File.expand_path('../scripts/export_fastlane_metadata.py', __dir__)}").strip
     build_app(
       project: PROJECT,
       scheme: SCHEME,
@@ -63,7 +65,7 @@ platform :ios do
       api_key: app_store_api_key,
       app_identifier: APP_IDENTIFIER,
       app_version: APP_VERSION,
-      metadata_path: File.expand_path("metadata", __dir__),
+      metadata_path: localized_metadata_path,
       skip_screenshots: true,
       submit_for_review: false,
       automatic_release: false,

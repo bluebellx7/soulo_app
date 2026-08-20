@@ -93,11 +93,18 @@ final class TabManager: ObservableObject {
     /// URL and snapshot but release WebKit, avoiding memory pressure with many tabs.
     static let aliveWindow = 2
 
-    private static let storageKey = "soulo_saved_tabs"
+    private let storageKey: String
 
     // MARK: - Init
 
-    init() {
+    init(storageKey: String = "soulo_saved_tabs") {
+        self.storageKey = storageKey
+        if storageKey != "soulo_saved_tabs",
+           UserDefaults.standard.data(forKey: storageKey) == nil,
+           let legacy = UserDefaults.standard.data(forKey: "soulo_saved_tabs") {
+            UserDefaults.standard.set(legacy, forKey: storageKey)
+            UserDefaults.standard.removeObject(forKey: "soulo_saved_tabs")
+        }
         restoreFromDisk()
         if tabs.isEmpty {
             createTab()
@@ -161,6 +168,7 @@ final class TabManager: ObservableObject {
     func closeTab(at index: Int, animated: Bool = true) {
         guard tabs.indices.contains(index) else { return }
         let tab = tabs[index]
+        unregisterWebExtensionTab(tab)
         tab.webViewModel.deletePersistedSnapshot()
 
         let closed = RecentlyClosedTab(
@@ -204,12 +212,13 @@ final class TabManager: ObservableObject {
         closeAllTabs(addingToRecentlyClosed: false)
         recentlyClosed.removeAll()
         WebViewModel.deleteAllPersistedSnapshots()
-        UserDefaults.standard.removeObject(forKey: Self.storageKey)
+        UserDefaults.standard.removeObject(forKey: storageKey)
         saveToDisk()
     }
 
     private func closeAllTabs(addingToRecentlyClosed: Bool) {
         for tab in tabs {
+            unregisterWebExtensionTab(tab)
             tab.webViewModel.deletePersistedSnapshot()
             if addingToRecentlyClosed {
                 let closed = RecentlyClosedTab(
@@ -234,6 +243,7 @@ final class TabManager: ObservableObject {
     func closeOtherTabs() {
         guard let current = activeTab else { return }
         for tab in tabs where tab.id != current.id {
+            unregisterWebExtensionTab(tab)
             tab.webViewModel.deletePersistedSnapshot()
             let closed = RecentlyClosedTab(
                 id: tab.id, title: tab.displayTitle,
@@ -339,6 +349,7 @@ final class TabManager: ObservableObject {
         guard tabs.indices.contains(index) else { return }
         let tabID = tabs[index].id
         let webViewModel = tabs[index].webViewModel
+        unregisterWebExtensionTab(tabs[index])
         tabs[index].suspendedURL = tabs[index].webViewModel.currentURL
         tabs[index].isAlive = false
         webViewModel.takeSnapshot { [weak self] in
@@ -346,6 +357,14 @@ final class TabManager: ObservableObject {
                   let currentIndex = self.tabs.firstIndex(where: { $0.id == tabID }),
                   !self.tabs[currentIndex].isAlive else { return }
             webViewModel.releaseWebViewRuntime()
+        }
+    }
+
+    private func unregisterWebExtensionTab(_ tab: BrowserTab) {
+        guard BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
+              let webView = tab.webViewModel.webView else { return }
+        if #available(iOS 18.4, *) {
+            NativeWebExtensionRuntime.shared.unregister(webView)
         }
     }
 
@@ -447,11 +466,17 @@ final class TabManager: ObservableObject {
     /// Save current tab state to UserDefaults.
     func saveToDisk() {
         guard !UserDefaults.standard.bool(forKey: "is_incognito") else {
-            UserDefaults.standard.removeObject(forKey: Self.storageKey)
+            UserDefaults.standard.removeObject(forKey: storageKey)
             return
         }
 
-        let saved = tabs.map { tab in
+        // WKWebExtension origins are scoped to the loaded extension context.
+        // Persisting them across launches restores a stale, unresolvable page.
+        // Keep those tabs for the current session only.
+        let restorableTabs = tabs.filter { tab in
+            Self.isRestorableAcrossLaunches(tab.webViewModel.currentURL ?? tab.suspendedURL)
+        }
+        let saved = restorableTabs.map { tab in
             SavedTab(
                 id: tab.id.uuidString,
                 urlString: (tab.webViewModel.currentURL ?? tab.suspendedURL)?.absoluteString,
@@ -459,25 +484,37 @@ final class TabManager: ObservableObject {
                 platformName: tab.platform?.name
             )
         }
-        let state = SavedState(tabs: saved, activeIndex: activeTabIndex)
+        let restoredActiveIndex: Int
+        if let activeID = activeTab?.id,
+           let index = restorableTabs.firstIndex(where: { $0.id == activeID }) {
+            restoredActiveIndex = index
+        } else {
+            let restorableBeforeActive = tabs.prefix(activeTabIndex).filter { tab in
+                Self.isRestorableAcrossLaunches(tab.webViewModel.currentURL ?? tab.suspendedURL)
+            }.count
+            restoredActiveIndex = max(0, min(restorableBeforeActive, restorableTabs.count - 1))
+        }
+        let state = SavedState(tabs: saved, activeIndex: restoredActiveIndex)
         if let data = try? JSONEncoder().encode(state) {
-            UserDefaults.standard.set(data, forKey: Self.storageKey)
+            UserDefaults.standard.set(data, forKey: storageKey)
         }
     }
 
     /// Restore tabs from UserDefaults. Called once at init.
     private func restoreFromDisk() {
         guard !UserDefaults.standard.bool(forKey: "is_incognito") else {
-            UserDefaults.standard.removeObject(forKey: Self.storageKey)
+            UserDefaults.standard.removeObject(forKey: storageKey)
             return
         }
 
-        guard let data = UserDefaults.standard.data(forKey: Self.storageKey),
+        guard let data = UserDefaults.standard.data(forKey: storageKey),
               let state = try? JSONDecoder().decode(SavedState.self, from: data) else { return }
 
         let allPlatforms = PlatformDataStore.shared.allPlatforms()
 
         for saved in state.tabs {
+            let restoredURL = saved.urlString.flatMap(URL.init(string:))
+            guard Self.isRestorableAcrossLaunches(restoredURL) else { continue }
             let platform = saved.platformName.flatMap { name in
                 allPlatforms.first { $0.name == name }
             }
@@ -486,7 +523,7 @@ final class TabManager: ObservableObject {
                 keyword: saved.keyword,
                 platform: platform
             )
-            if let urlStr = saved.urlString, let url = URL(string: urlStr) {
+            if let url = restoredURL {
                 tab.webViewModel.loadCachedURL(url)
             }
             tabs.append(tab)
@@ -495,6 +532,10 @@ final class TabManager: ObservableObject {
         if state.activeIndex >= 0 && state.activeIndex < tabs.count {
             activeTabIndex = state.activeIndex
         }
+    }
+
+    private static func isRestorableAcrossLaunches(_ url: URL?) -> Bool {
+        url?.scheme?.lowercased() != "webkit-extension"
     }
 }
 
