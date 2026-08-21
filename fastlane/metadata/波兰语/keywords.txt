@@ -1,1 +1,1 @@
-przeglądarka,wyszukiwanie,prywatne,karty,internet,sztuczna inteligencja,społecznościowe,wideo,pobier
+prywatność,karty,pobierz wideo,blokada reklam,skrypty,rozszerzenia,tłumaczenie,multimedia

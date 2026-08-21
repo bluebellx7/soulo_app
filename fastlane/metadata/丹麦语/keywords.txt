@@ -1,1 +1,1 @@
-browser,søgning,privat,faner,web,AI,social,video,download,adblock,brugerskrift,oversæt
+privatliv,faner,videodownload,annonceblokering,brugerscript,udvidelser,oversættelse,mediefinder

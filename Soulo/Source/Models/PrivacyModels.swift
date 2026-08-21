@@ -152,7 +152,7 @@ struct SitePrivacySummary: Codable, Equatable {
     }
 }
 
-enum BrowserDownloadStatus: String, Codable {
+enum BrowserDownloadStatus: String, Codable, Hashable {
     case inProgress
     case paused
     case finished
@@ -161,7 +161,7 @@ enum BrowserDownloadStatus: String, Codable {
 }
 
 struct BrowserDownloadItem: Identifiable, Codable, Equatable {
-    enum Transport: String, Codable { case webKit, background }
+    enum Transport: String, Codable { case webKit, background, streaming, hls }
     let id: UUID
     var fileName: String
     var sourceURLString: String

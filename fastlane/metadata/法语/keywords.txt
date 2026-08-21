@@ -1,1 +1,1 @@
-navigateur,recherche,privé,onglets,web,IA,social,vidéo,téléchargement,adblock,script utilisateur,tra
+privé,onglets,télécharger vidéo,bloqueur de pub,scripts,extensions,traduction,détection média

@@ -32,6 +32,53 @@ final class WebResourceDownloadService {
     }
 
     func download(
+        _ resource: WebMediaResource,
+        preferredFilename: String? = nil,
+        pageURL: URL? = nil,
+        webView: WKWebView?
+    ) async throws -> URL {
+        switch resource.delivery {
+        case .youtubeSABR:
+            guard let webView else { throw StreamingMediaDownloadError.unavailable }
+            return try await StreamingMediaDownloadService.shared.downloadYouTubeVideo(
+                resource: resource,
+                preferredFilename: preferredFilename,
+                pageURL: pageURL,
+                webView: webView
+            )
+        case .separateTracks:
+            guard let webView, let audioURL = resource.companionAudioURL else {
+                throw StreamingMediaDownloadError.missingTrack
+            }
+            return try await StreamingMediaDownloadService.shared.downloadSeparatedTracks(
+                resource: resource,
+                audioURL: audioURL,
+                preferredFilename: preferredFilename,
+                pageURL: pageURL,
+                webView: webView
+            )
+        case .hls:
+            guard let webView else { throw StreamingMediaDownloadError.unavailable }
+            return try await StreamingMediaDownloadService.shared.downloadHLS(
+                resource: resource,
+                preferredFilename: preferredFilename,
+                pageURL: pageURL,
+                webView: webView
+            )
+        case .dash:
+            throw StreamingMediaDownloadError.unsupportedManifest
+        case .direct:
+            return try await download(
+                resource.url,
+                preferredFilename: preferredFilename,
+                pageURL: pageURL,
+                webView: webView,
+                fallbackBaseName: resource.kind == .video ? "Video" : "Audio"
+            )
+        }
+    }
+
+    func download(
         _ url: URL,
         preferredFilename: String? = nil,
         pageURL: URL? = nil,
@@ -202,7 +249,7 @@ final class WebResourceDownloadService {
         return (temporaryURL, response)
     }
 
-    private func resourceRequest(_ url: URL, pageURL: URL?, webView: WKWebView?) async -> URLRequest {
+    func resourceRequest(_ url: URL, pageURL: URL?, webView: WKWebView?) async -> URLRequest {
         var request = URLRequest(url: url)
         request.timeoutInterval = 60
         request.setValue(AppConstants.mobileWebViewUserAgent, forHTTPHeaderField: "User-Agent")
@@ -218,7 +265,7 @@ final class WebResourceDownloadService {
         return request
     }
 
-    private func allCookies(in webView: WKWebView) async -> [HTTPCookie] {
+    func allCookies(in webView: WKWebView) async -> [HTTPCookie] {
         await withCheckedContinuation { continuation in
             webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { cookies in
                 continuation.resume(returning: cookies)

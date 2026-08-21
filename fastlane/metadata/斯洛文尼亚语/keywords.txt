@@ -1,1 +1,1 @@
-brskalnik,iskanje,zasebno,zavihki,splet,umetna inteligenca,družabno,video,prenos,blokiranje oglasov
+zasebnost,zavihki,prenos videa,blokiranje oglasov,uporabniške skripte,razširitve,prevod,mediji

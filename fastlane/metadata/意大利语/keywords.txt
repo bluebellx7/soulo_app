@@ -1,1 +1,1 @@
-browser,ricerca,privato,schede,web,AI,social,video,download,adblock,userscript,traduci
+privacy,schede,scarica video,blocco pubblicità,script utente,estensioni,traduzione,risorse media

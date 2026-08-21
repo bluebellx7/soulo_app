@@ -1,4 +1,5 @@
 import Foundation
+import UniformTypeIdentifiers
 
 struct WebImageResource: Identifiable, Hashable {
     let url: URL
@@ -15,12 +16,80 @@ struct WebMediaResource: Identifiable, Hashable {
         case audio
     }
 
+    enum Delivery: String {
+        case direct
+        case hls
+        case dash
+        case youtubeSABR
+        case separateTracks
+    }
+
     let kind: Kind
     let url: URL
     let title: String
     let posterURL: URL?
+    let delivery: Delivery
+    let companionAudioURL: URL?
+
+    init(
+        kind: Kind,
+        url: URL,
+        title: String,
+        posterURL: URL?,
+        delivery: Delivery = .direct,
+        companionAudioURL: URL? = nil
+    ) {
+        self.kind = kind
+        self.url = url
+        self.title = title
+        self.posterURL = posterURL
+        self.delivery = delivery
+        self.companionAudioURL = companionAudioURL
+    }
 
     var id: String { "\(kind.rawValue):\(url.absoluteString)" }
+
+    var suggestedFilename: String {
+        let decodedPathName = url.lastPathComponent.removingPercentEncoding ?? url.lastPathComponent
+        let defaultName = title.isEmpty ? (kind == .video ? "Video" : "Audio") : title
+        let baseName = delivery == .youtubeSABR
+            ? defaultName
+            : (decodedPathName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? defaultName
+                : decodedPathName)
+        guard (baseName as NSString).pathExtension.isEmpty,
+              let mediaExtension else {
+            return baseName
+        }
+        return "\(baseName).\(mediaExtension)"
+    }
+
+    private var mediaExtension: String? {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return nil
+        }
+        let mimeValue = components.queryItems?
+            .first(where: {
+                ["mime", "mime_type", "type", "content-type", "content_type"]
+                    .contains($0.name.lowercased())
+            })?
+            .value?
+            .split(separator: ";", maxSplits: 1)
+            .first
+            .map(String.init)
+        let normalizedMIMEValue = mimeValue.map { value in
+            if value.contains("/") { return value }
+            if let separator = value.firstIndex(where: { $0 == "_" || $0 == "-" }) {
+                return "\(value[..<separator])/\(value[value.index(after: separator)...])"
+            }
+            return value
+        }
+        if let normalizedMIMEValue,
+           let filenameExtension = UTType(mimeType: normalizedMIMEValue)?.preferredFilenameExtension {
+            return filenameExtension
+        }
+        return kind == .video ? "mp4" : "m4a"
+    }
 }
 
 struct WebLinkResource: Identifiable, Hashable {
@@ -156,9 +225,20 @@ struct WebResourceSnapshot {
                 kind: kind,
                 url: url,
                 title: cleanText(value["title"] as? String),
-                posterURL: webURL(value["poster"] as? String)
+                posterURL: webURL(value["poster"] as? String),
+                delivery: WebMediaResource.Delivery(
+                    rawValue: value["delivery"] as? String ?? ""
+                ) ?? inferredDelivery(for: url),
+                companionAudioURL: webURL(value["audioURL"] as? String)
             )
         }, id: \.id)
+    }
+
+    private static func inferredDelivery(for url: URL) -> WebMediaResource.Delivery {
+        let value = url.absoluteString.lowercased()
+        if value.contains(".m3u8") { return .hls }
+        if value.contains(".mpd") { return .dash }
+        return .direct
     }
 
     private static func webURL(_ value: String?) -> URL? {
@@ -229,7 +309,7 @@ struct WebContextResource: Equatable {
         case file
 
         var allowsDirectDownload: Bool {
-            self == .image || self == .file
+            true
         }
     }
 

@@ -1,1 +1,1 @@
-böngésző,keresés,privát,lapok,web,AI,közösségi,videó,letöltés,hirdetésblokkolás,felhasználói szkript
+privát,lapok,videóletöltés,reklámblokkoló,felhasználói szkript,bővítmények,fordítás,média

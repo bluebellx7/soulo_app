@@ -64,7 +64,7 @@
 "platform_list_view" = "切换为列表视图";
 "platform_not_found" = "没有我想要的平台";
 "platform_request_feedback_template" = "申请增加平台：\n\n平台名称：\n平台网址：\n使用场景：";
-"resource_inspector_title" = "网页资源嗅探";
+"resource_inspector_title" = "资源嗅探";
 "resource_rescan" = "重新嗅探";
 "resource_images" = "图片";
 "resource_videos" = "视频";
@@ -89,6 +89,12 @@
 "resource_scan_failed" = "网页资源分析失败";
 "resource_copy_url" = "复制资源网址";
 "resource_download_invalid_response" = "无法下载这个网页资源。";
+"resource_stream_download_unavailable" = "当前页面中的流媒体已失效，请刷新页面后重试。";
+"resource_stream_download_unsupported" = "已识别这个流媒体，但暂时无法保存这种清单格式。";
+"resource_stream_download_invalid_chunk" = "流媒体返回了无效或顺序错误的分段。";
+"resource_stream_download_missing_track" = "下载内容中缺少可播放的视频或音频轨道。";
+"resource_stream_download_export_failed" = "无法合并已下载的视频和音频。";
+"resource_stream_playback_download_first" = "这个受保护的流媒体无法通过临时网址预览，请先下载后播放本地文件。";
 "resource_photo_access_denied" = "请允许访问照片后再保存图片。";
 "resource_inspector_page_unavailable" = "请先打开网页，再嗅探网页资源。";
 "resource_inspector_invalid_result" = "当前网页返回了无法识别的资源数据。";
@@ -619,7 +625,7 @@
 "extensions_empty_desc" = "安装浏览器扩展或 UserScript 后会显示在这里。";
 "extensions_reload_note" = "扩展或脚本状态改变后，已打开的网页会重新加载以应用新状态。";
 "web_extensions" = "浏览器扩展";
-"userscripts" = "脚本与扩展";
+"userscripts" = "脚本扩展";
 "userscripts_installed" = "我的脚本";
 "userscripts_install" = "安装脚本";
 "userscripts_empty" = "暂无 UserScript";

@@ -1,1 +1,1 @@
-browser,zoeken,privé,tabbladen,web,AI,sociaal,video,downloaden,adblock,gebruikersscript,vertalen
+privacy,tabbladen,video downloaden,adblocker,userscripts,extensies,vertalen,mediazoeker

@@ -366,6 +366,18 @@ struct WebViewRepresentable: UIViewRepresentable {
     }
 
     private func installRuntimeIfNeeded(on contentController: WKUserContentController, context: Context) {
+        // Streaming transfers continue inside the retained page even when SwiftUI
+        // temporarily dismantles this wrapper. Keep their page-world bridge alive
+        // for the lifetime of that WKWebView instead of tying it to the wrapper.
+        if !viewModel.isStreamingDownloadHandlerInstalled {
+            contentController.addScriptMessageHandler(
+                StreamingMediaDownloadService.shared,
+                contentWorld: .page,
+                name: StreamingMediaDownloadService.messageHandlerName
+            )
+            viewModel.isStreamingDownloadHandlerInstalled = true
+        }
+
         guard !viewModel.isWebViewRuntimeInstalled else { return }
 
         contentController.add(context.coordinator, name: "souloAdBlocker")
@@ -405,7 +417,6 @@ struct WebViewRepresentable: UIViewRepresentable {
             contentWorld: .page,
             name: "souloDownload"
         )
-
         contentController.addUserScript(
             WKUserScript(
                 source: WebViewScripts.applyWebAppearance(
@@ -448,6 +459,14 @@ struct WebViewRepresentable: UIViewRepresentable {
                 source: WebViewScripts.contextMenuResourceTracking,
                 injectionTime: .atDocumentStart,
                 forMainFrameOnly: false
+            )
+        )
+
+        contentController.addUserScript(
+            WKUserScript(
+                source: WebViewScripts.mediaResourceTracking,
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: true
             )
         )
 
@@ -644,6 +663,8 @@ struct WebViewRepresentable: UIViewRepresentable {
             let fileName: String
             let fileHandle: FileHandle
             var nextChunkIndex: Int
+            var isPaused = false
+            var pendingChunkReply: ((Any?, String?) -> Void)?
         }
 
         private var lastContentOffset: CGFloat = 0
@@ -660,6 +681,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var downloadProgressObservations: [ObjectIdentifier: NSKeyValueObservation] = [:]
         private var pageDownloadTransfers: [String: PageDownloadTransfer] = [:]
         private var downloadCancelObserver: NSObjectProtocol?
+        private var individualDownloadCancelObserver: NSObjectProtocol?
         private var downloadPauseObserver: NSObjectProtocol?
         private var downloadResumeObserver: NSObjectProtocol?
         private var lastAdHidingSignature = ""
@@ -669,7 +691,6 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var blankPageRecoveryAttempts: [String: Int] = [:]
         private var terminatedProcessRecoveryURLs = Set<String>()
         private var navigationGeneration = UUID()
-
         init(viewModel: WebViewModel) {
             self.viewModel = viewModel
             super.init()
@@ -679,6 +700,14 @@ struct WebViewRepresentable: UIViewRepresentable {
                 queue: .main
             ) { [weak self] _ in
                 self?.cancelActiveDownloads()
+            }
+            individualDownloadCancelObserver = NotificationCenter.default.addObserver(
+                forName: .cancelBrowserDownload,
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                guard let id = notification.userInfo?["id"] as? UUID else { return }
+                self?.cancelDownload(id: id)
             }
             downloadPauseObserver = NotificationCenter.default.addObserver(
                 forName: .pauseBrowserDownload,
@@ -1145,7 +1174,9 @@ struct WebViewRepresentable: UIViewRepresentable {
                         fileURL: fileURL,
                         fileName: item.fileName,
                         fileHandle: fileHandle,
-                        nextChunkIndex: 0
+                        nextChunkIndex: 0,
+                        isPaused: false,
+                        pendingChunkReply: nil
                     )
                     refreshDownloadPresentation(preferredFilename: item.fileName)
                     replyHandler(["accepted": true], nil)
@@ -1168,8 +1199,13 @@ struct WebViewRepresentable: UIViewRepresentable {
                 do {
                     try transfer.fileHandle.write(contentsOf: chunk)
                     transfer.nextChunkIndex += 1
+                    if transfer.isPaused {
+                        transfer.pendingChunkReply = replyHandler
+                    }
                     pageDownloadTransfers[transferID] = transfer
-                    replyHandler(["received": chunkIndex], nil)
+                    if !transfer.isPaused {
+                        replyHandler(["received": chunkIndex], nil)
+                    }
                 } catch {
                     pageDownloadTransfers.removeValue(forKey: transferID)
                     try? transfer.fileHandle.close()
@@ -1315,6 +1351,10 @@ struct WebViewRepresentable: UIViewRepresentable {
             if let downloadCancelObserver {
                 NotificationCenter.default.removeObserver(downloadCancelObserver)
                 self.downloadCancelObserver = nil
+            }
+            if let individualDownloadCancelObserver {
+                NotificationCenter.default.removeObserver(individualDownloadCancelObserver)
+                self.individualDownloadCancelObserver = nil
             }
             if let downloadPauseObserver {
                 NotificationCenter.default.removeObserver(downloadPauseObserver)
@@ -2414,6 +2454,15 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         private func pauseDownload(id: UUID) {
+            if let transferEntry = pageDownloadTransfers.first(where: { $0.value.itemID == id }) {
+                var transfer = transferEntry.value
+                guard !transfer.isPaused else { return }
+                transfer.isPaused = true
+                pageDownloadTransfers[transferEntry.key] = transfer
+                DownloadManagerService.shared.markPaused(id: id)
+                refreshDownloadPresentation()
+                return
+            }
             guard let pair = downloadIDs.first(where: { $0.value == id }),
                   let download = activeDownloads[pair.key] else { return }
             activeDownloads.removeValue(forKey: pair.key)
@@ -2434,6 +2483,18 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         private func resumeDownload(id: UUID) {
+            if let transferEntry = pageDownloadTransfers.first(where: { $0.value.itemID == id }) {
+                var transfer = transferEntry.value
+                guard transfer.isPaused else { return }
+                transfer.isPaused = false
+                let pendingReply = transfer.pendingChunkReply
+                transfer.pendingChunkReply = nil
+                pageDownloadTransfers[transferEntry.key] = transfer
+                DownloadManagerService.shared.markResumed(id: id)
+                pendingReply?(["resumed": true], nil)
+                refreshDownloadPresentation()
+                return
+            }
             guard let webView = viewModel.webView,
                   let resumeData = DownloadManagerService.shared.resumeData(id: id),
                   BrowserDownloadResumeClaims.claim(id) else { return }
@@ -2477,6 +2538,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             let pageTransfersToCancel = pageDownloadTransfers
             pageDownloadTransfers.removeAll()
             for transfer in pageTransfersToCancel.values {
+                transfer.pendingChunkReply?(nil, "Download canceled")
                 try? transfer.fileHandle.close()
                 DownloadManagerService.shared.markCanceled(id: transfer.itemID)
             }
@@ -2484,6 +2546,34 @@ struct WebViewRepresentable: UIViewRepresentable {
             Task { @MainActor in
                 refreshDownloadPresentation()
             }
+        }
+
+        private func cancelDownload(id: UUID) {
+            if let entry = downloadIDs.first(where: { $0.value == id }),
+               let download = activeDownloads.removeValue(forKey: entry.key) {
+                activeDownloadNames.removeValue(forKey: entry.key)
+                downloadProgressObservations.removeValue(forKey: entry.key)?.invalidate()
+                downloadIDs.removeValue(forKey: entry.key)
+                download.cancel { _ in }
+            }
+
+            if let transferEntry = pageDownloadTransfers.first(where: { $0.value.itemID == id }) {
+                pageDownloadTransfers.removeValue(forKey: transferEntry.key)
+                transferEntry.value.pendingChunkReply?(nil, "Download canceled")
+                try? transferEntry.value.fileHandle.close()
+                viewModel.webView?.evaluateJavaScript(
+                    "window.__souloCancelDownload && window.__souloCancelDownload(\(Self.javascriptString(transferEntry.key)));"
+                )
+            }
+            refreshDownloadPresentation()
+        }
+
+        private static func javascriptString(_ value: String) -> String {
+            guard let data = try? JSONEncoder().encode(value),
+                  let encoded = String(data: data, encoding: .utf8) else {
+                return "\"\""
+            }
+            return encoded
         }
     }
 }

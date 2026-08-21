@@ -1,1 +1,1 @@
-preglednik,pretraživanje,privatno,kartice,web,AI,društveno,video,preuzmi,adblock,userscript,prevedi
+privatnost,kartice,preuzimanje videa,blokiranje oglasa,korisničke skripte,proširenja,prijevod

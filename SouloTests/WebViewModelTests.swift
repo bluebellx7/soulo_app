@@ -95,6 +95,16 @@ final class WebViewModelTests: XCTestCase {
         XCTAssertFalse(model.isWebViewRuntimeInstalled)
     }
 
+    func testReleasingWebViewResetsStreamingHandlerInstallationState() {
+        let model = WebViewModel()
+        model.webView = WKWebView(frame: .zero)
+        model.isStreamingDownloadHandlerInstalled = true
+
+        model.releaseWebViewRuntime()
+
+        XCTAssertFalse(model.isStreamingDownloadHandlerInstalled)
+    }
+
     func testRetryCurrentPageStartsFreshNavigationAndClearsError() {
         let model = WebViewModel()
         let url = URL(string: "https://example.com/article")!

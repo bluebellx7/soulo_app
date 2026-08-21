@@ -166,9 +166,15 @@ final class DownloadManagerService: ObservableObject {
     func markPaused(id: UUID, resumeData: Data?) {
         guard let resumeData, !resumeData.isEmpty,
               let index = downloads.firstIndex(where: { $0.id == id }) else { return }
+        saveResumeData(resumeData, id: id)
+        markPaused(id: id)
+    }
+
+    func markPaused(id: UUID) {
+        guard let index = downloads.firstIndex(where: { $0.id == id }),
+              downloads[index].status == .inProgress else { return }
         downloads[index].status = .paused
         downloads[index].completedAt = nil
-        saveResumeData(resumeData, id: id)
         save()
     }
 
@@ -200,7 +206,7 @@ final class DownloadManagerService: ObservableObject {
 
     func markCanceled(id: UUID) {
         guard let index = downloads.firstIndex(where: { $0.id == id }),
-              downloads[index].status == .inProgress else { return }
+              [.inProgress, .paused].contains(downloads[index].status) else { return }
         downloads[index].status = .canceled
         downloads[index].completedAt = Date()
         downloads[index].errorMessage = ""
@@ -212,7 +218,8 @@ final class DownloadManagerService: ObservableObject {
     func cancelAllDownloads() {
         var changed = false
         for index in downloads.indices
-        where downloads[index].status == .inProgress && downloads[index].transport == .webKit {
+        where downloads[index].status == .inProgress
+            && [.webKit, .streaming].contains(downloads[index].transport) {
             downloads[index].status = resumeData(id: downloads[index].id) == nil ? .canceled : .paused
             downloads[index].completedAt = Date()
             downloads[index].errorMessage = ""
@@ -235,9 +242,17 @@ final class DownloadManagerService: ObservableObject {
     }
 
     func delete(_ item: BrowserDownloadItem) {
-        guard item.status != .inProgress else { return }
-        if item.transport == .background {
+        switch item.transport {
+        case .background:
             BackgroundDownloadService.shared.abandon(id: item.id)
+        case .streaming, .hls:
+            StreamingMediaDownloadService.shared.cancel(itemID: item.id)
+        case .webKit:
+            NotificationCenter.default.post(
+                name: .cancelBrowserDownload,
+                object: nil,
+                userInfo: ["id": item.id]
+            )
         }
         try? FileManager.default.removeItem(at: item.localURL)
         removeResumeData(id: item.id)
@@ -246,9 +261,10 @@ final class DownloadManagerService: ObservableObject {
     }
 
     func clearFinished() {
-        let finished = downloads.filter { $0.status != .inProgress }
+        let removableStatuses: Set<BrowserDownloadStatus> = [.finished, .failed, .canceled]
+        let finished = downloads.filter { removableStatuses.contains($0.status) }
         finished.forEach { try? FileManager.default.removeItem(at: $0.localURL) }
-        downloads.removeAll { $0.status != .inProgress }
+        downloads.removeAll { removableStatuses.contains($0.status) }
         save()
     }
 
@@ -256,6 +272,35 @@ final class DownloadManagerService: ObservableObject {
         downloads.removeAll { item in
             item.status == .finished && !FileManager.default.fileExists(atPath: item.localPath)
         }
+        save()
+    }
+
+    func finishedDownload(for sourceURL: URL) -> BrowserDownloadItem? {
+        downloads.first {
+            $0.sourceURLString == sourceURL.absoluteString
+                && $0.status == .finished
+                && FileManager.default.fileExists(atPath: $0.localPath)
+        }
+    }
+
+    func activeDownload(for sourceURL: URL) -> BrowserDownloadItem? {
+        downloads.first {
+            $0.sourceURLString == sourceURL.absoluteString
+                && [.inProgress, .paused].contains($0.status)
+        }
+    }
+
+    func removeFailedDownloads(for sourceURL: URL) {
+        let matches = downloads.filter {
+            $0.sourceURLString == sourceURL.absoluteString && $0.status == .failed
+        }
+        guard !matches.isEmpty else { return }
+        matches.forEach {
+            try? FileManager.default.removeItem(at: $0.localURL)
+            removeResumeData(id: $0.id)
+        }
+        let ids = Set(matches.map(\.id))
+        downloads.removeAll { ids.contains($0.id) }
         save()
     }
 
@@ -287,9 +332,7 @@ final class DownloadManagerService: ObservableObject {
         var restoredInterruptedDownload = false
         // WebKit downloads are owned by the web view process and cannot continue after
         // relaunch. Background URLSession tasks are reattached and reconciled separately.
-        for index in downloads.indices
-        where downloads[index].status == .inProgress
-            && downloads[index].transport == .webKit {
+        for index in downloads.indices where shouldCancelInterruptedDownload(downloads[index]) {
             downloads[index].status = .canceled
             downloads[index].completedAt = Date()
             downloads[index].errorMessage = ""
@@ -302,11 +345,41 @@ final class DownloadManagerService: ObservableObject {
         removeMissingFiles()
     }
 
+    private func shouldCancelInterruptedDownload(_ item: BrowserDownloadItem) -> Bool {
+        if item.status == .inProgress {
+            return [.webKit, .streaming].contains(item.transport)
+        }
+        guard item.status == .paused else { return false }
+        switch item.transport {
+        case .streaming:
+            return true
+        case .webKit:
+            return resumeData(id: item.id) == nil
+        case .background, .hls:
+            return false
+        }
+    }
+
     func reconcileBackgroundDownloads(activeIDs: Set<UUID>, now: Date = Date()) {
         var changed = false
         for index in downloads.indices
         where downloads[index].status == .inProgress
             && downloads[index].transport == .background
+            && !activeIDs.contains(downloads[index].id)
+            && now.timeIntervalSince(downloads[index].startedAt) > 5 {
+            downloads[index].status = .failed
+            downloads[index].completedAt = now
+            downloads[index].errorMessage = AppLocalization.string("downloads_background_interrupted")
+            changed = true
+        }
+        if changed { save() }
+    }
+
+    func reconcileHLSDownloads(activeIDs: Set<UUID>, now: Date = Date()) {
+        var changed = false
+        for index in downloads.indices
+        where downloads[index].status == .inProgress
+            && downloads[index].transport == .hls
             && !activeIDs.contains(downloads[index].id)
             && now.timeIntervalSince(downloads[index].startedAt) > 5 {
             downloads[index].status = .failed

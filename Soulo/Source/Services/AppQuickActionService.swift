@@ -81,6 +81,10 @@ final class SouloAppDelegate: NSObject, UIApplicationDelegate {
         handleEventsForBackgroundURLSession identifier: String,
         completionHandler: @escaping () -> Void
     ) {
+        if identifier == StreamingMediaDownloadService.hlsSessionIdentifier {
+            StreamingMediaDownloadService.shared.backgroundEventsCompletionHandler = completionHandler
+            return
+        }
         guard identifier == BackgroundDownloadService.sessionIdentifier else {
             completionHandler()
             return

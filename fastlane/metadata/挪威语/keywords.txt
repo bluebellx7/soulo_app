@@ -1,1 +1,1 @@
-nettleser,søk,privat,faner,nett,AI,sosial,video,nedlasting,adblock,brukerskript,oversett
+personvern,faner,videonedlasting,reklameblokkering,brukerskript,utvidelser,oversettelse,mediefinner

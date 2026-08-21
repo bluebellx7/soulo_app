@@ -29,6 +29,7 @@ final class WebViewModel: ObservableObject {
     @Published private(set) var runtimeRevision = UUID()
     @Published private(set) var userScriptMenuCommands: [UserScriptMenuCommand] = []
     var isWebViewRuntimeInstalled: Bool = false
+    var isStreamingDownloadHandlerInstalled: Bool = false
     var isDesktopModeEnabled: Bool = false
     private var snapshotPersistenceID: String?
 
@@ -47,7 +48,11 @@ final class WebViewModel: ObservableObject {
 
     var webView: WKWebView? {
         didSet {
-            guard let webView, oldValue !== webView else { return }
+            guard oldValue !== webView else { return }
+            if webView == nil {
+                isStreamingDownloadHandlerInstalled = false
+            }
+            guard let webView else { return }
             applyWebPreferences(to: webView)
             if let request = pendingRequest {
                 pendingRequest = nil

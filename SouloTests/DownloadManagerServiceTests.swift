@@ -1,8 +1,35 @@
+import AVFoundation
 import XCTest
 @testable import Soulo
 
 @MainActor
 final class DownloadManagerServiceTests: XCTestCase {
+    func testStreamingMuxCapsDuplicatedTracksToPageDuration() {
+        let duration = StreamingMediaDownloadService.constrainedDuration(
+            videoDuration: CMTime(seconds: 1_904.13, preferredTimescale: 600),
+            audioDuration: CMTime(seconds: 1_904.13, preferredTimescale: 600),
+            maximumDurationSeconds: 952.081
+        )
+        XCTAssertEqual(duration.seconds, 952.081, accuracy: 0.01)
+    }
+
+    func testBackgroundDownloadFallsBackOnlyForURLSessionUnknownError() {
+        XCTAssertTrue(
+            BackgroundDownloadService.shouldUseForegroundFallback(
+                for: NSError(domain: NSURLErrorDomain, code: NSURLErrorUnknown)
+            )
+        )
+        XCTAssertFalse(
+            BackgroundDownloadService.shouldUseForegroundFallback(
+                for: NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)
+            )
+        )
+        XCTAssertFalse(
+            BackgroundDownloadService.shouldUseForegroundFallback(
+                for: NSError(domain: "Example", code: NSURLErrorUnknown)
+            )
+        )
+    }
     private var defaults: UserDefaults!
     private var suiteName: String!
     private var directory: URL!
@@ -25,6 +52,31 @@ final class DownloadManagerServiceTests: XCTestCase {
         super.tearDown()
     }
 
+    func testBackgroundDownloadStagesCFNetworkFileBeforeDelegateReturns() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SouloBackgroundStageTest-\(UUID().uuidString)", isDirectory: true)
+        let sourceDirectory = root.appendingPathComponent("CFNetwork", isDirectory: true)
+        let stagingDirectory = root.appendingPathComponent("Staging", isDirectory: true)
+        try FileManager.default.createDirectory(at: sourceDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let sourceURL = sourceDirectory.appendingPathComponent("CFNetworkDownload.tmp")
+        let expectedData = Data("downloaded-media".utf8)
+        try expectedData.write(to: sourceURL)
+        let id = UUID()
+
+        let stagedURL = try BackgroundDownloadService.stageDownloadedFile(
+            at: sourceURL,
+            id: id,
+            directory: stagingDirectory
+        )
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: sourceURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: stagedURL.path))
+        XCTAssertEqual(try Data(contentsOf: stagedURL), expectedData)
+        XCTAssertEqual(stagedURL.lastPathComponent, "\(id.uuidString).download")
+    }
+
     func testDownloadLifecyclePersistsFinishedItems() throws {
         let first = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
 
@@ -34,6 +86,8 @@ final class DownloadManagerServiceTests: XCTestCase {
         )
         try Data("pdf".utf8).write(to: fileURL)
         first.markFinished(id: item.id)
+
+        XCTAssertEqual(first.finishedDownload(for: URL(string: "https://example.com/report.pdf")!)?.id, item.id)
 
         let second = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
         let persisted = try XCTUnwrap(second.downloads.first)
@@ -103,6 +157,30 @@ final class DownloadManagerServiceTests: XCTestCase {
         XCTAssertEqual(second.fileName, "report 1.pdf")
     }
 
+    func testActiveDownloadLookupAndFailedRetryCleanupUseStableSourceURL() throws {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let sourceURL = try XCTUnwrap(URL(string: "https://www.youtube.com/watch?v=fixture"))
+        let active = service.beginDownload(
+            suggestedFilename: "Fixture.mp4",
+            sourceURL: sourceURL,
+            transport: .streaming
+        ).0
+
+        XCTAssertEqual(service.activeDownload(for: sourceURL)?.id, active.id)
+
+        service.markFailed(id: active.id, error: NSError(domain: "test", code: 1))
+        let retry = service.beginDownload(
+            suggestedFilename: "Fixture.mp4",
+            sourceURL: sourceURL,
+            transport: .streaming
+        ).0
+        service.markFailed(id: retry.id, error: NSError(domain: "test", code: 2))
+
+        XCTAssertEqual(service.downloads.filter { $0.status == .failed }.count, 2)
+        service.removeFailedDownloads(for: sourceURL)
+        XCTAssertFalse(service.downloads.contains { $0.sourceURLString == sourceURL.absoluteString })
+    }
+
     func testCancelAllDownloadsMarksInProgressItemsCanceled() {
         let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
         let (item, fileURL) = service.beginDownload(
@@ -115,6 +193,24 @@ final class DownloadManagerServiceTests: XCTestCase {
 
         XCTAssertEqual(service.downloads.first(where: { $0.id == item.id })?.status, .canceled)
         XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
+    }
+
+    func testInterruptedStreamingDownloadIsCanceledButHLSRemainsAttachable() {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let streaming = service.beginDownload(
+            suggestedFilename: "stream.mp4",
+            sourceURL: URL(string: "https://example.com/stream"),
+            transport: .streaming
+        ).0
+        let hls = service.beginDownload(
+            suggestedFilename: "hls.mp4",
+            sourceURL: URL(string: "https://example.com/master.m3u8"),
+            transport: .hls
+        ).0
+
+        let restored = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        XCTAssertEqual(restored.downloads.first(where: { $0.id == streaming.id })?.status, .canceled)
+        XCTAssertEqual(restored.downloads.first(where: { $0.id == hls.id })?.status, .inProgress)
     }
 
     func testCanceledDownloadCannotLaterBecomeFinished() {
@@ -147,7 +243,7 @@ final class DownloadManagerServiceTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
     }
 
-    func testInProgressDownloadCannotBeDeletedWithoutCancellation() {
+    func testInProgressDownloadCanBeCanceledAndDeleted() {
         let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
         let (item, _) = service.beginDownload(
             suggestedFilename: "Report.pdf",
@@ -156,7 +252,7 @@ final class DownloadManagerServiceTests: XCTestCase {
 
         service.delete(item)
 
-        XCTAssertNotNil(service.downloads.first(where: { $0.id == item.id }))
+        XCTAssertNil(service.downloads.first(where: { $0.id == item.id }))
     }
 
     func testStaleInProgressDownloadIsCanceledWhenManagerReloads() {
@@ -211,6 +307,68 @@ final class DownloadManagerServiceTests: XCTestCase {
         let updated = try XCTUnwrap(service.downloads.first(where: { $0.id == item.id }))
         XCTAssertEqual(updated.status, .inProgress)
         XCTAssertNil(service.resumeData(id: item.id))
+    }
+
+    func testStreamingDownloadCanPauseResumeAndDelete() throws {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let (item, fileURL) = service.beginDownload(
+            suggestedFilename: "Video.mp4",
+            sourceURL: URL(string: "https://example.com/video.mp4"),
+            transport: .streaming
+        )
+        try Data("partial-video".utf8).write(to: fileURL)
+        service.updateProgress(id: item.id, completed: 300, total: 1_000)
+
+        service.markPaused(id: item.id)
+        var updated = try XCTUnwrap(service.downloads.first(where: { $0.id == item.id }))
+        XCTAssertEqual(updated.status, .paused)
+        XCTAssertEqual(updated.progress, 0.3, accuracy: 0.001)
+
+        service.markResumed(id: item.id)
+        updated = try XCTUnwrap(service.downloads.first(where: { $0.id == item.id }))
+        XCTAssertEqual(updated.status, .inProgress)
+
+        service.markPaused(id: item.id)
+        service.delete(updated)
+        XCTAssertNil(service.downloads.first(where: { $0.id == item.id }))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
+    }
+
+    func testClearFinishedPreservesPausedDownloads() throws {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let (paused, _) = service.beginDownload(
+            suggestedFilename: "Paused.mp4",
+            sourceURL: URL(string: "https://example.com/paused.mp4"),
+            transport: .hls
+        )
+        service.markPaused(id: paused.id)
+        let (finished, finishedURL) = service.beginDownload(
+            suggestedFilename: "Finished.pdf",
+            sourceURL: URL(string: "https://example.com/finished.pdf")
+        )
+        try Data("finished".utf8).write(to: finishedURL)
+        service.markFinished(id: finished.id)
+
+        service.clearFinished()
+
+        XCTAssertEqual(service.downloads.map(\.id), [paused.id])
+        XCTAssertEqual(service.downloads.first?.status, .paused)
+    }
+
+    func testInterruptedPausedStreamingDownloadIsCanceledAfterRelaunch() throws {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let (item, fileURL) = service.beginDownload(
+            suggestedFilename: "Streaming.mp4",
+            sourceURL: URL(string: "https://example.com/streaming.mp4"),
+            transport: .streaming
+        )
+        try Data("partial".utf8).write(to: fileURL)
+        service.markPaused(id: item.id)
+
+        let restored = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+
+        XCTAssertEqual(restored.downloads.first(where: { $0.id == item.id })?.status, .canceled)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
     }
 
     func testBackgroundDownloadSurvivesReloadAndOrphansAreReconciled() throws {

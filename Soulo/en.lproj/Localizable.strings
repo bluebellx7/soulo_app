@@ -104,6 +104,12 @@
 "resource_scan_failed" = "Unable to scan page";
 "resource_copy_url" = "Copy resource URL";
 "resource_download_invalid_response" = "The resource could not be downloaded.";
+"resource_stream_download_unavailable" = "This stream is no longer available on the current page. Reload the page and try again.";
+"resource_stream_download_unsupported" = "Soulo detected this stream, but its manifest format cannot be saved yet.";
+"resource_stream_download_invalid_chunk" = "The media stream returned an invalid or out-of-order segment.";
+"resource_stream_download_missing_track" = "The downloaded stream did not contain playable video and audio tracks.";
+"resource_stream_download_export_failed" = "Soulo could not combine the downloaded video and audio.";
+"resource_stream_playback_download_first" = "This protected stream cannot be previewed from its temporary URL. Download it first to play the local file.";
 "resource_photo_access_denied" = "Allow photo access to save this image.";
 "resource_inspector_page_unavailable" = "Open a webpage before scanning resources.";
 "resource_inspector_invalid_result" = "The page returned an unsupported resource result.";

@@ -426,6 +426,7 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertTrue(script.contains("type: 'finished'"))
         XCTAssertTrue(script.contains("type: 'failed'"))
         XCTAssertTrue(script.contains("__souloCancelDownloads"))
+        XCTAssertTrue(script.contains("__souloCancelDownload"))
         XCTAssertTrue(script.contains("blob.slice"))
         XCTAssertTrue(script.contains("FileReader"))
         XCTAssertFalse(script.contains("readAsDataURL"))
@@ -526,6 +527,7 @@ final class WebViewScriptsTests: XCTestCase {
         assertJavaScriptParses(WebViewScripts.privacyProtection(gpcEnabled: true, cookieBannerHandling: true))
         assertJavaScriptParses(WebViewScripts.downloadBridge)
         assertJavaScriptParses(WebViewScripts.contextMenuResourceTracking)
+        assertJavaScriptParses(WebViewScripts.mediaResourceTracking)
         assertJavaScriptParses(WebResourceInspectionService.extractionScript)
         assertJavaScriptParses(
             WebViewScripts.extensionInstallBridge(
@@ -573,6 +575,7 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertEqual(snapshot.images.count, 1)
         XCTAssertEqual(snapshot.images.first?.width, 640)
         XCTAssertEqual(snapshot.videos.count, 1)
+        XCTAssertEqual(snapshot.videos.first?.suggestedFilename, "movie.mp4")
         XCTAssertEqual(snapshot.audio.count, 1)
         XCTAssertEqual(snapshot.links.count, 2)
         XCTAssertEqual(snapshot.links.first?.title, "Story")
@@ -586,7 +589,571 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertEqual(WebResourceInspectorDefaults.minimumImageWidth, 200)
         XCTAssertTrue(WebResourceInspectionService.extractionScript.contains("image.complete"))
         XCTAssertTrue(WebResourceInspectionService.extractionScript.contains("image.naturalWidth <= 0"))
+        XCTAssertTrue(WebResourceInspectionService.extractionScript.contains("performance.getEntriesByType('resource')"))
+        XCTAssertTrue(WebResourceInspectionService.extractionScript.contains("window.__souloObservedResourceURLs"))
+        XCTAssertTrue(WebResourceInspectionService.extractionScript.contains("window.ytInitialPlayerResponse"))
+        XCTAssertTrue(WebResourceInspectionService.extractionScript.contains("collectYouTubeStreamingData"))
+        XCTAssertTrue(WebResourceInspectionService.extractionScript.contains("window.__playinfo__"))
+        XCTAssertTrue(WebResourceInspectionService.extractionScript.contains("script#RENDER_DATA"))
         XCTAssertFalse(WebResourceInspectionService.extractionScript.contains("sourceSet.split"))
+    }
+
+    func testYouTubePlaybackURLsUseOfficialEmbedPlayer() throws {
+        let watchURL = try XCTUnwrap(URL(string: "https://m.youtube.com/watch?v=oi2QgPH61JM&ra=m"))
+        let shortURL = try XCTUnwrap(URL(string: "https://youtu.be/dQw4w9WgXcQ"))
+        let shortsURL = try XCTUnwrap(URL(string: "https://www.youtube.com/shorts/jNQXAC9IVRw"))
+        let mediaURL = try XCTUnwrap(URL(string: "https://rr1---sn.example.com/videoplayback?id=fixture"))
+
+        XCTAssertTrue(WebResourceMediaService.isYouTubePageURL(watchURL))
+        XCTAssertTrue(WebResourceMediaService.isYouTubePageURL(shortURL))
+        XCTAssertTrue(WebResourceMediaService.isYouTubePageURL(shortsURL))
+        XCTAssertFalse(WebResourceMediaService.isYouTubePageURL(mediaURL))
+        XCTAssertEqual(
+            WebResourceMediaService.youtubeEmbedURL(for: watchURL)?.host,
+            "www.youtube.com"
+        )
+        XCTAssertEqual(
+            WebResourceMediaService.youtubeEmbedURL(for: watchURL)?.path,
+            "/embed/oi2QgPH61JM"
+        )
+        XCTAssertEqual(
+            WebResourceMediaService.youtubeEmbedURL(for: shortURL)?.path,
+            "/embed/dQw4w9WgXcQ"
+        )
+        XCTAssertEqual(
+            WebResourceMediaService.youtubeEmbedURL(for: shortsURL)?.path,
+            "/embed/jNQXAC9IVRw"
+        )
+        XCTAssertNil(WebResourceMediaService.youtubeEmbedURL(for: mediaURL))
+
+        let resource = WebMediaResource(
+            kind: .video,
+            url: mediaURL,
+            title: "Fixture",
+            posterURL: nil,
+            delivery: .youtubeSABR
+        )
+        XCTAssertEqual(
+            WebResourceMediaService.downloadIdentityURL(for: resource, pageURL: watchURL).absoluteString,
+            "https://www.youtube.com/watch?v=oi2QgPH61JM"
+        )
+    }
+
+    @MainActor
+    func testResourceInspectorExtractsStructuredPlayerMedia() async throws {
+        let webView = WKWebView(frame: .zero)
+        webView.loadHTMLString(
+            """
+            <html><body><script>
+            window.ytInitialPlayerResponse = {
+              videoDetails: {
+                title: 'Fixture video',
+                thumbnail: { thumbnails: [{ url: 'https://media.example.com/poster.jpg' }] }
+              },
+              streamingData: {
+                formats: [
+                  { mimeType: 'video/mp4', url: 'https://media.example.com/videoplayback?mime=video%2Fmp4' },
+                  {
+                    mimeType: 'video/mp4',
+                    signatureCipher: 'url=https%3A%2F%2Fmedia.example.com%2Fciphered-videoplayback%3Fmime%3Dvideo%252Fmp4&sp=sig&sig=signed'
+                  }
+                ],
+                adaptiveFormats: [
+                  { mimeType: 'audio/mp4', url: 'https://media.example.com/videoplayback?mime=audio%2Fmp4' },
+                  {
+                    mimeType: 'video/mp4',
+                    signatureCipher: 'url=https%3A%2F%2Fmedia.example.com%2Fencrypted-videoplayback%3Fmime%3Dvideo%252Fmp4&sp=sig&s=requires-player-decipher'
+                  }
+                ]
+              }
+            };
+            window.__souloObservedResourceURLs = [
+              'https://runtime.example.com/videoplayback?mime=video%2Fmp4&range=0-999'
+            ];
+            window.__playinfo__ = {
+              play_addr: {
+                url_list: [
+                  'https://cdn-a.example.com/video/tos/example?mime_type=video_mp4',
+                  'https://cdn-b.example.com/video/tos/example?mime_type=video_mp4'
+                ]
+              }
+            };
+            </script></body></html>
+            """,
+            baseURL: try XCTUnwrap(URL(string: "https://example.com/watch"))
+        )
+        for _ in 0..<20 {
+            try await Task.sleep(for: .milliseconds(50))
+            if !webView.isLoading { break }
+        }
+
+        let snapshot = try await WebResourceInspectionService.inspect(webView: webView)
+
+        XCTAssertEqual(snapshot.videos.map(\.url.absoluteString), [
+            "https://runtime.example.com/videoplayback?mime=video%2Fmp4&range=0-999",
+            "https://media.example.com/videoplayback?mime=video%2Fmp4",
+            "https://media.example.com/ciphered-videoplayback?mime=video%2Fmp4&sig=signed",
+            "https://cdn-a.example.com/video/tos/example?mime_type=video_mp4"
+        ])
+        XCTAssertEqual(snapshot.audio.map(\.url.absoluteString), [
+            "https://media.example.com/videoplayback?mime=audio%2Fmp4"
+        ])
+    }
+
+    @MainActor
+    func testResourceInspectorCreatesYouTubeSABRVideoWithoutLegacyFormatURLs() async throws {
+        let webView = WKWebView(frame: .zero)
+        webView.loadHTMLString(
+            """
+            <html><head><title>Modern fixture - YouTube</title></head><body>
+            <video poster="https://i.ytimg.com/vi/fixture/hq720.jpg"></video>
+            <script>
+            window.ytInitialPlayerResponse = {
+              videoDetails: {
+                videoId: 'fixture',
+                title: 'Modern fixture',
+                thumbnail: { thumbnails: [{ url: 'https://i.ytimg.com/vi/fixture/hq720.jpg' }] }
+              },
+              streamingData: {
+                serverAbrStreamingUrl: 'https://rr.example.googlevideo.com/videoplayback?sabr=1',
+                adaptiveFormats: [
+                  { itag: 136, mimeType: 'video/mp4; codecs="avc1.4d401f"', height: 720 },
+                  { itag: 140, mimeType: 'audio/mp4; codecs="mp4a.40.2"', bitrate: 129000 }
+                ]
+              }
+            };
+            </script></body></html>
+            """,
+            baseURL: try XCTUnwrap(URL(string: "https://m.youtube.com/watch?v=fixture"))
+        )
+        for _ in 0..<20 {
+            try await Task.sleep(for: .milliseconds(50))
+            if !webView.isLoading { break }
+        }
+
+        let snapshot = try await WebResourceInspectionService.inspect(webView: webView)
+
+        XCTAssertEqual(snapshot.videos.count, 1)
+        XCTAssertEqual(snapshot.videos.first?.url.absoluteString, "https://m.youtube.com/watch?v=fixture")
+        XCTAssertEqual(snapshot.videos.first?.delivery, .youtubeSABR)
+        XCTAssertEqual(snapshot.videos.first?.title, "Modern fixture")
+        XCTAssertEqual(snapshot.videos.first?.suggestedFilename, "Modern fixture.mp4")
+        XCTAssertTrue(snapshot.audio.isEmpty)
+    }
+
+    @MainActor
+    func testResourceInspectorCreatesYouTubeSABRVideoFromObservedPlayback() async throws {
+        let webView = WKWebView(frame: .zero)
+        webView.loadHTMLString(
+            """
+            <html><head><title>Observed fixture - YouTube</title></head><body>
+            <video poster="https://i.ytimg.com/vi/observed/hq720.jpg"></video>
+            <script>
+            window.__souloObservedResourceURLs = [
+              'https://rr.example.googlevideo.com/videoplayback?sabr=1&foo=bar'
+            ];
+            </script></body></html>
+            """,
+            baseURL: try XCTUnwrap(URL(string: "https://m.youtube.com/watch?v=observed"))
+        )
+        for _ in 0..<20 {
+            try await Task.sleep(for: .milliseconds(50))
+            if !webView.isLoading { break }
+        }
+
+        let snapshot = try await WebResourceInspectionService.inspect(webView: webView)
+
+        XCTAssertEqual(snapshot.videos.count, 1)
+        XCTAssertEqual(snapshot.videos.first?.url.absoluteString, "https://m.youtube.com/watch?v=observed")
+        XCTAssertEqual(snapshot.videos.first?.delivery, .youtubeSABR)
+        XCTAssertTrue(snapshot.audio.isEmpty)
+    }
+
+    @MainActor
+    func testResourceInspectorIgnoresPreviousYouTubeVideoAfterSPANavigation() async throws {
+        let webView = WKWebView(frame: .zero)
+        webView.loadHTMLString(
+            """
+            <html><head><title>Current fixture - YouTube</title></head><body>
+            <video poster="https://i.ytimg.com/vi/current/hq720.jpg"></video>
+            <script>
+            const previousResponse = {
+              videoDetails: { videoId: 'previous', title: 'Previous fixture' },
+              streamingData: {
+                serverAbrStreamingUrl: 'https://old.example.googlevideo.com/videoplayback?sabr=1',
+                formats: [
+                  { mimeType: 'video/mp4', url: 'https://old.example.googlevideo.com/videoplayback?itag=18' }
+                ],
+                adaptiveFormats: [
+                  { mimeType: 'video/mp4; codecs="avc1.4d401f"', height: 720 }
+                ]
+              }
+            };
+            const currentResponse = {
+              videoDetails: { videoId: 'current', title: 'Current fixture' },
+              streamingData: {
+                serverAbrStreamingUrl: 'https://current.example.googlevideo.com/videoplayback?sabr=1',
+                adaptiveFormats: [
+                  { mimeType: 'video/mp4; codecs="avc1.4d401f"', height: 720 },
+                  { mimeType: 'audio/mp4; codecs="mp4a.40.2"', bitrate: 129000 }
+                ]
+              }
+            };
+            window.__souloYouTubePlayerResponses = { current: currentResponse };
+            window.__souloYouTubePlayerResponse = previousResponse;
+            window.ytInitialPlayerResponse = previousResponse;
+            window.__souloObservedResourceURLs = [
+              'https://old.example.googlevideo.com/videoplayback?itag=18'
+            ];
+            </script></body></html>
+            """,
+            baseURL: try XCTUnwrap(URL(string: "https://m.youtube.com/watch?v=current"))
+        )
+        for _ in 0..<20 {
+            try await Task.sleep(for: .milliseconds(50))
+            if !webView.isLoading { break }
+        }
+
+        let snapshot = try await WebResourceInspectionService.inspect(webView: webView)
+
+        XCTAssertEqual(snapshot.videos.count, 1)
+        XCTAssertEqual(snapshot.videos.first?.url.absoluteString, "https://m.youtube.com/watch?v=current")
+        XCTAssertEqual(snapshot.videos.first?.title, "Current fixture")
+        XCTAssertEqual(snapshot.videos.first?.delivery, .youtubeSABR)
+        XCTAssertTrue(snapshot.audio.isEmpty)
+    }
+
+    @MainActor
+    func testMediaTrackingCachesPlayerResponseFromYouTubeNextSPANavigation() async throws {
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController.addUserScript(WKUserScript(
+            source: WebViewScripts.mediaResourceTracking,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: true
+        ))
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.loadHTMLString(
+            """
+            <html><body><script>
+            const nextPlayerResponse = {
+              videoDetails: { videoId: 'current', title: 'Current SPA fixture' },
+              streamingData: {
+                serverAbrStreamingUrl: 'https://current.example.googlevideo.com/videoplayback?sabr=1',
+                adaptiveFormats: [
+                  { itag: 136, mimeType: 'video/mp4; codecs="avc1.4d401f"', height: 720 },
+                  { itag: 140, mimeType: 'audio/mp4; codecs="mp4a.40.2"', bitrate: 129000 }
+                ]
+              }
+            };
+            window.fetch = async function() {
+              return new Response(JSON.stringify({
+                navigationData: { nested: { playerResponse: nextPlayerResponse } }
+              }), { headers: { 'Content-Type': 'application/json' } });
+            };
+            </script></body></html>
+            """,
+            baseURL: try XCTUnwrap(URL(string: "https://m.youtube.com/watch?v=previous"))
+        )
+        for _ in 0..<20 {
+            try await Task.sleep(for: .milliseconds(50))
+            if !webView.isLoading { break }
+        }
+
+        _ = try await webView.evaluateJavaScript("""
+            history.pushState({}, '', '/watch?v=current');
+            void fetch('/youtubei/v1/next');
+            true;
+        """)
+        try await Task.sleep(for: .milliseconds(200))
+
+        let cachedVideoID = try await webView.evaluateJavaScript(
+            "window.__souloYouTubePlayerResponses?.current?.videoDetails?.videoId || ''"
+        ) as? String
+        let currentTitle = try await webView.evaluateJavaScript(
+            "window.__souloYouTubePlayerResponse?.videoDetails?.title || ''"
+        ) as? String
+
+        XCTAssertEqual(cachedVideoID, "current")
+        XCTAssertEqual(currentTitle, "Current SPA fixture")
+    }
+
+    @MainActor
+    func testMediaTrackingReadsLiveYouTubePlayerAfterSPANavigation() async throws {
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController.addUserScript(WKUserScript(
+            source: WebViewScripts.mediaResourceTracking,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: true
+        ))
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.loadHTMLString(
+            """
+            <html><head><title>Live player fixture - YouTube</title></head><body>
+            <div id="movie_player"></div>
+            <video></video>
+            <script>
+            const previousResponse = {
+              videoDetails: { videoId: 'previous', title: 'Previous live fixture' },
+              streamingData: {
+                serverAbrStreamingUrl: 'https://old.example.googlevideo.com/videoplayback?sabr=1',
+                adaptiveFormats: [
+                  { itag: 136, mimeType: 'video/mp4; codecs="avc1.4d401f"', height: 720 },
+                  { itag: 140, mimeType: 'audio/mp4; codecs="mp4a.40.2"', bitrate: 129000 }
+                ]
+              }
+            };
+            const currentResponse = {
+              videoDetails: { videoId: 'current', title: 'Current live fixture' },
+              streamingData: {
+                serverAbrStreamingUrl: 'https://current.example.googlevideo.com/videoplayback?sabr=1',
+                adaptiveFormats: [
+                  { itag: 136, mimeType: 'video/mp4; codecs="avc1.4d401f"', height: 720 },
+                  { itag: 140, mimeType: 'audio/mp4; codecs="mp4a.40.2"', bitrate: 129000 }
+                ]
+              }
+            };
+            window.activePlayerResponse = previousResponse;
+            document.getElementById('movie_player').getPlayerResponse = function() {
+              return window.activePlayerResponse;
+            };
+            window.ytInitialPlayerResponse = previousResponse;
+            </script></body></html>
+            """,
+            baseURL: try XCTUnwrap(URL(string: "https://m.youtube.com/watch?v=previous"))
+        )
+        for _ in 0..<20 {
+            try await Task.sleep(for: .milliseconds(50))
+            if !webView.isLoading { break }
+        }
+
+        _ = try await webView.evaluateJavaScript("""
+            window.__souloPreparedYouTubePlayerResponse = window.activePlayerResponse;
+            window.__souloLatestPageSABR = {
+              url: 'https://old.example.googlevideo.com/videoplayback?sabr=1',
+              videoID: 'previous'
+            };
+            history.pushState({}, '', '/watch?v=current');
+            window.activePlayerResponse = currentResponse;
+            window.dispatchEvent(new Event('yt-navigate-finish'));
+            window.__souloResolveCurrentYouTubePlayerResponse();
+            true;
+        """)
+
+        let resolvedVideoID = try await webView.evaluateJavaScript(
+            "window.__souloYouTubePlayerResponses?.current?.videoDetails?.videoId || ''"
+        ) as? String
+        let preparedWasInvalidated = try await webView.evaluateJavaScript(
+            "window.__souloPreparedYouTubePlayerResponse === null"
+        ) as? Bool
+        let staleSABRWasInvalidated = try await webView.evaluateJavaScript(
+            "window.__souloLatestPageSABR === null"
+        ) as? Bool
+        let snapshot = try await WebResourceInspectionService.inspect(webView: webView)
+
+        XCTAssertEqual(resolvedVideoID, "current")
+        XCTAssertEqual(preparedWasInvalidated, true)
+        XCTAssertEqual(staleSABRWasInvalidated, true)
+        XCTAssertEqual(snapshot.videos.first?.title, "Current live fixture")
+        XCTAssertEqual(snapshot.videos.first?.delivery, .youtubeSABR)
+    }
+
+    @MainActor
+    func testResourceInspectorDoesNotDuplicateYouTubeSABRVideoWhenFormatURLExists() async throws {
+        let webView = WKWebView(frame: .zero)
+        webView.loadHTMLString(
+            """
+            <html><head><title>Hybrid fixture - YouTube</title></head><body>
+            <video></video>
+            <script>
+            window.ytInitialPlayerResponse = {
+              videoDetails: { videoId: 'hybrid', title: 'Hybrid fixture' },
+              streamingData: {
+                serverAbrStreamingUrl: 'https://rr.example.googlevideo.com/videoplayback?sabr=1',
+                formats: [
+                  { mimeType: 'video/mp4', url: 'https://rr.example.googlevideo.com/videoplayback?itag=18' }
+                ]
+              }
+            };
+            </script></body></html>
+            """,
+            baseURL: try XCTUnwrap(URL(string: "https://m.youtube.com/watch?v=hybrid"))
+        )
+        for _ in 0..<20 {
+            try await Task.sleep(for: .milliseconds(50))
+            if !webView.isLoading { break }
+        }
+
+        let snapshot = try await WebResourceInspectionService.inspect(webView: webView)
+
+        XCTAssertEqual(snapshot.videos.count, 1)
+        XCTAssertEqual(
+            snapshot.videos.first?.url.absoluteString,
+            "https://rr.example.googlevideo.com/videoplayback?itag=18"
+        )
+        XCTAssertEqual(snapshot.videos.first?.delivery, .youtubeSABR)
+    }
+
+    @MainActor
+    func testResourceInspectorKeepsAdaptiveOnlyYouTubeVideoOnSABRTransport() async throws {
+        let webView = WKWebView(frame: .zero)
+        webView.loadHTMLString(
+            """
+            <html><head><title>Adaptive fixture - YouTube</title></head><body>
+            <video></video>
+            <script>
+            window.ytInitialPlayerResponse = {
+              videoDetails: { videoId: 'adaptive', title: 'Adaptive fixture' },
+              streamingData: {
+                serverAbrStreamingUrl: 'https://rr.example.googlevideo.com/videoplayback?sabr=1',
+                adaptiveFormats: [
+                  {
+                    mimeType: 'video/mp4; codecs="avc1.4d401f"',
+                    height: 720,
+                    url: 'https://rr.example.googlevideo.com/videoplayback?itag=136'
+                  },
+                  {
+                    mimeType: 'audio/mp4; codecs="mp4a.40.2"',
+                    bitrate: 129000,
+                    url: 'https://rr.example.googlevideo.com/videoplayback?itag=140'
+                  }
+                ]
+              }
+            };
+            </script></body></html>
+            """,
+            baseURL: try XCTUnwrap(URL(string: "https://m.youtube.com/watch?v=adaptive"))
+        )
+        for _ in 0..<20 {
+            try await Task.sleep(for: .milliseconds(50))
+            if !webView.isLoading { break }
+        }
+
+        let snapshot = try await WebResourceInspectionService.inspect(webView: webView)
+
+        XCTAssertEqual(snapshot.videos.count, 1)
+        XCTAssertEqual(
+            snapshot.videos.first?.url.absoluteString,
+            "https://rr.example.googlevideo.com/videoplayback?itag=136"
+        )
+        XCTAssertEqual(snapshot.videos.first?.delivery, .youtubeSABR)
+    }
+
+    func testSABRNativeFetchBridgeRestrictsAllowedHTTPSURLs() throws {
+        XCTAssertTrue(StreamingMediaDownloadService.isAllowedNativeFetchURL(
+            try XCTUnwrap(URL(string: "https://jnn-pa.googleapis.com/$rpc/google.internal.waa.v1.Waa/Create"))
+        ))
+        XCTAssertFalse(StreamingMediaDownloadService.isAllowedNativeFetchURL(
+            try XCTUnwrap(URL(string: "http://jnn-pa.googleapis.com/$rpc/google.internal.waa.v1.Waa/Create"))
+        ))
+        XCTAssertFalse(StreamingMediaDownloadService.isAllowedNativeFetchURL(
+            try XCTUnwrap(URL(string: "https://jnn-pa.googleapis.com.example.com/steal"))
+        ))
+        XCTAssertFalse(StreamingMediaDownloadService.isAllowedNativeFetchURL(
+            try XCTUnwrap(URL(string: "https://www.youtube.com/watch?v=fixture"))
+        ))
+        XCTAssertTrue(StreamingMediaDownloadService.isAllowedNativeFetchURL(
+            try XCTUnwrap(URL(string: "https://rr1---sn.example.googlevideo.com/videoplayback?sabr=1&rn=0"))
+        ))
+        XCTAssertFalse(StreamingMediaDownloadService.isAllowedNativeFetchURL(
+            try XCTUnwrap(URL(string: "https://rr1---sn.example.googlevideo.com/videoplayback?itag=18"))
+        ))
+        XCTAssertFalse(StreamingMediaDownloadService.isAllowedNativeFetchURL(
+            try XCTUnwrap(URL(string: "https://googlevideo.com.example.com/videoplayback?sabr=1"))
+        ))
+    }
+
+    func testSABRMediaFetchStaysInWebKitPlayerSession() {
+        let bridge = StreamingMediaDownloadService.nativeFetchBridgeScript
+
+        XCTAssertTrue(bridge.contains("if (isGoogleVideoSABR)"))
+        XCTAssertTrue(bridge.contains("pageInit.credentials = 'include'"))
+        XCTAssertTrue(bridge.contains("return originalFetch(input, pageInit)"))
+    }
+
+    func testSABREngineUsesPageResolvedEndpointAndDedicatedNativeFetch() {
+        let source = """
+        function gn(e){return performance.getEntriesByType("resource").map(r=>r.name).reverse().find(r=>/[?&]sabr=1(?:&|$)/.test(r))||e.streamingData?.serverAbrStreamingUrl||""}
+        const first={fetch:window.fetch.bind(window)};
+        const second={fetch:window.fetch.bind(window)};
+        """
+
+        let prepared = StreamingMediaDownloadService.preparedSABREngineSource(source)
+
+        XCTAssertTrue(prepared.contains(
+            "n&&n.videoID===e.videoDetails?.videoId?n.url:e.streamingData?.serverAbrStreamingUrl"
+        ))
+        XCTAssertTrue(prepared.contains("window.__souloLatestPageSABR"))
+        XCTAssertTrue(prepared.contains("n.videoID===e.videoDetails?.videoId"))
+        XCTAssertFalse(prepared.contains("performance.getEntriesByType(\"resource\")"))
+        XCTAssertEqual(
+            prepared.components(separatedBy: "fetch:window.__souloNativeFetch.bind(window)").count - 1,
+            2
+        )
+        XCTAssertFalse(prepared.contains("fetch:window.fetch.bind(window)"))
+    }
+
+    func testSABREngineUsesCachedAndMobilePlayerResponseSources() {
+        let source = """
+        function xn(){let e=[window.ytInitialPlayerResponse,window.ytplayer?.bootstrapPlayerResponse,window.ytplayer?.config?.args?.raw_player_response];for(let n of e)if(n){if(typeof n=="string")try{return JSON.parse(n)}catch{continue}return n}throw new Error("YouTube player response unavailable")}
+        async function download(e){let t=xn(),r=t.videoDetails?.videoId;return r}
+        """
+
+        let prepared = StreamingMediaDownloadService.preparedSABREngineSource(source)
+
+        XCTAssertTrue(prepared.contains("window.__souloYouTubePlayerResponse"))
+        XCTAssertTrue(prepared.contains("window.__souloPreparedYouTubePlayerResponse"))
+        XCTAssertTrue(prepared.contains("window.__souloYouTubePlayerResponses?.[e]"))
+        XCTAssertTrue(prepared.contains("if(e&&n!==e)continue"))
+        XCTAssertTrue(prepared.contains("!Array.isArray(r.adaptiveFormats)"))
+        XCTAssertTrue(prepared.contains(
+            "let t=e?.playerResponseJSON?JSON.parse(e.playerResponseJSON):xn(),r="
+        ))
+        XCTAssertTrue(prepared.contains("window.getInitialData?.()?.playerResponse"))
+        XCTAssertTrue(prepared.contains("window.ytcfg?.get?.(\"PLAYER_RESPONSE\")"))
+    }
+
+    func testMediaTrackingKeepsYouTubeResolvedSABREndpoint() {
+        XCTAssertTrue(WebViewScripts.mediaResourceTracking.contains("__souloLatestPageSABR"))
+        XCTAssertTrue(WebViewScripts.mediaResourceTracking.contains("videoID:"))
+        XCTAssertTrue(WebViewScripts.mediaResourceTracking.contains("pageHost.endsWith('.youtube.com')"))
+        XCTAssertTrue(WebViewScripts.mediaResourceTracking.contains("__souloYouTubePlayerResponse"))
+        XCTAssertTrue(WebViewScripts.mediaResourceTracking.contains("__souloYouTubePlayerResponses"))
+        XCTAssertTrue(WebViewScripts.mediaResourceTracking.contains("(?:player|next)"))
+        XCTAssertTrue(WebViewScripts.mediaResourceTracking.contains("cacheYouTubePlayerResponsesDeep"))
+        XCTAssertTrue(WebViewScripts.mediaResourceTracking.contains("getPlayerResponse"))
+        XCTAssertTrue(WebViewScripts.mediaResourceTracking.contains("yt-navigate-finish"))
+        XCTAssertTrue(WebViewScripts.mediaResourceTracking.contains("syncYouTubeVideoState"))
+        XCTAssertTrue(WebResourceInspectionService.extractionScript.contains("__souloYouTubePlayerResponse"))
+        XCTAssertTrue(WebResourceInspectionService.extractionScript.contains("__souloResolveCurrentYouTubePlayerResponse"))
+        XCTAssertTrue(WebResourceInspectionService.extractionScript.contains("candidateVideoID !== currentVideoID"))
+        XCTAssertTrue(WebResourceInspectionService.extractionScript.contains("isGoogleVideoURL"))
+    }
+
+    func testStreamingJavaScriptErrorKeepsOriginalExceptionMessage() {
+        let source = NSError(
+            domain: "WKErrorDomain",
+            code: 4,
+            userInfo: ["WKJavaScriptExceptionMessage": "YouTube player response unavailable"]
+        )
+
+        let surfaced = StreamingMediaDownloadService.surfacedStreamingError(source)
+
+        XCTAssertEqual(surfaced.localizedDescription, "YouTube player response unavailable")
+    }
+
+    func testPageVideoFrameDataURLDecoding() throws {
+        let sourceImage = UIGraphicsImageRenderer(size: CGSize(width: 4, height: 3)).image { context in
+            UIColor.systemBlue.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 4, height: 3))
+        }
+        let data = try XCTUnwrap(sourceImage.pngData())
+        let dataURL = "data:image/png;base64,\(data.base64EncodedString())"
+
+        let decoded = try XCTUnwrap(WebResourceMediaService.image(fromDataURL: dataURL))
+
+        XCTAssertEqual(decoded.cgImage?.width, sourceImage.cgImage?.width)
+        XCTAssertEqual(decoded.cgImage?.height, sourceImage.cgImage?.height)
+        XCTAssertNil(WebResourceMediaService.image(fromDataURL: "https://example.com/frame.png"))
     }
 
     func testContextResourceRecognizesDownloadableKinds() throws {
@@ -599,8 +1166,8 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertEqual(image.kind, .image)
         XCTAssertEqual(image.suggestedFilename, "photo.jpg")
         XCTAssertTrue(image.kind.allowsDirectDownload)
-        XCTAssertFalse(WebContextResource.Kind.video.allowsDirectDownload)
-        XCTAssertFalse(WebContextResource.Kind.audio.allowsDirectDownload)
+        XCTAssertTrue(WebContextResource.Kind.video.allowsDirectDownload)
+        XCTAssertTrue(WebContextResource.Kind.audio.allowsDirectDownload)
         XCTAssertTrue(WebContextResource.Kind.file.allowsDirectDownload)
         XCTAssertTrue(WebViewScripts.contextMenuResourceTracking.contains("csv|epub"))
         XCTAssertFalse(WebViewScripts.contextMenuResourceTracking.contains("epub|mp4"))
@@ -608,6 +1175,105 @@ final class WebViewScriptsTests: XCTestCase {
             "kind": "image",
             "url": "javascript:alert(1)"
         ]))
+    }
+
+    func testMediaResourceFilenameInfersExtensionFromMIMEQuery() throws {
+        let video = WebMediaResource(
+            kind: .video,
+            url: try XCTUnwrap(URL(string: "https://media.example.com/videoplayback?mime=video%2Fmp4&token=abc")),
+            title: "Example",
+            posterURL: nil
+        )
+        let audio = WebMediaResource(
+            kind: .audio,
+            url: try XCTUnwrap(URL(string: "https://media.example.com/audio?type=audio%2Fmpeg")),
+            title: "Example",
+            posterURL: nil
+        )
+        let alternateQueryName = WebMediaResource(
+            kind: .video,
+            url: try XCTUnwrap(URL(string: "https://media.example.com/play?mime_type=video%2Fmp4")),
+            title: "Example",
+            posterURL: nil
+        )
+        let extensionlessVideo = WebMediaResource(
+            kind: .video,
+            url: try XCTUnwrap(URL(string: "https://m.douyin.com/aweme/v1/playwm/?video_id=example")),
+            title: "Example",
+            posterURL: nil
+        )
+        let underscoredMIMEVideo = WebMediaResource(
+            kind: .video,
+            url: try XCTUnwrap(URL(string: "https://media.example.com/video/tos/file?mime_type=video_mp4")),
+            title: "Example",
+            posterURL: nil
+        )
+
+        XCTAssertEqual(video.suggestedFilename, "videoplayback.mp4")
+        XCTAssertEqual(audio.suggestedFilename, "audio.mp3")
+        XCTAssertEqual(alternateQueryName.suggestedFilename, "play.mp4")
+        XCTAssertEqual(extensionlessVideo.suggestedFilename, "playwm.mp4")
+        XCTAssertEqual(underscoredMIMEVideo.suggestedFilename, "file.mp4")
+    }
+
+    func testMediaDeliveryMetadataParsesStreamingProtocolsAndCompanionAudio() throws {
+        let snapshot = WebResourceSnapshot(dictionary: [
+            "videos": [
+                [
+                    "url": "https://cdn.example.com/master.m3u8",
+                    "delivery": "hls"
+                ],
+                [
+                    "url": "https://cdn.example.com/video.m4s",
+                    "delivery": "separateTracks",
+                    "audioURL": "https://cdn.example.com/audio.m4s"
+                ],
+                [
+                    "url": "https://rr.example.com/videoplayback?itag=134",
+                    "delivery": "youtubeSABR"
+                ]
+            ]
+        ])
+
+        XCTAssertEqual(snapshot.videos.map(\.delivery), [.hls, .separateTracks, .youtubeSABR])
+        XCTAssertEqual(
+            snapshot.videos[1].companionAudioURL?.absoluteString,
+            "https://cdn.example.com/audio.m4s"
+        )
+    }
+
+    @MainActor
+    func testResourceInspectorRecognizesGenericSeparatedDASHTracks() async throws {
+        let webView = WKWebView()
+        webView.loadHTMLString(
+            """
+            <html><head><title>Separated media</title></head><body><script>
+            window.__playinfo__ = { data: { dash: {
+              video: [
+                { height: 720, width: 1280, codecid: 7, bandwidth: 800000,
+                  baseUrl: 'https://cdn.example.com/video-720.m4s' },
+                { height: 1080, width: 1920, codecid: 12, bandwidth: 1200000,
+                  baseUrl: 'https://cdn.example.com/video-hevc.m4s' }
+              ],
+              audio: [
+                { id: 30280, bandwidth: 192000,
+                  baseUrl: 'https://cdn.example.com/audio.m4s' }
+              ]
+            } } };
+            </script></body></html>
+            """,
+            baseURL: try XCTUnwrap(URL(string: "https://example.com/watch"))
+        )
+        for _ in 0..<20 {
+            try await Task.sleep(for: .milliseconds(50))
+            if !webView.isLoading { break }
+        }
+
+        let snapshot = try await WebResourceInspectionService.inspect(webView: webView)
+        let video = try XCTUnwrap(snapshot.videos.first)
+        XCTAssertEqual(video.delivery, .separateTracks)
+        XCTAssertEqual(video.url.absoluteString, "https://cdn.example.com/video-720.m4s")
+        XCTAssertEqual(video.companionAudioURL?.absoluteString, "https://cdn.example.com/audio.m4s")
     }
 
     func testWebAppearanceReadabilityPreferencesCanBeAppliedAndRemoved() {

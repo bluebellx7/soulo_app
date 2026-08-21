@@ -1,1 +1,1 @@
-browser,penelusuran,pribadi,tab,web,AI,sosial,video,unduh,adblock,skrip pengguna,terjemahkan
+privasi,tab,unduh video,pemblokir iklan,skrip pengguna,ekstensi,terjemahan,pelacak media

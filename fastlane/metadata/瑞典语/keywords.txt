@@ -1,1 +1,1 @@
-webbläsare,sök,privat,flikar,webb,AI,socialt,video,ladda ner,adblock,användarskript,översätt
+integritet,flikar,videonedladdning,annonsblockering,användarskript,tillägg,översättning,mediefinnare

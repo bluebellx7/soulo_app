@@ -1,12 +1,19 @@
+import AVKit
+import QuickLook
 import SwiftUI
 import UniformTypeIdentifiers
 
 struct DownloadManagerView: View {
     @Environment(\.dismiss) private var dismiss
+    let highlightedItemID: UUID?
+
+    init(highlightedItemID: UUID? = nil) {
+        self.highlightedItemID = highlightedItemID
+    }
 
     var body: some View {
         NavigationStack {
-            DownloadManagerContentView()
+            DownloadManagerContentView(highlightedItemID: highlightedItemID)
                 .navigationTitle(LanguageManager.shared.localizedString("downloads"))
                 .navigationBarTitleDisplayMode(.large)
                 .toolbar {
@@ -20,8 +27,14 @@ struct DownloadManagerView: View {
 
 struct DownloadManagerContentView: View {
     @ObservedObject private var downloadManager = DownloadManagerService.shared
+    let highlightedItemID: UUID?
+    @State private var previewItem: BrowserDownloadItem?
     @State private var shareItem: BrowserDownloadItem?
     @State private var showDownloadsFolder = false
+
+    init(highlightedItemID: UUID? = nil) {
+        self.highlightedItemID = highlightedItemID
+    }
 
     var body: some View {
         List {
@@ -67,6 +80,9 @@ struct DownloadManagerContentView: View {
         .sheet(item: $shareItem) { item in
             DownloadShareSheet(items: [item.localURL])
         }
+        .sheet(item: $previewItem) { item in
+            DownloadContentPreview(item: item)
+        }
         .sheet(isPresented: $showDownloadsFolder) {
             DownloadFolderBrowser(isPresented: $showDownloadsFolder)
                 .ignoresSafeArea()
@@ -77,6 +93,73 @@ struct DownloadManagerContentView: View {
     }
 
     private func downloadRow(_ item: BrowserDownloadItem) -> some View {
+        HStack(spacing: 12) {
+            if canPreview(item) {
+                Button {
+                    previewItem = item
+                } label: {
+                    downloadSummary(item)
+                }
+                .buttonStyle(.plain)
+            } else {
+                downloadSummary(item)
+            }
+
+            if item.status == .finished {
+                Button {
+                    shareItem = item
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(LanguageManager.shared.localizedString("share"))
+            } else if item.status == .inProgress {
+                Button {
+                    switch item.transport {
+                    case .background:
+                        BackgroundDownloadService.shared.pause(id: item.id)
+                    case .webKit:
+                        NotificationCenter.default.post(name: .pauseBrowserDownload, object: nil, userInfo: ["id": item.id])
+                    case .streaming, .hls:
+                        StreamingMediaDownloadService.shared.pause(itemID: item.id)
+                    }
+                } label: {
+                    Image(systemName: "pause.circle")
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(LanguageManager.shared.localizedString("pause"))
+            } else if item.status == .paused {
+                Button {
+                    switch item.transport {
+                    case .background:
+                        BackgroundDownloadService.shared.resume(id: item.id)
+                    case .webKit:
+                        NotificationCenter.default.post(name: .resumeBrowserDownload, object: nil, userInfo: ["id": item.id])
+                    case .streaming, .hls:
+                        StreamingMediaDownloadService.shared.resume(itemID: item.id)
+                    }
+                } label: {
+                    Image(systemName: "play.circle")
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(LanguageManager.shared.localizedString("resume"))
+            }
+        }
+        .swipeActions(edge: .trailing) {
+            Button(role: .destructive) {
+                downloadManager.delete(item)
+            } label: {
+                Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
+            }
+        }
+        .listRowBackground(
+            item.id == highlightedItemID
+                ? Color.accentColor.opacity(0.12)
+                : Color(uiColor: .secondarySystemGroupedBackground)
+        )
+    }
+
+    private func downloadSummary(_ item: BrowserDownloadItem) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon(for: item.status))
                 .font(.system(size: 18, weight: .semibold))
@@ -109,51 +192,14 @@ struct DownloadManagerContentView: View {
                 }
             }
 
-            Spacer()
+            Spacer(minLength: 0)
+        }
+        .contentShape(Rectangle())
+    }
 
-            if item.status == .finished {
-                Button {
-                    shareItem = item
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                }
-                .buttonStyle(.borderless)
-                .accessibilityLabel(LanguageManager.shared.localizedString("share"))
-            } else if item.status == .inProgress {
-                Button {
-                    if item.transport == .background {
-                        BackgroundDownloadService.shared.pause(id: item.id)
-                    } else {
-                        NotificationCenter.default.post(name: .pauseBrowserDownload, object: nil, userInfo: ["id": item.id])
-                    }
-                } label: {
-                    Image(systemName: "pause.circle")
-                }
-                .buttonStyle(.borderless)
-                .accessibilityLabel(LanguageManager.shared.localizedString("pause"))
-            } else if item.status == .paused {
-                Button {
-                    if item.transport == .background {
-                        BackgroundDownloadService.shared.resume(id: item.id)
-                    } else {
-                        NotificationCenter.default.post(name: .resumeBrowserDownload, object: nil, userInfo: ["id": item.id])
-                    }
-                } label: {
-                    Image(systemName: "play.circle")
-                }
-                .buttonStyle(.borderless)
-                .accessibilityLabel(LanguageManager.shared.localizedString("resume"))
-            }
-        }
-        .swipeActions(edge: .trailing) {
-            if item.status != .inProgress {
-                Button(role: .destructive) {
-                    downloadManager.delete(item)
-                } label: {
-                    Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
-                }
-            }
-        }
+    private func canPreview(_ item: BrowserDownloadItem) -> Bool {
+        item.status == .finished
+            && FileManager.default.fileExists(atPath: item.localPath)
     }
 
     private func deleteDownloads(at offsets: IndexSet) {
@@ -162,7 +208,6 @@ struct DownloadManagerContentView: View {
                 guard downloadManager.downloads.indices.contains(index) else { return nil }
                 return downloadManager.downloads[index]
             }
-            .filter { $0.status != .inProgress }
             .forEach(downloadManager.delete)
     }
 
@@ -206,6 +251,7 @@ struct DownloadManagerContentView: View {
 extension Notification.Name {
     static let pauseBrowserDownload = Notification.Name("soulo.pauseBrowserDownload")
     static let resumeBrowserDownload = Notification.Name("soulo.resumeBrowserDownload")
+    static let cancelBrowserDownload = Notification.Name("soulo.cancelBrowserDownload")
 }
 
 private struct DownloadFolderBrowser: UIViewControllerRepresentable {
@@ -260,4 +306,96 @@ private struct DownloadShareSheet: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+private struct DownloadContentPreview: View {
+    @Environment(\.dismiss) private var dismiss
+    let item: BrowserDownloadItem
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if isPlayableMedia {
+                    DownloadMediaPreview(url: item.localURL)
+                } else {
+                    DownloadQuickLookPreview(url: item.localURL)
+                }
+            }
+            .navigationTitle(item.fileName)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(LanguageManager.shared.localizedString("done")) {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private var isPlayableMedia: Bool {
+        guard let type = UTType(filenameExtension: item.localURL.pathExtension) else {
+            return false
+        }
+        return type.conforms(to: .movie) || type.conforms(to: .audio)
+    }
+}
+
+private struct DownloadMediaPreview: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> AVPlayerViewController {
+        let controller = AVPlayerViewController()
+        controller.player = AVPlayer(url: url)
+        controller.showsPlaybackControls = true
+        DispatchQueue.main.async {
+            controller.player?.play()
+        }
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {}
+
+    static func dismantleUIViewController(
+        _ uiViewController: AVPlayerViewController,
+        coordinator: Void
+    ) {
+        uiViewController.player?.pause()
+        uiViewController.player = nil
+    }
+}
+
+private struct DownloadQuickLookPreview: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(url: url)
+    }
+
+    func makeUIViewController(context: Context) -> QLPreviewController {
+        let controller = QLPreviewController()
+        controller.dataSource = context.coordinator
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: QLPreviewController, context: Context) {}
+
+    final class Coordinator: NSObject, QLPreviewControllerDataSource {
+        let url: URL
+
+        init(url: URL) {
+            self.url = url
+        }
+
+        func numberOfPreviewItems(in controller: QLPreviewController) -> Int {
+            1
+        }
+
+        func previewController(
+            _ controller: QLPreviewController,
+            previewItemAt index: Int
+        ) -> QLPreviewItem {
+            url as NSURL
+        }
+    }
 }

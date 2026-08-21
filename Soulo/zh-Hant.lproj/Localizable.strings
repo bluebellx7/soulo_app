@@ -64,7 +64,7 @@
 "platform_list_view" = "切換為列表檢視";
 "platform_not_found" = "沒有我想要的平台";
 "platform_request_feedback_template" = "申請新增平台：\n\n平台名稱：\n平台網址：\n使用情境：";
-"resource_inspector_title" = "網頁資源偵測";
+"resource_inspector_title" = "資源偵測";
 "resource_rescan" = "重新偵測";
 "resource_images" = "圖片";
 "resource_videos" = "影片";
@@ -89,6 +89,12 @@
 "resource_scan_failed" = "網頁資源分析失敗";
 "resource_copy_url" = "複製資源網址";
 "resource_download_invalid_response" = "無法下載這個網頁資源。";
+"resource_stream_download_unavailable" = "目前頁面中的串流媒體已失效，請重新整理頁面後再試。";
+"resource_stream_download_unsupported" = "已識別此串流媒體，但暫時無法儲存這種清單格式。";
+"resource_stream_download_invalid_chunk" = "串流媒體傳回了無效或順序錯誤的分段。";
+"resource_stream_download_missing_track" = "下載內容中缺少可播放的影片或音訊軌道。";
+"resource_stream_download_export_failed" = "無法合併已下載的影片和音訊。";
+"resource_stream_playback_download_first" = "這個受保護的串流媒體無法透過暫時網址預覽，請先下載後播放本機檔案。";
 "resource_photo_access_denied" = "請允許取用照片後再儲存圖片。";
 "resource_inspector_page_unavailable" = "請先開啟網頁，再偵測網頁資源。";
 "resource_inspector_invalid_result" = "目前網頁傳回了無法識別的資源資料。";
@@ -619,7 +625,7 @@
 "extensions_empty_desc" = "安裝網路擴充或 UserScript 即可在此處查看。";
 "extensions_reload_note" = "更改擴充功能或腳本後會重新載入開啟的頁面，以便新狀態生效。";
 "web_extensions" = "網路擴充";
-"userscripts" = "腳本與擴充功能";
+"userscripts" = "腳本擴充";
 "userscripts_installed" = "我的腳本";
 "userscripts_install" = "安裝腳本";
 "userscripts_empty" = "沒有 UserScripts";

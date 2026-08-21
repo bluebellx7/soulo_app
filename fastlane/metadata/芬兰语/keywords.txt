@@ -1,1 +1,1 @@
-selain,haku,yksityinen,välilehdet,verkko,AI,sosiaalinen,video,lataa,mainosblokki,käyttäjäkoodi,käänn
+yksityisyys,välilehdet,videolataus,mainosten esto,käyttäjäskriptit,laajennukset,käännös,mediahaku

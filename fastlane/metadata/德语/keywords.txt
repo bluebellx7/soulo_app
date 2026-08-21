@@ -1,1 +1,1 @@
-Browser,Suche,Privat,Tabs,Web,KI,Soziales,Video,Herunterladen,Adblock,Userscript,Übersetzen
+privat,Tabs,Video Downloader,Werbeblocker,Userscripts,Erweiterungen,Übersetzer,Medienfinder

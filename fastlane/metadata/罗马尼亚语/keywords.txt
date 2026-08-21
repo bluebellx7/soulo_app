@@ -1,1 +1,1 @@
-browser,căutare,private,file,web,AI,social,video,descărcare,adblock,userscript,traducere
+confidențialitate,file,descărcare video,blocare reclame,scripturi,extensii,traducere,resurse media

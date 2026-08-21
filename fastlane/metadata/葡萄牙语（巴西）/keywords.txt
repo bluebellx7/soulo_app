@@ -1,1 +1,1 @@
-navegador,pesquisa,privado,guias,web,IA,social,vídeo,download,adblock,userscript,traduzir
+privacidade,abas,baixar vídeo,bloqueador de anúncios,scripts,extensões,tradução,detector de mídia

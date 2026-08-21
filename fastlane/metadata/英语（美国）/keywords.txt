@@ -1,1 +1,1 @@
-browser,search,private,tabs,web,AI,social,video,download,adblock,userscript,translate
+private browsing,tabs,video downloader,ad blocker,userscript,extensions,translate,media sniffer
