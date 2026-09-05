@@ -18,3 +18,5 @@ MỞ RỘNG WEB
 Cài đặt UserScripts hoặc WebExtensions tương thích, quản lý quyền rõ ràng và tạo tập lệnh của riêng bạn bằng tài liệu API tích hợp.
 
 Soulo lưu trữ dữ liệu duyệt web cục bộ trừ khi bạn bật đồng bộ hóa cài đặt iCloud. Duyệt web riêng tư không lưu lịch sử.
+
+Đọc bài viết và sách điện tử, quản lý tệp và truyền qua Wi-Fi.

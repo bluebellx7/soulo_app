@@ -18,3 +18,5 @@ AMPLIAR LA WEB
 Instale UserScripts o WebExtensions compatibles, administre los permisos con claridad y cree sus propios scripts con la documentación API incorporada.
 
 Soulo almacena los datos de navegación localmente a menos que habilites la sincronización de la configuración de iCloud. La navegación privada no guarda el historial.
+
+Lee artículos y libros electrónicos, gestiona archivos y transfiérelos por Wi-Fi.

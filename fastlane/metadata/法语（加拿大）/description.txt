@@ -18,3 +18,5 @@ CONÇU POUR IPHONE ET iPad
 Installez des UserScript ou des WebExtension compatibles, gérez clairement les autorisations et créez vos propres scripts avec la documentation de l'API intégrée.
 
 Soulo stocke les données de navigation localement, sauf si vous activez la synchronisation des paramètres iCloud. La navigation privée n'enregistre pas l'historique.
+
+Lisez des articles et des livres numériques, gérez vos fichiers et transférez-les par Wi-Fi.

@@ -101,10 +101,10 @@ struct SearchHistoryContentView: View {
             }
 
             if visibleHistory.isEmpty {
-                ContentUnavailableView(
-                    LanguageManager.shared.localizedString("no_history"),
-                    systemImage: "clock.arrow.circlepath",
-                    description: Text(LanguageManager.shared.localizedString("no_history_desc"))
+                IllustratedToolEmptyState(
+                    scene: .files,
+                    title: LanguageManager.shared.localizedString("no_history"),
+                    message: LanguageManager.shared.localizedString("no_history_desc")
                 )
             } else if deduped.isEmpty {
                 ContentUnavailableView(
@@ -132,9 +132,9 @@ struct SearchHistoryContentView: View {
             )
         }
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .primaryAction) {
                 Button(role: .destructive) { showClearAlert = true } label: {
-                    Image(systemName: "trash")
+                    Image(systemName: "trash").font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
                 }
                 .disabled(visibleHistory.isEmpty)
                 .accessibilityLabel(LanguageManager.shared.localizedString("clear_all"))

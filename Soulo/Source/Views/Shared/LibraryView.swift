@@ -4,6 +4,8 @@ enum LibrarySection: String, CaseIterable, Identifiable {
     case bookmarks
     case history
     case downloads
+    case files
+    case books
 
     var id: String { rawValue }
 
@@ -11,6 +13,8 @@ enum LibrarySection: String, CaseIterable, Identifiable {
         switch self {
         case .bookmarks: "bookmarks"
         case .history: "search_history"
+        case .files: "files"
+        case .books: "bookshelf"
         case .downloads: "downloads"
         }
     }
@@ -19,6 +23,8 @@ enum LibrarySection: String, CaseIterable, Identifiable {
         switch self {
         case .bookmarks: "bookmark.fill"
         case .history: "clock.arrow.circlepath"
+        case .files: "folder.fill"
+        case .books: "books.vertical.fill"
         case .downloads: "arrow.down.circle.fill"
         }
     }
@@ -42,36 +48,29 @@ struct LibraryView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                sectionSwitcher
+        VStack(spacing: 0) {
+            sectionSwitcher
 
-                Divider()
-                    .opacity(0.45)
-
-                Group {
-                    switch selectedSection {
-                    case .bookmarks:
-                        BookmarksContentView(searchVM: searchVM, onOpen: openSelection)
-                    case .history:
-                        SearchHistoryContentView(searchVM: searchVM, onOpen: openSelection)
-                    case .downloads:
-                        DownloadManagerContentView()
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .navigationTitle(LanguageManager.shared.localizedString("library"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(LanguageManager.shared.localizedString("done")) {
-                        dismiss()
-                    }
-                    .fontWeight(.semibold)
+            Group {
+                switch selectedSection {
+                case .bookmarks:
+                    BookmarksContentView(searchVM: searchVM, onOpen: openSelection)
+                case .history:
+                    SearchHistoryContentView(searchVM: searchVM, onOpen: openSelection)
+                case .books:
+                    BookshelfView()
+                case .downloads:
+                    DownloadManagerContentView(onOpenFiles: { selectedSection = .files })
+                case .files:
+                    LibraryFilesView(embeddedInLibrary: true)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .navigationTitle(LanguageManager.shared.localizedString("library"))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
+        .mediaPlayerNavigation()
     }
 
     private func openSelection(_ value: String) {
@@ -89,43 +88,41 @@ struct LibraryView: View {
     private var sectionSwitcher: some View {
         HStack(spacing: 4) {
             ForEach(LibrarySection.allCases) { section in
-                let isSelected = selectedSection == section
+                let selected = selectedSection == section
+                let title = [.books, .files].contains(section)
+                    ? ToolText.text(section.titleKey) : LanguageManager.shared.localizedString(section.titleKey)
                 Button {
-                    guard !isSelected else { return }
+                    guard !selected else { return }
                     HapticsManager.selection()
-                    withAnimation(.easeOut(duration: 0.18)) {
-                        selectedSection = section
-                    }
+                    withAnimation(.easeOut(duration: 0.18)) { selectedSection = section }
                 } label: {
-                    HStack(spacing: 5) {
+                    VStack(spacing: 7) {
                         Image(systemName: section.systemImage)
-                            .font(.system(size: 12, weight: .semibold))
-                        Text(LanguageManager.shared.localizedString(section.titleKey))
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.system(size: 17, weight: .medium))
+                            .frame(height: 20)
+                        Text(title)
+                            .font(.system(size: 11, weight: selected ? .semibold : .medium))
                             .lineLimit(1)
-                            .minimumScaleFactor(0.72)
+                            .minimumScaleFactor(0.7)
                     }
-                    .foregroundStyle(isSelected ? Color.primary : Color.secondary)
-                    .frame(maxWidth: .infinity, minHeight: 34)
+                    .foregroundStyle(selected ? Color.themePrimary : .secondary)
+                    .frame(maxWidth: .infinity, minHeight: 64)
                     .background {
-                        if isSelected {
-                            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .fill(Color(uiColor: .systemBackground))
-                                .shadow(color: .black.opacity(0.09), radius: 2, y: 1)
+                        if selected {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(Color.themePrimary.opacity(0.1))
                         }
                     }
-                    .contentShape(Rectangle())
+                    .contentShape(RoundedRectangle(cornerRadius: 16))
                 }
                 .buttonStyle(.plain)
-                .accessibilityAddTraits(isSelected ? .isSelected : [])
+                .accessibilityLabel(title)
+                .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
-        .padding(4)
-        .background(
-            Color(uiColor: .secondarySystemFill),
-            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-        )
         .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.top, 6)
+        .padding(.bottom, 14)
+        .background(Color(uiColor: .systemBackground))
     }
 }

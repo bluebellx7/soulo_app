@@ -18,3 +18,5 @@ PERPANJANG WEB
 Instal UserScripts atau WebExtensions yang kompatibel, kelola izin dengan jelas, dan buat skrip Anda sendiri dengan dokumentasi API bawaan.
 
 Soulo menyimpan data penjelajahan secara lokal kecuali Anda mengaktifkan sinkronisasi pengaturan iCloud. Penjelajahan pribadi tidak menyimpan riwayat.
+
+Baca artikel dan e-book, kelola file, dan transfer melalui Wi-Fi.

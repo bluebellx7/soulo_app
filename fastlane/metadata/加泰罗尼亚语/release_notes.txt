@@ -1,9 +1,5 @@
-Novetats:
+1.1.5
 
-• Comparteix enllaços i text a Soulo des d'altres aplicacions.
-• Extreu text d'imatges de pàgines web amb Live Text.
-• S'han afegit accions Control Center, pantalla de bloqueig, botó d'acció, Siri i Shortcuts.
-• Ara les descàrregues continuen en segon pla amb progrés real i pausa/reprèn.
-• S'ha afegit la navegació independent de diverses finestres a l'iPad.
-• S'han activat els WebExtensions nadius compatibles juntament amb els UserScripts.
-• S'ha ampliat l'aplicació i la informació App Store a les 50 configuracions regionals App Store compatibles.
+• Llegeix articles i llibres electrònics, gestiona fitxers i transfereix-los per Wi-Fi.
+• Controls blaus unificats i menús d'eines més senzills.
+• Corregida una fallada en obrir les eines de pantalla completa; millores en la reproducció i la previsualització.

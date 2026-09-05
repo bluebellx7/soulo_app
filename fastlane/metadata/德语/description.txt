@@ -18,3 +18,5 @@ ERWEITERN SIE DAS WEB
 Installieren Sie UserScripts oder kompatible WebExtensions, verwalten Sie Berechtigungen klar und erstellen Sie Ihre eigenen Skripte mit der integrierten API-Dokumentation.
 
 Soulo speichert Browserdaten lokal, es sei denn, Sie aktivieren die Synchronisierung der iCloud-Einstellungen. Beim privaten Surfen wird der Verlauf nicht gespeichert.
+
+Artikel und E-Books lesen, Dateien verwalten und per WLAN übertragen.

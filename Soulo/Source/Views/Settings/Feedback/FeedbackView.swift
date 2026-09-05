@@ -45,7 +45,7 @@ struct FeedbackView: View {
                                             }
                                             .padding(.horizontal, 12)
                                             .padding(.vertical, 8)
-                                            .background(feedbackType == type ? Color.blue : Color(uiColor: .tertiarySystemFill))
+                                            .background(feedbackType == type ? Color.themePrimary : Color(uiColor: .tertiarySystemFill))
                                             .foregroundStyle(feedbackType == type ? .white : .primary)
                                             .clipShape(Capsule())
                                         }
@@ -133,7 +133,7 @@ struct FeedbackView: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(content.trimmingCharacters(in: .whitespaces).isEmpty ? Color.gray : Color.blue)
+                            .background(content.trimmingCharacters(in: .whitespaces).isEmpty ? Color.gray : Color.themePrimary)
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
                         .disabled(content.trimmingCharacters(in: .whitespaces).isEmpty || isSubmitting)

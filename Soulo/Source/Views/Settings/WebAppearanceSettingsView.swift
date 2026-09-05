@@ -66,11 +66,11 @@ struct WebAppearanceSettingsView: View {
         Toggle(isOn: isOn) {
             SettingsDescriptionLabel(
                 icon: icon,
-                color: isOn.wrappedValue ? .blue : Color(uiColor: .systemGray3),
+                color: isOn.wrappedValue ? Color.themePrimary : Color(uiColor: .systemGray3),
                 title: LanguageManager.shared.localizedString(titleKey),
                 description: LanguageManager.shared.localizedString(descriptionKey)
             )
         }
-        .tint(.blue)
+        .tint(Color.themePrimary)
     }
 }

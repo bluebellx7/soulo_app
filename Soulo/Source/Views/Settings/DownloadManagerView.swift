@@ -15,7 +15,7 @@ struct DownloadManagerView: View {
         NavigationStack {
             DownloadManagerContentView(highlightedItemID: highlightedItemID)
                 .navigationTitle(LanguageManager.shared.localizedString("downloads"))
-                .navigationBarTitleDisplayMode(.large)
+                .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         Button(LanguageManager.shared.localizedString("done")) { dismiss() }
@@ -28,6 +28,7 @@ struct DownloadManagerView: View {
 struct DownloadManagerContentView: View {
     @ObservedObject private var downloadManager = DownloadManagerService.shared
     let highlightedItemID: UUID?
+    var onOpenFiles: (() -> Void)? = nil
     @State private var previewItem: BrowserDownloadItem?
     @State private var shareItem: BrowserDownloadItem?
     @State private var showDownloadsFolder = false
@@ -37,17 +38,21 @@ struct DownloadManagerContentView: View {
         downloadManager.downloads.contains { [.finished, .failed, .canceled].contains($0.status) }
     }
 
-    init(highlightedItemID: UUID? = nil) {
+    init(highlightedItemID: UUID? = nil, onOpenFiles: (() -> Void)? = nil) {
         self.highlightedItemID = highlightedItemID
+        self.onOpenFiles = onOpenFiles
     }
 
     var body: some View {
         List {
+            if onOpenFiles == nil {
+                Section { NavigationLink { LibraryFilesView() } label: { Label(ToolText.text("files_tools"), systemImage: "folder.badge.gearshape") } }
+            }
             if downloadManager.downloads.isEmpty {
-                ContentUnavailableView(
-                    LanguageManager.shared.localizedString("downloads_empty"),
-                    systemImage: "arrow.down.circle",
-                    description: Text(LanguageManager.shared.localizedString("downloads_empty_desc"))
+                IllustratedToolEmptyState(
+                    scene: .files,
+                    title: LanguageManager.shared.localizedString("downloads_empty"),
+                    message: LanguageManager.shared.localizedString("downloads_empty_desc")
                 )
             } else {
                 Section {
@@ -83,12 +88,12 @@ struct DownloadManagerContentView: View {
             Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
         }
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .primaryAction) {
                 Button {
-                    showDownloadsFolder = true
+                    if let onOpenFiles { onOpenFiles() } else { showDownloadsFolder = true }
                 } label: {
                     Image(systemName: "folder.fill")
-                        .frame(minWidth: 44, minHeight: 44)
+                        .font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
                 }
                 .accessibilityLabel(
                     LanguageManager.shared.localizedString("open_downloads_folder")
@@ -98,13 +103,10 @@ struct DownloadManagerContentView: View {
         .sheet(item: $shareItem) { item in
             DownloadShareSheet(items: [item.localURL])
         }
-        .sheet(item: $previewItem) { item in
-            DownloadContentPreview(item: item)
+        .navigationDestination(isPresented: Binding(get: { previewItem != nil }, set: { if !$0 { previewItem = nil } })) {
+            if let item = previewItem { DownloadContentPreview(item: item) }
         }
-        .sheet(isPresented: $showDownloadsFolder) {
-            DownloadFolderBrowser(isPresented: $showDownloadsFolder)
-                .ignoresSafeArea()
-        }
+        .navigationDestination(isPresented: $showDownloadsFolder) { LibraryFilesView() }
         .onAppear {
             downloadManager.removeMissingFiles()
         }
@@ -175,7 +177,7 @@ struct DownloadManagerContentView: View {
         }
         .listRowBackground(
             item.id == highlightedItemID
-                ? Color.accentColor.opacity(0.12)
+                ? Color.themePrimary.opacity(0.12)
                 : Color(uiColor: .secondarySystemGroupedBackground)
         )
     }
@@ -244,8 +246,8 @@ struct DownloadManagerContentView: View {
 
     private func color(for status: BrowserDownloadStatus) -> Color {
         switch status {
-        case .inProgress: .blue
-        case .paused: .blue
+        case .inProgress: Color.themePrimary
+        case .paused: Color.themePrimary
         case .finished: .green
         case .failed: .orange
         case .canceled: .secondary
@@ -275,50 +277,6 @@ extension Notification.Name {
     static let cancelBrowserDownload = Notification.Name("soulo.cancelBrowserDownload")
 }
 
-private struct DownloadFolderBrowser: UIViewControllerRepresentable {
-    @Binding var isPresented: Bool
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(isPresented: $isPresented)
-    }
-
-    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        let picker = UIDocumentPickerViewController(
-            forOpeningContentTypes: [.item],
-            asCopy: false
-        )
-        picker.directoryURL = DownloadManagerService.downloadsDirectory
-        picker.delegate = context.coordinator
-        picker.allowsMultipleSelection = false
-        picker.shouldShowFileExtensions = true
-        return picker
-    }
-
-    func updateUIViewController(
-        _ uiViewController: UIDocumentPickerViewController,
-        context: Context
-    ) {}
-
-    final class Coordinator: NSObject, UIDocumentPickerDelegate {
-        private var isPresented: Binding<Bool>
-
-        init(isPresented: Binding<Bool>) {
-            self.isPresented = isPresented
-        }
-
-        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
-            isPresented.wrappedValue = false
-        }
-
-        func documentPicker(
-            _ controller: UIDocumentPickerViewController,
-            didPickDocumentsAt urls: [URL]
-        ) {
-            isPresented.wrappedValue = false
-        }
-    }
-}
-
 private struct DownloadShareSheet: UIViewControllerRepresentable {
     let items: [Any]
 
@@ -330,28 +288,19 @@ private struct DownloadShareSheet: UIViewControllerRepresentable {
 }
 
 private struct DownloadContentPreview: View {
-    @Environment(\.dismiss) private var dismiss
     let item: BrowserDownloadItem
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if isPlayableMedia {
-                    DownloadMediaPreview(url: item.localURL)
-                } else {
-                    DownloadQuickLookPreview(url: item.localURL)
-                }
-            }
-            .navigationTitle(item.fileName)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(LanguageManager.shared.localizedString("done")) {
-                        dismiss()
-                    }
-                }
+        Group {
+            if isPlayableMedia {
+                VStack { MediaPlaybackSurface(); MediaControls() }
+                    .task { MediaSession.shared.open(url: item.localURL, title: item.fileName) }
+            } else {
+                DownloadQuickLookPreview(url: item.localURL).mediaPlayerNavigation()
             }
         }
+        .navigationTitle(item.fileName)
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private var isPlayableMedia: Bool {
@@ -362,61 +311,36 @@ private struct DownloadContentPreview: View {
     }
 }
 
-private struct DownloadMediaPreview: UIViewControllerRepresentable {
+struct DownloadQuickLookPreview: UIViewControllerRepresentable {
     let url: URL
-
-    func makeUIViewController(context: Context) -> AVPlayerViewController {
-        let controller = AVPlayerViewController()
-        controller.player = AVPlayer(url: url)
-        controller.showsPlaybackControls = true
-        DispatchQueue.main.async {
-            controller.player?.play()
-        }
-        return controller
-    }
-
-    func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {}
-
-    static func dismantleUIViewController(
-        _ uiViewController: AVPlayerViewController,
-        coordinator: Void
-    ) {
-        uiViewController.player?.pause()
-        uiViewController.player = nil
-    }
-}
-
-private struct DownloadQuickLookPreview: UIViewControllerRepresentable {
-    let url: URL
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(url: url)
-    }
-
+    func makeCoordinator() -> Coordinator { Coordinator(url: url) }
     func makeUIViewController(context: Context) -> QLPreviewController {
         let controller = QLPreviewController()
         controller.dataSource = context.coordinator
+        context.coordinator.prepare(controller)
         return controller
     }
+    func updateUIViewController(_ controller: QLPreviewController, context: Context) {}
+    static func dismantleUIViewController(_ controller: QLPreviewController, coordinator: Coordinator) { coordinator.cancel() }
 
-    func updateUIViewController(_ uiViewController: QLPreviewController, context: Context) {}
-
-    final class Coordinator: NSObject, QLPreviewControllerDataSource {
-        let url: URL
-
-        init(url: URL) {
-            self.url = url
+    @MainActor final class Coordinator: NSObject, QLPreviewControllerDataSource {
+        let original: URL
+        private var prepared: PreparedFilePreview?
+        private var task: Task<Void, Never>?
+        init(url: URL) { original = url }
+        func prepare(_ controller: QLPreviewController) {
+            let url = original
+            task = Task { [weak self, weak controller] in
+                let result = try? await Task.detached { try PreparedFilePreview.prepare(url) }.value
+                guard !Task.isCancelled, let self, let controller else { result?.removeTemporaryFile(); return }
+                self.prepared = result ?? PreparedFilePreview(url: url, temporaryDirectory: nil)
+                controller.reloadData()
+            }
         }
-
-        func numberOfPreviewItems(in controller: QLPreviewController) -> Int {
-            1
-        }
-
-        func previewController(
-            _ controller: QLPreviewController,
-            previewItemAt index: Int
-        ) -> QLPreviewItem {
-            url as NSURL
+        func cancel() { task?.cancel(); prepared?.removeTemporaryFile(); prepared = nil }
+        func numberOfPreviewItems(in controller: QLPreviewController) -> Int { prepared == nil ? 0 : 1 }
+        func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem {
+            (prepared?.url ?? original) as NSURL
         }
     }
 }

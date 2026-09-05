@@ -15,7 +15,7 @@ struct SettingsView: View {
 
     @State private var selectedAppearance: String = ThemeManager.shared.appearance
     @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = true
-    @AppStorage("show_top_search_bar") private var showTopSearchBar = true
+    @AppStorage("show_top_search_bar") private var showTopSearchBar = BrowserInitialPreferences.showTopSearchBar
     @AppStorage(AppConstants.StorageKeys.keepFullscreenBrowsing) private var keepFullscreenBrowsing = false
     @AppStorage(AppConstants.StorageKeys.iCloudSyncEnabled) private var iCloudSyncEnabled = false
     @AppStorage(AppConstants.StorageKeys.shakeAction) private var shakeAction = BrowserShakeAction.none.rawValue
@@ -49,21 +49,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background gradient
-                LinearGradient(
-                    colors: colorScheme == .light
-                        ? [
-                            Color(red: 0.965, green: 0.965, blue: 0.975),
-                            Color(red: 0.925, green: 0.925, blue: 0.945)
-                        ]
-                        : [
-                            Color(uiColor: .systemBackground),
-                            Color(uiColor: .secondarySystemBackground)
-                        ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
+                Color.themeGroupedBg.ignoresSafeArea()
 
                 List {
                     // MARK: - Platform Management
@@ -110,7 +96,7 @@ struct SettingsView: View {
                                                 .lineLimit(1)
                                         }
                                         .foregroundStyle(
-                                            sel ? Color.accentColor : Color(uiColor: .secondaryLabel)
+                                            sel ? Color.themePrimary : Color(uiColor: .secondaryLabel)
                                         )
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 5)
@@ -118,14 +104,14 @@ struct SettingsView: View {
                                             Capsule(style: .continuous)
                                                 .fill(
                                                     sel
-                                                        ? Color.accentColor.opacity(0.14)
+                                                        ? Color.themePrimary.opacity(0.14)
                                                         : Color(uiColor: .secondarySystemFill)
                                                 )
                                         )
                                         .overlay {
                                             Capsule(style: .continuous)
                                                 .stroke(
-                                                    sel ? Color.accentColor.opacity(0.2) : Color.clear,
+                                                    sel ? Color.themePrimary.opacity(0.2) : Color.clear,
                                                     lineWidth: 0.5
                                                 )
                                         }
@@ -199,42 +185,42 @@ struct SettingsView: View {
                         Toggle(isOn: $showBookmarksOnHome) {
                             SettingsDescriptionLabel(
                                 icon: "bookmark.fill",
-                                color: showBookmarksOnHome ? .blue : Color(uiColor: .systemGray3),
+                                color: showBookmarksOnHome ? Color.themePrimary : Color(uiColor: .systemGray3),
                                 title: LanguageManager.shared.localizedString("show_bookmarks_home"),
                                 description: LanguageManager.shared.localizedString("show_bookmarks_home_desc")
                             )
                         }
-                        .tint(.blue)
+                        .tint(Color.themePrimary)
 
                         Toggle(isOn: $showGroupPickerOnHome) {
                             SettingsDescriptionLabel(
                                 icon: "folder.fill",
-                                color: showGroupPickerOnHome ? .blue : Color(uiColor: .systemGray3),
+                                color: showGroupPickerOnHome ? Color.themePrimary : Color(uiColor: .systemGray3),
                                 title: LanguageManager.shared.localizedString("show_group_picker_home"),
                                 description: LanguageManager.shared.localizedString("show_group_picker_home_desc")
                             )
                         }
-                        .tint(.blue)
+                        .tint(Color.themePrimary)
 
                         Toggle(isOn: $showRecentSearchesOnHome) {
                             SettingsDescriptionLabel(
                                 icon: "clock.arrow.circlepath",
-                                color: showRecentSearchesOnHome ? .blue : Color(uiColor: .systemGray3),
+                                color: showRecentSearchesOnHome ? Color.themePrimary : Color(uiColor: .systemGray3),
                                 title: LanguageManager.shared.localizedString("show_recent_searches_home"),
                                 description: LanguageManager.shared.localizedString("show_recent_searches_home_desc")
                             )
                         }
-                        .tint(.blue)
+                        .tint(Color.themePrimary)
 
                         Toggle(isOn: $liveActivityEnabled) {
                             SettingsDescriptionLabel(
                                 icon: "dot.radiowaves.left.and.right",
-                                color: liveActivityEnabled ? .blue : Color(uiColor: .systemGray3),
+                                color: liveActivityEnabled ? Color.themePrimary : Color(uiColor: .systemGray3),
                                 title: LanguageManager.shared.localizedString("live_activity"),
                                 description: LanguageManager.shared.localizedString("live_activity_desc")
                             )
                         }
-                        .tint(.blue)
+                        .tint(Color.themePrimary)
                         .onChange(of: liveActivityEnabled) { _, enabled in
                             LiveActivityService.shared.setEnabled(enabled)
                         }
@@ -248,22 +234,22 @@ struct SettingsView: View {
                         Toggle(isOn: $showTopSearchBar) {
                             SettingsDescriptionLabel(
                                 icon: "rectangle.topthird.inset.filled",
-                                color: showTopSearchBar ? .blue : Color(uiColor: .systemGray3),
+                                color: showTopSearchBar ? Color.themePrimary : Color(uiColor: .systemGray3),
                                 title: LanguageManager.shared.localizedString("show_top_search_bar"),
                                 description: LanguageManager.shared.localizedString("show_top_search_bar_desc")
                             )
                         }
-                        .tint(.blue)
+                        .tint(Color.themePrimary)
 
                         Toggle(isOn: $keepFullscreenBrowsing) {
                             SettingsDescriptionLabel(
                                 icon: "arrow.up.left.and.arrow.down.right",
-                                color: keepFullscreenBrowsing ? .blue : Color(uiColor: .systemGray3),
+                                color: keepFullscreenBrowsing ? Color.themePrimary : Color(uiColor: .systemGray3),
                                 title: LanguageManager.shared.localizedString("keep_fullscreen_browsing"),
                                 description: LanguageManager.shared.localizedString("keep_fullscreen_browsing_desc")
                             )
                         }
-                        .tint(.blue)
+                        .tint(Color.themePrimary)
 
                         NavigationLink(destination: WebAppearanceSettingsView()) {
                             SettingsNavigationLabel(
@@ -370,12 +356,12 @@ struct SettingsView: View {
                         Toggle(isOn: $iCloudSyncEnabled) {
                             SettingsDescriptionLabel(
                                 icon: "icloud.fill",
-                                color: iCloudSyncEnabled ? .blue : Color(uiColor: .systemGray3),
+                                color: iCloudSyncEnabled ? Color.themePrimary : Color(uiColor: .systemGray3),
                                 title: LanguageManager.shared.localizedString("icloud_settings_sync"),
                                 description: LanguageManager.shared.localizedString("icloud_settings_sync_desc")
                             )
                         }
-                        .tint(.blue)
+                        .tint(Color.themePrimary)
                         .onChange(of: iCloudSyncEnabled) { _, enabled in
                             CloudSyncService.shared.setEnabled(enabled)
                         }
@@ -418,6 +404,16 @@ struct SettingsView: View {
                                 Text(LanguageManager.shared.localizedString("settings_privacy_policy"))
                             } icon: {
                                 IconBadge(systemName: "doc.text.fill", color: neutralIconColor)
+                            }
+                        }
+
+                        NavigationLink {
+                            ReadingToolsLicensesView()
+                        } label: {
+                            Label {
+                                Text(ToolText.text("licenses"))
+                            } icon: {
+                                IconBadge(systemName: "text.book.closed", color: neutralIconColor)
                             }
                         }
 
@@ -464,7 +460,7 @@ struct SettingsView: View {
                 .scrollContentBackground(.hidden)
             }
             .navigationTitle(LanguageManager.shared.localizedString("settings_title"))
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(LanguageManager.shared.localizedString("done")) {

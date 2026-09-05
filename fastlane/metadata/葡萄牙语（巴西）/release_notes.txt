@@ -1,9 +1,5 @@
-O que há de novo:
+1.1.5
 
-• Compartilhe links e textos para Soulo de outros aplicativos.
-• Extraia texto de imagens de páginas da web com Live Text.
-• Adicionadas ações Control Center, tela de bloqueio, botão de ação, Siri e Shortcuts.
-• Os downloads agora continuam em segundo plano com progresso real e pausa/retomada.
-• Adicionada navegação independente em múltiplas janelas no iPad.
-• Habilitação de WebExtensions nativos compatíveis junto com UserScripts.
-• Expandimos o aplicativo e as informações de App Store para todas as 50 localidades App Store suportadas.
+• Leia artigos e e-books, gerencie arquivos e transfira-os por Wi-Fi.
+• Controles azuis uniformes e menus de ferramentas mais simples.
+• Corrigida uma falha ao abrir ferramentas em tela cheia; reprodução de mídia e prévias de arquivos aprimoradas.

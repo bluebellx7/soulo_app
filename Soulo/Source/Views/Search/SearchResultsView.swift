@@ -37,7 +37,7 @@ struct SearchResultsView: View {
     // Persist last selected group
     @AppStorage("last_selected_region") private var lastRegion: String = ""
     @AppStorage("last_selected_group_id") private var lastGroupID: String = ""
-    @AppStorage("show_top_search_bar") private var showTopSearchBar = true
+    @AppStorage("show_top_search_bar") private var showTopSearchBar = BrowserInitialPreferences.showTopSearchBar
     @AppStorage(AppConstants.StorageKeys.keepFullscreenBrowsing) private var keepFullscreenBrowsing = false
     @AppStorage(AppConstants.StorageKeys.shakeAction) private var shakeAction = BrowserShakeAction.none.rawValue
     @AppStorage(AppConstants.StorageKeys.shakeIntensity) private var shakeIntensity = BrowserShakeIntensity.standard.rawValue
@@ -472,7 +472,7 @@ struct SearchResultsView: View {
                     .font(.system(size: 32, weight: .medium))
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [.indigo, .purple],
+                            colors: [Color.themePrimary, Color.themePrimary.opacity(0.7)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )

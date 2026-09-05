@@ -21,7 +21,7 @@ struct HelpCenterView: View {
                         guideRow(icon: "globe", title: lm.localizedString("help_platforms_title"), desc: lm.localizedString("help_platforms_desc"))
                     }
 
-                    guideSection(title: lm.localizedString("help_features"), icon: "sparkles", color: .blue) {
+                    guideSection(title: lm.localizedString("help_features"), icon: "sparkles", color: Color.themePrimary) {
                         guideRow(icon: "bookmark.fill", title: lm.localizedString("help_bookmarks_title"), desc: lm.localizedString("help_bookmarks_desc"))
                         guideRow(icon: "photo.fill", title: lm.localizedString("help_wallpaper_title"), desc: lm.localizedString("help_wallpaper_desc"))
                         guideRow(icon: "shield.checkered", title: lm.localizedString("help_adblock_title"), desc: lm.localizedString("help_adblock_desc"))
@@ -64,7 +64,7 @@ struct HelpCenterView: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 18))
-                .foregroundStyle(.blue)
+                .foregroundStyle(Color.themePrimary)
                 .frame(width: 28)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(.system(size: 15, weight: .semibold))

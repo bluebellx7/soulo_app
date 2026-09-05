@@ -1,9 +1,5 @@
-Mitä uutta:
+1.1.5
 
-• Jaa linkkejä ja tekstiä osoitteeseen Soulo muista sovelluksista.
-• Poimi tekstiä verkkosivun kuvista komennolla Live Text.
-• Lisätty toimintoa Control Center, lukitusnäyttö, toimintopainike, Siri ja Shortcuts.
-• Lataukset jatkuvat nyt taustalla todellisen edistymisen ja tauon/jatkamisen kanssa.
-• Lisätty itsenäinen usean ikkunan selaus iPadiin.
-• Käytössä yhteensopivat alkuperäiset WebExtensions UserScripts rinnalla.
-• Laajennettiin sovellus ja App Store tiedot kaikkiin 50 tuettuun App Store alueeseen.
+• Lue artikkeleita ja e-kirjoja, hallitse tiedostoja ja siirrä niitä Wi-Fi-yhteydellä.
+• Yhtenäiset siniset säätimet ja selkeämmät työkaluvalikot.
+• Korjattu kaatuminen avattaessa koko näytön työkaluja; parannettu toistoa ja tiedostojen esikatselua.

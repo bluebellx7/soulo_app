@@ -73,30 +73,13 @@ struct BrowserToolbarSettingsView: View {
     }
 
     private var bottomActionBar: some View {
-        HStack(spacing: 10) {
+        AdaptiveActionRow(spacing: 12) {
             Button {
                 showRestoreConfirmation = true
             } label: {
-                Label(
-                    LanguageManager.shared.localizedString("toolbar_restore_default"),
-                    systemImage: "arrow.counterclockwise"
-                )
-                .font(.subheadline.weight(.medium))
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .foregroundStyle(.primary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 42)
-                .background(
-                    Color(uiColor: .secondarySystemGroupedBackground),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                )
-                .overlay {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5)
-                }
+                Label(LanguageManager.shared.localizedString("toolbar_restore_default"), systemImage: "arrow.counterclockwise")
             }
-            .buttonStyle(.plain)
+            .buttonStyle(CompactActionButtonStyle(fillsHeight: true))
 
             Button {
                 service.save(actions: draftActions, addressAction: draftAddressAction)
@@ -104,24 +87,13 @@ struct BrowserToolbarSettingsView: View {
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
             } label: {
                 Label(LanguageManager.shared.localizedString("save"), systemImage: "checkmark")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 42)
-                    .background(
-                        Color.accentColor,
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(CompactActionButtonStyle(prominent: true, fillsHeight: true))
         }
         .padding(.horizontal, 16)
-        .padding(.top, 10)
-        .padding(.bottom, 8)
+        .padding(.vertical, 12)
         .background(.regularMaterial)
-        .overlay(alignment: .top) {
-            Divider()
-        }
+        .overlay(alignment: .top) { Divider() }
     }
 
     private func restoreDefaults() {
@@ -162,7 +134,7 @@ struct BrowserToolbarSettingsView: View {
                 .frame(maxWidth: .infinity, minHeight: 36)
                 .background(.thinMaterial, in: Capsule())
                 .overlay {
-                    Capsule().stroke(selectedSlot == 4 ? Color.accentColor : Color.primary.opacity(0.08), lineWidth: selectedSlot == 4 ? 2 : 0.5)
+                    Capsule().stroke(selectedSlot == 4 ? Color.themePrimary : Color.primary.opacity(0.08), lineWidth: selectedSlot == 4 ? 2 : 0.5)
                 }
             }
             .buttonStyle(.plain)
@@ -196,10 +168,10 @@ struct BrowserToolbarSettingsView: View {
                         .font(.system(size: 13, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .frame(height: 30)
-                        .foregroundStyle(selectedSlot == index ? Color.accentColor : .secondary)
+                        .foregroundStyle(selectedSlot == index ? Color.themePrimary : .secondary)
                         .background(
                             selectedSlot == index
-                                ? Color.accentColor.opacity(0.12)
+                                ? Color.themePrimary.opacity(0.12)
                                 : Color.primary.opacity(0.045),
                             in: Capsule()
                         )
@@ -222,22 +194,23 @@ struct BrowserToolbarSettingsView: View {
             ZStack {
                 if action != .none {
                     Image(systemName: action.systemImage)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
                 }
             }
-                .frame(width: 36, height: 36)
+                .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
                 .background(
                     selectedSlot == slot
-                        ? Color.accentColor.opacity(0.16)
+                        ? Color.themePrimary.opacity(0.16)
                         : action == .none ? Color.clear : Color.primary.opacity(0.06),
                     in: Circle()
                 )
                 .overlay {
-                    Circle().stroke(selectedSlot == slot ? Color.accentColor : .clear, lineWidth: 1.5)
+                    Circle().stroke(selectedSlot == slot ? Color.themePrimary : .clear, lineWidth: 1.5)
                 }
+                .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(LanguageManager.shared.localizedString(action.titleKey))
+        .accessibilityLabel(action.localizedTitle)
     }
 
     private func actionChoice(_ action: BrowserToolbarAction) -> some View {
@@ -254,21 +227,21 @@ struct BrowserToolbarSettingsView: View {
                 Image(systemName: action.systemImage)
                     .font(.system(size: 17, weight: .semibold))
                     .frame(height: 22)
-                Text(LanguageManager.shared.localizedString(action.titleKey))
+                Text(action.localizedTitle)
                     .font(.caption.weight(.medium))
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
             }
-            .foregroundStyle(isSelected ? Color.accentColor : .primary)
+            .foregroundStyle(isSelected ? Color.themePrimary : .primary)
             .frame(maxWidth: .infinity)
             .frame(height: 72)
             .background(
-                isSelected ? Color.accentColor.opacity(0.12) : Color(uiColor: .secondarySystemGroupedBackground),
+                isSelected ? Color.themePrimary.opacity(0.12) : Color(uiColor: .secondarySystemGroupedBackground),
                 in: RoundedRectangle(cornerRadius: 14, style: .continuous)
             )
             .overlay {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(isSelected ? Color.accentColor.opacity(0.75) : Color.primary.opacity(0.06), lineWidth: isSelected ? 1.5 : 0.5)
+                    .stroke(isSelected ? Color.themePrimary.opacity(0.75) : Color.primary.opacity(0.06), lineWidth: isSelected ? 1.5 : 0.5)
             }
         }
         .buttonStyle(.plain)
@@ -279,7 +252,7 @@ struct BrowserToolbarSettingsView: View {
     }
 
     private var selectedActionTitle: String {
-        LanguageManager.shared.localizedString(selectedAction.titleKey)
+        selectedAction.localizedTitle
     }
 
     private var availableActions: [BrowserToolbarAction] {

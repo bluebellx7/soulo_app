@@ -18,3 +18,5 @@ ROZŠÍŘIT WEB
 Nainstalujte UserScripts nebo kompatibilní WebExtension, spravujte přehledně oprávnění a vytvářejte si vlastní skripty pomocí vestavěné dokumentace API.
 
 Soulo ukládá údaje o prohlížení místně, pokud nepovolíte synchronizaci nastavení iCloud. Soukromé prohlížení neukládá historii.
+
+Čtěte články a e-knihy, spravujte soubory a přenášejte je přes Wi-Fi.

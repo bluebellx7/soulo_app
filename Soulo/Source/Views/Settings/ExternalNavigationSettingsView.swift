@@ -44,5 +44,6 @@ struct ExternalNavigationSettingsView: View {
             }
         }
         .navigationTitle(LanguageManager.shared.localizedString("external_navigation"))
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

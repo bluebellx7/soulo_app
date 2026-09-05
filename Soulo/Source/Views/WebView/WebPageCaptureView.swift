@@ -550,82 +550,86 @@ struct WebPageCapturePreview: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                GeometryReader { proxy in
-                    ScrollView(.vertical) {
-                        let size = previewSize(in: proxy.size)
-                        VStack(spacing: 12) {
-                            if result.wasHeightLimited {
+            GeometryReader { geometry in
+                VStack(spacing: 0) {
+                    GeometryReader { proxy in
+                        ScrollView(.vertical) {
+                            let size = previewSize(in: proxy.size)
+                            VStack(spacing: 12) {
+                                if result.wasHeightLimited {
+                                    Label(
+                                        LanguageManager.shared.localizedString("web_capture_height_limited"),
+                                        systemImage: "scissors"
+                                    )
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                    .padding(12)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                }
+
                                 Label(
-                                    LanguageManager.shared.localizedString("web_capture_height_limited"),
-                                    systemImage: "scissors"
+                                    LanguageManager.shared.localizedString("web_capture_live_text_hint"),
+                                    systemImage: "text.viewfinder"
                                 )
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
-                                .padding(12)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                                LiveTextCaptureImage(image: result.image)
+                                    .frame(width: size.width, height: size.height)
+                                    .background(Color.white)
+                                    .overlay {
+                                        Rectangle()
+                                            .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
+                                    }
+                                    .shadow(color: .black.opacity(0.12), radius: 12, y: 5)
+                                    .frame(maxWidth: .infinity)
                             }
-
-                            Label(
-                                LanguageManager.shared.localizedString("web_capture_live_text_hint"),
-                                systemImage: "text.viewfinder"
-                            )
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                            LiveTextCaptureImage(image: result.image)
-                                .frame(width: size.width, height: size.height)
-                                .background(Color.white)
-                                .overlay {
-                                    Rectangle()
-                                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
-                                }
-                                .shadow(color: .black.opacity(0.12), radius: 12, y: 5)
-                                .frame(maxWidth: .infinity)
+                            .padding(16)
                         }
-                        .padding(16)
+                    }
+                    .frame(maxHeight: .infinity)
+
+                    captureActions(bottomSafeArea: geometry.safeAreaInsets.bottom)
+                }
+                .background(Color(uiColor: .secondarySystemBackground).ignoresSafeArea())
+                .ignoresSafeArea(.container, edges: .bottom)
+                .navigationTitle(LanguageManager.shared.localizedString(result.mode.titleKey))
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(LanguageManager.shared.localizedString("done")) { dismiss() }
                     }
                 }
-                .frame(maxHeight: .infinity)
+                .overlay {
+                    if isSaving {
+                        ProgressView()
+                            .padding(22)
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    }
+                }
+                .alert(
+                    LanguageManager.shared.localizedString(saveSucceeded ? "web_capture_saved" : "save_failed"),
+                    isPresented: Binding(
+                        get: { saveMessage != nil },
+                        set: { if !$0 { saveMessage = nil } }
+                    )
+                ) {
+                    Button(LanguageManager.shared.localizedString("confirm"), role: .cancel) {}
+                } message: {
+                    Text(saveMessage ?? "")
+                }
+                .sheet(isPresented: $showShareSheet) {
+                    CaptureShareSheet(items: [result.image])
+                }
 
-                captureActions
-            }
-            .background(Color(uiColor: .secondarySystemBackground).ignoresSafeArea())
-            .navigationTitle(LanguageManager.shared.localizedString(result.mode.titleKey))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(LanguageManager.shared.localizedString("done")) { dismiss() }
-                }
-            }
-            .overlay {
-                if isSaving {
-                    ProgressView()
-                        .padding(22)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                }
-            }
-            .alert(
-                LanguageManager.shared.localizedString(saveSucceeded ? "web_capture_saved" : "save_failed"),
-                isPresented: Binding(
-                    get: { saveMessage != nil },
-                    set: { if !$0 { saveMessage = nil } }
-                )
-            ) {
-                Button(LanguageManager.shared.localizedString("confirm"), role: .cancel) {}
-            } message: {
-                Text(saveMessage ?? "")
-            }
-            .sheet(isPresented: $showShareSheet) {
-                CaptureShareSheet(items: [result.image])
             }
         }
     }
 
-    private var captureActions: some View {
-        HStack(spacing: 12) {
+    private func captureActions(bottomSafeArea: CGFloat) -> some View {
+        AdaptiveActionRow(spacing: 12) {
             Button {
                 saveImage()
             } label: {
@@ -635,7 +639,7 @@ struct WebPageCapturePreview: View {
                 )
                 .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(CompactActionButtonStyle(prominent: true, fillsHeight: true))
             .disabled(isSaving || saveSucceeded)
 
             Button {
@@ -643,22 +647,11 @@ struct WebPageCapturePreview: View {
             } label: {
                 Label(LanguageManager.shared.localizedString("share"), systemImage: "square.and.arrow.up")
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .foregroundStyle(Color.primary)
-                    .background(
-                        Color(uiColor: .secondarySystemBackground),
-                        in: Capsule(style: .continuous)
-                    )
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .strokeBorder(Color.primary.opacity(0.14), lineWidth: 1)
-                    }
-                    .contentShape(Capsule(style: .continuous))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(CompactActionButtonStyle(fillsHeight: true))
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.vertical, CaptureActionLayout.verticalPadding(bottomSafeArea: bottomSafeArea))
         .background(.ultraThinMaterial)
         .overlay(alignment: .top) {
             Divider()
@@ -714,89 +707,83 @@ struct WebPagePDFPreview: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                if result.wasPageLimited {
-                    Label(
-                        LanguageManager.shared.localizedString("web_capture_pdf_limited"),
-                        systemImage: "doc.badge.ellipsis"
+            GeometryReader { geometry in
+                VStack(spacing: 0) {
+                    if result.wasPageLimited {
+                        Label(
+                            LanguageManager.shared.localizedString("web_capture_pdf_limited"),
+                            systemImage: "doc.badge.ellipsis"
+                        )
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.orange.opacity(0.1))
+                    }
+
+                    PDFDocumentView(data: result.data)
+                        .background(Color(uiColor: .secondarySystemBackground))
+
+                    pdfActions(bottomSafeArea: geometry.safeAreaInsets.bottom)
+                }
+                .ignoresSafeArea(.container, edges: .bottom)
+                .navigationTitle(LanguageManager.shared.localizedString("web_capture_pdf"))
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(LanguageManager.shared.localizedString("done")) { dismiss() }
+                    }
+                }
+                .fileExporter(
+                    isPresented: $showExporter,
+                    document: WebPagePDFDocument(data: result.data),
+                    contentType: .pdf,
+                    defaultFilename: result.fileName
+                ) { exportResult in
+                    if case let .failure(error) = exportResult {
+                        errorMessage = error.localizedDescription
+                    }
+                }
+                .sheet(isPresented: $showShareSheet) {
+                    if let shareURL {
+                        CaptureShareSheet(items: [shareURL])
+                    }
+                }
+                .alert(
+                    LanguageManager.shared.localizedString("save_failed"),
+                    isPresented: Binding(
+                        get: { errorMessage != nil },
+                        set: { if !$0 { errorMessage = nil } }
                     )
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.orange.opacity(0.1))
+                ) {
+                    Button(LanguageManager.shared.localizedString("confirm"), role: .cancel) {}
+                } message: {
+                    Text(errorMessage ?? "")
                 }
+                .onDisappear(perform: removeTemporaryShareFile)
 
-                PDFDocumentView(data: result.data)
-                    .background(Color(uiColor: .secondarySystemBackground))
-
-                pdfActions
             }
-            .navigationTitle(LanguageManager.shared.localizedString("web_capture_pdf"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(LanguageManager.shared.localizedString("done")) { dismiss() }
-                }
-            }
-            .fileExporter(
-                isPresented: $showExporter,
-                document: WebPagePDFDocument(data: result.data),
-                contentType: .pdf,
-                defaultFilename: result.fileName
-            ) { exportResult in
-                if case let .failure(error) = exportResult {
-                    errorMessage = error.localizedDescription
-                }
-            }
-            .sheet(isPresented: $showShareSheet) {
-                if let shareURL {
-                    CaptureShareSheet(items: [shareURL])
-                }
-            }
-            .alert(
-                LanguageManager.shared.localizedString("save_failed"),
-                isPresented: Binding(
-                    get: { errorMessage != nil },
-                    set: { if !$0 { errorMessage = nil } }
-                )
-            ) {
-                Button(LanguageManager.shared.localizedString("confirm"), role: .cancel) {}
-            } message: {
-                Text(errorMessage ?? "")
-            }
-            .onDisappear(perform: removeTemporaryShareFile)
         }
     }
 
-    private var pdfActions: some View {
-        HStack(spacing: 12) {
+    private func pdfActions(bottomSafeArea: CGFloat) -> some View {
+        AdaptiveActionRow(spacing: 12) {
             Button {
                 showExporter = true
             } label: {
                 Label(LanguageManager.shared.localizedString("save"), systemImage: "folder")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(CompactActionButtonStyle(prominent: true, fillsHeight: true))
 
             Button(action: sharePDF) {
                 Label(LanguageManager.shared.localizedString("share"), systemImage: "square.and.arrow.up")
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .foregroundStyle(Color.primary)
-                    .background(
-                        Color(uiColor: .secondarySystemBackground),
-                        in: Capsule(style: .continuous)
-                    )
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .strokeBorder(Color.primary.opacity(0.14), lineWidth: 1)
-                    }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(CompactActionButtonStyle(fillsHeight: true))
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.vertical, CaptureActionLayout.verticalPadding(bottomSafeArea: bottomSafeArea))
         .background(.ultraThinMaterial)
         .overlay(alignment: .top) { Divider() }
     }
@@ -868,6 +855,11 @@ private struct LiveTextCaptureImage: UIViewRepresentable {
         context.coordinator.interaction = interaction
         context.coordinator.analyze(image)
         return imageView
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UIImageView, context: Context) -> CGSize? {
+        guard let width = proposal.width, let height = proposal.height else { return nil }
+        return CGSize(width: width, height: height)
     }
 
     func updateUIView(_ imageView: UIImageView, context: Context) {

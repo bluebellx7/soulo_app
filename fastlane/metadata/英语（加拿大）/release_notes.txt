@@ -1,9 +1,5 @@
-What’s New:
+1.1.5
 
-• Share links and text to Soulo from other apps.
-• Extract text from webpage images with Live Text.
-• Added Control Center, Lock Screen, Action Button, Siri and Shortcuts actions.
-• Downloads now continue in the background with real progress and pause/resume.
-• Added independent multi-window browsing on iPad.
-• Enabled compatible native WebExtensions alongside UserScripts.
-• Expanded the app and App Store information to all 50 supported App Store locales.
+• Read articles and e-books, manage files and transfer them over Wi-Fi.
+• Unified blue controls and simpler tool menus.
+• Fixed a crash when opening fullscreen tools; improved media playback and file previews.

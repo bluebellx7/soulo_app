@@ -50,6 +50,8 @@
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Allow camera access when you approve a website request, such as for video calls, scanning codes, or taking a photo.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Transfer files with your computer while Wi-Fi Transfer is open.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Allow microphone access for voice search and, when you approve, website calls or recording.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
@@ -65,6 +67,10 @@
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<true/>
 	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>UILaunchScreen</key>

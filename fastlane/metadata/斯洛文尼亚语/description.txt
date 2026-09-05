@@ -18,3 +18,5 @@ RAZŠIRITE SPLET
 Namestite UserScripts ali združljive WebExtensions, jasno upravljajte dovoljenja in ustvarite lastne skripte z vgrajeno dokumentacijo API-ja.
 
 Soulo shrani podatke o brskanju lokalno, razen če omogočite iCloud sinhronizacijo nastavitev. Zasebno brskanje ne shranjuje zgodovine.
+
+Berite članke in e-knjige, upravljajte datoteke in jih prenašajte prek Wi-Fi.

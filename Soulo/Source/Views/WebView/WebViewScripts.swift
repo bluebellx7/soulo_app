@@ -491,7 +491,10 @@ enum WebViewScripts {
             var button = document.createElement('button');
             button.type = 'button';
             button.textContent = '\(escapedInstallButton)';
-            button.style.cssText = 'all:unset;box-sizing:border-box;flex:0 0 auto;min-height:34px;padding:0 14px;border-radius:10px;color:white;background:#5b55e7;cursor:pointer;font-size:13px;font-weight:700;text-align:center;-webkit-tap-highlight-color:transparent;';
+            button.style.cssText = 'all:unset;box-sizing:border-box;flex:0 0 auto;min-height:34px;padding:0 14px;border-radius:10px;color:white;background:\(AppTheme.accentCSS(for: .light));cursor:pointer;font-size:13px;font-weight:700;text-align:center;-webkit-tap-highlight-color:transparent;';
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                button.style.backgroundColor = '\(AppTheme.accentCSS(for: .dark))';
+            }
             button.addEventListener('click', function(event) {
                 event.preventDefault();
                 event.stopPropagation();

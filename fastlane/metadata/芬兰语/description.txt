@@ -18,3 +18,5 @@ LAAJENTAA VERKKAA
 Asenna UserScripts tai yhteensopivat WebExtensions, hallitse käyttöoikeuksia selkeästi ja luo omia skriptejäsi sisäänrakennetun API-dokumentaation avulla.
 
 Soulo tallentaa selaustiedot paikallisesti, ellet ota käyttöön iCloud asetusten synkronointia. Yksityinen selaus ei tallenna historiaa.
+
+Lue artikkeleita ja e-kirjoja, hallitse tiedostoja ja siirrä niitä Wi-Fi-yhteydellä.

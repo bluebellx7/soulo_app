@@ -47,7 +47,7 @@ struct LanguageSettingsView: View {
             .scrollContentBackground(.hidden)
         }
         .navigationTitle(LanguageManager.shared.localizedString("settings_language"))
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func selectLanguage(_ code: String) {
@@ -95,7 +95,7 @@ struct LanguageRowView: View {
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
                                 .strokeBorder(
                                     isSelected
-                                    ? Color.blue.opacity(0.4)
+                                    ? Color.themePrimary.opacity(0.4)
                                     : Color.clear,
                                     lineWidth: 1.5
                                 )
@@ -119,14 +119,14 @@ struct LanguageRowView: View {
                 if isSelected {
                     ZStack {
                         Circle()
-                            .fill(Color.blue.gradient)
+                            .fill(Color.themePrimary.gradient)
                             .frame(width: 26, height: 26)
                         Image(systemName: "checkmark")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(.white)
                     }
                     .transition(.scale.combined(with: .opacity))
-                    .shadow(color: .blue.opacity(0.4), radius: 4, x: 0, y: 2)
+                    .shadow(color: Color.themePrimary.opacity(0.4), radius: 4, x: 0, y: 2)
                 }
             }
             .padding(.vertical, 4)
@@ -135,7 +135,7 @@ struct LanguageRowView: View {
         .buttonStyle(.plain)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(isSelected ? Color.blue.opacity(0.05) : Color.clear)
+                .fill(isSelected ? Color.themePrimary.opacity(0.05) : Color.clear)
                 .padding(.horizontal, -4)
         )
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)

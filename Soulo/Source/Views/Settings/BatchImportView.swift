@@ -36,7 +36,7 @@ struct BatchImportView: View {
                         systemImage: "info.circle.fill"
                     )
                     .font(.caption)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.tint)
 
                     Text("[{\"name\": \"xxx\", \"url\": \"https://...?wd=%@\"}, ...]")
                         .font(.system(size: 12, design: .monospaced))
@@ -53,7 +53,7 @@ struct BatchImportView: View {
                             HStack(spacing: 10) {
                                 Image(systemName: "film.stack")
                                     .font(.system(size: 16, weight: .semibold))
-                                    .foregroundStyle(.purple)
+                                    .foregroundStyle(Color.themePrimary)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(LanguageManager.shared.localizedString("example"))
                                         .font(.system(size: 14, weight: .semibold))
@@ -109,7 +109,7 @@ struct BatchImportView: View {
                         Text(LanguageManager.shared.localizedString("paste_from_clipboard"))
                             .font(.system(size: 14, weight: .medium))
                     }
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.tint)
                 }
 
                 // Group selection
@@ -209,17 +209,8 @@ struct BatchImportView: View {
                         Text(LanguageManager.shared.localizedString("batch_import_action"))
                             .font(.system(size: 16, weight: .semibold))
                     }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(
-                        LinearGradient(
-                            colors: jsonText.isEmpty ? [.gray.opacity(0.4), .gray.opacity(0.3)] : [Color(hex: "6366F1"), Color(hex: "7C3AED")],
-                            startPoint: .leading, endPoint: .trailing
-                        ),
-                        in: RoundedRectangle(cornerRadius: 14)
-                    )
                 }
+                .buttonStyle(CompactActionButtonStyle(prominent: true))
                 .disabled(jsonText.isEmpty || isImporting)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)

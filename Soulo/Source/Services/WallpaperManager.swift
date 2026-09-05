@@ -86,10 +86,10 @@ class WallpaperManager: ObservableObject {
     private var preloadedImageData: Data?
 
     private init() {
-        self.source = WallpaperSource(rawValue: UserDefaults.standard.string(forKey: "wallpaper_source") ?? "pexels") ?? .pexels
+        self.source = BrowserInitialPreferences.wallpaperSource(in: .standard)
         self.selectedGradientId = UserDefaults.standard.string(forKey: "wallpaper_gradient_id") ?? "aurora"
         self.solidColor = UserDefaults.standard.string(forKey: "wallpaper_solid_color") ?? "#FFFFFF"
-        self.searchTopic = UserDefaults.standard.string(forKey: "wallpaper_topic") ?? "Nature"
+        self.searchTopic = BrowserInitialPreferences.wallpaperTopic(in: .standard)
         self.vibeTags = UserDefaults.standard.stringArray(forKey: "wallpaper_vibe_tags") ?? ["Nature", "Ocean", "Forest", "Night Sky", "Mountains", "Minimal", "Cyberpunk"]
         let savedInterval = UserDefaults.standard.object(forKey: "wallpaper_refresh_interval") as? Int
         self.autoRefreshInterval = WallpaperRefreshInterval(rawValue: savedInterval ?? WallpaperRefreshInterval.none.rawValue) ?? .none
@@ -109,10 +109,10 @@ class WallpaperManager: ObservableObject {
 
     func reloadPreferencesFromDefaults() {
         let defaults = UserDefaults.standard
-        let nextSource = WallpaperSource(rawValue: defaults.string(forKey: "wallpaper_source") ?? "pexels") ?? .pexels
+        let nextSource = BrowserInitialPreferences.wallpaperSource(in: defaults)
         let nextGradientID = defaults.string(forKey: "wallpaper_gradient_id") ?? "aurora"
         let nextSolidColor = defaults.string(forKey: "wallpaper_solid_color") ?? "#FFFFFF"
-        let nextTopic = defaults.string(forKey: "wallpaper_topic") ?? "Nature"
+        let nextTopic = BrowserInitialPreferences.wallpaperTopic(in: defaults)
         let nextVibeTags = defaults.stringArray(forKey: "wallpaper_vibe_tags") ?? ["Nature", "Ocean", "Forest", "Night Sky", "Mountains", "Minimal", "Cyberpunk"]
         let savedInterval = defaults.object(forKey: "wallpaper_refresh_interval") as? Int
         let nextInterval = WallpaperRefreshInterval(rawValue: savedInterval ?? WallpaperRefreshInterval.none.rawValue) ?? .none

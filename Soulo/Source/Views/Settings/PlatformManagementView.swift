@@ -69,6 +69,7 @@ struct PlatformManagementView: View {
             }
         }
         .navigationTitle(LanguageManager.shared.localizedString("platform_management"))
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button {
@@ -285,7 +286,7 @@ struct PlatformManagementView: View {
             } label: {
                 Label(LanguageManager.shared.localizedString("add_platform"), systemImage: "plus.circle.fill")
                     .font(.system(size: 12))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(Color.themePrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
             }
@@ -297,7 +298,7 @@ struct PlatformManagementView: View {
             } label: {
                 Label(LanguageManager.shared.localizedString("add_existing"), systemImage: "arrow.right.circle.fill")
                     .font(.system(size: 12))
-                    .foregroundStyle(.purple)
+                    .foregroundStyle(Color.themePrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
             }
@@ -348,7 +349,7 @@ struct PlatformManagementView: View {
                 Label(LanguageManager.shared.localizedString("add_platform"), systemImage: "plus")
                     .frame(maxWidth: .infinity)
             }
-            .tint(.blue)
+            .tint(Color.themePrimary)
 
             Button {
                 addExistingPlatform(to: section)
@@ -356,7 +357,7 @@ struct PlatformManagementView: View {
                 Label(LanguageManager.shared.localizedString("add_existing"), systemImage: "arrow.right")
                     .frame(maxWidth: .infinity)
             }
-            .tint(.purple)
+            .tint(Color.themePrimary)
         }
         .font(.system(size: 12, weight: .semibold))
         .buttonStyle(.bordered)
@@ -453,7 +454,7 @@ private struct PlatformCompactRow: View {
             Button { onToggleVisibility() } label: {
                 Image(systemName: platform.isVisible ? "eye.fill" : "eye.slash")
                     .font(.system(size: 13))
-                    .foregroundStyle(platform.isVisible ? .blue : Color(UIColor.quaternaryLabel))
+                    .foregroundStyle(platform.isVisible ? Color.themePrimary : Color(UIColor.quaternaryLabel))
             }
             .buttonStyle(.plain)
             .accessibilityLabel(
@@ -484,7 +485,7 @@ private struct PlatformGridCard: View {
                 Button(action: onToggleVisibility) {
                     Image(systemName: platform.isVisible ? "eye.fill" : "eye.slash")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(platform.isVisible ? Color.blue : Color.secondary)
+                        .foregroundStyle(platform.isVisible ? Color.themePrimary : Color.secondary)
                         .frame(width: 24, height: 24)
                         .background(.thinMaterial, in: Circle())
                 }
@@ -574,7 +575,7 @@ struct AddPlatformToGroupSheet: View {
                                     Spacer()
                                     if selectedIDs.contains(platform.id) {
                                         Image(systemName: "checkmark.circle.fill")
-                                            .foregroundStyle(.blue)
+                                            .foregroundStyle(Color.themePrimary)
                                             .font(.system(size: 16))
                                     } else {
                                         Image(systemName: "circle")

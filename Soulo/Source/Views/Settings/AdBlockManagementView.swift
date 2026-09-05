@@ -7,6 +7,7 @@ struct AdBlockManagementView: View {
     @AppStorage("ad_block_enabled") private var adBlockEnabled = true
 
     let currentHost: String?
+    var showsDoneButton = false
     var onChanged: (() -> Void)? = nil
 
     private var currentHostIsAllowlisted: Bool {
@@ -58,11 +59,6 @@ struct AdBlockManagementView: View {
                         )
                 }
                 .padding(.vertical, 6)
-                .listRowBackground(
-                    adBlockEnabled
-                        ? Color.green.opacity(0.09)
-                        : Color(uiColor: .secondarySystemGroupedBackground)
-                )
             } footer: {
                 Text(LanguageManager.shared.localizedString("ad_block_desc"))
             }
@@ -118,21 +114,6 @@ struct AdBlockManagementView: View {
             }
 
             Section {
-                Button {
-                    Task {
-                        await subscriptionService.updateEnabledSubscriptions()
-                        onChanged?()
-                    }
-                } label: {
-                    Label(
-                        subscriptionService.isUpdating
-                            ? LanguageManager.shared.localizedString("ad_block_subscription_updating")
-                            : LanguageManager.shared.localizedString("ad_block_subscription_update"),
-                        systemImage: "arrow.clockwise"
-                    )
-                }
-                .disabled(subscriptionService.isUpdating || !adBlockEnabled)
-
                 ForEach(subscriptionService.subscriptions) { subscription in
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 10) {
@@ -140,7 +121,6 @@ struct AdBlockManagementView: View {
                                 Text(subscription.name)
                                     .font(.body.weight(.medium))
                                     .foregroundStyle(subscription.isEnabled ? Color.primary : Color.secondary)
-                                AdBlockStatusPill(isEnabled: adBlockEnabled && subscription.isEnabled)
                             }
 
                             Spacer()
@@ -171,33 +151,34 @@ struct AdBlockManagementView: View {
                                 Text("-")
                                 Text(lastUpdatedAt, style: .date)
                             }
-                            if !subscription.errorMessage.isEmpty {
-                                Text("-")
-                                Text(subscription.errorMessage)
-                                    .foregroundStyle(.red)
-                            }
                         }
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
+                        if !subscription.errorMessage.isEmpty {
+                            Label(subscription.errorMessage, systemImage: "exclamationmark.circle")
+                                .font(.caption).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                     .padding(.vertical, 4)
-                    .listRowBackground(
-                        adBlockEnabled && subscription.isEnabled
-                            ? Color.green.opacity(0.055)
-                            : Color(uiColor: .secondarySystemGroupedBackground)
-                    )
                 }
-
-                Button(role: .destructive) {
-                    subscriptionService.resetToDefaults()
-                    onChanged?()
-                } label: {
-                    Label(LanguageManager.shared.localizedString("ad_block_subscription_reset"), systemImage: "arrow.counterclockwise")
-                }
-                .disabled(!adBlockEnabled)
             } header: {
-                SectionHeader(title: LanguageManager.shared.localizedString("ad_block_subscriptions"))
+                HStack {
+                    SectionHeader(title: LanguageManager.shared.localizedString("ad_block_subscriptions"))
+                    Spacer()
+                    Button {
+                        Task {
+                            await subscriptionService.updateEnabledSubscriptions()
+                            onChanged?()
+                        }
+                    } label: {
+                        if subscriptionService.isUpdating { ProgressView().frame(width: 44, height: 44) }
+                        else { CompactIconLabel(systemImage: "arrow.clockwise", emphasized: true) }
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(subscriptionService.isUpdating || !adBlockEnabled)
+                    .accessibilityLabel(LanguageManager.shared.localizedString("ad_block_subscription_update"))
+                }.textCase(nil)
             } footer: {
                 Text(
                     LanguageManager.shared.localizedString(
@@ -206,6 +187,16 @@ struct AdBlockManagementView: View {
                 )
             }
             .opacity(adBlockEnabled ? 1 : 0.48)
+
+            Section(ToolText.text("rule_maintenance")) {
+                Button(role: .destructive) {
+                    subscriptionService.resetToDefaults()
+                    onChanged?()
+                } label: {
+                    Label(LanguageManager.shared.localizedString("ad_block_subscription_reset"), systemImage: "arrow.counterclockwise")
+                }
+                .disabled(!adBlockEnabled)
+            }
 
             if !service.allowlistedHosts.isEmpty {
                 Section {
@@ -231,9 +222,12 @@ struct AdBlockManagementView: View {
             }
         }
         .navigationTitle(LanguageManager.shared.localizedString("ad_block_management"))
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(LanguageManager.shared.localizedString("done")) { dismiss() }
+            if showsDoneButton {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(LanguageManager.shared.localizedString("done")) { dismiss() }
+                }
             }
         }
         .onChange(of: adBlockEnabled) { _, _ in

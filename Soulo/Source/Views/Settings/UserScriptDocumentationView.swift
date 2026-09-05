@@ -50,10 +50,8 @@ struct UserScriptDocumentationView: View {
                         .foregroundStyle(.white)
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
-                        .frame(height: 42)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.orange)
+                    .buttonStyle(CompactActionButtonStyle(prominent: true))
                 }
                 .padding(.vertical, 7)
             }

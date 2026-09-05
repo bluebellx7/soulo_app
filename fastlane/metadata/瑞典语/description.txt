@@ -18,3 +18,5 @@ FÖRLÄNG WEBBEN
 Installera UserScripts eller kompatibla WebExtensions, hantera behörigheter tydligt och skapa dina egna skript med den inbyggda API-dokumentationen.
 
 Soulo lagrar webbläsardata lokalt om du inte aktiverar synkronisering av iCloud inställningar. Privat surfning sparar inte historik.
+
+Läs artiklar och e-böcker, hantera filer och överför dem via Wi-Fi.

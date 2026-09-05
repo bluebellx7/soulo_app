@@ -1,9 +1,5 @@
-Apa yang Baharu:
+1.1.5
 
-• Kongsi pautan dan teks ke Soulo daripada apl lain.
-• Ekstrak teks daripada imej halaman web dengan Live Text.
-• Menambah tindakan Control Center, Skrin Kunci, Butang Tindakan, Siri dan Shortcuts.
-• Muat turun kini diteruskan di latar belakang dengan kemajuan sebenar dan jeda/sambung semula.
-• Menambah penyemakan imbas berbilang tetingkap bebas pada iPad.
-• Mendayakan WebExtensions asli yang serasi bersama-sama UserScripts.
-• Kembangkan apl dan maklumat App Store ke semua 50 tempat App Store yang disokong.
+• Baca artikel dan e-buku, urus fail dan pindahkannya melalui Wi-Fi.
+• Kawalan biru yang seragam dan menu alat yang lebih ringkas.
+• Membaiki ranap semasa membuka alat skrin penuh; menambah baik main balik media dan pratonton fail.

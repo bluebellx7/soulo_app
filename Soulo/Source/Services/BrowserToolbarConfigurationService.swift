@@ -20,6 +20,13 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
     case hideToolbar
     case screenshot
     case translate
+    case readerMode
+    case resources
+    case files
+    case books
+    case downloads
+    case wifiTransfer
+    case adBlock
 
     var id: String { rawValue }
 
@@ -44,6 +51,13 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .hideToolbar: "hide_browser_toolbar"
         case .screenshot: "web_capture"
         case .translate: "web_translate"
+        case .readerMode: "reader_mode"
+        case .resources: "resource_inspector_title"
+        case .files: "files"
+        case .books: "bookshelf"
+        case .downloads: "downloads"
+        case .wifiTransfer: "wifi_transfer"
+        case .adBlock: "ad_block"
         }
     }
 
@@ -68,12 +82,26 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .hideToolbar: BrowserChromeSymbol.toolbarVisibility
         case .screenshot: "camera.viewfinder"
         case .translate: "character.bubble"
+        case .readerMode: "doc.text"
+        case .resources: "play.rectangle.on.rectangle"
+        case .files: "folder"
+        case .books: "books.vertical"
+        case .downloads: "arrow.down.circle"
+        case .wifiTransfer: "wifi"
+        case .adBlock: "shield.lefthalf.filled"
+        }
+    }
+
+    @MainActor var localizedTitle: String {
+        switch self {
+        case .readerMode, .files, .books, .wifiTransfer: ToolText.text(titleKey)
+        default: LanguageManager.shared.localizedString(titleKey)
         }
     }
 
     var requiresPage: Bool {
         switch self {
-        case .none, .home, .tabs, .more, .settings, .extensions, .library, .hideToolbar:
+        case .none, .home, .tabs, .more, .settings, .extensions, .library, .hideToolbar, .files, .books, .downloads, .wifiTransfer:
             false
         default:
             true

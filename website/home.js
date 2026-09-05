@@ -7,7 +7,7 @@
       intro: '在 40+ 搜索、视频、社区和 AI 平台间快速切换。\n广告拦截、下载管理、网页翻译，常用功能一步即达。',
       downloadOn: '下载于', availability: 'iOS 17.0 及以上 · 无需注册 Soulo 账号', scan: '用 iPhone 扫码下载', scanHint: '或直接在 App Store 搜索 Soulo',
       qrLink: '前往 App Store 下载 Soulo', qrAlt: 'Soulo App Store 下载二维码',
-      darkScreenshot: 'Soulo 深色首页，展示搜索栏和平台分组', lightScreenshot: 'Soulo 浅色首页，展示自定义壁纸和平台分组', screenshots: 'Soulo App 实际界面',
+      darkScreenshot: 'Soulo 首页，展示山景壁纸和搜索栏', lightScreenshot: 'Soulo 浅色首页，展示自定义壁纸和平台分组', screenshots: 'Soulo App 实际界面',
       featuresTitle: '日常浏览，需要的都在。', featuresIntro: '从搜索到阅读，把常用功能放在顺手的地方。',
       searchTitle: '多平台搜索', searchBody: '关键词只输入一次，快速切换搜索、视频、社区与 AI 平台，也支持添加自己的搜索源。',
       blockTitle: '广告拦截', blockBody: '拦截广告请求、隐藏广告占位，支持订阅规则和站点例外，让浏览更清爽。',
@@ -26,7 +26,7 @@
       intro: 'Switch between 40+ search, video, community, and AI platforms.\nAd blocking, downloads, and page translation, all within reach.',
       downloadOn: 'Download on the', availability: 'iOS 17.0 or later · No Soulo account needed', scan: 'Scan with your iPhone', scanHint: 'Or search for Soulo on the App Store',
       qrLink: 'Download Soulo on the App Store', qrAlt: 'QR code to download Soulo on the App Store',
-      darkScreenshot: 'Soulo Home screen in dark appearance, with search and platform groups', lightScreenshot: 'Soulo Home screen with a light wallpaper and platform groups', screenshots: 'ACTUAL SOULO APP SCREENS',
+      darkScreenshot: 'Soulo Home screen with a mountain wallpaper and search bar', lightScreenshot: 'Soulo Home screen with a light wallpaper and platform groups', screenshots: 'ACTUAL SOULO APP SCREENS',
       featuresTitle: 'Your everyday browsing essentials.', featuresIntro: 'From searching to reading, keep useful tools close at hand.',
       searchTitle: 'Multi-platform search', searchBody: 'Enter a query once, then switch between search engines, video, communities, and AI. Add your own search sources, too.',
       blockTitle: 'Ad blocking', blockBody: 'Block ad requests and hide empty ad spaces. Customize subscriptions and site exceptions for cleaner browsing.',
@@ -75,7 +75,7 @@
     document.querySelectorAll('[data-label]').forEach(element => element.setAttribute('aria-label', t[element.dataset.label]));
     document.querySelectorAll('[data-alt]').forEach(element => element.alt = t[element.dataset.alt]);
     document.querySelector('.brand').setAttribute('aria-label', language === 'zh' ? 'Soulo 首页' : 'Soulo home');
-    document.getElementById('primary-screenshot').src = `images/soulo-home-${language}.webp`;
+    document.getElementById('primary-screenshot').src = 'images/search-home.png';
     document.getElementById('secondary-screenshot').src = `images/soulo-home-light-${language}.webp`;
     languageButton.textContent = language === 'zh' ? 'EN' : '中文';
     languageButton.setAttribute('aria-label', language === 'zh' ? 'Switch to English' : '切换至中文');

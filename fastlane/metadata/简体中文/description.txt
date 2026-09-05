@@ -18,3 +18,5 @@ Soulo 是一款适用于 iPhone 和 iPad 的快速、私密的多重搜索浏览
 安装 UserScript 或兼容的 WebExtension，明确管理权限，并使用内置 API 文档创建您自己的脚本。
 
 Soulo 会在本地存储浏览数据，除非您启用 iCloud 设置同步。隐私浏览不保存历史记录。
+
+阅读文章与电子书，管理文件，通过 Wi-Fi 轻松传输。

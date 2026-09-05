@@ -97,6 +97,9 @@ targets:
         NSPhotoLibraryUsageDescription: "Soulo needs photo library access to set a custom wallpaper."
         NSPhotoLibraryAddUsageDescription: "Soulo needs permission to save web images to your photo library."
         NSSupportsLiveActivities: true
+        UIBackgroundModes:
+          - audio
+        NSLocalNetworkUsageDescription: "Transfer files with your computer while Wi-Fi Transfer is open."
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
         CFBundleURLTypes:
@@ -114,8 +117,8 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: Soulo/Soulo.entitlements
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.1.4"
-        CURRENT_PROJECT_VERSION: 19
+        MARKETING_VERSION: "1.1.5"
+        CURRENT_PROJECT_VERSION: 20
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_PREVIEWS: "YES"
@@ -123,6 +126,10 @@ targets:
     dependencies:
       - target: SouloWidgetExtension
       - target: SouloShareExtension
+      - package: PLzmaSDK
+      - package: Unrar
+      - package: ZipArchive
+        product: ZipArchive
       - package: DKlugeKit
         product: DKlugeCore
       - package: DKlugeKit
@@ -152,8 +159,8 @@ targets:
         CODE_SIGN_ENTITLEMENTS: SouloWidget/SouloWidget.entitlements
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.1.4"
-        CURRENT_PROJECT_VERSION: 19
+        MARKETING_VERSION: "1.1.5"
+        CURRENT_PROJECT_VERSION: 20
         GENERATE_INFOPLIST_FILE: "YES"
         INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
         SKIP_INSTALL: "YES"
@@ -190,8 +197,8 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: SouloShareExtension/SouloShareExtension.entitlements
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.1.4"
-        CURRENT_PROJECT_VERSION: 19
+        MARKETING_VERSION: "1.1.5"
+        CURRENT_PROJECT_VERSION: 20
         SKIP_INSTALL: "YES"
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
 
@@ -199,7 +206,12 @@ targets:
     type: bundle.unit-test
     platform: iOS
     sources:
-      - SouloTests
+      - path: SouloTests
+        excludes:
+          - ReadingFixtures
+      - path: SouloTests/ReadingFixtures
+        type: folder
+        buildPhase: resources
     dependencies:
       - target: Soulo
     settings:
@@ -208,6 +220,15 @@ targets:
         GENERATE_INFOPLIST_FILE: "YES"
 
 packages:
+  ZipArchive:
+    url: https://github.com/ZipArchive/ZipArchive.git
+    revision: acc61be58181e635ae77718e66530b4ee7dea4be
+  Unrar:
+    url: https://github.com/mtgto/Unrar.swift.git
+    revision: 7216007a38ac122dbdeae26cfdaf7f10775c868f
+  PLzmaSDK:
+    url: https://github.com/OlehKulykov/PLzmaSDK.git
+    revision: 1b27a1c9df85805342d1b049427d6d1dc7ce713d
   DKlugeKit:
     path: ../DKlugeKit
 

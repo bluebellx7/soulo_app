@@ -356,14 +356,14 @@ final class WebViewModelTests: XCTestCase {
         )
     }
 
-    func testLibrarySectionsKeepTheExpectedThreeWayOrder() {
+    func testLibrarySectionsProvideSeparateFilesAndBooks() {
         XCTAssertEqual(
             LibrarySection.allCases.map(\.rawValue),
-            ["bookmarks", "history", "downloads"]
+            ["bookmarks", "history", "downloads", "files", "books"]
         )
         XCTAssertEqual(
             LibrarySection.allCases.map(\.titleKey),
-            ["bookmarks", "search_history", "downloads"]
+            ["bookmarks", "search_history", "downloads", "files", "bookshelf"]
         )
     }
 

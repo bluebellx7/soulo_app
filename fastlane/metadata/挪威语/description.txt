@@ -18,3 +18,5 @@ UTVID NETTET
 Installer UserScripter eller kompatible WebExtensioner, administrer tillatelser tydelig, og lag dine egne skript med den innebygde API-dokumentasjonen.
 
 Soulo lagrer nettleserdata lokalt med mindre du aktiverer synkronisering av iCloud innstillinger. Privat surfing lagrer ikke historikk.
+
+Les artikler og e-bøker, administrer filer og overfør dem via Wi-Fi.

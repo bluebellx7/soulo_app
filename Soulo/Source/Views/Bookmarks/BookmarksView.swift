@@ -31,10 +31,10 @@ struct BookmarksContentView: View {
         List {
             if bookmarks.isEmpty {
                 Section {
-                    ContentUnavailableView(
-                        LanguageManager.shared.localizedString("no_bookmarks"),
-                        systemImage: "bookmark",
-                        description: Text(LanguageManager.shared.localizedString("no_bookmarks_desc"))
+                    IllustratedToolEmptyState(
+                        scene: .books,
+                        title: LanguageManager.shared.localizedString("no_bookmarks"),
+                        message: LanguageManager.shared.localizedString("no_bookmarks_desc")
                     )
                 }
             } else {

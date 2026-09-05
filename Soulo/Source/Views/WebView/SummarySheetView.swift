@@ -20,7 +20,7 @@ struct SummarySheetView: View {
             VStack(spacing: 10) {
                 Image(systemName: "link.circle.fill")
                     .font(.system(size: 40))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(Color.themePrimary)
 
                 Text(LanguageManager.shared.localizedString("link_copied"))
                     .font(.system(size: 17, weight: .semibold))
@@ -37,7 +37,7 @@ struct SummarySheetView: View {
             // Link text
             Text(summary)
                 .font(.system(size: 14, design: .monospaced))
-                .foregroundStyle(.blue)
+                .foregroundStyle(Color.themePrimary)
                 .lineLimit(3)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
@@ -58,11 +58,11 @@ struct SummarySheetView: View {
                     Text(didCopy ? LanguageManager.shared.localizedString("copied") : LanguageManager.shared.localizedString("copy_link"))
                         .font(.system(size: 14, weight: .medium))
                 }
-                .foregroundStyle(didCopy ? .green : .blue)
+                .foregroundStyle(didCopy ? .green : Color.themePrimary)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 10)
                 .background(
-                    (didCopy ? Color.green : Color.blue).opacity(0.1),
+                    (didCopy ? Color.green : Color.themePrimary).opacity(0.1),
                     in: Capsule()
                 )
             }

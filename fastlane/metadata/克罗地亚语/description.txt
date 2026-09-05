@@ -18,3 +18,5 @@ PROŠIRI WEB
 Instalirajte UserScripts ili kompatibilne WebExtensions, jasno upravljajte dopuštenjima i izradite vlastite skripte s ugrađenom API dokumentacijom.
 
 Soulo pohranjuje podatke o pregledavanju lokalno osim ako ne omogućite iCloud sinkronizaciju postavki. Privatno pregledavanje ne sprema povijest.
+
+Čitajte članke i e-knjige, upravljajte datotekama i prenosite ih putem Wi-Fi veze.

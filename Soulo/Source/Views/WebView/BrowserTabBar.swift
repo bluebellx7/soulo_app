@@ -810,9 +810,10 @@ struct TabCountBadge: View {
                     .font(.system(size: 10, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.primary.opacity(0.86))
             }
-            .frame(width: 40, height: 40)
+            .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
             .contentShape(Circle())
             .browserToolbarButtonGlass(tint: glassTint)
+            .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
         }
         .accessibilityLabel("\(count) \(LanguageManager.shared.localizedString("tab_tabs"))")
         .accessibilityHint(LanguageManager.shared.localizedString("accessibility_tab_overview_hint"))

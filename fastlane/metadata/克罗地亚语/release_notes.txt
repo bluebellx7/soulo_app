@@ -1,9 +1,5 @@
-Što je novo:
+1.1.5
 
-• Dijelite veze i tekst na Soulo iz drugih aplikacija.
-• Ekstrahirajte tekst sa slika web stranica pomoću Live Text.
-• Dodane radnje Control Center, zaključani zaslon, gumb za radnju, Siri i Shortcuts.
-• Preuzimanja se sada nastavljaju u pozadini sa stvarnim napredovanjem i pauzom/nastavkom.
-• Dodano neovisno pregledavanje s više prozora na iPadu.
-• Omogućeni kompatibilni izvorni WebExtension uz UserScript.
-• Proširili su aplikaciju i App Store informacije na svih 50 podržanih App Store jezika.
+• Čitajte članke i e-knjige, upravljajte datotekama i prenosite ih putem Wi-Fi veze.
+• Ujednačene plave kontrole i jednostavniji izbornici alata.
+• Ispravljeno rušenje pri otvaranju alata preko cijelog zaslona; poboljšana reprodukcija i pregled datoteka.

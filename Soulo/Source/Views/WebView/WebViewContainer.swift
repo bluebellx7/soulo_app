@@ -156,6 +156,8 @@ struct WebViewContainer: View {
     @State private var fullscreenHintDismissTask: Task<Void, Never>?
     @State private var showCaptureOptions = false
     @State private var showResourceInspector = false
+    @State private var showArticleReader = false
+    @State private var showWiFiTransfer = false
     @State private var imageTextResult: ImageTextRecognitionResult?
     @State private var imageTextError: String?
     @State private var isCapturingPage = false
@@ -569,7 +571,7 @@ struct WebViewContainer: View {
         }
         .sheet(isPresented: $showAdBlockManager) {
             NavigationStack {
-                AdBlockManagementView(currentHost: webViewModel.currentURL?.host) {
+                AdBlockManagementView(currentHost: webViewModel.currentURL?.host, showsDoneButton: true) {
                     webViewModel.reload()
                 }
             }
@@ -581,7 +583,7 @@ struct WebViewContainer: View {
                 }
             }
         }
-        .sheet(item: $librarySection) { section in
+        .navigationDestination(item: $librarySection) { section in
             LibraryView(
                 initialSection: section,
                 searchVM: searchVM,
@@ -593,8 +595,6 @@ struct WebViewContainer: View {
                     }
                 }
             )
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showExtensionCenter) {
             NavigationStack {
@@ -625,6 +625,12 @@ struct WebViewContainer: View {
             BrowserPackageInstallView(candidate: candidate)
                 .presentationDetents([.height(580), .large])
                 .presentationDragIndicator(.visible)
+        }
+        .navigationDestination(isPresented: $showWiFiTransfer) {
+            WiFiTransferView(directory: BookLibrary.directory).toolbar(.visible, for: .navigationBar)
+        }
+        .sheet(isPresented: $showArticleReader) {
+            if let webView = webViewModel.webView { ArticleReaderView(source: webView) }
         }
         .fullScreenCover(isPresented: $showResourceInspector) {
             NavigationStack {
@@ -869,6 +875,8 @@ struct WebViewContainer: View {
             },
             onManageAdBlock: { showAdBlockManager = true },
             onShowLibrary: { librarySection = .bookmarks },
+            onOpenLibrarySection: { librarySection = $0 },
+            onWiFiTransfer: { showWiFiTransfer = true },
             onShowExtensions: { showExtensionCenter = true },
             onGoHome: onGoHome,
             onEditAddress: { presentAddressEditor() },
@@ -881,6 +889,7 @@ struct WebViewContainer: View {
             onOpenDefaultBrowser: { openCurrentPageInDefaultBrowser() },
             onCapturePage: { showCaptureOptions = true },
             onInspectResources: { showResourceInspector = true },
+            onReadArticle: { showArticleReader = true },
             onTranslatePage: { showTranslationSheet = true },
             onMoreMenuPresentationChange: { isPresented in
                 toolbarInteractionLocked = isPresented
@@ -1055,6 +1064,7 @@ struct WebViewContainer: View {
             )
             .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
             .accessibilityHint(LanguageManager.shared.localizedString("fullscreen_exit_hint"))
+            .accessibilityIdentifier("fullscreen.handle")
 
             if showFullscreenMenu {
                 fullscreenQuickMenu
@@ -1089,354 +1099,40 @@ struct WebViewContainer: View {
             .accessibilityHidden(true)
     }
 
-    private var fullscreenQuickMenu: some View {
-        VStack(spacing: 0) {
-            fullscreenAddressHeader
-
-            Rectangle()
-                .fill(.white.opacity(0.1))
-                .frame(height: 0.5)
-
-            HStack(spacing: 8) {
-                fullscreenPrimaryAction(
-                    titleKey: "share",
-                    systemImage: "square.and.arrow.up"
-                ) {
-                    closeFullscreenMenu()
-                    shareCurrentPage()
-                }
-
-                fullscreenPrimaryAction(
-                    titleKey: "copy_link",
-                    systemImage: "doc.on.doc"
-                ) {
-                    closeFullscreenMenu()
-                    copyCurrentPageLink()
-                }
-
-                fullscreenPrimaryAction(
-                    titleKey: "bookmarks",
-                    systemImage: isBookmarked ? "bookmark.fill" : "bookmark",
-                    tint: isBookmarked ? .orange : .white
-                ) {
-                    closeFullscreenMenu()
-                    handleBookmarkToggle()
-                }
-            }
-            .padding(10)
-
-            HStack(spacing: 8) {
-                fullscreenPrimaryAction(
-                    titleKey: "home_screen",
-                    systemImage: "house.fill"
-                ) {
-                    closeFullscreenMenu()
-                    onGoHome?()
-                }
-
-                fullscreenPrimaryAction(
-                    titleKey: "web_capture",
-                    systemImage: "camera.viewfinder"
-                ) {
-                    closeFullscreenMenu()
-                    showCaptureOptions = true
-                }
-
-                fullscreenPrimaryAction(
-                    titleKey: "web_translate",
-                    systemImage: "character.bubble"
-                ) {
-                    closeFullscreenMenu()
-                    showTranslationSheet = true
-                }
-
-                fullscreenPrimaryAction(
-                    titleKey: "settings",
-                    systemImage: "gearshape"
-                ) {
-                    closeFullscreenMenu()
-                    onOpenSettings?()
-                }
-            }
-            .padding(.horizontal, 10)
-            .padding(.bottom, 10)
-
-            Rectangle()
-                .fill(.white.opacity(0.1))
-                .frame(height: 0.5)
-                .padding(.horizontal, 12)
-
-            fullscreenContentModePicker
-                .padding(10)
-
-            Rectangle()
-                .fill(.white.opacity(0.1))
-                .frame(height: 0.5)
-                .padding(.horizontal, 12)
-
-            fullscreenZoomControls
-                .padding(10)
-
-            Rectangle()
-                .fill(.white.opacity(0.1))
-                .frame(height: 0.5)
-                .padding(.horizontal, 12)
-
-            fullscreenNavigationActions
-                .padding(10)
-        }
-        .frame(maxWidth: 340)
-        .background {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .fill(.black.opacity(0.56))
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .stroke(.white.opacity(0.14), lineWidth: 0.5)
-                }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .shadow(color: .black.opacity(0.3), radius: 18, y: 8)
-        .accessibilityElement(children: .contain)
+    private var fullscreenQuickMenu: FullscreenQuickMenu {
+        FullscreenQuickMenu(
+            webViewModel: webViewModel,
+            title: fullscreenDisplayTitle,
+            isBookmarked: isBookmarked,
+            isDesktopMode: tabManager?.isDesktopMode ?? false,
+            canSwitchContentMode: tabManager != nil,
+            onAction: performFullscreenMenuAction
+        )
     }
 
-    private var fullscreenAddressHeader: some View {
-        HStack(spacing: 9) {
-            Button {
-                closeFullscreenMenu()
-                presentAddressEditor()
-            } label: {
-                HStack(spacing: 9) {
-                    Image(systemName: webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.42))
-                        .frame(width: 20, height: 20)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(fullscreenDisplayTitle)
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.72))
-                            .lineLimit(1)
-
-                        if let address = webViewModel.currentURL?.absoluteString {
-                            Text(address)
-                                .font(.system(size: 9.5, weight: .regular, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.32))
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                        }
-                    }
-
-                    Spacer(minLength: 8)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(LanguageManager.shared.localizedString("browser_edit_address"))
-            .accessibilityHint(LanguageManager.shared.localizedString("accessibility_edit_address_hint"))
-
-            Button {
-                closeFullscreenMenu()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.52))
-                    .frame(width: 28, height: 28)
-                    .background(.white.opacity(0.08), in: Circle())
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(LanguageManager.shared.localizedString("cancel"))
-        }
-        .padding(.leading, 12)
-        .padding(.trailing, 10)
-        .padding(.vertical, 10)
-    }
-
-    private func fullscreenPrimaryAction(
-        titleKey: String,
-        systemImage: String,
-        tint: Color = .white,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button {
-            HapticsManager.selection()
-            action()
-        } label: {
-            VStack(spacing: 6) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(tint.opacity(0.9))
-                    .frame(height: 20)
-
-                Text(LanguageManager.shared.localizedString(titleKey))
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 9)
-            .background(.white.opacity(0.075), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .disabled(webViewModel.currentURL == nil)
-        .opacity(webViewModel.currentURL == nil ? 0.35 : 1)
-    }
-
-    private var fullscreenContentModePicker: some View {
-        HStack(spacing: 6) {
-            fullscreenContentModeButton(
-                titleKey: "mobile_mode",
-                systemImage: "iphone",
-                isSelected: !(tabManager?.isDesktopMode ?? false)
-            ) {
-                setFullscreenDesktopMode(false)
-            }
-
-            fullscreenContentModeButton(
-                titleKey: "desktop_mode",
-                systemImage: "desktopcomputer",
-                isSelected: tabManager?.isDesktopMode ?? false
-            ) {
-                setFullscreenDesktopMode(true)
+    private func performFullscreenMenuAction(_ action: FullscreenQuickMenu.Action) {
+        switch action {
+        case .mobileMode: setFullscreenDesktopMode(false)
+        case .desktopMode: setFullscreenDesktopMode(true)
+        case .exitFullscreen: exitFullscreen()
+        case .close: closeFullscreenMenu()
+        default:
+            closeFullscreenMenu()
+            switch action {
+            case .share: shareCurrentPage()
+            case .copyLink: copyCurrentPageLink()
+            case .bookmark: handleBookmarkToggle()
+            case .home: onGoHome?()
+            case .capture: showCaptureOptions = true
+            case .translate: showTranslationSheet = true
+            case .settings: onOpenSettings?()
+            case .editAddress: presentAddressEditor()
+            case .back: webViewModel.goBack()
+            case .reload: webViewModel.reload()
+            case .forward: webViewModel.goForward()
+            default: break
             }
         }
-        .padding(3)
-        .background(.black.opacity(0.22), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-    }
-
-    private func fullscreenContentModeButton(
-        titleKey: String,
-        systemImage: String,
-        isSelected: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button {
-            guard !isSelected else { return }
-            HapticsManager.selection()
-            action()
-        } label: {
-            Label(LanguageManager.shared.localizedString(titleKey), systemImage: systemImage)
-                .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
-                .foregroundStyle(.white.opacity(isSelected ? 0.9 : 0.48))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-                .background(
-                    isSelected ? .white.opacity(0.13) : .clear,
-                    in: RoundedRectangle(cornerRadius: 10, style: .continuous)
-                )
-                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .disabled(tabManager == nil)
-    }
-
-    private var fullscreenNavigationActions: some View {
-        HStack(spacing: 7) {
-            fullscreenCompactAction(
-                titleKey: "browser_back",
-                systemImage: "chevron.left",
-                enabled: webViewModel.canGoBack
-            ) {
-                closeFullscreenMenu()
-                webViewModel.goBack()
-            }
-
-            fullscreenCompactAction(
-                titleKey: "browser_reload",
-                systemImage: webViewModel.isLoading ? "xmark" : "arrow.clockwise",
-                enabled: webViewModel.currentURL != nil
-            ) {
-                closeFullscreenMenu()
-                webViewModel.reload()
-            }
-
-            fullscreenCompactAction(
-                titleKey: "browser_forward",
-                systemImage: "chevron.right",
-                enabled: webViewModel.canGoForward
-            ) {
-                closeFullscreenMenu()
-                webViewModel.goForward()
-            }
-
-            Button {
-                exitFullscreen()
-            } label: {
-                Label(
-                    LanguageManager.shared.localizedString("exit_fullscreen"),
-                    systemImage: "arrow.down.right.and.arrow.up.left"
-                )
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.red.opacity(0.88))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 9)
-                .background(.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                .contentShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    private var fullscreenZoomControls: some View {
-        HStack(spacing: 8) {
-            fullscreenCompactAction(
-                titleKey: "web_zoom_out",
-                systemImage: "minus",
-                enabled: webViewModel.pageZoom > 0.5
-            ) {
-                webViewModel.decreasePageZoom()
-            }
-
-            Button {
-                webViewModel.resetPageZoom()
-            } label: {
-                Text("\(Int((webViewModel.pageZoom * 100).rounded()))%")
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.76))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 34)
-                    .background(.white.opacity(0.075), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(LanguageManager.shared.localizedString("web_zoom_reset"))
-
-            fullscreenCompactAction(
-                titleKey: "web_zoom_in",
-                systemImage: "plus",
-                enabled: webViewModel.pageZoom < 2
-            ) {
-                webViewModel.increasePageZoom()
-            }
-        }
-    }
-
-    private func fullscreenCompactAction(
-        titleKey: String,
-        systemImage: String,
-        enabled: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button {
-            guard enabled else { return }
-            HapticsManager.selection()
-            action()
-        } label: {
-            Image(systemName: systemImage)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white.opacity(enabled ? 0.76 : 0.2))
-                .frame(width: 34, height: 34)
-                .background(.white.opacity(enabled ? 0.075 : 0.035), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                .contentShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .disabled(!enabled)
-        .accessibilityLabel(LanguageManager.shared.localizedString(titleKey))
     }
 
     private var fullscreenHandleRevealGesture: some Gesture {
@@ -1816,19 +1512,15 @@ private struct WebToolsPresentationModifier: ViewModifier {
 
 // MARK: - Address Editor
 
-private struct BrowserAddressEditorSheet: View {
-    private enum Field: Hashable {
-        case query
-        case pageURL
-    }
-
+struct BrowserAddressEditorSheet: View {
     let onOpen: (String) -> Void
     let onVoiceInput: () -> Void
 
     @State private var text: String
     @State private var pageURLText: String
     @State private var didCopyLink = false
-    @FocusState private var focusedField: Field?
+    @FocusState private var pageURLFocused: Bool
+    @State private var queryFocused = false
     @Environment(\.dismiss) private var dismiss
 
     init(
@@ -1851,32 +1543,29 @@ private struct BrowserAddressEditorSheet: View {
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.secondary)
 
-                    HStack(spacing: 8) {
+                    HStack(spacing: 4) {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(focusedField == .query ? Color.accentColor : Color.secondary)
+                            .foregroundStyle(queryFocused ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
                             .frame(width: 20)
                             .accessibilityHidden(true)
 
-                        TextField(
-                            LanguageManager.shared.localizedString("search_placeholder"),
-                            text: $text
+                        PresentationSearchField(
+                            text: $text,
+                            placeholder: LanguageManager.shared.localizedString("search_placeholder"),
+                            onFocusChanged: { queryFocused = $0 },
+                            onSubmit: open
                         )
-                        .font(.system(size: 15, weight: .medium))
-                        .keyboardType(.webSearch)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .submitLabel(.go)
-                        .focused($focusedField, equals: .query)
-                        .onSubmit(open)
-                        .accessibilityLabel(LanguageManager.shared.localizedString("search_placeholder"))
+                        .frame(minWidth: 40, maxWidth: .infinity, minHeight: 34)
 
                         if !text.isEmpty {
                             Button {
                                 text = ""
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
                                     .foregroundStyle(.tertiary)
+                                    .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
                             }
                             .accessibilityLabel(LanguageManager.shared.localizedString("accessibility_clear_search"))
                         }
@@ -1892,9 +1581,10 @@ private struct BrowserAddressEditorSheet: View {
                         } label: {
                             Image(systemName: "mic.fill")
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(Color.accentColor)
-                                .frame(width: 32, height: 32)
-                                .background(Color.accentColor.opacity(0.11), in: Circle())
+                                .foregroundStyle(.tint)
+                                .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
+                                .background(.tint.opacity(0.11), in: Circle())
+                                .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(LanguageManager.shared.localizedString("voice_record"))
@@ -1905,7 +1595,7 @@ private struct BrowserAddressEditorSheet: View {
                     .background(Color(UIColor.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 13, style: .continuous)
-                            .stroke(focusedField == .query ? Color.accentColor.opacity(0.55) : Color(UIColor.separator).opacity(0.25), lineWidth: 1)
+                            .stroke(queryFocused ? AnyShapeStyle(.tint.opacity(0.55)) : AnyShapeStyle(Color(UIColor.separator).opacity(0.25)), lineWidth: 1)
                     )
                 }
 
@@ -1914,10 +1604,10 @@ private struct BrowserAddressEditorSheet: View {
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
 
-                HStack(spacing: 8) {
+                HStack(spacing: 4) {
                     Image(systemName: "link")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(focusedField == .pageURL ? Color.accentColor : Color.secondary)
+                        .foregroundStyle(pageURLFocused ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
                         .frame(width: 20)
                         .accessibilityHidden(true)
 
@@ -1927,7 +1617,7 @@ private struct BrowserAddressEditorSheet: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .submitLabel(.go)
-                        .focused($focusedField, equals: .pageURL)
+                        .focused($pageURLFocused)
                         .onSubmit(openPageURL)
                         .accessibilityLabel(LanguageManager.shared.localizedString("current_page_link"))
 
@@ -1944,8 +1634,9 @@ private struct BrowserAddressEditorSheet: View {
                         Image(systemName: didCopyLink ? "checkmark" : "doc.on.doc")
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(didCopyLink ? Color.green : Color.secondary)
-                            .frame(width: 28, height: 28)
-                            .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
+                            .background(Color(uiColor: .tertiarySystemFill), in: Circle())
+                            .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
                     }
                     .buttonStyle(.plain)
                     .disabled(pageURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -1955,8 +1646,9 @@ private struct BrowserAddressEditorSheet: View {
                         Image(systemName: "arrow.up.right")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(.white)
-                            .frame(width: 28, height: 28)
-                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
+                            .background(.tint, in: Circle())
+                            .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
                     }
                     .buttonStyle(.plain)
                     .disabled(pageURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -1968,22 +1660,18 @@ private struct BrowserAddressEditorSheet: View {
                 .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        .stroke(focusedField == .pageURL ? Color.accentColor.opacity(0.45) : Color(UIColor.separator).opacity(0.2), lineWidth: 1)
+                        .stroke(pageURLFocused ? AnyShapeStyle(.tint.opacity(0.55)) : AnyShapeStyle(Color(UIColor.separator).opacity(0.25)), lineWidth: 1)
                 )
             }
 
-            HStack(spacing: 12) {
+            AdaptiveActionRow(spacing: 12) {
                 Button {
                     dismiss()
                 } label: {
                     Text(LanguageManager.shared.localizedString("cancel"))
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.primary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 42)
-                        .background(Color(uiColor: .secondarySystemFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(CompactActionButtonStyle(fillsHeight: true))
 
                 Button {
                     open()
@@ -1995,15 +1683,10 @@ private struct BrowserAddressEditorSheet: View {
                                 : "search"
                         )
                     )
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 42)
-                        .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(CompactActionButtonStyle(prominent: true, fillsHeight: true))
                 .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .opacity(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.45 : 1)
             }
             }
             .padding(.horizontal, 18)
@@ -2013,23 +1696,6 @@ private struct BrowserAddressEditorSheet: View {
         .scrollIndicators(.hidden)
         .scrollBounceBehavior(.basedOnSize)
         .scrollDismissesKeyboard(.interactively)
-        .onAppear {
-            // Sheet presentation and keyboard activation happen on adjacent
-            // run-loop passes. Focus first, then select the active field once
-            // UIKit has installed its text input as first responder.
-            DispatchQueue.main.async {
-                focusedField = .query
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                    guard focusedField == .query else { return }
-                    UIApplication.shared.sendAction(
-                        #selector(UIResponder.selectAll(_:)),
-                        to: nil,
-                        from: nil,
-                        for: nil
-                    )
-                }
-            }
-        }
     }
 
     private func open() {
@@ -2170,7 +1836,7 @@ struct FindInPageBar: View {
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 4) {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 13))

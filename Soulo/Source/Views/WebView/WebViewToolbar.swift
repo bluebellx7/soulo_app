@@ -27,12 +27,12 @@ private final class DraggableNativeMenuControl: UIButton {
         } else {
             buttonConfiguration = .plain()
             buttonConfiguration.background.backgroundColor = .secondarySystemBackground
-            buttonConfiguration.background.cornerRadius = 20
+            buttonConfiguration.background.cornerRadius = AppControlMetrics.iconDiameter / 2
         }
         buttonConfiguration.image = UIImage(systemName: "ellipsis")
         buttonConfiguration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
-            pointSize: 14,
-            weight: .regular
+            pointSize: AppControlMetrics.iconSize,
+            weight: .semibold
         )
         buttonConfiguration.baseForegroundColor = UIColor.label.withAlphaComponent(0.85)
         buttonConfiguration.contentInsets = .zero
@@ -42,6 +42,11 @@ private final class DraggableNativeMenuControl: UIButton {
         dragRecognizer.addTarget(self, action: #selector(handlePan(_:)))
         dragRecognizer.cancelsTouchesInView = true
         addGestureRecognizer(dragRecognizer)
+    }
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let inset = (AppControlMetrics.minimumHitSize - bounds.width) / 2
+        return bounds.insetBy(dx: -max(0, inset), dy: -max(0, inset)).contains(point)
     }
 
     @objc private func handleTap() {
@@ -133,6 +138,8 @@ struct WebViewToolbar: View {
     var onSetPrivateMode: ((Bool) -> Void)?
     var onManageAdBlock: (() -> Void)?
     var onShowLibrary: (() -> Void)?
+    var onOpenLibrarySection: ((LibrarySection) -> Void)?
+    var onWiFiTransfer: (() -> Void)?
     var onShowExtensions: (() -> Void)?
     var onGoHome: (() -> Void)?
     var onEditAddress: (() -> Void)?
@@ -145,6 +152,8 @@ struct WebViewToolbar: View {
     var onOpenDefaultBrowser: (() -> Void)?
     var onCapturePage: (() -> Void)?
     var onInspectResources: (() -> Void)?
+    var onReadArticle: (() -> Void)?
+    @State private var mediaRateMessage: String?
     var onTranslatePage: (() -> Void)?
     var onMoreMenuPresentationChange: ((Bool) -> Void)?
     var showsOnlyMore: Bool = false
@@ -289,7 +298,7 @@ struct WebViewToolbar: View {
                         .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(
                             isAddressTranslationActive
-                                ? Color.blue
+                                ? Color.themePrimary
                                 : Color.primary.opacity(0.68)
                         )
                         .frame(width: 27, height: 32)
@@ -347,7 +356,7 @@ struct WebViewToolbar: View {
                 .buttonStyle(.plain)
                 .disabled(!isToolbarActionEnabled(toolbarConfiguration.addressAction))
                 .accessibilityLabel(
-                    LanguageManager.shared.localizedString(toolbarConfiguration.addressAction.titleKey)
+                    toolbarConfiguration.addressAction.localizedTitle
                 )
             }
         }
@@ -423,7 +432,7 @@ struct WebViewToolbar: View {
         _ key: String,
         systemImage: String,
         isActive: Bool? = nil,
-        activeColor: UIColor = .systemBlue
+        activeColor: UIColor = AppTheme.uiAccent
     ) -> some View {
         Label {
             Text(LanguageManager.shared.localizedString(key))
@@ -476,7 +485,8 @@ struct WebViewToolbar: View {
                     onDragChanged: onFloatingMoreDragChanged,
                     onDragEnded: onFloatingMoreDragEnded
                 )
-                .frame(width: 40, height: 40)
+                .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
+                .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
                 .contentShape(Circle())
             } else {
                 Button(action: presentMoreMenu) {
@@ -512,11 +522,12 @@ struct WebViewToolbar: View {
 
     private var moreMenuLauncherLabel: some View {
         Image(systemName: "ellipsis")
-            .font(.system(size: 14, weight: .regular))
+            .font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
             .foregroundStyle(Color.primary.opacity(0.85))
-            .frame(width: 40, height: 40)
-            .contentShape(Circle())
+            .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
             .browserToolbarButtonGlass(tint: toolbarGlassTint)
+            .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
+            .contentShape(Circle())
     }
 
     private var moreMenuPanel: some View {
@@ -644,95 +655,58 @@ struct WebViewToolbar: View {
 
     private var pageToolsMenu: some View {
         Menu {
-            if let tabManager, viewModel.currentURL != nil {
-                Button {
-                    performMoreMenuAction {
-                        tabManager.startFindInPage()
+            Group {
+                Button { performMoreMenuAction { onReadArticle?() } } label: {
+                    Label(ToolText.text("reader_mode"), systemImage: "doc.text")
+                }.disabled(onReadArticle == nil)
+                Button { performMoreMenuAction { onTranslatePage?() } } label: {
+                    menuLabel("web_translate", systemImage: "character.bubble")
+                }.disabled(onTranslatePage == nil)
+                Button { performMoreMenuAction { showZoomControls = true } } label: {
+                    menuLabel("web_zoom", systemImage: "plus.magnifyingglass")
+                }
+                if let tabManager {
+                    Button { performMoreMenuAction { tabManager.startFindInPage() } } label: {
+                        menuLabel("find_in_page", systemImage: "doc.text.magnifyingglass")
                     }
-                } label: {
-                    menuLabel("find_in_page", systemImage: "doc.text.magnifyingglass")
                 }
             }
-
-            if viewModel.currentURL?.host != nil {
-                Button {
-                    performMoreMenuAction {
-                        onShowPrivacy?()
-                    }
-                } label: {
-                    menuLabel(
-                        "site_privacy",
-                        systemImage: "shield.checkered",
-                        isActive: siteProtectionEnabled,
-                        activeColor: .systemGreen
-                    )
-                }
-
-                Button {
-                    performMoreMenuAction {
-                        onManageAdBlock?()
-                    }
-                } label: {
-                    menuLabel(
-                        "ad_block_management",
-                        systemImage: "shield.lefthalf.filled",
-                        isActive: siteAdBlockingEnabled,
-                        activeColor: .systemGreen
-                    )
-                }
-            }
-
             Divider()
-
-            Button {
-                performMoreMenuAction {
-                    onShowExtensions?()
+            Menu {
+                ForEach([0.5, 1, 1.5, 2, 4, 8, 16], id: \.self) { rate in
+                    Button("\(rate.formatted())×") {
+                        guard let webView = viewModel.webView else { return }
+                        Task {
+                            do {
+                                let actual = try await WebMediaPlaybackBridge.setRate(rate, on: webView)
+                                mediaRateMessage = actual.map { "\($0.formatted())×" }.joined(separator: " · ")
+                            } catch { mediaRateMessage = error.localizedDescription }
+                        }
+                    }
                 }
-            } label: {
-                menuLabel(
-                    "userscripts",
-                    systemImage: "puzzlepiece.extension"
-                )
-            }
-            .disabled(onShowExtensions == nil)
-
-            Button {
-                performMoreMenuAction {
-                    showZoomControls = true
-                }
-            } label: {
-                menuLabel("web_zoom", systemImage: "plus.magnifyingglass")
-            }
-
-            Button {
-                performMoreMenuAction {
-                    onTranslatePage?()
-                }
-            } label: {
-                menuLabel("web_translate", systemImage: "character.bubble")
-            }
-            .disabled(onTranslatePage == nil)
-
-            Button {
-                performMoreMenuAction {
-                    onCapturePage?()
-                }
-            } label: {
+            } label: { Label(ToolText.text("web_media_speed"), systemImage: "speedometer") }
+            Button { performMoreMenuAction { onInspectResources?() } } label: {
+                menuLabel("resource_inspector_title", systemImage: "dot.radiowaves.left.and.right")
+            }.disabled(onInspectResources == nil)
+            Button { performMoreMenuAction { onCapturePage?() } } label: {
                 menuLabel("web_capture", systemImage: "camera.viewfinder")
-            }
-            .disabled(onCapturePage == nil)
-
-            Button {
-                performMoreMenuAction {
-                    onInspectResources?()
+            }.disabled(onCapturePage == nil)
+            Divider()
+            Group {
+                Button { performMoreMenuAction { onShowExtensions?() } } label: {
+                    menuLabel("userscripts", systemImage: "puzzlepiece.extension")
+                }.disabled(onShowExtensions == nil)
+                if viewModel.currentURL?.host != nil {
+                    Button { performMoreMenuAction { onManageAdBlock?() } } label: {
+                        menuLabel("ad_block_management", systemImage: "shield.lefthalf.filled",
+                                  isActive: siteAdBlockingEnabled, activeColor: .systemGreen)
+                    }
+                    Button { performMoreMenuAction { onShowPrivacy?() } } label: {
+                        menuLabel("site_privacy", systemImage: "shield.checkered",
+                                  isActive: siteProtectionEnabled, activeColor: .systemGreen)
+                    }
                 }
-            } label: {
-                menuLabel(
-                    "resource_inspector_title",
-                    systemImage: "dot.radiowaves.left.and.right"
-                )
             }
-            .disabled(onInspectResources == nil)
         } label: {
             moreMenuRowLabel(
                 "browser_page_tools",
@@ -741,6 +715,9 @@ struct WebViewToolbar: View {
             )
         }
         .buttonStyle(.plain)
+        .alert(ToolText.text("web_media_speed"), isPresented: Binding(get: { mediaRateMessage != nil }, set: { if !$0 { mediaRateMessage = nil } })) {
+            Button(ToolText.text("done")) { mediaRateMessage = nil }
+        } message: { Text(mediaRateMessage ?? "") }
         .disabled(viewModel.currentURL == nil)
         .opacity(viewModel.currentURL == nil ? 0.35 : 1)
     }
@@ -764,7 +741,7 @@ struct WebViewToolbar: View {
                         menuIcon(
                             "chevron.left.forwardslash.chevron.right",
                             isActive: nil,
-                            activeColor: .systemBlue
+                            activeColor: AppTheme.uiAccent
                         )
                     }
                 }
@@ -823,7 +800,7 @@ struct WebViewToolbar: View {
                                         .offset(x: 5, y: -5)
                                 }
                             }
-                            .frame(width: 40, height: 40)
+                            .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -849,7 +826,7 @@ struct WebViewToolbar: View {
                 Image(systemName: "puzzlepiece.extension")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.secondary)
-                    .frame(width: 40, height: 40)
+                    .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -1010,7 +987,7 @@ struct WebViewToolbar: View {
         systemImage: String,
         isEnabled: Bool = true,
         isActive: Bool = false,
-        activeColor: UIColor = .systemBlue,
+        activeColor: UIColor = AppTheme.uiAccent,
         action: @escaping () -> Void
     ) -> some View {
         Button {
@@ -1033,7 +1010,7 @@ struct WebViewToolbar: View {
         systemImage: String,
         showsDisclosure: Bool = false,
         isActive: Bool = false,
-        activeColor: UIColor = .systemBlue
+        activeColor: UIColor = AppTheme.uiAccent
     ) -> some View {
         HStack(spacing: 12) {
             Image(systemName: systemImage)
@@ -1064,7 +1041,7 @@ struct WebViewToolbar: View {
         systemImage: String,
         isEnabled: Bool = true,
         isActive: Bool = false,
-        activeColor: UIColor = .systemBlue,
+        activeColor: UIColor = AppTheme.uiAccent,
         action: @escaping () -> Void
     ) -> some View {
         let title = LanguageManager.shared.localizedString(titleKey)
@@ -1241,6 +1218,7 @@ struct WebViewToolbar: View {
             ) {
                 performToolbarAction(action)
             }
+            .accessibilityLabel(action.localizedTitle)
         }
     }
 
@@ -1257,8 +1235,8 @@ struct WebViewToolbar: View {
     private func toolbarTint(for action: BrowserToolbarAction) -> Color? {
         switch action {
         case .bookmark where isBookmarked: .orange
-        case .darkMode where webAppearance.forceDarkPages: .blue
-        case .desktopMode where tabManager?.isDesktopMode == true: .blue
+        case .darkMode where webAppearance.forceDarkPages: Color.themePrimary
+        case .desktopMode where tabManager?.isDesktopMode == true: Color.themePrimary
         default: nil
         }
     }
@@ -1280,6 +1258,11 @@ struct WebViewToolbar: View {
         case .hideToolbar: onHideToolbar != nil
         case .screenshot: onCapturePage != nil
         case .translate: onTranslatePage != nil
+        case .readerMode: onReadArticle != nil
+        case .resources: onInspectResources != nil
+        case .files, .books, .downloads: onOpenLibrarySection != nil
+        case .wifiTransfer: onWiFiTransfer != nil
+        case .adBlock: onManageAdBlock != nil
         default: true
         }
     }
@@ -1327,6 +1310,20 @@ struct WebViewToolbar: View {
             onCapturePage?()
         case .translate:
             onTranslatePage?()
+        case .readerMode:
+            onReadArticle?()
+        case .resources:
+            onInspectResources?()
+        case .files:
+            onOpenLibrarySection?(.files)
+        case .books:
+            onOpenLibrarySection?(.books)
+        case .downloads:
+            onOpenLibrarySection?(.downloads)
+        case .wifiTransfer:
+            onWiFiTransfer?()
+        case .adBlock:
+            onManageAdBlock?()
         }
     }
 
@@ -1343,14 +1340,15 @@ struct WebViewToolbar: View {
             action()
         } label: {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .regular))
+                .font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
                 .foregroundStyle(
                     !enabled ? Color.primary.opacity(0.35) :
                     tint ?? Color.primary.opacity(0.85)
                 )
-                .frame(width: 40, height: 40)
+                .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
                 .contentShape(Circle())
                 .browserToolbarButtonGlass(tint: toolbarGlassTint)
+                .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
         }
         .disabled(!enabled)
         .accessibilityLabel(LanguageManager.shared.localizedString(labelKey))

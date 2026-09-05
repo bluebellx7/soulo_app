@@ -98,7 +98,7 @@ struct SouloLogoView: View {
 struct CapsuleTag: View {
     let text: String
     var icon: String?
-    var color: Color = .blue
+    var color: Color = Color.themePrimary
     var action: () -> Void
 
     var body: some View {

@@ -35,6 +35,8 @@ struct SouloApp: App {
                 .environmentObject(themeManager)
                 .environmentObject(wallpaperManager)
                 .environment(\.locale, languageManager.locale)
+                .tint(Color.themePrimary)
+                .accentColor(Color.themePrimary)
         } defaultValue: {
             BrowserWindowConfiguration()
         }

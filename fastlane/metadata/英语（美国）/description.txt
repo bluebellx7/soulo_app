@@ -18,3 +18,5 @@ EXTEND THE WEB
 Install UserScripts or compatible WebExtensions, manage permissions clearly, and create your own scripts with the built-in API documentation.
 
 Soulo stores browsing data locally unless you enable iCloud settings sync. Private browsing does not save history.
+
+Read articles and e-books, manage files and transfer them over Wi-Fi.

@@ -18,3 +18,5 @@ LANJUTKAN WEB
 Pasang UserScripts atau WebExtensions yang serasi, uruskan kebenaran dengan jelas dan buat skrip anda sendiri dengan dokumentasi API terbina dalam.
 
 Soulo menyimpan data penyemakan imbas secara setempat melainkan anda mendayakan penyegerakan tetapan iCloud. Penyemakan imbas peribadi tidak menyimpan sejarah.
+
+Baca artikel dan e-buku, urus fail dan pindahkannya melalui Wi-Fi.

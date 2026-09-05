@@ -49,6 +49,7 @@ struct GroupManagementView: View {
         }
         .listStyle(.insetGrouped)
         .navigationTitle(LanguageManager.shared.localizedString("custom_groups"))
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { showAddGroup = true } label: {
@@ -108,7 +109,7 @@ struct GroupEditView: View {
                                     Spacer()
                                     if selectedIDs.contains(platform.id) {
                                         Image(systemName: "checkmark.circle.fill")
-                                            .foregroundStyle(.blue)
+                                            .foregroundStyle(Color.themePrimary)
                                     }
                                 }
                                 .contentShape(Rectangle())

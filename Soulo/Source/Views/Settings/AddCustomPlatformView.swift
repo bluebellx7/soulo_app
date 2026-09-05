@@ -86,13 +86,13 @@ struct AddCustomPlatformView: View {
                                 Circle()
                                     .fill(
                                         LinearGradient(
-                                            colors: [.blue, .purple],
+                                            colors: [Color.themePrimary, Color.themePrimary.opacity(0.7)],
                                             startPoint: .topLeading,
                                             endPoint: .bottomTrailing
                                         )
                                     )
                                     .frame(width: 64, height: 64)
-                                    .shadow(color: .blue.opacity(0.4), radius: 12, x: 0, y: 6)
+                                    .shadow(color: Color.themePrimary.opacity(0.4), radius: 12, x: 0, y: 6)
                                 Image(systemName: "plus.magnifyingglass")
                                     .font(.system(size: 26, weight: .semibold))
                                     .foregroundStyle(.white)
@@ -134,7 +134,7 @@ struct AddCustomPlatformView: View {
                                             }
                                         } label: {
                                             Image(systemName: showURLHelp ? "questionmark.circle.fill" : "questionmark.circle")
-                                                .foregroundStyle(.blue)
+                                                .foregroundStyle(Color.themePrimary)
                                                 .font(.system(size: 16))
                                                 .frame(minWidth: 44, minHeight: 44)
                                         }
@@ -265,24 +265,8 @@ struct AddCustomPlatformView: View {
                                     .font(.body)
                                     .fontWeight(.semibold)
                             }
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 52)
-                            .background(
-                                LinearGradient(
-                                    colors: isValid ? [.blue, .purple] : [.gray.opacity(0.5), .gray.opacity(0.4)],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                ),
-                                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            )
-                            .shadow(
-                                color: isValid ? .blue.opacity(0.4) : .clear,
-                                radius: 10,
-                                x: 0,
-                                y: 5
-                            )
                         }
+                        .buttonStyle(CompactActionButtonStyle(prominent: true))
                         .disabled(!isValid || isSaving)
                         .animation(.spring(response: 0.3), value: isValid)
                         .padding(.horizontal, 20)
@@ -365,12 +349,12 @@ struct URLHelpView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: "info.circle.fill")
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(Color.themePrimary)
                     .font(.caption)
                 Text(LanguageManager.shared.localizedString("add_platform_url_help_title"))
                     .font(.caption)
                     .fontWeight(.semibold)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(Color.themePrimary)
             }
 
             Text(LanguageManager.shared.localizedString("add_platform_url_help_desc"))
@@ -394,7 +378,7 @@ struct URLHelpView: View {
                             .foregroundStyle(.secondary)
                         Text(example.url)
                             .font(.caption2.monospaced())
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(Color.themePrimary)
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
@@ -404,7 +388,7 @@ struct URLHelpView: View {
             .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .padding(12)
-        .background(Color.blue.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(Color.themePrimary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
 

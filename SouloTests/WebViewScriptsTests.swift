@@ -1619,7 +1619,9 @@ final class WebViewScriptsTests: XCTestCase {
             $0.namespace == definition.namespace
         })
         XCTAssertTrue(installed.isBuiltIn == true)
-        XCTAssertFalse(installed.isEnabled)
+        // Installed examples may already be enabled by the user. Only a fresh
+        // record is required to default to disabled; upgrades preserve that choice.
+        XCTAssertFalse(definition.makeRecord().isEnabled)
         XCTAssertEqual(installed.matchPatterns, ["*://*/*"])
         XCTAssertEqual(installed.grants, ["GM_addStyle"])
 

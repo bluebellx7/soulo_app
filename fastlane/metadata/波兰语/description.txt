@@ -18,3 +18,5 @@ ROZSZERZAJ SIEĆ
 Zainstaluj UserScript lub kompatybilne WebExtension, zarządzaj uprawnieniami w przejrzysty sposób i twórz własne skrypty dzięki wbudowanej dokumentacji API.
 
 Soulo przechowuje dane przeglądania lokalnie, chyba że włączysz synchronizację ustawień iCloud. Przeglądanie prywatne nie zapisuje historii.
+
+Czytaj artykuły i e-booki, zarządzaj plikami i przesyłaj je przez Wi-Fi.

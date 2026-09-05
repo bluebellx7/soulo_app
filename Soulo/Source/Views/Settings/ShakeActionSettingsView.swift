@@ -55,16 +55,16 @@ struct ShakeActionSettingsView: View {
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.65)
                             }
-                            .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                            .foregroundStyle(isSelected ? Color.themePrimary : Color.secondary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
                             .background(
-                                isSelected ? Color.accentColor.opacity(0.12) : Color(uiColor: .tertiarySystemFill),
+                                isSelected ? Color.themePrimary.opacity(0.12) : Color(uiColor: .tertiarySystemFill),
                                 in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                             )
                             .overlay {
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(isSelected ? Color.accentColor.opacity(0.45) : .clear, lineWidth: 1)
+                                    .stroke(isSelected ? Color.themePrimary.opacity(0.45) : .clear, lineWidth: 1)
                             }
                             .contentShape(Rectangle())
                         }

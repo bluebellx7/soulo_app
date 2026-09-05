@@ -1,9 +1,5 @@
-Kaj je novega:
+1.1.5
 
-• Delite povezave in besedila na Soulo iz drugih aplikacij.
-• Izvlecite besedilo iz slik spletnih strani z Live Text.
-• Dodana dejanja Control Center, zaklenjen zaslon, gumb za dejanja, Siri in Shortcuts.
-• Prenosi se zdaj nadaljujejo v ozadju z resničnim napredovanjem in zaustavitvijo/nadaljevanjem.
-• Dodano neodvisno brskanje z več okni na iPadu.
-• Omogočeni združljivi izvorni WebExtension poleg UserScript.
-• Razširili aplikacijo in informacije App Store na vseh 50 podprtih App Store jezikov.
+• Berite članke in e-knjige, upravljajte datoteke in jih prenašajte prek Wi-Fi.
+• Enotni modri kontrolniki in preprostejši meniji orodij.
+• Odpravljeno sesutje ob odpiranju celozaslonskih orodij; izboljšano predvajanje in predogled datotek.

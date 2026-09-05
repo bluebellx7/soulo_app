@@ -18,3 +18,5 @@ BŐVÍTSD KI A WELT
 Telepítse a(z) UserScripts vagy kompatibilis WebExtensions, kezelje egyértelműen az engedélyeket, és hozza létre saját szkriptjeit a beépített API-dokumentáció segítségével.
 
 A Soulo helyileg tárolja a böngészési adatokat, hacsak nem engedélyezi a iCloud beállítások szinkronizálását. A privát böngészés nem menti az előzményeket.
+
+Olvasson cikkeket és e-könyveket, kezelje fájljait, és vigye át őket Wi-Fi-n.

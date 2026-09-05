@@ -18,3 +18,5 @@ WEB'İ GENİŞLETİN
 UserScript'leri veya uyumlu WebExtension'leri yükleyin, izinleri net bir şekilde yönetin ve yerleşik API belgeleriyle kendi komut dosyalarınızı oluşturun.
 
 Soulo, iCloud ayarların senkronizasyonunu etkinleştirmediğiniz sürece tarama verilerini yerel olarak depolar. Özel tarama geçmişi kaydetmez.
+
+Makaleleri ve e-kitapları okuyun, dosyaları yönetin ve Wi-Fi ile aktarın.

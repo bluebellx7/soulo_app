@@ -153,7 +153,7 @@ struct WallpaperSettingsView: View {
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(isSelected ? Color.blue : Color(uiColor: .tertiarySystemFill))
+                        .background(isSelected ? Color.themePrimary : Color(uiColor: .tertiarySystemFill))
                         .foregroundStyle(isSelected ? .white : .primary)
                         .clipShape(Capsule())
                     }
@@ -176,9 +176,9 @@ struct WallpaperSettingsView: View {
         return Button { wallpaperManager.source = src; HapticsManager.selection() } label: {
             VStack(spacing: 8) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12).fill(selected ? Color.blue.opacity(0.15) : Color(uiColor: .secondarySystemFill)).frame(width: 80, height: 60)
-                    Image(systemName: sourceIcon(src)).font(.system(size: 20)).foregroundStyle(selected ? Color.blue : .secondary)
-                }.overlay(RoundedRectangle(cornerRadius: 12).stroke(selected ? Color.blue : Color.clear, lineWidth: 2))
+                    RoundedRectangle(cornerRadius: 12).fill(selected ? Color.themePrimary.opacity(0.15) : Color(uiColor: .secondarySystemFill)).frame(width: 80, height: 60)
+                    Image(systemName: sourceIcon(src)).font(.system(size: 20)).foregroundStyle(selected ? Color.themePrimary : .secondary)
+                }.overlay(RoundedRectangle(cornerRadius: 12).stroke(selected ? Color.themePrimary : Color.clear, lineWidth: 2))
                 Text(src.localizedName).font(.system(size: 10, weight: selected ? .bold : .medium)).foregroundStyle(selected ? .primary : .secondary)
             }
         }
@@ -201,7 +201,7 @@ struct WallpaperSettingsView: View {
         Section {
             HStack {
                 Text(LText("wallpaper_current_vibe")).font(.system(size: 12, weight: .bold)).foregroundStyle(.secondary)
-                Text(wallpaperManager.searchTopic).font(.system(size: 12, weight: .bold)).padding(.horizontal, 8).padding(.vertical, 2).background(Color.blue.opacity(0.2)).foregroundStyle(Color.blue).cornerRadius(4)
+                Text(wallpaperManager.searchTopic).font(.system(size: 12, weight: .bold)).padding(.horizontal, 8).padding(.vertical, 2).background(Color.themePrimary.opacity(0.2)).foregroundStyle(Color.themePrimary).cornerRadius(4)
                 Spacer()
                 if wallpaperManager.networkLoading {
                     ProgressView().controlSize(.small)
@@ -243,7 +243,7 @@ struct WallpaperSettingsView: View {
                 ForEach(GradientPreset.presets) { preset in
                     Button { wallpaperManager.selectedGradientId = preset.id; HapticsManager.light() } label: {
                         ZStack {
-                            LinearGradient(colors: preset.colors, startPoint: preset.startPoint, endPoint: preset.endPoint).frame(height: 80).clipShape(RoundedRectangle(cornerRadius: 12)).overlay(RoundedRectangle(cornerRadius: 12).stroke(wallpaperManager.selectedGradientId == preset.id ? Color.blue : .clear, lineWidth: 3))
+                            LinearGradient(colors: preset.colors, startPoint: preset.startPoint, endPoint: preset.endPoint).frame(height: 80).clipShape(RoundedRectangle(cornerRadius: 12)).overlay(RoundedRectangle(cornerRadius: 12).stroke(wallpaperManager.selectedGradientId == preset.id ? Color.themePrimary : .clear, lineWidth: 3))
                             if wallpaperManager.selectedGradientId == preset.id { Image(systemName: "checkmark.circle.fill").foregroundStyle(.white).font(.headline) }
                         }
                     }
@@ -470,7 +470,7 @@ struct FullScreenWallpaperView: View {
                     } label: {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 50))
-                            .foregroundStyle(.white, .blue)
+                            .foregroundStyle(.white, Color.themePrimary)
                             .shadow(radius: 4)
                     }
 

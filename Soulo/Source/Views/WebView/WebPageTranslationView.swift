@@ -73,7 +73,7 @@ private enum WebTranslationProvider: String, CaseIterable, Identifiable {
 
     var tint: Color {
         switch self {
-        case .apple: .blue
+        case .apple: Color.themePrimary
         case .google: .green
         }
     }
@@ -722,7 +722,7 @@ private struct SystemWebPageTranslationView: View {
                                 VStack(alignment: .leading, spacing: 7) {
                                     HStack(spacing: 10) {
                                         Image(systemName: "character.book.closed")
-                                            .foregroundStyle(.blue)
+                                            .foregroundStyle(Color.themePrimary)
                                         Text(
                                             "\(LanguageManager.shared.localizedString("download")) · "
                                                 + (selectedTarget?.title ?? selectedTargetID.wrappedValue)

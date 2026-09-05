@@ -71,7 +71,7 @@ struct PrivacySettingsView: View {
 
                     PrivacyToggleRow(
                         icon: "link.badge.minus",
-                        color: .blue,
+                        color: Color.themePrimary,
                         title: LanguageManager.shared.localizedString("privacy_strip_tracking"),
                         description: LanguageManager.shared.localizedString("privacy_strip_tracking_desc"),
                         isOn: $stripTrackingParameters
@@ -79,7 +79,7 @@ struct PrivacySettingsView: View {
 
                     PrivacyToggleRow(
                         icon: "hand.raised.fill",
-                        color: .indigo,
+                        color: Color.themePrimary,
                         title: LanguageManager.shared.localizedString("privacy_gpc"),
                         description: LanguageManager.shared.localizedString("privacy_gpc_desc"),
                         isOn: $gpcEnabled
@@ -193,7 +193,7 @@ struct PrivacySettingsView: View {
             .scrollContentBackground(.hidden)
         }
         .navigationTitle(LanguageManager.shared.localizedString("settings_privacy"))
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .task {
             await refreshCacheSize()
         }
@@ -409,7 +409,7 @@ struct CacheActionRow: View {
                         ProgressView()
                             .progressViewStyle(.circular)
                             .scaleEffect(0.85)
-                            .tint(.blue)
+                            .tint(Color.themePrimary)
                     } else if isCompleted {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 18))

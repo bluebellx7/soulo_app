@@ -154,6 +154,8 @@ struct WebResourceInspectorView: View {
     @State private var selectedMedia: WebMediaResource?
     @State private var selectedDownloadedItem: BrowserDownloadItem?
     @State private var audioPlayer: AVPlayer?
+    @State private var activeAudioURL: URL?
+    @State private var inlineAudioTask: Task<Void, Never>?
     @State private var activeAudioID: String?
     @State private var isAudioPlaying = false
 
@@ -190,7 +192,7 @@ struct WebResourceInspectorView: View {
                     if viewModel.isLoading {
                         ProgressView()
                     } else {
-                        Image(systemName: "arrow.clockwise")
+                        Image(systemName: "arrow.clockwise").font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
                     }
                 }
                 .disabled(viewModel.isLoading)
@@ -212,8 +214,8 @@ struct WebResourceInspectorView: View {
                 downloadAction: { await viewModel.download(media: media) }
             )
         }
-        .sheet(item: $selectedDownloadedItem) { item in
-            DownloadManagerView(highlightedItemID: item.id)
+        .navigationDestination(isPresented: Binding(get: { selectedDownloadedItem != nil }, set: { if !$0 { selectedDownloadedItem = nil } })) {
+            if let item = selectedDownloadedItem { DownloadManagerContentView(highlightedItemID: item.id).navigationTitle(LanguageManager.shared.localizedString("downloads")) }
         }
         .fullScreenCover(item: $selectedImage) { image in
             WebResourceImageViewer(
@@ -222,11 +224,8 @@ struct WebResourceInspectorView: View {
                 viewModel: viewModel
             )
         }
-        .onReceive(NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime)) { notification in
-            guard let endedItem = notification.object as? AVPlayerItem,
-                  endedItem === audioPlayer?.currentItem else { return }
-            audioPlayer?.seek(to: .zero)
-            isAudioPlaying = false
+        .onReceive(MediaSession.shared.$playing) { playing in
+            isAudioPlaying = playing && MediaSession.shared.url == activeAudioURL
         }
         .onDisappear {
             stopInlineAudio()
@@ -363,7 +362,7 @@ struct WebResourceInspectorView: View {
                 HStack(spacing: 10) {
                     Image(systemName: systemImage)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.tint)
                         .frame(width: 28, height: 28)
                     Text(LanguageManager.shared.localizedString(titleKey))
                         .font(.system(size: 15, weight: .semibold))
@@ -421,7 +420,7 @@ struct WebResourceInspectorView: View {
                 Spacer()
                 Text(minimumImageWidth <= 0 ? LanguageManager.shared.localizedString("all") : "≥ \(Int(minimumImageWidth)) px")
                     .font(.system(size: 12, design: .rounded).weight(.semibold))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.tint)
             }
             Slider(value: $minimumImageWidth, in: 0...maximumImageWidth, step: 20)
                 .accessibilityLabel(LanguageManager.shared.localizedString("resource_minimum_image_width"))
@@ -495,8 +494,7 @@ struct WebResourceInspectorView: View {
                         Label(LanguageManager.shared.localizedString("share"), systemImage: "square.and.arrow.up")
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.system(size: 16))
+                    CompactIconLabel(systemImage: "ellipsis")
                         .frame(width: 26, height: 26)
                 }
             }
@@ -572,7 +570,7 @@ struct WebResourceInspectorView: View {
                             .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(.white)
                             .frame(width: 34, height: 34)
-                            .background(Color.blue, in: Circle())
+                            .background(.tint, in: Circle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(
@@ -590,30 +588,29 @@ struct WebResourceInspectorView: View {
     }
 
     private func toggleInlineAudio(_ resource: WebMediaResource) {
-        if activeAudioID == resource.id, let audioPlayer {
-            if isAudioPlaying {
-                audioPlayer.pause()
-                isAudioPlaying = false
-            } else {
-                audioPlayer.play()
-                isAudioPlaying = true
-            }
+        let session = MediaSession.shared
+        inlineAudioTask?.cancel()
+        activeAudioID = resource.id
+        activeAudioURL = resource.url
+        audioPlayer = session.player
+        if session.url == resource.url {
+            session.toggle()
+            isAudioPlaying = session.playing
             return
         }
-
-        audioPlayer?.pause()
-        let player = AVPlayer(url: resource.url)
-        audioPlayer = player
-        activeAudioID = resource.id
-        isAudioPlaying = true
-        player.play()
+        let reservation = session.reservePreparation()
+        inlineAudioTask = Task {
+            let asset = await viewModel.playbackAsset(for: resource)
+            guard !Task.isCancelled, session.ownsPreparation(reservation) else { return }
+            session.open(url: resource.url, title: resource.title, pageURL: viewModel.snapshot.pageURL,
+                         asset: asset, webView: viewModel.sourceWebView, reservation: reservation)
+        }
     }
 
     private func stopInlineAudio() {
-        audioPlayer?.pause()
-        audioPlayer = nil
-        activeAudioID = nil
-        isAudioPlaying = false
+        // Closing the inspector detaches its controls; the shared mini-player keeps playing.
+        inlineAudioTask?.cancel(); inlineAudioTask = nil
+        audioPlayer = nil; activeAudioID = nil; activeAudioURL = nil; isAudioPlaying = false
     }
 
     @ViewBuilder
@@ -630,9 +627,7 @@ struct WebResourceInspectorView: View {
                 Button {
                     viewModel.startDownload(media: resource)
                 } label: {
-                    Image(systemName: "arrow.down.circle")
-                        .font(.system(size: 16))
-                        .frame(width: 30, height: 30)
+                    CompactIconLabel(systemImage: "arrow.down.circle")
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(LanguageManager.shared.localizedString("download"))
@@ -673,7 +668,7 @@ struct WebResourceInspectorView: View {
                     } label: {
                         HStack(spacing: 10) {
                         Image(systemName: "link")
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(.tint)
                             .frame(width: 28)
                         resourceText(title: resource.title, url: resource.url)
                         Spacer(minLength: 4)
@@ -790,8 +785,7 @@ struct WebResourceInspectorView: View {
                 Button {
                     Task { await viewModel.download(url: url) }
                 } label: {
-                    Image(systemName: "arrow.down.circle")
-                        .font(.system(size: 18))
+                    CompactIconLabel(systemImage: "arrow.down.circle")
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(LanguageManager.shared.localizedString("download"))
@@ -803,8 +797,7 @@ struct WebResourceInspectorView: View {
         Button {
             copyToPasteboard(url.absoluteString)
         } label: {
-            Image(systemName: "doc.on.doc")
-                .font(.system(size: 16))
+            CompactIconLabel(systemImage: "doc.on.doc")
         }
         .buttonStyle(.plain)
         .accessibilityLabel(LanguageManager.shared.localizedString("resource_copy_url"))
@@ -825,11 +818,11 @@ struct WebResourceInspectorView: View {
                             .font(.system(size: 8, design: .monospaced).weight(.medium))
                             .foregroundStyle(.secondary)
                     }
-                    .frame(width: 40, height: 30)
+                    .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
                 } else {
                     Image(systemName: item.status == .paused ? "pause.circle.fill" : "arrow.down.circle.fill")
                         .font(.system(size: 17))
-                        .frame(width: 30, height: 30)
+                        .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
                 }
             }
             .buttonStyle(.plain)
@@ -838,7 +831,7 @@ struct WebResourceInspectorView: View {
         } else {
             ProgressView()
                 .controlSize(.small)
-                .frame(width: 30, height: 30)
+                .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
         }
     }
 
@@ -861,9 +854,7 @@ struct WebResourceInspectorView: View {
         Button {
             selectedDownloadedItem = item
         } label: {
-            Image(systemName: "folder.fill")
-                .font(.system(size: 16))
-                .frame(width: 30, height: 30)
+            CompactIconLabel(systemImage: "folder.fill")
         }
         .buttonStyle(.plain)
         .accessibilityLabel(LanguageManager.shared.localizedString("open_downloads_folder"))
@@ -871,9 +862,7 @@ struct WebResourceInspectorView: View {
 
     private func shareURLButton(_ url: URL) -> some View {
         ShareLink(item: url) {
-            Image(systemName: "square.and.arrow.up")
-                .font(.system(size: 16))
-                .frame(width: 30, height: 30)
+            CompactIconLabel(systemImage: "square.and.arrow.up")
         }
         .buttonStyle(.plain)
         .accessibilityLabel(LanguageManager.shared.localizedString("share"))
@@ -881,9 +870,7 @@ struct WebResourceInspectorView: View {
 
     private func shareTextButton(_ value: String) -> some View {
         ShareLink(item: value) {
-            Image(systemName: "square.and.arrow.up")
-                .font(.system(size: 14))
-                .frame(width: 30, height: 30)
+            CompactIconLabel(systemImage: "square.and.arrow.up")
         }
         .buttonStyle(.plain)
         .accessibilityLabel(LanguageManager.shared.localizedString("share"))
@@ -1196,8 +1183,8 @@ private struct WebResourceImageViewer: View {
             viewModel.statusMessage = ""
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.statusMessage)
-        .sheet(item: $selectedDownloadedItem) { item in
-            DownloadManagerView(highlightedItemID: item.id)
+        .navigationDestination(isPresented: Binding(get: { selectedDownloadedItem != nil }, set: { if !$0 { selectedDownloadedItem = nil } })) {
+            if let item = selectedDownloadedItem { DownloadManagerContentView(highlightedItemID: item.id).navigationTitle(LanguageManager.shared.localizedString("downloads")) }
         }
     }
 
@@ -1340,7 +1327,7 @@ private struct WebResourceMediaPlayerView: View {
     let sourceWebView: WKWebView?
     let assetProvider: @MainActor () async -> AVURLAsset
     let downloadAction: @MainActor () async -> URL?
-    @State private var player = AVPlayer()
+    private var player: AVPlayer { MediaSession.shared.player }
     @State private var isDownloading = false
     @State private var isPreparing = true
     @State private var isPlaying = false
@@ -1348,6 +1335,7 @@ private struct WebResourceMediaPlayerView: View {
     @State private var selectedDownloadedItem: BrowserDownloadItem?
     @State private var downloadedPlaybackURL: URL?
     @State private var useYouTubeWebPlayback = false
+    @State private var playbackRequestID = UUID()
 
     init(
         resource: WebMediaResource,
@@ -1377,7 +1365,7 @@ private struct WebResourceMediaPlayerView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(.black)
                     } else {
-                        VideoPlayer(player: player)
+                        SessionPlayerController()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .background(.black)
                     }
@@ -1403,25 +1391,8 @@ private struct WebResourceMediaPlayerView: View {
                     }
                 }
 
+                if !useYouTubeWebPlayback { MediaControls() }
                 HStack(spacing: 12) {
-                    if !useYouTubeWebPlayback {
-                        Button {
-                            togglePlayback()
-                        } label: {
-                            Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                                .font(.system(size: 14, weight: .semibold))
-                                .frame(width: 34, height: 34)
-                                .background(Color(uiColor: .tertiarySystemFill), in: Circle())
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(isPreparing || !playbackError.isEmpty)
-                        .accessibilityLabel(
-                            LanguageManager.shared.localizedString(
-                                isPlaying ? "pause" : "resource_video_player"
-                            )
-                        )
-                    }
-
                     Text(resource.url.absoluteString)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -1514,6 +1485,7 @@ private struct WebResourceMediaPlayerView: View {
                 }
             }
             .task { await prepareAndPlay() }
+            .onDisappear { playbackRequestID = UUID() }
             .onReceive(player.publisher(for: \.timeControlStatus)) { status in
                 isPlaying = status == .playing
             }
@@ -1532,21 +1504,23 @@ private struct WebResourceMediaPlayerView: View {
                     ?? AppLocalization.string("resource_download_invalid_response")
                 isPreparing = false
             }
-            .onDisappear { player.pause() }
-            .sheet(item: $selectedDownloadedItem) { item in
-                DownloadManagerView(highlightedItemID: item.id)
+
+            .navigationDestination(isPresented: Binding(get: { selectedDownloadedItem != nil }, set: { if !$0 { selectedDownloadedItem = nil } })) {
+                if let item = selectedDownloadedItem { DownloadManagerContentView(highlightedItemID: item.id).navigationTitle(LanguageManager.shared.localizedString("downloads")) }
             }
         }
     }
 
     @MainActor
     private func prepareAndPlay(localURL: URL? = nil) async {
+        let requestID = UUID(); playbackRequestID = requestID
+        let reservation = MediaSession.shared.reservePreparation()
         isPreparing = true
         playbackError = ""
         let resolvedLocalURL = localURL ?? downloadedPlaybackURL ?? finishedDownload?.localURL
         if requiresDownloadedPlayback, resolvedLocalURL == nil {
             if !activateYouTubeWebPlaybackIfAvailable() {
-                player.replaceCurrentItem(with: nil)
+                MediaSession.shared.stop()
                 playbackError = AppLocalization.string("resource_stream_playback_download_first")
                 isPreparing = false
             }
@@ -1563,25 +1537,17 @@ private struct WebResourceMediaPlayerView: View {
             guard try await asset.load(.isPlayable) else {
                 throw WebResourceDownloadError.invalidResponse
             }
-            let item = AVPlayerItem(asset: asset)
-            player.replaceCurrentItem(with: item)
-            player.play()
+            guard !Task.isCancelled, playbackRequestID == requestID, MediaSession.shared.ownsPreparation(reservation) else { return }
+            MediaSession.shared.open(url: resolvedLocalURL ?? resource.url, title: resource.title, pageURL: pageURL, asset: asset, webView: sourceWebView, reservation: reservation)
         } catch {
-            player.replaceCurrentItem(with: nil)
+            guard !Task.isCancelled, playbackRequestID == requestID, MediaSession.shared.ownsPreparation(reservation) else { return }
+            MediaSession.shared.stop()
             if resolvedLocalURL != nil || !activateYouTubeWebPlaybackIfAvailable() {
                 playbackError = error.localizedDescription
             }
         }
         if !useYouTubeWebPlayback {
             isPreparing = false
-        }
-    }
-
-    private func togglePlayback() {
-        if isPlaying {
-            player.pause()
-        } else {
-            player.play()
         }
     }
 
@@ -1593,8 +1559,7 @@ private struct WebResourceMediaPlayerView: View {
     @discardableResult
     private func activateYouTubeWebPlaybackIfAvailable() -> Bool {
         guard resource.delivery == .youtubeSABR, youtubeEmbedURL != nil else { return false }
-        player.pause()
-        player.replaceCurrentItem(with: nil)
+        MediaSession.shared.stop()
         playbackError = ""
         isPreparing = true
         useYouTubeWebPlayback = true

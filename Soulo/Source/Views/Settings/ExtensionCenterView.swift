@@ -261,7 +261,7 @@ struct ExtensionCenterView: View {
                     .frame(width: 34, height: 34)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             } else {
-                extensionIcon(systemName: "puzzlepiece.extension", tint: .blue)
+                extensionIcon(systemName: "puzzlepiece.extension", tint: Color.themePrimary)
             }
 
             VStack(alignment: .leading, spacing: 3) {
@@ -287,10 +287,10 @@ struct ExtensionCenterView: View {
                     if script.isBuiltIn == true {
                         Text(LanguageManager.shared.localizedString("userscript_builtin_badge"))
                             .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.purple)
+                            .foregroundStyle(Color.themePrimary)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(.purple.opacity(0.11), in: Capsule())
+                            .background(Color.themePrimary.opacity(0.11), in: Capsule())
                     }
                     if let version = script.version, !version.isEmpty {
                         Text("v\(version)")
@@ -344,7 +344,7 @@ struct ExtensionCenterView: View {
                 }
 
                 Section {
-                    installSourceRow("Chrome Web Store", icon: "safari.fill", tint: .blue, url: "https://chromewebstore.google.com/category/extensions")
+                    installSourceRow("Chrome Web Store", icon: "safari.fill", tint: Color.themePrimary, url: "https://chromewebstore.google.com/category/extensions")
                     installSourceRow("Microsoft Edge Extensions", icon: "globe", tint: .cyan, url: "https://microsoftedge.microsoft.com/addons/Microsoft-Edge-Extensions-Home")
                     installSourceRow("Firefox Add-ons", icon: "flame.fill", tint: .orange, url: "https://addons.mozilla.org/")
                     installSourceRow("GitHub · Browser Extensions", icon: "chevron.left.forwardslash.chevron.right", tint: .primary, url: "https://github.com/topics/browser-extension")
@@ -357,7 +357,7 @@ struct ExtensionCenterView: View {
 
             Section {
                 installSourceRow("GreasyFork", icon: "gearshape.2.fill", tint: .secondary, url: "https://greasyfork.org/")
-                installSourceRow("OpenUserJS", icon: "circle.circle", tint: .blue, url: "https://openuserjs.org/")
+                installSourceRow("OpenUserJS", icon: "circle.circle", tint: Color.themePrimary, url: "https://openuserjs.org/")
                 installSourceRow("Userscript.Zone", icon: "curlybraces", tint: .green, url: "https://www.userscript.zone/")
                 installSourceRow("GitHub", icon: "chevron.left.forwardslash.chevron.right", tint: .primary, url: "https://github.com/topics/userscript")
 
@@ -545,9 +545,8 @@ struct WebExtensionStoreInstallView: View {
                         }
                         .font(.body.weight(.semibold))
                         .frame(maxWidth: .infinity)
-                        .frame(height: 48)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(CompactActionButtonStyle(prominent: true))
                     .disabled(isInstalling || linkText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
                 .padding(20)
@@ -626,10 +625,10 @@ struct BrowserPackageInstallView: View {
                     ? "chevron.left.forwardslash.chevron.right"
                     : "puzzlepiece.extension")
                     .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(candidate.kind == .userScript ? .orange : .blue)
+                    .foregroundStyle(candidate.kind == .userScript ? .orange : Color.themePrimary)
                     .frame(width: 68, height: 68)
                     .background(
-                        (candidate.kind == .userScript ? Color.orange : Color.blue).opacity(0.12),
+                        (candidate.kind == .userScript ? Color.orange : Color.themePrimary).opacity(0.12),
                         in: RoundedRectangle(cornerRadius: 18, style: .continuous)
                     )
 
@@ -714,9 +713,8 @@ struct BrowserPackageInstallView: View {
                     }
                     .font(.body.weight(.semibold))
                     .frame(maxWidth: .infinity)
-                    .frame(height: 50)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(CompactActionButtonStyle(prominent: true))
                 .disabled(isInstalling || (candidate.kind == .userScript && scriptPreview == nil))
                 .padding(.horizontal, 20)
 

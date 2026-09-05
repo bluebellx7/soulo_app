@@ -18,3 +18,5 @@ UDVID WEBNET
 Installer UserScripts eller kompatible WebExtensions, administrer tilladelser tydeligt, og opret dine egne scripts med den indbyggede API-dokumentation.
 
 Soulo gemmer browserdata lokalt, medmindre du aktiverer synkronisering af iCloud indstillinger. Privat browsing gemmer ikke historik.
+
+Læs artikler og e-bøger, administrer filer, og overfør dem via Wi-Fi.

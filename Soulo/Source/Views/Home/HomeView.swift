@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import StoreKit
 
 struct HomeView: View {
     @EnvironmentObject var searchVM: SearchViewModel
@@ -9,6 +10,10 @@ struct HomeView: View {
     @ObservedObject var wallpaperManager = WallpaperManager.shared
     @StateObject private var speechService = SpeechRecognitionService()
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.requestReview) private var requestReview
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var keyboardVisible = false
+    @State private var reviewTask: Task<Void, Never>?
     @Namespace private var searchBarNamespace
 
     @State private var showSettings = false
@@ -39,6 +44,15 @@ struct HomeView: View {
     }
 
     var body: some View {
+        NavigationStack {
+            homeSurface
+                .toolbar(.hidden, for: .navigationBar)
+                .mediaPlayerNavigation()
+        }
+        .overlay { MediaMiniPlayer() }
+    }
+
+    private var homeSurface: some View {
         ZStack {
             // Keep the wallpaper outside every content transition and tab-card
             // transform. Scaling the wallpaper with the page exposes the hosting
@@ -143,10 +157,8 @@ struct HomeView: View {
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
-        .sheet(item: $librarySection) { section in
+        .navigationDestination(item: $librarySection) { section in
             LibraryView(initialSection: section, searchVM: searchVM)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showVoiceInput) {
             VoiceInputView(
@@ -180,6 +192,7 @@ struct HomeView: View {
             Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
         }
         .onAppear {
+            ReviewPromptPolicy.recordUse()
             editingTitle = homeTitle
             editingSubtitle = homeSubtitle
             searchVM.loadRecentSearches(context: modelContext)
@@ -194,12 +207,28 @@ struct HomeView: View {
             }
         }
         .onDisappear {
+            reviewTask?.cancel()
             wallpaperLoadTask?.cancel()
         }
         .onChange(of: searchVM.isSearching) { _, isSearching in
+            reviewTask?.cancel()
             if !isSearching {
                 searchVM.loadRecentSearches(context: modelContext)
+                reviewTask = Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(2))
+                    guard !Task.isCancelled, !searchVM.isSearching, !keyboardVisible, scenePhase == .active,
+                          !showSettings, !showExtensionCenter, librarySection == nil,
+                          !showVoiceInput, !showAppShareSheet, !showTabOverviewFromHome,
+                          !showTitleEditor, !showSubtitleEditor, !MediaSession.shared.expanded else { return }
+                    if ReviewPromptPolicy.consumeIfEligible() { requestReview() }
+                }
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            keyboardVisible = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
+            keyboardVisible = false
         }
         .onReceive(NotificationCenter.default.publisher(for: .appQuickActionReceived)) { notification in
             guard let action = notification.object as? AppQuickAction else { return }
@@ -564,9 +593,9 @@ struct HomeView: View {
             }
         } label: {
             Image(systemName: "ellipsis")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
                 .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.78) : .white.opacity(0.68))
-                .frame(width: 34, height: 34)
+                .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
                 .background {
                     if wallpaperManager.isCurrentWallpaperLight {
                         Circle().fill(Color.black.opacity(0.04))
@@ -574,7 +603,7 @@ struct HomeView: View {
                         Circle().fill(.ultraThinMaterial.opacity(0.3))
                     }
                 }
-                .frame(width: 44, height: 44)
+                .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
                 .contentShape(Circle())
         }
         .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
