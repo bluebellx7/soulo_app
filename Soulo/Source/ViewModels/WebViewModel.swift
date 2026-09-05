@@ -1,6 +1,7 @@
 import UIKit
 import WebKit
 import Combine
+import NaturalLanguage
 
 struct UserScriptMenuCommand: Identifiable, Equatable {
     let id: String
@@ -26,12 +27,15 @@ final class WebViewModel: ObservableObject {
     @Published var snapshot: UIImage?
     @Published var showSnapshotWhileRestoring: Bool = false
     @Published private(set) var pageZoom: CGFloat = 1
+    @Published private(set) var pageLanguageIdentifier: String?
+    @Published private(set) var isPageTranslationApplied = false
     @Published private(set) var runtimeRevision = UUID()
     @Published private(set) var userScriptMenuCommands: [UserScriptMenuCommand] = []
     var isWebViewRuntimeInstalled: Bool = false
     var isStreamingDownloadHandlerInstalled: Bool = false
     var isDesktopModeEnabled: Bool = false
     private var snapshotPersistenceID: String?
+    private var pageLanguageDetectionID = UUID()
 
     // Download state
     @Published var isDownloading: Bool = false
@@ -286,6 +290,89 @@ final class WebViewModel: ObservableObject {
         guard let url = url else { return }
         currentURL = url
         lastURLString = url.absoluteString
+    }
+
+    func resetPageTranslationState() {
+        pageLanguageDetectionID = UUID()
+        pageLanguageIdentifier = nil
+        isPageTranslationApplied = false
+    }
+
+    func updatePageTranslationApplied(_ applied: Bool) {
+        isPageTranslationApplied = applied
+    }
+
+    /// Detects the primary language from a bounded DOM text sample. Keeping the
+    /// sample small avoids a full-page layout/read on large, dynamic websites.
+    func refreshPageTranslationState() async {
+        guard let webView,
+              let pageURL = webView.url,
+              ["http", "https"].contains(pageURL.scheme?.lowercased() ?? "") else {
+            resetPageTranslationState()
+            return
+        }
+
+        let detectionID = UUID()
+        pageLanguageDetectionID = detectionID
+        let expectedURL = pageURL.absoluteString
+        let script = #"""
+        (function() {
+            var root = document.documentElement;
+            var walker = document.createTreeWalker(document.body || root, NodeFilter.SHOW_TEXT);
+            var parts = [];
+            var length = 0;
+            var scanned = 0;
+            var node;
+            while ((node = walker.nextNode()) && scanned < 1200 && length < 16000) {
+                scanned += 1;
+                var parent = node.parentElement;
+                if (!parent || parent.closest('script,style,noscript,textarea,code,pre,svg,canvas,[aria-hidden="true"]')) continue;
+                var text = (node.nodeValue || '').replace(/\s+/g, ' ').trim();
+                if (text.length < 2) continue;
+                var remaining = 16000 - length;
+                parts.push(text.slice(0, remaining));
+                length += Math.min(text.length, remaining);
+            }
+            return {
+                url: location.href,
+                declaredLanguage: (root && root.lang) || '',
+                sample: parts.join('\n'),
+                translated: Boolean(window.__souloPageTranslation && window.__souloPageTranslation.isTranslated)
+            };
+        })();
+        """#
+
+        do {
+            let value = try await webView.evaluateJavaScript(script)
+            guard pageLanguageDetectionID == detectionID,
+                  webView.url?.absoluteString == expectedURL,
+                  let result = value as? [String: Any],
+                  (result["url"] as? String) == expectedURL else { return }
+
+            let sample = result["sample"] as? String ?? ""
+            let declaredLanguage = (result["declaredLanguage"] as? String ?? "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let letterCount = sample.unicodeScalars.reduce(into: 0) { count, scalar in
+                if CharacterSet.letters.contains(scalar) { count += 1 }
+            }
+            let detectedLanguage: String?
+            if letterCount >= 20,
+               let language = NLLanguageRecognizer.dominantLanguage(for: sample),
+               language != .undetermined {
+                detectedLanguage = language.rawValue
+            } else if !declaredLanguage.isEmpty {
+                detectedLanguage = declaredLanguage
+            } else {
+                detectedLanguage = nil
+            }
+
+            pageLanguageIdentifier = detectedLanguage
+            isPageTranslationApplied = result["translated"] as? Bool ?? false
+        } catch {
+            guard pageLanguageDetectionID == detectionID else { return }
+            pageLanguageIdentifier = nil
+            isPageTranslationApplied = false
+        }
     }
 
     func setError(_ message: String) {

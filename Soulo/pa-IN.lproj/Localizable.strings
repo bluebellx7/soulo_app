@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "ਪਿਛਲੇ 3 ਦਿਨਾਂ ਤੋਂ ਕੈਸ਼ ਕੀਤੇ ਸਰੋਤਾਂ, ਟੈਬ ਪੂਰਵਦਰਸ਼ਨਾਂ ਅਤੇ ਪੰਨੇ ਵਿਜ਼ਿਟਾਂ ਨੂੰ ਹਟਾਓ। ਸਾਈਨ-ਇਨ ਰੱਖੇ ਜਾਂਦੇ ਹਨ";
 "privacy_clear_cache_confirm_title" = "ਕੀ ਬ੍ਰਾਊਜ਼ਿੰਗ ਕੈਸ਼ ਕਲੀਅਰ ਕਰਨਾ ਹੈ?";
 "privacy_clear_cache_confirm_message" = "ਪਿਛਲੇ 3 ਦਿਨਾਂ ਤੋਂ ਕੈਸ਼ ਕੀਤੇ ਸਰੋਤ ਅਤੇ ਪੰਨਾ ਵਿਜ਼ਿਟਾਂ ਨੂੰ ਹਟਾ ਦਿੱਤਾ ਜਾਵੇਗਾ। ਕੂਕੀਜ਼ ਅਤੇ ਸਾਈਨ-ਇਨ ਰੱਖੇ ਜਾਣਗੇ।";
-"enter_fullscreen" = "ਪੂਰੀ ਸਕ੍ਰੀਨ ਵਿੱਚ ਦਾਖਲ ਹੋਵੋ";
+"enter_fullscreen" = "ਪੂਰੀ ਸਕ੍ਰੀਨ";
 "exit_fullscreen" = "ਪੂਰੀ ਸਕ੍ਰੀਨ ਤੋਂ ਬਾਹਰ ਜਾਓ";
 "fullscreen_exit_hint" = "ਨਿਯੰਤਰਣ ਲਈ ਟੈਪ ਕਰੋ, ਬਾਹਰ ਜਾਣ ਲਈ ਹੇਠਾਂ ਖਿੱਚੋ";
 "restore_browser_toolbar" = "ਟੂਲਬਾਰ ਰੀਸਟੋਰ ਕਰੋ";
@@ -262,7 +262,7 @@
 "ad_block_network" = "ਵਿਗਿਆਪਨ ਨੈੱਟਵਰਕ ਬੇਨਤੀਆਂ ਨੂੰ ਬਲਾਕ ਕਰੋ";
 "ad_block_cosmetic" = "ਵਿਗਿਆਪਨ ਪਲੇਸਹੋਲਡਰਾਂ ਨੂੰ ਲੁਕਾਓ";
 "ad_block_popups" = "ਸਾਫ਼ ਪੌਪਅੱਪ ਅਤੇ ਓਵਰਲੇਅ";
-"ad_block_management" = "ਐਡ ਬਲਾਕ ਪ੍ਰਬੰਧਨ";
+"ad_block_management" = "ਵਿਗਿਆਪਨ ਰੋਕ";
 "ad_block_allowlist" = "ਮਨਜ਼ੂਰ ਸਾਈਟਾਂ";
 "ad_block_disable_current_site" = "ਇਸ ਸਾਈਟ 'ਤੇ ਵਿਗਿਆਪਨ ਬਲਾਕ ਨੂੰ ਅਯੋਗ ਕਰੋ";
 "ad_block_enable_current_site" = "ਇਸ ਸਾਈਟ 'ਤੇ ਵਿਗਿਆਪਨ ਬਲਾਕ ਨੂੰ ਸਮਰੱਥ ਬਣਾਓ";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "ਸਾਫ਼";
 "fire_button_desc" = "ਬ੍ਰਾਊਜ਼ਰ ਟੈਬਸ ਨੂੰ ਬੰਦ ਕਰੋ ਅਤੇ ਵੈੱਬਸਾਈਟ ਡਾਟਾ, ਕੂਕੀਜ਼, ਕੈਸ਼, ਅਤੇ ਗੋਪਨੀਯਤਾ ਅੰਕੜੇ ਸਾਫ਼ ਕਰੋ।";
 "fire_complete" = "ਗੋਪਨੀਯਤਾ ਡੇਟਾ ਕਲੀਅਰ ਕੀਤਾ ਗਿਆ";
-"site_privacy" = "ਸਾਈਟ ਸੁਰੱਖਿਆ ਵੇਰਵੇ";
+"site_privacy" = "ਸਾਈਟ ਸੁਰੱਖਿਆ";
 "site_privacy_scope_desc" = "ਸਿਰਫ਼ ਇਸ ਸਾਈਟ 'ਤੇ ਲਾਗੂ ਹੁੰਦਾ ਹੈ। ਗੋਪਨੀਯਤਾ ਸੈਟਿੰਗਾਂ ਵਿੱਚ ਸਾਰੀਆਂ ਸਾਈਟਾਂ ਲਈ ਡਿਫੌਲਟ ਬਦਲੋ।";
 "privacy_global_scope_desc" = "ਇਹ ਡਿਫੌਲਟ ਸਾਰੀਆਂ ਸਾਈਟਾਂ 'ਤੇ ਲਾਗੂ ਹੁੰਦੇ ਹਨ। ਮੌਜੂਦਾ ਵੈੱਬਸਾਈਟ ਲਈ ਅਪਵਾਦ ਸੈੱਟ ਕਰਨ ਲਈ ਹੇਠਾਂ ਐਡਰੈੱਸ ਬਾਰ ਵਿੱਚ ਸਾਈਟ ਆਈਕਨ 'ਤੇ ਟੈਪ ਕਰੋ।";
 "site_privacy_compatibility_bypass" = "ਸਾਈਨ-ਇਨ ਅਤੇ ਸਾਈਟ ਵਿਸ਼ੇਸ਼ਤਾਵਾਂ ਨੂੰ ਕੰਮ ਕਰਦੇ ਰਹਿਣ ਲਈ ਸੁਰੱਖਿਆ ਨੂੰ ਰੋਕਿਆ ਗਿਆ ਹੈ।";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "ਸਰੋਤਾਂ ਨੂੰ ਰੈਂਡਮਾਈਜ਼ ਕਰੋ";
 "wallpaper_random_sources_desc" = "ਚੁਣੇ ਹੋਏ ਰਿਮੋਟ ਸਰੋਤਾਂ ਵਿੱਚ ਆਟੋਮੈਟਿਕ ਰਿਫਰੈਸ਼ ਅਤੇ ਬੇਤਰਤੀਬ ਰਿਫਰੈਸ਼ ਸਵਿੱਚ। ਘੱਟੋ-ਘੱਟ ਇੱਕ ਸਰੋਤ ਰੱਖਿਆ ਗਿਆ ਹੈ।";
 "wallpaper_random_topics" = "ਵਿਸ਼ਿਆਂ ਨੂੰ ਰੈਂਡਮਾਈਜ਼ ਕਰੋ";
+"wallpaper_only_favorites" = "ਸਿਰਫ਼ ਮਨਪਸੰਦ ਵਰਤੋ";
+"wallpaper_only_favorites_desc" = "ਹੱਥੀਂ ਅਤੇ ਆਟੋਮੈਟਿਕ ਤਬਦੀਲੀਆਂ ਵਿੱਚ ਸਿਰਫ਼ ਤੁਹਾਡੇ ਮਨਪਸੰਦ ਵਾਲਪੇਪਰ ਵਰਤੇ ਜਾਣਗੇ। ਚਾਲੂ ਕਰਨ ਲਈ ਘੱਟੋ-ਘੱਟ ਇੱਕ ਮਨਪਸੰਦ ਜੋੜੋ।";
 "wallpaper_interval_none" = "ਕਦੇ ਨਹੀਂ";
 "wallpaper_interval_1min" = "ਹਰ ਮਿੰਟ";
 "wallpaper_interval_5min" = "ਹਰ 5 ਮਿੰਟ";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Soulo ਨੂੰ ਸੈਟਿੰਗਾਂ ਵਿੱਚ ਫੋਟੋਆਂ ਵਿੱਚ ਪੰਨਾ ਕੈਪਚਰ ਸ਼ਾਮਲ ਕਰਨ ਦੀ ਇਜਾਜ਼ਤ ਦਿਓ, ਫਿਰ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।";
 "web_capture_height_limited" = "ਇਹ ਪੰਨਾ ਸਕ੍ਰੋਲਿੰਗ ਕੈਪਚਰ ਸੀਮਾ ਨੂੰ ਪਾਰ ਕਰ ਗਿਆ ਹੈ, ਇਸਲਈ ਚਿੱਤਰ ਨੂੰ ਵੱਧ ਤੋਂ ਵੱਧ ਉਚਾਈ 'ਤੇ ਕੱਟਿਆ ਗਿਆ ਸੀ।";
 "web_capture_live_text_hint" = "Live Text ਨਾਲ ਚੁਣਨ ਜਾਂ ਕਾਪੀ ਕਰਨ ਲਈ ਚਿੱਤਰ ਵਿੱਚ ਪਛਾਣੇ ਗਏ ਟੈਕਸਟ ਨੂੰ ਛੋਹਵੋ ਅਤੇ ਹੋਲਡ ਕਰੋ।";
+"web_capture_pdf" = "ਵੈੱਬਪੇਜ PDF ਨਿਰਯਾਤ";
+"web_capture_pdf_limited" = "ਪੰਨਾ PDF ਸੀਮਾ ਤੋਂ ਵੱਡਾ ਸੀ, ਇਸ ਲਈ ਸਿਰਫ਼ ਪਹਿਲਾ ਹਿੱਸਾ ਨਿਰਯਾਤ ਹੋਇਆ।";
 "web_translate" = "ਪੰਨਾ ਅਨੁਵਾਦ ਕਰੋ";
 "web_translate_target" = "ਵਿੱਚ ਅਨੁਵਾਦ ਕਰੋ";
 "web_translate_target_desc" = "Soulo ਆਪਣੇ ਆਪ ਪੰਨੇ ਦੀ ਭਾਸ਼ਾ ਦਾ ਪਤਾ ਲਗਾਉਂਦਾ ਹੈ।";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "ਵੈੱਬਪੇਜ ਲਿੰਕਾਂ ਨੂੰ ਰੇਖਾਂਕਿਤ ਕਰੋ ਤਾਂ ਜੋ ਉਹਨਾਂ ਨੂੰ ਪਛਾਣਨਾ ਆਸਾਨ ਹੋਵੇ।";
 "home_title_edit_desc" = "ਹੋਮ ਸਕ੍ਰੀਨ 'ਤੇ ਮੁੱਖ ਸਿਰਲੇਖ ਵਜੋਂ ਦਿਖਾਇਆ ਗਿਆ ਹੈ।";
 "home_subtitle_edit_desc" = "ਮੁੱਖ ਸਿਰਲੇਖ ਦੇ ਹੇਠਾਂ ਦਿਖਾਇਆ ਗਿਆ ਹੈ; ਇਸ ਨੂੰ ਛੁਪਾਉਣ ਲਈ ਖਾਲੀ ਛੱਡੋ।";
+"current_keyword" = "ਮੌਜੂਦਾ ਕੀਵਰਡ";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "ਇਹ ਸਟ੍ਰੀਮ ਹੁਣ ਮੌਜੂਦਾ ਪੰਨੇ ਉੱਤੇ ਉਪਲਬਧ ਨਹੀਂ ਹੈ। ਪੰਨਾ ਮੁੜ ਲੋਡ ਕਰੋ ਅਤੇ ਫਿਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ।";
+"resource_stream_download_unsupported" = "Soulo ਨੇ ਇਹ ਸਟ੍ਰੀਮ ਲੱਭੀ ਹੈ, ਪਰ ਇਸ ਦੇ ਮੈਨੀਫੈਸਟ ਫਾਰਮੈਟ ਨੂੰ ਹਾਲੇ ਸੁਰੱਖਿਅਤ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ।";
+"resource_stream_download_invalid_chunk" = "ਮੀਡੀਆ ਸਟ੍ਰੀਮ ਨੇ ਅਵੈਧ ਜਾਂ ਗਲਤ ਕ੍ਰਮ ਵਾਲਾ ਖੰਡ ਵਾਪਸ ਕੀਤਾ।";
+"resource_stream_download_missing_track" = "ਡਾਊਨਲੋਡ ਕੀਤੀ ਸਟ੍ਰੀਮ ਵਿੱਚ ਚਲਾਉਣ ਯੋਗ ਵੀਡੀਓ ਅਤੇ ਆਡੀਓ ਟ੍ਰੈਕ ਨਹੀਂ ਸਨ।";
+"resource_stream_download_export_failed" = "Soulo ਡਾਊਨਲੋਡ ਕੀਤੇ ਵੀਡੀਓ ਅਤੇ ਆਡੀਓ ਨੂੰ ਜੋੜ ਨਹੀਂ ਸਕਿਆ।";
+"resource_stream_playback_download_first" = "ਇਸ ਸੁਰੱਖਿਅਤ ਸਟ੍ਰੀਮ ਦੇ ਅਸਥਾਈ URL ਤੋਂ ਪੂਰਵਦਰਸ਼ਨ ਨਹੀਂ ਹੋ ਸਕਦਾ। ਸਥਾਨਕ ਫਾਈਲ ਚਲਾਉਣ ਲਈ ਪਹਿਲਾਂ ਇਸ ਨੂੰ ਡਾਊਨਲੋਡ ਕਰੋ।";

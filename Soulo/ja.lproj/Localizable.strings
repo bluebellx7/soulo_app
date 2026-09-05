@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "Webキャッシュ、タブのプレビュー、過去3日間の閲覧履歴を削除します。ログイン状態は保持されます";
 "privacy_clear_cache_confirm_title" = "ブラウザキャッシュを削除しますか？";
 "privacy_clear_cache_confirm_message" = "Webキャッシュと過去3日間の閲覧履歴を削除します。Cookieとログイン状態は保持されます。";
-"enter_fullscreen" = "フルスクリーンにする";
+"enter_fullscreen" = "フルスクリーン";
 "exit_fullscreen" = "フルスクリーンを終了";
 "fullscreen_exit_hint" = "タップでメニュー、下に引いて終了";
 "restore_browser_toolbar" = "ツールバーを復元";
@@ -262,7 +262,7 @@
 "ad_block_network" = "広告ネットワークリクエストのブロック";
 "ad_block_cosmetic" = "広告プレースホルダーを非表示にする";
 "ad_block_popups" = "クリーンなポップアップとオーバーレイ";
-"ad_block_management" = "広告ブロック管理";
+"ad_block_management" = "広告ブロック";
 "ad_block_allowlist" = "許可されたサイト";
 "ad_block_disable_current_site" = "このサイトの広告ブロックを無効にする";
 "ad_block_enable_current_site" = "このサイトで広告ブロックを有効にする";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "現在のサイトの保護";
+"site_privacy" = "サイト保護";
 "site_privacy_scope_desc" = "このサイトにのみ適用されます。全サイトの既定値はプライバシー設定で変更できます。";
 "privacy_global_scope_desc" = "これらの既定値はすべてのサイトに適用されます。サイトごとの例外は現在のサイトの保護で設定できます。";
 "site_privacy_compatibility_bypass" = "ログインとサイト機能を維持するため、保護を一時停止しています。";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "ソースをランダム化する";
 "wallpaper_random_sources_desc" = "選択したリモート ソース間で自動更新とランダム更新が切り替わります。少なくとも 1 つのソースが保持されます。";
 "wallpaper_random_topics" = "トピックをランダム化する";
+"wallpaper_only_favorites" = "お気に入りのみ使用";
+"wallpaper_only_favorites_desc" = "手動および自動の切り替えでは、お気に入りの壁紙のみを使用します。有効にするには1枚以上追加してください。";
 "wallpaper_interval_none" = "決してしない";
 "wallpaper_interval_1min" = "毎分";
 "wallpaper_interval_5min" = "5分ごと";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Soulo が [設定] の [写真] にページ キャプチャを追加できるようにしてから、もう一度お試しください。";
 "web_capture_height_limited" = "このページはスクロール キャプチャの制限を超えたため、画像は最大高さでトリミングされました。";
 "web_capture_live_text_hint" = "画像内の認識されたテキストを長押しして、Live Text を使用して選択またはコピーします。";
+"web_capture_pdf" = "WebページをPDFで書き出す";
+"web_capture_pdf_limited" = "ページがPDFの上限を超えたため、先頭部分のみを書き出しました。";
 "web_translate" = "ページを翻訳する";
 "web_translate_target" = "翻訳先";
 "web_translate_target_desc" = "Soulo はページの言語を自動的に検出します。";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Webページのリンクを見分けやすくするために下線を表示します。";
 "home_title_edit_desc" = "ホーム画面中央のメイン見出しとして表示します。";
 "home_subtitle_edit_desc" = "メイン見出しの下に表示します。空欄にすると非表示になります。";
+"current_keyword" = "現在のキーワード";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "このストリームは現在のページでは利用できなくなりました。ページを再読み込みして、もう一度お試しください。";
+"resource_stream_download_unsupported" = "Soulo はこのストリームを検出しましたが、マニフェスト形式の保存にはまだ対応していません。";
+"resource_stream_download_invalid_chunk" = "メディアストリームから無効なセグメント、または順序が正しくないセグメントが返されました。";
+"resource_stream_download_missing_track" = "ダウンロードしたストリームに、再生可能な映像と音声のトラックが含まれていませんでした。";
+"resource_stream_download_export_failed" = "ダウンロードした映像と音声を Soulo で結合できませんでした。";
+"resource_stream_playback_download_first" = "この保護されたストリームは一時 URL からプレビューできません。先にダウンロードして、ローカルファイルを再生してください。";

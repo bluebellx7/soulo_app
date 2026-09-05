@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "웹 캐시, 탭 미리보기와 최근 3일간의 방문 기록을 삭제합니다. 로그인 상태는 유지됩니다";
 "privacy_clear_cache_confirm_title" = "브라우저 캐시를 삭제하시겠습니까?";
 "privacy_clear_cache_confirm_message" = "웹 캐시와 최근 3일간의 방문 기록을 삭제합니다. 쿠키와 로그인 상태는 유지됩니다.";
-"enter_fullscreen" = "전체 화면 시작";
+"enter_fullscreen" = "전체 화면";
 "exit_fullscreen" = "전체 화면 종료";
 "fullscreen_exit_hint" = "탭하여 메뉴 열기, 아래로 당겨 종료";
 "restore_browser_toolbar" = "도구 막대 복원";
@@ -262,7 +262,7 @@
 "ad_block_network" = "광고 네트워크 요청 차단";
 "ad_block_cosmetic" = "광고 자리 표시자 숨기기";
 "ad_block_popups" = "팝업 및 오버레이 정리";
-"ad_block_management" = "광고 차단 관리";
+"ad_block_management" = "광고 차단";
 "ad_block_allowlist" = "허용된 사이트";
 "ad_block_disable_current_site" = "이 사이트에서 광고 차단 비활성화";
 "ad_block_enable_current_site" = "이 사이트에서 광고 차단 활성화";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "현재 사이트 보호";
+"site_privacy" = "사이트 보호";
 "site_privacy_scope_desc" = "현재 사이트에만 적용됩니다. 모든 사이트의 기본값은 개인정보 보호 설정에서 변경할 수 있습니다.";
 "privacy_global_scope_desc" = "이 기본값은 모든 사이트에 적용됩니다. 사이트별 예외는 현재 사이트 보호에서 설정하세요.";
 "site_privacy_compatibility_bypass" = "로그인과 사이트 기능을 유지하기 위해 보호가 일시 중지되었습니다.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "소스 무작위화";
 "wallpaper_random_sources_desc" = "선택한 원격 소스 간의 자동 새로 고침 및 무작위 새로 고침 전환. 소스가 하나 이상 유지됩니다.";
 "wallpaper_random_topics" = "주제 무작위화";
+"wallpaper_only_favorites" = "즐겨찾기만 사용";
+"wallpaper_only_favorites_desc" = "수동 및 자동 변경 시 즐겨찾기한 배경화면만 사용합니다. 활성화하려면 하나 이상 추가하세요.";
 "wallpaper_interval_none" = "절대로";
 "wallpaper_interval_1min" = "매분";
 "wallpaper_interval_5min" = "5분마다";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Soulo에서 설정의 사진에 페이지 캡처를 추가하도록 허용한 후 다시 시도하세요.";
 "web_capture_height_limited" = "이 페이지는 스크롤 캡처 제한을 초과하여 이미지가 최대 높이에서 잘렸습니다.";
 "web_capture_live_text_hint" = "이미지에서 인식된 텍스트를 길게 터치하여 선택하거나 Live Text으로 복사하세요.";
+"web_capture_pdf" = "웹페이지 PDF 내보내기";
+"web_capture_pdf_limited" = "페이지가 PDF 한도를 초과하여 앞부분만 내보냈습니다.";
 "web_translate" = "페이지 번역";
 "web_translate_target" = "번역 대상";
 "web_translate_target_desc" = "Soulo은 페이지 언어를 자동으로 감지합니다.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "웹페이지 링크를 더 쉽게 구분할 수 있도록 밑줄을 표시합니다.";
 "home_title_edit_desc" = "홈 화면 중앙의 기본 제목으로 표시됩니다.";
 "home_subtitle_edit_desc" = "기본 제목 아래에 표시되며 비워 두면 숨겨집니다.";
+"current_keyword" = "현재 키워드";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "현재 페이지에서 이 스트림을 더 이상 사용할 수 없습니다. 페이지를 새로고침한 후 다시 시도하세요.";
+"resource_stream_download_unsupported" = "Soulo가 이 스트림을 감지했지만 아직 해당 매니페스트 형식을 저장할 수 없습니다.";
+"resource_stream_download_invalid_chunk" = "미디어 스트림이 잘못된 세그먼트 또는 순서가 맞지 않는 세그먼트를 반환했습니다.";
+"resource_stream_download_missing_track" = "다운로드한 스트림에 재생 가능한 비디오 및 오디오 트랙이 없습니다.";
+"resource_stream_download_export_failed" = "다운로드한 비디오와 오디오를 결합하지 못했습니다.";
+"resource_stream_playback_download_first" = "이 보호된 스트림은 임시 URL에서 미리 볼 수 없습니다. 먼저 다운로드한 후 로컬 파일을 재생하세요.";

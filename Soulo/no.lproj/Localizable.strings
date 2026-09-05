@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "Fjern bufrede ressurser, faneforhåndsvisninger og sidebesøk fra de siste 3 dagene. Pålogginger beholdes";
 "privacy_clear_cache_confirm_title" = "Tømme nettleserbufferen?";
 "privacy_clear_cache_confirm_message" = "Bufrede ressurser og sidebesøk fra de siste 3 dagene vil bli fjernet. Informasjonskapsler og pålogginger beholdes.";
-"enter_fullscreen" = "Gå inn i fullskjerm";
+"enter_fullscreen" = "Fullskjerm";
 "exit_fullscreen" = "Avslutt fullskjerm";
 "fullscreen_exit_hint" = "Trykk for kontroller, trekk ned for å avslutte";
 "restore_browser_toolbar" = "Gjenopprett verktøylinje";
@@ -262,7 +262,7 @@
 "ad_block_network" = "Blokker annonsenettverksforespørsler";
 "ad_block_cosmetic" = "Skjul annonseplassholdere";
 "ad_block_popups" = "Rengjør popup-vinduer og overlegg";
-"ad_block_management" = "Ad Block Management";
+"ad_block_management" = "Annonseblokkering";
 "ad_block_allowlist" = "Tillatte nettsteder";
 "ad_block_disable_current_site" = "Deaktiver annonseblokkering på dette nettstedet";
 "ad_block_enable_current_site" = "Aktiver annonseblokkering på dette nettstedet";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Klart";
 "fire_button_desc" = "Lukk nettleserfaner og slett nettsteddata, informasjonskapsler, cache og personvernstatistikk.";
 "fire_complete" = "Personverndata slettet";
-"site_privacy" = "Informasjon om nettstedbeskyttelse";
+"site_privacy" = "Nettstedbeskyttelse";
 "site_privacy_scope_desc" = "Gjelder kun denne siden. Endre standardinnstillingene for alle nettsteder i Personverninnstillinger.";
 "privacy_global_scope_desc" = "Disse standardinnstillingene gjelder for alle nettsteder. Trykk på nettstedikonet i den nederste adresselinjen for å angi et unntak for gjeldende nettside.";
 "site_privacy_compatibility_bypass" = "Beskyttelsen er satt på pause for å holde pålogging og nettstedsfunksjoner i gang.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "Randomiser kilder";
 "wallpaper_random_sources_desc" = "Automatisk oppdatering og tilfeldig oppdatering bytter mellom utvalgte eksterne kilder. Minst én kilde beholdes.";
 "wallpaper_random_topics" = "Randomiser emner";
+"wallpaper_only_favorites" = "Bruk bare favoritter";
+"wallpaper_only_favorites_desc" = "Manuelle og automatiske bytter bruker bare favorittbakgrunnene dine. Legg til minst én favoritt for å aktivere dette.";
 "wallpaper_interval_none" = "Aldri";
 "wallpaper_interval_1min" = "Hvert minutt";
 "wallpaper_interval_5min" = "Hvert 5. minutt";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Tillat Soulo å legge til sideopptaket i Bilder i Innstillinger, og prøv på nytt.";
 "web_capture_height_limited" = "Denne siden overskred opptaksgrensen for rulling, så bildet ble trimmet til maksimal høyde.";
 "web_capture_live_text_hint" = "Trykk og hold på gjenkjent tekst i bildet for å velge eller kopiere det med Live Text.";
+"web_capture_pdf" = "Eksporter nettside som PDF";
+"web_capture_pdf_limited" = "Siden overskred PDF-grensen, så bare den første delen ble eksportert.";
 "web_translate" = "Oversett side";
 "web_translate_target" = "Oversett til";
 "web_translate_target_desc" = "Soulo oppdager sidespråket automatisk.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Understrek nettsidekoblinger slik at de er lettere å gjenkjenne.";
 "home_title_edit_desc" = "Vises som hovedoverskrift på startskjermen.";
 "home_subtitle_edit_desc" = "Vist under hovedoverskriften; la stå tomt for å skjule det.";
+"current_keyword" = "Gjeldende søkeord";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Denne strømmen er ikke lenger tilgjengelig på den aktuelle siden. Last inn siden på nytt og prøv igjen.";
+"resource_stream_download_unsupported" = "Soulo oppdaget denne strømmen, men manifestformatet kan ikke lagres ennå.";
+"resource_stream_download_invalid_chunk" = "Mediestrømmen returnerte et ugyldig segment eller et segment i feil rekkefølge.";
+"resource_stream_download_missing_track" = "Den nedlastede strømmen inneholdt ikke video- og lydspor som kunne spilles av.";
+"resource_stream_download_export_failed" = "Soulo kunne ikke slå sammen den nedlastede videoen og lyden.";
+"resource_stream_playback_download_first" = "Denne beskyttede strømmen kan ikke forhåndsvises fra den midlertidige nettadressen. Last den ned først for å spille av den lokale filen.";

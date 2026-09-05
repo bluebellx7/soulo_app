@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "Odstranite predpomnjene vire, predoglede zavihkov in obiske strani v zadnjih 3 dneh. Prijave se ohranijo";
 "privacy_clear_cache_confirm_title" = "Počistiti predpomnilnik brskanja?";
 "privacy_clear_cache_confirm_message" = "Predpomnjeni viri in obiski strani v zadnjih 3 dneh bodo odstranjeni. Piškotki in prijave bodo ohranjeni.";
-"enter_fullscreen" = "Vnesite celozaslonski način";
+"enter_fullscreen" = "Celozaslonsko";
 "exit_fullscreen" = "Izhod iz celotnega zaslona";
 "fullscreen_exit_hint" = "Tapnite za nadzor, povlecite navzdol za izhod";
 "restore_browser_toolbar" = "Obnovi orodno vrstico";
@@ -262,7 +262,7 @@
 "ad_block_network" = "Blokiraj zahteve oglasnega omrežja";
 "ad_block_cosmetic" = "Skrij nadomestne oznake oglasov";
 "ad_block_popups" = "Očistite pojavna okna in prekrivanja";
-"ad_block_management" = "Upravljanje oglasnih blokov";
+"ad_block_management" = "Blokiranje oglasov";
 "ad_block_allowlist" = "Dovoljena spletna mesta";
 "ad_block_disable_current_site" = "Onemogoči blokiranje oglasov na tem spletnem mestu";
 "ad_block_enable_current_site" = "Omogoči blokiranje oglasov na tem spletnem mestu";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "jasno";
 "fire_button_desc" = "Zaprite zavihke brskalnika in počistite podatke spletnega mesta, piškotke, predpomnilnik in statistiko zasebnosti.";
 "fire_complete" = "Podatki o zasebnosti izbrisani";
-"site_privacy" = "Podrobnosti o zaščiti mesta";
+"site_privacy" = "Zaščita mesta";
 "site_privacy_scope_desc" = "Velja samo za to stran. Spremenite privzete nastavitve za vsa spletna mesta v nastavitvah zasebnosti.";
 "privacy_global_scope_desc" = "Te privzete nastavitve veljajo za vsa spletna mesta. Tapnite ikono mesta v spodnji naslovni vrstici, da nastavite izjemo za trenutno spletno mesto.";
 "site_privacy_compatibility_bypass" = "Zaščita je začasno ustavljena, da še naprej delujejo vpis in funkcije spletnega mesta.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "Naključni viri";
 "wallpaper_random_sources_desc" = "Samodejno osveževanje in naključno preklapljanje med izbranimi oddaljenimi viri. Ohranja se vsaj en vir.";
 "wallpaper_random_topics" = "Naključno razvrstite teme";
+"wallpaper_only_favorites" = "Uporabi samo priljubljene";
+"wallpaper_only_favorites_desc" = "Ročne in samodejne menjave uporabljajo samo priljubljena ozadja. Za vklop dodajte vsaj eno.";
 "wallpaper_interval_none" = "Nikoli";
 "wallpaper_interval_1min" = "Vsako minuto";
 "wallpaper_interval_5min" = "Vsakih 5 minut";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Dovolite Soulo, da doda posnetek strani v fotografije v nastavitvah, nato poskusite znova.";
 "web_capture_height_limited" = "Ta stran je presegla omejitev drsnega zajema, zato je bila slika obrezana na največjo višino.";
 "web_capture_live_text_hint" = "Dotaknite se prepoznanega besedila na sliki in ga pridržite, da ga izberete ali kopirate z Live Text.";
+"web_capture_pdf" = "Izvozi spletno stran v PDF";
+"web_capture_pdf_limited" = "Stran je presegla omejitev PDF, zato je bil izvožen le prvi del.";
 "web_translate" = "Prevedi stran";
 "web_translate_target" = "Prevedi v";
 "web_translate_target_desc" = "Soulo samodejno zazna jezik strani.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Podčrtajte povezave do spletnih strani, da jih boste lažje prepoznali.";
 "home_title_edit_desc" = "Prikazano kot glavni naslov na začetnem zaslonu.";
 "home_subtitle_edit_desc" = "Prikazano pod glavnim naslovom; pustite prazno, da ga skrijete.";
+"current_keyword" = "Trenutna ključna beseda";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Ta tok na trenutni strani ni več na voljo. Znova naložite stran in poskusite znova.";
+"resource_stream_download_unsupported" = "Soulo je zaznal ta tok, vendar oblike njegovega manifesta še ne more shraniti.";
+"resource_stream_download_invalid_chunk" = "Predstavnostni tok je vrnil neveljaven segment ali segment v napačnem vrstnem redu.";
+"resource_stream_download_missing_track" = "Preneseni tok ni vseboval video- in zvočnih sledi, ki bi jih bilo mogoče predvajati.";
+"resource_stream_download_export_failed" = "Soulo ni mogel združiti prenesenega videa in zvoka.";
+"resource_stream_playback_download_first" = "Predogled tega zaščitenega toka prek začasnega URL-ja ni mogoč. Najprej ga prenesite, da predvajate lokalno datoteko.";

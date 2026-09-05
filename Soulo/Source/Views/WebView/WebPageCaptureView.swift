@@ -1,5 +1,7 @@
 import Photos
+import PDFKit
 import SwiftUI
+import UniformTypeIdentifiers
 import VisionKit
 import WebKit
 
@@ -16,6 +18,35 @@ struct WebPageCaptureResult: Identifiable {
     let image: UIImage
     let mode: WebPageCaptureMode
     let wasHeightLimited: Bool
+}
+
+struct WebPagePDFResult: Identifiable {
+    let id = UUID()
+    let data: Data
+    let fileName: String
+    let pageCount: Int
+    let wasPageLimited: Bool
+}
+
+struct WebPagePDFDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.pdf] }
+
+    let data: Data
+
+    init(data: Data) {
+        self.data = data
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        guard let data = configuration.file.regularFileContents else {
+            throw WebPageCaptureError.captureFailed
+        }
+        self.data = data
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: data)
+    }
 }
 
 enum WebPageCaptureError: LocalizedError {
@@ -116,7 +147,10 @@ enum WebPageCaptureService {
             let image = try await snapshot(webView, configuration: configuration)
             return WebPageCaptureResult(image: image, mode: mode, wasHeightLimited: false)
         case .fullPage:
-            await prepareResourcesForFullPageCapture(in: webView)
+            await prepareResourcesForCapture(
+                in: webView,
+                maximumHeight: maximumFullPageHeight
+            )
             let contentSize = webView.scrollView.contentSize
             let contentWidth = max(contentSize.width, bounds.width)
             let contentHeight = max(contentSize.height, bounds.height)
@@ -347,10 +381,13 @@ enum WebPageCaptureService {
         return colorFromComputedCSS(value as? String) ?? .white
     }
 
-    private static func prepareResourcesForFullPageCapture(in webView: WKWebView) async {
+    static func prepareResourcesForCapture(
+        in webView: WKWebView,
+        maximumHeight: CGFloat
+    ) async {
         _ = try? await webView.callAsyncJavaScript(
             resourcePreparationScript,
-            arguments: ["maximumHeight": Double(maximumFullPageHeight)],
+            arguments: ["maximumHeight": Double(max(maximumHeight, 1))],
             in: nil,
             contentWorld: .page
         )
@@ -381,6 +418,108 @@ enum WebPageCaptureService {
         try await PHPhotoLibrary.shared().performChanges {
             PHAssetChangeRequest.creationRequestForAsset(from: image)
         }
+    }
+}
+
+@MainActor
+enum WebPagePDFService {
+    static let pageAspectRatio: CGFloat = 297 / 210
+    static let maximumPageCount = 200
+    static let maximumPageWidth = WebPageCaptureService.maximumFullPageWidth
+
+    static func export(
+        from webView: WKWebView?,
+        title: String
+    ) async throws -> WebPagePDFResult {
+        guard let webView else { throw WebPageCaptureError.unavailable }
+        let bounds = WebPageCaptureService.captureBounds(for: webView.bounds)
+        guard bounds.width > 1, bounds.height > 1 else { throw WebPageCaptureError.emptyPage }
+
+        webView.layoutIfNeeded()
+        let initialContentWidth = max(webView.scrollView.contentSize.width, bounds.width)
+        await WebPageCaptureService.prepareResourcesForCapture(
+            in: webView,
+            maximumHeight: maximumPreparedContentHeight(pageWidth: initialContentWidth)
+        )
+
+        let contentSize = webView.scrollView.contentSize
+        let layout = pageLayout(
+            contentSize: contentSize,
+            viewportSize: bounds.size
+        )
+        guard !layout.rects.isEmpty else { throw WebPageCaptureError.emptyPage }
+
+        let output = PDFDocument()
+        output.documentAttributes = [
+            PDFDocumentAttribute.titleAttribute: title,
+            PDFDocumentAttribute.creatorAttribute: "Soulo",
+            PDFDocumentAttribute.producerAttribute: "Soulo WebKit PDF"
+        ]
+
+        for rect in layout.rects {
+            try Task.checkCancellation()
+            let configuration = WKPDFConfiguration()
+            configuration.rect = rect
+            if #available(iOS 17.0, *) {
+                configuration.allowTransparentBackground = false
+            }
+            let data = try await webView.pdf(configuration: configuration)
+            guard let pageDocument = PDFDocument(data: data),
+                  let page = pageDocument.page(at: 0),
+                  let copiedPage = page.copy() as? PDFPage else {
+                throw WebPageCaptureError.captureFailed
+            }
+            output.insert(copiedPage, at: output.pageCount)
+        }
+
+        guard output.pageCount == layout.rects.count,
+              let data = output.dataRepresentation(),
+              !data.isEmpty else {
+            throw WebPageCaptureError.captureFailed
+        }
+
+        let fallbackTitle = webView.url?.host ?? "Web Page"
+        let fileName = DownloadFilenameSanitizer.sanitize(
+            title,
+            fallbackBaseName: fallbackTitle,
+            preferredExtension: "pdf"
+        )
+        return WebPagePDFResult(
+            data: data,
+            fileName: fileName,
+            pageCount: output.pageCount,
+            wasPageLimited: layout.wasLimited
+        )
+    }
+
+    struct PageLayout: Equatable {
+        let rects: [CGRect]
+        let wasLimited: Bool
+    }
+
+    static func pageLayout(
+        contentSize: CGSize,
+        viewportSize: CGSize
+    ) -> PageLayout {
+        let pageWidth = min(max(max(contentSize.width, viewportSize.width), 1), maximumPageWidth)
+        let pageHeight = max(pageWidth * pageAspectRatio, 1)
+        let contentHeight = max(max(contentSize.height, viewportSize.height), 1)
+        let requiredPageCount = max(Int(ceil(contentHeight / pageHeight)), 1)
+        let pageCount = min(requiredPageCount, maximumPageCount)
+        let rects = (0..<pageCount).map { index in
+            CGRect(
+                x: 0,
+                y: CGFloat(index) * pageHeight,
+                width: pageWidth,
+                height: pageHeight
+            )
+        }
+        return PageLayout(rects: rects, wasLimited: requiredPageCount > pageCount)
+    }
+
+    private static func maximumPreparedContentHeight(pageWidth: CGFloat) -> CGFloat {
+        let width = min(max(pageWidth, 1), maximumPageWidth)
+        return width * pageAspectRatio * CGFloat(maximumPageCount)
     }
 }
 
@@ -544,6 +683,153 @@ struct WebPageCapturePreview: View {
             }
             isSaving = false
         }
+    }
+}
+
+struct WebPagePDFPreview: View {
+    let result: WebPagePDFResult
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var showExporter = false
+    @State private var showShareSheet = false
+    @State private var shareURL: URL?
+    @State private var shareDirectory: URL?
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                if result.wasPageLimited {
+                    Label(
+                        LanguageManager.shared.localizedString("web_capture_pdf_limited"),
+                        systemImage: "doc.badge.ellipsis"
+                    )
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.orange.opacity(0.1))
+                }
+
+                PDFDocumentView(data: result.data)
+                    .background(Color(uiColor: .secondarySystemBackground))
+
+                pdfActions
+            }
+            .navigationTitle(LanguageManager.shared.localizedString("web_capture_pdf"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(LanguageManager.shared.localizedString("done")) { dismiss() }
+                }
+            }
+            .fileExporter(
+                isPresented: $showExporter,
+                document: WebPagePDFDocument(data: result.data),
+                contentType: .pdf,
+                defaultFilename: result.fileName
+            ) { exportResult in
+                if case let .failure(error) = exportResult {
+                    errorMessage = error.localizedDescription
+                }
+            }
+            .sheet(isPresented: $showShareSheet) {
+                if let shareURL {
+                    CaptureShareSheet(items: [shareURL])
+                }
+            }
+            .alert(
+                LanguageManager.shared.localizedString("save_failed"),
+                isPresented: Binding(
+                    get: { errorMessage != nil },
+                    set: { if !$0 { errorMessage = nil } }
+                )
+            ) {
+                Button(LanguageManager.shared.localizedString("confirm"), role: .cancel) {}
+            } message: {
+                Text(errorMessage ?? "")
+            }
+            .onDisappear(perform: removeTemporaryShareFile)
+        }
+    }
+
+    private var pdfActions: some View {
+        HStack(spacing: 12) {
+            Button {
+                showExporter = true
+            } label: {
+                Label(LanguageManager.shared.localizedString("save"), systemImage: "folder")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+
+            Button(action: sharePDF) {
+                Label(LanguageManager.shared.localizedString("share"), systemImage: "square.and.arrow.up")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .foregroundStyle(Color.primary)
+                    .background(
+                        Color(uiColor: .secondarySystemBackground),
+                        in: Capsule(style: .continuous)
+                    )
+                    .overlay {
+                        Capsule(style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.14), lineWidth: 1)
+                    }
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .top) { Divider() }
+    }
+
+    private func sharePDF() {
+        do {
+            removeTemporaryShareFile()
+            let directory = FileManager.default.temporaryDirectory
+                .appendingPathComponent("Soulo-PDF-\(UUID().uuidString)", isDirectory: true)
+            try FileManager.default.createDirectory(
+                at: directory,
+                withIntermediateDirectories: true
+            )
+            let url = directory.appendingPathComponent(result.fileName)
+            try result.data.write(to: url, options: .atomic)
+            shareDirectory = directory
+            shareURL = url
+            showShareSheet = true
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func removeTemporaryShareFile() {
+        if let shareDirectory {
+            try? FileManager.default.removeItem(at: shareDirectory)
+        }
+        shareDirectory = nil
+        shareURL = nil
+    }
+}
+
+private struct PDFDocumentView: UIViewRepresentable {
+    let data: Data
+
+    func makeUIView(context: Context) -> PDFView {
+        let view = PDFView()
+        view.autoScales = true
+        view.displayMode = .singlePageContinuous
+        view.displayDirection = .vertical
+        view.displaysPageBreaks = true
+        view.backgroundColor = .secondarySystemBackground
+        view.document = PDFDocument(data: data)
+        return view
+    }
+
+    func updateUIView(_ view: PDFView, context: Context) {
+        // The preview data is immutable for the lifetime of this sheet. Avoid
+        // reserializing a potentially large PDF during unrelated SwiftUI updates.
     }
 }
 

@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "Verwijder in de cache opgeslagen bronnen, tabbladvoorbeelden en paginabezoeken van de afgelopen drie dagen. Aanmeldingen blijven behouden";
 "privacy_clear_cache_confirm_title" = "Browsercache wissen?";
 "privacy_clear_cache_confirm_message" = "In het cachegeheugen opgeslagen bronnen en paginabezoeken van de afgelopen drie dagen worden verwijderd. Cookies en aanmeldingen worden bewaard.";
-"enter_fullscreen" = "Ga naar Volledig scherm";
+"enter_fullscreen" = "Volledig scherm";
 "exit_fullscreen" = "Sluit Volledig scherm af";
 "fullscreen_exit_hint" = "Tik voor bedieningselementen, trek omlaag om af te sluiten";
 "restore_browser_toolbar" = "Werkbalk herstellen";
@@ -262,7 +262,7 @@
 "ad_block_network" = "Blokkeer advertentienetwerkverzoeken";
 "ad_block_cosmetic" = "Plaatsaanduidingen voor advertenties verbergen";
 "ad_block_popups" = "Maak pop-ups en overlays schoon";
-"ad_block_management" = "Beheer van advertentieblokken";
+"ad_block_management" = "Advertentieblokkering";
 "ad_block_allowlist" = "Toegestane sites";
 "ad_block_disable_current_site" = "Schakel advertentieblokkering op deze site uit";
 "ad_block_enable_current_site" = "Schakel advertentieblokkering op deze site in";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Duidelijk";
 "fire_button_desc" = "Sluit browsertabbladen en wis websitegegevens, cookies, cache en privacystatistieken.";
 "fire_complete" = "Privacygegevens gewist";
-"site_privacy" = "Details van sitebescherming";
+"site_privacy" = "Sitebeveiliging";
 "site_privacy_scope_desc" = "Geldt alleen voor deze site. Wijzig de standaardinstellingen voor alle sites in Privacy-instellingen.";
 "privacy_global_scope_desc" = "Deze standaardwaarden zijn van toepassing op alle sites. Tik op het sitepictogram in de onderste adresbalk om een ​​uitzondering in te stellen voor de huidige website.";
 "site_privacy_compatibility_bypass" = "De beveiliging is onderbroken om het inloggen en de sitefuncties te laten werken.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "Randomiseer bronnen";
 "wallpaper_random_sources_desc" = "Automatisch vernieuwen en willekeurig vernieuwen tussen geselecteerde externe bronnen. Er wordt minimaal één bron bewaard.";
 "wallpaper_random_topics" = "Randomiseer onderwerpen";
+"wallpaper_only_favorites" = "Alleen favorieten gebruiken";
+"wallpaper_only_favorites_desc" = "Handmatige en automatische wisselingen gebruiken alleen je favoriete achtergronden. Voeg er minstens één toe om dit in te schakelen.";
 "wallpaper_interval_none" = "Nooit";
 "wallpaper_interval_1min" = "Elke minuut";
 "wallpaper_interval_5min" = "Elke 5 minuten";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Geef Soulo toestemming om de pagina-opname toe te voegen aan Foto's in Instellingen en probeer het vervolgens opnieuw.";
 "web_capture_height_limited" = "Deze pagina overschreed de limiet voor scrollen, dus de afbeelding werd op de maximale hoogte bijgesneden.";
 "web_capture_live_text_hint" = "Blijf de herkende tekst in de afbeelding aanraken om deze te selecteren of te kopiëren met Live Text.";
+"web_capture_pdf" = "Webpagina als PDF exporteren";
+"web_capture_pdf_limited" = "De pagina overschreed de PDF-limiet. Alleen het eerste deel is geëxporteerd.";
 "web_translate" = "Vertaal pagina";
 "web_translate_target" = "Vertalen naar";
 "web_translate_target_desc" = "Soulo detecteert de paginataal automatisch.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Onderstreep webpaginalinks zodat ze gemakkelijker te herkennen zijn.";
 "home_title_edit_desc" = "Getoond als de hoofdkop op het startscherm.";
 "home_subtitle_edit_desc" = "Getoond onder de hoofdkop; laat leeg om het te verbergen.";
+"current_keyword" = "Huidig trefwoord";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Deze stream is niet meer beschikbaar op de huidige pagina. Herlaad de pagina en probeer het opnieuw.";
+"resource_stream_download_unsupported" = "Soulo heeft deze stream gedetecteerd, maar kan de manifestindeling nog niet opslaan.";
+"resource_stream_download_invalid_chunk" = "De mediastream gaf een ongeldig segment of een segment in de verkeerde volgorde terug.";
+"resource_stream_download_missing_track" = "De gedownloade stream bevatte geen afspeelbare video- en audiotracks.";
+"resource_stream_download_export_failed" = "Soulo kon de gedownloade video en audio niet samenvoegen.";
+"resource_stream_playback_download_first" = "Deze beveiligde stream kan niet via de tijdelijke URL worden bekeken. Download deze eerst om het lokale bestand af te spelen.";

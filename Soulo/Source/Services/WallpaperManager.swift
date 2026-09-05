@@ -49,6 +49,12 @@ class WallpaperManager: ObservableObject {
             resetPreloadedWallpaper()
         }
     }
+    @Published var onlyUseFavoriteWallpapers: Bool {
+        didSet {
+            UserDefaults.standard.set(onlyUseFavoriteWallpapers, forKey: "wallpaper_only_favorites")
+            resetPreloadedWallpaper()
+        }
+    }
 
     @Published var currentImage: UIImage?
     @Published var currentImageID: String = ""
@@ -58,7 +64,14 @@ class WallpaperManager: ObservableObject {
     @Published private(set) var lastRemoteError: String = ""
     @Published private(set) var lastRemoteErrorAt: Date?
 
-    @Published var favorites: [RemoteWallpaper] = [] { didSet { saveFavorites() } }
+    @Published var favorites: [RemoteWallpaper] = [] {
+        didSet {
+            saveFavorites()
+            if onlyUseFavoriteWallpapers {
+                resetPreloadedWallpaper()
+            }
+        }
+    }
     @Published var blockedIDs: Set<String> = [] { didSet { saveBlocked() } }
 
     private let pexelsKey = "asyKYAHBDxGhP1t9z6VnvZ8OmscCPbWtTVn5yz5SBnOuoD6xwxhTFctL"
@@ -85,6 +98,7 @@ class WallpaperManager: ObservableObject {
         let remoteSources = savedSources.compactMap(WallpaperSource.init(rawValue:)).filter(\.isRemote)
         self.autoRemoteSources = Set(remoteSources.isEmpty ? [.pexels, .pixabay, .bing] : remoteSources)
         self.autoRandomizeTopics = UserDefaults.standard.object(forKey: "wallpaper_auto_random_topics") as? Bool ?? true
+        self.onlyUseFavoriteWallpapers = UserDefaults.standard.object(forKey: "wallpaper_only_favorites") as? Bool ?? false
         
         loadFavorites()
         loadBlocked()
@@ -107,6 +121,7 @@ class WallpaperManager: ObservableObject {
         let remoteSources = savedSources.compactMap(WallpaperSource.init(rawValue:)).filter(\.isRemote)
         let nextSources = Set(remoteSources.isEmpty ? [.pexels, .pixabay, .bing] : remoteSources)
         let nextRandomTopics = defaults.object(forKey: "wallpaper_auto_random_topics") as? Bool ?? true
+        let nextOnlyFavorites = defaults.object(forKey: "wallpaper_only_favorites") as? Bool ?? false
 
         if source != nextSource { source = nextSource }
         if selectedGradientId != nextGradientID { selectedGradientId = nextGradientID }
@@ -117,9 +132,14 @@ class WallpaperManager: ObservableObject {
         if autoRandomizeRemoteSources != nextRandomSources { autoRandomizeRemoteSources = nextRandomSources }
         if autoRemoteSources != nextSources { autoRemoteSources = nextSources }
         if autoRandomizeTopics != nextRandomTopics { autoRandomizeTopics = nextRandomTopics }
+        if onlyUseFavoriteWallpapers != nextOnlyFavorites { onlyUseFavoriteWallpapers = nextOnlyFavorites }
     }
 
     private func initialFetch() async {
+        if onlyUseFavoriteWallpapers {
+            await refreshRandom()
+            return
+        }
         switch source {
         case .bing:    await fetchBingWallpaper()
         case .pexels:  await searchPexels(query: searchTopic)
@@ -139,6 +159,17 @@ class WallpaperManager: ObservableObject {
 
     func refreshRandom() async {
         guard !networkLoading else { return }
+
+        // Manual and automatic refreshes stay entirely within favorites when
+        // requested. An empty list intentionally leaves the current image in place.
+        if onlyUseFavoriteWallpapers {
+            guard let picked = favoriteWallpaperForRefresh() else { return }
+            if let newSource = WallpaperSource(rawValue: picked.source) {
+                source = newSource
+            }
+            await applyWallpaper(picked)
+            return
+        }
 
         // 1. 40% chance to pick from favorites (any source)
         if !favorites.isEmpty && Double.random(in: 0...1) < favoritePickProbability {
@@ -265,12 +296,20 @@ class WallpaperManager: ObservableObject {
         guard autoRefreshInterval != .none, preloadedWallpaper == nil, preloadTask == nil else { return }
         preloadTask = Task { @MainActor in
             defer { preloadTask = nil }
-            guard let selection = autoRandomRemoteSelection() else { return }
-            guard let wall = await fetchRandomRemoteWallpaper(source: selection.source, query: selection.topic) else { return }
+            let wall: RemoteWallpaper
+            if onlyUseFavoriteWallpapers {
+                guard let favorite = favoriteWallpaperForRefresh() else { return }
+                wall = favorite
+            } else {
+                guard let selection = autoRandomRemoteSelection(),
+                      let remote = await fetchRandomRemoteWallpaper(
+                        source: selection.source,
+                        query: selection.topic
+                      ) else { return }
+                wall = remote
+            }
             guard !Task.isCancelled else { return }
-            let urlString = wall.url.isEmpty ? wall.previewURL : wall.url
-            guard let url = URL(string: urlString),
-                  let imageData = await downloadImageData(from: url),
+            guard let imageData = await imageData(for: wall),
                   let image = UIImage(data: imageData) else { return }
             guard !Task.isCancelled else { return }
             preloadedWallpaper = wall
@@ -285,6 +324,18 @@ class WallpaperManager: ObservableObject {
         preloadedWallpaper = nil
         preloadedImage = nil
         preloadedImageData = nil
+    }
+
+    private func favoriteWallpaperForRefresh() -> RemoteWallpaper? {
+        Self.favoriteWallpaperForRefresh(in: favorites, currentImageID: currentImageID)
+    }
+
+    static func favoriteWallpaperForRefresh(
+        in favorites: [RemoteWallpaper],
+        currentImageID: String
+    ) -> RemoteWallpaper? {
+        let alternatives = favorites.filter { $0.id != currentImageID }
+        return alternatives.randomElement() ?? favorites.first
     }
 
     private func autoRandomRemoteSelection() -> (source: WallpaperSource, topic: String)? {
@@ -436,7 +487,10 @@ class WallpaperManager: ObservableObject {
                 return RemoteWallpaper(id: id, url: src?["original"] as? String ?? "", previewURL: src?["medium"] as? String ?? "", source: "pexels", topic: query, isFavorite: favorites.contains(where: { $0.id == id }))
             }
             clearRemoteErrorIfNeeded()
-            if let first = candidateWallpapers.first { await applyWallpaper(first) }
+            if !onlyUseFavoriteWallpapers,
+               let first = candidateWallpapers.first {
+                await applyWallpaper(first)
+            }
         } catch {
             recordRemoteError(source: .pexels, error: error)
         }
@@ -458,7 +512,10 @@ class WallpaperManager: ObservableObject {
                 return RemoteWallpaper(id: id, url: h["largeImageURL"] as? String ?? "", previewURL: h["previewURL"] as? String ?? "", source: "pixabay", topic: query, isFavorite: favorites.contains(where: { $0.id == id }))
             }
             clearRemoteErrorIfNeeded()
-            if let first = candidateWallpapers.first { await applyWallpaper(first) }
+            if !onlyUseFavoriteWallpapers,
+               let first = candidateWallpapers.first {
+                await applyWallpaper(first)
+            }
         } catch {
             recordRemoteError(source: .pixabay, error: error)
         }
@@ -480,7 +537,9 @@ class WallpaperManager: ObservableObject {
                 let wall = RemoteWallpaper(id: id, url: "https://www.bing.com" + urlBase, previewURL: "https://www.bing.com" + urlBase, source: "bing", topic: "Bing Daily", isFavorite: favorites.contains(where: { $0.id == id }))
                 self.candidateWallpapers = [wall]
                 clearRemoteErrorIfNeeded()
-                await applyWallpaper(wall)
+                if !onlyUseFavoriteWallpapers {
+                    await applyWallpaper(wall)
+                }
             }
         } catch {
             recordRemoteError(source: .bing, error: error)
@@ -488,9 +547,7 @@ class WallpaperManager: ObservableObject {
     }
 
     func applyWallpaper(_ wallpaper: RemoteWallpaper) async {
-        let urlString = wallpaper.url.isEmpty ? wallpaper.previewURL : wallpaper.url
-        guard let url = URL(string: urlString),
-              let imageData = await downloadImageData(from: url),
+        guard let imageData = await imageData(for: wallpaper),
               let image = UIImage(data: imageData) else { return }
 
         currentImageURLString = wallpaper.url
@@ -499,6 +556,20 @@ class WallpaperManager: ObservableObject {
             currentImageID = wallpaper.id
         }
         await persistRemoteWallpaper(imageData, wallpaper: wallpaper)
+    }
+
+    private func imageData(for wallpaper: RemoteWallpaper) async -> Data? {
+        let cacheURL = hdCacheURL(for: wallpaper.id)
+        if favorites.contains(where: { $0.id == wallpaper.id }),
+           let cached = await Task.detached(priority: .utility, operation: {
+               try? Data(contentsOf: cacheURL)
+           }).value {
+            return cached
+        }
+
+        let urlString = wallpaper.url.isEmpty ? wallpaper.previewURL : wallpaper.url
+        guard let url = URL(string: urlString) else { return nil }
+        return await downloadImageData(from: url)
     }
 
     private func downloadImageData(from url: URL) async -> Data? {

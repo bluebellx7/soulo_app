@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "مسح ذاكرة الويب المؤقتة ومعاينات علامات التبويب وسجل الصفحات لآخر 3 أيام مع الاحتفاظ بتسجيل الدخول";
 "privacy_clear_cache_confirm_title" = "مسح ذاكرة التصفح المؤقتة؟";
 "privacy_clear_cache_confirm_message" = "ستتم إزالة ذاكرة الويب المؤقتة وسجل الصفحات لآخر 3 أيام مع الاحتفاظ بملفات تعريف الارتباط وتسجيل الدخول.";
-"enter_fullscreen" = "الدخول إلى ملء الشاشة";
+"enter_fullscreen" = "ملء الشاشة";
 "exit_fullscreen" = "الخروج من ملء الشاشة";
 "fullscreen_exit_hint" = "اضغط لعناصر التحكم واسحب لأسفل للخروج";
 "restore_browser_toolbar" = "استعادة شريط الأدوات";
@@ -262,7 +262,7 @@
 "ad_block_network" = "منع طلبات شبكة الإعلانات";
 "ad_block_cosmetic" = "إخفاء العناصر النائبة للإعلان";
 "ad_block_popups" = "تنظيف النوافذ المنبثقة والتراكبات";
-"ad_block_management" = "إدارة كتلة الإعلانات";
+"ad_block_management" = "حجب الإعلانات";
 "ad_block_allowlist" = "المواقع المسموح بها";
 "ad_block_disable_current_site" = "تعطيل حظر الإعلانات على هذا الموقع";
 "ad_block_enable_current_site" = "تمكين حظر الإعلانات على هذا الموقع";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "حماية الموقع الحالي";
+"site_privacy" = "حماية الموقع";
 "site_privacy_scope_desc" = "ينطبق على هذا الموقع فقط. غيّر الإعدادات الافتراضية لكل المواقع من إعدادات الخصوصية.";
 "privacy_global_scope_desc" = "تنطبق هذه الإعدادات على كل المواقع. استخدم حماية الموقع الحالي لإضافة استثناء خاص.";
 "site_privacy_compatibility_bypass" = "تم إيقاف الحماية مؤقتاً للحفاظ على تسجيل الدخول ووظائف الموقع.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "المصادر العشوائية";
 "wallpaper_random_sources_desc" = "التحديث التلقائي ومفتاح التحديث العشوائي بين المصادر البعيدة المحددة. يتم الاحتفاظ بمصدر واحد على الأقل.";
 "wallpaper_random_topics" = "المواضيع العشوائية";
+"wallpaper_only_favorites" = "استخدام المفضلة فقط";
+"wallpaper_only_favorites_desc" = "يقتصر التغيير اليدوي والتلقائي على خلفياتك المفضلة. أضف خلفية مفضلة واحدة على الأقل للتفعيل.";
 "wallpaper_interval_none" = "أبداً";
 "wallpaper_interval_1min" = "كل دقيقة";
 "wallpaper_interval_5min" = "كل 5 دقائق";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "اسمح لـ Soulo بإضافة لقطة الصفحة إلى الصور في الإعدادات، ثم حاول مرة أخرى.";
 "web_capture_height_limited" = "تجاوزت هذه الصفحة حد الالتقاط القابل للتمرير، لذا تم اقتطاع الصورة بأقصى ارتفاع.";
 "web_capture_live_text_hint" = "المس مع الاستمرار النص الذي تم التعرف عليه في الصورة لتحديده أو نسخه باستخدام Live Text.";
+"web_capture_pdf" = "تصدير صفحة الويب PDF";
+"web_capture_pdf_limited" = "تجاوزت الصفحة حد PDF، لذا تم تصدير الجزء الأول فقط.";
 "web_translate" = "ترجمة الصفحة";
 "web_translate_target" = "ترجمة إلى";
 "web_translate_target_desc" = "يكتشف Soulo لغة الصفحة تلقائيًا.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "يضع خطًا تحت روابط صفحات الويب لتسهيل التعرّف عليها.";
 "home_title_edit_desc" = "يظهر كعنوان رئيسي في وسط الشاشة الرئيسية.";
 "home_subtitle_edit_desc" = "يظهر أسفل العنوان الرئيسي؛ اتركه فارغًا لإخفائه.";
+"current_keyword" = "الكلمة المفتاحية الحالية";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "لم يعد هذا البث متاحًا في الصفحة الحالية. أعد تحميل الصفحة وحاول مجددًا.";
+"resource_stream_download_unsupported" = "اكتشف Soulo هذا البث، لكن تنسيق ملف البيان الخاص به غير مدعوم للحفظ بعد.";
+"resource_stream_download_invalid_chunk" = "أعاد بث الوسائط مقطعًا غير صالح أو بترتيب غير صحيح.";
+"resource_stream_download_missing_track" = "لم يتضمن البث الذي تم تنزيله مسارات فيديو وصوت قابلة للتشغيل.";
+"resource_stream_download_export_failed" = "تعذر على Soulo دمج الفيديو والصوت اللذين تم تنزيلهما.";
+"resource_stream_playback_download_first" = "لا يمكن معاينة هذا البث المحمي من رابطه المؤقت. نزّله أولًا لتشغيل الملف المحلي.";

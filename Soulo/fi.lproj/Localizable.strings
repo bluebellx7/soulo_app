@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "Poista välimuistissa olevat resurssit, välilehtien esikatselut ja sivukäynnit viimeisen kolmen päivän ajalta. Kirjautumiset säilytetään";
 "privacy_clear_cache_confirm_title" = "Tyhjennetäänkö selausvälimuisti?";
 "privacy_clear_cache_confirm_message" = "Välimuistissa olevat resurssit ja sivuvierailut kolmen viime päivän ajalta poistetaan. Evästeet ja kirjautumiset säilytetään.";
-"enter_fullscreen" = "Siirry koko näytön tilaan";
+"enter_fullscreen" = "Koko näyttö";
 "exit_fullscreen" = "Poistu koko näytön tilasta";
 "fullscreen_exit_hint" = "Napauta nähdäksesi säätimet, vedä alas poistuaksesi";
 "restore_browser_toolbar" = "Palauta työkalupalkki";
@@ -262,7 +262,7 @@
 "ad_block_network" = "Estä mainosverkostopyynnöt";
 "ad_block_cosmetic" = "Piilota mainoksen paikkamerkit";
 "ad_block_popups" = "Puhdista ponnahdusikkunat ja peittokuvat";
-"ad_block_management" = "Mainoslohkon hallinta";
+"ad_block_management" = "Mainosten esto";
 "ad_block_allowlist" = "Sallitut sivustot";
 "ad_block_disable_current_site" = "Poista mainosten esto käytöstä tällä sivustolla";
 "ad_block_enable_current_site" = "Ota Ad Block käyttöön tällä sivustolla";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Selkeä";
 "fire_button_desc" = "Sulje selaimen välilehdet ja tyhjennä verkkosivustojen tiedot, evästeet, välimuisti ja tietosuojatilastot.";
 "fire_complete" = "Yksityisyystiedot tyhjennetty";
-"site_privacy" = "Sivuston suojaustiedot";
+"site_privacy" = "Sivuston suojaus";
 "site_privacy_scope_desc" = "Koskee vain tätä sivustoa. Muuta kaikkien sivustojen oletusasetuksia tietosuoja-asetuksissa.";
 "privacy_global_scope_desc" = "Nämä oletusasetukset koskevat kaikkia sivustoja. Napauta sivuston kuvaketta alareunan osoitepalkissa asettaaksesi poikkeuksen nykyiselle verkkosivustolle.";
 "site_privacy_compatibility_bypass" = "Suojaus on keskeytetty, jotta sisäänkirjautuminen ja sivuston ominaisuudet pysyvät toiminnassa.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "Satunnaista lähteet";
 "wallpaper_random_sources_desc" = "Automaattinen päivitys ja satunnainen päivityskytkin valittujen etälähteiden välillä. Ainakin yksi lähde säilytetään.";
 "wallpaper_random_topics" = "Satunnaista aiheita";
+"wallpaper_only_favorites" = "Käytä vain suosikkeja";
+"wallpaper_only_favorites_desc" = "Manuaaliset ja automaattiset vaihdot käyttävät vain suosikkitaustakuviasi. Lisää vähintään yksi suosikki ottaaksesi tämän käyttöön.";
 "wallpaper_interval_none" = "Ei koskaan";
 "wallpaper_interval_1min" = "Joka Minuutti";
 "wallpaper_interval_5min" = "5 minuutin välein";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Salli Soulo lisätä sivunkaappaus Valokuviin Asetuksissa ja yritä sitten uudelleen.";
 "web_capture_height_limited" = "Tämä sivu ylitti vieritysrajan, joten kuva leikattiin enimmäiskorkeudella.";
 "web_capture_live_text_hint" = "Kosketa ja pidä painettuna kuvan tunnistettua tekstiä valitaksesi tai kopioidaksesi sen Live Text.";
+"web_capture_pdf" = "Vie verkkosivu PDF:nä";
+"web_capture_pdf_limited" = "Sivu ylitti PDF-rajan, joten vain alkuosa vietiin.";
 "web_translate" = "Käännä sivu";
 "web_translate_target" = "Käännä To";
 "web_translate_target_desc" = "Soulo tunnistaa sivun kielen automaattisesti.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Alleviivaa verkkosivulinkit, jotta ne on helpompi tunnistaa.";
 "home_title_edit_desc" = "Näytetään aloitusnäytön pääotsikona.";
 "home_subtitle_edit_desc" = "Näkyy pääotsikon alla; jätä tyhjäksi piilottaaksesi sen.";
+"current_keyword" = "Nykyinen hakusana";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Tämä suoratoisto ei ole enää saatavilla nykyisellä sivulla. Lataa sivu uudelleen ja yritä uudelleen.";
+"resource_stream_download_unsupported" = "Soulo havaitsi tämän suoratoiston, mutta sen manifestimuotoa ei vielä voi tallentaa.";
+"resource_stream_download_invalid_chunk" = "Mediavirta palautti virheellisen tai väärässä järjestyksessä olevan osan.";
+"resource_stream_download_missing_track" = "Ladattu suoratoisto ei sisältänyt toistettavia video- ja ääniraitoja.";
+"resource_stream_download_export_failed" = "Soulo ei voinut yhdistää ladattua videota ja ääntä.";
+"resource_stream_playback_download_first" = "Tätä suojattua suoratoistoa ei voi esikatsella väliaikaisesta URL-osoitteesta. Lataa se ensin ja toista paikallinen tiedosto.";

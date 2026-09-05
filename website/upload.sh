@@ -26,7 +26,9 @@ trap cleanup EXIT INT TERM
 
 echo "========== 上传 Soulo 静态网站 =========="
 
-for file in index.html home.css home.js site.css sources.html privacy.html; do
+for file in index.html home.css home.js site.css sources.html privacy.html \
+    images/soulo-home-zh.webp images/soulo-home-en.webp \
+    images/soulo-home-light-zh.webp images/soulo-home-light-en.webp images/app-store-qr.svg; do
     if [[ ! -f "$LOCAL_DIR/$file" ]]; then
         echo "❌ 缺少网站文件：$LOCAL_DIR/$file" >&2
         exit 1

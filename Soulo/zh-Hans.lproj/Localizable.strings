@@ -167,7 +167,7 @@
 "privacy_clear_cache_desc" = "清除网页缓存、标签页预览和最近 3 天的网页访问记录，保留登录状态";
 "privacy_clear_cache_confirm_title" = "清除浏览缓存？";
 "privacy_clear_cache_confirm_message" = "将清除网页缓存和最近 3 天的网页访问记录，但保留 Cookie 和登录状态。";
-"enter_fullscreen" = "进入全屏";
+"enter_fullscreen" = "全屏";
 "exit_fullscreen" = "退出全屏";
 "fullscreen_exit_hint" = "轻点展开，下拉退出";
 "restore_browser_toolbar" = "恢复工具栏";
@@ -268,7 +268,7 @@
 "ad_block_network" = "拦截广告网络请求";
 "ad_block_cosmetic" = "隐藏广告占位";
 "ad_block_popups" = "清理弹窗和悬浮层";
-"ad_block_management" = "广告过滤管理";
+"ad_block_management" = "广告过滤";
 "ad_block_allowlist" = "允许的网站";
 "ad_block_disable_current_site" = "在当前网站停用广告过滤";
 "ad_block_enable_current_site" = "在当前网站启用广告过滤";
@@ -450,7 +450,7 @@
 "fire_button_confirm" = "清除";
 "fire_button_desc" = "关闭浏览器标签页，并清除网站数据、Cookie、缓存和隐私统计。";
 "fire_complete" = "隐私数据已清除";
-"site_privacy" = "站点保护详情";
+"site_privacy" = "站点保护";
 "site_privacy_scope_desc" = "仅影响当前网站；所有网站的默认规则可在“隐私设置”中修改。";
 "privacy_global_scope_desc" = "以上规则默认应用于所有网站；点击底部地址栏的站点图标可设置当前网站的例外。";
 "site_privacy_compatibility_bypass" = "为保证登录和网页功能正常，此站点的保护已暂停。";
@@ -511,6 +511,8 @@
 "wallpaper_random_sources" = "随机切换来源";
 "wallpaper_random_sources_desc" = "自动刷新和随机刷新会在已选远程来源中切换，至少保留一个来源。";
 "wallpaper_random_topics" = "随机切换关键词";
+"wallpaper_only_favorites" = "仅使用喜欢的壁纸";
+"wallpaper_only_favorites_desc" = "手动更换和自动刷新都只会使用喜欢的壁纸；至少喜欢一张壁纸后即可开启。";
 "wallpaper_interval_none" = "不自动刷新";
 "wallpaper_interval_1min" = "每 1 分钟";
 "wallpaper_interval_5min" = "每 5 分钟";
@@ -789,6 +791,8 @@
 "web_capture_photo_permission" = "请在系统设置中允许 Soulo 添加照片，然后重试。";
 "web_capture_height_limited" = "此网页超过滚动截屏的最大高度，图片已在上限处截断。";
 "web_capture_live_text_hint" = "长按图片中识别出的文字，可使用实况文本选择或复制。";
+"web_capture_pdf" = "导出网页 PDF";
+"web_capture_pdf_limited" = "网页超出 PDF 上限，仅导出了前面部分。";
 "web_translate" = "翻译网页";
 "web_translate_target" = "翻译为";
 "web_translate_target_desc" = "Soulo 会自动识别当前网页的语言。";
@@ -853,3 +857,4 @@
 "web_underline_links_desc" = "为网页链接添加下划线，让链接更容易识别。";
 "home_title_edit_desc" = "作为首页中央显示的主标题。";
 "home_subtitle_edit_desc" = "显示在主标题下方，留空则隐藏。";
+"current_keyword" = "当前关键词";

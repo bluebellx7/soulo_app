@@ -331,7 +331,7 @@ struct SettingsView: View {
                             dismiss()
                         })) {
                             SettingsNavigationLabel(
-                                icon: "puzzlepiece.extension.fill",
+                                icon: "puzzlepiece.extension",
                                 color: neutralIconColor,
                                 title: LanguageManager.shared.localizedString("userscripts")
                             )
@@ -569,11 +569,14 @@ struct SettingsActionLabel: View {
     let title: String
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            IconBadge(systemName: icon, color: color)
-            Text(title)
-                .font(.body)
-                .foregroundStyle(.primary)
+        HStack {
+            Label {
+                Text(title)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+            } icon: {
+                IconBadge(systemName: icon, color: color)
+            }
             Spacer(minLength: 12)
             Image(systemName: "chevron.right")
                 .font(.system(size: 13, weight: .semibold))

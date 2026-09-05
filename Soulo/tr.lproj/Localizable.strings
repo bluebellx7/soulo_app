@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "Önbelleği, sekme önizlemelerini ve son 3 günlük sayfa geçmişini temizle. Oturumlar korunur";
 "privacy_clear_cache_confirm_title" = "Tarama Önbelleği Temizlensin mi?";
 "privacy_clear_cache_confirm_message" = "Önbellek ve son 3 günlük sayfa geçmişi silinecek. Çerezler ve oturumlar korunacak.";
-"enter_fullscreen" = "Tam Ekrana Geç";
+"enter_fullscreen" = "Tam Ekran";
 "exit_fullscreen" = "Tam Ekrandan Çık";
 "fullscreen_exit_hint" = "Denetimler için dokunun, çıkmak için aşağı çekin";
 "restore_browser_toolbar" = "Araç çubuğunu geri yükle";
@@ -262,7 +262,7 @@
 "ad_block_network" = "Reklam Ağı İsteklerini Engelle";
 "ad_block_cosmetic" = "Reklam Yer Tutucularını Gizle";
 "ad_block_popups" = "Açılır Pencereleri ve Kaplamaları Temizleme";
-"ad_block_management" = "Reklam Bloğu Yönetimi";
+"ad_block_management" = "Reklam Engelleme";
 "ad_block_allowlist" = "İzin Verilen Siteler";
 "ad_block_disable_current_site" = "Bu Sitede Reklam Engellemeyi Devre Dışı Bırak";
 "ad_block_enable_current_site" = "Bu Sitede Reklam Engellemeyi Etkinleştir";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Geçerli Site Koruması";
+"site_privacy" = "Site Koruması";
 "site_privacy_scope_desc" = "Yalnızca bu siteye uygulanır. Tüm sitelerin varsayılanlarını Gizlilik Ayarları’ndan değiştirin.";
 "privacy_global_scope_desc" = "Bu varsayılanlar tüm sitelere uygulanır. Siteye özel istisna için Geçerli Site Koruması’nı kullanın.";
 "site_privacy_compatibility_bypass" = "Oturum açma ve site özellikleri çalışsın diye koruma duraklatıldı.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "Kaynakları Rastgeleleştir";
 "wallpaper_random_sources_desc" = "Seçilen uzak kaynaklar arasında otomatik yenileme ve rastgele yenileme geçişi. En az bir kaynak tutulur.";
 "wallpaper_random_topics" = "Konuları Rastgele Seç";
+"wallpaper_only_favorites" = "Yalnızca Favorileri Kullan";
+"wallpaper_only_favorites_desc" = "Elle ve otomatik değiştirmede yalnızca favori duvar kâğıtlarınız kullanılır. Etkinleştirmek için en az bir favori ekleyin.";
 "wallpaper_interval_none" = "Asla";
 "wallpaper_interval_1min" = "Her Dakika";
 "wallpaper_interval_5min" = "Her 5 Dakikada Bir";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Soulo'in sayfa yakalamayı Ayarlar'daki Fotoğraflar'a eklemesine izin verin, ardından tekrar deneyin.";
 "web_capture_height_limited" = "Bu sayfa kayan yakalama sınırını aştığı için görüntü maksimum yükseklikte kırpıldı.";
 "web_capture_live_text_hint" = "Live Text ile seçmek veya kopyalamak için resimde tanınan metne dokunup basılı tutun.";
+"web_capture_pdf" = "Web Sayfasını PDF Olarak Aktar";
+"web_capture_pdf_limited" = "Sayfa PDF sınırını aştığı için yalnızca ilk bölüm aktarıldı.";
 "web_translate" = "Sayfayı Çevir";
 "web_translate_target" = "Çevir";
 "web_translate_target_desc" = "Soulo sayfa dilini otomatik olarak algılar.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Daha kolay ayırt edilmeleri için web sayfası bağlantılarının altını çizer.";
 "home_title_edit_desc" = "Ana ekranın ortasında ana başlık olarak gösterilir.";
 "home_subtitle_edit_desc" = "Ana başlığın altında gösterilir; gizlemek için boş bırakın.";
+"current_keyword" = "Geçerli anahtar kelime";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Bu akış artık geçerli sayfada kullanılamıyor. Sayfayı yenileyip tekrar deneyin.";
+"resource_stream_download_unsupported" = "Soulo bu akışı algıladı ancak bildirim dosyası biçimini henüz kaydedemiyor.";
+"resource_stream_download_invalid_chunk" = "Medya akışı geçersiz veya yanlış sıralanmış bir bölüm döndürdü.";
+"resource_stream_download_missing_track" = "İndirilen akış, oynatılabilir video ve ses parçaları içermiyordu.";
+"resource_stream_download_export_failed" = "Soulo indirilen video ve sesi birleştiremedi.";
+"resource_stream_playback_download_first" = "Bu korumalı akış geçici URL üzerinden önizlenemez. Yerel dosyayı oynatmak için önce indirin.";

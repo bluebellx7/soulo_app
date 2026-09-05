@@ -287,7 +287,7 @@
 "privacy_clear_cache_confirm_title" = "Browser-Cache leeren?";
 "privacy_clear_cache_confirm_message" = "Zwischengespeicherte Inhalte und Seitenaufrufe der letzten 3 Tage werden gelöscht. Cookies und Anmeldungen bleiben erhalten.";
 
-"enter_fullscreen" = "Vollbild aktivieren";
+"enter_fullscreen" = "Vollbild";
 "exit_fullscreen" = "Vollbild beenden";
 "fullscreen_exit_hint" = "Tippen für Steuerung, zum Beenden nach unten ziehen";
 "restore_browser_toolbar" = "Symbolleiste wiederherstellen";
@@ -481,7 +481,7 @@ Erzahlen Sie uns:
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Schutz der aktuellen Website";
+"site_privacy" = "Website-Schutz";
 "site_privacy_scope_desc" = "Gilt nur für diese Website. Die Standardwerte für alle Websites ändern Sie in den Datenschutzeinstellungen.";
 "privacy_global_scope_desc" = "Diese Standardwerte gelten für alle Websites. Ausnahmen legen Sie unter Schutz der aktuellen Website fest.";
 "site_privacy_compatibility_bypass" = "Der Schutz ist pausiert, damit Anmeldung und Website-Funktionen verfügbar bleiben.";
@@ -588,3 +588,14 @@ Erzahlen Sie uns:
 "userscript_commands" = "Skriptbefehle";
 "userscript_page_marker_name" = "Bereichstext extrahieren";
 "userscript_page_marker_desc" = "Die verschiebbare Taste und dann einen Seitenbereich antippen, um sichtbaren Text zu extrahieren und zu kopieren.";
+"wallpaper_only_favorites" = "Nur Favoriten verwenden";
+"wallpaper_only_favorites_desc" = "Manuelle und automatische Wechsel verwenden nur deine Lieblingshintergründe. Füge zum Aktivieren mindestens einen Favoriten hinzu.";
+"current_keyword" = "Aktuelles Suchwort";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Dieser Stream ist auf der aktuellen Seite nicht mehr verfügbar. Lade die Seite neu und versuche es erneut.";
+"resource_stream_download_unsupported" = "Soulo hat diesen Stream erkannt, kann sein Manifestformat aber noch nicht speichern.";
+"resource_stream_download_invalid_chunk" = "Der Medienstream hat ein ungültiges Segment oder ein Segment in falscher Reihenfolge geliefert.";
+"resource_stream_download_missing_track" = "Der heruntergeladene Stream enthielt keine abspielbaren Video- und Audiospuren.";
+"resource_stream_download_export_failed" = "Soulo konnte das heruntergeladene Video und Audio nicht zusammenführen.";
+"resource_stream_playback_download_first" = "Dieser geschützte Stream kann über seine temporäre URL nicht in der Vorschau angezeigt werden. Lade ihn zuerst herunter, um die lokale Datei abzuspielen.";

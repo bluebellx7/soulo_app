@@ -560,7 +560,7 @@ struct HomeView: View {
             Button {
                 showExtensionCenter = true
             } label: {
-                Label(LanguageManager.shared.localizedString("userscripts"), systemImage: "puzzlepiece.extension.fill")
+                Label(LanguageManager.shared.localizedString("userscripts"), systemImage: "puzzlepiece.extension")
             }
         } label: {
             Image(systemName: "ellipsis")

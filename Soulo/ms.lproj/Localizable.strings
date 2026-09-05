@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "Alih keluar sumber cache, pratonton tab dan lawatan halaman dari 3 hari lalu. Log masuk disimpan";
 "privacy_clear_cache_confirm_title" = "Kosongkan Cache Semak Imbas?";
 "privacy_clear_cache_confirm_message" = "Sumber cache dan lawatan halaman dari 3 hari lalu akan dialih keluar. Kuki dan log masuk akan disimpan.";
-"enter_fullscreen" = "Masukkan Skrin Penuh";
+"enter_fullscreen" = "Skrin Penuh";
 "exit_fullscreen" = "Keluar dari Skrin Penuh";
 "fullscreen_exit_hint" = "Ketik untuk kawalan, tarik ke bawah untuk keluar";
 "restore_browser_toolbar" = "Pulihkan bar alat";
@@ -262,7 +262,7 @@
 "ad_block_network" = "Sekat Permintaan Rangkaian Iklan";
 "ad_block_cosmetic" = "Sembunyikan Pemegang Tempat Iklan";
 "ad_block_popups" = "Bersihkan Pop Timbul dan Tindanan";
-"ad_block_management" = "Pengurusan Blok Iklan";
+"ad_block_management" = "Sekatan Iklan";
 "ad_block_allowlist" = "Tapak yang Dibenarkan";
 "ad_block_disable_current_site" = "Lumpuhkan Sekatan Iklan di Tapak Ini";
 "ad_block_enable_current_site" = "Dayakan Sekatan Iklan di Tapak Ini";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Jelas";
 "fire_button_desc" = "Tutup tab penyemak imbas dan kosongkan data tapak web, kuki, cache dan statistik privasi.";
 "fire_complete" = "Data privasi dikosongkan";
-"site_privacy" = "Butiran Perlindungan Tapak";
+"site_privacy" = "Perlindungan Tapak";
 "site_privacy_scope_desc" = "Terpakai hanya untuk tapak ini. Tukar lalai untuk semua tapak dalam Tetapan Privasi.";
 "privacy_global_scope_desc" = "Lalai ini digunakan untuk semua tapak. Ketik ikon tapak di bar alamat bawah untuk menetapkan pengecualian untuk tapak web semasa.";
 "site_privacy_compatibility_bypass" = "Perlindungan dijeda untuk memastikan log masuk dan ciri tapak berfungsi.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "Rawak Sumber";
 "wallpaper_random_sources_desc" = "Tukar semula automatik dan muat semula rawak antara sumber jauh yang dipilih. Sekurang-kurangnya satu sumber disimpan.";
 "wallpaper_random_topics" = "Rawak Topik";
+"wallpaper_only_favorites" = "Guna Kegemaran Sahaja";
+"wallpaper_only_favorites_desc" = "Perubahan manual dan automatik hanya menggunakan kertas dinding kegemaran anda. Tambah sekurang-kurangnya satu untuk mengaktifkannya.";
 "wallpaper_interval_none" = "tidak pernah";
 "wallpaper_interval_1min" = "Setiap Minit";
 "wallpaper_interval_5min" = "Setiap 5 Minit";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Benarkan Soulo menambah tangkapan halaman pada Foto dalam Tetapan, kemudian cuba lagi.";
 "web_capture_height_limited" = "Halaman ini melebihi had tangkapan tatal, jadi imej telah dipangkas pada ketinggian maksimum.";
 "web_capture_live_text_hint" = "Sentuh dan tahan teks yang dikenali dalam imej untuk memilih atau menyalinnya dengan Live Text.";
+"web_capture_pdf" = "Eksport Halaman Web PDF";
+"web_capture_pdf_limited" = "Halaman melebihi had PDF, jadi hanya bahagian pertama dieksport.";
 "web_translate" = "Halaman Terjemah";
 "web_translate_target" = "Terjemah Kepada";
 "web_translate_target_desc" = "Soulo mengesan bahasa halaman secara automatik.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Gariskan pautan halaman web supaya lebih mudah dikenali.";
 "home_title_edit_desc" = "Ditunjukkan sebagai tajuk utama pada skrin Utama.";
 "home_subtitle_edit_desc" = "Ditunjukkan di bawah tajuk utama; biarkan kosong untuk menyembunyikannya.";
+"current_keyword" = "Kata kunci semasa";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Strim ini tidak lagi tersedia pada halaman semasa. Muat semula halaman dan cuba lagi.";
+"resource_stream_download_unsupported" = "Soulo mengesan strim ini, tetapi format manifesnya belum boleh disimpan.";
+"resource_stream_download_invalid_chunk" = "Strim media mengembalikan segmen yang tidak sah atau di luar turutan.";
+"resource_stream_download_missing_track" = "Strim yang dimuat turun tidak mengandungi trek video dan audio yang boleh dimainkan.";
+"resource_stream_download_export_failed" = "Soulo tidak dapat menggabungkan video dan audio yang dimuat turun.";
+"resource_stream_playback_download_first" = "Strim terlindung ini tidak dapat dipratonton daripada URL sementaranya. Muat turun dahulu untuk memainkan fail setempat.";

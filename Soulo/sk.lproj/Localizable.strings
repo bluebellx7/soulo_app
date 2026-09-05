@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "Odstráňte zdroje uložené vo vyrovnávacej pamäti, ukážky kariet a návštevy stránok za posledné 3 dni. Prihlásenia sú zachované";
 "privacy_clear_cache_confirm_title" = "Vymazať vyrovnávaciu pamäť prehliadania?";
 "privacy_clear_cache_confirm_message" = "Zdroje vo vyrovnávacej pamäti a návštevy stránok za posledné 3 dni budú odstránené. Súbory cookie a prihlásenia sa zachovajú.";
-"enter_fullscreen" = "Vstúpte na celú obrazovku";
+"enter_fullscreen" = "Celá obrazovka";
 "exit_fullscreen" = "Ukončiť celú obrazovku";
 "fullscreen_exit_hint" = "Klepnutím zobrazíte ovládacie prvky, potiahnutím nadol opustíte ponuku";
 "restore_browser_toolbar" = "Obnoviť panel s nástrojmi";
@@ -262,7 +262,7 @@
 "ad_block_network" = "Blokovať požiadavky reklamnej siete";
 "ad_block_cosmetic" = "Skryť zástupné symboly reklamy";
 "ad_block_popups" = "Čisté kontextové okná a prekrytia";
-"ad_block_management" = "Správa blokov reklám";
+"ad_block_management" = "Blokovanie reklám";
 "ad_block_allowlist" = "Povolené stránky";
 "ad_block_disable_current_site" = "Zakázať blokovanie reklám na tejto stránke";
 "ad_block_enable_current_site" = "Povoliť blokovanie reklám na tejto stránke";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Jasné";
 "fire_button_desc" = "Zatvorte karty prehliadača a vymažte údaje webových stránok, súbory cookie, vyrovnávaciu pamäť a štatistiky ochrany osobných údajov.";
 "fire_complete" = "Osobné údaje boli vymazané";
-"site_privacy" = "Podrobnosti o ochrane lokality";
+"site_privacy" = "Ochrana lokality";
 "site_privacy_scope_desc" = "Platí len pre túto stránku. Zmeňte predvolené nastavenia pre všetky stránky v nastaveniach ochrany osobných údajov.";
 "privacy_global_scope_desc" = "Tieto predvolené nastavenia platia pre všetky lokality. Klepnutím na ikonu lokality v dolnom paneli s adresou nastavíte výnimku pre aktuálnu webovú lokalitu.";
 "site_privacy_compatibility_bypass" = "Ochrana je pozastavená, aby prihlasovanie a funkcie lokality fungovali.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "Randomizujte zdroje";
 "wallpaper_random_sources_desc" = "Automatické obnovovanie a náhodné obnovovanie prepína medzi vybranými vzdialenými zdrojmi. Uchováva sa aspoň jeden zdroj.";
 "wallpaper_random_topics" = "Randomizujte témy";
+"wallpaper_only_favorites" = "Použiť iba obľúbené";
+"wallpaper_only_favorites_desc" = "Ručné aj automatické zmeny použijú iba obľúbené tapety. Na zapnutie pridajte aspoň jednu.";
 "wallpaper_interval_none" = "Nikdy";
 "wallpaper_interval_1min" = "Každú minútu";
 "wallpaper_interval_5min" = "Každých 5 minút";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Povoľte Soulo pridať snímku strany do Fotiek v Nastaveniach a skúste to znova.";
 "web_capture_height_limited" = "Táto stránka prekročila limit snímania pri posúvaní, takže obrázok bol orezaný na maximálnu výšku.";
 "web_capture_live_text_hint" = "Klepnutím a podržaním rozpoznaného textu na obrázku ho vyberte alebo skopírujte pomocou Live Text.";
+"web_capture_pdf" = "Exportovať stránku do PDF";
+"web_capture_pdf_limited" = "Stránka prekročila limit PDF, preto sa exportovala len prvá časť.";
 "web_translate" = "Preložiť stránku";
 "web_translate_target" = "Preložiť do";
 "web_translate_target_desc" = "Soulo automaticky rozpozná jazyk stránky.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Podčiarknite odkazy na webové stránky, aby boli ľahšie rozpoznateľné.";
 "home_title_edit_desc" = "Zobrazuje sa ako hlavný nadpis na domovskej obrazovke.";
 "home_subtitle_edit_desc" = "Zobrazené pod hlavným nadpisom; ponechajte prázdne, aby ste ho skryli.";
+"current_keyword" = "Aktuálne kľúčové slovo";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Tento stream už nie je na aktuálnej stránke dostupný. Obnovte stránku a skúste to znova.";
+"resource_stream_download_unsupported" = "Soulo rozpoznalo tento stream, ale jeho formát manifestu zatiaľ nedokáže uložiť.";
+"resource_stream_download_invalid_chunk" = "Mediálny stream vrátil neplatný segment alebo segment v nesprávnom poradí.";
+"resource_stream_download_missing_track" = "Stiahnutý stream neobsahoval prehrateľné obrazové a zvukové stopy.";
+"resource_stream_download_export_failed" = "Soulo nedokázalo spojiť stiahnuté video a zvuk.";
+"resource_stream_playback_download_first" = "Tento chránený stream nemožno zobraziť z dočasnej adresy URL. Najprv ho stiahnite a prehrajte miestny súbor.";

@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "پچھلے 3 دنوں سے کیش کردہ وسائل، ٹیب کے پیش نظارہ اور صفحہ کے وزٹ کو ہٹا دیں۔ سائن ان رکھے گئے ہیں۔";
 "privacy_clear_cache_confirm_title" = "براؤزنگ کیشے صاف کریں؟";
 "privacy_clear_cache_confirm_message" = "پچھلے 3 دنوں سے کیش کردہ وسائل اور صفحہ کے وزٹس کو ہٹا دیا جائے گا۔ کوکیز اور سائن ان رکھے جائیں گے۔";
-"enter_fullscreen" = "فل سکرین درج کریں۔";
+"enter_fullscreen" = "فل سکرین";
 "exit_fullscreen" = "فل سکرین سے باہر نکلیں۔";
 "fullscreen_exit_hint" = "کنٹرولز کے لیے تھپتھپائیں، باہر نکلنے کے لیے نیچے کھینچیں۔";
 "restore_browser_toolbar" = "ٹول بار کو بحال کریں۔";
@@ -262,7 +262,7 @@
 "ad_block_network" = "اشتہاری نیٹ ورک کی درخواستوں کو مسدود کریں۔";
 "ad_block_cosmetic" = "اشتہار کے پلیس ہولڈرز کو چھپائیں۔";
 "ad_block_popups" = "پاپ اپ اور اوورلیز کو صاف کریں۔";
-"ad_block_management" = "ایڈ بلاک مینجمنٹ";
+"ad_block_management" = "اشتہارات کی روک تھام";
 "ad_block_allowlist" = "اجازت یافتہ سائٹس";
 "ad_block_disable_current_site" = "اس سائٹ پر اشتہاری بلاک کو غیر فعال کریں۔";
 "ad_block_enable_current_site" = "اس سائٹ پر اشتہاری بلاک کو فعال کریں۔";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "صاف";
 "fire_button_desc" = "براؤزر کے ٹیبز کو بند کریں اور ویب سائٹ کا ڈیٹا، کوکیز، کیشے، اور رازداری کے اعدادوشمار کو صاف کریں۔";
 "fire_complete" = "رازداری کا ڈیٹا صاف کر دیا گیا۔";
-"site_privacy" = "سائٹ کے تحفظ کی تفصیلات";
+"site_privacy" = "سائٹ کا تحفظ";
 "site_privacy_scope_desc" = "صرف اس سائٹ پر لاگو ہوتا ہے۔ رازداری کی ترتیبات میں تمام سائٹس کے لیے ڈیفالٹس کو تبدیل کریں۔";
 "privacy_global_scope_desc" = "یہ ڈیفالٹس تمام سائٹس پر لاگو ہوتے ہیں۔ موجودہ ویب سائٹ کے لیے مستثنیٰ سیٹ کرنے کے لیے نیچے ایڈریس بار میں سائٹ کے آئیکن کو تھپتھپائیں۔";
 "site_privacy_compatibility_bypass" = "سائن ان اور سائٹ کی خصوصیات کو کام کرتے رہنے کے لیے تحفظ موقوف ہے۔";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "ذرائع کو بے ترتیب بنائیں";
 "wallpaper_random_sources_desc" = "منتخب ریموٹ ذرائع کے درمیان خودکار ریفریش اور بے ترتیب ریفریش سوئچ۔ کم از کم ایک ذریعہ رکھا جاتا ہے۔";
 "wallpaper_random_topics" = "موضوعات کو بے ترتیب بنائیں";
+"wallpaper_only_favorites" = "صرف پسندیدہ استعمال کریں";
+"wallpaper_only_favorites_desc" = "دستی اور خودکار تبدیلیوں میں صرف آپ کے پسندیدہ وال پیپر استعمال ہوں گے۔ فعال کرنے کے لیے کم از کم ایک پسندیدہ شامل کریں۔";
 "wallpaper_interval_none" = "کبھی نہیں۔";
 "wallpaper_interval_1min" = "ہر منٹ";
 "wallpaper_interval_5min" = "ہر 5 منٹ";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Soulo کو ترتیبات میں تصاویر میں صفحہ کیپچر شامل کرنے کی اجازت دیں، پھر دوبارہ کوشش کریں۔";
 "web_capture_height_limited" = "یہ صفحہ اسکرولنگ کیپچر کی حد سے تجاوز کر گیا، اس لیے تصویر کو زیادہ سے زیادہ اونچائی پر تراشا گیا۔";
 "web_capture_live_text_hint" = "تصویر میں پہچانے گئے متن کو Live Text کے ساتھ منتخب یا کاپی کرنے کے لیے اسے ٹچ کریں اور دبائے رکھیں۔";
+"web_capture_pdf" = "ویب صفحہ PDF برآمد کریں";
+"web_capture_pdf_limited" = "صفحہ PDF حد سے بڑا تھا، اس لیے صرف پہلا حصہ برآمد ہوا۔";
 "web_translate" = "صفحہ کا ترجمہ کریں۔";
 "web_translate_target" = "میں ترجمہ کریں۔";
 "web_translate_target_desc" = "Soulo صفحہ کی زبان کا خود بخود پتہ لگاتا ہے۔";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "ویب پیج کے لنکس کو انڈر لائن کریں تاکہ انہیں پہچاننا آسان ہو۔";
 "home_title_edit_desc" = "ہوم اسکرین پر مرکزی سرخی کے طور پر دکھایا گیا ہے۔";
 "home_subtitle_edit_desc" = "مرکزی عنوان کے نیچے دکھایا گیا ہے۔ اسے چھپانے کے لیے خالی چھوڑ دو۔";
+"current_keyword" = "موجودہ کلیدی لفظ";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "یہ اسٹریم موجودہ صفحے پر اب دستیاب نہیں ہے۔ صفحہ دوبارہ لوڈ کر کے کوشش کریں۔";
+"resource_stream_download_unsupported" = "Soulo نے یہ اسٹریم دریافت کی ہے، لیکن اس کے مینی فیسٹ فارمیٹ کو ابھی محفوظ نہیں کیا جا سکتا۔";
+"resource_stream_download_invalid_chunk" = "میڈیا اسٹریم نے ایک نامعتبر یا غلط ترتیب والا حصہ واپس کیا۔";
+"resource_stream_download_missing_track" = "ڈاؤن لوڈ کی گئی اسٹریم میں چلنے کے قابل ویڈیو اور آڈیو ٹریک نہیں تھے۔";
+"resource_stream_download_export_failed" = "Soulo ڈاؤن لوڈ کردہ ویڈیو اور آڈیو کو یکجا نہیں کر سکا۔";
+"resource_stream_playback_download_first" = "اس محفوظ اسٹریم کے عارضی URL سے پیش منظر نہیں دیکھا جا سکتا۔ مقامی فائل چلانے کے لیے پہلے اسے ڈاؤن لوڈ کریں۔";

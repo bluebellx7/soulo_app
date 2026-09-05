@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "הסר משאבים במטמון, תצוגות מקדימות של כרטיסיות וביקורים בדפים מ-3 הימים האחרונים. כניסות נשמרות";
 "privacy_clear_cache_confirm_title" = "לנקות את מטמון הגלישה?";
 "privacy_clear_cache_confirm_message" = "משאבים בקובץ שמור וביקורים בדפים מ-3 הימים האחרונים יוסרו. עוגיות וכניסות יישמרו.";
-"enter_fullscreen" = "היכנס למסך מלא";
+"enter_fullscreen" = "מסך מלא";
 "exit_fullscreen" = "צא ממסך מלא";
 "fullscreen_exit_hint" = "הקש לפקדים, משוך למטה כדי לצאת";
 "restore_browser_toolbar" = "שחזור סרגל כלים";
@@ -262,7 +262,7 @@
 "ad_block_network" = "חסום בקשות לרשת מודעות";
 "ad_block_cosmetic" = "הסתר מצייני מיקום של מודעה";
 "ad_block_popups" = "נקה חלונות קופצים ושכבות-על";
-"ad_block_management" = "ניהול בלוק מודעות";
+"ad_block_management" = "חסימת פרסומות";
 "ad_block_allowlist" = "אתרים מותרים";
 "ad_block_disable_current_site" = "השבת את חסימת המודעות באתר זה";
 "ad_block_enable_current_site" = "הפעל חסימת מודעות באתר זה";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "ברור";
 "fire_button_desc" = "סגור את כרטיסיות הדפדפן ונקה נתוני אתר, קובצי Cookie, מטמון וסטטיסטיקות פרטיות.";
 "fire_complete" = "נתוני הפרטיות נוקו";
-"site_privacy" = "פרטי הגנת האתר";
+"site_privacy" = "הגנת האתר";
 "site_privacy_scope_desc" = "חל רק על אתר זה. שנה ברירת מחדל עבור כל האתרים בהגדרות הפרטיות.";
 "privacy_global_scope_desc" = "ברירות מחדל אלה חלות על כל האתרים. הקש על סמל האתר בשורת הכתובת התחתונה כדי להגדיר חריגה עבור האתר הנוכחי.";
 "site_privacy_compatibility_bypass" = "ההגנה מושהית כדי שהכניסה ותכונות האתר ימשיכו לפעול.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "עשה אקראי מקורות";
 "wallpaper_random_sources_desc" = "מתג רענון אוטומטי ורענון אקראי בין מקורות מרוחקים נבחרים. לפחות מקור אחד נשמר.";
 "wallpaper_random_topics" = "הפוך נושאים באקראי";
+"wallpaper_only_favorites" = "שימוש במועדפים בלבד";
+"wallpaper_only_favorites_desc" = "שינויים ידניים ואוטומטיים ישתמשו רק ברקעים המועדפים שלך. יש להוסיף לפחות מועדף אחד כדי להפעיל זאת.";
 "wallpaper_interval_none" = "לעולם לא";
 "wallpaper_interval_1min" = "כל דקה";
 "wallpaper_interval_5min" = "כל 5 דקות";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "אפשר ל-Soulo להוסיף את לכידת העמוד לתמונות בהגדרות, ולאחר מכן נסה שוב.";
 "web_capture_height_limited" = "דף זה חרג ממגבלת הלכידת הגלילה, כך שהתמונה נחתכה בגובה המרבי.";
 "web_capture_live_text_hint" = "גע והחזק טקסט מזוהה בתמונה כדי לבחור או להעתיק אותו באמצעות Live Text.";
+"web_capture_pdf" = "ייצוא דף כ-PDF";
+"web_capture_pdf_limited" = "הדף חרג ממגבלת ה-PDF, ולכן רק החלק הראשון יוצא.";
 "web_translate" = "דף תרגם";
 "web_translate_target" = "תרגם ל";
 "web_translate_target_desc" = "Soulo מזהה את שפת הדף באופן אוטומטי.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "סמן תחתית קישורים של דפי אינטרנט כדי שיהיה קל יותר לזהות אותם.";
 "home_title_edit_desc" = "מוצגת ככותרת הראשית במסך הבית.";
 "home_subtitle_edit_desc" = "מוצג מתחת לכותרת הראשית; השאר ריק כדי להסתיר אותו.";
+"current_keyword" = "מילת מפתח נוכחית";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "השידור הזה אינו זמין עוד בדף הנוכחי. יש לטעון מחדש את הדף ולנסות שוב.";
+"resource_stream_download_unsupported" = "Soulo זיהה את השידור הזה, אך עדיין לא ניתן לשמור את פורמט קובץ המניפסט שלו.";
+"resource_stream_download_invalid_chunk" = "זרם המדיה החזיר מקטע לא תקין או מקטע בסדר שגוי.";
+"resource_stream_download_missing_track" = "השידור שהורד לא כלל רצועות וידאו ושמע שניתן לנגן.";
+"resource_stream_download_export_failed" = "Soulo לא הצליח לשלב את הווידאו והשמע שהורדו.";
+"resource_stream_playback_download_first" = "לא ניתן להציג תצוגה מקדימה של השידור המוגן הזה מהכתובת הזמנית שלו. יש להוריד אותו תחילה כדי לנגן את הקובץ המקומי.";

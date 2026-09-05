@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "ล้างแคช ตัวอย่างแท็บ และประวัติการเข้าชม 3 วันที่ผ่านมา โดยยังคงสถานะการเข้าสู่ระบบไว้";
 "privacy_clear_cache_confirm_title" = "ล้างแคชการเรียกดู?";
 "privacy_clear_cache_confirm_message" = "แคชและประวัติการเข้าชม 3 วันที่ผ่านมาจะถูกลบ โดยยังคงคุกกี้และสถานะการเข้าสู่ระบบไว้";
-"enter_fullscreen" = "เข้าสู่โหมดเต็มหน้าจอ";
+"enter_fullscreen" = "เต็มหน้าจอ";
 "exit_fullscreen" = "ออกจากโหมดเต็มหน้าจอ";
 "fullscreen_exit_hint" = "แตะเพื่อดูเมนู ดึงลงเพื่อออก";
 "restore_browser_toolbar" = "คืนค่าแถบเครื่องมือ";
@@ -262,7 +262,7 @@
 "ad_block_network" = "บล็อกคำขอเครือข่ายโฆษณา";
 "ad_block_cosmetic" = "ซ่อนตัวยึดตำแหน่งโฆษณา";
 "ad_block_popups" = "ทำความสะอาดป๊อปอัปและโอเวอร์เลย์";
-"ad_block_management" = "การจัดการบล็อคโฆษณา";
+"ad_block_management" = "การบล็อกโฆษณา";
 "ad_block_allowlist" = "ไซต์ที่ได้รับอนุญาต";
 "ad_block_disable_current_site" = "ปิดการใช้งานบล็อกโฆษณาบนเว็บไซต์นี้";
 "ad_block_enable_current_site" = "เปิดใช้งาน Ad Block บนไซต์นี้";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "การป้องกันเว็บไซต์ปัจจุบัน";
+"site_privacy" = "การป้องกันเว็บไซต์";
 "site_privacy_scope_desc" = "ใช้กับเว็บไซต์นี้เท่านั้น เปลี่ยนค่าเริ่มต้นของทุกเว็บไซต์ได้ในการตั้งค่าความเป็นส่วนตัว";
 "privacy_global_scope_desc" = "ค่าเริ่มต้นเหล่านี้ใช้กับทุกเว็บไซต์ ใช้การป้องกันเว็บไซต์ปัจจุบันเพื่อตั้งข้อยกเว้นเฉพาะเว็บไซต์";
 "site_privacy_compatibility_bypass" = "หยุดการป้องกันชั่วคราวเพื่อให้การเข้าสู่ระบบและฟังก์ชันของเว็บไซต์ทำงานได้";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "สุ่มแหล่งที่มา";
 "wallpaper_random_sources_desc" = "รีเฟรชอัตโนมัติและสวิตช์รีเฟรชแบบสุ่มระหว่างแหล่งระยะไกลที่เลือก อย่างน้อยหนึ่งแหล่งจะถูกเก็บไว้";
 "wallpaper_random_topics" = "สุ่มหัวข้อ";
+"wallpaper_only_favorites" = "ใช้เฉพาะรายการโปรด";
+"wallpaper_only_favorites_desc" = "การเปลี่ยนแบบกำหนดเองและอัตโนมัติจะใช้เฉพาะวอลเปเปอร์โปรดของคุณ เพิ่มอย่างน้อยหนึ่งรายการเพื่อเปิดใช้";
 "wallpaper_interval_none" = "ไม่เคย";
 "wallpaper_interval_1min" = "ทุกนาที";
 "wallpaper_interval_5min" = "ทุก 5 นาที";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "อนุญาตให้ Soulo เพิ่มการบันทึกหน้าลงใน Photos ในการตั้งค่า จากนั้นลองอีกครั้ง";
 "web_capture_height_limited" = "หน้านี้เกินขีดจำกัดการเลื่อนภาพ ดังนั้นรูปภาพจึงถูกตัดแต่งที่ความสูงสูงสุด";
 "web_capture_live_text_hint" = "แตะข้อความที่รู้จักในรูปภาพค้างไว้เพื่อเลือกหรือคัดลอกด้วย Live Text";
+"web_capture_pdf" = "ส่งออกเว็บเป็น PDF";
+"web_capture_pdf_limited" = "หน้าเว็บเกินขีดจำกัด PDF จึงส่งออกเฉพาะส่วนแรก";
 "web_translate" = "แปลหน้า";
 "web_translate_target" = "แปลเป็น";
 "web_translate_target_desc" = "Soulo ตรวจจับภาษาของหน้าโดยอัตโนมัติ";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "ขีดเส้นใต้ลิงก์บนหน้าเว็บเพื่อให้สังเกตได้ง่ายขึ้น";
 "home_title_edit_desc" = "แสดงเป็นหัวเรื่องหลักตรงกลางหน้าจอหลัก";
 "home_subtitle_edit_desc" = "แสดงใต้หัวเรื่องหลัก เว้นว่างไว้เพื่อซ่อน";
+"current_keyword" = "คำค้นหาปัจจุบัน";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "สตรีมนี้ไม่พร้อมใช้งานบนหน้าปัจจุบันแล้ว โปรดโหลดหน้าใหม่แล้วลองอีกครั้ง";
+"resource_stream_download_unsupported" = "Soulo ตรวจพบสตรีมนี้ แต่ยังไม่รองรับการบันทึกรูปแบบไฟล์รายการของสตรีม";
+"resource_stream_download_invalid_chunk" = "สตรีมสื่อส่งกลับส่วนข้อมูลที่ไม่ถูกต้องหรือผิดลำดับ";
+"resource_stream_download_missing_track" = "สตรีมที่ดาวน์โหลดไม่มีแทร็กวิดีโอและเสียงที่เล่นได้";
+"resource_stream_download_export_failed" = "Soulo ไม่สามารถรวมวิดีโอและเสียงที่ดาวน์โหลดได้";
+"resource_stream_playback_download_first" = "ไม่สามารถดูตัวอย่างสตรีมที่มีการป้องกันนี้จาก URL ชั่วคราวได้ โปรดดาวน์โหลดก่อนเพื่อเล่นไฟล์ในเครื่อง";

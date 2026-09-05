@@ -167,7 +167,7 @@
 "privacy_clear_cache_desc" = "清除網頁快取、分頁預覽與最近 3 天的網頁瀏覽記錄，保留登入狀態";
 "privacy_clear_cache_confirm_title" = "清除瀏覽快取？";
 "privacy_clear_cache_confirm_message" = "將清除網頁快取與最近 3 天的網頁瀏覽記錄，但保留 Cookie 與登入狀態。";
-"enter_fullscreen" = "進入全螢幕";
+"enter_fullscreen" = "全螢幕";
 "exit_fullscreen" = "退出全螢幕";
 "fullscreen_exit_hint" = "輕點展開，下拉退出";
 "restore_browser_toolbar" = "恢復工具列";
@@ -268,7 +268,7 @@
 "ad_block_network" = "阻止廣告網路請求";
 "ad_block_cosmetic" = "隱藏廣告佔位符";
 "ad_block_popups" = "清理彈出視窗和覆蓋層";
-"ad_block_management" = "廣告區塊管理";
+"ad_block_management" = "廣告攔截";
 "ad_block_allowlist" = "允許的站點";
 "ad_block_disable_current_site" = "在此網站上停用廣告攔截";
 "ad_block_enable_current_site" = "在此網站啟用廣告攔截";
@@ -450,7 +450,7 @@
 "fire_button_confirm" = "清除";
 "fire_button_desc" = "關閉瀏覽器分頁，並清除網站資料、Cookie、快取和隱私統計。";
 "fire_complete" = "隱私資料已清除";
-"site_privacy" = "目前網站保護";
+"site_privacy" = "網站保護";
 "site_privacy_scope_desc" = "僅影響目前網站；所有網站的預設規則可在「隱私設定」中修改。";
 "privacy_global_scope_desc" = "以上規則預設套用至所有網站；單一網站的例外可在「目前網站保護」中設定。";
 "site_privacy_compatibility_bypass" = "為確保登入與網頁功能正常，此網站的保護已暫停。";
@@ -511,6 +511,8 @@
 "wallpaper_random_sources" = "隨機來源";
 "wallpaper_random_sources_desc" = "自動刷新和隨機刷新在選定的遠端來源之間切換。至少保留一個來源。";
 "wallpaper_random_topics" = "隨機主題";
+"wallpaper_only_favorites" = "僅使用喜歡的桌布";
+"wallpaper_only_favorites_desc" = "手動更換和自動重新整理都只會使用喜歡的桌布；至少喜歡一張桌布後即可開啟。";
 "wallpaper_interval_none" = "絕不";
 "wallpaper_interval_1min" = "每分鐘";
 "wallpaper_interval_5min" = "每 5 分鐘一班";
@@ -789,6 +791,8 @@
 "web_capture_photo_permission" = "允許 Soulo 將頁面擷取新增至“設定”中的“照片”，然後重試。";
 "web_capture_height_limited" = "此頁面超出了滾動捕獲限制，因此圖像被修剪到最大高度。";
 "web_capture_live_text_hint" = "觸摸並按住圖像中已識別的文本，以使用 Live Text 選擇或複製它。";
+"web_capture_pdf" = "匯出網頁 PDF";
+"web_capture_pdf_limited" = "頁面超出 PDF 上限，僅匯出前段內容。";
 "web_translate" = "翻譯頁面";
 "web_translate_target" = "翻譯為";
 "web_translate_target_desc" = "Soulo 自動偵測頁面語言。";
@@ -853,3 +857,4 @@
 "web_underline_links_desc" = "為網頁連結加上底線，讓連結更容易辨識。";
 "home_title_edit_desc" = "作為首頁中央顯示的主標題。";
 "home_subtitle_edit_desc" = "顯示在主標題下方，留空則隱藏。";
+"current_keyword" = "目前關鍵字";

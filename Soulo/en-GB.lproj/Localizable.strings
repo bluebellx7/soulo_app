@@ -161,16 +161,16 @@
 "privacy_clear_cache_desc" = "Remove cached resources, tab previews, and page visits from the last 3 days. Sign-ins are kept";
 "privacy_clear_cache_confirm_title" = "Clear Browsing Cache?";
 "privacy_clear_cache_confirm_message" = "Cached resources and page visits from the last 3 days will be removed. Cookies and sign-ins will be kept.";
-"enter_fullscreen" = "Enter Full Screen";
+"enter_fullscreen" = "Full Screen";
 "exit_fullscreen" = "Exit Full Screen";
 "fullscreen_exit_hint" = "Tap for controls, pull down to exit";
-"restore_browser_toolbar" = "Restore toolbar";
+"restore_browser_toolbar" = "Restore Toolbar";
 "floating_more_detach" = "Detach More button";
 "floating_more_snap" = "Snap More button to edge";
 "more_navigation" = "Navigation";
 "more_page_actions" = "Page";
 "more_browser_actions" = "Browser";
-"hide_browser_toolbar" = "Hide toolbar";
+"hide_browser_toolbar" = "Hide Toolbar";
 "privacy_clear_action" = "Clear";
 "privacy_data_footer" = "These actions cannot be undone. Cleared data cannot be recovered.";
 "settings_privacy" = "Privacy Settings";
@@ -262,7 +262,7 @@
 "ad_block_network" = "Block Ad Network Requests";
 "ad_block_cosmetic" = "Hide Ad Placeholders";
 "ad_block_popups" = "Clean Popups and Overlays";
-"ad_block_management" = "Ad Block Management";
+"ad_block_management" = "Ad Blocking";
 "ad_block_allowlist" = "Allowed Sites";
 "ad_block_disable_current_site" = "Disable Ad Block on This Site";
 "ad_block_enable_current_site" = "Enable Ad Block on This Site";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Site Protection Details";
+"site_privacy" = "Site Protection";
 "site_privacy_scope_desc" = "Applies only to this site. Change defaults for all sites in Privacy Settings.";
 "privacy_global_scope_desc" = "These defaults apply to all sites. Tap the site icon in the bottom address bar to set an exception for the current website.";
 "site_privacy_compatibility_bypass" = "Protection is paused to keep sign-in and site features working.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "Randomize Sources";
 "wallpaper_random_sources_desc" = "Automatic refresh and random refresh switch among selected remote sources. At least one source is kept.";
 "wallpaper_random_topics" = "Randomize Topics";
+"wallpaper_only_favorites" = "Use Favourites Only";
+"wallpaper_only_favorites_desc" = "Manual and automatic changes use only your favourite wallpapers. Add at least one favourite to enable this.";
 "wallpaper_interval_none" = "Never";
 "wallpaper_interval_1min" = "Every Minute";
 "wallpaper_interval_5min" = "Every 5 Minutes";
@@ -516,8 +518,8 @@
 "browser_back" = "Back";
 "browser_forward" = "Forward";
 "browser_reload" = "Reload";
-"browser_edit_address" = "Edit address or search";
-"current_page_link" = "Current page link";
+"browser_edit_address" = "Edit Address or Search";
+"current_page_link" = "Current Page Link";
 "tab_limit_title" = "Tab Limit Reached";
 "tab_limit_message" = "You can keep up to 20 tabs. Close a tab before opening another.";
 "accessibility_selected" = "Selected";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Allow Soulo to add the page capture to Photos in Settings, then try again.";
 "web_capture_height_limited" = "This page exceeded the scrolling capture limit, so the image was trimmed at the maximum height.";
 "web_capture_live_text_hint" = "Touch and hold recognized text in the image to select or copy it with Live Text.";
+"web_capture_pdf" = "Export Webpage PDF";
+"web_capture_pdf_limited" = "This page exceeded the PDF limit, so only the first part was exported.";
 "web_translate" = "Translate Page";
 "web_translate_target" = "Translate To";
 "web_translate_target_desc" = "Soulo detects the page language automatically.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Underline webpage links so they are easier to recognize.";
 "home_title_edit_desc" = "Shown as the main heading on the Home screen.";
 "home_subtitle_edit_desc" = "Shown below the main heading; leave empty to hide it.";
+"current_keyword" = "Current Keyword";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "This stream is no longer available on the current page. Reload the page and try again.";
+"resource_stream_download_unsupported" = "Soulo detected this stream, but its manifest format cannot be saved yet.";
+"resource_stream_download_invalid_chunk" = "The media stream returned an invalid or out-of-order segment.";
+"resource_stream_download_missing_track" = "The downloaded stream did not contain playable video and audio tracks.";
+"resource_stream_download_export_failed" = "Soulo could not combine the downloaded video and audio.";
+"resource_stream_playback_download_first" = "This protected stream cannot be previewed from its temporary URL. Download it first to play the local file.";

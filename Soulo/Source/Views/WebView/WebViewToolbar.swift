@@ -120,6 +120,7 @@ struct WebViewToolbar: View {
     @ObservedObject private var extensionService = BrowserExtensionService.shared
     @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = true
     @AppStorage(AppConstants.StorageKeys.isIncognito) private var isIncognito = false
+    @AppStorage(AppConstants.StorageKeys.selectedLanguage) private var appLanguage = AppConstants.preferredLanguageCode()
     @State private var showSiteInformation = false
     @State private var showZoomControls = false
     @State private var showMoreMenu = false
@@ -135,6 +136,7 @@ struct WebViewToolbar: View {
     var onShowExtensions: (() -> Void)?
     var onGoHome: (() -> Void)?
     var onEditAddress: (() -> Void)?
+    var onAddressTranslation: (() -> Void)?
     var onHideToolbar: (() -> Void)?
     var onOpenSettings: (() -> Void)?
     var isFullscreen: Bool = false
@@ -277,6 +279,31 @@ struct WebViewToolbar: View {
             .accessibilityValue(fullAddressDisplayText)
             .accessibilityHint(LanguageManager.shared.localizedString("accessibility_edit_address_hint"))
 
+            if showsAddressTranslationAction {
+                Button {
+                    HapticsManager.light()
+                    onAddressTranslation?()
+                } label: {
+                    Image(systemName: isAddressTranslationActive ? "character.bubble.fill" : "character.bubble")
+                        .font(.system(size: 12, weight: .semibold))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(
+                            isAddressTranslationActive
+                                ? Color.blue
+                                : Color.primary.opacity(0.68)
+                        )
+                        .frame(width: 27, height: 32)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(onAddressTranslation == nil)
+                .accessibilityLabel(
+                    LanguageManager.shared.localizedString(
+                        isAddressTranslationActive ? "web_translate_restore" : "web_translate"
+                    )
+                )
+            }
+
             Rectangle()
                 .fill(Color.primary.opacity(0.12))
                 .frame(width: 0.5, height: 16)
@@ -347,6 +374,23 @@ struct WebViewToolbar: View {
 
     private var fullAddressDisplayText: String {
         BrowserAddressDisplay.fullText(keyword: displayKeyword, host: displayHost)
+    }
+
+    private var isAddressTranslationActive: Bool {
+        viewModel.isPageTranslationApplied
+            || isGoogleTranslationPageURL(viewModel.currentURL)
+    }
+
+    private var showsAddressTranslationAction: Bool {
+        guard let url = viewModel.currentURL,
+              ["http", "https"].contains(url.scheme?.lowercased() ?? "") else {
+            return false
+        }
+        return isAddressTranslationActive
+            || WebPageLanguageMatcher.shouldOfferTranslation(
+                pageIdentifier: viewModel.pageLanguageIdentifier,
+                appIdentifier: appLanguage
+            )
     }
 
     private func compactAddressText(maximumKeywordLength: Int) -> some View {
@@ -647,7 +691,7 @@ struct WebViewToolbar: View {
             } label: {
                 menuLabel(
                     "userscripts",
-                    systemImage: "puzzlepiece.extension.fill"
+                    systemImage: "puzzlepiece.extension"
                 )
             }
             .disabled(onShowExtensions == nil)
@@ -659,6 +703,15 @@ struct WebViewToolbar: View {
             } label: {
                 menuLabel("web_zoom", systemImage: "plus.magnifyingglass")
             }
+
+            Button {
+                performMoreMenuAction {
+                    onTranslatePage?()
+                }
+            } label: {
+                menuLabel("web_translate", systemImage: "character.bubble")
+            }
+            .disabled(onTranslatePage == nil)
 
             Button {
                 performMoreMenuAction {
@@ -751,7 +804,7 @@ struct WebViewToolbar: View {
                                         .frame(width: 18, height: 18)
                                         .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                                 } else {
-                                    Image(systemName: "puzzlepiece.extension.fill")
+                                    Image(systemName: "puzzlepiece.extension")
                                         .font(.system(size: 12, weight: .semibold))
                                         .foregroundStyle(.secondary)
                                         .frame(width: 18, height: 18)
@@ -793,7 +846,7 @@ struct WebViewToolbar: View {
                     onShowExtensions?()
                 }
             } label: {
-                Image(systemName: "puzzlepiece.extension.fill")
+                Image(systemName: "puzzlepiece.extension")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .frame(width: 40, height: 40)
@@ -1226,7 +1279,7 @@ struct WebViewToolbar: View {
         case .library: onShowLibrary != nil
         case .hideToolbar: onHideToolbar != nil
         case .screenshot: onCapturePage != nil
-        case .translate: false // Temporarily hidden until the next version.
+        case .translate: onTranslatePage != nil
         default: true
         }
     }
@@ -1273,7 +1326,7 @@ struct WebViewToolbar: View {
         case .screenshot:
             onCapturePage?()
         case .translate:
-            break // Temporarily hidden; retained to decode saved toolbar layouts.
+            onTranslatePage?()
         }
     }
 

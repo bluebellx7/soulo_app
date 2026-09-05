@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "Удалить веб-кэш, превью и посещения страниц за последние 3 дня. Вход в аккаунты сохранится";
 "privacy_clear_cache_confirm_title" = "Очистить кэш браузера?";
 "privacy_clear_cache_confirm_message" = "Кэш и посещения страниц за последние 3 дня будут удалены. Cookie и вход в аккаунты сохранятся.";
-"enter_fullscreen" = "Включить полноэкранный режим";
+"enter_fullscreen" = "Полный экран";
 "exit_fullscreen" = "Выйти из полноэкранного режима";
 "fullscreen_exit_hint" = "Нажмите для меню, потяните вниз для выхода";
 "restore_browser_toolbar" = "Восстановить панель инструментов";
@@ -262,7 +262,7 @@
 "ad_block_network" = "Блокировать запросы рекламной сети";
 "ad_block_cosmetic" = "Скрыть заполнители объявлений";
 "ad_block_popups" = "Очистите всплывающие окна и наложения";
-"ad_block_management" = "Управление рекламными блоками";
+"ad_block_management" = "Блокировка рекламы";
 "ad_block_allowlist" = "Разрешенные сайты";
 "ad_block_disable_current_site" = "Отключить блокировку рекламы на этом сайте";
 "ad_block_enable_current_site" = "Включить блокировку рекламы на этом сайте";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Защита текущего сайта";
+"site_privacy" = "Защита сайта";
 "site_privacy_scope_desc" = "Действует только для этого сайта. Общие настройки можно изменить в разделе конфиденциальности.";
 "privacy_global_scope_desc" = "Эти настройки применяются ко всем сайтам. Исключение задаётся в защите текущего сайта.";
 "site_privacy_compatibility_bypass" = "Защита приостановлена, чтобы сохранить вход и работу функций сайта.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "Рандомизировать источники";
 "wallpaper_random_sources_desc" = "Автоматическое обновление и случайное переключение между выбранными удаленными источниками. Хотя бы один источник сохраняется.";
 "wallpaper_random_topics" = "Рандомизировать темы";
+"wallpaper_only_favorites" = "Только избранные";
+"wallpaper_only_favorites_desc" = "При ручной и автоматической смене используются только избранные обои. Добавьте хотя бы одни, чтобы включить эту функцию.";
 "wallpaper_interval_none" = "Никогда";
 "wallpaper_interval_1min" = "Каждую минуту";
 "wallpaper_interval_5min" = "Каждые 5 минут";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Разрешите Soulo добавить снимок страницы в «Фото» в настройках, а затем повторите попытку.";
 "web_capture_height_limited" = "На этой странице превышен предел захвата при прокрутке, поэтому изображение было обрезано до максимальной высоты.";
 "web_capture_live_text_hint" = "Коснитесь и удерживайте распознанный текст на изображении, чтобы выбрать или скопировать его с помощью Live Text.";
+"web_capture_pdf" = "Экспорт страницы в PDF";
+"web_capture_pdf_limited" = "Страница превысила лимит PDF, поэтому экспортирована только первая часть.";
 "web_translate" = "Перевести страницу";
 "web_translate_target" = "Перевести на";
 "web_translate_target_desc" = "Soulo автоматически определяет язык страницы.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Подчёркивает ссылки на веб-страницах, чтобы их было легче распознавать.";
 "home_title_edit_desc" = "Отображается как основной заголовок в центре главного экрана.";
 "home_subtitle_edit_desc" = "Отображается под заголовком; оставьте пустым, чтобы скрыть.";
+"current_keyword" = "Текущее ключевое слово";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Этот поток больше недоступен на текущей странице. Обновите страницу и повторите попытку.";
+"resource_stream_download_unsupported" = "Soulo обнаружил этот поток, но сохранение его формата манифеста пока не поддерживается.";
+"resource_stream_download_invalid_chunk" = "Медиапоток вернул недопустимый сегмент или сегмент в неверном порядке.";
+"resource_stream_download_missing_track" = "Загруженный поток не содержал воспроизводимых видео- и аудиодорожек.";
+"resource_stream_download_export_failed" = "Soulo не удалось объединить загруженные видео и аудио.";
+"resource_stream_playback_download_first" = "Предпросмотр этого защищённого потока по временному URL невозможен. Сначала скачайте его, чтобы воспроизвести локальный файл.";

@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "पिछले 3 दिनों से कैश्ड संसाधन, टैब पूर्वावलोकन और पृष्ठ विज़िट हटाएँ। साइन-इन रखे जाते हैं";
 "privacy_clear_cache_confirm_title" = "ब्राउज़िंग कैश साफ़ करें?";
 "privacy_clear_cache_confirm_message" = "पिछले 3 दिनों के कैश्ड संसाधन और पेज विज़िट हटा दिए जाएंगे। कुकीज़ और साइन-इन रखे जाएंगे.";
-"enter_fullscreen" = "पूर्ण स्क्रीन दर्ज करें";
+"enter_fullscreen" = "पूर्ण स्क्रीन";
 "exit_fullscreen" = "पूर्ण स्क्रीन से बाहर निकलें";
 "fullscreen_exit_hint" = "नियंत्रण के लिए टैप करें, बाहर निकलने के लिए नीचे खींचें";
 "restore_browser_toolbar" = "टूलबार पुनर्स्थापित करें";
@@ -262,7 +262,7 @@
 "ad_block_network" = "विज्ञापन नेटवर्क अनुरोधों को ब्लॉक करें";
 "ad_block_cosmetic" = "विज्ञापन प्लेसहोल्डर छिपाएँ";
 "ad_block_popups" = "पॉपअप और ओवरले साफ़ करें";
-"ad_block_management" = "विज्ञापन ब्लॉक प्रबंधन";
+"ad_block_management" = "विज्ञापन अवरोधन";
 "ad_block_allowlist" = "अनुमत साइटें";
 "ad_block_disable_current_site" = "इस साइट पर विज्ञापन ब्लॉक अक्षम करें";
 "ad_block_enable_current_site" = "इस साइट पर विज्ञापन ब्लॉक सक्षम करें";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "स्पष्ट";
 "fire_button_desc" = "ब्राउज़र टैब बंद करें और वेबसाइट डेटा, कुकीज़, कैश और गोपनीयता आँकड़े साफ़ करें।";
 "fire_complete" = "गोपनीयता डेटा साफ़ किया गया";
-"site_privacy" = "साइट सुरक्षा विवरण";
+"site_privacy" = "साइट सुरक्षा";
 "site_privacy_scope_desc" = "केवल इस साइट पर लागू होता है. गोपनीयता सेटिंग्स में सभी साइटों के लिए डिफ़ॉल्ट बदलें।";
 "privacy_global_scope_desc" = "ये डिफ़ॉल्ट सभी साइटों पर लागू होते हैं. मौजूदा वेबसाइट के लिए अपवाद सेट करने के लिए नीचे एड्रेस बार में साइट आइकन पर टैप करें।";
 "site_privacy_compatibility_bypass" = "साइन-इन और साइट सुविधाओं को चालू रखने के लिए सुरक्षा रोक दी गई है।";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "स्रोतों को यादृच्छिक करें";
 "wallpaper_random_sources_desc" = "चयनित दूरस्थ स्रोतों के बीच स्वचालित ताज़ा और यादृच्छिक ताज़ा स्विच। कम से कम एक स्रोत तो रखा ही जाता है.";
 "wallpaper_random_topics" = "विषयों को यादृच्छिक बनाएं";
+"wallpaper_only_favorites" = "केवल पसंदीदा उपयोग करें";
+"wallpaper_only_favorites_desc" = "मैन्युअल और स्वचालित बदलाव केवल आपके पसंदीदा वॉलपेपर इस्तेमाल करेंगे। इसे चालू करने के लिए कम से कम एक पसंदीदा जोड़ें।";
 "wallpaper_interval_none" = "कभी नहीं";
 "wallpaper_interval_1min" = "हर मिनट";
 "wallpaper_interval_5min" = "हर 5 मिनट में";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Soulo को सेटिंग्स में फ़ोटो में पेज कैप्चर जोड़ने की अनुमति दें, फिर पुनः प्रयास करें।";
 "web_capture_height_limited" = "यह पृष्ठ स्क्रॉलिंग कैप्चर सीमा को पार कर गया था, इसलिए छवि को अधिकतम ऊंचाई पर ट्रिम किया गया था।";
 "web_capture_live_text_hint" = "छवि में पहचाने गए टेक्स्ट को Live Text से चुनने या कॉपी करने के लिए उसे स्पर्श करके रखें।";
+"web_capture_pdf" = "वेबपेज PDF निर्यात करें";
+"web_capture_pdf_limited" = "पेज PDF सीमा से बड़ा था, इसलिए केवल पहला भाग निर्यात हुआ।";
 "web_translate" = "पृष्ठ का अनुवाद करें";
 "web_translate_target" = "में अनुवाद करें";
 "web_translate_target_desc" = "Soulo स्वचालित रूप से पृष्ठ भाषा का पता लगाता है।";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "वेबपेज लिंक को रेखांकित करें ताकि उन्हें पहचानना आसान हो।";
 "home_title_edit_desc" = "होम स्क्रीन पर मुख्य शीर्षक के रूप में दिखाया गया।";
 "home_subtitle_edit_desc" = "मुख्य शीर्षक के नीचे दिखाया गया है; इसे छुपाने के लिए खाली छोड़ दें।";
+"current_keyword" = "वर्तमान कीवर्ड";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "यह स्ट्रीम अब मौजूदा पेज पर उपलब्ध नहीं है। पेज दोबारा लोड करें और फिर कोशिश करें।";
+"resource_stream_download_unsupported" = "Soulo ने इस स्ट्रीम का पता लगाया है, लेकिन इसके मैनिफ़ेस्ट फ़ॉर्मैट को अभी सहेजा नहीं जा सकता।";
+"resource_stream_download_invalid_chunk" = "मीडिया स्ट्रीम ने अमान्य या गलत क्रम वाला खंड लौटाया।";
+"resource_stream_download_missing_track" = "डाउनलोड की गई स्ट्रीम में चलने योग्य वीडियो और ऑडियो ट्रैक नहीं थे।";
+"resource_stream_download_export_failed" = "Soulo डाउनलोड किए गए वीडियो और ऑडियो को जोड़ नहीं सका।";
+"resource_stream_playback_download_first" = "इस सुरक्षित स्ट्रीम के अस्थायी URL से प्रीव्यू नहीं देखा जा सकता। स्थानीय फ़ाइल चलाने के लिए पहले इसे डाउनलोड करें।";

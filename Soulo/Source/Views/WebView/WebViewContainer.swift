@@ -149,7 +149,6 @@ struct WebViewContainer: View {
     @State private var showExternalOpenFailed = false
     @State private var showDownloadFailed = false
     @State private var showAddressEditor = false
-    @State private var addressEditorDetent: PresentationDetent = .height(BrowserAddressEditorLayout.compactHeight)
     @State private var requestVoiceAfterAddressEditorDismisses = false
     @State private var showFullscreenExitHandle = false
     @State private var showFullscreenExitHint = false
@@ -161,6 +160,7 @@ struct WebViewContainer: View {
     @State private var imageTextError: String?
     @State private var isCapturingPage = false
     @State private var captureResult: WebPageCaptureResult?
+    @State private var pdfResult: WebPagePDFResult?
     @State private var captureError: String?
     @State private var showTranslationSheet = false
 
@@ -460,6 +460,12 @@ struct WebViewContainer: View {
         .onChange(of: isFullscreen) { _, fullscreen in
             updateFullscreenPresentation(isFullscreen: fullscreen)
         }
+        .onChange(of: showTranslationSheet) { _, isPresented in
+            guard !isPresented else { return }
+            Task { @MainActor in
+                await webViewModel.refreshPageTranslationState()
+            }
+        }
         .onAppear {
             updateFullscreenPresentation(isFullscreen: isFullscreen)
         }
@@ -556,16 +562,9 @@ struct WebViewContainer: View {
                 onVoiceInput: {
                     requestVoiceAfterAddressEditorDismisses = true
                     showAddressEditor = false
-                },
-                onFocusChange: { isFocused in
-                    guard isFocused, isIPadLandscapeWindow else { return }
-                    addressEditorDetent = .medium
                 }
             )
-            .presentationDetents(
-                [.height(BrowserAddressEditorLayout.compactHeight), .medium],
-                selection: $addressEditorDetent
-            )
+            .presentationDetents([.height(BrowserAddressEditorLayout.compactHeight)])
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showAdBlockManager) {
@@ -645,9 +644,11 @@ struct WebViewContainer: View {
                 showCaptureOptions: $showCaptureOptions,
                 isCapturingPage: isCapturingPage,
                 captureResult: $captureResult,
+                pdfResult: $pdfResult,
                 captureError: $captureError,
                 showTranslationSheet: $showTranslationSheet,
-                onCapture: capturePage
+                onCapture: capturePage,
+                onExportPDF: exportPagePDF
             )
         )
         .onReceive(NotificationCenter.default.publisher(for: .browserExtensionInstallCandidate)) { notification in
@@ -821,17 +822,6 @@ struct WebViewContainer: View {
             .safeAreaInsets ?? .zero
     }
 
-    private var isIPadLandscapeWindow: Bool {
-        guard UIDevice.current.userInterfaceIdiom == .pad,
-              let window = UIApplication.shared.connectedScenes
-                .compactMap({ $0 as? UIWindowScene })
-                .first(where: { $0.activationState == .foregroundActive })?
-                .keyWindow else {
-            return false
-        }
-        return window.bounds.width > window.bounds.height
-    }
-
     private var toolbarGlassTint: Color? {
         searchVM.isIncognito ? Color.teal.opacity(0.14) : nil
     }
@@ -870,10 +860,7 @@ struct WebViewContainer: View {
             isBookmarked: $isBookmarked,
             tabManager: tabManager,
             onShare: {
-                if let url = webViewModel.currentURL {
-                    shareItems = [url]
-                    showShareSheet = true
-                }
+                shareCurrentPage()
             },
             onBookmarkToggle: { handleBookmarkToggle() },
             onShowPrivacy: { showPrivacyPanel = true },
@@ -885,6 +872,7 @@ struct WebViewContainer: View {
             onShowExtensions: { showExtensionCenter = true },
             onGoHome: onGoHome,
             onEditAddress: { presentAddressEditor() },
+            onAddressTranslation: { handleAddressTranslationAction() },
             onHideToolbar: { hideToolbar() },
             onOpenSettings: onOpenSettings,
             isFullscreen: false,
@@ -1115,10 +1103,7 @@ struct WebViewContainer: View {
                     systemImage: "square.and.arrow.up"
                 ) {
                     closeFullscreenMenu()
-                    if let url = webViewModel.currentURL {
-                        shareItems = [url]
-                        showShareSheet = true
-                    }
+                    shareCurrentPage()
                 }
 
                 fullscreenPrimaryAction(
@@ -1157,8 +1142,13 @@ struct WebViewContainer: View {
                     showCaptureOptions = true
                 }
 
-                // Page translation is hidden in 1.1.1 and will return after the
-                // next round of webpage extraction and language-pack testing.
+                fullscreenPrimaryAction(
+                    titleKey: "web_translate",
+                    systemImage: "character.bubble"
+                ) {
+                    closeFullscreenMenu()
+                    showTranslationSheet = true
+                }
 
                 fullscreenPrimaryAction(
                     titleKey: "settings",
@@ -1576,12 +1566,67 @@ struct WebViewContainer: View {
         NotificationCenter.default.post(name: .linkCopied, object: nil)
     }
 
+    private func shareCurrentPage() {
+        guard let url = webViewModel.currentURL else { return }
+        // This one item behaves as a regular URL for every share extension and
+        // also adopts SafariServices' native Add to Home Screen activity.
+        if #available(iOS 17.4, *),
+           ["http", "https"].contains(url.scheme?.lowercased() ?? "") {
+            shareItems = [
+                WebPageShareActivityItem(url: url, title: fullscreenDisplayTitle)
+            ]
+        } else {
+            shareItems = [url]
+        }
+        showShareSheet = true
+    }
+
+    private func handleAddressTranslationAction() {
+        let isTranslated = webViewModel.isPageTranslationApplied
+            || isGoogleTranslationPageURL(webViewModel.currentURL)
+        if !isTranslated {
+            presentAddressTranslationForAppLanguage()
+            return
+        }
+        showTranslationSheet = true
+    }
+
+    private func presentAddressTranslationForAppLanguage() {
+        let defaults = UserDefaults.standard
+        let appLanguage = AppConstants.canonicalLanguageCode(
+            defaults.string(forKey: AppConstants.StorageKeys.selectedLanguage)
+                ?? AppConstants.preferredLanguageCode()
+        )
+        defaults.set(appLanguage, forKey: "web_translation_apple_target")
+        defaults.set(appLanguage, forKey: "web_translation_google_target")
+        showTranslationSheet = true
+    }
+
     private func capturePage(_ mode: WebPageCaptureMode) {
         guard !isCapturingPage else { return }
         isCapturingPage = true
         Task { @MainActor in
             do {
                 captureResult = try await WebPageCaptureService.capture(mode, from: webViewModel.webView)
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            } catch {
+                captureError = error.localizedDescription
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+            }
+            isCapturingPage = false
+        }
+    }
+
+    private func exportPagePDF() {
+        guard !isCapturingPage else { return }
+        isCapturingPage = true
+        let title = webViewModel.pageTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        Task { @MainActor in
+            do {
+                pdfResult = try await WebPagePDFService.export(
+                    from: webViewModel.webView,
+                    title: title
+                )
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
             } catch {
                 captureError = error.localizedDescription
@@ -1681,14 +1726,10 @@ struct WebViewContainer: View {
     }
 
     private func presentAddressEditor() {
-        addressEditorDetent = isIPadLandscapeWindow
-            ? .medium
-            : .height(BrowserAddressEditorLayout.compactHeight)
         showAddressEditor = true
     }
 
     private func handleAddressEditorDismissal() {
-        addressEditorDetent = .height(BrowserAddressEditorLayout.compactHeight)
         guard requestVoiceAfterAddressEditorDismisses else { return }
         requestVoiceAfterAddressEditorDismisses = false
         DispatchQueue.main.async {
@@ -1702,9 +1743,11 @@ private struct WebToolsPresentationModifier: ViewModifier {
     @Binding var showCaptureOptions: Bool
     let isCapturingPage: Bool
     @Binding var captureResult: WebPageCaptureResult?
+    @Binding var pdfResult: WebPagePDFResult?
     @Binding var captureError: String?
     @Binding var showTranslationSheet: Bool
     let onCapture: (WebPageCaptureMode) -> Void
+    let onExportPDF: () -> Void
 
     func body(content: Content) -> some View {
         content
@@ -1719,6 +1762,9 @@ private struct WebToolsPresentationModifier: ViewModifier {
                 Button(LanguageManager.shared.localizedString("web_capture_full_page")) {
                     onCapture(.fullPage)
                 }
+                Button(LanguageManager.shared.localizedString("web_capture_pdf")) {
+                    onExportPDF()
+                }
                 Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
             } message: {
                 Text(LanguageManager.shared.localizedString("web_capture_full_page_limit_desc"))
@@ -1726,13 +1772,16 @@ private struct WebToolsPresentationModifier: ViewModifier {
             .sheet(item: $captureResult) { result in
                 WebPageCapturePreview(result: result)
             }
+            .sheet(item: $pdfResult) { result in
+                WebPagePDFPreview(result: result)
+            }
             .sheet(isPresented: $showTranslationSheet) {
                 WebPageTranslationSheet(
                     webView: webViewModel.webView,
                     pageURL: webViewModel.currentURL,
                     onOpenURL: { url in webViewModel.loadURL(url) }
                 )
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.fraction(0.68), .large])
                 .presentationDragIndicator(.visible)
             }
             .alert(
@@ -1775,7 +1824,6 @@ private struct BrowserAddressEditorSheet: View {
 
     let onOpen: (String) -> Void
     let onVoiceInput: () -> Void
-    let onFocusChange: (Bool) -> Void
 
     @State private var text: String
     @State private var pageURLText: String
@@ -1787,82 +1835,81 @@ private struct BrowserAddressEditorSheet: View {
         initialText: String,
         initialURL: String,
         onOpen: @escaping (String) -> Void,
-        onVoiceInput: @escaping () -> Void,
-        onFocusChange: @escaping (Bool) -> Void
+        onVoiceInput: @escaping () -> Void
     ) {
         self.onOpen = onOpen
         self.onVoiceInput = onVoiceInput
-        self.onFocusChange = onFocusChange
         _text = State(initialValue: initialText)
         _pageURLText = State(initialValue: initialURL)
     }
 
     var body: some View {
         ScrollView(.vertical) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(LanguageManager.shared.localizedString("browser_edit_address"))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 7) {
+                    Text(LanguageManager.shared.localizedString("current_keyword"))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.secondary)
 
-            HStack(spacing: 10) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(focusedField == .query ? Color.accentColor : Color.secondary)
-                    .frame(width: 30, height: 30)
-                    .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                    .accessibilityHidden(true)
+                    HStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(focusedField == .query ? Color.accentColor : Color.secondary)
+                            .frame(width: 20)
+                            .accessibilityHidden(true)
 
-                TextField(
-                    LanguageManager.shared.localizedString("search_placeholder"),
-                    text: $text
-                )
-                .font(.system(size: 15, weight: .medium))
-                .keyboardType(.webSearch)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .submitLabel(.go)
-                .focused($focusedField, equals: .query)
-                .onSubmit(open)
-                .accessibilityLabel(LanguageManager.shared.localizedString("search_placeholder"))
+                        TextField(
+                            LanguageManager.shared.localizedString("search_placeholder"),
+                            text: $text
+                        )
+                        .font(.system(size: 15, weight: .medium))
+                        .keyboardType(.webSearch)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .submitLabel(.go)
+                        .focused($focusedField, equals: .query)
+                        .onSubmit(open)
+                        .accessibilityLabel(LanguageManager.shared.localizedString("search_placeholder"))
 
-                if !text.isEmpty {
-                    Button {
-                        text = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.tertiary)
+                        if !text.isEmpty {
+                            Button {
+                                text = ""
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(.tertiary)
+                            }
+                            .accessibilityLabel(LanguageManager.shared.localizedString("accessibility_clear_search"))
+                        }
+
+                        Rectangle()
+                            .fill(Color(UIColor.separator).opacity(0.35))
+                            .frame(width: 1, height: 20)
+                            .accessibilityHidden(true)
+
+                        Button {
+                            HapticsManager.light()
+                            onVoiceInput()
+                        } label: {
+                            Image(systemName: "mic.fill")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(Color.accentColor)
+                                .frame(width: 32, height: 32)
+                                .background(Color.accentColor.opacity(0.11), in: Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(LanguageManager.shared.localizedString("voice_record"))
+                        .accessibilityHint(LanguageManager.shared.localizedString("accessibility_voice_search_hint"))
                     }
-                    .accessibilityLabel(LanguageManager.shared.localizedString("accessibility_clear_search"))
+                    .padding(.horizontal, 11)
+                    .frame(height: 50)
+                    .background(Color(UIColor.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 13, style: .continuous)
+                            .stroke(focusedField == .query ? Color.accentColor.opacity(0.55) : Color(UIColor.separator).opacity(0.25), lineWidth: 1)
+                    )
                 }
 
-                Rectangle()
-                    .fill(Color(UIColor.separator).opacity(0.35))
-                    .frame(width: 1, height: 20)
-                    .accessibilityHidden(true)
-
-                Button {
-                    HapticsManager.light()
-                    onVoiceInput()
-                } label: {
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.accentColor)
-                        .frame(width: 32, height: 32)
-                        .background(Color.accentColor.opacity(0.11), in: Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(LanguageManager.shared.localizedString("voice_record"))
-                .accessibilityHint(LanguageManager.shared.localizedString("accessibility_voice_search_hint"))
-            }
-            .padding(.horizontal, 10)
-            .frame(height: 52)
-            .background(Color(UIColor.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .stroke(focusedField == .query ? Color.accentColor.opacity(0.55) : Color(UIColor.separator).opacity(0.25), lineWidth: 1)
-            )
-
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 7) {
                 Text(LanguageManager.shared.localizedString("current_page_link"))
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
@@ -1871,6 +1918,7 @@ private struct BrowserAddressEditorSheet: View {
                     Image(systemName: "link")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(focusedField == .pageURL ? Color.accentColor : Color.secondary)
+                        .frame(width: 20)
                         .accessibilityHidden(true)
 
                     TextField("https://", text: $pageURLText)
@@ -1916,7 +1964,7 @@ private struct BrowserAddressEditorSheet: View {
                     .accessibilityLabel(LanguageManager.shared.localizedString("open_directly"))
                 }
                 .padding(.horizontal, 11)
-                .frame(height: 42)
+                .frame(height: 44)
                 .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 11, style: .continuous)
@@ -1932,7 +1980,7 @@ private struct BrowserAddressEditorSheet: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 44)
+                        .frame(height: 42)
                         .background(Color(uiColor: .secondarySystemFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .buttonStyle(.plain)
@@ -1950,7 +1998,7 @@ private struct BrowserAddressEditorSheet: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 44)
+                        .frame(height: 42)
                         .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .buttonStyle(.plain)
@@ -1959,8 +2007,8 @@ private struct BrowserAddressEditorSheet: View {
             }
             }
             .padding(.horizontal, 18)
-            .padding(.top, 9)
-            .padding(.bottom, 12)
+            .padding(.top, 22)
+            .padding(.bottom, 10)
         }
         .scrollIndicators(.hidden)
         .scrollBounceBehavior(.basedOnSize)
@@ -1981,9 +2029,6 @@ private struct BrowserAddressEditorSheet: View {
                     )
                 }
             }
-        }
-        .onChange(of: focusedField) { _, field in
-            onFocusChange(field != nil)
         }
     }
 
@@ -2198,4 +2243,35 @@ private struct ShareSheet: UIViewControllerRepresentable {
         UIActivityViewController(activityItems: items, applicationActivities: nil)
     }
     func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
+}
+
+@available(iOS 17.4, *)
+final class WebPageShareActivityItem: NSObject, UIActivityItemSource, SFAddToHomeScreenActivityItem {
+    let url: URL
+    let title: String
+
+    init(url: URL, title: String) {
+        self.url = url
+        self.title = title
+    }
+
+    func activityViewControllerPlaceholderItem(
+        _ activityViewController: UIActivityViewController
+    ) -> Any {
+        url
+    }
+
+    func activityViewController(
+        _ activityViewController: UIActivityViewController,
+        itemForActivityType activityType: UIActivity.ActivityType?
+    ) -> Any? {
+        url
+    }
+
+    func activityViewController(
+        _ activityViewController: UIActivityViewController,
+        subjectForActivityType activityType: UIActivity.ActivityType?
+    ) -> String {
+        title
+    }
 }

@@ -48,6 +48,11 @@ struct SouloSharedAction: Codable, Equatable {
         return action
     }
 
+    static func discardPending() {
+        UserDefaults(suiteName: SouloSharedConstants.appGroupIdentifier)?
+            .removeObject(forKey: SouloSharedConstants.pendingActionKey)
+    }
+
     var deepLink: URL? {
         var components = URLComponents()
         components.scheme = "soulo"

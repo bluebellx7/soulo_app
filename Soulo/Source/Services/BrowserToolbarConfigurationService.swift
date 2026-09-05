@@ -62,7 +62,7 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .desktopMode: "desktopcomputer"
         case .darkMode: "moon.fill"
         case .settings: "gearshape"
-        case .extensions: "puzzlepiece.extension.fill"
+        case .extensions: "puzzlepiece.extension"
         case .library: "books.vertical"
         case .reload: "arrow.clockwise"
         case .hideToolbar: BrowserChromeSymbol.toolbarVisibility
@@ -89,9 +89,9 @@ final class BrowserToolbarConfigurationService: ObservableObject {
     static let defaultActions: [BrowserToolbarAction] = [.home, .back, .tabs, .more]
     static let defaultAddressAction: BrowserToolbarAction = .darkMode
     static let unsupportedAddressActions: Set<BrowserToolbarAction> = [.tabs, .more]
-    /// Page translation remains decoded for settings compatibility, but its UI
-    /// is intentionally hidden in 1.1.1 until the next compatibility pass.
-    static let temporarilyUnavailableActions: Set<BrowserToolbarAction> = [.translate]
+    /// Keep this hook for actions that must temporarily disappear without
+    /// invalidating a saved toolbar layout.
+    static let temporarilyUnavailableActions: Set<BrowserToolbarAction> = []
 
     @Published private(set) var actions: [BrowserToolbarAction]
     @Published private(set) var addressAction: BrowserToolbarAction

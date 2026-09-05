@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "Eliminar la caché, las vistas previas y las páginas visitadas en los últimos 3 días. Se mantienen las sesiones";
 "privacy_clear_cache_confirm_title" = "¿Limpiar caché del navegador?";
 "privacy_clear_cache_confirm_message" = "Se eliminarán la caché y las páginas visitadas en los últimos 3 días. Se conservarán las cookies y las sesiones.";
-"enter_fullscreen" = "Activar pantalla completa";
+"enter_fullscreen" = "Pantalla completa";
 "exit_fullscreen" = "Salir de pantalla completa";
 "fullscreen_exit_hint" = "Toca para ver controles; desliza para salir";
 "restore_browser_toolbar" = "Restaurar barra de herramientas";
@@ -262,7 +262,7 @@
 "ad_block_network" = "Bloquear solicitudes de redes publicitarias";
 "ad_block_cosmetic" = "Ocultar marcadores de posición de anuncios";
 "ad_block_popups" = "Limpiar ventanas emergentes y superposiciones";
-"ad_block_management" = "Gestión de bloques de anuncios";
+"ad_block_management" = "Bloqueo de anuncios";
 "ad_block_allowlist" = "Sitios permitidos";
 "ad_block_disable_current_site" = "Deshabilitar el bloqueo de anuncios en este sitio";
 "ad_block_enable_current_site" = "Habilitar el bloqueo de anuncios en este sitio";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Protección del sitio actual";
+"site_privacy" = "Protección del sitio";
 "site_privacy_scope_desc" = "Solo se aplica a este sitio. Cambia los valores predeterminados en Ajustes de privacidad.";
 "privacy_global_scope_desc" = "Estos valores se aplican a todos los sitios. Usa Protección del sitio actual para crear una excepción.";
 "site_privacy_compatibility_bypass" = "La protección está pausada para mantener el inicio de sesión y las funciones del sitio.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "Aleatorizar fuentes";
 "wallpaper_random_sources_desc" = "Actualización automática y cambio de actualización aleatoria entre fuentes remotas seleccionadas. Se mantiene al menos una fuente.";
 "wallpaper_random_topics" = "Aleatorizar temas";
+"wallpaper_only_favorites" = "Usar solo favoritos";
+"wallpaper_only_favorites_desc" = "Los cambios manuales y automáticos solo usan tus fondos favoritos. Añade al menos uno para activar esta opción.";
 "wallpaper_interval_none" = "nunca";
 "wallpaper_interval_1min" = "cada minuto";
 "wallpaper_interval_5min" = "Cada 5 minutos";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Permita que Soulo agregue la captura de página a Fotos en Configuración y vuelva a intentarlo.";
 "web_capture_height_limited" = "Esta página superó el límite de captura con desplazamiento, por lo que la imagen se recortó a la altura máxima.";
 "web_capture_live_text_hint" = "Toque y mantenga presionado el texto reconocido en la imagen para seleccionarlo o copiarlo con Live Text.";
+"web_capture_pdf" = "Exportar web como PDF";
+"web_capture_pdf_limited" = "La página superó el límite del PDF; solo se exportó la primera parte.";
 "web_translate" = "Traducir página";
 "web_translate_target" = "Traducir a";
 "web_translate_target_desc" = "Soulo detecta el idioma de la página automáticamente.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Subraya los enlaces de las páginas web para reconocerlos con mayor facilidad.";
 "home_title_edit_desc" = "Se muestra como título principal en el centro de la pantalla de inicio.";
 "home_subtitle_edit_desc" = "Se muestra bajo el título principal; déjalo vacío para ocultarlo.";
+"current_keyword" = "Palabra clave actual";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Esta transmisión ya no está disponible en la página actual. Recarga la página e inténtalo de nuevo.";
+"resource_stream_download_unsupported" = "Soulo ha detectado esta transmisión, pero todavía no puede guardar su formato de manifiesto.";
+"resource_stream_download_invalid_chunk" = "La transmisión multimedia ha devuelto un segmento no válido o fuera de orden.";
+"resource_stream_download_missing_track" = "La transmisión descargada no contenía pistas de vídeo y audio reproducibles.";
+"resource_stream_download_export_failed" = "Soulo no ha podido combinar el vídeo y el audio descargados.";
+"resource_stream_playback_download_first" = "No se puede previsualizar esta transmisión protegida desde su URL temporal. Descárgala primero para reproducir el archivo local.";

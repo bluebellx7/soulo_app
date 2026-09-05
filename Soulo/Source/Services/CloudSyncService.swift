@@ -125,6 +125,7 @@ final class CloudSyncService: NSObject {
         "wallpaper_auto_random_sources",
         "wallpaper_auto_sources",
         "wallpaper_auto_random_topics",
+        "wallpaper_only_favorites",
         "last_selected_region",
         "last_selected_group_id",
         "platform_config",

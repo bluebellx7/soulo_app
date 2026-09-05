@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "Xóa bộ nhớ đệm, bản xem trước tab và lịch sử truy cập 3 ngày gần nhất. Trạng thái đăng nhập được giữ lại";
 "privacy_clear_cache_confirm_title" = "Xóa bộ nhớ cache trình duyệt?";
 "privacy_clear_cache_confirm_message" = "Bộ nhớ đệm và lịch sử truy cập 3 ngày gần nhất sẽ bị xóa. Cookie và trạng thái đăng nhập được giữ lại.";
-"enter_fullscreen" = "Bật toàn màn hình";
+"enter_fullscreen" = "Toàn màn hình";
 "exit_fullscreen" = "Thoát toàn màn hình";
 "fullscreen_exit_hint" = "Chạm để mở điều khiển, kéo xuống để thoát";
 "restore_browser_toolbar" = "Khôi phục thanh công cụ";
@@ -262,7 +262,7 @@
 "ad_block_network" = "Chặn yêu cầu mạng quảng cáo";
 "ad_block_cosmetic" = "Ẩn phần giữ chỗ quảng cáo";
 "ad_block_popups" = "Làm sạch cửa sổ bật lên và lớp phủ";
-"ad_block_management" = "Quản lý khối quảng cáo";
+"ad_block_management" = "Chặn quảng cáo";
 "ad_block_allowlist" = "Trang web được phép";
 "ad_block_disable_current_site" = "Tắt tính năng chặn quảng cáo trên trang web này";
 "ad_block_enable_current_site" = "Bật tính năng chặn quảng cáo trên trang web này";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Bảo vệ trang hiện tại";
+"site_privacy" = "Bảo vệ trang";
 "site_privacy_scope_desc" = "Chỉ áp dụng cho trang này. Thay đổi mặc định cho mọi trang trong Cài đặt quyền riêng tư.";
 "privacy_global_scope_desc" = "Các mặc định này áp dụng cho mọi trang. Dùng Bảo vệ trang hiện tại để đặt ngoại lệ riêng.";
 "site_privacy_compatibility_bypass" = "Đã tạm dừng bảo vệ để duy trì đăng nhập và các chức năng của trang.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "Nguồn ngẫu nhiên";
 "wallpaper_random_sources_desc" = "Tự động làm mới và chuyển đổi làm mới ngẫu nhiên giữa các nguồn từ xa được chọn. Ít nhất một nguồn được giữ lại.";
 "wallpaper_random_topics" = "Chọn ngẫu nhiên chủ đề";
+"wallpaper_only_favorites" = "Chỉ dùng mục yêu thích";
+"wallpaper_only_favorites_desc" = "Thay đổi thủ công và tự động chỉ dùng hình nền yêu thích của bạn. Hãy thêm ít nhất một mục để bật tùy chọn này.";
 "wallpaper_interval_none" = "không bao giờ";
 "wallpaper_interval_1min" = "Mỗi phút";
 "wallpaper_interval_5min" = "Cứ sau 5 phút";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Cho phép Soulo thêm ảnh chụp trang vào Ảnh trong Cài đặt, sau đó thử lại.";
 "web_capture_height_limited" = "Trang này đã vượt quá giới hạn chụp cuộn nên hình ảnh đã bị cắt ở độ cao tối đa.";
 "web_capture_live_text_hint" = "Chạm và giữ văn bản được nhận dạng trong hình ảnh để chọn hoặc sao chép văn bản đó bằng Live Text.";
+"web_capture_pdf" = "Xuất trang web PDF";
+"web_capture_pdf_limited" = "Trang vượt giới hạn PDF nên chỉ phần đầu được xuất.";
 "web_translate" = "Dịch trang";
 "web_translate_target" = "Dịch sang";
 "web_translate_target_desc" = "Soulo tự động phát hiện ngôn ngữ trang.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Gạch chân các liên kết trên trang web để dễ nhận biết hơn.";
 "home_title_edit_desc" = "Hiển thị làm tiêu đề chính ở giữa màn hình chính.";
 "home_subtitle_edit_desc" = "Hiển thị bên dưới tiêu đề chính; để trống để ẩn.";
+"current_keyword" = "Từ khóa hiện tại";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Luồng này không còn khả dụng trên trang hiện tại. Hãy tải lại trang và thử lại.";
+"resource_stream_download_unsupported" = "Soulo đã phát hiện luồng này nhưng chưa thể lưu định dạng tệp kê khai của luồng.";
+"resource_stream_download_invalid_chunk" = "Luồng phương tiện trả về một phân đoạn không hợp lệ hoặc sai thứ tự.";
+"resource_stream_download_missing_track" = "Luồng đã tải xuống không có các bản video và âm thanh có thể phát.";
+"resource_stream_download_export_failed" = "Soulo không thể ghép video và âm thanh đã tải xuống.";
+"resource_stream_playback_download_first" = "Không thể xem trước luồng được bảo vệ này từ URL tạm thời. Hãy tải xuống trước để phát tệp trên thiết bị.";

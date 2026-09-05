@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "Távolítsa el a gyorsítótárazott erőforrásokat, a lap előnézetét és az oldallátogatásokat az elmúlt 3 napból. A bejelentkezések megmaradnak";
 "privacy_clear_cache_confirm_title" = "Törli a böngészési gyorsítótárat?";
 "privacy_clear_cache_confirm_message" = "A gyorsítótárazott erőforrások és az elmúlt 3 nap oldallátogatásai el lesznek távolítva. A cookie-k és a bejelentkezési adatok megmaradnak.";
-"enter_fullscreen" = "Lépjen be a teljes képernyőre";
+"enter_fullscreen" = "Teljes képernyő";
 "exit_fullscreen" = "Lépjen ki a teljes képernyőből";
 "fullscreen_exit_hint" = "Koppintson a kezelőszervekhez, húzza le a kilépéshez";
 "restore_browser_toolbar" = "Eszköztár visszaállítása";
@@ -262,7 +262,7 @@
 "ad_block_network" = "Reklámhálózati kérések blokkolása";
 "ad_block_cosmetic" = "Hirdetési helyőrzők elrejtése";
 "ad_block_popups" = "Tisztítsa meg a felugró ablakokat és a fedvényeket";
-"ad_block_management" = "Hirdetésblokk kezelése";
+"ad_block_management" = "Hirdetésblokkolás";
 "ad_block_allowlist" = "Engedélyezett webhelyek";
 "ad_block_disable_current_site" = "Tiltsa le a hirdetésblokkolást ezen a webhelyen";
 "ad_block_enable_current_site" = "Engedélyezze a hirdetésblokkolást ezen a webhelyen";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Világos";
 "fire_button_desc" = "Zárja be a böngésző lapjait, és törölje a webhelyadatokat, a cookie-kat, a gyorsítótárat és az adatvédelmi statisztikákat.";
 "fire_complete" = "Az adatvédelmi adatok törölve";
-"site_privacy" = "A webhely védelmének részletei";
+"site_privacy" = "Webhelyvédelem";
 "site_privacy_scope_desc" = "Csak erre az oldalra vonatkozik. Módosítsa az összes webhely alapértelmezett beállításait az Adatvédelmi beállításokban.";
 "privacy_global_scope_desc" = "Ezek az alapértelmezett értékek minden webhelyre érvényesek. Érintse meg a webhely ikonját az alsó címsorban, hogy kivételt állítson be az aktuális webhelyre.";
 "site_privacy_compatibility_bypass" = "A védelem szünetel, hogy a bejelentkezés és a webhely funkciói működjenek.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "Források véletlenszerűsítése";
 "wallpaper_random_sources_desc" = "Automatikus frissítés és véletlenszerű frissítési váltás a kiválasztott távoli források között. Legalább egy forrás megmarad.";
 "wallpaper_random_topics" = "Témák véletlenszerűvé tétele";
+"wallpaper_only_favorites" = "Csak kedvencek használata";
+"wallpaper_only_favorites_desc" = "A kézi és automatikus váltás csak a kedvenc háttérképeket használja. Az engedélyezéshez adjon hozzá legalább egyet.";
 "wallpaper_interval_none" = "Soha";
 "wallpaper_interval_1min" = "Minden percben";
 "wallpaper_interval_5min" = "5 percenként";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Engedélyezze a(z) Soulo számára, hogy hozzáadja az oldalrögzítést a Fotókhoz a Beállításokban, majd próbálkozzon újra.";
 "web_capture_height_limited" = "Ez az oldal túllépte a görgethető rögzítési korlátot, ezért a kép a maximális magasságban lett levágva.";
 "web_capture_live_text_hint" = "Érintse meg és tartsa lenyomva a felismert szöveget a képen a kijelöléséhez vagy másolásához a Live Text segítségével.";
+"web_capture_pdf" = "Weboldal exportálása PDF-ként";
+"web_capture_pdf_limited" = "Az oldal túllépte a PDF-korlátot, ezért csak az első része lett exportálva.";
 "web_translate" = "Oldal fordítása";
 "web_translate_target" = "Fordítás ide";
 "web_translate_target_desc" = "A Soulo automatikusan felismeri az oldal nyelvét.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Húzd alá a weboldal hivatkozásait, hogy könnyebben felismerhetők legyenek.";
 "home_title_edit_desc" = "A kezdőképernyő fő címsoraként jelenik meg.";
 "home_subtitle_edit_desc" = "A főcím alatt látható; hagyja üresen, hogy elrejtse.";
+"current_keyword" = "Jelenlegi kulcsszó";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Ez a stream már nem érhető el az aktuális oldalon. Töltse újra az oldalt, és próbálja újra.";
+"resource_stream_download_unsupported" = "A Soulo felismerte ezt a streamet, de a manifest formátumát még nem tudja menteni.";
+"resource_stream_download_invalid_chunk" = "A médiafolyam érvénytelen vagy nem megfelelő sorrendű szegmenst adott vissza.";
+"resource_stream_download_missing_track" = "A letöltött stream nem tartalmazott lejátszható video- és hangsávokat.";
+"resource_stream_download_export_failed" = "A Soulo nem tudta egyesíteni a letöltött videót és hangot.";
+"resource_stream_playback_download_first" = "Ez a védett stream nem tekinthető meg az ideiglenes URL-ről. Először töltse le a helyi fájl lejátszásához.";

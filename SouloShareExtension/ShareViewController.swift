@@ -5,6 +5,7 @@ final class ShareViewController: UIViewController {
     private let stack = UIStackView()
     private let titleLabel = UILabel()
     private let activityIndicator = UIActivityIndicatorView(style: .medium)
+    private var primaryButton: UIButton?
     private var sharedText: String?
 
     override func viewDidLoad() {
@@ -25,11 +26,13 @@ final class ShareViewController: UIViewController {
         view.addSubview(stack)
         stack.addArrangedSubview(titleLabel)
         stack.addArrangedSubview(activityIndicator)
-        stack.addArrangedSubview(makeButton(
+        let primaryButton = makeButton(
             title: NSLocalizedString("share_search_in_soulo", comment: ""),
             image: "magnifyingglass",
-            action: #selector(search)
-        ))
+            action: #selector(performPrimaryAction)
+        )
+        self.primaryButton = primaryButton
+        stack.addArrangedSubview(primaryButton)
         stack.addArrangedSubview(makeButton(
             title: NSLocalizedString("share_private_search", comment: ""),
             image: "eye.slash",
@@ -75,12 +78,16 @@ final class ShareViewController: UIViewController {
             for provider in providers {
                 if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier),
                    let url = try? await provider.loadItem(forTypeIdentifier: UTType.url.identifier) as? URL {
-                    contentLoaded(url.absoluteString)
+                    contentLoaded(url.absoluteString, isWebURL: isWebURL(url))
                     return
                 }
                 if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier),
                    let text = try? await provider.loadItem(forTypeIdentifier: UTType.plainText.identifier) as? String {
-                    contentLoaded(text)
+                    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                    contentLoaded(
+                        trimmed,
+                        isWebURL: URL(string: trimmed).map(isWebURL) ?? false
+                    )
                     return
                 }
             }
@@ -89,13 +96,20 @@ final class ShareViewController: UIViewController {
     }
 
     @MainActor
-    private func contentLoaded(_ text: String) {
+    private func contentLoaded(_ text: String, isWebURL: Bool) {
         sharedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if isWebURL {
+            titleLabel.text = NSLocalizedString("intent_open_soulo_title", comment: "")
+            var configuration = primaryButton?.configuration
+            configuration?.title = NSLocalizedString("intent_open_soulo_title", comment: "")
+            configuration?.image = UIImage(systemName: "safari")
+            primaryButton?.configuration = configuration
+        }
         activityIndicator.stopAnimating()
         stack.arrangedSubviews.compactMap { $0 as? UIButton }.forEach { $0.isEnabled = true }
     }
 
-    @objc private func search() { open(.search) }
+    @objc private func performPrimaryAction() { open(.search) }
     @objc private func privateSearch() { open(.privateSearch) }
 
     private func open(_ kind: SouloSharedAction.Kind) {
@@ -105,8 +119,23 @@ final class ShareViewController: UIViewController {
             finishWithError()
             return
         }
-        extensionContext?.open(url) { [weak self] _ in
-            self?.extensionContext?.completeRequest(returningItems: nil)
+        activityIndicator.startAnimating()
+        stack.arrangedSubviews.compactMap { $0 as? UIButton }.forEach { $0.isEnabled = false }
+        guard let extensionContext else {
+            SouloSharedAction.discardPending()
+            finishWithError(messageKey: "open_external_failed")
+            return
+        }
+        extensionContext.open(url) { [weak self] success in
+            Task { @MainActor in
+                guard let self else { return }
+                if success {
+                    extensionContext.completeRequest(returningItems: nil)
+                } else {
+                    SouloSharedAction.discardPending()
+                    self.finishWithError(messageKey: "open_external_failed")
+                }
+            }
         }
     }
 
@@ -114,9 +143,18 @@ final class ShareViewController: UIViewController {
         extensionContext?.cancelRequest(withError: NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError))
     }
 
-    private func finishWithError() {
-        titleLabel.text = NSLocalizedString("share_extension_unsupported", comment: "")
+    private func finishWithError(messageKey: String = "share_extension_unsupported") {
+        titleLabel.text = NSLocalizedString(messageKey, comment: "")
         activityIndicator.stopAnimating()
-        stack.arrangedSubviews.compactMap { $0 as? UIButton }.last?.isEnabled = true
+        let buttons = stack.arrangedSubviews.compactMap { $0 as? UIButton }
+        let cancelButton = buttons.last
+        buttons.forEach { button in
+            button.isEnabled = button === cancelButton
+        }
+    }
+
+    private func isWebURL(_ url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased() else { return false }
+        return (scheme == "http" || scheme == "https") && url.host != nil
     }
 }

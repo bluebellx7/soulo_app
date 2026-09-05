@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "Supprimez les ressources mises en cache, les aperçus des onglets et les visites de pages au cours des 3 derniers jours. Les connexions sont conservées";
 "privacy_clear_cache_confirm_title" = "Effacer le cache de navigation ?";
 "privacy_clear_cache_confirm_message" = "Les ressources mises en cache et les visites de pages des 3 derniers jours seront supprimées. Les cookies et les connexions seront conservés.";
-"enter_fullscreen" = "Passer en plein écran";
+"enter_fullscreen" = "Plein écran";
 "exit_fullscreen" = "Quitter le plein écran";
 "fullscreen_exit_hint" = "Appuyez pour les commandes, tirez vers le bas pour quitter";
 "restore_browser_toolbar" = "Restaurer la barre d'outils";
@@ -262,7 +262,7 @@
 "ad_block_network" = "Bloquer les demandes du réseau publicitaire";
 "ad_block_cosmetic" = "Masquer les espaces réservés aux annonces";
 "ad_block_popups" = "Nettoyer les popups et les superpositions";
-"ad_block_management" = "Gestion des blocs de publicités";
+"ad_block_management" = "Blocage des publicités";
 "ad_block_allowlist" = "Sites autorisés";
 "ad_block_disable_current_site" = "Désactiver le blocage des publicités sur ce site";
 "ad_block_enable_current_site" = "Activer le blocage des publicités sur ce site";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Effacer";
 "fire_button_desc" = "Fermez les onglets du navigateur et effacez les données du site Web, les cookies, le cache et les statistiques de confidentialité.";
 "fire_complete" = "Données de confidentialité effacées";
-"site_privacy" = "Détails de la protection du site";
+"site_privacy" = "Protection du site";
 "site_privacy_scope_desc" = "S'applique uniquement à ce site. Modifiez les valeurs par défaut de tous les sites dans les paramètres de confidentialité.";
 "privacy_global_scope_desc" = "Ces valeurs par défaut s'appliquent à tous les sites. Appuyez sur l'icône du site dans la barre d'adresse inférieure pour définir une exception pour le site Web actuel.";
 "site_privacy_compatibility_bypass" = "La protection est suspendue pour que les fonctionnalités de connexion et du site continuent de fonctionner.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "Randomiser les sources";
 "wallpaper_random_sources_desc" = "Actualisation automatique et commutation d'actualisation aléatoire entre les sources distantes sélectionnées. Au moins une source est conservée.";
 "wallpaper_random_topics" = "Randomiser les sujets";
+"wallpaper_only_favorites" = "Utiliser seulement les favoris";
+"wallpaper_only_favorites_desc" = "Les changements manuels et automatiques utilisent seulement vos fonds favoris. Ajoutez-en au moins un pour activer cette option.";
 "wallpaper_interval_none" = "Jamais";
 "wallpaper_interval_1min" = "Chaque minute";
 "wallpaper_interval_5min" = "Toutes les 5 minutes";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Autorisez Soulo à ajouter la capture de page à Photos dans Paramètres, puis réessayez.";
 "web_capture_height_limited" = "Cette page a dépassé la limite de capture avec défilement, l'image a donc été rognée à la hauteur maximale.";
 "web_capture_live_text_hint" = "Appuyez longuement sur le texte reconnu dans l'image pour le sélectionner ou le copier avec Live Text.";
+"web_capture_pdf" = "Exporter la page en PDF";
+"web_capture_pdf_limited" = "La page dépasse la limite PDF. Seule la première partie a été exportée.";
 "web_translate" = "Page de traduction";
 "web_translate_target" = "Traduire vers";
 "web_translate_target_desc" = "Soulo détecte automatiquement la langue de la page.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Soulignez les liens des pages Web afin qu’ils soient plus faciles à reconnaître.";
 "home_title_edit_desc" = "Affiché comme titre principal sur l’écran d’accueil.";
 "home_subtitle_edit_desc" = "Montré sous le titre principal ; laissez vide pour le cacher.";
+"current_keyword" = "Mot-clé actuel";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Ce flux n’est plus disponible sur la page actuelle. Rechargez la page et réessayez.";
+"resource_stream_download_unsupported" = "Soulo a détecté ce flux, mais ne peut pas encore enregistrer son format de manifeste.";
+"resource_stream_download_invalid_chunk" = "Le flux multimédia a renvoyé un segment non valide ou dans le mauvais ordre.";
+"resource_stream_download_missing_track" = "Le flux téléchargé ne contenait pas de pistes vidéo et audio lisibles.";
+"resource_stream_download_export_failed" = "Soulo n’a pas pu fusionner la vidéo et l’audio téléchargés.";
+"resource_stream_playback_download_first" = "Ce flux protégé ne peut pas être prévisualisé depuis son URL temporaire. Téléchargez-le d’abord pour lire le fichier local.";

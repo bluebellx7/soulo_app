@@ -287,7 +287,7 @@
 "privacy_clear_cache_confirm_title" = "Vider le cache du navigateur ?";
 "privacy_clear_cache_confirm_message" = "Le cache et les pages consultées ces 3 derniers jours seront supprimés. Les cookies et connexions seront conservés.";
 
-"enter_fullscreen" = "Activer le plein écran";
+"enter_fullscreen" = "Plein écran";
 "exit_fullscreen" = "Quitter le plein écran";
 "fullscreen_exit_hint" = "Touchez pour les commandes, tirez pour quitter";
 "restore_browser_toolbar" = "Restaurer la barre d’outils";
@@ -481,7 +481,7 @@ Dites-nous :
 "fire_button_confirm" = "Clear";
 "fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
 "fire_complete" = "Privacy data cleared";
-"site_privacy" = "Protection du site actuel";
+"site_privacy" = "Protection du site";
 "site_privacy_scope_desc" = "S’applique uniquement à ce site. Modifiez les réglages par défaut dans les réglages de confidentialité.";
 "privacy_global_scope_desc" = "Ces réglages s’appliquent à tous les sites. Utilisez la protection du site actuel pour créer une exception.";
 "site_privacy_compatibility_bypass" = "La protection est suspendue pour préserver la connexion et les fonctions du site.";
@@ -588,3 +588,14 @@ Dites-nous :
 "userscript_commands" = "Commandes de script";
 "userscript_page_marker_name" = "Extracteur de texte";
 "userscript_page_marker_desc" = "Touchez le bouton déplaçable, puis une zone de la page pour extraire et copier son texte visible.";
+"wallpaper_only_favorites" = "Utiliser uniquement les favoris";
+"wallpaper_only_favorites_desc" = "Les changements manuels et automatiques utilisent uniquement vos fonds favoris. Ajoutez-en au moins un pour activer cette option.";
+"current_keyword" = "Mot-clé actuel";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Ce flux n’est plus disponible sur la page actuelle. Rechargez la page et réessayez.";
+"resource_stream_download_unsupported" = "Soulo a détecté ce flux, mais ne peut pas encore enregistrer son format de manifeste.";
+"resource_stream_download_invalid_chunk" = "Le flux multimédia a renvoyé un segment non valide ou dans le mauvais ordre.";
+"resource_stream_download_missing_track" = "Le flux téléchargé ne contenait pas de pistes vidéo et audio lisibles.";
+"resource_stream_download_export_failed" = "Soulo n’a pas pu fusionner la vidéo et l’audio téléchargés.";
+"resource_stream_playback_download_first" = "Ce flux protégé ne peut pas être prévisualisé depuis son URL temporaire. Téléchargez-le d’abord pour lire le fichier local.";

@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "मागील 3 दिवसांपासून कॅशे केलेली संसाधने, टॅब पूर्वावलोकन आणि पृष्ठ भेटी काढून टाका. साइन-इन ठेवले आहेत";
 "privacy_clear_cache_confirm_title" = "ब्राउझिंग कॅशे साफ करायचे?";
 "privacy_clear_cache_confirm_message" = "मागील 3 दिवसातील कॅश्ड संसाधने आणि पृष्ठ भेटी काढून टाकल्या जातील. कुकीज आणि साइन-इन ठेवले जातील.";
-"enter_fullscreen" = "पूर्ण स्क्रीन प्रविष्ट करा";
+"enter_fullscreen" = "पूर्ण स्क्रीन";
 "exit_fullscreen" = "पूर्ण स्क्रीनमधून बाहेर पडा";
 "fullscreen_exit_hint" = "नियंत्रणांसाठी टॅप करा, बाहेर पडण्यासाठी खाली खेचा";
 "restore_browser_toolbar" = "टूलबार पुनर्संचयित करा";
@@ -262,7 +262,7 @@
 "ad_block_network" = "जाहिरात नेटवर्क विनंत्या ब्लॉक करा";
 "ad_block_cosmetic" = "जाहिरात प्लेसहोल्डर लपवा";
 "ad_block_popups" = "पॉपअप आणि आच्छादन स्वच्छ करा";
-"ad_block_management" = "जाहिरात ब्लॉक व्यवस्थापन";
+"ad_block_management" = "जाहिरात अवरोधन";
 "ad_block_allowlist" = "परवानगी दिलेल्या साइट्स";
 "ad_block_disable_current_site" = "या साइटवरील जाहिरात ब्लॉक अक्षम करा";
 "ad_block_enable_current_site" = "या साइटवर जाहिरात ब्लॉक सक्षम करा";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "साफ";
 "fire_button_desc" = "ब्राउझर टॅब बंद करा आणि वेबसाइट डेटा, कुकीज, कॅशे आणि गोपनीयता आकडेवारी साफ करा.";
 "fire_complete" = "गोपनीयता डेटा साफ केला";
-"site_privacy" = "साइट संरक्षण तपशील";
+"site_privacy" = "साइट संरक्षण";
 "site_privacy_scope_desc" = "फक्त या साइटवर लागू होते. गोपनीयता सेटिंग्जमधील सर्व साइटसाठी डीफॉल्ट बदला.";
 "privacy_global_scope_desc" = "हे डीफॉल्ट सर्व साइटवर लागू होतात. वर्तमान वेबसाइटसाठी अपवाद सेट करण्यासाठी तळाशी असलेल्या ॲड्रेस बारमधील साइट चिन्हावर टॅप करा.";
 "site_privacy_compatibility_bypass" = "साइन-इन आणि साइट वैशिष्ट्ये कार्यरत ठेवण्यासाठी संरक्षणास विराम दिला आहे.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "स्रोत यादृच्छिक करा";
 "wallpaper_random_sources_desc" = "निवडलेल्या रिमोट स्त्रोतांमध्ये स्वयंचलित रिफ्रेश आणि यादृच्छिक रीफ्रेश स्विच. किमान एक स्रोत ठेवला आहे.";
 "wallpaper_random_topics" = "विषय यादृच्छिक करा";
+"wallpaper_only_favorites" = "फक्त आवडते वापरा";
+"wallpaper_only_favorites_desc" = "मॅन्युअल आणि स्वयंचलित बदलांमध्ये फक्त तुमचे आवडते वॉलपेपर वापरले जातील. सुरू करण्यासाठी किमान एक आवडते जोडा.";
 "wallpaper_interval_none" = "कधीच नाही";
 "wallpaper_interval_1min" = "प्रत्येक मिनिटाला";
 "wallpaper_interval_5min" = "दर ५ मिनिटांनी";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Soulo ला सेटिंग्जमध्ये फोटोमध्ये पेज कॅप्चर जोडण्यासाठी अनुमती द्या, त्यानंतर पुन्हा प्रयत्न करा.";
 "web_capture_height_limited" = "या पृष्ठाने स्क्रोलिंग कॅप्चर मर्यादा ओलांडली, त्यामुळे प्रतिमा कमाल उंचीवर ट्रिम केली गेली.";
 "web_capture_live_text_hint" = "Live Text सह निवडण्यासाठी किंवा कॉपी करण्यासाठी प्रतिमेतील मान्यताप्राप्त मजकूर स्पर्श करा आणि धरून ठेवा.";
+"web_capture_pdf" = "वेबपेज PDF निर्यात";
+"web_capture_pdf_limited" = "पृष्ठाने PDF मर्यादा ओलांडल्यामुळे फक्त पहिला भाग निर्यात केला.";
 "web_translate" = "पृष्ठाचे भाषांतर करा";
 "web_translate_target" = "यामध्ये भाषांतर करा";
 "web_translate_target_desc" = "Soulo पृष्ठ भाषा आपोआप शोधते.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "वेबपेज लिंक अधोरेखित करा जेणेकरून ते ओळखणे सोपे होईल.";
 "home_title_edit_desc" = "होम स्क्रीनवर मुख्य शीर्षक म्हणून दाखवले आहे.";
 "home_subtitle_edit_desc" = "मुख्य शीर्षकाच्या खाली दर्शविले आहे; ते लपविण्यासाठी रिकामे सोडा.";
+"current_keyword" = "वर्तमान कीवर्ड";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "हा स्ट्रीम सध्याच्या पानावर आता उपलब्ध नाही. पान पुन्हा लोड करा आणि प्रयत्न करा.";
+"resource_stream_download_unsupported" = "Soulo ने हा स्ट्रीम शोधला, पण त्याचे मॅनिफेस्ट स्वरूप अद्याप जतन करता येत नाही.";
+"resource_stream_download_invalid_chunk" = "मीडिया स्ट्रीमने अवैध किंवा चुकीच्या क्रमातील भाग परत केला.";
+"resource_stream_download_missing_track" = "डाउनलोड केलेल्या स्ट्रीममध्ये प्ले करता येणारे व्हिडिओ आणि ऑडिओ ट्रॅक नव्हते.";
+"resource_stream_download_export_failed" = "Soulo डाउनलोड केलेले व्हिडिओ आणि ऑडिओ एकत्र करू शकले नाही.";
+"resource_stream_playback_download_first" = "या संरक्षित स्ट्रीमचे तात्पुरत्या URL वरून पूर्वावलोकन करता येत नाही. स्थानिक फाइल प्ले करण्यासाठी आधी डाउनलोड करा.";

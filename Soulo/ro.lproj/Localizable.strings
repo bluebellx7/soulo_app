@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "Eliminați resursele din cache, previzualizările filelor și vizitele de pagină din ultimele 3 zile. Conectările sunt păstrate";
 "privacy_clear_cache_confirm_title" = "Ștergeți memoria cache de navigare?";
 "privacy_clear_cache_confirm_message" = "Resursele memorate în cache și vizitele de pagină din ultimele 3 zile vor fi eliminate. Cookie-urile și conectările vor fi păstrate.";
-"enter_fullscreen" = "Intrați pe ecran complet";
+"enter_fullscreen" = "Ecran complet";
 "exit_fullscreen" = "Ieșiți din ecranul complet";
 "fullscreen_exit_hint" = "Atingeți pentru comenzi, trageți în jos pentru a ieși";
 "restore_browser_toolbar" = "Restaurați bara de instrumente";
@@ -262,7 +262,7 @@
 "ad_block_network" = "Blocați solicitările rețelei publicitare";
 "ad_block_cosmetic" = "Ascundeți substituenții pentru anunțuri";
 "ad_block_popups" = "Curățați ferestrele pop-up și suprapunerile";
-"ad_block_management" = "Gestionarea blocurilor de anunțuri";
+"ad_block_management" = "Blocare reclame";
 "ad_block_allowlist" = "Site-uri permise";
 "ad_block_disable_current_site" = "Dezactivați blocarea anunțurilor pe acest site";
 "ad_block_enable_current_site" = "Activați blocarea anunțurilor pe acest site";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Clar";
 "fire_button_desc" = "Închideți filele browserului și ștergeți datele site-ului, cookie-urile, memoria cache și statisticile de confidențialitate.";
 "fire_complete" = "Datele de confidențialitate au fost șterse";
-"site_privacy" = "Detalii privind protecția site-ului";
+"site_privacy" = "Protecția site-ului";
 "site_privacy_scope_desc" = "Se aplică numai acestui site. Modificați setările implicite pentru toate site-urile din Setările de confidențialitate.";
 "privacy_global_scope_desc" = "Aceste valori implicite se aplică tuturor site-urilor. Atingeți pictograma site-ului din bara de adrese de jos pentru a seta o excepție pentru site-ul actual.";
 "site_privacy_compatibility_bypass" = "Protecția este întreruptă pentru ca funcțiile de conectare și de site să funcționeze.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "Randomizați sursele";
 "wallpaper_random_sources_desc" = "Reîmprospătare automată și reîmprospătare aleatorie comută între sursele de la distanță selectate. Se păstrează cel puțin o sursă.";
 "wallpaper_random_topics" = "Randomizați subiecte";
+"wallpaper_only_favorites" = "Folosiți doar favoritele";
+"wallpaper_only_favorites_desc" = "Schimbările manuale și automate folosesc doar fundalurile favorite. Adăugați cel puțin unul pentru a activa opțiunea.";
 "wallpaper_interval_none" = "Niciodată";
 "wallpaper_interval_1min" = "În fiecare minut";
 "wallpaper_interval_5min" = "La fiecare 5 minute";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Permiteți Soulo să adauge captarea paginii la Fotografii din Setări, apoi încercați din nou.";
 "web_capture_height_limited" = "Această pagină a depășit limita de captură prin defilare, așa că imaginea a fost tăiată la înălțimea maximă.";
 "web_capture_live_text_hint" = "Atingeți lung textul recunoscut din imagine pentru al selecta sau copia cu Live Text.";
+"web_capture_pdf" = "Exportă pagina web ca PDF";
+"web_capture_pdf_limited" = "Pagina a depășit limita PDF, deci a fost exportată doar prima parte.";
 "web_translate" = "Traduceți pagina";
 "web_translate_target" = "Traduceți în";
 "web_translate_target_desc" = "Soulo detectează automat limba paginii.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Subliniați linkurile paginilor web, astfel încât acestea să fie mai ușor de recunoscut.";
 "home_title_edit_desc" = "Afișat ca titlu principal pe ecranul de pornire.";
 "home_subtitle_edit_desc" = "Afișat sub titlul principal; lăsați gol pentru a-l ascunde.";
+"current_keyword" = "Cuvânt-cheie actual";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Acest flux nu mai este disponibil pe pagina curentă. Reîncarcă pagina și încearcă din nou.";
+"resource_stream_download_unsupported" = "Soulo a detectat acest flux, dar încă nu poate salva formatul manifestului său.";
+"resource_stream_download_invalid_chunk" = "Fluxul media a returnat un segment nevalid sau într-o ordine incorectă.";
+"resource_stream_download_missing_track" = "Fluxul descărcat nu conținea piste video și audio care pot fi redate.";
+"resource_stream_download_export_failed" = "Soulo nu a putut combina conținutul video și audio descărcat.";
+"resource_stream_playback_download_first" = "Acest flux protejat nu poate fi previzualizat de la adresa URL temporară. Descarcă-l mai întâi pentru a reda fișierul local.";

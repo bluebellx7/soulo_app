@@ -161,7 +161,7 @@ struct ExtensionCenterView: View {
             if service.userScripts.isEmpty {
                 ContentUnavailableView(
                     LanguageManager.shared.localizedString("userscripts_empty"),
-                    systemImage: "puzzlepiece.extension.fill",
+                    systemImage: "puzzlepiece.extension",
                     description: Text(LanguageManager.shared.localizedString("userscripts_empty_desc"))
                 )
             }
@@ -261,7 +261,7 @@ struct ExtensionCenterView: View {
                     .frame(width: 34, height: 34)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             } else {
-                extensionIcon(systemName: "puzzlepiece.extension.fill", tint: .blue)
+                extensionIcon(systemName: "puzzlepiece.extension", tint: .blue)
             }
 
             VStack(alignment: .leading, spacing: 3) {
@@ -500,7 +500,7 @@ struct WebExtensionStoreInstallView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     Label(
                         LanguageManager.shared.localizedString("web_extension_store_install_title"),
-                        systemImage: "puzzlepiece.extension.fill"
+                        systemImage: "puzzlepiece.extension"
                     )
                     .font(.title3.weight(.semibold))
 
@@ -624,7 +624,7 @@ struct BrowserPackageInstallView: View {
               VStack(spacing: 20) {
                 Image(systemName: candidate.kind == .userScript
                     ? "chevron.left.forwardslash.chevron.right"
-                    : "puzzlepiece.extension.fill")
+                    : "puzzlepiece.extension")
                     .font(.system(size: 28, weight: .semibold))
                     .foregroundStyle(candidate.kind == .userScript ? .orange : .blue)
                     .frame(width: 68, height: 68)

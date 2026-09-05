@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "Hapus sumber daya cache, pratinjau tab, dan kunjungan halaman dari 3 hari terakhir. Proses masuk disimpan";
 "privacy_clear_cache_confirm_title" = "Hapus Cache Penjelajahan?";
 "privacy_clear_cache_confirm_message" = "Sumber daya yang di-cache dan kunjungan halaman dari 3 hari terakhir akan dihapus. Cookie dan proses masuk akan disimpan.";
-"enter_fullscreen" = "Masuk ke Layar Penuh";
+"enter_fullscreen" = "Layar Penuh";
 "exit_fullscreen" = "Keluar dari Layar Penuh";
 "fullscreen_exit_hint" = "Ketuk untuk kontrol, tarik ke bawah untuk keluar";
 "restore_browser_toolbar" = "Pulihkan bilah alat";
@@ -262,7 +262,7 @@
 "ad_block_network" = "Blokir Permintaan Jaringan Iklan";
 "ad_block_cosmetic" = "Sembunyikan Placeholder Iklan";
 "ad_block_popups" = "Bersihkan Popup dan Overlay";
-"ad_block_management" = "Manajemen Blok Iklan";
+"ad_block_management" = "Pemblokiran Iklan";
 "ad_block_allowlist" = "Situs yang Diizinkan";
 "ad_block_disable_current_site" = "Nonaktifkan Blok Iklan di Situs Ini";
 "ad_block_enable_current_site" = "Aktifkan Blok Iklan di Situs Ini";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Jelas";
 "fire_button_desc" = "Tutup tab browser dan hapus data situs web, cookie, cache, dan statistik privasi.";
 "fire_complete" = "Data privasi dihapus";
-"site_privacy" = "Detail Perlindungan Situs";
+"site_privacy" = "Perlindungan Situs";
 "site_privacy_scope_desc" = "Hanya berlaku untuk situs ini. Ubah default untuk semua situs di Pengaturan Privasi.";
 "privacy_global_scope_desc" = "Setelan default ini berlaku untuk semua situs. Ketuk ikon situs di bilah alamat bawah untuk menetapkan pengecualian untuk situs web saat ini.";
 "site_privacy_compatibility_bypass" = "Perlindungan dijeda agar fitur masuk dan situs tetap berfungsi.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "Acak Sumber";
 "wallpaper_random_sources_desc" = "Penyegaran otomatis dan penyegaran acak beralih di antara sumber jarak jauh yang dipilih. Setidaknya satu sumber disimpan.";
 "wallpaper_random_topics" = "Acak Topik";
+"wallpaper_only_favorites" = "Gunakan Favorit Saja";
+"wallpaper_only_favorites_desc" = "Perubahan manual dan otomatis hanya memakai wallpaper favorit Anda. Tambahkan setidaknya satu favorit untuk mengaktifkannya.";
 "wallpaper_interval_none" = "Tidak pernah";
 "wallpaper_interval_1min" = "Setiap Menit";
 "wallpaper_interval_5min" = "Setiap 5 Menit";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Izinkan Soulo menambahkan tangkapan halaman ke Foto di Pengaturan, lalu coba lagi.";
 "web_capture_height_limited" = "Halaman ini melebihi batas pengambilan gulir, sehingga gambar dipangkas pada ketinggian maksimum.";
 "web_capture_live_text_hint" = "Sentuh dan tahan teks yang dikenali pada gambar untuk memilih atau menyalinnya dengan Live Text.";
+"web_capture_pdf" = "Ekspor Halaman Web PDF";
+"web_capture_pdf_limited" = "Halaman melebihi batas PDF, jadi hanya bagian awal yang diekspor.";
 "web_translate" = "Terjemahkan Halaman";
 "web_translate_target" = "Terjemahkan Ke";
 "web_translate_target_desc" = "Soulo mendeteksi bahasa halaman secara otomatis.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Garis bawahi link halaman web agar lebih mudah dikenali.";
 "home_title_edit_desc" = "Ditampilkan sebagai judul utama di layar Beranda.";
 "home_subtitle_edit_desc" = "Ditampilkan di bawah judul utama; biarkan kosong untuk menyembunyikannya.";
+"current_keyword" = "Kata kunci saat ini";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Streaming ini tidak lagi tersedia di halaman saat ini. Muat ulang halaman dan coba lagi.";
+"resource_stream_download_unsupported" = "Soulo mendeteksi streaming ini, tetapi format manifesnya belum dapat disimpan.";
+"resource_stream_download_invalid_chunk" = "Streaming media mengembalikan segmen yang tidak valid atau tidak berurutan.";
+"resource_stream_download_missing_track" = "Streaming yang diunduh tidak berisi trek video dan audio yang dapat diputar.";
+"resource_stream_download_export_failed" = "Soulo tidak dapat menggabungkan video dan audio yang diunduh.";
+"resource_stream_playback_download_first" = "Streaming terlindungi ini tidak dapat dipratinjau dari URL sementaranya. Unduh terlebih dahulu untuk memutar file lokal.";

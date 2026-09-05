@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "Suprimeix els recursos emmagatzemats a la memòria cau, les visualitzacions prèvies de pestanyes i les visites a la pàgina dels darrers 3 dies. Es conserven els inicis de sessió";
 "privacy_clear_cache_confirm_title" = "Esborrar la memòria cau de navegació?";
 "privacy_clear_cache_confirm_message" = "Els recursos emmagatzemats a la memòria cau i les visites a la pàgina dels darrers 3 dies s'eliminaran. Es mantindran les galetes i els inicis de sessió.";
-"enter_fullscreen" = "Entra a pantalla completa";
+"enter_fullscreen" = "Pantalla completa";
 "exit_fullscreen" = "Sortir de pantalla completa";
 "fullscreen_exit_hint" = "Toqueu per als controls, tireu cap avall per sortir";
 "restore_browser_toolbar" = "Barra d'eines de restauració";
@@ -262,7 +262,7 @@
 "ad_block_network" = "Bloqueja les sol·licituds de la xarxa publicitària";
 "ad_block_cosmetic" = "Amaga els marcadors de posició de l'anunci";
 "ad_block_popups" = "Neteja les finestres emergents i les superposicions";
-"ad_block_management" = "Gestió de blocs d'anuncis";
+"ad_block_management" = "Bloqueig d'anuncis";
 "ad_block_allowlist" = "Llocs permesos";
 "ad_block_disable_current_site" = "Desactiva el bloqueig d'anuncis en aquest lloc";
 "ad_block_enable_current_site" = "Activa el bloqueig d'anuncis en aquest lloc";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "Clar";
 "fire_button_desc" = "Tanca les pestanyes del navegador i esborra les dades del lloc web, les galetes, la memòria cau i les estadístiques de privadesa.";
 "fire_complete" = "Dades de privadesa esborrades";
-"site_privacy" = "Detalls de protecció del lloc";
+"site_privacy" = "Protecció del lloc";
 "site_privacy_scope_desc" = "S'aplica només a aquest lloc. Canvieu els valors predeterminats de tots els llocs a la configuració de privadesa.";
 "privacy_global_scope_desc" = "Aquests valors predeterminats s'apliquen a tots els llocs. Toqueu la icona del lloc a la barra d'adreces inferior per establir una excepció per al lloc web actual.";
 "site_privacy_compatibility_bypass" = "La protecció s'atura per mantenir l'inici de sessió i les funcions del lloc funcionant.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "Aleatoritzar les fonts";
 "wallpaper_random_sources_desc" = "Actualització automàtica i canvi d'actualització aleatòria entre les fonts remotes seleccionades. Es conserva almenys una font.";
 "wallpaper_random_topics" = "Aleatoritzar temes";
+"wallpaper_only_favorites" = "Utilitza només els preferits";
+"wallpaper_only_favorites_desc" = "Els canvis manuals i automàtics només utilitzen els teus fons preferits. Afegeix-ne almenys un per activar-ho.";
 "wallpaper_interval_none" = "Mai";
 "wallpaper_interval_1min" = "Cada Minut";
 "wallpaper_interval_5min" = "Cada 5 minuts";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Permet que Soulo afegeixi la captura de pàgina a Fotos a Configuració i torna-ho a provar.";
 "web_capture_height_limited" = "Aquesta pàgina ha superat el límit de captura de desplaçament, de manera que la imatge es va retallar a l'alçada màxima.";
 "web_capture_live_text_hint" = "Mantén premut el text reconegut a la imatge per seleccionar-lo o copiar-lo amb Live Text.";
+"web_capture_pdf" = "Exporta el web en PDF";
+"web_capture_pdf_limited" = "La pàgina supera el límit del PDF; només se n'ha exportat la primera part.";
 "web_translate" = "Pàgina de traducció";
 "web_translate_target" = "Traduir a";
 "web_translate_target_desc" = "Soulo detecta automàticament l'idioma de la pàgina.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Subratlla els enllaços de pàgines web perquè siguin més fàcils de reconèixer.";
 "home_title_edit_desc" = "Es mostra com a títol principal a la pantalla d'inici.";
 "home_subtitle_edit_desc" = "Es mostra a sota de l'encapçalament principal; deixa buit per amagar-lo.";
+"current_keyword" = "Paraula clau actual";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Aquest flux ja no està disponible a la pàgina actual. Torna a carregar la pàgina i prova-ho de nou.";
+"resource_stream_download_unsupported" = "Soulo ha detectat aquest flux, però encara no es pot desar el seu format de manifest.";
+"resource_stream_download_invalid_chunk" = "El flux multimèdia ha retornat un segment no vàlid o fora d'ordre.";
+"resource_stream_download_missing_track" = "El flux baixat no contenia pistes de vídeo i àudio reproduïbles.";
+"resource_stream_download_export_failed" = "Soulo no ha pogut combinar el vídeo i l'àudio baixats.";
+"resource_stream_playback_download_first" = "Aquest flux protegit no es pot previsualitzar des del seu URL temporal. Baixa'l primer per reproduir el fitxer local.";

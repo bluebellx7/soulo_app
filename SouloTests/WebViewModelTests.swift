@@ -2,6 +2,7 @@ import XCTest
 import UIKit
 import SwiftData
 import CoreImage
+import PDFKit
 import WebKit
 @testable import Soulo
 
@@ -28,6 +29,90 @@ final class WebViewModelTests: XCTestCase {
                 "Missing runtime localization for \(language)"
             )
         }
+    }
+
+    func testWebPagePDFLabelsExistInEveryRuntimeLanguage() throws {
+        for language in AppConstants.supportedLanguages.map(\.code) {
+            let path = try XCTUnwrap(
+                Bundle.main.path(forResource: language, ofType: "lproj"),
+                "Missing localization bundle for \(language)"
+            )
+            let bundle = try XCTUnwrap(Bundle(path: path))
+            for key in ["web_capture_pdf", "web_capture_pdf_limited"] {
+                XCTAssertNotEqual(
+                    bundle.localizedString(forKey: key, value: nil, table: nil),
+                    key,
+                    "Missing \(key) for \(language)"
+                )
+            }
+        }
+    }
+
+    func testFavoriteWallpaperLabelsExistInEveryRuntimeLanguage() throws {
+        for language in AppConstants.supportedLanguages.map(\.code) {
+            let path = try XCTUnwrap(
+                Bundle.main.path(forResource: language, ofType: "lproj"),
+                "Missing localization bundle for \(language)"
+            )
+            let bundle = try XCTUnwrap(Bundle(path: path))
+            for key in ["wallpaper_only_favorites", "wallpaper_only_favorites_desc"] {
+                XCTAssertNotEqual(
+                    bundle.localizedString(forKey: key, value: nil, table: nil),
+                    key,
+                    "Missing \(key) for \(language)"
+                )
+            }
+        }
+    }
+
+    func testWebPageShareItemKeepsStandardURLSharing() throws {
+        guard #available(iOS 17.4, *) else { return }
+        let url = try XCTUnwrap(URL(string: "https://example.com/article"))
+        let item = WebPageShareActivityItem(url: url, title: "Example")
+        let controller = UIActivityViewController(
+            activityItems: [item],
+            applicationActivities: nil
+        )
+
+        XCTAssertEqual(
+            item.activityViewControllerPlaceholderItem(controller) as? URL,
+            url
+        )
+        XCTAssertEqual(
+            item.activityViewController(controller, itemForActivityType: .copyToPasteboard) as? URL,
+            url
+        )
+        XCTAssertEqual(item.url, url)
+        XCTAssertEqual(item.title, "Example")
+    }
+
+    func testFavoriteWallpaperRefreshAvoidsCurrentImageWhenPossible() throws {
+        let current = RemoteWallpaper(
+            id: "current",
+            url: "https://example.com/current.jpg",
+            previewURL: "https://example.com/current-preview.jpg",
+            source: "pexels"
+        )
+        let alternative = RemoteWallpaper(
+            id: "alternative",
+            url: "https://example.com/alternative.jpg",
+            previewURL: "https://example.com/alternative-preview.jpg",
+            source: "pexels"
+        )
+
+        XCTAssertEqual(
+            WallpaperManager.favoriteWallpaperForRefresh(
+                in: [current, alternative],
+                currentImageID: current.id
+            )?.id,
+            alternative.id
+        )
+        XCTAssertNil(
+            WallpaperManager.favoriteWallpaperForRefresh(
+                in: [],
+                currentImageID: current.id
+            )
+        )
     }
 
     func testLegacyAndRegionalLanguageCodesResolveToSupportedLocales() {
@@ -712,8 +797,8 @@ final class WebViewModelTests: XCTestCase {
         XCTAssertEqual(service.addressAction, .none)
 
         service.save(actions: [.translate, .share, .tabs, .more], addressAction: .translate)
-        XCTAssertEqual(service.actions, [.none, .share, .tabs, .more])
-        XCTAssertEqual(service.addressAction, .none)
+        XCTAssertEqual(service.actions, [.translate, .share, .tabs, .more])
+        XCTAssertEqual(service.addressAction, .translate)
 
         service.save(actions: [.home, .back, .tabs, .more], addressAction: .hideToolbar)
         XCTAssertEqual(service.addressAction, .hideToolbar)
@@ -870,6 +955,65 @@ final class WebViewModelTests: XCTestCase {
         XCTAssertTrue(WebPageCaptureService.pageBackgroundColorScript.contains("document.documentElement"))
     }
 
+    func testWebPagePDFLayoutUsesConsistentPagesAndCapsPathologicalDocuments() {
+        let layout = WebPagePDFService.pageLayout(
+            contentSize: CGSize(width: 390, height: 1_400),
+            viewportSize: CGSize(width: 390, height: 500)
+        )
+
+        XCTAssertEqual(layout.rects.count, 3)
+        XCTAssertFalse(layout.wasLimited)
+        XCTAssertTrue(layout.rects.allSatisfy { rect in
+            abs(rect.height / rect.width - WebPagePDFService.pageAspectRatio) < 0.001
+        })
+        XCTAssertEqual(layout.rects[1].minY, layout.rects[0].maxY, accuracy: 0.001)
+
+        let limited = WebPagePDFService.pageLayout(
+            contentSize: CGSize(width: 390, height: 1_000_000),
+            viewportSize: CGSize(width: 390, height: 500)
+        )
+        XCTAssertEqual(limited.rects.count, WebPagePDFService.maximumPageCount)
+        XCTAssertTrue(limited.wasLimited)
+    }
+
+    func testWebPagePDFExportKeepsTextSelectableAcrossPages() async throws {
+        let html = #"""
+        <!doctype html><html><head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+        html,body{margin:0;width:100%;height:1400px;background:white;color:black}
+        h1{margin:24px;font-size:32px} p{margin:760px 24px 0;font-size:20px}
+        </style></head><body>
+        <h1>Selectable Vector Heading</h1>
+        <p>Selectable text on a later PDF page.</p>
+        </body></html>
+        """#
+        let (window, webView) = try await makeCaptureWebView(
+            html: html,
+            size: CGSize(width: 390, height: 500)
+        )
+        defer { window.isHidden = true }
+
+        let result = try await WebPagePDFService.export(from: webView, title: "Vector PDF Test")
+        let document = try XCTUnwrap(PDFDocument(data: result.data))
+        let selectableText = (0..<document.pageCount)
+            .compactMap { document.page(at: $0)?.string }
+            .joined(separator: " ")
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+
+        XCTAssertEqual(document.pageCount, result.pageCount)
+        XCTAssertGreaterThan(document.pageCount, 1)
+        XCTAssertTrue(
+            selectableText.contains("Selectable Vector Heading"),
+            "Extracted PDF text: \(selectableText)"
+        )
+        XCTAssertTrue(
+            selectableText.contains("Selectable text on a later PDF page"),
+            "Extracted PDF text: \(selectableText)"
+        )
+        XCTAssertEqual(result.fileName, "Vector PDF Test.pdf")
+    }
+
     private func makeCaptureWebView(
         html: String,
         size: CGSize
@@ -960,6 +1104,229 @@ final class WebViewModelTests: XCTestCase {
         XCTAssertEqual(values["sl"], "auto")
         XCTAssertEqual(values["tl"], "zh-CN")
         XCTAssertEqual(values["u"], pageURL.absoluteString)
+    }
+
+    func testGoogleTranslationCatalogCoversEveryAppLanguage() {
+        let targets = WebTranslationLanguageCatalog.googleTargets()
+
+        XCTAssertGreaterThan(targets.count, 180)
+        XCTAssertNotNil(targets.first { $0.id == "zh-CN" })
+        XCTAssertNotNil(targets.first { $0.id == "zh-TW" })
+        for language in AppConstants.supportedLanguages {
+            XCTAssertNotNil(
+                WebTranslationLanguageCatalog.bestMatch(for: language.code, in: targets),
+                "Missing Google translation target for \(language.code)"
+            )
+        }
+    }
+
+    func testGoogleTranslationURLMapsTraditionalChineseAndRejectsLocalFiles() throws {
+        let pageURL = try XCTUnwrap(URL(string: "https://example.com/article"))
+        let url = try XCTUnwrap(googleTranslationURL(pageURL: pageURL, target: "zh-Hant"))
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        let values = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).compactMap { item in
+            item.value.map { (item.name, $0) }
+        })
+
+        XCTAssertEqual(values["tl"], "zh-TW")
+        XCTAssertNil(
+            googleTranslationURL(
+                pageURL: URL(fileURLWithPath: "/tmp/private.html"),
+                target: "en"
+            )
+        )
+    }
+
+    func testGoogleTranslationURLChangesTargetWithoutNestingTranslatedPage() throws {
+        let firstTranslation = try XCTUnwrap(
+            googleTranslationURL(
+                pageURL: URL(string: "https://example.com/article?q=swift"),
+                target: "zh-CN"
+            )
+        )
+        let changedTranslation = try XCTUnwrap(
+            googleTranslationURL(pageURL: firstTranslation, target: "ja")
+        )
+        let components = try XCTUnwrap(
+            URLComponents(url: changedTranslation, resolvingAgainstBaseURL: false)
+        )
+        let values = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).compactMap {
+            item in item.value.map { (item.name, $0) }
+        })
+
+        XCTAssertEqual(values["tl"], "ja")
+        XCTAssertEqual(values["u"], "https://example.com/article?q=swift")
+    }
+
+    func testGoogleTranslationURLRecoversOriginalURLFromProxyHost() throws {
+        let proxyURL = try XCTUnwrap(
+            URL(string: "https://docs--example-com.translate.goog/guide?item=1&_x_tr_sl=auto&_x_tr_tl=zh-CN")
+        )
+        let sourceURL = try XCTUnwrap(googleTranslationSourcePageURL(from: proxyURL))
+
+        XCTAssertEqual(sourceURL.absoluteString, "https://docs-example.com/guide?item=1")
+    }
+
+    func testAddressTranslationLanguageMatchingHandlesLocalesAndChineseScripts() {
+        XCTAssertFalse(
+            WebPageLanguageMatcher.shouldOfferTranslation(
+                pageIdentifier: "en",
+                appIdentifier: "en-GB"
+            )
+        )
+        XCTAssertTrue(
+            WebPageLanguageMatcher.shouldOfferTranslation(
+                pageIdentifier: "fr",
+                appIdentifier: "en-US"
+            )
+        )
+        XCTAssertFalse(
+            WebPageLanguageMatcher.shouldOfferTranslation(
+                pageIdentifier: "zh-CN",
+                appIdentifier: "zh-Hans"
+            )
+        )
+        XCTAssertTrue(
+            WebPageLanguageMatcher.shouldOfferTranslation(
+                pageIdentifier: "zh-TW",
+                appIdentifier: "zh-Hans"
+            )
+        )
+        XCTAssertFalse(
+            WebPageLanguageMatcher.shouldOfferTranslation(
+                pageIdentifier: nil,
+                appIdentifier: "en-US"
+            )
+        )
+    }
+
+    func testGoogleTranslationPageRecognition() throws {
+        XCTAssertTrue(
+            isGoogleTranslationPageURL(
+                URL(string: "https://translate.google.com/translate?sl=auto&tl=fr&u=https://example.com")
+            )
+        )
+        XCTAssertTrue(
+            isGoogleTranslationPageURL(
+                URL(string: "https://docs--example-com.translate.goog/guide?_x_tr_tl=fr")
+            )
+        )
+        XCTAssertFalse(isGoogleTranslationPageURL(URL(string: "https://example.com/article")))
+    }
+
+    func testTranslationLanguageIdentifierUsesMinimalUnambiguousIdentifier() {
+        XCTAssertEqual(
+            WebTranslationLanguageCatalog.identifier(for: Locale.Language(identifier: "zh-Hans")),
+            "zh"
+        )
+        XCTAssertEqual(
+            WebTranslationLanguageCatalog.identifier(for: Locale.Language(identifier: "pt-BR")),
+            "pt"
+        )
+        XCTAssertEqual(
+            WebTranslationLanguageCatalog.identifier(for: Locale.Language(identifier: "pt-PT")),
+            "pt-PT"
+        )
+    }
+
+    func testTranslationSourceDetectorUsesDominantPageLanguageAndFiltersConfidentOutlier() throws {
+        let fragments = [
+            PageTranslationFragment(
+                id: "article-1",
+                text: "Artificial intelligence enables computers to learn patterns, reason, and solve complex problems."
+            ),
+            PageTranslationFragment(
+                id: "article-2",
+                text: "Modern systems combine language understanding with visual perception and planning."
+            ),
+            PageTranslationFragment(id: "short-label", text: "Home"),
+            PageTranslationFragment(
+                id: "outlier",
+                text: "这是一段明显属于另一种语言的较长网页内容，不应放进同一个批量翻译请求。"
+            )
+        ]
+
+        let source = try XCTUnwrap(WebTranslationSourceDetector.dominantLanguage(in: fragments))
+        XCTAssertEqual(source.languageCode?.identifier, "en")
+
+        let matching = WebTranslationSourceDetector.matchingFragments(fragments, source: source)
+        XCTAssertTrue(matching.contains { $0.id == "article-1" })
+        XCTAssertTrue(matching.contains { $0.id == "article-2" })
+        XCTAssertTrue(matching.contains { $0.id == "short-label" })
+        XCTAssertFalse(matching.contains { $0.id == "outlier" })
+    }
+
+    func testWebViewModelDetectsPageLanguageAndAppliedTranslation() async throws {
+        let html = #"""
+        <!doctype html><html lang="fr"><body>
+        <main>La traduction de cette page permet aux utilisateurs de lire clairement le contenu
+        dans leur langue préférée. Cette phrase fournit suffisamment de texte français fiable.</main>
+        </body></html>
+        """#
+        let (window, webView) = try await makeCaptureWebView(
+            html: html,
+            size: CGSize(width: 390, height: 500)
+        )
+        defer { window.isHidden = true }
+        _ = try await webView.evaluateJavaScript(
+            "window.__souloPageTranslation = { isTranslated: true, entries: {} }"
+        )
+
+        let viewModel = WebViewModel()
+        viewModel.webView = webView
+        await viewModel.refreshPageTranslationState()
+
+        XCTAssertEqual(
+            Locale.Language(identifier: viewModel.pageLanguageIdentifier ?? "")
+                .languageCode?.identifier,
+            "fr"
+        )
+        XCTAssertTrue(viewModel.isPageTranslationApplied)
+    }
+
+    func testPageTranslationBridgePreservesDOMAndRestoresOriginalText() async throws {
+        let html = #"""
+        <!doctype html><html><body>
+        <main id="article">  Hello <strong>world</strong><code>do-not-translate</code></main>
+        </body></html>
+        """#
+        let (window, webView) = try await makeCaptureWebView(
+            html: html,
+            size: CGSize(width: 390, height: 500)
+        )
+        defer { window.isHidden = true }
+        let originalValue = try await webView.evaluateJavaScript(
+            "document.getElementById('article').innerHTML"
+        )
+        let originalHTML = try XCTUnwrap(originalValue as? String)
+
+        let snapshot = try await WebPageTranslationBridge.extract(from: webView)
+        let extractedValue = try await webView.evaluateJavaScript(
+            "document.getElementById('article').innerHTML"
+        )
+        let extractedHTML = try XCTUnwrap(extractedValue as? String)
+
+        XCTAssertEqual(extractedHTML, originalHTML)
+        XCTAssertEqual(Set(snapshot.fragments.map(\.text)), Set(["Hello", "world"]))
+
+        let translations = snapshot.fragments.map { fragment in
+            (id: fragment.id, text: fragment.text == "Hello" ? "你好" : "世界")
+        }
+        try await WebPageTranslationBridge.apply(translations, snapshot: snapshot, to: webView)
+        let translatedValue = try await webView.evaluateJavaScript(
+            "document.getElementById('article').textContent"
+        )
+        let translatedText = try XCTUnwrap(translatedValue as? String)
+        XCTAssertTrue(translatedText.contains("你好"))
+        XCTAssertTrue(translatedText.contains("世界"))
+        XCTAssertTrue(translatedText.contains("do-not-translate"))
+
+        try await WebPageTranslationBridge.restore(on: webView)
+        let restoredValue = try await webView.evaluateJavaScript(
+            "document.getElementById('article').innerHTML"
+        )
+        let restoredHTML = try XCTUnwrap(restoredValue as? String)
+        XCTAssertEqual(restoredHTML, originalHTML)
     }
 
     @MainActor

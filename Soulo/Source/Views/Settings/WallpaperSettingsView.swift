@@ -35,21 +35,35 @@ struct WallpaperSettingsView: View {
                     }
                 }
 
-                Toggle(LText("wallpaper_random_sources"), isOn: $wallpaperManager.autoRandomizeRemoteSources)
+                Toggle(
+                    LText("wallpaper_only_favorites"),
+                    isOn: $wallpaperManager.onlyUseFavoriteWallpapers
+                )
+                .disabled(
+                    wallpaperManager.favorites.isEmpty
+                        && !wallpaperManager.onlyUseFavoriteWallpapers
+                )
+                Text(LText("wallpaper_only_favorites_desc"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
-                if wallpaperManager.autoRandomizeRemoteSources {
-                    ForEach([WallpaperSource.pexels, .pixabay, .bing], id: \.self) { src in
-                        Toggle(src.localizedName, isOn: Binding(
-                            get: { wallpaperManager.autoRemoteSources.contains(src) },
-                            set: { wallpaperManager.setAutoRemoteSource(src, enabled: $0) }
-                        ))
+                if !wallpaperManager.onlyUseFavoriteWallpapers {
+                    Toggle(LText("wallpaper_random_sources"), isOn: $wallpaperManager.autoRandomizeRemoteSources)
+
+                    if wallpaperManager.autoRandomizeRemoteSources {
+                        ForEach([WallpaperSource.pexels, .pixabay, .bing], id: \.self) { src in
+                            Toggle(src.localizedName, isOn: Binding(
+                                get: { wallpaperManager.autoRemoteSources.contains(src) },
+                                set: { wallpaperManager.setAutoRemoteSource(src, enabled: $0) }
+                            ))
+                        }
+                        Text(LText("wallpaper_random_sources_desc"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    Text(LText("wallpaper_random_sources_desc"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
 
-                Toggle(LText("wallpaper_random_topics"), isOn: $wallpaperManager.autoRandomizeTopics)
+                    Toggle(LText("wallpaper_random_topics"), isOn: $wallpaperManager.autoRandomizeTopics)
+                }
                 Text(LText("wallpaper_auto_refresh_desc"))
                     .font(.caption)
                     .foregroundStyle(.secondary)

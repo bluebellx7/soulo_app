@@ -165,7 +165,7 @@ final class DownloadManagerService: ObservableObject {
 
     func markPaused(id: UUID, resumeData: Data?) {
         guard let resumeData, !resumeData.isEmpty,
-              let index = downloads.firstIndex(where: { $0.id == id }) else { return }
+              downloads.contains(where: { $0.id == id }) else { return }
         saveResumeData(resumeData, id: id)
         markPaused(id: id)
     }

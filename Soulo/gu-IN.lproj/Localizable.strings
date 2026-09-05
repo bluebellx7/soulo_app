@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "છેલ્લા 3 દિવસથી કેશ્ડ સંસાધનો, ટેબ પૂર્વાવલોકનો અને પૃષ્ઠ મુલાકાતો દૂર કરો. સાઇન-ઇન્સ રાખવામાં આવે છે";
 "privacy_clear_cache_confirm_title" = "બ્રાઉઝિંગ કેશ સાફ કરીએ?";
 "privacy_clear_cache_confirm_message" = "છેલ્લા 3 દિવસથી કેશ્ડ સંસાધનો અને પૃષ્ઠ મુલાકાતો દૂર કરવામાં આવશે. કૂકીઝ અને સાઇન-ઇન રાખવામાં આવશે.";
-"enter_fullscreen" = "પૂર્ણ સ્ક્રીન દાખલ કરો";
+"enter_fullscreen" = "પૂર્ણ સ્ક્રીન";
 "exit_fullscreen" = "પૂર્ણ સ્ક્રીનમાંથી બહાર નીકળો";
 "fullscreen_exit_hint" = "નિયંત્રણો માટે ટૅપ કરો, બહાર નીકળવા માટે નીચે ખેંચો";
 "restore_browser_toolbar" = "ટૂલબારને પુનઃસ્થાપિત કરો";
@@ -262,7 +262,7 @@
 "ad_block_network" = "જાહેરાત નેટવર્ક વિનંતીઓને અવરોધિત કરો";
 "ad_block_cosmetic" = "એડ પ્લેસહોલ્ડર્સ છુપાવો";
 "ad_block_popups" = "પોપઅપ્સ અને ઓવરલે સાફ કરો";
-"ad_block_management" = "એડ બ્લોક મેનેજમેન્ટ";
+"ad_block_management" = "જાહેરાત અવરોધન";
 "ad_block_allowlist" = "મંજૂર સાઇટ્સ";
 "ad_block_disable_current_site" = "આ સાઇટ પર એડ બ્લોકને અક્ષમ કરો";
 "ad_block_enable_current_site" = "આ સાઇટ પર એડ બ્લોકને સક્ષમ કરો";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "સાફ કરો";
 "fire_button_desc" = "બ્રાઉઝર ટૅબ્સ બંધ કરો અને વેબસાઇટ ડેટા, કૂકીઝ, કૅશ અને ગોપનીયતાના આંકડા સાફ કરો.";
 "fire_complete" = "ગોપનીયતા ડેટા સાફ";
-"site_privacy" = "સાઇટ પ્રોટેક્શન વિગતો";
+"site_privacy" = "સાઇટ સુરક્ષા";
 "site_privacy_scope_desc" = "ફક્ત આ સાઇટ પર જ લાગુ પડે છે. ગોપનીયતા સેટિંગ્સમાં તમામ સાઇટ્સ માટે ડિફોલ્ટ બદલો.";
 "privacy_global_scope_desc" = "આ ડિફૉલ્ટ બધી સાઇટ્સ પર લાગુ થાય છે. વર્તમાન વેબસાઇટ માટે અપવાદ સેટ કરવા માટે નીચેના સરનામાં બારમાં સાઇટ આયકનને ટેપ કરો.";
 "site_privacy_compatibility_bypass" = "સાઇન-ઇન અને સાઇટ સુવિધાઓને કાર્યરત રાખવા માટે સુરક્ષા થોભાવવામાં આવી છે.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "સ્ત્રોતોને રેન્ડમાઇઝ કરો";
 "wallpaper_random_sources_desc" = "પસંદ કરેલા રિમોટ સ્ત્રોતો વચ્ચે સ્વચાલિત તાજું અને રેન્ડમ રિફ્રેશ સ્વિચ. ઓછામાં ઓછો એક સ્ત્રોત રાખવામાં આવે છે.";
 "wallpaper_random_topics" = "વિષયોને રેન્ડમાઇઝ કરો";
+"wallpaper_only_favorites" = "માત્ર મનપસંદ વાપરો";
+"wallpaper_only_favorites_desc" = "મેન્યુઅલ અને આપમેળે ફેરફારમાં માત્ર તમારા મનપસંદ વૉલપેપર વપરાશે. ચાલુ કરવા ઓછામાં ઓછું એક મનપસંદ ઉમેરો.";
 "wallpaper_interval_none" = "ક્યારેય નહીં";
 "wallpaper_interval_1min" = "દર મિનિટે";
 "wallpaper_interval_5min" = "દર 5 મિનિટે";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Soulo ને સેટિંગ્સમાં ફોટામાં પૃષ્ઠ કેપ્ચર ઉમેરવાની મંજૂરી આપો, પછી ફરી પ્રયાસ કરો.";
 "web_capture_height_limited" = "આ પૃષ્ઠ સ્ક્રોલિંગ કેપ્ચર મર્યાદાને ઓળંગી ગયું છે, તેથી છબી મહત્તમ ઊંચાઈ પર સુવ્યવસ્થિત કરવામાં આવી હતી.";
 "web_capture_live_text_hint" = "Live Text વડે પસંદ કરવા અથવા કૉપિ કરવા માટે છબીમાં ઓળખાયેલ ટેક્સ્ટને ટચ કરો અને પકડી રાખો.";
+"web_capture_pdf" = "વેબપેજ PDF નિકાસ";
+"web_capture_pdf_limited" = "પેજ PDF મર્યાદાથી મોટું હોવાથી ફક્ત પહેલો ભાગ નિકાસ થયો.";
 "web_translate" = "પૃષ્ઠનો અનુવાદ કરો";
 "web_translate_target" = "માં અનુવાદ કરો";
 "web_translate_target_desc" = "Soulo પૃષ્ઠની ભાષા આપમેળે શોધે છે.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "વેબપેજ લિંક્સને રેખાંકિત કરો જેથી તેઓને ઓળખવામાં સરળતા રહે.";
 "home_title_edit_desc" = "હોમ સ્ક્રીન પર મુખ્ય મથાળા તરીકે બતાવવામાં આવે છે.";
 "home_subtitle_edit_desc" = "મુખ્ય મથાળાની નીચે દર્શાવેલ છે; તેને છુપાવવા માટે ખાલી છોડી દો.";
+"current_keyword" = "વર્તમાન કીવર્ડ";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "આ સ્ટ્રીમ હવે વર્તમાન પૃષ્ઠ પર ઉપલબ્ધ નથી. પૃષ્ઠ ફરી લોડ કરો અને ફરી પ્રયાસ કરો.";
+"resource_stream_download_unsupported" = "Soulo એ આ સ્ટ્રીમ શોધી છે, પરંતુ તેનું મેનિફેસ્ટ ફોર્મેટ હજી સાચવી શકાતું નથી.";
+"resource_stream_download_invalid_chunk" = "મીડિયા સ્ટ્રીમે અમાન્ય અથવા ખોટા ક્રમનો સેગમેન્ટ પરત કર્યો.";
+"resource_stream_download_missing_track" = "ડાઉનલોડ કરેલી સ્ટ્રીમમાં ચલાવી શકાય તેવા વિડિયો અને ઑડિયો ટ્રૅક નહોતા.";
+"resource_stream_download_export_failed" = "Soulo ડાઉનલોડ કરેલા વિડિયો અને ઑડિયોને જોડી શક્યું નથી.";
+"resource_stream_playback_download_first" = "આ સુરક્ષિત સ્ટ્રીમનું તેના અસ્થાયી URL પરથી પૂર્વાવલોકન કરી શકાતું નથી. સ્થાનિક ફાઇલ ચલાવવા પહેલાં તેને ડાઉનલોડ કરો.";

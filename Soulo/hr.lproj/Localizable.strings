@@ -161,7 +161,7 @@
 "privacy_clear_cache_desc" = "Uklonite predmemorirane resurse, preglede kartica i posjete stranicama u zadnja 3 dana. Prijave se čuvaju";
 "privacy_clear_cache_confirm_title" = "Očistiti predmemoriju pregledavanja?";
 "privacy_clear_cache_confirm_message" = "Predmemorirani resursi i posjeti stranicama u zadnja 3 dana bit će uklonjeni. Kolačići i prijave će se zadržati.";
-"enter_fullscreen" = "Otvori cijeli zaslon";
+"enter_fullscreen" = "Cijeli zaslon";
 "exit_fullscreen" = "Izađi iz cijelog zaslona";
 "fullscreen_exit_hint" = "Dodirnite za kontrole, povucite prema dolje za izlaz";
 "restore_browser_toolbar" = "Vrati alatnu traku";
@@ -262,7 +262,7 @@
 "ad_block_network" = "Blokiraj zahtjeve oglasne mreže";
 "ad_block_cosmetic" = "Sakrij rezervirana mjesta oglasa";
 "ad_block_popups" = "Čisti skočne prozore i slojeve";
-"ad_block_management" = "Upravljanje blokovima oglasa";
+"ad_block_management" = "Blokiranje oglasa";
 "ad_block_allowlist" = "Dopuštene stranice";
 "ad_block_disable_current_site" = "Onemogući blokiranje oglasa na ovoj stranici";
 "ad_block_enable_current_site" = "Omogući blokiranje oglasa na ovoj web stranici";
@@ -444,7 +444,7 @@
 "fire_button_confirm" = "čisto";
 "fire_button_desc" = "Zatvorite kartice preglednika i izbrišite podatke web stranice, kolačiće, predmemoriju i statistiku privatnosti.";
 "fire_complete" = "Podaci o privatnosti izbrisani";
-"site_privacy" = "Pojedinosti o zaštiti stranice";
+"site_privacy" = "Zaštita stranice";
 "site_privacy_scope_desc" = "Odnosi se samo na ovu stranicu. Promijenite zadane postavke za sve stranice u postavkama privatnosti.";
 "privacy_global_scope_desc" = "Ove zadane postavke primjenjuju se na sve stranice. Dodirnite ikonu web mjesta u donjoj adresnoj traci kako biste postavili iznimku za trenutno web mjesto.";
 "site_privacy_compatibility_bypass" = "Zaštita je pauzirana kako bi prijava i značajke stranice radile.";
@@ -505,6 +505,8 @@
 "wallpaper_random_sources" = "Nasumično odredite izvore";
 "wallpaper_random_sources_desc" = "Automatsko osvježavanje i nasumično osvježavanje između odabranih udaljenih izvora. Najmanje jedan izvor se čuva.";
 "wallpaper_random_topics" = "Nasumično odredite teme";
+"wallpaper_only_favorites" = "Koristi samo favorite";
+"wallpaper_only_favorites_desc" = "Ručne i automatske promjene koriste samo omiljene pozadine. Dodajte barem jednu za uključivanje.";
 "wallpaper_interval_none" = "nikada";
 "wallpaper_interval_1min" = "Svake minute";
 "wallpaper_interval_5min" = "Svakih 5 minuta";
@@ -783,6 +785,8 @@
 "web_capture_photo_permission" = "Dopustite da Soulo doda snimku stranice u Fotografije u postavkama, a zatim pokušajte ponovno.";
 "web_capture_height_limited" = "Ova je stranica premašila ograničenje snimanja pomicanjem, pa je slika obrezana na najvećoj visini.";
 "web_capture_live_text_hint" = "Dodirnite i držite prepoznati tekst na slici kako biste ga odabrali ili kopirali pomoću Live Text.";
+"web_capture_pdf" = "Izvezi web-stranicu kao PDF";
+"web_capture_pdf_limited" = "Stranica je premašila PDF ograničenje pa je izvezen samo prvi dio.";
 "web_translate" = "Prevedi stranicu";
 "web_translate_target" = "Prevedi na";
 "web_translate_target_desc" = "Soulo automatski otkriva jezik stranice.";
@@ -847,3 +851,12 @@
 "web_underline_links_desc" = "Podcrtajte poveznice na web stranice kako biste ih lakše prepoznali.";
 "home_title_edit_desc" = "Prikazuje se kao glavni naslov na početnom zaslonu.";
 "home_subtitle_edit_desc" = "Prikazano ispod glavnog naslova; ostavite prazno da biste ga sakrili.";
+"current_keyword" = "Trenutačna ključna riječ";
+
+// Stream download errors
+"resource_stream_download_unavailable" = "Ovaj tok više nije dostupan na trenutačnoj stranici. Ponovno učitajte stranicu i pokušajte opet.";
+"resource_stream_download_unsupported" = "Soulo je otkrio ovaj tok, ali još ne može spremiti njegov format manifesta.";
+"resource_stream_download_invalid_chunk" = "Medijski tok vratio je neispravan segment ili segment izvan redoslijeda.";
+"resource_stream_download_missing_track" = "Preuzeti tok nije sadržavao videozapise i zvučne zapise koji se mogu reproducirati.";
+"resource_stream_download_export_failed" = "Soulo nije mogao spojiti preuzeti video i zvuk.";
+"resource_stream_playback_download_first" = "Ovaj zaštićeni tok nije moguće pregledati putem privremenog URL-a. Najprije ga preuzmite da biste reproducirali lokalnu datoteku.";

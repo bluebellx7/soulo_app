@@ -1339,7 +1339,12 @@ struct WebViewRepresentable: UIViewRepresentable {
                 },
                 webView.observe(\.url, options: .new) { [weak self] wv, _ in
                     Task { @MainActor in
-                        self?.viewModel.updateCurrentURL(wv.url)
+                        guard let self else { return }
+                        let previousURL = self.viewModel.currentURL
+                        self.viewModel.updateCurrentURL(wv.url)
+                        if previousURL != wv.url, !wv.isLoading {
+                            await self.viewModel.refreshPageTranslationState()
+                        }
                     }
                 }
             ]
@@ -1423,6 +1428,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             Task { @MainActor in
                 viewModel.errorMessage = nil
                 viewModel.clearUserScriptMenuCommands()
+                viewModel.resetPageTranslationState()
             }
             lastAdHidingSignature = ""
         }
@@ -1458,6 +1464,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 }
                 self.focusAccessibilityOnLoadedPage(webView)
                 self.scheduleVideoViewportSynchronization(on: webView)
+                await self.viewModel.refreshPageTranslationState()
             }
         }
 
