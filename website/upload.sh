@@ -9,7 +9,7 @@ LOCAL_DIR="$SCRIPT_DIR"
 
 echo "========== 上传 Soulo 静态网站 =========="
 
-for file in index.html site.css sources.html privacy.html; do
+for file in index.html home.css home.js site.css sources.html privacy.html; do
     if [[ ! -f "$LOCAL_DIR/$file" ]]; then
         echo "❌ 缺少网站文件：$LOCAL_DIR/$file" >&2
         exit 1
@@ -36,6 +36,8 @@ check_content_type() {
 
 curl -fsS --retry 3 --max-time 15 "$SITE_URL/" >/dev/null
 check_content_type "site.css" "text/css"
+check_content_type "home.css" "text/css"
+curl -fsS --retry 3 --max-time 15 "$SITE_URL/home.js" >/dev/null
 check_content_type "app-icon.png" "image/png"
 
 echo "✅ 部署完成"

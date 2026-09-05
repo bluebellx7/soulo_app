@@ -21,7 +21,6 @@
     <meta property="og:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.4" />
     <link rel="icon" type="image/png" href="app-icon.png?v=1.1.4" />
     <link rel="apple-touch-icon" href="app-icon.png?v=1.1.4" />
-    <link rel="stylesheet" href="site.css?v=1.1.4" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
@@ -551,6 +550,7 @@
         .source-card:hover { transform: none; box-shadow: none; }
       }
     </style>
+    <link rel="stylesheet" href="site.css?v=20260905" />
   </head>
   <body class="sources-page">
     <a class="skip-link" href="#catalog">跳到搜索源目录</a>
@@ -571,10 +571,10 @@
     <main>
       <header class="sources-hero">
         <div class="sources-eyebrow">IMPORT-READY DIRECTORY</div>
-        <h1>搜索源，不只是首页链接</h1>
+        <h1>把常用网站，收进 Soulo。</h1>
         <p>
-          每条地址都包含 <code>%@</code> 关键词占位符，可直接复制 JSON 并导入 Soulo。
-          点击卡片会用 “Soulo” 作为示例关键词打开真实搜索页。
+          找到你常用的平台，复制配置，导入 Soulo。
+          点击下方平台，可以预览它的搜索页面。
         </p>
         <div class="stat-row" id="statRow" aria-live="polite"></div>
       </header>
@@ -806,15 +806,23 @@
         textarea.style.left = '-9999px';
         document.body.appendChild(textarea);
         textarea.select();
-        document.execCommand('copy');
-        textarea.remove();
+        try {
+          if (!document.execCommand('copy')) throw new Error('Clipboard unavailable');
+        } finally {
+          textarea.remove();
+        }
       }
 
       async function copySources(items, button, label) {
         const json = buildJSON(items);
         jsonPreview.textContent = json;
         jsonPanel.open = true;
-        await copyText(json);
+        try {
+          await copyText(json);
+        } catch (error) {
+          showToast('复制未成功，请在已展开的 JSON 中手动选择并复制。');
+          return;
+        }
         button.dataset.state = 'copied';
         showToast(`已复制 ${items.length} 个${label}搜索源`);
         window.setTimeout(() => { button.dataset.state = ''; }, 1800);
@@ -886,6 +894,7 @@
           : `共 <strong>${SOURCES.length}</strong> 个可直接导入的搜索源`;
         copyVisibleButton.querySelector('span').textContent = `复制当前可见 JSON (${count})`;
         emptyState.hidden = count !== 0;
+        copyVisibleButton.disabled = count === 0;
       }
 
       statRow.innerHTML = `
