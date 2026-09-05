@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "Pobrany strumień nie zawierał ścieżek wideo i audio możliwych do odtworzenia.";
 "resource_stream_download_export_failed" = "Soulo nie mogło połączyć pobranego wideo i dźwięku.";
 "resource_stream_playback_download_first" = "Nie można wyświetlić podglądu tego chronionego strumienia z tymczasowego adresu URL. Pobierz go najpierw, aby odtworzyć plik lokalny.";
+"platform_invalid_web_url" = "Wpisz poprawny adres internetowy zaczynający się od http:// lub https://.";

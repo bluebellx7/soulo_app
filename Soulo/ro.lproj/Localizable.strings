@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "Fluxul descărcat nu conținea piste video și audio care pot fi redate.";
 "resource_stream_download_export_failed" = "Soulo nu a putut combina conținutul video și audio descărcat.";
 "resource_stream_playback_download_first" = "Acest flux protejat nu poate fi previzualizat de la adresa URL temporară. Descarcă-l mai întâi pentru a reda fișierul local.";
+"platform_invalid_web_url" = "Introduceți o adresă web validă care începe cu http:// sau https://.";

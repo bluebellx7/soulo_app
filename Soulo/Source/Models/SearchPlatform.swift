@@ -1,5 +1,35 @@
 import Foundation
 
+enum SearchPlatformURLInput {
+    static func webURL(from value: String) -> URL? {
+        let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.contains(where: \.isWhitespace),
+              let url = URL(string: value),
+              let scheme = url.scheme?.lowercased(),
+              ["http", "https"].contains(scheme),
+              let host = url.host, !host.isEmpty else { return nil }
+        return url
+    }
+
+    static func searchTemplate(_ value: String) -> String? {
+        let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard value.contains("%@"),
+              webURL(from: value.replacingOccurrences(of: "%@", with: "test")) != nil else { return nil }
+        return value
+    }
+
+    static func derivedHomeURL(from template: String) -> String {
+        guard let url = webURL(from: template.replacingOccurrences(of: "%@", with: "test")),
+              var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return "" }
+        components.path = ""
+        components.query = nil
+        components.fragment = nil
+        components.user = nil
+        components.password = nil
+        return components.url?.absoluteString ?? ""
+    }
+}
+
 enum PlatformInteractionType: String, Codable {
     case urlSearch       // Standard: load search URL directly
     case aiChat          // AI chat: need to inject text into chat input and send

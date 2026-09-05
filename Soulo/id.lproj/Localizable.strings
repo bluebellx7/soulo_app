@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "Streaming yang diunduh tidak berisi trek video dan audio yang dapat diputar.";
 "resource_stream_download_export_failed" = "Soulo tidak dapat menggabungkan video dan audio yang diunduh.";
 "resource_stream_playback_download_first" = "Streaming terlindungi ini tidak dapat dipratinjau dari URL sementaranya. Unduh terlebih dahulu untuk memutar file lokal.";
+"platform_invalid_web_url" = "Masukkan alamat web valid yang diawali dengan http:// atau https://.";

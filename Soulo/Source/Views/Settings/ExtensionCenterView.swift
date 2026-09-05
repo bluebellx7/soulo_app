@@ -942,6 +942,8 @@ struct UserScriptEditorView: View {
                 } else {
                     TextEditor(text: $patternsText)
                         .font(.system(.footnote, design: .monospaced))
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
                         .frame(minHeight: 80)
                 }
             }
@@ -990,6 +992,8 @@ struct UserScriptEditorView: View {
                 if !isBuiltIn {
                     Button(LanguageManager.shared.localizedString("save")) { save() }
                         .fontWeight(.semibold)
+                        .disabled(source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            || patternsText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
         }

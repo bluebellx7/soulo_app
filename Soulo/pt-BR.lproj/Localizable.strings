@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "A transmissão baixada não continha faixas de vídeo e áudio reproduzíveis.";
 "resource_stream_download_export_failed" = "O Soulo não conseguiu combinar o vídeo e o áudio baixados.";
 "resource_stream_playback_download_first" = "Não é possível visualizar esta transmissão protegida pelo URL temporário. Baixe-a primeiro para reproduzir o arquivo local.";
+"platform_invalid_web_url" = "Digite um endereço web válido que comece com http:// ou https://.";

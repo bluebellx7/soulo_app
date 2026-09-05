@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "Strim yang dimuat turun tidak mengandungi trek video dan audio yang boleh dimainkan.";
 "resource_stream_download_export_failed" = "Soulo tidak dapat menggabungkan video dan audio yang dimuat turun.";
 "resource_stream_playback_download_first" = "Strim terlindung ini tidak dapat dipratonton daripada URL sementaranya. Muat turun dahulu untuk memainkan fail setempat.";
+"platform_invalid_web_url" = "Masukkan alamat web yang sah bermula dengan http:// atau https://.";

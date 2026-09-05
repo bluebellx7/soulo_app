@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "Загруженный поток не содержал воспроизводимых видео- и аудиодорожек.";
 "resource_stream_download_export_failed" = "Soulo не удалось объединить загруженные видео и аудио.";
 "resource_stream_playback_download_first" = "Предпросмотр этого защищённого потока по временному URL невозможен. Сначала скачайте его, чтобы воспроизвести локальный файл.";
+"platform_invalid_web_url" = "Введите корректный веб-адрес, начинающийся с http:// или https://.";

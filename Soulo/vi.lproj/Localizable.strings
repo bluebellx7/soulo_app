@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "Luồng đã tải xuống không có các bản video và âm thanh có thể phát.";
 "resource_stream_download_export_failed" = "Soulo không thể ghép video và âm thanh đã tải xuống.";
 "resource_stream_playback_download_first" = "Không thể xem trước luồng được bảo vệ này từ URL tạm thời. Hãy tải xuống trước để phát tệp trên thiết bị.";
+"platform_invalid_web_url" = "Nhập địa chỉ web hợp lệ bắt đầu bằng http:// hoặc https://.";

@@ -8,6 +8,76 @@ import WebKit
 
 @MainActor
 final class WebViewModelTests: XCTestCase {
+    func testCustomSearchURLsValidateWithoutLosingTemplateOrPort() {
+        XCTAssertEqual(SearchPlatformURLInput.searchTemplate(" \nhttps://example.com:8443/search?q=%@&lang=zh \n"),
+                       "https://example.com:8443/search?q=%@&lang=zh")
+        XCTAssertEqual(SearchPlatformURLInput.derivedHomeURL(from: "https://example.com:8443/search?q=%@#results"),
+                       "https://example.com:8443")
+        for value in ["javascript:%@", "file:///search/%@", "https:///", "https://exa mple.com/?q=%@", "https://example.com/search"] {
+            XCTAssertNil(SearchPlatformURLInput.searchTemplate(value), value)
+        }
+        XCTAssertNotNil(SearchPlatformURLInput.searchTemplate("http://localhost:8080/?q=%@"))
+        XCTAssertNotNil(SearchPlatformURLInput.searchTemplate("https://例子.中国/?q=%@"))
+    }
+
+    func testTranslationSkipsEditableRegionsAndPreservesLivePageChanges() async throws {
+        let (window, webView) = try await makeCaptureWebView(
+            html: """
+            <html><body><p id="stable">Hello world</p><p id="live">Old headline</p>
+            <div contenteditable><span>Editable draft</span></div>
+            <div contenteditable="plaintext-only">Plain draft</div></body></html>
+            """, size: CGSize(width: 390, height: 500))
+        defer { window.isHidden = true }
+        let snapshot = try await WebPageTranslationBridge.extract(from: webView)
+        XCTAssertEqual(Set(snapshot.fragments.map(\.text)), ["Hello world", "Old headline"])
+        _ = try await webView.evaluateJavaScript("document.getElementById('live').firstChild.nodeValue = 'Fresh headline'")
+        try await WebPageTranslationBridge.apply(snapshot.fragments.map { ($0.id, "译文") }, snapshot: snapshot, to: webView)
+        let headline = try await webView.evaluateJavaScript("document.getElementById('live').textContent")
+        XCTAssertEqual(headline as? String, "Fresh headline")
+        try await WebPageTranslationBridge.restore(on: webView)
+        let restored = try await webView.evaluateJavaScript("document.getElementById('stable').textContent")
+        XCTAssertEqual(restored as? String, "Hello world")
+        let preserved = try await webView.evaluateJavaScript("document.getElementById('live').textContent")
+        XCTAssertEqual(preserved as? String, "Fresh headline")
+    }
+
+    func testTranslationRestoreAndRetranslateKeepChangesMadeAfterTranslation() async throws {
+        let (window, webView) = try await makeCaptureWebView(
+            html: "<html><body><p id='text'>Original headline</p></body></html>",
+            size: CGSize(width: 390, height: 500))
+        defer { window.isHidden = true }
+        for action in ["restore", "extract"] {
+            let snapshot = try await WebPageTranslationBridge.extract(from: webView)
+            try await WebPageTranslationBridge.apply(snapshot.fragments.map { ($0.id, "译文") }, snapshot: snapshot, to: webView)
+            _ = try await webView.evaluateJavaScript("document.getElementById('text').firstChild.nodeValue = 'Updated by website'")
+            if action == "restore" {
+                try await WebPageTranslationBridge.restore(on: webView)
+            } else {
+                let fresh = try await WebPageTranslationBridge.extract(from: webView)
+                XCTAssertEqual(fresh.fragments.map(\.text), ["Updated by website"])
+            }
+            let text = try await webView.evaluateJavaScript("document.getElementById('text').textContent")
+            XCTAssertEqual(text as? String, "Updated by website")
+        }
+    }
+
+    func testTranslationRejectsSnapshotWhenAllItsTextHasChanged() async throws {
+        let (window, webView) = try await makeCaptureWebView(
+            html: "<html><body><p id='text'>Original headline</p></body></html>",
+            size: CGSize(width: 390, height: 500))
+        defer { window.isHidden = true }
+        let snapshot = try await WebPageTranslationBridge.extract(from: webView)
+        _ = try await webView.evaluateJavaScript("document.getElementById('text').firstChild.nodeValue = 'Fresh headline'")
+        do {
+            try await WebPageTranslationBridge.apply(snapshot.fragments.map { ($0.id, "译文") }, snapshot: snapshot, to: webView)
+            XCTFail("A stale snapshot must not report successful translation")
+        } catch WebPageTranslationError.stalePage {
+            // Expected: preserve the newer page content.
+        }
+        let text = try await webView.evaluateJavaScript("document.getElementById('text').textContent")
+        XCTAssertEqual(text as? String, "Fresh headline")
+    }
+
     override func setUp() {
         super.setUp()
         UserDefaults.standard.removeObject(forKey: LiveActivityService.enabledKey)
@@ -936,6 +1006,23 @@ final class WebViewModelTests: XCTestCase {
         assertPixel(result.image, at: CGPoint(x: 12, y: 100), resembles: (255, 0, 0))
         assertPixel(result.image, at: CGPoint(x: 768, y: 100), resembles: (0, 0, 255))
         assertPixel(result.image, at: CGPoint(x: 390, y: 1188), resembles: (0, 255, 0))
+    }
+
+    func testFullPageCaptureCompletesWhenPageStopsAnimationFrameCallbacks() async throws {
+        executionTimeAllowance = 15
+        let (window, webView) = try await makeCaptureWebView(
+            html: """
+            <html><head><meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>html,body{margin:0;background:#ff0000;height:900px}</style></head>
+            <body>Capture fixture</body></html>
+            """, size: CGSize(width: 390, height: 500))
+        defer { window.isHidden = true }
+        _ = try await webView.evaluateJavaScript("window.requestAnimationFrame = function() { return 0; }; true;")
+
+        let result = try await WebPageCaptureService.capture(.fullPage, from: webView)
+
+        XCTAssertEqual(result.image.size.height, 900, accuracy: 1)
+        assertPixel(result.image, at: CGPoint(x: 100, y: 850), resembles: (255, 0, 0))
     }
 
     func testWebCaptureUsesThePageBackgroundForItsHorizontalFrame() throws {

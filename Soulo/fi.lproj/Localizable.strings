@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "Ladattu suoratoisto ei sisältänyt toistettavia video- ja ääniraitoja.";
 "resource_stream_download_export_failed" = "Soulo ei voinut yhdistää ladattua videota ja ääntä.";
 "resource_stream_playback_download_first" = "Tätä suojattua suoratoistoa ei voi esikatsella väliaikaisesta URL-osoitteesta. Lataa se ensin ja toista paikallinen tiedosto.";
+"platform_invalid_web_url" = "Anna kelvollinen verkko-osoite, joka alkaa http:// tai https://.";

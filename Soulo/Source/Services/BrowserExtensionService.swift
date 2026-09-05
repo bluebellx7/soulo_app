@@ -357,6 +357,9 @@ final class BrowserExtensionService: ObservableObject {
         explicitName: String? = nil,
         sourceURL: URL? = nil
     ) throws -> UserScriptRecord {
+        guard source.utf8.count <= Self.maximumUserScriptSize else {
+            throw BrowserExtensionError.scriptTooLarge
+        }
         let trimmedSource = source.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedSource.isEmpty else { throw BrowserExtensionError.emptyScript }
 
@@ -364,6 +367,10 @@ final class BrowserExtensionService: ObservableObject {
         let requestedPatterns = (explicitPatterns ?? metadata.patterns)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
+        // An explicitly cleared scope must not silently become access to every site.
+        if explicitPatterns != nil && requestedPatterns.isEmpty {
+            throw BrowserExtensionError.invalidMatchPattern("")
+        }
         let normalizedPatterns = Self.deduplicated(requestedPatterns.isEmpty ? ["*://*/*"] : requestedPatterns)
         let normalizedExcludes = metadata.excludePatterns
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }

@@ -31,6 +31,11 @@ struct DownloadManagerContentView: View {
     @State private var previewItem: BrowserDownloadItem?
     @State private var shareItem: BrowserDownloadItem?
     @State private var showDownloadsFolder = false
+    @State private var showClearConfirmation = false
+
+    private var hasFinishedDownloads: Bool {
+        downloadManager.downloads.contains { [.finished, .failed, .canceled].contains($0.status) }
+    }
 
     init(highlightedItemID: UUID? = nil) {
         self.highlightedItemID = highlightedItemID
@@ -52,25 +57,38 @@ struct DownloadManagerContentView: View {
                     .onDelete(perform: deleteDownloads)
                 }
 
-                Section {
-                    Button(role: .destructive) {
-                        downloadManager.clearFinished()
-                    } label: {
-                        Label(
-                            LanguageManager.shared.localizedString("downloads_clear_finished"),
-                            systemImage: "trash"
-                        )
+                if hasFinishedDownloads {
+                    Section {
+                        Button(role: .destructive) {
+                            showClearConfirmation = true
+                        } label: {
+                            Label(
+                                LanguageManager.shared.localizedString("downloads_clear_finished"),
+                                systemImage: "trash"
+                            )
+                        }
                     }
                 }
             }
         }
         .listStyle(.insetGrouped)
+        .confirmationDialog(
+            LanguageManager.shared.localizedString("downloads_clear_finished"),
+            isPresented: $showClearConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(LanguageManager.shared.localizedString("delete"), role: .destructive) {
+                downloadManager.clearFinished()
+            }
+            Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
+        }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
                     showDownloadsFolder = true
                 } label: {
                     Image(systemName: "folder.fill")
+                        .frame(minWidth: 44, minHeight: 44)
                 }
                 .accessibilityLabel(
                     LanguageManager.shared.localizedString("open_downloads_folder")
@@ -110,6 +128,7 @@ struct DownloadManagerContentView: View {
                     shareItem = item
                 } label: {
                     Image(systemName: "square.and.arrow.up")
+                        .frame(minWidth: 44, minHeight: 44)
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel(LanguageManager.shared.localizedString("share"))
@@ -125,6 +144,7 @@ struct DownloadManagerContentView: View {
                     }
                 } label: {
                     Image(systemName: "pause.circle")
+                        .frame(minWidth: 44, minHeight: 44)
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel(LanguageManager.shared.localizedString("pause"))
@@ -140,6 +160,7 @@ struct DownloadManagerContentView: View {
                     }
                 } label: {
                     Image(systemName: "play.circle")
+                        .frame(minWidth: 44, minHeight: 44)
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel(LanguageManager.shared.localizedString("resume"))

@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "De gedownloade stream bevatte geen afspeelbare video- en audiotracks.";
 "resource_stream_download_export_failed" = "Soulo kon de gedownloade video en audio niet samenvoegen.";
 "resource_stream_playback_download_first" = "Deze beveiligde stream kan niet via de tijdelijke URL worden bekeken. Download deze eerst om het lokale bestand af te spelen.";
+"platform_invalid_web_url" = "Voer een geldig webadres in dat begint met http:// of https://.";

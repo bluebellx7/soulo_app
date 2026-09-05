@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "Preuzeti tok nije sadržavao videozapise i zvučne zapise koji se mogu reproducirati.";
 "resource_stream_download_export_failed" = "Soulo nije mogao spojiti preuzeti video i zvuk.";
 "resource_stream_playback_download_first" = "Ovaj zaštićeni tok nije moguće pregledati putem privremenog URL-a. Najprije ga preuzmite da biste reproducirali lokalnu datoteku.";
+"platform_invalid_web_url" = "Unesite valjanu web-adresu koja počinje s http:// ili https://.";

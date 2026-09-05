@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "El flux baixat no contenia pistes de vídeo i àudio reproduïbles.";
 "resource_stream_download_export_failed" = "Soulo no ha pogut combinar el vídeo i l'àudio baixats.";
 "resource_stream_playback_download_first" = "Aquest flux protegit no es pot previsualitzar des del seu URL temporal. Baixa'l primer per reproduir el fitxer local.";
+"platform_invalid_web_url" = "Introdueix una adreça web vàlida que comenci per http:// o https://.";

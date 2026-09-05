@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "ଡାଉନଲୋଡ୍ ହୋଇଥିବା ଷ୍ଟ୍ରିମ୍‌ରେ ଚଲାଇବାଯୋଗ୍ୟ ଭିଡିଓ ଏବଂ ଅଡିଓ ଟ୍ରାକ୍ ନଥିଲା।";
 "resource_stream_download_export_failed" = "Soulo ଡାଉନଲୋଡ୍ ହୋଇଥିବା ଭିଡିଓ ଏବଂ ଅଡିଓକୁ ଏକତ୍ର କରିପାରିଲା ନାହିଁ।";
 "resource_stream_playback_download_first" = "ଏହି ସୁରକ୍ଷିତ ଷ୍ଟ୍ରିମ୍‌ର ଅସ୍ଥାୟୀ URL ରୁ ପୂର୍ବାବଲୋକନ କରାଯାଇପାରିବ ନାହିଁ। ସ୍ଥାନୀୟ ଫାଇଲ୍ ଚଲାଇବା ପାଇଁ ପ୍ରଥମେ ଡାଉନଲୋଡ୍ କରନ୍ତୁ।";
+"platform_invalid_web_url" = "http:// କିମ୍ବା https:// ରୁ ଆରମ୍ଭ ହେଉଥିବା ଏକ ବୈଧ ୱେବ୍ ଠିକଣା ଲେଖନ୍ତୁ।";

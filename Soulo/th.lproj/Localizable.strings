@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "สตรีมที่ดาวน์โหลดไม่มีแทร็กวิดีโอและเสียงที่เล่นได้";
 "resource_stream_download_export_failed" = "Soulo ไม่สามารถรวมวิดีโอและเสียงที่ดาวน์โหลดได้";
 "resource_stream_playback_download_first" = "ไม่สามารถดูตัวอย่างสตรีมที่มีการป้องกันนี้จาก URL ชั่วคราวได้ โปรดดาวน์โหลดก่อนเพื่อเล่นไฟล์ในเครื่อง";
+"platform_invalid_web_url" = "ป้อนที่อยู่เว็บที่ถูกต้องซึ่งขึ้นต้นด้วย http:// หรือ https://";

@@ -130,7 +130,15 @@ enum WebPageCaptureService {
     ]);
 
     window.scrollTo(originalX, originalY);
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    await new Promise(resolve => {
+        // A page can stop producing animation frames while timers still run.
+        // Keep capture responsive instead of waiting indefinitely for a frame.
+        const timer = setTimeout(resolve, 250);
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            clearTimeout(timer);
+            resolve();
+        }));
+    });
     return { imageCount: imageTasks.length, documentHeight: documentHeight };
     """#
 
@@ -395,7 +403,15 @@ enum WebPageCaptureService {
 
     private static func waitForRenderingCycle(in webView: WKWebView) async {
         let script = #"""
-        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        await new Promise(resolve => {
+            // A page can stop producing animation frames while timers still run.
+            // Keep capture responsive instead of waiting indefinitely for a frame.
+            const timer = setTimeout(resolve, 250);
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                clearTimeout(timer);
+                resolve();
+            }));
+        });
         return true;
         """#
         _ = try? await webView.callAsyncJavaScript(

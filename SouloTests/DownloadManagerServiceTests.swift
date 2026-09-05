@@ -4,6 +4,47 @@ import XCTest
 
 @MainActor
 final class DownloadManagerServiceTests: XCTestCase {
+    func testPausedDownloadsKeepTheirFilenameReservationAcrossRelaunch() {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let first = service.beginDownload(suggestedFilename: "report.pdf", sourceURL: nil, transport: .background).0
+        service.markPaused(id: first.id, resumeData: Data("resume".utf8))
+        defer { service.removeResumeData(id: first.id) }
+
+        let restored = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let second = restored.beginDownload(suggestedFilename: "report.pdf", sourceURL: nil).0
+        XCTAssertNotEqual(first.localPath, second.localPath)
+        XCTAssertEqual(second.fileName, "report 1.pdf")
+    }
+
+    func testLateResumeAndPauseCallbacksCannotReviveTerminalDownloads() throws {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let canceled = service.beginDownload(suggestedFilename: "canceled.pdf", sourceURL: nil).0
+        service.markCanceled(id: canceled.id)
+        let (finished, url) = service.beginDownload(suggestedFilename: "finished.pdf", sourceURL: nil)
+        try Data("finished".utf8).write(to: url)
+        service.markFinished(id: finished.id)
+
+        for item in [canceled, finished] {
+            service.markResumed(id: item.id)
+            service.markPaused(id: item.id, resumeData: Data("late".utf8))
+            XCTAssertNil(service.resumeData(id: item.id))
+        }
+        XCTAssertEqual(service.downloads.first { $0.id == canceled.id }?.status, .canceled)
+        XCTAssertEqual(service.downloads.first { $0.id == finished.id }?.status, .finished)
+        XCTAssertEqual(try Data(contentsOf: url), Data("finished".utf8))
+    }
+
+    func testFailedBackgroundDownloadCanStillRetryWithFreshState() throws {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let item = service.beginDownload(suggestedFilename: "retry.pdf", sourceURL: nil, transport: .background).0
+        service.markFailed(id: item.id, error: URLError(.unknown))
+        service.markResumed(id: item.id)
+        let updated = try XCTUnwrap(service.downloads.first { $0.id == item.id })
+        XCTAssertEqual(updated.status, .inProgress)
+        XCTAssertNil(updated.completedAt)
+        XCTAssertEqual(updated.errorMessage, "")
+    }
+
     func testStreamingMuxCapsDuplicatedTracksToPageDuration() {
         let duration = StreamingMediaDownloadService.constrainedDuration(
             videoDuration: CMTime(seconds: 1_904.13, preferredTimescale: 600),

@@ -858,3 +858,4 @@
 "home_title_edit_desc" = "作为首页中央显示的主标题。";
 "home_subtitle_edit_desc" = "显示在主标题下方，留空则隐藏。";
 "current_keyword" = "当前关键词";
+"platform_invalid_web_url" = "请输入以 http:// 或 https:// 开头的有效网址。";

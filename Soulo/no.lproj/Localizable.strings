@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "Den nedlastede strømmen inneholdt ikke video- og lydspor som kunne spilles av.";
 "resource_stream_download_export_failed" = "Soulo kunne ikke slå sammen den nedlastede videoen og lyden.";
 "resource_stream_playback_download_first" = "Denne beskyttede strømmen kan ikke forhåndsvises fra den midlertidige nettadressen. Last den ned først for å spille av den lokale filen.";
+"platform_invalid_web_url" = "Skriv inn en gyldig nettadresse som begynner med http:// eller https://.";

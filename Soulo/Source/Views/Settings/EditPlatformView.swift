@@ -7,7 +7,7 @@ struct EditPlatformView: View {
     @State private var name: String = ""
     @State private var searchURL: String = ""
     @State private var homeURL: String = ""
-    @State private var showError = false
+    @State private var errorMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -19,6 +19,7 @@ struct EditPlatformView: View {
                             .foregroundStyle(.secondary)
                         TextField("", text: $name)
                             .font(.system(size: 15))
+                            .disabled(platform.isBuiltIn)
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
@@ -47,9 +48,9 @@ struct EditPlatformView: View {
                         .font(.caption)
                 }
 
-                if showError {
+                if let errorMessage {
                     Section {
-                        Label(LanguageManager.shared.localizedString("url_template_error"), systemImage: "exclamationmark.triangle")
+                        Label(errorMessage, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(.red)
                             .font(.caption)
                     }
@@ -67,7 +68,7 @@ struct EditPlatformView: View {
                         save()
                     }
                     .fontWeight(.semibold)
-                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
             .onAppear {
@@ -85,19 +86,26 @@ struct EditPlatformView: View {
     }
 
     private func save() {
-        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return }
 
         if !searchURL.contains("%@") {
-            showError = true
+            errorMessage = LanguageManager.shared.localizedString("url_template_error")
+            return
+        }
+
+        let trimmedHomeURL = homeURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let template = SearchPlatformURLInput.searchTemplate(searchURL),
+              trimmedHomeURL.isEmpty || SearchPlatformURLInput.webURL(from: trimmedHomeURL) != nil else {
+            errorMessage = LanguageManager.shared.localizedString("platform_invalid_web_url")
             return
         }
 
         PlatformDataStore.shared.updatePlatform(
             id: platform.id,
             name: platform.isBuiltIn ? platform.name : trimmedName, // keep localization key for built-in
-            searchURL: searchURL,
-            homeURL: homeURL
+            searchURL: template,
+            homeURL: trimmedHomeURL
         )
         dismiss()
     }

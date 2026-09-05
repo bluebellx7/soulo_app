@@ -949,3 +949,4 @@
 "home_title_edit_desc" = "Shown as the main heading on the Home screen.";
 "home_subtitle_edit_desc" = "Shown below the main heading; leave empty to hide it.";
 "current_keyword" = "Current Keyword";
+"platform_invalid_web_url" = "Enter a valid web address starting with http:// or https://.";

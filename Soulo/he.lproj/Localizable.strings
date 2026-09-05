@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "השידור שהורד לא כלל רצועות וידאו ושמע שניתן לנגן.";
 "resource_stream_download_export_failed" = "Soulo לא הצליח לשלב את הווידאו והשמע שהורדו.";
 "resource_stream_playback_download_first" = "לא ניתן להציג תצוגה מקדימה של השידור המוגן הזה מהכתובת הזמנית שלו. יש להוריד אותו תחילה כדי לנגן את הקובץ המקומי.";
+"platform_invalid_web_url" = "יש להזין כתובת אינטרנט תקינה שמתחילה ב־http:// או ב־https://.";

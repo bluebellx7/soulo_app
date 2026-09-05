@@ -858,3 +858,4 @@
 "home_title_edit_desc" = "作為首頁中央顯示的主標題。";
 "home_subtitle_edit_desc" = "顯示在主標題下方，留空則隱藏。";
 "current_keyword" = "目前關鍵字";
+"platform_invalid_web_url" = "請輸入以 http:// 或 https:// 開頭的有效網址。";

@@ -2,6 +2,69 @@ import XCTest
 @testable import Soulo
 
 final class AdBlockSubscriptionServiceTests: XCTestCase {
+    @MainActor
+    func testSubscriptionUpdatePreservesToggleChangedDuringRequestAndCountsScopedRules() async throws {
+        let suite = "SubscriptionRace.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SubscriptionTestProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer {
+            SubscriptionTestProtocol.handler = nil
+            session.invalidateAndCancel()
+            defaults.removePersistentDomain(forName: suite)
+        }
+        let service = AdBlockSubscriptionService(userDefaults: defaults, session: session)
+        for item in service.subscriptions { service.setEnabled(item.id == "easylist", for: item) }
+        let subscription = try XCTUnwrap(service.subscriptions.first { $0.id == "easylist" })
+        SubscriptionTestProtocol.handler = { request in
+            Task { @MainActor in
+                service.setEnabled(false, for: subscription)
+                request.respond(body: "||ads.example.com^\nexample.com##.advert", mimeType: "text/plain")
+            }
+        }
+
+        await service.updateEnabledSubscriptions()
+        let updated = try XCTUnwrap(service.subscriptions.first { $0.id == subscription.id })
+        XCTAssertFalse(updated.isEnabled)
+        XCTAssertEqual(updated.networkRuleCount, 1)
+        XCTAssertEqual(updated.cosmeticRuleCount, 1)
+        XCTAssertEqual(service.enabledRuleSummary, .empty)
+        service.reloadFromDefaults()
+        XCTAssertFalse(try XCTUnwrap(service.subscriptions.first { $0.id == subscription.id }).isEnabled)
+        service.setEnabled(true, for: updated)
+        XCTAssertEqual(service.enabledRuleSummary.cosmeticRules.first?.selector, ".advert")
+    }
+
+    @MainActor
+    func testHTMLResponseKeepsValidRulesAndUnchangedRulesKeepTheirSignature() async throws {
+        let suite = "SubscriptionCache.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SubscriptionTestProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer {
+            SubscriptionTestProtocol.handler = nil
+            session.invalidateAndCancel()
+            defaults.removePersistentDomain(forName: suite)
+        }
+        let service = AdBlockSubscriptionService(userDefaults: defaults, session: session)
+        for item in service.subscriptions { service.setEnabled(item.id == "easylist", for: item) }
+        SubscriptionTestProtocol.handler = { $0.respond(body: "||ads.example.com^", mimeType: "text/plain") }
+        await service.updateEnabledSubscriptions()
+        let validRules = service.enabledRuleSummary
+        XCTAssertFalse(validRules.networkRules.isEmpty)
+        // A fixed sentinel makes this independent of clock resolution.
+        defaults.set(1234.0, forKey: "soulo_ad_block_subscription_rules_version")
+        let restored = AdBlockSubscriptionService(userDefaults: defaults, session: session)
+        XCTAssertEqual(AdBlockSubscriptionService.rulesSignature(userDefaults: defaults), "1234.0")
+        SubscriptionTestProtocol.handler = { $0.respond(body: "<!doctype html><html>Sign in</html>", mimeType: "text/html") }
+        await restored.updateEnabledSubscriptions()
+        XCTAssertEqual(restored.enabledRuleSummary, validRules)
+        XCTAssertFalse(restored.lastError.isEmpty)
+        XCTAssertEqual(AdBlockSubscriptionService.rulesSignature(userDefaults: defaults), "1234.0")
+    }
+
     func testParserConvertsABPNetworkAndCosmeticRules() {
         let sample = """
         ! comment
@@ -123,5 +186,28 @@ final class AdBlockSubscriptionServiceTests: XCTestCase {
 
         XCTAssertEqual(service.enabledRuleSummary.networkRules, [networkRule])
         XCTAssertEqual(service.enabledRuleSummary.cosmeticRules, [cosmeticRule])
+    }
+}
+
+private final class SubscriptionTestProtocol: URLProtocol, @unchecked Sendable {
+    nonisolated(unsafe) static var handler: ((SubscriptionTestProtocol) -> Void)?
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        guard let handler = Self.handler else {
+            client?.urlProtocol(self, didFailWithError: URLError(.unsupportedURL))
+            return
+        }
+        handler(self)
+    }
+    override func stopLoading() {}
+
+    func respond(body: String, mimeType: String) {
+        let response = HTTPURLResponse(url: request.url!, statusCode: 200,
+            httpVersion: "HTTP/1.1", headerFields: ["Content-Type": mimeType])!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data(body.utf8))
+        client?.urlProtocolDidFinishLoading(self)
     }
 }

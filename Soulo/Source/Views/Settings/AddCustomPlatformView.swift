@@ -61,7 +61,7 @@ struct AddCustomPlatformView: View {
     }
 
     private var isValid: Bool {
-        !name.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         searchURLTemplate.contains("%@")
     }
 
@@ -136,7 +136,9 @@ struct AddCustomPlatformView: View {
                                             Image(systemName: showURLHelp ? "questionmark.circle.fill" : "questionmark.circle")
                                                 .foregroundStyle(.blue)
                                                 .font(.system(size: 16))
+                                                .frame(minWidth: 44, minHeight: 44)
                                         }
+                                        .accessibilityLabel(LanguageManager.shared.localizedString("add_platform_url_help_title"))
                                     }
 
                                     TextField(
@@ -150,7 +152,7 @@ struct AddCustomPlatformView: View {
                                     .autocorrectionDisabled()
                                     .textInputAutocapitalization(.never)
                                     .onChange(of: searchURLTemplate) { _, newValue in
-                                        if newValue.contains("%@") { urlError = nil }
+                                        urlError = nil
                                         // Auto-parse name from domain if user hasn't manually edited
                                         if !nameManuallyEdited {
                                             name = parseDomainName(from: newValue)
@@ -183,13 +185,16 @@ struct AddCustomPlatformView: View {
 
                                     TextField(
                                         LanguageManager.shared.localizedString("add_platform_name_placeholder"),
-                                        text: $name
+                                        text: Binding(
+                                            get: { name },
+                                            set: {
+                                                name = $0
+                                                nameManuallyEdited = true
+                                                nameError = nil
+                                            }
+                                        )
                                     )
                                     .font(.body)
-                                    .onChange(of: name) { _, _ in
-                                        if !name.isEmpty { nameError = nil }
-                                        nameManuallyEdited = true
-                                    }
 
                                     if let error = nameError {
                                         ErrorLabel(text: error)
@@ -306,7 +311,7 @@ struct AddCustomPlatformView: View {
 
     /// Extract a readable name from a URL domain (e.g. "www.pianbs.com" -> "Pianbs")
     private func parseDomainName(from urlString: String) -> String {
-        guard let url = URL(string: urlString.replacingOccurrences(of: "%@", with: "test")),
+        guard let url = SearchPlatformURLInput.webURL(from: urlString.replacingOccurrences(of: "%@", with: "test")),
               let host = url.host else { return "" }
         // Remove www. prefix, take the domain name part, capitalize
         let domain = host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
@@ -317,7 +322,7 @@ struct AddCustomPlatformView: View {
     private func saveAndDismiss() {
         var hasError = false
 
-        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmedName.isEmpty {
             nameError = LanguageManager.shared.localizedString("add_platform_error_name_empty")
             withAnimation(.default) { shakeName.toggle() }
@@ -328,37 +333,28 @@ struct AddCustomPlatformView: View {
             urlError = LanguageManager.shared.localizedString("add_platform_error_url_placeholder")
             withAnimation(.default) { shakeURL.toggle() }
             hasError = true
+        } else if SearchPlatformURLInput.searchTemplate(searchURLTemplate) == nil {
+            urlError = LanguageManager.shared.localizedString("platform_invalid_web_url")
+            hasError = true
         }
 
-        guard !hasError else { return }
+        guard !hasError, !isSaving,
+              let template = SearchPlatformURLInput.searchTemplate(searchURLTemplate) else { return }
 
         isSaving = true
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            // Auto-derive homeURL from searchURLTemplate
-            let derivedHomeURL: String
-            if let url = URL(string: searchURLTemplate.replacingOccurrences(of: "%@", with: "")),
-               let scheme = url.scheme, let host = url.host {
-                derivedHomeURL = "\(scheme)://\(host)"
-            } else {
-                derivedHomeURL = ""
-            }
-
-            PlatformDataStore.shared.addCustomPlatform(
-                name: trimmedName,
-                searchURL: searchURLTemplate,
-                homeURL: derivedHomeURL,
-                region: selectedRegion
-            )
-            // Add to custom group if selected
-            let groupToAdd = selectedGroupID ?? targetGroupID
-            if let groupID = groupToAdd,
-               let newPlatform = PlatformDataStore.shared.platforms.last {
-                PlatformDataStore.shared.addPlatformToGroup(groupID: groupID, platformID: newPlatform.id)
-            }
-            isSaving = false
-            dismiss()
+        PlatformDataStore.shared.addCustomPlatform(
+            name: trimmedName,
+            searchURL: template,
+            homeURL: SearchPlatformURLInput.derivedHomeURL(from: template),
+            region: selectedRegion
+        )
+        // The current selection is authoritative, even after leaving a custom group.
+        if let groupID = selectedGroupID,
+           let newPlatform = PlatformDataStore.shared.platforms.last {
+            PlatformDataStore.shared.addPlatformToGroup(groupID: groupID, platformID: newPlatform.id)
         }
+        dismiss()
     }
 }
 

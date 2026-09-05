@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "لم يتضمن البث الذي تم تنزيله مسارات فيديو وصوت قابلة للتشغيل.";
 "resource_stream_download_export_failed" = "تعذر على Soulo دمج الفيديو والصوت اللذين تم تنزيلهما.";
 "resource_stream_playback_download_first" = "لا يمكن معاينة هذا البث المحمي من رابطه المؤقت. نزّله أولًا لتشغيل الملف المحلي.";
+"platform_invalid_web_url" = "أدخل عنوان موقع صالحًا يبدأ بـ http:// أو https://.";

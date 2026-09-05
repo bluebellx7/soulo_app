@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "Le flux téléchargé ne contenait pas de pistes vidéo et audio lisibles.";
 "resource_stream_download_export_failed" = "Soulo n’a pas pu fusionner la vidéo et l’audio téléchargés.";
 "resource_stream_playback_download_first" = "Ce flux protégé ne peut pas être prévisualisé depuis son URL temporaire. Téléchargez-le d’abord pour lire le fichier local.";
+"platform_invalid_web_url" = "Saisissez une adresse web valide commençant par http:// ou https://.";

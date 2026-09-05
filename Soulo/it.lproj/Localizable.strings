@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "Il flusso scaricato non conteneva tracce video e audio riproducibili.";
 "resource_stream_download_export_failed" = "Soulo non è riuscito a unire il video e l’audio scaricati.";
 "resource_stream_playback_download_first" = "Non è possibile visualizzare l’anteprima di questo flusso protetto dal suo URL temporaneo. Scaricalo prima per riprodurre il file locale.";
+"platform_invalid_web_url" = "Inserisci un indirizzo web valido che inizi con http:// o https://.";

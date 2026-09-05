@@ -5,6 +5,43 @@ import WebKit
 
 final class WebViewScriptsTests: XCTestCase {
     @MainActor
+    func testEditingScriptCannotWidenAnEmptyScopeOrLoseExistingPreferences() throws {
+        let service = BrowserExtensionService.shared
+        let id = UUID()
+        let first = try service.saveUserScript(id: id, fallbackName: id.uuidString,
+            source: "console.log('original');", explicitPatterns: ["https://example.com/*"], injectionTime: .documentEnd)
+        defer { service.deleteUserScript(first.id) }
+        service.setUserScriptEnabled(first.id, enabled: false)
+        try service.setStoredValues(["theme": #"{"value":"dark"}"#], scriptID: first.id)
+
+        XCTAssertThrowsError(try service.saveUserScript(id: first.id, fallbackName: first.name,
+            source: "console.log('edited');", explicitPatterns: ["  ", "\n"], injectionTime: .documentStart))
+        XCTAssertEqual(service.userScript(id: first.id)?.source, first.source)
+        XCTAssertEqual(service.userScript(id: first.id)?.matchPatterns, ["https://example.com/*"])
+
+        let updated = try service.saveUserScript(id: first.id, fallbackName: first.name,
+            source: "console.log('edited');", explicitPatterns: ["https://example.com/*"], injectionTime: .documentStart)
+        XCTAssertFalse(updated.isEnabled)
+        XCTAssertEqual(updated.storedValues?["theme"], #"{"value":"dark"}"#)
+        XCTAssertEqual(updated.injectionTime, .documentStart)
+    }
+
+    @MainActor
+    func testEditorEnforcesTheSameScriptSizeLimitAsImport() {
+        let service = BrowserExtensionService.shared
+        let before = service.userScripts
+        // Multibyte input verifies the byte limit, not merely character count.
+        let source = String(repeating: "字", count: BrowserExtensionService.maximumUserScriptSize / 3 + 1)
+        XCTAssertThrowsError(try service.saveUserScript(id: UUID(), fallbackName: "Large script",
+            source: source, explicitPatterns: ["https://example.com/*"], injectionTime: .documentEnd)) { error in
+            guard case BrowserExtensionError.scriptTooLarge = error else {
+                return XCTFail("Unexpected error: \(error)")
+            }
+        }
+        XCTAssertEqual(service.userScripts, before)
+    }
+
+    @MainActor
     func testNativeWebExtensionHostImplementsEveryWebKitInterface() throws {
         guard #available(iOS 18.4, *) else {
             throw XCTSkip("Native WebExtensions require iOS 18.4 or newer")

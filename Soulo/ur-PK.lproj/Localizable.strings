@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "ڈاؤن لوڈ کی گئی اسٹریم میں چلنے کے قابل ویڈیو اور آڈیو ٹریک نہیں تھے۔";
 "resource_stream_download_export_failed" = "Soulo ڈاؤن لوڈ کردہ ویڈیو اور آڈیو کو یکجا نہیں کر سکا۔";
 "resource_stream_playback_download_first" = "اس محفوظ اسٹریم کے عارضی URL سے پیش منظر نہیں دیکھا جا سکتا۔ مقامی فائل چلانے کے لیے پہلے اسے ڈاؤن لوڈ کریں۔";
+"platform_invalid_web_url" = "http:// یا https:// سے شروع ہونے والا درست ویب پتا درج کریں۔";

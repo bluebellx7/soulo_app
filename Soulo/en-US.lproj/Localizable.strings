@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "The downloaded stream did not contain playable video and audio tracks.";
 "resource_stream_download_export_failed" = "Soulo could not combine the downloaded video and audio.";
 "resource_stream_playback_download_first" = "This protected stream cannot be previewed from its temporary URL. Download it first to play the local file.";
+"platform_invalid_web_url" = "Enter a valid web address starting with http:// or https://.";

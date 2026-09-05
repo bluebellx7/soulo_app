@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "Der heruntergeladene Stream enthielt keine abspielbaren Video- und Audiospuren.";
 "resource_stream_download_export_failed" = "Soulo konnte das heruntergeladene Video und Audio nicht zusammenführen.";
 "resource_stream_playback_download_first" = "Dieser geschützte Stream kann über seine temporäre URL nicht in der Vorschau angezeigt werden. Lade ihn zuerst herunter, um die lokale Datei abzuspielen.";
+"platform_invalid_web_url" = "Gib eine gültige Webadresse ein, die mit http:// oder https:// beginnt.";

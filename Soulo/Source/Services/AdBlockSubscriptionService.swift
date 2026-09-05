@@ -398,7 +398,8 @@ final class AdBlockSubscriptionService: ObservableObject {
     func updateEnabledSubscriptionsIfNeeded() async {
         guard enabledSubscriptionCount > 0, !isUpdating else { return }
         let lastCheck = userDefaults.double(forKey: autoUpdateCheckKey)
-        let hasCachedRules = !enabledRuleSummary.networkURLFilters.isEmpty || !enabledRuleSummary.cosmeticSelectors.isEmpty
+        let rules = enabledRuleSummary
+        let hasCachedRules = !rules.networkRules.isEmpty || !rules.cosmeticRules.isEmpty
         guard !hasCachedRules || Date().timeIntervalSince1970 - lastCheck >= autoUpdateInterval else { return }
         userDefaults.set(Date().timeIntervalSince1970, forKey: autoUpdateCheckKey)
         await updateEnabledSubscriptions(reportErrors: false)
@@ -413,40 +414,54 @@ final class AdBlockSubscriptionService: ObservableObject {
         defer { isUpdating = false }
 
         var parsedByID = storedParsedRulesByID()
-        var updated = subscriptions
+        let candidates = subscriptions.filter(\.isEnabled)
 
-        for index in updated.indices where updated[index].isEnabled {
-            guard let url = updated[index].url else {
-                updated[index].errorMessage = "Invalid URL"
-                continue
-            }
+        for candidate in candidates {
+            guard !Task.isCancelled else { break }
+            guard let current = subscriptions.first(where: { $0.id == candidate.id }),
+                  current.isEnabled, current.urlString == candidate.urlString else { continue }
 
             do {
+                guard let url = current.url else { throw URLError(.badURL) }
                 var request = URLRequest(url: url)
                 request.timeoutInterval = 20
                 request.cachePolicy = .reloadIgnoringLocalCacheData
                 let (data, response) = try await session.data(for: request)
+                try Task.checkCancellation()
                 if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
                     throw URLError(.badServerResponse)
                 }
                 guard let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else {
                     throw URLError(.cannotDecodeContentData)
                 }
+                let prefix = text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(100).lowercased()
+                guard response.mimeType?.lowercased() != "text/html",
+                      !prefix.hasPrefix("<!doctype html"), !prefix.hasPrefix("<html") else {
+                    throw URLError(.cannotParseResponse)
+                }
                 let parsed = AdBlockRuleParser.parse(text)
-                parsedByID[updated[index].id] = parsed
-                updated[index].networkRuleCount = parsed.networkURLFilters.count
-                updated[index].cosmeticRuleCount = parsed.cosmeticSelectors.count
-                updated[index].lastUpdatedAt = Date()
-                updated[index].errorMessage = ""
+                // Re-find the live record after suspension. A user can toggle
+                // subscriptions while a network request is in flight.
+                guard let index = subscriptions.firstIndex(where: {
+                    $0.id == candidate.id && $0.urlString == candidate.urlString
+                }) else { continue }
+                parsedByID[candidate.id] = parsed
+                subscriptions[index].networkRuleCount = parsed.networkRules.count
+                subscriptions[index].cosmeticRuleCount = parsed.cosmeticRules.count
+                subscriptions[index].lastUpdatedAt = Date()
+                subscriptions[index].errorMessage = ""
             } catch {
-                updated[index].errorMessage = error.localizedDescription
+                if Task.isCancelled { break }
+                guard let index = subscriptions.firstIndex(where: {
+                    $0.id == candidate.id && $0.urlString == candidate.urlString
+                }) else { continue }
+                subscriptions[index].errorMessage = error.localizedDescription
                 if reportErrors {
                     lastError = error.localizedDescription
                 }
             }
         }
 
-        subscriptions = updated
         saveSubscriptions()
         saveParsedRulesByID(parsedByID)
         rebuildCacheFrom(parsedByID: parsedByID)
@@ -533,6 +548,13 @@ final class AdBlockSubscriptionService: ObservableObject {
             networkRules: structuredNetwork.values,
             cosmeticRules: structuredCosmetic.values
         )
+        // Starting the service must not invalidate compiled WebKit rules when
+        // the enabled rule content is unchanged.
+        if let data = userDefaults.data(forKey: cachedRulesKey),
+           let previous = try? JSONDecoder().decode(ParsedAdBlockRules.self, from: data),
+           previous == merged {
+            return
+        }
         if let data = try? JSONEncoder().encode(merged) {
             userDefaults.set(data, forKey: cachedRulesKey)
         }

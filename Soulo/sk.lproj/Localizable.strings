@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "Stiahnutý stream neobsahoval prehrateľné obrazové a zvukové stopy.";
 "resource_stream_download_export_failed" = "Soulo nedokázalo spojiť stiahnuté video a zvuk.";
 "resource_stream_playback_download_first" = "Tento chránený stream nemožno zobraziť z dočasnej adresy URL. Najprv ho stiahnite a prehrajte miestny súbor.";
+"platform_invalid_web_url" = "Zadajte platnú webovú adresu začínajúcu na http:// alebo https://.";

@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "A letöltött stream nem tartalmazott lejátszható video- és hangsávokat.";
 "resource_stream_download_export_failed" = "A Soulo nem tudta egyesíteni a letöltött videót és hangot.";
 "resource_stream_playback_download_first" = "Ez a védett stream nem tekinthető meg az ideiglenes URL-ről. Először töltse le a helyi fájl lejátszásához.";
+"platform_invalid_web_url" = "Adjon meg egy érvényes, http:// vagy https:// kezdetű webcímet.";

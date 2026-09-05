@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "ダウンロードしたストリームに、再生可能な映像と音声のトラックが含まれていませんでした。";
 "resource_stream_download_export_failed" = "ダウンロードした映像と音声を Soulo で結合できませんでした。";
 "resource_stream_playback_download_first" = "この保護されたストリームは一時 URL からプレビューできません。先にダウンロードして、ローカルファイルを再生してください。";
+"platform_invalid_web_url" = "http:// または https:// で始まる有効なウェブアドレスを入力してください。";

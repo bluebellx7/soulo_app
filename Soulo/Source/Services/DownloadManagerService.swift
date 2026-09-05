@@ -165,7 +165,7 @@ final class DownloadManagerService: ObservableObject {
 
     func markPaused(id: UUID, resumeData: Data?) {
         guard let resumeData, !resumeData.isEmpty,
-              downloads.contains(where: { $0.id == id }) else { return }
+              downloads.contains(where: { $0.id == id && $0.status == .inProgress }) else { return }
         saveResumeData(resumeData, id: id)
         markPaused(id: id)
     }
@@ -179,9 +179,11 @@ final class DownloadManagerService: ObservableObject {
     }
 
     func markResumed(id: UUID) {
-        guard let index = downloads.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = downloads.firstIndex(where: { $0.id == id }),
+              [.inProgress, .paused, .failed].contains(downloads[index].status) else { return }
         downloads[index].status = .inProgress
         downloads[index].errorMessage = ""
+        downloads[index].completedAt = nil
         save()
     }
 
@@ -310,7 +312,7 @@ final class DownloadManagerService: ObservableObject {
         let ext = nsName.pathExtension
         let reservedNames = Set(
             downloads
-                .filter { $0.status == .inProgress }
+                .filter { [.inProgress, .paused].contains($0.status) }
                 .map(\.fileName)
         )
 

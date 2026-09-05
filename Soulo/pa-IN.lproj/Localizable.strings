@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "ਡਾਊਨਲੋਡ ਕੀਤੀ ਸਟ੍ਰੀਮ ਵਿੱਚ ਚਲਾਉਣ ਯੋਗ ਵੀਡੀਓ ਅਤੇ ਆਡੀਓ ਟ੍ਰੈਕ ਨਹੀਂ ਸਨ।";
 "resource_stream_download_export_failed" = "Soulo ਡਾਊਨਲੋਡ ਕੀਤੇ ਵੀਡੀਓ ਅਤੇ ਆਡੀਓ ਨੂੰ ਜੋੜ ਨਹੀਂ ਸਕਿਆ।";
 "resource_stream_playback_download_first" = "ਇਸ ਸੁਰੱਖਿਅਤ ਸਟ੍ਰੀਮ ਦੇ ਅਸਥਾਈ URL ਤੋਂ ਪੂਰਵਦਰਸ਼ਨ ਨਹੀਂ ਹੋ ਸਕਦਾ। ਸਥਾਨਕ ਫਾਈਲ ਚਲਾਉਣ ਲਈ ਪਹਿਲਾਂ ਇਸ ਨੂੰ ਡਾਊਨਲੋਡ ਕਰੋ।";
+"platform_invalid_web_url" = "http:// ਜਾਂ https:// ਨਾਲ ਸ਼ੁਰੂ ਹੋਣ ਵਾਲਾ ਵੈਧ ਵੈੱਬ ਪਤਾ ਦਰਜ ਕਰੋ।";

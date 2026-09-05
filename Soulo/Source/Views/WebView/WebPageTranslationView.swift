@@ -324,10 +324,11 @@ enum WebPageTranslationBridge {
         #"""
         (function() {
             var existing = window.__souloPageTranslation;
-            if (existing && existing.entries) {
+            if (existing && existing.url === location.href && existing.entries) {
                 Object.keys(existing.entries).forEach(function(id) {
                     var entry = existing.entries[id];
-                    if (entry && entry.node && entry.node.isConnected) {
+                    if (entry && entry.node && entry.node.isConnected &&
+                        typeof entry.translated === 'string' && entry.node.nodeValue === entry.translated) {
                         entry.node.nodeValue = entry.original;
                     }
                 });
@@ -367,7 +368,7 @@ enum WebPageTranslationBridge {
             while ((node = walker.nextNode()) && scanned < (\#(maximumScannedNodeCount))) {
                 scanned += 1;
                 var parent = node.parentElement;
-                if (!parent || parent.closest(blockedSelector) || !isVisible(parent)) continue;
+                if (!parent || parent.isContentEditable || parent.closest(blockedSelector) || !isVisible(parent)) continue;
                 var raw = node.nodeValue || '';
                 var text = raw.trim();
                 if (text.length < 2 || text.length > (\#(maximumFragmentLength))) continue;
@@ -458,10 +459,15 @@ enum WebPageTranslationBridge {
             Object.keys(payload.values).forEach(function(id) {
                 var entry = registry.entries[id];
                 if (!entry || !entry.node || !entry.node.isConnected) return;
+                // A live page may update text while translation is running.
+                // Only replace the exact text captured for this request.
+                if (entry.node.nodeValue !== entry.original ||
+                    (entry.node.parentElement && entry.node.parentElement.isContentEditable)) return;
                 var original = entry.original || '';
                 var leading = (original.match(/^\s*/) || [''])[0];
                 var trailing = (original.match(/\s*$/) || [''])[0];
-                entry.node.nodeValue = leading + payload.values[id] + trailing;
+                entry.translated = leading + payload.values[id] + trailing;
+                entry.node.nodeValue = entry.translated;
                 applied += 1;
             });
             registry.isTranslated = applied > 0;
@@ -481,19 +487,19 @@ enum WebPageTranslationBridge {
         let value = try await webView.evaluateJavaScript(#"""
         (function() {
             var registry = window.__souloPageTranslation;
-            if (!registry || !registry.entries) return 0;
-            var restored = 0;
+            if (!registry || registry.url !== location.href || !registry.entries) return false;
             Object.keys(registry.entries).forEach(function(id) {
                 var entry = registry.entries[id];
                 if (!entry || !entry.node || !entry.node.isConnected) return;
+                if (typeof entry.translated !== 'string' || entry.node.nodeValue !== entry.translated ||
+                    (entry.node.parentElement && entry.node.parentElement.isContentEditable)) return;
                 entry.node.nodeValue = entry.original;
-                restored += 1;
             });
             delete window.__souloPageTranslation;
-            return restored;
+            return true;
         })();
         """#)
-        guard (value as? Int ?? 0) > 0 else { throw WebPageTranslationError.stalePage }
+        guard (value as? Bool) == true else { throw WebPageTranslationError.stalePage }
     }
 
     static func hasAppliedTranslation(on webView: WKWebView?) async -> Bool {

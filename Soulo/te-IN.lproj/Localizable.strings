@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "డౌన్‌లోడ్ చేసిన స్ట్రీమ్‌లో ప్లే చేయగల వీడియో, ఆడియో ట్రాక్‌లు లేవు.";
 "resource_stream_download_export_failed" = "డౌన్‌లోడ్ చేసిన వీడియో, ఆడియోను Soulo కలపలేకపోయింది.";
 "resource_stream_playback_download_first" = "ఈ రక్షిత స్ట్రీమ్ తాత్కాలిక URL నుండి ప్రివ్యూ చూడలేరు. స్థానిక ఫైల్‌ను ప్లే చేయడానికి ముందు డౌన్‌లోడ్ చేయండి.";
+"platform_invalid_web_url" = "http:// లేదా https:// తో ప్రారంభమయ్యే చెల్లుబాటు అయ్యే వెబ్ చిరునామాను నమోదు చేయండి.";

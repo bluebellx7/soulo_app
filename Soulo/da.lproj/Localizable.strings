@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "Den downloadede stream indeholdt ikke video- og lydspor, der kunne afspilles.";
 "resource_stream_download_export_failed" = "Soulo kunne ikke kombinere den downloadede video og lyd.";
 "resource_stream_playback_download_first" = "Denne beskyttede stream kan ikke forhåndsvises fra dens midlertidige URL. Download den først for at afspille den lokale fil.";
+"platform_invalid_web_url" = "Indtast en gyldig webadresse, der begynder med http:// eller https://.";

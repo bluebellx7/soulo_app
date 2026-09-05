@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "Preneseni tok ni vseboval video- in zvočnih sledi, ki bi jih bilo mogoče predvajati.";
 "resource_stream_download_export_failed" = "Soulo ni mogel združiti prenesenega videa in zvoka.";
 "resource_stream_playback_download_first" = "Predogled tega zaščitenega toka prek začasnega URL-ja ni mogoč. Najprej ga prenesite, da predvajate lokalno datoteko.";
+"platform_invalid_web_url" = "Vnesite veljaven spletni naslov, ki se začne s http:// ali https://.";

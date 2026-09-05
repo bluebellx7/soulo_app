@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "La transmisión descargada no contenía pistas de vídeo y audio reproducibles.";
 "resource_stream_download_export_failed" = "Soulo no ha podido combinar el vídeo y el audio descargados.";
 "resource_stream_playback_download_first" = "No se puede previsualizar esta transmisión protegida desde su URL temporal. Descárgala primero para reproducir el archivo local.";
+"platform_invalid_web_url" = "Introduce una dirección web válida que empiece por http:// o https://.";

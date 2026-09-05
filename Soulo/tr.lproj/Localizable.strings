@@ -860,3 +860,4 @@
 "resource_stream_download_missing_track" = "İndirilen akış, oynatılabilir video ve ses parçaları içermiyordu.";
 "resource_stream_download_export_failed" = "Soulo indirilen video ve sesi birleştiremedi.";
 "resource_stream_playback_download_first" = "Bu korumalı akış geçici URL üzerinden önizlenemez. Yerel dosyayı oynatmak için önce indirin.";
+"platform_invalid_web_url" = "http:// veya https:// ile başlayan geçerli bir web adresi girin.";
