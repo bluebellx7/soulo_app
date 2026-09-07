@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "Masquer la barre d'outils";
 "privacy_clear_action" = "Effacer";
 "privacy_data_footer" = "Ces actions ne peuvent pas être annulées. Les données effacées ne peuvent pas être récupérées.";
-"settings_privacy" = "Paramètres de confidentialité";
+"settings_privacy" = "Confidentialité";
 "platform_sort_options" = "Options de tri";
 "cancel" = "Annuler";
 "confirm" = "Confirmer";
@@ -480,12 +480,12 @@
 "ad_block_total_hidden" = "Éléments cachés";
 "ad_block_current_site_hidden" = "Ce site";
 "ad_block_search_allowlist" = "Rechercher dans la liste blanche";
-"ad_block_subscriptions" = "Filtrer les abonnements";
+"ad_block_subscriptions" = "Listes de filtres";
 "ad_block_subscriptions_desc" = "Soulo prend en charge un sous-ensemble pratique de listes de filtres ABP et les convertit en règles WebKit avec masquage cosmétique. Les sources incluent les filtres EasyList, EasyList China et AdGuard.";
 "ad_block_subscription_enabled" = "Listes activées";
 "ad_block_subscription_rules" = "Règles mises en cache";
 "ad_block_subscription_rules_suffix" = "règles";
-"ad_block_subscription_update" = "Mettre à jour les listes activées";
+"ad_block_subscription_update" = "Actualiser les listes";
 "ad_block_subscription_updating" = "Mise à jour...";
 "ad_block_subscription_reset" = "Réinitialiser les abonnements";
 "wallpaper_remote_error" = "La source du fond d’écran n’est pas disponible. Essayez d'actualiser ou de changer de source.";
@@ -787,7 +787,7 @@
 "web_capture_live_text_hint" = "Appuyez longuement sur le texte reconnu dans l'image pour le sélectionner ou le copier avec Live Text.";
 "web_capture_pdf" = "Exporter la page en PDF";
 "web_capture_pdf_limited" = "La page dépasse la limite PDF. Seule la première partie a été exportée.";
-"web_translate" = "Page de traduction";
+"web_translate" = "Traduire la page";
 "web_translate_target" = "Traduire vers";
 "web_translate_target_desc" = "Soulo détecte automatiquement la langue de la page.";
 "web_translate_system" = "Traduction sur l'appareil";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Soulo n’a pas pu fusionner la vidéo et l’audio téléchargés.";
 "resource_stream_playback_download_first" = "Ce flux protégé ne peut pas être prévisualisé depuis son URL temporaire. Téléchargez-le d’abord pour lire le fichier local.";
 "platform_invalid_web_url" = "Saisissez une adresse web valide commençant par http:// ou https://.";
+
+"library_history_tab" = "Historique";
+
+"library_files_tab" = "Fichiers";
+
+"library_books_tab" = "Livres";

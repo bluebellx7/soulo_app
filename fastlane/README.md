@@ -1,6 +1,6 @@
 # Soulo Fastlane
 
-本目录对应 App Store Connect 版本 **1.1.4（Build 18）**。仓库使用 App Store Connect 中文语言名维护 50 个语言目录，上传时会自动导出为 Fastlane 所需的 locale code。
+当前工程版本为 **1.1.5（Build 21）**。Fastlane 从 `project.yml` 读取版本，不再单独写死版本号。仓库使用 App Store Connect 中文语言名维护 50 个语言目录，上传时会自动导出为 Fastlane 所需的 locale code。
 
 每个语言目录同步以下六类字段：
 
@@ -8,7 +8,7 @@
 - `subtitle.txt`：副标题
 - `promotional_text.txt`：推广文本
 - `description.txt`：应用描述
-- `release_notes.txt`：1.1.4 新增内容
+- `release_notes.txt`：当前版本新增内容
 - `keywords.txt`：关键词
 
 ## 使用
@@ -24,7 +24,7 @@ bundle exec fastlane ios beta
 bundle exec fastlane ios release
 ```
 
-`metadata` 只上传元数据，不上传构建；`beta` 上传 Build 18 到 TestFlight；`release` 上传构建和元数据，但不会自动提交审核。
+`metadata` 只上传元数据，不上传构建；`beta` 上传工程当前 Build 到 TestFlight；`release` 上传构建和元数据，但不会自动提交审核。各上传流程会先检查 50 种语言的元数据、生成 JSON 与工程版本是否一致，以及本地化是否完整。
 
 ## 认证
 

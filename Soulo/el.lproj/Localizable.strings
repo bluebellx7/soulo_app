@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "Απόκρυψη γραμμής εργαλείων";
 "privacy_clear_action" = "Καθαρό";
 "privacy_data_footer" = "Αυτές οι ενέργειες δεν μπορούν να αναιρεθούν. Δεν είναι δυνατή η ανάκτηση των εκκαθαρισμένων δεδομένων.";
-"settings_privacy" = "Ρυθμίσεις απορρήτου";
+"settings_privacy" = "Απόρρητο";
 "platform_sort_options" = "Επιλογές ταξινόμησης";
 "cancel" = "Ακύρωση";
 "confirm" = "Επιβεβαίωση";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "Κρυφά Στοιχεία";
 "ad_block_current_site_hidden" = "Αυτός ο ιστότοπος";
 "ad_block_search_allowlist" = "Αναζήτηση λίστας επιτρεπόμενων";
-"ad_block_subscriptions" = "Φιλτράρισμα συνδρομών";
+"ad_block_subscriptions" = "Λίστες φίλτρων";
 "ad_block_subscriptions_desc" = "Το Soulo υποστηρίζει ένα πρακτικό υποσύνολο λιστών φίλτρων ABP και τις μετατρέπει σε κανόνες WebKit συν απόκρυψη καλλυντικών. Οι πηγές περιλαμβάνουν τα φίλτρα EasyList, EasyList China και AdGuard.";
 "ad_block_subscription_enabled" = "Ενεργοποιημένες λίστες";
 "ad_block_subscription_rules" = "Αποθηκευμένοι κανόνες";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Το Soulo δεν μπόρεσε να συνδυάσει το βίντεο και τον ήχο που λήφθηκαν.";
 "resource_stream_playback_download_first" = "Δεν είναι δυνατή η προεπισκόπηση αυτής της προστατευμένης ροής από το προσωρινό URL της. Κατεβάστε την πρώτα για να παίξετε το τοπικό αρχείο.";
 "platform_invalid_web_url" = "Εισαγάγετε μια έγκυρη διεύθυνση ιστού που αρχίζει με http:// ή https://.";
+
+"library_history_tab" = "Ιστορικό";
+
+"library_files_tab" = "Αρχεία";
+
+"library_books_tab" = "Βιβλία";

@@ -82,7 +82,7 @@
 "resource_copy_all_links" = "Kopiraj sve veze";
 "resource_copy_all_text" = "Kopiraj sav tekst";
 "resource_video_player" = "Video player";
-"resource_audio_player" = "Audio Player";
+"resource_audio_player" = "Audioplayer";
 "resource_scanning" = "Skeniranje ove stranice…";
 "resource_none_found" = "Nema pronađenih izvora";
 "resource_none_found_desc" = "Stranica se možda nije učitala do kraja ili su njezini resursi zaštićeni.";
@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "Sakrij alatnu traku";
 "privacy_clear_action" = "čisto";
 "privacy_data_footer" = "Ove se radnje ne mogu poništiti. Izbrisani podaci ne mogu se vratiti.";
-"settings_privacy" = "Postavke privatnosti";
+"settings_privacy" = "Privatnost";
 "platform_sort_options" = "Mogućnosti sortiranja";
 "cancel" = "Odustani";
 "confirm" = "Potvrdi";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "Skriveni elementi";
 "ad_block_current_site_hidden" = "Ova stranica";
 "ad_block_search_allowlist" = "Popis dopuštenih pretraga";
-"ad_block_subscriptions" = "Filtrirajte pretplate";
+"ad_block_subscriptions" = "Popisi filtara";
 "ad_block_subscriptions_desc" = "Soulo podržava praktičan podskup popisa ABP filtera i pretvara ih u WebKit pravila uz kozmetičko skrivanje. Izvori uključuju filtre EasyList, EasyList China i AdGuard.";
 "ad_block_subscription_enabled" = "Omogućeni popisi";
 "ad_block_subscription_rules" = "Predmemorirana pravila";
@@ -596,7 +596,7 @@
 "web_follow_app_scheme_desc" = "Recite podržanim web stranicama je li Soulo trenutno svijetlo ili tamno kako bi mogli odabrati odgovarajuću temu. Nepodržane stranice ostaju nepromijenjene.";
 "web_warm_color_shift" = "Topla boja za čitanje";
 "web_warm_color_shift_desc" = "Dodajte suptilnu toplu nijansu preko stranice kako biste ublažili hladne bijele ekrane noću. Slike i videozapisi također će izgledati malo toplije.";
-"web_force_dark" = "Force Dark Webpages";
+"web_force_dark" = "Prisilni tamni prikaz stranica";
 "web_force_dark_short" = "Tamni način rada";
 "web_force_dark_desc" = "Pokušajte pretvoriti svijetle pozadine, tamni tekst i obrube u tamnu paletu slabog osvjetljenja čak i kada web-mjesto nema vlastitu tamnu temu.";
 "web_force_dark_footer" = "Ove postavke mogu se međusobno kombinirati. Konverzija ne mijenja sadržaj stranice, ali složene stranice, platna i prilagođene kontrole mogu zadržati svoje izvorne boje. Brzo ga isključite iz donjeg izbornika Više ako stranica izgleda krivo.";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Soulo nije mogao spojiti preuzeti video i zvuk.";
 "resource_stream_playback_download_first" = "Ovaj zaštićeni tok nije moguće pregledati putem privremenog URL-a. Najprije ga preuzmite da biste reproducirali lokalnu datoteku.";
 "platform_invalid_web_url" = "Unesite valjanu web-adresu koja počinje s http:// ili https://.";
+
+"library_history_tab" = "Povijest";
+
+"library_files_tab" = "Datoteke";
+
+"library_books_tab" = "Knjige";

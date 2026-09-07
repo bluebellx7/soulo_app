@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "Ukryj pasek narzędzi";
 "privacy_clear_action" = "Jasne";
 "privacy_data_footer" = "Tych działań nie można cofnąć. Wyczyszczonych danych nie można odzyskać.";
-"settings_privacy" = "Ustawienia prywatności";
+"settings_privacy" = "Prywatność";
 "platform_sort_options" = "Opcje sortowania";
 "cancel" = "Anuluj";
 "confirm" = "Potwierdź";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "Ukryte elementy";
 "ad_block_current_site_hidden" = "Ta witryna";
 "ad_block_search_allowlist" = "Przeszukaj listę dozwolonych";
-"ad_block_subscriptions" = "Filtruj subskrypcje";
+"ad_block_subscriptions" = "Listy filtrów";
 "ad_block_subscriptions_desc" = "Soulo obsługuje praktyczny podzbiór list filtrów ABP i konwertuje je na reguły WebKit oraz ukrywanie kosmetyczne. Źródła obejmują filtry EasyList, EasyList China i AdGuard.";
 "ad_block_subscription_enabled" = "Włączone listy";
 "ad_block_subscription_rules" = "Reguły buforowane";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Soulo nie mogło połączyć pobranego wideo i dźwięku.";
 "resource_stream_playback_download_first" = "Nie można wyświetlić podglądu tego chronionego strumienia z tymczasowego adresu URL. Pobierz go najpierw, aby odtworzyć plik lokalny.";
 "platform_invalid_web_url" = "Wpisz poprawny adres internetowy zaczynający się od http:// lub https://.";
+
+"library_history_tab" = "Historia";
+
+"library_files_tab" = "Pliki";
+
+"library_books_tab" = "Książki";

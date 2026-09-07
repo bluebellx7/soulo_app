@@ -35,6 +35,7 @@ struct SouloApp: App {
                 .environmentObject(themeManager)
                 .environmentObject(wallpaperManager)
                 .environment(\.locale, languageManager.locale)
+                .environment(\.layoutDirection, languageManager.locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
                 .tint(Color.themePrimary)
                 .accentColor(Color.themePrimary)
         } defaultValue: {

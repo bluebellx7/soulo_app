@@ -128,6 +128,8 @@ struct WebViewToolbar: View {
     @AppStorage(AppConstants.StorageKeys.selectedLanguage) private var appLanguage = AppConstants.preferredLanguageCode()
     @State private var showSiteInformation = false
     @State private var showZoomControls = false
+    @State private var showMediaRateControls = false
+    @State private var isChangingMediaRate = false
     @State private var showMoreMenu = false
     @State private var extensionActionRevision = 0
 
@@ -154,6 +156,8 @@ struct WebViewToolbar: View {
     var onInspectResources: (() -> Void)?
     var onReadArticle: (() -> Void)?
     @State private var mediaRateMessage: String?
+    @State private var pageAvailability = WebPageToolsAvailability()
+    @State private var webMediaRate = 1.0
     var onTranslatePage: (() -> Void)?
     var onMoreMenuPresentationChange: ((Bool) -> Void)?
     var showsOnlyMore: Bool = false
@@ -228,6 +232,11 @@ struct WebViewToolbar: View {
                 arrowEdge: .bottom
             ) {
                 SiteInformationPopoverView(
+                    webViewModel: viewModel,
+                    onSetDesktopMode: { enabled in
+                        if let tabManager { tabManager.setDesktopModeEnabled(enabled, reload: false) }
+                        else { viewModel.setDesktopModeEnabled(enabled) }
+                    },
                     currentURL: viewModel.currentURL,
                     isPrivateMode: isIncognito,
                     onSetPrivateMode: { enabled in
@@ -512,10 +521,37 @@ struct WebViewToolbar: View {
                 .presentationDragIndicator(.visible)
                 .presentationBackground(.ultraThinMaterial)
         }
+        .sheet(isPresented: $showMediaRateControls) {
+            mediaRatePanel
+                .presentationDetents([.height(250)])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(.ultraThinMaterial)
+        }
+        .task(id: showMoreMenu) {
+            guard showMoreMenu else { return }
+            // Poll only while the panel is visible, so late SPA/video content appears.
+            while !Task.isCancelled {
+                if let web = viewModel.webView {
+                    let url = web.url
+                    let result = await WebPageToolsAvailability.inspect(web)
+                    if !Task.isCancelled && viewModel.webView === web && web.url == url {
+                        if pageAvailability != result { pageAvailability = result }
+                        if webMediaRate != result.mediaRate { webMediaRate = result.mediaRate }
+                    }
+                }
+                do { try await Task.sleep(for: .seconds(1)) } catch { break }
+            }
+        }
+        .onChange(of: viewModel.currentURL) { _, _ in
+            pageAvailability = .init(); webMediaRate = 1; showMediaRateControls = false
+        }
         .onChange(of: showMoreMenu) { _, _ in
             reportMoreMenuPresentationState()
         }
         .onChange(of: showZoomControls) { _, _ in
+            reportMoreMenuPresentationState()
+        }
+        .onChange(of: showMediaRateControls) { _, _ in
             reportMoreMenuPresentationState()
         }
     }
@@ -657,7 +693,7 @@ struct WebViewToolbar: View {
         Menu {
             Group {
                 Button { performMoreMenuAction { onReadArticle?() } } label: {
-                    Label(ToolText.text("reader_mode"), systemImage: "doc.text")
+                    Label(ToolText.text(pageAvailability.likelyReadable ? "reader_mode" : "try_reader"), systemImage: "doc.text")
                 }.disabled(onReadArticle == nil)
                 Button { performMoreMenuAction { onTranslatePage?() } } label: {
                     menuLabel("web_translate", systemImage: "character.bubble")
@@ -672,19 +708,11 @@ struct WebViewToolbar: View {
                 }
             }
             Divider()
-            Menu {
-                ForEach([0.5, 1, 1.5, 2, 4, 8, 16], id: \.self) { rate in
-                    Button("\(rate.formatted())×") {
-                        guard let webView = viewModel.webView else { return }
-                        Task {
-                            do {
-                                let actual = try await WebMediaPlaybackBridge.setRate(rate, on: webView)
-                                mediaRateMessage = actual.map { "\($0.formatted())×" }.joined(separator: " · ")
-                            } catch { mediaRateMessage = error.localizedDescription }
-                        }
-                    }
+            if pageAvailability.shouldShowMediaRate(for: viewModel.currentURL) {
+                Button { performMoreMenuAction { showMediaRateControls = true } } label: {
+                    Label(ToolText.text("web_media_speed") + (pageAvailability.mediaCount > 0 ? " · " + webMediaRate.formatted() + "×" : ""), systemImage: "speedometer")
                 }
-            } label: { Label(ToolText.text("web_media_speed"), systemImage: "speedometer") }
+            }
             Button { performMoreMenuAction { onInspectResources?() } } label: {
                 menuLabel("resource_inspector_title", systemImage: "dot.radiowaves.left.and.right")
             }.disabled(onInspectResources == nil)
@@ -715,9 +743,6 @@ struct WebViewToolbar: View {
             )
         }
         .buttonStyle(.plain)
-        .alert(ToolText.text("web_media_speed"), isPresented: Binding(get: { mediaRateMessage != nil }, set: { if !$0 { mediaRateMessage = nil } })) {
-            Button(ToolText.text("done")) { mediaRateMessage = nil }
-        } message: { Text(mediaRateMessage ?? "") }
         .disabled(viewModel.currentURL == nil)
         .opacity(viewModel.currentURL == nil ? 0.35 : 1)
     }
@@ -1049,10 +1074,16 @@ struct WebViewToolbar: View {
             performMoreMenuAction(action)
         } label: {
             VStack(spacing: 5) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 19, weight: .regular))
-                    .foregroundStyle(isActive ? Color(uiColor: activeColor) : Color.primary)
-                    .frame(height: 23)
+                Group {
+                    if titleKey == "browser_tabs" {
+                        TabCountSymbol(count: tabManager?.tabCount ?? 0)
+                    } else {
+                        Image(systemName: systemImage)
+                            .font(.system(size: 19, weight: .regular))
+                    }
+                }
+                .foregroundStyle(isActive ? Color(uiColor: activeColor) : Color.primary)
+                .frame(height: 23)
 
                 Text(title)
                     .font(.system(size: 10, weight: .medium))
@@ -1105,7 +1136,58 @@ struct WebViewToolbar: View {
     }
 
     private func reportMoreMenuPresentationState() {
-        onMoreMenuPresentationChange?(showMoreMenu || showZoomControls)
+        onMoreMenuPresentationChange?(showMoreMenu || showZoomControls || showMediaRateControls)
+    }
+
+    private var mediaRatePanel: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack {
+                Label(ToolText.text("web_media_speed"), systemImage: "speedometer")
+                    .font(.headline)
+                Spacer()
+                Button(ToolText.text("done")) { showMediaRateControls = false }
+                    .font(.subheadline.weight(.semibold))
+                    .frame(minHeight: AppControlMetrics.minimumHitSize)
+            }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 10) {
+                ForEach([0.5, 1, 1.5, 2, 4, 8, 16], id: \.self) { rate in
+                    Button { changeWebMediaRate(rate) } label: {
+                        Text("\(rate.formatted())×")
+                            .font(.system(size: 15, weight: .semibold)).monospacedDigit()
+                            .frame(maxWidth: .infinity, minHeight: AppControlMetrics.actionHeight)
+                            .foregroundStyle(abs(webMediaRate - rate) < 0.001 ? Color.white : Color.primary)
+                            .background(abs(webMediaRate - rate) < 0.001 ? Color.themePrimary : Color(uiColor: .tertiarySystemFill),
+                                in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isChangingMediaRate)
+                    .accessibilityAddTraits(abs(webMediaRate - rate) < 0.001 ? .isSelected : [])
+                }
+            }
+        }
+        .padding(20)
+        .alert(ToolText.text("web_media_speed"), isPresented: Binding(
+            get: { mediaRateMessage != nil }, set: { if !$0 { mediaRateMessage = nil } }
+        )) {
+            Button(ToolText.text("done")) { mediaRateMessage = nil }
+        } message: { Text(mediaRateMessage ?? "") }
+    }
+
+    private func changeWebMediaRate(_ rate: Double) {
+        guard !isChangingMediaRate, let web = viewModel.webView else { return }
+        let url = web.url
+        isChangingMediaRate = true
+        Task { @MainActor in
+            defer { isChangingMediaRate = false }
+            do {
+                let actual = try await WebMediaPlaybackBridge.setRate(rate, on: web)
+                guard viewModel.webView === web, web.url == url else { return }
+                webMediaRate = actual.first ?? rate
+            } catch {
+                guard viewModel.webView === web, web.url == url else { return }
+                mediaRateMessage = error.localizedDescription
+            }
+        }
     }
 
     private var persistentZoomPanel: some View {

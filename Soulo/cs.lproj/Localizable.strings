@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "Skrýt panel nástrojů";
 "privacy_clear_action" = "Jasný";
 "privacy_data_footer" = "Tyto akce nelze vrátit zpět. Vymazaná data nelze obnovit.";
-"settings_privacy" = "Nastavení soukromí";
+"settings_privacy" = "Soukromí";
 "platform_sort_options" = "Možnosti řazení";
 "cancel" = "Zrušit";
 "confirm" = "Potvrďte";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "Skryté prvky";
 "ad_block_current_site_hidden" = "Tato stránka";
 "ad_block_search_allowlist" = "Hledat v seznamu povolených";
-"ad_block_subscriptions" = "Filtrovat odběry";
+"ad_block_subscriptions" = "Seznamy filtrů";
 "ad_block_subscriptions_desc" = "Soulo podporuje praktickou podmnožinu seznamů filtrů ABP a převádí je na pravidla WebKit plus kosmetické skrývání. Zdroje zahrnují EasyList, EasyList China a filtry AdGuard.";
 "ad_block_subscription_enabled" = "Povolené seznamy";
 "ad_block_subscription_rules" = "Pravidla uložená v mezipaměti";
@@ -601,7 +601,7 @@
 "web_force_dark_desc" = "Zkuste převést světlá pozadí, tmavý text a okraje na málo světlé tmavé palety, i když web nemá žádné vlastní tmavé téma.";
 "web_force_dark_footer" = "Tato nastavení lze nezávisle kombinovat. Konverze nemění obsah stránky, ale složité stránky, plátna a vlastní ovládací prvky si mohou zachovat své původní barvy. Pokud stránka vypadá špatně, rychle ji vypněte ze spodní nabídky Více.";
 "site_information" = "Informace o webu";
-"shake_action" = "Shake Action";
+"shake_action" = "Akce při zatřesení";
 "shake_action_none" = "žádný";
 "shake_action_fullscreen" = "Přepnout na celou obrazovku";
 "shake_action_dark" = "Přepnout tmavý režim";
@@ -663,7 +663,7 @@
 "userscript_invalid_match_pattern" = "Neplatné pravidlo webu: %@";
 "userscript_untitled" = "Skript bez názvu";
 "userscript_name" = "Jméno";
-"userscript_run_at" = "Run At";
+"userscript_run_at" = "Čas spuštění";
 "userscript_document_start" = "Start dokumentu";
 "userscript_document_end" = "Konec dokumentu";
 "userscript_matches" = "Pravidla webu (jedno na řádek)";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Soulo nemohlo spojit stažené video a zvuk.";
 "resource_stream_playback_download_first" = "Tento chráněný stream nelze přehrát z dočasné adresy. Nejprve jej stáhněte a přehrajte místní soubor.";
 "platform_invalid_web_url" = "Zadejte platnou webovou adresu začínající http:// nebo https://.";
+
+"library_history_tab" = "Historie";
+
+"library_files_tab" = "Soubory";
+
+"library_books_tab" = "Knihy";

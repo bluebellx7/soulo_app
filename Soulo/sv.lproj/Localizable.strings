@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "Dölj verktygsfältet";
 "privacy_clear_action" = "Rensa";
 "privacy_data_footer" = "Dessa åtgärder kan inte ångras. Raderade data kan inte återställas.";
-"settings_privacy" = "Sekretessinställningar";
+"settings_privacy" = "Integritet";
 "platform_sort_options" = "Sorteringsalternativ";
 "cancel" = "Avbryt";
 "confirm" = "Bekräfta";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "Dolda element";
 "ad_block_current_site_hidden" = "Denna webbplats";
 "ad_block_search_allowlist" = "Sök godkännandelista";
-"ad_block_subscriptions" = "Filtrera prenumerationer";
+"ad_block_subscriptions" = "Filterlistor";
 "ad_block_subscriptions_desc" = "Soulo stöder en praktisk delmängd av ABP-filterlistor och konverterar dem till WebKit-regler plus kosmetisk gömma. Källor inkluderar EasyList, EasyList China och AdGuard-filter.";
 "ad_block_subscription_enabled" = "Aktiverade listor";
 "ad_block_subscription_rules" = "Cachade regler";
@@ -601,7 +601,7 @@
 "web_force_dark_desc" = "Försök att konvertera ljusa bakgrunder, mörk text och kanter till en mörk palett med svagt ljus även när webbplatsen inte har något eget mörkt tema.";
 "web_force_dark_footer" = "Dessa inställningar kan kombineras oberoende av varandra. Konvertering ändrar inte sidinnehållet, men komplexa sidor, dukar och anpassade kontroller kan behålla sina ursprungliga färger. Stäng av det snabbt från menyn Mer om en sida ser fel ut.";
 "site_information" = "Webbplatsinformation";
-"shake_action" = "Shake Action";
+"shake_action" = "Åtgärd vid skakning";
 "shake_action_none" = "Inga";
 "shake_action_fullscreen" = "Växla helskärm";
 "shake_action_dark" = "Växla mellan mörkt läge";
@@ -661,7 +661,7 @@
 "userscript_unreadable" = "Det valda skriptet kunde inte läsas som UTF-8-text.";
 "userscript_empty" = "Skriptet får inte vara tomt.";
 "userscript_invalid_match_pattern" = "Ogiltig webbplatsregel: %@";
-"userscript_untitled" = "Untitled Script";
+"userscript_untitled" = "Namnlöst skript";
 "userscript_name" = "Namn";
 "userscript_run_at" = "Kör kl";
 "userscript_document_start" = "Dokumentstart";
@@ -746,7 +746,7 @@
 "userscript_sample_name" = "Läsförloppsindikator";
 "userscript_sample_desc" = "Visar en subtil läsförloppsindikator överst på varje webbsida.";
 "userscript_builtin_badge" = "Inbyggt exempel";
-"userscript_page_marker_name" = "Area Text Extractor";
+"userscript_page_marker_name" = "Textextraktion från område";
 "userscript_page_marker_desc" = "Tryck på den rörliga knappen och tryck sedan på valfritt sidområde för att extrahera och kopiera dess synliga text.";
 "userscript_builtin_readonly_desc" = "Inbyggda exempel är skrivskyddade och förblir inaktiverade tills du slår på dem.";
 "site_connection_secure" = "Anslutningen är säker";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Soulo kunde inte kombinera den nedladdade videon och ljudet.";
 "resource_stream_playback_download_first" = "Den här skyddade strömmen kan inte förhandsvisas från sin tillfälliga URL. Ladda ned den först för att spela upp den lokala filen.";
 "platform_invalid_web_url" = "Ange en giltig webbadress som börjar med http:// eller https://.";
+
+"library_history_tab" = "Historik";
+
+"library_files_tab" = "Filer";
+
+"library_books_tab" = "Böcker";

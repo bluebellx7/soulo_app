@@ -130,7 +130,7 @@ struct VoiceInputView: View {
                     if speechService.isRecording {
                         ForEach(0..<3, id: \.self) { i in
                             Circle()
-                                .fill(Color(hex: "7C3AED"))
+                                .fill(Color.themePrimary)
                                 .frame(width: 8, height: 8)
                                 .scaleEffect(wavePhase == CGFloat(i) ? 1.3 : 0.7)
                                 .opacity(wavePhase == CGFloat(i) ? 1 : 0.4)
@@ -188,8 +188,8 @@ struct VoiceInputView: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color(hex: "6366F1").opacity(speechService.isRecording ? 0.8 : 0.2),
-                                Color(hex: "A855F7").opacity(speechService.isRecording ? 0.6 : 0.15)
+                                Color.themePrimary.opacity(speechService.isRecording ? 0.8 : 0.2),
+                                Color.themePrimary.opacity(speechService.isRecording ? 0.6 : 0.15)
                             ],
                             startPoint: .bottom,
                             endPoint: .top
@@ -252,7 +252,7 @@ struct VoiceInputView: View {
                     ZStack {
                         if speechService.isRecording {
                             Circle()
-                                .stroke(Color(hex: "7C3AED").opacity(0.15), lineWidth: 2)
+                                .stroke(Color.themePrimary.opacity(0.15), lineWidth: 2)
                                 .frame(width: 96, height: 96)
                                 .scaleEffect(pulseScale)
                                 .opacity(2 - Double(pulseScale))
@@ -266,11 +266,11 @@ struct VoiceInputView: View {
                             .fill(
                                 speechService.isRecording
                                     ? LinearGradient(colors: [Color(hex: "EF4444"), Color(hex: "DC2626")], startPoint: .topLeading, endPoint: .bottomTrailing)
-                                    : LinearGradient(colors: [Color(hex: "6366F1"), Color(hex: "7C3AED")], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                    : LinearGradient(colors: [Color.themePrimary, Color.themePrimary], startPoint: .topLeading, endPoint: .bottomTrailing)
                             )
                             .frame(width: 72, height: 72)
                             .shadow(
-                                color: speechService.isRecording ? Color.red.opacity(0.25) : Color(hex: "7C3AED").opacity(0.3),
+                                color: speechService.isRecording ? Color.red.opacity(0.25) : Color.themePrimary.opacity(0.3),
                                 radius: 16, y: 6
                             )
 
@@ -318,13 +318,13 @@ struct VoiceInputView: View {
                             Circle()
                                 .fill(
                                     LinearGradient(
-                                        colors: [Color(hex: "6366F1"), Color(hex: "7C3AED")],
+                                        colors: [Color.themePrimary, Color.themePrimary],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     )
                                 )
                                 .frame(width: 52, height: 52)
-                                .shadow(color: Color(hex: "7C3AED").opacity(0.3), radius: 8, y: 3)
+                                .shadow(color: Color.themePrimary.opacity(0.3), radius: 8, y: 3)
                         }
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 18, weight: .semibold))

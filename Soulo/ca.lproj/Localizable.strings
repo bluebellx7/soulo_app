@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "Amaga la barra d'eines";
 "privacy_clear_action" = "Clar";
 "privacy_data_footer" = "Aquestes accions no es poden desfer. Les dades esborrades no es poden recuperar.";
-"settings_privacy" = "Configuració de privadesa";
+"settings_privacy" = "Privadesa";
 "platform_sort_options" = "Opcions d'ordenació";
 "cancel" = "Cancel·la";
 "confirm" = "Confirmeu";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "Elements ocults";
 "ad_block_current_site_hidden" = "Aquest lloc";
 "ad_block_search_allowlist" = "Cerca a la llista de permisos";
-"ad_block_subscriptions" = "Filtra les subscripcions";
+"ad_block_subscriptions" = "Llistes de filtres";
 "ad_block_subscriptions_desc" = "Soulo admet un subconjunt pràctic de llistes de filtres ABP i les converteix en regles WebKit i ocultació estètica. Les fonts inclouen filtres EasyList, EasyList China i AdGuard.";
 "ad_block_subscription_enabled" = "Llistes habilitades";
 "ad_block_subscription_rules" = "Regles en memòria cau";
@@ -624,7 +624,7 @@
 "userscripts" = "Scripts i extensions";
 "userscripts_installed" = "Els meus guions";
 "userscripts_install" = "Instal·leu scripts";
-"userscripts_empty" = "No UserScripts";
+"userscripts_empty" = "Cap script d’usuari";
 "userscripts_empty_desc" = "Instal·leu un fitxer .user.js o creeu un script per veure'l aquí.";
 "userscripts_reload_note" = "Les pàgines obertes es tornen a carregar després d'instal·lar, editar, activar, desactivar o eliminar un script.";
 "userscript_experimental_badge" = "Compatibilitat";
@@ -787,7 +787,7 @@
 "web_capture_live_text_hint" = "Mantén premut el text reconegut a la imatge per seleccionar-lo o copiar-lo amb Live Text.";
 "web_capture_pdf" = "Exporta el web en PDF";
 "web_capture_pdf_limited" = "La pàgina supera el límit del PDF; només se n'ha exportat la primera part.";
-"web_translate" = "Pàgina de traducció";
+"web_translate" = "Tradueix la pàgina";
 "web_translate_target" = "Traduir a";
 "web_translate_target_desc" = "Soulo detecta automàticament l'idioma de la pàgina.";
 "web_translate_system" = "Traducció al dispositiu";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Soulo no ha pogut combinar el vídeo i l'àudio baixats.";
 "resource_stream_playback_download_first" = "Aquest flux protegit no es pot previsualitzar des del seu URL temporal. Baixa'l primer per reproduir el fitxer local.";
 "platform_invalid_web_url" = "Introdueix una adreça web vàlida que comenci per http:// o https://.";
+
+"library_history_tab" = "Historial";
+
+"library_files_tab" = "Fitxers";
+
+"library_books_tab" = "Llibres";

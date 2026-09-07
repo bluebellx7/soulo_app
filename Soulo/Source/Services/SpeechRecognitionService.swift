@@ -152,10 +152,10 @@ class SpeechRecognitionService: ObservableObject {
                     self?.isAvailable = self?.speechRecognizer?.isAvailable ?? false
                 case .denied:
                     self?.isAvailable = false
-                    self?.errorMessage = "Speech recognition permission denied."
+                    self?.errorMessage = LanguageManager.shared.localizedString("speech_permission")
                 case .restricted:
                     self?.isAvailable = false
-                    self?.errorMessage = "Speech recognition is restricted on this device."
+                    self?.errorMessage = LanguageManager.shared.localizedString("speech_permission")
                 case .notDetermined:
                     self?.isAvailable = false
                 @unknown default:
@@ -184,7 +184,7 @@ class SpeechRecognitionService: ObservableObject {
         SFSpeechRecognizer.requestAuthorization { [weak self] status in
             guard status == .authorized else {
                 DispatchQueue.main.async {
-                    self?.errorMessage = "Speech recognition not authorized."
+                    self?.errorMessage = LanguageManager.shared.localizedString("speech_permission")
                 }
                 return
             }
@@ -268,7 +268,7 @@ class SpeechRecognitionService: ObservableObject {
                 // NSURLErrorCancelled / recognition cancelled — ignore
                 guard nsError.code != 301 && nsError.code != NSURLErrorCancelled else { return }
                 Task { @MainActor in
-                    self.errorMessage = error.localizedDescription
+                    self.errorMessage = ToolText.text("speech_failed")
                     self.stopRecording()
                 }
             }

@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "הסתר את סרגל הכלים";
 "privacy_clear_action" = "ברור";
 "privacy_data_footer" = "לא ניתן לבטל פעולות אלו. לא ניתן לשחזר נתונים שנמחקו.";
-"settings_privacy" = "הגדרות פרטיות";
+"settings_privacy" = "פרטיות";
 "platform_sort_options" = "אפשרויות מיון";
 "cancel" = "בטל";
 "confirm" = "אשר";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "אלמנטים נסתרים";
 "ad_block_current_site_hidden" = "אתר זה";
 "ad_block_search_allowlist" = "חפש ברשימת ההיתרים";
-"ad_block_subscriptions" = "סינון מנויים";
+"ad_block_subscriptions" = "רשימות מסננים";
 "ad_block_subscriptions_desc" = "Soulo תומך בתת-קבוצה מעשית של רשימות מסנני ABP וממיר אותן לכללי WebKit בתוספת הסתרה קוסמטית. המקורות כוללים מסנני EasyList, EasyList China ו-AdGuard.";
 "ad_block_subscription_enabled" = "רשימות מופעלות";
 "ad_block_subscription_rules" = "כללים בקובץ שמור";
@@ -601,14 +601,14 @@
 "web_force_dark_desc" = "נסה להמיר רקעים בהירים, טקסט כהה וגבולות ללוח כהה באור נמוך גם כאשר לאתר אין נושא כהה משלו.";
 "web_force_dark_footer" = "ניתן לשלב הגדרות אלו באופן עצמאי. המרה אינה משנה את תוכן העמוד, אך דפים מורכבים, קנבסים ופקדים מותאמים אישית עשויים לשמור על הצבעים המקוריים שלהם. כבה אותו במהירות מתפריט 'עוד' התחתון אם דף נראה שגוי.";
 "site_information" = "מידע על האתר";
-"shake_action" = "Shake Action";
+"shake_action" = "פעולה בניעור";
 "shake_action_none" = "אין";
 "shake_action_fullscreen" = "החלף מסך מלא";
 "shake_action_dark" = "החלף מצב כהה";
 "shake_action_reload" = "טען מחדש את הדף";
 "shake_action_close_tab" = "סגור את הכרטיסייה הנוכחית";
 "shake_action_footer" = "הפעולה שנבחרה פועלת בזמן שדף אינטרנט פתוח. בחירה בפעולת החלפה הופכת אותה עם הטלטול הבא.";
-"shake_intensity" = "Shake Intensity";
+"shake_intensity" = "עוצמת הניעור";
 "shake_intensity_light" = "אור";
 "shake_intensity_standard" = "סטנדרטי";
 "shake_intensity_firm" = "מוצק";
@@ -771,7 +771,7 @@
 "extension_install_success" = "הותקן בהצלחה";
 "extension_installed_success_desc" = "%@ מותקן ומופעל. דפים פתוחים ייטענו מחדש כדי להחיל אותו.";
 "browser_tabs" = "כרטיסיות";
-"web_capture" = "דף לכידת";
+"web_capture" = "צילום הדף";
 "web_capture_viewport" = "לכידת מסך נוכחי";
 "web_capture_full_page" = "לכידת דף גלילה";
 "web_capture_full_page_limit_desc" = "ללכודות גלילה יש גובה מרבי כדי לשמור על שימוש בטוח בזיכרון. דפים ארוכים מאוד נחתכים אוטומטית.";
@@ -787,7 +787,7 @@
 "web_capture_live_text_hint" = "גע והחזק טקסט מזוהה בתמונה כדי לבחור או להעתיק אותו באמצעות Live Text.";
 "web_capture_pdf" = "ייצוא דף כ-PDF";
 "web_capture_pdf_limited" = "הדף חרג ממגבלת ה-PDF, ולכן רק החלק הראשון יוצא.";
-"web_translate" = "דף תרגם";
+"web_translate" = "תרגום הדף";
 "web_translate_target" = "תרגם ל";
 "web_translate_target_desc" = "Soulo מזהה את שפת הדף באופן אוטומטי.";
 "web_translate_system" = "תרגום במכשיר";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Soulo לא הצליח לשלב את הווידאו והשמע שהורדו.";
 "resource_stream_playback_download_first" = "לא ניתן להציג תצוגה מקדימה של השידור המוגן הזה מהכתובת הזמנית שלו. יש להוריד אותו תחילה כדי לנגן את הקובץ המקומי.";
 "platform_invalid_web_url" = "יש להזין כתובת אינטרנט תקינה שמתחילה ב־http:// או ב־https://.";
+
+"library_history_tab" = "היסטוריה";
+
+"library_files_tab" = "קבצים";
+
+"library_books_tab" = "ספרים";

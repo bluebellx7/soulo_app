@@ -203,7 +203,7 @@
 "hide_browser_toolbar" = "Hide Toolbar";
 "privacy_clear_action" = "Clear";
 "privacy_data_footer" = "These actions cannot be undone. Cleared data cannot be recovered.";
-"settings_privacy" = "Privacy Settings";
+"settings_privacy" = "Privacy";
 "platform_sort_options" = "Sort Options";
 "cancel" = "Cancel";
 "confirm" = "Confirm";
@@ -567,7 +567,7 @@
 "ad_block_total_hidden" = "Hidden Elements";
 "ad_block_current_site_hidden" = "This Site";
 "ad_block_search_allowlist" = "Search allowlist";
-"ad_block_subscriptions" = "Filter Subscriptions";
+"ad_block_subscriptions" = "Filter lists";
 "ad_block_subscriptions_desc" = "Soulo supports a practical subset of ABP filter lists and converts them to WebKit rules plus cosmetic hiding. Sources include EasyList, EasyList China, and AdGuard filters.";
 "ad_block_subscription_enabled" = "Enabled Lists";
 "ad_block_subscription_rules" = "Cached Rules";
@@ -950,3 +950,9 @@
 "home_subtitle_edit_desc" = "Shown below the main heading; leave empty to hide it.";
 "current_keyword" = "Current Keyword";
 "platform_invalid_web_url" = "Enter a valid web address starting with http:// or https://.";
+
+"library_history_tab" = "History";
+
+"library_files_tab" = "Files";
+
+"library_books_tab" = "Books";

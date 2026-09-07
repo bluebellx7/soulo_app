@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "Skjul verktøylinjen";
 "privacy_clear_action" = "Klart";
 "privacy_data_footer" = "Disse handlingene kan ikke angres. Slettede data kan ikke gjenopprettes.";
-"settings_privacy" = "Personverninnstillinger";
+"settings_privacy" = "Personvern";
 "platform_sort_options" = "Sorteringsalternativer";
 "cancel" = "Avbryt";
 "confirm" = "Bekreft";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "Skjulte elementer";
 "ad_block_current_site_hidden" = "Dette nettstedet";
 "ad_block_search_allowlist" = "Søk i godkjenningslisten";
-"ad_block_subscriptions" = "Filtrer abonnementer";
+"ad_block_subscriptions" = "Filterlister";
 "ad_block_subscriptions_desc" = "Soulo støtter et praktisk undersett av ABP-filterlister og konverterer dem til WebKit-regler pluss kosmetisk skjul. Kilder inkluderer EasyList, EasyList China og AdGuard-filtre.";
 "ad_block_subscription_enabled" = "Aktiverte lister";
 "ad_block_subscription_rules" = "Bufret regler";
@@ -601,14 +601,14 @@
 "web_force_dark_desc" = "Prøv å konvertere lyse bakgrunner, mørk tekst og kantlinjer til en mørk palett med lite lys selv når nettstedet ikke har noe eget mørkt tema.";
 "web_force_dark_footer" = "Disse innstillingene kan kombineres uavhengig. Konvertering endrer ikke sideinnhold, men komplekse sider, lerreter og egendefinerte kontroller kan beholde sine originale farger. Slå den av raskt fra den nederste Mer-menyen hvis en side ser feil ut.";
 "site_information" = "Informasjon om nettstedet";
-"shake_action" = "Shake Action";
+"shake_action" = "Handling ved risting";
 "shake_action_none" = "Ingen";
 "shake_action_fullscreen" = "Slå på fullskjerm";
 "shake_action_dark" = "Slå av/på mørk modus";
 "shake_action_reload" = "Last inn siden på nytt";
 "shake_action_close_tab" = "Lukk gjeldende fane";
 "shake_action_footer" = "Den valgte handlingen kjører mens en nettside er åpen. Hvis du velger en vekslingshandling, reverseres den med neste risting.";
-"shake_intensity" = "Shake Intensity";
+"shake_intensity" = "Ristestyrke";
 "shake_intensity_light" = "Lys";
 "shake_intensity_standard" = "Standard";
 "shake_intensity_firm" = "fast";
@@ -771,7 +771,7 @@
 "extension_install_success" = "Installert vellykket";
 "extension_installed_success_desc" = "%@ er installert og aktivert. Åpne sider lastes inn på nytt for å bruke den.";
 "browser_tabs" = "Faner";
-"web_capture" = "Capture Page";
+"web_capture" = "Ta skjermbilde";
 "web_capture_viewport" = "Ta opp gjeldende skjerm";
 "web_capture_full_page" = "Capture Rulleside";
 "web_capture_full_page_limit_desc" = "Rulleopptak har en maksimal høyde for å holde minnebruken trygg. Svært lange sider trimmes automatisk.";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Soulo kunne ikke slå sammen den nedlastede videoen og lyden.";
 "resource_stream_playback_download_first" = "Denne beskyttede strømmen kan ikke forhåndsvises fra den midlertidige nettadressen. Last den ned først for å spille av den lokale filen.";
 "platform_invalid_web_url" = "Skriv inn en gyldig nettadresse som begynner med http:// eller https://.";
+
+"library_history_tab" = "Historikk";
+
+"library_files_tab" = "Filer";
+
+"library_books_tab" = "Bøker";

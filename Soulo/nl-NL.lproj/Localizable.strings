@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "Werkbalk verbergen";
 "privacy_clear_action" = "Duidelijk";
 "privacy_data_footer" = "Deze acties kunnen niet ongedaan worden gemaakt. Gewiste gegevens kunnen niet worden hersteld.";
-"settings_privacy" = "Privacy-instellingen";
+"settings_privacy" = "Privacy";
 "platform_sort_options" = "Sorteeropties";
 "cancel" = "Annuleer";
 "confirm" = "Bevestig";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "Verborgen elementen";
 "ad_block_current_site_hidden" = "Deze site";
 "ad_block_search_allowlist" = "Zoek op de toelatingslijst";
-"ad_block_subscriptions" = "Filter abonnementen";
+"ad_block_subscriptions" = "Filterlijsten";
 "ad_block_subscriptions_desc" = "Soulo ondersteunt een praktische subset van ABP-filterlijsten en converteert deze naar WebKit-regels plus cosmetische verberging. Bronnen zijn onder meer EasyList-, EasyList China- en AdGuard-filters.";
 "ad_block_subscription_enabled" = "Ingeschakelde lijsten";
 "ad_block_subscription_rules" = "In cache opgeslagen regels";
@@ -549,7 +549,7 @@
 "accessibility_next_platform" = "Volgende platform";
 "accessibility_first_platform" = "Eerste platform";
 "accessibility_last_platform" = "Laatste platform";
-"accessibility_platform_position" = "%@, %d of %d";
+"accessibility_platform_position" = "%@, %d van %d";
 "accessibility_platform_loading" = "%@, laden, %d van %d";
 "accessibility_page_position" = "Pagina %d van %d";
 "accessibility_page_top" = "Bovenaan de pagina";
@@ -823,13 +823,13 @@
 "resume" = "Hervatten";
 "downloads_paused" = "Gepauzeerd";
 "downloads_background_interrupted" = "De download op de achtergrond werd onderbroken voordat deze kon worden voltooid.";
-"intent_open_soulo_title" = "Open Soulo";
+"intent_open_soulo_title" = "Soulo openen";
 "intent_search_title" = "Zoek met Soulo";
 "intent_search_description" = "Zoek op meerdere platforms.";
 "intent_search_query" = "Zoekopdracht";
 "intent_search_platform" = "Platform";
 "intent_open_soulo_description" = "Open Soulo en start een nieuwe zoekopdracht.";
-"intent_open_downloads_title" = "Open Downloads";
+"intent_open_downloads_title" = "Downloads openen";
 "intent_open_downloads_description" = "Open je Soulo downloads.";
 "intent_paste_search_title" = "Plakken en zoeken";
 "intent_paste_search_description" = "Zoek klembordtekst in Soulo.";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Soulo kon de gedownloade video en audio niet samenvoegen.";
 "resource_stream_playback_download_first" = "Deze beveiligde stream kan niet via de tijdelijke URL worden bekeken. Download deze eerst om het lokale bestand af te spelen.";
 "platform_invalid_web_url" = "Voer een geldig webadres in dat begint met http:// of https://.";
+
+"library_history_tab" = "Geschiedenis";
+
+"library_files_tab" = "Bestanden";
+
+"library_books_tab" = "Boeken";

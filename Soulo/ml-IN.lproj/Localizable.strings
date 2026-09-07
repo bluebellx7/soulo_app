@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "ടൂൾബാർ മറയ്ക്കുക";
 "privacy_clear_action" = "ക്ലിയർ";
 "privacy_data_footer" = "ഈ പ്രവർത്തനങ്ങൾ പഴയപടിയാക്കാനാകില്ല. മായ്‌ച്ച ഡാറ്റ വീണ്ടെടുക്കാൻ കഴിയില്ല.";
-"settings_privacy" = "സ്വകാര്യതാ ക്രമീകരണങ്ങൾ";
+"settings_privacy" = "സ്വകാര്യത";
 "platform_sort_options" = "ഓപ്‌ഷനുകൾ അടുക്കുക";
 "cancel" = "റദ്ദാക്കുക";
 "confirm" = "സ്ഥിരീകരിക്കുക";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "മറഞ്ഞിരിക്കുന്ന ഘടകങ്ങൾ";
 "ad_block_current_site_hidden" = "ഈ സൈറ്റ്";
 "ad_block_search_allowlist" = "തിരയൽ അനുവദനീയ പട്ടിക";
-"ad_block_subscriptions" = "സബ്സ്ക്രിപ്ഷനുകൾ ഫിൽട്ടർ ചെയ്യുക";
+"ad_block_subscriptions" = "ഫിൽട്ടർ പട്ടികകൾ";
 "ad_block_subscriptions_desc" = "Soulo ABP ഫിൽട്ടർ ലിസ്റ്റുകളുടെ ഒരു പ്രായോഗിക ഉപസെറ്റിനെ പിന്തുണയ്‌ക്കുകയും അവയെ WebKit നിയമങ്ങളിലേക്കും സൗന്ദര്യവർദ്ധക വസ്തുക്കളിലേക്കും മാറ്റുകയും ചെയ്യുന്നു. EasyList, EasyList China, AdGuard ഫിൽട്ടറുകൾ എന്നിവ ഉറവിടങ്ങളിൽ ഉൾപ്പെടുന്നു.";
 "ad_block_subscription_enabled" = "പ്രവർത്തനക്ഷമമാക്കിയ ലിസ്റ്റുകൾ";
 "ad_block_subscription_rules" = "കാഷെ ചെയ്ത നിയമങ്ങൾ";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "ഡൗൺലോഡ് ചെയ്ത വീഡിയോയും ഓഡിയോയും സംയോജിപ്പിക്കാൻ Soulo-യ്ക്ക് കഴിഞ്ഞില്ല.";
 "resource_stream_playback_download_first" = "ഈ സംരക്ഷിത സ്ട്രീമിന്റെ താൽക്കാലിക URL-ൽ നിന്ന് പ്രിവ്യൂ കാണാനാവില്ല. പ്രാദേശിക ഫയൽ പ്ലേ ചെയ്യാൻ ആദ്യം അത് ഡൗൺലോഡ് ചെയ്യുക.";
 "platform_invalid_web_url" = "http:// അല്ലെങ്കിൽ https:// ൽ തുടങ്ങുന്ന സാധുവായ വെബ് വിലാസം നൽകുക.";
+
+"library_history_tab" = "ചരിത്രം";
+
+"library_files_tab" = "ഫയലുകൾ";
+
+"library_books_tab" = "പുസ്തകങ്ങൾ";

@@ -101,3 +101,18 @@
 "copy_pairing_code" = "Copy pairing code";
 "copied" = "Copied";
 "reader_continue" = "Continue reading";
+
+"speech_failed" = "Speech was not recognized. Please try again.";
+"browser_identity" = "Browser identity";
+"custom_identity" = "Custom";
+"default_identity" = "Default mode";
+"identity_hint" = "Applies to this tab and reloads the page.";
+"identity_validation" = "Use up to 1,024 bytes with no line breaks or control characters.";
+"current_identity" = "Current User-Agent";
+"connection_protocol" = "Protocol / port";
+"certificate" = "Certificate subject";
+"mixed_content" = "This page includes content that is not securely loaded.";
+"try_reader" = "Try Reader";
+"media_no_content" = "No playable media detected";
+"reading_progress" = "Reading progress";
+"loaded_chapters" = "Loaded chapters";

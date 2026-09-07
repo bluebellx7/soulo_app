@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Validate Soulo's 50 runtime and App Store localizations."""
 import re, sys
+from collections import Counter
 from pathlib import Path
 from app_store_locales import APP_STORE_LOCALE_NAMES
 
@@ -12,6 +13,21 @@ LIMITS={"name.txt":30,"subtitle.txt":30,"promotional_text.txt":170,"description.
 def load(path): return dict(PATTERN.findall(path.read_text(encoding="utf-8"))) if path.exists() else {}
 def main():
     errors=[]; english=load(RESOURCES/"en.lproj"/"Localizable.strings")
+    tool_english=load(RESOURCES/"en-US.lproj"/"ReadingTools.strings")
+    # Check the independent tools table too; missing locale coverage is reported
+    # separately by audit_localization.py instead of being counted as translated.
+    for path in RESOURCES.glob("*.lproj/*.strings"):
+        entries=PATTERN.findall(path.read_text(encoding="utf-8"))
+        duplicates=[key for key,count in Counter(key for key,_ in entries).items() if count>1]
+        if duplicates: errors.append(f"{path.relative_to(RESOURCES)}: duplicate keys {duplicates}")
+        for key,value in entries:
+            if not value.strip(): errors.append(f"{path.relative_to(RESOURCES)}:{key}: empty value")
+        if path.name=="ReadingTools.strings":
+            values=dict(entries)
+            if set(values)!=set(tool_english): errors.append(f"{path.parent.name}: ReadingTools key parity")
+            for key,source in tool_english.items():
+                if PLACEHOLDER.findall(values.get(key,""))!=PLACEHOLDER.findall(source):
+                    errors.append(f"{path.parent.name}:ReadingTools:{key}: placeholders")
     for locale,label in APP_STORE_LOCALE_NAMES.items():
         values=load(RESOURCES/f"{locale}.lproj"/"Localizable.strings")
         if set(values)!=set(english): errors.append(f"{locale}: key parity {len(values)}/{len(english)}")

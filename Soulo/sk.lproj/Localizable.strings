@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "Skryť panel s nástrojmi";
 "privacy_clear_action" = "Jasné";
 "privacy_data_footer" = "Tieto akcie nie je možné vrátiť späť. Vymazané údaje nie je možné obnoviť.";
-"settings_privacy" = "Nastavenia ochrany osobných údajov";
+"settings_privacy" = "Súkromie";
 "platform_sort_options" = "Možnosti triedenia";
 "cancel" = "Zrušiť";
 "confirm" = "Potvrďte";
@@ -429,7 +429,7 @@
 "image_saved" = "Uložené do Fotiek";
 "save_failed" = "Uloženie zlyhalo";
 "downloading" = "Sťahuje sa...";
-"downloads" = "sťahovanie";
+"downloads" = "Sťahovania";
 "downloads_empty" = "Žiadne sťahovanie";
 "downloads_empty_desc" = "Tu sa zobrazia stiahnuté súbory.";
 "downloads_clear_finished" = "Vymazať dokončené sťahovanie";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "Skryté prvky";
 "ad_block_current_site_hidden" = "Táto stránka";
 "ad_block_search_allowlist" = "Hľadať v zozname povolených";
-"ad_block_subscriptions" = "Filtrovať odbery";
+"ad_block_subscriptions" = "Zoznamy filtrov";
 "ad_block_subscriptions_desc" = "Soulo podporuje praktickú podmnožinu zoznamov filtrov ABP a konvertuje ich na pravidlá WebKit plus kozmetické skrytie. Medzi zdroje patria filtre EasyList, EasyList China a AdGuard.";
 "ad_block_subscription_enabled" = "Povolené zoznamy";
 "ad_block_subscription_rules" = "Pravidlá uložené vo vyrovnávacej pamäti";
@@ -601,7 +601,7 @@
 "web_force_dark_desc" = "Pokúste sa previesť svetlé pozadie, tmavý text a okraje na slabo osvetlenú tmavú paletu, aj keď webová lokalita nemá vlastnú tmavú tému.";
 "web_force_dark_footer" = "Tieto nastavenia je možné nezávisle kombinovať. Konverzia nemení obsah stránky, ale zložité stránky, plátna a vlastné ovládacie prvky si môžu zachovať svoje pôvodné farby. Ak stránka vyzerá nesprávne, rýchlo ju vypnite v spodnej ponuke Viac.";
 "site_information" = "Informácie o lokalite";
-"shake_action" = "Shake Action";
+"shake_action" = "Akcia pri zatrasení";
 "shake_action_none" = "žiadne";
 "shake_action_fullscreen" = "Prepnúť na celú obrazovku";
 "shake_action_dark" = "Prepnúť tmavý režim";
@@ -663,7 +663,7 @@
 "userscript_invalid_match_pattern" = "Neplatné pravidlo webu: %@";
 "userscript_untitled" = "Skript bez názvu";
 "userscript_name" = "Meno";
-"userscript_run_at" = "Run At";
+"userscript_run_at" = "Čas spustenia";
 "userscript_document_start" = "Začiatok dokumentu";
 "userscript_document_end" = "Koniec dokumentu";
 "userscript_matches" = "Pravidlá webových stránok (jedno na riadok)";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Soulo nedokázalo spojiť stiahnuté video a zvuk.";
 "resource_stream_playback_download_first" = "Tento chránený stream nemožno zobraziť z dočasnej adresy URL. Najprv ho stiahnite a prehrajte miestny súbor.";
 "platform_invalid_web_url" = "Zadajte platnú webovú adresu začínajúcu na http:// alebo https://.";
+
+"library_history_tab" = "História";
+
+"library_files_tab" = "Súbory";
+
+"library_books_tab" = "Knihy";

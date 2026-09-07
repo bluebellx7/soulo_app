@@ -27,6 +27,7 @@ struct SearchHistoryContentView: View {
 
     @ObservedObject var searchVM: SearchViewModel
     var onOpen: ((String) -> Void)? = nil
+    @ObservedObject private var platformStore = PlatformDataStore.shared
     @State private var filterText = ""
     @State private var showClearAlert = false
 
@@ -166,9 +167,19 @@ struct SearchHistoryContentView: View {
             }
         } label: {
             HStack(spacing: 10) {
-                Image(systemName: item.isWebVisit ? "globe" : "clock")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
+                if let url = item.visitedURLString {
+                    BookmarkFaviconView(urlString: url, size: 20)
+                        .frame(width: 26, height: 26)
+                } else if let platformID = item.platformID,
+                          let platform = platformStore.platforms.first(where: { $0.id == platformID }) {
+                    PlatformIconView(platform: platform, size: 20)
+                        .frame(width: 26, height: 26)
+                } else {
+                    Image(systemName: "clock")
+                        .font(.system(size: 13)).foregroundStyle(.secondary)
+                        .frame(width: 26, height: 26)
+                        .accessibilityHidden(true)
+                }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.keyword)

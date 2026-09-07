@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "Ascundeți bara de instrumente";
 "privacy_clear_action" = "Clar";
 "privacy_data_footer" = "Aceste acțiuni nu pot fi anulate. Datele șterse nu pot fi recuperate.";
-"settings_privacy" = "Setări de confidențialitate";
+"settings_privacy" = "Confidențialitate";
 "platform_sort_options" = "Opțiuni de sortare";
 "cancel" = "Anulează";
 "confirm" = "Confirmați";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "Elemente ascunse";
 "ad_block_current_site_hidden" = "Acest site";
 "ad_block_search_allowlist" = "Căutați lista permisă";
-"ad_block_subscriptions" = "Filtrați abonamentele";
+"ad_block_subscriptions" = "Liste de filtre";
 "ad_block_subscriptions_desc" = "Soulo acceptă un subset practic de liste de filtre ABP și le convertește în reguli WebKit plus ascundere cosmetică. Sursele includ filtre EasyList, EasyList China și AdGuard.";
 "ad_block_subscription_enabled" = "Liste activate";
 "ad_block_subscription_rules" = "Reguli stocate în cache";
@@ -601,7 +601,7 @@
 "web_force_dark_desc" = "Încercați să convertiți fundalurile luminoase, textul întunecat și marginile într-o paletă întunecată cu lumină slabă, chiar și atunci când site-ul web nu are o temă întunecată proprie.";
 "web_force_dark_footer" = "Aceste setări pot fi combinate independent. Conversia nu modifică conținutul paginii, dar paginile complexe, pânzele și comenzile personalizate își pot păstra culorile originale. Opriți-l rapid din meniul de jos Mai multe dacă o pagină arată greșit.";
 "site_information" = "Informații despre site";
-"shake_action" = "Shake Action";
+"shake_action" = "Acțiune la scuturare";
 "shake_action_none" = "Niciuna";
 "shake_action_fullscreen" = "Comutați Ecranul complet";
 "shake_action_dark" = "Comutați în modul întunecat";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Soulo nu a putut combina conținutul video și audio descărcat.";
 "resource_stream_playback_download_first" = "Acest flux protejat nu poate fi previzualizat de la adresa URL temporară. Descarcă-l mai întâi pentru a reda fișierul local.";
 "platform_invalid_web_url" = "Introduceți o adresă web validă care începe cu http:// sau https://.";
+
+"library_history_tab" = "Istoric";
+
+"library_files_tab" = "Fișiere";
+
+"library_books_tab" = "Cărți";

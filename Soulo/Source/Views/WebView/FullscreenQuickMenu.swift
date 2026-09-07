@@ -4,7 +4,7 @@ import SwiftUI
 /// and stack frames from being expanded inside WebViewContainer on first open.
 struct FullscreenQuickMenu: View {
     enum Action {
-        case share, copyLink, bookmark, home, capture, translate, settings
+        case share, copyLink, bookmark, library, home, capture, translate, settings
         case editAddress, close, mobileMode, desktopMode, back, reload, forward, exitFullscreen
     }
 
@@ -16,6 +16,14 @@ struct FullscreenQuickMenu: View {
     let onAction: (Action) -> Void
 
     var body: some View {
+        ViewThatFits(in: .vertical) {
+            menuContent
+            ScrollView { menuContent }
+        }
+        .frame(maxWidth: 340)
+    }
+
+    private var menuContent: some View {
         VStack(spacing: 0) {
             fullscreenAddressHeader
 
@@ -23,7 +31,7 @@ struct FullscreenQuickMenu: View {
                 .fill(.white.opacity(0.1))
                 .frame(height: 0.5)
 
-            HStack(spacing: 8) {
+            AdaptiveIconActionGrid {
                 fullscreenPrimaryAction(
                     titleKey: "share",
                     systemImage: "square.and.arrow.up"
@@ -45,10 +53,17 @@ struct FullscreenQuickMenu: View {
                 ) {
                     onAction(.bookmark)
                 }
+
+                fullscreenPrimaryAction(
+                    titleKey: "library",
+                    systemImage: "books.vertical"
+                ) {
+                    onAction(.library)
+                }
             }
             .padding(10)
 
-            HStack(spacing: 8) {
+            AdaptiveIconActionGrid {
                 fullscreenPrimaryAction(
                     titleKey: "home_screen",
                     systemImage: "house.fill"
@@ -322,12 +337,13 @@ private struct FullscreenPrimaryActionButton: View {
                     .frame(height: 20)
 
                 Text(LanguageManager.shared.localizedString(titleKey))
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.white.opacity(0.7))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 4)
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.vertical, 9)
             .background(.white.opacity(0.075), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
@@ -353,6 +369,8 @@ private struct FullscreenContentModeButton: View {
         } label: {
             Label(LanguageManager.shared.localizedString(titleKey), systemImage: systemImage)
                 .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
                 .foregroundStyle(.white.opacity(isSelected ? 0.9 : 0.48))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)

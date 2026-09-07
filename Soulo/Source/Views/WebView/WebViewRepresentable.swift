@@ -191,6 +191,15 @@ private final class UserScriptTabStore {
 /// deterministic page scrolling and horizontal platform paging when a site or
 /// custom browser gesture does not respond to VoiceOver's three-finger swipe.
 final class AccessibleWebView: WKWebView {
+    override func buildMenu(with builder: UIMenuBuilder) {
+        super.buildMenu(with: builder)
+        if let editing = builder.menu(for: .standardEdit) {
+            let rows = editing.replacingChildren(editing.children)
+            rows.preferredElementSize = .large
+            builder.replace(menu: .standardEdit, with: rows)
+        }
+    }
+
     var onAccessibilityPlatformPage: ((AccessibilityPlatformPagingDirection) -> Bool)?
 
     override func accessibilityScroll(_ direction: UIAccessibilityScrollDirection) -> Bool {

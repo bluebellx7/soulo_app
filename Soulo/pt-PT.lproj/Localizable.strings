@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "Ocultar barra de ferramentas";
 "privacy_clear_action" = "Limpar";
 "privacy_data_footer" = "Essas ações não podem ser desfeitas. Os dados apagados não podem ser recuperados.";
-"settings_privacy" = "Configurações de privacidade";
+"settings_privacy" = "Privacidade";
 "platform_sort_options" = "Opções de classificação";
 "cancel" = "Cancelar";
 "confirm" = "Confirmar";
@@ -341,7 +341,7 @@
 "show_bookmarks_home_desc" = "Exibir sites favoritos como ícones na tela inicial";
 "show_recent_searches_home" = "Mostrar pesquisas recentes na página inicial";
 "show_recent_searches_home_desc" = "Exibir palavras-chave de pesquisa recentes abaixo da barra de pesquisa inicial";
-"home_screen" = "Tela inicial";
+"home_screen" = "Ecrã inicial";
 "platform_metaso" = "Metaso";
 "platform_tiangong" = "IA Tiangong";
 "platform_phind" = "Encontrar";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "Elementos ocultos";
 "ad_block_current_site_hidden" = "Este site";
 "ad_block_search_allowlist" = "Lista de permissões de pesquisa";
-"ad_block_subscriptions" = "Filtrar assinaturas";
+"ad_block_subscriptions" = "Listas de filtros";
 "ad_block_subscriptions_desc" = "Soulo suporta um subconjunto prático de listas de filtros ABP e as converte em regras do WebKit, além de ocultação cosmética. As fontes incluem filtros EasyList, EasyList China e AdGuard.";
 "ad_block_subscription_enabled" = "Listas habilitadas";
 "ad_block_subscription_rules" = "Regras em cache";
@@ -771,7 +771,7 @@
 "extension_install_success" = "Instalado com sucesso";
 "extension_installed_success_desc" = "%@ está instalado e habilitado. As páginas abertas serão recarregadas para aplicá-lo.";
 "browser_tabs" = "Guias";
-"web_capture" = "Página de captura";
+"web_capture" = "Capturar página";
 "web_capture_viewport" = "Capturar tela atual";
 "web_capture_full_page" = "Capturar página de rolagem";
 "web_capture_full_page_limit_desc" = "As capturas de rolagem têm uma altura máxima para manter seguro o uso da memória. Páginas muito longas são cortadas automaticamente.";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "O Soulo não conseguiu combinar o vídeo e o áudio descarregados.";
 "resource_stream_playback_download_first" = "Não é possível pré-visualizar esta transmissão protegida a partir do URL temporário. Descarregue-a primeiro para reproduzir o ficheiro local.";
 "platform_invalid_web_url" = "Introduza um endereço web válido que comece por http:// ou https://.";
+
+"library_history_tab" = "Histórico";
+
+"library_files_tab" = "Ficheiros";
+
+"library_books_tab" = "Livros";

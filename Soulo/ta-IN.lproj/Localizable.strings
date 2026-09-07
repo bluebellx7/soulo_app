@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "கருவிப்பட்டியை மறை";
 "privacy_clear_action" = "தெளிவு";
 "privacy_data_footer" = "இந்த செயல்களை செயல்தவிர்க்க முடியாது. அழிக்கப்பட்ட தரவை மீட்டெடுக்க முடியாது.";
-"settings_privacy" = "தனியுரிமை அமைப்புகள்";
+"settings_privacy" = "தனியுரிமை";
 "platform_sort_options" = "வரிசை விருப்பங்கள்";
 "cancel" = "ரத்து செய்";
 "confirm" = "உறுதிப்படுத்தவும்";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "மறைக்கப்பட்ட கூறுகள்";
 "ad_block_current_site_hidden" = "இந்த தளம்";
 "ad_block_search_allowlist" = "அனுமதிப்பட்டியலைத் தேடுங்கள்";
-"ad_block_subscriptions" = "வடிகட்டி சந்தாக்கள்";
+"ad_block_subscriptions" = "வடிகட்டி பட்டியல்கள்";
 "ad_block_subscriptions_desc" = "Soulo ABP வடிகட்டி பட்டியல்களின் நடைமுறை துணைக்குழுவை ஆதரிக்கிறது மற்றும் அவற்றை WebKit விதிகள் மற்றும் ஒப்பனை மறைப்பிற்கு மாற்றுகிறது. ஆதாரங்களில் EasyList, EasyList China மற்றும் AdGuard வடிப்பான்கள் ஆகியவை அடங்கும்.";
 "ad_block_subscription_enabled" = "இயக்கப்பட்ட பட்டியல்கள்";
 "ad_block_subscription_rules" = "தற்காலிக சேமிப்பு விதிகள்";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "பதிவிறக்கிய வீடியோவையும் ஆடியோவையும் Soulo-வால் இணைக்க முடியவில்லை.";
 "resource_stream_playback_download_first" = "இந்தப் பாதுகாக்கப்பட்ட ஸ்ட்ரீமின் தற்காலிக URL மூலம் முன்னோட்டத்தைப் பார்க்க முடியாது. உள்ளூர் கோப்பை இயக்க முதலில் அதைப் பதிவிறக்கவும்.";
 "platform_invalid_web_url" = "http:// அல்லது https:// எனத் தொடங்கும் செல்லுபடியாகும் இணைய முகவரியை உள்ளிடவும்.";
+
+"library_history_tab" = "வரலாறு";
+
+"library_files_tab" = "கோப்புகள்";
+
+"library_books_tab" = "புத்தகங்கள்";

@@ -1122,6 +1122,7 @@ struct WebViewContainer: View {
             case .share: shareCurrentPage()
             case .copyLink: copyCurrentPageLink()
             case .bookmark: handleBookmarkToggle()
+            case .library: librarySection = .bookmarks
             case .home: onGoHome?()
             case .capture: showCaptureOptions = true
             case .translate: showTranslationSheet = true

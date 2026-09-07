@@ -1,8 +1,10 @@
 opt_out_usage
 default_platform(:ios)
+require "yaml"
 
 APP_IDENTIFIER = "com.dkluge.Soulo"
-APP_VERSION = "1.1.4"
+PROJECT_CONFIG = YAML.load_file(File.expand_path("../project.yml", __dir__))
+APP_VERSION = PROJECT_CONFIG.fetch("targets").fetch("Soulo").fetch("settings").fetch("base").fetch("MARKETING_VERSION").to_s
 SCHEME = "Soulo"
 PROJECT = "Soulo.xcodeproj"
 
@@ -18,8 +20,9 @@ platform :ios do
     )
   end
 
-  desc "Upload localized App Store metadata for version 1.1.4"
+  desc "Upload localized App Store metadata for the project version"
   lane :metadata do
+    validate_release_metadata
     localized_metadata_path = sh("python3 #{File.expand_path('../scripts/export_fastlane_metadata.py', __dir__)}").strip
     upload_to_app_store(
       api_key: app_store_api_key,
@@ -35,7 +38,7 @@ platform :ios do
     )
   end
 
-  desc "Build and upload Build 18 to TestFlight"
+  desc "Build and upload the current project build to TestFlight"
   lane :beta do
     prepare_project
     build_app(
@@ -51,7 +54,7 @@ platform :ios do
     )
   end
 
-  desc "Build and upload version 1.1.4 without submitting it for review"
+  desc "Build and upload the project version without submitting it for review"
   lane :release do
     prepare_project
     localized_metadata_path = sh("python3 #{File.expand_path('../scripts/export_fastlane_metadata.py', __dir__)}").strip
@@ -75,7 +78,14 @@ platform :ios do
   end
 
   private_lane :prepare_project do
+    validate_release_metadata
     sh("xcodegen generate")
+  end
+
+  private_lane :validate_release_metadata do
+    scripts = File.expand_path("../scripts", __dir__)
+    sh("python3 #{scripts}/export_metadata_json.py --check")
+    sh("python3 #{scripts}/check_localization.py --strict")
   end
 
   private_lane :app_store_api_key do

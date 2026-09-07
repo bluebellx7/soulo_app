@@ -6,12 +6,12 @@ struct PrivacyPolicyView: View {
             VStack(alignment: .leading, spacing: 20) {
                 Group {
                     sectionTitle("Privacy Policy")
-                    Text("Last updated: August 2026")
+                    Text("Last updated: September 2026")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
                     sectionTitle("1. Data Collection")
-                    Text("Soulo does not collect, store, or transmit any personal data to external servers. All search queries, bookmarks, and preferences are stored locally on your device.")
+                    Text("Soulo stores browsing history, bookmarks, and preferences locally by default. Search queries go directly to the platform you choose. Optional feedback sends the information described below to DKluge for customer support; Soulo does not automatically upload your browsing history or bookmarks.")
 
                     sectionTitle("2. Search Queries")
                     Text("When you search, Soulo constructs a URL using your keyword and opens it within an embedded browser. Your search terms are sent directly to the selected platform (e.g., Google, Baidu, YouTube) — Soulo does not intercept or store these queries on any server.")
@@ -33,10 +33,16 @@ struct PrivacyPolicyView: View {
                     sectionTitle("7. User-Installed Scripts")
                     Text("UserScript is an experimental, opt-in browser feature. A script you choose to install can read or modify matching web pages and may make network requests according to its code. Soulo does not install scripts automatically or send their data to a Soulo server. Only install and enable scripts from authors you trust.")
 
-                    sectionTitle("8. Children's Privacy")
+                    sectionTitle("8. Feedback")
+                    Text("When you tap Submit in Feedback, Soulo sends your feedback category, message, optional email or other contact details, app version, device model and name, operating system, screen size and scale, and language to api.dkluge.com. This information is used to investigate your request and reply to you. Contact details are optional. You can request deletion of submitted feedback at contact@dkluge.com; removing the app does not delete feedback already submitted.")
+
+                    sectionTitle("9. Network Services and File Transfer")
+                    Text("Website icons are requested from the original website; if unavailable, the website domain may be sent to DuckDuckGo or Google to retrieve an icon. Full page URLs and search terms are not included in icon requests. Online wallpapers, filter subscriptions, and translation contact their selected providers. Google translation sends the text or page you choose to Google. Wi-Fi Transfer exposes files to devices connected to your transfer session; keep pairing enabled on shared networks and stop the transfer when finished.")
+
+                    sectionTitle("10. Children's Privacy")
                     Text("Soulo does not knowingly collect any information from children under 13. The app does not require registration or personal information.")
 
-                    sectionTitle("9. Contact")
+                    sectionTitle("11. Contact")
                     Text("If you have questions about this privacy policy, please contact us at contact@dkluge.com")
                 }
             }

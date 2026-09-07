@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "Sembunyikan bar alat";
 "privacy_clear_action" = "Jelas";
 "privacy_data_footer" = "Tindakan ini tidak boleh dibuat asal. Data yang telah dikosongkan tidak boleh dipulihkan.";
-"settings_privacy" = "Tetapan Privasi";
+"settings_privacy" = "Privasi";
 "platform_sort_options" = "Pilihan Isih";
 "cancel" = "Batal";
 "confirm" = "sahkan";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "Elemen Tersembunyi";
 "ad_block_current_site_hidden" = "Laman ini";
 "ad_block_search_allowlist" = "Cari senarai yang dibenarkan";
-"ad_block_subscriptions" = "Langganan Penapis";
+"ad_block_subscriptions" = "Senarai penapis";
 "ad_block_subscriptions_desc" = "Soulo menyokong subset praktikal senarai penapis ABP dan menukarnya kepada peraturan WebKit serta penyembunyian kosmetik. Sumber termasuk EasyList, EasyList China dan penapis AdGuard.";
 "ad_block_subscription_enabled" = "Senarai Didayakan";
 "ad_block_subscription_rules" = "Peraturan Cache";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Soulo tidak dapat menggabungkan video dan audio yang dimuat turun.";
 "resource_stream_playback_download_first" = "Strim terlindung ini tidak dapat dipratonton daripada URL sementaranya. Muat turun dahulu untuk memainkan fail setempat.";
 "platform_invalid_web_url" = "Masukkan alamat web yang sah bermula dengan http:// atau https://.";
+
+"library_history_tab" = "Sejarah";
+
+"library_files_tab" = "Fail";
+
+"library_books_tab" = "Buku";

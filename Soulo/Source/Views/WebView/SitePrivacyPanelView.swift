@@ -1,5 +1,6 @@
 import SwiftUI
 import WebKit
+import Security
 
 struct SiteAdBlockToggleState: Equatable {
     let isGloballyEnabled: Bool
@@ -26,6 +27,9 @@ enum SiteAdBlockTogglePolicy {
 }
 
 struct SiteInformationPopoverView: View {
+    @ObservedObject var webViewModel: WebViewModel
+    var onSetDesktopMode: (Bool) -> Void
+    @State private var showUserAgent = false
     @ObservedObject private var privacyService = PrivacyProtectionService.shared
     @ObservedObject private var adBlockService = AdBlockSettingsService.shared
     @AppStorage("ad_block_enabled") private var adBlockEnabled = true
@@ -37,6 +41,8 @@ struct SiteInformationPopoverView: View {
     var onShowDetails: () -> Void
 
     @State private var connectionExpanded = false
+    @State private var panelHeight: CGFloat = 330
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     private var host: String {
         PrivacyProtectionService.normalizedHost(currentURL?.host)
@@ -64,8 +70,21 @@ struct SiteInformationPopoverView: View {
     }
 
     var body: some View {
+        ScrollView {
         VStack(spacing: 12) {
             connectionCard
+            Button { showUserAgent = true } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "globe").frame(width: 25)
+                    Text(ToolText.text("browser_identity")).font(.subheadline.weight(.semibold))
+                    Spacer(minLength: 8)
+                    Text(webViewModel.userAgentOverride == nil
+                         ? LanguageManager.shared.localizedString(webViewModel.isDesktopModeEnabled ? "desktop_mode" : "mobile_mode")
+                         : ToolText.text("custom_identity"))
+                        .font(.caption).foregroundStyle(.secondary)
+                    Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                }.padding(14).background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16))
+            }.buttonStyle(.plain).accessibilityIdentifier("site.user-agent")
 
             HStack(spacing: 10) {
                 protectionButton(
@@ -133,57 +152,67 @@ struct SiteInformationPopoverView: View {
             }
         }
         .padding(14)
-        .frame(width: 350)
+        .fixedSize(horizontal: false, vertical: true)
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { panelHeight = $0 }
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .frame(idealWidth: 350, maxWidth: 350)
+        .frame(height: min(panelHeight, verticalSizeClass == .compact ? 250 : 580))
         .presentationCompactAdaptation(.popover)
+        .sheet(isPresented: $showUserAgent) {
+            BrowserIdentityView(viewModel: webViewModel, onSetDesktopMode: onSetDesktopMode)
+        }
     }
 
     private var connectionCard: some View {
-        Button {
-            withAnimation(.easeOut(duration: 0.18)) {
-                connectionExpanded.toggle()
-            }
-        } label: {
-            VStack(alignment: .leading, spacing: connectionExpanded ? 9 : 0) {
+        VStack(alignment: .leading, spacing: 12) {
+            Button {
+                withAnimation(.easeOut(duration: 0.18)) { connectionExpanded.toggle() }
+            } label: {
                 HStack(spacing: 11) {
                     Image(systemName: isSecure ? "lock.shield.fill" : "exclamationmark.triangle.fill")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(isSecure ? .green : .orange)
-                        .frame(width: 30)
-
+                        .font(.system(size: 18, weight: .semibold)).foregroundStyle(isSecure ? .green : .orange).frame(width: 30)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(LanguageManager.shared.localizedString(isSecure ? "site_connection_secure" : "site_connection_not_secure"))
                             .font(.subheadline.weight(.semibold))
-                        Text(host)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                        Text(host).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                     }
-
                     Spacer(minLength: 8)
                     Image(systemName: connectionExpanded ? "chevron.up" : "chevron.right")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.tertiary)
+                        .font(.caption.weight(.bold)).foregroundStyle(.tertiary)
+                }.contentShape(Rectangle())
+            }.buttonStyle(.plain).accessibilityIdentifier("site.connection")
+            if connectionExpanded {
+                Divider().opacity(0.55)
+                Text(LanguageManager.shared.localizedString(isSecure ? "site_https_verified_desc" : "site_http_warning_desc"))
+                    .font(.caption).foregroundStyle(.secondary)
+                if !webViewModel.pageTitle.isEmpty {
+                    Text(webViewModel.pageTitle).font(.subheadline.weight(.medium)).fixedSize(horizontal: false, vertical: true)
                 }
-
-                if connectionExpanded {
-                    Divider().opacity(0.55)
-                    Text(LanguageManager.shared.localizedString(isSecure ? "site_https_verified_desc" : "site_http_warning_desc"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(currentURL?.absoluteString ?? "")
-                        .font(.caption2.monospaced())
-                        .foregroundStyle(.tertiary)
-                        .lineLimit(2)
+                LabeledContent(ToolText.text("connection_protocol"), value: (currentURL?.scheme?.uppercased() ?? "—") + " · " + String(currentURL?.port ?? (isSecure ? 443 : 80)))
+                    .font(.caption)
+                if let trust = webViewModel.webView?.serverTrust,
+                   let certificates = SecTrustCopyCertificateChain(trust) as? [SecCertificate],
+                   let certificate = certificates.first,
+                   let subject = SecCertificateCopySubjectSummary(certificate) {
+                    LabeledContent(ToolText.text("certificate"), value: subject as String).font(.caption)
+                }
+                if isSecure, let web = webViewModel.webView, !web.isLoading, !web.hasOnlySecureContent {
+                    Text(ToolText.text("mixed_content")).font(.caption).foregroundStyle(.orange)
+                }
+                HStack(alignment: .top, spacing: 8) {
+                    Text(currentURL?.absoluteString ?? "").font(.caption2.monospaced())
+                        .foregroundStyle(.secondary).textSelection(.enabled)
+                        .lineLimit(5).truncationMode(.middle)
+                    Button {
+                        UIPasteboard.general.string = currentURL?.absoluteString
+                    } label: { CompactIconLabel(systemImage: "doc.on.doc") }
+                    .buttonStyle(.plain).accessibilityLabel(LanguageManager.shared.localizedString("copy_link"))
                 }
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                Color(uiColor: .secondarySystemBackground),
-                in: RoundedRectangle(cornerRadius: 18, style: .continuous)
-            )
         }
-        .buttonStyle(.plain)
+        .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18))
     }
 
     private func protectionButton(
@@ -435,6 +464,55 @@ struct SitePrivacyPanelView: View {
                     siteDataCleared = true
                     onChanged?()
                 }
+            }
+        }
+    }
+}
+
+
+private struct BrowserIdentityView: View {
+    @ObservedObject var viewModel: WebViewModel
+    let onSetDesktopMode: (Bool) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var mode = "automatic"
+    @State private var custom = ""
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Picker(ToolText.text("browser_identity"), selection: $mode) {
+                        Text(ToolText.text("default_identity")).tag("automatic")
+                        Text("iPhone · Safari").tag("mobile")
+                        Text("Mac · Safari").tag("desktop")
+                        Text(ToolText.text("custom_identity")).tag("custom")
+                    }.pickerStyle(.inline)
+                } footer: { Text(ToolText.text("identity_hint")) }
+                if mode == "custom" {
+                    Section {
+                        TextEditor(text: $custom).font(.body.monospaced()).frame(minHeight: 120)
+                            .autocorrectionDisabled().textInputAutocapitalization(.never)
+                    } header: { Text("User-Agent") } footer: { Text(ToolText.text("identity_validation")) }
+                }
+                Section(ToolText.text("current_identity")) {
+                    Text(viewModel.webView?.customUserAgent ?? "").font(.caption.monospaced()).textSelection(.enabled)
+                }
+            }
+            .navigationTitle(ToolText.text("browser_identity")).navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button(ToolText.text("cancel")) { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(ToolText.text("done")) {
+                        guard viewModel.setUserAgentOverride(mode == "custom" ? custom : nil) else { return }
+                        if mode == "mobile" || mode == "desktop" { onSetDesktopMode(mode == "desktop") }
+                        viewModel.retryCurrentPage()
+                        dismiss()
+                    }.disabled(mode == "custom" && !WebViewModel.isValidUserAgent(custom))
+                }
+            }
+            .onAppear {
+                custom = viewModel.userAgentOverride ?? viewModel.webView?.customUserAgent ?? ""
+                mode = viewModel.userAgentOverride == nil ? "automatic" : "custom"
             }
         }
     }

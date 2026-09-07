@@ -49,7 +49,7 @@ struct LibraryView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            sectionSwitcher
+            LibrarySectionSwitcher(selectedSection: $selectedSection)
 
             Group {
                 switch selectedSection {
@@ -85,12 +85,39 @@ struct LibraryView: View {
         }
     }
 
-    private var sectionSwitcher: some View {
-        HStack(spacing: 4) {
+}
+
+struct LibrarySectionSwitcher: View {
+    @Binding var selectedSection: LibrarySection
+    @ScaledMetric(relativeTo: .caption) private var captionSize: CGFloat = 11
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            sectionButtons
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal) {
+                    sectionButtons.fixedSize(horizontal: true, vertical: false)
+                }
+                .accessibilityIdentifier("library.tabs")
+                .fixedSize(horizontal: false, vertical: true)
+                .onAppear { proxy.scrollTo(selectedSection, anchor: .center) }
+                .onChange(of: selectedSection) { _, section in
+                    withAnimation { proxy.scrollTo(section, anchor: .center) }
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 6)
+        .padding(.bottom, 14)
+        .background(Color(uiColor: .systemBackground))
+    }
+
+    private var sectionButtons: some View {
+        HStack(alignment: .top, spacing: 4) {
             ForEach(LibrarySection.allCases) { section in
                 let selected = selectedSection == section
-                let title = [.books, .files].contains(section)
-                    ? ToolText.text(section.titleKey) : LanguageManager.shared.localizedString(section.titleKey)
+                let titleKey = section == .history ? "library_history_tab" : section == .files ? "library_files_tab" : section == .books ? "library_books_tab" : section.titleKey
+                let title = LanguageManager.shared.localizedString(titleKey)
                 Button {
                     guard !selected else { return }
                     HapticsManager.selection()
@@ -101,12 +128,14 @@ struct LibraryView: View {
                             .font(.system(size: 17, weight: .medium))
                             .frame(height: 20)
                         Text(title)
-                            .font(.system(size: 11, weight: selected ? .semibold : .medium))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                            .font(.system(size: captionSize, weight: selected ? .semibold : .medium))
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: true, vertical: true)
                     }
                     .foregroundStyle(selected ? Color.themePrimary : .secondary)
-                    .frame(maxWidth: .infinity, minHeight: 64)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 8)
+                    .frame(minWidth: 48, minHeight: 64, alignment: .top)
                     .background {
                         if selected {
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -116,13 +145,14 @@ struct LibraryView: View {
                     .contentShape(RoundedRectangle(cornerRadius: 16))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(title)
+                .fixedSize(horizontal: true, vertical: false)
+                .accessibilityLabel(section == .history ? LanguageManager.shared.localizedString("search_history") : title)
+                .accessibilityIdentifier("library.section.\(section.rawValue)")
+                .id(section)
                 .accessibilityAddTraits(selected ? .isSelected : [])
+                if section != .books { Spacer(minLength: 0) }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 6)
-        .padding(.bottom, 14)
-        .background(Color(uiColor: .systemBackground))
+        .frame(maxWidth: .infinity)
     }
 }

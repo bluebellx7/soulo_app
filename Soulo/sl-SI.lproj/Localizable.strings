@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "Skrij orodno vrstico";
 "privacy_clear_action" = "jasno";
 "privacy_data_footer" = "Teh dejanj ni mogoče razveljaviti. Izbrisanih podatkov ni mogoče obnoviti.";
-"settings_privacy" = "Nastavitve zasebnosti";
+"settings_privacy" = "Zasebnost";
 "platform_sort_options" = "Možnosti razvrščanja";
 "cancel" = "Prekliči";
 "confirm" = "Potrdi";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "Skriti elementi";
 "ad_block_current_site_hidden" = "To spletno mesto";
 "ad_block_search_allowlist" = "Seznam dovoljenih iskanj";
-"ad_block_subscriptions" = "Filtriraj naročnine";
+"ad_block_subscriptions" = "Seznami filtrov";
 "ad_block_subscriptions_desc" = "Soulo podpira praktično podmnožico seznamov filtrov ABP in jih pretvori v pravila WebKit ter kozmetično skrivanje. Viri vključujejo filtre EasyList, EasyList China in AdGuard.";
 "ad_block_subscription_enabled" = "Omogočeni seznami";
 "ad_block_subscription_rules" = "Predpomnjena pravila";
@@ -601,7 +601,7 @@
 "web_force_dark_desc" = "Poskusite pretvoriti svetla ozadja, temno besedilo in obrobe v temno paleto pri šibki svetlobi, tudi če spletno mesto nima lastne temne teme.";
 "web_force_dark_footer" = "Te nastavitve je mogoče kombinirati neodvisno. Pretvorba ne spremeni vsebine strani, vendar lahko kompleksne strani, platna in kontrolniki po meri ohranijo svoje prvotne barve. Hitro ga izklopite v spodnjem meniju Več, če je stran videti napačno.";
 "site_information" = "Informacije o mestu";
-"shake_action" = "Shake Action";
+"shake_action" = "Dejanje ob tresenju";
 "shake_action_none" = "Noben";
 "shake_action_fullscreen" = "Preklop na celoten zaslon";
 "shake_action_dark" = "Preklopi temni način";
@@ -663,7 +663,7 @@
 "userscript_invalid_match_pattern" = "Neveljavno pravilo spletnega mesta: %@";
 "userscript_untitled" = "Scenarij brez naslova";
 "userscript_name" = "Ime";
-"userscript_run_at" = "Run At";
+"userscript_run_at" = "Čas zagona";
 "userscript_document_start" = "Začetek dokumenta";
 "userscript_document_end" = "Konec dokumenta";
 "userscript_matches" = "Pravila spletne strani (ena na vrstico)";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Soulo ni mogel združiti prenesenega videa in zvoka.";
 "resource_stream_playback_download_first" = "Predogled tega zaščitenega toka prek začasnega URL-ja ni mogoč. Najprej ga prenesite, da predvajate lokalno datoteko.";
 "platform_invalid_web_url" = "Vnesite veljaven spletni naslov, ki se začne s http:// ali https://.";
+
+"library_history_tab" = "Zgodovina";
+
+"library_files_tab" = "Datoteke";
+
+"library_books_tab" = "Knjige";

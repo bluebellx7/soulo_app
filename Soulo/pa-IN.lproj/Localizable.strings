@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "ਟੂਲਬਾਰ ਨੂੰ ਲੁਕਾਓ";
 "privacy_clear_action" = "ਸਾਫ਼";
 "privacy_data_footer" = "ਇਹਨਾਂ ਕਾਰਵਾਈਆਂ ਨੂੰ ਅਣਕੀਤਾ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ। ਕਲੀਅਰ ਕੀਤਾ ਡਾਟਾ ਮੁੜ ਪ੍ਰਾਪਤ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ ਹੈ।";
-"settings_privacy" = "ਗੋਪਨੀਯਤਾ ਸੈਟਿੰਗਾਂ";
+"settings_privacy" = "ਪਰਦੇਦਾਰੀ";
 "platform_sort_options" = "ਕ੍ਰਮਬੱਧ ਵਿਕਲਪ";
 "cancel" = "ਰੱਦ ਕਰੋ";
 "confirm" = "ਪੁਸ਼ਟੀ ਕਰੋ";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "ਲੁਕਵੇਂ ਤੱਤ";
 "ad_block_current_site_hidden" = "ਇਹ ਸਾਈਟ";
 "ad_block_search_allowlist" = "ਅਨੁਮਤੀ ਸੂਚੀ ਖੋਜੋ";
-"ad_block_subscriptions" = "ਗਾਹਕੀਆਂ ਨੂੰ ਫਿਲਟਰ ਕਰੋ";
+"ad_block_subscriptions" = "ਫਿਲਟਰ ਸੂਚੀਆਂ";
 "ad_block_subscriptions_desc" = "Soulo ABP ਫਿਲਟਰ ਸੂਚੀਆਂ ਦੇ ਇੱਕ ਪ੍ਰੈਕਟੀਕਲ ਸਬਸੈੱਟ ਦਾ ਸਮਰਥਨ ਕਰਦਾ ਹੈ ਅਤੇ ਉਹਨਾਂ ਨੂੰ ਵੈਬਕਿੱਟ ਨਿਯਮਾਂ ਦੇ ਨਾਲ ਨਾਲ ਕਾਸਮੈਟਿਕ ਲੁਕਾਉਣ ਵਿੱਚ ਬਦਲਦਾ ਹੈ। ਸਰੋਤਾਂ ਵਿੱਚ EasyList, EasyList China, ਅਤੇ AdGuard ਫਿਲਟਰ ਸ਼ਾਮਲ ਹਨ।";
 "ad_block_subscription_enabled" = "ਯੋਗ ਸੂਚੀਆਂ";
 "ad_block_subscription_rules" = "ਕੈਸ਼ ਕੀਤੇ ਨਿਯਮ";
@@ -549,7 +549,7 @@
 "accessibility_next_platform" = "ਅਗਲਾ ਪਲੇਟਫਾਰਮ";
 "accessibility_first_platform" = "ਪਹਿਲਾ ਪਲੇਟਫਾਰਮ";
 "accessibility_last_platform" = "ਆਖਰੀ ਪਲੇਟਫਾਰਮ";
-"accessibility_platform_position" = "%@, %d of %d";
+"accessibility_platform_position" = "%@, ਸਥਾਨ %d, ਕੁੱਲ %d";
 "accessibility_platform_loading" = "%@, ਲੋਡਿੰਗ, %d of %d";
 "accessibility_page_position" = "%d ਵਿੱਚੋਂ %d ਪੰਨਾ";
 "accessibility_page_top" = "ਪੰਨੇ ਦਾ ਸਿਖਰ";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Soulo ਡਾਊਨਲੋਡ ਕੀਤੇ ਵੀਡੀਓ ਅਤੇ ਆਡੀਓ ਨੂੰ ਜੋੜ ਨਹੀਂ ਸਕਿਆ।";
 "resource_stream_playback_download_first" = "ਇਸ ਸੁਰੱਖਿਅਤ ਸਟ੍ਰੀਮ ਦੇ ਅਸਥਾਈ URL ਤੋਂ ਪੂਰਵਦਰਸ਼ਨ ਨਹੀਂ ਹੋ ਸਕਦਾ। ਸਥਾਨਕ ਫਾਈਲ ਚਲਾਉਣ ਲਈ ਪਹਿਲਾਂ ਇਸ ਨੂੰ ਡਾਊਨਲੋਡ ਕਰੋ।";
 "platform_invalid_web_url" = "http:// ਜਾਂ https:// ਨਾਲ ਸ਼ੁਰੂ ਹੋਣ ਵਾਲਾ ਵੈਧ ਵੈੱਬ ਪਤਾ ਦਰਜ ਕਰੋ।";
+
+"library_history_tab" = "ਇਤਿਹਾਸ";
+
+"library_files_tab" = "ਫ਼ਾਈਲਾਂ";
+
+"library_books_tab" = "ਕਿਤਾਬਾਂ";

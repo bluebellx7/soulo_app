@@ -21,7 +21,7 @@
 "bookmark" = "添加書簽";
 "appearance" = "閱讀外觀";
 "font_size" = "字號";
-"line_height" = "行距";
+"line_height" = "行高";
 "paper" = "紙色";
 "light" = "淺色";
 "dark" = "深色";
@@ -101,3 +101,18 @@
 "copy_pairing_code" = "複製配對碼";
 "copied" = "已複製";
 "reader_continue" = "繼續閱讀";
+
+"speech_failed" = "未能辨識語音，請重試。";
+"browser_identity" = "瀏覽器識別";
+"custom_identity" = "自訂";
+"default_identity" = "預設模式";
+"identity_hint" = "僅套用至目前分頁，儲存後重新載入網頁。";
+"identity_validation" = "最多 1024 位元組，不可包含換行或控制字元。";
+"current_identity" = "目前 User-Agent";
+"connection_protocol" = "通訊協定 / 連接埠";
+"certificate" = "憑證主體";
+"mixed_content" = "此網頁包含未安全載入的內容。";
+"try_reader" = "嘗試閱讀模式";
+"media_no_content" = "未偵測到可播放媒體";
+"reading_progress" = "閱讀進度";
+"loaded_chapters" = "已載入章節";

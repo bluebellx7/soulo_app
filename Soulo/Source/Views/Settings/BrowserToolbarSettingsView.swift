@@ -8,7 +8,8 @@ struct BrowserToolbarSettingsView: View {
     @State private var showSaved = false
     @State private var showRestoreConfirmation = false
 
-    private let columns = [GridItem(.adaptive(minimum: 92), spacing: 10)]
+    @ScaledMetric(relativeTo: .caption) private var actionMinimumWidth: CGFloat = 92
+    private var columns: [GridItem] { [GridItem(.adaptive(minimum: actionMinimumWidth), spacing: 10)] }
 
     var body: some View {
         ScrollView {
@@ -229,12 +230,14 @@ struct BrowserToolbarSettingsView: View {
                     .frame(height: 22)
                 Text(action.localizedTitle)
                     .font(.caption.weight(.medium))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .foregroundStyle(isSelected ? Color.themePrimary : .primary)
             .frame(maxWidth: .infinity)
-            .frame(height: 72)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 10)
+            .frame(minHeight: 72)
             .background(
                 isSelected ? Color.themePrimary.opacity(0.12) : Color(uiColor: .secondarySystemGroupedBackground),
                 in: RoundedRectangle(cornerRadius: 14, style: .continuous)

@@ -107,23 +107,30 @@ struct LibraryFilesView: View {
             }
             ForEach(files) { file in
                 HStack(spacing: 8) {
-                    if !file.directory {
+                    if file.directory {
+                        NavigationLink { LibraryFilesView(directory: file.url) } label: { fileLabel(file) }
+                    } else {
+                        Button { open(file) } label: { fileLabel(file) }
+                            .buttonStyle(.plain)
                         Button {
                             if !selected.insert(file.id).inserted { selected.remove(file.id) }
                         } label: {
                             Image(systemName: selected.contains(file.id) ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: 19, weight: .regular))
+                                .foregroundStyle(selected.contains(file.id) ? Color.themePrimary : Color.secondary.opacity(0.45))
                                 .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.borderless)
                         .accessibilityLabel(ToolText.text("select") + " " + file.url.lastPathComponent)
                         .accessibilityAddTraits(selected.contains(file.id) ? .isSelected : [])
                     }
-                    if file.directory {
-                        NavigationLink { LibraryFilesView(directory: file.url) } label: { fileLabel(file) }
-                    } else {
-                        Button { open(file) } label: { fileLabel(file) }.buttonStyle(.plain)
-                    }
                 }
+                .padding(.vertical, 12)
+                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 8))
+                .listRowBackground(selected.contains(file.id) ? Color.themePrimary.opacity(0.07) : Color.clear)
+                .listRowSeparatorTint(Color.primary.opacity(0.08))
+                .alignmentGuide(.listRowSeparatorLeading) { _ in 56 }
                 .contextMenu {
                     if !file.directory {
                         ShareLink(item: file.url) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
@@ -141,6 +148,9 @@ struct LibraryFilesView: View {
                 }
             }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .contentMargins(.top, 4, for: .scrollContent)
         .disabled(busy)
         .overlay { if !hasLoaded { ProgressView() } }
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -155,15 +165,21 @@ struct LibraryFilesView: View {
         .navigationTitle(embeddedInLibrary ? LanguageManager.shared.localizedString("library") : directory == BookLibrary.directory ? ToolText.text("files") : directory.lastPathComponent)
         .navigationBarTitleDisplayMode(.inline)
         .mediaPlayerNavigation()
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button(ToolText.text("import_files"), systemImage: "square.and.arrow.down") { importing = true }
-                    Button(ToolText.text("wifi_transfer"), systemImage: "wifi") { showTransfer = true }
-                } label: {
-                    Image(systemName: "ellipsis").font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
+        .safeAreaInset(edge: .top, spacing: 0) {
+            AdaptiveActionRow {
+                Button { importing = true } label: {
+                    Label(ToolText.text("import_files"), systemImage: "folder.badge.plus")
                 }
+                .accessibilityIdentifier("files.import")
+                Button { showTransfer = true } label: {
+                    Label(ToolText.text("wifi_transfer"), systemImage: "wifi")
+                }
+                .accessibilityIdentifier("files.wifi")
             }
+            .buttonStyle(CompactActionButtonStyle())
+            .disabled(busy)
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            .background(Color(uiColor: .systemBackground))
         }
         .onAppear { reload() }
         .onDisappear { reloadTask?.cancel() }
@@ -234,21 +250,29 @@ struct LibraryFilesView: View {
     private var selectedURLs: [URL] { files.filter { selected.contains($0.id) }.map(\.url) }
 
     private func fileLabel(_ file: LocalFile) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 12) {
             Image(systemName: file.info.symbol)
                 .font(.system(size: 20, weight: .regular))
-                .foregroundStyle(.tint)
-                .frame(width: 34, height: 44)
-            VStack(alignment: .leading, spacing: 5) {
-                Text(file.url.lastPathComponent).font(.subheadline.weight(.medium)).foregroundStyle(.primary)
+                .foregroundStyle(Color.themePrimary)
+                .frame(width: 44, height: 48)
+                .background(Color.themePrimary.opacity(0.09), in: RoundedRectangle(cornerRadius: 10))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(file.url.lastPathComponent)
+                    .font(.subheadline.weight(.medium)).foregroundStyle(.primary)
                     .lineLimit(2).truncationMode(.middle)
+                    .fixedSize(horizontal: false, vertical: true)
                 if !file.directory {
-                    Text(file.info.badge + " · " + ByteCountFormatter.string(fromByteCount: file.info.size, countStyle: .file))
-                        .font(.caption).foregroundStyle(.secondary)
+                    HStack(spacing: 8) {
+                        Text(file.info.badge)
+                            .font(.system(.caption2, design: .rounded).weight(.semibold))
+                        Text(ByteCountFormatter.string(fromByteCount: file.info.size, countStyle: .file))
+                            .font(.caption)
+                    }.foregroundStyle(.secondary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-        }.padding(.vertical, 8)
+        }.frame(minHeight: 48).contentShape(Rectangle())
     }
 
     private var selectionActions: some View {

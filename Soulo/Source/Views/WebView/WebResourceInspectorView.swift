@@ -134,7 +134,8 @@ private final class WebResourceInspectorViewModel: ObservableObject {
 }
 
 struct WebResourceInspectorView: View {
-    private enum ResourceSection: Hashable {
+    private enum ResourceSection: String, CaseIterable, Identifiable {
+        var id: String { rawValue }
         case images
         case videos
         case audio
@@ -147,7 +148,7 @@ struct WebResourceInspectorView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: WebResourceInspectorViewModel
     @ObservedObject private var downloadManager = DownloadManagerService.shared
-    @State private var expandedSections: Set<ResourceSection> = [.images, .videos]
+    @State private var selectedSection: ResourceSection = .images
     @State private var minimumImageWidth = WebResourceInspectorDefaults.minimumImageWidth
     @State private var unavailableImageIDs = Set<String>()
     @State private var selectedImage: WebImageResource?
@@ -171,8 +172,6 @@ struct WebResourceInspectorView: View {
                 loadingView
             } else if !viewModel.errorMessage.isEmpty && viewModel.snapshot.isEmpty {
                 errorView
-            } else if viewModel.snapshot.isEmpty {
-                emptyView
             } else {
                 resourcesView
             }
@@ -203,6 +202,9 @@ struct WebResourceInspectorView: View {
             downloadManager.removeMissingFiles()
             if viewModel.snapshot.isEmpty {
                 await viewModel.inspect()
+                if count(for: selectedSection) == 0 {
+                    selectedSection = ResourceSection.allCases.first { count(for: $0) > 0 } ?? .images
+                }
             }
         }
         .sheet(item: $selectedMedia) { media in
@@ -250,153 +252,105 @@ struct WebResourceInspectorView: View {
         .animation(.easeInOut(duration: 0.2), value: viewModel.statusMessage)
     }
 
-    private var resourcesView: some View {
-        ScrollView {
-            LazyVStack(spacing: 12) {
-                if !viewModel.snapshot.videos.isEmpty {
-                    resourceSection(
-                        .videos,
-                        titleKey: "resource_videos",
-                        systemImage: "play.rectangle.fill",
-                        count: viewModel.snapshot.videos.count
-                    ) {
-                        videoRows
-                    }
-                }
-
-                if !viewModel.snapshot.audio.isEmpty {
-                    resourceSection(
-                        .audio,
-                        titleKey: "resource_audio",
-                        systemImage: "waveform",
-                        count: viewModel.snapshot.audio.count
-                    ) {
-                        audioRows
-                    }
-                }
-
-                if !viewModel.snapshot.images.isEmpty {
-                    resourceSection(
-                        .images,
-                        titleKey: "resource_images",
-                        systemImage: "photo.on.rectangle.angled",
-                        count: filteredImages.count
-                    ) {
-                        imageWidthFilter
-                        imageGrid
-                    }
-                }
-
-                if !viewModel.snapshot.documents.isEmpty {
-                    resourceSection(
-                        .documents,
-                        titleKey: "resource_documents",
-                        systemImage: "doc.on.doc.fill",
-                        count: viewModel.snapshot.documents.count
-                    ) {
-                        documentRows
-                    }
-                }
-
-                if !viewModel.snapshot.textFragments.isEmpty {
-                    resourceSection(
-                        .text,
-                        titleKey: "resource_text_fragments",
-                        systemImage: "text.quote",
-                        count: viewModel.snapshot.textFragments.count
-                    ) {
-                        copyAndShareAllButtons(
-                            titleKey: "resource_copy_all_text",
-                            value: viewModel.snapshot.textFragments.map(\.text).joined(separator: "\n\n")
-                        )
-                        textRows
-                    }
-                }
-
-                if !viewModel.snapshot.colors.isEmpty {
-                    resourceSection(
-                        .colors,
-                        titleKey: "resource_colors",
-                        systemImage: "paintpalette.fill",
-                        count: viewModel.snapshot.colors.count
-                    ) {
-                        colorGrid
-                    }
-                }
-
-                if !viewModel.snapshot.links.isEmpty {
-                    resourceSection(
-                        .links,
-                        titleKey: "resource_links",
-                        systemImage: "link",
-                        count: viewModel.snapshot.links.count
-                    ) {
-                        copyAndShareAllButtons(
-                            titleKey: "resource_copy_all_links",
-                            value: viewModel.snapshot.links.map(\.url.absoluteString).joined(separator: "\n")
-                        )
-                        linkRows
-                    }
-                }
-            }
-            .padding(16)
+    private func count(for section: ResourceSection) -> Int {
+        switch section {
+        case .images: viewModel.snapshot.images.count
+        case .videos: viewModel.snapshot.videos.count
+        case .audio: viewModel.snapshot.audio.count
+        case .documents: viewModel.snapshot.documents.count
+        case .links: viewModel.snapshot.links.count
+        case .text: viewModel.snapshot.textFragments.count
+        case .colors: viewModel.snapshot.colors.count
         }
-        .background(Color(uiColor: .systemGroupedBackground))
     }
 
-    private func resourceSection<Content: View>(
-        _ section: ResourceSection,
-        titleKey: String,
-        systemImage: String,
-        count: Int,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(spacing: 0) {
-            Button {
-                if expandedSections.contains(section) {
-                    expandedSections.remove(section)
-                } else {
-                    expandedSections.insert(section)
-                }
-            } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: systemImage)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.tint)
-                        .frame(width: 28, height: 28)
-                    Text(LanguageManager.shared.localizedString(titleKey))
-                        .font(.system(size: 15, weight: .semibold))
-                    Text("\(count)")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(Color(uiColor: .tertiarySystemFill), in: Capsule())
-                    Spacer()
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                        .rotationEffect(.degrees(expandedSections.contains(section) ? 0 : -90))
-                        .animation(.easeInOut(duration: 0.16), value: expandedSections.contains(section))
-                }
-                .foregroundStyle(.primary)
-                .padding(14)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
+    private func titleKey(for section: ResourceSection) -> String {
+        section == .text ? "resource_text_fragments" : "resource_" + section.rawValue
+    }
 
-            if expandedSections.contains(section) {
-                Divider().padding(.horizontal, 14)
-                VStack(spacing: 10) {
-                    content()
+    private func symbol(for section: ResourceSection) -> String {
+        switch section {
+        case .images: "photo"
+        case .videos: "play.rectangle"
+        case .audio: "waveform"
+        case .documents: "doc"
+        case .links: "link"
+        case .text: "text.quote"
+        case .colors: "paintpalette"
+        }
+    }
+
+    private var availableSections: [ResourceSection] {
+        ResourceSection.allCases.filter { count(for: $0) > 0 }
+    }
+
+    private var resourcesView: some View {
+        VStack(spacing: 0) {
+            if !availableSections.isEmpty {
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal) {
+                    HStack(spacing: 6) {
+                        ForEach(availableSections) { section in
+                            Button {
+                                selectedSection = section
+                                if section != .audio { stopInlineAudio() }
+                                withAnimation { proxy.scrollTo(section, anchor: .center) }
+                            } label: {
+                                VStack(spacing: 7) {
+                                    Image(systemName: symbol(for: section)).font(.system(size: 17, weight: .medium)).frame(height: 20)
+                                    HStack(spacing: 4) {
+                                        Text(LanguageManager.shared.localizedString(titleKey(for: section)))
+                                        Text(count(for: section).formatted()).monospacedDigit().foregroundStyle(.secondary)
+                                    }.font(.caption2.weight(.medium)).fixedSize()
+                                }
+                                .padding(.horizontal, 12).frame(minHeight: 64)
+                                .foregroundStyle(selectedSection == section ? Color.themePrimary : .secondary)
+                                .background(selectedSection == section ? Color.themePrimary.opacity(0.1) : .clear, in: RoundedRectangle(cornerRadius: 16))
+                            }
+                            .buttonStyle(.plain).id(section)
+                            .accessibilityIdentifier("resources.tab." + section.rawValue)
+                            .accessibilityAddTraits(selectedSection == section ? .isSelected : [])
+                        }
+                    }.padding(.horizontal, 16).padding(.vertical, 10)
+                }.scrollIndicators(.hidden)
+                .onChange(of: selectedSection) { _, section in
+                    withAnimation { proxy.scrollTo(section, anchor: .center) }
                 }
-                .padding(14)
+            }
+            Divider().opacity(0.4)
+            }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    if count(for: selectedSection) == 0 {
+                        emptyView.frame(maxWidth: .infinity).padding(.top, 50)
+                    } else {
+                        switch selectedSection {
+                        case .videos: videoRows
+                        case .audio: audioRows
+                        case .images:
+                            imageWidthFilter
+                            if filteredImages.isEmpty {
+                                emptyView.padding(.top, 24)
+                            } else { imageGrid }
+                        case .documents: documentRows
+                        case .text:
+                            copyAndShareAllButtons(titleKey: "resource_copy_all_text", value: viewModel.snapshot.textFragments.map(\.text).joined(separator: "\n\n"))
+                            textRows
+                        case .colors: colorGrid
+                        case .links:
+                            copyAndShareAllButtons(titleKey: "resource_copy_all_links", value: viewModel.snapshot.links.map(\.url.absoluteString).joined(separator: "\n"))
+                            linkRows
+                        }
+                    }
+                }.padding(18)
+            }.id(selectedSection)
+        }.background(Color(uiColor: .systemBackground))
+        .onChange(of: availableSections, initial: true) { _, sections in
+            if !sections.contains(selectedSection) {
+                selectedSection = sections.first ?? .images
+                stopInlineAudio()
             }
         }
-        .background(
-            Color(uiColor: .secondarySystemGroupedBackground),
-            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
-        )
     }
 
     private var maximumImageWidth: Double {
@@ -455,8 +409,7 @@ struct WebResourceInspectorView: View {
                         resourceDownloadMenu(for: image)
                     }
                 }
-                .padding(8)
-                .background(Color(uiColor: .tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                .padding(.bottom, 8)
             }
         }
     }
@@ -549,11 +502,8 @@ struct WebResourceInspectorView: View {
                         mediaResourceActions(for: resource)
                     }
                 }
-                .padding(9)
-                .background(
-                    Color(uiColor: .tertiarySystemGroupedBackground),
-                    in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                )
+                .padding(.vertical, 8)
+                if resource.id != viewModel.snapshot.videos.last?.id { Divider() }
             }
         }
     }

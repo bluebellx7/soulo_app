@@ -545,15 +545,15 @@ struct HomeView: View {
     private var homeMenu: some View {
         Menu {
             Button {
-                librarySection = .history
-            } label: {
-                Label(LanguageManager.shared.localizedString("search_history"), systemImage: "clock.arrow.circlepath")
-            }
-
-            Button {
                 librarySection = .bookmarks
             } label: {
                 Label(LanguageManager.shared.localizedString("my_favorites"), systemImage: "bookmark")
+            }
+
+            Button {
+                librarySection = .history
+            } label: {
+                Label(LanguageManager.shared.localizedString("search_history"), systemImage: "clock.arrow.circlepath")
             }
 
             Button {

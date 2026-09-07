@@ -408,7 +408,7 @@
 "help_adblock_desc" = "拦截广告和弹窗，获得更清爽的浏览体验。";
 "help_contact" = "联系我们";
 "help_email_title" = "邮箱";
-"theme_system" = "跟随系统";
+"theme_system" = "系统";
 "theme_light" = "浅色";
 "theme_dark" = "深色";
 "wallpaper_delete_title" = "移除壁纸";
@@ -859,3 +859,9 @@
 "home_subtitle_edit_desc" = "显示在主标题下方，留空则隐藏。";
 "current_keyword" = "当前关键词";
 "platform_invalid_web_url" = "请输入以 http:// 或 https:// 开头的有效网址。";
+
+"library_history_tab" = "搜索历史";
+
+"library_files_tab" = "文件";
+
+"library_books_tab" = "书库";

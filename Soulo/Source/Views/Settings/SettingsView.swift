@@ -14,7 +14,6 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var selectedAppearance: String = ThemeManager.shared.appearance
-    @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = true
     @AppStorage("show_top_search_bar") private var showTopSearchBar = BrowserInitialPreferences.showTopSearchBar
     @AppStorage(AppConstants.StorageKeys.keepFullscreenBrowsing) private var keepFullscreenBrowsing = false
     @AppStorage(AppConstants.StorageKeys.iCloudSyncEnabled) private var iCloudSyncEnabled = false
@@ -46,6 +45,12 @@ struct SettingsView: View {
         LanguageManager.shared.currentLanguageName
     }
 
+    private func setAppearance(_ mode: String) {
+        selectedAppearance = mode
+        HapticsManager.selection()
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { ThemeManager.shared.setAppearance(mode) }
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -67,60 +72,32 @@ struct SettingsView: View {
 
                     // MARK: - Appearance, Language & Background
                     Section {
-                        VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 12) {
                             Label {
                                 Text(LanguageManager.shared.localizedString("settings_appearance"))
                             } icon: {
                                 IconBadge(systemName: "paintbrush.fill", color: neutralIconColor)
                             }
-                            .padding(.top, 2)
-
-                            HStack(spacing: 6) {
-                                ForEach(["system", "light", "dark"], id: \.self) { mode in
-                                    let sel = selectedAppearance == mode
-                                    let icon = mode == "system" ? "circle.lefthalf.filled" : mode == "light" ? "sun.max.fill" : "moon.fill"
-                                    let name = LanguageManager.shared.localizedString("theme_\(mode)")
-                                    Button {
-                                        selectedAppearance = mode
-                                        HapticsManager.selection()
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                            ThemeManager.shared.setAppearance(mode)
-                                        }
-                                    } label: {
-                                        HStack(spacing: 4) {
-                                            Image(systemName: icon)
-                                                .font(.caption2)
-                                            Text(name)
-                                                .font(.caption2)
-                                                .fontWeight(.semibold)
-                                                .lineLimit(1)
-                                        }
-                                        .foregroundStyle(
-                                            sel ? Color.themePrimary : Color(uiColor: .secondaryLabel)
-                                        )
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 5)
-                                        .background(
-                                            Capsule(style: .continuous)
-                                                .fill(
-                                                    sel
-                                                        ? Color.themePrimary.opacity(0.14)
-                                                        : Color(uiColor: .secondarySystemFill)
-                                                )
-                                        )
-                                        .overlay {
-                                            Capsule(style: .continuous)
-                                                .stroke(
-                                                    sel ? Color.themePrimary.opacity(0.2) : Color.clear,
-                                                    lineWidth: 0.5
-                                                )
-                                        }
+                            Spacer(minLength: 4)
+                            ViewThatFits(in: .horizontal) {
+                                HStack(spacing: 4) {
+                                    ForEach(["system", "light", "dark"], id: \.self) { mode in
+                                        Button { setAppearance(mode) } label: {
+                                            Text(LanguageManager.shared.localizedString("theme_\(mode)"))
+                                                .font(.caption.weight(.semibold))
+                                                .fixedSize()
+                                                .padding(.horizontal, 8).padding(.vertical, 7)
+                                                .foregroundStyle(selectedAppearance == mode ? Color.themePrimary : .secondary)
+                                                .background(selectedAppearance == mode ? Color.themePrimary.opacity(0.14) : Color(uiColor: .secondarySystemFill), in: Capsule())
+                                        }.buttonStyle(.plain).frame(minHeight: 44)
                                     }
-                                    .buttonStyle(.plain)
-                                    .frame(minHeight: 34)
-                                }
+                                }.fixedSize()
+                                Picker("", selection: Binding(get: { selectedAppearance }, set: setAppearance)) {
+                                    ForEach(["system", "light", "dark"], id: \.self) { mode in
+                                        Text(LanguageManager.shared.localizedString("theme_\(mode)")).tag(mode)
+                                    }
+                                }.labelsHidden().pickerStyle(.menu)
                             }
-                            .padding(.leading, 42)
                         }
                         .padding(.vertical, 4)
 
@@ -284,16 +261,6 @@ struct SettingsView: View {
                                 title: LanguageManager.shared.localizedString("toolbar_customize")
                             )
                         }
-
-                        Toggle(isOn: $adBlockEnabled) {
-                            SettingsDescriptionLabel(
-                                icon: adBlockEnabled ? "shield.checkered" : "shield.slash",
-                                color: adBlockEnabled ? .green : Color(uiColor: .systemGray3),
-                                title: LanguageManager.shared.localizedString("ad_block"),
-                                description: LanguageManager.shared.localizedString("ad_block_desc")
-                            )
-                        }
-                        .tint(.green)
 
                         NavigationLink(destination: AdBlockManagementView(currentHost: nil)) {
                             SettingsNavigationLabel(

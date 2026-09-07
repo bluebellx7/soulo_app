@@ -1,15 +1,15 @@
 /* Soulo — generated and validated localization */
 
 "app_name" = "Soulo";
-"app_subtitle" = "One Query, 40+ Platforms";
-"search_placeholder" = "Search or enter URL";
+"app_subtitle" = "Один запит, понад 40 платформ";
+"search_placeholder" = "Пошук або адреса сайту";
 "privacy_search_placeholder" = "Приватний пошук або введіть URL";
 "search" = "Пошук";
-"recent_searches" = "Recent Searches";
+"recent_searches" = "Останні пошуки";
 "show_more" = "більше";
 "show_less" = "менше";
 "clear_all" = "Очистити все";
-"no_results" = "No Results";
+"no_results" = "Немає результатів";
 "clipboard_detected" = "Виявлено вміст буфера обміну";
 "clipboard_tap_to_search" = "Натисніть Пошук, щоб використовувати буфер обміну";
 "region_china" = "Китай";
@@ -40,19 +40,19 @@
 "platform_vk" = "VK";
 "loading" = "Завантаження...";
 "load_error" = "Не вдалося завантажити";
-"bookmark_added" = "Bookmark Added";
-"bookmark_removed" = "Bookmark Removed";
+"bookmark_added" = "Закладку додано";
+"bookmark_removed" = "Закладку видалено";
 "bookmarks" = "Закладки";
-"no_bookmarks" = "No Bookmarks";
-"no_bookmarks_desc" = "Tap the bookmark button while browsing to save pages";
-"search_history" = "Search History";
-"no_history" = "No Search History";
-"no_history_desc" = "Your recent searches and visited pages will appear here";
+"no_bookmarks" = "Немає закладок";
+"no_bookmarks_desc" = "Зберігайте сторінки кнопкою закладки під час перегляду";
+"search_history" = "Історія пошуку";
+"no_history" = "Історія порожня";
+"no_history_desc" = "Тут з’являться останні пошукові запити та відвідані сторінки";
 "today" = "Сьогодні";
 "yesterday" = "Yesterday";
 "earlier" = "Earlier";
 "confirm_clear_history" = "Очистити всю історію пошуку?";
-"confirm_clear_bookmarks" = "Clear all bookmarks?";
+"confirm_clear_bookmarks" = "Видалити всі закладки?";
 "settings" = "Налаштування";
 "platform_management" = "Platform Management";
 "region_korea" = "Корея";
@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "Приховати панель інструментів";
 "privacy_clear_action" = "ясно";
 "privacy_data_footer" = "Ці дії не можна скасувати. Очищені дані неможливо відновити.";
-"settings_privacy" = "Налаштування конфіденційності";
+"settings_privacy" = "Приватність";
 "platform_sort_options" = "Параметри сортування";
 "cancel" = "Скасувати";
 "confirm" = "Підтвердити";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "Приховані елементи";
 "ad_block_current_site_hidden" = "Цей сайт";
 "ad_block_search_allowlist" = "Білий список пошуку";
-"ad_block_subscriptions" = "Фільтрувати підписки";
+"ad_block_subscriptions" = "Списки фільтрів";
 "ad_block_subscriptions_desc" = "Soulo підтримує практичну підмножину списків фільтрів ABP і перетворює їх на правила WebKit із косметичним приховуванням. Джерела включають фільтри EasyList, EasyList China і AdGuard.";
 "ad_block_subscription_enabled" = "Увімкнені списки";
 "ad_block_subscription_rules" = "Кешовані правила";
@@ -601,7 +601,7 @@
 "web_force_dark_desc" = "Спробуйте перетворити яскраві фони, темний текст і рамки на темну палітру для слабкого освітлення, навіть якщо на веб-сайті немає власної темної теми.";
 "web_force_dark_footer" = "Ці параметри можна комбінувати незалежно. Перетворення не змінює вміст сторінки, але складні сторінки, полотна та настроювані елементи керування можуть зберігати свої оригінальні кольори. Швидко вимкніть його в нижньому меню «Більше», якщо сторінка виглядає неправильно.";
 "site_information" = "Інформація про сайт";
-"shake_action" = "Shake Action";
+"shake_action" = "Дія при струшуванні";
 "shake_action_none" = "Жодного";
 "shake_action_fullscreen" = "Перемкнути повний екран";
 "shake_action_dark" = "Увімкнути темний режим";
@@ -663,7 +663,7 @@
 "userscript_invalid_match_pattern" = "Недійсне правило веб-сайту: %@";
 "userscript_untitled" = "Сценарій без назви";
 "userscript_name" = "Ім'я";
-"userscript_run_at" = "Run At";
+"userscript_run_at" = "Час запуску";
 "userscript_document_start" = "Початок документа";
 "userscript_document_end" = "Кінець документа";
 "userscript_matches" = "Правила веб-сайту (по одному на рядок)";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Soulo не вдалося об’єднати завантажені відео та аудіо.";
 "resource_stream_playback_download_first" = "Попередній перегляд цього захищеного потоку за тимчасовою URL-адресою неможливий. Спочатку завантажте його, щоб відтворити локальний файл.";
 "platform_invalid_web_url" = "Введіть коректну вебадресу, що починається з http:// або https://.";
+
+"library_history_tab" = "Історія";
+
+"library_files_tab" = "Файли";
+
+"library_books_tab" = "Книги";

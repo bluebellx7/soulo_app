@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "టూల్‌బార్‌ను దాచండి";
 "privacy_clear_action" = "క్లియర్";
 "privacy_data_footer" = "ఈ చర్యలు రద్దు చేయబడవు. క్లియర్ చేయబడిన డేటాను తిరిగి పొందడం సాధ్యం కాదు.";
-"settings_privacy" = "గోప్యతా సెట్టింగ్‌లు";
+"settings_privacy" = "గోప్యత";
 "platform_sort_options" = "క్రమబద్ధీకరణ ఎంపికలు";
 "cancel" = "రద్దు చేయి";
 "confirm" = "నిర్ధారించండి";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "దాచిన అంశాలు";
 "ad_block_current_site_hidden" = "ఈ సైట్";
 "ad_block_search_allowlist" = "శోధన అనుమతి జాబితా";
-"ad_block_subscriptions" = "ఫిల్టర్ సభ్యత్వాలు";
+"ad_block_subscriptions" = "ఫిల్టర్ జాబితాలు";
 "ad_block_subscriptions_desc" = "Soulo ABP ఫిల్టర్ జాబితాల యొక్క ఆచరణాత్మక ఉపసమితికి మద్దతు ఇస్తుంది మరియు వాటిని WebKit నియమాలు మరియు కాస్మెటిక్ దాచడానికి మారుస్తుంది. మూలాధారాలలో EasyList, EasyList చైనా మరియు AdGuard ఫిల్టర్‌లు ఉన్నాయి.";
 "ad_block_subscription_enabled" = "ప్రారంభించబడిన జాబితాలు";
 "ad_block_subscription_rules" = "కాష్ చేసిన నియమాలు";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "డౌన్‌లోడ్ చేసిన వీడియో, ఆడియోను Soulo కలపలేకపోయింది.";
 "resource_stream_playback_download_first" = "ఈ రక్షిత స్ట్రీమ్ తాత్కాలిక URL నుండి ప్రివ్యూ చూడలేరు. స్థానిక ఫైల్‌ను ప్లే చేయడానికి ముందు డౌన్‌లోడ్ చేయండి.";
 "platform_invalid_web_url" = "http:// లేదా https:// తో ప్రారంభమయ్యే చెల్లుబాటు అయ్యే వెబ్ చిరునామాను నమోదు చేయండి.";
+
+"library_history_tab" = "చరిత్ర";
+
+"library_files_tab" = "ఫైళ్లు";
+
+"library_books_tab" = "పుస్తకాలు";

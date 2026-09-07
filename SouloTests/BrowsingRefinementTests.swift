@@ -90,7 +90,7 @@ final class BrowsingRefinementTests: XCTestCase {
         let article = try await ArticleReader.extract(web)
         XCTAssertEqual(article.title, "第一章 雨后")
         XCTAssertEqual(article.next?.absoluteString, "https://novel.test/chapter2")
-        XCTAssertTrue(article.text.contains(paragraph)); XCTAssertTrue(article.html.contains("<br>"))
+        XCTAssertTrue(article.text.contains(paragraph)); XCTAssertTrue(article.html.contains("<p>")); XCTAssertTrue(article.isNovel)
         XCTAssertTrue(article.html.contains("https://novel.test/cover.png"))
         for removed in ["广告测试应移除", "onerror", "<iframe", "上一章", "目录"] { XCTAssertFalse(article.html.contains(removed), removed) }
         let originalAd = try await web.evaluateJavaScript("document.querySelector('.ads').textContent") as? String
@@ -111,6 +111,104 @@ final class BrowsingRefinementTests: XCTestCase {
         XCTAssertEqual(article.text.trimmingCharacters(in: .whitespacesAndNewlines), paragraph)
         XCTAssertFalse(article.html.contains("本章未完")); XCTAssertFalse(article.html.contains("点此举报"))
     }
+    @MainActor func testGenericArticleKeepsStructureLazyImagesFootnotesAndLanguage() async throws {
+        let web = WKWebView()
+        let paragraph = String(repeating: "هذا نص أصلي لاختبار القراءة، ويشرح تجربة علمية بخطوات واضحة وملاحظات مفيدة. ", count: 12)
+        web.loadHTMLString("""
+            <html lang="ar" dir="rtl"><head><title>ملاحظات علمية</title></head><body>
+            <header><a rel="next" href="https://other.test/next">Next</a></header>
+            <div id="content"><aside>SIDEBAR NOISE</aside><article><h1>ملاحظات علمية</h1>
+            <p>\(paragraph)</p><p><a href="#note">Reference</a></p>
+            <figure><img src="/loading.gif" data-src="/figure.jpg"><figcaption>Original figure caption</figcaption></figure>
+            <img src="/loading2.gif" data-srcset="/responsive.jpg 640w, /responsive-large.jpg 1280w"><pre><code>let total = 1 &lt; 2;</code></pre>
+            <table><tr><th>Value</th><th>Unit</th></tr><tr><td>12</td><td>cm</td></tr></table>
+            <math><mfrac><mi>x</mi><mn>2</mn></mfrac></math>
+            <p id="note">\(paragraph)</p><p hidden>HIDDEN DUPLICATE</p>
+            <div class="ads">ADVERTISEMENT NOISE</div></article></div>
+            <a rel="next" href="/page2">Next page</a></body></html>
+            """, baseURL: URL(string: "https://reader.test/page1"))
+        for _ in 0..<120 {
+            if (try? await web.evaluateJavaScript("document.querySelector('article') !== null")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        let article = try await ArticleReader.extract(web)
+        XCTAssertEqual(article.language, "ar"); XCTAssertEqual(article.direction, "rtl")
+        XCTAssertEqual(article.next?.absoluteString, "https://reader.test/page2")
+        for expected in ["<table", "<pre", "<code", "<math", "<mfrac", "id=\"note\"", "href=\"#note\"", "https://reader.test/figure.jpg", "https://reader.test/responsive.jpg"] {
+            XCTAssertTrue(article.html.contains(expected), expected)
+        }
+        for removed in ["SIDEBAR NOISE", "HIDDEN DUPLICATE", "ADVERTISEMENT NOISE", "loading.gif"] {
+            XCTAssertFalse(article.html.contains(removed), removed)
+        }
+    }
+
+    @MainActor func testReaderAppendsWithoutReloadAndKeepsFootnotesScopedToEachPage() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow), window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let text = String(repeating: "<p>Original reading content for scroll and pagination verification.</p>", count: 80)
+        let first = ReaderArticle(title: "Chapter", html: text + "<a href='#note'>Note</a><p id='note'>First note</p>", text: "first", url: URL(string: "https://reader.test/1")!, next: nil)
+        let second = ReaderArticle(title: "Chapter", html: "<a href='#note'>Note</a><p id='note'>Second note</p>", text: "second", url: URL(string: "https://reader.test/2")!, next: nil)
+        let host = UIHostingController(rootView: ArticleSurface(articles: [first], size: 18, line: 1.6, theme: "paper"))
+        window.rootViewController = host; window.makeKeyAndVisible()
+        func findWeb(_ view: UIView) -> WKWebView? { if let web = view as? WKWebView { return web }; return view.subviews.compactMap(findWeb).first }
+        var web: WKWebView?
+        for _ in 0..<160 {
+            web = findWeb(host.view)
+            if let web, (try? await web.evaluateJavaScript("document.querySelectorAll('article').length")) as? Int == 1 { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        let surface = try XCTUnwrap(web)
+        try await Task.sleep(for: .milliseconds(150))
+        _ = try await surface.evaluateJavaScript("window.retainedPage=42;window.scrollTo(0,600)")
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertGreaterThan(surface.scrollView.contentOffset.y, 500, "Initial page must be laid out before testing append")
+        host.rootView = ArticleSurface(articles: [first, second], size: 18, line: 1.6, theme: "paper")
+        for _ in 0..<120 {
+            if (try? await surface.evaluateJavaScript("document.querySelectorAll('article').length")) as? Int == 2 { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        let result = try await surface.evaluateJavaScript("""
+            ({marker:window.retainedPage, count:document.querySelectorAll('article').length,
+              headings:document.querySelectorAll('h1').length,
+              notes:[...document.querySelectorAll('a[href^="#"]')].every(a => a.closest('article').contains(document.getElementById(a.getAttribute('href').slice(1))))})
+            """) as? [String: Any]
+        XCTAssertEqual(result?["marker"] as? Int, 42)
+        XCTAssertEqual(result?["count"] as? Int, 2)
+        XCTAssertEqual(result?["headings"] as? Int, 1)
+        XCTAssertEqual(result?["notes"] as? Bool, true)
+        XCTAssertGreaterThan(surface.scrollView.contentOffset.y, 500)
+    }
+
+    @MainActor func testReaderWideContentAndLinksStayInsideTheReadingSurface() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow), window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let cells = (0..<16).map { "<td>Column \($0)</td>" }.joined()
+        let html = "<p>Read an article with technical content and references.</p><pre><code>" + String(repeating: "long_code_line(); ", count: 30) + "</code></pre><table><tr>" + cells + "</tr></table><a href='https://reader.test/original'>Open original</a>"
+        let article = ReaderArticle(title: "Technical notes", html: html, text: "notes", url: URL(string: "https://reader.test/article")!, next: nil)
+        var opened: URL?
+        let host = UIHostingController(rootView: ArticleSurface(articles: [article], size: 18, line: 1.6, theme: "paper", onOpenLink: { opened = $0 }))
+        window.rootViewController = host; window.makeKeyAndVisible()
+        func findWeb(_ view: UIView) -> WKWebView? { if let web = view as? WKWebView { return web }; return view.subviews.compactMap(findWeb).first }
+        var web: WKWebView?
+        for _ in 0..<160 {
+            web = findWeb(host.view)
+            if let web, (try? await web.evaluateJavaScript("document.querySelector('table') !== null")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        let surface = try XCTUnwrap(web)
+        try await Task.sleep(for: .milliseconds(150))
+        let fits = try await surface.evaluateJavaScript("document.documentElement.scrollWidth <= innerWidth + 1 && document.querySelector('pre').scrollWidth > document.querySelector('pre').clientWidth && document.querySelector('td').clientWidth > 60") as? Bool
+        XCTAssertEqual(fits, true, "Wide content should scroll inside its own block")
+        let screenshot = try await surface.takeSnapshot(configuration: nil)
+        let attachment = XCTAttachment(image: screenshot); attachment.name = "reader-technical-layout"; attachment.lifetime = .keepAlways; add(attachment)
+        _ = try await surface.evaluateJavaScript("document.querySelector('a').click()")
+        for _ in 0..<80 { if opened != nil { break }; try await Task.sleep(for: .milliseconds(25)) }
+        XCTAssertEqual(opened?.absoluteString, "https://reader.test/original")
+        XCTAssertEqual(surface.url?.host, "soulo-reader.invalid", "External links should be handed back to the browser")
+    }
+
     @MainActor func testReaderAppearanceUpdatesWithoutReloadingOrRepeatingChapterTitle() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow), window = UIWindow(windowScene: scene)

@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "टूलबार लपवा";
 "privacy_clear_action" = "साफ";
 "privacy_data_footer" = "या क्रिया पूर्ववत केल्या जाऊ शकत नाहीत. साफ केलेला डेटा पुनर्प्राप्त केला जाऊ शकत नाही.";
-"settings_privacy" = "गोपनीयता सेटिंग्ज";
+"settings_privacy" = "गोपनीयता";
 "platform_sort_options" = "क्रमवारी पर्याय";
 "cancel" = "रद्द करा";
 "confirm" = "पुष्टी करा";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "लपलेले घटक";
 "ad_block_current_site_hidden" = "ही साइट";
 "ad_block_search_allowlist" = "अनुमती यादी शोधा";
-"ad_block_subscriptions" = "सदस्यता फिल्टर करा";
+"ad_block_subscriptions" = "फिल्टर याद्या";
 "ad_block_subscriptions_desc" = "Soulo ABP फिल्टर सूचीच्या व्यावहारिक उपसमूहाचे समर्थन करते आणि त्यांना WebKit नियम तसेच कॉस्मेटिक लपविण्यामध्ये रूपांतरित करते. स्रोतांमध्ये EasyList, EasyList China आणि AdGuard फिल्टर्स समाविष्ट आहेत.";
 "ad_block_subscription_enabled" = "सक्षम केलेल्या याद्या";
 "ad_block_subscription_rules" = "कॅश्ड नियम";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Soulo डाउनलोड केलेले व्हिडिओ आणि ऑडिओ एकत्र करू शकले नाही.";
 "resource_stream_playback_download_first" = "या संरक्षित स्ट्रीमचे तात्पुरत्या URL वरून पूर्वावलोकन करता येत नाही. स्थानिक फाइल प्ले करण्यासाठी आधी डाउनलोड करा.";
 "platform_invalid_web_url" = "http:// किंवा https:// ने सुरू होणारा वैध वेब पत्ता प्रविष्ट करा.";
+
+"library_history_tab" = "इतिहास";
+
+"library_files_tab" = "फाइल्स";
+
+"library_books_tab" = "पुस्तके";

@@ -173,7 +173,7 @@
 "hide_browser_toolbar" = "ଟୁଲ୍ ବାର୍ ଲୁଚାନ୍ତୁ";
 "privacy_clear_action" = "ସଫା";
 "privacy_data_footer" = "ଏହି କାର୍ଯ୍ୟଗୁଡିକ ପୂର୍ବବତ୍ କରାଯାଇପାରିବ ନାହିଁ | ସଫା ହୋଇଥିବା ତଥ୍ୟ ପୁନରୁଦ୍ଧାର ହୋଇପାରିବ ନାହିଁ";
-"settings_privacy" = "ଗୋପନୀୟତା ସେଟିଂସମୂହ";
+"settings_privacy" = "ଗୋପନୀୟତା";
 "platform_sort_options" = "ବିକଳ୍ପଗୁଡିକ ସର୍ଟ କରନ୍ତୁ";
 "cancel" = "ବାତିଲ୍ କରନ୍ତୁ";
 "confirm" = "ନିଶ୍ଚିତ କରନ୍ତୁ";
@@ -480,7 +480,7 @@
 "ad_block_total_hidden" = "ଲୁକ୍କାୟିତ ଉପାଦାନଗୁଡିକ";
 "ad_block_current_site_hidden" = "ଏହି ସାଇଟ୍";
 "ad_block_search_allowlist" = "ଅନୁମତି ତାଲିକା ଖୋଜ";
-"ad_block_subscriptions" = "ସଦସ୍ୟତା ଫିଲ୍ଟର୍ କରନ୍ତୁ";
+"ad_block_subscriptions" = "ଫିଲ୍ଟର ତାଲିକା";
 "ad_block_subscriptions_desc" = "Soulo ABP ଫିଲ୍ଟର ତାଲିକାର ଏକ ବ୍ୟବହାରିକ ଉପସେଟକୁ ସମର୍ଥନ କରେ ଏବଂ ସେଗୁଡ଼ିକୁ ୱେବ୍ କିଟ୍ ନିୟମ ଏବଂ କସମେଟିକ୍ ଲୁଚାଇବାରେ ରୂପାନ୍ତର କରେ | ଉତ୍ସଗୁଡ଼ିକରେ EasyList, EasyList China, ଏବଂ AdGuard ଫିଲ୍ଟର ଅନ୍ତର୍ଭୁକ୍ତ";
 "ad_block_subscription_enabled" = "ସକ୍ଷମ ତାଲିକା";
 "ad_block_subscription_rules" = "କ୍ୟାଚ୍ ନିୟମ";
@@ -861,3 +861,9 @@
 "resource_stream_download_export_failed" = "Soulo ଡାଉନଲୋଡ୍ ହୋଇଥିବା ଭିଡିଓ ଏବଂ ଅଡିଓକୁ ଏକତ୍ର କରିପାରିଲା ନାହିଁ।";
 "resource_stream_playback_download_first" = "ଏହି ସୁରକ୍ଷିତ ଷ୍ଟ୍ରିମ୍‌ର ଅସ୍ଥାୟୀ URL ରୁ ପୂର୍ବାବଲୋକନ କରାଯାଇପାରିବ ନାହିଁ। ସ୍ଥାନୀୟ ଫାଇଲ୍ ଚଲାଇବା ପାଇଁ ପ୍ରଥମେ ଡାଉନଲୋଡ୍ କରନ୍ତୁ।";
 "platform_invalid_web_url" = "http:// କିମ୍ବା https:// ରୁ ଆରମ୍ଭ ହେଉଥିବା ଏକ ବୈଧ ୱେବ୍ ଠିକଣା ଲେଖନ୍ତୁ।";
+
+"library_history_tab" = "ଇତିହାସ";
+
+"library_files_tab" = "ଫାଇଲ୍";
+
+"library_books_tab" = "ବହି";

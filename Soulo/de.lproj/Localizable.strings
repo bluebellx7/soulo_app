@@ -299,7 +299,7 @@
 "hide_browser_toolbar" = "Symbolleiste ausblenden";
 "privacy_clear_action" = "Löschen";
 "privacy_data_footer" = "Diese Aktionen können nicht rückgängig gemacht werden. Gelöschte Daten können nicht wiederhergestellt werden.";
-"settings_privacy" = "Datenschutzeinstellungen";
+"settings_privacy" = "Datenschutz";
 "platform_sort_options" = "Sortieroptionen";
 
 /* Settings - Navigation & Titles */
@@ -369,18 +369,18 @@
 "voice_record" = "Aufnahme";
 
 /* Batch Import */
-"batch_import" = "Batch Import";
-"batch_import_format" = "Paste JSON in the format below";
-"batch_import_group" = "Add to Group (Optional)";
-"batch_import_group_placeholder" = "e.g. Movies";
-"batch_import_action" = "Import";
-"batch_import_result" = "Successfully imported %d platforms";
-"paste_from_clipboard" = "Paste from Clipboard";
+"batch_import" = "Mehrere importieren";
+"batch_import_format" = "JSON im folgenden Format einfügen";
+"batch_import_group" = "Zur Gruppe hinzufügen (optional)";
+"batch_import_group_placeholder" = "z. B. Filme";
+"batch_import_action" = "Importieren";
+"batch_import_result" = "%d Plattformen importiert";
+"paste_from_clipboard" = "Aus Zwischenablage einfügen";
 "none" = "None";
-"show_group_picker_home" = "Show Group Picker on Home";
+"show_group_picker_home" = "Gruppenauswahl auf Startseite";
 "show_group_picker_home_desc" = "Display platform group tabs on the home screen";
-"error_no_internet" = "No internet connection. Please check your network.";
-"error_timeout" = "Connection timed out. Please try again.";
+"error_no_internet" = "Keine Internetverbindung. Bitte prüfen Sie Ihr Netzwerk.";
+"error_timeout" = "Zeitüberschreitung. Bitte versuchen Sie es erneut.";
 "error_ssl" = "Secure connection failed.";
 "retry" = "Retry";
 
@@ -472,48 +472,47 @@ Erzahlen Sie uns:
 "downloads_finished" = "Abgeschlossen";
 "downloads_failed" = "Fehlgeschlagen";
 "downloads_canceled" = "Abgebrochen";
-"library" = "Mediathek";
+"library" = "Bibliothek";
 "my_downloads" = "Meine Downloads";
 "open_downloads_folder" = "Download-Ordner öffnen";
 "live_activity" = "Dynamic Island";
-"live_activity_desc" = "Show current searches in Live Activities and Dynamic Island—the black pill around the camera at the top of supported iPhones.";
-"fire_button" = "Clear Privacy Data";
-"fire_button_confirm" = "Clear";
-"fire_button_desc" = "Close browser tabs and clear website data, cookies, cache, and privacy statistics.";
-"fire_complete" = "Privacy data cleared";
+"live_activity_desc" = "Aktuelle Suchen in Live-Aktivitäten und in der Dynamic Island anzeigen. Die Dynamic Island ist der dunkle Bereich um die Kamera oben auf unterstützten iPhones.";
+"fire_button" = "Private Daten löschen";
+"fire_button_confirm" = "Löschen";
+"fire_button_desc" = "Tabs schließen und Website-Daten, Cookies, Cache sowie Datenschutzstatistiken löschen.";
+"fire_complete" = "Private Daten gelöscht";
 "site_privacy" = "Website-Schutz";
 "site_privacy_scope_desc" = "Gilt nur für diese Website. Die Standardwerte für alle Websites ändern Sie in den Datenschutzeinstellungen.";
 "privacy_global_scope_desc" = "Diese Standardwerte gelten für alle Websites. Ausnahmen legen Sie unter Schutz der aktuellen Website fest.";
 "site_privacy_compatibility_bypass" = "Der Schutz ist pausiert, damit Anmeldung und Website-Funktionen verfügbar bleiben.";
-"site_privacy_no_site" = "No Site";
-"site_privacy_protected" = "Protections are active";
-"site_privacy_unprotected" = "Protections are disabled for this site";
-"site_protection" = "Site Protection";
-"site_ad_blocking" = "Ad Blocking";
-"site_privacy_activity" = "Privacy Activity";
-"site_tracker_hosts" = "Tracker Hosts";
-"site_tracker_allowed_third_party" = "Allowed third-party request";
-"site_tracker_allowed_first_party" = "Allowed as first-party owned";
-"site_tracker_allowed_protection_disabled" = "Allowed because protection is off";
-"site_tracker_blocked" = "Blocked";
-"site_tracker_requests" = "Tracker Requests";
-"site_third_party_requests" = "Third-Party Requests";
-"site_detected_trackers" = "Detected Trackers";
-"site_blocked_trackers" = "Blocked Trackers";
+"site_privacy_no_site" = "Keine Website";
+"site_privacy_protected" = "Schutz ist aktiv";
+"site_privacy_unprotected" = "Schutz für diese Website deaktiviert";
+"site_protection" = "Website-Schutz";
+"site_ad_blocking" = "Werbeblocker";
+"site_privacy_activity" = "Datenschutzaktivität";
+"site_tracker_hosts" = "Tracker-Domains";
+"site_tracker_allowed_third_party" = "Drittanbieter-Anfrage zugelassen";
+"site_tracker_allowed_first_party" = "Als Anfrage des Website-Betreibers zugelassen";
+"site_tracker_allowed_protection_disabled" = "Zugelassen, da der Schutz deaktiviert ist";
+"site_tracker_blocked" = "Blockiert";
+"site_tracker_requests" = "Tracker-Anfragen";
+"site_third_party_requests" = "Drittanbieter-Anfragen";
+"site_detected_trackers" = "Erkannte Tracker";
+"site_blocked_trackers" = "Blockierte Tracker";
 "site_hidden_elements" = "Hidden Page Elements";
-"site_https_upgrades" = "HTTPS Upgrades";
-"site_stripped_params" = "Tracking Parameters Removed";
-"site_cookie_banners" = "Cookie Prompts Handled";
-"site_tracker_categories" = "Tracker Categories";
-"site_tracker_companies" = "Tracker Companies";
+"site_https_upgrades" = "HTTPS-Upgrades";
+"site_stripped_params" = "Entfernte Tracking-Parameter";
+"site_cookie_banners" = "Bearbeitete Cookie-Hinweise";
+"site_tracker_categories" = "Tracker-Kategorien";
+"site_tracker_companies" = "Tracker-Unternehmen";
 "site_clear_data" = "Clear Site Data";
-"site_data_cleared" = "Site Data Cleared";
+"site_data_cleared" = "Website-Daten gelöscht";
 "site_reset_stats" = "Reset Site Stats";
 "privacy_gpc" = "Global Privacy Control";
-"privacy_gpc_desc" = "Ask websites not to sell or share your data when they support GPC.";
-"privacy_cookie_banners" = "Handle Cookie Prompts";
-"privacy_cookie_banners_desc" = "Try to reject or dismiss common cookie consent banners.";
-
+"privacy_gpc_desc" = "Websites, die GPC unterstützen, auffordern, Ihre Daten weder zu verkaufen noch weiterzugeben.";
+"privacy_cookie_banners" = "Cookie-Hinweise behandeln";
+"privacy_cookie_banners_desc" = "Versuchen, gängige Cookie-Einwilligungsbanner abzulehnen oder zu schließen.";
 /* Wallpaper (extra) */
 "wallpaper_color" = "Hintergrundfarbe";
 "wallpaper_current_vibe" = "Aktuelle Stimmung";
@@ -600,3 +599,9 @@ Erzahlen Sie uns:
 "resource_stream_download_export_failed" = "Soulo konnte das heruntergeladene Video und Audio nicht zusammenführen.";
 "resource_stream_playback_download_first" = "Dieser geschützte Stream kann über seine temporäre URL nicht in der Vorschau angezeigt werden. Lade ihn zuerst herunter, um die lokale Datei abzuspielen.";
 "platform_invalid_web_url" = "Gib eine gültige Webadresse ein, die mit http:// oder https:// beginnt.";
+
+"library_history_tab" = "Verlauf";
+
+"library_files_tab" = "Dateien";
+
+"library_books_tab" = "Bücher";

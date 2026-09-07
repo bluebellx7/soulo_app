@@ -21,7 +21,7 @@
 "bookmark" = "添加书签";
 "appearance" = "阅读外观";
 "font_size" = "字号";
-"line_height" = "行距";
+"line_height" = "行高";
 "paper" = "纸色";
 "light" = "浅色";
 "dark" = "深色";
@@ -101,3 +101,18 @@
 "copy_pairing_code" = "复制配对码";
 "copied" = "已复制";
 "reader_continue" = "继续阅读";
+
+"speech_failed" = "未能识别语音，请重试。";
+"browser_identity" = "浏览器标识";
+"custom_identity" = "自定义";
+"default_identity" = "默认模式";
+"identity_hint" = "仅应用于当前标签页，保存后重新加载网页。";
+"identity_validation" = "最多 1024 字节，不可包含换行或控制字符。";
+"current_identity" = "当前 User-Agent";
+"connection_protocol" = "协议 / 端口";
+"certificate" = "证书主体";
+"mixed_content" = "此页面包含未安全加载的内容。";
+"try_reader" = "尝试阅读模式";
+"media_no_content" = "未检测到可播放媒体";
+"reading_progress" = "阅读进度";
+"loaded_chapters" = "已载入章节";

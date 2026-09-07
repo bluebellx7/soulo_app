@@ -116,11 +116,20 @@ final class MediaSession: ObservableObject {
         guard player.currentItem != nil else { return }
         wantsPlayback = true
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback, options: [.allowAirPlay])
+            // Playback supports AirPlay implicitly. Explicit .allowAirPlay is
+            // only valid for playAndRecord and can throw OSStatus -50 on device,
+            // preventing player.play() even though seeking still renders frames.
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback, options: [])
             try AVAudioSession.sharedInstance().setActive(true)
-            // Allow AVPlayer to prepare enough data before advancing.
             player.defaultRate = rate
-            player.play()
+            if url?.isFileURL == true {
+                // Local media is already available. Apply the requested rate
+                // directly, including slow playback after a seek.
+                player.playImmediately(atRate: rate)
+            } else {
+                // Network streams still use AVPlayer's buffering policy.
+                player.play()
+            }
         } catch { self.error = error.localizedDescription }
     }
     func pause() { wantsPlayback = false; player.pause(); savePosition(); updateNowPlaying() }

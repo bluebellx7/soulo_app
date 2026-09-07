@@ -88,3 +88,38 @@ struct AdaptiveActionRow: Layout {
 enum CaptureActionLayout {
     static func verticalPadding(bottomSafeArea: CGFloat) -> CGFloat { max(12, bottomSafeArea) }
 }
+
+/// Keep compact actions in four columns when their labels fit; use two otherwise.
+/// Rows share a height so wrapping does not produce uneven button backgrounds.
+struct AdaptiveIconActionGrid: Layout {
+    var spacing: CGFloat = 8
+    @Environment(\.layoutDirection) private var layoutDirection
+
+    private func measurement(width: CGFloat?, subviews: Subviews) -> (CGFloat, Int, CGFloat, [CGFloat]) {
+        let ideal = subviews.map { $0.sizeThatFits(.unspecified) }
+        let available = max(0, width ?? ideal.map(\.width).reduce(0, +) + spacing * 3)
+        let columns = (ideal.map(\.width).max() ?? 0) * 4 + spacing * 3 <= available + 0.5 ? 4 : 2
+        let cellWidth = max(0, (available - spacing * CGFloat(columns - 1)) / CGFloat(columns))
+        var heights = [CGFloat](repeating: 0, count: (subviews.count + columns - 1) / columns)
+        for (index, view) in subviews.enumerated() {
+            heights[index / columns] = max(heights[index / columns], view.sizeThatFits(.init(width: cellWidth, height: nil)).height)
+        }
+        return (available, columns, cellWidth, heights)
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let (width, _, _, heights) = measurement(width: proposal.width, subviews: subviews)
+        return CGSize(width: width, height: heights.reduce(0, +) + spacing * CGFloat(max(0, heights.count - 1)))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let (_, columns, width, heights) = measurement(width: bounds.width, subviews: subviews)
+        for (index, view) in subviews.enumerated() {
+            let row = index / columns
+            let column = layoutDirection == .rightToLeft ? columns - 1 - index % columns : index % columns
+            let y = heights.prefix(row).reduce(0, +) + spacing * CGFloat(row)
+            view.place(at: CGPoint(x: bounds.minX + CGFloat(column) * (width + spacing), y: bounds.minY + y),
+                       anchor: .topLeading, proposal: .init(width: width, height: heights[row]))
+        }
+    }
+}

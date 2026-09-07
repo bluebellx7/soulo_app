@@ -792,6 +792,24 @@ private struct TabOverviewCard: View {
     }
 }
 
+/// The same count symbol appears in the toolbar and the More panel.
+struct TabCountSymbol: View {
+    let count: Int
+    var outlineOpacity = 1.0
+    var numberOpacity = 1.0
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(lineWidth: 1.5).frame(width: 18, height: 18)
+                .opacity(outlineOpacity)
+            Text("\(min(count, 99))")
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .opacity(numberOpacity)
+        }.frame(width: 23, height: 23)
+        .accessibilityHidden(true)
+    }
+}
+
 // MARK: - Tab Count Badge (for toolbar)
 
 struct TabCountBadge: View {
@@ -801,15 +819,8 @@ struct TabCountBadge: View {
 
     var body: some View {
         Button(action: action) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .stroke(Color.primary.opacity(0.72), lineWidth: 1.5)
-                    .frame(width: 18, height: 18)
-
-                Text("\(min(count, 99))")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.primary.opacity(0.86))
-            }
+            TabCountSymbol(count: count, outlineOpacity: 0.72, numberOpacity: 0.86)
+            .foregroundStyle(Color.primary)
             .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
             .contentShape(Circle())
             .browserToolbarButtonGlass(tint: glassTint)
@@ -823,15 +834,13 @@ struct TabCountBadge: View {
 // MARK: - View Extension for Tab Overview Scale
 
 extension View {
-    @ViewBuilder
     func tabOverviewScale(isActive: Bool) -> some View {
-        if isActive {
-            self
-                .scaleEffect(0.90)
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .ignoresSafeArea()
-        } else {
-            self
-        }
+        // Preserve structural identity: branching here dismantles and reattaches
+        // the live WKWebView while WebKit is presenting its text-selection menu.
+        // Do not clip this root: browser chrome extends into the safe area, and
+        // even a zero-radius clip cuts off the bottom toolbar in normal browsing.
+        self
+            .scaleEffect(isActive ? 0.90 : 1)
+            .ignoresSafeArea(.container, edges: isActive ? .all : [])
     }
 }

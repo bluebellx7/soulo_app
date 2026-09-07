@@ -9,6 +9,7 @@ enum FireButtonService {
         DownloadManagerService.shared.cancelAllDownloads()
         URLSession.shared.configuration.urlCache?.removeAllCachedResponses()
         URLCache.shared.removeAllCachedResponses()
+        WebsiteFaviconService.shared.clear()
 
         tabManager?.resetTabsForPrivacy()
         WebViewModel.deleteAllPersistedSnapshots()
@@ -39,6 +40,7 @@ enum BrowserCacheService {
     @MainActor
     static func clear(tabManager: TabManager?, historyContext: ModelContext? = nil) async {
         URLCache.shared.removeAllCachedResponses()
+        WebsiteFaviconService.shared.clear()
         WebViewModel.deleteAllPersistedSnapshots()
         tabManager?.tabs.forEach { $0.webViewModel.snapshot = nil }
         if let historyContext {
@@ -64,6 +66,8 @@ enum BrowserCacheService {
             let fileManager = FileManager.default
             var total = Int64(URLCache.shared.currentDiskUsage)
                 + Int64(URLCache.shared.currentMemoryUsage)
+                + Int64(WebsiteFaviconService.responseCache.currentDiskUsage)
+                + Int64(WebsiteFaviconService.responseCache.currentMemoryUsage)
 
             if let cachesDirectory = fileManager.urls(
                 for: .cachesDirectory,

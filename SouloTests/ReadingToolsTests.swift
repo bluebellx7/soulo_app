@@ -301,6 +301,27 @@ final class ReadingToolsTests: XCTestCase {
             session.pause()
         }
     }
+    @MainActor func testLocalVideoAdvancesAfterSeekAndResume() async throws {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(
+            forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let url = try file("video-playback.mp4", Data(contentsOf: fixture))
+        let session = MediaSession.shared
+        let oldRate = session.rate
+        defer { session.setRate(oldRate); session.stop() }
+        session.setRate(1)
+        session.open(url: url)
+        try await wait { session.hasVideo && session.player.currentTime().seconds > 0.2 }
+        XCTAssertNil(session.error)
+        session.pause()
+        session.seek(3)
+        try await wait { abs(session.player.currentTime().seconds - 3) < 0.1 }
+        session.play()
+        try await wait { session.player.currentTime().seconds > 3.3 }
+        XCTAssertNil(session.error)
+        XCTAssertTrue(session.playing)
+        XCTAssertEqual(AVAudioSession.sharedInstance().category, .playback)
+    }
+
     @MainActor func testHTMLMediaRatesUseActualElementValues() async throws {
         let web = WKWebView()
         web.loadHTMLString("<video id='v'></video><audio></audio>", baseURL: nil)

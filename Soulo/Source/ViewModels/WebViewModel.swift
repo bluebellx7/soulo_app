@@ -16,6 +16,7 @@ final class WebViewModel: ObservableObject {
     // MARK: - Published State
 
     @Published var currentURL: URL?
+    @Published private(set) var userAgentOverride: String?
     @Published var pageTitle: String = ""
     var lastURLString: String = ""
     @Published var isLoading: Bool = false
@@ -100,10 +101,23 @@ final class WebViewModel: ObservableObject {
         }
     }
 
+    @discardableResult
+    func setUserAgentOverride(_ value: String?) -> Bool {
+        if let value, !Self.isValidUserAgent(value) { return false }
+        userAgentOverride = value?.trimmingCharacters(in: .whitespaces)
+        if let webView { applyWebPreferences(to: webView) }
+        return true
+    }
+
+    static func isValidUserAgent(_ value: String) -> Bool {
+        !value.trimmingCharacters(in: .whitespaces).isEmpty && value.utf8.count <= 1024
+            && !value.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) })
+    }
+
     func applyWebPreferences(to webView: WKWebView) {
-        webView.customUserAgent = isDesktopModeEnabled
+        webView.customUserAgent = userAgentOverride ?? (isDesktopModeEnabled
             ? AppConstants.desktopWebViewUserAgent
-            : AppConstants.mobileWebViewUserAgent
+            : AppConstants.mobileWebViewUserAgent)
         webView.configuration.defaultWebpagePreferences.preferredContentMode = isDesktopModeEnabled
             ? .desktop
             : .mobile
