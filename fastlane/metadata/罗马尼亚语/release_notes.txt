@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Citiți articole și cărți electronice, gestionați fișiere și transferați-le prin Wi-Fi.
-• Comenzi albastre uniforme și meniuri de instrumente mai simple.
-• Remediată o blocare la deschiderea instrumentelor pe tot ecranul; redarea și previzualizarea fișierelor au fost îmbunătățite.
+• Lectură continuă îmbunătățită, cu cuprins și căutare separate, setări pentru font, spațierea rândurilor și aspectul PDF.
+• Adăugate biblioteca în grilă și widgetul, scanarea QR, recunoașterea textului din fotografii și scurtătura de scanare.
+• Îmbunătățite accesul la descărcări, acțiunile pentru fișiere, paginile web întunecate și performanța.

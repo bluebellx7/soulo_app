@@ -65,7 +65,7 @@ final class BrowserUIPreferencesTests: XCTestCase {
                 Color.clear.onAppear { presented = true }
                     .sheet(isPresented: $presented) {
                         BrowserAddressEditorSheet(initialText: "电影", initialURL: "https://example.com",
-                                                  onOpen: { _ in }, onVoiceInput: {})
+                                                  onOpen: { _ in }, onOpenURL: { _ in }, onVoiceInput: {})
                     }
             }
         }
@@ -106,6 +106,53 @@ final class BrowserUIPreferencesTests: XCTestCase {
         window.rootViewController?.dismiss(animated: false)
         try await Task.sleep(for: .milliseconds(300))
     }
+    func testQueryClearRequestRestoresKeyboardFocus() async throws {
+        final class Model: ObservableObject {
+            @Published var text = "original query"
+            @Published var focusRequest = 0
+        }
+        struct Harness: View {
+            @ObservedObject var model: Model
+            var body: some View {
+                PresentationSearchField(text: $model.text, placeholder: "Search",
+                                        focusRequest: model.focusRequest)
+            }
+        }
+        let model = Model()
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = UIHostingController(rootView: Harness(model: model))
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        func findField(in view: UIView) -> PresentationSearchField.Field? {
+            if let input = view as? PresentationSearchField.Field { return input }
+            return view.subviews.lazy.compactMap { findField(in: $0) }.first
+        }
+        var candidate: PresentationSearchField.Field?
+        for _ in 0..<100 {
+            candidate = findField(in: window)
+            if candidate?.isFirstResponder == true { break }
+            try await Task.sleep(for: .milliseconds(30))
+        }
+        let input = try XCTUnwrap(candidate)
+        input.resignFirstResponder()
+        model.text = ""
+        model.focusRequest += 1
+        for _ in 0..<100 {
+            if input.isFirstResponder && input.text == "" { break }
+            try await Task.sleep(for: .milliseconds(30))
+        }
+        XCTAssertTrue(input.isFirstResponder, "Clearing from another field must restore query focus")
+        XCTAssertEqual(input.text, "")
+        input.insertText("new query")
+        input.sendActions(for: .editingChanged)
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(model.text, "new query")
+        XCTAssertTrue(try XCTUnwrap(input.selectedTextRange).isEmpty,
+                      "A clear request must not reselect later edits")
+    }
+
     func testCapturePreviewFitsLargeImageInsideItsDisplayArea() async throws {
         let image = UIGraphicsImageRenderer(size: CGSize(width: 1200, height: 2000)).image { context in
             UIColor.white.setFill(); context.fill(CGRect(x: 0, y: 0, width: 1200, height: 2000))

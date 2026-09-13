@@ -34,6 +34,7 @@ struct LibraryBook: Codable, Identifiable, Hashable {
     nonisolated static var coverDirectory: URL { FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("BookCovers") }
     @Published private(set) var books: [LibraryBook] = []
     private let metadata: URL
+    private let progressPersistence = DeferredPersistence()
     init(metadata: URL? = nil) {
         self.metadata = metadata ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("BookLibrary.json")
         if let data = try? Data(contentsOf: self.metadata), let books = try? JSONDecoder().decode([LibraryBook].self, from: data) { self.books = books }
@@ -52,16 +53,31 @@ struct LibraryBook: Codable, Identifiable, Hashable {
         try FileManager.default.createDirectory(at: Self.directory, withIntermediateDirectories: true)
         var destination = url
         if url.deletingLastPathComponent().standardizedFileURL != Self.directory.standardizedFileURL {
-            destination = FileSafety.availableURL(name: url.lastPathComponent, directory: Self.directory)
-            try FileManager.default.copyItem(at: url, to: destination)
+            destination = try await BookImportWorker.shared.copy(url, into: Self.directory)
+            // Another import may have completed while the copy was running.
+            if let book = books.first(where: { $0.id == result }) {
+                try? FileManager.default.removeItem(at: destination)
+                return book
+            }
         }
         var book = LibraryBook(id: result, name: url.deletingPathExtension().lastPathComponent, fileName: destination.lastPathComponent)
         book.fileBookmark = try? destination.bookmarkData(options: .minimalBookmark)
         books.insert(book, at: 0); try save(); return book
     }
     func update(_ id: String, location: String, fraction: Double) {
-        guard let index = books.firstIndex(where: { $0.id == id }) else { return }
-        books[index].location = location; books[index].fraction = min(1, max(0, fraction)); books[index].openedAt = Date()
+        guard fraction.isFinite, let index = books.firstIndex(where: { $0.id == id }) else { return }
+        let fraction = min(1, max(0, fraction))
+        guard books[index].location != location || books[index].fraction != fraction else { return }
+        var book = books[index]
+        book.location = location; book.fraction = fraction; book.openedAt = Date()
+        books[index] = book
+        progressPersistence.schedule { [weak self] in try? self?.save() }
+    }
+    func flushReadingProgress() { progressPersistence.flush() }
+    func updateTitle(_ id: String, title: String) {
+        let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty, title.count <= 400, let index = books.firstIndex(where: { $0.id == id }), books[index].name != title else { return }
+        books[index].name = title
         try? save()
     }
     func bookmark(_ id: String) {
@@ -80,6 +96,7 @@ struct LibraryBook: Codable, Identifiable, Hashable {
     }
     func remove(_ id: String) { books.removeAll { $0.id == id }; try? save() }
     private func save() throws {
+        progressPersistence.cancel()
         try FileManager.default.createDirectory(at: metadata.deletingLastPathComponent(), withIntermediateDirectories: true)
         try JSONEncoder().encode(books).write(to: metadata, options: .atomic)
     }
@@ -161,17 +178,17 @@ enum TextBookDecoder {
     }
     static func chapters(_ text: String) -> [String] {
         // Bound each WebView document; a large TXT never becomes a single DOM.
-        var result: [String] = [], chunk = ""
+        var result: [String] = [], chunk = "", chunkLength = 0
         for line in text.components(separatedBy: .newlines) {
-            if chunk.count > 24_000 || (chunk.count > 1000 && line.range(of: "^(第.{1,15}[章节回卷]|Chapter\\s+\\d+)", options: [.regularExpression, .caseInsensitive]) != nil) {
-                result.append(chunk); chunk = ""
+            if chunkLength > 24_000 || (chunkLength > 1000 && line.range(of: "^(第.{1,15}[章节回卷]|Chapter\\s+\\d+)", options: [.regularExpression, .caseInsensitive]) != nil) {
+                result.append(chunk); chunk = ""; chunkLength = 0
             }
             var remainder = line[...]
-            while remainder.count > 24_000 {
-                let end = remainder.index(remainder.startIndex, offsetBy: 24_000)
-                chunk += remainder[..<end]; result.append(chunk); chunk = ""; remainder = remainder[end...]
+            while let end = remainder.index(remainder.startIndex, offsetBy: 24_000, limitedBy: remainder.endIndex), end != remainder.endIndex {
+                chunk += remainder[..<end]; result.append(chunk); chunk = ""; chunkLength = 0; remainder = remainder[end...]
             }
             chunk += remainder + "\n"
+            chunkLength += remainder.count + 1
         }
         if !chunk.isEmpty { result.append(chunk) }
         return result
@@ -213,5 +230,16 @@ enum TextBookDecoder {
             guard output.count <= 1024 * 1024 else { throw ReadingToolError.limit }
         }
         return Data(output)
+    }
+}
+
+/// Serializes destination selection and large file copies away from the UI actor.
+private actor BookImportWorker {
+    static let shared = BookImportWorker()
+    func copy(_ source: URL, into directory: URL) throws -> URL {
+        let destination = FileSafety.availableURL(name: source.lastPathComponent, directory: directory)
+        do { try FileManager.default.copyItem(at: source, to: destination) }
+        catch { try? FileManager.default.removeItem(at: destination); throw error }
+        return destination
     }
 }

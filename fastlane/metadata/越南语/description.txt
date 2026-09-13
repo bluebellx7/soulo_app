@@ -19,4 +19,4 @@ Cài đặt UserScripts hoặc WebExtensions tương thích, quản lý quyền 
 
 Soulo lưu trữ dữ liệu duyệt web cục bộ trừ khi bạn bật đồng bộ hóa cài đặt iCloud. Duyệt web riêng tư không lưu lịch sử.
 
-Đọc bài viết và sách điện tử, quản lý tệp và truyền qua Wi-Fi.
+Đọc thoải mái, mở tủ sách từ tiện ích, quét mã QR và trích xuất văn bản từ ảnh.

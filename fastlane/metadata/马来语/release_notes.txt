@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Baca artikel dan e-buku, urus fail dan pindahkannya melalui Wi-Fi.
-• Kawalan biru yang seragam dan menu alat yang lebih ringkas.
-• Membaiki ranap semasa membuka alat skrin penuh; menambah baik main balik media dan pratonton fail.
+• Bacaan berterusan ditambah baik dengan kandungan dan carian berasingan, tetapan fon, jarak baris dan rupa PDF.
+• Ditambah paparan buku bergrid dan widget, pengimbasan QR, pengecaman teks dalam foto serta pintasan imbasan.
+• Akses muat turun, tindakan fail, mod gelap halaman web dan prestasi ditambah baik.

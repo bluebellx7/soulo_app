@@ -19,4 +19,4 @@ Installieren Sie UserScripts oder kompatible WebExtensions, verwalten Sie Berech
 
 Soulo speichert Browserdaten lokal, es sei denn, Sie aktivieren die Synchronisierung der iCloud-Einstellungen. Beim privaten Surfen wird der Verlauf nicht gespeichert.
 
-Artikel und E-Books lesen, Dateien verwalten und per WLAN übertragen.
+Bequem lesen, das Bücherregal per Widget öffnen, QR-Codes scannen und Text aus Fotos erkennen.

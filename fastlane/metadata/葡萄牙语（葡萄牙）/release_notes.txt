@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Leia artigos e livros digitais, gira ficheiros e transfira-os por Wi-Fi.
-• Controlos azuis uniformes e menus de ferramentas mais simples.
-• Corrigida uma falha ao abrir ferramentas em ecrã inteiro; reprodução multimédia e pré-visualizações melhoradas.
+• Leitura contínua melhorada, com índice e pesquisa separados, controlos de tipo de letra e entrelinha e aparência de PDFs.
+• Biblioteca em grelha e widget no ecrã principal, leitura de QR, reconhecimento de texto em fotografias e atalho de leitura de códigos.
+• Melhorias no acesso às descargas, nas ações de ficheiros, no modo escuro de páginas web e no desempenho.

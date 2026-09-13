@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Läs artiklar och e-böcker, hantera filer och överför dem via Wi-Fi.
-• Enhetliga blå kontroller och enklare verktygsmenyer.
-• Åtgärdat en krasch när helskärmsverktygen öppnas; förbättrad uppspelning och förhandsvisning av filer.
+• Förbättrad löpande läsning med separat innehållsförteckning och sökning samt inställningar för typsnitt, radavstånd och PDF-utseende.
+• Lagt till bokrutnät och widget, QR-skanning, textigenkänning i foton och en genväg till skanning.
+• Förbättrad åtkomst till hämtningar, filåtgärder, mörka webbsidor och prestanda.

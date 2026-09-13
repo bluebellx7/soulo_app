@@ -21,7 +21,7 @@
 "bookmark" = "添加书签";
 "appearance" = "阅读外观";
 "font_size" = "字号";
-"line_height" = "行高";
+"line_height" = "行间距";
 "paper" = "纸色";
 "light" = "浅色";
 "dark" = "深色";
@@ -116,3 +116,21 @@
 "media_no_content" = "未检测到可播放媒体";
 "reading_progress" = "阅读进度";
 "loaded_chapters" = "已载入章节";
+
+// QR scanner
+"scan_qr" = "扫一扫";
+"scan_hint" = "将二维码或条形码放入框内";
+"scan_result" = "扫描结果";
+"scan_camera_unavailable" = "当前无法使用相机扫描，可从相册识别二维码、条形码或文字。";
+"scan_no_code" = "未识别到二维码、条形码或文字，请选择更清晰的图片。";
+"scan_local" = "内容仅在本机展示";
+"copy" = "复制";
+
+"file_info" = "文件信息";
+"file_name" = "文件名";
+"file_size" = "文件大小";
+"file_modified" = "修改时间";
+"file_pages" = "页数";
+"page_zoom" = "页面缩放";
+"pdf_fixed_layout" = "PDF 保留原版排版，可调整缩放和页面颜色。";
+"system_files" = "浏览系统文件";

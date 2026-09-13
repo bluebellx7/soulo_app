@@ -356,16 +356,6 @@ struct SettingsView: View {
                         }
                         .buttonStyle(.plain)
 
-                        NavigationLink {
-                            HelpCenterView()
-                        } label: {
-                            Label {
-                                Text(LanguageManager.shared.localizedString("settings_help"))
-                            } icon: {
-                                IconBadge(systemName: "questionmark.circle.fill", color: neutralIconColor)
-                            }
-                        }
-
                         NavigationLink(destination: PrivacyPolicyView()) {
                             Label {
                                 Text(LanguageManager.shared.localizedString("settings_privacy_policy"))

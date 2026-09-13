@@ -306,8 +306,8 @@ final class WebViewModelTests: XCTestCase {
     }
 
     func testPhoneAddressEditorUsesCompactDetent() {
-        XCTAssertLessThanOrEqual(BrowserAddressEditorLayout.compactHeight, 260)
-        XCTAssertGreaterThanOrEqual(BrowserAddressEditorLayout.compactHeight, 240)
+        XCTAssertLessThanOrEqual(BrowserAddressEditorLayout.compactHeight, 220)
+        XCTAssertGreaterThanOrEqual(BrowserAddressEditorLayout.compactHeight, 200)
     }
 
     func testShakeClassifierIgnoresEverydayMovementAndWidelySpacedPeaks() {

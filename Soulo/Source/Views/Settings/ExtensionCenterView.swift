@@ -177,7 +177,7 @@ struct ExtensionCenterView: View {
                                     service.deleteWebExtension(item.id)
                                 } label: {
                                     Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
-                                }
+                                }.tint(.red)
                             }
                     }
                 }
@@ -205,7 +205,7 @@ struct ExtensionCenterView: View {
                                     scriptPendingDeletion = script
                                 } label: {
                                     Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
-                                }
+                                }.tint(.red)
                             }
                         }
                     }

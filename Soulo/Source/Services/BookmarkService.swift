@@ -41,11 +41,12 @@ struct BookmarkService {
     // MARK: - Is Bookmarked
 
     static func isBookmarked(url: String, context: ModelContext) -> Bool {
-        let descriptor = FetchDescriptor<BookmarkItem>(
+        var descriptor = FetchDescriptor<BookmarkItem>(
             predicate: #Predicate { item in
                 item.urlString == url
             }
         )
+        descriptor.fetchLimit = 1
         let results = (try? context.fetch(descriptor)) ?? []
         return !results.isEmpty
     }

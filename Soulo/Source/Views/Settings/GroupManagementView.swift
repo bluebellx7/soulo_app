@@ -42,7 +42,7 @@ struct GroupManagementView: View {
                             groups = PlatformDataStore.shared.customGroups
                         } label: {
                             Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
-                        }
+                        }.tint(.red)
                     }
                 }
             }

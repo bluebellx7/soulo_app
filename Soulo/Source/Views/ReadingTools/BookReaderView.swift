@@ -14,9 +14,13 @@ struct ReaderLink: Identifiable {
     @Published var error: String?
     @Published var ready = false
     @Published var replicaPDF: Data?
+    @Published var controlsVisible = false
+    @Published var fraction = 0.0
+    @Published var title = ""
     weak var webView: WKWebView?
     weak var pdfView: PDFView?
     var book: LibraryBook
+    var onBack: (() -> Void)?
     var size = 18.0, line = 1.6, theme = "paper", font = "serif"
     init(book: LibraryBook) { self.book = book }
     func command(_ name: String, _ args: [Any] = []) {
@@ -24,6 +28,12 @@ struct ReaderLink: Identifiable {
             let json = String(data: data, encoding: .utf8)
         else { return }
         webView?.evaluateJavaScript("window.soulo.\(name)(...\(json)); null;", completionHandler: nil)
+    }
+    func seek(_ fraction: Double) {
+        if let pdfView, let document = pdfView.document {
+            let index = Int((fraction * Double(max(0, document.pageCount - 1))).rounded())
+            if let page = document.page(at: index) { pdfView.go(to: page) }
+        } else { command("fraction", [fraction]) }
     }
     func style() { command("style", [size, line, theme, font]) }
     func go(_ href: String) {
@@ -57,8 +67,18 @@ struct BookReaderView: View {
     @State private var data: Data?
     @State private var textData: Data?
     @State private var format: BookFormat?
-    @State private var showContents = false
+    @State private var contentsPresentation: ReaderContentsPresentation?
     @State private var showStyle = false
+    @State private var showBrightness = false
+    @State private var showFileInfo = false
+    @State private var pdfZoom = 1.0
+    @State private var fileBytes: Int64 = 0
+    @State private var fileModified: Date?
+    @State private var seekPosition = 0.0
+    @State private var isSeeking = false
+    @State private var brightness = UIScreen.main.brightness
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var query = ""
     @State private var encoding = "auto"
     @AppStorage("reader.fontSize") private var fontSize = 18.0
@@ -71,109 +91,54 @@ struct BookReaderView: View {
         _controller = StateObject(wrappedValue: BookReaderController(book: book))
     }
     var body: some View {
-        Group {
-            if let error = controller.error {
-                ContentUnavailableView {
-                    Label(ToolText.text("reading_failed"), systemImage: "book.closed")
-                } description: {
-                    Text(error)
-                } actions: {
-                    Button(ToolText.text("retry")) {
-                        controller.error = nil
-                        Task { await prepare() }
-                    }
-                }
-            } else if let pdf = controller.replicaPDF {
-                PDFBookSurface(data: pdf, controller: controller)
-            } else if let data, let format {
-                if format == .pdf {
-                    PDFBookSurface(data: data, controller: controller)
-                } else {
-                    BookWebSurface(data: data, textData: textData, format: format, controller: controller)
-                }
-            } else {
-                ProgressView()
+        GeometryReader { geometry in
+            readerContent
+                .frame(width: geometry.size.width,
+                    height: geometry.size.height + geometry.safeAreaInsets.top + geometry.safeAreaInsets.bottom)
+                .offset(y: -geometry.safeAreaInsets.top)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(readerBackground.ignoresSafeArea())
+        .overlay(alignment: .top) {
+            if controller.controlsVisible || controller.error != nil {
+                readerHeader.transition(.opacity)
             }
         }
-        .navigationTitle(book.name)
-        .navigationBarTitleDisplayMode(.inline)
-        .mediaPlayerNavigation()
-        .toolbar {
-            ToolbarItemGroup(placement: .bottomBar) {
-                Button {
-                    showContents = true
-                } label: {
-                    Image(systemName: "list.bullet").font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
-                }.accessibilityLabel(ToolText.text("contents"))
-                Spacer()
-                Button {
-                    if let pdf = controller.pdfView { pdf.goToPreviousPage(nil) } else { controller.command("prev") }
-                } label: {
-                    Image(systemName: "chevron.left").font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
-                }
-                Button {
-                    if let pdf = controller.pdfView { pdf.goToNextPage(nil) } else { controller.command("next") }
-                } label: {
-                    Image(systemName: "chevron.right").font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
-                }
-                Spacer()
-                Button {
-                    library.bookmark(book.id)
-                } label: {
-                    Image(systemName: isBookmarked ? "bookmark.fill" : "bookmark").font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
-                }.accessibilityLabel(ToolText.text("bookmark"))
-                Button {
-                    showStyle = true
-                } label: {
-                    Image(systemName: "textformat.size").font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
-                }.accessibilityLabel(ToolText.text("appearance"))
+        .overlay(alignment: .bottom) {
+            if controller.controlsVisible {
+                readerFooter.transition(.opacity)
             }
         }
-        .sheet(isPresented: $showContents) {
-            NavigationStack {
-                List {
-                    Section(ToolText.text("search")) {
-                        TextField(ToolText.text("search_book"), text: $query).onSubmit { controller.search(query) }
-                        if controller.searched && controller.results.isEmpty {
-                            Text(ToolText.text("search_empty")).font(.footnote).foregroundStyle(.secondary)
-                        }
-                        ForEach(Array(controller.results.enumerated()), id: \.offset) { _, link in
-                            Button(link.label) {
-                                controller.go(link.href)
-                                showContents = false
-                            }
-                        }
-                    }
-                    Section(ToolText.text("bookmarks")) {
-                        ForEach(library.books.first(where: { $0.id == book.id })?.bookmarks ?? []) { mark in
-                            Button(mark.label) {
-                                controller.go(mark.location)
-                                showContents = false
-                            }
-                        }
-                    }
-                    Section(ToolText.text("contents")) {
-                        ForEach(Array(controller.toc.enumerated()), id: \.offset) { _, link in
-                            Button(link.label) {
-                                controller.go(link.href)
-                                showContents = false
-                            }
-                        }
-                    }
-                }.navigationTitle(ToolText.text("contents"))
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button(ToolText.text("done")) { showContents = false } } }
-            }
+        .navigationBarBackButtonHidden()
+        .toolbar(.hidden, for: .navigationBar, .bottomBar)
+        .statusBarHidden(true)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: controller.controlsVisible)
+        .accessibilityAction(named: Text(ToolText.text("appearance"))) { controller.controlsVisible.toggle() }
+        .accessibilityAction(.escape) { dismiss() }
+        .onChange(of: controller.fraction) { _, fraction in if !isSeeking { seekPosition = fraction } }
+        .sheet(item: $contentsPresentation) { mode in
+            ReaderContentsSheet(controller: controller, query: $query, mode: mode)
         }
         .sheet(isPresented: $showStyle) {
             NavigationStack {
                 Form {
-                    LabeledContent(ToolText.text("font_size"), value: Int(fontSize).formatted())
-                    Slider(value: $fontSize, in: 14...36, step: 1) { Text(ToolText.text("font_size")) }
-                    LabeledContent(ToolText.text("line_height"), value: lineHeight.formatted())
-                    Slider(value: $lineHeight, in: 1.2...2.4, step: 0.1) { Text(ToolText.text("line_height")) }
-                    Picker(ToolText.text("font"), selection: $font) {
-                        ForEach(["serif", "sans", "mono"], id: \.self) { Text(ToolText.text($0)).tag($0) }
+                    if isPDF {
+                        LabeledContent(ToolText.text("page_zoom"), value: pdfZoom.formatted(.percent.precision(.fractionLength(0))))
+                        Slider(value: $pdfZoom, in: 1...3, step: 0.1) { Text(ToolText.text("page_zoom")) }
+                            .onChange(of: pdfZoom) { _, value in
+                                guard let view = controller.pdfView else { return }
+                                view.autoScales = false
+                                view.scaleFactor = view.scaleFactorForSizeToFit * value
+                            }
+                        Text(ToolText.text("pdf_fixed_layout")).font(.footnote).foregroundStyle(.secondary)
+                    } else {
+                        LabeledContent(ToolText.text("font_size"), value: Int(fontSize).formatted())
+                        Slider(value: $fontSize, in: 14...36, step: 1) { Text(ToolText.text("font_size")) }
+                        LabeledContent(ToolText.text("line_height"), value: lineHeight.formatted())
+                        Slider(value: $lineHeight, in: 1.2...2.4, step: 0.1) { Text(ToolText.text("line_height")) }
+                        Picker(ToolText.text("font"), selection: $font) {
+                            ForEach(["serif", "sans", "mono"], id: \.self) { Text(ToolText.text($0)).tag($0) }
+                        }
                     }
                     Picker(ToolText.text("appearance"), selection: $theme) {
                         Text(ToolText.text("paper")).tag("paper")
@@ -192,6 +157,21 @@ struct BookReaderView: View {
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button(ToolText.text("done")) { showStyle = false } } }
             }.presentationDetents([.medium, .large])
         }
+        .sheet(isPresented: $showBrightness) {
+            VStack(alignment: .leading, spacing: 24) {
+                HStack(spacing: 16) {
+                    Image(systemName: "sun.min")
+                    Slider(value: $brightness, in: 0.05...1)
+                        .accessibilityLabel(ToolText.text("appearance"))
+                        .onChange(of: brightness) { _, value in UIScreen.main.brightness = value }
+                    Image(systemName: "sun.max")
+                }
+                themePicker
+            }
+            .padding(28)
+            .presentationDetents([.height(190)])
+            .presentationDragIndicator(.visible)
+        }
         .onChange(of: font) { _, _ in updateStyle() }
         .onChange(of: fontSize) { _, _ in updateStyle() }
         .onChange(of: lineHeight) { _, _ in updateStyle() }
@@ -200,11 +180,164 @@ struct BookReaderView: View {
             data = nil
             Task { await prepare() }
         }
+        .sheet(isPresented: $showFileInfo) { fileInfoSheet }
+        .onAppear {
+            let action = dismiss
+            controller.onBack = { action() }
+        }
         .task { await prepare() }
+        .onDisappear { library.flushReadingProgress(); controller.onBack = nil }
+
     }
-    private var isBookmarked: Bool {
-        guard let current = library.books.first(where: { $0.id == book.id }) else { return false }
-        return current.bookmarks.contains { $0.location == current.location }
+    private var isPDF: Bool { format == .pdf || controller.replicaPDF != nil }
+    @ViewBuilder private var readerContent: some View {
+        Group {
+            if let error = controller.error {
+                ContentUnavailableView {
+                    Label(ToolText.text("reading_failed"), systemImage: "book.closed")
+                } description: {
+                    Text(error)
+                } actions: {
+                    Button(ToolText.text("retry")) {
+                        controller.error = nil
+                        Task { await prepare() }
+                    }
+                }
+            } else if let pdf = controller.replicaPDF {
+                pdfSurface(pdf)
+            } else if let data, let format {
+                if format == .pdf {
+                    pdfSurface(data)
+                } else {
+                    BookWebSurface(data: data, textData: textData, format: format, controller: controller)
+                }
+            } else {
+                ProgressView()
+            }
+        }
+    }
+    private func pdfSurface(_ bytes: Data) -> some View {
+        PDFBookSurface(data: bytes, controller: controller)
+            .overlay {
+                if theme == "dark" { Color.white.blendMode(.difference).allowsHitTesting(false) }
+            }
+            .compositingGroup()
+            .colorMultiply(theme == "paper" ? readerBackground : .white)
+    }
+    private var fileInfoSheet: some View {
+        NavigationStack {
+            Form {
+                Section(ToolText.text("file_name")) {
+                    Text(book.url.lastPathComponent).textSelection(.enabled)
+                }
+                LabeledContent(ToolText.text("format"), value: book.url.pathExtension.uppercased())
+                LabeledContent(ToolText.text("file_size"), value: ByteCountFormatter.string(fromByteCount: fileBytes, countStyle: .file))
+                if let fileModified {
+                    LabeledContent(ToolText.text("file_modified"), value: fileModified.formatted(date: .abbreviated, time: .shortened))
+                }
+                if let count = controller.pdfView?.document?.pageCount {
+                    LabeledContent(ToolText.text("file_pages"), value: count.formatted())
+                }
+            }
+            .navigationTitle(ToolText.text("file_info"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(ToolText.text("done")) { showFileInfo = false } } }
+            .task {
+                let url = book.url
+                let values = try? await Task.detached(priority: .utility) {
+                    try url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
+                }.value
+                fileBytes = Int64(values?.fileSize ?? data?.count ?? 0)
+                fileModified = values?.contentModificationDate
+            }
+        }.presentationDetents([.medium, .large])
+    }
+    private var readerBackground: Color {
+        switch theme {
+        case "dark": Color(red: 0.09, green: 0.10, blue: 0.09)
+        case "light": .white
+        default: Color(red: 0.965, green: 0.945, blue: 0.906)
+        }
+    }
+    private var readerForeground: Color { theme == "dark" ? Color.white.opacity(0.85) : Color.black.opacity(0.78) }
+    private var readerHeader: some View {
+        HStack(spacing: 8) {
+            Button { dismiss() } label: { Image(systemName: "chevron.left") }
+                .accessibilityLabel(ToolText.text("close"))
+                .accessibilityIdentifier("reader.back")
+            Text(controller.title.isEmpty ? book.name : controller.title)
+                .font(.subheadline.weight(.semibold)).lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            ShareLink(item: book.url) { Image(systemName: "square.and.arrow.up") }
+                .accessibilityLabel(ToolText.text("share"))
+                .accessibilityIdentifier("reader.share")
+            Menu {
+                Button(ToolText.text("contents"), systemImage: "list.bullet") { contentsPresentation = .contents }
+                Button(ToolText.text("file_info"), systemImage: "info.circle") { showFileInfo = true }
+                Button(ToolText.text("appearance"), systemImage: "textformat.size") { showStyle = true }
+            } label: { Image(systemName: "ellipsis") }
+                .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
+                .accessibilityIdentifier("reader.more")
+        }
+        .buttonStyle(ReaderControlStyle())
+        .foregroundStyle(readerForeground)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .background(readerBackground.ignoresSafeArea(edges: .top))
+        .overlay(alignment: .bottom) { Divider().opacity(0.3) }
+    }
+    private var readerFooter: some View {
+        VStack(spacing: 14) {
+            HStack {
+                Text(ToolText.text("continuous_reading")).font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Text(controller.fraction, format: .percent.precision(.fractionLength(0)))
+                    .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+            }
+            Slider(value: $seekPosition, in: 0...1, onEditingChanged: { editing in
+                isSeeking = editing
+                if !editing { controller.seek(seekPosition) }
+            })
+            .accessibilityLabel(ToolText.text("continuous_reading"))
+            .accessibilityIdentifier("reader.progress")
+            HStack {
+                Button { contentsPresentation = .contents } label: { Image(systemName: "list.bullet") }
+                    .accessibilityLabel(ToolText.text("contents"))
+                    .accessibilityIdentifier("reader.contents")
+                Spacer()
+                Button { contentsPresentation = .search } label: { Image(systemName: "magnifyingglass") }
+                    .accessibilityLabel(ToolText.text("search_book"))
+                    .accessibilityIdentifier("reader.search")
+                Spacer()
+                Button { brightness = UIScreen.main.brightness; showBrightness = true } label: { Image(systemName: "sun.max") }
+                    .accessibilityLabel(ToolText.text("appearance"))
+                Spacer()
+                Button { showStyle = true } label: { Image(systemName: isPDF ? "slider.horizontal.3" : "textformat.size") }
+                    .accessibilityLabel(ToolText.text("appearance"))
+                    .accessibilityIdentifier("reader.style")
+            }
+            .font(.system(size: 21, weight: .regular))
+        }
+        .buttonStyle(ReaderControlStyle())
+        .foregroundStyle(readerForeground)
+        .tint(theme == "dark" ? Color.white.opacity(0.75) : Color.black.opacity(0.6))
+        .padding(.horizontal, 24)
+        .padding(.top, 18)
+        .padding(.bottom, 10)
+        .background(readerBackground.ignoresSafeArea(edges: .bottom))
+        .overlay(alignment: .top) { Divider().opacity(0.3) }
+    }
+    private var themePicker: some View {
+        HStack(spacing: 16) {
+            ForEach(["light", "paper", "dark"], id: \.self) { value in
+                Button { theme = value } label: {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(value == "dark" ? Color.black : value == "light" ? Color.white : Color(red: 0.965, green: 0.945, blue: 0.906))
+                        .frame(height: 48)
+                        .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(theme == value ? Color.blue : Color.gray.opacity(0.3), lineWidth: theme == value ? 2 : 1) }
+                }.accessibilityLabel(ToolText.text(value))
+            }
+        }
     }
     private func updateStyle() {
         controller.font = font
@@ -238,6 +371,61 @@ struct BookReaderView: View {
     }
 }
 
+private enum ReaderContentsPresentation: String, Identifiable {
+    case contents, search
+    var id: String { rawValue }
+}
+
+/// Focus belongs to the presented sheet's view hierarchy, rather than the reader behind it.
+private struct ReaderContentsSheet: View {
+    @ObservedObject var controller: BookReaderController
+    @Binding var query: String
+    let mode: ReaderContentsPresentation
+    @FocusState private var searchFocused: Bool
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if mode == .search {
+                    Section(ToolText.text("search")) {
+                        TextField(ToolText.text("search_book"), text: $query)
+                            .focused($searchFocused)
+                            .submitLabel(.search)
+                            .onSubmit { controller.search(query) }
+                            .task { searchFocused = true }
+                        if controller.searched && controller.results.isEmpty {
+                            Text(ToolText.text("search_empty")).font(.footnote).foregroundStyle(.secondary)
+                        }
+                        ForEach(Array(controller.results.enumerated()), id: \.offset) { _, link in
+                            Button(link.label) { controller.go(link.href); dismiss() }
+                        }
+                    }
+                } else {
+                    Section(ToolText.text("contents")) {
+                        ForEach(Array(controller.toc.enumerated()), id: \.offset) { _, link in
+                            Button(link.label) { controller.go(link.href); dismiss() }
+                        }
+                    }
+                }
+            }
+            .accessibilityIdentifier(mode == .search ? "reader.searchPage" : "reader.contentsPage")
+            .navigationTitle(ToolText.text(mode == .search ? "search" : "contents"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(ToolText.text("done")) { dismiss() } } }
+        }
+    }
+}
+
+private struct ReaderControlStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .frame(minWidth: 44, minHeight: 44)
+            .contentShape(Rectangle())
+            .opacity(configuration.isPressed ? 0.45 : 1)
+    }
+}
+
 struct BookWebSurface: UIViewRepresentable {
     let data: Data
     let textData: Data?
@@ -253,6 +441,15 @@ struct BookWebSurface: UIViewRepresentable {
         view.navigationDelegate = context.coordinator
         view.isOpaque = false
         view.backgroundColor = .clear
+        let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.toggleControls(_:)))
+        tap.cancelsTouchesInView = false
+        tap.delegate = context.coordinator
+        view.addGestureRecognizer(tap)
+        let back = UIScreenEdgePanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.swipeBack(_:)))
+        back.edges = .left
+        view.addGestureRecognizer(back)
+        view.scrollView.panGestureRecognizer.require(toFail: back)
+        view.scrollView.contentInsetAdjustmentBehavior = .never
         controller.webView = view
         view.load(URLRequest(url: URL(string: "soulo-book://reader/index")!))
         return view
@@ -262,9 +459,26 @@ struct BookWebSurface: UIViewRepresentable {
         view.stopLoading()
         view.configuration.userContentController.removeScriptMessageHandler(forName: "book")
     }
-    final class Coordinator: NSObject, WKURLSchemeHandler, WKScriptMessageHandler, WKNavigationDelegate {
+    final class Coordinator: NSObject, WKURLSchemeHandler, WKScriptMessageHandler, WKNavigationDelegate, UIGestureRecognizerDelegate {
         let parent: BookWebSurface
         init(_ parent: BookWebSurface) { self.parent = parent }
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool { true }
+        @objc func swipeBack(_ gesture: UIScreenEdgePanGestureRecognizer) {
+            guard gesture.state == .ended, gesture.translation(in: gesture.view).x > 70 else { return }
+            parent.controller.onBack?()
+        }
+        @objc func toggleControls(_ gesture: UITapGestureRecognizer) {
+            guard gesture.state == .ended, parent.controller.ready, let web = gesture.view as? WKWebView else { return }
+            let point = gesture.location(in: web)
+            guard point.x > web.bounds.width * 0.18, point.x < web.bounds.width * 0.82,
+                  point.y > web.bounds.height * 0.2, point.y < web.bounds.height * 0.8 else { return }
+            // Native recognition also works in sandboxed chapter frames, where
+            // WebKit suppresses DOM click handlers. Keep text selection intact.
+            web.evaluateJavaScript("window.soulo.canToggleAt(\(point.x), \(point.y))") { [weak self] value, _ in
+                guard value as? Bool == true else { return }
+                self?.parent.controller.controlsVisible.toggle()
+            }
+        }
         func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
             guard let url = urlSchemeTask.request.url, url.host == "reader" else {
                 urlSchemeTask.didFailWithError(ReadingToolError.unsafePath)
@@ -317,11 +531,16 @@ struct BookWebSurface: UIViewRepresentable {
             case "boot": controller.command("open", [parent.format.rawValue, controller.book.location])
             case "ready":
                 controller.ready = true
+                controller.title = body["title"] as? String ?? ""
+                BookLibrary.shared.updateTitle(controller.book.id, title: controller.title)
                 controller.toc = links(body["toc"])
                 controller.style()
+            case "toggleControls": controller.controlsVisible.toggle()
+            case "scroll": if controller.controlsVisible { controller.controlsVisible = false }
             case "search": controller.results = links(body["results"])
             case "location":
                 if let location = body["location"] as? String, let fraction = body["fraction"] as? Double {
+                    controller.fraction = fraction
                     BookLibrary.shared.update(controller.book.id, location: location, fraction: fraction)
                 }
             case "cover":
@@ -367,6 +586,7 @@ struct PDFBookSurface: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(controller) }
     func makeUIView(context: Context) -> PDFView {
         let view = PDFView()
+        view.accessibilityIdentifier = "reader.pdf"
         guard let document = PDFDocument(data: data), !document.isLocked else {
             controller.error = ToolText.text("protected_file")
             return view
@@ -377,8 +597,27 @@ struct PDFBookSurface: UIViewRepresentable {
             BookLibrary.shared.storeCover(controller.book.id, data: cover)
         }
         view.document = document
+        view.backgroundColor = .white
         view.autoScales = true
         view.displayMode = .singlePageContinuous
+        view.displayDirection = .vertical
+        let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.toggleControls(_:)))
+        tap.cancelsTouchesInView = false
+        tap.delegate = context.coordinator
+        view.addGestureRecognizer(tap)
+        let back = UIScreenEdgePanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.swipeBack(_:)))
+        back.edges = .left
+        view.addGestureRecognizer(back)
+        func configureScrolling(_ child: UIView) {
+            if let scroll = child as? UIScrollView {
+                scroll.contentInsetAdjustmentBehavior = .never
+                scroll.panGestureRecognizer.require(toFail: back)
+                scroll.panGestureRecognizer.addTarget(context.coordinator, action: #selector(Coordinator.scrolled(_:)))
+            }
+            child.subviews.forEach(configureScrolling)
+        }
+        configureScrolling(view)
+        controller.ready = true
         controller.pdfView = view
         if let index = Int(controller.book.location), let page = document.page(at: index) { view.go(to: page) }
         func outline(_ item: PDFOutline?) -> [ReaderLink] {
@@ -400,14 +639,30 @@ struct PDFBookSurface: UIViewRepresentable {
         return view
     }
     func updateUIView(_ view: PDFView, context: Context) {}
-    @MainActor final class Coordinator: NSObject {
+    @MainActor final class Coordinator: NSObject, UIGestureRecognizerDelegate {
         let controller: BookReaderController
         init(_ controller: BookReaderController) { self.controller = controller }
+        @objc func swipeBack(_ gesture: UIScreenEdgePanGestureRecognizer) {
+            guard gesture.state == .ended, gesture.translation(in: gesture.view).x > 70 else { return }
+            controller.onBack?()
+        }
+        @objc func toggleControls(_ gesture: UITapGestureRecognizer) {
+            guard let view = gesture.view as? PDFView, view.currentSelection == nil else { return }
+            let point = gesture.location(in: view)
+            if point.x > view.bounds.width * 0.18 && point.x < view.bounds.width * 0.82 && point.y > view.bounds.height * 0.2 && point.y < view.bounds.height * 0.8 {
+                controller.controlsVisible.toggle()
+            }
+        }
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
+        @objc func scrolled(_ gesture: UIPanGestureRecognizer) {
+            if gesture.state == .changed && controller.controlsVisible { controller.controlsVisible = false }
+        }
         @objc func pageChanged(_ event: Notification) {
             guard let view = event.object as? PDFView, let document = view.document, let page = view.currentPage else {
                 return
             }
             let index = document.index(for: page)
+            controller.fraction = Double(index) / Double(max(1, document.pageCount - 1))
             BookLibrary.shared.update(
                 controller.book.id, location: String(index),
                 fraction: Double(index) / Double(max(1, document.pageCount - 1)))

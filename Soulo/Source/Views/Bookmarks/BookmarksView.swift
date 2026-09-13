@@ -88,7 +88,7 @@ struct BookmarksContentView: View {
                             BookmarkService.delete(item, context: modelContext)
                         } label: {
                             Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
-                        }
+                        }.tint(.red)
                     }
                 }
             }

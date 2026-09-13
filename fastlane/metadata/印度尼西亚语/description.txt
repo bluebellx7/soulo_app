@@ -19,4 +19,4 @@ Instal UserScripts atau WebExtensions yang kompatibel, kelola izin dengan jelas,
 
 Soulo menyimpan data penjelajahan secara lokal kecuali Anda mengaktifkan sinkronisasi pengaturan iCloud. Penjelajahan pribadi tidak menyimpan riwayat.
 
-Baca artikel dan e-book, kelola file, dan transfer melalui Wi-Fi.
+Baca dengan nyaman, buka rak buku lewat widget, pindai kode QR, dan ambil teks dari foto.

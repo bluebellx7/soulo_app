@@ -19,6 +19,11 @@ struct HomeView: View {
     @State private var showSettings = false
     @State private var showExtensionCenter = false
     @State private var librarySection: LibrarySection?
+    @State private var navigationSession = UUID()
+    @State private var incomingDocument: IncomingDocument?
+    @State private var showScanner = false
+    @State private var pendingScan: String?
+    @State private var scannedContent: ScannedContent?
     @State private var showVoiceInput = false
     @State private var showAppShareSheet = false
     @State private var showTabOverviewFromHome = false
@@ -49,6 +54,7 @@ struct HomeView: View {
                 .toolbar(.hidden, for: .navigationBar)
                 .mediaPlayerNavigation()
         }
+        .id(navigationSession)
         .overlay { MediaMiniPlayer() }
     }
 
@@ -160,6 +166,21 @@ struct HomeView: View {
         .navigationDestination(item: $librarySection) { section in
             LibraryView(initialSection: section, searchVM: searchVM)
         }
+        .navigationDestination(item: $incomingDocument) { document in
+            ExternalDocumentView(source: document.url)
+        }
+        .sheet(isPresented: $showScanner, onDismiss: {
+            guard let value = pendingScan else { return }
+            pendingScan = nil
+            let result = ScannedContent(text: value)
+            if let url = result.webURL {
+                searchVM.searchText = url.absoluteString
+                performSearch()
+            } else { scannedContent = result }
+        }) {
+            QRCodeScannerView { value in pendingScan = value; showScanner = false }
+        }
+        .navigationDestination(item: $scannedContent) { content in LocalScanResultView(content: content) }
         .sheet(isPresented: $showVoiceInput) {
             VoiceInputView(
                 speechService: speechService,
@@ -238,6 +259,32 @@ struct HomeView: View {
         .onReceive(NotificationCenter.default.publisher(for: .openSouloDownloads)) { _ in
             librarySection = .downloads
         }
+        .onReceive(NotificationCenter.default.publisher(for: .openSouloDocument)) { notification in
+            if let url = notification.object as? URL {
+                resetNavigationForExternalEntry()
+                incomingDocument = IncomingDocument(url: url)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openSouloBookshelf)) { _ in
+            resetNavigationForExternalEntry()
+            librarySection = .books
+        }
+    }
+
+    private func resetNavigationForExternalEntry() {
+        // A widget or Open In request must work even with a reader pushed above
+        // the library. Recreate the navigation stack while retaining tab models.
+        librarySection = nil
+        incomingDocument = nil
+        scannedContent = nil
+        pendingScan = nil
+        showScanner = false
+        showSettings = false
+        showExtensionCenter = false
+        showVoiceInput = false
+        showTabOverviewFromHome = false
+        showAppShareSheet = false
+        navigationSession = UUID()
     }
 
     // MARK: - Home Content
@@ -302,7 +349,8 @@ struct HomeView: View {
                     isRecording: speechService.isRecording,
                     onSubmit: { performSearch() },
                     onMicTap: { showVoiceInput = true },
-                    onIncognitoTap: { togglePrivateModeFromSearchBar() }
+                    onIncognitoTap: { togglePrivateModeFromSearchBar() },
+                    onScanTap: { showScanner = true }
                 )
                 .matchedGeometryEffect(id: "searchBar", in: searchBarNamespace)
                 .frame(maxWidth: isIPad ? 600 : .infinity)
@@ -660,6 +708,10 @@ struct HomeView: View {
 
     private func handleQuickAction(_ action: AppQuickAction) {
         switch action {
+        case .scan:
+            resetNavigationForExternalEntry()
+            searchVM.clearSearch()
+            showScanner = true
         case .search:
             searchVM.clearSearch()
             DispatchQueue.main.async {

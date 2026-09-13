@@ -139,6 +139,9 @@ export class View extends HTMLElement {
         if (this.isFixedLayout) {
             await import('./fixed-layout.js')
             this.renderer = document.createElement('foliate-fxl')
+        } else if (book.souloContinuous) {
+            await import('./continuous.js')
+            this.renderer = document.createElement('soulo-continuous')
         } else {
             await import('./paginator.js')
             this.renderer = document.createElement('foliate-paginator')

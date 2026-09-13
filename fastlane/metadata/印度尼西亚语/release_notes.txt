@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Baca artikel dan e-book, kelola file, dan transfer melalui Wi-Fi.
-• Kontrol biru yang seragam dan menu alat yang lebih sederhana.
-• Memperbaiki crash saat membuka alat layar penuh; meningkatkan pemutaran media dan pratinjau file.
+• Membaca berkelanjutan ditingkatkan dengan daftar isi dan pencarian terpisah, pengaturan font, jarak baris, dan tampilan PDF.
+• Ditambahkan kisi buku dan widget, pemindaian QR, pengenalan teks pada foto, dan pintasan pemindaian.
+• Akses unduhan, tindakan file, mode gelap halaman web, dan kinerja ditingkatkan.

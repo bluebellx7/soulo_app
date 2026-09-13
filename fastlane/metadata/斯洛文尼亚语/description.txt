@@ -19,4 +19,4 @@ Namestite UserScripts ali združljive WebExtensions, jasno upravljajte dovoljenj
 
 Soulo shrani podatke o brskanju lokalno, razen če omogočite iCloud sinhronizacijo nastavitev. Zasebno brskanje ne shranjuje zgodovine.
 
-Berite članke in e-knjige, upravljajte datoteke in jih prenašajte prek Wi-Fi.
+Berite udobno, odprite knjižnico iz gradnika, skenirajte kode QR in prepoznajte besedilo na fotografijah.

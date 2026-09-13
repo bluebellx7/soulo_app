@@ -78,15 +78,8 @@ import ImageIO
             for url in sources {
                 guard !Task.isCancelled, generation == epoch else { return nil }
                 do {
-                    let (bytes, response) = try await session.bytes(for: URLRequest(url: url))
-                    guard let response = response as? HTTPURLResponse, (200..<300).contains(response.statusCode),
-                          response.expectedContentLength <= 1024 * 1024 else { continue }
-                    var data = Data()
-                    for try await byte in bytes {
-                        data.append(byte)
-                        if data.count > 1024 * 1024 { break }
-                    }
-                    guard data.count <= 1024 * 1024, let image = await Self.decode(data),
+                    let data = try await Self.download(url, session: session)
+                    guard let image = await Self.decode(data),
                           !Task.isCancelled, generation == epoch else { continue }
                     let timestamp = now()
                     images.setObject(Entry(image, expires: timestamp.addingTimeInterval(Self.lifetime)), forKey: key as NSURL, cost: 64 * 64 * 4)
@@ -128,5 +121,19 @@ import ImageIO
                   ] as CFDictionary) else { return nil }
             return UIImage(cgImage: image)
         }.value
+    }
+
+    /// Byte iteration must not monopolize the UI actor on a fast/cached response.
+    nonisolated private static func download(_ url: URL, session: URLSession) async throws -> Data {
+        let (bytes, response) = try await session.bytes(for: URLRequest(url: url))
+        guard let response = response as? HTTPURLResponse, (200..<300).contains(response.statusCode),
+              response.expectedContentLength <= 1024 * 1024 else { throw URLError(.badServerResponse) }
+        var data = Data()
+        for try await byte in bytes {
+            data.append(byte)
+            if data.count > 1024 * 1024 { throw URLError(.dataLengthExceedsMaximum) }
+        }
+        try Task.checkCancellation()
+        return data
     }
 }

@@ -14,15 +14,33 @@ view.addEventListener('relocate', event => {
 })
 view.addEventListener('external-link', event => { event.preventDefault() })
 const escape = text => text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+const textSection = (text, index) => {
+    let url
+    const html = () => '<!doctype html><meta charset="utf-8"><article><p>' + escape(text).replaceAll('\n', '</p><p>') + '</p></article>'
+    return {
+        id: String(index), size: text.length,
+        createDocument: async () => new DOMParser().parseFromString(html(), 'text/html'),
+        load: async () => url ??= URL.createObjectURL(new Blob([html()], { type: 'text/html' })),
+        unload: () => { if (url) URL.revokeObjectURL(url); url = null },
+    }
+}
 window.soulo = {
+    canToggleAt(x, y) {
+        for (const { doc } of view.renderer?.getContents() || []) {
+            if (!doc.getSelection()?.isCollapsed) return false
+            const rect = doc.defaultView.frameElement.getBoundingClientRect()
+            if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) continue
+            const target = doc.elementFromPoint(x - rect.left, y - rect.top)
+            if (target?.closest('a,button,input,select,textarea')) return false
+        }
+        return true
+    },
     async open(format, location) {
         try {
             let book
             if (format === 'text' || format === 'palmDoc') {
                 const chunks = await (await fetch('soulo-book://reader/text')).json()
-                book = { metadata: {}, sections: chunks.map((text, index) => ({ id: String(index), size: text.length,
-                    createDocument: async () => new DOMParser().parseFromString('<html><body><p>' + escape(text).replaceAll('\n', '</p><p>') + '</p></body></html>', 'text/html'),
-                    load: async () => URL.createObjectURL(new Blob(['<!doctype html><meta charset="utf-8"><article><p>' + escape(text).replaceAll('\n', '</p><p>') + '</p></article>'], { type: 'text/html' })) })),
+                book = { metadata: {}, sections: chunks.map(textSection),
                     toc: chunks.map((text, index) => ({ label: text.trim().split('\n')[0].slice(0, 70) || String(index+1), href: String(index) })),
                     resolveHref: href => ({ index: Number(href) }), splitTOCHref: href => [href, ''], getTOCFragment: doc => doc.body }
             } else {
@@ -43,7 +61,14 @@ window.soulo = {
                 for (let i = 0; i < bytes.length; i += 32768) binary += String.fromCharCode(...bytes.subarray(i, i + 32768))
                 post('pdf', { data: btoa(binary) }); return
             }
+            book.souloContinuous = true
             await view.open(book)
+            view.renderer.addEventListener('error', event => post('error', { message: String(event.detail?.message || event.detail) }))
+            let scrolling = false, scrollTimer
+            view.renderer.addEventListener('scroll', () => {
+                if (!scrolling) { scrolling = true; post('scroll') }
+                clearTimeout(scrollTimer); scrollTimer = setTimeout(() => scrolling = false, 250)
+            })
             await view.init({ lastLocation: location || undefined })
             ready = true
             post('ready', { toc: flatten(book.toc), title: book.metadata?.title ?? '' })
@@ -61,13 +86,14 @@ window.soulo = {
     },
     async next() { if (ready) await view.next() },
     async prev() { if (ready) await view.prev() },
+    async fraction(value) { if (ready) await view.goToFraction(Math.max(0, Math.min(1, value))) },
     async go(location) { if (ready) await view.goTo(location) },
     style(size, line, theme, font = "serif") {
-        const family = { serif: "Georgia, serif", sans: "-apple-system, sans-serif", mono: "ui-monospace, monospace" }[font] || "Georgia, serif"
+        const family = { serif: "Georgia, 'Songti SC', 'Songti TC', serif", sans: "-apple-system, 'PingFang SC', 'PingFang TC', sans-serif", mono: "ui-monospace, 'SFMono-Regular', Menlo, monospace" }[font] || "Georgia, serif"
         const colors = { paper: ['#f6f1e7', '#29251f'], light: ['#fff', '#202124'], dark: ['#171918', '#d8ddd9'] }
         const [bg, fg] = colors[theme] || colors.paper
         document.body.style.background = bg; document.body.style.color = fg
-        view.renderer?.setStyles(`:root { color-scheme: ${theme === 'dark' ? 'dark' : 'light'} } body { background: ${bg} !important; color: ${fg} !important; font-family: ${family} !important; font-size: ${size}px !important; line-height: ${line} !important; padding: 12px !important; } img { max-width:100%; height:auto } p { overflow-wrap:anywhere }`)
+        view.renderer?.setStyles(`:root { color-scheme: ${theme === 'dark' ? 'dark' : 'light'} } body { background: ${bg} !important; color: ${fg} !important; font-family: ${family} !important; font-size: ${size}px !important; line-height: ${line} !important; padding: 12px 0 !important; } :root body :is(p, div, span, li, blockquote, td, h1, h2, h3, h4, h5, h6) { font-family: ${family} !important; line-height: ${line} !important; } :root body :is(p, div, li, blockquote, td) { font-size: inherit !important; } img { max-width:100%; height:auto } p { overflow-wrap:anywhere; text-align:justify }`)
     },
     async search(query) {
         try {

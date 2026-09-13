@@ -20,10 +20,11 @@ struct SearchHistoryService {
 
         // Check for duplicate keyword within the last minute
         let oneMinuteAgo = Date().addingTimeInterval(-60)
-        let descriptor = FetchDescriptor<SearchHistoryItem>()
-        if let existing = try? context.fetch(descriptor), existing.contains(where: {
-            !$0.isWebVisit && $0.keyword == trimmed && $0.timestamp >= oneMinuteAgo
-        }) {
+        var descriptor = FetchDescriptor<SearchHistoryItem>(predicate: #Predicate {
+            $0.visitedURLString == nil && $0.keyword == trimmed && $0.timestamp >= oneMinuteAgo
+        })
+        descriptor.fetchLimit = 1
+        if let existing = try? context.fetch(descriptor), !existing.isEmpty {
             return
         }
 
@@ -35,11 +36,12 @@ struct SearchHistoryService {
     // MARK: - Fetch Recent
 
     static func fetchRecent(limit: Int = 20, context: ModelContext) -> [SearchHistoryItem] {
-        let descriptor = FetchDescriptor<SearchHistoryItem>(
+        guard limit > 0 else { return [] }
+        var descriptor = FetchDescriptor<SearchHistoryItem>(
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
-        let all = (try? context.fetch(descriptor)) ?? []
-        return Array(all.prefix(max(limit, 0)))
+        descriptor.fetchLimit = limit
+        return (try? context.fetch(descriptor)) ?? []
     }
 
     // MARK: - Browsing History
@@ -57,10 +59,10 @@ struct SearchHistoryService {
         purgeExpiredBrowsingHistory(referenceDate: visitedAt, context: context, save: false)
 
         let descriptor = FetchDescriptor<SearchHistoryItem>(
+            predicate: #Predicate { $0.visitedURLString == canonicalURL },
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
-        let all = (try? context.fetch(descriptor)) ?? []
-        let matches = all.filter { $0.visitedURLString == canonicalURL }
+        let matches = (try? context.fetch(descriptor)) ?? []
         let displayTitle = normalizedPageTitle(title, url: url)
 
         if let existing = matches.first {
@@ -89,7 +91,7 @@ struct SearchHistoryService {
     }
 
     static func clearBrowsingHistory(context: ModelContext) {
-        let descriptor = FetchDescriptor<SearchHistoryItem>()
+        let descriptor = FetchDescriptor<SearchHistoryItem>(predicate: #Predicate { $0.visitedURLString != nil })
         guard let all = try? context.fetch(descriptor) else { return }
         for item in all where item.isWebVisit {
             context.delete(item)
@@ -158,6 +160,7 @@ struct SearchHistoryService {
     static func suggestions(prefix: String, context: ModelContext) -> [String] {
         let lowercased = prefix.lowercased()
         let descriptor = FetchDescriptor<SearchHistoryItem>(
+            predicate: #Predicate { $0.visitedURLString == nil },
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
         guard let all = try? context.fetch(descriptor) else { return [] }
@@ -185,6 +188,7 @@ struct SearchHistoryService {
     ) {
         let cutoff = referenceDate.addingTimeInterval(-browsingHistoryLifetime)
         let descriptor = FetchDescriptor<SearchHistoryItem>(
+            predicate: #Predicate { $0.visitedURLString != nil },
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
         guard let all = try? context.fetch(descriptor) else { return }

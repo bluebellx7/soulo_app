@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Olvasson cikkeket és e-könyveket, kezelje fájljait, és vigye át őket Wi-Fi-n.
-• Egységes kék vezérlők és egyszerűbb eszközmenük.
-• Javítottuk a teljes képernyős eszközök megnyitásakor fellépő összeomlást, a lejátszást és a fájlelőnézeteket.
+• Jobb folyamatos olvasás, külön tartalomjegyzék és keresés, valamint betűtípus-, sorköz- és PDF-megjelenítési beállítások.
+• Új könyvrács és widget, QR-kód-olvasás, szövegfelismerés fotókról és beolvasási parancsikon.
+• Javult a letöltések elérése, a fájlműveletek, a weboldalak sötét megjelenítése és a teljesítmény.

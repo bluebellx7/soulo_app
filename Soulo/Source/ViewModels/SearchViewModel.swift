@@ -109,9 +109,6 @@ class SearchViewModel: ObservableObject {
         return .international
     }
 
-    // MARK: - F3: Spell Correction
-    @Published var spellSuggestion: String? = nil
-
     // MARK: - F7: Enhanced Clipboard
     @Published var clipboardContentType: ClipboardContentType = .generalText
     @Published var suggestedClipboardPlatforms: [SearchPlatform] = []
@@ -131,9 +128,6 @@ class SearchViewModel: ObservableObject {
         searchID = UUID()
         clearSuggestions()
 
-        // Clear previous suggestions
-        spellSuggestion = nil
-
         if trimmed.isValidURL {
             // URL detected — caller handles direct load
         } else {
@@ -151,9 +145,6 @@ class SearchViewModel: ObservableObject {
             selectedPlatform = platform
             PlatformDataStore.shared.incrementUsage(for: platform.id)
         }
-
-        // F3: Spell correction (async-safe, UITextChecker is fast)
-        spellSuggestion = SpellCorrectionService.suggest(for: trimmed)
 
         // F6: Live Activity
         if !isIncognito, let platform = selectedPlatform {
@@ -276,7 +267,6 @@ class SearchViewModel: ObservableObject {
         searchText = ""
         isSearching = false
         currentKeyword = ""
-        spellSuggestion = nil
         // F6: End Live Activity
         LiveActivityService.shared.end()
     }

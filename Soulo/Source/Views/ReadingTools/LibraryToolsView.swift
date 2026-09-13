@@ -8,41 +8,54 @@ struct BookshelfView: View {
     @State private var error: String?
     @State private var busy = false
     var body: some View {
-        List {
-            if library.books.isEmpty {
-                IllustratedToolEmptyState(
-                    scene: .books, title: ToolText.text("bookshelf_empty"),
-                    message: ToolText.text("bookshelf_hint"))
-            }
-            ForEach(library.books.sorted { $0.openedAt > $1.openedAt }) { book in
-                Button {
-                    selected = book
-                } label: {
-                    HStack(spacing: 16) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 8).fill(Color.themePrimary.opacity(0.12))
-                            if book.hasCover == true {
-                                AsyncImage(url: book.coverURL) { image in
-                                    image.resizable().scaledToFill()
-                                } placeholder: {
-                                    Image(systemName: "book.closed")
+        GeometryReader { geometry in
+            ScrollView {
+                if library.books.isEmpty {
+                    IllustratedToolEmptyState(
+                        scene: .books, title: ToolText.text("bookshelf_empty"),
+                        message: ToolText.text("bookshelf_hint"))
+                        .frame(maxWidth: .infinity, minHeight: geometry.size.height * 0.7)
+                } else {
+                    let count = geometry.size.width < 600 ? 3 : max(3, Int(geometry.size.width / 160))
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 18), count: count), alignment: .leading, spacing: 26) {
+                        ForEach(library.books.sorted { $0.openedAt > $1.openedAt }) { book in
+                            Button { selected = book } label: {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    ZStack {
+                                        Rectangle().fill(Color(uiColor: .secondarySystemBackground))
+                                        if book.hasCover == true {
+                                            AsyncImage(url: book.coverURL) { image in
+                                                image.resizable().scaledToFit()
+                                            } placeholder: { coverPlaceholder(book) }
+                                        } else {
+                                            coverPlaceholder(book)
+                                        }
+                                    }
+                                    .aspectRatio(0.68, contentMode: .fit)
+                                    .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+                                    .overlay { RoundedRectangle(cornerRadius: 3).strokeBorder(Color.primary.opacity(0.06)) }
+                                    .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
+                                    Text(book.name)
+                                        .font(.subheadline.weight(.medium))
+                                        .foregroundStyle(.primary)
+                                        .lineLimit(1)
+                                        .multilineTextAlignment(.leading)
                                 }
-                            } else {
-                                Image(systemName: book.url.pathExtension == "pdf" ? "doc.richtext" : "book.closed")
-                                    .font(.title2).foregroundStyle(Color.themePrimary)
+                                .contentShape(Rectangle())
                             }
-                        }.frame(width: 50, height: 66).clipShape(RoundedRectangle(cornerRadius: 8))
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(book.name).font(.headline).foregroundStyle(.primary).lineLimit(2)
-                            Text("\(book.url.pathExtension.uppercased()) · \(Int(book.fraction * 100))%").font(.caption)
-                                .foregroundStyle(.secondary)
-                            ProgressView(value: book.fraction).tint(Color.themePrimary)
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("bookshelf.book.\(book.id)")
+                            .contextMenu {
+                                ShareLink(item: book.url) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
+                                Button(ToolText.text("remove_from_shelf"), role: .destructive) { library.remove(book.id) }
+                            }
                         }
-                    }.padding(.vertical, 8)
-                }.contextMenu {
-                    Button(ToolText.text("remove_from_shelf"), role: .destructive) { library.remove(book.id) }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 18)
                 }
             }
+            .accessibilityIdentifier("bookshelf.grid")
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -69,6 +82,20 @@ struct BookshelfView: View {
             Text(error ?? "")
         }
     }
+    private func coverPlaceholder(_ book: LibraryBook) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Image(systemName: "book.closed").font(.title3)
+            Text(book.name).font(.system(.subheadline, design: .serif).weight(.semibold)).lineLimit(4)
+            Spacer(minLength: 0)
+            Text(book.url.pathExtension.uppercased()).font(.caption2.weight(.medium))
+        }
+        .foregroundStyle(Color.primary.opacity(0.75))
+        .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .background(Color.themePrimary.opacity(0.08))
+        .accessibilityHidden(true)
+    }
+
 }
 
 struct LocalFile: Identifiable, Hashable {
@@ -99,7 +126,7 @@ struct LibraryFilesView: View {
     @State private var operation = FileOperationProgress()
     @State private var reloadTask: Task<Void, Never>?
     @State private var pendingDeletion: [URL] = []
-    @State private var showDeleteConfirmation = false
+    @State private var deletionAnchor: String?
     var body: some View {
         List {
             if hasLoaded && files.isEmpty {
@@ -135,17 +162,19 @@ struct LibraryFilesView: View {
                     if !file.directory {
                         ShareLink(item: file.url) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
                         Button(ToolText.text("delete_files"), systemImage: "trash", role: .destructive) {
-                            pendingDeletion = [file.url]; showDeleteConfirmation = true
+                            pendingDeletion = [file.url]; deletionAnchor = file.id
                         }
                     }
                 }
                 .swipeActions(edge: .trailing) {
                     if !file.directory {
                         Button(role: .destructive) {
-                            pendingDeletion = [file.url]; showDeleteConfirmation = true
+                            pendingDeletion = [file.url]; deletionAnchor = file.id
                         } label: { Label(ToolText.text("delete_files"), systemImage: "trash") }
+                        .tint(.red)
                     }
                 }
+                .fileDeletionConfirmation(isPresented: deletionBinding(file.id), count: pendingDeletion.count, confirm: deleteSelectedFiles)
             }
         }
         .listStyle(.plain)
@@ -155,12 +184,6 @@ struct LibraryFilesView: View {
         .overlay { if !hasLoaded { ProgressView() } }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if !selected.isEmpty { selectionActions }
-        }
-        .confirmationDialog(ToolText.text("delete_files_confirm"), isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
-            Button(ToolText.text("delete_files"), role: .destructive) { deleteSelectedFiles() }
-            Button(ToolText.text("cancel"), role: .cancel) { pendingDeletion = [] }
-        } message: {
-            Text(String(format: ToolText.text("delete_files_message"), pendingDeletion.count))
         }
         .navigationTitle(embeddedInLibrary ? LanguageManager.shared.localizedString("library") : directory == BookLibrary.directory ? ToolText.text("files") : directory.lastPathComponent)
         .navigationBarTitleDisplayMode(.inline)
@@ -203,8 +226,7 @@ struct LibraryFilesView: View {
         }
         .navigationDestination(item: $book) { BookReaderView(book: $0) }
         .navigationDestination(item: $preview) { file in
-            DownloadQuickLookPreview(url: file.url).mediaPlayerNavigation().navigationTitle(file.url.lastPathComponent)
-                .navigationBarTitleDisplayMode(.inline)
+            LocalDocumentContent(url: file.url)
         }
         .navigationDestination(item: $archive) { file in ArchiveBrowserView(url: file.url, directory: directory) }
         .navigationDestination(isPresented: $showMedia) { MediaPlayerPage() }
@@ -288,13 +310,19 @@ struct LibraryFilesView: View {
                 ShareLink(items: selectedURLs) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
                     .buttonStyle(CompactActionButtonStyle())
                 Button(role: .destructive) {
-                    pendingDeletion = selectedURLs; showDeleteConfirmation = true
+                    pendingDeletion = selectedURLs; deletionAnchor = "selection"
                 } label: { Label(ToolText.text("delete_files"), systemImage: "trash") }
+                        .tint(.red)
                     .buttonStyle(CompactActionButtonStyle())
+                    .fileDeletionConfirmation(isPresented: deletionBinding("selection"), count: pendingDeletion.count, confirm: deleteSelectedFiles)
             }
         }
         .padding(12).background(.regularMaterial)
         .disabled(busy)
+    }
+
+    private func deletionBinding(_ anchor: String) -> Binding<Bool> {
+        Binding(get: { deletionAnchor == anchor }, set: { if !$0 { deletionAnchor = nil } })
     }
 
     private func deleteSelectedFiles() {
@@ -505,6 +533,17 @@ private struct FileDestinationView: View {
                     return result.sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
                 }.value
             } catch { self.error = error.localizedDescription }
+        }
+    }
+}
+
+private extension View {
+    func fileDeletionConfirmation(isPresented: Binding<Bool>, count: Int, confirm: @escaping () -> Void) -> some View {
+        confirmationDialog(ToolText.text("delete_files_confirm"), isPresented: isPresented, titleVisibility: .visible) {
+            Button(ToolText.text("delete_files"), role: .destructive, action: confirm)
+            Button(ToolText.text("cancel"), role: .cancel) {}
+        } message: {
+            Text(String(format: ToolText.text("delete_files_message"), count))
         }
     }
 }

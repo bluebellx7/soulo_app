@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Llegeix articles i llibres electrònics, gestiona fitxers i transfereix-los per Wi-Fi.
-• Controls blaus unificats i menús d'eines més senzills.
-• Corregida una fallada en obrir les eines de pantalla completa; millores en la reproducció i la previsualització.
+• Lectura contínua millorada, amb índex i cerca separats, controls de lletra i interlineat i ajustos d’aspecte dels PDF.
+• Biblioteca en graella i giny d’inici, escaneig de QR, reconeixement de text en fotos i drecera d’escaneig.
+• Millores en l’accés a les baixades, les accions de fitxers, les pàgines web fosques i el rendiment.

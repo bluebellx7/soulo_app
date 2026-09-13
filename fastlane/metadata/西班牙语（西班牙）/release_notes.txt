@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Lee artículos y libros electrónicos, gestiona archivos y transfiérelos por Wi-Fi.
-• Controles azules uniformes y menús de herramientas más sencillos.
-• Corregido un cierre al abrir las herramientas de pantalla completa; mejoradas la reproducción y las vistas previas.
+• Lectura continua mejorada, con índice y búsqueda separados, ajustes de fuente e interlineado y opciones de apariencia para PDF.
+• Biblioteca en cuadrícula y widget de inicio, escaneo de QR, reconocimiento de texto en fotos y acceso rápido al escáner.
+• Mejoras en el acceso a las descargas, las acciones de archivos, las páginas web oscuras y el rendimiento.

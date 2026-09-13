@@ -6,6 +6,7 @@ import UIKit
 struct PresentationSearchField: UIViewRepresentable {
     @Binding var text: String
     let placeholder: String
+    var focusRequest: Int = 0
     var onFocusChanged: (Bool) -> Void = { _ in }
     var onSubmit: () -> Void = {}
 
@@ -21,6 +22,7 @@ struct PresentationSearchField: UIViewRepresentable {
         field.textColor = .label
         field.keyboardType = .webSearch
         field.returnKeyType = .go
+        field.enablesReturnKeyAutomatically = true
         field.autocorrectionType = .no
         field.autocapitalizationType = .none
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -31,8 +33,15 @@ struct PresentationSearchField: UIViewRepresentable {
     }
 
     func updateUIView(_ field: Field, context: Context) {
+        let shouldFocus = context.coordinator.parent.focusRequest != focusRequest
         context.coordinator.parent = self
         if field.text != text { field.text = text }
+        if shouldFocus {
+            DispatchQueue.main.async { [weak field] in
+                guard let field, field.window != nil else { return }
+                field.becomeFirstResponder()
+            }
+        }
     }
 
     final class Field: UITextField {

@@ -21,6 +21,8 @@ struct SearchResultsView: View {
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var tabManager: TabManager
     @ObservedObject private var platformStore = PlatformDataStore.shared
+    @ObservedObject private var webAppearance = WebAppearanceService.shared
+    @Environment(\.colorScheme) private var appColorScheme
     @StateObject private var bookmarkVM = BookmarkViewModel()
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
@@ -49,82 +51,71 @@ struct SearchResultsView: View {
         GeometryReader { geo in
             VStack(spacing: 0) {
                 if !isFullscreen {
-                    if showTopSearchBar {
-                        topSearchBar
-                            .padding(.horizontal, 10)
-                            .padding(.top, 4)
-                            .padding(.bottom, 2)
+                    Group {
+                        if showTopSearchBar {
+                            topSearchBar
+                                .padding(.horizontal, 10)
+                                .padding(.top, 4)
+                                .padding(.bottom, 2)
 
-                        // Floating autocomplete — zero-height container with overlay extending below
-                        Color.clear
-                            .frame(height: 0)
-                            .overlay(alignment: .top) {
-                                if !searchVM.suggestions.isEmpty {
-                                    SearchAutocompleteView(
-                                        suggestions: searchVM.suggestions,
-                                        query: searchVM.searchText,
-                                        darkVariant: false,
-                                        onSelect: { suggestion in
-                                            searchVM.searchText = suggestion
-                                            searchVM.performSearch(context: modelContext)
-                                            loadCurrentPlatformURL()
-                                        },
-                                        onFill: { suggestion in
-                                            searchVM.searchText = suggestion
-                                        }
-                                    )
-                                    .padding(.horizontal, 10)
-                                    .padding(.top, 4)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                            // Floating autocomplete — zero-height container with overlay extending below
+                            Color.clear
+                                .frame(height: 0)
+                                .overlay(alignment: .top) {
+                                    if !searchVM.suggestions.isEmpty {
+                                        SearchAutocompleteView(
+                                            suggestions: searchVM.suggestions,
+                                            query: searchVM.searchText,
+                                            darkVariant: false,
+                                            onSelect: { suggestion in
+                                                searchVM.searchText = suggestion
+                                                searchVM.performSearch(context: modelContext)
+                                                loadCurrentPlatformURL()
+                                            },
+                                            onFill: { suggestion in
+                                                searchVM.searchText = suggestion
+                                            }
+                                        )
+                                        .padding(.horizontal, 10)
+                                        .padding(.top, 4)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .transition(.opacity.combined(with: .move(edge: .top)))
+                                    }
                                 }
-                            }
-                            .zIndex(100)
-                            .allowsHitTesting(!searchVM.suggestions.isEmpty)
-                    }
-
-                    // Tab bar — show when multiple tabs
-                    if tabManager.tabs.count > 1 {
-                        BrowserTabBar(tabManager: tabManager) {
-                            tabManager.createTab()
+                                .zIndex(100)
+                                .allowsHitTesting(!searchVM.suggestions.isEmpty)
                         }
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                    }
 
-                    if !searchVM.currentKeyword.isValidURL {
-                        HStack(spacing: 2) {
-                            PlatformTabBar(
-                                platforms: currentPlatforms,
-                                selectedPlatform: $searchVM.selectedPlatform,
-                                usesContrastingControlSurface: !showTopSearchBar
-                            )
-                            .frame(maxWidth: .infinity)
-                            .onChange(of: searchVM.selectedPlatform) { _, _ in
-                                loadCurrentPlatformURL()
+                        // Tab bar — show when multiple tabs
+                        if tabManager.tabs.count > 1 {
+                            BrowserTabBar(tabManager: tabManager) {
+                                tabManager.createTab()
                             }
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                        }
 
-                            Rectangle()
-                                .fill(Color(UIColor.separator).opacity(0.35))
-                                .frame(width: 0.5, height: 18)
+                        if !searchVM.currentKeyword.isValidURL {
+                            HStack(spacing: 2) {
+                                PlatformTabBar(
+                                    platforms: currentPlatforms,
+                                    selectedPlatform: $searchVM.selectedPlatform,
+                                    usesContrastingControlSurface: !showTopSearchBar
+                                )
+                                .frame(maxWidth: .infinity)
+                                .onChange(of: searchVM.selectedPlatform) { _, _ in
+                                    loadCurrentPlatformURL()
+                                }
 
-                            groupPickerMenu
-                                .padding(.trailing, 6)
+                                Rectangle()
+                                    .fill(Color(UIColor.separator).opacity(0.35))
+                                    .frame(width: 0.5, height: 18)
+
+                                groupPickerMenu
+                                    .padding(.trailing, 6)
+                            }
                         }
                     }
-
-                    if let suggestion = searchVM.spellSuggestion {
-                        SpellSuggestionBanner(
-                            suggestion: suggestion,
-                            onTap: {
-                                searchVM.searchText = suggestion
-                                searchVM.spellSuggestion = nil
-                                searchVM.performSearch(context: modelContext)
-                                loadCurrentPlatformURL()
-                            },
-                            onDismiss: { searchVM.spellSuggestion = nil }
-                        )
-                    }
-
+                    .environment(\.colorScheme, usesDarkBrowserChrome ? .dark : appColorScheme)
                 }
 
                 // WebView — mount only the active tab; WebViewModel keeps the WKWebView alive for instant restores.
@@ -234,7 +225,7 @@ struct SearchResultsView: View {
                     // the opaque system background while WebKit is rendering.
                     VStack(spacing: 0) {
                         LinearGradient(
-                            colors: [
+                            colors: usesDarkBrowserChrome ? [.black.opacity(0.12), .black.opacity(0.06), Color(hex: "111111")] : [
                                 Color(hex: "4F46E5").opacity(0.08),
                                 Color(hex: "7C3AED").opacity(0.04),
                                 Color(UIColor.systemBackground)
@@ -244,10 +235,10 @@ struct SearchResultsView: View {
                         )
                         .frame(height: 160)
 
-                        Color(UIColor.systemBackground)
+                        usesDarkBrowserChrome ? Color(hex: "111111") : Color(UIColor.systemBackground)
 
                         LinearGradient(
-                            colors: [
+                            colors: usesDarkBrowserChrome ? [Color(hex: "111111"), Color(hex: "17181D"), Color(hex: "1D1F25")] : [
                                 Color(UIColor.systemBackground),
                                 Color(hex: "7C3AED").opacity(0.04),
                                 Color(hex: "4F46E5").opacity(0.08)
@@ -437,6 +428,10 @@ struct SearchResultsView: View {
             .frame(width: 1, height: 1)
             .allowsHitTesting(false)
         }
+    }
+
+    private var usesDarkBrowserChrome: Bool {
+        webAppearance.forceDarkPages && !isShowingNewTabPage
     }
 
     // MARK: - Top Search Bar

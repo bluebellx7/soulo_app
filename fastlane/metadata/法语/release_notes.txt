@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Lisez des articles et des livres numériques, gérez vos fichiers et transférez-les par Wi-Fi.
-• Commandes bleues harmonisées et menus d'outils simplifiés.
-• Correction d'un plantage à l'ouverture des outils en plein écran ; lecture multimédia et aperçus améliorés.
+• Lecture continue améliorée, sommaire et recherche séparés, meilleurs réglages de police, d’interligne et d’apparence des PDF.
+• Ajout d’une bibliothèque en grille, d’un widget, du scan de codes QR, de la reconnaissance de texte dans les photos et d’un raccourci de scan.
+• Navigation vers les téléchargements, actions sur les fichiers, mode sombre des pages web et performances améliorés.

@@ -19,4 +19,4 @@ Installeer UserScripts of compatibele WebExtensions, beheer rechten duidelijk en
 
 Soulo slaat browsegegevens lokaal op, tenzij je iCloud instellingensynchronisatie inschakelt. Bij privé browsen wordt de geschiedenis niet opgeslagen.
 
-Lees artikelen en e-boeken, beheer bestanden en zet ze over via Wi-Fi.
+Lees comfortabel, open je boekenplank via een widget, scan QR-codes en haal tekst uit foto’s.

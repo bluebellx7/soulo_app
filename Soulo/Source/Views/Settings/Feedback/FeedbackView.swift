@@ -108,6 +108,22 @@ struct FeedbackView: View {
                                 .padding(.horizontal, 4)
                         }
 
+                        HStack(spacing: 12) {
+                            Image(systemName: "envelope").foregroundStyle(Color.themePrimary)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(lm.localizedString("help_email_title")).font(.caption).foregroundStyle(.secondary)
+                                Link("contact@dkluge.com", destination: URL(string: "mailto:contact@dkluge.com")!)
+                                    .font(.subheadline)
+                            }
+                            Spacer(minLength: 0)
+                            Button { UIPasteboard.general.string = "contact@dkluge.com"; HapticsManager.light() } label: {
+                                Image(systemName: "doc.on.doc").frame(width: 44, height: 44)
+                            }
+                            .accessibilityLabel(ToolText.text("copy"))
+                        }
+                        .padding(12)
+                        .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12))
+
                         // App info
                         HStack(spacing: 6) {
                             Image(systemName: "app.fill").font(.system(size: 10))

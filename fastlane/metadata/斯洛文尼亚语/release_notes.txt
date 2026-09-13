@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Berite članke in e-knjige, upravljajte datoteke in jih prenašajte prek Wi-Fi.
-• Enotni modri kontrolniki in preprostejši meniji orodij.
-• Odpravljeno sesutje ob odpiranju celozaslonskih orodij; izboljšano predvajanje in predogled datotek.
+• Izboljšano neprekinjeno branje z ločenima kazalom in iskanjem ter nastavitvami pisave, razmika vrstic in videza PDF.
+• Dodani mreža knjig in gradnik, skeniranje kod QR, prepoznavanje besedila na fotografijah in bližnjica za skeniranje.
+• Izboljšani dostop do prenosov, opravila z datotekami, temni prikaz spletnih strani in delovanje.

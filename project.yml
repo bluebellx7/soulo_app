@@ -102,6 +102,50 @@ targets:
         NSLocalNetworkUsageDescription: "Transfer files with your computer while Wi-Fi Transfer is open."
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Soulo Documents
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - com.adobe.pdf
+              - org.idpf.epub-container
+              - public.text
+              - public.rtf
+              - public.html
+              - public.xml
+              - public.json
+              - public.comma-separated-values-text
+              - public.tab-separated-values-text
+              - net.daringfireball.markdown
+              - public.image
+              - public.movie
+              - public.audio
+              - public.zip-archive
+              - com.dkluge.soulo.ebook
+              - com.dkluge.soulo.archive
+              - org.openxmlformats.wordprocessingml.document
+              - org.openxmlformats.spreadsheetml.sheet
+              - org.openxmlformats.presentationml.presentation
+              - com.microsoft.word.doc
+              - com.microsoft.excel.xls
+              - com.microsoft.powerpoint.ppt
+              - com.apple.iwork.pages.pages
+              - com.apple.iwork.numbers.numbers
+              - com.apple.iwork.keynote.key
+              - com.rarlab.rar-archive
+              - org.7-zip.7-zip-archive
+              - com.amazon.mobi8-ebook
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: com.dkluge.soulo.ebook
+            UTTypeDescription: Mobipocket eBook
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification:
+              public.filename-extension: [mobi, azw, azw3, azw4, prc, pdb]
+          - UTTypeIdentifier: com.dkluge.soulo.archive
+            UTTypeDescription: Compressed Archive
+            UTTypeConformsTo: [public.data, public.archive]
+            UTTypeTagSpecification:
+              public.filename-extension: [rar, 7z]
         CFBundleURLTypes:
           - CFBundleURLSchemes:
               - soulo
@@ -117,7 +161,7 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: Soulo/Soulo.entitlements
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.1.5"
+        MARKETING_VERSION: "1.1.6"
         CURRENT_PROJECT_VERSION: 21
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
@@ -149,17 +193,18 @@ targets:
           - SouloWidget.entitlements
       - path: Soulo/Source/Shared/SouloSharedAction.swift
       - path: Soulo/Source/Shared/SouloSystemIntents.swift
-      - path: Soulo
-        includes:
-          - "*.lproj"
-        buildPhase: resources
+    postBuildScripts:
+      - name: Package extension localizations
+        script: python3 "$SRCROOT/scripts/build_extension_localizations.py" SouloWidget
+        basedOnDependencyAnalysis: false
+
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dkluge.Soulo.Widget
         CODE_SIGN_ENTITLEMENTS: SouloWidget/SouloWidget.entitlements
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.1.5"
+        MARKETING_VERSION: "1.1.6"
         CURRENT_PROJECT_VERSION: 21
         GENERATE_INFOPLIST_FILE: "YES"
         INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
@@ -174,10 +219,6 @@ targets:
         excludes:
           - SouloShareExtension.entitlements
       - path: Soulo/Source/Shared/SouloSharedAction.swift
-      - path: Soulo
-        includes:
-          - "*.lproj"
-        buildPhase: resources
     info:
       path: SouloShareExtension/Info.plist
       properties:
@@ -191,13 +232,18 @@ targets:
             NSExtensionActivationRule:
               NSExtensionActivationSupportsWebURLWithMaxCount: 1
               NSExtensionActivationSupportsText: true
+    postBuildScripts:
+      - name: Package extension localizations
+        script: python3 "$SRCROOT/scripts/build_extension_localizations.py" SouloShareExtension
+        basedOnDependencyAnalysis: false
+
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dkluge.Soulo.ShareExtension
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: SouloShareExtension/SouloShareExtension.entitlements
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.1.5"
+        MARKETING_VERSION: "1.1.6"
         CURRENT_PROJECT_VERSION: 21
         SKIP_INSTALL: "YES"
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"

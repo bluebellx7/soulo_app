@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Lue artikkeleita ja e-kirjoja, hallitse tiedostoja ja siirrä niitä Wi-Fi-yhteydellä.
-• Yhtenäiset siniset säätimet ja selkeämmät työkaluvalikot.
-• Korjattu kaatuminen avattaessa koko näytön työkaluja; parannettu toistoa ja tiedostojen esikatselua.
+• Parannettu jatkuvaa lukemista: erilliset sisällysluettelo ja haku sekä fontin, rivivälin ja PDF-ulkoasun asetukset.
+• Lisätty kirjojen ruudukkonäkymä ja widget, QR-skannaus, tekstintunnistus valokuvista ja skannauksen pikavalinta.
+• Parannettu latauksiin siirtymistä, tiedostotoimintoja, verkkosivujen tummaa tilaa ja suorituskykyä.

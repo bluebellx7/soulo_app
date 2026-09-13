@@ -269,7 +269,7 @@ struct PlatformManagementView: View {
                             withAnimation { store.deletePlatform(id: platform.id) }
                         } label: {
                             Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
-                        }
+                        }.tint(.red)
                     }
                 }
                 .onMove { indices, destination in

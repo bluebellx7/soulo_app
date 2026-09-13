@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Læs artikler og e-bøger, administrer filer, og overfør dem via Wi-Fi.
-• Ensartede blå knapper og enklere værktøjsmenuer.
-• Rettet et nedbrud ved åbning af værktøjer i fuld skærm; forbedret afspilning og forhåndsvisning af filer.
+• Forbedret løbende læsning med separat indholdsfortegnelse og søgning samt indstillinger for skrifttype, linjeafstand og PDF-udseende.
+• Tilføjet boggitter og widget, QR-scanning, tekstgenkendelse i fotos og en genvej til scanning.
+• Forbedret adgang til downloads, filhandlinger, mørke websider og ydeevne.

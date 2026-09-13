@@ -439,7 +439,8 @@ final class AdBlockSubscriptionService: ObservableObject {
                       !prefix.hasPrefix("<!doctype html"), !prefix.hasPrefix("<html") else {
                     throw URLError(.cannotParseResponse)
                 }
-                let parsed = AdBlockRuleParser.parse(text)
+                let parsed = await Task.detached(priority: .utility) { AdBlockRuleParser.parse(text) }.value
+                try Task.checkCancellation()
                 // Re-find the live record after suspension. A user can toggle
                 // subscriptions while a network request is in flight.
                 guard let index = subscriptions.firstIndex(where: {

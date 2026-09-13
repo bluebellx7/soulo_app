@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Čitajte članke i e-knjige, upravljajte datotekama i prenosite ih putem Wi-Fi veze.
-• Ujednačene plave kontrole i jednostavniji izbornici alata.
-• Ispravljeno rušenje pri otvaranju alata preko cijelog zaslona; poboljšana reprodukcija i pregled datoteka.
+• Poboljšano kontinuirano čitanje uz odvojeni sadržaj i pretraživanje te postavke fonta, proreda i izgleda PDF-a.
+• Dodani mrežni prikaz knjiga i widget, skeniranje QR kodova, prepoznavanje teksta na fotografijama i prečac za skeniranje.
+• Poboljšani pristup preuzimanjima, radnje s datotekama, tamni prikaz web-stranica i performanse.

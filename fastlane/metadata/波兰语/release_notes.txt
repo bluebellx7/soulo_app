@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Czytaj artykuły i e-booki, zarządzaj plikami i przesyłaj je przez Wi-Fi.
-• Jednolite niebieskie elementy sterujące i prostsze menu narzędzi.
-• Naprawiono awarię przy otwieraniu narzędzi pełnoekranowych; ulepszono odtwarzanie i podgląd plików.
+• Ulepszone czytanie ciągłe: osobne spis treści i wyszukiwanie, ustawienia czcionki, interlinii oraz wyglądu PDF.
+• Dodano siatkę książek i widżet, skanowanie kodów QR, rozpoznawanie tekstu na zdjęciach i skrót do skanera.
+• Ulepszono przejście do pobranych plików, operacje na plikach, ciemny wygląd stron i wydajność.

@@ -19,4 +19,4 @@ Telepítse a(z) UserScripts vagy kompatibilis WebExtensions, kezelje egyértelm�
 
 A Soulo helyileg tárolja a böngészési adatokat, hacsak nem engedélyezi a iCloud beállítások szinkronizálását. A privát böngészés nem menti az előzményeket.
 
-Olvasson cikkeket és e-könyveket, kezelje fájljait, és vigye át őket Wi-Fi-n.
+Olvasson kényelmesen, nyissa meg könyvtárát widgetből, olvasson be QR-kódokat és ismerjen fel szöveget a fotókon.

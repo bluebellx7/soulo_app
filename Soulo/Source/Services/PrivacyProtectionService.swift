@@ -10,6 +10,7 @@ final class PrivacyProtectionService: ObservableObject {
     private let userDefaults: UserDefaults
     private let summariesKey: String
     private let disabledHostsKey: String
+    private let statisticsPersistence = DeferredPersistence()
 
     init(
         userDefaults: UserDefaults = .standard,
@@ -138,7 +139,7 @@ final class PrivacyProtectionService: ObservableObject {
         var summary = summariesByHost[cleanHost] ?? .empty(host: cleanHost)
         update(&summary)
         summariesByHost[cleanHost] = summary
-        saveSummaries()
+        statisticsPersistence.schedule { [weak self] in self?.saveSummaries() }
     }
 
     private func load() {
@@ -150,10 +151,14 @@ final class PrivacyProtectionService: ObservableObject {
     }
 
     func reloadFromDefaults() {
+        flushPendingStatistics()
         load()
     }
 
+    func flushPendingStatistics() { statisticsPersistence.flush() }
+
     private func saveSummaries() {
+        statisticsPersistence.cancel()
         if let data = try? JSONEncoder().encode(summariesByHost) {
             userDefaults.set(data, forKey: summariesKey)
         }

@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Read articles and e-books, manage files and transfer them over Wi-Fi.
-• Unified blue controls and simpler tool menus.
-• Fixed a crash when opening fullscreen tools; improved media playback and file previews.
+• Improved continuous reading, with separate contents and search views, font and line spacing controls, and PDF appearance settings.
+• Added a bookshelf grid and Home Screen widget, QR scanning, photo text recognition and a scan shortcut.
+• Improved download navigation, file actions, dark web browsing and performance.

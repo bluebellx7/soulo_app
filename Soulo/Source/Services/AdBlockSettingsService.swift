@@ -10,6 +10,7 @@ final class AdBlockSettingsService: ObservableObject {
     private let allowlistKey: String
     private let statsKey: String
     private let userDefaults: UserDefaults
+    private let statisticsPersistence = DeferredPersistence()
 
     init(
         allowlistKey: String = "soulo_ad_block_allowlisted_hosts",
@@ -54,7 +55,7 @@ final class AdBlockSettingsService: ObservableObject {
         let cleanHost = normalizedHost(host)
         guard !cleanHost.isEmpty else { return }
         hiddenElementCountByHost[cleanHost, default: 0] += count
-        saveStats()
+        statisticsPersistence.schedule { [weak self] in self?.saveStats() }
     }
 
     func hiddenElementCount(for host: String?) -> Int {
@@ -104,14 +105,18 @@ final class AdBlockSettingsService: ObservableObject {
     }
 
     func reloadFromDefaults() {
+        flushPendingStatistics()
         load()
     }
+
+    func flushPendingStatistics() { statisticsPersistence.flush() }
 
     private func saveAllowlist() {
         userDefaults.set(allowlistedHosts, forKey: allowlistKey)
     }
 
     private func saveStats() {
+        statisticsPersistence.cancel()
         if let data = try? JSONEncoder().encode(hiddenElementCountByHost) {
             userDefaults.set(data, forKey: statsKey)
         }

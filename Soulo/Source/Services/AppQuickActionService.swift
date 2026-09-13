@@ -4,6 +4,7 @@ enum AppQuickAction: String {
     case clearCache = "com.dkluge.Soulo.quick-action.clear-cache"
     case newPrivateTab = "com.dkluge.Soulo.quick-action.private-tab"
     case search = "com.dkluge.Soulo.quick-action.search"
+    case scan = "com.dkluge.Soulo.quick-action.scan"
     case shareApp = "com.dkluge.Soulo.quick-action.share-app"
 
     init?(shortcutItem: UIApplicationShortcutItem) {
@@ -21,6 +22,13 @@ final class AppQuickActionService {
 
     func configureShortcuts() {
         UIApplication.shared.shortcutItems = [
+            UIApplicationShortcutItem(
+                type: AppQuickAction.scan.rawValue,
+                localizedTitle: ToolText.text("scan_qr"),
+                localizedSubtitle: nil,
+                icon: UIApplicationShortcutIcon(systemImageName: "qrcode.viewfinder"),
+                userInfo: nil
+            ),
             UIApplicationShortcutItem(
                 type: AppQuickAction.clearCache.rawValue,
                 localizedTitle: LanguageManager.shared.localizedString("quick_action_clear_cache"),
@@ -40,13 +48,6 @@ final class AppQuickActionService {
                 localizedTitle: LanguageManager.shared.localizedString("search"),
                 localizedSubtitle: nil,
                 icon: UIApplicationShortcutIcon(type: .search),
-                userInfo: nil
-            ),
-            UIApplicationShortcutItem(
-                type: AppQuickAction.shareApp.rawValue,
-                localizedTitle: LanguageManager.shared.localizedString("quick_action_share_app"),
-                localizedSubtitle: nil,
-                icon: UIApplicationShortcutIcon(systemImageName: "square.and.arrow.up"),
                 userInfo: nil
             )
         ]

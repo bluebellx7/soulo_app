@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Lees artikelen en e-boeken, beheer bestanden en zet ze over via Wi-Fi.
-• Uniforme blauwe bediening en eenvoudigere gereedschapsmenu's.
-• Een crash bij het openen van hulpmiddelen op volledig scherm opgelost; afspelen en bestandsvoorbeelden verbeterd.
+• Doorlopend lezen verbeterd, met aparte inhoudsopgave en zoekfunctie, lettertype- en regelafstandinstellingen en PDF-weergaveopties.
+• Boekenraster en beginschermwidget, QR-scanner, tekstherkenning in foto’s en een scansnelkoppeling toegevoegd.
+• Navigatie naar downloads, bestandsacties, donkere webpagina’s en prestaties verbeterd.

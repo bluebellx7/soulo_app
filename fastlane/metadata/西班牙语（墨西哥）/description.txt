@@ -19,4 +19,4 @@ Instale UserScripts o WebExtensions compatibles, administre los permisos con cla
 
 Soulo almacena los datos de navegación localmente a menos que habilites la sincronización de la configuración de iCloud. La navegación privada no guarda el historial.
 
-Lee artículos y libros electrónicos, administra archivos y transfiérelos por Wi-Fi.
+Lee cómodamente, abre tu biblioteca desde un widget, escanea códigos QR y extrae texto de tus fotos.

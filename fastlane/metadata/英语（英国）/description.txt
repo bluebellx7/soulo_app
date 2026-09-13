@@ -19,4 +19,4 @@ Install UserScripts or compatible WebExtensions, manage permissions clearly, and
 
 Soulo stores browsing data locally unless you enable iCloud settings sync. Private browsing does not save history.
 
-Read articles and e-books, manage files and transfer them over Wi-Fi.
+Read comfortably, open your bookshelf from a widget, scan QR codes and extract text from photos.

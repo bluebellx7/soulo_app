@@ -36,6 +36,7 @@ final class PrivacyProtectionServiceTests: XCTestCase {
         first.recordHTTPSUpgrade(for: "example.com")
         first.recordTrackingParametersStripped(2, for: "example.com")
         first.recordCookieBannerActions(1, for: "example.com")
+        first.flushPendingStatistics()
 
         let second = PrivacyProtectionService(userDefaults: defaults)
         let summary = second.summary(for: "example.com")

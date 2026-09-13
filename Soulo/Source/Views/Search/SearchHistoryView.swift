@@ -230,7 +230,7 @@ struct SearchHistoryContentView: View {
                 }
             } label: {
                 Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
-            }
+            }.tint(.red)
         }
     }
 

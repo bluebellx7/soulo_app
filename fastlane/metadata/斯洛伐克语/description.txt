@@ -19,4 +19,4 @@ Nainštalujte UserScripts alebo kompatibilné WebExtension, spravujte prehľadne
 
 Soulo ukladá údaje prehliadania lokálne, pokiaľ nepovolíte synchronizáciu nastavení iCloud. Súkromné prehliadanie neukladá históriu.
 
-Čítajte články a e-knihy, spravujte súbory a prenášajte ich cez Wi-Fi.
+Čítajte pohodlne, otvorte knižnicu z widgetu, skenujte QR kódy a rozpoznávajte text na fotografiách.

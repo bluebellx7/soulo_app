@@ -9,6 +9,7 @@ struct SearchBarView: View {
     var onMicTap: () -> Void
     var onClear: (() -> Void)?
     var onIncognitoTap: (() -> Void)?
+    var onScanTap: (() -> Void)?
 
     @ObservedObject var wallpaperManager = WallpaperManager.shared
 
@@ -43,21 +44,30 @@ struct SearchBarView: View {
         HStack(spacing: 10) {
             if let onIncognitoTap {
                 Menu {
-                    Button(action: onIncognitoTap) {
-                        Label(
-                            LanguageManager.shared.localizedString(
-                                isIncognito ? "privacy_exit_incognito" : "privacy_enter_incognito"
-                            ),
-                            systemImage: isIncognito ? "eye" : "eye.slash"
-                        )
+                    Button {
+                        isFocused = false
+                        onIncognitoTap()
+                    } label: {
+                        Label(LanguageManager.shared.localizedString(isIncognito ? "privacy_exit_incognito" : "privacy_enter_incognito"), systemImage: isIncognito ? "eye" : "eye.slash")
+                    }
+                    if let onScanTap {
+                        Button {
+                            isFocused = false
+                            onScanTap()
+                        } label: {
+                            Label(ToolText.text("scan_qr"), systemImage: "qrcode.viewfinder")
+                        }
+                        .accessibilityIdentifier("search.scan")
                     }
                 } label: {
                     Image(systemName: isIncognito ? "eye.slash.fill" : "magnifyingglass")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(isFocused ? iconActiveColor : iconColor)
                         .frame(width: 26, height: 26)
-                        .contentShape(Circle())
+                        .contentShape(Rectangle())
                 }
+                .menuOrder(.fixed)
+                .accessibilityIdentifier("search.actions")
                 .accessibilityLabel(
                     LanguageManager.shared.localizedString(
                         isIncognito ? "accessibility_incognito_active" : "search"
@@ -104,8 +114,8 @@ struct SearchBarView: View {
                     withAnimation(.easeInOut(duration: 0.15)) { text = "" }
                     onClear?()
                 } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(clearColor)
                 }
                 .transition(.scale.combined(with: .opacity))

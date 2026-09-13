@@ -19,4 +19,4 @@ Installera UserScripts eller kompatibla WebExtensions, hantera behörigheter tyd
 
 Soulo lagrar webbläsardata lokalt om du inte aktiverar synkronisering av iCloud inställningar. Privat surfning sparar inte historik.
 
-Läs artiklar och e-böcker, hantera filer och överför dem via Wi-Fi.
+Läs bekvämt, öppna bokhyllan från en widget, skanna QR-koder och hämta text från foton.

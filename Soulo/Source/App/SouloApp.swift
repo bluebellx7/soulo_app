@@ -84,10 +84,14 @@ private struct SouloWindowRoot: View {
                 applyWebAppearanceToOpenTabs()
             }
             .onOpenURL { url in
-                if url.scheme == "soulo" && url.host == "action" {
+                if url.isFileURL {
+                    NotificationCenter.default.post(name: .openSouloDocument, object: url)
+                } else if url.scheme == "soulo" && url.host == "action" {
                     handlePendingSharedAction()
                 } else if url.scheme == "soulo" && url.host == "search" {
                     searchVM.clearSearch()
+                } else if url.scheme == "soulo" && url.host == "bookshelf" {
+                    NotificationCenter.default.post(name: .openSouloBookshelf, object: nil)
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .souloSharedActionRequested)) { _ in
@@ -165,4 +169,6 @@ private struct SouloWindowRoot: View {
 
 extension Notification.Name {
     static let openSouloDownloads = Notification.Name("soulo.openDownloads")
+    static let openSouloDocument = Notification.Name("soulo.openDocument")
+    static let openSouloBookshelf = Notification.Name("soulo.openBookshelf")
 }

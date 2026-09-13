@@ -33,6 +33,7 @@ final class AdBlockSettingsServiceTests: XCTestCase {
         let first = AdBlockSettingsService(userDefaults: defaults)
         first.recordHiddenElementCount(3, for: "example.com")
         first.recordHiddenElementCount(2, for: "www.example.com")
+        first.flushPendingStatistics()
 
         let second = AdBlockSettingsService(userDefaults: defaults)
         XCTAssertEqual(second.hiddenElementCount(for: "example.com"), 5)

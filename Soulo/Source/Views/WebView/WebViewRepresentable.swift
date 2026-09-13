@@ -2447,7 +2447,8 @@ struct WebViewRepresentable: UIViewRepresentable {
                 )
                 return
             }
-            presentActivityController(items: [fileURL], sourceView: viewModel.webView)
+            // Completed files remain available in Library > Downloads. Sharing
+            // is explicit there, so completion never interrupts navigation or reading.
         }
 
         func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {

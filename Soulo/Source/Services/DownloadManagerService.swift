@@ -101,6 +101,7 @@ final class DownloadManagerService: ObservableObject {
     private let userDefaults: UserDefaults
     private let storageKey: String
     private let storageDirectory: URL
+    private let progressPersistence = DeferredPersistence()
 
     init(
         userDefaults: UserDefaults = .standard,
@@ -155,12 +156,16 @@ final class DownloadManagerService: ObservableObject {
     func updateProgress(id: UUID, completed: Int64, total: Int64) {
         guard let index = downloads.firstIndex(where: { $0.id == id }),
               downloads[index].status == .inProgress else { return }
-        downloads[index].receivedBytes = max(0, completed)
-        downloads[index].expectedBytes = max(0, total)
+        var item = downloads[index]
+        let received = max(0, completed), expected = max(0, total)
+        guard item.receivedBytes != received || item.expectedBytes != expected else { return }
+        item.receivedBytes = received
+        item.expectedBytes = expected
         if total > 0 {
-            downloads[index].progress = min(max(Double(completed) / Double(total), 0), 1)
+            item.progress = min(max(Double(completed) / Double(total), 0), 1)
         }
-        save()
+        downloads[index] = item
+        progressPersistence.schedule { [weak self] in self?.save() }
     }
 
     func markPaused(id: UUID, resumeData: Data?) {
@@ -393,6 +398,7 @@ final class DownloadManagerService: ObservableObject {
     }
 
     private func save() {
+        progressPersistence.cancel()
         if let data = try? JSONEncoder().encode(downloads) {
             userDefaults.set(data, forKey: storageKey)
         }

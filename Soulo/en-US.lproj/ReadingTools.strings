@@ -21,7 +21,7 @@
 "bookmark" = "Save bookmark";
 "appearance" = "Reading appearance";
 "font_size" = "Font size";
-"line_height" = "Line height";
+"line_height" = "Line spacing";
 "paper" = "Paper";
 "light" = "Light";
 "dark" = "Dark";
@@ -116,3 +116,21 @@
 "media_no_content" = "No playable media detected";
 "reading_progress" = "Reading progress";
 "loaded_chapters" = "Loaded chapters";
+
+// QR scanner
+"scan_qr" = "Scan QR code";
+"scan_hint" = "Place a QR code or barcode inside the frame";
+"scan_result" = "Scan result";
+"scan_camera_unavailable" = "Camera scanning is unavailable. Choose a photo to recognize a code or text.";
+"scan_no_code" = "No code or text found. Choose a clearer image.";
+"scan_local" = "Displayed locally on this device";
+"copy" = "Copy";
+
+"file_info" = "File information";
+"file_name" = "File name";
+"file_size" = "File size";
+"file_modified" = "Modified";
+"file_pages" = "Pages";
+"page_zoom" = "Page zoom";
+"pdf_fixed_layout" = "PDF preserves its original layout. Adjust zoom and page colors here.";
+"system_files" = "Browse files";

@@ -28,7 +28,9 @@ final class LocalizationLayoutTests: XCTestCase {
                 .frame(width: 320)
             let image = try await snapshot(view)
             XCTAssertEqual(image.size.width, 320, accuracy: 0.5, language.code)
-            XCTAssertGreaterThanOrEqual(image.size.height, 84, language.code)
+            // The compact library tabs must retain a full touch target; the old
+            // 84-point minimum described the superseded tall tab design.
+            XCTAssertGreaterThanOrEqual(image.size.height, 44, language.code)
             XCTAssertLessThan(image.size.height, 200, language.code)
             if snapshotLocales.contains(language.code) {
                 let attachment = XCTAttachment(image: image)

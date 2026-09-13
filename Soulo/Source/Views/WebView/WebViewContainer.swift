@@ -56,7 +56,7 @@ enum BrowserChromeLayout {
 }
 
 enum BrowserAddressEditorLayout {
-    static let compactHeight: CGFloat = 252
+    static let compactHeight: CGFloat = 210
 }
 
 private struct WebExtensionInstallPresentation: Identifiable {
@@ -396,6 +396,10 @@ struct WebViewContainer: View {
             if webViewModel.isDownloading {
                 VStack {
                     Spacer()
+                    Button {
+                        HapticsManager.selection()
+                        librarySection = .downloads
+                    } label: {
                     HStack(spacing: 8) {
                         ProgressView()
                             .controlSize(.small)
@@ -409,13 +413,20 @@ struct WebViewContainer: View {
                                 .foregroundStyle(.white.opacity(0.6))
                                 .lineLimit(1)
                         }
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.65))
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(LanguageManager.shared.localizedString("downloads") + ", " + downloadStatusDetail)
+                    .accessibilityIdentifier("browser.downloadStatus")
                     .padding(.bottom, bottomOverlayClearance)
                 }
-                .allowsHitTesting(false)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
@@ -561,6 +572,10 @@ struct WebViewContainer: View {
                     showAddressEditor = false
                     onAddressSearch?(value)
                 },
+                onOpenURL: { url in
+                    showAddressEditor = false
+                    webViewModel.loadURL(url)
+                },
                 onVoiceInput: {
                     requestVoiceAfterAddressEditorDismisses = true
                     showAddressEditor = false
@@ -648,6 +663,7 @@ struct WebViewContainer: View {
             WebToolsPresentationModifier(
                 webViewModel: webViewModel,
                 showCaptureOptions: $showCaptureOptions,
+                captureAtTop: isFullscreen,
                 isCapturingPage: isCapturingPage,
                 captureResult: $captureResult,
                 pdfResult: $pdfResult,
@@ -1438,6 +1454,7 @@ struct WebViewContainer: View {
 private struct WebToolsPresentationModifier: ViewModifier {
     @ObservedObject var webViewModel: WebViewModel
     @Binding var showCaptureOptions: Bool
+    let captureAtTop: Bool
     let isCapturingPage: Bool
     @Binding var captureResult: WebPageCaptureResult?
     @Binding var pdfResult: WebPagePDFResult?
@@ -1448,23 +1465,27 @@ private struct WebToolsPresentationModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .confirmationDialog(
-                LanguageManager.shared.localizedString("web_capture"),
-                isPresented: $showCaptureOptions,
-                titleVisibility: .visible
-            ) {
-                Button(LanguageManager.shared.localizedString("web_capture_viewport")) {
-                    onCapture(.viewport)
-                }
-                Button(LanguageManager.shared.localizedString("web_capture_full_page")) {
-                    onCapture(.fullPage)
-                }
-                Button(LanguageManager.shared.localizedString("web_capture_pdf")) {
-                    onExportPDF()
-                }
-                Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
-            } message: {
-                Text(LanguageManager.shared.localizedString("web_capture_full_page_limit_desc"))
+            .overlay(alignment: captureAtTop ? .top : .bottomTrailing) {
+                Color.clear.frame(width: 44, height: 44)
+                    .allowsHitTesting(false)
+                    .confirmationDialog(
+                        LanguageManager.shared.localizedString("web_capture"),
+                        isPresented: $showCaptureOptions,
+                        titleVisibility: .visible
+                    ) {
+                        Button(LanguageManager.shared.localizedString("web_capture_viewport")) {
+                            onCapture(.viewport)
+                        }
+                        Button(LanguageManager.shared.localizedString("web_capture_full_page")) {
+                            onCapture(.fullPage)
+                        }
+                        Button(LanguageManager.shared.localizedString("web_capture_pdf")) {
+                            onExportPDF()
+                        }
+                        Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
+                    } message: {
+                        Text(LanguageManager.shared.localizedString("web_capture_full_page_limit_desc"))
+                    }
             }
             .sheet(item: $captureResult) { result in
                 WebPageCapturePreview(result: result)
@@ -1515,202 +1536,240 @@ private struct WebToolsPresentationModifier: ViewModifier {
 
 struct BrowserAddressEditorSheet: View {
     let onOpen: (String) -> Void
+    let onOpenURL: (URL) -> Void
     let onVoiceInput: () -> Void
 
     @State private var text: String
     @State private var pageURLText: String
     @State private var didCopyLink = false
+    @State private var copyFeedbackID = UUID()
     @FocusState private var pageURLFocused: Bool
     @State private var queryFocused = false
+    @State private var queryFocusRequest = 0
+    @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 54
     @Environment(\.dismiss) private var dismiss
 
     init(
         initialText: String,
         initialURL: String,
         onOpen: @escaping (String) -> Void,
+        onOpenURL: @escaping (URL) -> Void,
         onVoiceInput: @escaping () -> Void
     ) {
         self.onOpen = onOpen
+        self.onOpenURL = onOpenURL
         self.onVoiceInput = onVoiceInput
         _text = State(initialValue: initialText)
         _pageURLText = State(initialValue: initialURL)
     }
 
+    private var trimmedQuery: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var trimmedPageURL: String { pageURLText.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var destinationURL: URL? { ScannedContent(text: trimmedPageURL).webURL }
+
     var body: some View {
         ScrollView(.vertical) {
-            VStack(alignment: .leading, spacing: 12) {
-                VStack(alignment: .leading, spacing: 7) {
-                    Text(LanguageManager.shared.localizedString("current_keyword"))
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.secondary)
-
-                    HStack(spacing: 4) {
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(queryFocused ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
-                            .frame(width: 20)
-                            .accessibilityHidden(true)
-
-                        PresentationSearchField(
-                            text: $text,
-                            placeholder: LanguageManager.shared.localizedString("search_placeholder"),
-                            onFocusChanged: { queryFocused = $0 },
-                            onSubmit: open
-                        )
-                        .frame(minWidth: 40, maxWidth: .infinity, minHeight: 34)
-
-                        if !text.isEmpty {
-                            Button {
-                                text = ""
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
-                                    .foregroundStyle(.tertiary)
-                                    .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
-                            }
-                            .accessibilityLabel(LanguageManager.shared.localizedString("accessibility_clear_search"))
-                        }
-
-                        Rectangle()
-                            .fill(Color(UIColor.separator).opacity(0.35))
-                            .frame(width: 1, height: 20)
-                            .accessibilityHidden(true)
-
-                        Button {
-                            HapticsManager.light()
-                            onVoiceInput()
-                        } label: {
-                            Image(systemName: "mic.fill")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(.tint)
-                                .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
-                                .background(.tint.opacity(0.11), in: Circle())
-                                .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(LanguageManager.shared.localizedString("voice_record"))
-                        .accessibilityHint(LanguageManager.shared.localizedString("accessibility_voice_search_hint"))
-                    }
-                    .padding(.horizontal, 11)
-                    .frame(height: 50)
-                    .background(Color(UIColor.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 13, style: .continuous)
-                            .stroke(queryFocused ? AnyShapeStyle(.tint.opacity(0.55)) : AnyShapeStyle(Color(UIColor.separator).opacity(0.25)), lineWidth: 1)
-                    )
-                }
-
-            VStack(alignment: .leading, spacing: 7) {
-                Text(LanguageManager.shared.localizedString("current_page_link"))
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
-
-                HStack(spacing: 4) {
-                    Image(systemName: "link")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(pageURLFocused ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
-                        .frame(width: 20)
-                        .accessibilityHidden(true)
-
-                    TextField("https://", text: $pageURLText)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .keyboardType(.URL)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .submitLabel(.go)
-                        .focused($pageURLFocused)
-                        .onSubmit(openPageURL)
-                        .accessibilityLabel(LanguageManager.shared.localizedString("current_page_link"))
-
-                    Button {
-                        let value = pageURLText.trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard !value.isEmpty else { return }
-                        UIPasteboard.general.string = value
-                        HapticsManager.light()
-                        withAnimation(.easeInOut(duration: 0.18)) { didCopyLink = true }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                            withAnimation(.easeInOut(duration: 0.18)) { didCopyLink = false }
-                        }
-                    } label: {
-                        Image(systemName: didCopyLink ? "checkmark" : "doc.on.doc")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(didCopyLink ? Color.green : Color.secondary)
-                            .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
-                            .background(Color(uiColor: .tertiarySystemFill), in: Circle())
-                            .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(pageURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .accessibilityLabel(LanguageManager.shared.localizedString("copy_link"))
-
-                    Button(action: openPageURL) {
-                        Image(systemName: "arrow.up.right")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
-                            .background(.tint, in: Circle())
-                            .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(pageURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .opacity(pageURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.45 : 1)
-                    .accessibilityLabel(LanguageManager.shared.localizedString("open_directly"))
-                }
-                .padding(.horizontal, 11)
-                .frame(height: 44)
-                .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        .stroke(pageURLFocused ? AnyShapeStyle(.tint.opacity(0.55)) : AnyShapeStyle(Color(UIColor.separator).opacity(0.25)), lineWidth: 1)
-                )
-            }
-
-            AdaptiveActionRow(spacing: 12) {
-                Button {
-                    dismiss()
-                } label: {
-                    Text(LanguageManager.shared.localizedString("cancel"))
-
-                }
-                .buttonStyle(CompactActionButtonStyle(fillsHeight: true))
-
-                Button {
-                    open()
-                } label: {
-                    Text(
-                        LanguageManager.shared.localizedString(
-                            text.trimmingCharacters(in: .whitespacesAndNewlines).isValidURL
-                                ? "open_directly"
-                                : "search"
-                        )
-                    )
-
-                }
-                .buttonStyle(CompactActionButtonStyle(prominent: true, fillsHeight: true))
-                .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
+            VStack(alignment: .leading, spacing: 14) {
+                querySection
+                pageURLSection
             }
             .padding(.horizontal, 18)
             .padding(.top, 22)
-            .padding(.bottom, 10)
+            .padding(.bottom, 12)
         }
         .scrollIndicators(.hidden)
         .scrollBounceBehavior(.basedOnSize)
         .scrollDismissesKeyboard(.interactively)
+        .accessibilityAction(.escape) { dismiss() }
+        .onChange(of: pageURLText) { _, _ in
+            copyFeedbackID = UUID()
+            didCopyLink = false
+        }
+        .task(id: copyFeedbackID) {
+            guard didCopyLink else { return }
+            do {
+                try await Task.sleep(for: .seconds(1.2))
+                withAnimation(.easeInOut(duration: 0.18)) { didCopyLink = false }
+            } catch { /* A new copy, edit, or dismissal cancels the old feedback. */ }
+        }
+    }
+
+    private var querySection: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            sectionLabel("current_keyword")
+            HStack(spacing: 2) {
+                leadingIcon("magnifyingglass", focused: queryFocused)
+
+                PresentationSearchField(
+                    text: $text,
+                    placeholder: LanguageManager.shared.localizedString("search_placeholder"),
+                    focusRequest: queryFocusRequest,
+                    onFocusChanged: { queryFocused = $0 },
+                    onSubmit: open
+                )
+                .frame(minWidth: 40, maxWidth: .infinity, minHeight: 34)
+                .accessibilityIdentifier("addressEditor.query")
+
+                if !text.isEmpty {
+                    clearButton(label: "accessibility_clear_search", identifier: "addressEditor.clearQuery") {
+                        pageURLFocused = false
+                        text = ""
+                        queryFocusRequest += 1
+                    }
+                }
+
+                Button {
+                    HapticsManager.light()
+                    onVoiceInput()
+                } label: {
+                    Image(systemName: "mic.fill")
+                }
+                .buttonStyle(AddressEditorIconButtonStyle(tinted: true))
+                .accessibilityLabel(LanguageManager.shared.localizedString("voice_record"))
+                .accessibilityHint(LanguageManager.shared.localizedString("accessibility_voice_search_hint"))
+                .accessibilityIdentifier("addressEditor.voice")
+
+                Button(action: open) {
+                    Image(systemName: "magnifyingglass")
+                }
+                .buttonStyle(AddressEditorIconButtonStyle(prominent: true))
+                .disabled(trimmedQuery.isEmpty)
+                .accessibilityLabel(LanguageManager.shared.localizedString("search"))
+                .accessibilityIdentifier("addressEditor.search")
+            }
+            .modifier(AddressEditorRowStyle(focused: queryFocused, height: rowHeight))
+        }
+    }
+
+    private var pageURLSection: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            sectionLabel("current_page_link")
+            HStack(spacing: 2) {
+                leadingIcon("link", focused: pageURLFocused)
+
+                TextField("https://", text: $pageURLText)
+                    .font(.subheadline)
+                    .frame(minWidth: 40, maxWidth: .infinity)
+                    .keyboardType(.URL)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.go)
+                    .focused($pageURLFocused)
+                    .onSubmit(openPageURL)
+                    .accessibilityLabel(LanguageManager.shared.localizedString("current_page_link"))
+                    .accessibilityIdentifier("addressEditor.pageURL")
+
+                if !pageURLText.isEmpty {
+                    clearButton(label: "privacy_clear_action", identifier: "addressEditor.clearPageURL") {
+                        pageURLText = ""
+                        pageURLFocused = true
+                    }
+                    .accessibilityValue(LanguageManager.shared.localizedString("current_page_link"))
+                }
+
+                Button(action: copyPageURL) {
+                    Image(systemName: didCopyLink ? "checkmark" : "doc.on.doc")
+                        .contentTransition(.symbolEffect(.replace))
+                        .foregroundStyle(didCopyLink ? Color.green : Color.secondary)
+                }
+                .buttonStyle(AddressEditorIconButtonStyle())
+                .disabled(trimmedPageURL.isEmpty)
+                .accessibilityLabel(LanguageManager.shared.localizedString(didCopyLink ? "copied" : "copy_link"))
+                .accessibilityIdentifier("addressEditor.copy")
+
+                Button(action: openPageURL) {
+                    Image(systemName: "arrow.up.right")
+                }
+                .buttonStyle(AddressEditorIconButtonStyle(prominent: true))
+                .disabled(trimmedPageURL.isEmpty)
+                .disabled(destinationURL == nil)
+                .accessibilityLabel(LanguageManager.shared.localizedString("open_directly"))
+                .accessibilityIdentifier("addressEditor.openURL")
+            }
+            .modifier(AddressEditorRowStyle(focused: pageURLFocused, height: rowHeight))
+        }
+    }
+
+    private func sectionLabel(_ key: String) -> some View {
+        Text(LanguageManager.shared.localizedString(key))
+            .font(.caption.weight(.medium))
+            .foregroundStyle(.secondary)
+            .padding(.leading, 2)
+    }
+
+    private func leadingIcon(_ name: String, focused: Bool) -> some View {
+        Image(systemName: name)
+            .font(.system(size: 14, weight: .medium))
+            .foregroundStyle(focused ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+            .frame(width: 20)
+            .accessibilityHidden(true)
+    }
+
+    private func clearButton(label: String, identifier: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: "xmark")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.tertiary)
+        }
+        .buttonStyle(AddressEditorIconButtonStyle())
+        .accessibilityLabel(LanguageManager.shared.localizedString(label))
+        .accessibilityIdentifier(identifier)
+    }
+
+    private func copyPageURL() {
+        guard !trimmedPageURL.isEmpty else { return }
+        UIPasteboard.general.string = trimmedPageURL
+        HapticsManager.light()
+        withAnimation(.easeInOut(duration: 0.18)) { didCopyLink = true }
+        copyFeedbackID = UUID()
     }
 
     private func open() {
-        let value = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty else { return }
+        guard !trimmedQuery.isEmpty else { return }
         HapticsManager.selection()
-        onOpen(value)
+        onOpen(trimmedQuery)
     }
 
     private func openPageURL() {
-        let value = pageURLText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty else { return }
+        guard let url = destinationURL else { return }
         HapticsManager.selection()
-        onOpen(value)
+        onOpenURL(url)
+    }
+}
+
+private struct AddressEditorRowStyle: ViewModifier {
+    let focused: Bool
+    let height: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .padding(.leading, 12)
+            .padding(.trailing, 5)
+            .frame(minHeight: max(54, height))
+            .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .strokeBorder(focused ? AnyShapeStyle(.tint.opacity(0.55)) : AnyShapeStyle(Color(uiColor: .separator).opacity(0.25)), lineWidth: 1)
+            }
+    }
+}
+
+private struct AddressEditorIconButtonStyle: ButtonStyle {
+    var prominent = false
+    var tinted = false
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 15, weight: prominent ? .semibold : .medium))
+            .foregroundStyle(prominent ? AnyShapeStyle(.white) : tinted ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+            .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
+            .background {
+                if prominent { Circle().fill(.tint) }
+            }
+            .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
+            .contentShape(Rectangle())
+            .opacity(isEnabled ? (configuration.isPressed ? 0.6 : 1) : 0.3)
     }
 }
 

@@ -92,6 +92,9 @@ struct WallpaperBackground: View {
 /// 5 color pools drift slowly across the screen, blending into each other.
 struct DynamicGradientView: View {
     let colors: [Color]
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isVisible = false
 
     static var fallback: DynamicGradientView {
         DynamicGradientView(colors: [
@@ -102,11 +105,14 @@ struct DynamicGradientView: View {
     }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 24.0)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 24.0,
+            paused: !isVisible || scenePhase != .active || reduceMotion)) { timeline in
             Canvas { ctx, size in
                 render(ctx: ctx, size: size, time: timeline.date.timeIntervalSinceReferenceDate)
             }
         }
+        .onAppear { isVisible = true }
+        .onDisappear { isVisible = false }
     }
 
     private func render(ctx: GraphicsContext, size: CGSize, time: Double) {

@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 struct FilePresentation: Sendable, Hashable {
     enum Kind: String, Sendable { case folder, image, video, audio, pdf, book, archive, text, other }
+    static let textExtensions: Set<String> = ["txt", "md", "markdown", "log", "csv", "tsv", "json", "yaml", "yml", "xml", "html", "htm", "css", "js", "jsx", "ts", "tsx", "swift", "py", "java", "c", "h", "cpp", "hpp", "cs", "go", "rs", "sh", "sql", "ini", "cfg", "conf", "toml", "srt", "vtt", "ass", "lrc", "tex", "rst"]
     let kind: Kind
     let fileExtension: String
     let size: Int64
@@ -45,7 +46,7 @@ struct FilePresentation: Sendable, Hashable {
         else if ["zip", "rar", "7z"].contains(ext) { kind = .archive }
         else if type?.conforms(to: .audio) == true { kind = .audio }
         else if type?.conforms(to: .movie) == true { kind = .video }
-        else if type?.conforms(to: .text) == true { kind = .text }
+        else if Self.textExtensions.contains(ext) || type?.conforms(to: .text) == true { kind = .text }
         else { kind = .other }
         return FilePresentation(kind: kind, fileExtension: ext, size: Int64(values?.fileSize ?? 0))
     }
@@ -85,5 +86,33 @@ enum LibraryFileActions {
                   !file.lastPathComponent.hasPrefix(".") else { throw ReadingToolError.unsafePath }
         }
         for file in files { try FileManager.default.removeItem(at: file) }
+    }
+}
+
+/// Keep an app-owned copy: external providers can revoke access after handoff.
+enum ExternalDocumentImporter {
+    static func copyToLibrary(_ source: URL) throws -> URL {
+        guard source.isFileURL else { throw ReadingToolError.unsafePath }
+        let accessing = source.startAccessingSecurityScopedResource()
+        defer { if accessing { source.stopAccessingSecurityScopedResource() } }
+        let directory = BookLibrary.directory
+        let root = directory.standardizedFileURL.resolvingSymlinksInPath().path + "/"
+        if source.standardizedFileURL.resolvingSymlinksInPath().path.hasPrefix(root) { return source }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        var coordinationError: NSError?
+        var result: Result<URL, Error> = .failure(ReadingToolError.invalid)
+        NSFileCoordinator().coordinate(readingItemAt: source, options: .withoutChanges, error: &coordinationError) { readable in
+            result = Result {
+                let info = try readable.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
+                guard info.isRegularFile == true else { throw ReadingToolError.unsupported }
+                guard (info.fileSize ?? 0) <= 1024 * 1024 * 1024 else { throw ReadingToolError.limit }
+                let target = FileSafety.availableURL(name: readable.lastPathComponent, directory: directory)
+                do { try FileManager.default.copyItem(at: readable, to: target) }
+                catch { try? FileManager.default.removeItem(at: target); throw error }
+                return target
+            }
+        }
+        if let coordinationError { throw coordinationError }
+        return try result.get()
     }
 }

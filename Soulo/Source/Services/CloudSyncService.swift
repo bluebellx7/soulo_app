@@ -78,6 +78,7 @@ final class CloudSyncService: NSObject {
     private var defaultsObserver: NSObjectProtocol?
     private var pendingUpload: DispatchWorkItem?
     private var isApplyingRemote = false
+    private var lastSyncedSettings: NSDictionary?
     private var isObservingRemote = false
     private(set) var isStarted = false
 
@@ -221,6 +222,10 @@ final class CloudSyncService: NSObject {
 
     private func uploadLocalSettings() {
         guard isEnabled, isStarted, !isApplyingRemote else { return }
+        let settings = currentSettings()
+        // Download progress and other non-synced defaults also send change
+        // notifications. Do not upload the same preferences again for those.
+        guard lastSyncedSettings?.isEqual(settings) != true else { return }
         guard let data = try? CloudSettingsPayloadCodec.encode(
             defaults: defaults,
             keys: Self.syncedKeys
@@ -228,6 +233,7 @@ final class CloudSyncService: NSObject {
 
         kvStore.set(data, forKey: payloadKey)
         kvStore.synchronize()
+        lastSyncedSettings = settings
     }
 
     @objc private func handleRemoteChange(_ notification: Notification) {
@@ -253,6 +259,13 @@ final class CloudSyncService: NSObject {
         )) != nil else { return }
 
         reloadRuntimeSettings()
+        lastSyncedSettings = currentSettings()
+    }
+
+    private func currentSettings() -> NSDictionary {
+        var values: [String: Any] = [:]
+        for key in Self.syncedKeys { values[key] = defaults.object(forKey: key) }
+        return values as NSDictionary
     }
 
     private func reloadRuntimeSettings() {

@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Makaleleri ve e-kitapları okuyun, dosyaları yönetin ve Wi-Fi ile aktarın.
-• Tutarlı mavi kontroller ve daha sade araç menüleri.
-• Tam ekran araçları açılırken oluşan çökme giderildi; medya oynatma ve dosya önizlemeleri iyileştirildi.
+• Kesintisiz okuma iyileştirildi; içindekiler ve arama ayrıldı, yazı tipi, satır aralığı ve PDF görünüm ayarları geliştirildi.
+• Kitap ızgarası ve araç takımı, QR tarama, fotoğraflarda metin tanıma ve tarama kestirmesi eklendi.
+• İndirmelere erişim, dosya işlemleri, karanlık web sayfaları ve performans iyileştirildi.

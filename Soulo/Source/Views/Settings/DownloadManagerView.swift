@@ -28,24 +28,26 @@ struct DownloadManagerView: View {
 struct DownloadManagerContentView: View {
     @ObservedObject private var downloadManager = DownloadManagerService.shared
     let highlightedItemID: UUID?
-    var onOpenFiles: (() -> Void)? = nil
+    var embeddedInLibrary = false
     @State private var previewItem: BrowserDownloadItem?
     @State private var shareItem: BrowserDownloadItem?
     @State private var showDownloadsFolder = false
     @State private var showClearConfirmation = false
+    @State private var systemFile: URL?
+    @State private var fileError: String?
 
     private var hasFinishedDownloads: Bool {
         downloadManager.downloads.contains { [.finished, .failed, .canceled].contains($0.status) }
     }
 
-    init(highlightedItemID: UUID? = nil, onOpenFiles: (() -> Void)? = nil) {
+    init(highlightedItemID: UUID? = nil, embeddedInLibrary: Bool = false) {
         self.highlightedItemID = highlightedItemID
-        self.onOpenFiles = onOpenFiles
+        self.embeddedInLibrary = embeddedInLibrary
     }
 
     var body: some View {
         List {
-            if onOpenFiles == nil {
+            if !embeddedInLibrary {
                 Section { NavigationLink { LibraryFilesView() } label: { Label(ToolText.text("files_tools"), systemImage: "folder.badge.gearshape") } }
             }
             if downloadManager.downloads.isEmpty {
@@ -72,31 +74,31 @@ struct DownloadManagerContentView: View {
                                 systemImage: "trash"
                             )
                         }
+                        .confirmationDialog(
+                            LanguageManager.shared.localizedString("downloads_clear_finished"),
+                            isPresented: $showClearConfirmation,
+                            titleVisibility: .visible
+                        ) {
+                            Button(LanguageManager.shared.localizedString("delete"), role: .destructive) {
+                                downloadManager.clearFinished()
+                            }
+                            Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
+                        }
                     }
                 }
             }
         }
         .listStyle(.insetGrouped)
-        .confirmationDialog(
-            LanguageManager.shared.localizedString("downloads_clear_finished"),
-            isPresented: $showClearConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button(LanguageManager.shared.localizedString("delete"), role: .destructive) {
-                downloadManager.clearFinished()
-            }
-            Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
-        }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    if let onOpenFiles { onOpenFiles() } else { showDownloadsFolder = true }
+                    showDownloadsFolder = true
                 } label: {
                     Image(systemName: "folder.fill")
                         .font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
                 }
                 .accessibilityLabel(
-                    LanguageManager.shared.localizedString("open_downloads_folder")
+                    ToolText.text("system_files")
                 )
             }
         }
@@ -106,7 +108,20 @@ struct DownloadManagerContentView: View {
         .navigationDestination(isPresented: Binding(get: { previewItem != nil }, set: { if !$0 { previewItem = nil } })) {
             if let item = previewItem { DownloadContentPreview(item: item) }
         }
-        .navigationDestination(isPresented: $showDownloadsFolder) { LibraryFilesView() }
+        .fileImporter(isPresented: $showDownloadsFolder, allowedContentTypes: [.data]) { result in
+            Task {
+                do {
+                    let url = try result.get()
+                    let access = url.startAccessingSecurityScopedResource()
+                    defer { if access { url.stopAccessingSecurityScopedResource() } }
+                    systemFile = try await Task.detached { try ExternalDocumentImporter.copyToLibrary(url) }.value
+                } catch { fileError = error.localizedDescription }
+            }
+        }
+        .navigationDestination(item: $systemFile) { LocalDocumentContent(url: $0) }
+        .alert(ToolText.text("error"), isPresented: Binding(get: { fileError != nil }, set: { if !$0 { fileError = nil } })) {
+            Button(ToolText.text("done")) { fileError = nil }
+        } message: { Text(fileError ?? "") }
         .onAppear {
             downloadManager.removeMissingFiles()
         }
@@ -119,8 +134,11 @@ struct DownloadManagerContentView: View {
                     previewItem = item
                 } label: {
                     downloadSummary(item)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("downloads.open.\(item.id)")
             } else {
                 downloadSummary(item)
             }
@@ -173,7 +191,7 @@ struct DownloadManagerContentView: View {
                 downloadManager.delete(item)
             } label: {
                 Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
-            }
+            }.tint(.red)
         }
         .listRowBackground(
             item.id == highlightedItemID
@@ -287,24 +305,50 @@ private struct DownloadShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
-private struct DownloadContentPreview: View {
+struct DownloadContentPreview: View {
     let item: BrowserDownloadItem
+    var body: some View { LocalDocumentContent(url: item.localURL) }
+}
+
+struct LocalDocumentContent: View {
+    let url: URL
+    @State private var book: LibraryBook?
+    @State private var error: String?
+
+    private var isBook: Bool { BookFormat.extensions.contains(url.pathExtension.lowercased()) }
 
     var body: some View {
         Group {
-            if isPlayableMedia {
+            if isBook {
+                if let book {
+                    BookReaderView(book: book)
+                } else if let error {
+                    ContentUnavailableView(ToolText.text("reading_failed"), systemImage: "book.closed", description: Text(error))
+                } else {
+                    ProgressView().task {
+                        do { book = try await BookLibrary.shared.add(url) }
+                        catch { self.error = error.localizedDescription }
+                    }
+                }
+            } else if ArchiveService.extensions.contains(url.pathExtension.lowercased()) {
+                ArchiveBrowserView(url: url, directory: url.deletingLastPathComponent())
+            } else if FilePresentation.textExtensions.contains(url.pathExtension.lowercased())
+                        || UTType(filenameExtension: url.pathExtension)?.conforms(to: .plainText) == true
+                        || UTType(filenameExtension: url.pathExtension)?.conforms(to: .sourceCode) == true {
+                TextDocumentPreview(url: url)
+            } else if isPlayableMedia {
                 VStack { MediaPlaybackSurface(); MediaControls() }
-                    .task { MediaSession.shared.open(url: item.localURL, title: item.fileName) }
+                    .task { MediaSession.shared.open(url: url, title: url.lastPathComponent) }
             } else {
-                DownloadQuickLookPreview(url: item.localURL).mediaPlayerNavigation()
+                DownloadQuickLookPreview(url: url).mediaPlayerNavigation()
             }
         }
-        .navigationTitle(item.fileName)
+        .navigationTitle(isBook ? "" : url.lastPathComponent)
         .navigationBarTitleDisplayMode(.inline)
     }
 
     private var isPlayableMedia: Bool {
-        guard let type = UTType(filenameExtension: item.localURL.pathExtension) else {
+        guard let type = UTType(filenameExtension: url.pathExtension) else {
             return false
         }
         return type.conforms(to: .movie) || type.conforms(to: .audio)
@@ -343,4 +387,68 @@ struct DownloadQuickLookPreview: UIViewControllerRepresentable {
             (prepared?.url ?? original) as NSURL
         }
     }
+}
+
+struct IncomingDocument: Identifiable, Hashable {
+    let id = UUID()
+    let url: URL
+}
+
+struct ExternalDocumentView: View {
+    let source: URL
+    @State private var localURL: URL?
+    @State private var error: String?
+    var body: some View {
+        Group {
+            if let localURL { LocalDocumentContent(url: localURL) }
+            else if let error { ContentUnavailableView(ToolText.text("reading_failed"), systemImage: "doc", description: Text(error)) }
+            else { ProgressView() }
+        }
+        .task(id: source) {
+            do {
+                let imported = try await Task.detached(priority: .userInitiated) {
+                    try ExternalDocumentImporter.copyToLibrary(source)
+                }.value
+                guard !Task.isCancelled else { return }
+                localURL = imported
+            } catch { self.error = error.localizedDescription }
+        }
+    }
+}
+
+private struct TextDocumentPreview: View {
+    let url: URL
+    @State private var text: String?
+    @State private var error: String?
+    var body: some View {
+        Group {
+            if let text { SelectableDocumentText(text: text) }
+            else if let error { ContentUnavailableView(ToolText.text("reading_failed"), systemImage: "doc.text", description: Text(error)) }
+            else { ProgressView() }
+        }
+        .task(id: url) {
+            do {
+                text = try await Task.detached(priority: .userInitiated) {
+                    let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+                    guard size <= 16 * 1024 * 1024 else { throw ReadingToolError.limit }
+                    return try TextBookDecoder.decode(Data(contentsOf: url, options: .mappedIfSafe))
+                }.value
+            } catch { self.error = error.localizedDescription }
+        }
+        .toolbar { ToolbarItem(placement: .primaryAction) { ShareLink(item: url) { Image(systemName: "square.and.arrow.up") } } }
+    }
+}
+private struct SelectableDocumentText: UIViewRepresentable {
+    let text: String
+    func makeUIView(context: Context) -> UITextView {
+        let view = UITextView(usingTextLayoutManager: true)
+        view.isEditable = false
+        view.isSelectable = true
+        view.font = .monospacedSystemFont(ofSize: 15, weight: .regular)
+        view.adjustsFontForContentSizeCategory = true
+        view.textContainerInset = UIEdgeInsets(top: 20, left: 16, bottom: 24, right: 16)
+        view.text = text
+        return view
+    }
+    func updateUIView(_ view: UITextView, context: Context) { if view.text != text { view.text = text } }
 }

@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Đọc bài viết và sách điện tử, quản lý tệp và truyền qua Wi-Fi.
-• Thống nhất các nút điều khiển màu xanh và đơn giản hóa menu công cụ.
-• Sửa lỗi ứng dụng bị đóng khi mở công cụ toàn màn hình; cải thiện phát phương tiện và xem trước tệp.
+• Cải thiện đọc cuộn liên tục, tách mục lục và tìm kiếm, thêm điều chỉnh phông chữ, giãn dòng và giao diện PDF.
+• Thêm tủ sách dạng lưới và tiện ích, quét QR, nhận dạng chữ trong ảnh và lối tắt quét mã.
+• Cải thiện truy cập bản tải xuống, thao tác tệp, chế độ tối của trang web và hiệu năng.

@@ -19,4 +19,4 @@ Instal·leu UserScripto WebExtensions compatibles, gestioneu els permisos amb cl
 
 Soulo emmagatzema les dades de navegació localment tret que activeu la sincronització de la configuració de iCloud. La navegació privada no guarda l'historial.
 
-Llegeix articles i llibres electrònics, gestiona fitxers i transfereix-los per Wi-Fi.
+Llegeix còmodament, obre la biblioteca des d’un giny, escaneja codis QR i extreu text de les fotos.

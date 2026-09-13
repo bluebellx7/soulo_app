@@ -6,6 +6,48 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Soulo</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Soulo Documents</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.adobe.pdf</string>
+				<string>org.idpf.epub-container</string>
+				<string>public.text</string>
+				<string>public.rtf</string>
+				<string>public.html</string>
+				<string>public.xml</string>
+				<string>public.json</string>
+				<string>public.comma-separated-values-text</string>
+				<string>public.tab-separated-values-text</string>
+				<string>net.daringfireball.markdown</string>
+				<string>public.image</string>
+				<string>public.movie</string>
+				<string>public.audio</string>
+				<string>public.zip-archive</string>
+				<string>com.dkluge.soulo.ebook</string>
+				<string>com.dkluge.soulo.archive</string>
+				<string>org.openxmlformats.wordprocessingml.document</string>
+				<string>org.openxmlformats.spreadsheetml.sheet</string>
+				<string>org.openxmlformats.presentationml.presentation</string>
+				<string>com.microsoft.word.doc</string>
+				<string>com.microsoft.excel.xls</string>
+				<string>com.microsoft.powerpoint.ppt</string>
+				<string>com.apple.iwork.pages.pages</string>
+				<string>com.apple.iwork.numbers.numbers</string>
+				<string>com.apple.iwork.keynote.key</string>
+				<string>com.rarlab.rar-archive</string>
+				<string>org.7-zip.7-zip-archive</string>
+				<string>com.amazon.mobi8-ebook</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -90,6 +132,50 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UTImportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Mobipocket eBook</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.dkluge.soulo.ebook</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>mobi</string>
+					<string>azw</string>
+					<string>azw3</string>
+					<string>azw4</string>
+					<string>prc</string>
+					<string>pdb</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Compressed Archive</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.dkluge.soulo.archive</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>rar</string>
+					<string>7z</string>
+				</array>
+			</dict>
+		</dict>
 	</array>
 </dict>
 </plist>

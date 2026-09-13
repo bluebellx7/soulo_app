@@ -424,20 +424,30 @@ final class WebViewModel: ObservableObject {
 
     func deletePersistedSnapshot() {
         guard let snapshotPersistenceID else { return }
-        try? FileManager.default.removeItem(at: Self.snapshotURL(id: snapshotPersistenceID))
+        self.snapshotPersistenceID = nil
+        let url = Self.snapshotURL(id: snapshotPersistenceID)
+        Self.snapshotWriteQueue.async { try? FileManager.default.removeItem(at: url) }
     }
 
     static func deleteAllPersistedSnapshots() {
-        try? FileManager.default.removeItem(at: snapshotDirectory)
+        let directory = snapshotDirectory
+        snapshotWriteQueue.async { try? FileManager.default.removeItem(at: directory) }
     }
 
     private func persistSnapshot(_ image: UIImage) {
-        guard let snapshotPersistenceID,
-              let data = image.jpegData(compressionQuality: 0.82) else { return }
+        guard let snapshotPersistenceID else { return }
         let directory = Self.snapshotDirectory
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try? data.write(to: Self.snapshotURL(id: snapshotPersistenceID), options: .atomic)
+        let url = Self.snapshotURL(id: snapshotPersistenceID)
+        Self.snapshotWriteQueue.async {
+            autoreleasepool {
+                guard let data = image.jpegData(compressionQuality: 0.82) else { return }
+                try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                try? data.write(to: url, options: .atomic)
+            }
+        }
     }
+
+    private static let snapshotWriteQueue = DispatchQueue(label: "com.dkluge.Soulo.tab-snapshots", qos: .utility)
 
     private static func loadSnapshot(id: String) -> UIImage? {
         UIImage(contentsOfFile: snapshotURL(id: id).path)

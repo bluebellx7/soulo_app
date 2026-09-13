@@ -60,7 +60,7 @@ struct LibraryView: View {
                 case .books:
                     BookshelfView()
                 case .downloads:
-                    DownloadManagerContentView(onOpenFiles: { selectedSection = .files })
+                    DownloadManagerContentView(embeddedInLibrary: true)
                 case .files:
                     LibraryFilesView(embeddedInLibrary: true)
                 }
@@ -71,6 +71,9 @@ struct LibraryView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
         .mediaPlayerNavigation()
+        .onReceive(NotificationCenter.default.publisher(for: .openSouloBookshelf)) { _ in
+            selectedSection = .books
+        }
     }
 
     private func openSelection(_ value: String) {
@@ -107,8 +110,8 @@ struct LibrarySectionSwitcher: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.top, 6)
-        .padding(.bottom, 14)
+        .padding(.top, 2)
+        .padding(.bottom, 6)
         .background(Color(uiColor: .systemBackground))
     }
 
@@ -123,7 +126,7 @@ struct LibrarySectionSwitcher: View {
                     HapticsManager.selection()
                     withAnimation(.easeOut(duration: 0.18)) { selectedSection = section }
                 } label: {
-                    VStack(spacing: 7) {
+                    VStack(spacing: 4) {
                         Image(systemName: section.systemImage)
                             .font(.system(size: 17, weight: .medium))
                             .frame(height: 20)
@@ -134,15 +137,15 @@ struct LibrarySectionSwitcher: View {
                     }
                     .foregroundStyle(selected ? Color.themePrimary : .secondary)
                     .padding(.horizontal, 8)
-                    .padding(.vertical, 8)
-                    .frame(minWidth: 48, minHeight: 64, alignment: .top)
+                    .padding(.vertical, 6)
+                    .frame(minWidth: 48, minHeight: 50)
                     .background {
                         if selected {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
                                 .fill(Color.themePrimary.opacity(0.1))
                         }
                     }
-                    .contentShape(RoundedRectangle(cornerRadius: 16))
+                    .contentShape(RoundedRectangle(cornerRadius: 10))
                 }
                 .buttonStyle(.plain)
                 .fixedSize(horizontal: true, vertical: false)

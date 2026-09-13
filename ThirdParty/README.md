@@ -6,7 +6,9 @@ All parsing runs locally. No CDN or runtime script downloads.
   - `view.js`: remove the unused generic loader; Soulo supplies validated books.
   - `paginator.js` / `fixed-layout.js`: remove `allow-scripts` from book iframe sandboxes.
   - `mobi.js`: reject encrypted books, bound decoding, extract Print Replica PDF using the container's offset/length fields. No DRM removal.
-  - `soulo.js`: app bridge, TXT documents, appearance, search and cover thumbnails.
+  - `soulo.js`: app bridge, TXT documents, appearance, search, cover thumbnails and reader controls.
+  - `continuous.js`: Soulo's vertical chapter renderer; keeps the current chapter and two neighbors on each side loaded, retaining measured placeholder heights when releasing documents.
+  - `paginator.js`: exports the sandboxed chapter view for the continuous renderer; `view.js` selects it for reflowable Soulo books.
   - Vendor zip.js and fflate preserve upstream license files.
 - Mozilla Readability: https://github.com/mozilla/readability, revision `ab4027a8b37669745016869a37a504727992b2ba`, Apache 2.0. Source is `Soulo/Source/Resources/SouloReadability.js`; license here.
 - PLzmaSDK, ZipArchive and Unrar.swift use exact revisions in `project.yml`. They compile from source for device and simulator. UnRAR is extraction-only; its license prohibits using its code to develop a RAR compressor.

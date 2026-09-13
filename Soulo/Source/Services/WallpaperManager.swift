@@ -573,9 +573,14 @@ class WallpaperManager: ObservableObject {
     }
 
     private func downloadImageData(from url: URL) async -> Data? {
-        await Task.detached(priority: .utility) {
-            try? Data(contentsOf: url)
-        }.value
+        do {
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 20
+            let (data, response) = try await URLSession.shared.data(for: request)
+            try Task.checkCancellation()
+            guard (response as? HTTPURLResponse).map({ (200..<300).contains($0.statusCode) }) ?? true else { return nil }
+            return data
+        } catch { return nil }
     }
 
     private func recordRemoteError(source: WallpaperSource, error: Error) {

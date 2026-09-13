@@ -1,5 +1,5 @@
-1.1.5
+1.1.6
 
-• Čítajte články a e-knihy, spravujte súbory a prenášajte ich cez Wi-Fi.
-• Jednotné modré ovládacie prvky a jednoduchšie ponuky nástrojov.
-• Opravený pád pri otváraní nástrojov na celej obrazovke; vylepšené prehrávanie a náhľady súborov.
+• Vylepšené plynulé čítanie, oddelený obsah a vyhľadávanie, nastavenia písma, riadkovania a vzhľadu PDF.
+• Pridaná mriežka kníh a widget, skenovanie QR kódov, rozpoznávanie textu na fotografiách a skratka na skenovanie.
+• Vylepšený prístup k sťahovaniu, práca so súbormi, tmavý vzhľad webových stránok a výkon.
