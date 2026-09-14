@@ -356,14 +356,14 @@ final class WebViewModelTests: XCTestCase {
         )
     }
 
-    func testLibrarySectionsProvideSeparateFilesAndBooks() {
+    func testLibrarySectionsCombineBooksIntoFiles() {
         XCTAssertEqual(
             LibrarySection.allCases.map(\.rawValue),
-            ["bookmarks", "history", "downloads", "files", "books"]
+            ["bookmarks", "history", "downloads", "files"]
         )
         XCTAssertEqual(
             LibrarySection.allCases.map(\.titleKey),
-            ["bookmarks", "search_history", "downloads", "files", "bookshelf"]
+            ["bookmarks", "search_history", "downloads", "files"]
         )
     }
 

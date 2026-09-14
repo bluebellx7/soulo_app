@@ -437,7 +437,7 @@ struct BookWebSurface: UIViewRepresentable {
         config.websiteDataStore = .nonPersistent()
         config.setURLSchemeHandler(context.coordinator, forURLScheme: "soulo-book")
         config.userContentController.add(context.coordinator, name: "book")
-        let view = WKWebView(frame: .zero, configuration: config)
+        let view = SelectionSearchWebView(frame: .zero, configuration: config)
         view.navigationDelegate = context.coordinator
         view.isOpaque = false
         view.backgroundColor = .clear
@@ -585,7 +585,7 @@ struct PDFBookSurface: UIViewRepresentable {
     let controller: BookReaderController
     func makeCoordinator() -> Coordinator { Coordinator(controller) }
     func makeUIView(context: Context) -> PDFView {
-        let view = PDFView()
+        let view = SelectionSearchPDFView()
         view.accessibilityIdentifier = "reader.pdf"
         guard let document = PDFDocument(data: data), !document.isLocked else {
             controller.error = ToolText.text("protected_file")

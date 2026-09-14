@@ -610,8 +610,27 @@ struct WebResourceInspectorView: View {
     }
 
     private var linkRows: some View {
-        VStack(spacing: 0) {
-            ForEach(viewModel.snapshot.links) { resource in
+        let groups = WebLinkDomainGroup.group(viewModel.snapshot.links)
+        return VStack(alignment: .leading, spacing: 0) {
+            ForEach(groups) { group in
+                if groups.count > 1 {
+                    HStack {
+                        Text(group.domain).font(.subheadline.weight(.semibold))
+                        Spacer()
+                        Text("\(group.links.count)").font(.caption).foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 12)
+                    .accessibilityIdentifier("resources.domain.\(group.domain)")
+                }
+                ForEach(group.links) { resource in
+                    linkRow(resource)
+                    if resource.id != group.links.last?.id { Divider() }
+                }
+            }
+        }
+    }
+
+    private func linkRow(_ resource: WebLinkResource) -> some View {
                 HStack(spacing: 6) {
                     Button {
                         copyToPasteboard(resource.url.absoluteString)
@@ -632,9 +651,6 @@ struct WebResourceInspectorView: View {
                     .buttonStyle(.plain)
                     shareURLButton(resource.url)
                 }
-                if resource.id != viewModel.snapshot.links.last?.id { Divider() }
-            }
-        }
     }
 
     private var textRows: some View {
@@ -1057,7 +1073,7 @@ private struct WebResourceImageViewer: View {
 
             TabView(selection: $selectedImageID) {
                 ForEach(images) { image in
-                    WebResourceFullSizeImage(resource: image)
+                    WebResourceFullSizeImage(resource: image, onDismiss: { dismiss() })
                         .tag(image.id)
                 }
             }
@@ -1244,14 +1260,13 @@ private struct WebResourceImageViewer: View {
 
 private struct WebResourceFullSizeImage: View {
     let resource: WebImageResource
+    var onDismiss: () -> Void
 
     var body: some View {
         AsyncImage(url: resource.url) { phase in
             switch phase {
             case .success(let image):
-                image
-                    .resizable()
-                    .scaledToFit()
+                ZoomableImageSurface(image: image, onDismiss: onDismiss)
             case .failure:
                 Image(systemName: "photo.badge.exclamationmark")
                     .font(.system(size: 36))
@@ -1264,8 +1279,7 @@ private struct WebResourceFullSizeImage: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 64)
+
     }
 }
 

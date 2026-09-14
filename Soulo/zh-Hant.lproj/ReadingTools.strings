@@ -134,3 +134,16 @@
 "page_zoom" = "頁面縮放";
 "pdf_fixed_layout" = "PDF 保留原版排版，可調整縮放和頁面顏色。";
 "system_files" = "瀏覽系統檔案";
+
+"files_widget_hint" = "快速開啟 Soulo 中的檔案、圖片和電子書。";
+"safari_opening" = "正在開啟 Safari 相容頁面…";
+"safari_open_failed" = "無法開啟 Safari 相容頁面，請重試。";
+"search_web" = "搜尋網頁";
+
+"rename_file" = "重新命名";
+"rename_file_extension_hint" = "將保留原檔案副檔名。";
+"file_busy" = "請等待下載完成後再重新命名檔案。";
+
+"remove_download_record" = "移除記錄";
+"clear_download_records" = "清除已結束的下載記錄";
+"download_records_keep_files" = "僅清除下載記錄，已下載的檔案仍保留在「檔案」中。";

@@ -51,8 +51,8 @@ final class BrowserUIPreferencesTests: XCTestCase {
         for action: BrowserToolbarAction in [.readerMode, .resources, .files, .books, .downloads, .wifiTransfer, .adBlock] {
             service.save(actions: [action, .back, .tabs, .more], addressAction: action)
             let restored = BrowserToolbarConfigurationService(defaults: defaults)
-            XCTAssertEqual(restored.actions.first, action)
-            XCTAssertEqual(restored.addressAction, action)
+            XCTAssertEqual(restored.actions.first, action == .books ? .files : action)
+            XCTAssertEqual(restored.addressAction, action == .books ? .files : action)
             XCTAssertFalse(action.localizedTitle.isEmpty)
             XCTAssertNotEqual(action.localizedTitle, action.titleKey)
         }

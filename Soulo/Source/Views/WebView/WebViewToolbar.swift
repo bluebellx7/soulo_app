@@ -131,6 +131,9 @@ struct WebViewToolbar: View {
     @State private var showMediaRateControls = false
     @State private var isChangingMediaRate = false
     @State private var showMoreMenu = false
+    @State private var menuAnchorGeneration = 0
+    @State private var menuKeyboardVisible = false
+    @State private var presentMenuAfterKeyboard = false
     @State private var extensionActionRevision = 0
 
     var tabManager: TabManager?
@@ -514,6 +517,21 @@ struct WebViewToolbar: View {
                 .presentationCompactAdaptation(.popover)
                 .presentationBackground(.ultraThinMaterial)
                 .presentationCornerRadius(26)
+        }
+        .id(menuAnchorGeneration)
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            menuKeyboardVisible = true
+            showMoreMenu = false
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
+            menuKeyboardVisible = false
+            showMoreMenu = false
+            // Recreate the native popover anchor after keyboard avoidance ends.
+            menuAnchorGeneration &+= 1
+            if presentMenuAfterKeyboard {
+                presentMenuAfterKeyboard = false
+                DispatchQueue.main.async { showMoreMenu = true }
+            }
         }
         .sheet(isPresented: $showZoomControls) {
             persistentZoomPanel
@@ -1117,7 +1135,12 @@ struct WebViewToolbar: View {
 
     private func presentMoreMenu() {
         HapticsManager.light()
-        showMoreMenu = true
+        if menuKeyboardVisible {
+            presentMenuAfterKeyboard = true
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        } else {
+            showMoreMenu = true
+        }
     }
 
     private func performMoreMenuAction(_ action: @escaping () -> Void) {
@@ -1399,7 +1422,7 @@ struct WebViewToolbar: View {
         case .files:
             onOpenLibrarySection?(.files)
         case .books:
-            onOpenLibrarySection?(.books)
+            onOpenLibrarySection?(.files)
         case .downloads:
             onOpenLibrarySection?(.downloads)
         case .wifiTransfer:

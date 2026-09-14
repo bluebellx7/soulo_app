@@ -193,6 +193,9 @@ private final class UserScriptTabStore {
 final class AccessibleWebView: WKWebView {
     override func buildMenu(with builder: UIMenuBuilder) {
         super.buildMenu(with: builder)
+        SelectionWebSearch.replace(in: builder) { [weak self] in
+            if let self { SelectionWebSearch.search(in: self) }
+        }
         if let editing = builder.menu(for: .standardEdit) {
             let rows = editing.replacingChildren(editing.children)
             rows.preferredElementSize = .large

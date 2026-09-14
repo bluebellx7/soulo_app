@@ -1,115 +1,22 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-struct BookshelfView: View {
-    @ObservedObject private var library = BookLibrary.shared
-    @State private var importing = false
-    @State private var selected: LibraryBook?
-    @State private var error: String?
-    @State private var busy = false
-    var body: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                if library.books.isEmpty {
-                    IllustratedToolEmptyState(
-                        scene: .books, title: ToolText.text("bookshelf_empty"),
-                        message: ToolText.text("bookshelf_hint"))
-                        .frame(maxWidth: .infinity, minHeight: geometry.size.height * 0.7)
-                } else {
-                    let count = geometry.size.width < 600 ? 3 : max(3, Int(geometry.size.width / 160))
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 18), count: count), alignment: .leading, spacing: 26) {
-                        ForEach(library.books.sorted { $0.openedAt > $1.openedAt }) { book in
-                            Button { selected = book } label: {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    ZStack {
-                                        Rectangle().fill(Color(uiColor: .secondarySystemBackground))
-                                        if book.hasCover == true {
-                                            AsyncImage(url: book.coverURL) { image in
-                                                image.resizable().scaledToFit()
-                                            } placeholder: { coverPlaceholder(book) }
-                                        } else {
-                                            coverPlaceholder(book)
-                                        }
-                                    }
-                                    .aspectRatio(0.68, contentMode: .fit)
-                                    .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
-                                    .overlay { RoundedRectangle(cornerRadius: 3).strokeBorder(Color.primary.opacity(0.06)) }
-                                    .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
-                                    Text(book.name)
-                                        .font(.subheadline.weight(.medium))
-                                        .foregroundStyle(.primary)
-                                        .lineLimit(1)
-                                        .multilineTextAlignment(.leading)
-                                }
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("bookshelf.book.\(book.id)")
-                            .contextMenu {
-                                ShareLink(item: book.url) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
-                                Button(ToolText.text("remove_from_shelf"), role: .destructive) { library.remove(book.id) }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 18)
-                }
-            }
-            .accessibilityIdentifier("bookshelf.grid")
-        }
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button { importing = true } label: { Image(systemName: "plus").font(.system(size: AppControlMetrics.iconSize, weight: .semibold)) }
-                    .accessibilityLabel(ToolText.text("import_book"))
-            }
-        }
-        .fileImporter(isPresented: $importing, allowedContentTypes: [.data], allowsMultipleSelection: true) { result in
-            Task {
-                busy = true
-                defer { busy = false }
-                do { for url in try result.get() { _ = try await library.add(url) } } catch {
-                    self.error = error.localizedDescription
-                }
-            }
-        }
-        .overlay {
-            if busy { ProgressView().padding(24).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16)) }
-        }
-        .navigationDestination(item: $selected) { book in BookReaderView(book: book) }
-        .alert(ToolText.text("error"), isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
-            Button(ToolText.text("done")) { error = nil }
-        } message: {
-            Text(error ?? "")
-        }
-    }
-    private func coverPlaceholder(_ book: LibraryBook) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Image(systemName: "book.closed").font(.title3)
-            Text(book.name).font(.system(.subheadline, design: .serif).weight(.semibold)).lineLimit(4)
-            Spacer(minLength: 0)
-            Text(book.url.pathExtension.uppercased()).font(.caption2.weight(.medium))
-        }
-        .foregroundStyle(Color.primary.opacity(0.75))
-        .padding(12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .background(Color.themePrimary.opacity(0.08))
-        .accessibilityHidden(true)
-    }
-
-}
-
 struct LocalFile: Identifiable, Hashable {
     var id: String { url.path }
     let url: URL
     let directory: Bool
     let info: FilePresentation
+    var modifiedAt: Date = .distantPast
+    var coverURL: URL?
 }
 struct LibraryFilesView: View {
     var directory: URL = BookLibrary.directory
     var embeddedInLibrary = false
+    @AppStorage("files.gridView") private var showsGrid = false
     @State private var files: [LocalFile] = []
     @State private var hasLoaded = false
     @State private var selected = Set<String>()
+    @State private var isSelecting = false
     @State private var importing = false
     @State private var archive: LocalFile?
     @State private var book: LibraryBook?
@@ -127,85 +34,60 @@ struct LibraryFilesView: View {
     @State private var reloadTask: Task<Void, Never>?
     @State private var pendingDeletion: [URL] = []
     @State private var deletionAnchor: String?
+    @State private var renamingFile: LocalFile?
+    @State private var renameText = ""
     var body: some View {
-        List {
-            if hasLoaded && files.isEmpty {
-                IllustratedToolEmptyState(scene: .files, title: ToolText.text("files_empty"))
-            }
-            ForEach(files) { file in
-                HStack(spacing: 8) {
-                    if file.directory {
-                        NavigationLink { LibraryFilesView(directory: file.url) } label: { fileLabel(file) }
-                    } else {
-                        Button { open(file) } label: { fileLabel(file) }
-                            .buttonStyle(.plain)
-                        Button {
-                            if !selected.insert(file.id).inserted { selected.remove(file.id) }
-                        } label: {
-                            Image(systemName: selected.contains(file.id) ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: 19, weight: .regular))
-                                .foregroundStyle(selected.contains(file.id) ? Color.themePrimary : Color.secondary.opacity(0.45))
-                                .frame(width: 44, height: 44)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.borderless)
-                        .accessibilityLabel(ToolText.text("select") + " " + file.url.lastPathComponent)
-                        .accessibilityAddTraits(selected.contains(file.id) ? .isSelected : [])
-                    }
-                }
-                .padding(.vertical, 12)
-                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 8))
-                .listRowBackground(selected.contains(file.id) ? Color.themePrimary.opacity(0.07) : Color.clear)
-                .listRowSeparatorTint(Color.primary.opacity(0.08))
-                .alignmentGuide(.listRowSeparatorLeading) { _ in 56 }
-                .contextMenu {
-                    if !file.directory {
-                        ShareLink(item: file.url) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
-                        Button(ToolText.text("delete_files"), systemImage: "trash", role: .destructive) {
-                            pendingDeletion = [file.url]; deletionAnchor = file.id
-                        }
-                    }
-                }
-                .swipeActions(edge: .trailing) {
-                    if !file.directory {
-                        Button(role: .destructive) {
-                            pendingDeletion = [file.url]; deletionAnchor = file.id
-                        } label: { Label(ToolText.text("delete_files"), systemImage: "trash") }
-                        .tint(.red)
-                    }
-                }
-                .fileDeletionConfirmation(isPresented: deletionBinding(file.id), count: pendingDeletion.count, confirm: deleteSelectedFiles)
-            }
+        Group {
+            if showsGrid { gridContent } else { listContent }
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .contentMargins(.top, 4, for: .scrollContent)
         .disabled(busy)
         .overlay { if !hasLoaded { ProgressView() } }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if !selected.isEmpty { selectionActions }
+            if isSelecting { selectionActions }
         }
         .navigationTitle(embeddedInLibrary ? LanguageManager.shared.localizedString("library") : directory == BookLibrary.directory ? ToolText.text("files") : directory.lastPathComponent)
         .navigationBarTitleDisplayMode(.inline)
         .mediaPlayerNavigation()
-        .safeAreaInset(edge: .top, spacing: 0) {
-            AdaptiveActionRow {
-                Button { importing = true } label: {
-                    Label(ToolText.text("import_files"), systemImage: "folder.badge.plus")
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if !isSelecting {
+                    Button { importing = true } label: { Image(systemName: "folder.badge.plus") }
+                        .accessibilityLabel(ToolText.text("import_files"))
+                        .accessibilityIdentifier("files.import")
+                    Button { showTransfer = true } label: { Image(systemName: "wifi") }
+                        .accessibilityLabel(ToolText.text("wifi_transfer"))
+                        .accessibilityIdentifier("files.wifi")
                 }
-                .accessibilityIdentifier("files.import")
-                Button { showTransfer = true } label: {
-                    Label(ToolText.text("wifi_transfer"), systemImage: "wifi")
+                Button { showsGrid.toggle() } label: {
+                    Image(systemName: showsGrid ? "list.bullet" : "square.grid.2x2")
                 }
-                .accessibilityIdentifier("files.wifi")
+                .accessibilityLabel(LanguageManager.shared.localizedString(showsGrid ? "platform_list_view" : "platform_grid_view"))
+                .accessibilityIdentifier("files.viewMode")
+                Button {
+                    if isSelecting { endSelection() } else { isSelecting = true }
+                } label: {
+                    Image(systemName: isSelecting ? "checkmark.circle.fill" : "checkmark.circle")
+                }
+                .accessibilityLabel(ToolText.text(isSelecting ? "done" : "select"))
+                .accessibilityIdentifier("files.selectionMode")
+                .accessibilityAddTraits(isSelecting ? .isSelected : [])
+                .disabled(busy || (!isSelecting && !files.contains(where: { !$0.directory })))
             }
-            .buttonStyle(CompactActionButtonStyle())
-            .disabled(busy)
-            .padding(.horizontal, 16).padding(.vertical, 10)
-            .background(Color(uiColor: .systemBackground))
         }
         .onAppear { reload() }
         .onDisappear { reloadTask?.cancel() }
+        .alert(ToolText.text("rename_file"), isPresented: Binding(
+            get: { renamingFile != nil }, set: { if !$0 { renamingFile = nil } }
+        )) {
+            TextField(ToolText.text("file_name"), text: $renameText)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            Button(LanguageManager.shared.localizedString("save")) {
+                if let file = renamingFile { rename(file, to: renameText) }
+                renamingFile = nil
+            }.disabled(renameText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            Button(ToolText.text("cancel"), role: .cancel) { renamingFile = nil }
+        } message: { Text(ToolText.text("rename_file_extension_hint")) }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.data], allowsMultipleSelection: true) { result in
             Task {
                 do {
@@ -269,20 +151,151 @@ struct LibraryFilesView: View {
             Text(error ?? "")
         }
     }
+    private var listContent: some View {
+        List {
+            if hasLoaded && files.isEmpty {
+                IllustratedToolEmptyState(scene: .files, title: ToolText.text("files_empty"))
+            }
+            ForEach(files) { file in
+                HStack(spacing: 8) {
+                    if file.directory {
+                        NavigationLink { LibraryFilesView(directory: file.url) } label: { fileLabel(file) }
+                    } else {
+                        Button { open(file) } label: { fileLabel(file) }
+                            .buttonStyle(.plain)
+                        if isSelecting {
+                            Button {
+                                if !selected.insert(file.id).inserted { selected.remove(file.id) }
+                            } label: {
+                                Image(systemName: selected.contains(file.id) ? "checkmark.circle.fill" : "circle")
+                                    .font(.system(size: 19, weight: .regular))
+                                    .foregroundStyle(selected.contains(file.id) ? Color.themePrimary : Color.secondary.opacity(0.45))
+                                    .frame(width: 44, height: 44)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel(ToolText.text("select") + " " + file.url.lastPathComponent)
+                            .accessibilityIdentifier("files.select.\(file.url.lastPathComponent)")
+                            .accessibilityAddTraits(selected.contains(file.id) ? .isSelected : [])
+                        }
+                    }
+                }
+                .padding(.vertical, 12)
+                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 8))
+                .listRowBackground(selected.contains(file.id) ? Color.themePrimary.opacity(0.07) : Color.clear)
+                .listRowSeparatorTint(Color.primary.opacity(0.08))
+                .alignmentGuide(.listRowSeparatorLeading) { _ in 56 }
+                .contextMenu {
+                    if !file.directory {
+                        renameAction(file)
+                        ShareLink(item: file.url) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
+                        Button(ToolText.text("delete_files"), systemImage: "trash", role: .destructive) {
+                            pendingDeletion = [file.url]; deletionAnchor = file.id
+                        }
+                    }
+                }
+                .swipeActions(edge: .trailing) {
+                    if !file.directory {
+                        // The destructive role makes List optimistically remove
+                        // this row, taking its confirmation presenter with it.
+                        Button {
+                            pendingDeletion = [file.url]; deletionAnchor = file.id
+                        } label: { Label(ToolText.text("delete_files"), systemImage: "trash") }
+                        .tint(.red)
+                    }
+                }
+                .fileDeletionConfirmation(isPresented: deletionBinding(file.id), count: pendingDeletion.count, confirm: deleteSelectedFiles)
+            }
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .contentMargins(.top, 4, for: .scrollContent)
+        .accessibilityIdentifier("files.list")
+    }
+
+    private var gridContent: some View {
+        GeometryReader { geometry in
+            ScrollView {
+                if hasLoaded && files.isEmpty {
+                    IllustratedToolEmptyState(scene: .files, title: ToolText.text("files_empty"))
+                        .frame(maxWidth: .infinity, minHeight: geometry.size.height * 0.7)
+                } else {
+                    let count = geometry.size.width < 600 ? 3 : max(3, Int(geometry.size.width / 160))
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 18), count: count), alignment: .leading, spacing: 24) {
+                        ForEach(files) { file in
+                            VStack(alignment: .leading, spacing: 8) {
+                                if file.directory {
+                                    NavigationLink { LibraryFilesView(directory: file.url) } label: { gridLabel(file) }
+                                } else {
+                                    Button { open(file) } label: { gridLabel(file) }
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .overlay(alignment: .topTrailing) {
+                                if isSelecting && !file.directory {
+                                    Button {
+                                        if !selected.insert(file.id).inserted { selected.remove(file.id) }
+                                    } label: {
+                                        Image(systemName: selected.contains(file.id) ? "checkmark.circle.fill" : "circle")
+                                            .font(.system(size: 17, weight: .light))
+                                            .foregroundStyle(selected.contains(file.id) ? Color.themePrimary : Color.secondary.opacity(0.5))
+                                            .background {
+                                                Circle().fill(.white.opacity(selected.contains(file.id) ? 0.9 : 0.25))
+                                            }
+                                            .frame(width: 44, height: 44)
+                                            .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(ToolText.text("select") + " " + file.url.lastPathComponent)
+                                    .accessibilityIdentifier("files.select.\(file.url.lastPathComponent)")
+                                    .accessibilityAddTraits(selected.contains(file.id) ? .isSelected : [])
+                                }
+                            }
+                            .contextMenu {
+                                if !file.directory {
+                                    renameAction(file)
+                                    ShareLink(item: file.url) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
+                                    Button(ToolText.text("delete_files"), systemImage: "trash", role: .destructive) {
+                                        pendingDeletion = [file.url]; deletionAnchor = file.id
+                                    }
+                                }
+                            }
+                            .fileDeletionConfirmation(isPresented: deletionBinding(file.id), count: pendingDeletion.count, confirm: deleteSelectedFiles)
+                        }
+                    }
+                    .padding(.horizontal, 20).padding(.vertical, 18)
+                }
+            }
+            .accessibilityIdentifier("files.grid")
+        }
+    }
+
+    private func gridLabel(_ file: LocalFile) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            FileThumbnailView(file: file)
+                .aspectRatio(0.68, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .overlay { RoundedRectangle(cornerRadius: 4).strokeBorder(Color.primary.opacity(0.06)) }
+            Text(file.url.lastPathComponent)
+                .font(.subheadline.weight(.medium)).foregroundStyle(.primary)
+                .lineLimit(1).truncationMode(.middle)
+        }
+        .contentShape(Rectangle())
+        .accessibilityIdentifier("files.item.\(file.url.lastPathComponent)")
+    }
+
     private var selectedURLs: [URL] { files.filter { selected.contains($0.id) }.map(\.url) }
 
     private func fileLabel(_ file: LocalFile) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: file.info.symbol)
-                .font(.system(size: 20, weight: .regular))
-                .foregroundStyle(Color.themePrimary)
-                .frame(width: 44, height: 48)
-                .background(Color.themePrimary.opacity(0.09), in: RoundedRectangle(cornerRadius: 10))
+            FileThumbnailView(file: file)
+                .frame(width: 44, height: 54)
+                .clipShape(RoundedRectangle(cornerRadius: 5))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 6) {
                 Text(file.url.lastPathComponent)
                     .font(.subheadline.weight(.medium)).foregroundStyle(.primary)
-                    .lineLimit(2).truncationMode(.middle)
+                    .lineLimit(1).truncationMode(.middle)
                     .fixedSize(horizontal: false, vertical: true)
                 if !file.directory {
                     HStack(spacing: 8) {
@@ -295,6 +308,7 @@ struct LibraryFilesView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }.frame(minHeight: 48).contentShape(Rectangle())
+        .accessibilityIdentifier("files.item.\(file.url.lastPathComponent)")
     }
 
     private var selectionActions: some View {
@@ -302,7 +316,7 @@ struct LibraryFilesView: View {
             HStack {
                 Text(String(format: ToolText.text("selected_files_count"), selected.count)).font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Button(ToolText.text("cancel")) { selected.removeAll() }.font(.caption)
+                Button(ToolText.text("cancel")) { endSelection() }.font(.caption)
             }
             AdaptiveActionRow(spacing: 8) {
                 Button { compressing = true } label: { Label(ToolText.text("compress"), systemImage: "doc.zipper") }
@@ -316,13 +330,52 @@ struct LibraryFilesView: View {
                     .buttonStyle(CompactActionButtonStyle())
                     .fileDeletionConfirmation(isPresented: deletionBinding("selection"), count: pendingDeletion.count, confirm: deleteSelectedFiles)
             }
+            .disabled(selected.isEmpty)
         }
         .padding(12).background(.regularMaterial)
         .disabled(busy)
     }
 
     private func deletionBinding(_ anchor: String) -> Binding<Bool> {
-        Binding(get: { deletionAnchor == anchor }, set: { if !$0 { deletionAnchor = nil } })
+        Binding(get: { deletionAnchor == anchor }, set: {
+            if !$0, deletionAnchor == anchor { deletionAnchor = nil }
+        })
+    }
+
+    private func endSelection() {
+        selected.removeAll()
+        isSelecting = false
+    }
+
+    private func renameAction(_ file: LocalFile) -> some View {
+        Button(ToolText.text("rename_file"), systemImage: "pencil") {
+            renameText = file.url.deletingPathExtension().lastPathComponent
+            renamingFile = file
+        }
+    }
+
+    private func rename(_ file: LocalFile, to name: String) {
+        guard !DownloadManagerService.shared.downloads.contains(where: {
+            $0.localURL.standardizedFileURL == file.url.standardizedFileURL && [.inProgress, .paused].contains($0.status)
+        }) else { error = ToolText.text("file_busy"); return }
+        let bookIDs = Set(BookLibrary.shared.books.filter { $0.url.standardizedFileURL == file.url.standardizedFileURL }.map(\.id))
+        let directory = directory
+        busy = true
+        Task {
+            defer { busy = false; reload() }
+            do {
+                let target = try await Task.detached { try LibraryFileActions.rename(file.url, baseName: name, in: directory) }.value
+                guard target != file.url else { return }
+                do { try BookLibrary.shared.updateFileReference(bookIDs: bookIDs, to: target) }
+                catch {
+                    try await Task.detached { try FileManager.default.moveItem(at: target, to: file.url) }.value
+                    throw error
+                }
+                DownloadManagerService.shared.updateFileReference(from: file.url, to: target)
+                MediaSession.shared.updateFileReference(from: file.url, to: target)
+                if selected.remove(file.id) != nil { selected.insert(target.path) }
+            } catch { self.error = error.localizedDescription }
+        }
     }
 
     private func deleteSelectedFiles() {
@@ -343,16 +396,17 @@ struct LibraryFilesView: View {
     private func reload() {
         reloadTask?.cancel()
         let directory = directory
+        let covers = Dictionary(BookLibrary.shared.books.filter { $0.hasCover == true }.map { ($0.url.standardizedFileURL, $0.coverURL) }, uniquingKeysWith: { first, _ in first })
         reloadTask = Task {
             do {
                 let result = try await Task.detached {
                     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
                     return try FileManager.default.contentsOfDirectory(at: directory,
-                        includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey], options: .skipsHiddenFiles)
+                        includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey, .contentModificationDateKey], options: .skipsHiddenFiles)
                         .compactMap { url -> LocalFile? in
-                            let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+                            let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey, .contentModificationDateKey])
                             guard values.isSymbolicLink != true else { return nil }
-                            return LocalFile(url: url, directory: values.isDirectory == true, info: FilePresentation.inspect(url))
+                            return LocalFile(url: url, directory: values.isDirectory == true, info: FilePresentation.inspect(url), modifiedAt: values.contentModificationDate ?? .distantPast, coverURL: covers[url.standardizedFileURL])
                         }.sorted { $0.url.lastPathComponent.localizedStandardCompare($1.url.lastPathComponent) == .orderedAscending }
                 }.value
                 guard !Task.isCancelled else { return }
@@ -362,6 +416,10 @@ struct LibraryFilesView: View {
         }
     }
     private func open(_ file: LocalFile) {
+        if isSelecting {
+            if !selected.insert(file.id).inserted { selected.remove(file.id) }
+            return
+        }
         let ext = file.info.fileExtension
         if ArchiveService.extensions.contains(ext) {
             archive = file

@@ -8,7 +8,7 @@ final class LocalizationLayoutTests: XCTestCase {
         XCTAssertEqual(ToolText.text("files", language: "de-DE"), "Dateien")
         XCTAssertEqual(ToolText.text("bookshelf", language: "fr-FR"), "Livres")
         XCTAssertEqual(ToolText.text("cancel", language: "ja-JP"), "キャンセル")
-        XCTAssertEqual(ToolText.text("line_height", language: "zh-Hant-TW"), "行高")
+        XCTAssertEqual(ToolText.text("line_height", language: "zh-Hant-TW"), "行間距")
         XCTAssertEqual(ToolText.text("wifi_hint", language: "de-DE"), ToolText.text("wifi_hint", language: "en-US"))
         XCTAssertEqual(UserDefaults.standard.object(forKey: "app_language") as? String, saved)
     }

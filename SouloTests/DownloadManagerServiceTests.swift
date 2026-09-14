@@ -296,6 +296,29 @@ final class DownloadManagerServiceTests: XCTestCase {
         XCTAssertNil(service.downloads.first(where: { $0.id == item.id }))
     }
 
+    func testRemovingFinishedRecordsKeepsFilesAcrossReloadAndRedownload() throws {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        for transport in [BrowserDownloadItem.Transport.webKit, .background, .streaming, .hls] {
+            let name = "Completed-\(transport.rawValue).m4a"
+            let (staleItem, url) = service.beginDownload(suggestedFilename: name, sourceURL: nil, transport: transport)
+            let bytes = Data("completed audio \(transport.rawValue)".utf8)
+            try bytes.write(to: url)
+            service.markFinished(id: staleItem.id)
+
+            // The user may tap a row whose captured state predates completion.
+            service.delete(staleItem)
+            service.delete(staleItem)
+            service.markCanceled(id: staleItem.id)
+            XCTAssertEqual(try Data(contentsOf: url), bytes)
+            let restored = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+            XCTAssertNil(restored.downloads.first { $0.id == staleItem.id })
+            let (next, destination) = service.beginDownload(suggestedFilename: name, sourceURL: nil)
+            XCTAssertNotEqual(destination, url)
+            XCTAssertEqual(try Data(contentsOf: url), bytes)
+            service.delete(next)
+        }
+    }
+
     func testStaleInProgressDownloadIsCanceledWhenManagerReloads() {
         let first = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
         let (item, _) = first.beginDownload(
@@ -394,6 +417,10 @@ final class DownloadManagerServiceTests: XCTestCase {
 
         XCTAssertEqual(service.downloads.map(\.id), [paused.id])
         XCTAssertEqual(service.downloads.first?.status, .paused)
+        XCTAssertEqual(try Data(contentsOf: finishedURL), Data("finished".utf8))
+        let restored = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        XCTAssertNil(restored.downloads.first { $0.id == finished.id })
+        XCTAssertEqual(try Data(contentsOf: finishedURL), Data("finished".utf8))
     }
 
     func testInterruptedPausedStreamingDownloadIsCanceledAfterRelaunch() throws {

@@ -54,7 +54,7 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .readerMode: "reader_mode"
         case .resources: "resource_inspector_title"
         case .files: "files"
-        case .books: "bookshelf"
+        case .books: "files"
         case .downloads: "downloads"
         case .wifiTransfer: "wifi_transfer"
         case .adBlock: "ad_block"
@@ -85,7 +85,7 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .readerMode: "doc.text"
         case .resources: "play.rectangle.on.rectangle"
         case .files: "folder"
-        case .books: "books.vertical"
+        case .books: "folder"
         case .downloads: "arrow.down.circle"
         case .wifiTransfer: "wifi"
         case .adBlock: "shield.lefthalf.filled"
@@ -119,7 +119,7 @@ final class BrowserToolbarConfigurationService: ObservableObject {
     static let unsupportedAddressActions: Set<BrowserToolbarAction> = [.tabs, .more]
     /// Keep this hook for actions that must temporarily disappear without
     /// invalidating a saved toolbar layout.
-    static let temporarilyUnavailableActions: Set<BrowserToolbarAction> = []
+    static let temporarilyUnavailableActions: Set<BrowserToolbarAction> = [.books]
 
     @Published private(set) var actions: [BrowserToolbarAction]
     @Published private(set) var addressAction: BrowserToolbarAction
@@ -158,7 +158,7 @@ final class BrowserToolbarConfigurationService: ObservableObject {
 
     static func normalized(_ actions: [BrowserToolbarAction]) -> [BrowserToolbarAction] {
         var result = Array(actions.prefix(4)).map {
-            temporarilyUnavailableActions.contains($0) ? .none : $0
+            $0 == .books ? .files : temporarilyUnavailableActions.contains($0) ? .none : $0
         }
         while result.count < 4 {
             result.append(defaultActions[result.count])
@@ -170,6 +170,7 @@ final class BrowserToolbarConfigurationService: ObservableObject {
         guard let action, !unsupportedAddressActions.contains(action) else {
             return defaultAddressAction
         }
+        if action == .books { return .files }
         guard !temporarilyUnavailableActions.contains(action) else { return .none }
         return action
     }

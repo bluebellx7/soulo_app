@@ -330,3 +330,19 @@ struct WebContextResource: Equatable {
         suggestedFilename = (dictionary["filename"] as? String) ?? url.lastPathComponent
     }
 }
+
+struct WebLinkDomainGroup: Identifiable {
+    var id: String { domain }
+    let domain: String
+    var links: [WebLinkResource]
+    static func group(_ links: [WebLinkResource]) -> [Self] {
+        var positions: [String: Int] = [:]
+        var groups: [Self] = []
+        for link in links {
+            let domain = link.url.host?.lowercased() ?? link.url.scheme ?? ""
+            if let index = positions[domain] { groups[index].links.append(link) }
+            else { positions[domain] = groups.count; groups.append(Self(domain: domain, links: [link])) }
+        }
+        return groups
+    }
+}

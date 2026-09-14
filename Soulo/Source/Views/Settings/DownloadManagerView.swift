@@ -70,19 +70,21 @@ struct DownloadManagerContentView: View {
                             showClearConfirmation = true
                         } label: {
                             Label(
-                                LanguageManager.shared.localizedString("downloads_clear_finished"),
+                                ToolText.text("clear_download_records"),
                                 systemImage: "trash"
                             )
                         }
                         .confirmationDialog(
-                            LanguageManager.shared.localizedString("downloads_clear_finished"),
+                            ToolText.text("clear_download_records"),
                             isPresented: $showClearConfirmation,
                             titleVisibility: .visible
                         ) {
-                            Button(LanguageManager.shared.localizedString("delete"), role: .destructive) {
+                            Button(ToolText.text("clear_download_records"), role: .destructive) {
                                 downloadManager.clearFinished()
                             }
                             Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
+                        } message: {
+                            Text(ToolText.text("download_records_keep_files"))
                         }
                     }
                 }
@@ -190,7 +192,12 @@ struct DownloadManagerContentView: View {
             Button(role: .destructive) {
                 downloadManager.delete(item)
             } label: {
-                Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
+                Label(
+                    [.inProgress, .paused].contains(item.status)
+                        ? LanguageManager.shared.localizedString("cancel")
+                        : ToolText.text("remove_download_record"),
+                    systemImage: "trash"
+                )
             }.tint(.red)
         }
         .listRowBackground(
@@ -202,14 +209,20 @@ struct DownloadManagerContentView: View {
 
     private func downloadSummary(_ item: BrowserDownloadItem) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon(for: item.status))
+            if item.status == .finished {
+                DownloadFileThumbnail(item: item)
+                    .frame(width: 44, height: 54)
+                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+            } else {
+                Image(systemName: icon(for: item.status))
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(color(for: item.status))
-                .frame(width: 34, height: 34)
+                .frame(width: 44, height: 54)
                 .background(
                     Color(UIColor.tertiarySystemFill),
                     in: RoundedRectangle(cornerRadius: 8, style: .continuous)
                 )
+            }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.fileName)
@@ -295,6 +308,44 @@ extension Notification.Name {
     static let cancelBrowserDownload = Notification.Name("soulo.cancelBrowserDownload")
 }
 
+private struct DownloadFileThumbnail: View {
+    let item: BrowserDownloadItem
+    @ObservedObject private var library = BookLibrary.shared
+    @State private var file: LocalFile?
+
+    private var fileWithCover: LocalFile? {
+        guard var file else { return nil }
+        file.coverURL = library.books.first {
+            $0.hasCover == true && $0.url.standardizedFileURL == file.url.standardizedFileURL
+        }?.coverURL
+        return file
+    }
+
+    var body: some View {
+        Group {
+            if let file = fileWithCover {
+                FileThumbnailView(file: file)
+            } else {
+                Image(systemName: "doc")
+                    .foregroundStyle(Color.themePrimary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(uiColor: .secondarySystemBackground))
+            }
+        }
+        .accessibilityHidden(true)
+        .task(id: item.localPath) {
+            file = nil
+            let url = item.localURL
+            let result = await Task.detached(priority: .utility) {
+                let modifiedAt = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? .distantPast
+                return LocalFile(url: url, directory: false, info: FilePresentation.inspect(url), modifiedAt: modifiedAt)
+            }.value
+            guard !Task.isCancelled else { return }
+            file = result
+        }
+    }
+}
+
 private struct DownloadShareSheet: UIViewControllerRepresentable {
     let items: [Any]
 
@@ -315,11 +366,17 @@ struct LocalDocumentContent: View {
     @State private var book: LibraryBook?
     @State private var error: String?
 
+    @State private var fileKind: FilePresentation.Kind?
+
     private var isBook: Bool { BookFormat.extensions.contains(url.pathExtension.lowercased()) }
 
     var body: some View {
         Group {
-            if isBook {
+            if fileKind == .image {
+                LocalImagePreview(url: url)
+            } else if fileKind == nil {
+                ProgressView()
+            } else if isBook {
                 if let book {
                     BookReaderView(book: book)
                 } else if let error {
@@ -342,6 +399,9 @@ struct LocalDocumentContent: View {
             } else {
                 DownloadQuickLookPreview(url: url).mediaPlayerNavigation()
             }
+        }
+        .task(id: url) {
+            fileKind = await Task.detached { FilePresentation.inspect(url).kind }.value
         }
         .navigationTitle(isBook ? "" : url.lastPathComponent)
         .navigationBarTitleDisplayMode(.inline)
@@ -441,7 +501,7 @@ private struct TextDocumentPreview: View {
 private struct SelectableDocumentText: UIViewRepresentable {
     let text: String
     func makeUIView(context: Context) -> UITextView {
-        let view = UITextView(usingTextLayoutManager: true)
+        let view = SelectionSearchTextView(usingTextLayoutManager: true)
         view.isEditable = false
         view.isSelectable = true
         view.font = .monospacedSystemFont(ofSize: 15, weight: .regular)

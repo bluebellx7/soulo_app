@@ -133,6 +133,21 @@ final class MediaSession: ObservableObject {
         } catch { self.error = error.localizedDescription }
     }
     func pause() { wantsPlayback = false; player.pause(); savePosition(); updateNowPlaying() }
+    func updateFileReference(from oldURL: URL, to newURL: URL) {
+        let defaults = UserDefaults.standard
+        let isCurrent = url?.standardizedFileURL == oldURL.standardizedFileURL
+        if isCurrent { savePosition() }
+        let position = defaults.object(forKey: positionKey(oldURL))
+        if isCurrent {
+            let resume = wantsPlayback
+            open(url: newURL, title: newURL.lastPathComponent)
+            if !resume { pause() }
+        }
+        if let position {
+            defaults.set(position, forKey: positionKey(newURL))
+            defaults.removeObject(forKey: positionKey(oldURL))
+        }
+    }
     func toggle() { playing ? pause() : play() }
     func stop() {
         pause(); generation = UUID(); preparation = UUID(); itemObservation = nil

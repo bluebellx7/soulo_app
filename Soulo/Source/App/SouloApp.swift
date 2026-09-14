@@ -90,8 +90,8 @@ private struct SouloWindowRoot: View {
                     handlePendingSharedAction()
                 } else if url.scheme == "soulo" && url.host == "search" {
                     searchVM.clearSearch()
-                } else if url.scheme == "soulo" && url.host == "bookshelf" {
-                    NotificationCenter.default.post(name: .openSouloBookshelf, object: nil)
+                } else if url.scheme == "soulo" && ["files", "bookshelf"].contains(url.host ?? "") {
+                    NotificationCenter.default.post(name: .openSouloFiles, object: nil)
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .souloSharedActionRequested)) { _ in
@@ -170,5 +170,5 @@ private struct SouloWindowRoot: View {
 extension Notification.Name {
     static let openSouloDownloads = Notification.Name("soulo.openDownloads")
     static let openSouloDocument = Notification.Name("soulo.openDocument")
-    static let openSouloBookshelf = Notification.Name("soulo.openBookshelf")
+    static let openSouloFiles = Notification.Name("soulo.openFiles")
 }

@@ -14,6 +14,7 @@ class SearchViewModel: ObservableObject {
     /// Unique ID that changes each time a new search is performed. Used to detect new vs. returning.
     @Published var searchID: UUID = UUID()
     @Published var currentKeyword: String = ""
+    var isSelectionSearch = false
     @Published var selectedRegion: PlatformRegion = .international
     @Published var selectedPlatform: SearchPlatform?
     @Published var clipboardContent: String? = nil
@@ -124,6 +125,7 @@ class SearchViewModel: ObservableObject {
         guard !trimmed.isEmpty else { return }
 
         currentKeyword = trimmed
+        isSelectionSearch = false
         isSearching = true
         searchID = UUID()
         clearSuggestions()
@@ -267,6 +269,7 @@ class SearchViewModel: ObservableObject {
         searchText = ""
         isSearching = false
         currentKeyword = ""
+        isSelectionSearch = false
         // F6: End Live Activity
         LiveActivityService.shared.end()
     }

@@ -134,3 +134,16 @@
 "page_zoom" = "Page zoom";
 "pdf_fixed_layout" = "PDF preserves its original layout. Adjust zoom and page colors here.";
 "system_files" = "Browse files";
+
+"files_widget_hint" = "Open your files, photos and books in Soulo.";
+"safari_opening" = "Opening Safari compatibility view…";
+"safari_open_failed" = "Unable to open Safari compatibility view. Please try again.";
+"search_web" = "Search Web";
+
+"rename_file" = "Rename";
+"rename_file_extension_hint" = "The file extension will be kept.";
+"file_busy" = "Wait for the download to finish before renaming this file.";
+
+"remove_download_record" = "Remove Record";
+"clear_download_records" = "Clear Finished Records";
+"download_records_keep_files" = "Only download records are removed. Downloaded files remain in Files.";

@@ -5,7 +5,6 @@ enum LibrarySection: String, CaseIterable, Identifiable {
     case history
     case downloads
     case files
-    case books
 
     var id: String { rawValue }
 
@@ -14,7 +13,6 @@ enum LibrarySection: String, CaseIterable, Identifiable {
         case .bookmarks: "bookmarks"
         case .history: "search_history"
         case .files: "files"
-        case .books: "bookshelf"
         case .downloads: "downloads"
         }
     }
@@ -24,7 +22,6 @@ enum LibrarySection: String, CaseIterable, Identifiable {
         case .bookmarks: "bookmark.fill"
         case .history: "clock.arrow.circlepath"
         case .files: "folder.fill"
-        case .books: "books.vertical.fill"
         case .downloads: "arrow.down.circle.fill"
         }
     }
@@ -57,8 +54,6 @@ struct LibraryView: View {
                     BookmarksContentView(searchVM: searchVM, onOpen: openSelection)
                 case .history:
                     SearchHistoryContentView(searchVM: searchVM, onOpen: openSelection)
-                case .books:
-                    BookshelfView()
                 case .downloads:
                     DownloadManagerContentView(embeddedInLibrary: true)
                 case .files:
@@ -71,8 +66,8 @@ struct LibraryView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
         .mediaPlayerNavigation()
-        .onReceive(NotificationCenter.default.publisher(for: .openSouloBookshelf)) { _ in
-            selectedSection = .books
+        .onReceive(NotificationCenter.default.publisher(for: .openSouloFiles)) { _ in
+            selectedSection = .files
         }
     }
 
@@ -119,7 +114,7 @@ struct LibrarySectionSwitcher: View {
         HStack(alignment: .top, spacing: 4) {
             ForEach(LibrarySection.allCases) { section in
                 let selected = selectedSection == section
-                let titleKey = section == .history ? "library_history_tab" : section == .files ? "library_files_tab" : section == .books ? "library_books_tab" : section.titleKey
+                let titleKey = section == .history ? "library_history_tab" : section == .files ? "library_files_tab" : section.titleKey
                 let title = LanguageManager.shared.localizedString(titleKey)
                 Button {
                     guard !selected else { return }
@@ -153,7 +148,7 @@ struct LibrarySectionSwitcher: View {
                 .accessibilityIdentifier("library.section.\(section.rawValue)")
                 .id(section)
                 .accessibilityAddTraits(selected ? .isSelected : [])
-                if section != .books { Spacer(minLength: 0) }
+                if section != .files { Spacer(minLength: 0) }
             }
         }
         .frame(maxWidth: .infinity)

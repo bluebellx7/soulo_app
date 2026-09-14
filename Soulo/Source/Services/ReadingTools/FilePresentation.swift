@@ -77,6 +77,28 @@ struct PreparedFilePreview: Sendable {
 
 /// Only selected, app-owned regular files are removed. Directory and symlink deletion are excluded.
 enum LibraryFileActions {
+    static func rename(_ file: URL, baseName: String, in directory: URL) throws -> URL {
+        let name = baseName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, !name.hasPrefix("."),
+              !name.contains(where: { "/\\:".contains($0) }),
+              !name.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }) else {
+            throw ReadingToolError.unsafePath
+        }
+        let root = directory.standardizedFileURL.resolvingSymlinksInPath()
+        let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+        guard values.isRegularFile == true, values.isSymbolicLink != true,
+              file.standardizedFileURL.deletingLastPathComponent().resolvingSymlinksInPath() == root else {
+            throw ReadingToolError.unsafePath
+        }
+        let filename = file.pathExtension.isEmpty ? name : name + "." + file.pathExtension
+        guard filename.utf8.count <= 255 else { throw ReadingToolError.limit }
+        let target = directory.appendingPathComponent(filename)
+        if target.standardizedFileURL == file.standardizedFileURL { return file }
+        guard !FileManager.default.fileExists(atPath: target.path) else { throw ReadingToolError.conflict }
+        try FileManager.default.moveItem(at: file, to: target)
+        return target
+    }
+
     static func delete(_ files: [URL], in directory: URL) throws {
         let root = directory.standardizedFileURL.resolvingSymlinksInPath()
         for file in files {

@@ -292,6 +292,9 @@ final class BrowserExtensionService: ObservableObject {
     static let maximumStoredValuesSize = 1 * 1_024 * 1_024
     @Published private(set) var userScripts: [UserScriptRecord] = []
     @Published private(set) var webExtensions: [WebExtensionRecord] = []
+    @Published private(set) var loadingWebExtensions: Set<UUID> = []
+    @Published private(set) var webExtensionErrors: [UUID: String] = [:]
+    private var extensionLoadRevisions: [UUID: UUID] = [:]
 
     private let fileManager = FileManager.default
 
@@ -541,19 +544,36 @@ final class BrowserExtensionService: ObservableObject {
 
     func setWebExtensionEnabled(_ id: UUID, enabled: Bool) {
         guard let index = webExtensions.firstIndex(where: { $0.id == id }) else { return }
+        let revision = UUID()
+        extensionLoadRevisions[id] = revision
+        webExtensionErrors[id] = nil
         webExtensions[index].isEnabled = enabled
         let record = webExtensions[index]
         persistAndNotify(reloadPages: false)
-
         guard #available(iOS 18.4, *) else { return }
+        if !enabled {
+            loadingWebExtensions.remove(id)
+            NativeWebExtensionRuntime.shared.unload(id: id)
+            NotificationCenter.default.post(name: .browserExtensionsChanged, object: nil)
+            return
+        }
+        loadingWebExtensions.insert(id)
         Task {
-            if enabled {
-                _ = try? await NativeWebExtensionRuntime.shared.load(
-                    id: record.id,
-                    resourceURL: resourceURL(for: record)
-                )
-            } else {
-                NativeWebExtensionRuntime.shared.unload(id: record.id)
+            defer {
+                if extensionLoadRevisions[id] == revision { loadingWebExtensions.remove(id) }
+            }
+            do {
+                _ = try await NativeWebExtensionRuntime.shared.load(id: id, resourceURL: resourceURL(for: record))
+                guard extensionLoadRevisions[id] == revision else {
+                    if webExtensions.first(where: { $0.id == id })?.isEnabled != true { NativeWebExtensionRuntime.shared.unload(id: id) }
+                    return
+                }
+            } catch {
+                guard extensionLoadRevisions[id] == revision,
+                      let index = webExtensions.firstIndex(where: { $0.id == id }) else { return }
+                webExtensions[index].isEnabled = false
+                webExtensionErrors[id] = error.localizedDescription
+                persistAndNotify(reloadPages: false)
             }
             NotificationCenter.default.post(name: .browserExtensionsChanged, object: nil)
         }
@@ -571,6 +591,9 @@ final class BrowserExtensionService: ObservableObject {
     }
 
     func deleteWebExtension(_ id: UUID) {
+        extensionLoadRevisions[id] = nil
+        loadingWebExtensions.remove(id)
+        webExtensionErrors[id] = nil
         guard let record = webExtensions.first(where: { $0.id == id }) else { return }
         if #available(iOS 18.4, *) {
             NativeWebExtensionRuntime.shared.unload(id: id)
@@ -585,8 +608,8 @@ final class BrowserExtensionService: ObservableObject {
     private func restoreEnabledNativeExtensions() async {
         guard #available(iOS 18.4, *) else { return }
         var migratedStore = false
-        for index in webExtensions.indices where webExtensions[index].isEnabled {
-            let record = webExtensions[index]
+        for record in webExtensions.filter(\.isEnabled) {
+            guard let index = webExtensions.firstIndex(where: { $0.id == record.id }) else { continue }
             let originalResourceURL = resourceURL(for: record)
             let resourceURL: URL
             if record.storedResourceName == WebExtensionPackagePreparer.preparedResourceName {
@@ -609,10 +632,20 @@ final class BrowserExtensionService: ObservableObject {
                     resourceURL = originalResourceURL
                 }
             }
-            _ = try? await NativeWebExtensionRuntime.shared.load(
-                id: record.id,
-                resourceURL: resourceURL
-            )
+            let revision = extensionLoadRevisions[record.id]
+            do {
+                _ = try await NativeWebExtensionRuntime.shared.load(id: record.id, resourceURL: resourceURL)
+                if webExtensions.first(where: { $0.id == record.id })?.isEnabled != true {
+                    NativeWebExtensionRuntime.shared.unload(id: record.id)
+                }
+            } catch {
+                if extensionLoadRevisions[record.id] == revision,
+                   let current = webExtensions.firstIndex(where: { $0.id == record.id }), webExtensions[current].isEnabled {
+                    webExtensions[current].isEnabled = false
+                    webExtensionErrors[record.id] = error.localizedDescription
+                    migratedStore = true
+                }
+            }
         }
         if migratedStore {
             persistAndNotify(reloadPages: false)

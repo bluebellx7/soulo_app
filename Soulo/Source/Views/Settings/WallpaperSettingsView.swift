@@ -438,7 +438,7 @@ struct FullScreenWallpaperView: View {
 
             TabView(selection: $selection) {
                 ForEach(wallpapers) { wall in
-                    WallpaperFullImage(wall: wall, wallpaperManager: wallpaperManager)
+                    WallpaperFullImage(wall: wall, wallpaperManager: wallpaperManager, onDismiss: { dismiss() })
                         .tag(wall.id)
                 }
             }
@@ -538,17 +538,18 @@ struct FullScreenWallpaperView: View {
 private struct WallpaperFullImage: View {
     let wall: RemoteWallpaper
     let wallpaperManager: WallpaperManager
+    var onDismiss: () -> Void
     @State private var image: UIImage?
 
     var body: some View {
         Group {
             if let image {
-                Image(uiImage: image).resizable().scaledToFit()
+                ZoomableImageSurface(image: Image(uiImage: image), onDismiss: onDismiss)
             } else {
                 // Show preview via AsyncImage while loading HD
                 AsyncImage(url: URL(string: wall.previewURL)) { phase in
                     if let img = phase.image {
-                        img.resizable().scaledToFit()
+                        ZoomableImageSurface(image: img, onDismiss: onDismiss)
                     } else {
                         ProgressView().tint(.white)
                     }

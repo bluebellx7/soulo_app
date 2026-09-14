@@ -240,11 +240,13 @@ struct ExtensionCenterView: View {
                 webExtensionActionLabel(item, action: nil)
             }
 
+            if service.loadingWebExtensions.contains(item.id) { ProgressView().controlSize(.small) }
             Toggle("", isOn: Binding(
                 get: { item.isEnabled },
                 set: { service.setWebExtensionEnabled(item.id, enabled: $0) }
             ))
             .labelsHidden()
+            .disabled(service.loadingWebExtensions.contains(item.id))
         }
         .padding(.vertical, 3)
     }
@@ -266,6 +268,9 @@ struct ExtensionCenterView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.name).font(.body.weight(.medium)).lineLimit(1)
+                if let error = service.webExtensionErrors[item.id] {
+                    Text(error).font(.caption).foregroundStyle(.red).lineLimit(3)
+                }
                 Text(webExtensionDetail(item))
                     .font(.caption)
                     .foregroundStyle(.secondary)

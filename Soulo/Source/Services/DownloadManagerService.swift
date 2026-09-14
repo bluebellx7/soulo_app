@@ -249,19 +249,25 @@ final class DownloadManagerService: ObservableObject {
     }
 
     func delete(_ item: BrowserDownloadItem) {
-        switch item.transport {
-        case .background:
-            BackgroundDownloadService.shared.abandon(id: item.id)
-        case .streaming, .hls:
-            StreamingMediaDownloadService.shared.cancel(itemID: item.id)
-        case .webKit:
-            NotificationCenter.default.post(
-                name: .cancelBrowserDownload,
-                object: nil,
-                userInfo: ["id": item.id]
-            )
+        // A row captured before completion may be stale. Only cancel and clean
+        // partial data when the current record still represents an active task.
+        guard let current = downloads.first(where: { $0.id == item.id }) else { return }
+        if [.inProgress, .paused].contains(current.status) {
+            switch current.transport {
+            case .background:
+                BackgroundDownloadService.shared.abandon(id: current.id)
+            case .streaming, .hls:
+                StreamingMediaDownloadService.shared.cancel(itemID: current.id)
+            case .webKit:
+                NotificationCenter.default.post(
+                    name: .cancelBrowserDownload,
+                    object: nil,
+                    userInfo: ["id": current.id]
+                )
+            }
+            try? FileManager.default.removeItem(at: current.localURL)
         }
-        try? FileManager.default.removeItem(at: item.localURL)
+        // Completed files belong to Files; removing download history keeps them.
         removeResumeData(id: item.id)
         downloads.removeAll { $0.id == item.id }
         save()
@@ -270,7 +276,7 @@ final class DownloadManagerService: ObservableObject {
     func clearFinished() {
         let removableStatuses: Set<BrowserDownloadStatus> = [.finished, .failed, .canceled]
         let finished = downloads.filter { removableStatuses.contains($0.status) }
-        finished.forEach { try? FileManager.default.removeItem(at: $0.localURL) }
+        finished.forEach { removeResumeData(id: $0.id) }
         downloads.removeAll { removableStatuses.contains($0.status) }
         save()
     }
@@ -278,6 +284,14 @@ final class DownloadManagerService: ObservableObject {
     func removeMissingFiles() {
         downloads.removeAll { item in
             item.status == .finished && !FileManager.default.fileExists(atPath: item.localPath)
+        }
+        save()
+    }
+
+    func updateFileReference(from oldURL: URL, to newURL: URL) {
+        for index in downloads.indices where downloads[index].localURL.standardizedFileURL == oldURL.standardizedFileURL {
+            downloads[index].localPath = newURL.path
+            downloads[index].fileName = newURL.lastPathComponent
         }
         save()
     }

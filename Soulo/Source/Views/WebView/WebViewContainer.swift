@@ -180,6 +180,10 @@ struct WebViewContainer: View {
     }
 
     var body: some View {
+        browserContent.modifier(SafariCompatibilityFeedback(presenter: safariCompatibilityPresenter))
+    }
+
+    private var browserContent: some View {
         ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
                 if !isFullscreen {
@@ -485,6 +489,13 @@ struct WebViewContainer: View {
         .onDisappear {
             fullscreenHintDismissTask?.cancel()
             fullscreenHintDismissTask = nil
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .searchSelectionInSoulo)) { _ in
+            // Pop the library/reader through its presentation binding. Replacing
+            // the entire NavigationStack during an edit-menu action can detach
+            // the new WebView or leave UIKit navigation items on the old bar.
+            librarySection = nil
+            showArticleReader = false
         }
         .accessibilityAction(.escape) {
             if isFullscreen {
@@ -1838,12 +1849,38 @@ private struct BrowserLoadErrorView: View {
 @MainActor
 private final class SafariCompatibilityPresenter: NSObject, ObservableObject, @preconcurrency SFSafariViewControllerDelegate {
     private weak var presentedController: SFSafariViewController?
+    @Published private(set) var isOpening = false
+    @Published var failedToOpen = false
+    private var presentationTask: Task<Void, Never>?
+
+    deinit { presentationTask?.cancel() }
 
     func present(url: URL, sourceView: UIView?) {
-        guard presentedController == nil,
-              let presentingController = topViewController(for: sourceView) else {
-            return
+        guard presentedController == nil, !isOpening else { return }
+        isOpening = true
+        failedToOpen = false
+        presentationTask = Task { [weak self, weak sourceView] in
+            guard let self else { return }
+            defer { self.isOpening = false }
+            // Menu dismissal and keyboard transitions own the presentation stack.
+            // Wait for a stable presenter instead of presenting on a disappearing popover.
+            for _ in 0..<40 {
+                guard !Task.isCancelled else { return }
+                if let presenter = self.topViewController(for: sourceView),
+                   !presenter.isBeingDismissed, !presenter.isBeingPresented,
+                   presenter.transitionCoordinator == nil,
+                   presenter.viewIfLoaded?.window != nil,
+                   presenter.modalPresentationStyle != .popover {
+                    self.show(url, from: presenter)
+                    return
+                }
+                do { try await Task.sleep(for: .milliseconds(50)) } catch { return }
+            }
+            self.failedToOpen = true
         }
+    }
+
+    private func show(_ url: URL, from presentingController: UIViewController) {
         let configuration = SFSafariViewController.Configuration()
         configuration.entersReaderIfAvailable = false
         configuration.barCollapsingEnabled = true
@@ -1886,6 +1923,21 @@ private final class SafariCompatibilityPresenter: NSObject, ObservableObject, @p
             return visibleViewController(from: selected)
         }
         return root
+    }
+}
+
+private struct SafariCompatibilityFeedback: ViewModifier {
+    @ObservedObject var presenter: SafariCompatibilityPresenter
+    func body(content: Content) -> some View {
+        content.overlay {
+            if presenter.isOpening {
+                ProgressView(ToolText.text("safari_opening"))
+                    .padding(20).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+            }
+        }
+        .alert(ToolText.text("error"), isPresented: $presenter.failedToOpen) {
+            Button(ToolText.text("done"), role: .cancel) {}
+        } message: { Text(ToolText.text("safari_open_failed")) }
     }
 }
 
@@ -1947,6 +1999,7 @@ struct FindInPageBar: View {
             .accessibilityLabel(LanguageManager.shared.localizedString("accessibility_next_match"))
 
             Button {
+                isFocused = false
                 tabManager.dismissFindInPage()
             } label: {
                 Text(LanguageManager.shared.localizedString("done"))
@@ -1958,6 +2011,7 @@ struct FindInPageBar: View {
         .padding(.vertical, 6)
         .background(Color(UIColor.secondarySystemBackground))
         .onAppear { isFocused = true }
+        .onDisappear { isFocused = false }
     }
 }
 

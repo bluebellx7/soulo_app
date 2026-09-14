@@ -94,7 +94,7 @@ struct SearchResultsView: View {
                             .transition(.move(edge: .top).combined(with: .opacity))
                         }
 
-                        if !searchVM.currentKeyword.isValidURL {
+                        if !searchVM.currentKeyword.isValidURL || searchVM.isSelectionSearch {
                             HStack(spacing: 2) {
                                 PlatformTabBar(
                                     platforms: currentPlatforms,
@@ -381,6 +381,19 @@ struct SearchResultsView: View {
                 isFullscreen = true
             }
 
+            // Selection search already created and loaded its own tab before
+            // this navigation stack appeared. Restoring the saved group here
+            // would replace that request with another platform (and cancel the
+            // first navigation). Keep the chosen engine and its pending load.
+            if searchVM.isSelectionSearch {
+                lastSearchID = searchVM.searchID
+                if let group = platformStore.customGroups.first(where: { $0.id.uuidString == lastGroupID }),
+                   platformStore.platformsForGroup(group).contains(where: { $0.id == searchVM.selectedPlatform?.id }) {
+                    selectedCustomGroup = group
+                }
+                return
+            }
+
             // Restore last selected group and select first platform
             if !lastGroupID.isEmpty,
                let group = platformStore.customGroups.first(where: { $0.id.uuidString == lastGroupID }) {
@@ -661,7 +674,7 @@ struct SearchResultsView: View {
         guard let webVM = tabManager.activeWebViewModel else { return }
         guard let platform = searchVM.selectedPlatform else { return }
         let keyword = searchVM.currentKeyword
-        let directURL = keyword.isValidURL ? keyword.asURL : nil
+        let directURL = keyword.isValidURL && !searchVM.isSelectionSearch ? keyword.asURL : nil
 
         // Apply the platform's required content mode before starting navigation,
         // so the very first request already carries the correct user agent.

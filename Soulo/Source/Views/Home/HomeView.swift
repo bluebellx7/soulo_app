@@ -20,6 +20,8 @@ struct HomeView: View {
     @State private var showExtensionCenter = false
     @State private var librarySection: LibrarySection?
     @State private var navigationSession = UUID()
+    @State private var pendingSelectionSearch: (text: String, platform: SearchPlatform, url: URL)?
+    @State private var selectionSearchID = UUID()
     @State private var incomingDocument: IncomingDocument?
     @State private var showScanner = false
     @State private var pendingScan: String?
@@ -55,6 +57,19 @@ struct HomeView: View {
                 .mediaPlayerNavigation()
         }
         .id(navigationSession)
+        .task(id: selectionSearchID) {
+            // Dismiss reader destinations before publishing a new tab, while
+            // keeping the navigation controller and browser root mounted.
+            guard let request = pendingSelectionSearch else { return }
+            pendingSelectionSearch = nil
+            guard tabManager.tabs.count < TabManager.maxTabs else {
+                tabManager.didReachTabLimit = true
+                return
+            }
+            let tab = tabManager.createTab(keyword: request.text, platform: request.platform)
+            tabManager.setDesktopModeEnabled(request.platform.requiresDesktopMode, reload: false)
+            tab.webViewModel.loadURL(request.url)
+        }
         .overlay { MediaMiniPlayer() }
     }
 
@@ -265,13 +280,25 @@ struct HomeView: View {
                 incomingDocument = IncomingDocument(url: url)
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .openSouloBookshelf)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .searchSelectionInSoulo)) { notification in
+            guard let text = notification.object as? String, !text.isEmpty else { return }
+            guard tabManager.tabs.count < TabManager.maxTabs else { tabManager.didReachTabLimit = true; return }
+            searchVM.searchText = text
+            searchVM.performSearch(context: modelContext)
+            searchVM.isSelectionSearch = true
+            if let platform = searchVM.selectedPlatform, let url = platform.searchURL(for: text) {
+                pendingSelectionSearch = (text, platform, url)
+                resetNavigationForExternalEntry(recreateStack: false)
+                selectionSearchID = UUID()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openSouloFiles)) { _ in
             resetNavigationForExternalEntry()
-            librarySection = .books
+            librarySection = .files
         }
     }
 
-    private func resetNavigationForExternalEntry() {
+    private func resetNavigationForExternalEntry(recreateStack: Bool = true) {
         // A widget or Open In request must work even with a reader pushed above
         // the library. Recreate the navigation stack while retaining tab models.
         librarySection = nil
@@ -284,7 +311,7 @@ struct HomeView: View {
         showVoiceInput = false
         showTabOverviewFromHome = false
         showAppShareSheet = false
-        navigationSession = UUID()
+        if recreateStack { navigationSession = UUID() }
     }
 
     // MARK: - Home Content

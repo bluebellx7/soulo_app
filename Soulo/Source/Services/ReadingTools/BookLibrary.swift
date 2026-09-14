@@ -95,6 +95,19 @@ struct LibraryBook: Codable, Identifiable, Hashable {
         } catch { /* A missing thumbnail must never block the reader. */ }
     }
     func remove(_ id: String) { books.removeAll { $0.id == id }; try? save() }
+    func updateFileReference(bookIDs: Set<String>, to url: URL) throws {
+        guard !bookIDs.isEmpty else { return }
+        guard url.standardizedFileURL.path.hasPrefix(Self.directory.standardizedFileURL.path + "/") else {
+            throw ReadingToolError.unsafePath
+        }
+        let original = books
+        for index in books.indices where bookIDs.contains(books[index].id) {
+            books[index].name = url.deletingPathExtension().lastPathComponent
+            books[index].fileName = String(url.standardizedFileURL.path.dropFirst(Self.directory.standardizedFileURL.path.count + 1))
+            books[index].fileBookmark = try? url.bookmarkData(options: .minimalBookmark)
+        }
+        do { try save() } catch { books = original; throw error }
+    }
     private func save() throws {
         progressPersistence.cancel()
         try FileManager.default.createDirectory(at: metadata.deletingLastPathComponent(), withIntermediateDirectories: true)
