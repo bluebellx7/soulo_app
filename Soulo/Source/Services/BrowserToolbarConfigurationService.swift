@@ -73,7 +73,7 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .bookmark: "bookmark"
         case .copyLink: "doc.on.doc"
         case .fullscreen: "arrow.up.left.and.arrow.down.right"
-        case .desktopMode: "desktopcomputer"
+        case .desktopMode: "display"
         case .darkMode: "moon.fill"
         case .settings: "gearshape"
         case .extensions: "puzzlepiece.extension"

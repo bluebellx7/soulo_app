@@ -1,22 +1,18 @@
-Soulo adalah browser multi-pencarian pribadi yang cepat untuk iPhone dan iPad. Masukkan satu kueri, lalu beralih di antara lebih dari 40 platform pencarian, sosial, video, belanja, pengetahuan, dan AI tanpa mengetik ulang.
+Soulo adalah browser pencarian multiplatform untuk iPhone dan iPad. Ketik sekali, lalu beralih antara pencarian, media sosial, video, belanja, pengetahuan, dan AI tanpa mengulang kueri.
 
-JELAJAHI CARA ANDA
-• Tab, bookmark, riwayat, unduhan, dan platform pencarian yang dapat disesuaikan
-• Penjelajahan pribadi, perlindungan pelacak, pemblokiran iklan, dan kontrol per situs
-• Mode situs web seluler dan desktop, zoom halaman, terjemahan, dan pengambilan halaman penuh
-• Unduh gambar, video, audio, dan dokumen dengan pemeriksa sumber daya halaman web
-• Ekstrak teks dari gambar halaman web dengan Live Text
+Cari informasi, baca artikel, putar media, dan kelola unduhan dalam satu browser.
 
-DIBANGUN UNTUK iPhone DAN iPad
-• Beberapa jendela independen di iPad
-• Bagikan tautan atau SMS langsung ke Soulo
-• Cari dan buka download dari Siri, Shortcuts, Control Center, Layar Kunci dan Tombol Tindakan
-• Unduhan latar belakang dengan kemajuan nyata dan jeda/lanjutkan
-• Aktivitas Langsung dan status Dynamic Island
+• Pencarian: tambahkan platform, atur grup dan urutannya. Pilih teks untuk mencarinya di tab Soulo baru.
+• Iklan dan privasi: filter iklan, berlangganan aturan pihak ketiga, dan tandai iklan untuk disembunyikan. Kelola filter serta perlindungan pelacakan per situs. Penelusuran pribadi tidak menyimpan riwayat.
+• Audio dan video: kecepatan, pengulangan, pemutar mini mengambang, gambar dalam gambar, pemutaran latar belakang, dan AirPlay. Ambil bingkai video, cerminkan gambar, dan tekan lama untuk mempercepat sementara.
+• File: temukan gambar, audio, video, dan dokumen di halaman, lalu simpan gambar secara massal. Tampilan daftar atau kisi sampul, ubah nama, impor dari Foto, dan transfer melalui Wi-Fi.
+• Arsip: ekstrak ZIP, RAR, dan 7z. Buat ZIP dan 7z dengan perlindungan kata sandi opsional.
+• Membaca: TXT, PDF, EPUB, serta buku MOBI, AZW, dan AZW3 tanpa DRM yang didukung. Atur font, ukuran, spasi baris, dan latar. Buku bertata letak fleksibel mendukung tampilan Mandarin sederhana atau tradisional. Mode baca mengekstrak artikel dan memungkinkan lanjut ke halaman berikutnya.
+• Ekstensi: impor, edit, dan jalankan skrip pengguna JavaScript, kelola kecocokan situs serta izin, dan pasang WebExtension yang kompatibel.
+• Alat web: terjemahan, cari di halaman, tangkapan layar seluruh halaman, pengenalan teks pada gambar, mode desktop/seluler, agen pengguna khusus, dan sertifikat situs.
+• Penanda: folder serta impor/ekspor penanda HTML untuk Chrome, Edge, dan browser lain. Buat kode QR halaman dengan ikon situs, lalu bagikan, simpan, atau salin.
+• Personalisasi: wallpaper, bar alat, dan tindakan cepat ikon aplikasi. Akses lewat widget, Pintasan, dan skema URL. Sinkronkan pengaturan melalui iCloud jika diinginkan.
 
-PERPANJANG WEB
-Instal UserScripts atau WebExtensions yang kompatibel, kelola izin dengan jelas, dan buat skrip Anda sendiri dengan dokumentasi API bawaan.
+Ketersediaan media, buku, dan ekstensi bergantung pada format file, batasan situs, dan versi sistem.
 
-Soulo menyimpan data penjelajahan secara lokal kecuali Anda mengaktifkan sinkronisasi pengaturan iCloud. Penjelajahan pribadi tidak menyimpan riwayat.
-
-Baca dengan nyaman, buka rak buku lewat widget, pindai kode QR, dan ambil teks dari foto.
+Dukungan: contact@dkluge.com

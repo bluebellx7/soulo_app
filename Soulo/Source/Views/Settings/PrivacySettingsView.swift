@@ -70,7 +70,7 @@ struct PrivacySettingsView: View {
                     )
 
                     PrivacyToggleRow(
-                        icon: "link.badge.minus",
+                        icon: "link",
                         color: Color.themePrimary,
                         title: LanguageManager.shared.localizedString("privacy_strip_tracking"),
                         description: LanguageManager.shared.localizedString("privacy_strip_tracking_desc"),

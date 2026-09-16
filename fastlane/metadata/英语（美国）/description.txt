@@ -1,22 +1,18 @@
-Soulo is a fast, private multi-search browser for iPhone and iPad. Enter one query, then switch between more than 40 search, social, video, shopping, knowledge and AI platforms without retyping.
+Soulo is a multi-search browser for iPhone and iPad. Enter a query once and switch between search, social, video, shopping, knowledge and AI platforms without typing it again.
 
-BROWSE YOUR WAY
-• Tabs, bookmarks, history, downloads and customizable search platforms
-• Private browsing, tracker protection, ad blocking and per-site controls
-• Mobile and desktop website modes, page zoom, translation and full-page capture
-• Download images, video, audio and documents with the webpage resource inspector
-• Extract text from webpage images with Live Text
+Find information, read articles, play media and manage downloads in one browser.
 
-BUILT FOR iPHONE AND iPAD
-• Multiple independent windows on iPad
-• Share links or text directly to Soulo
-• Search and open downloads from Siri, Shortcuts, Control Center, the Lock Screen and Action Button
-• Background downloads with real progress and pause/resume
-• Live Activities and Dynamic Island status
+• Search your way: Add platforms, organize groups and reorder them. Select text to search in a new Soulo tab.
+• Ads and privacy: Filter ads, subscribe to third-party rules and mark unwanted ads yourself. Manage filtering and tracking protection by site. Private browsing does not save history.
+• Audio and video: Playback speed, repeat, floating mini-player, Picture in Picture, background playback and AirPlay. Capture video frames, mirror the picture and press and hold for a temporary speed boost.
+• Downloads and files: Find images, audio, video and documents on webpages. Save images in batches. Browse files in a list or cover grid, rename them, import from Photos and transfer over Wi-Fi.
+• Archives: Extract ZIP, RAR and 7z files. Create ZIP and 7z archives with optional password protection.
+• Books and reading: Read TXT, PDF, EPUB and supported DRM-free MOBI, AZW and AZW3 books. Adjust reading fonts, text size, line spacing and backgrounds. Reflowable books support simplified/traditional Chinese display conversion; webpage reading mode extracts articles and lets you continue to the next page.
+• Extensions: Import, edit and run JavaScript userscripts, manage site matching and permissions, and install compatible WebExtensions.
+• Web tools: Page translation, find in page, full-page screenshots, image text recognition, desktop/mobile modes, custom user agent and site certificate details.
+• Bookmarks and sharing: Organize bookmarks in folders and import or export HTML bookmarks used by Chrome, Edge and other browsers. Create webpage QR codes with the site's icon, then share, save or copy them.
+• Make it yours: Customize wallpapers, the toolbar and app icon quick actions. Reach common tools through widgets, Shortcuts and URL schemes. Optionally sync settings with iCloud.
 
-EXTEND THE WEB
-Install UserScripts or compatible WebExtensions, manage permissions clearly, and create your own scripts with the built-in API documentation.
+Media, ebook and extension availability depends on file formats, website restrictions and system version.
 
-Soulo stores browsing data locally unless you enable iCloud settings sync. Private browsing does not save history.
-
-Read comfortably, open your bookshelf from a widget, scan QR codes and extract text from photos.
+Support: contact@dkluge.com

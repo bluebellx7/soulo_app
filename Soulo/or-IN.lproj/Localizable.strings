@@ -264,8 +264,8 @@
 "ad_block_popups" = "ପପ୍ଅପ୍ ଏବଂ ଓଭରଲେଜ୍ ସଫା କରନ୍ତୁ";
 "ad_block_management" = "ବିଜ୍ଞାପନ ବ୍ଲକ୍";
 "ad_block_allowlist" = "ଅନୁମୋଦିତ ସାଇଟଗୁଡିକ";
-"ad_block_disable_current_site" = "ଏହି ସାଇଟରେ ବିଜ୍ଞାପନ ବ୍ଲକ ଅକ୍ଷମ କରନ୍ତୁ";
-"ad_block_enable_current_site" = "ଏହି ସାଇଟରେ ବିଜ୍ଞାପନ ବ୍ଲକ ସକ୍ଷମ କରନ୍ତୁ";
+"ad_block_disable_current_site" = "ବିଜ୍ଞାପନ ଅନୁମତି ଦିଅନ୍ତୁ";
+"ad_block_enable_current_site" = "ବିଜ୍ଞାପନ ଅଟକାନ୍ତୁ";
 "ad_block_site_toggle_desc" = "ଏହାକୁ ପରିବର୍ତ୍ତନ କରିବା ସାମ୍ପ୍ରତିକ ପୃଷ୍ଠାକୁ ପୁନ o ଲୋଡ୍ କରେ ତେଣୁ ନୂତନ ବିଜ୍ଞାପନ-ବ୍ଲକ ସେଟିଂ ପ୍ରୟୋଗ ହୋଇପାରିବ";
 "ad_block_no_allowlisted_sites" = "କ allowed ଣସି ଅନୁମତିପ୍ରାପ୍ତ ସାଇଟ୍ ନାହିଁ";
 "ad_block_stats" = "ଲୁକ୍କାୟିତ ଉପାଦାନଗୁଡିକ";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "ସୁସଙ୍ଗତତା";
 "userscript_experimental_title" = "UserScript ସୁସଙ୍ଗତତା";
 "userscript_experimental_desc" = "ସାଇଟ୍ ନିୟମ, ଡକ୍ୟୁମେଣ୍ଟ୍-ଷ୍ଟାର୍ଟ / ଏଣ୍ଡ୍, ବିସ୍ତୃତ ଜିଏମ୍ ଷ୍ଟୋରେଜ୍ ଏବଂ ପେଜ୍ API, ସ୍କ୍ରିପ୍ଟ କମାଣ୍ଡ, ବିଜ୍ଞପ୍ତି, ଟ୍ୟାବ, ଡାଉନଲୋଡ୍, କୁକିଜ, ଉତ୍ସ, ଏବଂ ଅନୁମତି-ସ୍କୋପ ଅନୁରୋଧକୁ ସମର୍ଥନ କରେ | ସଂସ୍ଥାପନ ପୂର୍ବରୁ ପ୍ରତ୍ୟେକ ସ୍କ୍ରିପ୍ଟ ସମୀକ୍ଷା କରନ୍ତୁ; ବାହ୍ୟ @ ଆବଶ୍ୟକ ଫାଇଲଗୁଡିକ ଏକଜେକ୍ୟୁଟ୍ ହୋଇନାହିଁ";
-"extension_choose_file" = "ଏକ୍ସଟେନ୍ସନ୍ ଫାଇଲ୍ କିମ୍ବା ଫୋଲ୍ଡର୍ ବାଛନ୍ତୁ…";
+"extension_choose_file" = "ଫାଇଲ୍ ବା ଫୋଲ୍ଡର୍ ବାଛନ୍ତୁ…";
 "extension_installing" = "ବିସ୍ତୃତକରଣ ଯାଞ୍ଚ ଏବଂ ସଂସ୍ଥାପନ…";
 "extension_install_failed" = "ସମ୍ପ୍ରସାରଣ ସଂସ୍ଥାପିତ ହୋଇପାରିଲା ନାହିଁ";
 "extension_permissions_summary" = "%d ଅନୁମତିଗୁଡିକ · %d ୱେବସାଇଟ୍ ନିୟମ";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "ଏହି ବିସ୍ତୃତକରଣ ଏକ ସ୍ଥାୟୀ ପୃଷ୍ଠଭୂମି ପୃଷ୍ଠା ବ୍ୟବହାର କରେ ଯାହା iOS ୱେବ୍ ଏକ୍ସଟେନ୍ସନ୍ ସମର୍ଥନ କରେ ନାହିଁ | ଏକ ମନିଫେଷ୍ଟ୍ V3 କିମ୍ବା ସଫାରି-ସୁସଙ୍ଗତ ସଂସ୍କରଣ ଚେଷ୍ଟା କରନ୍ତୁ";
 "userscript_new" = "ନୂତନ ସ୍କ୍ରିପ୍ଟ";
 "userscript_edit" = "ସ୍କ୍ରିପ୍ଟ ସଂପାଦନ କରନ୍ତୁ";
-"userscript_choose_file" = "UserScript ଫାଇଲ୍ (.js) ବାଛନ୍ତୁ…";
+"userscript_choose_file" = "ସ୍କ୍ରିପ୍ଟ ବାଛନ୍ତୁ…";
 "userscript_install_footer" = "ସାମ୍ପ୍ରତିକ Soulo ଟ୍ୟାବରେ ଏହାକୁ ଖୋଲିବା ପାଇଁ ଏକ ଉତ୍ସ ଧାଡି ଟ୍ୟାପ୍ କରନ୍ତୁ | A .user.js ଲିଙ୍କ୍ ଏକ ସ୍ଥାପନ ନିଶ୍ଚିତକରଣ ଖୋଲିବ | ଷ୍ଟାଣ୍ଡାର୍ଡ ଜାଭାସ୍କ୍ରିପ୍ଟ ଏବଂ GM API ର ଏକ ବିସ୍ତୃତ ସେଟ୍ ସମର୍ଥିତ; ବ୍ୟକ୍ତିଗତ ବ୍ରାଉଜିଂରେ ସ୍କ୍ରିପ୍ଟ ଚାଲୁ ନାହିଁ ଏବଂ ବାହ୍ୟ @ ଆବଶ୍ୟକ ଫାଇଲଗୁଡ଼ିକ ଏକଜେକ୍ୟୁଟ୍ ହୁଏ ନାହିଁ";
 "userscript_install_failed" = "UserScript ସଂସ୍ଥାପିତ ହୋଇପାରିଲା ନାହିଁ";
 "web_extension_temporarily_disabled" = "ସୁସଙ୍ଗତତା ପରୀକ୍ଷା ସମାପ୍ତ ହୋଇଥିବାବେଳେ ଷ୍ଟାଣ୍ଡାର୍ଡ ବ୍ରାଉଜର୍ ଏକ୍ସଟେନ୍ସନ୍ ସାମୟିକ ଭାବରେ ଉପଲବ୍ଧ ନୁହେଁ";

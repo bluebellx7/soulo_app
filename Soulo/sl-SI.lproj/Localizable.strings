@@ -264,8 +264,8 @@
 "ad_block_popups" = "Očistite pojavna okna in prekrivanja";
 "ad_block_management" = "Blokiranje oglasov";
 "ad_block_allowlist" = "Dovoljena spletna mesta";
-"ad_block_disable_current_site" = "Onemogoči blokiranje oglasov na tem spletnem mestu";
-"ad_block_enable_current_site" = "Omogoči blokiranje oglasov na tem spletnem mestu";
+"ad_block_disable_current_site" = "Dovoli oglase";
+"ad_block_enable_current_site" = "Blokiraj oglase";
 "ad_block_site_toggle_desc" = "Če to spremenite, se trenutna stran znova naloži, tako da se lahko uporabi nova nastavitev za blokiranje oglasov.";
 "ad_block_no_allowlisted_sites" = "Ni dovoljenih spletnih mest.";
 "ad_block_stats" = "Skriti elementi";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Združljivost";
 "userscript_experimental_title" = "UserScript združljivost";
 "userscript_experimental_desc" = "Podpira pravila spletnega mesta, začetek/konec dokumenta, obsežno shranjevanje GM in API-je strani, ukaze skriptov, obvestila, zavihke, prenose, piškotke, vire in zahteve v obsegu dovoljenj. Pred namestitvijo preglejte vsak skript; zunanje datoteke @require se ne izvajajo.";
-"extension_choose_file" = "Izberite razširitveno datoteko ali mapo ...";
+"extension_choose_file" = "Izberi datoteko ali mapo…";
 "extension_installing" = "Preverjanje in nameščanje razširitve …";
 "extension_install_failed" = "Razširitve ni bilo mogoče namestiti";
 "extension_permissions_summary" = "%d dovoljenja · %d pravila spletnega mesta";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Ta razširitev uporablja trajno stran v ozadju, ki je spletne razširitve iOS ne podpirajo. Poskusite Manifest V3 ali različico, združljivo s Safari.";
 "userscript_new" = "Nov scenarij";
 "userscript_edit" = "Uredi skript";
-"userscript_choose_file" = "Izberite UserScript Datoteka (.js)…";
+"userscript_choose_file" = "Izberi skript…";
 "userscript_install_footer" = "Tapnite izvorno vrstico, da jo odprete v trenutnem zavihku Soulo. Povezava .user.js odpre potrditev namestitve. Podprt je standardni JavaScript in širok nabor API-jev GM; skripti se ne izvajajo v zasebnem brskanju in zunanje datoteke @require se ne izvajajo.";
 "userscript_install_failed" = "UserScript Ni bilo mogoče namestiti";
 "web_extension_temporarily_disabled" = "Standardne razširitve brskalnika začasno niso na voljo, medtem ko je testiranje združljivosti končano.";

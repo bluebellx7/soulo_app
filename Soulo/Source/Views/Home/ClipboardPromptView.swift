@@ -11,6 +11,15 @@ struct ClipboardPromptView: View {
     @State private var offset: CGFloat = -100
     @State private var opacity: Double = 0
 
+    private var previewText: String {
+        guard let content = searchVM.clipboardContent else {
+            return languageManager.localizedString("clipboard_tap_to_search")
+        }
+        let prefix = content.prefix(240)
+        let compact = prefix.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        return compact + (prefix.endIndex < content.endIndex ? "…" : "")
+    }
+
     var body: some View {
         VStack {
             HStack(spacing: 12) {
@@ -25,13 +34,14 @@ struct ClipboardPromptView: View {
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.secondary)
 
-                    Text(searchVM.clipboardContent ?? languageManager.localizedString("clipboard_tap_to_search"))
+                    Text(previewText)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(searchVM.clipboardContent == nil ? .secondary : .primary)
-                        .lineLimit(1)
+                        .lineLimit(2)
+                        .truncationMode(.tail)
+                        .accessibilityIdentifier("clipboard.preview")
                 }
-
-                Spacer()
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 // Search button
                 Button {
@@ -68,25 +78,27 @@ struct ClipboardPromptView: View {
 
             Spacer()
         }
-        .onAppear {
+        .task(id: searchVM.clipboardContent) {
             AppAccessibility.announce(
-                "\(languageManager.localizedString("clipboard_detected")), \(searchVM.clipboardContent ?? languageManager.localizedString("clipboard_tap_to_search"))"
+                "\(languageManager.localizedString("clipboard_detected")), \(previewText)"
             )
             withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                 offset = 0
                 opacity = 1
             }
-            // Auto dismiss after 8 seconds
-            DispatchQueue.main.asyncAfter(deadline: .now() + 8) {
-                if searchVM.showClipboardPrompt && !voiceOverEnabled {
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        offset = -100
-                        opacity = 0
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        searchVM.dismissClipboard()
-                    }
+            guard !voiceOverEnabled else { return }
+            do {
+                try await Task.sleep(for: .seconds(8))
+                try Task.checkCancellation()
+                withAnimation(.easeOut(duration: 0.3)) {
+                    offset = -100
+                    opacity = 0
                 }
+                try await Task.sleep(for: .milliseconds(300))
+                try Task.checkCancellation()
+                searchVM.dismissClipboard()
+            } catch {
+                // Disappearance or new clipboard content cancels this timer.
             }
         }
     }

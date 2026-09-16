@@ -264,8 +264,8 @@
 "ad_block_popups" = "Rengjør popup-vinduer og overlegg";
 "ad_block_management" = "Annonseblokkering";
 "ad_block_allowlist" = "Tillatte nettsteder";
-"ad_block_disable_current_site" = "Deaktiver annonseblokkering på dette nettstedet";
-"ad_block_enable_current_site" = "Aktiver annonseblokkering på dette nettstedet";
+"ad_block_disable_current_site" = "Tillat annonser";
+"ad_block_enable_current_site" = "Blokker annonser";
 "ad_block_site_toggle_desc" = "Hvis du endrer dette, lastes den gjeldende siden på nytt slik at den nye annonseblokk-innstillingen kan gjelde.";
 "ad_block_no_allowlisted_sites" = "Ingen tillatte nettsteder.";
 "ad_block_stats" = "Skjulte elementer";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Kompatibilitet";
 "userscript_experimental_title" = "UserScript kompatibilitet";
 "userscript_experimental_desc" = "Støtter nettstedregler, dokumentstart/slutt, omfattende GM-lagring og side-API-er, skriptkommandoer, varsler, faner, nedlastinger, informasjonskapsler, ressurser og forespørsler med tillatelsesomfang. Gå gjennom hvert skript før du installerer; eksterne @require-filer kjøres ikke.";
-"extension_choose_file" = "Velg utvidelsesfil eller mappe...";
+"extension_choose_file" = "Velg fil eller mappe…";
 "extension_installing" = "Sjekker og installerer utvidelsen …";
 "extension_install_failed" = "Utvidelsen kunne ikke installeres";
 "extension_permissions_summary" = "%d tillatelser · %d nettstedsregler";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Denne utvidelsen bruker en vedvarende bakgrunnsside som iOS Web Extensions ikke støtter. Prøv en Manifest V3 eller Safari-kompatibel versjon.";
 "userscript_new" = "Nytt skript";
 "userscript_edit" = "Rediger skript";
-"userscript_choose_file" = "Velg UserScript Fil (.js)...";
+"userscript_choose_file" = "Velg skript…";
 "userscript_install_footer" = "Trykk på en kilderad for å åpne den i gjeldende Soulo-fane. En .user.js-kobling åpner en installasjonsbekreftelse. Standard JavaScript og et bredt sett med GM APIer støttes; skript kjører ikke i privat surfing og eksterne @require-filer kjøres ikke.";
 "userscript_install_failed" = "UserScript Kunne ikke installeres";
 "web_extension_temporarily_disabled" = "Standard nettleserutvidelser er midlertidig utilgjengelige mens kompatibilitetstesting er fullført.";

@@ -1,22 +1,18 @@
-Soulo, iPhone ve iPad için hızlı, özel bir çoklu arama tarayıcısıdır. Bir sorgu girin, ardından yeniden yazmaya gerek kalmadan 40'tan fazla arama, sosyal, video, alışveriş, bilgi ve yapay zeka platformu arasında geçiş yapın.
+Soulo, iPhone ve iPad için çok platformlu bir arama tarayıcısıdır. Bir kez yazın; arama, sosyal medya, video, alışveriş, bilgi ve yapay zekâ platformları arasında sorgunuzu yeniden yazmadan geçiş yapın.
 
-YOLUNUZA GÖZ ATIN
-• Sekmeler, yer imleri, geçmiş, indirmeler ve özelleştirilebilir arama platformları
-• Özel tarama, izleyici koruması, reklam engelleme ve site bazında kontroller
-• Mobil ve masaüstü web sitesi modları, sayfa yakınlaştırma, çeviri ve tam sayfa yakalama
-• Web sayfası kaynak denetçisi ile görselleri, videoları, sesleri ve belgeleri indirin
-• Live Text ile web sayfası görüntülerinden metin çıkarın
+Bilgi bulun, makale okuyun, medya oynatın ve indirmelerinizi tek tarayıcıda yönetin.
 
-iPHONE VE iPAD İÇİN ÜRETİLDİ
-• iPad'de birden çok bağımsız pencere
-• Bağlantıları veya metni doğrudan Soulo ile paylaşın
-• Siri, Shortcuts, Control Center, Kilit Ekranı ve Eylem Düğmesinden indirilenleri arayın ve açın
-• Gerçek ilerleme ve duraklatma/devam ettirme özelliğiyle arka planda indirmeler
-• Canlı Etkinlikler ve Dynamic Island durumu
+• Arama: platform ekleyin, gruplandırın ve sıralayın. Seçili metni yeni bir Soulo sekmesinde arayın.
+• Reklamlar ve gizlilik: reklamları filtreleyin, üçüncü taraf kurallara abone olun ve gizlenecek reklamları elle işaretleyin. Filtreleri ve izleme korumasını site bazında yönetin. Özel dolaşma geçmişi kaydetmez.
+• Ses ve video: hız, tekrar, yüzen mini oynatıcı, resim içinde resim, arka planda oynatma ve AirPlay. Video karelerini kaydedin, görüntüyü aynalayın ve geçici hız artışı için basılı tutun.
+• Dosyalar: sayfalardaki resim, ses, video ve belgeleri bulun; resimleri topluca kaydedin. Liste veya kapak ızgarası, yeniden adlandırma, Fotoğraflar’dan içe aktarma ve Wi-Fi aktarımı.
+• Arşivler: ZIP, RAR ve 7z açın. İsteğe bağlı parola korumalı ZIP ve 7z arşivleri oluşturun.
+• Okuma: TXT, PDF, EPUB ve desteklenen DRM’siz MOBI, AZW, AZW3 kitaplar. Yazı tipi, boyut, satır aralığı ve arka planı ayarlayın. Akışkan düzenli kitaplarda basitleştirilmiş/geleneksel Çince görünümü seçin. Okuma modu makale metnini çıkarır ve sonraki sayfada devam etmenizi sağlar.
+• Uzantılar: JavaScript kullanıcı betiklerini içe aktarın, düzenleyin ve çalıştırın; site eşleştirmelerini ve izinleri yönetin, uyumlu WebExtensions yükleyin.
+• Web araçları: çeviri, sayfada bul, tam sayfa ekran görüntüsü, resimden metin tanıma, masaüstü/mobil mod, özel kullanıcı aracısı ve site sertifikaları.
+• Yer imleri: klasörler ve Chrome, Edge gibi tarayıcıların HTML yer imlerini içe/dışa aktarma. Site simgeli sayfa QR kodları oluşturun, paylaşın, kaydedin veya kopyalayın.
+• Kişiselleştirme: duvar kâğıdı, araç çubuğu ve uygulama simgesi hızlı eylemleri. Araç takımları, Kestirmeler ve URL şemalarıyla erişim. İsteğe bağlı iCloud ayar eşzamanlama.
 
-WEB'İ GENİŞLETİN
-UserScript'leri veya uyumlu WebExtension'leri yükleyin, izinleri net bir şekilde yönetin ve yerleşik API belgeleriyle kendi komut dosyalarınızı oluşturun.
+Medya, kitap ve uzantı kullanılabilirliği dosya biçimine, site kısıtlamalarına ve sistem sürümüne bağlıdır.
 
-Soulo, iCloud ayarların senkronizasyonunu etkinleştirmediğiniz sürece tarama verilerini yerel olarak depolar. Özel tarama geçmişi kaydetmez.
-
-Rahatça okuyun, kitaplığınızı araç takımından açın, QR kodlarını tarayın ve fotoğraflardan metin çıkarın.
+Destek: contact@dkluge.com

@@ -1,22 +1,18 @@
-Soulo to szybka, prywatna przeglądarka z wieloma wyszukiwaniami dla iPhone'a i iPada. Wpisz jedno zapytanie, a następnie przełączaj się między ponad 40 platformami wyszukiwania, społecznościowymi, wideo, zakupowymi, wiedzą i sztuczną inteligencją bez konieczności ponownego wpisywania.
+Soulo to przeglądarka na iPhone’a i iPada z wyszukiwaniem na wielu platformach. Wpisz zapytanie raz i przełączaj się między wyszukiwarkami, mediami społecznościowymi, filmami, zakupami, wiedzą i AI.
 
-PRZEGLĄDAJ SWOJĄ DROGĘ
-• Karty, zakładki, historia, pliki do pobrania i konfigurowalne platformy wyszukiwania
-• Prywatne przeglądanie, ochrona modułów śledzących, blokowanie reklam i kontrola poszczególnych witryn
-• Tryby witryn mobilnych i stacjonarnych, powiększanie strony, tłumaczenie i przechwytywanie całej strony
-• Pobieraj obrazy, wideo, audio i dokumenty za pomocą inspektora zasobów strony internetowej
-• Wyodrębnij tekst z obrazów stron internetowych za pomocą Live Text
+Szukaj informacji, czytaj artykuły, odtwarzaj multimedia i zarządzaj pobraniami w jednej przeglądarce.
 
-ZBUDOWANY DLA iPhone'a i iPada
-• Wiele niezależnych okien na iPadzie
-• Udostępniaj linki lub SMS-y bezpośrednio Soulo
-• Wyszukuj i otwieraj pliki do pobrania z Siri, Shortcuts, Control Center, ekranu blokady i przycisku akcji
-• Pobieranie w tle z rzeczywistym postępem i pauzą/wznawianiem
-• Aktywności na żywo i stan Dynamic Island
+• Wyszukiwanie: dodawaj platformy, grupuj je i zmieniaj kolejność. Szukaj zaznaczonego tekstu w nowej karcie Soulo.
+• Reklamy i prywatność: filtruj reklamy, subskrybuj zewnętrzne reguły i ręcznie wskazuj reklamy do ukrycia. Zarządzaj filtrami i ochroną przed śledzeniem dla witryn. Tryb prywatny nie zapisuje historii.
+• Audio i wideo: prędkość, powtarzanie, pływający miniodtwarzacz, obraz w obrazie, odtwarzanie w tle i AirPlay. Zapisuj klatki, odbijaj obraz i przytrzymuj, aby chwilowo przyspieszyć.
+• Pliki: wykrywaj obrazy, audio, filmy i dokumenty na stronach oraz zapisuj wiele obrazów naraz. Lista lub siatka okładek, zmiana nazw, import ze Zdjęć i przesyłanie przez Wi-Fi.
+• Archiwa: rozpakowuj ZIP, RAR i 7z. Twórz ZIP i 7z z opcjonalnym hasłem.
+• Czytanie: TXT, PDF, EPUB oraz obsługiwane MOBI, AZW i AZW3 bez DRM. Dostosuj czcionkę, rozmiar, interlinię i tło. Książki z elastycznym układem obsługują wyświetlanie chińskiego uproszczonego i tradycyjnego. Tryb czytania wydobywa tekst artykułu i pozwala kontynuować na kolejnej stronie.
+• Rozszerzenia: importuj, edytuj i uruchamiaj skrypty JavaScript, zarządzaj dopasowaniem witryn i uprawnieniami oraz instaluj zgodne WebExtensions.
+• Narzędzia: tłumaczenie, szukanie na stronie, zrzuty całych stron, rozpoznawanie tekstu na obrazach, tryby komputerowy/mobilny, własny agent użytkownika i certyfikaty witryn.
+• Zakładki: foldery oraz import i eksport zakładek HTML używanych przez Chrome, Edge i inne przeglądarki. Twórz kody QR stron z ikoną witryny, udostępniaj je, zapisuj i kopiuj.
+• Personalizacja: tapety, pasek narzędzi i szybkie czynności ikony aplikacji. Dostęp przez widżety, Skróty i schematy URL. Opcjonalna synchronizacja ustawień przez iCloud.
 
-ROZSZERZAJ SIEĆ
-Zainstaluj UserScript lub kompatybilne WebExtension, zarządzaj uprawnieniami w przejrzysty sposób i twórz własne skrypty dzięki wbudowanej dokumentacji API.
+Dostępność multimediów, książek i rozszerzeń zależy od formatu, ograniczeń witryny i wersji systemu.
 
-Soulo przechowuje dane przeglądania lokalnie, chyba że włączysz synchronizację ustawień iCloud. Przeglądanie prywatne nie zapisuje historii.
-
-Czytaj wygodnie, otwieraj biblioteczkę z widżetu, skanuj kody QR i rozpoznawaj tekst na zdjęciach.
+Pomoc: contact@dkluge.com

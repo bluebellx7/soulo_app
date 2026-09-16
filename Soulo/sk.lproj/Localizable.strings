@@ -264,8 +264,8 @@
 "ad_block_popups" = "Čisté kontextové okná a prekrytia";
 "ad_block_management" = "Blokovanie reklám";
 "ad_block_allowlist" = "Povolené stránky";
-"ad_block_disable_current_site" = "Zakázať blokovanie reklám na tejto stránke";
-"ad_block_enable_current_site" = "Povoliť blokovanie reklám na tejto stránke";
+"ad_block_disable_current_site" = "Povoliť reklamy";
+"ad_block_enable_current_site" = "Blokovať reklamy";
 "ad_block_site_toggle_desc" = "Zmenou tohto nastavenia sa znova načíta aktuálna stránka, aby bolo možné použiť nové nastavenie blokovania reklám.";
 "ad_block_no_allowlisted_sites" = "Žiadne povolené stránky.";
 "ad_block_stats" = "Skryté prvky";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Kompatibilita";
 "userscript_experimental_title" = "UserScript kompatibilita";
 "userscript_experimental_desc" = "Podporuje pravidlá lokality, spustenie/ukončenie dokumentu, rozsiahle úložisko GM a rozhrania API stránok, príkazy skriptov, upozornenia, karty, sťahovanie, súbory cookie, zdroje a požiadavky v rozsahu povolení. Pred inštaláciou skontrolujte každý skript; externé súbory @require sa nespustia.";
-"extension_choose_file" = "Vyberte súbor alebo priečinok rozšírenia…";
+"extension_choose_file" = "Vybrať súbor alebo priečinok…";
 "extension_installing" = "Kontrola a inštalácia rozšírenia…";
 "extension_install_failed" = "Rozšírenie sa nepodarilo nainštalovať";
 "extension_permissions_summary" = "%d povolenia · %d pravidlá webu";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Toto rozšírenie používa trvalú stránku na pozadí, ktorú webové rozšírenia pre iOS nepodporujú. Vyskúšajte verziu kompatibilnú s Manifest V3 alebo Safari.";
 "userscript_new" = "Nový skript";
 "userscript_edit" = "Upraviť skript";
-"userscript_choose_file" = "Vyberte UserScript Súbor (.js)…";
+"userscript_choose_file" = "Vybrať skript…";
 "userscript_install_footer" = "Klepnutím na zdrojový riadok ho otvoríte na aktuálnej karte Soulo. Odkaz .user.js otvorí potvrdenie inštalácie. Podporovaný je štandardný JavaScript a široká sada GM API; skripty sa nespúšťajú v režime Súkromné ​​prehliadanie a externé súbory @require sa nevykonávajú.";
 "userscript_install_failed" = "UserScript sa nepodarilo nainštalovať";
 "web_extension_temporarily_disabled" = "Kým sa dokončí testovanie kompatibility, štandardné rozšírenia prehliadača sú dočasne nedostupné.";

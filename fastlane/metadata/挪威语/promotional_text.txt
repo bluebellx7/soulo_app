@@ -1,1 +1,1 @@
-Les behagelig, åpne bokhyllen fra en widget, skann QR-koder og hent tekst fra bilder.
+Skjul valgte annonser, sorter bokmerker i mapper og lagre flere nettbilder samtidig. Tydeligere filvisning og deling av sider med QR-koder.

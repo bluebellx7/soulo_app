@@ -1,22 +1,18 @@
-Soulo este un browser rapid, privat cu mai multe căutări pentru iPhone și iPad. Introduceți o interogare, apoi comutați între mai mult de 40 de platforme de căutare, socializare, video, cumpărături, cunoștințe și AI fără a reintroduce.
+Soulo este un browser pentru iPhone și iPad cu căutare pe mai multe platforme. Scrie o singură dată și treci între căutare, rețele sociale, videoclipuri, cumpărături, cunoștințe și AI fără să repeți interogarea.
 
-RAUȚIȚI-ȚI CALUL
-• File, marcaje, istoric, descărcări și platforme de căutare personalizabile
-• Navigare privată, protecție tracker, blocare anunțuri și controale pe site
-• Moduri pentru site-ul web mobil și desktop, mărirea paginii, traducere și captură pe întreaga pagină
-• Descărcați imagini, videoclipuri, audio și documente cu ajutorul inspectorului de resurse pentru paginile web
-• Extrageți text din imaginile paginii web cu Live Text
+Găsește informații, citește articole, redă conținut și gestionează descărcările într-un singur browser.
 
-CONSTRUIT PENTRU IPHONE ȘI IPAD
-• Mai multe ferestre independente pe iPad
-• Partajați linkuri sau text direct către Soulo
-• Căutați și deschideți descărcări din Siri, Shortcuts, Control Center, ecranul de blocare și butonul de acțiune
-• Descărcări în fundal cu progres real și pauză/reluare
-• Activități live și starea Dynamic Island
+• Căutare: adaugă platforme, organizează grupuri și schimbă ordinea. Caută textul selectat într-o filă Soulo nouă.
+• Reclame și confidențialitate: filtrează reclame, abonează-te la reguli externe și marchează reclame pentru ascundere. Gestionează filtrele și protecția împotriva urmăririi pentru fiecare site. Navigarea privată nu salvează istoricul.
+• Audio și video: viteză, repetare, miniplayer flotant, imagine în imagine, redare în fundal și AirPlay. Salvează cadre, oglindește imaginea și ține apăsat pentru accelerare temporară.
+• Fișiere: găsește imagini, audio, videoclipuri și documente în pagini și salvează imagini în lot. Listă sau grilă de coperte, redenumire, import din Poze și transfer Wi-Fi.
+• Arhive: extrage ZIP, RAR și 7z. Creează ZIP și 7z cu protecție opțională prin parolă.
+• Lectură: TXT, PDF, EPUB și cărți MOBI, AZW, AZW3 compatibile fără DRM. Ajustează fontul, mărimea, spațierea și fundalul. Cărțile cu aspect adaptabil permit afișare în chineză simplificată sau tradițională. Modul de lectură extrage articolul și permite continuarea pe pagina următoare.
+• Extensii: importă, editează și rulează scripturi JavaScript, gestionează site-urile și permisiunile și instalează WebExtensions compatibile.
+• Instrumente web: traducere, căutare în pagină, capturi ale întregii pagini, recunoașterea textului din imagini, mod desktop/mobil, agent utilizator personalizat și certificatele site-urilor.
+• Marcaje: dosare și import/export de marcaje HTML pentru Chrome, Edge și alte browsere. Creează coduri QR ale paginilor cu pictograma site-ului, apoi distribuie, salvează sau copiază.
+• Personalizare: fundaluri, bară de instrumente și acțiuni rapide ale pictogramei aplicației. Acces prin widgeturi, Scurtături și scheme URL. Sincronizare opțională a configurărilor cu iCloud.
 
-EXTINDEȚI WEB-UL
-Instalați UserScript-uri sau WebExtension-uri compatibile, gestionați permisiunile în mod clar și creați-vă propriile scripturi cu documentația API încorporată.
+Disponibilitatea conținutului, cărților și extensiilor depinde de format, restricțiile site-ului și versiunea sistemului.
 
-Soulo stochează datele de navigare local, cu excepția cazului în care activați sincronizarea setărilor iCloud. Navigarea privată nu salvează istoricul.
-
-Citește confortabil, deschide biblioteca dintr-un widget, scanează coduri QR și extrage text din fotografii.
+Asistență: contact@dkluge.com

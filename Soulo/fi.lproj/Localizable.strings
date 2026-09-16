@@ -264,8 +264,8 @@
 "ad_block_popups" = "Puhdista ponnahdusikkunat ja peittokuvat";
 "ad_block_management" = "Mainosten esto";
 "ad_block_allowlist" = "Sallitut sivustot";
-"ad_block_disable_current_site" = "Poista mainosten esto käytöstä tällä sivustolla";
-"ad_block_enable_current_site" = "Ota Ad Block käyttöön tällä sivustolla";
+"ad_block_disable_current_site" = "Salli mainokset";
+"ad_block_enable_current_site" = "Estä mainokset";
 "ad_block_site_toggle_desc" = "Tämän muuttaminen lataa nykyisen sivun uudelleen, jotta uusi mainosten estoasetus voidaan ottaa käyttöön.";
 "ad_block_no_allowlisted_sites" = "Ei sallittuja sivustoja.";
 "ad_block_stats" = "Piilotetut elementit";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Yhteensopivuus";
 "userscript_experimental_title" = "UserScript yhteensopivuus";
 "userscript_experimental_desc" = "Tukee sivustosääntöjä, asiakirjan alkua/loppua, laajaa GM-tallennustilaa ja sivujen sovellusliittymiä, komentosarjakomentoja, ilmoituksia, välilehtiä, latauksia, evästeitä, resursseja ja käyttöoikeuslaajuisia pyyntöjä. Tarkista jokainen komentosarja ennen asennusta; ulkoisia @require-tiedostoja ei suoriteta.";
-"extension_choose_file" = "Valitse laajennustiedosto tai kansio…";
+"extension_choose_file" = "Valitse tiedosto tai kansio…";
 "extension_installing" = "Tarkistetaan ja asennetaan laajennusta…";
 "extension_install_failed" = "Laajennusta ei voitu asentaa";
 "extension_permissions_summary" = "%d käyttöoikeudet · %d verkkosivustosäännöt";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Tämä laajennus käyttää pysyvää taustasivua, jota iOS-verkkolaajennukset eivät tue. Kokeile Manifest V3- tai Safari-yhteensopivaa versiota.";
 "userscript_new" = "Uusi Script";
 "userscript_edit" = "Muokkaa skriptiä";
-"userscript_choose_file" = "Valitse UserScript Tiedosto (.js)…";
+"userscript_choose_file" = "Valitse skripti…";
 "userscript_install_footer" = "Napauta lähderiviä avataksesi sen nykyisessä Soulo-välilehdessä. .user.js-linkki avaa asennusvahvistuksen. Vakio JavaScript ja laaja joukko GM-sovellusliittymiä tuetaan. komentosarjat eivät toimi yksityisessä selauksessa ja ulkoisia @require-tiedostoja ei suoriteta.";
 "userscript_install_failed" = "UserScript Ei voitu asentaa";
 "web_extension_temporarily_disabled" = "Vakioselainlaajennukset ovat tilapäisesti poissa käytöstä, kun yhteensopivuustesti on valmis.";

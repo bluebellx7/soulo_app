@@ -1033,6 +1033,7 @@ final class WebViewScriptsTests: XCTestCase {
     @MainActor
     func testResourceInspectorKeepsAdaptiveOnlyYouTubeVideoOnSABRTransport() async throws {
         let webView = WKWebView(frame: .zero)
+        defer { webView.stopLoading() }
         webView.loadHTMLString(
             """
             <html><head><title>Adaptive fixture - YouTube</title></head><body>
@@ -1060,11 +1061,16 @@ final class WebViewScriptsTests: XCTestCase {
             """,
             baseURL: try XCTUnwrap(URL(string: "https://m.youtube.com/watch?v=adaptive"))
         )
-        for _ in 0..<20 {
+        var fixtureReady = false
+        for _ in 0..<100 {
             try await Task.sleep(for: .milliseconds(50))
-            if !webView.isLoading { break }
+            if (try? await webView.evaluateJavaScript("window.ytInitialPlayerResponse?.videoDetails?.videoId === 'adaptive'")) as? Bool == true {
+                fixtureReady = true
+                break
+            }
         }
-
+        XCTAssertTrue(fixtureReady, "Wait for this document's player response, not an initial isLoading value")
+        guard fixtureReady else { return }
         let snapshot = try await WebResourceInspectionService.inspect(webView: webView)
 
         XCTAssertEqual(snapshot.videos.count, 1)

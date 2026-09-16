@@ -318,7 +318,7 @@ struct SettingsView: View {
                         SectionHeader(title: LanguageManager.shared.localizedString("browsing"))
                     }
 
-                    // MARK: - Sync
+                    // MARK: - Other
                     Section {
                         Toggle(isOn: $iCloudSyncEnabled) {
                             SettingsDescriptionLabel(
@@ -332,8 +332,15 @@ struct SettingsView: View {
                         .onChange(of: iCloudSyncEnabled) { _, enabled in
                             CloudSyncService.shared.setEnabled(enabled)
                         }
+                        NavigationLink(destination: AppQuickActionSettingsView()) {
+                            Label {
+                                Text(ToolText.text("quick_actions_title"))
+                            } icon: {
+                                IconBadge(systemName: "hand.tap", color: neutralIconColor)
+                            }
+                        }.accessibilityIdentifier("settings.quick-actions")
                     } header: {
-                        SectionHeader(title: LanguageManager.shared.localizedString("settings_section_sync"))
+                        SectionHeader(title: ToolText.text("settings_other"))
                     }
 
                     // MARK: - About & Support
@@ -356,44 +363,30 @@ struct SettingsView: View {
                         }
                         .buttonStyle(.plain)
 
-                        NavigationLink(destination: PrivacyPolicyView()) {
+                        NavigationLink(destination: URLSchemeGuideView()) {
                             Label {
-                                Text(LanguageManager.shared.localizedString("settings_privacy_policy"))
+                                Text(verbatim: "URL Scheme")
                             } icon: {
-                                IconBadge(systemName: "doc.text.fill", color: neutralIconColor)
+                                IconBadge(systemName: "link", color: neutralIconColor)
                             }
                         }
+                        .accessibilityIdentifier("settings.url-schemes")
 
-                        NavigationLink {
-                            ReadingToolsLicensesView()
-                        } label: {
-                            Label {
-                                Text(ToolText.text("licenses"))
-                            } icon: {
-                                IconBadge(systemName: "text.book.closed", color: neutralIconColor)
+                        NavigationLink(destination: AppVersionView(version: appVersion)) {
+                            HStack {
+                                Label {
+                                    Text(LanguageManager.shared.localizedString("settings_version"))
+                                } icon: {
+                                    IconBadge(systemName: "info.circle.fill", color: neutralIconColor)
+                                }
+                                Spacer()
+                                Text(appVersion)
+                                    .foregroundStyle(.secondary)
+                                    .font(.subheadline)
+                                    .monospacedDigit()
                             }
-                        }
+                        }.accessibilityIdentifier("settings.version")
 
-                        NavigationLink(destination: TermsOfServiceView()) {
-                            Label {
-                                Text(LanguageManager.shared.localizedString("settings_terms"))
-                            } icon: {
-                                IconBadge(systemName: "checkmark.seal.fill", color: neutralIconColor)
-                            }
-                        }
-
-                        HStack {
-                            Label {
-                                Text(LanguageManager.shared.localizedString("settings_version"))
-                            } icon: {
-                                IconBadge(systemName: "info.circle.fill", color: neutralIconColor)
-                            }
-                            Spacer()
-                            Text(appVersion)
-                                .foregroundStyle(.secondary)
-                                .font(.subheadline)
-                                .monospacedDigit()
-                        }
                     } header: {
                         SectionHeader(title: LanguageManager.shared.localizedString("settings_section_about_support"))
                     } footer: {

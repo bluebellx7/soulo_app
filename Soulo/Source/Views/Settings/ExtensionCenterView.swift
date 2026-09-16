@@ -10,6 +10,8 @@ private enum ExtensionCenterTab: String, CaseIterable, Identifiable {
 }
 
 struct ExtensionCenterView: View {
+    @AppStorage("builtin_reader_enabled") private var readerEnabled = false
+
     var onOpenInBrowser: ((URL) -> Void)? = nil
 
     @ObservedObject private var service = BrowserExtensionService.shared
@@ -152,6 +154,25 @@ struct ExtensionCenterView: View {
         }
     }
 
+    private var readerTool: some View {
+        Section(ToolText.text("extension_builtin_tools")) {
+            Toggle(isOn: $readerEnabled) {
+                HStack(spacing: 12) {
+                    extensionIcon(systemName: "doc.text", tint: .primary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(ToolText.text("reader_mode"))
+                            .font(.body.weight(.medium)).foregroundStyle(.primary)
+                        Text(ToolText.text("reader_builtin_description"))
+                            .font(.caption).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            .accessibilityIdentifier("extensions.reader-toggle")
+        }
+    }
+
     private var installedContent: some View {
         List {
             Section {
@@ -219,6 +240,7 @@ struct ExtensionCenterView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
+            readerTool
         }
         .listStyle(.insetGrouped)
     }

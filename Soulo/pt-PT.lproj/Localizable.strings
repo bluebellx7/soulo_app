@@ -264,8 +264,8 @@
 "ad_block_popups" = "Limpe pop-ups e sobreposições";
 "ad_block_management" = "Bloqueio de anúncios";
 "ad_block_allowlist" = "Sites permitidos";
-"ad_block_disable_current_site" = "Desative o bloqueio de anúncios neste site";
-"ad_block_enable_current_site" = "Habilite o bloqueio de anúncios neste site";
+"ad_block_disable_current_site" = "Permitir anúncios";
+"ad_block_enable_current_site" = "Bloquear anúncios";
 "ad_block_site_toggle_desc" = "Alterar isso recarrega a página atual para que a nova configuração de bloqueio de anúncios possa ser aplicada.";
 "ad_block_no_allowlisted_sites" = "Nenhum site permitido.";
 "ad_block_stats" = "Elementos ocultos";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Compatibilidade";
 "userscript_experimental_title" = "UserScript compatibilidade";
 "userscript_experimental_desc" = "Suporta regras de site, início/fim de documento, armazenamento GM extenso e APIs de página, comandos de script, notificações, guias, downloads, cookies, recursos e solicitações com escopo de permissão. Revise cada script antes de instalar; arquivos @require externos não são executados.";
-"extension_choose_file" = "Escolha arquivo ou pasta de extensão…";
+"extension_choose_file" = "Escolher ficheiro ou pasta…";
 "extension_installing" = "Verificando e instalando extensão…";
 "extension_install_failed" = "A extensão não pôde ser instalada";
 "extension_permissions_summary" = "%d permissões · %d regras do site";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Esta extensão usa uma página de plano de fundo persistente que as extensões da Web do iOS não suportam. Experimente uma versão compatível com Manifest V3 ou Safari.";
 "userscript_new" = "Novo roteiro";
 "userscript_edit" = "Editar roteiro";
-"userscript_choose_file" = "Escolha UserScript Arquivo (.js)…";
+"userscript_choose_file" = "Escolher script…";
 "userscript_install_footer" = "Toque em uma linha de origem para abri-la na guia Soulo atual. Um link .user.js abre uma confirmação de instalação. JavaScript padrão e um amplo conjunto de APIs GM são suportados; os scripts não são executados na navegação privada e os arquivos @require externos não são executados.";
 "userscript_install_failed" = "UserScript Não foi possível instalar";
 "web_extension_temporarily_disabled" = "As extensões padrão do navegador ficam temporariamente indisponíveis enquanto o teste de compatibilidade é concluído.";

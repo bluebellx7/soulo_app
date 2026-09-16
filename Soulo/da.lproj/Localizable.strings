@@ -264,8 +264,8 @@
 "ad_block_popups" = "Rens popups og overlejringer";
 "ad_block_management" = "Annonceblokering";
 "ad_block_allowlist" = "Tilladte websteder";
-"ad_block_disable_current_site" = "Deaktiver annonceblokering på dette websted";
-"ad_block_enable_current_site" = "Aktiver annonceblokering på dette websted";
+"ad_block_disable_current_site" = "Tillad annoncer";
+"ad_block_enable_current_site" = "Bloker annoncer";
 "ad_block_site_toggle_desc" = "Ændring af dette genindlæser den aktuelle side, så den nye annonceblokindstilling kan anvendes.";
 "ad_block_no_allowlisted_sites" = "Ingen tilladte websteder.";
 "ad_block_stats" = "Skjulte elementer";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Kompatibilitet";
 "userscript_experimental_title" = "UserScript kompatibilitet";
 "userscript_experimental_desc" = "Understøtter webstedsregler, dokumentstart/afslutning, omfattende GM-lagring og side-API'er, scriptkommandoer, meddelelser, faner, downloads, cookies, ressourcer og anmodninger med tilladelser. Gennemgå hvert script før installation; eksterne @require-filer udføres ikke.";
-"extension_choose_file" = "Vælg udvidelsesfil eller mappe...";
+"extension_choose_file" = "Vælg fil eller mappe…";
 "extension_installing" = "Kontrollerer og installerer udvidelse...";
 "extension_install_failed" = "Udvidelsen kunne ikke installeres";
 "extension_permissions_summary" = "%d tilladelser · %d webstedsregler";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Denne udvidelse bruger en vedvarende baggrundsside, som iOS Web Extensions ikke understøtter. Prøv en Manifest V3 eller Safari-kompatibel version.";
 "userscript_new" = "Nyt script";
 "userscript_edit" = "Rediger script";
-"userscript_choose_file" = "Vælg UserScript Fil (.js)...";
+"userscript_choose_file" = "Vælg script…";
 "userscript_install_footer" = "Tryk på en kilderække for at åbne den på den aktuelle Soulo fane. Et .user.js-link åbner en installationsbekræftelse. Standard JavaScript og et bredt sæt af GM API'er understøttes; scripts kører ikke i privat browsing, og eksterne @require-filer udføres ikke.";
 "userscript_install_failed" = "UserScript kunne ikke installeres";
 "web_extension_temporarily_disabled" = "Standardbrowserudvidelser er midlertidigt utilgængelige, mens kompatibilitetstesten er fuldført.";

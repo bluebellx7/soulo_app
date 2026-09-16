@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Cải thiện đọc cuộn liên tục, tách mục lục và tìm kiếm, thêm điều chỉnh phông chữ, giãn dòng và giao diện PDF.
-• Thêm tủ sách dạng lưới và tiện ích, quét QR, nhận dạng chữ trong ảnh và lối tắt quét mã.
-• Cải thiện truy cập bản tải xuống, thao tác tệp, chế độ tối của trang web và hiệu năng.
+• Thêm đánh dấu quảng cáo để ẩn, cải thiện bộ lọc quảng cáo và các tùy chọn quyền riêng tư.
+• Thư mục dấu trang, nhập và xuất HTML, cùng chia sẻ, lưu hoặc sao chép mã QR của trang.
+• Ảnh xem trước vuông, lưu ảnh hàng loạt và cải thiện việc đọc, phát nội dung đa phương tiện và tiện ích tập lệnh.

@@ -1,22 +1,18 @@
-Soulo er en hurtig, privat multisøgningsbrowser til iPhone og iPad. Indtast én forespørgsel, og skift derefter mellem mere end 40 søge-, social-, video-, shopping-, videns- og AI-platforme uden at indtaste igen.
+Soulo er en browser til iPhone og iPad med søgning på flere platforme. Skriv én gang, og skift mellem søgemaskiner, sociale medier, video, shopping, viden og AI uden at gentage søgningen.
 
-BROWSE DIN VEJ
-• Faner, bogmærker, historik, downloads og tilpassede søgeplatforme
-• Privat browsing, tracker-beskyttelse, annonceblokering og kontrol pr. websted
-• Mobil- og desktop-webstedstilstande, sidezoom, oversættelse og helsidesoptagelse
-• Download billeder, video, lyd og dokumenter med websideressourceinspektøren
-• Udtræk tekst fra websidebilleder med Live Text
+Find information, læs artikler, afspil medier og administrer downloads i samme browser.
 
-BYGGET TIL iPHONE OG iPAD
-• Flere uafhængige vinduer på iPad
-• Del links eller tekst direkte til Soulo
-• Søg og åbn downloads fra Siri, Shortcuts, Control Center, låseskærmen og handlingsknappen
-• Baggrundsdownloads med reelle fremskridt og pause/genoptag
-• Liveaktiviteter og Dynamic Island status
+• Søgning: tilføj platforme, saml dem i grupper, og vælg rækkefølgen. Søg efter markeret tekst i en ny Soulo-fane.
+• Annoncer og privatliv: filtrer annoncer, abonnér på eksterne regler, og markér annoncer, du vil skjule. Administrer filtre og sporingsbeskyttelse pr. websted. Privat browsing gemmer ikke historik.
+• Lyd og video: hastighed, gentagelse, flydende miniafspiller, billede i billede, baggrundsafspilning og AirPlay. Gem videobilleder, spejlvend billedet, og hold nede for midlertidigt at øge hastigheden.
+• Filer: find billeder, lyd, video og dokumenter på websider, og gem flere billeder ad gangen. Vis filer som liste eller omslagsgitter, omdøb, importér fra Fotos, og overfør via Wi-Fi.
+• Arkiver: udpak ZIP, RAR og 7z. Opret ZIP- og 7z-arkiver med valgfri adgangskodebeskyttelse.
+• Læsning: TXT, PDF, EPUB og understøttede DRM-frie MOBI-, AZW- og AZW3-bøger. Juster skrifttype, størrelse, linjeafstand og baggrund. Bøger med flydende layout kan vises på forenklet eller traditionelt kinesisk. Læsetilstanden udtrækker artikler og lader dig fortsætte på næste side.
+• Udvidelser: importér, rediger og kør JavaScript-brugerscripts, administrer websteder og tilladelser, og installér kompatible WebExtensions.
+• Webværktøjer: oversættelse, søgning på siden, skærmbilleder af hele sider, tekstgenkendelse i billeder, computer-/mobilvisning, egen brugeragent og webstedscertifikater.
+• Bogmærker: mapper og import/eksport af HTML-bogmærker til Chrome, Edge og andre browsere. Opret QR-koder med webstedets ikon, og del, gem eller kopiér dem.
+• Tilpasning: baggrunde, værktøjslinje og hurtige handlinger på appikonet. Åbn funktioner via widgets, Genveje og URL-skemaer. Synkroniser eventuelt indstillinger med iCloud.
 
-UDVID WEBNET
-Installer UserScripts eller kompatible WebExtensions, administrer tilladelser tydeligt, og opret dine egne scripts med den indbyggede API-dokumentation.
+Tilgængelighed af medier, bøger og udvidelser afhænger af filformat, webstedets begrænsninger og systemversion.
 
-Soulo gemmer browserdata lokalt, medmindre du aktiverer synkronisering af iCloud indstillinger. Privat browsing gemmer ikke historik.
-
-Læs behageligt, åbn bogreolen fra en widget, scan QR-koder, og udtræk tekst fra fotos.
+Support: contact@dkluge.com

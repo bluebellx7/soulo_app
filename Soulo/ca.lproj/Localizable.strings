@@ -264,8 +264,8 @@
 "ad_block_popups" = "Neteja les finestres emergents i les superposicions";
 "ad_block_management" = "Bloqueig d'anuncis";
 "ad_block_allowlist" = "Llocs permesos";
-"ad_block_disable_current_site" = "Desactiva el bloqueig d'anuncis en aquest lloc";
-"ad_block_enable_current_site" = "Activa el bloqueig d'anuncis en aquest lloc";
+"ad_block_disable_current_site" = "Permet anuncis";
+"ad_block_enable_current_site" = "Bloca anuncis";
 "ad_block_site_toggle_desc" = "En canviar-ho, es tornarà a carregar la pàgina actual perquè s'apliqui la nova configuració de bloqueig d'anuncis.";
 "ad_block_no_allowlisted_sites" = "No hi ha llocs permesos.";
 "ad_block_stats" = "Elements ocults";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Compatibilitat";
 "userscript_experimental_title" = "Compatibilitat UserScript";
 "userscript_experimental_desc" = "Admet regles del lloc, inici/finalització de documents, emmagatzematge extensiu de GM i API de pàgines, ordres d'script, notificacions, pestanyes, descàrregues, galetes, recursos i sol·licituds amb àmbit de permís. Reviseu cada script abans d'instal·lar-lo; Els fitxers @require externs no s'executen.";
-"extension_choose_file" = "Trieu el fitxer d'extensió o la carpeta...";
+"extension_choose_file" = "Tria un fitxer o carpeta…";
 "extension_installing" = "S'està comprovant i instal·lant l'extensió...";
 "extension_install_failed" = "No s'ha pogut instal·lar l'extensió";
 "extension_permissions_summary" = "%d permisos · %d regles del lloc web";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Aquesta extensió utilitza una pàgina de fons persistent que les extensions web d'iOS no admeten. Proveu una versió compatible amb Manifest V3 o Safari.";
 "userscript_new" = "Nou guió";
 "userscript_edit" = "Edita el guió";
-"userscript_choose_file" = "Trieu UserScript Fitxer (.js)...";
+"userscript_choose_file" = "Tria un script…";
 "userscript_install_footer" = "Toqueu una fila d'origen per obrir-la a la pestanya Soulo actual. Un enllaç .user.js obre una confirmació d'instal·lació. S'admeten JavaScript estàndard i un ampli conjunt d'API de GM; els scripts no s'executen a la navegació privada i els fitxers @require externs no s'executen.";
 "userscript_install_failed" = "UserScript No s'ha pogut instal·lar";
 "web_extension_temporarily_disabled" = "Les extensions estàndard del navegador no estan disponibles temporalment mentre es completen les proves de compatibilitat.";

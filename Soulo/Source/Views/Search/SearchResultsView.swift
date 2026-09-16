@@ -39,6 +39,7 @@ struct SearchResultsView: View {
     // Persist last selected group
     @AppStorage("last_selected_region") private var lastRegion: String = ""
     @AppStorage("last_selected_group_id") private var lastGroupID: String = ""
+    @AppStorage("show_top_tab_bar") private var showTopTabBar = true
     @AppStorage("show_top_search_bar") private var showTopSearchBar = BrowserInitialPreferences.showTopSearchBar
     @AppStorage(AppConstants.StorageKeys.keepFullscreenBrowsing) private var keepFullscreenBrowsing = false
     @AppStorage(AppConstants.StorageKeys.shakeAction) private var shakeAction = BrowserShakeAction.none.rawValue
@@ -87,10 +88,11 @@ struct SearchResultsView: View {
                         }
 
                         // Tab bar — show when multiple tabs
-                        if tabManager.tabs.count > 1 {
+                        if showTopTabBar && tabManager.tabs.count > 1 {
                             BrowserTabBar(tabManager: tabManager) {
                                 tabManager.createTab()
                             }
+                            .accessibilityIdentifier("browser.top-tab-bar")
                             .transition(.move(edge: .top).combined(with: .opacity))
                         }
 
@@ -417,6 +419,12 @@ struct SearchResultsView: View {
                 }
             }
             // Otherwise: returning to existing tabs, keep as-is
+        }
+        .onChange(of: searchVM.externalSearchRequestID) { _, requestID in
+            guard requestID != nil, searchVM.searchID != lastSearchID,
+                  !searchVM.currentKeyword.isEmpty else { return }
+            lastSearchID = searchVM.searchID
+            loadCurrentPlatformURL()
         }
         .onChange(of: keepFullscreenBrowsing) { _, enabled in
             guard PersistentFullscreenBehavior.shouldEnter(

@@ -11,20 +11,42 @@ struct SessionPlayerController: UIViewControllerRepresentable {
         view.delegate = context.coordinator
         view.allowsPictureInPicturePlayback = true
         view.canStartPictureInPictureAutomaticallyFromInline = true
+        let hold = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleHold(_:)))
+        hold.minimumPressDuration = 0.4
+        hold.delegate = context.coordinator
+        view.view.addGestureRecognizer(hold)
         return view
     }
     func updateUIViewController(_ view: AVPlayerViewController, context: Context) {}
     static func dismantleUIViewController(_ view: AVPlayerViewController, coordinator: Coordinator) {
         coordinator.detached = true
         if !coordinator.pipActive { view.player = nil }
-        Task { @MainActor in MediaSession.shared.playerSurfaces = max(0, MediaSession.shared.playerSurfaces - 1) }
+        Task { @MainActor in
+            MediaSession.shared.endTemporaryRate()
+            MediaSession.shared.playerSurfaces = max(0, MediaSession.shared.playerSurfaces - 1)
+        }
     }
-    final class Coordinator: NSObject, AVPlayerViewControllerDelegate {
+    final class Coordinator: NSObject, AVPlayerViewControllerDelegate, UIGestureRecognizerDelegate {
+        @objc func handleHold(_ gesture: UILongPressGestureRecognizer) {
+            if gesture.state == .began { MediaSession.shared.beginTemporaryRate() }
+            else if [.ended, .cancelled, .failed].contains(gesture.state) { MediaSession.shared.endTemporaryRate() }
+        }
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            var view = touch.view
+            while let current = view {
+                if current is UIControl { return false }
+                view = current.superview
+            }
+            return true
+        }
         var pipActive = false
         var detached = false
         func playerViewControllerWillStartPictureInPicture(_ playerViewController: AVPlayerViewController) {
             pipActive = true
-            Task { @MainActor in MediaSession.shared.retainedPiPController = playerViewController }
+            Task { @MainActor in
+                MediaSession.shared.retainedPiPController = playerViewController
+                MediaSession.shared.retainedPiPDelegate = self
+            }
         }
         func playerViewControllerDidStopPictureInPicture(_ playerViewController: AVPlayerViewController) {
             pipActive = false
@@ -33,6 +55,7 @@ struct SessionPlayerController: UIViewControllerRepresentable {
                 if detach { playerViewController.player = nil }
                 if MediaSession.shared.retainedPiPController === playerViewController {
                     MediaSession.shared.retainedPiPController = nil
+                    MediaSession.shared.retainedPiPDelegate = nil
                 }
             }
         }
@@ -42,6 +65,7 @@ struct SessionPlayerController: UIViewControllerRepresentable {
             pipActive = false
             Task { @MainActor in
                 MediaSession.shared.retainedPiPController = nil
+                MediaSession.shared.retainedPiPDelegate = nil
                 MediaSession.shared.error = error.localizedDescription
             }
         }
@@ -60,8 +84,34 @@ struct SessionPlayerController: UIViewControllerRepresentable {
 
 struct MediaControls: View {
     @ObservedObject var session = MediaSession.shared
+    @ObservedObject private var pip = MediaSession.shared.pictureInPicture
+    var fullScreen: (() -> Void)? = nil
     var body: some View {
         VStack(spacing: 20) {
+            if session.hasVideo {
+                HStack {
+                    if pip.supported {
+                    Button { pip.toggle() } label: {
+                        Label(ToolText.text("media_pip"), systemImage: pip.active ? "pip.exit" : "pip.enter")
+                            .font(.subheadline.weight(.medium)).frame(minHeight: 44)
+                    }
+                    .disabled(!pip.possible && !pip.active)
+                    .accessibilityIdentifier("media.picture-in-picture")
+                    .accessibilityHint(ToolText.text("media_pip_hint"))
+                    }
+                    Spacer()
+                    AirPlayRoutePicker().frame(width: 44, height: 44)
+                    if let fullScreen {
+                        Button(action: fullScreen) {
+                            Image(systemName: "arrow.up.left.and.arrow.down.right").frame(width: 44, height: 44)
+                        }
+                        .disabled(pip.active)
+                        .accessibilityLabel(ToolText.text("media_fullscreen"))
+                    }
+                }
+                .foregroundStyle(.primary)
+                .buttonStyle(.borderless)
+            }
             if session.duration > 0 {
                 HStack {
                     Text(clock(session.elapsed))
@@ -125,34 +175,10 @@ struct MediaControls: View {
 
 struct MediaPlayerPage: View {
     @ObservedObject var session = MediaSession.shared
-    @Environment(\.dismiss) private var dismiss
     var body: some View {
-
-        VStack(spacing: 0) {
-            MediaPlaybackSurface()
-            MediaControls()
-        }
+        MediaPlaybackContent()
         .navigationTitle(session.title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    if let url = session.url {
-                        ShareLink(item: url) { Label(ToolText.text("share_media"), systemImage: "link") }
-                    }
-                    if let url = session.pageURL {
-                        ShareLink(item: url) { Label(ToolText.text("share_page"), systemImage: "globe") }
-                    }
-                    Button(ToolText.text("stop"), role: .destructive) {
-                        session.stop()
-                        dismiss()
-                    }
-                } label: {
-                    Image(systemName: "ellipsis").font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
-                }
-            }
-        }
-
     }
 }
 
@@ -165,13 +191,14 @@ enum MiniPlayerDocking {
 
 struct MediaMiniPlayer: View {
     @ObservedObject var session = MediaSession.shared
+    @ObservedObject private var pip = MediaSession.shared.pictureInPicture
     @State private var trailing = true
     @State private var docked = false
     @State private var y: CGFloat = 0
     @GestureState private var drag = CGSize.zero
     var body: some View {
         GeometryReader { geometry in
-            if session.url != nil && session.playerSurfaces == 0 && !session.expanded {
+            if session.url != nil && session.playerSurfaces == 0 && !session.expanded && !pip.active && session.retainedPiPController == nil {
                 let width = min(320.0, max(44, geometry.size.width - 24))
                 let center = docked ? (trailing ? geometry.size.width - 18 : 18)
                     : (trailing ? geometry.size.width - width / 2 - 12 : width / 2 + 12)
@@ -196,7 +223,7 @@ struct MediaMiniPlayer: View {
                             Button { session.expanded = true } label: {
                                 HStack(spacing: 8) {
                                     if session.hasVideo {
-                                        MiniVideoSurface().frame(width: 52, height: 38)
+                                        InlineVideoSurface(countsAsPlayerSurface: false).frame(width: 52, height: 38)
                                             .clipShape(RoundedRectangle(cornerRadius: 7))
                                     } else {
                                         Image(systemName: "waveform").foregroundStyle(Color.themePrimary)
@@ -238,26 +265,20 @@ struct MediaMiniPlayer: View {
     }
 }
 
-private struct MiniVideoSurface: UIViewRepresentable {
-    final class Surface: UIView {
-        override class var layerClass: AnyClass { AVPlayerLayer.self }
-    }
-    func makeUIView(context: Context) -> Surface {
-        let view = Surface()
-        let layer = view.layer as! AVPlayerLayer
-        layer.player = MediaSession.shared.player
-        layer.videoGravity = .resizeAspectFill
-        return view
-    }
-    func updateUIView(_ view: Surface, context: Context) {}
-    static func dismantleUIView(_ view: Surface, coordinator: Void) { (view.layer as? AVPlayerLayer)?.player = nil }
-}
-
 struct MediaPlaybackSurface: View {
     @ObservedObject private var session = MediaSession.shared
     var body: some View {
         if session.hasVideo {
-            SessionPlayerController()
+            if session.retainedPiPController != nil {
+                // A native full-screen player's PiP still owns video rendering.
+                // Attaching a second AVPlayerLayer here would interrupt that window.
+                Label(ToolText.text("media_pip"), systemImage: "pip")
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(.black)
+            } else {
+                InlineVideoSurface()
+            }
         } else {
             VStack(spacing: 24) {
                 Spacer()
@@ -317,4 +338,154 @@ private struct MediaPlayerNavigation: ViewModifier {
 }
 extension View {
     func mediaPlayerNavigation() -> some View { modifier(MediaPlayerNavigation()) }
+}
+
+private struct InlineVideoSurface: UIViewRepresentable {
+    @ObservedObject private var session = MediaSession.shared
+    var countsAsPlayerSurface = true
+    final class Host: UIView {
+        let attachment = UUID()
+        var countsAsPlayerSurface = true
+        weak var video: MediaPictureInPicture.Surface?
+        @objc func handleHold(_ gesture: UILongPressGestureRecognizer) {
+            if gesture.state == .began { MediaSession.shared.beginTemporaryRate() }
+            else if [.ended, .cancelled, .failed].contains(gesture.state) { MediaSession.shared.endTemporaryRate() }
+        }
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            video?.transform = .identity
+            video?.frame = bounds
+            video?.transform = CGAffineTransform(scaleX: MediaSession.shared.mirrored ? -1 : 1, y: 1)
+        }
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            MediaSession.shared.pictureInPicture.didMount()
+        }
+    }
+    func makeUIView(context: Context) -> Host {
+        let host = Host()
+        host.countsAsPlayerSurface = countsAsPlayerSurface
+        let surface = MediaSession.shared.pictureInPicture.attach(id: host.attachment, primary: countsAsPlayerSurface)
+        host.video = surface
+        if let surface { host.addSubview(surface) }
+        host.backgroundColor = .black
+        if countsAsPlayerSurface {
+            let hold = UILongPressGestureRecognizer(target: host, action: #selector(Host.handleHold(_:)))
+            hold.minimumPressDuration = 0.4
+            host.addGestureRecognizer(hold)
+            Task { @MainActor in MediaSession.shared.playerSurfaces += 1 }
+        }
+        return host
+    }
+    func updateUIView(_ view: Host, context: Context) { view.setNeedsLayout() }
+    static func dismantleUIView(_ view: Host, coordinator: Void) {
+        // The session keeps the source layer alive while system PiP is active.
+        if view.video?.superview === view { view.video?.removeFromSuperview() }
+        Task { @MainActor in
+            MediaSession.shared.pictureInPicture.detach(id: view.attachment)
+            if view.countsAsPlayerSurface {
+                MediaSession.shared.endTemporaryRate()
+                MediaSession.shared.playerSurfaces = max(0, MediaSession.shared.playerSurfaces - 1)
+            }
+        }
+    }
+}
+
+/// The same controls and PiP source are used by file, download and web-resource previews.
+struct MediaPlaybackContent: View {
+    @ObservedObject private var session = MediaSession.shared
+    @State private var showingFullScreen = false
+    @State private var frame: CapturedMediaFrame?
+    @State private var capturing = false
+    @State private var captureTask: Task<Void, Never>?
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        VStack(spacing: 0) {
+            if !showingFullScreen {
+                MediaPlaybackSurface().overlay(alignment: .top) {
+                    if session.temporaryRate {
+                        Text("2×").font(.callout.monospacedDigit().weight(.semibold))
+                            .padding(.horizontal, 16).padding(.vertical, 8)
+                            .background(.regularMaterial, in: Capsule()).padding().allowsHitTesting(false)
+                    }
+                }
+            }
+            MediaControls(fullScreen: { showingFullScreen = true })
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    if session.hasVideo {
+                        Toggle(isOn: $session.mirrored) {
+                            ToolMenuLabel(key: "media_mirror", symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right")
+                        }
+                        Button {
+                            capturing = true
+                            captureTask = Task {
+                                defer { capturing = false; captureTask = nil }
+                                do { frame = CapturedMediaFrame(image: try await session.captureFrame()) }
+                                catch is CancellationError { }
+                                catch { session.error = error.localizedDescription }
+                            }
+                        } label: { ToolMenuLabel(key: "media_snapshot", symbol: "camera") }
+                        .disabled(capturing)
+                    }
+                    if let url = session.url {
+                        ShareLink(item: url) { ToolMenuLabel(key: "share_media", symbol: "square.and.arrow.up") }
+                    }
+                    if let url = session.pageURL {
+                        ShareLink(item: url) { ToolMenuLabel(key: "share_page", symbol: "globe") }
+                    }
+                    Button(ToolText.text("stop"), role: .destructive) { session.stop(); dismiss() }
+                } label: { Image(systemName: "ellipsis") }
+                .accessibilityIdentifier("media.options")
+            }
+        }
+        .onDisappear { captureTask?.cancel(); session.endTemporaryRate() }
+        .sheet(item: $frame) { item in MediaFrameShare(image: item.image) }
+        .fullScreenCover(isPresented: $showingFullScreen) {
+            Group {
+                if session.mirrored {
+                    VStack(spacing: 0) {
+                        MediaPlaybackSurface()
+                        MediaControls()
+                    }.background(.black).preferredColorScheme(.dark)
+                } else { SessionPlayerController().ignoresSafeArea() }
+            }
+                .overlay(alignment: .topLeading) {
+                    Button { showingFullScreen = false } label: {
+                        Image(systemName: "xmark").font(.headline).padding(14)
+                            .background(.regularMaterial, in: Circle())
+                    }.padding().accessibilityLabel(ToolText.text("close"))
+                }
+        }
+    }
+}
+
+private struct CapturedMediaFrame: Identifiable {
+    let id = UUID()
+    let image: UIImage
+}
+private struct MediaFrameShare: UIViewControllerRepresentable {
+    let image: UIImage
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: [image], applicationActivities: nil)
+    }
+    func updateUIViewController(_ view: UIActivityViewController, context: Context) {}
+}
+
+/// Menu icons use the same neutral colors as the rest of the browser's menus.
+struct ToolMenuLabel: View {
+    let key: String
+    let symbol: String
+    @Environment(\.colorScheme) private var colorScheme
+    var body: some View {
+        Label {
+            Text(ToolText.text(key))
+        } icon: {
+            if let image = UIImage(systemName: symbol)?.withTintColor(colorScheme == .dark ? .white : .black, renderingMode: .alwaysOriginal) {
+                Image(uiImage: image)
+            } else { Image(systemName: symbol).foregroundStyle(.primary) }
+        }
+    }
 }

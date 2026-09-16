@@ -1,4 +1,5 @@
 import './view.js'
+import { ChineseDisplay } from './chinese-display.js'
 import { EPUB } from './epub.js'
 import { MOBI } from './mobi.js'
 import { unzlibSync } from './vendor/fflate.js'
@@ -6,6 +7,10 @@ import { configure, ZipReader, BlobReader, TextWriter, BlobWriter } from './vend
 const post = (type, payload = {}) => window.webkit.messageHandlers.book.postMessage({ type, ...payload })
 const view = document.createElement('foliate-view')
 document.body.append(view)
+const chineseDisplay = new ChineseDisplay(
+    () => (view.renderer?.getContents() || []).map(x => x.doc),
+    (texts, mode) => window.webkit.messageHandlers.chineseText.postMessage({ texts, mode }))
+view.addEventListener('load', event => chineseDisplay.apply(event.detail.doc))
 let last = '', ready = false
 const flatten = items => (items ?? []).flatMap(x => [{ label: x.label, href: x.href }, ...flatten(x.subitems)])
 view.addEventListener('relocate', event => {
@@ -25,6 +30,7 @@ const textSection = (text, index) => {
     }
 }
 window.soulo = {
+    chinese(mode) { chineseDisplay.setMode(mode) },
     canToggleAt(x, y) {
         for (const { doc } of view.renderer?.getContents() || []) {
             if (!doc.getSelection()?.isCollapsed) return false

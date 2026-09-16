@@ -145,14 +145,23 @@ final class ReaderExperienceTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(25))
         }
         let surface = try XCTUnwrap(web)
-        try await Task.sleep(for: .milliseconds(200))
+        // Article DOM insertion precedes the native content-size/progress KVO
+        // update. Check the initial position after the laid-out content arrives.
+        for _ in 0..<100 {
+            if surface.scrollView.contentSize.height > surface.bounds.height * 2, progress < 0.05 { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
         XCTAssertLessThan(progress, 0.05, "Initial layout should report the start, not a completed book")
         let indent = try await surface.evaluateJavaScript("getComputedStyle(document.querySelector('article > p')).textIndent") as? String
         XCTAssertEqual(indent, "36px")
         let screenshot = try await surface.takeSnapshot(configuration: nil)
         let attachment = XCTAttachment(image: screenshot); attachment.name = "reader-book-paper"; attachment.lifetime = .keepAlways; add(attachment)
         host.rootView = ArticleSurface(articles: [first, second], size: 20, line: 1.8, theme: "dark", font: "sans", targetChapter: second.id, onProgress: { progress = $0 })
-        try await Task.sleep(for: .milliseconds(500))
+        for _ in 0..<100 {
+            if let top = (try? await surface.evaluateJavaScript("document.querySelectorAll('article')[1].getBoundingClientRect().top")) as? Double,
+               abs(top) < 2, progress > 0.3 { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
         let chapterTop = try await surface.evaluateJavaScript("document.querySelectorAll('article')[1].getBoundingClientRect().top") as? Double
         XCTAssertEqual(try XCTUnwrap(chapterTop), 0, accuracy: 2)
         XCTAssertGreaterThan(progress, 0.3)

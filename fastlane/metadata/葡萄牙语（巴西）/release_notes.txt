@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Leitura contínua aprimorada, com sumário e busca separados, controles de fonte e espaçamento entre linhas e aparência de PDFs.
-• Biblioteca em grade e widget na tela de início, leitura de QR, reconhecimento de texto em fotos e atalho para escanear.
-• Melhorias no acesso a downloads, nas ações de arquivos, no modo escuro de páginas web e no desempenho.
+• Marque anúncios para ocultá-los. Melhoramos os filtros de anúncios e os controles de privacidade.
+• Pastas de favoritos, importação e exportação HTML e QR codes de páginas para compartilhar, salvar ou copiar.
+• Prévias quadradas, salvamento de imagens em lote e melhorias na leitura, reprodução de mídia e extensões de scripts.

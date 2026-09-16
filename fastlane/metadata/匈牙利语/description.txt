@@ -1,22 +1,18 @@
-A Soulo egy gyors, privát többkeresős böngésző iPhone és iPad készülékekhez. Adjon meg egy lekérdezést, majd váltson több mint 40 keresési, közösségi, videós, vásárlási, tudás- és mesterséges intelligencia platform között anélkül, hogy újragépelne.
+A Soulo többplatformos keresést kínáló böngésző iPhone-ra és iPadre. Írja be egyszer a keresést, majd váltson keresők, közösségi oldalak, videók, vásárlás, tudás és AI-platformok között újragépelés nélkül.
 
-BÖNGÉSZEN ÚTJÁT
-• Lapok, könyvjelzők, előzmények, letöltések és testreszabható keresési platformok
-• Privát böngészés, nyomkövető védelem, hirdetések blokkolása és webhelyenkénti vezérlés
-• Mobil és asztali webhelymódok, oldalnagyítás, fordítás és teljes oldal rögzítése
-• Töltse le a képeket, videókat, hanganyagokat és dokumentumokat a weboldal erőforrás-ellenőrzőjével
-• Szöveg kinyerése a weboldal képeiből a Live Text segítségével
+Keressen információt, olvasson cikkeket, játsszon le médiát és kezelje letöltéseit egy böngészőben.
 
-iPHONE-HOZ ÉS iPAD-HOZ ÉPÍTETT
-• Több független ablak az iPaden
-• Ossza meg a linkeket vagy szöveget közvetlenül a következővel: Soulo
-• Letöltések keresése és megnyitása innen: Siri, Shortcuts, Control Center, a Lezárási képernyő és a Művelet gomb
-• Háttérletöltések valós előrehaladással és szüneteltetéssel/folytatással
-• Élő tevékenységek és Dynamic Island állapot
+• Keresés: adjon hozzá platformokat, csoportosítsa és rendezze őket. Keressen a kijelölt szövegre új Soulo-lapon.
+• Hirdetések és adatvédelem: hirdetésszűrés, külső szabálylisták és kézzel kijelölt hirdetések elrejtése. Kezelje a szűrőket és a követésvédelmet webhelyenként. A privát böngészés nem ment előzményeket.
+• Hang és videó: sebesség, ismétlés, lebegő minilejátszó, kép a képben, háttérlejátszás és AirPlay. Mentsen videóképkockákat, tükrözze a képet, vagy tartsa nyomva az átmeneti gyorsításhoz.
+• Fájlok: keressen képeket, hangot, videót és dokumentumokat az oldalakon, és mentsen több képet egyszerre. Lista vagy borítórács, átnevezés, importálás a Fotókból és Wi-Fi-átvitel.
+• Tömörítés: ZIP, RAR és 7z kibontása; ZIP és 7z létrehozása választható jelszóvédelemmel.
+• Olvasás: TXT, PDF, EPUB és támogatott, DRM-mentes MOBI-, AZW- és AZW3-könyvek. Állítsa be a betűtípust, méretet, sorközt és hátteret. Az áttördelhető könyvek egyszerűsített vagy hagyományos kínai megjelenítést is kínálnak. Az olvasómód kiemeli a cikket, és lehetővé teszi a folytatást a következő oldalon.
+• Bővítmények: JavaScript-felhasználói szkriptek importálása, szerkesztése és futtatása, webhelyek és engedélyek kezelése, kompatibilis WebExtensions telepítése.
+• Webes eszközök: fordítás, keresés az oldalon, teljes oldalas képernyőkép, képek szövegfelismerése, asztali/mobil mód, egyéni user agent és webhelytanúsítványok.
+• Könyvjelzők: mappák és a Chrome, Edge vagy más böngészők HTML-könyvjelzőinek importálása/exportálása. Készítsen QR-kódot a webhely ikonjával, majd ossza meg, mentse vagy másolja.
+• Testreszabás: háttérképek, eszközsor és az appikon gyorsműveletei. Elérés widgetekkel, Parancsokkal és URL-sémákkal. Választható iCloud-beállításszinkronizálás.
 
-BŐVÍTSD KI A WELT
-Telepítse a(z) UserScripts vagy kompatibilis WebExtensions, kezelje egyértelműen az engedélyeket, és hozza létre saját szkriptjeit a beépített API-dokumentáció segítségével.
+A média, könyvek és bővítmények elérhetősége a formátumtól, a webhely korlátozásaitól és a rendszerverziótól függ.
 
-A Soulo helyileg tárolja a böngészési adatokat, hacsak nem engedélyezi a iCloud beállítások szinkronizálását. A privát böngészés nem menti az előzményeket.
-
-Olvasson kényelmesen, nyissa meg könyvtárát widgetből, olvasson be QR-kódokat és ismerjen fel szöveget a fotókon.
+Támogatás: contact@dkluge.com

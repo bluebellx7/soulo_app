@@ -6,6 +6,7 @@ struct ToolIllustration: View {
         case files = "IllustrationFiles"
         case books = "IllustrationBooks"
         case transfer = "IllustrationTransfer"
+        case pageQR = "IllustrationPageQR"
     }
 
     let scene: Scene

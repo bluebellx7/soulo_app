@@ -1,22 +1,18 @@
-Soulo on nopea, yksityinen usean haun selain iPhonelle ja iPadille. Kirjoita yksi kysely ja vaihda sitten yli 40 haku-, sosiaali-, video-, ostos-, tieto- ja tekoälyalustan välillä kirjoittamatta uudelleen.
+Soulo on iPhonen ja iPadin selain, jolla haet useilta alustoilta. Kirjoita hakusi kerran ja vaihda hakukoneiden, somen, videoiden, ostosten, tiedon ja tekoälyn välillä kirjoittamatta uudelleen.
 
-SELAA TEISI
-• Välilehdet, kirjanmerkit, historia, lataukset ja mukautettavat hakuympäristöt
-• Yksityinen selaus, seurantasuojaus, mainosten esto ja sivustokohtainen hallinta
-• Mobiili- ja työpöytäsivuston tilat, sivun zoomaus, käännös ja koko sivun kaappaus
-• Lataa kuvia, videoita, ääntä ja asiakirjoja verkkosivun resurssien tarkastajalla
-• Poimi tekstiä verkkosivun kuvista komennolla Live Text
+Etsi tietoa, lue artikkeleita, toista mediaa ja hallitse latauksia samassa selaimessa.
 
-RAKENNETTU iPHONELLE JA iPadILLE
-• Useita itsenäisiä ikkunoita iPadissa
-• Jaa linkkejä tai tekstiä suoraan osoitteeseen Soulo
-• Hae ja avaa latauksia kohdista Siri, Shortcuts, Control Center, Lukitusnäyttö ja toimintopainike
-• Taustalataukset todellisella edistymisellä ja tauko/jatkaminen
-• Live-tapahtumat ja Dynamic Island tila
+• Haku: lisää alustoja, ryhmittele ja järjestä niitä. Hae valittua tekstiä uudessa Soulo-välilehdessä.
+• Mainokset ja yksityisyys: suodata mainoksia, tilaa ulkopuolisia sääntölistoja ja merkitse piilotettavat mainokset itse. Hallitse suodatusta ja seurannan estoa sivustoittain. Yksityinen selaus ei tallenna historiaa.
+• Ääni ja video: nopeudensäätö, toisto silmukassa, kelluva minisoitin, kuva kuvassa, taustatoisto ja AirPlay. Tallenna videon ruutuja, peilaa kuva ja nopeuta toistoa tilapäisesti pitkällä painalluksella.
+• Tiedostot: löydä sivujen kuvat, ääni, videot ja asiakirjat ja tallenna useita kuvia kerralla. Selaa luettelona tai kansiruudukkona, nimeä uudelleen, tuo Kuvista ja siirrä Wi-Fi-yhteydellä.
+• Pakkaus: pura ZIP-, RAR- ja 7z-tiedostoja. Luo ZIP- ja 7z-paketteja halutessasi salasanasuojauksella.
+• Lukeminen: TXT, PDF, EPUB ja tuetut DRM-vapaat MOBI-, AZW- ja AZW3-kirjat. Säädä fonttia, kokoa, riviväliä ja taustaa. Mukautuvan asettelun kirjoissa voit vaihtaa kiinan yksinkertaistetun ja perinteisen kirjoitusasun välillä. Lukutila poimii artikkelin ja antaa jatkaa seuraavalle sivulle.
+• Laajennukset: tuo, muokkaa ja suorita JavaScript-käyttäjäskriptejä, hallitse sivustokohdistusta ja oikeuksia sekä asenna yhteensopivia WebExtension-laajennuksia.
+• Verkkotyökalut: käännös, sivulta haku, koko sivun kuvakaappaus, kuvien tekstintunnistus, työpöytä-/mobiilitila, oma käyttäjäagentti ja sivustojen varmenteet.
+• Kirjanmerkit: kansiot sekä Chromen, Edgen ja muiden selainten HTML-kirjanmerkkien tuonti ja vienti. Luo sivun kuvakkeella varustettu QR-koodi ja jaa, tallenna tai kopioi se.
+• Mukautus: taustakuvat, työkalupalkki ja sovelluskuvakkeen pikatoiminnot. Käytä widgettejä, Pikakomentoja ja URL-skeemoja. Synkronoi asetukset halutessasi iCloudiin.
 
-LAAJENTAA VERKKAA
-Asenna UserScripts tai yhteensopivat WebExtensions, hallitse käyttöoikeuksia selkeästi ja luo omia skriptejäsi sisäänrakennetun API-dokumentaation avulla.
+Median, kirjojen ja laajennusten toimivuus riippuu tiedostomuodosta, sivuston rajoituksista ja järjestelmäversiosta.
 
-Soulo tallentaa selaustiedot paikallisesti, ellet ota käyttöön iCloud asetusten synkronointia. Yksityinen selaus ei tallenna historiaa.
-
-Lue mukavasti, avaa kirjahylly widgetistä, skannaa QR-koodeja ja poimi tekstiä valokuvista.
+Tuki: contact@dkluge.com

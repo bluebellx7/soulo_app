@@ -264,8 +264,8 @@
 "ad_block_popups" = "પોપઅપ્સ અને ઓવરલે સાફ કરો";
 "ad_block_management" = "જાહેરાત અવરોધન";
 "ad_block_allowlist" = "મંજૂર સાઇટ્સ";
-"ad_block_disable_current_site" = "આ સાઇટ પર એડ બ્લોકને અક્ષમ કરો";
-"ad_block_enable_current_site" = "આ સાઇટ પર એડ બ્લોકને સક્ષમ કરો";
+"ad_block_disable_current_site" = "જાહેરાતોને મંજૂરી આપો";
+"ad_block_enable_current_site" = "જાહેરાતો રોકો";
 "ad_block_site_toggle_desc" = "આને બદલવાથી વર્તમાન પેજ ફરીથી લોડ થાય છે જેથી નવી એડ-બ્લોક સેટિંગ લાગુ થઈ શકે.";
 "ad_block_no_allowlisted_sites" = "કોઈ મંજૂર સાઇટ્સ નથી.";
 "ad_block_stats" = "છુપાયેલા તત્વો";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "સુસંગતતા";
 "userscript_experimental_title" = "UserScript સુસંગતતા";
 "userscript_experimental_desc" = "સાઇટ નિયમો, દસ્તાવેજ-પ્રારંભ/અંત, વ્યાપક GM સ્ટોરેજ અને પૃષ્ઠ API, સ્ક્રિપ્ટ આદેશો, સૂચનાઓ, ટેબ્સ, ડાઉનલોડ્સ, કૂકીઝ, સંસાધનો અને પરવાનગી-સ્કોપવાળી વિનંતીઓને સમર્થન આપે છે. ઇન્સ્ટોલ કરતા પહેલા દરેક સ્ક્રિપ્ટની સમીક્ષા કરો; external @require ફાઇલો ચલાવવામાં આવતી નથી.";
-"extension_choose_file" = "એક્સ્ટેંશન ફાઇલ અથવા ફોલ્ડર પસંદ કરો...";
+"extension_choose_file" = "ફાઇલ કે ફોલ્ડર પસંદ કરો…";
 "extension_installing" = "એક્સ્ટેંશન તપાસી રહ્યું છે અને ઇન્સ્ટોલ કરી રહ્યું છે...";
 "extension_install_failed" = "એક્સ્ટેંશન ઇન્સ્ટોલ કરી શકાયું નથી";
 "extension_permissions_summary" = "%d પરવાનગીઓ · %d વેબસાઇટ નિયમો";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "આ એક્સ્ટેંશન સતત પૃષ્ઠભૂમિ પૃષ્ઠનો ઉપયોગ કરે છે જેને iOS વેબ એક્સ્ટેન્શન્સ સપોર્ટ કરતા નથી. મેનિફેસ્ટ V3 અથવા સફારી-સુસંગત સંસ્કરણ અજમાવી જુઓ.";
 "userscript_new" = "નવી સ્ક્રિપ્ટ";
 "userscript_edit" = "સ્ક્રિપ્ટ સંપાદિત કરો";
-"userscript_choose_file" = "UserScript ફાઇલ (.js) પસંદ કરો…";
+"userscript_choose_file" = "સ્ક્રિપ્ટ પસંદ કરો…";
 "userscript_install_footer" = "વર્તમાન Soulo ટેબમાં તેને ખોલવા માટે સ્રોત પંક્તિને ટેપ કરો. .user.js લિંક ઇન્સ્ટોલેશન કન્ફર્મેશન ખોલે છે. માનક JavaScript અને GM API નો વ્યાપક સમૂહ સમર્થિત છે; સ્ક્રિપ્ટો ખાનગી બ્રાઉઝિંગમાં ચાલતી નથી અને બાહ્ય @require ફાઇલો ચલાવવામાં આવતી નથી.";
 "userscript_install_failed" = "UserScript ઇન્સ્ટોલ કરી શકાયું નથી";
 "web_extension_temporarily_disabled" = "જ્યારે સુસંગતતા પરીક્ષણ પૂર્ણ થાય ત્યારે માનક બ્રાઉઝર એક્સ્ટેન્શન્સ અસ્થાયી રૂપે અનુપલબ્ધ હોય છે.";

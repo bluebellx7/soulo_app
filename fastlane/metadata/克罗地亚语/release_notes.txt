@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Poboljšano kontinuirano čitanje uz odvojeni sadržaj i pretraživanje te postavke fonta, proreda i izgleda PDF-a.
-• Dodani mrežni prikaz knjiga i widget, skeniranje QR kodova, prepoznavanje teksta na fotografijama i prečac za skeniranje.
-• Poboljšani pristup preuzimanjima, radnje s datotekama, tamni prikaz web-stranica i performanse.
+• Dodano označavanje oglasa za skrivanje te poboljšani filtri i kontrole privatnosti.
+• Mape oznaka, uvoz i izvoz HTML oznaka te dijeljenje, spremanje i kopiranje QR kodova stranica.
+• Kvadratni pregledi datoteka, skupno spremanje slika te poboljšanja čitanja, reprodukcije i skriptnih proširenja.

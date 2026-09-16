@@ -264,8 +264,8 @@
 "ad_block_popups" = "Curățați ferestrele pop-up și suprapunerile";
 "ad_block_management" = "Blocare reclame";
 "ad_block_allowlist" = "Site-uri permise";
-"ad_block_disable_current_site" = "Dezactivați blocarea anunțurilor pe acest site";
-"ad_block_enable_current_site" = "Activați blocarea anunțurilor pe acest site";
+"ad_block_disable_current_site" = "Permite reclame";
+"ad_block_enable_current_site" = "Blochează reclame";
 "ad_block_site_toggle_desc" = "Schimbarea acesteia reîncarcă pagina curentă, astfel încât să se poată aplica noua setare de blocare a anunțurilor.";
 "ad_block_no_allowlisted_sites" = "Nu sunt site-uri permise.";
 "ad_block_stats" = "Elemente ascunse";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Compatibilitate";
 "userscript_experimental_title" = "Compatibilitate UserScript";
 "userscript_experimental_desc" = "Acceptă regulile site-ului, pornirea/sfârșitul documentului, stocare extinsă GM și API-uri de pagină, comenzi de script, notificări, file, descărcări, cookie-uri, resurse și solicitări cu permisiuni. Examinați fiecare script înainte de instalare; fișierele externe @require nu sunt executate.";
-"extension_choose_file" = "Alegeți fișierul de extensie sau folderul...";
+"extension_choose_file" = "Alege fișier sau dosar…";
 "extension_installing" = "Se verifică și se instalează extensia...";
 "extension_install_failed" = "Extensia nu a putut fi instalată";
 "extension_permissions_summary" = "%d permisiuni · %d regulile site-ului";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Această extensie folosește o pagină de fundal persistentă pe care Extensiile Web iOS nu o acceptă. Încercați o versiune Manifest V3 sau compatibilă cu Safari.";
 "userscript_new" = "Script nou";
 "userscript_edit" = "Editați Scriptul";
-"userscript_choose_file" = "Alegeți UserScript Fișier (.js)...";
+"userscript_choose_file" = "Alege script…";
 "userscript_install_footer" = "Atingeți un rând sursă pentru a-l deschide în fila Soulo curentă. Un link .user.js deschide o confirmare de instalare. JavaScript standard și un set larg de API-uri GM sunt acceptate; scripturile nu rulează în Navigarea privată și fișierele externe @require nu sunt executate.";
 "userscript_install_failed" = "UserScript Nu a putut fi instalat";
 "web_extension_temporarily_disabled" = "Extensiile standard de browser sunt temporar indisponibile în timp ce testarea de compatibilitate este finalizată.";

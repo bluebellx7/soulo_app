@@ -264,8 +264,8 @@
 "ad_block_popups" = "ทำความสะอาดป๊อปอัปและโอเวอร์เลย์";
 "ad_block_management" = "การบล็อกโฆษณา";
 "ad_block_allowlist" = "ไซต์ที่ได้รับอนุญาต";
-"ad_block_disable_current_site" = "ปิดการใช้งานบล็อกโฆษณาบนเว็บไซต์นี้";
-"ad_block_enable_current_site" = "เปิดใช้งาน Ad Block บนไซต์นี้";
+"ad_block_disable_current_site" = "อนุญาตโฆษณา";
+"ad_block_enable_current_site" = "บล็อกโฆษณา";
 "ad_block_site_toggle_desc" = "การเปลี่ยนแปลงนี้จะโหลดหน้าปัจจุบันซ้ำเพื่อให้สามารถใช้การตั้งค่าบล็อกโฆษณาใหม่ได้";
 "ad_block_no_allowlisted_sites" = "ไม่มีไซต์ที่ได้รับอนุญาต";
 "ad_block_stats" = "องค์ประกอบที่ซ่อนอยู่";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "ความเข้ากันได้";
 "userscript_experimental_title" = "UserScript ความเข้ากันได้";
 "userscript_experimental_desc" = "รองรับกฎของไซต์, การเริ่ม/สิ้นสุดเอกสาร, พื้นที่จัดเก็บ GM ที่กว้างขวางและ API ของเพจ, คำสั่งสคริปต์, การแจ้งเตือน, แท็บ, การดาวน์โหลด, คุกกี้, ทรัพยากร และคำขอที่กำหนดขอบเขตสิทธิ์ ตรวจสอบทุกสคริปต์ก่อนการติดตั้ง ไฟล์ @require ภายนอกจะไม่ถูกดำเนินการ";
-"extension_choose_file" = "เลือกไฟล์นามสกุลหรือโฟลเดอร์...";
+"extension_choose_file" = "เลือกไฟล์หรือโฟลเดอร์…";
 "extension_installing" = "กำลังตรวจสอบและติดตั้งส่วนขยาย...";
 "extension_install_failed" = "ไม่สามารถติดตั้งส่วนขยายได้";
 "extension_permissions_summary" = "%d สิทธิ์ · %d กฎของเว็บไซต์";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "ส่วนขยายนี้ใช้หน้าพื้นหลังถาวรซึ่ง iOS Web Extensions ไม่รองรับ ลองใช้ Manifest V3 หรือเวอร์ชันที่รองรับ Safari";
 "userscript_new" = "สคริปต์ใหม่";
 "userscript_edit" = "แก้ไขสคริปต์";
-"userscript_choose_file" = "เลือกไฟล์ UserScript (.js)...";
+"userscript_choose_file" = "เลือกสคริปต์…";
 "userscript_install_footer" = "แตะแถวแหล่งที่มาเพื่อเปิดในแท็บ Soulo ปัจจุบัน ลิงก์ .user.js จะเปิดการยืนยันการติดตั้ง รองรับ JavaScript มาตรฐานและชุด GM API ที่หลากหลาย สคริปต์ไม่ทำงานในการดูเว็บแบบส่วนตัวและไฟล์ @require ภายนอกจะไม่ถูกดำเนินการ";
 "userscript_install_failed" = "UserScript ไม่สามารถติดตั้งได้";
 "web_extension_temporarily_disabled" = "ส่วนขยายเบราว์เซอร์มาตรฐานไม่สามารถใช้งานได้ชั่วคราวในขณะที่การทดสอบความเข้ากันได้เสร็จสิ้น";

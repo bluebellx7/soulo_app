@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Improved continuous reading, with separate contents and search views, font and line spacing controls, and PDF appearance settings.
-• Added a bookshelf grid and Home Screen widget, QR scanning, photo text recognition and a scan shortcut.
-• Improved download navigation, file actions, dark web browsing and performance.
+• Added ad marking and improved ad filtering and privacy controls.
+• Organise bookmarks in folders, import and export HTML bookmarks, and share, save or copy webpage QR codes.
+• Square file previews, batch image saving, and improvements to reading, media playback and script extensions.

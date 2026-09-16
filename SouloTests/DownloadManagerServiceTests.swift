@@ -1,9 +1,28 @@
 import AVFoundation
+import Combine
 import XCTest
 @testable import Soulo
 
 @MainActor
 final class DownloadManagerServiceTests: XCTestCase {
+    func testCompletionNoticeIsSentOnceAndNotForCanceledOrFailedDownloads() throws {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        var completed: [UUID] = []
+        let subscription = service.didFinishDownload.sink { completed.append($0.id) }
+        defer { subscription.cancel() }
+        let (item, url) = service.beginDownload(suggestedFilename: "notice.txt", sourceURL: nil)
+        try Data("Saved file".utf8).write(to: url)
+        service.markFinished(id: item.id)
+        service.markFinished(id: item.id)
+        let canceled = service.beginDownload(suggestedFilename: "canceled.txt", sourceURL: nil).0
+        service.markCanceled(id: canceled.id)
+        service.markFinished(id: canceled.id)
+        let failed = service.beginDownload(suggestedFilename: "failed.txt", sourceURL: nil).0
+        service.markFailed(id: failed.id, error: URLError(.networkConnectionLost))
+        service.markFinished(id: failed.id)
+        XCTAssertEqual(completed, [item.id])
+    }
+
     func testPausedDownloadsKeepTheirFilenameReservationAcrossRelaunch() {
         let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
         let first = service.beginDownload(suggestedFilename: "report.pdf", sourceURL: nil, transport: .background).0

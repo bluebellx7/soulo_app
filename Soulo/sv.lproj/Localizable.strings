@@ -264,8 +264,8 @@
 "ad_block_popups" = "Rengör popup-fönster och överlägg";
 "ad_block_management" = "Annonsblockering";
 "ad_block_allowlist" = "Tillåtna webbplatser";
-"ad_block_disable_current_site" = "Inaktivera annonsblockering på denna webbplats";
-"ad_block_enable_current_site" = "Aktivera annonsblockering på den här webbplatsen";
+"ad_block_disable_current_site" = "Tillåt annonser";
+"ad_block_enable_current_site" = "Blockera annonser";
 "ad_block_site_toggle_desc" = "Om du ändrar detta laddas den aktuella sidan om så att den nya inställningen för annonsblockering kan tillämpas.";
 "ad_block_no_allowlisted_sites" = "Inga tillåtna webbplatser.";
 "ad_block_stats" = "Dolda element";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Kompatibilitet";
 "userscript_experimental_title" = "UserScript kompatibilitet";
 "userscript_experimental_desc" = "Stöder webbplatsregler, dokumentstart/slut, omfattande GM-lagring och sid-API:er, skriptkommandon, meddelanden, flikar, nedladdningar, cookies, resurser och förfrågningar med behörighetsomfång. Granska varje skript innan du installerar; externa @require-filer körs inte.";
-"extension_choose_file" = "Välj tilläggsfil eller mapp...";
+"extension_choose_file" = "Välj fil eller mapp…";
 "extension_installing" = "Kontrollerar och installerar tillägg...";
 "extension_install_failed" = "Tillägget kunde inte installeras";
 "extension_permissions_summary" = "%d behörigheter · %d webbplatsregler";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Det här tillägget använder en beständig bakgrundssida som iOS Web Extensions inte stöder. Prova en Manifest V3 eller Safari-kompatibel version.";
 "userscript_new" = "Nytt manus";
 "userscript_edit" = "Redigera skript";
-"userscript_choose_file" = "Välj UserScript Fil (.js)...";
+"userscript_choose_file" = "Välj skript…";
 "userscript_install_footer" = "Tryck på en källrad för att öppna den på den aktuella fliken Soulo. En .user.js-länk öppnar en installationsbekräftelse. Standard JavaScript och en bred uppsättning GM API:er stöds; skript körs inte i privat surfning och externa @require-filer körs inte.";
 "userscript_install_failed" = "UserScript Kunde inte installeras";
 "web_extension_temporarily_disabled" = "Standardwebbläsartillägg är tillfälligt otillgängliga medan kompatibilitetstester är klara.";

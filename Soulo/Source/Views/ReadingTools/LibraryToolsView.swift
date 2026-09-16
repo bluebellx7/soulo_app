@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import PhotosUI
 
 struct LocalFile: Identifiable, Hashable {
     var id: String { url.path }
@@ -18,6 +19,9 @@ struct LibraryFilesView: View {
     @State private var selected = Set<String>()
     @State private var isSelecting = false
     @State private var importing = false
+    @State private var importingPhotos = false
+    @State private var photos: [PhotosPickerItem] = []
+    @State private var plainTextFile: LocalFile?
     @State private var archive: LocalFile?
     @State private var book: LibraryBook?
     @State private var preview: LocalFile?
@@ -40,6 +44,11 @@ struct LibraryFilesView: View {
         Group {
             if showsGrid { gridContent } else { listContent }
         }
+        .onDrop(of: [.data], isTargeted: nil) { providers in
+            guard !busy, !isSelecting, !providers.isEmpty, providers.count <= 100 else { return false }
+            importProviders(providers)
+            return true
+        }
         .disabled(busy)
         .overlay { if !hasLoaded { ProgressView() } }
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -51,7 +60,10 @@ struct LibraryFilesView: View {
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if !isSelecting {
-                    Button { importing = true } label: { Image(systemName: "folder.badge.plus") }
+                    Menu {
+                        Button { importing = true } label: { ToolMenuLabel(key: "import_files", symbol: "folder") }
+                        Button { importingPhotos = true } label: { ToolMenuLabel(key: "import_photos", symbol: "photo") }
+                    } label: { Image(systemName: "folder.badge.plus") }
                         .accessibilityLabel(ToolText.text("import_files"))
                         .accessibilityIdentifier("files.import")
                     Button { showTransfer = true } label: { Image(systemName: "wifi") }
@@ -106,6 +118,23 @@ struct LibraryFilesView: View {
                 } catch { self.error = error.localizedDescription }
             }
         }
+        .photosPicker(isPresented: $importingPhotos, selection: $photos, maxSelectionCount: 100, matching: .any(of: [.images, .videos]), preferredItemEncoding: .current)
+        .onChange(of: photos) { _, items in
+            guard !items.isEmpty else { return }
+            busy = true
+            Task {
+                defer { busy = false; photos = []; reload() }
+                do {
+                    for item in items {
+                        guard let file = try await item.loadTransferable(type: LibraryImportFile.self) else { throw ReadingToolError.unsupported }
+                        _ = try await Task.detached { try LibraryFileImport.commit(file.url, to: directory) }.value
+                    }
+                } catch { self.error = error.localizedDescription }
+            }
+        }
+        .navigationDestination(item: $plainTextFile) { file in
+            TextDocumentPreview(url: file.url).navigationTitle(file.url.lastPathComponent)
+        }
         .navigationDestination(item: $book) { BookReaderView(book: $0) }
         .navigationDestination(item: $preview) { file in
             LocalDocumentContent(url: file.url)
@@ -151,6 +180,18 @@ struct LibraryFilesView: View {
             Text(error ?? "")
         }
     }
+    private func importProviders(_ providers: [NSItemProvider]) {
+        busy = true
+        Task {
+            defer { busy = false; reload() }
+            do {
+                for provider in providers {
+                    let staged = try await LibraryFileImport.receive(provider)
+                    _ = try await Task.detached { try LibraryFileImport.commit(staged, to: directory) }.value
+                }
+            } catch { self.error = error.localizedDescription }
+        }
+    }
     private var listContent: some View {
         List {
             if hasLoaded && files.isEmpty {
@@ -185,8 +226,10 @@ struct LibraryFilesView: View {
                 .listRowBackground(selected.contains(file.id) ? Color.themePrimary.opacity(0.07) : Color.clear)
                 .listRowSeparatorTint(Color.primary.opacity(0.08))
                 .alignmentGuide(.listRowSeparatorLeading) { _ in 56 }
+                .modifier(LibraryFileDragModifier(url: file.url, enabled: !file.directory && !isSelecting && !busy))
                 .contextMenu {
                     if !file.directory {
+                        Button { plainTextFile = file } label: { ToolMenuLabel(key: "open_as_text", symbol: "doc.text") }
                         renameAction(file)
                         ShareLink(item: file.url) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
                         Button(ToolText.text("delete_files"), systemImage: "trash", role: .destructive) {
@@ -251,8 +294,10 @@ struct LibraryFilesView: View {
                                     .accessibilityAddTraits(selected.contains(file.id) ? .isSelected : [])
                                 }
                             }
+                            .modifier(LibraryFileDragModifier(url: file.url, enabled: !file.directory && !isSelecting && !busy))
                             .contextMenu {
                                 if !file.directory {
+                                    Button { plainTextFile = file } label: { ToolMenuLabel(key: "open_as_text", symbol: "doc.text") }
                                     renameAction(file)
                                     ShareLink(item: file.url) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
                                     Button(ToolText.text("delete_files"), systemImage: "trash", role: .destructive) {
@@ -273,9 +318,9 @@ struct LibraryFilesView: View {
     private func gridLabel(_ file: LocalFile) -> some View {
         VStack(alignment: .leading, spacing: 9) {
             FileThumbnailView(file: file)
-                .aspectRatio(0.68, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 4))
-                .overlay { RoundedRectangle(cornerRadius: 4).strokeBorder(Color.primary.opacity(0.06)) }
+                .aspectRatio(1, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Color.primary.opacity(0.06)) }
             Text(file.url.lastPathComponent)
                 .font(.subheadline.weight(.medium)).foregroundStyle(.primary)
                 .lineLimit(1).truncationMode(.middle)
@@ -289,8 +334,8 @@ struct LibraryFilesView: View {
     private func fileLabel(_ file: LocalFile) -> some View {
         HStack(spacing: 12) {
             FileThumbnailView(file: file)
-                .frame(width: 44, height: 54)
-                .clipShape(RoundedRectangle(cornerRadius: 5))
+                .frame(width: 48, height: 48)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 6) {
                 Text(file.url.lastPathComponent)

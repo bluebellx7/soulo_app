@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Bacaan berterusan ditambah baik dengan kandungan dan carian berasingan, tetapan fon, jarak baris dan rupa PDF.
-• Ditambah paparan buku bergrid dan widget, pengimbasan QR, pengecaman teks dalam foto serta pintasan imbasan.
-• Akses muat turun, tindakan fail, mod gelap halaman web dan prestasi ditambah baik.
+• Penandaan iklan untuk disembunyikan serta penambahbaikan penapis iklan dan kawalan privasi.
+• Folder penanda buku, import dan eksport HTML serta perkongsian, penyimpanan dan penyalinan kod QR halaman.
+• Pratonton fail segi empat sama, simpanan imej pukal serta penambahbaikan bacaan, main balik media dan sambungan skrip.

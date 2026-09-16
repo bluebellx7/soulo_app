@@ -5,7 +5,63 @@ enum AppQuickAction: String {
     case newPrivateTab = "com.dkluge.Soulo.quick-action.private-tab"
     case search = "com.dkluge.Soulo.quick-action.search"
     case scan = "com.dkluge.Soulo.quick-action.scan"
+    case files = "com.dkluge.Soulo.quick-action.files"
+    case bookmarks = "com.dkluge.Soulo.quick-action.bookmarks"
+    case downloads = "com.dkluge.Soulo.quick-action.downloads"
+    case history = "com.dkluge.Soulo.quick-action.history"
     case shareApp = "com.dkluge.Soulo.quick-action.share-app"
+
+    static let defaultOrder: [Self] = [.scan, .clearCache, .newPrivateTab, .search]
+    static let availableActions: [Self] = [.scan, .search, .newPrivateTab, .clearCache, .files, .bookmarks, .downloads, .history]
+    static let maximumCount = 4
+    static let orderKey = "app_icon_quick_action_order"
+
+    static func resolvedOrder(_ stored: [String]?) -> [Self] {
+        guard let stored else { return defaultOrder }
+        var seen = Set<String>()
+        let chosen = stored.compactMap(Self.init(rawValue:))
+            .filter { availableActions.contains($0) && seen.insert($0.rawValue).inserted }
+        if chosen.isEmpty && !stored.isEmpty { return defaultOrder }
+        return Array(chosen.prefix(maximumCount))
+    }
+
+    var librarySection: LibrarySection? {
+        switch self {
+        case .files: .files
+        case .bookmarks: .bookmarks
+        case .downloads: .downloads
+        case .history: .history
+        default: nil
+        }
+    }
+
+    @MainActor var title: String {
+        switch self {
+        case .scan: ToolText.text("scan_qr")
+        case .clearCache: LanguageManager.shared.localizedString("quick_action_clear_cache")
+        case .newPrivateTab: LanguageManager.shared.localizedString("quick_action_private_tab")
+        case .search: LanguageManager.shared.localizedString("search")
+        case .files: ToolText.text("files")
+        case .bookmarks: LanguageManager.shared.localizedString("bookmarks")
+        case .downloads: LanguageManager.shared.localizedString("downloads")
+        case .history: LanguageManager.shared.localizedString("search_history")
+        case .shareApp: LanguageManager.shared.localizedString("share")
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .scan: "qrcode.viewfinder"
+        case .clearCache: "trash.slash"
+        case .newPrivateTab: "eye.slash"
+        case .search: "magnifyingglass"
+        case .files: "folder"
+        case .bookmarks: "bookmark"
+        case .downloads: "arrow.down.circle"
+        case .history: "clock.arrow.circlepath"
+        case .shareApp: "square.and.arrow.up"
+        }
+    }
 
     init?(shortcutItem: UIApplicationShortcutItem) {
         self.init(rawValue: shortcutItem.type)
@@ -21,36 +77,17 @@ final class AppQuickActionService {
     private init() {}
 
     func configureShortcuts() {
-        UIApplication.shared.shortcutItems = [
-            UIApplicationShortcutItem(
-                type: AppQuickAction.scan.rawValue,
-                localizedTitle: ToolText.text("scan_qr"),
-                localizedSubtitle: nil,
-                icon: UIApplicationShortcutIcon(systemImageName: "qrcode.viewfinder"),
-                userInfo: nil
-            ),
-            UIApplicationShortcutItem(
-                type: AppQuickAction.clearCache.rawValue,
-                localizedTitle: LanguageManager.shared.localizedString("quick_action_clear_cache"),
-                localizedSubtitle: nil,
-                icon: UIApplicationShortcutIcon(systemImageName: "trash.slash"),
-                userInfo: nil
-            ),
-            UIApplicationShortcutItem(
-                type: AppQuickAction.newPrivateTab.rawValue,
-                localizedTitle: LanguageManager.shared.localizedString("quick_action_private_tab"),
-                localizedSubtitle: nil,
-                icon: UIApplicationShortcutIcon(systemImageName: "eye.slash"),
-                userInfo: nil
-            ),
-            UIApplicationShortcutItem(
-                type: AppQuickAction.search.rawValue,
-                localizedTitle: LanguageManager.shared.localizedString("search"),
-                localizedSubtitle: nil,
-                icon: UIApplicationShortcutIcon(type: .search),
-                userInfo: nil
-            )
-        ]
+        let order = AppQuickAction.resolvedOrder(UserDefaults.standard.stringArray(forKey: AppQuickAction.orderKey))
+        UIApplication.shared.shortcutItems = order.map {
+            UIApplicationShortcutItem(type: $0.rawValue, localizedTitle: $0.title,
+                localizedSubtitle: nil, icon: UIApplicationShortcutIcon(systemImageName: $0.symbol), userInfo: nil)
+        }
+    }
+
+    func saveOrder(_ order: [AppQuickAction]) {
+        let resolved = AppQuickAction.resolvedOrder(order.map(\.rawValue))
+        UserDefaults.standard.set(resolved.map(\.rawValue), forKey: AppQuickAction.orderKey)
+        configureShortcuts()
     }
 
     func receive(_ shortcutItem: UIApplicationShortcutItem) -> Bool {

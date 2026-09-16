@@ -113,7 +113,8 @@ struct QRCodeScannerView: View {
                         .ignoresSafeArea()
                     VStack {
                         Spacer()
-                        RoundedRectangle(cornerRadius: 24).stroke(.white.opacity(0.8), style: StrokeStyle(lineWidth: 2, dash: [32, 12]))
+                        ScannerFrameCorners()
+                            .stroke(.white.opacity(0.85), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
                             .frame(width: 240, height: 240)
                             .accessibilityHidden(true)
                         Text(ToolText.text("scan_hint")).font(.subheadline).foregroundStyle(.white.opacity(0.8)).padding(.top, 24)
@@ -173,8 +174,9 @@ struct QRCodeScannerView: View {
         }
     }
     private var photoButton: some View {
-        PhotosPicker(selection: $photo, matching: .images) {
-            Label(LanguageManager.shared.localizedString("photo_library"), systemImage: "photo")
+        let title = LanguageManager.shared.localizedString("photo_library")
+        return PhotosPicker(selection: $photo, matching: .images) {
+            Label(title, systemImage: "photo")
                 .font(.subheadline.weight(.medium)).padding(.horizontal, 22).padding(.vertical, 13)
                 .foregroundStyle(.white).background(.white.opacity(0.15), in: Capsule())
         }.disabled(processing).accessibilityIdentifier("scanner.photos")
@@ -248,4 +250,24 @@ private struct LocalScanPage: UIViewRepresentable {
         return view
     }
     func updateUIView(_ uiView: WKWebView, context: Context) {}
+}
+
+private struct ScannerFrameCorners: Shape {
+    func path(in rect: CGRect) -> Path {
+        let length = min(36, min(rect.width, rect.height) / 3)
+        let radius = min(16, length / 2)
+        var path = Path()
+        for (x, y, dx, dy) in [
+            (rect.minX, rect.minY, CGFloat(1), CGFloat(1)),
+            (rect.maxX, rect.minY, CGFloat(-1), CGFloat(1)),
+            (rect.maxX, rect.maxY, CGFloat(-1), CGFloat(-1)),
+            (rect.minX, rect.maxY, CGFloat(1), CGFloat(-1))
+        ] {
+            path.move(to: CGPoint(x: x, y: y + dy * length))
+            path.addLine(to: CGPoint(x: x, y: y + dy * radius))
+            path.addQuadCurve(to: CGPoint(x: x + dx * radius, y: y), control: CGPoint(x: x, y: y))
+            path.addLine(to: CGPoint(x: x + dx * length, y: y))
+        }
+        return path
+    }
 }

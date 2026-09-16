@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Vylepšené plynulé čtení, oddělený obsah a vyhledávání, nastavení písma, řádkování a vzhledu PDF.
-• Přidána mřížka knih a widget, skenování QR kódů, rozpoznávání textu na fotografiích a zkratka pro skenování.
-• Vylepšen přístup ke stahování, práce se soubory, tmavý vzhled webových stránek a výkon.
+• Přidáno označování reklam ke skrytí a vylepšeny filtry reklam a ovládání soukromí.
+• Složky záložek, import a export HTML a QR kódy stránek ke sdílení, uložení či kopírování.
+• Čtvercové náhledy, hromadné ukládání obrázků a vylepšení čtení, přehrávání a skriptových rozšíření.

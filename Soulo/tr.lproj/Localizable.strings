@@ -264,8 +264,8 @@
 "ad_block_popups" = "Açılır Pencereleri ve Kaplamaları Temizleme";
 "ad_block_management" = "Reklam Engelleme";
 "ad_block_allowlist" = "İzin Verilen Siteler";
-"ad_block_disable_current_site" = "Bu Sitede Reklam Engellemeyi Devre Dışı Bırak";
-"ad_block_enable_current_site" = "Bu Sitede Reklam Engellemeyi Etkinleştir";
+"ad_block_disable_current_site" = "Reklamlara izin ver";
+"ad_block_enable_current_site" = "Reklamları engelle";
 "ad_block_site_toggle_desc" = "Bunu değiştirmek, yeni reklam engelleme ayarının uygulanabilmesi için mevcut sayfayı yeniden yükler.";
 "ad_block_no_allowlisted_sites" = "İzin verilen site yok.";
 "ad_block_stats" = "Gizli Öğeler";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Uyumluluk";
 "userscript_experimental_title" = "UserScript uyumluluğu";
 "userscript_experimental_desc" = "Site kurallarını, belge başlangıç/bitişini, kapsamlı GM depolama ve sayfa API'lerini, komut dosyası komutlarını, bildirimleri, sekmeleri, indirmeleri, çerezleri, kaynakları ve izin kapsamlı istekleri destekler. Yüklemeden önce her komut dosyasını inceleyin; harici @require dosyaları yürütülmez.";
-"extension_choose_file" = "Uzantı Dosyasını veya Klasörünü Seçin…";
+"extension_choose_file" = "Dosya veya klasör seç…";
 "extension_installing" = "Uzantı kontrol ediliyor ve yükleniyor…";
 "extension_install_failed" = "Uzantı Yüklenemedi";
 "extension_permissions_summary" = "%d izinleri · %d web sitesi kuralları";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Bu uzantı, iOS Web Uzantılarının desteklemediği kalıcı bir arka plan sayfası kullanıyor. Manifest V3 veya Safari uyumlu bir sürümü deneyin.";
 "userscript_new" = "Yeni Komut Dosyası";
 "userscript_edit" = "Komut Dosyasını Düzenle";
-"userscript_choose_file" = "UserScript Dosya (.js)'yi seçin…";
+"userscript_choose_file" = "Betik seç…";
 "userscript_install_footer" = "Geçerli Soulo sekmesinde açmak için bir kaynak satırına dokunun. Bir .user.js bağlantısı bir yükleme onayını açar. Standart JavaScript ve geniş bir GM API kümesi desteklenir; komut dosyaları Özel Tarama'da çalışmaz ve harici @require dosyaları yürütülmez.";
 "userscript_install_failed" = "UserScript Yüklenemedi";
 "web_extension_temporarily_disabled" = "Uyumluluk testi tamamlanırken standart tarayıcı uzantıları geçici olarak kullanılamıyor.";

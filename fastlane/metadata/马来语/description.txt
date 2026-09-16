@@ -1,22 +1,18 @@
-Soulo ialah penyemak imbas berbilang carian peribadi yang pantas untuk iPhone dan iPad. Masukkan satu pertanyaan, kemudian tukar antara lebih daripada 40 platform carian, sosial, video, beli-belah, pengetahuan dan AI tanpa menaip semula.
+Soulo ialah pelayar carian berbilang platform untuk iPhone dan iPad. Taip sekali dan beralih antara carian, media sosial, video, beli-belah, pengetahuan dan AI tanpa menaip semula.
 
-SEMAK JALAN ANDA
-• Tab, penanda halaman, sejarah, muat turun dan platform carian yang boleh disesuaikan
-• Penyemakan imbas peribadi, perlindungan penjejak, penyekatan iklan dan kawalan setiap tapak
-• Mod tapak web mudah alih dan desktop, zum halaman, terjemahan dan tangkapan halaman penuh
-• Muat turun imej, video, audio dan dokumen dengan pemeriksa sumber halaman web
-• Ekstrak teks daripada imej halaman web dengan Live Text
+Cari maklumat, baca artikel, mainkan media dan urus muat turun dalam satu pelayar.
 
-DIBINA UNTUK iPhone DAN iPad
-• Berbilang tetingkap bebas pada iPad
-• Kongsi pautan atau teks terus ke Soulo
-• Cari dan buka muat turun daripada Siri, Shortcuts, Control Center, Skrin Kunci dan Butang Tindakan
-• Muat turun latar belakang dengan kemajuan sebenar dan jeda/sambung semula
-• Aktiviti Langsung dan status Dynamic Island
+• Carian: tambah platform, susun kumpulan dan urutannya. Pilih teks untuk mencarinya dalam tab Soulo baharu.
+• Iklan dan privasi: tapis iklan, langgan peraturan pihak ketiga dan tandakan iklan untuk disembunyikan. Urus penapis serta perlindungan penjejakan mengikut laman. Pelayaran peribadi tidak menyimpan sejarah.
+• Audio dan video: kelajuan, ulang, pemain mini terapung, gambar dalam gambar, main balik latar belakang dan AirPlay. Simpan bingkai video, cerminkan imej dan tekan lama untuk mempercepat sementara.
+• Fail: cari imej, audio, video dan dokumen pada halaman serta simpan imej secara kelompok. Paparan senarai atau grid kulit buku, penamaan semula, import daripada Foto dan pemindahan Wi-Fi.
+• Arkib: ekstrak ZIP, RAR dan 7z. Cipta ZIP dan 7z dengan perlindungan kata laluan pilihan.
+• Membaca: TXT, PDF, EPUB serta buku MOBI, AZW dan AZW3 tanpa DRM yang disokong. Laraskan fon, saiz, jarak baris dan latar. Buku susun atur fleksibel menyokong paparan Cina ringkas atau tradisional. Mod bacaan mengekstrak artikel dan membolehkan sambungan ke halaman seterusnya.
+• Sambungan: import, sunting dan jalankan skrip pengguna JavaScript, urus padanan laman serta kebenaran, dan pasang WebExtension yang serasi.
+• Alat web: terjemahan, cari dalam halaman, tangkapan skrin seluruh halaman, pengecaman teks dalam imej, mod desktop/mudah alih, ejen pengguna tersuai dan sijil laman.
+• Penanda buku: folder serta import/eksport penanda HTML untuk Chrome, Edge dan pelayar lain. Cipta kod QR halaman dengan ikon laman untuk dikongsi, disimpan atau disalin.
+• Pemperibadian: kertas dinding, bar alat dan tindakan pantas ikon app. Akses melalui widget, Pintasan dan skema URL. Segerakkan tetapan dengan iCloud jika mahu.
 
-LANJUTKAN WEB
-Pasang UserScripts atau WebExtensions yang serasi, uruskan kebenaran dengan jelas dan buat skrip anda sendiri dengan dokumentasi API terbina dalam.
+Ketersediaan media, buku dan sambungan bergantung pada format fail, sekatan laman dan versi sistem.
 
-Soulo menyimpan data penyemakan imbas secara setempat melainkan anda mendayakan penyegerakan tetapan iCloud. Penyemakan imbas peribadi tidak menyimpan sejarah.
-
-Baca dengan selesa, buka rak buku melalui widget, imbas kod QR dan ekstrak teks daripada foto.
+Sokongan: contact@dkluge.com

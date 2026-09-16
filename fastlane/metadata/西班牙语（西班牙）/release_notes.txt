@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Lectura continua mejorada, con índice y búsqueda separados, ajustes de fuente e interlineado y opciones de apariencia para PDF.
-• Biblioteca en cuadrícula y widget de inicio, escaneo de QR, reconocimiento de texto en fotos y acceso rápido al escáner.
-• Mejoras en el acceso a las descargas, las acciones de archivos, las páginas web oscuras y el rendimiento.
+• Marca anuncios para ocultarlos. Mejoramos los filtros de anuncios y los controles de privacidad.
+• Carpetas de marcadores, importación y exportación HTML y códigos QR de páginas para compartir, guardar o copiar.
+• Vistas previas cuadradas, guardado de imágenes por lotes y mejoras de lectura, reproducción y extensiones de scripts.

@@ -1,22 +1,18 @@
-Soulo est un navigateur multi-recherche rapide et privé pour iPhone et iPad. Saisissez une requête, puis basculez entre plus de 40 plateformes de recherche, de réseaux sociaux, de vidéo, d'achat, de connaissances et d'IA sans avoir à retaper.
+Soulo est un navigateur multi-recherche pour iPhone et iPad. Saisissez votre recherche une fois, puis passez entre moteurs de recherche, réseaux sociaux, vidéos, achats, connaissances et plateformes d’IA sans la retaper.
 
-PARCOUREZ À VOTRE MANIÈRE
-• Onglets, signets, historique, téléchargements et plateformes de recherche personnalisables
-• Navigation privée, protection contre les trackers, blocage des publicités et contrôles par site
-• Modes de site Web mobile et de bureau, zoom de page, traduction et capture de page entière
-• Téléchargez des images, des vidéos, des fichiers audio et des documents avec l'inspecteur de ressources de pages Web.
-• Extrayez le texte des images de pages Web avec Live Text
+Recherchez, lisez, regardez des vidéos et gérez vos téléchargements au même endroit.
 
-CONÇU POUR IPHONE ET iPad
-• Plusieurs fenêtres indépendantes sur iPad
-• Partagez des liens ou du texte directement avec Soulo
-• Recherchez et ouvrez des téléchargements depuis Siri, Shortcuts, Control Center, l'écran de verrouillage et le bouton d'action.
-• Téléchargements en arrière-plan avec progression réelle et pause/reprise
-• Activités en direct et statut Dynamic Island
+• Recherche : ajoutez des plateformes, classez-les en groupes et réorganisez-les. Sélectionnez du texte pour le rechercher dans un nouvel onglet Soulo.
+• Publicité et confidentialité : filtrage publicitaire, abonnements à des règles tierces et masquage manuel des publicités. Gérez le filtrage et la protection contre le suivi par site. La navigation privée ne conserve pas l’historique.
+• Audio et vidéo : vitesse réglable, lecture en boucle, mini-lecteur flottant, image dans l’image, lecture en arrière-plan et AirPlay. Capturez une image vidéo, activez le miroir ou accélérez temporairement par un appui prolongé.
+• Fichiers : détectez images, sons, vidéos et documents sur les pages. Enregistrez plusieurs images à la fois. Affichez vos fichiers en liste ou en grille de couvertures, renommez-les, importez depuis Photos et transférez par Wi-Fi.
+• Archives : extraction ZIP, RAR et 7z ; création d’archives ZIP et 7z avec protection par mot de passe en option.
+• Lecture : TXT, PDF, EPUB et livres MOBI, AZW et AZW3 sans DRM compatibles. Réglez police, taille, interligne et fond. Les livres à mise en page adaptable permettent l’affichage en chinois simplifié ou traditionnel. Le mode lecture extrait les articles et permet de poursuivre à la page suivante.
+• Extensions : importez, modifiez et exécutez des scripts JavaScript, gérez leurs sites et autorisations, et installez des WebExtensions compatibles.
+• Outils web : traduction, recherche dans la page, capture pleine page, reconnaissance de texte dans les images, modes ordinateur/mobile, agent utilisateur personnalisé et certificats des sites.
+• Favoris : dossiers et import/export de favoris HTML utilisés par Chrome, Edge et d’autres navigateurs. Créez des codes QR de pages avec l’icône du site pour les partager, les enregistrer ou les copier.
+• Personnalisation : fonds d’écran, barre d’outils et actions rapides de l’icône de l’app. Accédez aux outils via widgets, Raccourcis et schémas d’URL. Synchronisation des réglages iCloud facultative.
 
-ÉLARGIR LE WEB
-Installez des UserScript ou des WebExtension compatibles, gérez clairement les autorisations et créez vos propres scripts avec la documentation de l'API intégrée.
+La disponibilité des médias, livres et extensions dépend des formats, des restrictions des sites et de la version du système.
 
-Soulo stocke les données de navigation localement, sauf si vous activez la synchronisation des paramètres iCloud. La navigation privée n'enregistre pas l'historique.
-
-Lisez confortablement, ouvrez votre bibliothèque avec un widget, scannez des codes QR et extrayez le texte de vos photos.
+Assistance : contact@dkluge.com

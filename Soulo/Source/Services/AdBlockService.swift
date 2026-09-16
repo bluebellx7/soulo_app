@@ -14,10 +14,21 @@ struct AdBlockService {
             AdBlockSubscriptionService.rulesSignature()
         ].joined(separator: "|")
         let identifier = "SouloAdBlockV4-\(stableIdentifierHash(signature))"
-        return try? await WKContentRuleListStore.default().compileContentRuleList(
-            forIdentifier: identifier,
-            encodedContentRuleList: jsonString
-        )
+        return await compileContentRules(identifier: identifier, json: jsonString)
+    }
+
+    @MainActor
+    private static func compileContentRules(identifier: String, json: String) async -> WKContentRuleList? {
+        // WebKit parses CSS selectors synchronously before dispatching compilation.
+        // Keep its initialization on the main actor; JSON preparation stays off it.
+        return await withCheckedContinuation { continuation in
+            WKContentRuleListStore.default().compileContentRuleList(
+                forIdentifier: identifier,
+                encodedContentRuleList: json
+            ) { ruleList, _ in
+                continuation.resume(returning: ruleList)
+            }
+        }
     }
 
     static func encodedContentRuleList(allowlistedHosts: [String] = []) -> String? {

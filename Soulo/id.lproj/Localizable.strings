@@ -264,8 +264,8 @@
 "ad_block_popups" = "Bersihkan Popup dan Overlay";
 "ad_block_management" = "Pemblokiran Iklan";
 "ad_block_allowlist" = "Situs yang Diizinkan";
-"ad_block_disable_current_site" = "Nonaktifkan Blok Iklan di Situs Ini";
-"ad_block_enable_current_site" = "Aktifkan Blok Iklan di Situs Ini";
+"ad_block_disable_current_site" = "Izinkan Iklan";
+"ad_block_enable_current_site" = "Blokir Iklan";
 "ad_block_site_toggle_desc" = "Mengubah ini akan memuat ulang halaman saat ini sehingga pengaturan blok iklan baru dapat diterapkan.";
 "ad_block_no_allowlisted_sites" = "Tidak ada situs yang diizinkan.";
 "ad_block_stats" = "Elemen Tersembunyi";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Kompatibilitas";
 "userscript_experimental_title" = "UserScript kompatibilitas";
 "userscript_experimental_desc" = "Mendukung aturan situs, awal/akhir dokumen, penyimpanan GM yang luas dan API halaman, perintah skrip, notifikasi, tab, unduhan, cookie, sumber daya, dan permintaan dengan cakupan izin. Tinjau setiap skrip sebelum menginstal; file @require eksternal tidak dijalankan.";
-"extension_choose_file" = "Pilih File atau Folder Ekstensi…";
+"extension_choose_file" = "Pilih File atau Folder…";
 "extension_installing" = "Memeriksa dan memasang ekstensi…";
 "extension_install_failed" = "Ekstensi Tidak Dapat Dipasang";
 "extension_permissions_summary" = "%d izin · %d aturan situs web";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Ekstensi ini menggunakan halaman latar belakang persisten yang tidak didukung oleh Ekstensi Web iOS. Coba versi yang kompatibel dengan Manifest V3 atau Safari.";
 "userscript_new" = "Skrip Baru";
 "userscript_edit" = "Sunting Skrip";
-"userscript_choose_file" = "Pilih UserScript File (.js)…";
+"userscript_choose_file" = "Pilih Skrip…";
 "userscript_install_footer" = "Ketuk baris sumber untuk membukanya di tab Soulo saat ini. Tautan .user.js membuka konfirmasi instalasi. JavaScript standar dan serangkaian API GM didukung; skrip tidak berjalan di Penjelajahan Pribadi dan file @require eksternal tidak dijalankan.";
 "userscript_install_failed" = "UserScript Tidak Dapat Dipasang";
 "web_extension_temporarily_disabled" = "Ekstensi browser standar untuk sementara tidak tersedia saat pengujian kompatibilitas selesai.";

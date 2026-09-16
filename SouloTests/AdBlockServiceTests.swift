@@ -3,6 +3,13 @@ import WebKit
 @testable import Soulo
 
 final class AdBlockServiceTests: XCTestCase {
+    func testProductionRuleCompilationFromBackgroundTask() async {
+        let rules = await Task.detached {
+            await AdBlockService.compileRules(allowlistedHosts: ["soulo-test.example"])
+        }.value
+        XCTAssertNotNil(rules)
+    }
+
     func testEncodedContentRulesAreValidAndContainBlockActions() throws {
         let json = try XCTUnwrap(AdBlockService.encodedContentRuleList())
         let data = try XCTUnwrap(json.data(using: .utf8))

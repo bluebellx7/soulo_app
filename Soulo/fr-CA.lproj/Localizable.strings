@@ -264,8 +264,8 @@
 "ad_block_popups" = "Nettoyer les popups et les superpositions";
 "ad_block_management" = "Blocage des publicités";
 "ad_block_allowlist" = "Sites autorisés";
-"ad_block_disable_current_site" = "Désactiver le blocage des publicités sur ce site";
-"ad_block_enable_current_site" = "Activer le blocage des publicités sur ce site";
+"ad_block_disable_current_site" = "Autoriser les pubs";
+"ad_block_enable_current_site" = "Bloquer les pubs";
 "ad_block_site_toggle_desc" = "Changer cela recharge la page actuelle afin que le nouveau paramètre de blocage des publicités puisse s'appliquer.";
 "ad_block_no_allowlisted_sites" = "Aucun site autorisé.";
 "ad_block_stats" = "Éléments cachés";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Compatibilité";
 "userscript_experimental_title" = "Compatibilité UserScript";
 "userscript_experimental_desc" = "Prend en charge les règles du site, le début/la fin du document, le stockage GM étendu et les API de page, les commandes de script, les notifications, les onglets, les téléchargements, les cookies, les ressources et les demandes d'autorisation. Examinez chaque script avant l'installation ; Les fichiers @require externes ne sont pas exécutés.";
-"extension_choose_file" = "Choisissez un fichier d'extension ou un dossier…";
+"extension_choose_file" = "Choisir un fichier ou dossier…";
 "extension_installing" = "Vérification et installation de l'extension…";
 "extension_install_failed" = "L'extension n'a pas pu être installée";
 "extension_permissions_summary" = "%d autorisations · %d règles du site Web";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Cette extension utilise une page d'arrière-plan persistante que les extensions Web iOS ne prennent pas en charge. Essayez une version compatible Manifest V3 ou Safari.";
 "userscript_new" = "Nouveau scénario";
 "userscript_edit" = "Modifier le script";
-"userscript_choose_file" = "Choisissez UserScript Fichier (.js)…";
+"userscript_choose_file" = "Choisir un script…";
 "userscript_install_footer" = "Appuyez sur une ligne source pour l'ouvrir dans l'onglet Soulo actuel. Un lien .user.js ouvre une confirmation d'installation. JavaScript standard et un large éventail d'API GM sont pris en charge ; les scripts ne s'exécutent pas en navigation privée et les fichiers @require externes ne sont pas exécutés.";
 "userscript_install_failed" = "UserScript n'a pas pu être installé";
 "web_extension_temporarily_disabled" = "Les extensions de navigateur standard sont temporairement indisponibles pendant que les tests de compatibilité sont terminés.";

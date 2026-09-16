@@ -7,6 +7,9 @@ import WebKit
 enum WebResourceDownloadError: LocalizedError {
     case invalidResponse
     case photoAccessDenied
+    case invalidImage
+    case imageTooLarge
+    case photoImportFailed
 
     var errorDescription: String? {
         switch self {
@@ -14,6 +17,9 @@ enum WebResourceDownloadError: LocalizedError {
             return AppLocalization.string("resource_download_invalid_response")
         case .photoAccessDenied:
             return AppLocalization.string("resource_photo_access_denied")
+        case .invalidImage: return ToolText.text("photo_save_invalid")
+        case .imageTooLarge: return ToolText.text("photo_save_too_large")
+        case .photoImportFailed: return ToolText.text("photo_save_incompatible")
         }
     }
 }
@@ -114,6 +120,7 @@ final class WebResourceDownloadService {
         guard status == .authorized || status == .limited else {
             throw WebResourceDownloadError.photoAccessDenied
         }
+        try Task.checkCancellation()
 
         let (temporaryURL, response) = try await temporaryDownload(
             url,
@@ -126,27 +133,50 @@ final class WebResourceDownloadService {
             try? FileManager.default.removeItem(at: temporaryURL)
             try? FileManager.default.removeItem(at: importDirectory)
         }
+        try Task.checkCancellation()
 
         try FileManager.default.createDirectory(
             at: importDirectory,
             withIntermediateDirectories: true
         )
-        let filename = normalizedFilename(
-            preferredFilename,
-            responseFilename: response.suggestedFilename,
-            responseMIMEType: response.mimeType,
-            fallbackBaseName: "Image",
-            sourceURL: url
-        )
-        let photoImportURL = importDirectory.appendingPathComponent(filename, isDirectory: false)
-        try FileManager.default.moveItem(at: temporaryURL, to: photoImportURL)
+        let filename = preferredFilename ?? response.suggestedFilename
+        let original = try await Task.detached(priority: .userInitiated) {
+            try PhotoImportPreparation.prepare(sourceURL: temporaryURL, directory: importDirectory, filename: filename)
+        }.value
+        try Task.checkCancellation()
+        do {
+            try await importPhoto(original)
+        } catch {
+            let failure = error as NSError
+            guard failure.domain == PHPhotosErrorDomain,
+                  failure.code == PHPhotosError.Code.invalidResource.rawValue else { throw error }
+            try Task.checkCancellation()
+            let compatible = try await Task.detached(priority: .userInitiated) {
+                try PhotoImportPreparation.prepare(sourceURL: temporaryURL, directory: importDirectory,
+                    filename: filename, convert: true)
+            }.value
+            try Task.checkCancellation()
+            do { try await importPhoto(compatible) }
+            catch {
+                let failure = error as NSError
+                if failure.domain == PHPhotosErrorDomain && failure.code == PHPhotosError.Code.invalidResource.rawValue {
+                    throw WebResourceDownloadError.photoImportFailed
+                }
+                throw error
+            }
+        }
+    }
 
+    private func importPhoto(_ resource: PhotoImportPreparation.Resource) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             PHPhotoLibrary.shared().performChanges {
+                let options = PHAssetResourceCreationOptions()
+                options.uniformTypeIdentifier = resource.typeIdentifier
+                options.originalFilename = resource.url.lastPathComponent
                 PHAssetCreationRequest.forAsset().addResource(
                     with: .photo,
-                    fileURL: photoImportURL,
-                    options: nil
+                    fileURL: resource.url,
+                    options: options
                 )
             } completionHandler: { success, error in
                 if let error {

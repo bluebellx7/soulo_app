@@ -159,6 +159,10 @@ struct WebResourceInspectorView: View {
     @State private var inlineAudioTask: Task<Void, Never>?
     @State private var activeAudioID: String?
     @State private var isAudioPlaying = false
+    @StateObject private var imageBatchSaver = WebImageBatchSaver()
+    @State private var isSelectingImages = false
+    @State private var selectedImageIDs = Set<String>()
+    @State private var batchSaveMessage: String?
 
     init(webViewModel: WebViewModel) {
         _viewModel = StateObject(
@@ -181,6 +185,21 @@ struct WebResourceInspectorView: View {
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button(LanguageManager.shared.localizedString("done")) { dismiss() }
+                    .disabled(imageBatchSaver.isSaving)
+            }
+            ToolbarItem(placement: .primaryAction) {
+                if selectedSection == .images && !filteredImages.isEmpty {
+                    Button {
+                        isSelectingImages.toggle()
+                        selectedImageIDs.removeAll()
+                    } label: {
+                        Image(systemName: isSelectingImages ? "xmark" : "checkmark.circle")
+                            .foregroundStyle(.primary)
+                    }
+                    .disabled(imageBatchSaver.isSaving)
+                    .accessibilityLabel(ToolText.text(isSelectingImages ? "cancel" : "image_batch_select"))
+                    .accessibilityIdentifier("resources.images.select")
+                }
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -194,7 +213,7 @@ struct WebResourceInspectorView: View {
                         Image(systemName: "arrow.clockwise").font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
                     }
                 }
-                .disabled(viewModel.isLoading)
+                .disabled(viewModel.isLoading || imageBatchSaver.isSaving)
                 .accessibilityLabel(LanguageManager.shared.localizedString("resource_rescan"))
             }
         }
@@ -231,7 +250,26 @@ struct WebResourceInspectorView: View {
         }
         .onDisappear {
             stopInlineAudio()
+            imageBatchSaver.cancel()
         }
+        .onChange(of: filteredImages.map(\.id)) { _, ids in
+            selectedImageIDs.formIntersection(ids)
+        }
+        .onChange(of: selectedSection) { _, section in
+            if section != .images && !imageBatchSaver.isSaving {
+                isSelectingImages = false
+                selectedImageIDs.removeAll()
+            }
+        }
+        .interactiveDismissDisabled(imageBatchSaver.isSaving)
+        .safeAreaInset(edge: .bottom) {
+            if isSelectingImages { imageBatchBar }
+        }
+        .alert(ToolText.text("image_batch_result"), isPresented: Binding(
+            get: { batchSaveMessage != nil }, set: { if !$0 { batchSaveMessage = nil } }
+        )) {
+            Button(LanguageManager.shared.localizedString("done")) { batchSaveMessage = nil }
+        } message: { Text(batchSaveMessage ?? "") }
         .overlay(alignment: .bottom) {
             if !viewModel.statusMessage.isEmpty {
                 Text(viewModel.statusMessage)
@@ -308,6 +346,7 @@ struct WebResourceInspectorView: View {
                                 .background(selectedSection == section ? Color.themePrimary.opacity(0.1) : .clear, in: RoundedRectangle(cornerRadius: 16))
                             }
                             .buttonStyle(.plain).id(section)
+                            .disabled(imageBatchSaver.isSaving)
                             .accessibilityIdentifier("resources.tab." + section.rawValue)
                             .accessibilityAddTraits(selectedSection == section ? .isSelected : [])
                         }
@@ -377,6 +416,7 @@ struct WebResourceInspectorView: View {
                     .foregroundStyle(.tint)
             }
             Slider(value: $minimumImageWidth, in: 0...maximumImageWidth, step: 20)
+                .disabled(imageBatchSaver.isSaving)
                 .accessibilityLabel(LanguageManager.shared.localizedString("resource_minimum_image_width"))
         }
     }
@@ -386,7 +426,9 @@ struct WebResourceInspectorView: View {
             ForEach(filteredImages) { image in
                 VStack(alignment: .leading, spacing: 7) {
                     Button {
-                        selectedImage = image
+                        if isSelectingImages {
+                            if !selectedImageIDs.insert(image.id).inserted { selectedImageIDs.remove(image.id) }
+                        } else { selectedImage = image }
                     } label: {
                         WebResourceImagePreview(resource: image) {
                             unavailableImageIDs.insert(image.id)
@@ -395,9 +437,20 @@ struct WebResourceInspectorView: View {
                         .frame(height: 124)
                         .background(Color(uiColor: .tertiarySystemFill))
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(alignment: .topTrailing) {
+                            if isSelectingImages {
+                                Image(systemName: selectedImageIDs.contains(image.id) ? "checkmark.circle.fill" : "circle")
+                                    .font(.system(size: 21, weight: .medium))
+                                    .foregroundStyle(selectedImageIDs.contains(image.id) ? Color.accentColor : .secondary)
+                                    .padding(4).background(.regularMaterial, in: Circle()).padding(6)
+                            }
+                        }
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .disabled(imageBatchSaver.isSaving)
+                    .accessibilityAddTraits(selectedImageIDs.contains(image.id) ? .isSelected : [])
+                    .accessibilityIdentifier("resources.image." + image.id)
                     .accessibilityLabel(imageAccessibilityLabel(image))
 
                     HStack(spacing: 5) {
@@ -406,11 +459,68 @@ struct WebResourceInspectorView: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                         Spacer(minLength: 2)
-                        resourceDownloadMenu(for: image)
+                        if !isSelectingImages { resourceDownloadMenu(for: image) }
                     }
                 }
                 .padding(.bottom, 8)
             }
+        }
+    }
+
+    private var imageBatchBar: some View {
+        VStack(spacing: 10) {
+            if imageBatchSaver.isSaving {
+                ProgressView(value: Double(imageBatchSaver.completed), total: Double(max(1, imageBatchSaver.total)))
+                HStack {
+                    Text(String(format: ToolText.text("image_batch_progress"), imageBatchSaver.completed, imageBatchSaver.total))
+                        .font(.subheadline).monospacedDigit()
+                    Spacer()
+                    Button(ToolText.text("cancel")) { imageBatchSaver.cancel() }
+                        .accessibilityIdentifier("resources.images.cancel-save")
+                }
+            } else {
+                HStack {
+                    let allSelected = !filteredImages.isEmpty && selectedImageIDs.count == filteredImages.count
+                    Button(ToolText.text(allSelected ? "image_batch_deselect_all" : "image_batch_select_all")) {
+                        selectedImageIDs = allSelected ? [] : Set(filteredImages.map(\.id))
+                    }
+                    .disabled(filteredImages.isEmpty)
+                    .accessibilityIdentifier("resources.images.select-all")
+                    Spacer()
+                    Button(action: saveSelectedImages) {
+                        Label(String(format: ToolText.text("image_batch_save"), selectedImageIDs.count), systemImage: "photo.badge.arrow.down")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(selectedImageIDs.isEmpty)
+                    .accessibilityIdentifier("resources.images.save-selected")
+                }
+            }
+        }
+        .padding(.horizontal, 18).padding(.vertical, 12)
+        .background(.regularMaterial)
+    }
+
+    private func saveSelectedImages() {
+        let images = filteredImages.filter { selectedImageIDs.contains($0.id) }
+        let pageURL = viewModel.snapshot.pageURL
+        let webView = viewModel.sourceWebView
+        imageBatchSaver.start(images: images) { image in
+            try await WebResourceDownloadService.shared.saveImageToPhotos(
+                image.url, preferredFilename: image.url.lastPathComponent, pageURL: pageURL, webView: webView
+            )
+        } completion: { result in
+            selectedImageIDs.subtract(result.savedIDs)
+            let summary = String(format: ToolText.text("image_batch_summary"), result.savedIDs.count, result.failedIDs.count)
+            if result.permissionDenied {
+                batchSaveMessage = WebResourceDownloadError.photoAccessDenied.localizedDescription
+            } else if result.wasCancelled {
+                batchSaveMessage = String(format: ToolText.text("image_batch_cancelled"), result.savedIDs.count)
+            } else {
+                batchSaveMessage = summary
+            }
+            if selectedImageIDs.isEmpty { isSelectingImages = false }
+            if result.failedIDs.isEmpty && !result.wasCancelled { HapticsManager.success() }
+            else if !result.wasCancelled { HapticsManager.error() }
         }
     }
 
@@ -1329,7 +1439,7 @@ private struct WebResourceMediaPlayerView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(.black)
                     } else {
-                        SessionPlayerController()
+                        MediaPlaybackContent()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .background(.black)
                     }
@@ -1355,7 +1465,6 @@ private struct WebResourceMediaPlayerView: View {
                     }
                 }
 
-                if !useYouTubeWebPlayback { MediaControls() }
                 HStack(spacing: 12) {
                     Text(resource.url.absoluteString)
                         .font(.caption)

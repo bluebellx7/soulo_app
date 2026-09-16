@@ -35,6 +35,9 @@ struct BookmarkService {
         for item in all {
             context.delete(item)
         }
+        for folder in try context.fetch(FetchDescriptor<BookmarkFolder>()) {
+            context.delete(folder)
+        }
         try context.save()
     }
 

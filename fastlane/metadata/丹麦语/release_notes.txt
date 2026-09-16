@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Forbedret løbende læsning med separat indholdsfortegnelse og søgning samt indstillinger for skrifttype, linjeafstand og PDF-udseende.
-• Tilføjet boggitter og widget, QR-scanning, tekstgenkendelse i fotos og en genvej til scanning.
-• Forbedret adgang til downloads, filhandlinger, mørke websider og ydeevne.
+• Markér annoncer for at skjule dem. Forbedrede annoncefiltre og privatlivsindstillinger.
+• Bogmærkemapper, import og eksport i HTML samt deling, lagring og kopiering af siders QR-koder.
+• Kvadratiske filvisninger, samlet billedlagring og forbedringer af læsning, medieafspilning og scriptudvidelser.

@@ -3,11 +3,14 @@ import SwiftUI
 struct AdBlockManagementView: View {
     @ObservedObject private var service = AdBlockSettingsService.shared
     @ObservedObject private var subscriptionService = AdBlockSubscriptionService.shared
+    @ObservedObject private var manualRules = ManualAdBlockService.shared
     @Environment(\.dismiss) private var dismiss
     @AppStorage("ad_block_enabled") private var adBlockEnabled = true
 
     let currentHost: String?
     var showsDoneButton = false
+    var currentURL: URL? = nil
+    var onMarkAdvertisement: (() -> Void)? = nil
     var onChanged: (() -> Void)? = nil
 
     private var currentHostIsAllowlisted: Bool {
@@ -20,7 +23,7 @@ struct AdBlockManagementView: View {
 
     private var currentHostUsesCompatibilityBypass: Bool {
         WebCompatibilityService.shouldBypassWebProtection(
-            for: nil,
+            for: currentURL,
             fallbackHost: currentHost
         )
     }
@@ -111,6 +114,33 @@ struct AdBlockManagementView: View {
                         )
                     )
                 }
+            }
+
+            Section {
+                if let onMarkAdvertisement {
+                    Button(action: onMarkAdvertisement) {
+                        Label(ToolText.text("manual_ad_mark"), systemImage: "viewfinder")
+                    }
+                    .disabled(!currentHostProtectionEnabled)
+                }
+                if manualRules.rules.isEmpty {
+                    Text(ToolText.text("manual_ad_hint")).foregroundStyle(.secondary)
+                } else {
+                    NavigationLink {
+                        ManualAdRulesView(currentHost: currentHost)
+                    } label: {
+                        HStack {
+                            Label(ToolText.text("manual_ad_rules"), systemImage: "eye.slash")
+                            Spacer()
+                            Text("\(manualRules.rules.count)").foregroundStyle(.secondary)
+                        }
+                    }
+                    .accessibilityIdentifier("adBlock.manualRules")
+                }
+            } header: {
+                Text(ToolText.text("manual_ad_rules"))
+            } footer: {
+                Text(ToolText.text("manual_ad_footer"))
             }
 
             Section {
@@ -233,6 +263,194 @@ struct AdBlockManagementView: View {
         .onChange(of: adBlockEnabled) { _, _ in
             onChanged?()
         }
+    }
+}
+
+private struct ManualAdRulesView: View {
+    @ObservedObject private var service = ManualAdBlockService.shared
+    @ObservedObject private var settings = AdBlockSettingsService.shared
+    @AppStorage("ad_block_enabled") private var adBlockEnabled = true
+    @State private var searchText = ""
+    @State private var selectedRule: ManualAdRule?
+    @State private var removedRule: ManualAdRule?
+    @State private var showUndoError = false
+    let currentHost: String?
+
+    private var groupedRules: [(host: String, rules: [ManualAdRule])] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let filtered = service.rules.filter {
+            query.isEmpty || $0.host.localizedCaseInsensitiveContains(query)
+                || ($0.path?.removingPercentEncoding ?? $0.path ?? "").localizedCaseInsensitiveContains(query)
+                || $0.selector.localizedCaseInsensitiveContains(query)
+        }
+        return Dictionary(grouping: filtered, by: \.host).map { host, rules in
+            (host, rules.sorted { $0.createdAt > $1.createdAt })
+        }.sorted {
+            let current = currentHost?.lowercased()
+            if ($0.host == current) != ($1.host == current) { return $0.host == current }
+            return $0.host < $1.host
+        }
+    }
+
+    var body: some View {
+        List {
+            if !service.rules.isEmpty {
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(String(format: ToolText.text("manual_ad_summary"), service.rules.count, Set(service.rules.map(\.host)).count))
+                            .font(.headline)
+                        Text(ToolText.text("manual_ad_list_hint"))
+                            .font(.footnote).foregroundStyle(.secondary)
+                        if !adBlockEnabled {
+                            Label(ToolText.text("manual_ad_paused"), systemImage: "pause.circle")
+                                .font(.footnote).foregroundStyle(.secondary)
+                        }
+                    }.padding(.vertical, 4)
+                }
+            }
+            ForEach(groupedRules, id: \.host) { group in
+                Section {
+                    ForEach(group.rules) { rule in ruleRow(rule) }
+                } header: {
+                    HStack {
+                        Text(group.host).textCase(nil)
+                        if group.host == currentHost?.lowercased() {
+                            Text(ToolText.text("manual_ad_current_site"))
+                                .font(.caption2).textCase(nil)
+                        }
+                        Spacer()
+                        Text("\(group.rules.count)").monospacedDigit()
+                    }
+                } footer: {
+                    if AdBlockSettingsService.isHostAllowlisted(group.host, allowlistedHosts: settings.allowlistedHosts) {
+                        Text(ToolText.text("manual_ad_site_paused"))
+                    }
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .searchable(text: $searchText, prompt: Text(ToolText.text("manual_ad_search")))
+        .overlay {
+            if service.rules.isEmpty {
+                ContentUnavailableView(ToolText.text("manual_ad_empty"), systemImage: "eye.slash",
+                    description: Text(ToolText.text("manual_ad_empty_hint")))
+            } else if groupedRules.isEmpty {
+                ContentUnavailableView.search(text: searchText)
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if let rule = removedRule {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(ToolText.text("manual_ad_removed")).font(.subheadline.weight(.medium))
+                        Text(rule.host).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                    Spacer()
+                    Button(ToolText.text("manual_ad_undo")) {
+                        if service.restore(rule) { removedRule = nil }
+                        else { showUndoError = true }
+                    }
+                    .accessibilityIdentifier("manualAds.undo")
+                    .frame(minHeight: 44)
+                }
+                .padding(.horizontal, 16).padding(.vertical, 8)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal, 16).padding(.bottom, 8)
+                .task(id: rule.id) {
+                    do { try await Task.sleep(for: .seconds(8)) }
+                    catch { return }
+                    if removedRule?.id == rule.id { removedRule = nil }
+                }
+            }
+        }
+        .navigationTitle(ToolText.text("manual_ad_rules"))
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $selectedRule) { rule in
+            NavigationStack {
+                Form {
+                    Section {
+                        LabeledContent(ToolText.text("manual_ad_domain"), value: rule.host)
+                        LabeledContent(ToolText.text("manual_ad_scope"), value: ToolText.text(rule.path == nil ? "manual_ad_site" : "manual_ad_page_rule"))
+                        if let path = rule.path {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(ToolText.text("manual_ad_path")).foregroundStyle(.secondary)
+                                Text(path.removingPercentEncoding ?? path).textSelection(.enabled)
+                            }
+                        }
+                        LabeledContent(ToolText.text("manual_ad_created")) {
+                            Text(rule.createdAt, format: .dateTime.year().month().day().hour().minute())
+                        }
+                    }
+                    Section {
+                        Text(rule.selector).font(.footnote.monospaced()).textSelection(.enabled)
+                    } header: {
+                        Text(ToolText.text("manual_ad_selector"))
+                    } footer: {
+                        Text(ToolText.text("manual_ad_selector_hint"))
+                    }
+                    Section {
+                        Button(LanguageManager.shared.localizedString("restore")) {
+                            remove(rule)
+                            selectedRule = nil
+                        }
+                    } footer: {
+                        Text(ToolText.text("manual_ad_list_hint"))
+                    }
+                }
+                .navigationTitle(ToolText.text("manual_ad_details"))
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(LanguageManager.shared.localizedString("done")) { selectedRule = nil }
+                    }
+                }
+            }
+        }
+        .alert(ToolText.text("manual_ad_undo_failed"), isPresented: $showUndoError) {
+            Button(LanguageManager.shared.localizedString("confirm"), role: .cancel) {}
+        }
+    }
+
+    private func ruleRow(_ rule: ManualAdRule) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button { selectedRule = rule } label: {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: rule.path == nil ? "globe" : "doc.text")
+                        .foregroundStyle(.secondary)
+                        .frame(width: 34, height: 38)
+                        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 9))
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(ToolText.text(rule.path == nil ? "manual_ad_site" : "manual_ad_page_rule"))
+                            .font(.subheadline.weight(.semibold))
+                        Text(rule.path.map { $0.removingPercentEncoding ?? $0 } ?? ToolText.text("manual_ad_all_paths"))
+                            .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                        Text(rule.selector).font(.caption2.monospaced()).foregroundStyle(.tertiary).lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("manualAds.rule.\(rule.id)")
+            HStack {
+                Text(rule.createdAt, format: .dateTime.month().day().hour().minute())
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Button { remove(rule) } label: {
+                    Label(LanguageManager.shared.localizedString("restore"), systemImage: "arrow.uturn.backward")
+                        .font(.subheadline)
+                        .frame(minHeight: 44)
+                }
+                .buttonStyle(.borderless)
+                .tint(.primary)
+            }
+        }.padding(.vertical, 4)
+    }
+
+    private func remove(_ rule: ManualAdRule) {
+        service.remove(rule.id)
+        removedRule = rule
     }
 }
 

@@ -141,7 +141,9 @@ struct WebViewContainer: View {
     @State private var floatingMoreVerticalFraction: CGFloat = 0.88
     @State private var floatingMoreDragTranslation: CGSize = .zero
     @State private var showAdBlockManager = false
+    @State private var markAdAfterDismiss = false
     @State private var showPrivacyPanel = false
+    @State private var showPrivacySettings = false
     @State private var librarySection: LibrarySection?
     @State private var showExtensionCenter = false
     @State private var remoteExtensionInstallPresentation: WebExtensionInstallPresentation?
@@ -257,7 +259,7 @@ struct WebViewContainer: View {
                     .zIndex(40)
             }
 
-            if BrowserChromeLayout.showsBottomToolbar(
+            if webViewModel.manualAdSelection == nil && webViewModel.manualAdSavedRuleID == nil && BrowserChromeLayout.showsBottomToolbar(
                 isActiveTab: isActiveTab,
                 isFullscreen: isFullscreen,
                 isManuallyHidden: toolbarManuallyHidden
@@ -269,7 +271,7 @@ struct WebViewContainer: View {
                     .zIndex(50)
             }
 
-            if BrowserChromeLayout.showsFloatingMore(
+            if webViewModel.manualAdSelection == nil && webViewModel.manualAdSavedRuleID == nil && BrowserChromeLayout.showsFloatingMore(
                 isActiveTab: isActiveTab,
                 isFullscreen: isFullscreen,
                 isManuallyHidden: toolbarManuallyHidden
@@ -435,6 +437,21 @@ struct WebViewContainer: View {
             }
         }
         .animation(.easeOut(duration: 0.18), value: webViewModel.showSnapshotWhileRestoring)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if isActiveTab && (webViewModel.manualAdSelection != nil || webViewModel.manualAdSavedRuleID != nil) {
+                ManualAdPickerBar(model: webViewModel)
+                    .padding(.bottom, windowSafeAreaInsets.bottom)
+                    .background(.regularMaterial)
+            }
+        }
+        .alert(ToolText.text("error"), isPresented: $webViewModel.manualAdError) {
+            Button(ToolText.text("done"), role: .cancel) {}
+        } message: {
+            Text(ToolText.text("manual_ad_error"))
+        }
+        .onChange(of: isActiveTab) { _, active in
+            if !active { webViewModel.cancelMarkingAdvertisement() }
+        }
         .simultaneousGesture(
             fullscreenHandleRevealGesture,
             including: isActiveTab && isFullscreen && !showFullscreenExitHandle
@@ -487,6 +504,7 @@ struct WebViewContainer: View {
             updateFullscreenPresentation(isFullscreen: isFullscreen)
         }
         .onDisappear {
+            webViewModel.cancelMarkingAdvertisement()
             fullscreenHintDismissTask?.cancel()
             fullscreenHintDismissTask = nil
         }
@@ -508,6 +526,9 @@ struct WebViewContainer: View {
         .onChange(of: webViewModel.estimatedProgress) { _, progress in
             if progress >= 0.98 { onPageLoaded?() }
         }
+        .modifier(BrowserHandoffModifier(
+            url: BrowserHandoff.eligibleURL(webViewModel.currentURL, isPrivate: searchVM.isIncognito),
+            title: webViewModel.pageTitle, enabled: isActiveTab))
         .onChange(of: webViewModel.currentURL) { _, url in
             onPageStarted?()
             syncBookmarkState(for: url)
@@ -595,11 +616,35 @@ struct WebViewContainer: View {
             .presentationDetents([.height(BrowserAddressEditorLayout.compactHeight)])
             .presentationDragIndicator(.visible)
         }
-        .sheet(isPresented: $showAdBlockManager) {
+        .sheet(isPresented: $showAdBlockManager, onDismiss: {
+            if markAdAfterDismiss {
+                markAdAfterDismiss = false
+                webViewModel.beginMarkingAdvertisement()
+            }
+        }) {
             NavigationStack {
-                AdBlockManagementView(currentHost: webViewModel.currentURL?.host, showsDoneButton: true) {
+                AdBlockManagementView(currentHost: webViewModel.currentURL?.host, showsDoneButton: true,
+                    currentURL: webViewModel.currentURL,
+                    onMarkAdvertisement: webViewModel.canMarkAdvertisement ? {
+                        markAdAfterDismiss = true
+                        showAdBlockManager = false
+                    } : nil) {
                     webViewModel.reload()
                 }
+            }
+        }
+        .sheet(isPresented: $showPrivacySettings) {
+            if let tabManager {
+                NavigationStack {
+                    PrivacySettingsView()
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button(LanguageManager.shared.localizedString("done")) { showPrivacySettings = false }
+                            }
+                        }
+                }
+                .environmentObject(tabManager)
+                .environmentObject(searchVM)
             }
         }
         .sheet(isPresented: $showPrivacyPanel) {
@@ -897,6 +942,7 @@ struct WebViewContainer: View {
             },
             onBookmarkToggle: { handleBookmarkToggle() },
             onShowPrivacy: { showPrivacyPanel = true },
+            onPrivacySettings: { showPrivacySettings = true },
             onSetPrivateMode: { enabled in
                 setPrivateMode(enabled)
             },

@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Lectura contínua millorada, amb índex i cerca separats, controls de lletra i interlineat i ajustos d’aspecte dels PDF.
-• Biblioteca en graella i giny d’inici, escaneig de QR, reconeixement de text en fotos i drecera d’escaneig.
-• Millores en l’accés a les baixades, les accions de fitxers, les pàgines web fosques i el rendiment.
+• Nova selecció d'anuncis per amagar-los i millores dels filtres i controls de privadesa.
+• Carpetes de marcadors, importació i exportació HTML i codis QR de pàgines per compartir, desar o copiar.
+• Previsualitzacions quadrades, desament d'imatges en lot i millores de lectura, reproducció i extensions de scripts.

@@ -264,8 +264,8 @@
 "ad_block_popups" = "Bersihkan Pop Timbul dan Tindanan";
 "ad_block_management" = "Sekatan Iklan";
 "ad_block_allowlist" = "Tapak yang Dibenarkan";
-"ad_block_disable_current_site" = "Lumpuhkan Sekatan Iklan di Tapak Ini";
-"ad_block_enable_current_site" = "Dayakan Sekatan Iklan di Tapak Ini";
+"ad_block_disable_current_site" = "Benarkan Iklan";
+"ad_block_enable_current_site" = "Sekat Iklan";
 "ad_block_site_toggle_desc" = "Menukar ini memuatkan semula halaman semasa supaya tetapan blok iklan baharu boleh digunakan.";
 "ad_block_no_allowlisted_sites" = "Tiada tapak yang dibenarkan.";
 "ad_block_stats" = "Elemen Tersembunyi";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Keserasian";
 "userscript_experimental_title" = "UserScript keserasian";
 "userscript_experimental_desc" = "Menyokong peraturan tapak, permulaan/tamat dokumen, storan GM dan API halaman yang luas, arahan skrip, pemberitahuan, tab, muat turun, kuki, sumber dan permintaan skop kebenaran. Semak setiap skrip sebelum memasang; fail @require luaran tidak dilaksanakan.";
-"extension_choose_file" = "Pilih Fail atau Folder Sambungan…";
+"extension_choose_file" = "Pilih Fail atau Folder…";
 "extension_installing" = "Menyemak dan memasang sambungan…";
 "extension_install_failed" = "Sambungan Tidak Dapat Dipasang";
 "extension_permissions_summary" = "%d kebenaran · %d peraturan tapak web";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Sambungan ini menggunakan halaman latar belakang yang berterusan yang tidak disokong oleh Sambungan Web iOS. Cuba versi Manifest V3 atau Safari yang serasi.";
 "userscript_new" = "Skrip Baharu";
 "userscript_edit" = "Edit Skrip";
-"userscript_choose_file" = "Pilih UserScript Fail (.js)…";
+"userscript_choose_file" = "Pilih Skrip…";
 "userscript_install_footer" = "Ketik baris sumber untuk membukanya dalam tab Soulo semasa. Pautan .user.js membuka pengesahan pemasangan. JavaScript standard dan set luas API GM disokong; skrip tidak dijalankan dalam Penyemakan Imbas Peribadi dan fail @require luaran tidak dilaksanakan.";
 "userscript_install_failed" = "UserScript Tidak Dapat Dipasang";
 "web_extension_temporarily_disabled" = "Sambungan penyemak imbas standard tidak tersedia buat sementara waktu sementara ujian keserasian selesai.";

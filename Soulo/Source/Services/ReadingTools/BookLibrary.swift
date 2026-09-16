@@ -181,14 +181,35 @@ enum FileSafety {
 
 enum TextBookDecoder {
     static func decode(_ data: Data, encoding: String = "auto") throws -> String {
-        let cf: [String: CFStringEncodings] = ["GB18030": .GB_18030_2000, "Big5": .big5, "Shift-JIS": .shiftJIS]
-        if let value = cf[encoding], let text = String(data: data, encoding: String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(CFStringEncoding(value.rawValue)))) { return text }
-        if encoding == "UTF-16", let text = String(data: data, encoding: .utf16) { return text }
-        if let text = String(data: data, encoding: .utf8) { return text }
-        if data.starts(with: [0xff, 0xfe]) || data.starts(with: [0xfe, 0xff]), let text = String(data: data, encoding: .utf16) { return text }
-        if encoding == "auto", let value = cf["GB18030"], let text = String(data: data, encoding: String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(CFStringEncoding(value.rawValue)))) { return text }
-        throw ReadingToolError.invalid
+        let encodings: [String: String.Encoding] = [
+            "UTF-8": .utf8, "UTF-16": .utf16, "UTF-16LE": .utf16LittleEndian,
+            "UTF-16BE": .utf16BigEndian, "UTF-32": .utf32,
+            "Windows-1252": .windowsCP1252, "ISO-8859-1": .isoLatin1,
+            "GB18030": String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(CFStringEncoding(CFStringEncodings.GB_18030_2000.rawValue))),
+            "Big5": String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(CFStringEncoding(CFStringEncodings.big5.rawValue))),
+            "Shift-JIS": .shiftJIS
+        ]
+        func checked(_ text: String?) throws -> String {
+            guard let text, !text.contains("\0") else {
+                throw ReadingToolError.invalid
+            }
+            return text.hasPrefix("\u{FEFF}") ? String(text.dropFirst()) : text
+        }
+        if encoding != "auto" {
+            guard let value = encodings[encoding] else { throw ReadingToolError.unsupported }
+            return try checked(String(data: data, encoding: value))
+        }
+        // Detect longer BOMs first; UTF-32LE shares UTF-16LE's prefix.
+        if data.starts(with: [0xff, 0xfe, 0, 0]) || data.starts(with: [0, 0, 0xfe, 0xff]) {
+            return try checked(String(data: data, encoding: .utf32))
+        }
+        if data.starts(with: [0xff, 0xfe]) || data.starts(with: [0xfe, 0xff]) {
+            return try checked(String(data: data, encoding: .utf16))
+        }
+        if let text = String(data: data, encoding: .utf8) { return try checked(text) }
+        return try checked(String(data: data, encoding: encodings["GB18030"]!))
     }
+    static let encodings = ["auto", "UTF-8", "UTF-16", "UTF-16LE", "UTF-16BE", "UTF-32", "GB18030", "Big5", "Shift-JIS", "Windows-1252", "ISO-8859-1"]
     static func chapters(_ text: String) -> [String] {
         // Bound each WebView document; a large TXT never becomes a single DOM.
         var result: [String] = [], chunk = "", chunkLength = 0

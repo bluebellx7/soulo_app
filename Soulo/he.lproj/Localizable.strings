@@ -264,8 +264,8 @@
 "ad_block_popups" = "נקה חלונות קופצים ושכבות-על";
 "ad_block_management" = "חסימת פרסומות";
 "ad_block_allowlist" = "אתרים מותרים";
-"ad_block_disable_current_site" = "השבת את חסימת המודעות באתר זה";
-"ad_block_enable_current_site" = "הפעל חסימת מודעות באתר זה";
+"ad_block_disable_current_site" = "אפשר פרסומות";
+"ad_block_enable_current_site" = "חסום פרסומות";
 "ad_block_site_toggle_desc" = "שינוי זה טוען מחדש את הדף הנוכחי כך שההגדרה החדשה של חסימת מודעות תוכל לחול.";
 "ad_block_no_allowlisted_sites" = "אין אתרים מורשים.";
 "ad_block_stats" = "אלמנטים נסתרים";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "תאימות";
 "userscript_experimental_title" = "UserScript תאימות";
 "userscript_experimental_desc" = "תומך בכללי האתר, התחלה/סיום של מסמכים, אחסון GM ו-API של עמודים נרחבים, פקודות סקריפט, התראות, כרטיסיות, הורדות, קובצי Cookie, משאבים ובקשות בהיקף הרשאות. סקור כל סקריפט לפני ההתקנה; קבצי @require חיצוניים אינם מופעלים.";
-"extension_choose_file" = "בחר קובץ הרחבה או תיקיה...";
+"extension_choose_file" = "בחר קובץ או תיקייה…";
 "extension_installing" = "בודק ומתקין תוסף...";
 "extension_install_failed" = "לא ניתן היה להתקין את ההרחבה";
 "extension_permissions_summary" = "%d הרשאות · %d כללי אתר";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "תוסף זה משתמש בדף רקע מתמיד שתוספי אינטרנט של iOS אינם תומכים בו. נסה גרסה תואמת Manifest V3 או Safari.";
 "userscript_new" = "סקריפט חדש";
 "userscript_edit" = "ערוך סקריפט";
-"userscript_choose_file" = "בחר UserScript קובץ (.js)...";
+"userscript_choose_file" = "בחר סקריפט…";
 "userscript_install_footer" = "הקש על שורת מקור כדי לפתוח אותה בכרטיסייה הנוכחית Soulo. קישור ‎.user.js פותח אישור התקנה. נתמכים ב-JavaScript סטנדרטי וקבוצה רחבה של ממשקי API של GM; סקריפטים אינם פועלים בגלישה פרטית וקבצי @require חיצוניים אינם מופעלים.";
 "userscript_install_failed" = "UserScript לא ניתן להתקין";
 "web_extension_temporarily_disabled" = "הרחבות דפדפן סטנדרטיות אינן זמינות באופן זמני בזמן שבדיקות התאימות מושלמות.";

@@ -394,7 +394,7 @@ struct LocalDocumentContent: View {
                         || UTType(filenameExtension: url.pathExtension)?.conforms(to: .sourceCode) == true {
                 TextDocumentPreview(url: url)
             } else if isPlayableMedia {
-                VStack { MediaPlaybackSurface(); MediaControls() }
+                MediaPlaybackContent()
                     .task { MediaSession.shared.open(url: url, title: url.lastPathComponent) }
             } else {
                 DownloadQuickLookPreview(url: url).mediaPlayerNavigation()
@@ -476,8 +476,9 @@ struct ExternalDocumentView: View {
     }
 }
 
-private struct TextDocumentPreview: View {
+struct TextDocumentPreview: View {
     let url: URL
+    @State private var encoding = "auto"
     @State private var text: String?
     @State private var error: String?
     var body: some View {
@@ -486,16 +487,35 @@ private struct TextDocumentPreview: View {
             else if let error { ContentUnavailableView(ToolText.text("reading_failed"), systemImage: "doc.text", description: Text(error)) }
             else { ProgressView() }
         }
-        .task(id: url) {
+        .task(id: url.absoluteString + encoding) {
+            text = nil; error = nil
+            let selectedEncoding = encoding
             do {
-                text = try await Task.detached(priority: .userInitiated) {
+                let decoded = try await Task.detached(priority: .userInitiated) {
                     let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
                     guard size <= 16 * 1024 * 1024 else { throw ReadingToolError.limit }
-                    return try TextBookDecoder.decode(Data(contentsOf: url, options: .mappedIfSafe))
+                    return try TextBookDecoder.decode(Data(contentsOf: url, options: .mappedIfSafe), encoding: selectedEncoding)
                 }.value
-            } catch { self.error = error.localizedDescription }
+                guard !Task.isCancelled else { return }
+                text = decoded
+            } catch ReadingToolError.invalid {
+                if !Task.isCancelled { self.error = ToolText.text("text_encoding_failed") }
+            } catch { if !Task.isCancelled { self.error = error.localizedDescription } }
         }
-        .toolbar { ToolbarItem(placement: .primaryAction) { ShareLink(item: url) { Image(systemName: "square.and.arrow.up") } } }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Picker(ToolText.text("encoding"), selection: $encoding) {
+                        ForEach(TextBookDecoder.encodings, id: \.self) { value in
+                            Text(value == "auto" ? ToolText.text("auto") : value).tag(value)
+                        }
+                    }
+                    ShareLink(item: url) { ToolMenuLabel(key: "share", symbol: "square.and.arrow.up") }
+                } label: { Image(systemName: "ellipsis") }
+                .accessibilityLabel(ToolText.text("encoding"))
+                .accessibilityIdentifier("text.options")
+            }
+        }
     }
 }
 private struct SelectableDocumentText: UIViewRepresentable {
@@ -511,4 +531,63 @@ private struct SelectableDocumentText: UIViewRepresentable {
         return view
     }
     func updateUIView(_ view: UITextView, context: Context) { if view.text != text { view.text = text } }
+}
+
+
+/// A transient completion event, shared by all download transports. Persisted
+/// download history is deliberately not replayed as a new success notification.
+struct DownloadCompletionToast: View {
+    let onOpenDownloads: () -> Void
+    @State private var completed: BrowserDownloadItem?
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+
+    var body: some View {
+        Group {
+            if let completed {
+                Button {
+                    self.completed = nil
+                    onOpenDownloads()
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(LanguageManager.shared.localizedString("resource_download_complete"))
+                                .font(.subheadline.weight(.semibold))
+                            Text(completed.fileName)
+                                .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        }
+                        Spacer(minLength: 4)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    }
+                    .padding(14)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("downloads.completion-toast")
+                .accessibilityHint(LanguageManager.shared.localizedString("downloads"))
+                .padding(.horizontal, 16)
+                .padding(.top, 10)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .task(id: completed.id) {
+                    do { try await Task.sleep(for: .seconds(voiceOverEnabled ? 8 : 4)) }
+                    catch { return }
+                    guard self.completed?.id == completed.id else { return }
+                    self.completed = nil
+                }
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: completed?.id)
+        .onReceive(DownloadManagerService.shared.didFinishDownload) { item in
+            guard scenePhase == .active else { return }
+            completed = item
+            AppAccessibility.announce(LanguageManager.shared.localizedString("resource_download_complete") + ", " + item.fileName)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { completed = nil }
+        }
+    }
 }

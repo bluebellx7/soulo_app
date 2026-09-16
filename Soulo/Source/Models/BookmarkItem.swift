@@ -8,6 +8,7 @@ final class BookmarkItem {
     var urlString: String
     var platformName: String?
     var dateAdded: Date
+    var folderID: UUID?
     @Attribute(.externalStorage) var faviconData: Data?
 
     init(title: String, urlString: String, platformName: String? = nil) {

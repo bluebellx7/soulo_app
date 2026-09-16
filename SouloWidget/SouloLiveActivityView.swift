@@ -45,6 +45,7 @@ struct SouloLiveActivityCompactLeadingView: View {
         Image(systemName: "magnifyingglass")
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(.indigo)
+            .frame(width: 18, height: 18)
     }
 }
 
@@ -52,11 +53,12 @@ struct SouloLiveActivityCompactTrailingView: View {
     let context: ActivityViewContext<SouloLiveActivityAttributes>
 
     var body: some View {
-        Text(context.state.keyword)
-            .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(.primary)
+        Text("Soulo")
+            .font(.system(size: 10, weight: .medium, design: .rounded))
+            .foregroundStyle(.secondary)
             .lineLimit(1)
-            .truncationMode(.tail)
+            .frame(width: 32)
+            .accessibilityLabel(context.state.keyword)
     }
 }
 

@@ -270,8 +270,8 @@
 "ad_block_popups" = "清理弹窗和悬浮层";
 "ad_block_management" = "广告过滤";
 "ad_block_allowlist" = "允许的网站";
-"ad_block_disable_current_site" = "在当前网站停用广告过滤";
-"ad_block_enable_current_site" = "在当前网站启用广告过滤";
+"ad_block_disable_current_site" = "允许广告";
+"ad_block_enable_current_site" = "拦截广告";
 "ad_block_site_toggle_desc" = "修改后会重新加载当前页面，让新的广告过滤设置生效。";
 "ad_block_no_allowlisted_sites" = "暂无允许的网站。";
 "ad_block_stats" = "已隐藏元素";
@@ -636,7 +636,7 @@
 "userscript_experimental_badge" = "兼容性";
 "userscript_experimental_title" = "UserScript 兼容性";
 "userscript_experimental_desc" = "支持网站规则、document-start/end、较完整的 GM 存储与页面 API、脚本命令、通知、标签页、下载、Cookie、资源及按权限开放的请求。安装前请检查脚本；外部 @require 不会执行。";
-"extension_choose_file" = "选择扩展文件或文件夹…";
+"extension_choose_file" = "选择文件或文件夹…";
 "extension_installing" = "正在检查并安装扩展…";
 "extension_install_failed" = "无法安装扩展";
 "extension_permissions_summary" = "%d 项权限 · %d 条网站规则";
@@ -660,7 +660,7 @@
 "web_extension_persistent_background_unsupported" = "此扩展使用了 iOS Web Extension 不支持的持久后台页面。请尝试 Manifest V3 或兼容 Safari 的版本。";
 "userscript_new" = "新建脚本";
 "userscript_edit" = "编辑脚本";
-"userscript_choose_file" = "选择 UserScript 文件（.js）…";
+"userscript_choose_file" = "选择脚本…";
 "userscript_install_footer" = "点击来源整行即可在 Soulo 当前标签页打开，点击 .user.js 链接会显示安装确认。现支持标准 JavaScript 与较完整的 GM API；脚本不会在隐私模式运行，外部 @require 文件不会执行。";
 "userscript_install_failed" = "无法安装 UserScript";
 "web_extension_temporarily_disabled" = "标准浏览器扩展正在进行兼容性测试，本版本暂不开放。";

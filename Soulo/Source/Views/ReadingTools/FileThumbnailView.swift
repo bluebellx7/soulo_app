@@ -1,6 +1,7 @@
 import SwiftUI
 import ImageIO
 import QuickLookThumbnailing
+import UniformTypeIdentifiers
 
 /// Shares bounded, downsampled previews between list and grid cells.
 private actor FileThumbnailCache {
@@ -42,15 +43,27 @@ private actor FileThumbnailCache {
 struct FileThumbnailView: View {
     let file: LocalFile
     @State private var image: UIImage?
+    private var contentMode: ContentMode {
+        guard file.coverURL == nil, !file.directory,
+              let type = UTType(filenameExtension: file.info.fileExtension),
+              type.conforms(to: .image) || type.conforms(to: .movie) else { return .fit }
+        return .fill
+    }
     var body: some View {
-        ZStack {
-            Color(uiColor: .secondarySystemBackground)
-            if let image {
-                Image(uiImage: image).resizable().scaledToFit()
-            } else {
-                Image(systemName: file.info.symbol)
-                    .font(.title2).foregroundStyle(Color.themePrimary)
+        GeometryReader { geometry in
+            ZStack {
+                Color(uiColor: .secondarySystemBackground)
+                if let image {
+                    Image(uiImage: image).resizable()
+                        .aspectRatio(contentMode: contentMode)
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                } else {
+                    Image(systemName: file.info.symbol)
+                        .font(.title2).foregroundStyle(Color.themePrimary)
+                }
             }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .clipped()
         }
         .task(id: file) {
             image = nil

@@ -11,6 +11,9 @@ struct FeedbackView: View {
     @State private var showSuccess = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var includeDiagnostics = true
+    @State private var diagnostics: FeedbackDiagnostics?
+    @State private var showDiagnostics = false
     @State private var checkScale: CGFloat = 0.3
 
     private let types = ["bug", "feature", "question", "other"]
@@ -64,9 +67,10 @@ struct FeedbackView: View {
                                 Spacer()
                                 Text("\(content.count)/2000")
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(content.count > 2000 ? .red : .secondary)
                             }
                             TextEditor(text: $content)
+                                .accessibilityIdentifier("feedback.content")
                                 .frame(minHeight: 150)
                                 .scrollContentBackground(.hidden)
                                 .padding(12)
@@ -98,6 +102,9 @@ struct FeedbackView: View {
                             TextField(lm.localizedString("feedback_contact_hint"), text: $contactInfo)
                                 .textContentType(.emailAddress)
                                 .keyboardType(.emailAddress)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .accessibilityIdentifier("feedback.contact")
                                 .padding(12)
                                 .background(Color(uiColor: .tertiarySystemFill))
                                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -108,26 +115,38 @@ struct FeedbackView: View {
                                 .padding(.horizontal, 4)
                         }
 
-                        HStack(spacing: 12) {
-                            Image(systemName: "envelope").foregroundStyle(Color.themePrimary)
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(lm.localizedString("help_email_title")).font(.caption).foregroundStyle(.secondary)
-                                Link("contact@dkluge.com", destination: URL(string: "mailto:contact@dkluge.com")!)
-                                    .font(.subheadline)
+
+
+                        VStack(alignment: .leading, spacing: 10) {
+                            Toggle(ToolText.text("feedback_diag_include"), isOn: $includeDiagnostics)
+                                .font(.subheadline.weight(.medium))
+                                .accessibilityIdentifier("feedback.include-diagnostics")
+                            Text(ToolText.text("feedback_diag_hint"))
+                                .font(.caption).foregroundStyle(.secondary)
+                            if includeDiagnostics, let diagnostics {
+                                DisclosureGroup(isExpanded: $showDiagnostics) {
+                                    VStack(spacing: 12) {
+                                        ForEach(diagnostics.fields) { field in
+                                            VStack(alignment: .leading, spacing: 3) {
+                                                Text(diagnosticTitle(field.titleKey)).font(.caption).foregroundStyle(.secondary)
+                                                Text(diagnosticValue(field.value)).font(.subheadline).textSelection(.enabled)
+                                            }
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                        }
+                                    }.padding(.top, 12)
+                                } label: {
+                                    Text(ToolText.text("feedback_diag_preview")).font(.subheadline)
+                                }
+                                .accessibilityIdentifier("feedback.diagnostics-preview")
                             }
-                            Spacer(minLength: 0)
-                            Button { UIPasteboard.general.string = "contact@dkluge.com"; HapticsManager.light() } label: {
-                                Image(systemName: "doc.on.doc").frame(width: 44, height: 44)
-                            }
-                            .accessibilityLabel(ToolText.text("copy"))
                         }
-                        .padding(12)
+                        .padding(14)
                         .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12))
 
                         // App info
                         HStack(spacing: 6) {
                             Image(systemName: "app.fill").font(.system(size: 10))
-                            Text("\(FeedbackService.appName) v\(FeedbackService.appVersion)")
+                            Text("\(SouloFeedbackService.appName) v\(SouloFeedbackService.appVersion) (\(SouloFeedbackService.buildNumber))")
                                 .font(.system(size: 11))
                         }
                         .foregroundStyle(.secondary)
@@ -149,12 +168,30 @@ struct FeedbackView: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(content.trimmingCharacters(in: .whitespaces).isEmpty ? Color.gray : Color.themePrimary)
+                            .background(!canSubmit ? Color.gray : Color.themePrimary)
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
-                        .disabled(content.trimmingCharacters(in: .whitespaces).isEmpty || isSubmitting)
+                        .disabled(!canSubmit || isSubmitting)
+                        .accessibilityIdentifier("feedback.submit")
+
+                        HStack(spacing: 12) {
+                            Image(systemName: "envelope").foregroundStyle(Color.themePrimary)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(ToolText.text("feedback_support_email")).font(.caption).foregroundStyle(.secondary)
+                                Link("contact@dkluge.com", destination: URL(string: "mailto:contact@dkluge.com")!)
+                                    .font(.subheadline)
+                            }
+                            Spacer(minLength: 0)
+                            Button { UIPasteboard.general.string = "contact@dkluge.com"; HapticsManager.light() } label: {
+                                Image(systemName: "doc.on.doc").frame(width: 44, height: 44)
+                            }
+                            .accessibilityLabel(ToolText.text("copy"))
+                        }
+                        .padding(12)
+                        .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12))
                     }
                     .padding(20)
+                    .disabled(isSubmitting)
                 }
                 .background(Color(uiColor: .systemGroupedBackground))
 
@@ -164,11 +201,13 @@ struct FeedbackView: View {
                         .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 }
             }
+            .task { if diagnostics == nil { diagnostics = FeedbackDiagnostics.capture() } }
+            .interactiveDismissDisabled(isSubmitting)
             .navigationTitle(lm.localizedString("feedback_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(lm.localizedString("cancel")) { dismiss() }
+                    Button(lm.localizedString("cancel")) { dismiss() }.disabled(isSubmitting)
                 }
             }
             .alert(lm.localizedString("feedback_error"), isPresented: $showError) {
@@ -214,13 +253,30 @@ struct FeedbackView: View {
         }
     }
 
+    private var canSubmit: Bool {
+        let text = content.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !text.isEmpty && text.count <= 2000
+    }
+
+    private func diagnosticTitle(_ key: String) -> String {
+        let shared = lm.localizedString(key)
+        return shared == key ? ToolText.text(key) : shared
+    }
+
+    private func diagnosticValue(_ value: String) -> String {
+        if value == "true" { return lm.localizedString("accessibility_enabled") }
+        if value == "false" { return lm.localizedString("accessibility_disabled") }
+        return value
+    }
+
     private func submitFeedback() {
-        let trimmed = content.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty, trimmed.count <= 2000 else { return }
+        let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard canSubmit, !isSubmitting else { return }
         isSubmitting = true
         Task {
             do {
-                try await FeedbackService.submit(type: feedbackType, content: trimmed, contactInfo: contactInfo)
+                try await SouloFeedbackService.submit(type: feedbackType, content: trimmed,
+                    contactInfo: contactInfo, diagnostics: includeDiagnostics ? diagnostics : nil)
                 await MainActor.run {
                     isSubmitting = false
                     checkScale = 0.3

@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Jobb folyamatos olvasás, külön tartalomjegyzék és keresés, valamint betűtípus-, sorköz- és PDF-megjelenítési beállítások.
-• Új könyvrács és widget, QR-kód-olvasás, szövegfelismerés fotókról és beolvasási parancsikon.
-• Javult a letöltések elérése, a fájlműveletek, a weboldalak sötét megjelenítése és a teljesítmény.
+• Reklámok kijelölése elrejtéshez, továbbfejlesztett reklámszűrés és adatvédelmi vezérlők.
+• Könyvjelzőmappák, HTML-import és -export, valamint az oldalak QR-kódjának megosztása, mentése és másolása.
+• Négyzetes előnézetek, csoportos képmentés és fejlesztések az olvasásban, médialejátszásban és szkriptbővítményekben.

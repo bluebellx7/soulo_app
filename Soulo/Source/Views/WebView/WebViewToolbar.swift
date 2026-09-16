@@ -118,15 +118,14 @@ enum BrowserAddressDisplay {
 struct WebViewToolbar: View {
     @ObservedObject var viewModel: WebViewModel
     @Binding var isBookmarked: Bool
-    @ObservedObject private var privacyService = PrivacyProtectionService.shared
-    @ObservedObject private var adBlockSettings = AdBlockSettingsService.shared
     @ObservedObject private var webAppearance = WebAppearanceService.shared
     @ObservedObject private var toolbarConfiguration = BrowserToolbarConfigurationService.shared
     @ObservedObject private var extensionService = BrowserExtensionService.shared
-    @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = true
     @AppStorage(AppConstants.StorageKeys.isIncognito) private var isIncognito = false
     @AppStorage(AppConstants.StorageKeys.selectedLanguage) private var appLanguage = AppConstants.preferredLanguageCode()
+    @AppStorage("builtin_reader_enabled") private var readerEnabled = false
     @State private var showSiteInformation = false
+    @State private var pendingSiteAction: (() -> Void)?
     @State private var showZoomControls = false
     @State private var showMediaRateControls = false
     @State private var isChangingMediaRate = false
@@ -140,6 +139,7 @@ struct WebViewToolbar: View {
     var onShare: (() -> Void)?
     var onBookmarkToggle: (() -> Void)?
     var onShowPrivacy: (() -> Void)?
+    var onPrivacySettings: (() -> Void)?
     var onSetPrivateMode: ((Bool) -> Void)?
     var onManageAdBlock: (() -> Void)?
     var onShowLibrary: (() -> Void)?
@@ -229,6 +229,7 @@ struct WebViewToolbar: View {
                     isIncognito ? "privacy_incognito" : "site_information"
                 )
             )
+            .accessibilityIdentifier("browser.siteInformation")
             .popover(
                 isPresented: $showSiteInformation,
                 attachmentAnchor: .rect(.bounds),
@@ -243,21 +244,29 @@ struct WebViewToolbar: View {
                     currentURL: viewModel.currentURL,
                     isPrivateMode: isIncognito,
                     onSetPrivateMode: { enabled in
-                        showSiteInformation = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) {
-                            onSetPrivateMode?(enabled)
-                        }
+                        dismissSiteInformation { onSetPrivateMode?(enabled) }
                     },
                     onReload: {
                         viewModel.retryCurrentPage()
                     },
                     onShowDetails: {
-                        showSiteInformation = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) {
-                            onShowPrivacy?()
-                        }
+                        dismissSiteInformation { onShowPrivacy?() }
+                    },
+                    onManageAdBlock: {
+                        dismissSiteInformation { onManageAdBlock?() }
+                    },
+                    onMarkAdvertisement: {
+                        dismissSiteInformation { viewModel.beginMarkingAdvertisement() }
+                    },
+                    onPrivacySettings: {
+                        dismissSiteInformation { onPrivacySettings?() }
                     }
                 )
+                .onDisappear {
+                    guard let action = pendingSiteAction else { return }
+                    pendingSiteAction = nil
+                    DispatchQueue.main.async(execute: action)
+                }
             }
 
             Rectangle()
@@ -428,16 +437,9 @@ struct WebViewToolbar: View {
 
     // MARK: - More Actions Menu
 
-    private var siteProtectionEnabled: Bool {
-        guard viewModel.currentURL?.host != nil else { return false }
-        return !privacyService.isProtectionDisabled(for: viewModel.currentURL?.host)
-            && !WebCompatibilityService.shouldBypassWebProtection(for: viewModel.currentURL)
-    }
-
-    private var siteAdBlockingEnabled: Bool {
-        adBlockEnabled
-            && !adBlockSettings.isAllowlisted(viewModel.currentURL?.host)
-            && !WebCompatibilityService.shouldBypassWebProtection(for: viewModel.currentURL)
+    private func dismissSiteInformation(then action: @escaping () -> Void) {
+        pendingSiteAction = action
+        showSiteInformation = false
     }
 
     private func menuLabel(
@@ -633,7 +635,7 @@ struct WebViewToolbar: View {
                 webExtensionActionStrip
             }
 
-            if !viewModel.userScriptMenuCommands.isEmpty {
+            if readerCommandAvailable || !viewModel.userScriptMenuCommands.isEmpty {
                 userScriptCommandsMenu
             }
 
@@ -710,9 +712,11 @@ struct WebViewToolbar: View {
     private var pageToolsMenu: some View {
         Menu {
             Group {
-                Button { performMoreMenuAction { onReadArticle?() } } label: {
-                    Label(ToolText.text(pageAvailability.likelyReadable ? "reader_mode" : "try_reader"), systemImage: "doc.text")
-                }.disabled(onReadArticle == nil)
+                Button { performMoreMenuAction { onManageAdBlock?() } } label: {
+                    menuLabel("ad_block_management", systemImage: "shield.lefthalf.filled")
+                }
+                .disabled(onManageAdBlock == nil)
+                .accessibilityIdentifier("browser.ad-block-management")
                 Button { performMoreMenuAction { onTranslatePage?() } } label: {
                     menuLabel("web_translate", systemImage: "character.bubble")
                 }.disabled(onTranslatePage == nil)
@@ -728,8 +732,13 @@ struct WebViewToolbar: View {
             Divider()
             if pageAvailability.shouldShowMediaRate(for: viewModel.currentURL) {
                 Button { performMoreMenuAction { showMediaRateControls = true } } label: {
-                    Label(ToolText.text("web_media_speed") + (pageAvailability.mediaCount > 0 ? " · " + webMediaRate.formatted() + "×" : ""), systemImage: "speedometer")
+                    Label {
+                        Text(ToolText.text("web_media_speed") + (pageAvailability.mediaCount > 0 ? " · " + webMediaRate.formatted() + "×" : ""))
+                    } icon: {
+                        menuIcon("speedometer", isActive: nil, activeColor: .label)
+                    }
                 }
+                .accessibilityIdentifier("browser.media-speed")
             }
             Button { performMoreMenuAction { onInspectResources?() } } label: {
                 menuLabel("resource_inspector_title", systemImage: "dot.radiowaves.left.and.right")
@@ -742,16 +751,7 @@ struct WebViewToolbar: View {
                 Button { performMoreMenuAction { onShowExtensions?() } } label: {
                     menuLabel("userscripts", systemImage: "puzzlepiece.extension")
                 }.disabled(onShowExtensions == nil)
-                if viewModel.currentURL?.host != nil {
-                    Button { performMoreMenuAction { onManageAdBlock?() } } label: {
-                        menuLabel("ad_block_management", systemImage: "shield.lefthalf.filled",
-                                  isActive: siteAdBlockingEnabled, activeColor: .systemGreen)
-                    }
-                    Button { performMoreMenuAction { onShowPrivacy?() } } label: {
-                        menuLabel("site_privacy", systemImage: "shield.checkered",
-                                  isActive: siteProtectionEnabled, activeColor: .systemGreen)
-                    }
-                }
+                .accessibilityIdentifier("browser.extensions")
             }
         } label: {
             moreMenuRowLabel(
@@ -761,12 +761,28 @@ struct WebViewToolbar: View {
             )
         }
         .buttonStyle(.plain)
+        .menuOrder(.fixed)
         .disabled(viewModel.currentURL == nil)
         .opacity(viewModel.currentURL == nil ? 0.35 : 1)
     }
 
+    private var readerCommandAvailable: Bool {
+        readerEnabled && onReadArticle != nil && viewModel.webView != nil
+            && ["http", "https"].contains(viewModel.currentURL?.scheme?.lowercased() ?? "")
+    }
+
     private var userScriptCommandsMenu: some View {
         Menu {
+            if readerCommandAvailable {
+                Button { performMoreMenuAction { onReadArticle?() } } label: {
+                    Label {
+                        Text(ToolText.text("reader_mode"))
+                    } icon: {
+                        menuIcon("doc.text", isActive: nil, activeColor: .label)
+                    }
+                }
+                .accessibilityIdentifier("browser.reader-command")
+            }
             ForEach(viewModel.userScriptMenuCommands) { command in
                 Button {
                     performMoreMenuAction {
@@ -956,7 +972,7 @@ struct WebViewToolbar: View {
                 }
                 moreMenuShortcut(
                     "desktop_mode",
-                    systemImage: "desktopcomputer",
+                    systemImage: "display",
                     isEnabled: viewModel.currentURL != nil && tabManager != nil,
                     isActive: tabManager?.isDesktopMode ?? false
                 ) {
@@ -1167,6 +1183,7 @@ struct WebViewToolbar: View {
             HStack {
                 Label(ToolText.text("web_media_speed"), systemImage: "speedometer")
                     .font(.headline)
+                    .foregroundStyle(.primary)
                 Spacer()
                 Button(ToolText.text("done")) { showMediaRateControls = false }
                     .font(.subheadline.weight(.semibold))
@@ -1331,7 +1348,7 @@ struct WebViewToolbar: View {
         switch action {
         case .bookmark: isBookmarked ? "bookmark.fill" : "bookmark"
         case .fullscreen: isFullscreen ? "arrow.down.right.and.arrow.up.left" : action.systemImage
-        case .desktopMode: tabManager?.isDesktopMode == true ? "desktopcomputer.and.macbook" : action.systemImage
+        case .desktopMode: action.systemImage
         case .darkMode: webAppearance.forceDarkPages ? "moon.fill" : "moon"
         default: action.systemImage
         }
@@ -1363,7 +1380,7 @@ struct WebViewToolbar: View {
         case .hideToolbar: onHideToolbar != nil
         case .screenshot: onCapturePage != nil
         case .translate: onTranslatePage != nil
-        case .readerMode: onReadArticle != nil
+        case .readerMode: readerCommandAvailable
         case .resources: onInspectResources != nil
         case .files, .books, .downloads: onOpenLibrarySection != nil
         case .wifiTransfer: onWiFiTransfer != nil

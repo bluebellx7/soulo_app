@@ -264,8 +264,8 @@
 "ad_block_popups" = "팝업 및 오버레이 정리";
 "ad_block_management" = "광고 차단";
 "ad_block_allowlist" = "허용된 사이트";
-"ad_block_disable_current_site" = "이 사이트에서 광고 차단 비활성화";
-"ad_block_enable_current_site" = "이 사이트에서 광고 차단 활성화";
+"ad_block_disable_current_site" = "광고 허용";
+"ad_block_enable_current_site" = "광고 차단";
 "ad_block_site_toggle_desc" = "이를 변경하면 현재 페이지가 다시 로드되어 새로운 광고 차단 설정이 적용될 수 있습니다.";
 "ad_block_no_allowlisted_sites" = "허용된 사이트가 없습니다.";
 "ad_block_stats" = "숨겨진 요소";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "호환성";
 "userscript_experimental_title" = "UserScript 호환성";
 "userscript_experimental_desc" = "사이트 규칙, 문서 시작/끝, 광범위한 GM 저장소 및 페이지 API, 스크립트 명령, 알림, 탭, 다운로드, 쿠키, 리소스 및 권한 범위 요청을 지원합니다. 설치하기 전에 모든 스크립트를 검토하십시오. 외부 @require 파일은 실행되지 않습니다.";
-"extension_choose_file" = "확장 파일 또는 폴더를 선택하세요...";
+"extension_choose_file" = "파일 또는 폴더 선택…";
 "extension_installing" = "확장 프로그램 확인 및 설치 중…";
 "extension_install_failed" = "확장 프로그램을 설치할 수 없습니다";
 "extension_permissions_summary" = "%d 권한 · %d 웹사이트 규칙";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "이 확장은 iOS 웹 확장이 지원하지 않는 지속적인 배경 페이지를 사용합니다. Manifest V3 또는 Safari 호환 버전을 사용해 보세요.";
 "userscript_new" = "새 스크립트";
 "userscript_edit" = "스크립트 편집";
-"userscript_choose_file" = "UserScript 파일(.js)을 선택하세요…";
+"userscript_choose_file" = "스크립트 선택…";
 "userscript_install_footer" = "소스 행을 탭하여 현재 Soulo 탭에서 엽니다. .user.js 링크는 설치 확인을 엽니다. 표준 JavaScript 및 광범위한 GM API 세트가 지원됩니다. 프라이빗 브라우징에서는 스크립트가 실행되지 않으며 외부 @require 파일도 실행되지 않습니다.";
 "userscript_install_failed" = "UserScript을 설치할 수 없습니다";
 "web_extension_temporarily_disabled" = "호환성 테스트가 완료되는 동안에는 표준 브라우저 확장을 일시적으로 사용할 수 없습니다.";

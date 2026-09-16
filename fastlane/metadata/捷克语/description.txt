@@ -1,22 +1,18 @@
-Soulo je rychlý soukromý prohlížeč pro více vyhledávání pro iPhone a iPad. Zadejte jeden dotaz a poté bez přepisování přepínejte mezi více než 40 platformami pro vyhledávání, sociální sítě, video, nakupování, znalosti a AI.
+Soulo je prohlížeč pro iPhone a iPad s hledáním na více platformách. Zadejte dotaz jednou a přepínejte mezi vyhledávači, sociálními sítěmi, videem, nákupy, znalostmi a AI bez dalšího psaní.
 
-PROCHÁZEJTE SI CESTU
-• Karty, záložky, historie, stahování a přizpůsobitelné vyhledávací platformy
-• Soukromé procházení, ochrana trackerem, blokování reklam a ovládání jednotlivých stránek
-• Režimy mobilních a stolních webových stránek, přiblížení stránky, překlad a snímání celé stránky
-• Stahujte obrázky, video, zvuk a dokumenty pomocí inspektora zdrojů webové stránky
-• Extrahujte text z obrázků webových stránek pomocí Live Text
+Hledejte informace, čtěte články, přehrávejte média a spravujte stahování v jednom prohlížeči.
 
-URČENO PRO IPHONE A iPad
-• Více nezávislých oken na iPadu
-• Sdílejte odkazy nebo text přímo s Soulo
-• Vyhledávejte a otevírejte stažené soubory z Siri, Shortcuts, Control Center, obrazovka uzamčení a tlačítko akce
-• Stahování na pozadí se skutečným postupem a pozastavením/obnovením
-• Živé aktivity a stav Dynamic Island
+• Hledání: přidávejte platformy, seskupujte je a měňte pořadí. Vybraný text vyhledejte na novém panelu Soulo.
+• Reklamy a soukromí: filtrace reklam, odběr externích pravidel a ruční označování reklam ke skrytí. Spravujte filtry a ochranu proti sledování pro jednotlivé weby. Anonymní prohlížení neukládá historii.
+• Zvuk a video: rychlost, opakování, plovoucí minipřehrávač, obraz v obraze, přehrávání na pozadí a AirPlay. Zachyťte snímky videa, zrcadlete obraz a podržením dočasně zrychlete přehrávání.
+• Soubory: najděte obrázky, zvuk, video a dokumenty na stránkách a ukládejte obrázky hromadně. Seznam či mřížka obálek, přejmenování, import z Fotek a přenos přes Wi-Fi.
+• Archivy: rozbalení ZIP, RAR a 7z; vytváření ZIP a 7z s volitelným heslem.
+• Čtení: TXT, PDF, EPUB a podporované MOBI, AZW a AZW3 bez DRM. Upravte písmo, velikost, řádkování a pozadí. Knihy s přizpůsobivým rozvržením umožňují zjednodušené či tradiční čínské zobrazení. Režim čtení získá text článku a umožní pokračovat na další stránce.
+• Rozšíření: importujte, upravujte a spouštějte uživatelské skripty JavaScript, spravujte weby a oprávnění a instalujte kompatibilní WebExtensions.
+• Webové nástroje: překlad, hledání na stránce, snímky celých stránek, rozpoznávání textu v obrázcích, počítačový/mobilní režim, vlastní user agent a certifikáty webů.
+• Záložky: složky a import/export HTML záložek pro Chrome, Edge a další prohlížeče. Vytvářejte QR kódy stránek s ikonou webu, sdílejte, ukládejte a kopírujte je.
+• Přizpůsobení: tapety, nástrojová lišta a rychlé akce ikony aplikace. Přístup přes widgety, Zkratky a URL schémata. Volitelná synchronizace nastavení přes iCloud.
 
-ROZŠÍŘIT WEB
-Nainstalujte UserScripts nebo kompatibilní WebExtension, spravujte přehledně oprávnění a vytvářejte si vlastní skripty pomocí vestavěné dokumentace API.
+Dostupnost médií, knih a rozšíření závisí na formátu, omezeních webu a verzi systému.
 
-Soulo ukládá údaje o prohlížení místně, pokud nepovolíte synchronizaci nastavení iCloud. Soukromé prohlížení neukládá historii.
-
-Čtěte pohodlně, otevřete knihovnu z widgetu, skenujte QR kódy a rozpoznávejte text na fotografiích.
+Podpora: contact@dkluge.com

@@ -264,8 +264,8 @@
 "ad_block_popups" = "Popup e overlay puliti";
 "ad_block_management" = "Blocco pubblicità";
 "ad_block_allowlist" = "Siti consentiti";
-"ad_block_disable_current_site" = "Disabilita il blocco degli annunci su questo sito";
-"ad_block_enable_current_site" = "Abilita il blocco degli annunci su questo sito";
+"ad_block_disable_current_site" = "Consenti annunci";
+"ad_block_enable_current_site" = "Blocca annunci";
 "ad_block_site_toggle_desc" = "La modifica di questa impostazione ricarica la pagina corrente in modo che possa essere applicata la nuova impostazione di blocco degli annunci.";
 "ad_block_no_allowlisted_sites" = "Nessun sito consentito.";
 "ad_block_stats" = "Elementi nascosti";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Compatibilità";
 "userscript_experimental_title" = "Compatibilità UserScript";
 "userscript_experimental_desc" = "Supporta regole del sito, inizio/fine documento, ampio spazio di archiviazione GM e API di pagina, comandi di script, notifiche, schede, download, cookie, risorse e richieste con ambito di autorizzazione. Rivedi ogni script prima dell'installazione; i file @require esterni non vengono eseguiti.";
-"extension_choose_file" = "Scegli il file o la cartella di estensione...";
+"extension_choose_file" = "Scegli file o cartella…";
 "extension_installing" = "Controllo e installazione dell'estensione…";
 "extension_install_failed" = "Impossibile installare l'estensione";
 "extension_permissions_summary" = "%d permessi · %d regole del sito web";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Questa estensione utilizza una pagina in background permanente che le estensioni web iOS non supportano. Prova una versione Manifest V3 o compatibile con Safari.";
 "userscript_new" = "Nuova sceneggiatura";
 "userscript_edit" = "Modifica sceneggiatura";
-"userscript_choose_file" = "Scegli UserScript File (.js)…";
+"userscript_choose_file" = "Scegli script…";
 "userscript_install_footer" = "Tocca una riga di origine per aprirla nella scheda Soulo corrente. Un collegamento .user.js apre una conferma di installazione. Sono supportati JavaScript standard e un'ampia serie di API GM; gli script non vengono eseguiti nella Navigazione privata e i file @require esterni non vengono eseguiti.";
 "userscript_install_failed" = "Impossibile installare UserScript";
 "web_extension_temporarily_disabled" = "Le estensioni del browser standard sono temporaneamente non disponibili mentre viene completato il test di compatibilità.";

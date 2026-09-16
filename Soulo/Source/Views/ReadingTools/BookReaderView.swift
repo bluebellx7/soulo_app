@@ -21,6 +21,7 @@ struct ReaderLink: Identifiable {
     weak var pdfView: PDFView?
     var book: LibraryBook
     var onBack: (() -> Void)?
+    var chineseDisplay = "original"
     var size = 18.0, line = 1.6, theme = "paper", font = "serif"
     init(book: LibraryBook) { self.book = book }
     func command(_ name: String, _ args: [Any] = []) {
@@ -35,7 +36,7 @@ struct ReaderLink: Identifiable {
             if let page = document.page(at: index) { pdfView.go(to: page) }
         } else { command("fraction", [fraction]) }
     }
-    func style() { command("style", [size, line, theme, font]) }
+    func style() { command("style", [size, line, theme, font]); command("chinese", [chineseDisplay]) }
     func go(_ href: String) {
         if let pdfView, let index = Int(href), let page = pdfView.document?.page(at: index) {
             pdfView.go(to: page)
@@ -81,6 +82,7 @@ struct BookReaderView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var query = ""
     @State private var encoding = "auto"
+    @AppStorage("reader.chineseDisplay") private var chineseDisplay = "original"
     @AppStorage("reader.fontSize") private var fontSize = 18.0
     @AppStorage("reader.font") private var font = "serif"
     @AppStorage("reader.lineHeight") private var lineHeight = 1.6
@@ -145,10 +147,17 @@ struct BookReaderView: View {
                         Text(ToolText.text("light")).tag("light")
                         Text(ToolText.text("dark")).tag("dark")
                     }.pickerStyle(.segmented)
-                    if format == .text || format == .palmDoc {
+                    if !isPDF {
+                        Picker(ToolText.text("chinese_display"), selection: $chineseDisplay) {
+                            Text(ToolText.text("original_text")).tag("original")
+                            Text(ToolText.text("simplified_text")).tag("simplified")
+                            Text(ToolText.text("traditional_text")).tag("traditional")
+                        }
+                    }
+                    if format == .text {
                         Picker(ToolText.text("encoding"), selection: $encoding) {
-                            ForEach(["auto", "UTF-8", "UTF-16", "GB18030", "Big5", "Shift-JIS"], id: \.self) {
-                                Text($0).tag($0)
+                            ForEach(TextBookDecoder.encodings, id: \.self) {
+                                Text($0 == "auto" ? ToolText.text("auto") : $0).tag($0)
                             }
                         }
                     }
@@ -172,20 +181,17 @@ struct BookReaderView: View {
             .presentationDetents([.height(190)])
             .presentationDragIndicator(.visible)
         }
+        .onChange(of: chineseDisplay) { _, _ in updateStyle() }
         .onChange(of: font) { _, _ in updateStyle() }
         .onChange(of: fontSize) { _, _ in updateStyle() }
         .onChange(of: lineHeight) { _, _ in updateStyle() }
         .onChange(of: theme) { _, _ in updateStyle() }
-        .onChange(of: encoding) { _, _ in
-            data = nil
-            Task { await prepare() }
-        }
         .sheet(isPresented: $showFileInfo) { fileInfoSheet }
         .onAppear {
             let action = dismiss
             controller.onBack = { action() }
         }
-        .task { await prepare() }
+        .task(id: encoding) { data = nil; controller.error = nil; await prepare() }
         .onDisappear { library.flushReadingProgress(); controller.onBack = nil }
 
     }
@@ -245,10 +251,12 @@ struct BookReaderView: View {
             .task {
                 let url = book.url
                 let values = try? await Task.detached(priority: .utility) {
-                    try url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
+                    let values = try url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
+                    return (size: values.fileSize, modified: values.contentModificationDate)
                 }.value
-                fileBytes = Int64(values?.fileSize ?? data?.count ?? 0)
-                fileModified = values?.contentModificationDate
+                guard !Task.isCancelled else { return }
+                fileBytes = Int64(values?.size ?? data?.count ?? 0)
+                fileModified = values?.modified
             }
         }.presentationDetents([.medium, .large])
     }
@@ -340,6 +348,7 @@ struct BookReaderView: View {
         }
     }
     private func updateStyle() {
+        controller.chineseDisplay = chineseDisplay
         controller.font = font
         controller.size = fontSize
         controller.line = lineHeight
@@ -437,6 +446,7 @@ struct BookWebSurface: UIViewRepresentable {
         config.websiteDataStore = .nonPersistent()
         config.setURLSchemeHandler(context.coordinator, forURLScheme: "soulo-book")
         config.userContentController.add(context.coordinator, name: "book")
+        config.userContentController.addScriptMessageHandler(context.coordinator, contentWorld: .page, name: "chineseText")
         let view = SelectionSearchWebView(frame: .zero, configuration: config)
         view.navigationDelegate = context.coordinator
         view.isOpaque = false
@@ -458,10 +468,26 @@ struct BookWebSurface: UIViewRepresentable {
     static func dismantleUIView(_ view: WKWebView, coordinator: Coordinator) {
         view.stopLoading()
         view.configuration.userContentController.removeScriptMessageHandler(forName: "book")
+        view.configuration.userContentController.removeScriptMessageHandler(forName: "chineseText", contentWorld: .page)
     }
-    final class Coordinator: NSObject, WKURLSchemeHandler, WKScriptMessageHandler, WKNavigationDelegate, UIGestureRecognizerDelegate {
+    final class Coordinator: NSObject, WKURLSchemeHandler, WKScriptMessageHandler, WKScriptMessageHandlerWithReply, WKNavigationDelegate, UIGestureRecognizerDelegate {
         let parent: BookWebSurface
         init(_ parent: BookWebSurface) { self.parent = parent }
+        func userContentController(_ userContentController: WKUserContentController,
+            didReceive message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
+            guard message.frameInfo.isMainFrame, let body = message.body as? [String: Any],
+                  let texts = body["texts"] as? [String], texts.count <= 128,
+                  texts.reduce(0, { $0 + $1.utf8.count }) <= 262_144,
+                  let mode = body["mode"] as? String, ["simplified", "traditional"].contains(mode) else {
+                replyHandler(nil, "Invalid conversion request"); return
+            }
+            Task {
+                let converted = await Task.detached(priority: .userInitiated) {
+                    texts.map { ChineseTextDisplay.convert($0, mode: mode) }
+                }.value
+                replyHandler(converted, nil)
+            }
+        }
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool { true }
         @objc func swipeBack(_ gesture: UIScreenEdgePanGestureRecognizer) {
             guard gesture.state == .ended, gesture.translation(in: gesture.view).x > 70 else { return }

@@ -1123,20 +1123,30 @@ final class WebViewModelTests: XCTestCase {
         window.rootViewController = viewController
         window.makeKeyAndVisible()
         viewController.view.layoutIfNeeded()
+        let ready = expectation(description: "Capture fixture navigation finished")
+        let navigation = CaptureFixtureNavigation(ready: ready)
+        webView.navigationDelegate = navigation
         webView.loadHTMLString(html, baseURL: URL(string: "https://capture.test"))
-
-        var didFinish = false
-        for _ in 0..<80 {
-            let state = try? await webView.evaluateJavaScript("document.readyState") as? String
-            if state == "complete" {
-                didFinish = true
-                break
-            }
-            try await Task.sleep(nanoseconds: 25_000_000)
-        }
-        XCTAssertTrue(didFinish)
+        await fulfillment(of: [ready], timeout: 20)
+        webView.navigationDelegate = nil
+        if let error = navigation.error { window.isHidden = true; throw error }
+        guard navigation.finished else { window.isHidden = true; webView.stopLoading(); throw ReadingToolError.invalid }
         try await Task.sleep(nanoseconds: 150_000_000)
         return (window, webView)
+    }
+
+    private final class CaptureFixtureNavigation: NSObject, WKNavigationDelegate {
+        let ready: XCTestExpectation
+        var finished = false
+        var error: Error?
+        init(ready: XCTestExpectation) { self.ready = ready }
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { complete() }
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { complete(error) }
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { complete(error) }
+        private func complete(_ error: Error? = nil) {
+            guard !finished else { return }
+            self.error = error; finished = true; ready.fulfill()
+        }
     }
 
     private func assertPixel(

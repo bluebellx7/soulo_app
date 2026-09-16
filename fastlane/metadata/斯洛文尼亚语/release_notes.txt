@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Izboljšano neprekinjeno branje z ločenima kazalom in iskanjem ter nastavitvami pisave, razmika vrstic in videza PDF.
-• Dodani mreža knjig in gradnik, skeniranje kod QR, prepoznavanje besedila na fotografijah in bližnjica za skeniranje.
-• Izboljšani dostop do prenosov, opravila z datotekami, temni prikaz spletnih strani in delovanje.
+• Označevanje oglasov za skrivanje ter izboljšani oglasni filtri in nastavitve zasebnosti.
+• Mape zaznamkov, uvoz in izvoz HTML ter deljenje, shranjevanje in kopiranje kod QR za strani.
+• Kvadratni predogledi, skupinsko shranjevanje slik ter izboljšave branja, predvajanja in skriptnih razširitev.

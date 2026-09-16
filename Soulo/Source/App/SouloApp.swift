@@ -41,7 +41,7 @@ struct SouloApp: App {
         } defaultValue: {
             BrowserWindowConfiguration()
         }
-        .modelContainer(for: [SearchHistoryItem.self, BookmarkItem.self])
+        .modelContainer(for: [SearchHistoryItem.self, BookmarkItem.self, BookmarkFolder.self])
     }
 }
 
@@ -86,12 +86,8 @@ private struct SouloWindowRoot: View {
             .onOpenURL { url in
                 if url.isFileURL {
                     NotificationCenter.default.post(name: .openSouloDocument, object: url)
-                } else if url.scheme == "soulo" && url.host == "action" {
+                } else if url.scheme?.lowercased() == "soulo" && url.host?.lowercased() == "action" {
                     handlePendingSharedAction()
-                } else if url.scheme == "soulo" && url.host == "search" {
-                    searchVM.clearSearch()
-                } else if url.scheme == "soulo" && ["files", "bookshelf"].contains(url.host ?? "") {
-                    NotificationCenter.default.post(name: .openSouloFiles, object: nil)
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .souloSharedActionRequested)) { _ in

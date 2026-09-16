@@ -13,6 +13,7 @@ class SearchViewModel: ObservableObject {
     @Published var isSearching: Bool = false
     /// Unique ID that changes each time a new search is performed. Used to detect new vs. returning.
     @Published var searchID: UUID = UUID()
+    @Published var externalSearchRequestID: UUID?
     @Published var currentKeyword: String = ""
     var isSelectionSearch = false
     @Published var selectedRegion: PlatformRegion = .international
@@ -213,15 +214,25 @@ class SearchViewModel: ObservableObject {
     // MARK: - Clipboard (F7 Enhanced)
 
     func detectClipboard() {
-        // Detect pasteboard content without reading it, avoiding the system paste prompt.
-        let changeCount = UIPasteboard.general.changeCount
+        let pasteboard = UIPasteboard.general
+        let changeCount = pasteboard.changeCount
         guard changeCount != lastClipboardChangeCount else { return }
         Task { @MainActor in
-            guard let patterns = try? await UIPasteboard.general.detectedPatterns(for: [\.probableWebURL, \.number, \.probableWebSearch]),
-                  !patterns.isEmpty else { return }
-            self.clipboardContent = nil
-            self.suggestedClipboardPlatforms = []
-            self.showClipboardPrompt = true
+            guard let patterns = try? await pasteboard.detectedPatterns(for: [\.probableWebURL, \.number, \.probableWebSearch]),
+                  !patterns.isEmpty, pasteboard.changeCount == changeCount else { return }
+            // Read each detected revision once. iOS owns paste permission; marking
+            // the revision first avoids requesting again when its prompt closes.
+            lastClipboardChangeCount = changeCount
+            let text = await Self.readClipboardText()
+            guard pasteboard.changeCount == changeCount else { return }
+            if let text, !text.isEmpty {
+                guard Self.stableHash(for: text) != lastClipboardHash else { return }
+                clipboardContent = text
+            } else {
+                clipboardContent = nil
+            }
+            suggestedClipboardPlatforms = []
+            showClipboardPrompt = true
         }
     }
 
@@ -234,18 +245,42 @@ class SearchViewModel: ObservableObject {
     }
 
     func searchFromClipboard(context: ModelContext? = nil) {
-        guard let content = readClipboardForUserAction() else {
+        Task {
+            guard let content = await readClipboardForUserAction() else {
+                dismissClipboard()
+                return
+            }
+            searchText = content
+            performSearch(context: context)
             dismissClipboard()
-            return
         }
-        searchText = content
-        performSearch(context: context)
-        dismissClipboard()
     }
 
-    private func readClipboardForUserAction() -> String? {
-        guard let text = UIPasteboard.general.string?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !text.isEmpty else { return nil }
+    private static func readClipboardText() async -> String? {
+        // Item providers deliver their contents asynchronously, including when
+        // iOS is waiting for paste permission. Never block the UI on .string.
+        guard let provider = UIPasteboard.general.itemProviders.first else { return nil }
+        let text: String?
+        if provider.canLoadObject(ofClass: NSString.self) {
+            text = await withCheckedContinuation { continuation in
+                _ = provider.loadObject(ofClass: NSString.self) { value, _ in
+                    continuation.resume(returning: value as? String)
+                }
+            }
+        } else if provider.canLoadObject(ofClass: NSURL.self) {
+            text = await withCheckedContinuation { continuation in
+                _ = provider.loadObject(ofClass: NSURL.self) { value, _ in
+                    continuation.resume(returning: (value as? URL)?.absoluteString)
+                }
+            }
+        } else {
+            text = nil
+        }
+        return text?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func readClipboardForUserAction() async -> String? {
+        guard let text = await Self.readClipboardText(), !text.isEmpty else { return nil }
 
         let hash = Self.stableHash(for: text)
         guard hash != lastClipboardHash else { return nil }

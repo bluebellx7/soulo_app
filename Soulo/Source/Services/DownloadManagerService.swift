@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 enum DownloadFilenameSanitizer {
     static let maximumUTF8ByteCount = 180
@@ -97,6 +98,7 @@ final class DownloadManagerService: ObservableObject {
     static let shared = DownloadManagerService()
 
     @Published private(set) var downloads: [BrowserDownloadItem] = []
+    let didFinishDownload = PassthroughSubject<BrowserDownloadItem, Never>()
 
     private let userDefaults: UserDefaults
     private let storageKey: String
@@ -151,6 +153,7 @@ final class DownloadManagerService: ObservableObject {
         downloads[index].errorMessage = ""
         downloads[index].progress = 1
         save()
+        didFinishDownload.send(downloads[index])
     }
 
     func updateProgress(id: UUID, completed: Int64, total: Int64) {

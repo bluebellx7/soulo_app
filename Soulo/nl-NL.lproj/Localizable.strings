@@ -264,8 +264,8 @@
 "ad_block_popups" = "Maak pop-ups en overlays schoon";
 "ad_block_management" = "Advertentieblokkering";
 "ad_block_allowlist" = "Toegestane sites";
-"ad_block_disable_current_site" = "Schakel advertentieblokkering op deze site uit";
-"ad_block_enable_current_site" = "Schakel advertentieblokkering op deze site in";
+"ad_block_disable_current_site" = "Advertenties toestaan";
+"ad_block_enable_current_site" = "Advertenties blokkeren";
 "ad_block_site_toggle_desc" = "Als u dit wijzigt, wordt de huidige pagina opnieuw geladen, zodat de nieuwe advertentieblokkeringsinstelling kan worden toegepast.";
 "ad_block_no_allowlisted_sites" = "Geen toegestane sites.";
 "ad_block_stats" = "Verborgen elementen";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Compatibiliteit";
 "userscript_experimental_title" = "UserScript compatibiliteit";
 "userscript_experimental_desc" = "Ondersteunt siteregels, begin/einde van documenten, uitgebreide GM-opslag en pagina-API's, scriptopdrachten, meldingen, tabbladen, downloads, cookies, bronnen en op toestemming gerichte verzoeken. Controleer elk script voordat u het installeert; externe @require-bestanden worden niet uitgevoerd.";
-"extension_choose_file" = "Kies Extensiebestand of map…";
+"extension_choose_file" = "Kies bestand of map…";
 "extension_installing" = "Extensie controleren en installeren…";
 "extension_install_failed" = "Extensie kon niet worden geïnstalleerd";
 "extension_permissions_summary" = "%d rechten · %d websiteregels";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Deze extensie gebruikt een permanente achtergrondpagina die iOS-webextensies niet ondersteunen. Probeer een Manifest V3- of Safari-compatibele versie.";
 "userscript_new" = "Nieuw script";
 "userscript_edit" = "Script bewerken";
-"userscript_choose_file" = "Kies UserScript Bestand (.js)…";
+"userscript_choose_file" = "Kies script…";
 "userscript_install_footer" = "Tik op een bronrij om deze te openen op het huidige tabblad Soulo. Een .user.js-link opent een installatiebevestiging. Standaard JavaScript en een brede reeks GM API's worden ondersteund; scripts worden niet uitgevoerd in Private Browsing en externe @require-bestanden worden niet uitgevoerd.";
 "userscript_install_failed" = "UserScript Kan niet worden geïnstalleerd";
 "web_extension_temporarily_disabled" = "Standaard browserextensies zijn tijdelijk niet beschikbaar zolang de compatibiliteitstests zijn voltooid.";

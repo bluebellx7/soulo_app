@@ -1,22 +1,18 @@
-Soulo je hiter zasebni brskalnik za več iskanj za iPhone in iPad. Vnesite eno poizvedbo, nato preklapljajte med več kot 40 platformami za iskanje, družabna omrežja, video, nakupovanje, znanje in AI brez ponovnega tipkanja.
+Soulo je brskalnik za iPhone in iPad za iskanje na več platformah. Vnesite poizvedbo enkrat in preklapljajte med iskalniki, družbenimi omrežji, videi, nakupi, znanjem in umetno inteligenco.
 
-BRSKAJTE NA SVOJO POT
-• Zavihki, zaznamki, zgodovina, prenosi in prilagodljive iskalne platforme
-• Zasebno brskanje, zaščita sledilnika, blokiranje oglasov in nadzor na spletnem mestu
-• Mobilni in namizni način spletnega mesta, povečava strani, prevod in zajem celotne strani
-• Prenesite slike, video, zvok in dokumente z inšpektorjem virov spletne strani
-• Izvlecite besedilo iz slik spletnih strani z Live Text
+Poiščite informacije, berite članke, predvajajte vsebine in upravljajte prenose v enem brskalniku.
 
-Ustvarjen za iPhone in iPad
-• Več neodvisnih oken na iPadu
-• Delite povezave ali besedilo neposredno na Soulo
-• Iščite in odprite prenose iz Siri, Shortcuts, Control Center, zaklenjenega zaslona in gumba za dejanja
-• Prenosi v ozadju z resničnim napredkom in premorom/nadaljevanjem
-• Dejavnosti v živo in stanje Dynamic Island
+• Iskanje: dodajte platforme, jih združite in razvrstite. Označeno besedilo poiščite na novem zavihku Soulo.
+• Oglasi in zasebnost: filtrirajte oglase, naročite se na zunanja pravila in ročno označite oglase za skrivanje. Upravljajte filtre in zaščito pred sledenjem za vsako spletno mesto. Zasebno brskanje ne shranjuje zgodovine.
+• Zvok in video: hitrost, ponavljanje, plavajoči mini predvajalnik, slika v sliki, predvajanje v ozadju in AirPlay. Zajemite sličice videa, zrcalite sliko in pridržite za začasno pospešitev.
+• Datoteke: poiščite slike, zvok, videe in dokumente na straneh ter shranite več slik hkrati. Seznam ali mreža naslovnic, preimenovanje, uvoz iz Fotografij in prenos prek Wi-Fi.
+• Arhivi: razširite ZIP, RAR in 7z. Ustvarite arhive ZIP in 7z z izbirno zaščito z geslom.
+• Branje: TXT, PDF, EPUB ter podprte knjige MOBI, AZW in AZW3 brez DRM. Nastavite pisavo, velikost, razmik vrstic in ozadje. Knjige s prilagodljivo postavitvijo omogočajo poenostavljeni ali tradicionalni kitajski prikaz. Bralni način izlušči članek in omogoča nadaljevanje na naslednji strani.
+• Razširitve: uvozite, uredite in izvajajte uporabniške skripte JavaScript, upravljajte mesta in dovoljenja ter namestite združljive WebExtensions.
+• Spletna orodja: prevajanje, iskanje po strani, posnetki celotnih strani, prepoznavanje besedila na slikah, namizni/mobilni način, lasten uporabniški agent in potrdila spletnih mest.
+• Zaznamki: mape in uvoz/izvoz zaznamkov HTML za Chrome, Edge in druge brskalnike. Ustvarite kode QR strani z ikono mesta ter jih delite, shranite ali kopirajte.
+• Prilagoditev: ozadja, orodna vrstica in hitra dejanja ikone aplikacije. Dostop prek gradnikov, Bližnjic in shem URL. Izbirna sinhronizacija nastavitev z iCloudom.
 
-RAZŠIRITE SPLET
-Namestite UserScripts ali združljive WebExtensions, jasno upravljajte dovoljenja in ustvarite lastne skripte z vgrajeno dokumentacijo API-ja.
+Razpoložljivost vsebin, knjig in razširitev je odvisna od oblike datoteke, omejitev strani in različice sistema.
 
-Soulo shrani podatke o brskanju lokalno, razen če omogočite iCloud sinhronizacijo nastavitev. Zasebno brskanje ne shranjuje zgodovine.
-
-Berite udobno, odprite knjižnico iz gradnika, skenirajte kode QR in prepoznajte besedilo na fotografijah.
+Podpora: contact@dkluge.com

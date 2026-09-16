@@ -264,8 +264,8 @@
 "ad_block_popups" = "تنظيف النوافذ المنبثقة والتراكبات";
 "ad_block_management" = "حجب الإعلانات";
 "ad_block_allowlist" = "المواقع المسموح بها";
-"ad_block_disable_current_site" = "تعطيل حظر الإعلانات على هذا الموقع";
-"ad_block_enable_current_site" = "تمكين حظر الإعلانات على هذا الموقع";
+"ad_block_disable_current_site" = "السماح بالإعلانات";
+"ad_block_enable_current_site" = "حظر الإعلانات";
 "ad_block_site_toggle_desc" = "يؤدي تغيير هذا إلى إعادة تحميل الصفحة الحالية حتى يمكن تطبيق إعداد حظر الإعلانات الجديد.";
 "ad_block_no_allowlisted_sites" = "لا توجد مواقع مسموح بها.";
 "ad_block_stats" = "العناصر المخفية";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "التوافق";
 "userscript_experimental_title" = "التوافق UserScript";
 "userscript_experimental_desc" = "يدعم قواعد الموقع، وبدء/نهاية المستند، وتخزين GM الشامل وواجهات برمجة التطبيقات للصفحة، وأوامر البرنامج النصي، والإشعارات، وعلامات التبويب، والتنزيلات، وملفات تعريف الارتباط، والموارد، والطلبات ذات نطاق الأذونات. قم بمراجعة كل برنامج نصي قبل التثبيت؛ لا يتم تنفيذ الملفات @require الخارجية.";
-"extension_choose_file" = "اختر ملحق الملف أو المجلد...";
+"extension_choose_file" = "اختيار ملف أو مجلد…";
 "extension_installing" = "جارٍ التحقق من الإضافة وتثبيتها…";
 "extension_install_failed" = "تعذر تثبيت الامتداد";
 "extension_permissions_summary" = "%d الأذونات · %d قواعد الموقع";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "يستخدم هذا الملحق صفحة خلفية ثابتة لا تدعمها ملحقات ويب iOS. جرب إصدار Manifest V3 أو إصدار متوافق مع Safari.";
 "userscript_new" = "البرنامج النصي الجديد";
 "userscript_edit" = "تحرير البرنامج النصي";
-"userscript_choose_file" = "اختر UserScript ملف (.js)...";
+"userscript_choose_file" = "اختيار نص برمجي…";
 "userscript_install_footer" = "اضغط على صف المصدر لفتحه في علامة التبويب Soulo الحالية. يفتح رابط .user.js تأكيد التثبيت. يتم دعم JavaScript القياسي ومجموعة واسعة من واجهات برمجة تطبيقات GM؛ لا تعمل البرامج النصية في التصفح الخاص ولا يتم تنفيذ ملفات @require الخارجية.";
 "userscript_install_failed" = "UserScript لا يمكن تثبيته";
 "web_extension_temporarily_disabled" = "ملحقات المتصفح القياسية غير متاحة مؤقتًا أثناء اكتمال اختبار التوافق.";

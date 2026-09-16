@@ -1,1 +1,1 @@
-Lue mukavasti, avaa kirjahylly widgetistä, skannaa QR-koodeja ja poimi tekstiä valokuvista.
+Piilota valitut mainokset, järjestä kirjanmerkit kansioihin ja tallenna verkkokuvia erissä. Selkeät tiedostoesikatselut ja sivujen jako QR-koodeina.

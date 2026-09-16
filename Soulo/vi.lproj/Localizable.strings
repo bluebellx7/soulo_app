@@ -264,8 +264,8 @@
 "ad_block_popups" = "Làm sạch cửa sổ bật lên và lớp phủ";
 "ad_block_management" = "Chặn quảng cáo";
 "ad_block_allowlist" = "Trang web được phép";
-"ad_block_disable_current_site" = "Tắt tính năng chặn quảng cáo trên trang web này";
-"ad_block_enable_current_site" = "Bật tính năng chặn quảng cáo trên trang web này";
+"ad_block_disable_current_site" = "Cho phép quảng cáo";
+"ad_block_enable_current_site" = "Chặn quảng cáo";
 "ad_block_site_toggle_desc" = "Thay đổi này sẽ tải lại trang hiện tại để có thể áp dụng cài đặt chặn quảng cáo mới.";
 "ad_block_no_allowlisted_sites" = "Không có trang web được phép.";
 "ad_block_stats" = "Yếu tố ẩn";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Khả năng tương thích";
 "userscript_experimental_title" = "Khả năng tương thích UserScript";
 "userscript_experimental_desc" = "Hỗ trợ các quy tắc trang web, bắt đầu/kết thúc tài liệu, API trang và lưu trữ GM mở rộng, lệnh tập lệnh, thông báo, tab, tải xuống, cookie, tài nguyên và các yêu cầu trong phạm vi quyền. Xem lại mọi tập lệnh trước khi cài đặt; các tệp @require bên ngoài không được thực thi.";
-"extension_choose_file" = "Chọn Tệp hoặc Thư mục Tiện ích mở rộng…";
+"extension_choose_file" = "Chọn tệp hoặc thư mục…";
 "extension_installing" = "Đang kiểm tra và cài đặt tiện ích mở rộng…";
 "extension_install_failed" = "Không thể cài đặt tiện ích mở rộng";
 "extension_permissions_summary" = "%d quyền · %d quy tắc trang web";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Tiện ích mở rộng này sử dụng trang nền liên tục mà Tiện ích mở rộng web iOS không hỗ trợ. Hãy dùng thử phiên bản tương thích với Manifest V3 hoặc Safari.";
 "userscript_new" = "Tập lệnh mới";
 "userscript_edit" = "Chỉnh sửa tập lệnh";
-"userscript_choose_file" = "Chọn tệp UserScript (.js)…";
+"userscript_choose_file" = "Chọn tập lệnh…";
 "userscript_install_footer" = "Nhấn vào hàng nguồn để mở nó trong tab Soulo hiện tại. Liên kết .user.js sẽ mở ra xác nhận cài đặt. Hỗ trợ JavaScript tiêu chuẩn và một loạt API GM; tập lệnh không chạy trong Duyệt web riêng tư và các tệp @require bên ngoài không được thực thi.";
 "userscript_install_failed" = "UserScript Không thể cài đặt được";
 "web_extension_temporarily_disabled" = "Tiện ích mở rộng trình duyệt tiêu chuẩn tạm thời không khả dụng trong khi quá trình kiểm tra khả năng tương thích hoàn tất.";

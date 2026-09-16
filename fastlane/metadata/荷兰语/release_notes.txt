@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Doorlopend lezen verbeterd, met aparte inhoudsopgave en zoekfunctie, lettertype- en regelafstandinstellingen en PDF-weergaveopties.
-• Boekenraster en beginschermwidget, QR-scanner, tekstherkenning in foto’s en een scansnelkoppeling toegevoegd.
-• Navigatie naar downloads, bestandsacties, donkere webpagina’s en prestaties verbeterd.
+• Advertenties markeren om ze te verbergen, met verbeterde filters en privacybediening.
+• Bladwijzermappen, HTML-import en -export en QR-codes van pagina's delen, opslaan of kopiëren.
+• Vierkante bestandsvoorbeelden, meerdere afbeeldingen opslaan en verbeteringen aan lezen, media en scriptextensies.

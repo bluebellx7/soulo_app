@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Lettura continua migliorata, con indice e ricerca separati, controlli per caratteri e interlinea e impostazioni di aspetto dei PDF.
-• Aggiunti libreria a griglia e widget, scansione QR, riconoscimento del testo nelle foto e accesso rapido allo scanner.
-• Migliorati accesso ai download, operazioni sui file, pagine web scure e prestazioni.
+• Selezione degli annunci da nascondere e miglioramenti ai filtri pubblicitari e ai controlli per la privacy.
+• Cartelle dei preferiti, importazione ed esportazione HTML e codici QR delle pagine da condividere, salvare o copiare.
+• Anteprime quadrate, salvataggio di immagini in gruppo e miglioramenti a lettura, riproduzione ed estensioni di script.

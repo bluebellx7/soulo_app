@@ -270,8 +270,8 @@
 "ad_block_popups" = "清理彈出視窗和覆蓋層";
 "ad_block_management" = "廣告攔截";
 "ad_block_allowlist" = "允許的站點";
-"ad_block_disable_current_site" = "在此網站上停用廣告攔截";
-"ad_block_enable_current_site" = "在此網站啟用廣告攔截";
+"ad_block_disable_current_site" = "允許廣告";
+"ad_block_enable_current_site" = "攔截廣告";
 "ad_block_site_toggle_desc" = "變更此設定會重新載入目前頁面，以便套用新的廣告攔截設定。";
 "ad_block_no_allowlisted_sites" = "沒有允許的站點。";
 "ad_block_stats" = "隱藏元素";
@@ -636,7 +636,7 @@
 "userscript_experimental_badge" = "相容性";
 "userscript_experimental_title" = "UserScript 相容性";
 "userscript_experimental_desc" = "支援網站規則、文件開始/結束、廣泛的 GM 儲存和頁面 API、腳本命令、通知、標籤、下載、cookie、資源和權限範圍的請求。安裝前檢查每個腳本；外部@require 檔案不會被執行。";
-"extension_choose_file" = "選擇擴充檔案或資料夾...";
+"extension_choose_file" = "選擇檔案或資料夾…";
 "extension_installing" = "檢查並安裝擴充功能...";
 "extension_install_failed" = "無法安裝擴充功能";
 "extension_permissions_summary" = "%d 權限 · %d 網站規則";
@@ -660,7 +660,7 @@
 "web_extension_persistent_background_unsupported" = "此擴充功能使用了 iOS Web Extension 不支援的持續背景頁面。請嘗試 Manifest V3 或相容 Safari 的版本。";
 "userscript_new" = "新腳本";
 "userscript_edit" = "編輯腳本";
-"userscript_choose_file" = "選擇 UserScript 檔案 (.js)...";
+"userscript_choose_file" = "選擇腳本…";
 "userscript_install_footer" = "點選來源行可在目前 Soulo 標籤中開啟。 .user.js 連結會開啟安裝確認訊息。支援標準 JavaScript 和廣泛的 GM API；腳本不會在無痕瀏覽中運行，並且不會執行外部 @require 檔案。";
 "userscript_install_failed" = "UserScript 無法安裝";
 "web_extension_temporarily_disabled" = "相容性測試完成後，標準瀏覽器擴充功能暫時無法使用。";

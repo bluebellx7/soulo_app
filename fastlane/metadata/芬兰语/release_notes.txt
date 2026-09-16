@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Parannettu jatkuvaa lukemista: erilliset sisällysluettelo ja haku sekä fontin, rivivälin ja PDF-ulkoasun asetukset.
-• Lisätty kirjojen ruudukkonäkymä ja widget, QR-skannaus, tekstintunnistus valokuvista ja skannauksen pikavalinta.
-• Parannettu latauksiin siirtymistä, tiedostotoimintoja, verkkosivujen tummaa tilaa ja suorituskykyä.
+• Mainosten merkitseminen piilotettaviksi sekä paremmat mainossuodattimet ja yksityisyysasetukset.
+• Kirjanmerkkikansiot, HTML-tuonti ja -vienti sekä sivujen QR-koodien jako, tallennus ja kopiointi.
+• Neliönmuotoiset esikatselut, kuvien erätallennus sekä parannuksia lukemiseen, mediatoistoon ja skriptilaajennuksiin.

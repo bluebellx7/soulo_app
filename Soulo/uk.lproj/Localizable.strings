@@ -264,8 +264,8 @@
 "ad_block_popups" = "Чисті спливаючі вікна та накладення";
 "ad_block_management" = "Блокування реклами";
 "ad_block_allowlist" = "Дозволені сайти";
-"ad_block_disable_current_site" = "Вимкнути блокування реклами на цьому сайті";
-"ad_block_enable_current_site" = "Увімкнути блокування реклами на цьому сайті";
+"ad_block_disable_current_site" = "Дозволити рекламу";
+"ad_block_enable_current_site" = "Блокувати рекламу";
 "ad_block_site_toggle_desc" = "Якщо змінити це, поточна сторінка перезавантажиться, щоб можна було застосувати нове налаштування блокування реклами.";
 "ad_block_no_allowlisted_sites" = "Немає дозволених сайтів.";
 "ad_block_stats" = "Приховані елементи";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Сумісність";
 "userscript_experimental_title" = "UserScript сумісність";
 "userscript_experimental_desc" = "Підтримує правила сайту, початок/кінець документа, велике сховище GM і API сторінок, команди сценаріїв, сповіщення, вкладки, завантаження, файли cookie, ресурси та запити на рівні дозволів. Перегляньте кожен сценарій перед встановленням; зовнішні файли @require не виконуються.";
-"extension_choose_file" = "Виберіть файл розширення або папку…";
+"extension_choose_file" = "Вибрати файл або папку…";
 "extension_installing" = "Перевірка та встановлення розширення…";
 "extension_install_failed" = "Не вдалося встановити розширення";
 "extension_permissions_summary" = "%d дозволи · %d правила веб-сайту";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Це розширення використовує постійну фонову сторінку, яку веб-розширення iOS не підтримують. Спробуйте Manifest V3 або версію, сумісну з Safari.";
 "userscript_new" = "Новий сценарій";
 "userscript_edit" = "Редагувати сценарій";
-"userscript_choose_file" = "Виберіть UserScript Файл (.js)…";
+"userscript_choose_file" = "Вибрати скрипт…";
 "userscript_install_footer" = "Торкніться вихідного рядка, щоб відкрити його на поточній вкладці Soulo. Посилання .user.js відкриває підтвердження встановлення. Підтримуються стандартний JavaScript і широкий набір API GM; сценарії не запускаються в режимі приватного перегляду, а зовнішні файли @require не виконуються.";
 "userscript_install_failed" = "UserScript Не вдалося встановити";
 "web_extension_temporarily_disabled" = "Стандартні розширення браузера тимчасово недоступні, доки завершиться тестування на сумісність.";

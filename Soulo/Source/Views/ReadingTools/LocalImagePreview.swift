@@ -23,7 +23,7 @@ struct LocalImagePreview: View {
         }
     }
 
-    private static func decode(_ url: URL) -> UIImage? {
+    nonisolated private static func decode(_ url: URL) -> UIImage? {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary) else { return nil }
         let count = CGImageSourceGetCount(source)
         guard count > 0 else { return nil }

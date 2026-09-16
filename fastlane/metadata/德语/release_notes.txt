@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Flüssigeres Lesen mit getrennten Ansichten für Inhaltsverzeichnis und Suche sowie besseren Schrift-, Zeilenabstands- und PDF-Einstellungen.
-• Bücherraster und Home-Bildschirm-Widget, QR-Scanner, Texterkennung in Fotos und Scan-Kurzbefehl hinzugefügt.
-• Navigation zu Downloads, Dateiaktionen, dunkle Webseiten und Leistung verbessert.
+• Werbung zum Ausblenden markieren; verbesserte Werbefilter und Datenschutzeinstellungen.
+• Lesezeichenordner, HTML-Import und -Export sowie Seiten-QR-Codes teilen, speichern oder kopieren.
+• Quadratische Dateivorschauen, Bilder gesammelt speichern und Verbesserungen bei Lesen, Medien und Skripterweiterungen.

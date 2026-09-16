@@ -264,8 +264,8 @@
 "ad_block_popups" = "پاپ اپ اور اوورلیز کو صاف کریں۔";
 "ad_block_management" = "اشتہارات کی روک تھام";
 "ad_block_allowlist" = "اجازت یافتہ سائٹس";
-"ad_block_disable_current_site" = "اس سائٹ پر اشتہاری بلاک کو غیر فعال کریں۔";
-"ad_block_enable_current_site" = "اس سائٹ پر اشتہاری بلاک کو فعال کریں۔";
+"ad_block_disable_current_site" = "اشتہارات کی اجازت دیں";
+"ad_block_enable_current_site" = "اشتہارات روکیں";
 "ad_block_site_toggle_desc" = "اسے تبدیل کرنے سے موجودہ صفحہ دوبارہ لوڈ ہو جاتا ہے تاکہ نئی ایڈ بلاک سیٹنگ لاگو ہو سکے۔";
 "ad_block_no_allowlisted_sites" = "سائٹس کی اجازت نہیں ہے۔";
 "ad_block_stats" = "پوشیدہ عناصر";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "مطابقت";
 "userscript_experimental_title" = "UserScript مطابقت";
 "userscript_experimental_desc" = "سائٹ کے قوانین، دستاویز شروع/اختتام، وسیع GM اسٹوریج اور صفحہ APIs، اسکرپٹ کمانڈز، اطلاعات، ٹیبز، ڈاؤن لوڈ، کوکیز، وسائل اور اجازت کے دائرہ کار کی درخواستوں کی حمایت کرتا ہے۔ انسٹال کرنے سے پہلے ہر اسکرپٹ کا جائزہ لیں؛ external @require فائلوں پر عمل درآمد نہیں ہوتا ہے۔";
-"extension_choose_file" = "ایکسٹینشن فائل یا فولڈر کا انتخاب کریں…";
+"extension_choose_file" = "فائل یا فولڈر منتخب کریں…";
 "extension_installing" = "ایکسٹینشن کو چیک اور انسٹال کیا جا رہا ہے…";
 "extension_install_failed" = "ایکسٹینشن انسٹال نہیں ہو سکی";
 "extension_permissions_summary" = "%d اجازتیں · %d ویب سائٹ کے قواعد";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "یہ ایکسٹینشن ایک مستقل پس منظر کا صفحہ استعمال کرتی ہے جسے iOS ویب ایکسٹینشن سپورٹ نہیں کرتے ہیں۔ مینی فیسٹ V3 یا سفاری سے مطابقت رکھنے والا ورژن آزمائیں۔";
 "userscript_new" = "نیا اسکرپٹ";
 "userscript_edit" = "اسکرپٹ میں ترمیم کریں۔";
-"userscript_choose_file" = "منتخب کریں UserScript فائل (.js)…";
+"userscript_choose_file" = "اسکرپٹ منتخب کریں…";
 "userscript_install_footer" = "کسی ماخذ کی قطار کو موجودہ Soulo ٹیب میں کھولنے کے لیے اسے تھپتھپائیں۔ .user.js لنک انسٹالیشن کی تصدیق کو کھولتا ہے۔ معیاری JavaScript اور GM APIs کا ایک وسیع سیٹ تعاون یافتہ ہے۔ اسکرپٹس پرائیویٹ براؤزنگ میں نہیں چلتی ہیں اور external @require فائلوں پر عمل نہیں کیا جاتا ہے۔";
 "userscript_install_failed" = "UserScript انسٹال نہیں کیا جا سکا";
 "web_extension_temporarily_disabled" = "مطابقت کی جانچ مکمل ہونے کے دوران معیاری براؤزر ایکسٹینشنز عارضی طور پر دستیاب نہیں ہیں۔";

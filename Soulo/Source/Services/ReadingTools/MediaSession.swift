@@ -10,7 +10,9 @@ final class MediaSession: ObservableObject {
     static let shared = MediaSession()
     lazy var player = AVPlayer()
     private var configured = false
-    var retainedPiPController: AVPlayerViewController?
+    @Published var retainedPiPController: AVPlayerViewController?
+    var retainedPiPDelegate: AnyObject?
+    let pictureInPicture = MediaPictureInPicture()
     @Published private(set) var url: URL?
     @Published private(set) var title = ""
     @Published private(set) var pageURL: URL?
@@ -22,7 +24,10 @@ final class MediaSession: ObservableObject {
     @Published private(set) var hasVideo = false
     @Published var playerSurfaces = 0
     @Published var loop = false
+    @Published var mirrored = false
     @Published private(set) var rate: Float
+    @Published private(set) var temporaryRate = false
+    private var interruptedGeneration: UUID?
     private var timer: Any?
     private var observations = Set<AnyCancellable>()
     private var itemObservation: NSKeyValueObservation?
@@ -47,22 +52,28 @@ final class MediaSession: ObservableObject {
         timer = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 0.5, preferredTimescale: 600), queue: .main) { [weak self] time in
             Task { @MainActor in self?.updateTime(time) }
         }
-        player.publisher(for: \.timeControlStatus).sink { [weak self] status in
+        player.publisher(for: \.timeControlStatus).receive(on: DispatchQueue.main).sink { [weak self] status in
             self?.playing = status == .playing
             self?.updateNowPlaying()
         }.store(in: &observations)
-        NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime).sink { [weak self] event in
+        NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime).receive(on: DispatchQueue.main).sink { [weak self] event in
             guard let self, event.object as? AVPlayerItem === self.player.currentItem else { return }
+            self.endTemporaryRate()
             self.seek(0)
-            if self.loop { self.play() }
+            if self.loop { self.play() } else { self.pause() }
         }.store(in: &observations)
-        NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification).sink { [weak self] event in
-            guard let type = event.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
-                  type == AVAudioSession.InterruptionType.began.rawValue else { return }
-            self?.pause()
+        NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification).receive(on: DispatchQueue.main).sink { [weak self] event in
+            guard let raw = event.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  let type = AVAudioSession.InterruptionType(rawValue: raw) else { return }
+            let options = (event.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt) ?? 0
+            self?.handleInterruption(began: type == .began,
+                shouldResume: AVAudioSession.InterruptionOptions(rawValue: options).contains(.shouldResume))
         }.store(in: &observations)
-        NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification).sink { [weak self] event in
+        NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification).receive(on: DispatchQueue.main).sink { [weak self] event in
             if (event.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt) == AVAudioSession.RouteChangeReason.oldDeviceUnavailable.rawValue { self?.pause() }
+        }.store(in: &observations)
+        NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification).receive(on: DispatchQueue.main).sink { [weak self] _ in
+            self?.endTemporaryRate()
         }.store(in: &observations)
         installRemoteControls()
     }
@@ -74,6 +85,8 @@ final class MediaSession: ObservableObject {
         preparation = UUID()
         configureIfNeeded()
         savePosition()
+        endTemporaryRate()
+        interruptedGeneration = nil
         generation = UUID()
         player.pause()
         sourceWebView = webView
@@ -86,6 +99,7 @@ final class MediaSession: ObservableObject {
         self.pageURL = pageURL
         elapsed = 0; duration = 0; error = nil; lastSavedSecond = -1
         hasVideo = false
+        mirrored = false
         let item = AVPlayerItem(asset: asset ?? AVURLAsset(url: url))
         // Preserve pitch across the full speed range. The spectral algorithm also
         // avoids the observed time-domain clock stall when starting at 0.5×.
@@ -106,7 +120,7 @@ final class MediaSession: ObservableObject {
                     let saved = self.persistsPosition ? UserDefaults.standard.double(forKey: self.positionKey(url)) : 0
                     if saved > 0, item.duration.seconds.isFinite, saved < item.duration.seconds - 2 { self.seek(saved) }
                     if self.rate > 2 && !item.canPlayFastForward { self.rate = 2 }
-                    if self.wantsPlayback { self.play() }
+                    if self.wantsPlayback && self.interruptedGeneration == nil { self.play() }
                 }
             }
         }
@@ -115,6 +129,7 @@ final class MediaSession: ObservableObject {
     func play() {
         guard player.currentItem != nil else { return }
         wantsPlayback = true
+        interruptedGeneration = nil
         do {
             // Playback supports AirPlay implicitly. Explicit .allowAirPlay is
             // only valid for playAndRecord and can throw OSStatus -50 on device,
@@ -122,17 +137,37 @@ final class MediaSession: ObservableObject {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback, options: [])
             try AVAudioSession.sharedInstance().setActive(true)
             player.defaultRate = rate
-            if url?.isFileURL == true {
-                // Local media is already available. Apply the requested rate
-                // directly, including slow playback after a seek.
-                player.playImmediately(atRate: rate)
-            } else {
-                // Network streams still use AVPlayer's buffering policy.
-                player.play()
-            }
+            // Let AVPlayer prime its decoding/time-pitch pipeline even for a
+            // local file. Bypassing readiness can leave a cold 0.5× clock stalled.
+            player.play()
         } catch { self.error = error.localizedDescription }
     }
-    func pause() { wantsPlayback = false; player.pause(); savePosition(); updateNowPlaying() }
+    func pause() {
+        wantsPlayback = false; interruptedGeneration = nil
+        endTemporaryRate(); player.pause(); savePosition(); updateNowPlaying()
+    }
+    func handleInterruption(began: Bool, shouldResume: Bool) {
+        if began {
+            if interruptedGeneration == nil { interruptedGeneration = wantsPlayback ? generation : nil }
+            endTemporaryRate(); player.pause(); savePosition(); updateNowPlaying()
+        } else {
+            let resume = shouldResume && interruptedGeneration == generation && wantsPlayback
+            interruptedGeneration = nil
+            if resume { play() } else { wantsPlayback = false }
+        }
+    }
+    func beginTemporaryRate() {
+        guard !temporaryRate, hasVideo, wantsPlayback, player.rate > 0, rate < 2 else { return }
+        temporaryRate = true
+        player.rate = 2
+        updateNowPlaying()
+    }
+    func endTemporaryRate() {
+        guard temporaryRate else { return }
+        temporaryRate = false
+        if player.rate > 0 { player.rate = rate }
+        updateNowPlaying()
+    }
     func updateFileReference(from oldURL: URL, to newURL: URL) {
         let defaults = UserDefaults.standard
         let isCurrent = url?.standardizedFileURL == oldURL.standardizedFileURL
@@ -151,7 +186,8 @@ final class MediaSession: ObservableObject {
     func toggle() { playing ? pause() : play() }
     func stop() {
         pause(); generation = UUID(); preparation = UUID(); itemObservation = nil
-        retainedPiPController?.player = nil; retainedPiPController = nil
+        pictureInPicture.stop()
+        retainedPiPController?.player = nil; retainedPiPController = nil; retainedPiPDelegate = nil
         player.replaceCurrentItem(with: nil); url = nil; expanded = false
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
@@ -161,10 +197,29 @@ final class MediaSession: ObservableObject {
         guard value <= 2 || player.currentItem?.canPlayFastForward == true else {
             error = ToolText.text("media_rate_unavailable"); return false
         }
+        endTemporaryRate()
         rate = value
         UserDefaults.standard.set(value, forKey: "media.rate")
-        if playing { player.rate = value }
+        player.defaultRate = value
+        if player.rate > 0 { player.rate = value }
         updateNowPlaying(); return true
+    }
+    func captureFrame() async throws -> UIImage {
+        guard let item = player.currentItem, hasVideo else { throw ReadingToolError.unsupported }
+        let token = generation
+        let mirror = mirrored
+        let generator = AVAssetImageGenerator(asset: item.asset)
+        generator.appliesPreferredTrackTransform = true
+        generator.requestedTimeToleranceBefore = .zero
+        generator.requestedTimeToleranceAfter = .zero
+        generator.maximumSize = CGSize(width: 3840, height: 3840)
+        let time = player.currentTime()
+        let result = try await withTaskCancellationHandler {
+            try await generator.image(at: time)
+        } onCancel: { generator.cancelAllCGImageGeneration() }
+        try Task.checkCancellation()
+        guard token == generation else { throw CancellationError() }
+        return UIImage(cgImage: result.image, scale: 1, orientation: mirror ? .upMirrored : .up)
     }
     func seek(_ seconds: Double) {
         guard seconds.isFinite else { return }

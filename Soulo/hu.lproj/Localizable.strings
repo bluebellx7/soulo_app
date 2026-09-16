@@ -264,8 +264,8 @@
 "ad_block_popups" = "Tisztítsa meg a felugró ablakokat és a fedvényeket";
 "ad_block_management" = "Hirdetésblokkolás";
 "ad_block_allowlist" = "Engedélyezett webhelyek";
-"ad_block_disable_current_site" = "Tiltsa le a hirdetésblokkolást ezen a webhelyen";
-"ad_block_enable_current_site" = "Engedélyezze a hirdetésblokkolást ezen a webhelyen";
+"ad_block_disable_current_site" = "Hirdetések engedélyezése";
+"ad_block_enable_current_site" = "Hirdetések blokkolása";
 "ad_block_site_toggle_desc" = "Ennek módosítása újra betölti az aktuális oldalt, így az új hirdetésblokkoló beállítás alkalmazható.";
 "ad_block_no_allowlisted_sites" = "Nincsenek engedélyezett webhelyek.";
 "ad_block_stats" = "Rejtett elemek";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Kompatibilitás";
 "userscript_experimental_title" = "UserScript kompatibilitás";
 "userscript_experimental_desc" = "Támogatja a webhelyszabályokat, a dokumentum kezdetét/végét, kiterjedt GM-tárhely- és oldal API-kat, szkriptparancsokat, értesítéseket, lapokat, letöltéseket, cookie-kat, erőforrásokat és engedély-hatókörű kéréseket. Telepítés előtt nézzen át minden szkriptet; külső @require fájlok nem hajtódnak végre.";
-"extension_choose_file" = "Válassza ki a kiterjesztési fájlt vagy mappát…";
+"extension_choose_file" = "Fájl vagy mappa kiválasztása…";
 "extension_installing" = "Bővítmény ellenőrzése és telepítése…";
 "extension_install_failed" = "A bővítményt nem sikerült telepíteni";
 "extension_permissions_summary" = "%d engedélyek · %d webhelyszabályok";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Ez a bővítmény állandó háttéroldalt használ, amelyet az iOS Web Extensions nem támogat. Próbáljon ki egy Manifest V3 vagy Safari-kompatibilis verziót.";
 "userscript_new" = "Új Script";
 "userscript_edit" = "Szkript szerkesztése";
-"userscript_choose_file" = "Válassza a UserScript fájlt (.js)…";
+"userscript_choose_file" = "Szkript kiválasztása…";
 "userscript_install_footer" = "Koppintson egy forrássorra, hogy megnyissa az aktuális Soulo lapon. A .user.js hivatkozás megnyitja a telepítés megerősítését. A szabványos JavaScript és a GM API-k széles készlete támogatott; a szkriptek nem futnak privát böngészésben, és a külső @require fájlok nem futnak le.";
 "userscript_install_failed" = "UserScript Nem sikerült telepíteni";
 "web_extension_temporarily_disabled" = "A szabványos böngészőbővítmények átmenetileg nem érhetők el, amíg a kompatibilitási tesztelés befejeződik.";

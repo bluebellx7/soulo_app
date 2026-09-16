@@ -264,8 +264,8 @@
 "ad_block_popups" = "पॉपअप आणि आच्छादन स्वच्छ करा";
 "ad_block_management" = "जाहिरात अवरोधन";
 "ad_block_allowlist" = "परवानगी दिलेल्या साइट्स";
-"ad_block_disable_current_site" = "या साइटवरील जाहिरात ब्लॉक अक्षम करा";
-"ad_block_enable_current_site" = "या साइटवर जाहिरात ब्लॉक सक्षम करा";
+"ad_block_disable_current_site" = "जाहिरातींना परवानगी द्या";
+"ad_block_enable_current_site" = "जाहिराती रोखा";
 "ad_block_site_toggle_desc" = "हे बदलल्याने वर्तमान पृष्ठ रीलोड होईल जेणेकरून नवीन जाहिरात-ब्लॉक सेटिंग लागू होऊ शकेल.";
 "ad_block_no_allowlisted_sites" = "परवानगी असलेल्या साइट नाहीत.";
 "ad_block_stats" = "लपलेले घटक";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "सुसंगतता";
 "userscript_experimental_title" = "UserScript सुसंगतता";
 "userscript_experimental_desc" = "साइट नियम, दस्तऐवज-प्रारंभ/एंड, विस्तृत GM स्टोरेज आणि पृष्ठ API, स्क्रिप्ट आदेश, सूचना, टॅब, डाउनलोड, कुकीज, संसाधने आणि परवानगी-व्याप्ती विनंत्यांचे समर्थन करते. स्थापित करण्यापूर्वी प्रत्येक स्क्रिप्टचे पुनरावलोकन करा; external @require फाइल्स चालवल्या जात नाहीत.";
-"extension_choose_file" = "एक्स्टेंशन फाइल किंवा फोल्डर निवडा...";
+"extension_choose_file" = "फाइल किंवा फोल्डर निवडा…";
 "extension_installing" = "विस्तार तपासत आहे आणि स्थापित करत आहे...";
 "extension_install_failed" = "विस्तार स्थापित करणे शक्य झाले नाही";
 "extension_permissions_summary" = "%d परवानग्या · %d वेबसाइट नियम";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "हा विस्तार सतत पार्श्वभूमी पृष्ठ वापरतो ज्यास iOS वेब विस्तार समर्थन देत नाहीत. मॅनिफेस्ट V3 किंवा सफारी-सुसंगत आवृत्ती वापरून पहा.";
 "userscript_new" = "नवीन स्क्रिप्ट";
 "userscript_edit" = "स्क्रिप्ट संपादित करा";
-"userscript_choose_file" = "UserScript फाईल (.js) निवडा…";
+"userscript_choose_file" = "स्क्रिप्ट निवडा…";
 "userscript_install_footer" = "वर्तमान Soulo टॅबमध्ये उघडण्यासाठी स्त्रोत पंक्तीवर टॅप करा. .user.js लिंक इंस्टॉलेशन पुष्टीकरण उघडते. मानक JavaScript आणि GM API चा विस्तृत संच समर्थित आहे; स्क्रिप्ट खाजगी ब्राउझिंगमध्ये चालत नाहीत आणि बाह्य @require फाइल्स कार्यान्वित केल्या जात नाहीत.";
 "userscript_install_failed" = "UserScript स्थापित करणे शक्य नाही";
 "web_extension_temporarily_disabled" = "सुसंगतता चाचणी पूर्ण झाल्यावर मानक ब्राउझर विस्तार तात्पुरते अनुपलब्ध असतात.";

@@ -147,3 +147,185 @@
 "remove_download_record" = "移除記錄";
 "clear_download_records" = "清除已結束的下載記錄";
 "download_records_keep_files" = "僅清除下載記錄，已下載的檔案仍保留在「檔案」中。";
+
+// Manual advertisement hiding
+"manual_ad_mark" = "標記廣告";
+"manual_ad_hint" = "點選要隱藏的區域，可捲動尋找。";
+"manual_ad_invalid" = "請選擇較小的區域，避開內文或登入表單。";
+"manual_ad_smaller" = "縮小範圍";
+"manual_ad_larger" = "擴大範圍";
+"manual_ad_preview" = "預覽";
+"manual_ad_scope" = "生效範圍";
+"manual_ad_page" = "目前頁面";
+"manual_ad_site" = "整個網站";
+"manual_ad_hide" = "隱藏並記住";
+"manual_ad_saved" = "已隱藏並儲存";
+"manual_ad_rules" = "已標記廣告";
+"manual_ad_footer" = "規則儲存在本機，遵循廣告攔截開關和網站白名單。還原一項即可移除對應規則。";
+"manual_ad_error" = "無法儲存該區域，頁面可能已變更，請重新標記。";
+
+"extension_builtin_tools" = "內建工具";
+"reader_builtin_description" = "開啟後，可從網頁的「腳本命令」進入閱讀模式。";
+"show_top_tab_bar" = "顯示頂部分頁列";
+"top_tab_bar_hint" = "僅在開啟多個分頁時顯示，單個分頁自動隱藏。";
+
+// Manual ad rule management
+"manual_ad_summary" = "%ld 條標記 · %ld 個網站";
+"manual_ad_list_hint" = "恢復會移除此手動標記，讓該區域可以重新顯示；自動過濾規則仍可能攔截它。";
+"manual_ad_paused" = "廣告過濾已關閉，標記會保留，暫不生效。";
+"manual_ad_site_paused" = "此網站已允許廣告，本站標記暫不生效。";
+"manual_ad_current_site" = "目前網站";
+"manual_ad_search" = "搜尋網站或頁面路徑";
+"manual_ad_empty" = "尚未標記廣告";
+"manual_ad_empty_hint" = "開啟網頁，點選網址列前的圖示，選擇「標記廣告」即可隱藏指定區域。";
+"manual_ad_removed" = "已移除標記";
+"manual_ad_undo" = "復原";
+"manual_ad_domain" = "網站網域";
+"manual_ad_page_rule" = "指定頁面";
+"manual_ad_path" = "頁面路徑";
+"manual_ad_created" = "標記時間";
+"manual_ad_selector" = "區域識別碼";
+"manual_ad_selector_hint" = "用於識別當時選取的網頁區域。網站版面變更後，可能需要重新標記。";
+"manual_ad_details" = "標記詳情";
+"manual_ad_all_paths" = "此網域下的所有頁面";
+"manual_ad_undo_failed" = "標記數量已達上限，請先移除其他標記再復原。";
+
+// Feedback diagnostics
+"feedback_diag_include" = "附加診斷資訊";
+"feedback_diag_hint" = "裝置、App 與相關設定有助於排查問題，可在下方查看或關閉附加。不會附加瀏覽記錄、網頁內容或剪貼簿文字。";
+"feedback_diag_preview" = "查看將附加的資訊";
+"feedback_diag_app" = "App 版本與建置編號";
+"feedback_diag_bundle" = "App 識別碼";
+"feedback_diag_device" = "裝置型號";
+"feedback_diag_system" = "系統版本";
+"feedback_diag_screen" = "螢幕尺寸";
+"feedback_diag_memory" = "裝置記憶體";
+"feedback_diag_language" = "App 語言";
+"feedback_diag_locale" = "系統地區與語言";
+"feedback_diag_timezone" = "時區";
+"feedback_diag_appearance" = "外觀設定";
+"feedback_diag_low_power" = "低耗電模式";
+"feedback_diag_thermal" = "裝置溫度狀態";
+"feedback_diag_adblock" = "廣告過濾";
+"feedback_diag_gpc" = "全域隱私控制";
+"feedback_diag_scripts" = "使用者腳本：已開啟 / 已安裝";
+"feedback_diag_extensions" = "擴充功能：已開啟 / 已安裝";
+"feedback_invalid_content" = "請輸入 1 至 2000 字的回饋內容，並選擇回饋類型。";
+
+// Current page QR code
+"page_qr_title" = "網頁 QR Code";
+"page_qr_hint" = "掃描即可開啟目前網頁，可複製、分享 QR Code 或儲存至相簿。";
+"page_qr_failed" = "無法為此網址產生 QR Code。";
+"page_qr_saved" = "已儲存至相簿";
+"page_qr_photo_permission" = "請在系統設定中允許 Soulo 加入照片，然後重試。";
+"page_qr_copy_image" = "複製圖片";
+"page_qr_saved_short" = "已儲存";
+
+// URL Scheme guide
+"scheme_title" = "URL Scheme 使用說明";
+"scheme_intro" = "可透過捷徑或其他 App 呼叫 Soulo。複製下方範例，再替換其中的搜尋內容或網址。";
+"scheme_home" = "啟動 Soulo";
+"scheme_focus" = "開始輸入搜尋";
+"scheme_search" = "搜尋內容或開啟網址";
+"scheme_open" = "開啟網頁";
+"scheme_download" = "新增下載";
+"scheme_scan" = "掃描";
+"scheme_files" = "開啟檔案";
+"scheme_bookmarks" = "開啟收藏";
+"scheme_history" = "開啟搜尋記錄";
+"scheme_downloads" = "開啟下載列表";
+"scheme_examples" = "呼叫範例";
+"scheme_usage" = "使用方式";
+"scheme_encoding" = "參數值請先進行一次 URL 編碼。在捷徑中，可先使用「URL 編碼」動作，再組合搜尋內容或網址，避免空格、中文、&、+、# 等字元被錯誤解析。";
+"scheme_download_note" = "下載支援 HTTP/HTTPS 檔案網址，工作會顯示在下載列表中。需要網站登入的連結，可能需要先在瀏覽器中開啟。example.com 網址僅作格式範例。";
+"scheme_shortcuts" = "簡寫與相容入口";
+"scheme_aliases" = "命令不區分大小寫，也可在 soulo:// 後直接接搜尋內容或網頁網址。QRCode 和 scan 均開啟掃描；Books 和 bookshelf 均開啟檔案。呼叫時保留目前隱私模式。";
+
+// Bookmark folders and browser HTML exchange
+"favorites_new_folder" = "新增資料夾";
+"favorites_import" = "匯入";
+"favorites_export" = "匯出";
+"favorites_manage" = "管理收藏";
+"favorites_rename" = "重新命名";
+"favorites_move" = "移至資料夾";
+"favorites_folder_name" = "資料夾名稱";
+"favorites_parent" = "返回上一層";
+"favorites_remove_folder" = "刪除資料夾？";
+"favorites_remove_note" = "其中的收藏和子資料夾會移至上一層，不會刪除收藏。";
+"favorites_empty" = "可以收藏網頁，也可以從右上角選單新增資料夾或匯入收藏。";
+"favorites_format" = "支援 Chrome、Edge 等瀏覽器匯出的書籤 HTML 檔案，保留資料夾層級，匯出也使用相同格式。";
+"favorites_processing" = "正在整理收藏⋯";
+"favorites_exported" = "收藏已匯出。";
+"favorites_import_result" = "新增 %d 筆收藏、%d 個資料夾。\n略過 %d 筆重複收藏與 %d 筆不支援的連結。";
+"favorites_name_exists" = "此位置已有同名資料夾。";
+"favorites_untitled" = "未命名資料夾";
+"favorites_invalid" = "請選擇瀏覽器匯出的書籤 HTML 檔案。";
+"favorites_too_large" = "支援匯入 20 MB 以內、最多 50,000 筆記錄的檔案，請分批匯出後重試。";
+"favorites_too_deep" = "資料夾層級過多，最多支援 64 層。";
+
+// Settings and site certificates
+"settings_other" = "其他";
+"quick_actions_title" = "長按快捷操作";
+"quick_actions_hint" = "拖動右側把手，調整長按 Soulo 圖示時各項快捷操作的順序，修改後自動儲存。系統操作的位置由 iOS 決定。";
+"quick_actions_reset" = "還原";
+"quick_actions_up" = "上移";
+"quick_actions_down" = "下移";
+"certificate_title" = "檢視憑證";
+"certificate_source" = "以下為目前網頁連線提供的憑證鏈，由 iOS 負責驗證。";
+"certificate_unavailable" = "目前頁面暫未提供憑證資訊，請等待載入完成，或重新整理網頁後再試。";
+"certificate_subject" = "核發給";
+"certificate_issuer" = "核發者";
+"certificate_from" = "生效時間";
+"certificate_until" = "到期時間";
+"certificate_serial" = "序號";
+"certificate_public_key" = "公開金鑰";
+"certificate_domains" = "適用網域";
+"certificate_leaf" = "網站憑證";
+"certificate_chain_item" = "憑證鏈 · %d";
+"quick_actions_selected" = "已選 · %d/%d";
+"quick_actions_available" = "更多操作";
+"quick_actions_remove" = "移除";
+"quick_actions_empty" = "從下方加入快捷操作。";
+"quick_actions_limit" = "最多選擇 4 項，請先移除上方的一項，再加入其他操作。";
+
+"connection_encrypted" = "連線已加密";
+"connection_unencrypted" = "連線未加密";
+
+"image_batch_select" = "選擇圖片";
+"image_batch_result" = "儲存結果";
+"image_batch_progress" = "正在儲存 %d / %d";
+"image_batch_select_all" = "全選";
+"image_batch_deselect_all" = "取消全選";
+"image_batch_save" = "儲存（%d）";
+"image_batch_summary" = "已儲存 %d 張，失敗 %d 張。";
+"image_batch_cancelled" = "已取消，已儲存 %d 張。";
+
+"photo_save_invalid" = "此資源不是可讀取的圖片，可能是網頁內容或不支援的格式。可以嘗試下載原始檔案。";
+"photo_save_too_large" = "圖片過大，無法安全轉換。請下載原始檔案。";
+"photo_save_incompatible" = "轉換後相簿仍無法匯入此圖片，請嘗試下載原始檔案。";
+
+"feedback_support_email" = "支援信箱";
+
+"media_pip" = "懸浮視窗";
+"media_pip_hint" = "切換到其他 App 後繼續觀看";
+"media_fullscreen" = "全螢幕";
+
+"import_photos" = "從相簿匯入";
+
+"open_as_text" = "文字開啟";
+
+"media_snapshot" = "影片截圖";
+
+"media_mirror" = "鏡像畫面";
+
+"chinese_display" = "簡繁顯示";
+
+"original_text" = "原文";
+
+"simplified_text" = "簡體";
+
+"traditional_text" = "繁體";
+
+"text_encoding_failed" = "無法以此編碼讀取。請在右上角嘗試其他編碼。";
+
+"auto" = "自動";

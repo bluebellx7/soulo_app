@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Kesintisiz okuma iyileştirildi; içindekiler ve arama ayrıldı, yazı tipi, satır aralığı ve PDF görünüm ayarları geliştirildi.
-• Kitap ızgarası ve araç takımı, QR tarama, fotoğraflarda metin tanıma ve tarama kestirmesi eklendi.
-• İndirmelere erişim, dosya işlemleri, karanlık web sayfaları ve performans iyileştirildi.
+• Gizlemek için reklam işaretleme eklendi; reklam filtreleri ve gizlilik denetimleri iyileştirildi.
+• Yer imi klasörleri, HTML içe ve dışa aktarma, sayfa QR kodlarını paylaşma, kaydetme veya kopyalama.
+• Kare dosya önizlemeleri, toplu görsel kaydetme, okuma, medya oynatma ve betik uzantılarında iyileştirmeler.

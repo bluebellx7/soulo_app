@@ -264,8 +264,8 @@
 "ad_block_popups" = "Clean Popups and Overlays";
 "ad_block_management" = "Ad Blocking";
 "ad_block_allowlist" = "Allowed Sites";
-"ad_block_disable_current_site" = "Disable Ad Block on This Site";
-"ad_block_enable_current_site" = "Enable Ad Block on This Site";
+"ad_block_disable_current_site" = "Allow Ads";
+"ad_block_enable_current_site" = "Block Ads";
 "ad_block_site_toggle_desc" = "Changing this reloads the current page so the new ad-block setting can apply.";
 "ad_block_no_allowlisted_sites" = "No allowed sites.";
 "ad_block_stats" = "Hidden Elements";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Compatibility";
 "userscript_experimental_title" = "UserScript compatibility";
 "userscript_experimental_desc" = "Supports site rules, document-start/end, extensive GM storage and page APIs, script commands, notifications, tabs, downloads, cookies, resources, and permission-scoped requests. Review every script before installing; external @require files are not executed.";
-"extension_choose_file" = "Choose Extension File or Folder…";
+"extension_choose_file" = "Choose File or Folder…";
 "extension_installing" = "Checking and installing extension…";
 "extension_install_failed" = "Extension Could Not Be Installed";
 "extension_permissions_summary" = "%d permissions · %d website rules";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "This extension uses a persistent background page that iOS Web Extensions do not support. Try a Manifest V3 or Safari-compatible version.";
 "userscript_new" = "New Script";
 "userscript_edit" = "Edit Script";
-"userscript_choose_file" = "Choose UserScript File (.js)…";
+"userscript_choose_file" = "Choose Script…";
 "userscript_install_footer" = "Tap a source row to open it in the current Soulo tab. A .user.js link opens an installation confirmation. Standard JavaScript and a broad set of GM APIs are supported; scripts do not run in Private Browsing and external @require files are not executed.";
 "userscript_install_failed" = "UserScript Could Not Be Installed";
 "web_extension_temporarily_disabled" = "Standard browser extensions are temporarily unavailable while compatibility testing is completed.";

@@ -264,8 +264,8 @@
 "ad_block_popups" = "Wyczyść wyskakujące okienka i nakładki";
 "ad_block_management" = "Blokowanie reklam";
 "ad_block_allowlist" = "Dozwolone witryny";
-"ad_block_disable_current_site" = "Wyłącz blokowanie reklam w tej witrynie";
-"ad_block_enable_current_site" = "Włącz blokowanie reklam w tej witrynie";
+"ad_block_disable_current_site" = "Zezwól na reklamy";
+"ad_block_enable_current_site" = "Blokuj reklamy";
 "ad_block_site_toggle_desc" = "Zmiana tego powoduje ponowne załadowanie bieżącej strony, dzięki czemu można zastosować nowe ustawienie blokowania reklam.";
 "ad_block_no_allowlisted_sites" = "Brak dozwolonych witryn.";
 "ad_block_stats" = "Ukryte elementy";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Kompatybilność";
 "userscript_experimental_title" = "Zgodność UserScript";
 "userscript_experimental_desc" = "Obsługuje reguły witryny, początek/koniec dokumentu, rozbudowane interfejsy API pamięci GM i stron, polecenia skryptów, powiadomienia, karty, pliki do pobrania, pliki cookie, zasoby i żądania o ograniczonym zakresie uprawnień. Przejrzyj każdy skrypt przed instalacją; zewnętrzne pliki @require nie są wykonywane.";
-"extension_choose_file" = "Wybierz plik rozszerzenia lub folder…";
+"extension_choose_file" = "Wybierz plik lub folder…";
 "extension_installing" = "Sprawdzanie i instalowanie rozszerzenia…";
 "extension_install_failed" = "Nie można zainstalować rozszerzenia";
 "extension_permissions_summary" = "%d uprawnienia · %d reguły witryny";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "To rozszerzenie korzysta z trwałej strony w tle, która nie jest obsługiwana przez rozszerzenia internetowe systemu iOS. Wypróbuj wersję kompatybilną z Manifest V3 lub Safari.";
 "userscript_new" = "Nowy skrypt";
 "userscript_edit" = "Edytuj skrypt";
-"userscript_choose_file" = "Wybierz plik UserScript (.js)…";
+"userscript_choose_file" = "Wybierz skrypt…";
 "userscript_install_footer" = "Kliknij wiersz źródłowy, aby otworzyć go na bieżącej karcie Soulo. Link .user.js otwiera potwierdzenie instalacji. Obsługiwany jest standardowy JavaScript i szeroki zestaw interfejsów API GM; skrypty nie działają w trybie przeglądania prywatnego, a zewnętrzne pliki @require nie są wykonywane.";
 "userscript_install_failed" = "UserScript Nie można zainstalować";
 "web_extension_temporarily_disabled" = "Standardowe rozszerzenia przeglądarki są tymczasowo niedostępne po zakończeniu testów zgodności.";

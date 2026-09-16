@@ -264,8 +264,8 @@
 "ad_block_popups" = "पॉपअप और ओवरले साफ़ करें";
 "ad_block_management" = "विज्ञापन अवरोधन";
 "ad_block_allowlist" = "अनुमत साइटें";
-"ad_block_disable_current_site" = "इस साइट पर विज्ञापन ब्लॉक अक्षम करें";
-"ad_block_enable_current_site" = "इस साइट पर विज्ञापन ब्लॉक सक्षम करें";
+"ad_block_disable_current_site" = "विज्ञापन की अनुमति दें";
+"ad_block_enable_current_site" = "विज्ञापन रोकें";
 "ad_block_site_toggle_desc" = "इसे बदलने से वर्तमान पृष्ठ पुनः लोड हो जाता है ताकि नई विज्ञापन-ब्लॉक सेटिंग लागू हो सके।";
 "ad_block_no_allowlisted_sites" = "कोई अनुमत साइटें नहीं.";
 "ad_block_stats" = "छुपे हुए तत्व";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "अनुकूलता";
 "userscript_experimental_title" = "UserScript अनुकूलता";
 "userscript_experimental_desc" = "साइट नियमों, दस्तावेज़-प्रारंभ/अंत, व्यापक जीएम भंडारण और पेज एपीआई, स्क्रिप्ट कमांड, अधिसूचनाएं, टैब, डाउनलोड, कुकीज़, संसाधन और अनुमति-दायरे वाले अनुरोधों का समर्थन करता है। इंस्टॉल करने से पहले प्रत्येक स्क्रिप्ट की समीक्षा करें; बाहरी @require फ़ाइलें निष्पादित नहीं होती हैं.";
-"extension_choose_file" = "एक्सटेंशन फ़ाइल या फ़ोल्डर चुनें...";
+"extension_choose_file" = "फ़ाइल या फ़ोल्डर चुनें…";
 "extension_installing" = "एक्सटेंशन की जाँच और इंस्टालेशन…";
 "extension_install_failed" = "एक्सटेंशन स्थापित नहीं किया जा सका";
 "extension_permissions_summary" = "%d अनुमतियाँ · %d वेबसाइट नियम";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "यह एक्सटेंशन एक सतत पृष्ठभूमि पृष्ठ का उपयोग करता है जिसका iOS वेब एक्सटेंशन समर्थन नहीं करते हैं। मेनिफेस्ट V3 या Safari-संगत संस्करण आज़माएँ।";
 "userscript_new" = "नई स्क्रिप्ट";
 "userscript_edit" = "स्क्रिप्ट संपादित करें";
-"userscript_choose_file" = "UserScript फ़ाइल (.js) चुनें...";
+"userscript_choose_file" = "स्क्रिप्ट चुनें…";
 "userscript_install_footer" = "किसी स्रोत पंक्ति को वर्तमान Soulo टैब में खोलने के लिए उस पर टैप करें। एक .user.js लिंक एक इंस्टॉलेशन पुष्टिकरण खोलता है। मानक जावास्क्रिप्ट और जीएम एपीआई का एक विस्तृत सेट समर्थित है; निजी ब्राउज़िंग में स्क्रिप्ट नहीं चलती हैं और बाहरी @require फ़ाइलें निष्पादित नहीं होती हैं।";
 "userscript_install_failed" = "UserScript स्थापित नहीं किया जा सका";
 "web_extension_temporarily_disabled" = "संगतता परीक्षण पूरा होने तक मानक ब्राउज़र एक्सटेंशन अस्थायी रूप से अनुपलब्ध हैं।";

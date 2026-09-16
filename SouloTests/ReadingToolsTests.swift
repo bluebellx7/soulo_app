@@ -189,7 +189,7 @@ final class ReadingToolsTests: XCTestCase {
         try "application/epub+zip".write(to: content.appendingPathComponent("mimetype"), atomically: true, encoding: .utf8)
         try "<container xmlns='urn:oasis:names:tc:opendocument:xmlns:container' version='1.0'><rootfiles><rootfile full-path='content.opf' media-type='application/oebps-package+xml'/></rootfiles></container>".write(to: content.appendingPathComponent("META-INF/container.xml"), atomically: true, encoding: .utf8)
         try "<package xmlns='http://www.idpf.org/2007/opf' version='3.0' unique-identifier='id'><metadata xmlns:dc='http://purl.org/dc/elements/1.1/'><dc:title>Soulo EPUB</dc:title><dc:identifier id='id'>test</dc:identifier><dc:language>en</dc:language></metadata><manifest><item id='c1' href='chapter.xhtml' media-type='application/xhtml+xml'/><item id='nav' href='nav.xhtml' media-type='application/xhtml+xml' properties='nav'/></manifest><spine><itemref idref='c1'/></spine></package>".write(to: content.appendingPathComponent("content.opf"), atomically: true, encoding: .utf8)
-        try "<html xmlns='http://www.w3.org/1999/xhtml'><head><title>Chapter</title></head><body><h1>Soulo EPUB chapter</h1><p>Readable test content.</p><script>parent.bookScriptExecuted = true</script></body></html>".write(to: content.appendingPathComponent("chapter.xhtml"), atomically: true, encoding: .utf8)
+        try "<html xmlns='http://www.w3.org/1999/xhtml'><head><title>Chapter</title></head><body><h1>Soulo EPUB chapter</h1><p>Readable test content. 汉语阅读 頭髮</p><code>汉语阅读</code><script>parent.bookScriptExecuted = true</script></body></html>".write(to: content.appendingPathComponent("chapter.xhtml"), atomically: true, encoding: .utf8)
         try "<html xmlns='http://www.w3.org/1999/xhtml' xmlns:epub='http://www.idpf.org/2007/ops'><body><nav epub:type='toc'><ol><li><a href='chapter.xhtml'>First chapter</a></li></ol></nav></body></html>".write(to: content.appendingPathComponent("nav.xhtml"), atomically: true, encoding: .utf8)
         let zip = root.appendingPathComponent("test.epub")
         XCTAssertTrue(SSZipArchive.createZipFile(atPath: zip.path, withContentsOfDirectory: content.path))
@@ -201,6 +201,18 @@ final class ReadingToolsTests: XCTestCase {
         XCTAssertEqual(controller.toc.first?.label, "First chapter")
         let executed = try await controller.webView?.evaluateJavaScript("window.bookScriptExecuted === true") as? Bool
         XCTAssertEqual(executed, false)
+        controller.chineseDisplay = "traditional"; controller.style()
+        let web = try XCTUnwrap(controller.webView)
+        var converted = ""
+        for _ in 0..<50 {
+            converted = (try await web.evaluateJavaScript("document.querySelector('foliate-view').renderer.getContents()[0].doc.querySelector('p').textContent") as? String) ?? ""
+            if converted.contains("漢語閱讀") { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertTrue(converted.contains("漢語閱讀 頭髮"), converted)
+        let code = try await web.evaluateJavaScript("document.querySelector('foliate-view').renderer.getContents()[0].doc.querySelector('code').textContent") as? String
+        XCTAssertEqual(code, "汉语阅读", "Code examples must not be converted")
+
     }
     func testRAR4RAR5UnicodeEncryptionCRCAndVolumes() throws {
         let bundle = Bundle(for: Self.self)
@@ -285,7 +297,7 @@ final class ReadingToolsTests: XCTestCase {
         session.open(url: url)
         try await wait { session.player.currentItem?.status == .readyToPlay }
         for rate: Float in [0.5, 1, 2, 4, 8, 16] {
-            await session.player.seek(to: .zero)
+            await session.player.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
             let accepted = session.setRate(rate)
             if !accepted { XCTAssertGreaterThan(rate, 2); print("MEDIA_RATE \(rate): unavailable for this asset; UI rejects it"); continue }
             session.play()
@@ -301,6 +313,27 @@ final class ReadingToolsTests: XCTestCase {
             session.pause()
         }
     }
+    @MainActor func testLocalVideoStartsAtHalfSpeedAndResumesAfterSeek() async throws {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(
+            forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let url = try file("half-speed.mp4", Data(contentsOf: fixture))
+        let session = MediaSession.shared
+        let oldRate = session.rate
+        defer { session.setRate(oldRate); session.stop() }
+        session.setRate(0.5)
+        session.open(url: url)
+        try await wait { session.player.currentTime().seconds > 0.2 }
+        XCTAssertNil(session.error)
+        XCTAssertEqual(session.player.rate, 0.5)
+        session.pause()
+        session.seek(2)
+        try await wait { abs(session.player.currentTime().seconds - 2) < 0.1 }
+        session.play()
+        try await wait { session.player.currentTime().seconds > 2.2 }
+        XCTAssertNil(session.error)
+        XCTAssertEqual(session.player.rate, 0.5)
+    }
+
     @MainActor func testLocalVideoAdvancesAfterSeekAndResume() async throws {
         let fixture = try XCTUnwrap(Bundle(for: Self.self).url(
             forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))

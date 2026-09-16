@@ -264,8 +264,8 @@
 "ad_block_popups" = "Bereinigen Sie Popups und Overlays";
 "ad_block_management" = "Werbeblocker";
 "ad_block_allowlist" = "Zulässige Websites";
-"ad_block_disable_current_site" = "Deaktivieren Sie den Werbeblock auf dieser Website";
-"ad_block_enable_current_site" = "Aktivieren Sie den Werbeblock auf dieser Website";
+"ad_block_disable_current_site" = "Werbung erlauben";
+"ad_block_enable_current_site" = "Werbung blockieren";
 "ad_block_site_toggle_desc" = "Wenn Sie dies ändern, wird die aktuelle Seite neu geladen, sodass die neue Werbeblock-Einstellung angewendet werden kann.";
 "ad_block_no_allowlisted_sites" = "Keine erlaubten Websites.";
 "ad_block_stats" = "Versteckte Elemente";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Kompatibilität";
 "userscript_experimental_title" = "UserScript Kompatibilität";
 "userscript_experimental_desc" = "Unterstützt Site-Regeln, Dokumentstart/-ende, umfangreiche GM-Speicher- und Seiten-APIs, Skriptbefehle, Benachrichtigungen, Registerkarten, Downloads, Cookies, Ressourcen und berechtigungsbezogene Anfragen. Überprüfen Sie jedes Skript vor der Installation. externe @require-Dateien werden nicht ausgeführt.";
-"extension_choose_file" = "Wählen Sie Erweiterungsdatei oder Ordner…";
+"extension_choose_file" = "Datei oder Ordner wählen…";
 "extension_installing" = "Erweiterung prüfen und installieren…";
 "extension_install_failed" = "Erweiterung konnte nicht installiert werden";
 "extension_permissions_summary" = "%d Berechtigungen · %d Website-Regeln";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Diese Erweiterung verwendet eine dauerhafte Hintergrundseite, die iOS-Weberweiterungen nicht unterstützen. Versuchen Sie es mit einer Manifest V3- oder Safari-kompatiblen Version.";
 "userscript_new" = "Neues Skript";
 "userscript_edit" = "Skript bearbeiten";
-"userscript_choose_file" = "Wählen Sie UserScript Datei (.js)…";
+"userscript_choose_file" = "Skript wählen…";
 "userscript_install_footer" = "Tippen Sie auf eine Quellzeile, um sie im aktuellen Tab Soulo zu öffnen. Ein .user.js-Link öffnet eine Installationsbestätigung. Standard-JavaScript und eine breite Palette von GM-APIs werden unterstützt; Skripte werden beim privaten Surfen nicht ausgeführt und externe @require-Dateien werden nicht ausgeführt.";
 "userscript_install_failed" = "UserScript konnte nicht installiert werden";
 "web_extension_temporarily_disabled" = "Standard-Browsererweiterungen sind vorübergehend nicht verfügbar, während die Kompatibilitätstests abgeschlossen sind.";

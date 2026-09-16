@@ -32,6 +32,10 @@ final class WebViewModel: ObservableObject {
     @Published private(set) var isPageTranslationApplied = false
     @Published private(set) var runtimeRevision = UUID()
     @Published private(set) var userScriptMenuCommands: [UserScriptMenuCommand] = []
+    @Published var manualAdSelection: ManualAdSelection?
+    @Published var manualAdBusy = false
+    @Published var manualAdError = false
+    @Published var manualAdSavedRuleID: UUID?
     var isWebViewRuntimeInstalled: Bool = false
     var isStreamingDownloadHandlerInstalled: Bool = false
     var isDesktopModeEnabled: Bool = false
@@ -195,6 +199,7 @@ final class WebViewModel: ObservableObject {
     /// Releases the expensive WebKit runtime while preserving the tab URL and snapshot.
     /// The view is recreated lazily the next time the tab becomes active.
     func releaseWebViewRuntime() {
+        cancelMarkingAdvertisement()
         webView?.stopLoading()
         webView = nil
         pendingRequest = nil
@@ -207,6 +212,7 @@ final class WebViewModel: ObservableObject {
     /// Recreates WebKit so document-start UserScripts and their permissions are
     /// rebuilt before the next navigation, while preserving the current page.
     func rebuildWebViewRuntime() {
+        cancelMarkingAdvertisement()
         webView?.stopLoading()
         webView = nil
         pendingRequest = nil

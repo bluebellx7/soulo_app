@@ -1,22 +1,18 @@
-Soulo es un navegador de búsqueda múltiple rápido y privado para iPhone y iPad. Ingrese una consulta y luego cambie entre más de 40 plataformas de búsqueda, redes sociales, videos, compras, conocimiento e inteligencia artificial sin volver a escribir.
+Soulo es un navegador de búsqueda multiplataforma para iPhone y iPad. Escribe una vez y cambia entre buscadores, redes sociales, vídeos, compras, conocimiento e IA sin repetir la consulta.
 
-NAVEGA A TU MANERA
-• Pestañas, marcadores, historial, descargas y plataformas de búsqueda personalizables
-• Navegación privada, protección de rastreadores, bloqueo de anuncios y controles por sitio
-• Modos de sitio web móvil y de escritorio, zoom de página, traducción y captura de página completa
-• Descargue imágenes, videos, audio y documentos con el inspector de recursos de la página web
-• Extraiga texto de imágenes de páginas web con Live Text
+Busca información, lee artículos, reproduce contenido y gestiona descargas en un mismo navegador.
 
-DISEÑADO PARA iPHONE Y iPAD
-• Múltiples ventanas independientes en iPad
-• Comparta enlaces o texto directamente a Soulo
-• Busque y abra descargas desde Siri, Shortcuts, Control Center, la pantalla de bloqueo y el botón de acción.
-• Descargas en segundo plano con progreso real y pausa/reanudación
-• Actividades en vivo y estado Dynamic Island
+• Búsqueda: añade plataformas, agrúpalas y cambia su orden. Selecciona texto para buscarlo en una nueva pestaña de Soulo.
+• Publicidad y privacidad: filtra anuncios, suscríbete a reglas de terceros y marca anuncios para ocultarlos. Gestiona filtros y protección frente al rastreo por sitio. La navegación privada no guarda el historial.
+• Audio y vídeo: velocidad ajustable, repetición, minirreproductor flotante, imagen dentro de imagen, reproducción en segundo plano y AirPlay. Captura fotogramas, refleja la imagen y mantén pulsado para acelerar temporalmente.
+• Archivos: detecta imágenes, audio, vídeos y documentos en las páginas y guarda imágenes por lotes. Explora archivos en lista o cuadrícula de portadas, cambia sus nombres, importa desde Fotos y transfiere por Wi-Fi.
+• Archivos comprimidos: extrae ZIP, RAR y 7z. Crea ZIP y 7z con protección por contraseña opcional.
+• Lectura: TXT, PDF, EPUB y libros MOBI, AZW y AZW3 sin DRM compatibles. Ajusta fuente, tamaño, interlineado y fondo. Los libros de diseño adaptable permiten alternar chino simplificado y tradicional. El modo de lectura extrae artículos y permite continuar en la página siguiente.
+• Extensiones: importa, edita y ejecuta scripts JavaScript, gestiona los sitios y permisos, e instala WebExtensions compatibles.
+• Herramientas web: traducción, buscar en la página, capturas de página completa, reconocimiento de texto en imágenes, modos escritorio/móvil, agente de usuario personalizado y certificados de sitios.
+• Marcadores: organízalos en carpetas e importa o exporta marcadores HTML de Chrome, Edge y otros navegadores. Crea códigos QR de páginas con el icono del sitio para compartirlos, guardarlos o copiarlos.
+• Personalización: fondos, barra de herramientas y acciones rápidas del icono de la app. Accede mediante widgets, Atajos y esquemas URL. Sincroniza los ajustes con iCloud de forma opcional.
 
-AMPLIAR LA WEB
-Instale UserScripts o WebExtensions compatibles, administre los permisos con claridad y cree sus propios scripts con la documentación API incorporada.
+La disponibilidad de contenido multimedia, libros y extensiones depende del formato, las restricciones del sitio y la versión del sistema.
 
-Soulo almacena los datos de navegación localmente a menos que habilites la sincronización de la configuración de iCloud. La navegación privada no guarda el historial.
-
-Lee cómodamente, abre tu biblioteca desde un widget, escanea códigos QR y extrae texto de tus fotos.
+Soporte: contact@dkluge.com

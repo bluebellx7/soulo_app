@@ -264,8 +264,8 @@
 "ad_block_popups" = "Čisti skočne prozore i slojeve";
 "ad_block_management" = "Blokiranje oglasa";
 "ad_block_allowlist" = "Dopuštene stranice";
-"ad_block_disable_current_site" = "Onemogući blokiranje oglasa na ovoj stranici";
-"ad_block_enable_current_site" = "Omogući blokiranje oglasa na ovoj web stranici";
+"ad_block_disable_current_site" = "Dopusti oglase";
+"ad_block_enable_current_site" = "Blokiraj oglase";
 "ad_block_site_toggle_desc" = "Ovom promjenom ponovno se učitava trenutna stranica kako bi se mogla primijeniti nova postavka za blokiranje oglasa.";
 "ad_block_no_allowlisted_sites" = "Nema dopuštenih web stranica.";
 "ad_block_stats" = "Skriveni elementi";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Kompatibilnost";
 "userscript_experimental_title" = "UserScript kompatibilnost";
 "userscript_experimental_desc" = "Podržava pravila web mjesta, početak/kraj dokumenta, opsežnu GM pohranu i API-je stranica, naredbe skripte, obavijesti, kartice, preuzimanja, kolačiće, resurse i zahtjeve s opsegom dopuštenja. Pregledajte svaku skriptu prije instalacije; vanjske @require datoteke se ne izvršavaju.";
-"extension_choose_file" = "Odaberite datoteku ili mapu proširenja…";
+"extension_choose_file" = "Odaberi datoteku ili mapu…";
 "extension_installing" = "Provjera i instaliranje proširenja…";
 "extension_install_failed" = "Nije moguće instalirati proširenje";
 "extension_permissions_summary" = "%d dopuštenja · %d pravila web stranice";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Ovo proširenje koristi stalnu pozadinsku stranicu koju iOS web-proširenja ne podržavaju. Isprobajte Manifest V3 ili verziju kompatibilnu sa Safarijem.";
 "userscript_new" = "Nova skripta";
 "userscript_edit" = "Uredi skriptu";
-"userscript_choose_file" = "Odaberite UserScript datoteku (.js)…";
+"userscript_choose_file" = "Odaberi skriptu…";
 "userscript_install_footer" = "Dodirnite izvorni redak da biste ga otvorili u trenutnoj kartici Soulo. Veza .user.js otvara potvrdu instalacije. Podržani su standardni JavaScript i širok skup GM API-ja; skripte se ne pokreću u privatnom pregledavanju i vanjske @require datoteke se ne izvršavaju.";
 "userscript_install_failed" = "UserScript Nije moguće instalirati";
 "web_extension_temporarily_disabled" = "Standardna proširenja preglednika privremeno nisu dostupna dok se ne završi testiranje kompatibilnosti.";

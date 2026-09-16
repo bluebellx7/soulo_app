@@ -163,7 +163,7 @@ private struct BrowserTabChip: View {
             onClose()
         }
         .contextMenu {
-            Button {
+            Button(role: .destructive) {
                 onClose()
             } label: {
                 Label(LanguageManager.shared.localizedString("tab_close"), systemImage: "xmark")
@@ -175,6 +175,8 @@ private struct BrowserTabChip: View {
 // MARK: - Tab Switcher Overlay
 
 struct TabSwitcherOverlay: View {
+    @AppStorage("show_top_tab_bar") private var showTopTabBar = true
+    @State private var showTabOptions = false
     @ObservedObject var tabManager: TabManager
     let onSelectTab: (Int) -> Void
     let onNewTab: () -> Void
@@ -258,21 +260,7 @@ struct TabSwitcherOverlay: View {
                 }
             }
 
-            Menu {
-                if tabManager.tabs.count > 1 {
-                    Button {
-                        tabManager.closeOtherTabs()
-                    } label: {
-                        Label(LanguageManager.shared.localizedString("tab_close_others"), systemImage: "xmark.circle")
-                    }
-                }
-
-                Button(role: .destructive) {
-                    tabManager.closeAllTabs()
-                } label: {
-                    Label(LanguageManager.shared.localizedString("tab_close_all"), systemImage: "trash")
-                }
-            } label: {
+            Button { showTabOptions = true } label: {
                 Image(systemName: "ellipsis")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.9))
@@ -280,13 +268,90 @@ struct TabSwitcherOverlay: View {
                     .background(.black.opacity(0.34), in: Circle())
                     .overlay(Circle().stroke(.white.opacity(0.14), lineWidth: 0.5))
             }
+            .buttonStyle(.plain)
             .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
+            .accessibilityIdentifier("tabs.options")
+            .popover(isPresented: $showTabOptions, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
+                tabOptionsPanel
+                    .presentationCompactAdaptation(.popover)
+            }
 
             iconButton("xmark", label: "done") {
                 dismiss()
             }
         }
         .padding(.horizontal, 14)
+    }
+
+    private var tabOptionsPanel: some View {
+        VStack(spacing: 14) {
+            Toggle(isOn: $showTopTabBar) {
+                Text(ToolText.text("show_top_tab_bar"))
+                    .font(.subheadline.weight(.semibold))
+            }
+            .tint(Color.themePrimary)
+            .accessibilityIdentifier("tabs.show-top-bar")
+
+            HStack(spacing: 12) {
+                tabBarPreview(isVisible: true)
+                tabBarPreview(isVisible: false)
+            }
+            .accessibilityHidden(true)
+            Text(ToolText.text("top_tab_bar_hint"))
+                .font(.caption).foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Divider()
+            if tabManager.tabs.count > 1 {
+                Button {
+                    showTabOptions = false
+                    tabManager.closeOtherTabs()
+                } label: {
+                    Label(LanguageManager.shared.localizedString("tab_close_others"), systemImage: "xmark.circle")
+                        .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
+                }
+                .foregroundStyle(.primary)
+            }
+            Button(role: .destructive) {
+                showTabOptions = false
+                tabManager.closeAllTabs()
+            } label: {
+                Label(LanguageManager.shared.localizedString("tab_close_all"), systemImage: "trash")
+                    .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
+            }
+            .foregroundStyle(.red)
+        }
+        .buttonStyle(.plain)
+        .padding(16)
+        .frame(width: 300)
+    }
+
+    private func tabBarPreview(isVisible: Bool) -> some View {
+        VStack(spacing: 6) {
+            VStack(alignment: .leading, spacing: 7) {
+                if isVisible {
+                    HStack(spacing: 4) {
+                        Capsule().fill(Color.themePrimary.opacity(0.65))
+                        Capsule().fill(Color.primary.opacity(0.14))
+                    }
+                    .frame(height: 12)
+                }
+                RoundedRectangle(cornerRadius: 3).fill(Color.primary.opacity(0.16)).frame(height: 6)
+                RoundedRectangle(cornerRadius: 3).fill(Color.primary.opacity(0.09)).frame(height: 5)
+                RoundedRectangle(cornerRadius: 3).fill(Color.primary.opacity(0.09)).frame(width: 55, height: 5)
+                Spacer(minLength: 0)
+                Capsule().fill(Color.primary.opacity(0.12)).frame(height: 10)
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity)
+            .frame(height: 88)
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(
+                showTopTabBar == isVisible ? Color.themePrimary.opacity(0.65) : Color.primary.opacity(0.12), lineWidth: 1))
+            Text(LanguageManager.shared.localizedString(isVisible ? "accessibility_enabled" : "accessibility_disabled"))
+                .font(.caption2).foregroundStyle(.secondary)
+        }
     }
 
     private var emptyState: some View {
@@ -317,6 +382,7 @@ struct TabSwitcherOverlay: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(LanguageManager.shared.localizedString(label))
+        .accessibilityIdentifier("tabs.\(label)")
     }
 
     private func dismiss() {
@@ -647,7 +713,7 @@ private struct TabOverviewCard: View {
         }
         .contextMenu {
             if !isExpanding {
-                Button {
+                Button(role: .destructive) {
                     onClose()
                 } label: {
                     Label(LanguageManager.shared.localizedString("tab_close"), systemImage: "xmark")
@@ -659,7 +725,7 @@ private struct TabOverviewCard: View {
                         UINotificationFeedbackGenerator().notificationOccurred(.success)
                         NotificationCenter.default.post(name: .linkCopied, object: nil)
                     } label: {
-                        Label(LanguageManager.shared.localizedString("copy_link"), systemImage: "doc.on.doc")
+                        tabContextLabel("copy_link", systemImage: "doc.on.doc")
                     }
 
                     Button {
@@ -669,7 +735,7 @@ private struct TabOverviewCard: View {
                             userInfo: ["url": url]
                         )
                     } label: {
-                        Label(LanguageManager.shared.localizedString("tab_duplicate"), systemImage: "plus.square.on.square")
+                        tabContextLabel("tab_duplicate", systemImage: "plus.square.on.square")
                     }
                 }
             }
@@ -827,6 +893,7 @@ struct TabCountBadge: View {
             .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
         }
         .accessibilityLabel("\(count) \(LanguageManager.shared.localizedString("tab_tabs"))")
+        .accessibilityIdentifier("browser.tabs")
         .accessibilityHint(LanguageManager.shared.localizedString("accessibility_tab_overview_hint"))
     }
 }
@@ -842,5 +909,19 @@ extension View {
         self
             .scaleEffect(isActive ? 0.90 : 1)
             .ignoresSafeArea(.container, edges: isActive ? .all : [])
+    }
+}
+
+// Native context menus otherwise inherit the app accent color for template images.
+@MainActor
+private func tabContextLabel(_ key: String, systemImage: String) -> some View {
+    Label {
+        Text(LanguageManager.shared.localizedString(key))
+    } icon: {
+        if let image = UIImage(systemName: systemImage)?.withTintColor(.label, renderingMode: .alwaysOriginal) {
+            Image(uiImage: image)
+        } else {
+            Image(systemName: systemImage).foregroundStyle(.primary)
+        }
     }
 }

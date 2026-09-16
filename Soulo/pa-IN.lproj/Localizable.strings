@@ -264,8 +264,8 @@
 "ad_block_popups" = "ਸਾਫ਼ ਪੌਪਅੱਪ ਅਤੇ ਓਵਰਲੇਅ";
 "ad_block_management" = "ਵਿਗਿਆਪਨ ਰੋਕ";
 "ad_block_allowlist" = "ਮਨਜ਼ੂਰ ਸਾਈਟਾਂ";
-"ad_block_disable_current_site" = "ਇਸ ਸਾਈਟ 'ਤੇ ਵਿਗਿਆਪਨ ਬਲਾਕ ਨੂੰ ਅਯੋਗ ਕਰੋ";
-"ad_block_enable_current_site" = "ਇਸ ਸਾਈਟ 'ਤੇ ਵਿਗਿਆਪਨ ਬਲਾਕ ਨੂੰ ਸਮਰੱਥ ਬਣਾਓ";
+"ad_block_disable_current_site" = "ਇਸ਼ਤਿਹਾਰਾਂ ਦੀ ਇਜਾਜ਼ਤ ਦਿਓ";
+"ad_block_enable_current_site" = "ਇਸ਼ਤਿਹਾਰ ਰੋਕੋ";
 "ad_block_site_toggle_desc" = "ਇਸ ਨੂੰ ਬਦਲਣ ਨਾਲ ਮੌਜੂਦਾ ਪੰਨਾ ਰੀਲੋਡ ਹੋ ਜਾਂਦਾ ਹੈ ਤਾਂ ਜੋ ਨਵੀਂ ਵਿਗਿਆਪਨ-ਬਲਾਕ ਸੈਟਿੰਗ ਲਾਗੂ ਹੋ ਸਕੇ।";
 "ad_block_no_allowlisted_sites" = "ਕੋਈ ਸਾਈਟਾਂ ਦੀ ਇਜਾਜ਼ਤ ਨਹੀਂ ਹੈ।";
 "ad_block_stats" = "ਲੁਕਵੇਂ ਤੱਤ";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "ਅਨੁਕੂਲਤਾ";
 "userscript_experimental_title" = "UserScript ਅਨੁਕੂਲਤਾ";
 "userscript_experimental_desc" = "ਸਾਈਟ ਨਿਯਮਾਂ, ਦਸਤਾਵੇਜ਼-ਸ਼ੁਰੂ/ਅੰਤ, ਵਿਆਪਕ GM ਸਟੋਰੇਜ ਅਤੇ ਪੇਜ API, ਸਕ੍ਰਿਪਟ ਕਮਾਂਡਾਂ, ਸੂਚਨਾਵਾਂ, ਟੈਬਾਂ, ਡਾਉਨਲੋਡਸ, ਕੂਕੀਜ਼, ਸਰੋਤਾਂ ਅਤੇ ਅਨੁਮਤੀ-ਸਕੋਪ ਬੇਨਤੀਆਂ ਦਾ ਸਮਰਥਨ ਕਰਦਾ ਹੈ। ਇੰਸਟਾਲ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਹਰ ਸਕ੍ਰਿਪਟ ਦੀ ਸਮੀਖਿਆ ਕਰੋ; external @require ਫਾਈਲਾਂ ਨੂੰ ਐਗਜ਼ੀਕਿਊਟ ਨਹੀਂ ਕੀਤਾ ਜਾਂਦਾ ਹੈ।";
-"extension_choose_file" = "ਐਕਸਟੈਂਸ਼ਨ ਫਾਈਲ ਜਾਂ ਫੋਲਡਰ ਚੁਣੋ...";
+"extension_choose_file" = "ਫਾਈਲ ਜਾਂ ਫੋਲਡਰ ਚੁਣੋ…";
 "extension_installing" = "ਐਕਸਟੈਂਸ਼ਨ ਦੀ ਜਾਂਚ ਅਤੇ ਸਥਾਪਨਾ ਕੀਤੀ ਜਾ ਰਹੀ ਹੈ...";
 "extension_install_failed" = "ਐਕਸਟੈਂਸ਼ਨ ਨੂੰ ਸਥਾਪਿਤ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ";
 "extension_permissions_summary" = "%d ਅਨੁਮਤੀਆਂ · %d ਵੈੱਬਸਾਈਟ ਨਿਯਮ";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "ਇਹ ਐਕਸਟੈਂਸ਼ਨ ਇੱਕ ਨਿਰੰਤਰ ਬੈਕਗ੍ਰਾਉਂਡ ਪੰਨੇ ਦੀ ਵਰਤੋਂ ਕਰਦੀ ਹੈ ਜਿਸਦਾ iOS ਵੈੱਬ ਐਕਸਟੈਂਸ਼ਨ ਸਮਰਥਨ ਨਹੀਂ ਕਰਦੇ ਹਨ। ਇੱਕ ਮੈਨੀਫੈਸਟ V3 ਜਾਂ Safari-ਅਨੁਕੂਲ ਸੰਸਕਰਣ ਅਜ਼ਮਾਓ।";
 "userscript_new" = "ਨਵੀਂ ਸਕ੍ਰਿਪਟ";
 "userscript_edit" = "ਸਕ੍ਰਿਪਟ ਦਾ ਸੰਪਾਦਨ ਕਰੋ";
-"userscript_choose_file" = "ਚੁਣੋ UserScript ਫ਼ਾਈਲ (.js)…";
+"userscript_choose_file" = "ਸਕ੍ਰਿਪਟ ਚੁਣੋ…";
 "userscript_install_footer" = "ਮੌਜੂਦਾ Soulo ਟੈਬ ਵਿੱਚ ਇਸਨੂੰ ਖੋਲ੍ਹਣ ਲਈ ਇੱਕ ਸਰੋਤ ਕਤਾਰ 'ਤੇ ਟੈਪ ਕਰੋ। ਇੱਕ .user.js ਲਿੰਕ ਇੱਕ ਇੰਸਟਾਲੇਸ਼ਨ ਪੁਸ਼ਟੀ ਨੂੰ ਖੋਲ੍ਹਦਾ ਹੈ। ਸਟੈਂਡਰਡ JavaScript ਅਤੇ GM API ਦਾ ਇੱਕ ਵਿਸ਼ਾਲ ਸਮੂਹ ਸਮਰਥਿਤ ਹੈ; ਸਕ੍ਰਿਪਟਾਂ ਪ੍ਰਾਈਵੇਟ ਬ੍ਰਾਊਜ਼ਿੰਗ ਵਿੱਚ ਨਹੀਂ ਚੱਲਦੀਆਂ ਹਨ ਅਤੇ ਬਾਹਰੀ @require ਫਾਈਲਾਂ ਨੂੰ ਚਲਾਇਆ ਨਹੀਂ ਜਾਂਦਾ ਹੈ।";
 "userscript_install_failed" = "UserScript ਨੂੰ ਸਥਾਪਿਤ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ";
 "web_extension_temporarily_disabled" = "ਅਨੁਕੂਲਤਾ ਜਾਂਚ ਪੂਰੀ ਹੋਣ 'ਤੇ ਸਟੈਂਡਰਡ ਬ੍ਰਾਊਜ਼ਰ ਐਕਸਟੈਂਸ਼ਨ ਅਸਥਾਈ ਤੌਰ 'ਤੇ ਉਪਲਬਧ ਨਹੀਂ ਹਨ।";

@@ -147,3 +147,185 @@
 "remove_download_record" = "Remove Record";
 "clear_download_records" = "Clear Finished Records";
 "download_records_keep_files" = "Only download records are removed. Downloaded files remain in Files.";
+
+// Manual advertisement hiding
+"manual_ad_mark" = "Mark an ad";
+"manual_ad_hint" = "Tap the area to hide. Scroll to find it.";
+"manual_ad_invalid" = "Choose a smaller area outside the main content or sign-in form.";
+"manual_ad_smaller" = "Smaller area";
+"manual_ad_larger" = "Larger area";
+"manual_ad_preview" = "Preview";
+"manual_ad_scope" = "Apply to";
+"manual_ad_page" = "This page";
+"manual_ad_site" = "This website";
+"manual_ad_hide" = "Hide and remember";
+"manual_ad_saved" = "Hidden and saved";
+"manual_ad_rules" = "Marked ads";
+"manual_ad_footer" = "Rules are saved on this device and follow Ad Block and the site allowlist. Restore an item here to remove its rule.";
+"manual_ad_error" = "The area could not be saved. It may have changed. Try marking it again.";
+
+"extension_builtin_tools" = "Built-in Tools";
+"reader_builtin_description" = "Turn on to access Reader from Script Commands on webpages.";
+"show_top_tab_bar" = "Show Top Tab Bar";
+"top_tab_bar_hint" = "Appears only when more than one tab is open.";
+
+// Manual ad rule management
+"manual_ad_summary" = "%ld marks · %ld sites";
+"manual_ad_list_hint" = "Restore removes your mark so the area can appear again. Automatic filters may still hide it.";
+"manual_ad_paused" = "Ad blocking is off. Your marks are saved but paused.";
+"manual_ad_site_paused" = "Ads are allowed on this site. Its marks are paused.";
+"manual_ad_current_site" = "Current site";
+"manual_ad_search" = "Search sites or page paths";
+"manual_ad_empty" = "No marked ads";
+"manual_ad_empty_hint" = "Open a webpage, tap the icon before the address, then choose Mark Ad to hide an area.";
+"manual_ad_removed" = "Mark removed";
+"manual_ad_undo" = "Undo";
+"manual_ad_domain" = "Website";
+"manual_ad_page_rule" = "Specific page";
+"manual_ad_path" = "Page path";
+"manual_ad_created" = "Marked on";
+"manual_ad_selector" = "Area identifier";
+"manual_ad_selector_hint" = "Identifies the area you selected. If the site changes its layout, mark the area again.";
+"manual_ad_details" = "Mark Details";
+"manual_ad_all_paths" = "All pages on this domain";
+"manual_ad_undo_failed" = "The mark limit has been reached. Remove another mark before undoing.";
+
+// Feedback diagnostics
+"feedback_diag_include" = "Include diagnostics";
+"feedback_diag_hint" = "Device, app and settings details help us investigate. You can review them below or turn this off. Browsing history, page content and clipboard text are not included.";
+"feedback_diag_preview" = "View attached information";
+"feedback_diag_app" = "App version and build";
+"feedback_diag_bundle" = "App identifier";
+"feedback_diag_device" = "Device model";
+"feedback_diag_system" = "Operating system";
+"feedback_diag_screen" = "Screen size";
+"feedback_diag_memory" = "Device memory";
+"feedback_diag_language" = "App language";
+"feedback_diag_locale" = "System region and language";
+"feedback_diag_timezone" = "Time zone";
+"feedback_diag_appearance" = "Appearance setting";
+"feedback_diag_low_power" = "Low Power Mode";
+"feedback_diag_thermal" = "Thermal state";
+"feedback_diag_adblock" = "Ad blocking";
+"feedback_diag_gpc" = "Global Privacy Control";
+"feedback_diag_scripts" = "UserScripts: enabled / installed";
+"feedback_diag_extensions" = "Extensions: enabled / installed";
+"feedback_invalid_content" = "Enter between 1 and 2,000 characters and choose a feedback type.";
+
+// Current page QR code
+"page_qr_title" = "Page QR Code";
+"page_qr_hint" = "Scan to open this page. Copy, share, or save the QR code to Photos.";
+"page_qr_failed" = "This address could not be converted to a QR code.";
+"page_qr_saved" = "Saved to Photos";
+"page_qr_photo_permission" = "Allow Soulo to add images to Photos in Settings, then try again.";
+"page_qr_copy_image" = "Copy image";
+"page_qr_saved_short" = "Saved";
+
+// URL Scheme guide
+"scheme_title" = "URL Scheme";
+"scheme_intro" = "Use Soulo from Shortcuts or other apps. Copy an example below and replace its text or address.";
+"scheme_home" = "Open Soulo";
+"scheme_focus" = "Start typing a search";
+"scheme_search" = "Search or open an address";
+"scheme_open" = "Open a webpage";
+"scheme_download" = "Start a download";
+"scheme_scan" = "Scan a code";
+"scheme_files" = "Open Files";
+"scheme_bookmarks" = "Open Bookmarks";
+"scheme_history" = "Open Search History";
+"scheme_downloads" = "Open Downloads";
+"scheme_examples" = "Examples";
+"scheme_usage" = "Usage";
+"scheme_encoding" = "Encode parameter values with URL encoding once. In Shortcuts, use URL Encode before inserting text or an address. This preserves spaces, Chinese characters, &, + and #.";
+"scheme_download_note" = "Downloads accept HTTP/HTTPS file addresses and appear in Downloads. Links requiring website sign-in may need to be opened in the browser first. The example.com addresses are placeholders.";
+"scheme_shortcuts" = "Short forms & aliases";
+"scheme_aliases" = "Commands ignore letter case. You may also append text or a webpage URL directly after soulo://. QRCode and scan open the scanner; Books and bookshelf open Files. Your current privacy mode is preserved.";
+
+// Bookmark folders and browser HTML exchange
+"favorites_new_folder" = "New Folder";
+"favorites_import" = "Import";
+"favorites_export" = "Export";
+"favorites_manage" = "Manage Bookmarks";
+"favorites_rename" = "Rename";
+"favorites_move" = "Move to Folder";
+"favorites_folder_name" = "Folder name";
+"favorites_parent" = "Back to Parent Folder";
+"favorites_remove_folder" = "Delete Folder?";
+"favorites_remove_note" = "Bookmarks and subfolders will be moved to the parent folder. No bookmarks will be deleted.";
+"favorites_empty" = "Save a page, create a folder, or import bookmarks from the menu above.";
+"favorites_format" = "Import a bookmarks HTML file exported by Chrome, Edge or another browser. Folder structure is preserved. Exports use the same HTML format.";
+"favorites_processing" = "Organizing bookmarks…";
+"favorites_exported" = "Bookmarks exported.";
+"favorites_import_result" = "Added %d bookmarks and %d folders.\nSkipped %d duplicates and %d unsupported links.";
+"favorites_name_exists" = "A folder with this name already exists here.";
+"favorites_untitled" = "Untitled Folder";
+"favorites_invalid" = "Select a bookmarks HTML file exported from your browser.";
+"favorites_too_large" = "Import supports files up to 20 MB and 50,000 entries. Split this export into smaller files and try again.";
+"favorites_too_deep" = "This file has too many nested folders (maximum 64 levels).";
+
+// Settings and site certificates
+"settings_other" = "Other";
+"quick_actions_title" = "Quick Actions";
+"quick_actions_hint" = "Drag to reorder the actions shown when you touch and hold the Soulo app icon. Changes save automatically. iOS controls the position of system actions.";
+"quick_actions_reset" = "Reset";
+"quick_actions_up" = "Move Up";
+"quick_actions_down" = "Move Down";
+"certificate_title" = "Certificate";
+"certificate_source" = "Certificate chain provided by the current webpage connection. Trust is managed by iOS.";
+"certificate_unavailable" = "The current page has not provided certificate details. Wait for loading to finish, or reload the webpage and try again.";
+"certificate_subject" = "Issued To";
+"certificate_issuer" = "Issued By";
+"certificate_from" = "Valid From";
+"certificate_until" = "Valid Until";
+"certificate_serial" = "Serial Number";
+"certificate_public_key" = "Public Key";
+"certificate_domains" = "Domains";
+"certificate_leaf" = "Website Certificate";
+"certificate_chain_item" = "Certificate Chain · %d";
+"quick_actions_selected" = "Selected · %d/%d";
+"quick_actions_available" = "More Actions";
+"quick_actions_remove" = "Remove";
+"quick_actions_empty" = "Add an action below.";
+"quick_actions_limit" = "Choose up to 4 actions. Remove one above to add another.";
+
+"connection_encrypted" = "Encrypted connection";
+"connection_unencrypted" = "Unencrypted connection";
+
+"image_batch_select" = "Select images";
+"image_batch_result" = "Save results";
+"image_batch_progress" = "Saving %d of %d";
+"image_batch_select_all" = "Select all";
+"image_batch_deselect_all" = "Deselect all";
+"image_batch_save" = "Save (%d)";
+"image_batch_summary" = "Saved %d images. Failed: %d.";
+"image_batch_cancelled" = "Cancelled. Saved %d images.";
+
+"photo_save_invalid" = "This resource is not a readable image. It may be a webpage or an unsupported format. Try downloading the original file.";
+"photo_save_too_large" = "This image is too large to convert safely. Download the original file instead.";
+"photo_save_incompatible" = "Photos could not import this image, even after conversion. Try downloading the original file.";
+
+"feedback_support_email" = "Support email";
+
+"media_pip" = "Picture in Picture";
+"media_pip_hint" = "Keep watching while using other apps";
+"media_fullscreen" = "Full screen";
+
+"import_photos" = "Import Photos";
+
+"open_as_text" = "Open as Text";
+
+"media_snapshot" = "Capture Frame";
+
+"media_mirror" = "Mirror Video";
+
+"chinese_display" = "Chinese Text";
+
+"original_text" = "Original";
+
+"simplified_text" = "Simplified";
+
+"traditional_text" = "Traditional";
+
+"text_encoding_failed" = "Cannot read this encoding. Try another encoding in the top-right menu.";
+
+"auto" = "Automatic";

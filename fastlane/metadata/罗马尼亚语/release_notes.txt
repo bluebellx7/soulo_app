@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Lectură continuă îmbunătățită, cu cuprins și căutare separate, setări pentru font, spațierea rândurilor și aspectul PDF.
-• Adăugate biblioteca în grilă și widgetul, scanarea QR, recunoașterea textului din fotografii și scurtătura de scanare.
-• Îmbunătățite accesul la descărcări, acțiunile pentru fișiere, paginile web întunecate și performanța.
+• Marchează reclame pentru a le ascunde. Filtre de reclame și controale de confidențialitate îmbunătățite.
+• Dosare de marcaje, import și export HTML și coduri QR ale paginilor pentru partajare, salvare sau copiere.
+• Previzualizări pătrate, salvare de imagini în lot și îmbunătățiri la citire, redare media și extensii de scripturi.

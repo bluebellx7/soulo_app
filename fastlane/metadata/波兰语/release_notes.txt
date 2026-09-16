@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Ulepszone czytanie ciągłe: osobne spis treści i wyszukiwanie, ustawienia czcionki, interlinii oraz wyglądu PDF.
-• Dodano siatkę książek i widżet, skanowanie kodów QR, rozpoznawanie tekstu na zdjęciach i skrót do skanera.
-• Ulepszono przejście do pobranych plików, operacje na plikach, ciemny wygląd stron i wydajność.
+• Oznaczanie reklam do ukrycia oraz ulepszenia filtrów reklam i ustawień prywatności.
+• Foldery zakładek, import i eksport HTML oraz udostępnianie, zapisywanie i kopiowanie kodów QR stron.
+• Kwadratowe podglądy, zbiorcze zapisywanie obrazów oraz usprawnienia czytania, odtwarzania i rozszerzeń skryptowych.

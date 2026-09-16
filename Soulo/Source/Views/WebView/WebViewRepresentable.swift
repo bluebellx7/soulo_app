@@ -290,6 +290,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     @AppStorage("privacy_cookie_banner_enabled")
     private var cookieBannerEnabled = PrivacyFeatureDefaults.cookieBannerHandling
     @ObservedObject private var adBlockSettings = AdBlockSettingsService.shared
+    @ObservedObject private var manualAdRules = ManualAdBlockService.shared
     @ObservedObject private var privacyService = PrivacyProtectionService.shared
     @ObservedObject private var webAppearance = WebAppearanceService.shared
 
@@ -318,7 +319,12 @@ struct WebViewRepresentable: UIViewRepresentable {
             guard compilingAdBlockAllowlistSignature != signature else { return }
             compilingAdBlockAllowlistSignature = signature
             cachedAdBlockAllowlistSignature = signature
-            cachedAdBlockRules = await AdBlockService.compileRules(allowlistedHosts: allowlist)
+            cachedAdBlockRules = nil
+            let rules = await AdBlockService.compileRules(allowlistedHosts: allowlist)
+            // A newer allowlist may have started compiling while this task waited.
+            if cachedAdBlockAllowlistSignature == signature {
+                cachedAdBlockRules = rules
+            }
             if compilingAdBlockAllowlistSignature == signature {
                 compilingAdBlockAllowlistSignature = nil
             }
@@ -393,6 +399,12 @@ struct WebViewRepresentable: UIViewRepresentable {
         guard !viewModel.isWebViewRuntimeInstalled else { return }
 
         contentController.add(context.coordinator, name: "souloAdBlocker")
+        contentController.add(context.coordinator, contentWorld: ManualAdBlockRuntime.world, name: ManualAdBlockRuntime.handler)
+        contentController.addUserScript(WKUserScript(
+            source: ManualAdBlockRuntime.configuredScript(enabled: adBlockEnabled,
+                allowlistedHosts: adBlockSettings.allowlistedHosts, rules: manualAdRules.rules),
+            injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: ManualAdBlockRuntime.world
+        ))
         contentController.add(context.coordinator, name: "souloPrivacy")
         if !isIncognito {
             contentController.addScriptMessageHandler(
@@ -560,7 +572,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         context.coordinator.observe(webView: webView, viewModel: viewModel)
 
         // Pull-to-refresh
-        let refreshControl = UIRefreshControl()
+        let refreshControl = BrowserRefreshControl()
         refreshControl.addTarget(context.coordinator, action: #selector(Coordinator.handleRefresh(_:)), for: .valueChanged)
         webView.scrollView.refreshControl = refreshControl
 
@@ -569,6 +581,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
+        context.coordinator.synchronizeManualAdRules(on: uiView)
         // URL loading is driven imperatively via viewModel.loadURL(_:)
         if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
            !isIncognito, #available(iOS 18.4, *) {
@@ -594,47 +607,51 @@ struct WebViewRepresentable: UIViewRepresentable {
             host: host
         )
         if adBlockEnabled && !shouldBypassWebProtection {
-            Self.ensureCurrentContentRules(on: uiView, allowlist: adBlockAllowlist)
+            Self.ensureCurrentContentRules(on: uiView, allowlist: adBlockAllowlist, model: viewModel)
         } else {
             uiView.configuration.userContentController.removeAllContentRuleLists()
             Self.installedContentRuleSignatures.removeValue(forKey: ObjectIdentifier(uiView))
         }
     }
 
-    private static func ensureCurrentContentRules(on webView: WKWebView, allowlist: [String]) {
+    private static func ensureCurrentContentRules(on webView: WKWebView, allowlist: [String], model: WebViewModel) {
         let signature = allowlistSignature(for: allowlist)
         let webViewID = ObjectIdentifier(webView)
         if signature == cachedAdBlockAllowlistSignature, let cachedAdBlockRules {
             guard installedContentRuleSignatures[webViewID] != signature else { return }
-            webView.configuration.userContentController.removeAllContentRuleLists()
-            if !AdBlockSettingsService.isHostAllowlisted(webView.url?.host, allowlistedHosts: allowlist) {
-                webView.configuration.userContentController.add(cachedAdBlockRules)
-                installedContentRuleSignatures[webViewID] = signature
-            } else {
-                installedContentRuleSignatures.removeValue(forKey: webViewID)
-            }
+            applyContentRules(cachedAdBlockRules, on: webView, allowlist: allowlist)
             return
         }
         guard compilingAdBlockAllowlistSignature != signature else { return }
         cachedAdBlockAllowlistSignature = signature
+        cachedAdBlockRules = nil
         compilingAdBlockAllowlistSignature = signature
-        Task {
+        Task { [weak webView, weak model] in
             let ruleList = await AdBlockService.compileRules(allowlistedHosts: allowlist)
-            await MainActor.run {
-                if compilingAdBlockAllowlistSignature == signature {
-                    compilingAdBlockAllowlistSignature = nil
-                }
-                guard cachedAdBlockAllowlistSignature == signature else { return }
-                cachedAdBlockRules = ruleList
-                webView.configuration.userContentController.removeAllContentRuleLists()
-                if let ruleList, !AdBlockSettingsService.isHostAllowlisted(webView.url?.host, allowlistedHosts: allowlist) {
-                    webView.configuration.userContentController.add(ruleList)
-                    installedContentRuleSignatures[ObjectIdentifier(webView)] = signature
-                } else {
-                    installedContentRuleSignatures.removeValue(forKey: ObjectIdentifier(webView))
-                }
+            if compilingAdBlockAllowlistSignature == signature {
+                compilingAdBlockAllowlistSignature = nil
             }
+            guard cachedAdBlockAllowlistSignature == signature else { return }
+            cachedAdBlockRules = ruleList
+            // Do not restore rules into a closed or suspended tab. A remounted
+            // instance of the same live WebView can use the current rules.
+            guard let webView, let model, model.isWebViewRuntimeInstalled,
+                  model.webView === webView else { return }
+            applyContentRules(ruleList, on: webView, allowlist: allowlist)
         }
+    }
+
+    /// Recheck current preferences when asynchronous compilation completes.
+    static func applyContentRules(_ rules: WKContentRuleList?, on webView: WKWebView, allowlist: [String]) {
+        let id = ObjectIdentifier(webView)
+        webView.configuration.userContentController.removeAllContentRuleLists()
+        installedContentRuleSignatures.removeValue(forKey: id)
+        guard UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true,
+              !WebCompatibilityService.shouldBypassWebProtection(for: webView.url),
+              !AdBlockSettingsService.isHostAllowlisted(webView.url?.host, allowlistedHosts: allowlist),
+              let rules else { return }
+        webView.configuration.userContentController.add(rules)
+        installedContentRuleSignatures[id] = allowlistSignature(for: allowlist)
     }
 
     private static func allowlistSignature(for allowlist: [String]) -> String {
@@ -655,6 +672,8 @@ struct WebViewRepresentable: UIViewRepresentable {
         coordinator.invalidateObservations()
         coordinator.dismissEmbeddedPopups(in: uiView)
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloAdBlocker")
+        coordinator.cancelManualAdPicker()
+        uiView.configuration.userContentController.removeScriptMessageHandler(forName: ManualAdBlockRuntime.handler, contentWorld: ManualAdBlockRuntime.world)
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloPrivacy")
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloExtensionInstaller")
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloDownload", contentWorld: .page)
@@ -697,6 +716,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var downloadPauseObserver: NSObjectProtocol?
         private var downloadResumeObserver: NSObjectProtocol?
         private var lastAdHidingSignature = ""
+        private var lastManualAdSignature = ""
         private var httpsUpgradeFallbacks: [String: URL] = [:]
         private var oneShotHTTPFallbacks = Set<String>()
         private var privacyHeaderBypassURLs = Set<String>()
@@ -745,6 +765,13 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             guard let body = message.body as? [String: Any] else { return }
+
+            if message.name == ManualAdBlockRuntime.handler {
+                guard message.frameInfo.isMainFrame, message.webView === viewModel.webView,
+                      message.world.name == ManualAdBlockRuntime.world.name else { return }
+                viewModel.receiveManualAdSelection(body)
+                return
+            }
 
             if message.name == "souloExtensionInstaller" {
                 handleExtensionInstallRequest(body, webView: message.webView)
@@ -1431,8 +1458,37 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         // MARK: WKNavigationDelegate
 
+        func cancelManualAdPicker() { viewModel.cancelMarkingAdvertisement() }
+
+        func synchronizeManualAdRules(on webView: WKWebView) {
+            let enabled = UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true
+            let service = ManualAdBlockService.shared
+            let allowlist = AdBlockSettingsService.shared.allowlistedHosts
+            let signature = "\(enabled)|\(service.revision)|\(allowlist.joined(separator: ","))|\(webView.url?.absoluteString ?? "")"
+            guard signature != lastManualAdSignature else { return }
+            lastManualAdSignature = signature
+            if let selection = viewModel.manualAdSelection,
+               selection.url != webView.url || !ManualAdBlockService.canUse(on: webView.url, enabled: enabled, allowlistedHosts: allowlist) {
+                Task { @MainActor [weak self] in
+                    guard let self, self.viewModel.manualAdSelection?.token == selection.token else { return }
+                    self.viewModel.cancelMarkingAdvertisement()
+                }
+            }
+            let source = ManualAdBlockRuntime.configuredScript(enabled: enabled, allowlistedHosts: allowlist, rules: service.rules)
+            let controller = webView.configuration.userContentController
+            // WebKit has no remove-one-user-script API. Preserve every unrelated
+            // runtime and handler when updating the rules used by future loads.
+            let others = controller.userScripts.filter { !$0.source.hasPrefix(ManualAdBlockRuntime.prefix) }
+            controller.removeAllUserScripts()
+            others.forEach(controller.addUserScript)
+            controller.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentEnd,
+                forMainFrameOnly: true, in: ManualAdBlockRuntime.world))
+            webView.evaluateJavaScript(source, in: nil, in: ManualAdBlockRuntime.world, completionHandler: nil)
+        }
+
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
             if webView === viewModel.webView {
+                viewModel.cancelMarkingAdvertisement()
                 dismissEmbeddedPopups(in: webView)
             }
             navigationGeneration = UUID()
@@ -1443,9 +1499,11 @@ struct WebViewRepresentable: UIViewRepresentable {
                 viewModel.resetPageTranslationState()
             }
             lastAdHidingSignature = ""
+            lastManualAdSignature = ""
         }
 
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+            synchronizeManualAdRules(on: webView)
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.viewModel.updateCurrentURL(webView.url)
@@ -1690,7 +1748,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             switch WebNavigationPolicyService.shared.decision(for: url) {
             case .allow:
                 let method = navigationAction.request.httpMethod?.uppercased() ?? "GET"
-                let isMainFrame = navigationAction.targetFrame?.isMainFrame ?? true
+                let isMainFrame = navigationAction.targetFrame?.isMainFrame == true
                 let shouldSkipPrivacyTransform = oneShotHTTPFallbacks.remove(url.absoluteString) != nil
 
                 if method == "GET", !shouldSkipPrivacyTransform {
@@ -1720,7 +1778,10 @@ struct WebViewRepresentable: UIViewRepresentable {
                     }
                 }
 
-                if method == "GET",
+                // Loading a rewritten request on WKWebView always navigates its
+                // main frame. Leave iframe requests and new-window contexts to
+                // WebKit instead of replacing the page that contains them.
+                if isMainFrame, method == "GET",
                    let privacyHeaderRequest = privacyHeaderRequestIfNeeded(for: navigationAction.request) {
                     privacyHeaderBypassURLs.insert(privacyHeaderRequest.url?.absoluteString ?? url.absoluteString)
                     decisionHandler(.cancel)
@@ -2107,6 +2168,9 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func scrollViewDidScroll(_ scrollView: UIScrollView) {
             let currentOffset = scrollView.contentOffset.y
+            (scrollView.refreshControl as? BrowserRefreshControl)?.updatePull(
+                distance: -(currentOffset + scrollView.adjustedContentInset.top)
+            )
 
             guard !UIAccessibility.isVoiceOverRunning else {
                 setScrollingUpIfNeeded(false)

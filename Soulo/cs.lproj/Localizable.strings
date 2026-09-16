@@ -264,8 +264,8 @@
 "ad_block_popups" = "Vyčistit vyskakovací okna a překryvné obrázky";
 "ad_block_management" = "Blokování reklam";
 "ad_block_allowlist" = "Povolené stránky";
-"ad_block_disable_current_site" = "Zakázat blokování reklam na tomto webu";
-"ad_block_enable_current_site" = "Povolit blokování reklam na tomto webu";
+"ad_block_disable_current_site" = "Povolit reklamy";
+"ad_block_enable_current_site" = "Blokovat reklamy";
 "ad_block_site_toggle_desc" = "Změnou tohoto nastavení se znovu načte aktuální stránka, aby bylo možné použít nové nastavení blokování reklam.";
 "ad_block_no_allowlisted_sites" = "Žádné povolené stránky.";
 "ad_block_stats" = "Skryté prvky";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Kompatibilita";
 "userscript_experimental_title" = "UserScript kompatibilita";
 "userscript_experimental_desc" = "Podporuje pravidla webu, začátek/konec dokumentu, rozsáhlé úložiště GM a rozhraní API pro stránky, příkazy skriptu, upozornění, karty, stahování, soubory cookie, zdroje a požadavky v rozsahu oprávnění. Před instalací zkontrolujte každý skript; externí soubory @require se nespustí.";
-"extension_choose_file" = "Vyberte soubor nebo složku rozšíření…";
+"extension_choose_file" = "Vybrat soubor či složku…";
 "extension_installing" = "Kontrola a instalace rozšíření…";
 "extension_install_failed" = "Rozšíření nelze nainstalovat";
 "extension_permissions_summary" = "%d oprávnění · %d pravidla webu";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Toto rozšíření používá trvalou stránku na pozadí, kterou iOS Web Extensions nepodporují. Vyzkoušejte verzi kompatibilní s Manifest V3 nebo Safari.";
 "userscript_new" = "Nový skript";
 "userscript_edit" = "Upravit skript";
-"userscript_choose_file" = "Vyberte UserScript Soubor (.js)…";
+"userscript_choose_file" = "Vybrat skript…";
 "userscript_install_footer" = "Klepnutím na zdrojový řádek jej otevřete na aktuální kartě Soulo. Odkaz .user.js otevře potvrzení instalace. Podporován je standardní JavaScript a široká sada GM API; skripty se v soukromém prohlížení nespouštějí a externí soubory @require se nespouštějí.";
 "userscript_install_failed" = "UserScript nelze nainstalovat";
 "web_extension_temporarily_disabled" = "Po dokončení testování kompatibility jsou standardní rozšíření prohlížeče dočasně nedostupná.";

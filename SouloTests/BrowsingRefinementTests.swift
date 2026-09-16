@@ -228,9 +228,24 @@ final class BrowsingRefinementTests: XCTestCase {
         let surface = try XCTUnwrap(web)
         let headings = try await surface.evaluateJavaScript("document.querySelectorAll('h1').length") as? Int
         XCTAssertEqual(headings, 1)
+        for _ in 0..<100 {
+            if surface.scrollView.contentSize.height > surface.bounds.height + 1000 { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
         _ = try await surface.evaluateJavaScript("window.souloRetained=42;window.scrollTo(0,800)")
+        // DOM insertion and scrollTo finish before WebKit commits the native
+        // scroll geometry. Establish the position before testing preservation.
+        for _ in 0..<100 {
+            if surface.scrollView.contentOffset.y > 400 { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertGreaterThan(surface.scrollView.contentOffset.y, 400, "Initial reading position must be established")
         host.rootView = ArticleSurface(articles: pages, size: 24, line: 2, theme: "dark")
-        try await Task.sleep(for: .milliseconds(250))
+        for _ in 0..<100 {
+            if (try? await surface.evaluateJavaScript("getComputedStyle(document.body).fontSize === '24px' && getComputedStyle(document.body).lineHeight === '48px'")) as? Bool == true,
+               surface.scrollView.contentOffset.y > 400 { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
         let retained = try await surface.evaluateJavaScript("window.souloRetained") as? Int
         let size = try await surface.evaluateJavaScript("getComputedStyle(document.body).fontSize") as? String
         let line = try await surface.evaluateJavaScript("getComputedStyle(document.body).lineHeight") as? String

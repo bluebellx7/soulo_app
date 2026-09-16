@@ -1,5 +1,5 @@
-1.1.6
+1.1.7
 
-• Lecture continue améliorée, sommaire et recherche séparés, meilleurs réglages de police, d’interligne et d’apparence des PDF.
-• Ajout d’une bibliothèque en grille, d’un widget, du scan de codes QR, de la reconnaissance de texte dans les photos et d’un raccourci de scan.
-• Navigation vers les téléchargements, actions sur les fichiers, mode sombre des pages web et performances améliorés.
+• Marquez les pubs à masquer et profitez de filtres et de réglages de confidentialité améliorés.
+• Dossiers de favoris, import et export HTML, partage, enregistrement et copie de QR codes de pages.
+• Aperçus carrés, enregistrement d'images par lots et améliorations de la lecture, des médias et des extensions de scripts.

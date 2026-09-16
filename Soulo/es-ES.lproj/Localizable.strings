@@ -264,8 +264,8 @@
 "ad_block_popups" = "Limpiar ventanas emergentes y superposiciones";
 "ad_block_management" = "Bloqueo de anuncios";
 "ad_block_allowlist" = "Sitios permitidos";
-"ad_block_disable_current_site" = "Deshabilitar el bloqueo de anuncios en este sitio";
-"ad_block_enable_current_site" = "Habilitar el bloqueo de anuncios en este sitio";
+"ad_block_disable_current_site" = "Permitir anuncios";
+"ad_block_enable_current_site" = "Bloquear anuncios";
 "ad_block_site_toggle_desc" = "Cambiar esto recarga la página actual para que se pueda aplicar la nueva configuración de bloqueo de anuncios.";
 "ad_block_no_allowlisted_sites" = "No hay sitios permitidos.";
 "ad_block_stats" = "Elementos ocultos";
@@ -630,7 +630,7 @@
 "userscript_experimental_badge" = "Compatibilidad";
 "userscript_experimental_title" = "UserScript compatibilidad";
 "userscript_experimental_desc" = "Admite reglas del sitio, inicio/finalización de documentos, amplio almacenamiento de GM y API de páginas, comandos de secuencias de comandos, notificaciones, pestañas, descargas, cookies, recursos y solicitudes con alcance de permisos. Revise cada script antes de instalarlo; Los archivos @require externos no se ejecutan.";
-"extension_choose_file" = "Elija extensión Archivo o Carpeta...";
+"extension_choose_file" = "Elegir archivo o carpeta…";
 "extension_installing" = "Comprobando e instalando la extensión...";
 "extension_install_failed" = "No se pudo instalar la extensión";
 "extension_permissions_summary" = "%d permisos · %d reglas del sitio web";
@@ -654,7 +654,7 @@
 "web_extension_persistent_background_unsupported" = "Esta extensión utiliza una página de fondo persistente que las extensiones web de iOS no admiten. Pruebe una versión Manifest V3 o compatible con Safari.";
 "userscript_new" = "Nuevo guión";
 "userscript_edit" = "Editar guión";
-"userscript_choose_file" = "Elija el archivo UserScript (.js)…";
+"userscript_choose_file" = "Elegir script…";
 "userscript_install_footer" = "Toque una fila de origen para abrirla en la pestaña Soulo actual. Un enlace .user.js abre una confirmación de instalación. Se admite JavaScript estándar y un amplio conjunto de API de GM; Los scripts no se ejecutan en la navegación privada y los archivos @require externos no se ejecutan.";
 "userscript_install_failed" = "UserScript No se pudo instalar";
 "web_extension_temporarily_disabled" = "Las extensiones de navegador estándar no están disponibles temporalmente mientras se completan las pruebas de compatibilidad.";

@@ -22,6 +22,8 @@ struct HomeView: View {
     @State private var navigationSession = UUID()
     @State private var pendingSelectionSearch: (text: String, platform: SearchPlatform, url: URL)?
     @State private var selectionSearchID = UUID()
+    @State private var pendingURLRoute: SouloURLRoute?
+    @State private var urlRouteID = UUID()
     @State private var incomingDocument: IncomingDocument?
     @State private var showScanner = false
     @State private var pendingScan: String?
@@ -57,6 +59,11 @@ struct HomeView: View {
                 .mediaPlayerNavigation()
         }
         .id(navigationSession)
+        .task(id: urlRouteID) {
+            guard let route = pendingURLRoute else { return }
+            pendingURLRoute = nil
+            handleURLRoute(route)
+        }
         .task(id: selectionSearchID) {
             // Dismiss reader destinations before publishing a new tab, while
             // keeping the navigation controller and browser root mounted.
@@ -71,6 +78,9 @@ struct HomeView: View {
             tab.webViewModel.loadURL(request.url)
         }
         .overlay { MediaMiniPlayer() }
+        .overlay(alignment: .top) {
+            DownloadCompletionToast { librarySection = .downloads }
+        }
     }
 
     private var homeSurface: some View {
@@ -292,9 +302,61 @@ struct HomeView: View {
                 selectionSearchID = UUID()
             }
         }
+        .onContinueUserActivity(BrowserHandoff.activityType) { activity in
+            guard let url = BrowserHandoff.eligibleURL(activity.webpageURL, isPrivate: false) else { return }
+            resetNavigationForExternalEntry(recreateStack: false)
+            pendingURLRoute = .open(url)
+            urlRouteID = UUID()
+        }
+        .onOpenURL { url in
+            guard let route = SouloURLRoute.parse(url) else { return }
+            // Reusing the browser's live navigation items in a replacement stack
+            // can make UIKit attach the same item to two navigation bars.
+            // Opening/searching a URL only needs to dismiss external destinations.
+            switch route {
+            case .open, .search: resetNavigationForExternalEntry(recreateStack: false)
+            default: resetNavigationForExternalEntry()
+            }
+            pendingURLRoute = route
+            urlRouteID = UUID()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .openSouloFiles)) { _ in
             resetNavigationForExternalEntry()
             librarySection = .files
+        }
+    }
+
+    private func handleURLRoute(_ route: SouloURLRoute) {
+        searchVM.showClipboardPrompt = false
+        switch route {
+        case .home:
+            searchVM.clearSearch()
+        case .search(let text):
+            if let text {
+                searchVM.searchText = text
+                performSearch()
+                searchVM.externalSearchRequestID = searchVM.searchID
+            } else {
+                handleQuickAction(.search)
+            }
+        case .open(let url):
+            searchVM.searchText = url.absoluteString
+            performSearch()
+            searchVM.externalSearchRequestID = searchVM.searchID
+        case .scan:
+            searchVM.clearSearch()
+            showScanner = true
+        case .files: librarySection = .files
+        case .bookmarks: librarySection = .bookmarks
+        case .history: librarySection = .history
+        case .downloads: librarySection = .downloads
+        case .download(let url):
+            librarySection = .downloads
+            Task {
+                // The existing background service owns progress, errors and the
+                // completion toast. No website cookies are attached to an external URL.
+                _ = try? await WebResourceDownloadService.shared.download(url)
+            }
         }
     }
 
@@ -622,19 +684,19 @@ struct HomeView: View {
             Button {
                 librarySection = .bookmarks
             } label: {
-                Label(LanguageManager.shared.localizedString("my_favorites"), systemImage: "bookmark")
+                homeMenuLabel("my_favorites", systemImage: "bookmark")
             }
 
             Button {
                 librarySection = .history
             } label: {
-                Label(LanguageManager.shared.localizedString("search_history"), systemImage: "clock.arrow.circlepath")
+                homeMenuLabel("search_history", systemImage: "clock.arrow.circlepath")
             }
 
             Button {
                 librarySection = .downloads
             } label: {
-                Label(LanguageManager.shared.localizedString("my_downloads"), systemImage: "arrow.down.circle")
+                homeMenuLabel("my_downloads", systemImage: "arrow.down.circle")
             }
 
             Divider()
@@ -642,14 +704,14 @@ struct HomeView: View {
             Button {
                 Task { await wallpaperManager.refreshRandom() }
             } label: {
-                Label(LanguageManager.shared.localizedString("wallpaper_refresh"), systemImage: "sparkles")
+                homeMenuLabel("wallpaper_refresh", systemImage: "sparkles")
             }
 
             if wallpaperManager.currentImage != nil || wallpaperManager.customImage != nil {
                 Button {
                     saveWallpaperToPhotos()
                 } label: {
-                    Label(LanguageManager.shared.localizedString("wallpaper_download"), systemImage: "square.and.arrow.down")
+                    homeMenuLabel("wallpaper_download", systemImage: "square.and.arrow.down")
                 }
             }
 
@@ -658,13 +720,13 @@ struct HomeView: View {
             Button {
                 showSettings = true
             } label: {
-                Label(LanguageManager.shared.localizedString("settings"), systemImage: "gearshape")
+                homeMenuLabel("settings", systemImage: "gearshape")
             }
 
             Button {
                 showExtensionCenter = true
             } label: {
-                Label(LanguageManager.shared.localizedString("userscripts"), systemImage: "puzzlepiece.extension")
+                homeMenuLabel("userscripts", systemImage: "puzzlepiece.extension")
             }
         } label: {
             Image(systemName: "ellipsis")
@@ -682,6 +744,19 @@ struct HomeView: View {
                 .contentShape(Circle())
         }
         .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
+        .accessibilityIdentifier("home.menu")
+    }
+
+    private func homeMenuLabel(_ key: String, systemImage: String) -> some View {
+        Label {
+            Text(languageManager.localizedString(key))
+        } icon: {
+            if let image = UIImage(systemName: systemImage)?.withTintColor(.label, renderingMode: .alwaysOriginal) {
+                Image(uiImage: image)
+            } else {
+                Image(systemName: systemImage).foregroundStyle(.primary)
+            }
+        }
     }
 
     // MARK: - Actions
@@ -762,6 +837,9 @@ struct HomeView: View {
                     LanguageManager.shared.localizedString("cache_cleared")
                 )
             }
+        case .files, .bookmarks, .downloads, .history:
+            resetNavigationForExternalEntry()
+            librarySection = action.librarySection
         case .shareApp:
             showAppShareSheet = true
         }

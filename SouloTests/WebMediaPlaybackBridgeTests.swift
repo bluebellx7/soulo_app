@@ -114,13 +114,33 @@ import UIKit
         let window = UIWindow(windowScene: scene)
         let host = UIViewController(); host.view.addSubview(web)
         window.rootViewController = host; window.makeKeyAndVisible()
-        defer { web.stopLoading(); window.isHidden = true; previous?.makeKey() }
+        defer {
+            web.pauseAllMediaPlayback(completionHandler: nil)
+            web.stopLoading()
+            web.removeFromSuperview()
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKeyAndVisible()
+        }
         web.loadFileURL(html, allowingReadAccessTo: root)
         for _ in 0..<200 {
             if (try? await web.evaluateJavaScript("document.getElementById('v')?.readyState >= 2")) as? Bool == true { break }
             try await Task.sleep(for: .milliseconds(25))
         }
         _ = try await web.callAsyncJavaScript("await document.getElementById('v').play(); return true", arguments: [:], in: nil, contentWorld: .defaultClient)
+        // play() resolves before WebKit's media clock necessarily starts. Wait
+        // for observable playback, especially after the full suite has created
+        // many WebKit processes; a stopped clock must still fail explicitly.
+        var started = false
+        for _ in 0..<100 {
+            if (try await web.evaluateJavaScript("document.getElementById('v').currentTime > 0.05")) as? Bool == true {
+                started = true
+                break
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertTrue(started, "The real video must start before measuring playback speed")
+        guard started else { return }
         var deltas: [Double] = []
         for rate in [1.0, 2.0] {
             _ = try await WebMediaPlaybackBridge.setRate(rate, on: web)

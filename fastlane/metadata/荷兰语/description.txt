@@ -1,22 +1,18 @@
-Soulo is een snelle privébrowser met meerdere zoekopdrachten voor iPhone en iPad. Voer één zoekopdracht in en schakel vervolgens tussen meer dan 40 zoek-, sociale, video-, winkel-, kennis- en AI-platforms zonder opnieuw te typen.
+Soulo is een browser voor iPhone en iPad waarmee je op meerdere platforms zoekt. Voer je zoekopdracht één keer in en wissel tussen zoekmachines, sociale media, video, winkelen, kennis en AI.
 
-BLADEREN OP UW MANIER
-• Tabbladen, bladwijzers, geschiedenis, downloads en aanpasbare zoekplatforms
-• Privé browsen, trackerbescherming, advertentieblokkering en controles per site
-• Mobiele en desktop websitemodi, paginazoom, vertaling en vastleggen van volledige pagina's
-• Download afbeeldingen, video, audio en documenten met de webpaginabroninspecteur
-• Extraheer tekst uit webpagina-afbeeldingen met Live Text
+Zoek informatie, lees artikelen, speel media af en beheer downloads in één browser.
 
-GEBOUWD VOOR iPhone EN iPad
-• Meerdere onafhankelijke vensters op iPad
-• Deel links of tekst rechtstreeks met Soulo
-• Zoek en open downloads van Siri, Shortcuts, Control Center, het vergrendelscherm en de actieknop
-• Achtergronddownloads met echte voortgang en pauzeren/hervatten
-• Live activiteiten en Dynamic Island status
+• Zoeken: voeg platforms toe, groepeer ze en bepaal de volgorde. Zoek geselecteerde tekst in een nieuw Soulo-tabblad.
+• Advertenties en privacy: filter advertenties, abonneer je op externe filterregels en markeer advertenties om ze te verbergen. Beheer filters en trackingbescherming per site. Privénavigatie bewaart geen geschiedenis.
+• Audio en video: afspeelsnelheid, herhalen, zwevende minispeler, beeld-in-beeld, afspelen op de achtergrond en AirPlay. Leg videobeelden vast, spiegel het beeld en houd ingedrukt om tijdelijk te versnellen.
+• Bestanden: vind afbeeldingen, audio, video's en documenten op pagina's en sla meerdere afbeeldingen op. Bekijk bestanden als lijst of omslagraster, hernoem ze, importeer uit Foto's en verstuur via wifi.
+• Archieven: pak ZIP, RAR en 7z uit. Maak ZIP- en 7z-archieven met optionele wachtwoordbeveiliging.
+• Lezen: TXT, PDF, EPUB en ondersteunde DRM-vrije MOBI-, AZW- en AZW3-boeken. Pas lettertype, grootte, regelafstand en achtergrond aan. Boeken met aanpasbare opmaak bieden vereenvoudigde/traditionele Chinese weergave. De leesmodus haalt artikelen uit webpagina's en laat je op de volgende pagina verder lezen.
+• Extensies: importeer, bewerk en gebruik JavaScript-userscripts, beheer sites en rechten en installeer compatibele WebExtensions.
+• Webtools: vertaling, zoeken op pagina, schermafbeeldingen van hele pagina's, tekstherkenning in afbeeldingen, desktop-/mobiele modus, eigen useragent en sitecertificaten.
+• Bladwijzers: mappen en import/export van HTML-bladwijzers voor Chrome, Edge en andere browsers. Maak pagina-QR-codes met het sitepictogram om te delen, bewaren of kopiëren.
+• Personaliseren: achtergronden, werkbalk en snelle taken via het app-pictogram. Open functies met widgets, Opdrachten en URL-schema's. Synchroniseer instellingen desgewenst via iCloud.
 
-BREI HET WEB UIT
-Installeer UserScripts of compatibele WebExtensions, beheer rechten duidelijk en maak uw eigen scripts met de ingebouwde API-documentatie.
+Beschikbaarheid van media, boeken en extensies hangt af van bestandsformaat, sitebeperkingen en systeemversie.
 
-Soulo slaat browsegegevens lokaal op, tenzij je iCloud instellingensynchronisatie inschakelt. Bij privé browsen wordt de geschiedenis niet opgeslagen.
-
-Lees comfortabel, open je boekenplank via een widget, scan QR-codes en haal tekst uit foto’s.
+Ondersteuning: contact@dkluge.com
