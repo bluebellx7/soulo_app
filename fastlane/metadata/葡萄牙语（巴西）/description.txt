@@ -1,5 +1,7 @@
 Soulo é um navegador de pesquisa multiplataforma para iPhone e iPad. Digite uma vez e alterne entre buscas, redes sociais, vídeos, compras, conhecimento e IA sem repetir a consulta.
 
+Filtros e marcação contínua de anúncios aprimorados, com regras integradas editáveis. Toque e segure imagens para ampliar, salvar ou compartilhar. Ferramentas de vídeo recolhíveis, reprodução horizontal e progresso mantido entre abas.
+
 Encontre informações, leia artigos, reproduza mídia e gerencie downloads no mesmo navegador.
 
 • Pesquisa: adicione plataformas, organize grupos e altere a ordem. Selecione um texto para pesquisar em uma nova aba do Soulo.

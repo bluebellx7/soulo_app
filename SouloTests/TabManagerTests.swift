@@ -1,5 +1,6 @@
 import XCTest
 import SwiftUI
+import WebKit
 @testable import Soulo
 
 final class TabManagerTests: XCTestCase {
@@ -70,13 +71,66 @@ final class TabManagerTests: XCTestCase {
     @MainActor
     func testManyTabsSuspendDistantWebKitSessions() {
         let manager = TabManager()
-        for index in 1...6 {
+        for index in 1..<(TabManager.maxAliveTabs + 4) {
             manager.createTab(url: URL(string: "https://example.com/\(index)"))
         }
 
-        XCTAssertEqual(manager.tabs.count, 7)
-        XCTAssertTrue(manager.tabs[0...3].allSatisfy { !$0.isAlive })
-        XCTAssertTrue(manager.tabs[4...6].allSatisfy(\.isAlive))
+        XCTAssertEqual(manager.tabs.count, TabManager.maxAliveTabs + 4)
+        XCTAssertTrue(manager.tabs.prefix(4).allSatisfy { !$0.isAlive })
+        XCTAssertTrue(manager.tabs.dropFirst(4).allSatisfy(\.isAlive))
+    }
+
+    @MainActor
+    func testRecentDistantTabKeepsRuntimeAndMemoryWarningReleasesOnlyBackground() async throws {
+        let manager = TabManager()
+        let first = manager.activeTab!
+        let web = WKWebView()
+        first.webViewModel.webView = web
+        manager.createTab()
+        manager.switchToTab(at: 0)
+        XCTAssertTrue(first.webViewModel.webView === web)
+        for _ in 0..<18 { manager.createTab() }
+        XCTAssertEqual(manager.tabs.count, 20)
+        XCTAssertLessThanOrEqual(manager.tabs.filter(\.isAlive).count, TabManager.maxAliveTabs)
+        manager.switchToTab(at: 0)
+        let active = manager.activeTab!
+        manager.releaseInactiveTabsForMemoryPressure()
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertEqual(manager.tabs.filter(\.isAlive).map(\.id), [active.id])
+        XCTAssertEqual(manager.tabs.count, 20, "Memory pressure must not discard tabs")
+        XCTAssertTrue(manager.tabs.dropFirst().allSatisfy { $0.webViewModel.webView == nil })
+    }
+
+    @MainActor
+    func testRecentTabStaysWarmRegardlessOfPositionAndRapidSwitchDoesNotReload() async throws {
+        let manager = TabManager()
+        for _ in 0..<8 { manager.createTab() }
+        manager.switchToTab(at: 0)
+        let web = WKWebView()
+        manager.activeWebViewModel?.webView = web
+        manager.switchToTab(at: 8)
+        manager.switchToTab(at: 0)
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertTrue(manager.activeWebViewModel?.webView === web)
+        XCTAssertTrue(manager.tabs[8].isAlive)
+        XCTAssertLessThanOrEqual(manager.tabs.filter(\.isAlive).count, TabManager.maxAliveTabs)
+    }
+
+    @MainActor
+    func testMediaDownloadSurvivesTabEvictionAndMemoryPressure() async throws {
+        let manager = TabManager()
+        let model = try XCTUnwrap(manager.activeWebViewModel)
+        let web = WKWebView(); model.webView = web
+        let url = try XCTUnwrap(URL(string: "https://example.com/video.mp4"))
+        XCTAssertTrue(model.beginMediaDownload(url: url, name: "Video"))
+        for _ in 0..<TabManager.maxAliveTabs + 1 { manager.createTab() }
+        manager.releaseInactiveTabsForMemoryPressure()
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertTrue(model.webView === web)
+        model.finishMediaDownload(url: url)
+        manager.releaseInactiveTabsForMemoryPressure()
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertNil(model.webView)
     }
 
     @MainActor

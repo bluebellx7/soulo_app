@@ -3,9 +3,137 @@ import WebKit
 @testable import Soulo
 
 final class AdBlockServiceTests: XCTestCase {
+    private var savedBuiltInOverrides: Data?
+    private var savedBuiltInRevision: String?
+    private var savedSubscriptionCache: Data?
+    override func setUp() {
+        super.setUp()
+        let defaults = UserDefaults.standard
+        savedSubscriptionCache = defaults.data(forKey: "soulo_ad_block_subscription_rules")
+        defaults.set(try? JSONEncoder().encode(ParsedAdBlockRules.empty), forKey: "soulo_ad_block_subscription_rules")
+        savedBuiltInOverrides = defaults.data(forKey: BuiltInAdRuleStore.storageKey)
+        savedBuiltInRevision = defaults.string(forKey: BuiltInAdRuleStore.versionKey)
+        defaults.removeObject(forKey: BuiltInAdRuleStore.storageKey)
+        defaults.removeObject(forKey: BuiltInAdRuleStore.versionKey)
+    }
+    override func tearDown() {
+        let defaults = UserDefaults.standard
+        defaults.set(savedSubscriptionCache, forKey: "soulo_ad_block_subscription_rules")
+        defaults.set(savedBuiltInOverrides, forKey: BuiltInAdRuleStore.storageKey)
+        defaults.set(savedBuiltInRevision, forKey: BuiltInAdRuleStore.versionKey)
+        super.tearDown()
+    }
+
+    func testLegacyImageBannerOverrideKeepsChoiceButNoLongerRevealsOnPicker() throws {
+        let suite = "ImageBannerMigration-\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var rule = BuiltInAdRule(id: "paired-image-banner", kind: .cosmetic,
+            pattern: ":root:not([data-soulo-ad-picker-active]) [data-soulo-image-banner]")
+        rule.isEnabled = false
+        rule.domains = ["example.com"]
+        defaults.set(try JSONEncoder().encode([rule.id:rule]), forKey: BuiltInAdRuleStore.storageKey)
+        let effective = try XCTUnwrap(BuiltInAdRuleStore.effectiveRules(defaults:defaults).first { $0.id == rule.id })
+        XCTAssertEqual(effective.pattern, ManualAdBlockRuntime.imageBannerSelector)
+        XCTAssertFalse(effective.isEnabled)
+        XCTAssertEqual(effective.domains, rule.domains)
+        rule.pattern = ".custom-ad"
+        defaults.set(try JSONEncoder().encode([rule.id:rule]), forKey: BuiltInAdRuleStore.storageKey)
+        XCTAssertEqual(BuiltInAdRuleStore.effectiveRules(defaults:defaults).first { $0.id == rule.id }?.pattern, ".custom-ad")
+    }
+
+    @MainActor
+    func testBuiltInEditsPersistValidateAndReset() async throws {
+        let suite = "BuiltInRulesTests-\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = BuiltInAdRuleStore(defaults: defaults)
+        var rule = try XCTUnwrap(store.rules.first { $0.id == "pbpbw:site-render" })
+        let original = rule
+        rule.pattern = "qa-tracker\\.example"
+        rule.domains = ["news.example.com"]
+        rule.isEnabled = false
+        let saved = await store.save(rule)
+        XCTAssertTrue(saved)
+        XCTAssertEqual(BuiltInAdRuleStore(defaults: defaults).rules.first { $0.id == rule.id }, rule)
+        XCTAssertNotEqual(BuiltInAdRuleStore.signature(defaults: defaults), "default")
+        var invalid = rule
+        invalid.resourceTypes = ["document"]
+        let rejected = await store.save(invalid)
+        XCTAssertFalse(rejected)
+        XCTAssertEqual(store.rules.first { $0.id == rule.id }, rule)
+        invalid = rule
+        invalid.pattern = "["
+        let invalidRegex = await store.save(invalid)
+        XCTAssertFalse(invalidRegex)
+        store.reset(rule.id)
+        XCTAssertEqual(store.rules.first { $0.id == rule.id }, original)
+        var cosmetic = try XCTUnwrap(store.rules.first { $0.kind == .cosmetic })
+        cosmetic.pattern = ".qa-promotion"
+        let cosmeticSaved = await store.save(cosmetic)
+        XCTAssertTrue(cosmeticSaved)
+        store.reset()
+        XCTAssertEqual(store.rules, AdBlockService.defaultBuiltInRules)
+        XCTAssertEqual(Set(store.rules.map(\.id)).count, store.rules.count)
+        print("BUILT_IN_RULE_COUNT", store.rules.count)
+    }
+
+    @MainActor
+    func testDisabledBuiltInRulesLeaveNativeAndScriptOutputs() async throws {
+        let defaults = UserDefaults.standard
+        let keys = [BuiltInAdRuleStore.storageKey, BuiltInAdRuleStore.versionKey]
+        let saved = keys.map { defaults.object(forKey: $0) }
+        defer { for (key, value) in zip(keys, saved) { if let value { defaults.set(value, forKey: key) } else { defaults.removeObject(forKey: key) } } }
+        defaults.removeObject(forKey: BuiltInAdRuleStore.storageKey)
+        let store = BuiltInAdRuleStore(defaults: defaults)
+        var rule = try XCTUnwrap(store.rules.first { $0.id == "pbpbw:site-render" })
+        rule.isEnabled = false
+        let disabled = await store.save(rule)
+        XCTAssertTrue(disabled)
+        let json = try XCTUnwrap(AdBlockService.encodedContentRuleList())
+        XCTAssertFalse(json.contains("site-render"))
+        XCTAssertTrue(json.contains("site-config"))
+        var cosmetic = try XCTUnwrap(store.rules.first { $0.kind == .cosmetic })
+        cosmetic.pattern = ".unique-qa-sponsor"
+        let edited = await store.save(cosmetic)
+        XCTAssertTrue(edited)
+        XCTAssertTrue(AdBlockService.encodedContentRuleList()!.contains("unique-qa-sponsor"))
+        XCTAssertTrue(AdBlockService.adHidingScript(cosmetic: true).contains("unique-qa-sponsor"))
+        cosmetic.isEnabled = false
+        let hidden = await store.save(cosmetic)
+        XCTAssertTrue(hidden)
+        XCTAssertFalse(AdBlockService.encodedContentRuleList()!.contains("unique-qa-sponsor"))
+        XCTAssertFalse(AdBlockService.adHidingScript(cosmetic: true).contains("unique-qa-sponsor"))
+    }
+
+    func testDomainRulesRequireActualHostAndPreserveEditedLegacyRules() throws {
+        let rules = AdBlockService.defaultBuiltInRules
+        let domains = rules.filter { $0.isEnabled && $0.id.hasPrefix("domain:") }
+        for rule in domains {
+            let regex = try NSRegularExpression(pattern: rule.pattern)
+            for url in ["https://example.com/help?url=https://doubleclick.net/", "https://doubleclick.net.example.com/image.png", "https://notdoubleclick.net/image.png"] {
+                XCTAssertNil(regex.firstMatch(in: url, range: NSRange(url.startIndex..., in: url)), rule.id + " matched " + url)
+            }
+        }
+        let rule = try XCTUnwrap(domains.first { $0.id == "domain:doubleclick\\.net" })
+        for url in ["https://doubleclick.net/ad.js", "https://ad.doubleclick.net/ad.js"] {
+            XCTAssertNotNil(url.range(of: rule.pattern, options: .regularExpression))
+        }
+        let suite = "ConservativeRuleDefaults-\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var edited = try XCTUnwrap(rules.first { $0.id == "pattern:/gg/" })
+        XCTAssertFalse(edited.isEnabled)
+        edited.isEnabled = true
+        edited.domains = ["chosen.example"]
+        defaults.set(try JSONEncoder().encode([edited.id: edited]), forKey: BuiltInAdRuleStore.storageKey)
+        XCTAssertEqual(BuiltInAdRuleStore.effectiveRules(defaults: defaults).first { $0.id == edited.id }, edited)
+        print("CONSERVATIVE_RULE_DEFAULTS", rules.count, rules.filter(\.isEnabled).count)
+    }
+
     func testProductionRuleCompilationFromBackgroundTask() async {
         let rules = await Task.detached {
-            await AdBlockService.compileRules(allowlistedHosts: ["soulo-test.example"])
+            await AdBlockService.compileRuleLists(allowlistedHosts: ["soulo-test.example"])
         }.value
         XCTAssertNotNil(rules)
     }
@@ -171,17 +299,14 @@ final class AdBlockServiceTests: XCTestCase {
         }
     }
 
-    func testEncodedContentRulesCoverChineseVideoSiteAdPatterns() throws {
-        let json = try XCTUnwrap(AdBlockService.encodedContentRuleList())
-
-        XCTAssertTrue(json.contains("cpcad"))
-        XCTAssertTrue(json.contains("gudingwei"))
-        XCTAssertTrue(json.contains("jioeidd"))
-        XCTAssertTrue(json.contains("tuiguang"))
-        XCTAssertTrue(json.contains("adpic"))
-        XCTAssertTrue(json.contains("floatad"))
-        XCTAssertTrue(json.contains("popupad"))
-        XCTAssertTrue(json.contains("cqlkxq1wc"))
+    func testBuiltInDefaultsRetainExplicitAdPatternsAndDisableWeakNames() throws {
+        let rules = AdBlockService.defaultBuiltInRules
+        for id in ["pattern:cpcad", "pattern:floatad", "pattern:popupad", "selector:#float-bottom-ad"] {
+            XCTAssertEqual(rules.first { $0.id == id }?.isEnabled, true)
+        }
+        for id in ["pattern:gudingwei", "pattern:jioeidd", "pattern:adpic", "pattern:cqlkxq1wc", "selector:.gg"] {
+            XCTAssertEqual(rules.first { $0.id == id }?.isEnabled, false)
+        }
     }
 
     func testAdHidingScriptUsesExplicitAdSelectorsWithoutGenericPopupScanning() {
@@ -206,5 +331,23 @@ final class AdBlockServiceTests: XCTestCase {
         XCTAssertTrue(script.contains("souloAllowlistedHosts"))
         XCTAssertTrue(script.contains("isSouloAllowlisted"))
         XCTAssertTrue(script.contains("example.com"))
+    }
+
+    func testPBPBWAdLoadersAreScopedAndRespectSiteAllowlist() throws {
+        func loaders(_ allowlist: [String]) throws -> [[String: Any]] {
+            let json = try XCTUnwrap(AdBlockService.encodedContentRuleList(allowlistedHosts: allowlist))
+            let rules = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [[String: Any]])
+            return rules.compactMap { $0["trigger"] as? [String: Any] }
+                .filter { ($0["url-filter"] as? String)?.contains("/assets/chunks/site-") == true }
+        }
+        let rules = try loaders([])
+        XCTAssertEqual(rules.count, 2)
+        for rule in rules {
+            XCTAssertEqual(rule["if-domain"] as? [String], ["*pbpbw.com"])
+            XCTAssertEqual(rule["resource-type"] as? [String], ["script"])
+            let filter = try XCTUnwrap(rule["url-filter"] as? String)
+            XCTAssertNotNil("https://www.pbpbw.com/assets/chunks/\(filter.contains("site-render") ? "site-render" : "site-config").js?v=2".range(of: filter, options: .regularExpression))
+        }
+        XCTAssertTrue(try loaders(["www.pbpbw.com"]).isEmpty)
     }
 }

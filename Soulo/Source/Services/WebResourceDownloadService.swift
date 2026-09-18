@@ -1,4 +1,5 @@
 import Foundation
+import ImageIO
 import Photos
 import UniformTypeIdentifiers
 import UIKit
@@ -122,11 +123,17 @@ final class WebResourceDownloadService {
         }
         try Task.checkCancellation()
 
-        let (temporaryURL, response) = try await temporaryDownload(
-            url,
-            pageURL: pageURL,
-            webView: webView
-        )
+        let temporaryURL: URL
+        let filename: String?
+        if url.isFileURL {
+            temporaryURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            try FileManager.default.copyItem(at: url, to: temporaryURL)
+            filename = preferredFilename ?? url.lastPathComponent
+        } else {
+            let downloaded = try await temporaryDownload(url, pageURL: pageURL, webView: webView)
+            temporaryURL = downloaded.0
+            filename = preferredFilename ?? downloaded.1.suggestedFilename
+        }
         let importDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent("SouloPhotoImport-\(UUID().uuidString)", isDirectory: true)
         defer {
@@ -139,7 +146,6 @@ final class WebResourceDownloadService {
             at: importDirectory,
             withIntermediateDirectories: true
         )
-        let filename = preferredFilename ?? response.suggestedFilename
         let original = try await Task.detached(priority: .userInitiated) {
             try PhotoImportPreparation.prepare(sourceURL: temporaryURL, directory: importDirectory, filename: filename)
         }.value
@@ -193,14 +199,63 @@ final class WebResourceDownloadService {
     func loadImage(
         _ url: URL,
         pageURL: URL? = nil,
-        webView: WKWebView? = nil
+        webView: WKWebView? = nil,
+        frame: WKFrameInfo? = nil,
+        forPreview: Bool = false
     ) async throws -> UIImage {
-        let (temporaryURL, _) = try await temporaryDownload(url, pageURL: pageURL, webView: webView)
+        let temporaryURL = try await temporaryImageFile(url, pageURL: pageURL, webView: webView, frame: frame)
         defer { try? FileManager.default.removeItem(at: temporaryURL) }
+        if forPreview {
+            let decoding = Task.detached(priority: .userInitiated) { LocalImagePreview.decode(temporaryURL) }
+            let result = await withTaskCancellationHandler { await decoding.value } onCancel: { decoding.cancel() }
+            guard let result else { throw WebResourceDownloadError.invalidImage }
+            return result
+        }
         guard let image = UIImage(contentsOfFile: temporaryURL.path) else {
             throw WebResourceDownloadError.invalidResponse
         }
         return image
+    }
+
+    /// Caller owns this original image file and must remove it after preview/sharing.
+    func temporaryImageFile(
+        _ url: URL, pageURL: URL? = nil, webView: WKWebView? = nil, frame: WKFrameInfo? = nil
+    ) async throws -> URL {
+        let temporaryURL: URL
+        if ["data", "blob"].contains(url.scheme?.lowercased() ?? "") {
+            guard let webView else { throw WebResourceDownloadError.invalidResponse }
+            let value = try await webView.callAsyncJavaScript(#"""
+                const response = await fetch(url);
+                const blob = await response.blob();
+                if (!blob.type.startsWith('image/') || blob.size > 32 * 1024 * 1024) throw new Error('Invalid image');
+                return await new Promise((resolve, reject) => {
+                    const reader = new FileReader(); reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject; reader.readAsDataURL(blob);
+                });
+                """#, arguments: ["url": url.absoluteString], in: frame, contentWorld: .defaultClient)
+            guard let value = value as? String, let comma = value.firstIndex(of: ","),
+                  let data = Data(base64Encoded: String(value[value.index(after: comma)...])),
+                  data.count <= 32 * 1024 * 1024 else { throw WebResourceDownloadError.invalidImage }
+            temporaryURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            try data.write(to: temporaryURL, options: .atomic)
+        } else {
+            (temporaryURL, _) = try await temporaryDownload(url, pageURL: pageURL, webView: webView)
+        }
+        do {
+            try Task.checkCancellation()
+            guard let source = CGImageSourceCreateWithURL(temporaryURL as CFURL, nil),
+                  CGImageSourceGetCount(source) > 0,
+                  let type = CGImageSourceGetType(source) as String?,
+                  let suffix = UTType(type)?.preferredFilenameExtension else {
+                throw WebResourceDownloadError.invalidImage
+            }
+            let named = temporaryURL.appendingPathExtension(suffix)
+            try FileManager.default.moveItem(at: temporaryURL, to: named)
+            return named
+        } catch {
+            try? FileManager.default.removeItem(at: temporaryURL)
+            throw error
+        }
     }
 
     static func matchingCookies(

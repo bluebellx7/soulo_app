@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Advertenties markeren om ze te verbergen, met verbeterde filters en privacybediening.
-• Bladwijzermappen, HTML-import en -export en QR-codes van pagina's delen, opslaan of kopiëren.
-• Vierkante bestandsvoorbeelden, meerdere afbeeldingen opslaan en verbeteringen aan lezen, media en scriptextensies.
+• Verbeterde advertentiefilters en opeenvolgende advertentiemarkering, met bewerkbare ingebouwde regels.
+• Houd afbeeldingen ingedrukt om te vergroten, bewaren of delen. Inklapbare videotools, liggende weergave en behoud van de afspeelpositie tussen tabbladen.

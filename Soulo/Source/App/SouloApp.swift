@@ -135,6 +135,9 @@ private struct SouloWindowRoot: View {
 
     @MainActor
     private func schedulePostActivationWork() {
+        // Unit tests install isolated preferences and request fixtures. App-level
+        // refreshes must not overwrite those fixtures while a test is running.
+        guard NSClassFromString("XCTestCase") == nil else { return }
         activationTask?.cancel()
         activationTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 350_000_000)

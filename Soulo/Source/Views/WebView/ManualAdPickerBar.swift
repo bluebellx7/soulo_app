@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ManualAdPickerBar: View {
     @ObservedObject var model: WebViewModel
-    @State private var wholeSite = false
+    @State private var wholeSite = true
 
     var body: some View {
         VStack(spacing: 10) {
@@ -11,11 +11,22 @@ struct ManualAdPickerBar: View {
                     Label(ToolText.text("manual_ad_saved"), systemImage: "checkmark.circle.fill")
                         .foregroundStyle(.primary)
                     Spacer()
+                }
+                HStack(spacing: 16) {
                     Button(LanguageManager.shared.localizedString("restore")) {
                         ManualAdBlockService.shared.remove(savedID)
                         model.manualAdSavedRuleID = nil
                     }
+                    .frame(minHeight: 44)
+                    Spacer(minLength: 0)
+                    Button(ToolText.text("manual_ad_continue")) {
+                        model.beginMarkingAdvertisement()
+                    }
+                    .frame(minHeight: 44)
+                    .disabled(!model.canMarkAdvertisement)
+                    .accessibilityIdentifier("browser.manualAdContinue")
                     Button(ToolText.text("done")) { model.manualAdSavedRuleID = nil }
+                        .frame(minHeight: 44)
                 }
             } else if let selection = model.manualAdSelection {
                 HStack(alignment: .top) {
@@ -62,7 +73,11 @@ struct ManualAdPickerBar: View {
         .frame(maxWidth: 600)
         .frame(maxWidth: .infinity)
         .background(.regularMaterial)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("browser.manualAdPicker")
+        .onChange(of: model.manualAdSelection?.token) { _, _ in
+            wholeSite = true
+        }
     }
 
     private func rangeButton(_ key: String, icon: String, action: String, enabled: Bool) -> some View {
@@ -72,5 +87,20 @@ struct ManualAdPickerBar: View {
         .buttonStyle(.bordered)
         .disabled(!enabled)
         .accessibilityLabel(ToolText.text(key))
+    }
+}
+
+// Reserve the complete panel height as soon as picking begins. Selecting,
+// previewing and saving must not trigger another responsive page relayout.
+struct ManualAdPickerPanel: View {
+    @ObservedObject var model: WebViewModel
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
+    var body: some View {
+        ScrollView {
+            ManualAdPickerBar(model: model)
+        }
+        .frame(height: verticalSizeClass == .compact ? 180 : 286, alignment: .top)
+        .background(.regularMaterial)
     }
 }

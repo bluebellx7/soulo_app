@@ -185,7 +185,7 @@ struct WebViewContainer: View {
         browserContent.modifier(SafariCompatibilityFeedback(presenter: safariCompatibilityPresenter))
     }
 
-    private var browserContent: some View {
+    private var browserPageLayers: some View {
         ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
                 if !isFullscreen {
@@ -398,48 +398,16 @@ struct WebViewContainer: View {
                 }
             }
 
-            // Download indicator
-            if webViewModel.isDownloading {
-                VStack {
-                    Spacer()
-                    Button {
-                        HapticsManager.selection()
-                        librarySection = .downloads
-                    } label: {
-                    HStack(spacing: 8) {
-                        ProgressView()
-                            .controlSize(.small)
-                            .tint(.white)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(LanguageManager.shared.localizedString("downloading"))
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.white)
-                            Text(downloadStatusDetail)
-                                .font(.system(size: 10))
-                                .foregroundStyle(.white.opacity(0.6))
-                                .lineLimit(1)
-                        }
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.65))
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(LanguageManager.shared.localizedString("downloads") + ", " + downloadStatusDetail)
-                    .accessibilityIdentifier("browser.downloadStatus")
-                    .padding(.bottom, bottomOverlayClearance)
-                }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
+            downloadFeedback
         }
+    }
+
+    private var browserLifecycle: some View {
+        browserPageLayers
         .animation(.easeOut(duration: 0.18), value: webViewModel.showSnapshotWhileRestoring)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if isActiveTab && (webViewModel.manualAdSelection != nil || webViewModel.manualAdSavedRuleID != nil) {
-                ManualAdPickerBar(model: webViewModel)
+                ManualAdPickerPanel(model: webViewModel)
                     .padding(.bottom, windowSafeAreaInsets.bottom)
                     .background(.regularMaterial)
             }
@@ -449,6 +417,7 @@ struct WebViewContainer: View {
         } message: {
             Text(ToolText.text("manual_ad_error"))
         }
+        .modifier(VideoOrientationErrorAlert(message: $webViewModel.videoOrientationError))
         .onChange(of: isActiveTab) { _, active in
             if !active { webViewModel.cancelMarkingAdvertisement() }
         }
@@ -508,6 +477,10 @@ struct WebViewContainer: View {
             fullscreenHintDismissTask?.cancel()
             fullscreenHintDismissTask = nil
         }
+    }
+
+    private var browserNotifications: some View {
+        browserLifecycle
         .onReceive(NotificationCenter.default.publisher(for: .searchSelectionInSoulo)) { _ in
             // Pop the library/reader through its presentation binding. Replacing
             // the entire NavigationStack during an edit-menu action can detach
@@ -521,7 +494,10 @@ struct WebViewContainer: View {
             }
         }
         .onChange(of: webViewModel.isLoading) { _, loading in
-            if !loading { onPageLoaded?() }
+            if loading { onPageStarted?() } else { onPageLoaded?() }
+        }
+        .onChange(of: webViewModel.hasVisibleContent) { _, visible in
+            if visible { onPageLoaded?() }
         }
         .onChange(of: webViewModel.estimatedProgress) { _, progress in
             if progress >= 0.98 { onPageLoaded?() }
@@ -590,6 +566,10 @@ struct WebViewContainer: View {
             }
         }
         // Link & image long-press handled by native WKUIDelegate context menus
+    }
+
+    private var browserContent: some View {
+        browserNotifications
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(items: shareItems)
         }
@@ -629,7 +609,7 @@ struct WebViewContainer: View {
                         markAdAfterDismiss = true
                         showAdBlockManager = false
                     } : nil) {
-                    webViewModel.reload()
+                    WebViewRepresentable.reloadWithCurrentAdRules(webViewModel)
                 }
             }
         }
@@ -708,6 +688,12 @@ struct WebViewContainer: View {
                 WebResourceInspectorView(webViewModel: webViewModel)
             }
         }
+        .fullScreenCover(item: $webViewModel.imagePreview) { request in
+            WebImagePreview(request: request)
+        }
+        .onChange(of: webViewModel.showMediaDownloads) { _, show in
+            if show { showResourceInspector = true; webViewModel.showMediaDownloads = false }
+        }
         .modifier(ImageTextRecognitionPresentationModifier(
             webViewModel: webViewModel,
             isActiveTab: isActiveTab,
@@ -762,6 +748,46 @@ struct WebViewContainer: View {
     }
 
     // MARK: - Toast
+
+    @ViewBuilder
+    private var downloadFeedback: some View {
+        // Completion uses the shared DownloadCompletionToast, including its
+        // VoiceOver announcement and the link to the downloads list.
+        if webViewModel.isDownloading {
+            VStack {
+                Spacer()
+                Button {
+                    HapticsManager.selection()
+                    librarySection = .downloads
+                } label: {
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small).tint(.white)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(LanguageManager.shared.localizedString("downloading"))
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.white)
+                            Text(downloadStatusDetail)
+                                .font(.system(size: 10))
+                                .foregroundStyle(.white.opacity(0.6))
+                                .lineLimit(1)
+                        }
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.65))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(LanguageManager.shared.localizedString("downloading") + ", " + downloadStatusDetail)
+                .accessibilityIdentifier("browser.downloadStatus")
+                .padding(.bottom, bottomOverlayClearance)
+            }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+    }
 
     private var downloadStatusDetail: String {
         guard webViewModel.activeDownloadCount > 1 else {
@@ -915,6 +941,7 @@ struct WebViewContainer: View {
                         ))
                 } else {
                     configuredBrowserToolbar()
+                    .frame(maxWidth: 720)
                     .padding(.horizontal, 4)
                     .transition(.asymmetric(
                         insertion: .move(edge: .bottom).combined(with: .opacity),

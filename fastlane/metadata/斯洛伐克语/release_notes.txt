@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Označovanie reklám na skrytie a vylepšené reklamné filtre a nastavenia súkromia.
-• Priečinky záložiek, import a export HTML a zdieľanie, uloženie či kopírovanie QR kódov stránok.
-• Štvorcové náhľady, hromadné ukladanie obrázkov a vylepšenia čítania, prehrávania a skriptových rozšírení.
+• Lepšie filtrovanie a postupné označovanie reklám s úpravou vstavaných pravidiel.
+• Podržaním obrázok zväčšíte, uložíte či zdieľate. Zbaliteľné nástroje videa, prehrávanie na šírku a zachovanie pozície pri prepínaní kariet.

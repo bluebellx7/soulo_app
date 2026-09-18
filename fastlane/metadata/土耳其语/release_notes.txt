@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Gizlemek için reklam işaretleme eklendi; reklam filtreleri ve gizlilik denetimleri iyileştirildi.
-• Yer imi klasörleri, HTML içe ve dışa aktarma, sayfa QR kodlarını paylaşma, kaydetme veya kopyalama.
-• Kare dosya önizlemeleri, toplu görsel kaydetme, okuma, medya oynatma ve betik uzantılarında iyileştirmeler.
+• Reklam filtreleme ve art arda işaretleme iyileştirildi; yerleşik kurallar düzenlenebilir.
+• Resimleri büyütmek, kaydetmek veya paylaşmak için basılı tutun. Katlanabilir video araçları, yatay oynatma ve sekmeler arasında korunan ilerleme.

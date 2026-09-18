@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Selezione degli annunci da nascondere e miglioramenti ai filtri pubblicitari e ai controlli per la privacy.
-• Cartelle dei preferiti, importazione ed esportazione HTML e codici QR delle pagine da condividere, salvare o copiare.
-• Anteprime quadrate, salvataggio di immagini in gruppo e miglioramenti a lettura, riproduzione ed estensioni di script.
+• Filtri e selezione consecutiva degli annunci migliorati, con regole integrate modificabili.
+• Tieni premuta un’immagine per ingrandirla, salvarla o condividerla. Strumenti video richiudibili, modalità orizzontale e avanzamento mantenuto tra le schede.

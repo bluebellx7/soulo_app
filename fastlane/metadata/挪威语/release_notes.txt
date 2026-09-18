@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Marker annonser for å skjule dem. Forbedrede annonsefiltre og personvernkontroller.
-• Bokmerkemapper, HTML-import og -eksport samt deling, lagring og kopiering av QR-koder for sider.
-• Kvadratiske filvisninger, samlet bildelagring og forbedringer av lesing, medieavspilling og skriptutvidelser.
+• Bedre annonsefiltrering og fortløpende merking av annonser, med redigerbare innebygde regler.
+• Hold på bilder for å forstørre, lagre eller dele. Sammenleggbare videoverktøy, liggende avspilling og bevart fremdrift når du bytter fane.

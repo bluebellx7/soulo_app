@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Mainosten merkitseminen piilotettaviksi sekä paremmat mainossuodattimet ja yksityisyysasetukset.
-• Kirjanmerkkikansiot, HTML-tuonti ja -vienti sekä sivujen QR-koodien jako, tallennus ja kopiointi.
-• Neliönmuotoiset esikatselut, kuvien erätallennus sekä parannuksia lukemiseen, mediatoistoon ja skriptilaajennuksiin.
+• Parannettu mainosten suodatus ja peräkkäinen merkintä sekä muokattavat sisäiset säännöt.
+• Paina kuvaa pitkään suurentaaksesi, tallentaaksesi tai jakaaksesi sen. Videotyökalut voi supistaa, ja vaakatoisto sekä toiston kohta säilyvät välilehdissä.

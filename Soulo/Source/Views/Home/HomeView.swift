@@ -12,6 +12,7 @@ struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.requestReview) private var requestReview
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var keyboardVisible = false
     @State private var reviewTask: Task<Void, Never>?
     @Namespace private var searchBarNamespace
@@ -383,130 +384,29 @@ struct HomeView: View {
 
     private var homeContent: some View {
         VStack(spacing: 0) {
-            // Top controls (FocusLock-style mini buttons)
-            topBar
-                .padding(.top, 8)
-
-            Spacer()
-            Spacer()
-
-            // Center: App name + Search
-            VStack(spacing: 24) {
-                if !displayedHomeTitle.isEmpty || !displayedHomeSubtitle.isEmpty {
-                    VStack(spacing: 6) {
-                        if !displayedHomeTitle.isEmpty {
-                            Text(displayedHomeTitle)
-                                .font(.system(size: 38, weight: .bold, design: .rounded))
-                                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47") : .white)
-                                .shadow(color: wallpaperManager.isCurrentWallpaperLight ? .black.opacity(0.05) : .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                                .onTapGesture { showTitleEditor = true }
-                                .accessibilityLabel(
-                                    AppAccessibility.formatted("accessibility_home_title", displayedHomeTitle)
-                                )
-                                .accessibilityHint(
-                                    languageManager.localizedString("accessibility_edit_title_hint")
-                                )
-                                .accessibilityAddTraits([.isHeader, .isButton])
-                                .accessibilityAction { showTitleEditor = true }
+            topBar.padding(.top, 8)
+            if verticalSizeClass == .compact {
+                GeometryReader { geometry in
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            homeHeading
+                            homeSearchContent
+                                .frame(maxWidth: 600)
                         }
-
-                        if !displayedHomeSubtitle.isEmpty {
-                            Text(displayedHomeSubtitle)
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.6) : .white.opacity(0.4))
-                                .tracking(1.5)
-                                .onTapGesture { showSubtitleEditor = true }
-                                .accessibilityLabel(
-                                    AppAccessibility.formatted(
-                                        "accessibility_home_subtitle",
-                                        displayedHomeSubtitle
-                                    )
-                                )
-                                .accessibilityHint(
-                                    languageManager.localizedString("accessibility_edit_subtitle_hint")
-                                )
-                                .accessibilityAddTraits(.isButton)
-                                .accessibilityAction { showSubtitleEditor = true }
-                        }
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 16)
+                        .frame(maxWidth: .infinity, minHeight: geometry.size.height)
                     }
+                    .scrollDismissesKeyboard(.interactively)
                 }
-
-                // Search bar
-                SearchBarView(
-                    text: $searchVM.searchText,
-                    isIncognito: searchVM.isIncognito,
-                    isRecording: speechService.isRecording,
-                    onSubmit: { performSearch() },
-                    onMicTap: { showVoiceInput = true },
-                    onIncognitoTap: { togglePrivateModeFromSearchBar() },
-                    onScanTap: { showScanner = true }
-                )
-                .matchedGeometryEffect(id: "searchBar", in: searchBarNamespace)
-                .frame(maxWidth: isIPad ? 600 : .infinity)
-                .padding(.horizontal, 28)
-
-                // Floating autocomplete — zero-height anchor, overlay extends downward
-                Color.clear
-                    .frame(height: 0)
-                    .overlay(alignment: .top) {
-                        if !searchVM.suggestions.isEmpty {
-                            SearchAutocompleteView(
-                                suggestions: searchVM.suggestions,
-                                query: searchVM.searchText,
-                                darkVariant: true,
-                                onSelect: { suggestion in
-                                    searchVM.searchText = suggestion
-                                    performSearch()
-                                },
-                                onFill: { suggestion in
-                                    searchVM.searchText = suggestion
-                                }
-                            )
-                            .frame(maxWidth: isIPad ? 600 : .infinity)
-                            .padding(.horizontal, 28)
-                            .padding(.top, 8)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .transition(.opacity.combined(with: .move(edge: .top)))
-                        }
-                    }
-                    .zIndex(100)
-                    .allowsHitTesting(!searchVM.suggestions.isEmpty)
-
-                // Group picker
-                if showGroupPickerOnHome {
-                    homeGroupPicker
-                        .padding(.top, 4)
+            } else {
+                Spacer()
+                VStack(spacing: 24) {
+                    homeHeading
+                    homeSearchContent
                 }
-
-                // Bookmark icons
-                if showBookmarksOnHome && !bookmarks.isEmpty {
-                    homeBookmarksRow
-                        .padding(.top, 4)
-                }
-
-                // Recent searches (hidden while typing, shown when empty)
-                if showRecentSearchesOnHome
-                    && !searchVM.recentSearches.isEmpty
-                    && searchVM.searchText.isEmpty {
-                    SearchSuggestionsView(
-                        recentSearches: searchVM.recentSearches,
-                        onTap: { keyword in
-                            searchVM.searchText = keyword
-                            performSearch()
-                        },
-                        onDelete: { keyword in
-                            searchVM.deleteHistoryItem(keyword: keyword, context: modelContext)
-                        }
-                    )
-                    .frame(maxWidth: .infinity)
-                    .clipped()
-                    .padding(.top, 4)
-                }
+                Spacer()
             }
-
-            Spacer()
-            Spacer()
-
             // Keep the footer informational only so search remains the single focal point.
             Text(wallpaperManager.source == .bing ? "Bing Daily" : wallpaperManager.searchTopic)
                 .font(.system(size: 8, weight: .medium))
@@ -516,6 +416,128 @@ struct HomeView: View {
                 .padding(.bottom, 8)
         }
     }
+
+    private var homeHeading: some View {
+        Group {
+            if !displayedHomeTitle.isEmpty || !displayedHomeSubtitle.isEmpty {
+                VStack(spacing: 6) {
+                    if !displayedHomeTitle.isEmpty {
+                        Text(displayedHomeTitle)
+                            .font(.system(size: 38, weight: .bold, design: .rounded))
+                            .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47") : .white)
+                            .shadow(color: wallpaperManager.isCurrentWallpaperLight ? .black.opacity(0.05) : .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                            .onTapGesture { showTitleEditor = true }
+                            .accessibilityLabel(
+                                AppAccessibility.formatted("accessibility_home_title", displayedHomeTitle)
+                            )
+                            .accessibilityHint(
+                                languageManager.localizedString("accessibility_edit_title_hint")
+                            )
+                            .accessibilityAddTraits([.isHeader, .isButton])
+                            .accessibilityAction { showTitleEditor = true }
+                    }
+
+                    if !displayedHomeSubtitle.isEmpty {
+                        Text(displayedHomeSubtitle)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.6) : .white.opacity(0.4))
+                            .tracking(1.5)
+                            .onTapGesture { showSubtitleEditor = true }
+                            .accessibilityLabel(
+                                AppAccessibility.formatted(
+                                    "accessibility_home_subtitle",
+                                    displayedHomeSubtitle
+                                )
+                            )
+                            .accessibilityHint(
+                                languageManager.localizedString("accessibility_edit_subtitle_hint")
+                            )
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityAction { showSubtitleEditor = true }
+                    }
+                }
+            }
+
+        }
+    }
+
+    private var homeSearchContent: some View {
+        VStack(spacing: verticalSizeClass == .compact ? 12 : 24) {
+
+            // Search bar
+            SearchBarView(
+                text: $searchVM.searchText,
+                isIncognito: searchVM.isIncognito,
+                isRecording: speechService.isRecording,
+                onSubmit: { performSearch() },
+                onMicTap: { showVoiceInput = true },
+                onIncognitoTap: { togglePrivateModeFromSearchBar() },
+                onScanTap: { showScanner = true }
+            )
+            .matchedGeometryEffect(id: "searchBar", in: searchBarNamespace)
+            .frame(maxWidth: isIPad ? 600 : .infinity)
+            .padding(.horizontal, 28)
+
+            // Floating autocomplete — zero-height anchor, overlay extends downward
+            Color.clear
+                .frame(height: 0)
+                .overlay(alignment: .top) {
+                    if !searchVM.suggestions.isEmpty {
+                        SearchAutocompleteView(
+                            suggestions: searchVM.suggestions,
+                            query: searchVM.searchText,
+                            darkVariant: true,
+                            onSelect: { suggestion in
+                                searchVM.searchText = suggestion
+                                performSearch()
+                            },
+                            onFill: { suggestion in
+                                searchVM.searchText = suggestion
+                            }
+                        )
+                        .frame(maxWidth: isIPad ? 600 : .infinity)
+                        .padding(.horizontal, 28)
+                        .padding(.top, 8)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+                }
+                .zIndex(100)
+                .allowsHitTesting(!searchVM.suggestions.isEmpty)
+
+            // Group picker
+            if showGroupPickerOnHome {
+                homeGroupPicker
+                    .padding(.top, 4)
+            }
+
+            // Bookmark icons
+            if showBookmarksOnHome && !bookmarks.isEmpty {
+                homeBookmarksRow
+                    .padding(.top, 4)
+            }
+
+            // Recent searches (hidden while typing, shown when empty)
+            if showRecentSearchesOnHome
+                && !searchVM.recentSearches.isEmpty
+                && searchVM.searchText.isEmpty {
+                SearchSuggestionsView(
+                    recentSearches: searchVM.recentSearches,
+                    onTap: { keyword in
+                        searchVM.searchText = keyword
+                        performSearch()
+                    },
+                    onDelete: { keyword in
+                        searchVM.deleteHistoryItem(keyword: keyword, context: modelContext)
+                    }
+                )
+                .frame(maxWidth: .infinity)
+                .clipped()
+                .padding(.top, 4)
+            }
+        }
+    }
+
 
     // MARK: - Top Bar
 

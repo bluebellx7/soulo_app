@@ -1,0 +1,9 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>跳转测试</title>
+<style>body{font:18px system-ui;padding:20px}a,button{display:block;margin:15px 0;font:inherit;padding:12px}</style>
+<h1>跳转测试</h1>
+<a href="/navigation-destination.html">手动链接</a>
+<button onclick="location.href='/navigation-destination.html'">脚本按钮</button>
+<form action="/navigation-destination.html"><button>提交表单</button></form>
+<a href="/navigation-destination.html" target="_blank">新窗口链接</a>
+<button onclick="window.open('/navigation-destination.html')">新窗口按钮</button>
+<script>if(location.search.includes('auto'))setTimeout(()=>location.href='/navigation-destination.html',600);</script>

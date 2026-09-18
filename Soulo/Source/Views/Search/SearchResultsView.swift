@@ -22,6 +22,7 @@ struct SearchResultsView: View {
     @EnvironmentObject var tabManager: TabManager
     @ObservedObject private var platformStore = PlatformDataStore.shared
     @ObservedObject private var webAppearance = WebAppearanceService.shared
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.colorScheme) private var appColorScheme
     @StateObject private var bookmarkVM = BookmarkViewModel()
     @Environment(\.modelContext) private var modelContext
@@ -55,6 +56,8 @@ struct SearchResultsView: View {
                     Group {
                         if showTopSearchBar {
                             topSearchBar
+                                .frame(maxWidth: 720)
+                                .frame(maxWidth: .infinity)
                                 .padding(.horizontal, 10)
                                 .padding(.top, 4)
                                 .padding(.bottom, 2)
@@ -127,9 +130,9 @@ struct SearchResultsView: View {
                     let activePageIsLoading = activeWebViewModel?.isLoading == true
                         && activeWebViewModel?.currentURL != nil
                         && activeProgress < 0.98
-                    let activePageIsRendered = pageReady || activeProgress >= 0.98
+                    let activePageIsRendered = activeWebViewModel?.hasVisibleContent == true || pageReady || activeProgress >= 0.98
                     let shouldShowLoadingOverlay = activeWebViewModel?.currentURL != nil
-                        && (activePageIsLoading || !activePageIsRendered)
+                        && activePageIsLoading && !activePageIsRendered
 
                     if let activeTab = tabManager.activeTab {
                         WebViewContainer(
@@ -220,6 +223,8 @@ struct SearchResultsView: View {
                     // Keep the new-tab wallpaper continuous behind the top
                     // platform controls instead of starting below them.
                     Color.clear
+                } else if verticalSizeClass == .compact {
+                    usesDarkBrowserChrome ? Color(hex: "111111") : Color(UIColor.systemBackground)
                 } else {
                     // The browser chrome background belongs to the navigation
                     // state, not the document render state. Show it as soon as
@@ -305,7 +310,7 @@ struct SearchResultsView: View {
         }
         .onChange(of: tabManager.activeTabIndex) { _, _ in
             if let vm = tabManager.activeWebViewModel {
-                pageReady = vm.estimatedProgress >= 0.98 || (!vm.isLoading && vm.currentURL != nil)
+                pageReady = vm.hasVisibleContent || vm.estimatedProgress >= 0.98 || (!vm.isLoading && vm.currentURL != nil)
             }
         }
         // Handle "open in new tab" from WebView (target="_blank" links)

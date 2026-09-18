@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Označevanje oglasov za skrivanje ter izboljšani oglasni filtri in nastavitve zasebnosti.
-• Mape zaznamkov, uvoz in izvoz HTML ter deljenje, shranjevanje in kopiranje kod QR za strani.
-• Kvadratni predogledi, skupinsko shranjevanje slik ter izboljšave branja, predvajanja in skriptnih razširitev.
+• Izboljšano filtriranje in zaporedno označevanje oglasov z urejanjem vgrajenih pravil.
+• Pridržite sliko za povečavo, shranjevanje ali deljenje. Zložljiva videoorodja, ležeče predvajanje in ohranjen napredek ob menjavi zavihkov.

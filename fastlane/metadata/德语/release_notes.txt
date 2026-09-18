@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Werbung zum Ausblenden markieren; verbesserte Werbefilter und Datenschutzeinstellungen.
-• Lesezeichenordner, HTML-Import und -Export sowie Seiten-QR-Codes teilen, speichern oder kopieren.
-• Quadratische Dateivorschauen, Bilder gesammelt speichern und Verbesserungen bei Lesen, Medien und Skripterweiterungen.
+• Verbesserte Werbefilter und fortlaufende Werbemarkierung mit bearbeitbaren integrierten Regeln.
+• Bilder lange drücken, um sie zu vergrößern, zu speichern oder zu teilen. Einklappbare Videotools, Querformat und gespeicherter Fortschritt beim Tabwechsel.

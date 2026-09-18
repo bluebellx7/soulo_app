@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Thêm đánh dấu quảng cáo để ẩn, cải thiện bộ lọc quảng cáo và các tùy chọn quyền riêng tư.
-• Thư mục dấu trang, nhập và xuất HTML, cùng chia sẻ, lưu hoặc sao chép mã QR của trang.
-• Ảnh xem trước vuông, lưu ảnh hàng loạt và cải thiện việc đọc, phát nội dung đa phương tiện và tiện ích tập lệnh.
+• Cải thiện lọc và đánh dấu quảng cáo liên tiếp, cho phép sửa quy tắc tích hợp.
+• Nhấn giữ ảnh để phóng to, lưu hoặc chia sẻ. Công cụ video thu gọn, phát ngang và giữ tiến độ khi chuyển tab.

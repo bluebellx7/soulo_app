@@ -160,6 +160,10 @@
 "manual_ad_site" = "This website";
 "manual_ad_hide" = "Hide and remember";
 "manual_ad_saved" = "Hidden and saved";
+"manual_ad_continue" = "Mark another";
+"manual_ad_restore_site" = "Restore all for site";
+"ad_allow_redirects" = "Allow automatic redirects";
+"ad_allow_redirects_hint" = "When off, block page redirects and pop-ups without a click. Turn this on if a website needs automatic redirects.";
 "manual_ad_rules" = "Marked ads";
 "manual_ad_footer" = "Rules are saved on this device and follow Ad Block and the site allowlist. Restore an item here to remove its rule.";
 "manual_ad_error" = "The area could not be saved. It may have changed. Try marking it again.";
@@ -309,6 +313,8 @@
 "media_pip" = "Picture in Picture";
 "media_pip_hint" = "Keep watching while using other apps";
 "media_fullscreen" = "Full screen";
+"media_landscape" = "Play in landscape";
+"media_portrait" = "Portrait";
 
 "import_photos" = "Import Photos";
 
@@ -329,3 +335,31 @@
 "text_encoding_failed" = "Cannot read this encoding. Try another encoding in the top-right menu.";
 
 "auto" = "Automatic";
+
+"media_fullscreen_unavailable" = "Fullscreen is unavailable. Start the video, then try again.";
+
+"builtin_rules" = "Built-in rules";
+"builtin_hint" = "View, edit, or disable built-in rules. Changes stay on this device and can be reset.";
+"builtin_tiled" = "Tiled bottom banners";
+"builtin_tiled_hint" = "Detect bottom banners by fixed image tiles and matching bounds, independently of the website. Use the switch above to enable or disable detection.";
+"builtin_all_sites" = "All websites";
+"builtin_search" = "Search rules or domains";
+"builtin_reset" = "Reset";
+"builtin_reset_all" = "Reset all built-in rules to their defaults?";
+"builtin_enabled" = "Enabled";
+"builtin_url_pattern" = "URL regular expression";
+"builtin_selector" = "CSS selector";
+"builtin_domains" = "Website domains";
+"builtin_domains_hint" = "Separate domains with commas. Leave empty for all websites. The website allowlist still applies.";
+"builtin_resources" = "Resource types";
+"builtin_edit" = "Edit rule";
+"builtin_invalid" = "Invalid rule. Check the pattern, domains, and resource types.";
+
+"ad_filter_settings" = "Filtering";
+"ad_rule_management" = "Rules";
+"ad_filter_statistics" = "Statistics";
+"ad_subscription_hint" = "Choose subscriptions and update their filtering rules.";
+"ad_allowlist_empty" = "No allowed sites";
+
+"image_view_full" = "View Image";
+"video_tools" = "Video tools";

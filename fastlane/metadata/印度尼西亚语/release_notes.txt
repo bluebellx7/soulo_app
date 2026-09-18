@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Penandaan iklan untuk disembunyikan serta penyempurnaan filter iklan dan kontrol privasi.
-• Folder markah, impor dan ekspor HTML, serta berbagi, menyimpan, atau menyalin kode QR halaman.
-• Pratinjau berkas persegi, penyimpanan gambar sekaligus, dan perbaikan pembacaan, pemutaran media, serta ekstensi skrip.
+• Penyaringan dan penandaan iklan beruntun ditingkatkan, dengan aturan bawaan yang dapat diedit.
+• Tekan lama gambar untuk memperbesar, menyimpan, atau berbagi. Alat video dapat dilipat, dengan mode lanskap dan progres tersimpan saat berganti tab.

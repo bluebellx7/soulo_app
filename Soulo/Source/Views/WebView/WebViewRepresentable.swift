@@ -31,6 +31,25 @@ enum WebNavigationErrorClassifier {
     }
 }
 
+enum BrowserAutomaticNavigationPolicy {
+    static let preferenceKey = "ad_block_allow_automatic_navigation"
+    static let world = WKContentWorld.world(name: "SouloNavigationGesture")
+    static let handler = "souloNavigationGesture"
+    static let script = """
+    (() => {
+      if (window.__souloNavigationGestureInstalled) return;
+      window.__souloNavigationGestureInstalled = true;
+      function interacted(event) {
+        if (!event.isTrusted) return;
+        if (event.type === 'keydown' && !['Enter', ' '].includes(event.key)) return;
+        window.webkit.messageHandlers.souloNavigationGesture.postMessage({url: location.href});
+      }
+      window.addEventListener('click', interacted, true);
+      window.addEventListener('keydown', interacted, true);
+    })();
+    """
+}
+
 enum BrowserPopupPolicy {
     private static let authenticationHostSuffixes = [
         "accounts.google.com",
@@ -75,6 +94,12 @@ enum WebMediaCapturePermissionPolicy {
     /// Web media capture is allowed to reach WebKit's site permission prompt
     /// only from secure origins. Soulo never grants camera or microphone
     /// access on a site's behalf.
+    static func decision(forScheme scheme: String?) -> WKPermissionDecision {
+        scheme?.lowercased() == "https" ? .prompt : .deny
+    }
+}
+
+enum WebMotionPermissionPolicy {
     static func decision(forScheme scheme: String?) -> WKPermissionDecision {
         scheme?.lowercased() == "https" ? .prompt : .deny
     }
@@ -191,6 +216,34 @@ private final class UserScriptTabStore {
 /// deterministic page scrolling and horizontal platform paging when a site or
 /// custom browser gesture does not respond to VoiceOver's three-finger swipe.
 final class AccessibleWebView: WKWebView {
+    private var nativeNavigationRequests: [URL: TimeInterval] = [:]
+
+    private func recordNativeNavigation(to url: URL?) {
+        let now = ProcessInfo.processInfo.systemUptime
+        nativeNavigationRequests = nativeNavigationRequests.filter { now - $0.value < 5 }
+        if let url { nativeNavigationRequests[url] = now }
+    }
+
+    override func load(_ request: URLRequest) -> WKNavigation? {
+        recordNativeNavigation(to: request.url)
+        return super.load(request)
+    }
+
+    override func loadHTMLString(_ string: String, baseURL: URL?) -> WKNavigation? {
+        recordNativeNavigation(to: baseURL ?? URL(string: "about:blank"))
+        return super.loadHTMLString(string, baseURL: baseURL)
+    }
+
+    override func loadFileURL(_ URL: URL, allowingReadAccessTo readAccessURL: URL) -> WKNavigation? {
+        recordNativeNavigation(to: URL)
+        return super.loadFileURL(URL, allowingReadAccessTo: readAccessURL)
+    }
+
+    func consumeNativeNavigation(to url: URL) -> Bool {
+        guard let time = nativeNavigationRequests.removeValue(forKey: url) else { return false }
+        return ProcessInfo.processInfo.systemUptime - time < 5
+    }
+
     override func buildMenu(with builder: UIMenuBuilder) {
         super.buildMenu(with: builder)
         SelectionWebSearch.replace(in: builder) { [weak self] in
@@ -297,7 +350,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     // MARK: - Make View
 
     // Pre-compiled ad block rules (call preWarm() at app launch)
-    private static var cachedAdBlockRules: WKContentRuleList?
+    private static var cachedAdBlockRules: [WKContentRuleList]?
     private static var cachedAdBlockAllowlistSignature: String?
     private static var compilingAdBlockAllowlistSignature: String?
     private static var installedContentRuleSignatures: [ObjectIdentifier: String] = [:]
@@ -320,7 +373,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             compilingAdBlockAllowlistSignature = signature
             cachedAdBlockAllowlistSignature = signature
             cachedAdBlockRules = nil
-            let rules = await AdBlockService.compileRules(allowlistedHosts: allowlist)
+            let rules = await AdBlockService.compileRuleLists(allowlistedHosts: allowlist)
             // A newer allowlist may have started compiling while this task waited.
             if cachedAdBlockAllowlistSignature == signature {
                 cachedAdBlockRules = rules
@@ -361,6 +414,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         // Inline media playback
         configuration.allowsInlineMediaPlayback = true
+        configuration.preferences.isElementFullscreenEnabled = true
         configuration.mediaTypesRequiringUserActionForPlayback = []
         configuration.websiteDataStore = isIncognito ? .nonPersistent() : .default()
 
@@ -397,26 +451,44 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         guard !viewModel.isWebViewRuntimeInstalled else { return }
-
         contentController.add(context.coordinator, name: "souloAdBlocker")
+        contentController.add(context.coordinator, name: "souloPrivacy")
+        contentController.add(context.coordinator, contentWorld: .defaultClient, name: "souloContextResource")
+        contentController.add(context.coordinator, contentWorld: .defaultClient, name: "souloPageReady")
+        contentController.add(context.coordinator, contentWorld: BrowserAutomaticNavigationPolicy.world, name: BrowserAutomaticNavigationPolicy.handler)
+        contentController.add(context.coordinator, contentWorld: WebVideoOrientationRuntime.world, name: WebVideoOrientationRuntime.handler)
         contentController.add(context.coordinator, contentWorld: ManualAdBlockRuntime.world, name: ManualAdBlockRuntime.handler)
+        if !isIncognito {
+            contentController.addScriptMessageHandler(context.coordinator, contentWorld: .page, name: "souloUserScriptXHR")
+            contentController.addScriptMessageHandler(context.coordinator, contentWorld: .page, name: "souloUserScriptAPI")
+        }
+        if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled {
+            contentController.add(context.coordinator, name: "souloExtensionInstaller")
+        }
+        contentController.addScriptMessageHandler(context.coordinator, contentWorld: .page, name: "souloDownload")
+        viewModel.isWebViewRuntimeInstalled = true
+        // Warm tab remounts only reconnect delegates. Keep scripts, their bridge
+        // identity and compiled filters attached to the retained page.
+        guard !viewModel.hasInstalledWebViewScripts else { return }
+        viewModel.hasInstalledWebViewScripts = true
+        viewModel.mediaSession.install(on: contentController)
+        contentController.addUserScript(WKUserScript(source: WebViewScripts.pageContentReady,
+            injectionTime: .atDocumentStart, forMainFrameOnly: true, in: .defaultClient))
+
+        contentController.addUserScript(WKUserScript(source: WebViewScripts.textSelection,
+            injectionTime: .atDocumentStart, forMainFrameOnly: false, in: .defaultClient))
+        contentController.addUserScript(WKUserScript(source: BrowserAutomaticNavigationPolicy.script,
+            injectionTime: .atDocumentStart, forMainFrameOnly: false, in: BrowserAutomaticNavigationPolicy.world))
+        contentController.addUserScript(WKUserScript(
+            source: WebVideoOrientationRuntime.script(), injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false, in: WebVideoOrientationRuntime.world
+        ))
         contentController.addUserScript(WKUserScript(
             source: ManualAdBlockRuntime.configuredScript(enabled: adBlockEnabled,
                 allowlistedHosts: adBlockSettings.allowlistedHosts, rules: manualAdRules.rules),
-            injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: ManualAdBlockRuntime.world
+            injectionTime: .atDocumentStart, forMainFrameOnly: true, in: ManualAdBlockRuntime.world
         ))
-        contentController.add(context.coordinator, name: "souloPrivacy")
         if !isIncognito {
-            contentController.addScriptMessageHandler(
-                context.coordinator,
-                contentWorld: .page,
-                name: "souloUserScriptXHR"
-            )
-            contentController.addScriptMessageHandler(
-                context.coordinator,
-                contentWorld: .page,
-                name: "souloUserScriptAPI"
-            )
             for script in BrowserExtensionService.shared.userScripts where script.isEnabled {
                 let injectionTime: WKUserScriptInjectionTime = script.injectionTime == .documentStart
                     ? .atDocumentStart
@@ -433,14 +505,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                 )
             }
         }
-        if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled {
-            contentController.add(context.coordinator, name: "souloExtensionInstaller")
-        }
-        contentController.addScriptMessageHandler(
-            context.coordinator,
-            contentWorld: .page,
-            name: "souloDownload"
-        )
         contentController.addUserScript(
             WKUserScript(
                 source: WebViewScripts.applyWebAppearance(
@@ -482,7 +546,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             WKUserScript(
                 source: WebViewScripts.contextMenuResourceTracking,
                 injectionTime: .atDocumentStart,
-                forMainFrameOnly: false
+                forMainFrameOnly: false, in: .defaultClient
             )
         )
 
@@ -534,7 +598,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                     cosmetic: true,
                     allowlistedHosts: protectionBypassHosts
                 ),
-                injectionTime: .atDocumentEnd,
+                injectionTime: .atDocumentStart,
                 forMainFrameOnly: false
             )
             contentController.addUserScript(adScript)
@@ -542,15 +606,19 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         // Apply pre-compiled content rules before the first navigation whenever possible.
         if adBlockEnabled && !hostIsAllowlisted, let cached = Self.cachedAdBlockRules {
-            contentController.add(cached)
+            cached.forEach { contentController.add($0) }
         }
 
         viewModel.isWebViewRuntimeInstalled = true
     }
 
     private func configureWebView(_ webView: WKWebView, context: Context) {
+        context.coordinator.updateManualAdTap(on: webView)
+        context.coordinator.installImageLongPress(on: webView)
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
+        // The native navigation policy applies the live user preference to pop-ups.
+        webView.configuration.preferences.javaScriptCanOpenWindowsAutomatically = true
         webView.allowsBackForwardNavigationGestures = true
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.backgroundColor = UIColor.systemBackground
@@ -568,6 +636,14 @@ struct WebViewRepresentable: UIViewRepresentable {
         viewModel.applyWebPreferences(to: webView)
         webAppearance.apply(to: webView)
 
+        if webView.url != nil, !viewModel.hasVisibleContent {
+            webView.evaluateJavaScript("window.__souloPageHasVisibleContent === true", in: nil, in: .defaultClient) { [weak webView, weak model = viewModel] result in
+                guard let webView, let model, model.webView === webView,
+                      case .success(let value) = result, value as? Bool == true else { return }
+                model.markPageContentVisible()
+            }
+        }
+
         // KVO observations
         context.coordinator.observe(webView: webView, viewModel: viewModel)
 
@@ -581,6 +657,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
+        context.coordinator.updateManualAdTap(on: uiView)
         context.coordinator.synchronizeManualAdRules(on: uiView)
         // URL loading is driven imperatively via viewModel.loadURL(_:)
         if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
@@ -627,7 +704,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         cachedAdBlockRules = nil
         compilingAdBlockAllowlistSignature = signature
         Task { [weak webView, weak model] in
-            let ruleList = await AdBlockService.compileRules(allowlistedHosts: allowlist)
+            let ruleList = await AdBlockService.compileRuleLists(allowlistedHosts: allowlist)
             if compilingAdBlockAllowlistSignature == signature {
                 compilingAdBlockAllowlistSignature = nil
             }
@@ -643,24 +720,56 @@ struct WebViewRepresentable: UIViewRepresentable {
 
     /// Recheck current preferences when asynchronous compilation completes.
     static func applyContentRules(_ rules: WKContentRuleList?, on webView: WKWebView, allowlist: [String]) {
+        applyContentRules(rules.map { [$0] }, on: webView, allowlist: allowlist)
+    }
+
+    static func applyContentRules(_ rules: [WKContentRuleList]?, on webView: WKWebView, allowlist: [String]) {
+        let enabled = (UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true)
+            && !WebCompatibilityService.shouldBypassWebProtection(for: webView.url)
+            && !AdBlockSettingsService.isHostAllowlisted(webView.url?.host, allowlistedHosts: allowlist)
+        // Preserve working rules on update failure, but always honor disabling.
+        if enabled && rules == nil { return }
         let id = ObjectIdentifier(webView)
         webView.configuration.userContentController.removeAllContentRuleLists()
         installedContentRuleSignatures.removeValue(forKey: id)
-        guard UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true,
-              !WebCompatibilityService.shouldBypassWebProtection(for: webView.url),
-              !AdBlockSettingsService.isHostAllowlisted(webView.url?.host, allowlistedHosts: allowlist),
-              let rules else { return }
-        webView.configuration.userContentController.add(rules)
+        guard enabled, let rules else { return }
+        rules.forEach { webView.configuration.userContentController.add($0) }
         installedContentRuleSignatures[id] = allowlistSignature(for: allowlist)
     }
 
     private static func allowlistSignature(for allowlist: [String]) -> String {
         let hosts = Array(Set(allowlist.map { AdBlockSettingsService.normalizedHost($0) }.filter { !$0.isEmpty })).sorted().joined(separator: ",")
-        return "\(hosts)|rules:\(AdBlockSubscriptionService.rulesSignature())"
+        return "\(hosts)|rules:\(AdBlockSubscriptionService.rulesSignature())|builtIn:\(BuiltInAdRuleStore.signature())"
+    }
+
+    static func reloadWithCurrentAdRules(_ model: WebViewModel) {
+        guard let webView = model.webView else { return }
+        let allowlist = AdBlockSettingsService.shared.allowlistedHosts
+        let signature = allowlistSignature(for: allowlist)
+        Task { @MainActor [weak webView, weak model] in
+            let rules = await AdBlockService.compileRuleLists(allowlistedHosts: allowlist)
+            guard let webView, let model, model.webView === webView,
+                  signature == allowlistSignature(for: AdBlockSettingsService.shared.allowlistedHosts) else { return }
+            cachedAdBlockAllowlistSignature = signature
+            cachedAdBlockRules = rules
+            applyContentRules(rules, on: webView, allowlist: allowlist)
+            let controller = webView.configuration.userContentController
+            let others = controller.userScripts.filter { !$0.source.contains("window.__souloAdBlockConfig") }
+            controller.removeAllUserScripts()
+            others.forEach(controller.addUserScript)
+            let enabled = UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true
+            controller.addUserScript(WKUserScript(source: AdBlockService.adHidingScript(cosmetic: enabled, allowlistedHosts: allowlist),
+                injectionTime: .atDocumentStart, forMainFrameOnly: false))
+            webView.reloadFromOrigin()
+        }
     }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(viewModel: viewModel)
+    }
+
+    static func forgetContentRules(on webView: WKWebView?) {
+        if let webView { installedContentRuleSignatures.removeValue(forKey: ObjectIdentifier(webView)) }
     }
 
     // MARK: - Cleanup
@@ -670,8 +779,15 @@ struct WebViewRepresentable: UIViewRepresentable {
         // WKWebView alive. Keep the native extension tab registered until the browser tab
         // is actually closed or suspended so extensions can still enumerate all tabs.
         coordinator.invalidateObservations()
+        uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloPageReady", contentWorld: .defaultClient)
+        uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloContextResource", contentWorld: .defaultClient)
         coordinator.dismissEmbeddedPopups(in: uiView)
+        uiView.configuration.userContentController.removeScriptMessageHandler(
+            forName: BrowserAutomaticNavigationPolicy.handler, contentWorld: BrowserAutomaticNavigationPolicy.world)
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloAdBlocker")
+        uiView.configuration.userContentController.removeScriptMessageHandler(forName: WebVideoOrientationRuntime.handler, contentWorld: WebVideoOrientationRuntime.world)
+        coordinator.removeManualAdTap()
+        coordinator.removeImageLongPress()
         coordinator.cancelManualAdPicker()
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: ManualAdBlockRuntime.handler, contentWorld: ManualAdBlockRuntime.world)
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloPrivacy")
@@ -679,15 +795,15 @@ struct WebViewRepresentable: UIViewRepresentable {
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloDownload", contentWorld: .page)
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloUserScriptXHR", contentWorld: .page)
         uiView.configuration.userContentController.removeScriptMessageHandler(forName: "souloUserScriptAPI", contentWorld: .page)
-        uiView.configuration.userContentController.removeAllUserScripts()
-        uiView.configuration.userContentController.removeAllContentRuleLists()
-        installedContentRuleSignatures.removeValue(forKey: ObjectIdentifier(uiView))
         coordinator.markRuntimeDismantled()
     }
 
     // MARK: - Coordinator
 
-    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, UIScrollViewDelegate, WKDownloadDelegate, WKScriptMessageHandler, WKScriptMessageHandlerWithReply {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, UIScrollViewDelegate, WKDownloadDelegate, WKScriptMessageHandler, WKScriptMessageHandlerWithReply, UIGestureRecognizerDelegate {
+        private var imageLongPress: UILongPressGestureRecognizer?
+        private var contextResource: (resource: WebContextResource?, frame: WKFrameInfo, time: TimeInterval, linkURL: URL?)?
+
         private struct PageDownloadTransfer {
             let itemID: UUID
             let fileURL: URL
@@ -698,13 +814,17 @@ struct WebViewRepresentable: UIViewRepresentable {
             var pendingChunkReply: ((Any?, String?) -> Void)?
         }
 
+        private weak var manualAdTapRecognizer: UITapGestureRecognizer?
+        private let videoFullscreenOrientation = WebVideoFullscreenOrientation()
+        private var navigationGesture: (webView: ObjectIdentifier, frameURL: URL, time: TimeInterval)?
+        private var provisionalNavigation: WKNavigation?
         private var lastContentOffset: CGFloat = 0
         private var lastReportedScrollingUp: Bool?
         private var isUserZooming = false
         private var accumulatedScrollDelta: CGFloat = 0
 
         private let viewModel: WebViewModel
-        let userScriptBridgeToken = UUID().uuidString
+        var userScriptBridgeToken: String { viewModel.userScriptBridgeToken }
         private var observations: [NSKeyValueObservation] = []
         private var downloadIDs: [ObjectIdentifier: UUID] = [:]
         private var activeDownloads: [ObjectIdentifier: WKDownload] = [:]
@@ -715,8 +835,14 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var individualDownloadCancelObserver: NSObjectProtocol?
         private var downloadPauseObserver: NSObjectProtocol?
         private var downloadResumeObserver: NSObjectProtocol?
-        private var lastAdHidingSignature = ""
-        private var lastManualAdSignature = ""
+        private var lastAdHidingSignature: String {
+            get { viewModel.lastAdHidingSignature }
+            set { viewModel.lastAdHidingSignature = newValue }
+        }
+        private var lastManualAdSignature: String {
+            get { viewModel.lastManualAdSignature }
+            set { viewModel.lastManualAdSignature = newValue }
+        }
         private var httpsUpgradeFallbacks: [String: URL] = [:]
         private var oneShotHTTPFallbacks = Set<String>()
         private var privacyHeaderBypassURLs = Set<String>()
@@ -759,12 +885,191 @@ struct WebViewRepresentable: UIViewRepresentable {
             }
         }
 
+        func updateManualAdTap(on webView: WKWebView) {
+            if manualAdTapRecognizer?.view !== webView {
+                removeManualAdTap()
+                let tap = UITapGestureRecognizer(target: self, action: #selector(markAdvertisementTapped(_:)))
+                tap.name = "SouloManualAdSelection"
+                tap.delegate = self
+                tap.cancelsTouchesInView = true
+                tap.delaysTouchesBegan = true
+                webView.addGestureRecognizer(tap)
+                manualAdTapRecognizer = tap
+            }
+            manualAdTapRecognizer?.isEnabled = viewModel.manualAdSelection != nil
+        }
+
+        func removeManualAdTap() {
+            if let tap = manualAdTapRecognizer { tap.view?.removeGestureRecognizer(tap) }
+            manualAdTapRecognizer = nil
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            if gestureRecognizer === imageLongPress { return viewModel.manualAdSelection == nil }
+            return viewModel.manualAdSelection != nil && !viewModel.manualAdBusy
+        }
+
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard gestureRecognizer === imageLongPress else { return true }
+            return contextResource?.resource?.kind == .image &&
+                ProcessInfo.processInfo.systemUptime - (contextResource?.time ?? 0) < 2
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+            gestureRecognizer === imageLongPress || otherGestureRecognizer === imageLongPress
+        }
+
+        func installImageLongPress(on webView: WKWebView) {
+            guard imageLongPress?.view !== webView else { return }
+            removeImageLongPress()
+            let press = UILongPressGestureRecognizer(target: self, action: #selector(imageLongPressed(_:)))
+            press.minimumPressDuration = 0.5; press.allowableMovement = 10
+            press.delegate = self; press.cancelsTouchesInView = true
+            webView.addGestureRecognizer(press); imageLongPress = press
+        }
+
+        func removeImageLongPress() {
+            if let press = imageLongPress { press.view?.removeGestureRecognizer(press) }
+            imageLongPress = nil
+        }
+
+        @objc private func imageLongPressed(_ gesture: UILongPressGestureRecognizer) {
+            guard gesture.state == .began, let webView = gesture.view as? WKWebView,
+                  let contextResource, let resource = contextResource.resource,
+                  resource.kind == .image, let host = topViewController(for: webView) else { return }
+            let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+            menu.addAction(UIAlertAction(title: ToolText.text("image_view_full"), style: .default) { [weak self, weak webView] _ in
+                guard let self, let webView else { return }
+                self.viewModel.imagePreview = WebImagePreviewRequest(url: resource.url, webView: webView, frame: contextResource.frame)
+            })
+            menu.addAction(UIAlertAction(title: LanguageManager.shared.localizedString("image_extract_text"), style: .default) { [weak self, weak webView] _ in
+                guard let self, let webView else { return }
+                self.extractText(from: resource, webView: webView, frame: contextResource.frame)
+            })
+            if ["http", "https"].contains(resource.url.scheme ?? "") {
+                menu.addAction(UIAlertAction(title: LanguageManager.shared.localizedString("save_to_photos"), style: .default) { [weak self, weak webView] _ in
+                    guard let self, let webView else { return }
+                    self.downloadContextResource(resource, webView: webView, saveToPhotos: true, pageURL: contextResource.frame.request.url)
+                })
+            }
+            if let linkURL = contextResource.linkURL {
+                menu.addAction(UIAlertAction(title: LanguageManager.shared.localizedString("tab_open_new"), style: .default) { _ in
+                    NotificationCenter.default.post(name: .openInNewTab, object: nil, userInfo: ["url": linkURL])
+                })
+            }
+            if ["http", "https"].contains(resource.url.scheme ?? "") {
+                menu.addAction(UIAlertAction(title: LanguageManager.shared.localizedString("download"), style: .default) { [weak self, weak webView] _ in
+                    guard let self, let webView else { return }
+                    self.downloadContextResource(resource, webView: webView, saveToPhotos: false, pageURL: contextResource.frame.request.url)
+                })
+            }
+            menu.addAction(UIAlertAction(title: LanguageManager.shared.localizedString("resource_copy_url"), style: .default) { _ in UIPasteboard.general.url = resource.url })
+            menu.addAction(UIAlertAction(title: ToolText.text("cancel"), style: .cancel))
+            menu.popoverPresentationController?.sourceView = webView
+            menu.popoverPresentationController?.sourceRect = CGRect(origin: gesture.location(in: webView), size: CGSize(width: 1, height: 1))
+            host.present(menu, animated: true)
+        }
+
+        @objc private func markAdvertisementTapped(_ gesture: UITapGestureRecognizer) {
+            guard gesture.state == .ended, let webView = gesture.view as? WKWebView else { return }
+            let point = gesture.location(in: webView)
+            Task { @MainActor [weak self] in await self?.viewModel.pickAdvertisement(at: point) }
+        }
+
         func markRuntimeDismantled() {
             viewModel.isWebViewRuntimeInstalled = false
         }
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             guard let body = message.body as? [String: Any] else { return }
+
+            if message.name == "souloPageReady" {
+                guard message.webView === viewModel.webView, message.frameInfo.isMainFrame,
+                      message.world == .defaultClient, body["visible"] as? Bool == true else { return }
+                viewModel.markPageContentVisible()
+                return
+            }
+
+            if message.name == "souloContextResource" {
+                guard message.webView === viewModel.webView, message.world == .defaultClient else { return }
+                let link = (body["linkURL"] as? String).flatMap(URL.init(string:))
+                contextResource = (WebContextResource(dictionary: body), message.frameInfo, ProcessInfo.processInfo.systemUptime,
+                    ["http", "https"].contains(link?.scheme ?? "") ? link : nil)
+                return
+            }
+
+            if message.name == BrowserAutomaticNavigationPolicy.handler {
+                guard message.world.name == BrowserAutomaticNavigationPolicy.world.name,
+                      let webView = message.webView, let parent = viewModel.webView,
+                      webView === parent || webView.isDescendant(of: parent),
+                      let url = message.frameInfo.request.url,
+                      body["url"] as? String == url.absoluteString else { return }
+                navigationGesture = (ObjectIdentifier(webView), url, ProcessInfo.processInfo.systemUptime)
+                return
+            }
+
+            if message.name == WebVideoOrientationRuntime.handler {
+                guard message.webView === viewModel.webView,
+                      message.world.name == WebVideoOrientationRuntime.world.name,
+                      let action = body["action"] as? String,
+                      let token = body["token"] as? String, token.count <= 80 else { return }
+                switch action {
+                case "speed":
+                    guard let webView = message.webView, let host = topViewController(for: webView) else { return }
+                    let currentRate = body["rate"] as? Double ?? 1
+                    let title = ToolText.text("web_media_speed") + " · " + String(format: "%g×", currentRate.isFinite ? currentRate : 1)
+                    let menu = UIAlertController(title: title, message: nil, preferredStyle: .actionSheet)
+                    for rate in [0.5, 1.0, 1.5, 2.0, 4.0, 8.0, 16.0] {
+                        let title = String(format: "%g×", rate)
+                        menu.addAction(UIAlertAction(title: title, style: .default) { [weak self, weak webView] _ in
+                            guard let webView else { return }
+                            Task { @MainActor in
+                                let applied = try? await webView.callAsyncJavaScript("return window.__souloVideoOrientation?.setRate(token, rate);",
+                                    arguments: ["token": token, "rate": rate], in: message.frameInfo, contentWorld: WebVideoOrientationRuntime.world)
+                                if applied as? Bool != true { self?.viewModel.videoOrientationError = ToolText.text("media_rate_unavailable") }
+                            }
+                        })
+                    }
+                    menu.addAction(UIAlertAction(title: ToolText.text("cancel"), style: .cancel))
+                    menu.popoverPresentationController?.sourceView = webView
+                    menu.popoverPresentationController?.sourceRect = CGRect(x: webView.bounds.midX, y: webView.bounds.midY, width: 1, height: 1)
+                    host.present(menu, animated: true)
+                case "download":
+                    guard let source = body["url"] as? String, let url = URL(string: source),
+                          ["http", "https"].contains(url.scheme?.lowercased() ?? "") else {
+                        viewModel.showMediaDownloads = true
+                        return
+                    }
+                    guard viewModel.beginMediaDownload(url: url, name: viewModel.pageTitle) else { return }
+                    let delivery: WebMediaResource.Delivery = url.pathExtension.lowercased() == "m3u8" ? .hls : .direct
+                    let resource = WebMediaResource(kind: .video, url: url, title: viewModel.pageTitle, posterURL: nil, delivery: delivery)
+                    Task { @MainActor [self, webView = message.webView] in
+                        do {
+                            let file = try await WebResourceDownloadService.shared.download(resource,
+                                pageURL: message.frameInfo.request.url ?? webView?.url, webView: webView)
+                            self.viewModel.finishMediaDownload(url: url)
+                            self.presentDownloadedFile(file, sourceURL: url)
+                        } catch {
+                            self.viewModel.finishMediaDownload(url: url)
+                            NotificationCenter.default.post(name: .browserDownloadFailed, object: self.viewModel)
+                        }
+                    }
+                case "prepare":
+                    if let scene = message.webView?.window?.windowScene {
+                        videoFullscreenOrientation.prepare(token: token, scene: scene)
+                    }
+                case "begin":
+                    videoFullscreenOrientation.begin(token: token) { [weak self] error in
+                        self?.viewModel.videoOrientationError = error.localizedDescription
+                    }
+                case "end", "failed":
+                    videoFullscreenOrientation.end(token: token)
+                    if action == "failed" { viewModel.videoOrientationError = ToolText.text("media_fullscreen_unavailable") }
+                default: break
+                }
+                return
+            }
 
             if message.name == ManualAdBlockRuntime.handler {
                 guard message.frameInfo.isMainFrame, message.webView === viewModel.webView,
@@ -1351,32 +1656,32 @@ struct WebViewRepresentable: UIViewRepresentable {
             observations.forEach { $0.invalidate() }
             observations.removeAll()
             observations = [
-                webView.observe(\.estimatedProgress, options: .new) { [weak self] wv, _ in
+                webView.observe(\.estimatedProgress, options: [.initial, .new]) { [weak self] wv, _ in
                     Task { @MainActor in
                         self?.viewModel.updateProgress(wv.estimatedProgress)
                     }
                 },
-                webView.observe(\.isLoading, options: .new) { [weak self] wv, _ in
+                webView.observe(\.isLoading, options: [.initial, .new]) { [weak self] wv, _ in
                     Task { @MainActor in
                         self?.viewModel.updateLoading(wv.isLoading)
                     }
                 },
-                webView.observe(\.canGoBack, options: .new) { [weak self] wv, _ in
+                webView.observe(\.canGoBack, options: [.initial, .new]) { [weak self] wv, _ in
                     Task { @MainActor in
                         self?.viewModel.updateCanGoBack(wv.canGoBack)
                     }
                 },
-                webView.observe(\.canGoForward, options: .new) { [weak self] wv, _ in
+                webView.observe(\.canGoForward, options: [.initial, .new]) { [weak self] wv, _ in
                     Task { @MainActor in
                         self?.viewModel.updateCanGoForward(wv.canGoForward)
                     }
                 },
-                webView.observe(\.title, options: .new) { [weak self] wv, _ in
+                webView.observe(\.title, options: [.initial, .new]) { [weak self] wv, _ in
                     Task { @MainActor in
                         self?.viewModel.updateTitle(wv.title)
                     }
                 },
-                webView.observe(\.url, options: .new) { [weak self] wv, _ in
+                webView.observe(\.url, options: [.initial, .new]) { [weak self] wv, _ in
                     Task { @MainActor in
                         guard let self else { return }
                         let previousURL = self.viewModel.currentURL
@@ -1390,6 +1695,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         func invalidateObservations() {
+            videoFullscreenOrientation.end()
             observations.forEach { $0.invalidate() }
             observations.removeAll()
             if let downloadCancelObserver {
@@ -1424,7 +1730,9 @@ struct WebViewRepresentable: UIViewRepresentable {
                 enabled ? "1" : "0",
                 cosmetic ? "1" : "0",
                 allowlistedHosts.joined(separator: ","),
-                AdBlockSettingsService.isHostAllowlisted(host) ? "1" : "0"
+                AdBlockSettingsService.isHostAllowlisted(host) ? "1" : "0",
+                BuiltInAdRuleStore.signature(),
+                AdBlockSubscriptionService.rulesSignature()
             ].joined(separator: "|")
             guard signature != lastAdHidingSignature else { return }
             lastAdHidingSignature = signature
@@ -1481,13 +1789,16 @@ struct WebViewRepresentable: UIViewRepresentable {
             let others = controller.userScripts.filter { !$0.source.hasPrefix(ManualAdBlockRuntime.prefix) }
             controller.removeAllUserScripts()
             others.forEach(controller.addUserScript)
-            controller.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentEnd,
+            controller.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart,
                 forMainFrameOnly: true, in: ManualAdBlockRuntime.world))
             webView.evaluateJavaScript(source, in: nil, in: ManualAdBlockRuntime.world, completionHandler: nil)
         }
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+            provisionalNavigation = navigation
             if webView === viewModel.webView {
+                viewModel.beginPageNavigation()
+                videoFullscreenOrientation.end()
                 viewModel.cancelMarkingAdvertisement()
                 dismissEmbeddedPopups(in: webView)
             }
@@ -1503,6 +1814,9 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+            provisionalNavigation = nil
+            navigationGesture = nil
+            if viewModel.manualAdSelection != nil { viewModel.cancelMarkingAdvertisement() }
             synchronizeManualAdRules(on: webView)
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -1574,6 +1888,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             didFail navigation: WKNavigation!,
             withError error: Error
         ) {
+            if provisionalNavigation === navigation { provisionalNavigation = nil }
             handleNavigationError(error)
         }
 
@@ -1582,6 +1897,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             didFailProvisionalNavigation navigation: WKNavigation!,
             withError error: Error
         ) {
+            if provisionalNavigation === navigation { provisionalNavigation = nil }
             if retryHTTPFallbackIfNeeded(on: webView, error: error) {
                 return
             }
@@ -1589,6 +1905,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            provisionalNavigation = nil
             guard let url = webView.url, isRecoverableWebPageURL(url) else { return }
             let key = url.absoluteString
             guard !terminatedProcessRecoveryURLs.contains(key) else {
@@ -1735,6 +2052,11 @@ struct WebViewRepresentable: UIViewRepresentable {
                 return
             }
 
+            guard allowsNavigation(navigationAction, in: webView) else {
+                decisionHandler(.cancel)
+                return
+            }
+
             if BrowserExtensionInstallCandidate.recognizedDownloadURL(url) {
                 decisionHandler(.download)
                 return
@@ -1799,6 +2121,25 @@ struct WebViewRepresentable: UIViewRepresentable {
                     userInitiated: navigationAction.navigationType == .linkActivated
                 )
             }
+        }
+
+        private func allowsNavigation(_ action: WKNavigationAction, in webView: WKWebView) -> Bool {
+            guard let destination = action.request.url else { return false }
+            let nativeRequest = (webView as? AccessibleWebView)?.consumeNativeNavigation(to: destination) == true
+            if viewModel.manualAdSelection != nil && !nativeRequest { return false }
+            if UserDefaults.standard.object(forKey: BrowserAutomaticNavigationPolicy.preferenceKey) as? Bool ?? true { return true }
+            if nativeRequest || action.navigationType == .backForward || action.navigationType == .reload { return true }
+            // HTTP redirects belong to the already-approved provisional load.
+            // A new document cannot run redirect scripts until it commits.
+            if provisionalNavigation != nil && action.targetFrame?.isMainFrame == true { return true }
+            // Embedded document loads must not break players or other page content.
+            if let target = action.targetFrame, !target.isMainFrame { return true }
+            if webView.url == nil && action.targetFrame != nil { return true }
+            if let source = action.sourceFrame.request.url,
+               let gesture = navigationGesture,
+               gesture.webView == ObjectIdentifier(webView), gesture.frameURL == source,
+               ProcessInfo.processInfo.systemUptime - gesture.time <= 3 { return true }
+            return false
         }
 
         private func privacyHeaderRequestIfNeeded(for request: URLRequest) -> URLRequest? {
@@ -1936,6 +2277,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             for navigationAction: WKNavigationAction,
             windowFeatures: WKWindowFeatures
         ) -> WKWebView? {
+            guard allowsNavigation(navigationAction, in: webView) else { return nil }
             if navigationAction.targetFrame == nil || !(navigationAction.targetFrame?.isMainFrame ?? false) {
                 if let url = navigationAction.request.url {
                     switch WebNavigationPolicyService.shared.decision(for: url) {
@@ -2066,7 +2408,18 @@ struct WebViewRepresentable: UIViewRepresentable {
             webView.superview?.removeFromSuperview()
         }
 
-        // MARK: WKUIDelegate — camera / microphone permission
+        // MARK: WKUIDelegate — device permissions
+
+        func webView(
+            _ webView: WKWebView,
+            requestDeviceOrientationAndMotionPermissionFor origin: WKSecurityOrigin,
+            initiatedByFrame frame: WKFrameInfo,
+            decisionHandler: @escaping (WKPermissionDecision) -> Void
+        ) {
+            // WebKit presents the requesting site's permission dialog. Never
+            // grant sensors implicitly, including requests from embedded frames.
+            decisionHandler(WebMotionPermissionPolicy.decision(forScheme: origin.protocol))
+        }
 
         func webView(
             _ webView: WKWebView,
@@ -2155,7 +2508,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 control.endRefreshing()
                 return
             }
-            webView.reload()
+            webView.reloadFromOrigin()
 
             // Completion normally ends the control in didFinish/didFail. Keep a
             // defensive timeout so a stalled WebKit process never leaves it spinning.
@@ -2276,9 +2629,19 @@ struct WebViewRepresentable: UIViewRepresentable {
             contextMenuConfigurationForElement elementInfo: WKContextMenuElementInfo,
             completionHandler: @escaping (UIContextMenuConfiguration?) -> Void
         ) {
+            if let contextResource, ProcessInfo.processInfo.systemUptime - contextResource.time < 3 {
+                guard elementInfo.linkURL != nil || contextResource.resource != nil else {
+                    completionHandler(nil); return
+                }
+                completionHandler(contextMenuConfiguration(linkURL: elementInfo.linkURL,
+                    resource: contextResource.resource, webView: webView, frame: contextResource.frame))
+                return
+            }
             webView.evaluateJavaScript(
-                "window.__souloContextResourceInfo ? window.__souloContextResourceInfo() : null"
-            ) { [weak self, weak webView] value, _ in
+                "window.__souloContextResourceInfo ? window.__souloContextResourceInfo() : null",
+                in: nil, in: .defaultClient
+            ) { [weak self, weak webView] result in
+                let value = try? result.get()
                 guard let self, let webView else {
                     completionHandler(nil)
                     return
@@ -2301,7 +2664,8 @@ struct WebViewRepresentable: UIViewRepresentable {
         private func contextMenuConfiguration(
             linkURL: URL?,
             resource: WebContextResource?,
-            webView: WKWebView
+            webView: WKWebView,
+            frame: WKFrameInfo? = nil
         ) -> UIContextMenuConfiguration {
             UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
                 var actions: [UIMenuElement] = []
@@ -2339,26 +2703,31 @@ struct WebViewRepresentable: UIViewRepresentable {
 
                 if let resource {
                     if resource.kind == .image {
+                        actions.append(UIAction(title: ToolText.text("image_view_full"), image: UIImage(systemName: "arrow.up.left.and.arrow.down.right")) { _ in
+                            self.viewModel.imagePreview = WebImagePreviewRequest(url: resource.url, webView: webView, frame: frame)
+                        })
                         actions.append(UIAction(
                             title: LanguageManager.shared.localizedString("image_extract_text"),
                             image: UIImage(systemName: "text.viewfinder")
                         ) { _ in
-                            self.extractText(from: resource, webView: webView)
+                            self.extractText(from: resource, webView: webView, frame: frame)
                         })
-                        actions.append(UIAction(
-                            title: LanguageManager.shared.localizedString("save_to_photos"),
-                            image: UIImage(systemName: "photo.badge.arrow.down")
-                        ) { _ in
-                            self.downloadContextResource(resource, webView: webView, saveToPhotos: true)
-                        })
+                        if ["http", "https"].contains(resource.url.scheme ?? "") {
+                            actions.append(UIAction(
+                                title: LanguageManager.shared.localizedString("save_to_photos"),
+                                image: UIImage(systemName: "photo.badge.arrow.down")
+                            ) { _ in
+                                self.downloadContextResource(resource, webView: webView, saveToPhotos: true, pageURL: frame?.request.url)
+                            })
+                        }
                     }
 
-                    if resource.kind.allowsDirectDownload {
+                    if resource.kind.allowsDirectDownload && ["http", "https"].contains(resource.url.scheme ?? "") {
                         actions.append(UIAction(
                             title: LanguageManager.shared.localizedString("download"),
                             image: UIImage(systemName: "arrow.down.circle")
                         ) { _ in
-                            self.downloadContextResource(resource, webView: webView, saveToPhotos: false)
+                            self.downloadContextResource(resource, webView: webView, saveToPhotos: false, pageURL: frame?.request.url)
                         })
                     }
 
@@ -2378,14 +2747,14 @@ struct WebViewRepresentable: UIViewRepresentable {
             }
         }
 
-        private func extractText(from resource: WebContextResource, webView: WKWebView) {
+        private func extractText(from resource: WebContextResource, webView: WKWebView, frame: WKFrameInfo? = nil) {
             Task { @MainActor [weak self, weak webView] in
                 guard let self, let webView else { return }
                 do {
                     let image = try await WebResourceDownloadService.shared.loadImage(
                         resource.url,
-                        pageURL: webView.url,
-                        webView: webView
+                        pageURL: frame?.request.url ?? webView.url,
+                        webView: webView, frame: frame
                     )
                     let result = try await ImageTextRecognitionService.recognize(image, sourceURL: resource.url)
                     NotificationCenter.default.post(
@@ -2406,7 +2775,8 @@ struct WebViewRepresentable: UIViewRepresentable {
         private func downloadContextResource(
             _ resource: WebContextResource,
             webView: WKWebView,
-            saveToPhotos: Bool
+            saveToPhotos: Bool,
+            pageURL: URL? = nil
         ) {
             Task { @MainActor [weak self, weak webView] in
                 guard let self, let webView else { return }
@@ -2415,7 +2785,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                         try await WebResourceDownloadService.shared.saveImageToPhotos(
                             resource.url,
                             preferredFilename: resource.suggestedFilename,
-                            pageURL: webView.url,
+                            pageURL: pageURL ?? webView.url,
                             webView: webView
                         )
                         UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -2423,7 +2793,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                         let fileURL = try await WebResourceDownloadService.shared.download(
                             resource.url,
                             preferredFilename: resource.suggestedFilename,
-                            pageURL: webView.url,
+                            pageURL: pageURL ?? webView.url,
                             webView: webView
                         )
                         self.presentDownloadedFile(fileURL, sourceURL: resource.url)

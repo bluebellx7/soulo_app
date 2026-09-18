@@ -1,0 +1,7 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Picker test</title><main style="height:2000px"><div style="position:fixed;top:8px"><p>正常页面与透明点击层</p><p id="scroll-state">未滚动</p></div></main><script>
+for(let i=0;i<4;i++){const e=document.createElement('div');e.style.cssText='position:fixed;bottom:0;height:70px;width:25%;z-index:20000;background-image:linear-gradient(orange,red);background-position:'+(-i*100)+'px 0;left:'+(i*25)+'%';document.body.append(e);}
+const cover=document.createElement('div');cover.style.cssText='position:fixed;inset:0;background:transparent;z-index:2147483647';document.body.append(cover);
+window.addEventListener('scroll',()=>document.querySelector('#scroll-state').textContent='已滚动');
+window.addEventListener('click',e=>{e.stopImmediatePropagation();location.href='/unexpected-navigation';},true);
+window.addEventListener('pointerdown',e=>e.stopImmediatePropagation(),true);
+</script>

@@ -160,6 +160,10 @@
 "manual_ad_site" = "整個網站";
 "manual_ad_hide" = "隱藏並記住";
 "manual_ad_saved" = "已隱藏並儲存";
+"manual_ad_continue" = "繼續標記";
+"manual_ad_restore_site" = "還原整站標記";
+"ad_allow_redirects" = "允許自動跳轉";
+"ad_allow_redirects_hint" = "關閉時攔截網頁未經點擊發起的跳轉和彈出視窗。若網站需要自動跳轉，可在此開啟。";
 "manual_ad_rules" = "已標記廣告";
 "manual_ad_footer" = "規則儲存在本機，遵循廣告攔截開關和網站白名單。還原一項即可移除對應規則。";
 "manual_ad_error" = "無法儲存該區域，頁面可能已變更，請重新標記。";
@@ -309,6 +313,8 @@
 "media_pip" = "懸浮視窗";
 "media_pip_hint" = "切換到其他 App 後繼續觀看";
 "media_fullscreen" = "全螢幕";
+"media_landscape" = "橫向播放";
+"media_portrait" = "直向";
 
 "import_photos" = "從相簿匯入";
 
@@ -329,3 +335,31 @@
 "text_encoding_failed" = "無法以此編碼讀取。請在右上角嘗試其他編碼。";
 
 "auto" = "自動";
+
+"media_fullscreen_unavailable" = "暫時無法全螢幕，請先播放影片後重試。";
+
+"builtin_rules" = "內建規則";
+"builtin_hint" = "可查看、編輯或停用內建規則。修改儲存在本機，可還原預設。";
+"builtin_tiled" = "底部拼圖廣告";
+"builtin_tiled_hint" = "依固定定位、圖片拼片和邊界識別底部廣告，不依賴網站網域。可使用上方開關啟停。";
+"builtin_all_sites" = "所有網站";
+"builtin_search" = "搜尋規則或網域";
+"builtin_reset" = "還原預設";
+"builtin_reset_all" = "還原所有內建規則的預設設定？";
+"builtin_enabled" = "啟用";
+"builtin_url_pattern" = "網址正規表示式";
+"builtin_selector" = "CSS 選擇器";
+"builtin_domains" = "適用網域";
+"builtin_domains_hint" = "多個網域以逗號分隔，留空代表所有網站。網站允許清單仍然生效。";
+"builtin_resources" = "資源類型";
+"builtin_edit" = "編輯規則";
+"builtin_invalid" = "規則無效，請檢查比對條件、網域和資源類型。";
+
+"ad_filter_settings" = "過濾設定";
+"ad_rule_management" = "規則管理";
+"ad_filter_statistics" = "過濾統計";
+"ad_subscription_hint" = "選擇訂閱並更新過濾規則。";
+"ad_allowlist_empty" = "暫無允許的網站";
+
+"image_view_full" = "查看大圖";
+"video_tools" = "影片工具";

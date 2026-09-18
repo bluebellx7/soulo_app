@@ -1,1 +1,1 @@
-Rejts el kijelölt reklámokat, rendezd könyvjelzőidet mappákba, és ments webes képeket csoportosan. Fájlelőnézetek és oldalmegosztás QR-kóddal.
+Hosszan nyomva nagyíthatja, mentheti és megoszthatja a képeket. Összecsukható videóeszközök, fekvő lejátszás és megőrzött pozíció lapváltáskor.

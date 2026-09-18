@@ -13,7 +13,7 @@ struct ManualAdSelection {
 
 extension WebViewModel {
     var canMarkAdvertisement: Bool {
-        webView != nil && !isLoading && ManualAdBlockService.canUse(
+        webView?.url != nil && ManualAdBlockService.canUse(
             on: webView?.url ?? currentURL,
             enabled: UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true,
             allowlistedHosts: AdBlockSettingsService.shared.allowlistedHosts
@@ -39,6 +39,26 @@ extension WebViewModel {
                 guard self?.manualAdSelection?.token == token else { return }
                 self?.failMarkingAdvertisement()
             }
+        }
+    }
+
+    /// Native hit testing cannot be swallowed by a site's JavaScript click handlers.
+    func pickAdvertisement(at point: CGPoint) async {
+        guard let selection = manualAdSelection, !manualAdBusy, let webView,
+              webView.bounds.width > 0, webView.bounds.height > 0 else { return }
+        do {
+            let result = try await webView.callAsyncJavaScript("""
+                const viewport = window.visualViewport;
+                const scale = (viewport?.width || innerWidth) / width;
+                return window.__souloManualAds?.pickAtPoint(
+                    (viewport?.offsetLeft || 0) + x * scale,
+                    (viewport?.offsetTop || 0) + y * scale) ?? null;
+                """, arguments: ["x": point.x, "y": point.y, "width": webView.bounds.width],
+                in: nil, contentWorld: ManualAdBlockRuntime.world)
+            guard manualAdSelection?.token == selection.token else { return }
+            if let body = result as? [String: Any] { receiveManualAdSelection(body) }
+        } catch {
+            if manualAdSelection?.token == selection.token { failMarkingAdvertisement() }
         }
     }
 
@@ -101,9 +121,9 @@ extension WebViewModel {
     }
 
     func cancelMarkingAdvertisement() {
-        manualAdSelection = nil
-        manualAdSavedRuleID = nil
-        manualAdBusy = false
+        if manualAdSelection != nil { manualAdSelection = nil }
+        if manualAdSavedRuleID != nil { manualAdSavedRuleID = nil }
+        if manualAdBusy { manualAdBusy = false }
         webView?.evaluateJavaScript(
             "window.__souloManualAds?.command('cancel'); null", in: nil,
             in: ManualAdBlockRuntime.world, completionHandler: nil

@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Dodano označavanje oglasa za skrivanje te poboljšani filtri i kontrole privatnosti.
-• Mape oznaka, uvoz i izvoz HTML oznaka te dijeljenje, spremanje i kopiranje QR kodova stranica.
-• Kvadratni pregledi datoteka, skupno spremanje slika te poboljšanja čitanja, reprodukcije i skriptnih proširenja.
+• Poboljšano filtriranje i uzastopno označavanje oglasa uz uređivanje ugrađenih pravila.
+• Dugo pritisnite sliku za povećanje, spremanje ili dijeljenje. Sklopivi videoalati, vodoravna reprodukcija i očuvan napredak pri promjeni kartica.

@@ -160,6 +160,10 @@
 "manual_ad_site" = "整个网站";
 "manual_ad_hide" = "隐藏并记住";
 "manual_ad_saved" = "已隐藏并保存";
+"manual_ad_continue" = "继续标记";
+"manual_ad_restore_site" = "恢复整站标记";
+"ad_allow_redirects" = "允许自动跳转";
+"ad_allow_redirects_hint" = "关闭时拦截网页未经点击发起的跳转和弹窗。若网站需要自动跳转，可在此开启。";
 "manual_ad_rules" = "已标记广告";
 "manual_ad_footer" = "规则保存在本机，遵循广告拦截开关和网站白名单。恢复一项即可移除对应规则。";
 "manual_ad_error" = "无法保存该区域，页面可能已变化，请重新标记。";
@@ -309,6 +313,8 @@
 "media_pip" = "悬浮窗";
 "media_pip_hint" = "切换到其他 App 后继续观看";
 "media_fullscreen" = "全屏";
+"media_landscape" = "横屏播放";
+"media_portrait" = "竖屏";
 
 "import_photos" = "从相册导入";
 
@@ -329,3 +335,31 @@
 "text_encoding_failed" = "无法按此编码读取。请在右上角尝试其他编码。";
 
 "auto" = "自动";
+
+"media_fullscreen_unavailable" = "暂时无法全屏，请先播放视频后重试。";
+
+"builtin_rules" = "内置规则";
+"builtin_hint" = "可查看、编辑或停用内置规则。修改保存在本机，可恢复默认。";
+"builtin_tiled" = "底部拼图广告";
+"builtin_tiled_hint" = "按固定定位、图片拼片和边界识别底部广告，不依赖网站域名。可使用上方开关启停。";
+"builtin_all_sites" = "全部网站";
+"builtin_search" = "搜索规则或域名";
+"builtin_reset" = "恢复默认";
+"builtin_reset_all" = "恢复全部内置规则的默认设置？";
+"builtin_enabled" = "启用";
+"builtin_url_pattern" = "网址正则表达式";
+"builtin_selector" = "CSS 选择器";
+"builtin_domains" = "适用域名";
+"builtin_domains_hint" = "多个域名用逗号分隔，留空表示全部网站。网站白名单仍然生效。";
+"builtin_resources" = "资源类型";
+"builtin_edit" = "编辑规则";
+"builtin_invalid" = "规则无效，请检查匹配条件、域名和资源类型。";
+
+"ad_filter_settings" = "过滤设置";
+"ad_rule_management" = "规则管理";
+"ad_filter_statistics" = "过滤统计";
+"ad_subscription_hint" = "选择订阅并更新过滤规则。";
+"ad_allowlist_empty" = "暂无允许的网站";
+
+"image_view_full" = "查看大图";
+"video_tools" = "视频工具";

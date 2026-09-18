@@ -20,6 +20,7 @@ final class WebViewModel: ObservableObject {
     @Published var pageTitle: String = ""
     var lastURLString: String = ""
     @Published var isLoading: Bool = false
+    @Published private(set) var hasVisibleContent = false
     @Published var estimatedProgress: Double = 0.0
     @Published var canGoBack: Bool = false
     @Published var canGoForward: Bool = false
@@ -36,7 +37,15 @@ final class WebViewModel: ObservableObject {
     @Published var manualAdBusy = false
     @Published var manualAdError = false
     @Published var manualAdSavedRuleID: UUID?
+    @Published var videoOrientationError: String?
+    @Published var imagePreview: WebImagePreviewRequest?
+    @Published var showMediaDownloads = false
+    let mediaSession = WebMediaSession()
     var isWebViewRuntimeInstalled: Bool = false
+    var hasInstalledWebViewScripts = false
+    var lastAdHidingSignature = ""
+    var lastManualAdSignature = ""
+    let userScriptBridgeToken = UUID().uuidString
     var isStreamingDownloadHandlerInstalled: Bool = false
     var isDesktopModeEnabled: Bool = false
     private var snapshotPersistenceID: String?
@@ -46,6 +55,9 @@ final class WebViewModel: ObservableObject {
     @Published var isDownloading: Bool = false
     @Published var downloadFileName: String = ""
     @Published var activeDownloadCount: Int = 0
+    private var nativeDownloadCount = 0
+    private var nativeDownloadName = ""
+    private var mediaDownloads: [URL: String] = [:]
 
     deinit {
         webView = nil
@@ -61,7 +73,9 @@ final class WebViewModel: ObservableObject {
             if webView == nil {
                 isStreamingDownloadHandlerInstalled = false
             }
-            guard let webView else { return }
+            guard let webView else { mediaSession.detach(); return }
+            mediaSession.webView = webView
+            if !mediaSession.isActive { webView.setAllMediaPlaybackSuspended(true, completionHandler: nil) }
             applyWebPreferences(to: webView)
             if let request = pendingRequest {
                 pendingRequest = nil
@@ -83,9 +97,11 @@ final class WebViewModel: ObservableObject {
         keepSnapshotUntilLoaded: Bool = false
     ) {
         errorMessage = nil
+        if !keepSnapshotUntilLoaded { mediaSession.reset() }
         currentURL = url
         lastURLString = url.absoluteString
         isLoading = true
+        hasVisibleContent = false
         estimatedProgress = 0.0
         showSnapshotWhileRestoring = keepSnapshotUntilLoaded && snapshot != nil
         let request = URLRequest(url: url, cachePolicy: cachePolicy, timeoutInterval: 30)
@@ -201,9 +217,14 @@ final class WebViewModel: ObservableObject {
     func releaseWebViewRuntime() {
         cancelMarkingAdvertisement()
         webView?.stopLoading()
+        WebViewRepresentable.forgetContentRules(on: webView)
         webView = nil
         pendingRequest = nil
         isWebViewRuntimeInstalled = false
+        hasInstalledWebViewScripts = false
+        lastAdHidingSignature = ""
+        lastManualAdSignature = ""
+        hasVisibleContent = false
         isLoading = false
         estimatedProgress = currentURL == nil ? 0 : 1
         showSnapshotWhileRestoring = false
@@ -214,9 +235,14 @@ final class WebViewModel: ObservableObject {
     func rebuildWebViewRuntime() {
         cancelMarkingAdvertisement()
         webView?.stopLoading()
+        WebViewRepresentable.forgetContentRules(on: webView)
         webView = nil
         pendingRequest = nil
         isWebViewRuntimeInstalled = false
+        hasInstalledWebViewScripts = false
+        lastAdHidingSignature = ""
+        lastManualAdSignature = ""
+        hasVisibleContent = false
         runtimeRevision = UUID()
         if currentURL != nil {
             isLoading = true
@@ -292,14 +318,38 @@ final class WebViewModel: ObservableObject {
     func updateCanGoForward(_ value: Bool) { canGoForward = value }
 
     func updateDownloadState(activeCount: Int, fileName: String? = nil) {
-        let normalizedCount = max(0, activeCount)
-        activeDownloadCount = normalizedCount
-        isDownloading = normalizedCount > 0
-        if normalizedCount == 0 {
-            downloadFileName = ""
-        } else if let fileName, !fileName.isEmpty {
-            downloadFileName = fileName
-        }
+        nativeDownloadCount = max(0, activeCount)
+        if let fileName { nativeDownloadName = fileName }
+        if nativeDownloadCount == 0 { nativeDownloadName = "" }
+        refreshDownloadState()
+    }
+
+    @discardableResult
+    func beginMediaDownload(url: URL, name: String) -> Bool {
+        guard mediaDownloads[url] == nil else { return false }
+        mediaDownloads[url] = name.isEmpty ? url.lastPathComponent : name
+        refreshDownloadState()
+        return true
+    }
+
+    func finishMediaDownload(url: URL) {
+        guard mediaDownloads.removeValue(forKey: url) != nil else { return }
+        refreshDownloadState()
+    }
+
+    private func refreshDownloadState() {
+        activeDownloadCount = nativeDownloadCount + mediaDownloads.count
+        isDownloading = activeDownloadCount > 0
+        downloadFileName = mediaDownloads.values.first ?? nativeDownloadName
+    }
+
+    func beginPageNavigation() {
+        hasVisibleContent = false
+    }
+
+    func markPageContentVisible() {
+        hasVisibleContent = true
+        showSnapshotWhileRestoring = false
     }
 
     func updateTitle(_ title: String?) {

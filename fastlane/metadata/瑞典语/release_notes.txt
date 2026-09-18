@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Markera annonser för att dölja dem. Förbättrade annonsfilter och integritetsinställningar.
-• Bokmärkesmappar, HTML-import och -export samt delning, sparande och kopiering av sidors QR-koder.
-• Kvadratiska förhandsvisningar, gruppvis bildsparande och förbättringar av läsning, medieuppspelning och skripttillägg.
+• Förbättrad annonsfiltrering och markering av flera annonser i följd, med redigerbara inbyggda regler.
+• Håll på bilder för att förstora, spara eller dela. Hopfällbara videoverktyg, liggande uppspelning och sparad position vid byte av flik.

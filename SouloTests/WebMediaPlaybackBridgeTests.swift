@@ -4,6 +4,32 @@ import UIKit
 @testable import Soulo
 
 @MainActor final class WebMediaPlaybackBridgeTests: XCTestCase {
+    func testVideoRotationControlsFollowDynamicVideosAndRejectSyntheticClicks() async throws {
+        let web = try await page("<video id='v' style='width:300px;height:160px'></video>")
+        let messages = RotationMessages()
+        web.configuration.userContentController.add(messages, contentWorld: WebVideoOrientationRuntime.world,
+            name: WebVideoOrientationRuntime.handler)
+        defer { web.configuration.userContentController.removeScriptMessageHandler(forName: WebVideoOrientationRuntime.handler,
+            contentWorld: WebVideoOrientationRuntime.world) }
+        _ = try await web.evaluateJavaScript(WebVideoOrientationRuntime.script(), in: nil, contentWorld: WebVideoOrientationRuntime.world)
+        let isolated = try await web.evaluateJavaScript("typeof window.__souloVideoOrientation")
+        XCTAssertEqual(isolated as? String, "undefined")
+        _ = try await web.evaluateJavaScript("document.getElementById('v').dispatchEvent(new Event('webkitbeginfullscreen')); document.querySelectorAll('[data-soulo-video-rotate] button').forEach(button => button.click()); document.body.insertAdjacentHTML('beforeend','<video id=second style=\"width:300px;height:160px\"></video>'); null")
+        try await Task.sleep(for: .milliseconds(250))
+        let count = try await web.evaluateJavaScript("document.querySelectorAll('[data-soulo-video-rotate]').length")
+        XCTAssertEqual(count as? Int, 2)
+        XCTAssertEqual(messages.count, 0, "A page cannot synthesize a trusted rotation request")
+        _ = try await web.evaluateJavaScript("document.getElementById('v').remove(); null")
+        try await Task.sleep(for: .milliseconds(250))
+        let remaining = try await web.evaluateJavaScript("document.querySelectorAll('[data-soulo-video-rotate]').length")
+        XCTAssertEqual(remaining as? Int, 1)
+    }
+
+    private final class RotationMessages: NSObject, WKScriptMessageHandler {
+        var count = 0
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) { count += 1 }
+    }
+
     private func page(_ html: String = "<video id='v' src='data:video/mp4;base64,'></video>") async throws -> WKWebView {
         let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 600))
         web.loadHTMLString("<html><body>\(html)</body></html>", baseURL: URL(string: "https://media.test/"))
@@ -158,6 +184,92 @@ import UIKit
         XCTAssertGreaterThan(deltas[0], 0.3)
         XCTAssertGreaterThan(deltas[1], deltas[0] * 1.5)
         print("WEB_MEDIA_TIMELINE 1x=\(deltas[0]), 2x=\(deltas[1]) over 1 second")
+    }
+
+    func testVideoPausesInBackgroundAndRestoresCheckpointAfterRuntimeEviction() async throws {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.copyItem(at: fixture, to: root.appendingPathComponent("video.mp4"))
+        let html = root.appendingPathComponent("index.html")
+        try "<html><body><video id='v' muted playsinline src='video.mp4'></video></body></html>".write(to: html, atomically: true, encoding: .utf8)
+        let session = WebMediaSession()
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let host = UIViewController(); window.rootViewController = host; window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        func make() async throws -> WKWebView {
+            let config = WKWebViewConfiguration(); config.allowsInlineMediaPlayback = true
+            config.mediaTypesRequiringUserActionForPlayback = []
+            session.install(on: config.userContentController)
+            let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 600), configuration: config)
+            session.webView = web; host.view.addSubview(web)
+            web.loadFileURL(html, allowingReadAccessTo: root)
+            for _ in 0..<200 {
+                if (try? await web.evaluateJavaScript("document.getElementById('v')?.readyState >= 1")) as? Bool == true { return web }
+                try await Task.sleep(for: .milliseconds(25))
+            }
+            let state = try? await web.evaluateJavaScript("JSON.stringify({url:location.href,ready:document.readyState,video:!!document.getElementById('v'),media:document.getElementById('v')?.readyState,error:document.getElementById('v')?.error?.message,source:document.getElementById('v')?.currentSrc})")
+            XCTFail("Media fixture failed to load: \(String(describing: state)); checkpoints \(session.checkpoints)")
+            throw ReadingToolError.invalid
+        }
+        func number(_ script: String, in web: WKWebView) async throws -> Double {
+            let result = try await web.evaluateJavaScript(script)
+            return try XCTUnwrap(result as? Double)
+        }
+        let web = try await make()
+        _ = try await web.callAsyncJavaScript("v.currentTime=4;v.playbackRate=1.5;await v.play();return true", arguments: [:], in: nil, contentWorld: .defaultClient)
+        try await Task.sleep(for: .milliseconds(400))
+        await session.capture()
+        session.setActive(false)
+        try await Task.sleep(for: .milliseconds(200))
+        let paused = try await number("v.currentTime", in: web)
+        try await Task.sleep(for: .milliseconds(600))
+        let stillPaused = try await number("v.currentTime", in: web)
+        XCTAssertEqual(paused, stillPaused, accuracy: 0.15)
+        session.setActive(true)
+        try await Task.sleep(for: .milliseconds(700))
+        let resumed = try await number("v.currentTime", in: web)
+        XCTAssertGreaterThan(resumed, paused + 0.3)
+        await session.capture()
+        session.setActive(false)
+        await session.capture()
+        web.pauseAllMediaPlayback(completionHandler: nil); web.removeFromSuperview(); web.stopLoading(); session.detach()
+        session.setActive(true)
+        let restored = try await make()
+        defer { restored.pauseAllMediaPlayback(completionHandler: nil); restored.removeFromSuperview() }
+        try await Task.sleep(for: .milliseconds(400))
+        let time = try await number("v.currentTime", in: restored)
+        let rate = try await number("v.playbackRate", in: restored)
+        XCTAssertGreaterThanOrEqual(time, resumed - 0.15, "Eviction must restore the same video position")
+        XCTAssertEqual(rate, 1.5)
+        let before = time
+        try await Task.sleep(for: .milliseconds(600))
+        let after = try await number("v.currentTime", in: restored)
+        XCTAssertGreaterThan(after, before + 0.3, "Previously playing media resumes after restoring")
+        _ = try await restored.evaluateJavaScript("v.pause()")
+        await session.capture(); session.setActive(false); await session.capture()
+        restored.removeFromSuperview(); restored.stopLoading(); session.detach(); session.setActive(true)
+        let pausedRestore = try await make()
+        defer { pausedRestore.pauseAllMediaPlayback(completionHandler: nil); pausedRestore.removeFromSuperview() }
+        try await Task.sleep(for: .milliseconds(400))
+        let staysPaused = try await pausedRestore.evaluateJavaScript("v.paused")
+        XCTAssertEqual(staysPaused as? Bool, true, "A user-paused video must not autoplay when restored")
+
+        // A checkpoint belongs to runtime restoration, not future explicit loads.
+        session.reset()
+        pausedRestore.loadFileURL(html, allowingReadAccessTo: root)
+        for _ in 0..<200 {
+            if (try? await pausedRestore.evaluateJavaScript("v.readyState >= 1 && v.currentTime < 0.1")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        let freshTime = try await number("v.currentTime", in: pausedRestore)
+        let freshRate = try await number("v.playbackRate", in: pausedRestore)
+        XCTAssertLessThan(freshTime, 0.1, "A fresh load must not replay an embedded old checkpoint")
+        XCTAssertEqual(freshRate, 1)
+
     }
 
 }

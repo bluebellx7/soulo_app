@@ -116,6 +116,7 @@ enum BrowserAddressDisplay {
 }
 
 struct WebViewToolbar: View {
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @ObservedObject var viewModel: WebViewModel
     @Binding var isBookmarked: Bool
     @ObservedObject private var webAppearance = WebAppearanceService.shared
@@ -381,7 +382,7 @@ struct WebViewToolbar: View {
                 )
             }
         }
-        .frame(minWidth: 120, maxWidth: 190, minHeight: 32)
+        .frame(minWidth: 120, maxWidth: verticalSizeClass == .compact ? 420 : 190, minHeight: 32)
         .frame(minHeight: 40)
         .browserToolbarCapsuleGlass(tint: toolbarGlassTint)
         .layoutPriority(1)

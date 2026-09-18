@@ -1,5 +1,7 @@
 Soulo ialah pelayar carian berbilang platform untuk iPhone dan iPad. Taip sekali dan beralih antara carian, media sosial, video, beli-belah, pengetahuan dan AI tanpa menaip semula.
 
+Penapisan dan penandaan iklan berturutan ditambah baik, dengan peraturan terbina dalam yang boleh disunting. Tekan lama imej untuk membesarkan, menyimpan atau berkongsi. Alat video boleh dilipat, dengan main balik landskap dan kemajuan kekal semasa menukar tab.
+
 Cari maklumat, baca artikel, mainkan media dan urus muat turun dalam satu pelayar.
 
 • Carian: tambah platform, susun kumpulan dan urutannya. Pilih teks untuk mencarinya dalam tab Soulo baharu.

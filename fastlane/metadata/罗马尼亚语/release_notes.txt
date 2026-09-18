@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Marchează reclame pentru a le ascunde. Filtre de reclame și controale de confidențialitate îmbunătățite.
-• Dosare de marcaje, import și export HTML și coduri QR ale paginilor pentru partajare, salvare sau copiere.
-• Previzualizări pătrate, salvare de imagini în lot și îmbunătățiri la citire, redare media și extensii de scripturi.
+• Filtrare și marcare succesivă a reclamelor îmbunătățite, cu reguli integrate editabile.
+• Ține apăsat pe imagini pentru mărire, salvare sau partajare. Instrumente video pliabile, redare pe orizontală și progres păstrat la schimbarea filelor.

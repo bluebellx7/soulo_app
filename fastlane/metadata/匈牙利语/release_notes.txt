@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Reklámok kijelölése elrejtéshez, továbbfejlesztett reklámszűrés és adatvédelmi vezérlők.
-• Könyvjelzőmappák, HTML-import és -export, valamint az oldalak QR-kódjának megosztása, mentése és másolása.
-• Négyzetes előnézetek, csoportos képmentés és fejlesztések az olvasásban, médialejátszásban és szkriptbővítményekben.
+• Jobb reklámszűrés és egymást követő reklámjelölés, szerkeszthető beépített szabályokkal.
+• Hosszan nyomva nagyíthatja, mentheti és megoszthatja a képeket. Összecsukható videóeszközök, fekvő lejátszás és megőrzött pozíció lapváltáskor.

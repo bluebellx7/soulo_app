@@ -1,0 +1,1 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><img alt="Blob image" style="width:300px;height:250px;object-fit:contain"><p id="ready"></p><script>fetch('qa-image.png').then(r=>r.blob()).then(b=>{document.querySelector('img').src=URL.createObjectURL(b);document.getElementById('ready').textContent='Blob已就绪'})</script>

@@ -702,6 +702,91 @@ enum WebViewScripts {
     })();
     """
 
+    /// Dismiss initial loading feedback when content can actually paint, even
+    /// if an analytics request or a distant image keeps the load event pending.
+    static let pageContentReady = #"""
+    (() => {
+        let sent = false, scheduled = false;
+        function check() {
+            scheduled = false;
+            if (sent || !document.body) return;
+            const visible = document.body.getBoundingClientRect().height > 0 ||
+                [...document.body.children].slice(0,32).some(el => el.getBoundingClientRect().height > 0);
+            if (!visible) return;
+            sent = true; observer.disconnect();
+            window.__souloPageHasVisibleContent = true;
+            try { window.webkit.messageHandlers.souloPageReady.postMessage({visible:true}); } catch (_) {}
+        }
+        function schedule() {
+            if (!sent && !scheduled) {
+                scheduled = true;
+                requestAnimationFrame(check);
+                // Do not use a timer fallback: parser-blocking resources can
+                // leave a laid-out document unpainted. Use a rendering callback
+                // or completed parsing, never elapsed time alone.
+            }
+        }
+        function parsedContentReady() {
+            // A pending async resource can delay animation callbacks even after
+            // parsing completes. DOMContentLoaded is a separate readiness signal;
+            // unlike a timer, it cannot bypass a parser-blocking script. Wait for
+            // applicable stylesheets too, so an unstyled layout is not enough.
+            if (sent || document.readyState === 'loading') return;
+            const pendingStyles = [...document.querySelectorAll('link[rel~="stylesheet"]')].some(link =>
+                !link.disabled && !link.sheet && (!link.media || matchMedia(link.media).matches));
+            if (!pendingStyles) check();
+        }
+        const observer = new MutationObserver(schedule);
+        observer.observe(document, {childList:true,subtree:true});
+        document.addEventListener('DOMContentLoaded', parsedContentReady, {once:true});
+        document.addEventListener('load', () => { schedule(); parsedContentReady(); }, true);
+        window.addEventListener('pageshow', schedule);
+        window.addEventListener('pagehide', () => observer.disconnect(), {once:true});
+        schedule();
+    })();
+    """#
+
+    static let textSelection = #"""
+    (() => {
+        if (window.__souloTextSelection) return;
+        window.__souloTextSelection = true;
+        const excluded = 'input,textarea,select,button,video,audio,[contenteditable]:not([contenteditable="false"]),[role="textbox"],[role="slider"],[role="button"],[data-soulo-video-rotate]';
+        const css = ':where(html,body,body *):not(img):not(:is(' + excluded + ')):not(:is(' + excluded + ') *){-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important}img{-webkit-touch-callout:none!important;-webkit-user-select:none!important;user-select:none!important}';
+        function install(root) {
+            if (!root || root.querySelector('style[data-soulo-selection]')) return;
+            const style = document.createElement('style'); style.dataset.souloSelection = ''; style.textContent = css;
+            (root === document ? document.documentElement : root)?.append(style);
+        }
+        function unlock(event) {
+            if (!event.isTrusted) return;
+            const target = event.composedPath()[0];
+            if (!(target instanceof Element) || target.closest(excluded)) return;
+            if (target.closest('img')) {
+                target.style.setProperty('-webkit-touch-callout', 'none', 'important');
+                target.style.setProperty('-webkit-user-select', 'none', 'important');
+                return;
+            }
+            let element = target;
+            for (let i = 0; element && i < 32; i++, element = element.parentElement || element.getRootNode()?.host) {
+                element.style.setProperty('-webkit-user-select', 'text', 'important');
+                element.style.setProperty('user-select', 'text', 'important');
+                element.style.setProperty('-webkit-touch-callout', 'default', 'important');
+                if (element.shadowRoot) install(element.shadowRoot);
+            }
+        }
+        window.addEventListener('touchstart', unlock, {capture:true, passive:true});
+        window.addEventListener('pointerdown', unlock, {capture:true, passive:true});
+        for (const name of ['selectstart', 'copy', 'contextmenu']) window.addEventListener(name, event => {
+            const target = event.composedPath()[0];
+            if (event.isTrusted && target instanceof Element && !target.closest(excluded)) event.stopImmediatePropagation();
+        }, true);
+        if (document.documentElement) install(document);
+        else new MutationObserver((_, observer) => {
+            if (document.documentElement) { install(document); observer.disconnect(); }
+        }).observe(document, {childList:true});
+    })();
+    """#
+
     static let contextMenuResourceTracking = #"""
     (function() {
         if (window.__souloContextResourceTrackingInstalled) return;
@@ -712,7 +797,7 @@ enum WebViewScripts {
             if (!value) return '';
             try {
                 var url = new URL(String(value), document.baseURI).href;
-                return /^https?:\/\//i.test(url) ? url : '';
+                return /^(https?:|blob:|data:image\/)/i.test(url) ? url : '';
             } catch (_) {
                 return '';
             }
@@ -736,7 +821,6 @@ enum WebViewScripts {
             if (!target || target.nodeType !== 1) return null;
 
             var image = target.closest && target.closest('img');
-            if (!image && target.querySelector) image = target.querySelector('img');
             if (image) {
                 var imageResource = resource('image', image.currentSrc || image.src);
                 if (imageResource) return imageResource;
@@ -781,9 +865,15 @@ enum WebViewScripts {
 
         function remember(target) {
             lastResource = resourceForElement(target);
+            if (lastResource) {
+                const link = target?.closest?.('a[href]');
+                if (link && /^https?:/.test(link.href)) lastResource.linkURL = link.href;
+            }
+            try { window.webkit.messageHandlers.souloContextResource.postMessage(lastResource || {}); } catch (_) {}
         }
 
         document.addEventListener('touchstart', function(event) {
+            if (!event.isTrusted) return;
             remember(event.touches && event.touches[0]
                 ? document.elementFromPoint(event.touches[0].clientX, event.touches[0].clientY)
                 : event.target);
@@ -792,6 +882,7 @@ enum WebViewScripts {
             remember(document.elementFromPoint(event.clientX, event.clientY) || event.target);
         }, true);
         document.addEventListener('contextmenu', function(event) {
+            if (!event.isTrusted) return;
             remember(event.target);
         }, true);
 

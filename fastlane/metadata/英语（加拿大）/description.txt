@@ -1,5 +1,7 @@
 Soulo is a multi-search browser for iPhone and iPad. Enter a query once and switch between search, social, video, shopping, knowledge and AI platforms without typing it again.
 
+Improved ad filtering and repeated ad marking, with editable built-in rules. Press and hold images to enlarge, save or share. Collapsible video tools add landscape playback, with playback progress preserved across tabs.
+
 Find information, read articles, play media and manage downloads in one browser.
 
 • Search your way: Add platforms, organize groups and reorder them. Select text to search in a new Soulo tab.

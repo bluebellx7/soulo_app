@@ -4,8 +4,11 @@ struct AdBlockManagementView: View {
     @ObservedObject private var service = AdBlockSettingsService.shared
     @ObservedObject private var subscriptionService = AdBlockSubscriptionService.shared
     @ObservedObject private var manualRules = ManualAdBlockService.shared
+    @ObservedObject private var builtInRules = BuiltInAdRuleStore.shared
     @Environment(\.dismiss) private var dismiss
     @AppStorage("ad_block_enabled") private var adBlockEnabled = true
+    @AppStorage(BrowserAutomaticNavigationPolicy.preferenceKey) private var allowsAutomaticNavigation = true
+    @State private var showsStatistics = false
 
     let currentHost: String?
     var showsDoneButton = false
@@ -13,136 +16,131 @@ struct AdBlockManagementView: View {
     var onMarkAdvertisement: (() -> Void)? = nil
     var onChanged: (() -> Void)? = nil
 
-    private var currentHostIsAllowlisted: Bool {
-        service.isAllowlisted(currentHost)
-    }
-
-    private var currentHostProtectionEnabled: Bool {
-        adBlockEnabled && !currentHostIsAllowlisted && !currentHostUsesCompatibilityBypass
-    }
-
     private var currentHostUsesCompatibilityBypass: Bool {
-        WebCompatibilityService.shouldBypassWebProtection(
-            for: currentURL,
-            fallbackHost: currentHost
-        )
+        WebCompatibilityService.shouldBypassWebProtection(for: currentURL, fallbackHost: currentHost)
     }
-
-    private var currentHostHiddenElementCount: Int {
-        service.hiddenElementCount(for: currentHost)
+    private var currentHostProtectionEnabled: Bool {
+        adBlockEnabled && !service.isAllowlisted(currentHost) && !currentHostUsesCompatibilityBypass
     }
 
     var body: some View {
         List {
-            Section {
-                HStack(spacing: 12) {
-                    IconBadge(
-                        systemName: adBlockEnabled ? "shield.checkered" : "shield.slash",
-                        color: adBlockEnabled ? .green : Color(uiColor: .systemGray3)
-                    )
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(LanguageManager.shared.localizedString("ad_block"))
-                            .font(.body.weight(.semibold))
-                        Text(LanguageManager.shared.localizedString(adBlockEnabled ? "status_enabled" : "status_disabled"))
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(adBlockEnabled ? Color.green : Color.secondary)
-                    }
-
-                    Spacer()
-
-                    Toggle("", isOn: $adBlockEnabled)
-                        .labelsHidden()
-                        .tint(.green)
-                        .accessibilityLabel(LanguageManager.shared.localizedString("ad_block"))
-                        .accessibilityValue(
-                            LanguageManager.shared.localizedString(
-                                adBlockEnabled ? "accessibility_enabled" : "accessibility_disabled"
-                            )
-                        )
+            Section(ToolText.text("ad_filter_settings")) {
+                Toggle(isOn: $adBlockEnabled) {
+                    Label(LanguageManager.shared.localizedString("ad_block"), systemImage: "shield.checkered")
                 }
-                .padding(.vertical, 6)
-            } footer: {
-                Text(LanguageManager.shared.localizedString("ad_block_desc"))
+                .tint(.green)
+                .accessibilityIdentifier("adBlock.enabled")
+                Toggle(isOn: $allowsAutomaticNavigation) {
+                    Label(ToolText.text("ad_allow_redirects"), systemImage: "arrow.turn.up.right")
+                }
+                .accessibilityIdentifier("adBlock.allowAutomaticNavigation")
             }
 
             if let currentHost {
                 Section {
-                    Button {
-                        service.toggleAllowlist(for: currentHost)
-                        onChanged?()
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: currentHostProtectionEnabled ? "shield.checkered" : "shield.slash")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(currentHostProtectionEnabled ? Color.green : Color.secondary)
-                                .frame(width: 32, height: 32)
-                                .background(
-                                    (currentHostProtectionEnabled ? Color.green : Color.secondary)
-                                        .opacity(0.12),
-                                    in: RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                )
-
-                            Text(
-                                currentHostIsAllowlisted
-                                    ? LanguageManager.shared.localizedString("ad_block_enable_current_site")
-                                    : LanguageManager.shared.localizedString("ad_block_disable_current_site")
-                            )
-                            .foregroundStyle(.primary)
-
-                            Spacer()
-
-                            AdBlockStatusPill(isEnabled: currentHostProtectionEnabled)
+                    Toggle(isOn: Binding(
+                        get: { !service.isAllowlisted(currentHost) },
+                        set: { enabled in
+                            if enabled { service.removeAllowlistedHost(currentHost) }
+                            else { service.addAllowlistedHost(currentHost) }
+                            onChanged?()
+                        }
+                    )) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(currentHost).font(.body.weight(.medium))
+                            Text(LanguageManager.shared.localizedString(currentHostProtectionEnabled ? "status_enabled" : "status_disabled"))
+                                .font(.caption).foregroundStyle(.secondary)
                         }
                     }
+                    .tint(.green)
                     .disabled(!adBlockEnabled || currentHostUsesCompatibilityBypass)
-
-                    AdBlockMetricRow(
-                        title: LanguageManager.shared.localizedString("ad_block_current_site_hidden"),
-                        systemImage: "eye.slash",
-                        value: currentHostHiddenElementCount,
-                        isHighlighted: currentHostHiddenElementCount > 0
-                    )
+                    .accessibilityIdentifier("adBlock.currentSite")
+                    if let onMarkAdvertisement {
+                        Button(action: onMarkAdvertisement) {
+                            Label(ToolText.text("manual_ad_mark"), systemImage: "viewfinder")
+                        }
+                        .disabled(!currentHostProtectionEnabled)
+                        .accessibilityIdentifier("adBlock.markAdvertisement")
+                    }
                 } header: {
-                    SectionHeader(title: currentHost)
+                    Text(ToolText.text("manual_ad_current_site"))
                 } footer: {
-                    Text(
-                        LanguageManager.shared.localizedString(
-                            currentHostUsesCompatibilityBypass
-                                ? "site_privacy_compatibility_bypass"
-                                : "ad_block_site_toggle_desc"
-                        )
-                    )
+                    if currentHostUsesCompatibilityBypass {
+                        Text(LanguageManager.shared.localizedString("site_privacy_compatibility_bypass"))
+                    } else if !adBlockEnabled {
+                        Text(LanguageManager.shared.localizedString("ad_block_master_disabled_desc"))
+                    }
                 }
+            }
+
+            Section(ToolText.text("ad_rule_management")) {
+                NavigationLink {
+                    ManualAdRulesView(currentHost: currentHost)
+                } label: {
+                    ruleRow(ToolText.text("manual_ad_rules"), icon: "eye.slash", count: manualRules.rules.count)
+                }
+                .accessibilityIdentifier("adBlock.manualRules")
+                NavigationLink {
+                    BuiltInAdRulesView(onChanged: onChanged)
+                } label: {
+                    ruleRow(ToolText.text("builtin_rules"), icon: "line.3.horizontal.decrease", count: builtInRules.rules.count)
+                }
+                .accessibilityIdentifier("adBlock.builtInRules")
+                NavigationLink {
+                    AdBlockSubscriptionsView(onChanged: onChanged)
+                } label: {
+                    ruleRow(LanguageManager.shared.localizedString("ad_block_subscriptions"), icon: "arrow.triangle.2.circlepath", count: subscriptionService.subscriptions.filter(\.isEnabled).count)
+                }
+                .accessibilityIdentifier("adBlock.subscriptions")
+                NavigationLink {
+                    AdBlockAllowedSitesView(onChanged: onChanged)
+                } label: {
+                    ruleRow(LanguageManager.shared.localizedString("ad_block_allowlist"), icon: "shield.slash", count: service.allowlistedHosts.count)
+                }
+                .accessibilityIdentifier("adBlock.allowedSites")
             }
 
             Section {
-                if let onMarkAdvertisement {
-                    Button(action: onMarkAdvertisement) {
-                        Label(ToolText.text("manual_ad_mark"), systemImage: "viewfinder")
+                DisclosureGroup(isExpanded: $showsStatistics) {
+                    if currentHost != nil {
+                        AdBlockMetricRow(title: LanguageManager.shared.localizedString("ad_block_current_site_hidden"), systemImage: "eye.slash", value: service.hiddenElementCount(for: currentHost), isHighlighted: false)
                     }
-                    .disabled(!currentHostProtectionEnabled)
+                    AdBlockMetricRow(title: LanguageManager.shared.localizedString("ad_block_total_hidden"), systemImage: "sum", value: service.hiddenElementCountByHost.values.reduce(0, +), isHighlighted: false)
+                } label: {
+                    Label(ToolText.text("ad_filter_statistics"), systemImage: "chart.bar")
                 }
-                if manualRules.rules.isEmpty {
-                    Text(ToolText.text("manual_ad_hint")).foregroundStyle(.secondary)
-                } else {
-                    NavigationLink {
-                        ManualAdRulesView(currentHost: currentHost)
-                    } label: {
-                        HStack {
-                            Label(ToolText.text("manual_ad_rules"), systemImage: "eye.slash")
-                            Spacer()
-                            Text("\(manualRules.rules.count)").foregroundStyle(.secondary)
-                        }
-                    }
-                    .accessibilityIdentifier("adBlock.manualRules")
-                }
-            } header: {
-                Text(ToolText.text("manual_ad_rules"))
-            } footer: {
-                Text(ToolText.text("manual_ad_footer"))
+                .accessibilityIdentifier("adBlock.statistics")
             }
+        }
+        .navigationTitle(LanguageManager.shared.localizedString("ad_block_management"))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if showsDoneButton {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(LanguageManager.shared.localizedString("done")) { dismiss() }
+                }
+            }
+        }
+        .onChange(of: adBlockEnabled) { _, _ in onChanged?() }
+    }
 
+    private func ruleRow(_ title: String, icon: String, count: Int) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).foregroundStyle(.blue).frame(width: 22)
+            Text(title).foregroundStyle(.primary)
+            Spacer(minLength: 8)
+            Text(count.formatted()).foregroundStyle(.secondary).monospacedDigit()
+        }
+    }
+}
+
+private struct AdBlockSubscriptionsView: View {
+    @ObservedObject private var subscriptionService = AdBlockSubscriptionService.shared
+    @AppStorage("ad_block_enabled") private var adBlockEnabled = true
+    var onChanged: (() -> Void)?
+    var body: some View {
+        List {
             Section {
                 ForEach(subscriptionService.subscriptions) { subscription in
                     VStack(alignment: .leading, spacing: 6) {
@@ -210,11 +208,7 @@ struct AdBlockManagementView: View {
                     .accessibilityLabel(LanguageManager.shared.localizedString("ad_block_subscription_update"))
                 }.textCase(nil)
             } footer: {
-                Text(
-                    LanguageManager.shared.localizedString(
-                        adBlockEnabled ? "ad_block_subscriptions_desc" : "ad_block_master_disabled_desc"
-                    )
-                )
+                Text(adBlockEnabled ? ToolText.text("ad_subscription_hint") : LanguageManager.shared.localizedString("ad_block_master_disabled_desc"))
             }
             .opacity(adBlockEnabled ? 1 : 0.48)
 
@@ -228,7 +222,17 @@ struct AdBlockManagementView: View {
                 .disabled(!adBlockEnabled)
             }
 
-            if !service.allowlistedHosts.isEmpty {
+        }
+        .navigationTitle(LanguageManager.shared.localizedString("ad_block_subscriptions"))
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct AdBlockAllowedSitesView: View {
+    @ObservedObject private var service = AdBlockSettingsService.shared
+    var onChanged: (() -> Void)?
+    var body: some View {
+        List {
                 Section {
                     ForEach(service.allowlistedHosts, id: \.self) { host in
                         HStack {
@@ -249,20 +253,141 @@ struct AdBlockManagementView: View {
                 } header: {
                     SectionHeader(title: LanguageManager.shared.localizedString("ad_block_allowlist"))
                 }
+        }
+        .overlay {
+            if service.allowlistedHosts.isEmpty {
+                ContentUnavailableView(ToolText.text("ad_allowlist_empty"), systemImage: "shield.checkered")
             }
         }
-        .navigationTitle(LanguageManager.shared.localizedString("ad_block_management"))
+        .navigationTitle(LanguageManager.shared.localizedString("ad_block_allowlist"))
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct BuiltInAdRulesView: View {
+    @ObservedObject private var store = BuiltInAdRuleStore.shared
+    @State private var search = ""
+    @State private var confirmReset = false
+    var onChanged: (() -> Void)?
+    private var rules: [BuiltInAdRule] {
+        let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
+        return store.rules.filter { query.isEmpty || $0.pattern.localizedCaseInsensitiveContains(query)
+            || $0.domains.joined(separator: " ").localizedCaseInsensitiveContains(query)
+            || ($0.kind == .tiledBanner && ToolText.text("builtin_tiled").localizedCaseInsensitiveContains(query)) }
+    }
+    var body: some View {
+        List {
+            Section {
+                Text(ToolText.text("builtin_hint")).font(.footnote).foregroundStyle(.secondary)
+            }
+            ForEach(rules) { rule in
+                NavigationLink {
+                    BuiltInAdRuleEditor(rule: rule, onChanged: onChanged)
+                } label: {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(rule.kind == .tiledBanner ? ToolText.text("builtin_tiled") : rule.pattern)
+                            .font(.subheadline).lineLimit(2)
+                        HStack {
+                            Text(rule.domains.isEmpty ? ToolText.text("builtin_all_sites") : rule.domains.joined(separator: ", "))
+                                .lineLimit(1)
+                            Spacer()
+                            Text(LanguageManager.shared.localizedString(rule.isEnabled ? "status_enabled" : "status_disabled"))
+                        }.font(.caption).foregroundStyle(.secondary)
+                    }.padding(.vertical, 4)
+                }
+                .accessibilityIdentifier("builtInRule.\(rule.id)")
+            }
+        }
+        .searchable(text: $search, prompt: ToolText.text("builtin_search"))
+        .navigationTitle(ToolText.text("builtin_rules"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if showsDoneButton {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(LanguageManager.shared.localizedString("done")) { dismiss() }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(ToolText.text("builtin_reset")) { confirmReset = true }
+            }
+        }
+        .confirmationDialog(ToolText.text("builtin_reset_all"), isPresented: $confirmReset, titleVisibility: .visible) {
+            Button(ToolText.text("builtin_reset"), role: .destructive) { store.reset(); onChanged?() }
+        }
+    }
+}
+
+private struct BuiltInAdRuleEditor: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var draft: BuiltInAdRule
+    @State private var domains: String
+    @State private var resources: String
+    @State private var saving = false
+    @State private var invalid = false
+    var onChanged: (() -> Void)?
+    init(rule: BuiltInAdRule, onChanged: (() -> Void)?) {
+        _draft = State(initialValue: rule)
+        _domains = State(initialValue: rule.domains.joined(separator: ", "))
+        _resources = State(initialValue: rule.resourceTypes.joined(separator: ", "))
+        self.onChanged = onChanged
+    }
+    var body: some View {
+        Form {
+            Section {
+                Toggle(ToolText.text("builtin_enabled"), isOn: $draft.isEnabled)
+                    .accessibilityIdentifier("builtInRule.enabled")
+            }
+            if draft.kind == .tiledBanner {
+                Section { Text(ToolText.text("builtin_tiled_hint")) }
+            } else {
+                Section(ToolText.text(draft.kind == .network ? "builtin_url_pattern" : "builtin_selector")) {
+                    TextEditor(text: $draft.pattern).font(.body.monospaced()).frame(minHeight: 100)
+                        .autocorrectionDisabled().textInputAutocapitalization(.never)
+                        .accessibilityIdentifier("builtInRule.pattern")
+                }
+                Section {
+                    TextField(ToolText.text("builtin_all_sites"), text: $domains)
+                        .autocorrectionDisabled().textInputAutocapitalization(.never)
+                        .accessibilityIdentifier("builtInRule.domains")
+                } header: { Text(ToolText.text("builtin_domains")) }
+                  footer: { Text(ToolText.text("builtin_domains_hint")) }
+                if draft.kind == .network {
+                    Section(ToolText.text("builtin_resources")) {
+                        TextField("script, image, raw", text: $resources)
+                            .autocorrectionDisabled().textInputAutocapitalization(.never)
+                    }
+                }
+            }
+            Section {
+                Button(ToolText.text("builtin_reset")) {
+                    if let original = AdBlockService.defaultBuiltInRules.first(where: { $0.id == draft.id }) {
+                        draft = original
+                        domains = original.domains.joined(separator: ", ")
+                        resources = original.resourceTypes.joined(separator: ", ")
+                    }
                 }
             }
         }
-        .onChange(of: adBlockEnabled) { _, _ in
-            onChanged?()
+        .disabled(saving)
+        .navigationTitle(ToolText.text("builtin_edit"))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button(LanguageManager.shared.localizedString("save")) {
+                    draft.pattern = draft.pattern.trimmingCharacters(in: .whitespacesAndNewlines)
+                    draft.domains = split(domains).map { $0.lowercased() }
+                    draft.resourceTypes = split(resources)
+                    saving = true
+                    Task { @MainActor in
+                        if await BuiltInAdRuleStore.shared.save(draft) { onChanged?(); dismiss() }
+                        else { invalid = true }
+                        saving = false
+                    }
+                }.disabled(saving).accessibilityIdentifier("builtInRule.save")
+            }
         }
+        .alert(ToolText.text("builtin_invalid"), isPresented: $invalid) {
+            Button(ToolText.text("done"), role: .cancel) {}
+        }
+    }
+    private func split(_ text: String) -> [String] {
+        text.replacingOccurrences(of: "，", with: ",").split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
     }
 }
 
@@ -272,7 +397,8 @@ private struct ManualAdRulesView: View {
     @AppStorage("ad_block_enabled") private var adBlockEnabled = true
     @State private var searchText = ""
     @State private var selectedRule: ManualAdRule?
-    @State private var removedRule: ManualAdRule?
+    @State private var removedRules: [ManualAdRule] = []
+    @State private var expandedHosts: [String: Bool] = [:]
     @State private var showUndoError = false
     let currentHost: String?
 
@@ -310,16 +436,31 @@ private struct ManualAdRulesView: View {
             }
             ForEach(groupedRules, id: \.host) { group in
                 Section {
-                    ForEach(group.rules) { rule in ruleRow(rule) }
-                } header: {
-                    HStack {
-                        Text(group.host).textCase(nil)
-                        if group.host == currentHost?.lowercased() {
-                            Text(ToolText.text("manual_ad_current_site"))
-                                .font(.caption2).textCase(nil)
+                    DisclosureGroup(isExpanded: expansion(for: group.host)) {
+                        Button {
+                            removedRules = service.remove(host: group.host)
+                        } label: {
+                            Label(ToolText.text("manual_ad_restore_site"), systemImage: "arrow.uturn.backward")
+                                .frame(minHeight: 44)
                         }
-                        Spacer()
-                        Text("\(group.rules.count)").monospacedDigit()
+                        .buttonStyle(.borderless)
+                        .accessibilityIdentifier("manualAds.restoreHost.\(group.host)")
+                        ForEach(group.rules) { rule in ruleRow(rule) }
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(group.host).font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                if group.host == currentHost?.lowercased() {
+                                    Text(ToolText.text("manual_ad_current_site"))
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+                            Spacer()
+                            Text("\(group.rules.count)").monospacedDigit().foregroundStyle(.secondary)
+                        }
+                        .frame(minHeight: 44)
+                        .accessibilityIdentifier("manualAds.host.\(group.host)")
                     }
                 } footer: {
                     if AdBlockSettingsService.isHostAllowlisted(group.host, allowlistedHosts: settings.allowlistedHosts) {
@@ -339,7 +480,7 @@ private struct ManualAdRulesView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            if let rule = removedRule {
+            if let rule = removedRules.first {
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(ToolText.text("manual_ad_removed")).font(.subheadline.weight(.medium))
@@ -347,7 +488,7 @@ private struct ManualAdRulesView: View {
                     }
                     Spacer()
                     Button(ToolText.text("manual_ad_undo")) {
-                        if service.restore(rule) { removedRule = nil }
+                        if service.restore(removedRules) { removedRules = [] }
                         else { showUndoError = true }
                     }
                     .accessibilityIdentifier("manualAds.undo")
@@ -359,7 +500,7 @@ private struct ManualAdRulesView: View {
                 .task(id: rule.id) {
                     do { try await Task.sleep(for: .seconds(8)) }
                     catch { return }
-                    if removedRule?.id == rule.id { removedRule = nil }
+                    if removedRules.first?.id == rule.id { removedRules = [] }
                 }
             }
         }
@@ -450,7 +591,14 @@ private struct ManualAdRulesView: View {
 
     private func remove(_ rule: ManualAdRule) {
         service.remove(rule.id)
-        removedRule = rule
+        removedRules = [rule]
+    }
+
+    private func expansion(for host: String) -> Binding<Bool> {
+        Binding {
+            expandedHosts[host] ?? (host == currentHost?.lowercased()
+                || !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        } set: { expandedHosts[host] = $0 }
     }
 }
 

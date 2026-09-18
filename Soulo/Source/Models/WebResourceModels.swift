@@ -322,7 +322,8 @@ struct WebContextResource: Equatable {
               let kind = Kind(rawValue: rawKind),
               let urlString = dictionary["url"] as? String,
               let url = URL(string: urlString),
-              ["http", "https"].contains(url.scheme?.lowercased() ?? "") else {
+              (["http", "https"].contains(url.scheme?.lowercased() ?? "") ||
+               (kind == .image && (urlString.hasPrefix("data:image/") || url.scheme == "blob"))) else {
             return nil
         }
         self.kind = kind

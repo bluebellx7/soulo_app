@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Marque anúncios para os ocultar. Melhorámos os filtros de anúncios e os controlos de privacidade.
-• Pastas de favoritos, importação e exportação HTML e códigos QR de páginas para partilhar, guardar ou copiar.
-• Pré-visualizações quadradas, gravação de imagens em lote e melhorias na leitura, reprodução multimédia e extensões de scripts.
+• Filtros e marcação consecutiva de anúncios melhorados, com regras integradas editáveis.
+• Prima imagens para ampliar, guardar ou partilhar. Ferramentas de vídeo recolhíveis, reprodução horizontal e progresso mantido entre separadores.

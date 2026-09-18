@@ -1,4 +1,95 @@
 import Foundation
+import WebKit
+
+struct BuiltInAdRule: Codable, Identifiable, Equatable {
+    enum Kind: String, Codable { case network, cosmetic, tiledBanner }
+    let id: String
+    let kind: Kind
+    var pattern: String
+    var domains: [String] = []
+    var resourceTypes: [String] = []
+    var isEnabled = true
+
+    var networkRule: AdBlockNetworkRule {
+        AdBlockNetworkRule(urlFilter: pattern, resourceTypes: resourceTypes, ifDomains: domains.map { "*" + $0 })
+    }
+    var cosmeticRule: AdBlockCosmeticRule { AdBlockCosmeticRule(selector: pattern, ifDomains: domains) }
+}
+
+@MainActor
+final class BuiltInAdRuleStore: ObservableObject {
+    static let shared = BuiltInAdRuleStore()
+    nonisolated static let storageKey = "soulo_builtin_ad_rule_overrides_v1"
+    nonisolated static let versionKey = "soulo_builtin_ad_rule_revision"
+    @Published private(set) var revision = UUID()
+    private let defaults: UserDefaults
+    init(defaults: UserDefaults = .standard) { self.defaults = defaults }
+    var rules: [BuiltInAdRule] { Self.effectiveRules(defaults: defaults) }
+
+    nonisolated static func effectiveRules(defaults: UserDefaults = .standard) -> [BuiltInAdRule] {
+        let overrides = defaults.data(forKey: storageKey)
+            .flatMap { try? JSONDecoder().decode([String: BuiltInAdRule].self, from: $0) } ?? [:]
+        return AdBlockService.defaultBuiltInRules.map { original in
+            guard var changed = overrides[original.id], changed.id == original.id, changed.kind == original.kind else { return original }
+            if changed.id == "paired-image-banner",
+               changed.pattern == ":root:not([data-soulo-ad-picker-active]) [data-soulo-image-banner]" {
+                changed.pattern = ManualAdBlockRuntime.imageBannerSelector
+            }
+            return changed
+        }
+    }
+    nonisolated static func signature(defaults: UserDefaults = .standard) -> String {
+        defaults.string(forKey: versionKey) ?? "default"
+    }
+
+    func save(_ rule: BuiltInAdRule) async -> Bool {
+        guard AdBlockService.defaultBuiltInRules.contains(where: { $0.id == rule.id && $0.kind == rule.kind }),
+              rule.domains.allSatisfy({ !$0.isEmpty && $0.range(of: #"^[a-z0-9.-]+$"#, options: .regularExpression) != nil }) else { return false }
+        if rule.kind != .tiledBanner {
+            guard !rule.pattern.isEmpty, rule.pattern.count <= 220 else { return false }
+            if rule.kind == .network {
+                guard AdBlockService.sanitizedContentBlockerURLFilter(rule.pattern) == rule.pattern,
+                      !rule.resourceTypes.isEmpty,
+                      Set(rule.resourceTypes).isSubset(of: ["script", "image", "style-sheet", "font", "media", "raw", "popup"]) else { return false }
+            } else if AdBlockService.sanitizedContentBlockerSelector(rule.pattern) != rule.pattern { return false }
+            var trigger: [String: Any] = ["url-filter": rule.kind == .network ? rule.pattern : ".*"]
+            if !rule.domains.isEmpty { trigger["if-domain"] = rule.domains.map { "*" + $0 } }
+            if rule.kind == .network { trigger["resource-type"] = rule.resourceTypes }
+            let action: [String: Any] = rule.kind == .network ? ["type": "block"] : ["type": "css-display-none", "selector": rule.pattern]
+            if rule.kind == .cosmetic && !ManualAdBlockService.validSelector(rule.pattern) { return false }
+            guard let data = try? JSONSerialization.data(withJSONObject: [["trigger": trigger, "action": action]]),
+                  let json = String(data: data, encoding: .utf8) else { return false }
+            let valid = await withCheckedContinuation { continuation in
+                let identifier = "SouloRuleValidation-\(UUID())"
+                WKContentRuleListStore.default().compileContentRuleList(forIdentifier: identifier, encodedContentRuleList: json) { result, _ in
+                    WKContentRuleListStore.default().removeContentRuleList(forIdentifier: identifier) { _ in }
+                    continuation.resume(returning: result != nil)
+                }
+            }
+            guard valid else { return false }
+        }
+        var overrides = defaults.data(forKey: Self.storageKey)
+            .flatMap { try? JSONDecoder().decode([String: BuiltInAdRule].self, from: $0) } ?? [:]
+        overrides[rule.id] = rule
+        defaults.set(try? JSONEncoder().encode(overrides), forKey: Self.storageKey)
+        changed()
+        return true
+    }
+
+    func reset(_ id: String? = nil) {
+        if let id {
+            var overrides = defaults.data(forKey: Self.storageKey)
+                .flatMap { try? JSONDecoder().decode([String: BuiltInAdRule].self, from: $0) } ?? [:]
+            overrides.removeValue(forKey: id)
+            defaults.set(try? JSONEncoder().encode(overrides), forKey: Self.storageKey)
+        } else { defaults.removeObject(forKey: Self.storageKey) }
+        changed()
+    }
+    private func changed() {
+        revision = UUID()
+        defaults.set(revision.uuidString, forKey: Self.versionKey)
+    }
+}
 
 @MainActor
 final class AdBlockSettingsService: ObservableObject {

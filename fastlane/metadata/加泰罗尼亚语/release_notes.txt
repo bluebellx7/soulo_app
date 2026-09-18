@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Nova selecció d'anuncis per amagar-los i millores dels filtres i controls de privadesa.
-• Carpetes de marcadors, importació i exportació HTML i codis QR de pàgines per compartir, desar o copiar.
-• Previsualitzacions quadrades, desament d'imatges en lot i millores de lectura, reproducció i extensions de scripts.
+• Millorem el filtratge i la selecció consecutiva d’anuncis, amb regles integrades editables.
+• Mantén premuda una imatge per ampliar-la, desar-la o compartir-la. Eines de vídeo plegables, mode horitzontal i progrés conservat entre pestanyes.

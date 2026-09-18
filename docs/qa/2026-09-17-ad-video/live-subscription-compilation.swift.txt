@@ -1,0 +1,15 @@
+    @MainActor
+    func testLiveSubscriptionCompilationForQA() async throws {
+        let service = AdBlockSubscriptionService.shared
+        await service.updateEnabledSubscriptions()
+        for subscription in service.subscriptions {
+            print("LIVE_SUBSCRIPTION", subscription.name, subscription.networkRuleCount, subscription.cosmeticRuleCount, subscription.errorMessage)
+        }
+        let rules = service.enabledRuleSummary
+        print("LIVE_MERGED", rules.networkRules.count, rules.cosmeticRules.count, rules.cosmeticExceptions.count)
+        XCTAssertGreaterThan(rules.networkRules.count, 4_000)
+        let compiled = await AdBlockService.compileRuleLists()
+        XCTAssertNotNil(compiled)
+        print("LIVE_COMPILED_BATCHES", compiled?.count ?? 0)
+
+    }

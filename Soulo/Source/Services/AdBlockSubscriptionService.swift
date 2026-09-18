@@ -21,19 +21,44 @@ struct AdBlockNetworkRule: Codable, Equatable, Hashable {
     var loadTypes: [String]
     var ifDomains: [String]
     var unlessDomains: [String]
+    var isException: Bool = false
+    var caseSensitive: Bool = false
+    var exceptionScope: String = "network"
 
     init(
         urlFilter: String,
         resourceTypes: [String] = [],
         loadTypes: [String] = [],
         ifDomains: [String] = [],
-        unlessDomains: [String] = []
+        unlessDomains: [String] = [],
+        isException: Bool = false,
+        caseSensitive: Bool = false,
+        exceptionScope: String = "network"
     ) {
         self.urlFilter = urlFilter
         self.resourceTypes = resourceTypes
         self.loadTypes = loadTypes
         self.ifDomains = ifDomains
         self.unlessDomains = unlessDomains
+        self.isException = isException
+        self.caseSensitive = caseSensitive
+        self.exceptionScope = exceptionScope
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case urlFilter, resourceTypes, loadTypes, ifDomains, unlessDomains, isException, caseSensitive, exceptionScope
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        urlFilter = try c.decode(String.self, forKey: .urlFilter)
+        resourceTypes = try c.decodeIfPresent([String].self, forKey: .resourceTypes) ?? []
+        loadTypes = try c.decodeIfPresent([String].self, forKey: .loadTypes) ?? []
+        ifDomains = try c.decodeIfPresent([String].self, forKey: .ifDomains) ?? []
+        unlessDomains = try c.decodeIfPresent([String].self, forKey: .unlessDomains) ?? []
+        isException = try c.decodeIfPresent(Bool.self, forKey: .isException) ?? false
+        caseSensitive = try c.decodeIfPresent(Bool.self, forKey: .caseSensitive) ?? false
+        exceptionScope = try c.decodeIfPresent(String.self, forKey: .exceptionScope) ?? "network"
     }
 }
 
@@ -54,6 +79,8 @@ struct ParsedAdBlockRules: Codable, Equatable {
     var cosmeticSelectors: [String]
     var networkRules: [AdBlockNetworkRule]
     var cosmeticRules: [AdBlockCosmeticRule]
+    var cosmeticExceptions: [AdBlockCosmeticRule]
+    var parserVersion: Int
 
     static let empty = ParsedAdBlockRules()
 
@@ -61,16 +88,20 @@ struct ParsedAdBlockRules: Codable, Equatable {
         networkURLFilters: [String] = [],
         cosmeticSelectors: [String] = [],
         networkRules: [AdBlockNetworkRule] = [],
-        cosmeticRules: [AdBlockCosmeticRule] = []
+        cosmeticRules: [AdBlockCosmeticRule] = [],
+        cosmeticExceptions: [AdBlockCosmeticRule] = [],
+        parserVersion: Int = AdBlockRuleParser.version
     ) {
         self.networkURLFilters = networkURLFilters
         self.cosmeticSelectors = cosmeticSelectors
         self.networkRules = networkRules
         self.cosmeticRules = cosmeticRules
+        self.cosmeticExceptions = cosmeticExceptions
+        self.parserVersion = parserVersion
     }
 
     enum CodingKeys: String, CodingKey {
-        case networkURLFilters, cosmeticSelectors, networkRules, cosmeticRules
+        case networkURLFilters, cosmeticSelectors, networkRules, cosmeticRules, cosmeticExceptions, parserVersion
     }
 
     init(from decoder: Decoder) throws {
@@ -79,6 +110,9 @@ struct ParsedAdBlockRules: Codable, Equatable {
         cosmeticSelectors = try container.decodeIfPresent([String].self, forKey: .cosmeticSelectors) ?? []
         networkRules = try container.decodeIfPresent([AdBlockNetworkRule].self, forKey: .networkRules) ?? []
         cosmeticRules = try container.decodeIfPresent([AdBlockCosmeticRule].self, forKey: .cosmeticRules) ?? []
+
+        cosmeticExceptions = try container.decodeIfPresent([AdBlockCosmeticRule].self, forKey: .cosmeticExceptions) ?? []
+        parserVersion = try container.decodeIfPresent(Int.self, forKey: .parserVersion) ?? 0
 
         if networkRules.isEmpty {
             networkRules = networkURLFilters.map {
@@ -92,254 +126,148 @@ struct ParsedAdBlockRules: Codable, Equatable {
 }
 
 enum AdBlockRuleParser {
-    static func parse(_ text: String, maxNetworkRules: Int = 2_500, maxCosmeticRules: Int = 1_200) -> ParsedAdBlockRules {
-        var networkRules = OrderedStringSet(limit: maxNetworkRules)
-        var cosmeticRules = OrderedStringSet(limit: maxCosmeticRules)
-        var structuredNetworkRules = OrderedNetworkRuleSet(limit: maxNetworkRules)
-        var structuredCosmeticRules = OrderedCosmeticRuleSet(limit: maxCosmeticRules)
+    static let version = 3
+    static let resourceTypes = ["script", "image", "style-sheet", "font", "media", "raw", "popup", "svg-document"]
 
-        for rawLine in text.components(separatedBy: .newlines) {
-            let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !line.isEmpty, !line.hasPrefix("!"), !line.hasPrefix("[") else { continue }
-
-            if line.contains("#@#") || line.hasPrefix("@@") {
-                continue
-            }
-
-            if let cosmetic = parseCosmeticRule(line) {
-                structuredCosmeticRules.insert(cosmetic)
-                if cosmetic.ifDomains.isEmpty && cosmetic.unlessDomains.isEmpty {
-                    cosmeticRules.insert(cosmetic.selector)
-                }
-                continue
-            }
-
-            if let rule = parseNetworkRule(line) {
-                structuredNetworkRules.insert(rule)
-                networkRules.insert(rule.urlFilter)
-            }
-        }
-
-        return ParsedAdBlockRules(
-            networkURLFilters: networkRules.values,
-            cosmeticSelectors: cosmeticRules.values,
-            networkRules: structuredNetworkRules.values,
-            cosmeticRules: structuredCosmeticRules.values
-        )
-    }
-
-    private static func parseCosmeticRule(_ line: String) -> AdBlockCosmeticRule? {
-        guard let range = line.range(of: "##") else { return nil }
-        let domainPrefix = String(line[..<range.lowerBound])
-        let selector = String(line[range.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard isSafeSelector(selector) else { return nil }
-
-        let domains = parseDomainList(domainPrefix)
-        return AdBlockCosmeticRule(
-            selector: selector,
-            ifDomains: domains.included,
-            unlessDomains: domains.excluded
-        )
-    }
-
-    private static func parseNetworkRule(_ line: String) -> AdBlockNetworkRule? {
-        var rule = line
-        var resourceTypes: [String] = []
-        var loadTypes: [String] = []
-        var ifDomains: [String] = []
-        var unlessDomains: [String] = []
-
-        if let optionRange = rule.range(of: "$") {
-            let options = String(rule[optionRange.upperBound...]).lowercased()
-            if options.contains("elemhide") ||
-                options.contains("generichide") ||
-                options.contains("document") ||
-                options.contains("csp") ||
-                options.contains("redirect") ||
-                options.contains("removeparam") ||
-                options.contains("badfilter") {
-                return nil
-            }
-            let parsedOptions = parseNetworkOptions(options)
-            resourceTypes = parsedOptions.resourceTypes
-            loadTypes = parsedOptions.loadTypes
-            ifDomains = parsedOptions.ifDomains
-            unlessDomains = parsedOptions.unlessDomains
-            rule = String(rule[..<optionRange.lowerBound])
-        }
-
-        rule = rule.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !rule.isEmpty,
-              !rule.contains("##"),
-              !rule.contains("#?#"),
-              !rule.contains("#$#"),
-              rule.count <= 180
-        else { return nil }
-
-        if rule.hasPrefix("||") {
-            let domain = rule.dropFirst(2)
-                .prefix { char in
-                    char != "^" && char != "/" && char != "$" && char != "*"
-                }
-            let cleanDomain = String(domain)
-                .trimmingCharacters(in: CharacterSet(charactersIn: "."))
-                .lowercased()
-            guard isLikelyDomain(cleanDomain) else { return nil }
-            return AdBlockNetworkRule(
-                urlFilter: NSRegularExpression.escapedPattern(for: cleanDomain).replacingOccurrences(of: "\\.", with: "\\."),
-                resourceTypes: resourceTypes,
-                loadTypes: loadTypes,
-                ifDomains: ifDomains,
-                unlessDomains: unlessDomains
-            )
-        }
-
-        if rule.hasPrefix("|http://") || rule.hasPrefix("|https://") {
-            rule.removeFirst()
-        } else if rule.hasPrefix("|") {
-            rule.removeFirst()
-        }
-
-        let converted = convertABPPatternToRegex(rule)
-        guard converted.count >= 4, converted.count <= 220 else { return nil }
-        return AdBlockNetworkRule(
-            urlFilter: converted,
-            resourceTypes: resourceTypes,
-            loadTypes: loadTypes,
-            ifDomains: ifDomains,
-            unlessDomains: unlessDomains
-        )
-    }
-
-    private static func parseNetworkOptions(_ options: String) -> (resourceTypes: [String], loadTypes: [String], ifDomains: [String], unlessDomains: [String]) {
-        var resourceTypes = OrderedStringSet(limit: 12)
-        var loadTypes = OrderedStringSet(limit: 2)
-        var ifDomains = OrderedStringSet(limit: 80)
-        var unlessDomains = OrderedStringSet(limit: 80)
-
-        for option in options.components(separatedBy: ",") {
-            let clean = option.trimmingCharacters(in: .whitespacesAndNewlines)
-            switch clean {
-            case "script":
-                resourceTypes.insert("script")
-            case "image":
-                resourceTypes.insert("image")
-            case "stylesheet":
-                resourceTypes.insert("style-sheet")
-            case "font":
-                resourceTypes.insert("font")
-            case "media":
-                resourceTypes.insert("media")
-            case "popup":
-                resourceTypes.insert("popup")
-            case "xmlhttprequest", "xhr", "websocket", "ping", "other":
-                resourceTypes.insert("raw")
-            case "subdocument":
-                resourceTypes.insert("document")
-            case "third-party":
-                loadTypes.insert("third-party")
-            case "~third-party":
-                loadTypes.insert("first-party")
-            default:
-                if clean.hasPrefix("domain=") {
-                    let domains = parseDomainList(String(clean.dropFirst("domain=".count)), separator: "|")
-                    domains.included.forEach { ifDomains.insert($0) }
-                    domains.excluded.forEach { unlessDomains.insert($0) }
-                }
-            }
-        }
-
-        return (resourceTypes.values, loadTypes.values, ifDomains.values, unlessDomains.values)
-    }
-
-    private static func parseDomainList(_ value: String, separator: Character = ",") -> (included: [String], excluded: [String]) {
-        guard !value.isEmpty else { return ([], []) }
-        var included = OrderedStringSet(limit: 80)
-        var excluded = OrderedStringSet(limit: 80)
-
-        for rawDomain in value.split(separator: separator) {
-            var domain = rawDomain.trimmingCharacters(in: .whitespacesAndNewlines)
-            let isExcluded = domain.hasPrefix("~")
-            if isExcluded {
-                domain.removeFirst()
-            }
-            domain = domain
-                .lowercased()
-                .replacingOccurrences(of: "^www\\.", with: "", options: .regularExpression)
-                .trimmingCharacters(in: CharacterSet(charactersIn: "."))
-            guard isLikelyDomain(domain) else { continue }
-            let webKitDomain = "*\(domain)"
-            if isExcluded {
-                excluded.insert(webKitDomain)
-                excluded.insert(domain)
+    // Limits are injectable for callers/tests; production keeps every supported rule.
+    static func parse(_ text: String, maxNetworkRules: Int = .max, maxCosmeticRules: Int = .max) -> ParsedAdBlockRules {
+        var network = OrderedNetworkRuleSet(limit: maxNetworkRules)
+        var cosmetic = OrderedCosmeticRuleSet(limit: maxCosmeticRules)
+        var exceptions = OrderedCosmeticRuleSet(limit: .max)
+        var conditionalDepth = 0
+        let lines = text.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        // badfilter cancels the exact rule, irrespective of ordering in a list.
+        let disabled = Set(lines.compactMap { line -> String? in
+            guard line.hasSuffix(",badfilter") else { return nil }
+            return String(line.dropLast(",badfilter".count))
+        })
+        for line in lines {
+            if line.hasPrefix("!#if ") { conditionalDepth += 1; continue }
+            if line.hasPrefix("!#endif") { conditionalDepth = max(0, conditionalDepth - 1); continue }
+            // Unknown platform conditions must not activate mutually exclusive branches.
+            guard conditionalDepth == 0, !line.isEmpty, !line.hasPrefix("!"), !line.hasPrefix("["), !disabled.contains(line) else { continue }
+            if let range = line.range(of: "#@#") {
+                if let rule = parseCosmeticRule(line, range: range) { exceptions.insert(rule) }
+            } else if let range = line.range(of: "##") {
+                if let rule = parseCosmeticRule(line, range: range) { cosmetic.insert(rule) }
             } else {
-                included.insert(webKitDomain)
-                included.insert(domain)
+                parseNetworkRules(line).forEach { network.insert($0) }
             }
         }
-
-        return (included.values, excluded.values)
+        return ParsedAdBlockRules(
+            networkURLFilters: Array(Set(network.values.filter { !$0.isException }.map(\.urlFilter))).sorted(),
+            cosmeticSelectors: Array(Set(cosmetic.values.filter { $0.ifDomains.isEmpty && $0.unlessDomains.isEmpty }.map(\.selector))).sorted(),
+            networkRules: network.values, cosmeticRules: cosmetic.values, cosmeticExceptions: exceptions.values)
     }
 
-    private static func convertABPPatternToRegex(_ rule: String) -> String {
-        var output = ""
-        for char in rule {
-            switch char {
-            case "*":
-                output += ".*"
-            case "^":
-                output += "[\\\\/:?&=]"
-            case ".":
-                output += "\\."
-            case "?":
-                output += "\\?"
-            case "+":
-                output += "\\+"
-            case "[":
-                output += "\\["
-            case "]":
-                output += "\\]"
-            case "(":
-                output += "\\("
-            case ")":
-                output += "\\)"
-            case "{":
-                output += "\\{"
-            case "}":
-                output += "\\}"
-            case "|":
-                output += ""
-            default:
-                output.append(char)
+    private static func parseCosmeticRule(_ line: String, range: Range<String.Index>) -> AdBlockCosmeticRule? {
+        let selector = String(line[range.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isSafeSelector(selector), let domains = parseDomainList(String(line[..<range.lowerBound])) else { return nil }
+        return AdBlockCosmeticRule(selector: selector, ifDomains: domains.included, unlessDomains: domains.excluded)
+    }
+
+    private static func parseNetworkRules(_ line: String) -> [AdBlockNetworkRule] {
+        var pattern = line
+        let exception = pattern.hasPrefix("@@")
+        if exception { pattern.removeFirst(2) }
+        var includedTypes = Set<String>(), excludedTypes = Set<String>()
+        var loadTypes: [String] = [], includedDomains: [String] = [], excludedDomains: [String] = []
+        var caseSensitive = false
+        var exceptionScope = "network"
+        if let split = pattern.firstIndex(of: "$") {
+            let options = pattern[pattern.index(after: split)...].components(separatedBy: ",")
+            pattern = String(pattern[..<split])
+            let typeMap = ["script":"script", "image":"image", "stylesheet":"style-sheet", "font":"font", "media":"media", "popup":"popup"]
+            for raw in options {
+                let option = raw.lowercased()
+                let negated = option.hasPrefix("~")
+                let name = negated ? String(option.dropFirst()) : option
+                if let type = typeMap[name] {
+                    if negated { excludedTypes.insert(type) } else { includedTypes.insert(type) }
+                } else if option == "third-party" || option == "~third-party" {
+                    let type = negated ? "first-party" : "third-party"
+                    guard loadTypes.isEmpty || loadTypes == [type] else { return [] }
+                    loadTypes = [type]
+                } else if ["document", "elemhide", "generichide"].contains(option), exception {
+                    guard exceptionScope == "network" else { return [] }
+                    exceptionScope = option
+                } else if option == "match-case" { caseSensitive = true
+                } else if option.hasPrefix("domain=") {
+                    guard includedDomains.isEmpty && excludedDomains.isEmpty,
+                          let domains = parseDomainList(String(option.dropFirst(7)), separator: "|"),
+                          !domains.included.isEmpty || !domains.excluded.isEmpty else { return [] }
+                    includedDomains = domains.included; excludedDomains = domains.excluded
+                } else {
+                    // Do not discard an unknown constraint and accidentally broaden it.
+                    // document/elemhide, scriptlets, redirects and raw request subtypes
+                    // need separate execution support before they can be enabled.
+                    return []
+                }
             }
         }
-        return output
+        if exceptionScope != "network" {
+            guard includedTypes.isEmpty, excludedTypes.isEmpty, loadTypes.isEmpty,
+                  includedDomains.isEmpty, excludedDomains.isEmpty, !caseSensitive else { return [] }
+        }
+        let types = (includedTypes.isEmpty ? Set(resourceTypes) : includedTypes).subtracting(excludedTypes).sorted()
+        guard !types.isEmpty, !pattern.isEmpty, pattern.utf8.count <= 512,
+              pattern.unicodeScalars.allSatisfy({ $0.isASCII }),
+              !pattern.contains("#"), !(pattern.hasPrefix("/") && pattern.hasSuffix("/")),
+              !pattern.contains(" ") else { return [] }
+        var prefix = "", suffix = ""
+        if pattern.hasPrefix("||") {
+            pattern.removeFirst(2)
+            let host = String(pattern.prefix { !"/^*|:".contains($0) })
+            guard isLikelyDomain(host) else { return [] }
+            prefix = #"^https?://([a-z0-9-]+\.)*"#
+        } else if pattern.hasPrefix("|") { pattern.removeFirst(); prefix = "^" }
+        if pattern.hasSuffix("|") { pattern.removeLast(); suffix = "$" }
+        guard !pattern.contains("|") else { return [] }
+        if suffix.isEmpty { while pattern.hasSuffix("*") { pattern.removeLast() } }
+        // WebKit disallows alternation. Expand the separator-at-end case into
+        // two equivalent rules instead of losing the end-of-URL alternative.
+        let terminalSeparator = pattern.hasSuffix("^")
+        if terminalSeparator { pattern.removeLast() }
+        var regex = prefix
+        for char in pattern {
+            switch char {
+            case "*": regex += ".*"
+            case "^": regex += #"[^a-zA-Z0-9_.%\-]"#
+            default: regex += NSRegularExpression.escapedPattern(for: String(char))
+            }
+        }
+        guard !regex.isEmpty else { return [] }
+        // Canonical HTTP URLs always contain a slash after the authority, so
+        // a host-only filter needs no impossible end-before-slash alternative.
+        let hostOnly = !prefix.isEmpty && prefix != "^" && !pattern.contains("/") && !pattern.contains(":") && !pattern.contains("*") && !pattern.contains("^")
+        let filters = terminalSeparator
+            ? (hostOnly ? [regex + #"[^a-zA-Z0-9_.%\-]"# + suffix]
+                        : [regex + #"[^a-zA-Z0-9_.%\-]"# + suffix, regex + "$"])
+            : [regex + suffix]
+        return filters.map { AdBlockNetworkRule(urlFilter: $0, resourceTypes: types,
+            loadTypes: loadTypes, ifDomains: includedDomains, unlessDomains: excludedDomains,
+            isException: exception, caseSensitive: caseSensitive, exceptionScope: exceptionScope) }
+    }
+
+    private static func parseDomainList(_ value: String, separator: Character = ",") -> (included: [String], excluded: [String])? {
+        guard !value.isEmpty else { return ([], []) }
+        var included = Set<String>(), excluded = Set<String>()
+        for raw in value.split(separator: separator, omittingEmptySubsequences: false) {
+            var domain = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let negated = domain.hasPrefix("~")
+            if negated { domain.removeFirst() }
+            guard isLikelyDomain(domain) else { return nil }
+            if negated { excluded.insert("*" + domain) } else { included.insert("*" + domain) }
+        }
+        return (included.sorted(), excluded.sorted())
     }
 
     private static func isLikelyDomain(_ value: String) -> Bool {
-        value.contains(".")
-            && !value.contains("/")
-            && !value.contains(" ")
-            && value.range(of: #"^[a-z0-9.-]+\.[a-z]{2,}$"#, options: .regularExpression) != nil
+        value.range(of: #"^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$"#, options: .regularExpression) != nil
     }
 
     private static func isSafeSelector(_ selector: String) -> Bool {
-        guard !selector.isEmpty,
-              selector.count <= 240,
-              !selector.contains("{"),
-              !selector.contains("}"),
-              !selector.contains("<"),
-              !selector.contains(">"),
-              !selector.contains("`"),
-              !selector.localizedCaseInsensitiveContains(":-abp-"),
-              !selector.localizedCaseInsensitiveContains(":contains"),
-              !selector.localizedCaseInsensitiveContains(":matches-css"),
-              !selector.localizedCaseInsensitiveContains(":xpath"),
-              !selector.localizedCaseInsensitiveContains(":upward"),
-              !selector.localizedCaseInsensitiveContains(":remove"),
-              !selector.localizedCaseInsensitiveContains("+js(")
-        else { return false }
-        return true
+        AdBlockService.sanitizedContentBlockerSelector(selector) != nil
     }
 }
 
@@ -357,6 +285,7 @@ final class AdBlockSubscriptionService: ObservableObject {
     private let autoUpdateCheckKey: String
     private let userDefaults: UserDefaults
     private let session: URLSession
+    private let rulesArchiveURL: URL?
     private let autoUpdateInterval: TimeInterval = 24 * 60 * 60
 
     init(
@@ -365,7 +294,8 @@ final class AdBlockSubscriptionService: ObservableObject {
         versionKey: String = "soulo_ad_block_subscription_rules_version",
         autoUpdateCheckKey: String = "soulo_ad_block_subscription_auto_update_check",
         userDefaults: UserDefaults = .standard,
-        session: URLSession = .shared
+        session: URLSession = .shared,
+        rulesArchiveURL: URL? = nil
     ) {
         self.subscriptionsKey = subscriptionsKey
         self.cachedRulesKey = cachedRulesKey
@@ -373,8 +303,25 @@ final class AdBlockSubscriptionService: ObservableObject {
         self.autoUpdateCheckKey = autoUpdateCheckKey
         self.userDefaults = userDefaults
         self.session = session
-        load()
+        self.rulesArchiveURL = rulesArchiveURL ?? (userDefaults === UserDefaults.standard && cachedRulesKey == "soulo_ad_block_subscription_rules"
+            ? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+                .appendingPathComponent("AdBlock/subscription-rules.json") : nil)
+        // Move the large per-subscription archive before any preference writes.
+        // Keeping several MB here exceeds CFPreferences' supported size and can
+        // lose unrelated settings or freshly saved manual advertisement rules.
         let storedRules = storedParsedRulesByID()
+        load()
+        if storedRules.values.contains(where: { $0.parserVersion != AdBlockRuleParser.version }) {
+            userDefaults.removeObject(forKey: autoUpdateCheckKey)
+            for index in subscriptions.indices {
+                if let old = storedRules[subscriptions[index].id], old.parserVersion != AdBlockRuleParser.version {
+                    subscriptions[index].networkRuleCount = 0
+                    subscriptions[index].cosmeticRuleCount = 0
+                    subscriptions[index].lastUpdatedAt = nil
+                }
+            }
+            saveSubscriptions()
+        }
         if !storedRules.isEmpty {
             rebuildCacheFrom(parsedByID: storedRules)
         }
@@ -399,7 +346,7 @@ final class AdBlockSubscriptionService: ObservableObject {
         guard enabledSubscriptionCount > 0, !isUpdating else { return }
         let lastCheck = userDefaults.double(forKey: autoUpdateCheckKey)
         let rules = enabledRuleSummary
-        let hasCachedRules = !rules.networkRules.isEmpty || !rules.cosmeticRules.isEmpty
+        let hasCachedRules = rules.parserVersion == AdBlockRuleParser.version && (!rules.networkRules.isEmpty || !rules.cosmeticRules.isEmpty)
         guard !hasCachedRules || Date().timeIntervalSince1970 - lastCheck >= autoUpdateInterval else { return }
         userDefaults.set(Date().timeIntervalSince1970, forKey: autoUpdateCheckKey)
         await updateEnabledSubscriptions(reportErrors: false)
@@ -512,16 +459,39 @@ final class AdBlockSubscriptionService: ObservableObject {
 
     private func storedParsedRulesByID() -> [String: ParsedAdBlockRules] {
         let key = "\(cachedRulesKey)_by_id"
+        if let rulesArchiveURL, let data = try? Data(contentsOf: rulesArchiveURL),
+           let decoded = try? JSONDecoder().decode([String: ParsedAdBlockRules].self, from: data) {
+            userDefaults.removeObject(forKey: key)
+            return decoded
+        }
         guard let data = userDefaults.data(forKey: key),
               let decoded = try? JSONDecoder().decode([String: ParsedAdBlockRules].self, from: data)
         else { return [:] }
+        if rulesArchiveURL != nil && writeRulesArchive(data) {
+            userDefaults.removeObject(forKey: key)
+        }
         return decoded
     }
 
     private func saveParsedRulesByID(_ rules: [String: ParsedAdBlockRules]) {
+        guard let data = try? JSONEncoder().encode(rules) else { return }
         let key = "\(cachedRulesKey)_by_id"
-        if let data = try? JSONEncoder().encode(rules) {
+        if rulesArchiveURL != nil {
+            if writeRulesArchive(data) { userDefaults.removeObject(forKey: key) }
+        } else {
             userDefaults.set(data, forKey: key)
+        }
+    }
+
+    private func writeRulesArchive(_ data: Data) -> Bool {
+        guard let rulesArchiveURL else { return false }
+        do {
+            try FileManager.default.createDirectory(at: rulesArchiveURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try data.write(to: rulesArchiveURL, options: .atomic)
+            return true
+        } catch {
+            lastError = error.localizedDescription
+            return false
         }
     }
 
@@ -530,42 +500,75 @@ final class AdBlockSubscriptionService: ObservableObject {
     }
 
     private func rebuildCacheFrom(parsedByID: [String: ParsedAdBlockRules]) {
-        var network = OrderedStringSet(limit: 4_000)
-        var cosmetic = OrderedStringSet(limit: 2_000)
-        var structuredNetwork = OrderedNetworkRuleSet(limit: 4_000)
-        var structuredCosmetic = OrderedCosmeticRuleSet(limit: 2_000)
+        var network = OrderedStringSet(limit: .max)
+        var cosmetic = OrderedStringSet(limit: .max)
+        var structuredNetwork = OrderedNetworkRuleSet(limit: .max)
+        var structuredCosmetic = OrderedCosmeticRuleSet(limit: .max)
+        var cosmeticExceptions = OrderedCosmeticRuleSet(limit: .max)
 
         for subscription in subscriptions where subscription.isEnabled {
-            guard let parsed = parsedByID[subscription.id] else { continue }
+            guard let parsed = parsedByID[subscription.id], parsed.parserVersion == AdBlockRuleParser.version else { continue }
             parsed.networkURLFilters.forEach { network.insert($0) }
             parsed.cosmeticSelectors.forEach { cosmetic.insert($0) }
             parsed.networkRules.forEach { structuredNetwork.insert($0) }
             parsed.cosmeticRules.forEach { structuredCosmetic.insert($0) }
+            parsed.cosmeticExceptions.forEach { cosmeticExceptions.insert($0) }
         }
 
         let merged = ParsedAdBlockRules(
             networkURLFilters: network.values,
             cosmeticSelectors: cosmetic.values,
             networkRules: structuredNetwork.values,
-            cosmeticRules: structuredCosmetic.values
+            cosmeticRules: structuredCosmetic.values,
+            cosmeticExceptions: cosmeticExceptions.values
         )
         // Starting the service must not invalidate compiled WebKit rules when
         // the enabled rule content is unchanged.
-        if let data = userDefaults.data(forKey: cachedRulesKey),
-           let previous = try? JSONDecoder().decode(ParsedAdBlockRules.self, from: data),
-           previous == merged {
-            return
-        }
-        if let data = try? JSONEncoder().encode(merged) {
+        if Self.cachedRules(userDefaults: userDefaults, key: cachedRulesKey) == merged,
+           userDefaults.object(forKey: versionKey) != nil { return }
+        guard let data = try? JSONEncoder().encode(merged) else { return }
+        if let url = Self.mergedArchiveURL(userDefaults: userDefaults, key: cachedRulesKey) {
+            do {
+                try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try data.write(to: url, options: .atomic)
+                userDefaults.removeObject(forKey: cachedRulesKey)
+                Self.decodedCache.removeAllObjects()
+            } catch {
+                lastError = error.localizedDescription
+                return
+            }
+        } else {
             userDefaults.set(data, forKey: cachedRulesKey)
         }
         userDefaults.set(Date().timeIntervalSince1970, forKey: versionKey)
     }
 
+    private final class RuleBox: NSObject {
+        let rules: ParsedAdBlockRules
+        init(_ rules: ParsedAdBlockRules) { self.rules = rules }
+    }
+    nonisolated(unsafe) private static let decodedCache = NSCache<NSString, RuleBox>()
+
+    nonisolated private static func mergedArchiveURL(userDefaults: UserDefaults, key: String) -> URL? {
+        guard userDefaults === UserDefaults.standard, key == "soulo_ad_block_subscription_rules" else { return nil }
+        return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("AdBlock/merged-rules.json")
+    }
+
     nonisolated static func cachedRules(userDefaults: UserDefaults = .standard, key: String = "soulo_ad_block_subscription_rules") -> ParsedAdBlockRules {
-        guard let data = userDefaults.data(forKey: key),
-              let decoded = try? JSONDecoder().decode(ParsedAdBlockRules.self, from: data)
-        else { return .empty }
+        // Explicit preferences also support isolated test fixtures and legacy migration.
+        if let data = userDefaults.data(forKey: key) {
+            guard let parsed = try? JSONDecoder().decode(ParsedAdBlockRules.self, from: data),
+                  parsed.parserVersion == AdBlockRuleParser.version else { return .empty }
+            return parsed
+        }
+        guard let url = mergedArchiveURL(userDefaults: userDefaults, key: key) else { return .empty }
+        let cacheKey = url.path as NSString
+        if let box = decodedCache.object(forKey: cacheKey) { return box.rules }
+        guard let data = try? Data(contentsOf: url),
+              let decoded = try? JSONDecoder().decode(ParsedAdBlockRules.self, from: data),
+              decoded.parserVersion == AdBlockRuleParser.version else { return .empty }
+        decodedCache.setObject(RuleBox(decoded), forKey: cacheKey, cost: data.count)
         return decoded
     }
 

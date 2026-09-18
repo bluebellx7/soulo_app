@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Oznaczanie reklam do ukrycia oraz ulepszenia filtrów reklam i ustawień prywatności.
-• Foldery zakładek, import i eksport HTML oraz udostępnianie, zapisywanie i kopiowanie kodów QR stron.
-• Kwadratowe podglądy, zbiorcze zapisywanie obrazów oraz usprawnienia czytania, odtwarzania i rozszerzeń skryptowych.
+• Ulepszone filtrowanie i kolejne zaznaczanie reklam oraz edycja wbudowanych reguł.
+• Przytrzymaj obraz, by go powiększyć, zapisać lub udostępnić. Zwijane narzędzia wideo, odtwarzanie poziome i zachowanie postępu przy zmianie kart.

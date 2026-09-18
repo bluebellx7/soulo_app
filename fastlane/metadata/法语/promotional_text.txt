@@ -1,1 +1,1 @@
-Masquez des pubs, classez vos favoris en dossiers et enregistrez des images par lots. Aperçus de fichiers améliorés et partage de pages par QR code.
+Appui long pour agrandir, enregistrer ou partager une image. Outils vidéo repliables, lecture en paysage et progression conservée entre les onglets.

@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Added ad marking and improved ad filtering and privacy controls.
-• Organise bookmarks in folders, import and export HTML bookmarks, and share, save or copy webpage QR codes.
-• Square file previews, batch image saving, and improvements to reading, media playback and script extensions.
+• Improved ad filtering and repeated ad marking, with editable built-in rules.
+• Press and hold images to enlarge, save or share. Collapsible video tools add landscape playback, with playback progress preserved across tabs.

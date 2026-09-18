@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Penandaan iklan untuk disembunyikan serta penambahbaikan penapis iklan dan kawalan privasi.
-• Folder penanda buku, import dan eksport HTML serta perkongsian, penyimpanan dan penyalinan kod QR halaman.
-• Pratonton fail segi empat sama, simpanan imej pukal serta penambahbaikan bacaan, main balik media dan sambungan skrip.
+• Penapisan dan penandaan iklan berturutan ditambah baik, dengan peraturan terbina dalam yang boleh disunting.
+• Tekan lama imej untuk membesarkan, menyimpan atau berkongsi. Alat video boleh dilipat, dengan main balik landskap dan kemajuan kekal semasa menukar tab.

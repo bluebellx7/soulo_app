@@ -41,9 +41,11 @@ final class ManualAdBlockService: ObservableObject {
 
     static func validSelector(_ value: String) -> Bool {
         // Only the app's selector generator supplies selectors. Do not accept CSS
-        // declarations or selector lists through persistence or a bridge message.
+        // declarations through persistence or a bridge message. A generated
+        // :is(...) group can include a tiled image and its transparent hit layer.
         !value.isEmpty && value.utf8.count <= 1024
-            && value.rangeOfCharacter(from: CharacterSet(charactersIn: "{},;\n\r")) == nil
+            && value.rangeOfCharacter(from: CharacterSet(charactersIn: "{};\n\r")) == nil
+            && (!value.contains(",") || (value.hasPrefix(":is(") && value.hasSuffix(")")))
             && !["html", "body", "*", ":root", "main", "article", "form"].contains(value.lowercased())
     }
 
@@ -68,14 +70,32 @@ final class ManualAdBlockService: ObservableObject {
     }
 
     @discardableResult
+    func remove(host: String) -> [ManualAdRule] {
+        let removed = rules.filter { $0.host == host.lowercased() }
+        guard !removed.isEmpty else { return [] }
+        rules.removeAll { $0.host == host.lowercased() }
+        persist()
+        return removed
+    }
+
+    @discardableResult
     func restore(_ rule: ManualAdRule) -> Bool {
-        if rules.contains(where: { $0.id == rule.id }) { return true }
-        guard rules.count < 500, !rule.host.isEmpty, Self.validSelector(rule.selector) else { return false }
-        // A newly saved equivalent rule already restores the same behavior.
-        if rules.contains(where: { $0.host == rule.host && $0.path == rule.path && $0.selector == rule.selector }) {
-            return true
+        restore([rule])
+    }
+
+    @discardableResult
+    func restore(_ removed: [ManualAdRule]) -> Bool {
+        var restored = rules
+        for rule in removed {
+            // Keep an existing equivalent rule and restore a batch atomically.
+            if restored.contains(where: { $0.id == rule.id ||
+                ($0.host == rule.host && $0.path == rule.path && $0.selector == rule.selector)
+            }) { continue }
+            guard restored.count < 500, !rule.host.isEmpty, Self.validSelector(rule.selector) else { return false }
+            restored.append(rule)
         }
-        rules.append(rule)
+        guard restored != rules else { return true }
+        rules = restored
         persist()
         return true
     }

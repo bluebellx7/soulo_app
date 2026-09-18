@@ -1,5 +1,4 @@
-1.1.7
+1.1.8
 
-• Přidáno označování reklam ke skrytí a vylepšeny filtry reklam a ovládání soukromí.
-• Složky záložek, import a export HTML a QR kódy stránek ke sdílení, uložení či kopírování.
-• Čtvercové náhledy, hromadné ukládání obrázků a vylepšení čtení, přehrávání a skriptových rozšíření.
+• Vylepšené filtrování a postupné označování reklam s úpravou vestavěných pravidel.
+• Podržením obrázek zvětšíte, uložíte či nasdílíte. Sbalitelné nástroje videa, přehrávání na šířku a zachování pozice při přepínání panelů.

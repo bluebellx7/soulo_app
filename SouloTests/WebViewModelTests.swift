@@ -356,6 +356,14 @@ final class WebViewModelTests: XCTestCase {
         )
     }
 
+    func testWebMotionPermissionRequiresUserChoiceForSecureOrigins() {
+        XCTAssertEqual(WebMotionPermissionPolicy.decision(forScheme: "https"), .prompt)
+        XCTAssertEqual(WebMotionPermissionPolicy.decision(forScheme: "HTTPS"), .prompt)
+        for scheme in [nil, "http", "file", "about"] as [String?] {
+            XCTAssertEqual(WebMotionPermissionPolicy.decision(forScheme: scheme), .deny)
+        }
+    }
+
     func testLibrarySectionsCombineBooksIntoFiles() {
         XCTAssertEqual(
             LibrarySection.allCases.map(\.rawValue),
@@ -477,6 +485,26 @@ final class WebViewModelTests: XCTestCase {
         let entries = try context.fetch(FetchDescriptor<SearchHistoryItem>())
         XCTAssertEqual(entries.map(\.keyword), ["search term"])
         XCTAssertNil(entries.first?.visitedURLString)
+    }
+
+    func testMediaDownloadFeedbackDeduplicatesAndCoexistsWithNativeDownloads() throws {
+        let model = WebViewModel()
+        let first = try XCTUnwrap(URL(string: "https://example.com/first.mp4"))
+        let second = try XCTUnwrap(URL(string: "https://example.com/second.mp4"))
+        model.updateDownloadState(activeCount: 1, fileName: "Document.pdf")
+        XCTAssertTrue(model.beginMediaDownload(url: first, name: "Video"))
+        XCTAssertFalse(model.beginMediaDownload(url: first, name: "Duplicate"))
+        XCTAssertTrue(model.isDownloading)
+        XCTAssertEqual(model.activeDownloadCount, 2)
+        model.updateDownloadState(activeCount: 0)
+        XCTAssertTrue(model.isDownloading, "Rebinding the native delegate must not clear media transfers")
+        model.finishMediaDownload(url: first)
+        XCTAssertFalse(model.isDownloading)
+        XCTAssertEqual(model.activeDownloadCount, 0)
+        XCTAssertTrue(model.beginMediaDownload(url: second, name: "Next video"))
+        model.finishMediaDownload(url: second)
+        XCTAssertFalse(model.isDownloading)
+        XCTAssertEqual(model.downloadFileName, "")
     }
 
     func testDownloadStateStaysActiveUntilEveryDownloadFinishes() {

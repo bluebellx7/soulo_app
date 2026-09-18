@@ -1,0 +1,26 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>连续标记验证</title>
+<style>
+body { margin: 0; font: 18px system-ui; }
+main { padding: 20px; }
+aside { margin: 16px; padding: 24px; background: #ffe5ae; }
+</style>
+<main><h1>连续标记验证</h1><p>正常内容始终保留</p></main>
+<script>
+const token = new URLSearchParams(location.search).get('run') || 'default';
+function insertPanel(number, text) {
+  const panel = document.createElement('aside');
+  panel.id = 'qa-continuous-' + number + '-' + token;
+  panel.textContent = text;
+  document.body.append(panel);
+}
+insertPanel('one', '第一推广区域');
+setTimeout(() => {
+  insertPanel('two', '第二推广区域');
+  const status = document.createElement('p');
+  status.textContent = '页面加载完成';
+  document.querySelector('main').append(status);
+}, 800);
+</script>

@@ -1,0 +1,5 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;height:2400px;background:#fff}header{position:fixed;top:0;padding:16px;background:white;width:100%;z-index:1}a{position:fixed;bottom:80px;left:16px;z-index:2;padding:12px;background:#def}</style><header><h2>点击回归</h2><p id="state">等待滚动</p></header><a href="/legitimate-target.html">正常链接</a><script>
+for(let row=0;row<4;row++)for(let col=0;col<10;col++){let e=document.createElement('adfragment');e.style.cssText=`position:fixed;bottom:${row*30}px;left:${col*10}%;height:30px;width:10%;z-index:99999;background-image:linear-gradient(red,red);background-position:${col*20}px ${row*30}px`;document.body.append(e)}
+document.addEventListener('click',()=>{location.href='/ad-jump.html'},true);
+window.addEventListener('scroll',()=>{document.getElementById('state').textContent='滚动正常'});
+</script>

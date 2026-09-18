@@ -1,6 +1,206 @@
 import AVKit
 import SwiftUI
 
+struct VideoOrientationErrorAlert: ViewModifier {
+    @Binding var message: String?
+    func body(content: Content) -> some View {
+        content.alert(ToolText.text("error"), isPresented: Binding(
+            get: { message != nil }, set: { if !$0 { message = nil } }
+        )) {
+            Button(ToolText.text("done")) { message = nil }
+        } message: { Text(message ?? "") }
+    }
+}
+
+@MainActor enum VideoOrientation {
+    static func mask(for orientation: UIInterfaceOrientation) -> UIInterfaceOrientationMask {
+        switch orientation {
+        case .landscapeLeft: return .landscapeLeft
+        case .landscapeRight: return .landscapeRight
+        case .portraitUpsideDown: return .portraitUpsideDown
+        default: return .portrait
+        }
+    }
+
+    static func request(_ orientations: UIInterfaceOrientationMask, in scene: UIWindowScene?,
+                        onError: @escaping (Error) -> Void) {
+        guard let scene else { onError(CocoaError(.featureUnsupported)); return }
+        for window in scene.windows {
+            var controller = window.rootViewController
+            while let current = controller {
+                current.setNeedsUpdateOfSupportedInterfaceOrientations()
+                controller = current.presentedViewController
+            }
+        }
+        scene.requestGeometryUpdate(.iOS(interfaceOrientations: orientations), errorHandler: onError)
+    }
+}
+
+/// A fullscreen session may originate from any frame, but only that session
+/// can rotate and restore its owning window. A failed entry never rotates.
+@MainActor final class WebVideoFullscreenOrientation {
+    private var token: String?
+    private weak var scene: UIWindowScene?
+    private weak var sourceWindow: UIWindow?
+    private var original: UIInterfaceOrientation = .portrait
+    private var began = false
+    private var transition: Task<Void, Never>?
+
+    func prepare(token: String, scene: UIWindowScene) {
+        guard self.token == nil else { return }
+        transition?.cancel()
+        self.token = token
+        self.scene = scene
+        sourceWindow = scene.keyWindow
+        original = scene.interfaceOrientation
+        began = false
+    }
+
+    func begin(token: String, onError: @escaping (Error) -> Void) {
+        guard self.token == token, !began else { return }
+        began = true
+        transition = Task { @MainActor [weak self] in
+            // WebKit reports begin before AVKit finishes presenting. During
+            // that transition AVKit temporarily supports portrait only. Wait
+            // for the fullscreen controller's actual supported orientations.
+            for _ in 0..<60 {
+                guard !Task.isCancelled, let self, self.token == token, let scene = self.scene else { return }
+                let window = scene.keyWindow
+                var controller = window?.rootViewController
+                while let presented = controller?.presentedViewController { controller = presented }
+                let fullscreenPresented = window !== self.sourceWindow
+                    || self.sourceWindow?.rootViewController?.presentedViewController != nil
+                if fullscreenPresented, let controller,
+                   !controller.isBeingPresented, controller.transitionCoordinator == nil,
+                   !controller.supportedInterfaceOrientations.intersection(.landscape).isEmpty {
+                    VideoOrientation.request(.landscape, in: scene, onError: onError)
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(50))
+            }
+            // Do not rotate the underlying page if presentation never finishes.
+
+        }
+    }
+
+    func end(token: String? = nil) {
+        guard self.token != nil, token == nil || self.token == token else { return }
+        transition?.cancel()
+        let scene = scene, source = sourceWindow, orientation = original, restore = began
+        self.token = nil
+        self.scene = nil
+        self.sourceWindow = nil
+        began = false
+        guard restore else { return }
+        transition = Task { @MainActor in
+            // AVKit also pins the current orientation while dismissing. Restore
+            // only once the original window has become key again.
+            for _ in 0..<60 {
+                guard !Task.isCancelled, let scene else { return }
+                var controller = source?.rootViewController
+                while let presented = controller?.presentedViewController { controller = presented }
+                let mask = VideoOrientation.mask(for: orientation)
+                if scene.keyWindow === source, let controller,
+                   !controller.isBeingDismissed, controller.transitionCoordinator == nil,
+                   !controller.supportedInterfaceOrientations.intersection(mask).isEmpty {
+                    if scene.interfaceOrientation != orientation {
+                        VideoOrientation.request(mask, in: scene) { _ in }
+                    }
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(50))
+            }
+        }
+
+    }
+}
+
+/// Phone and rotation arrow, matching the inline web player control.
+struct LandscapePlaybackIcon: View {
+    var body: some View {
+        Canvas { context, size in
+            let scale = min(size.width, size.height) / 24
+            context.scaleBy(x: scale, y: scale)
+            var phone = Path(roundedRect: CGRect(x: 3, y: 3, width: 10, height: 18), cornerRadius: 2.5)
+            phone.move(to: CGPoint(x: 6.5, y: 6)); phone.addLine(to: CGPoint(x: 9.5, y: 6))
+            phone.addEllipse(in: CGRect(x: 7.1, y: 16.6, width: 1.8, height: 1.8))
+            phone.move(to: CGPoint(x: 16, y: 12)); phone.addLine(to: CGPoint(x: 18.5, y: 12))
+            phone.addQuadCurve(to: CGPoint(x: 21, y: 14.5), control: CGPoint(x: 21, y: 12))
+            phone.addLine(to: CGPoint(x: 21, y: 18.5))
+            phone.addQuadCurve(to: CGPoint(x: 18.5, y: 21), control: CGPoint(x: 21, y: 21))
+            phone.addLine(to: CGPoint(x: 16, y: 21))
+            phone.move(to: CGPoint(x: 16, y: 3))
+            phone.addCurve(to: CGPoint(x: 21, y: 9), control1: CGPoint(x: 19, y: 3.5), control2: CGPoint(x: 20.5, y: 6))
+            phone.move(to: CGPoint(x: 18, y: 8)); phone.addLine(to: CGPoint(x: 21, y: 9))
+            phone.addLine(to: CGPoint(x: 21.5, y: 6))
+            context.stroke(phone, with: .foreground, style: StrokeStyle(lineWidth: 1.7, lineCap: .round, lineJoin: .round))
+        }.frame(width: 24, height: 24).accessibilityHidden(true)
+    }
+}
+
+/// A mounted control uses its own scene, including when another iPad window is open.
+private struct VideoRotationButton: UIViewRepresentable {
+    final class Button: UIButton {
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            let landscape = window?.windowScene?.interfaceOrientation.isLandscape == true
+            accessibilityLabel = ToolText.text(landscape ? "media_portrait" : "media_landscape")
+            setImage(UIImage(systemName: landscape ? "iphone" : "iphone.landscape"), for: .normal)
+        }
+        @objc func rotateVideo() {
+            guard let scene = window?.windowScene else { return }
+            VideoOrientation.request(scene.interfaceOrientation.isLandscape ? .portrait : .landscape, in: scene) {
+                MediaSession.shared.error = $0.localizedDescription
+            }
+        }
+    }
+    func makeUIView(context: Context) -> Button {
+        let button = Button(type: .system)
+        button.setImage(UIImage(systemName: "iphone.landscape"), for: .normal)
+        button.tintColor = .white
+        button.accessibilityIdentifier = "media.rotate"
+        button.addTarget(button, action: #selector(Button.rotateVideo), for: .touchUpInside)
+        return button
+    }
+    func updateUIView(_ view: Button, context: Context) { view.setNeedsLayout() }
+}
+
+private struct FullScreenVideoOrientation: UIViewControllerRepresentable {
+    let landscape: Bool
+    final class Controller: UIViewController {
+        var landscape = false
+        weak var playbackScene: UIWindowScene?
+        var originalOrientation: UIInterfaceOrientation?
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            guard originalOrientation == nil, let scene = view.window?.windowScene else { return }
+            playbackScene = scene
+            originalOrientation = scene.interfaceOrientation
+            if landscape {
+                VideoOrientation.request(.landscape, in: scene) { MediaSession.shared.error = $0.localizedDescription }
+            }
+        }
+        func restore() {
+            guard let scene = playbackScene, let orientation = originalOrientation,
+                  scene.interfaceOrientation != orientation else { return }
+            VideoOrientation.request(VideoOrientation.mask(for: orientation), in: scene) {
+                MediaSession.shared.error = $0.localizedDescription
+            }
+        }
+    }
+    func makeUIViewController(context: Context) -> Controller {
+        let controller = Controller()
+        controller.landscape = landscape
+        controller.view.isUserInteractionEnabled = false
+        return controller
+    }
+    func updateUIViewController(_ controller: Controller, context: Context) {}
+    static func dismantleUIViewController(_ controller: Controller, coordinator: Void) {
+        // Let dismissal finish before requesting the previous page's geometry.
+        Task { @MainActor in controller.restore() }
+    }
+}
+
 struct SessionPlayerController: UIViewControllerRepresentable {
     @ObservedObject var session = MediaSession.shared
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -86,6 +286,7 @@ struct MediaControls: View {
     @ObservedObject var session = MediaSession.shared
     @ObservedObject private var pip = MediaSession.shared.pictureInPicture
     var fullScreen: (() -> Void)? = nil
+    var landscape: (() -> Void)? = nil
     var body: some View {
         VStack(spacing: 20) {
             if session.hasVideo {
@@ -101,6 +302,14 @@ struct MediaControls: View {
                     }
                     Spacer()
                     AirPlayRoutePicker().frame(width: 44, height: 44)
+                    if let landscape {
+                        Button(action: landscape) {
+                            LandscapePlaybackIcon().frame(width: 44, height: 44)
+                        }
+                        .disabled(pip.active)
+                        .accessibilityLabel(ToolText.text("media_landscape"))
+                        .accessibilityIdentifier("media.landscape")
+                    }
                     if let fullScreen {
                         Button(action: fullScreen) {
                             Image(systemName: "arrow.up.left.and.arrow.down.right").frame(width: 44, height: 44)
@@ -395,22 +604,51 @@ private struct InlineVideoSurface: UIViewRepresentable {
 struct MediaPlaybackContent: View {
     @ObservedObject private var session = MediaSession.shared
     @State private var showingFullScreen = false
+    @State private var landscapeFullScreen = false
     @State private var frame: CapturedMediaFrame?
     @State private var capturing = false
     @State private var captureTask: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    private var compact: Bool { verticalSizeClass == .compact && session.hasVideo }
+
+    private var playbackControls: some View {
+        MediaControls(fullScreen: {
+            landscapeFullScreen = false; showingFullScreen = true
+        }, landscape: {
+            landscapeFullScreen = true; showingFullScreen = true
+        })
+    }
+
+    private var playbackPreview: some View {
+        MediaPlaybackSurface().overlay(alignment: .top) {
+            if session.temporaryRate {
+                Text("2×").font(.callout.monospacedDigit().weight(.semibold))
+                    .padding(.horizontal, 16).padding(.vertical, 8)
+                    .background(.regularMaterial, in: Capsule()).padding().allowsHitTesting(false)
+            }
+        }
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
-            if !showingFullScreen {
-                MediaPlaybackSurface().overlay(alignment: .top) {
-                    if session.temporaryRate {
-                        Text("2×").font(.callout.monospacedDigit().weight(.semibold))
-                            .padding(.horizontal, 16).padding(.vertical, 8)
-                            .background(.regularMaterial, in: Capsule()).padding().allowsHitTesting(false)
+        GeometryReader { geometry in
+            let layout = compact ? AnyLayout(HStackLayout(spacing: 0)) : AnyLayout(VStackLayout(spacing: 0))
+            layout {
+                if !showingFullScreen {
+                    playbackPreview
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .accessibilityIdentifier("media.preview")
+                }
+                if compact {
+                    ScrollView {
+                        playbackControls
                     }
+                    .frame(width: min(340, geometry.size.width * 0.43))
+                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                } else {
+                    playbackControls
                 }
             }
-            MediaControls(fullScreen: { showingFullScreen = true })
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -452,6 +690,11 @@ struct MediaPlaybackContent: View {
                     }.background(.black).preferredColorScheme(.dark)
                 } else { SessionPlayerController().ignoresSafeArea() }
             }
+                .background(FullScreenVideoOrientation(landscape: landscapeFullScreen))
+                .overlay(alignment: .topTrailing) {
+                    VideoRotationButton().frame(width: 44, height: 44)
+                        .background(.regularMaterial, in: Circle()).padding()
+                }
                 .overlay(alignment: .topLeading) {
                     Button { showingFullScreen = false } label: {
                         Image(systemName: "xmark").font(.headline).padding(14)

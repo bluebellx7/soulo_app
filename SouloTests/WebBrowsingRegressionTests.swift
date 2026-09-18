@@ -8,24 +8,47 @@ import Network
 @MainActor final class WebBrowsingRegressionTests: XCTestCase {
     private var saved: [String: Any] = [:]
     private let keys = ["privacy_gpc_enabled", "privacy_gpc_header_enabled_sites",
-                        "privacy_https_upgrade_enabled", "privacy_strip_tracking_parameters", "is_incognito", "ad_block_enabled"]
+                        "privacy_https_upgrade_enabled", "privacy_strip_tracking_parameters", "is_incognito", "ad_block_enabled",
+                        "soulo_ad_block_subscription_rules", BrowserAutomaticNavigationPolicy.preferenceKey, BuiltInAdRuleStore.storageKey, BuiltInAdRuleStore.versionKey]
 
     override func setUp() {
         super.setUp()
         let defaults = UserDefaults.standard
         for key in keys { saved[key] = defaults.object(forKey: key) }
+        defaults.set(try? JSONEncoder().encode(ParsedAdBlockRules.empty), forKey: "soulo_ad_block_subscription_rules")
         defaults.set(true, forKey: "privacy_gpc_enabled")
         defaults.set(["127.0.0.1"], forKey: "privacy_gpc_header_enabled_sites")
         defaults.set(false, forKey: "privacy_https_upgrade_enabled")
         defaults.set(false, forKey: "privacy_strip_tracking_parameters")
         defaults.set(true, forKey: "is_incognito")
         defaults.set(true, forKey: "ad_block_enabled")
+        defaults.removeObject(forKey: BuiltInAdRuleStore.storageKey)
+        defaults.removeObject(forKey: BuiltInAdRuleStore.versionKey)
+        // These regression fixtures drive navigation with synthetic JavaScript.
+        defaults.set(true, forKey: BrowserAutomaticNavigationPolicy.preferenceKey)
     }
 
     override func tearDown() {
         for key in keys { UserDefaults.standard.set(saved[key], forKey: key) }
         saved.removeAll()
         super.tearDown()
+    }
+
+    func testTextSelectionPreservesEditableAndControlSubtrees() async throws {
+        let web = WKWebView()
+        web.loadHTMLString("""
+        <p id="plain" style="-webkit-user-select:none;user-select:none">Copy this text</p>
+        <button style="-webkit-user-select:none;user-select:none"><span id="buttonLabel">Action</span></button>
+        <div contenteditable="" style="-webkit-user-select:all;user-select:all"><span id="editor">Editable</span></div>
+        <div role="slider" style="-webkit-user-select:none;user-select:none"><span id="sliderLabel">Slider</span></div>
+        """, baseURL: nil)
+        for _ in 0..<100 {
+            if (try? await web.evaluateJavaScript("!!document.getElementById('editor')")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        _ = try await web.evaluateJavaScript(WebViewScripts.textSelection, in: nil, contentWorld: .defaultClient)
+        let styles = try await web.evaluateJavaScript("['plain','buttonLabel','editor','sliderLabel'].map(id=>getComputedStyle(document.getElementById(id)).webkitUserSelect)")
+        XCTAssertEqual(styles as? [String], ["text", "none", "all", "none"])
     }
 
     private func host(_ model: WebViewModel) throws -> (UIWindow, UIWindow?) {
@@ -52,6 +75,209 @@ import Network
         }
         XCTFail("Page condition timed out: \(script), URL: \(String(describing: model.currentURL)), error: \(String(describing: model.errorMessage))")
         throw ReadingToolError.invalid
+    }
+
+    func testVisibleContentDoesNotWaitForHangingSubresource() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("visible-with-pending-resource"))
+        for _ in 0..<100 {
+            if model.hasVisibleContent { break }
+            try await Task.sleep(for: .milliseconds(30))
+        }
+        if !model.hasVisibleContent, let web = model.webView {
+            let state = try? await web.evaluateJavaScript("({sent:window.__souloPageHasVisibleContent===true,ready:document.readyState,visibility:document.visibilityState,height:document.body?.getBoundingClientRect().height,url:location.href})", in: nil, contentWorld: .defaultClient)
+            print("VISIBLE_CONTENT_DIAGNOSTIC", state ?? "nil", "frame", web.frame, "key", window.isKeyWindow, "scene", window.windowScene?.activationState.rawValue ?? -1)
+        }
+        XCTAssertTrue(model.hasVisibleContent)
+        XCTAssertTrue(model.isLoading, "The request is still pending, but the visible page is usable")
+        XCTAssertFalse(model.showSnapshotWhileRestoring)
+    }
+
+    func testParserBlockedPageDoesNotClaimToHavePaintedContent() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("unfinished-document"))
+        try await wait(model, for: "document.body && document.body.getBoundingClientRect().height > 0")
+        try await Task.sleep(for: .milliseconds(300))
+        XCTAssertTrue(model.isLoading)
+        XCTAssertFalse(model.hasVisibleContent, "Layout alone must not dismiss loading feedback before WebKit renders")
+    }
+
+    func testReturningToTabSynchronizesLoadFinishedWhileUnmounted() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("delayed-form"))
+        try await wait(model, for: "!!document.getElementById('form')")
+        let web = try XCTUnwrap(model.webView)
+        window.rootViewController = UIHostingController(rootView: Color.clear)
+        for _ in 0..<100 {
+            if !model.isWebViewRuntimeInstalled { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        for _ in 0..<100 {
+            if !web.isLoading { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertFalse(web.isLoading)
+        XCTAssertTrue(model.isLoading, "The wrapper was absent when the load finished")
+        let requests = server.requests.count
+        window.rootViewController = UIHostingController(rootView: WebViewRepresentable(viewModel: model))
+        for _ in 0..<100 {
+            if !model.isLoading && model.isWebViewRuntimeInstalled { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertFalse(model.isLoading, "Returning must not leave a stale loading indicator")
+        XCTAssertTrue(model.webView === web)
+        XCTAssertEqual(server.requests.count, requests)
+    }
+
+    func testWarmTabsKeepDocumentsAndScriptsWithoutNetworkReloads() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let defaults = UserDefaults.standard
+        let savedTabs = defaults.data(forKey: "soulo_saved_tabs")
+        defer { defaults.set(savedTabs, forKey: "soulo_saved_tabs") }
+        let manager = TabManager(storageKey: "warm-tabs-\(UUID())")
+        let first = try XCTUnwrap(manager.activeWebViewModel)
+        let (window, previous) = try host(first)
+        defer {
+            window.isHidden = true; window.rootViewController = nil
+            manager.tabs.forEach { $0.webViewModel.releaseWebViewRuntime() }
+            previous?.makeKeyAndVisible()
+        }
+        var views: [WKWebView] = []
+        var scripts: [[ObjectIdentifier]] = []
+        for i in 0..<TabManager.maxAliveTabs {
+            let model = i == 0 ? first : manager.createTab().webViewModel
+            window.rootViewController = UIHostingController(rootView: WebViewRepresentable(viewModel: model))
+            model.loadURL(root.appendingPathComponent("form"))
+            try await wait(model, for: "!!document.querySelector('input')")
+            let web = try XCTUnwrap(model.webView)
+            _ = try await web.evaluateJavaScript("document.querySelector('input').value='Draft \(i)';window.tabMarker=\(i)")
+            views.append(web)
+            scripts.append(web.configuration.userContentController.userScripts.map(ObjectIdentifier.init))
+        }
+        let requests = server.requests.filter { $0.path == "/form" }.count
+        XCTAssertEqual(requests, TabManager.maxAliveTabs)
+        let started = Date()
+        for i in views.indices {
+            manager.switchToTab(at: i)
+            let model = try XCTUnwrap(manager.activeWebViewModel)
+            window.rootViewController = UIHostingController(rootView: WebViewRepresentable(viewModel: model))
+            try await wait(model, for: "window.tabMarker === \(i) && document.querySelector('input').value === 'Draft \(i)'")
+            XCTAssertTrue(model.webView === views[i])
+            XCTAssertEqual(views[i].configuration.userContentController.userScripts.map(ObjectIdentifier.init), scripts[i])
+        }
+        XCTAssertEqual(server.requests.filter { $0.path == "/form" }.count, requests)
+        print("WARM_TAB_ROUND_TRIP", views.count, Date().timeIntervalSince(started), "seconds; no document reloads")
+    }
+
+    func testAdFilteringStartsBeforeBlockedParserFinishes() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("unfinished-document"))
+        try await wait(model, for: "document.querySelector('randompiece') && getComputedStyle(document.querySelector('randompiece')).clipPath !== 'none'")
+        let readyState = try await model.webView?.evaluateJavaScript("document.readyState")
+        XCTAssertEqual(readyState as? String, "loading")
+        XCTAssertTrue(model.canMarkAdvertisement, "Slow subresources must not disable selection")
+        model.beginMarkingAdvertisement()
+        for _ in 0..<100 {
+            if !model.manualAdBusy { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertNotNil(model.manualAdSelection)
+        model.cancelMarkingAdvertisement()
+        let content = try await model.webView?.evaluateJavaScript("getComputedStyle(document.querySelector('main')).display")
+        XCTAssertNotEqual(content as? String, "none")
+    }
+
+    func testBuiltInToggleReloadsCurrentRulesWhilePageIsStillLoading() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("unfinished-document"))
+        try await wait(model, for: "document.querySelector('randompiece') && getComputedStyle(document.querySelector('randompiece')).clipPath !== 'none'")
+        let store = BuiltInAdRuleStore()
+        var rule = try XCTUnwrap(store.rules.first { $0.kind == .tiledBanner })
+        rule.isEnabled = false
+        let saved = await store.save(rule)
+        XCTAssertTrue(saved)
+        WebViewRepresentable.reloadWithCurrentAdRules(model)
+        try await wait(model, for: "document.querySelector('randompiece') && !window.__souloAdBlockConfig.tiledBanners && getComputedStyle(document.querySelector('randompiece')).clipPath === 'none'")
+        for _ in 0..<100 {
+            if server.requests.filter({ $0.path == "/unfinished-document" }).count == 2 { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertEqual(server.requests.filter { $0.path == "/unfinished-document" }.count, 2)
+        rule.isEnabled = true
+        let enabled = await store.save(rule)
+        XCTAssertTrue(enabled)
+        WebViewRepresentable.reloadWithCurrentAdRules(model)
+        try await wait(model, for: "document.querySelector('randompiece') && window.__souloAdBlockConfig.tiledBanners && getComputedStyle(document.querySelector('randompiece')).clipPath !== 'none'")
+    }
+
+    func testConservativeBuiltInsPreserveOrdinaryResourcesAndStillBlockAds() async throws {
+        let defaults = UserDefaults.standard
+        let subscriptionKey = "soulo_ad_block_subscription_rules"
+        let subscriptions = defaults.data(forKey: subscriptionKey)
+        let versionKey = subscriptionKey + "_version"
+        let version = defaults.object(forKey: versionKey)
+        // Explicitly isolate built-ins now that production subscriptions live on disk.
+        defaults.set(try JSONEncoder().encode(ParsedAdBlockRules.empty), forKey: subscriptionKey)
+        defaults.set(Date().timeIntervalSince1970, forKey: versionKey)
+        defer { defaults.set(subscriptions, forKey: subscriptionKey); defaults.set(version, forKey: versionKey) }
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        for _ in 0..<100 {
+            if model.webView != nil { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let compiled = await AdBlockService.compileRuleLists()
+        let readyWeb = try XCTUnwrap(model.webView)
+        WebViewRepresentable.applyContentRules(try XCTUnwrap(compiled), on: readyWeb, allowlist: [])
+        model.loadURL(root.appendingPathComponent("conservative-rules"))
+        do {
+            try await wait(model, for: "window.fixtureScripts === 4 && window.fixtureFetches === 2 && document.querySelector('#portrait').naturalWidth > 0")
+        } catch {
+            print("RESOURCE_FIXTURE_REQUESTS", server.requests.map(\.path))
+            print("RESOURCE_FIXTURE_STATE", try await readyWeb.evaluateJavaScript("JSON.stringify({scripts:window.fixtureScripts,fetches:window.fixtureFetches,image:document.querySelector('#portrait')?.naturalWidth})") as Any)
+            throw error
+        }
+        let web = try XCTUnwrap(model.webView)
+        let contentVisible = try await web.evaluateJavaScript("""
+            ['download-panel','ggrid','normal-frame','portrait','player','login'].every(id => getComputedStyle(document.getElementById(id)).display !== 'none')
+            """)
+        XCTAssertEqual(contentVisible as? Bool, true)
+        try await wait(model, for: "getComputedStyle(document.getElementById('float-bottom-ad')).display === 'none'")
+        XCTAssertFalse(server.requests.contains { $0.path == "/ads/banner.js" }, "An explicit ads directory must still be blocked")
+        XCTAssertTrue(server.requests.contains { $0.path == "/gg/player.js" })
+        XCTAssertTrue(server.requests.contains { $0.path == "/adpic/portrait.svg" })
+        XCTAssertNil(model.errorMessage)
     }
 
     func testGPCDoesNotReplaceTopPageWithIframe() async throws {
@@ -182,6 +408,7 @@ import Network
         let web = try XCTUnwrap(model.webView)
         _ = try await web.evaluateJavaScript("document.querySelector('input').value='Unsaved draft'; window.tabMarker=42")
         let scriptCount = web.configuration.userContentController.userScripts.count
+        let scriptIDs = web.configuration.userContentController.userScripts.map(ObjectIdentifier.init)
         let requestCount = server.requests.count
         for _ in 0..<3 {
             window.rootViewController = UIHostingController(rootView: Color.clear)
@@ -190,6 +417,7 @@ import Network
                 try await Task.sleep(for: .milliseconds(20))
             }
             XCTAssertFalse(model.isWebViewRuntimeInstalled)
+            XCTAssertEqual(web.configuration.userContentController.userScripts.map(ObjectIdentifier.init), scriptIDs)
             window.rootViewController = UIHostingController(rootView: WebViewRepresentable(viewModel: model))
             for _ in 0..<100 {
                 if model.isWebViewRuntimeInstalled { break }
@@ -206,6 +434,94 @@ import Network
         try await wait(model, for: "!!document.getElementById('destination')")
     }
 
+    func testSubscriptionRulesBlockAndAllowRealRequestsAcrossBatches() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let key = "soulo_ad_block_subscription_rules"
+        let savedCache = UserDefaults.standard.data(forKey: key)
+        defer { UserDefaults.standard.set(savedCache, forKey: key) }
+        let rules = AdBlockRuleParser.parse("""
+        ||127.0.0.1/subscription/
+        /subscription/*
+        @@/subscription/allowed|
+        /scoped$domain=127.0.0.1|~localhost
+        /excluded$domain=127.0.0.1|~127.0.0.1
+        /CaseSensitive$match-case
+        /image-exempt$~image
+        ##.qa-hidden
+        ##.qa-excepted
+        127.0.0.1#@#.qa-excepted
+        localhost#@#.qa-hidden
+        127.0.0.1##.qa-site
+        @@/document-exempt|$document
+        @@/cosmetic-exempt|$elemhide
+        @@/generic-exempt|$generichide
+        """)
+        UserDefaults.standard.set(try JSONEncoder().encode(rules), forKey: key)
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .nonPersistent()
+        // Force several batches so exceptions must cancel blocks in every batch.
+        let batches = AdBlockService.encodedContentRuleLists(batchSize: 40)
+        XCTAssertGreaterThan(batches.count, 2)
+        for (index, json) in batches.enumerated() {
+            let list = try await WKContentRuleListStore.default().compileContentRuleList(
+                forIdentifier: "subscription-execution-\(UUID())-\(index)", encodedContentRuleList: json)
+            configuration.userContentController.add(try XCTUnwrap(list))
+        }
+        configuration.userContentController.addUserScript(WKUserScript(source: AdBlockService.adHidingScript(),
+            injectionTime: .atDocumentStart, forMainFrameOnly: false))
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844), configuration: configuration)
+        let model = WebViewModel(); model.webView = web
+        defer { model.releaseWebViewRuntime() }
+        web.load(URLRequest(url: root.appendingPathComponent("destination")))
+        try await wait(model, for: "!!document.getElementById('destination')")
+        func fetch(_ path: String) async throws -> Bool {
+            try await web.callAsyncJavaScript("try { return (await fetch(path, {cache:'no-store'})).ok; } catch (_) { return false; }",
+                arguments: ["path": path], in: nil, contentWorld: .page) as? Bool == true
+        }
+        for (path, expected) in [("/subscription/blocked", false), ("/subscription/allowed", true),
+                                 ("/normal?help=subscription", true), ("/scoped", false), ("/excluded", true),
+                                 ("/CaseSensitive", false), ("/casesensitive", true), ("/image-exempt", false)] {
+            let result = try await fetch(path)
+            XCTAssertEqual(result, expected, path)
+        }
+        _ = try await web.evaluateJavaScript("""
+            document.body.insertAdjacentHTML('beforeend', '<aside class="qa-hidden">Hidden ad</aside><aside class="qa-excepted">Allowed content</aside><img src="/image-exempt">');
+            """)
+        try await Task.sleep(for: .milliseconds(300))
+        try await wait(model, for: "getComputedStyle(document.querySelector('.qa-hidden')).display === 'none'")
+        let visible = try await web.evaluateJavaScript("getComputedStyle(document.querySelector('.qa-excepted')).display !== 'none'")
+        XCTAssertEqual(visible as? Bool, true)
+        for _ in 0..<40 {
+            if server.requests.contains(where: { $0.path == "/image-exempt" }) { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertTrue(server.requests.contains { $0.path == "/image-exempt" }, "Negated image type must preserve an actual image request")
+        XCTAssertFalse(server.requests.contains { $0.path == "/subscription/blocked" })
+        XCTAssertTrue(server.requests.contains { $0.path == "/subscription/allowed" })
+        // An exception scoped to 127.0.0.1 must not expose the ad on localhost.
+        let localhost = try XCTUnwrap(URL(string: root.absoluteString.replacingOccurrences(of: "127.0.0.1", with: "localhost") + "/destination"))
+        web.load(URLRequest(url: localhost))
+        try await wait(model, for: "location.hostname === 'localhost' && !!document.getElementById('destination')")
+        _ = try await web.evaluateJavaScript("document.body.insertAdjacentHTML('beforeend', '<aside class=qa-hidden>Allowed here</aside><aside class=qa-excepted>Hidden here</aside>')")
+        try await wait(model, for: "getComputedStyle(document.querySelector('.qa-excepted')).display === 'none'")
+        let localVisible = try await web.evaluateJavaScript("getComputedStyle(document.querySelector('.qa-hidden')).display !== 'none'")
+        XCTAssertEqual(localVisible as? Bool, true)
+        let scopedAllowed = try await fetch("/scoped")
+        XCTAssertTrue(scopedAllowed)
+        for path in ["document-exempt", "cosmetic-exempt", "generic-exempt"] {
+            web.load(URLRequest(url: root.appendingPathComponent(path)))
+            try await wait(model, for: "location.pathname === '/\(path)' && !!document.getElementById('destination')")
+            _ = try await web.evaluateJavaScript("document.body.insertAdjacentHTML('beforeend', '<aside class=qa-hidden>Generic</aside><aside class=qa-site>Site specific</aside>')")
+            try await Task.sleep(for: .milliseconds(250))
+            let styles = try await web.evaluateJavaScript("['.qa-hidden','.qa-site'].map(s => getComputedStyle(document.querySelector(s)).display !== 'none')") as? [Bool]
+            XCTAssertEqual(styles, [true, path != "generic-exempt"], path)
+            let allowed = try await fetch("/subscription/blocked")
+            XCTAssertEqual(allowed, path == "document-exempt", path)
+        }
+    }
+
     func testLateCompiledRulesRespectDisabledFilterAndChallengePage() async throws {
         let server = try BrowsingHTTPFixture()
         let root = try await server.start()
@@ -218,7 +534,7 @@ import Network
         defer { model.releaseWebViewRuntime() }
         web.load(URLRequest(url: root.appendingPathComponent("destination")))
         try await wait(model, for: "!!document.getElementById('destination')")
-        let compiled = await AdBlockService.compileRules()
+        let compiled = await AdBlockService.compileRuleLists()
         let rules = try XCTUnwrap(compiled)
         func canFetch() async throws -> Bool {
             let result = try await web.callAsyncJavaScript(
@@ -240,6 +556,84 @@ import Network
         WebViewRepresentable.applyContentRules(rules, on: web, allowlist: [])
         let challenge = try await canFetch()
         XCTAssertTrue(challenge, "Late compilation must respect the current challenge page bypass")
+    }
+
+    func testAutomaticNavigationIsAllowedByDefaultAndSettingAppliesImmediately() async throws {
+        UserDefaults.standard.removeObject(forKey: BrowserAutomaticNavigationPolicy.preferenceKey)
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("automatic-location"))
+        try await wait(model, for: "!!document.getElementById('destination')")
+        UserDefaults.standard.set(false, forKey: BrowserAutomaticNavigationPolicy.preferenceKey)
+        let previousDestinationCount = server.requests.filter { $0.path == "/destination" }.count
+        for path in ["automatic-location", "automatic-immediate", "automatic-meta", "automatic-popup", "automatic-link", "automatic-form", "automatic-frame"] {
+            model.loadURL(root.appendingPathComponent(path))
+            try await wait(model, for: "!!document.getElementById('automatic')")
+            try await Task.sleep(for: .milliseconds(1300))
+            XCTAssertEqual(model.webView?.url?.path, "/" + path)
+            XCTAssertNil(model.errorMessage)
+            XCTAssertFalse(model.webView?.subviews.contains(where: { $0.subviews.contains(where: { $0 is WKWebView }) }) == true)
+        }
+        XCTAssertEqual(server.requests.filter { $0.path == "/destination" }.count, previousDestinationCount)
+        XCTAssertFalse(server.requests.contains { $0.path == "/login-popup" })
+        UserDefaults.standard.set(true, forKey: BrowserAutomaticNavigationPolicy.preferenceKey)
+        model.loadURL(root.appendingPathComponent("automatic-popup"))
+        for _ in 0..<100 {
+            if server.requests.contains(where: { $0.path == "/login-popup" }) { break }
+            try await Task.sleep(for: .milliseconds(30))
+        }
+        XCTAssertTrue(server.requests.contains { $0.path == "/login-popup" })
+        model.loadURL(root.appendingPathComponent("automatic-location"))
+        try await wait(model, for: "!!document.getElementById('destination')")
+        UserDefaults.standard.set(false, forKey: BrowserAutomaticNavigationPolicy.preferenceKey)
+        // Native navigation and its HTTP redirect must still work while blocking page scripts.
+        model.loadURL(root.appendingPathComponent("submit"))
+        try await wait(model, for: "!!document.getElementById('receipt')")
+        model.loadURL(root.appendingPathComponent("automatic-location"))
+        try await wait(model, for: "!!document.getElementById('automatic')")
+        try await Task.sleep(for: .milliseconds(600))
+        XCTAssertEqual(model.webView?.url?.path, "/automatic-location")
+    }
+
+    func testPullToRefreshRevalidatesCachedPageAndResources() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("cache-page"))
+        try await wait(model, for: "document.getElementById('revision')?.textContent === '1' && window.fixtureRevision === 1")
+        let web = try XCTUnwrap(model.webView)
+        // Confirm the subresource is actually cached before exercising the gesture.
+        _ = try await web.callAsyncJavaScript("""
+            return await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = '/cache-resource.js';
+                script.onload = () => resolve(true);
+                script.onerror = () => reject(new Error('Script failed to load'));
+                document.head.append(script);
+            });
+            """,
+            arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertEqual(server.requests.filter { $0.path == "/cache-resource.js" }.count, 1)
+        let historyCount = web.backForwardList.backList.count
+        let control = try XCTUnwrap(web.scrollView.refreshControl)
+        control.beginRefreshing()
+        control.sendActions(for: .valueChanged)
+        try await wait(model, for: "document.getElementById('revision')?.textContent === '2' && window.fixtureRevision === 2")
+        for _ in 0..<100 {
+            if !control.isRefreshing { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertEqual(server.requests.filter { $0.path == "/cache-page" }.count, 2)
+        XCTAssertEqual(server.requests.filter { $0.path == "/cache-resource.js" }.count, 2)
+        XCTAssertFalse(control.isRefreshing)
+        XCTAssertEqual(web.backForwardList.backList.count, historyCount)
     }
 
     func testRapidNavigationRefreshAndRecoveryAfterNetworkFailure() async throws {
@@ -356,21 +750,73 @@ private final class BrowsingHTTPFixture: @unchecked Sendable {
         let body: String
         var status = "200 OK"
         var extra = ""
+        var contentType = "text/html; charset=utf-8"
         switch request.path {
+        case "/conservative-rules": body = """
+            <main id="download-panel"><span id="ggrid" class="gg gg-play not-popup-ad">Download</span>
+            <img id="portrait" src="/adpic/portrait.svg"><video id="player" controls></video>
+            <form id="login"><input type="password"></form></main>
+            <iframe id="normal-frame" src="/child?source=doubleclick"></iframe>
+            <aside id="float-bottom-ad">Advertisement</aside>
+            <script>window.fixtureScripts=0;window.fixtureFetches=0;
+            ['/data?ad=normal','/proxy?url=https://doubleclick.net/content'].forEach(url=>fetch(url).then(r=>{if(r.ok)window.fixtureFetches++}));</script>
+            <script src="/gg/player.js"></script><script src="/union/member.js"></script>
+            <script src="/gpt.js"></script><script src="/app.js?help=googlesyndication.com"></script>
+            <script src="/ads/banner.js"></script>
+            """
+        case "/gg/player.js", "/union/member.js", "/gpt.js", "/app.js?help=googlesyndication.com", "/ads/banner.js":
+            body = "window.fixtureScripts++;"
+            contentType = "application/javascript"
+        case "/adpic/portrait.svg":
+            body = "<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><rect width='16' height='16' fill='green'/></svg>"
+            contentType = "image/svg+xml"
+        case "/hanging-resource.js": return // Keep parsing blocked until fixture teardown.
+        case "/visible-with-pending-resource": body = "<main>Visible content</main><script async src='/hanging-resource.js'></script>"
+        case "/unfinished-document": body = """
+            <main>Visible content</main><script>
+            for (let i=0;i<10;i++) {
+              const e=document.createElement('randompiece');
+              e.style.cssText='position:fixed;bottom:0;width:10%;height:100px;z-index:2147483646;background-image:linear-gradient(red,red);background-position:0 0;left:'+i*10+'%';
+              document.body.append(e);
+            }
+            </script><script src='/hanging-resource.js'></script>
+            """
+        case "/automatic-immediate": body = "<p id='automatic'>Stay here</p><script>location.href='/destination'</script>"
+        case "/automatic-location": body = "<p id='automatic'>Stay here</p><script>setTimeout(() => location.href='/destination', 200)</script>"
+        case "/automatic-meta": body = "<p id='automatic'>Stay here</p><meta http-equiv='refresh' content='1;url=/destination'>"
+        case "/automatic-popup": body = "<p id='automatic'>Stay here</p><script>setTimeout(() => window.open('/login-popup'), 200)</script>"
+        case "/automatic-link": body = "<p id='automatic'>Stay here</p><a id='go' href='/destination'>Next</a><script>setTimeout(() => document.getElementById('go').click(), 200)</script>"
+        case "/automatic-form": body = "<p id='automatic'>Stay here</p><form id='go' action='/destination'></form><script>setTimeout(() => document.getElementById('go').submit(), 200)</script>"
+        case "/automatic-frame": body = "<p id='automatic'>Stay here</p><iframe src='/automatic-child'></iframe>"
+        case "/automatic-child": body = "<script>setTimeout(() => top.location.href='/destination', 200)</script>"
+        case "/cache-page":
+            body = "<p id='revision'>\(recorded.filter { $0.path == request.path }.count)</p><script src='/cache-resource.js'></script>"
+            extra = "Cache-Control: public, max-age=86400\r\n"
+        case "/cache-resource.js":
+            body = "window.fixtureRevision = \(recorded.filter { $0.path == request.path }.count);"
+            contentType = "application/javascript"
+            extra = "Cache-Control: public, max-age=86400\r\n"
         case "/auth-parent": body = "<button id='open-login' onclick=\"window.open('/login-popup','fixture-auth')\">Sign in</button><script>addEventListener('message', e => { if (e.origin === location.origin) window.authResult = e.data; });</script>"
         case "/login-popup": body = "<script>const shared = document.cookie.includes('fixture_session=parent'); document.cookie='fixture_login=complete; path=/'; window.opener.postMessage(shared ? 'session-shared' : 'missing-session', location.origin); window.close();</script>"
         case "/disconnect": connection.cancel(); return
         case "/dynamic", "/dynamic-next": body = "<main>Article content</main><aside id='user-chosen-panel'>Selected panel</aside>"
         case "/iframe": body = "<h1 id='parent'>Parent page</h1><iframe id='frame' src='/child'></iframe>"
         case "/child": body = "<p id='child'>Embedded content</p>"
+        case "/delayed-form": body = "<form id='form'><input></form><script src='/delayed.js'></script>"
+        case "/delayed.js":
+            queue.asyncAfter(deadline: .now() + 1) {
+                connection.send(content: Data("HTTP/1.1 200 OK\r\nContent-Type: application/javascript\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".utf8), completion: .contentProcessed { _ in connection.cancel() })
+            }
+            return
         case "/form": body = "<form id='form' method='post' action='/submit'><input name='query' value='a+b &amp; c'><button>Submit</button></form>"
         case "/form-popup": body = "<form id='form' method='post' action='/submit' target='_blank'><input name='query' value='a+b &amp; c'><button>Submit</button></form>"
         case "/submit": body = "Redirecting"; status = "303 See Other"; extra = "Location: /receipt\r\n"
         case "/receipt": body = "<p id='receipt'>Submitted</p><a id='next' href='/destination' target='_blank'>Next page</a>"
         default: body = "<p id='destination'>Destination</p>"
         }
-        let html = "<!doctype html><html><head><meta name='viewport' content='width=device-width'><title>Browsing fixture</title></head><body>\(body)</body></html>"
-        let response = "HTTP/1.1 \(status)\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: \(html.utf8.count)\r\n\(extra)Connection: close\r\n\r\n\(html)"
+        let content = contentType != "text/html; charset=utf-8" ? body
+            : "<!doctype html><html><head><meta name='viewport' content='width=device-width'><title>Browsing fixture</title></head><body>\(body)</body></html>"
+        let response = "HTTP/1.1 \(status)\r\nContent-Type: \(contentType)\r\nContent-Length: \(content.utf8.count)\r\n\(extra)Connection: close\r\n\r\n\(content)"
         connection.send(content: Data(response.utf8), completion: .contentProcessed { _ in connection.cancel() })
     }
 }

@@ -13,6 +13,7 @@ struct BrowserTab: Identifiable, Equatable {
     var createdAt: Date
     var isAlive: Bool = true
     var suspendedURL: URL?
+    var lastAccessedAt = Date()
 
     init(id: UUID = UUID(), keyword: String? = nil, platform: SearchPlatform? = nil) {
         self.id = id
@@ -89,9 +90,10 @@ final class TabManager: ObservableObject {
 
     static let maxTabs = 20
     static let maxRecentlyClosed = 10
-    /// Keep the active tab and a small neighborhood warm. Older tabs retain their
-    /// URL and snapshot but release WebKit, avoiding memory pressure with many tabs.
-    static let aliveWindow = 2
+    /// Retain recent tabs, independent of their position in the tab bar.
+    /// Older tabs keep their URL, snapshot and media checkpoint without WebKit.
+    static let maxAliveTabs = ProcessInfo.processInfo.physicalMemory >= 4 * 1_024 * 1_024 * 1_024 ? 8 : 5
+    private var memoryWarningObserver: AnyCancellable?
 
     private let storageKey: String
 
@@ -105,10 +107,15 @@ final class TabManager: ObservableObject {
             UserDefaults.standard.set(legacy, forKey: storageKey)
             UserDefaults.standard.removeObject(forKey: "soulo_saved_tabs")
         }
+        memoryWarningObserver = NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)
+            .sink { [weak self] _ in
+                Task { @MainActor in self?.releaseInactiveTabsForMemoryPressure() }
+            }
         restoreFromDisk()
         if tabs.isEmpty {
             createTab()
         }
+        manageTabLifecycles()
     }
 
     // MARK: - Computed
@@ -132,9 +139,9 @@ final class TabManager: ObservableObject {
     // MARK: - Snapshots
 
     func refreshSnapshotsForSwitcher() {
-        for tab in tabs where tab.isAlive {
-            tab.webViewModel.takeSnapshot()
-        }
+        // Background pages retain their last snapshot; no simultaneous WebKit
+        // captures across every warm tab when opening the switcher.
+        activeWebViewModel?.takeSnapshot()
     }
 
     // MARK: - Tab Creation
@@ -147,13 +154,14 @@ final class TabManager: ObservableObject {
             return activeTab ?? tabs[0]
         }
 
-        let tab = BrowserTab(keyword: keyword, platform: platform)
+        var tab = BrowserTab(keyword: keyword, platform: platform)
+        if !switchTo { tab.lastAccessedAt = .distantPast }
         tabs.append(tab)
 
         if switchTo {
             activeTabIndex = tabs.count - 1
-            manageTabLifecycles()
         }
+        manageTabLifecycles()
 
         if let url = url {
             tab.webViewModel.loadURL(url)
@@ -169,6 +177,7 @@ final class TabManager: ObservableObject {
         guard tabs.indices.contains(index) else { return }
         let tab = tabs[index]
         unregisterWebExtensionTab(tab)
+        tab.webViewModel.releaseWebViewRuntime()
         tab.webViewModel.deletePersistedSnapshot()
 
         let closed = RecentlyClosedTab(
@@ -219,6 +228,7 @@ final class TabManager: ObservableObject {
     private func closeAllTabs(addingToRecentlyClosed: Bool) {
         for tab in tabs {
             unregisterWebExtensionTab(tab)
+            tab.webViewModel.releaseWebViewRuntime()
             tab.webViewModel.deletePersistedSnapshot()
             if addingToRecentlyClosed {
                 let closed = RecentlyClosedTab(
@@ -244,6 +254,7 @@ final class TabManager: ObservableObject {
         guard let current = activeTab else { return }
         for tab in tabs where tab.id != current.id {
             unregisterWebExtensionTab(tab)
+            tab.webViewModel.releaseWebViewRuntime()
             tab.webViewModel.deletePersistedSnapshot()
             let closed = RecentlyClosedTab(
                 id: tab.id, title: tab.displayTitle,
@@ -325,23 +336,25 @@ final class TabManager: ObservableObject {
     // MARK: - Memory Management
 
     private func manageTabLifecycles() {
-        guard tabs.count > Self.aliveWindow * 2 + 1 else {
-            for i in tabs.indices where !tabs[i].isAlive {
-                restoreTabMemory(at: i)
-            }
-            return
-        }
-
-        let active = activeTabIndex
-        let lo = max(0, active - Self.aliveWindow)
-        let hi = min(tabs.count - 1, active + Self.aliveWindow)
-
+        guard tabs.indices.contains(activeTabIndex) else { return }
+        tabs[activeTabIndex].lastAccessedAt = Date()
+        let warmIDs = Set(tabs.sorted { $0.lastAccessedAt > $1.lastAccessedAt }
+            .prefix(Self.maxAliveTabs).map(\.id))
         for i in tabs.indices {
-            if (lo...hi).contains(i) {
+            tabs[i].webViewModel.mediaSession.setActive(i == activeTabIndex)
+            if i == activeTabIndex {
                 if !tabs[i].isAlive { restoreTabMemory(at: i) }
-            } else {
-                if tabs[i].isAlive { suspendTab(at: i) }
+            } else if !warmIDs.contains(tabs[i].id), tabs[i].isAlive,
+                      !tabs[i].webViewModel.isDownloading, tabs[i].webViewModel.activeDownloadCount == 0 {
+                suspendTab(at: i)
             }
+        }
+    }
+
+    func releaseInactiveTabsForMemoryPressure() {
+        for i in tabs.indices where i != activeTabIndex && tabs[i].isAlive {
+            guard !tabs[i].webViewModel.isDownloading, tabs[i].webViewModel.activeDownloadCount == 0 else { continue }
+            suspendTab(at: i)
         }
     }
 
@@ -352,9 +365,10 @@ final class TabManager: ObservableObject {
         unregisterWebExtensionTab(tabs[index])
         tabs[index].suspendedURL = tabs[index].webViewModel.currentURL
         tabs[index].isAlive = false
-        webViewModel.takeSnapshot { [weak self] in
-            guard let self,
-                  let currentIndex = self.tabs.firstIndex(where: { $0.id == tabID }),
+        Task { @MainActor [weak self, weak webViewModel] in
+            guard let webViewModel else { return }
+            await webViewModel.mediaSession.capture()
+            guard let self, let currentIndex = self.tabs.firstIndex(where: { $0.id == tabID }),
                   !self.tabs[currentIndex].isAlive else { return }
             webViewModel.releaseWebViewRuntime()
         }
@@ -371,10 +385,12 @@ final class TabManager: ObservableObject {
     private func restoreTabMemory(at index: Int) {
         guard tabs.indices.contains(index) else { return }
         tabs[index].isAlive = true
-        if let url = tabs[index].suspendedURL {
+        // A quick switch back can beat asynchronous checkpoint capture. Reuse
+        // the original runtime in that case, rather than reloading its page.
+        if let url = tabs[index].suspendedURL, tabs[index].webViewModel.webView == nil {
             tabs[index].webViewModel.loadCachedURL(url)
-            tabs[index].suspendedURL = nil
         }
+        tabs[index].suspendedURL = nil
     }
 
     // MARK: - Find in Page
