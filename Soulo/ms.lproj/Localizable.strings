@@ -867,3 +867,5 @@
 "library_files_tab" = "Fail";
 
 "library_books_tab" = "Buku";
+"keep_page_above_toolbar" = "Elakkan Bertindih";
+"keep_page_above_toolbar_desc" = "Simpan kawalan halaman web di atas bar alat.";

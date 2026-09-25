@@ -10,6 +10,12 @@ struct UserScriptMenuCommand: Identifiable, Equatable {
     let title: String
 }
 
+struct FollowLinkTranslation: Equatable {
+    let sourceIdentifier: String
+    let targetIdentifier: String
+    let startAfterPageRevision: Int
+}
+
 @MainActor
 final class WebViewModel: ObservableObject {
 
@@ -31,6 +37,9 @@ final class WebViewModel: ObservableObject {
     @Published private(set) var pageZoom: CGFloat = 1
     @Published private(set) var pageLanguageIdentifier: String?
     @Published private(set) var isPageTranslationApplied = false
+    @Published private(set) var pageRevision = 0
+    @Published private(set) var followLinkTranslation: FollowLinkTranslation?
+    @Published private(set) var googleFollowLinkTarget: String?
     @Published private(set) var runtimeRevision = UUID()
     @Published private(set) var userScriptMenuCommands: [UserScriptMenuCommand] = []
     @Published var manualAdSelection: ManualAdSelection?
@@ -192,7 +201,12 @@ final class WebViewModel: ObservableObject {
 
     func reload() {
         if isLoading {
+            pendingRequest = nil
             webView?.stopLoading()
+            webView?.scrollView.refreshControl?.endRefreshing()
+            // Explicit cancellation must dismiss the restoration snapshot even
+            // when WebKit has no loading-state transition left to deliver.
+            updateLoading(false)
         } else {
             webView?.reload()
         }
@@ -370,6 +384,30 @@ final class WebViewModel: ObservableObject {
 
     func updatePageTranslationApplied(_ applied: Bool) {
         isPageTranslationApplied = applied
+    }
+
+    func pageDidFinishLoading() {
+        pageRevision += 1
+    }
+
+    func enableAppleFollowLinkTranslation(source: Locale.Language, target: Locale.Language) {
+        followLinkTranslation = FollowLinkTranslation(
+            sourceIdentifier: source.minimalIdentifier,
+            targetIdentifier: target.minimalIdentifier,
+            startAfterPageRevision: pageRevision
+        )
+        googleFollowLinkTarget = nil
+        isPageTranslationApplied = true
+    }
+
+    func enableGoogleFollowLinkTranslation(target: String) {
+        googleFollowLinkTarget = target
+        followLinkTranslation = nil
+    }
+
+    func disableFollowLinkTranslation() {
+        followLinkTranslation = nil
+        googleFollowLinkTarget = nil
     }
 
     /// Detects the primary language from a bounded DOM text sample. Keeping the

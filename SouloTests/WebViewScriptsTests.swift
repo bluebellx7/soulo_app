@@ -1,9 +1,427 @@
 import XCTest
 import JavaScriptCore
 import WebKit
+import AVFoundation
+import QuartzCore
+import UIKit
 @testable import Soulo
 
 final class WebViewScriptsTests: XCTestCase {
+    private final class WebLinkCapture: NSObject, WKScriptMessageHandler {
+        var destinations: [String] = []
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            if let body = message.body as? [String: String], let url = body["url"] {
+                destinations.append(url)
+            }
+        }
+    }
+
+    @MainActor
+    func testCrossSiteClicksInterceptBothSameWindowAndNewWindow() async throws {
+        let capture = WebLinkCapture()
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController.add(capture, contentWorld: .defaultClient, name: "souloWebLink")
+        configuration.userContentController.addUserScript(WKUserScript(
+            source: WebViewScripts.internalWebLinkNavigation,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false,
+            in: .defaultClient
+        ))
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.loadHTMLString("""
+            <a id='same-window' href='https://www.douyin.com/video/123'>Douyin</a>
+            <a id='new-window' href='https://www.bilibili.com/video/456' target='_blank'>Bilibili</a>
+            """, baseURL: URL(string: "https://www.bing.com/"))
+        for _ in 0..<100 {
+            if (try? await webView.evaluateJavaScript("document.getElementById('new-window') !== null")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        _ = try await webView.evaluateJavaScript("document.getElementById('same-window').click()")
+        _ = try await webView.evaluateJavaScript("document.getElementById('new-window').click()")
+        for _ in 0..<100 {
+            if capture.destinations.count >= 2 { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertEqual(capture.destinations, [
+            "https://www.douyin.com/video/123",
+            "https://www.bilibili.com/video/456"
+        ])
+    }
+
+    @MainActor
+    func testHLSPlaybackAssetUsesPlaylistMIMEType() throws {
+        let resource = WebMediaResource(
+            kind: .video,
+            url: try XCTUnwrap(URL(string: "https://media.example.com/master.m3u8")),
+            title: "Fixture",
+            posterURL: nil,
+            delivery: .hls
+        )
+        let options = WebResourceMediaService.assetOptions(for: resource)
+        XCTAssertEqual(options[AVURLAssetOverrideMIMETypeKey] as? String, "application/vnd.apple.mpegurl")
+    }
+
+    @MainActor
+    func testDirectVideoPlaybackUsesServerMIMETypeAndPageUserAgent() async throws {
+        let resource = WebMediaResource(
+            kind: .video,
+            url: try XCTUnwrap(URL(string: "https://media.example.com/movie.webm")),
+            title: "Fixture",
+            posterURL: nil
+        )
+        XCTAssertNil(WebResourceMediaService.assetOptions(for: resource)[AVURLAssetOverrideMIMETypeKey])
+
+        let webView = WKWebView()
+        webView.customUserAgent = "Soulo desktop fixture"
+        let request = await WebResourceDownloadService.shared.resourceRequest(
+            resource.url,
+            pageURL: URL(string: "https://media.example.com/watch"),
+            webView: webView
+        )
+        XCTAssertEqual(request.value(forHTTPHeaderField: "User-Agent"), "Soulo desktop fixture")
+        let asset = await WebResourceMediaService.asset(for: resource, webView: webView)
+        XCTAssertEqual(asset.url, resource.url)
+    }
+
+    @MainActor
+    func testHLSRedownloadUsesRemoteManifestWhenLocalCopyExists() async throws {
+        let url = try XCTUnwrap(URL(string: "https://media.example.com/\(UUID().uuidString)/master.m3u8"))
+        let resource = WebMediaResource(
+            kind: .video, url: url, title: "Fixture", posterURL: nil, delivery: .hls
+        )
+        let manager = DownloadManagerService.shared
+        let (item, localURL) = manager.beginDownload(
+            suggestedFilename: "hls-copy.mp4", sourceURL: url, transport: .hls
+        )
+        try Data("fixture".utf8).write(to: localURL)
+        manager.markFinished(id: item.id)
+        defer {
+            manager.delete(item)
+            try? FileManager.default.removeItem(at: localURL)
+        }
+
+        let playbackAsset = await WebResourceMediaService.asset(for: resource, webView: nil)
+        let downloadAsset = await WebResourceMediaService.asset(
+            for: resource, webView: nil, preferDownloadedCopy: false
+        )
+        XCTAssertEqual(playbackAsset.url, localURL)
+        XCTAssertEqual(downloadAsset.url, url)
+    }
+
+    @MainActor
+    func testMediaTrackingObservesFetchAndRelativeXHRURLsOutsideYouTube() async throws {
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController.addUserScript(WKUserScript(
+            source: "window.fetch = function() { return Promise.resolve(new Response('ok')); };",
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        ))
+        configuration.userContentController.addUserScript(WKUserScript(
+            source: WebViewScripts.mediaResourceTracking,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        ))
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.loadHTMLString("<html><body>Video fixture</body></html>", baseURL: URL(string: "https://example.com/"))
+        for _ in 0..<40 {
+            let ready = (try? await webView.evaluateJavaScript(
+                "typeof window.__souloObservedResourceURLs !== 'undefined'"
+            )) as? Bool ?? false
+            if ready { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        _ = try await webView.evaluateJavaScript(#"""
+            fetch('https://cdn.example.com/movie.mp4');
+            const request = new XMLHttpRequest();
+            request.open('GET', '/media/clip.webm');
+            """#)
+        let observedValue = try await webView.evaluateJavaScript("window.__souloObservedResourceURLs")
+        let observed = try XCTUnwrap(observedValue as? [String])
+        XCTAssertTrue(observed.contains("https://cdn.example.com/movie.mp4"))
+        XCTAssertTrue(observed.contains("https://example.com/media/clip.webm"))
+        let snapshot = try await WebResourceInspectionService.inspect(webView: webView)
+        XCTAssertTrue(snapshot.videos.contains { $0.url.absoluteString == "https://cdn.example.com/movie.mp4" })
+        XCTAssertTrue(snapshot.videos.contains { $0.url.absoluteString == "https://example.com/media/clip.webm" })
+    }
+
+    @MainActor
+    func testLiveHLSInspectionAndVideoFrames() async throws {
+        guard ProcessInfo.processInfo.environment["SOULO_LIVE_MEDIA_QA"] == "1" else {
+            throw XCTSkip("Run with SOULO_LIVE_MEDIA_QA=1 for the Apple public HLS stream")
+        }
+        let url = try XCTUnwrap(URL(string:
+            "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_adv_example_hevc/master.m3u8"
+        ))
+        let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 600))
+        webView.loadHTMLString(
+            "<html><body><video controls src='\(url.absoluteString)'></video></body></html>",
+            baseURL: URL(string: "https://developer.apple.com/")
+        )
+        for _ in 0..<100 {
+            if (try? await webView.evaluateJavaScript("document.querySelector('video')?.src.endsWith('master.m3u8') === true")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let snapshot = try await WebResourceInspectionService.inspect(webView: webView)
+        let resource = try XCTUnwrap(snapshot.videos.first(where: { $0.url == url }))
+        XCTAssertEqual(resource.delivery, .hls)
+
+        let asset = await WebResourceMediaService.asset(for: resource, webView: webView)
+        let session = MediaSession.shared
+        session.open(url: resource.url, title: resource.title, pageURL: webView.url,
+                     asset: asset, webView: webView)
+        defer { session.stop() }
+        let item = try XCTUnwrap(session.player.currentItem)
+        let output = AVPlayerItemVideoOutput(pixelBufferAttributes: nil)
+        item.add(output)
+        for _ in 0..<200 {
+            if item.status == .failed { break }
+            let itemTime = output.itemTime(forHostTime: CACurrentMediaTime())
+            if output.hasNewPixelBuffer(forItemTime: itemTime),
+               let frame = output.copyPixelBuffer(forItemTime: itemTime, itemTimeForDisplay: nil) {
+                XCTAssertGreaterThan(CVPixelBufferGetWidth(frame), 0)
+                XCTAssertGreaterThan(CVPixelBufferGetHeight(frame), 0)
+                XCTAssertTrue(session.hasVideo)
+                XCTAssertTrue(session.videoIsLandscape)
+                return
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTFail("HLS did not deliver a video frame: \(String(describing: item.error))")
+    }
+
+    @MainActor
+    func testLiveVideoSiteInspectionMatrix() async throws {
+        guard ProcessInfo.processInfo.environment["SOULO_LIVE_MEDIA_QA"] == "1" else {
+            throw XCTSkip("Run with SOULO_LIVE_MEDIA_QA=1 for live video sites")
+        }
+        let sites: [(String, String)] = [
+            ("Bilibili", "https://www.bilibili.com/video/BV1cf4y1h7Q6/"),
+            ("YouTube", "https://www.youtube.com/watch?v=dQw4w9WgXcQ"),
+            ("Douyin", "https://www.douyin.com/video/7631522953741602074"),
+            ("Youku", "https://v.youku.com/v_show/id_XNjU1ODU5NTQ5Ng%3D%3D.html"),
+            ("MangoTV", "https://www.mgtv.com/b/292435/3285788.html"),
+            ("Tencent", "https://v.qq.com/x/page/r0033a9ff42.html"),
+            ("iQIYI", "https://www.iqiyi.com/v_19rrbfgak0.html")
+        ]
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let host = UIViewController()
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+
+        for (name, address) in sites {
+            if let only = ProcessInfo.processInfo.environment["SOULO_QA_SITE"], only != name {
+                continue
+            }
+            let config = WKWebViewConfiguration()
+            config.allowsInlineMediaPlayback = true
+            config.mediaTypesRequiringUserActionForPlayback = []
+            config.userContentController.addUserScript(WKUserScript(
+                source: WebViewScripts.mediaResourceTracking,
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: true
+            ))
+            config.userContentController.addScriptMessageHandler(
+                StreamingMediaDownloadService.shared,
+                contentWorld: .page,
+                name: StreamingMediaDownloadService.messageHandlerName
+            )
+            let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 600), configuration: config)
+            host.view.addSubview(web)
+            web.load(URLRequest(url: try XCTUnwrap(URL(string: address))))
+            for _ in 0..<120 {
+                if (try? await web.evaluateJavaScript("document.readyState === 'complete'")) as? Bool == true { break }
+                try await Task.sleep(for: .milliseconds(100))
+            }
+            try await Task.sleep(for: .seconds(3))
+            let page = web.url?.absoluteString ?? "nil"
+            let domVideoCount = (try? await web.evaluateJavaScript("document.querySelectorAll('video').length")) as? Int ?? -1
+            do {
+                let snapshot = try await WebResourceInspectionService.inspect(webView: web)
+                print("SITE_QA \(name) page=\(page) domVideos=\(domVideoCount) resources=\(snapshot.videos.count) delivery=\(snapshot.videos.map(\.delivery.rawValue))")
+                var attemptedDownload = false
+                var completedDownload = false
+                for (index, candidate) in snapshot.videos.enumerated()
+                    where index < 10 && (candidate.delivery == .hls || candidate.delivery == .direct) {
+                    let mime = URLComponents(url: candidate.url, resolvingAgainstBaseURL: false)?
+                        .queryItems?.first(where: { $0.name == "mime" })?.value ?? ""
+                    print("SITE_QA_RESOURCE \(name) index=\(index) host=\(candidate.url.host ?? "") path=\(candidate.url.path) mime=\(mime)")
+                    var request = await WebResourceDownloadService.shared.resourceRequest(
+                        candidate.url, pageURL: web.url, webView: web
+                    )
+                    request.timeoutInterval = 12
+                    if candidate.delivery == .direct { request.httpMethod = "HEAD" }
+                    do {
+                        let (data, response) = try await URLSession.shared.data(for: request)
+                        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                        print("SITE_QA_FETCH \(name) index=\(index) status=\(status) bytes=\(data.count)")
+                        if candidate.delivery == .hls, let manifest = String(data: data, encoding: .utf8) {
+                            let tags = manifest.components(separatedBy: .newlines)
+                                .filter { $0.hasPrefix("#EXT-X-") }
+                                .prefix(12).map { String($0.split(separator: ":", maxSplits: 1)[0]) }
+                            print("SITE_QA_HLS \(name) tags=\(Array(tags))")
+                            if let segment = manifest.components(separatedBy: .newlines)
+                                .map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) })
+                                .first(where: { !$0.isEmpty && !$0.hasPrefix("#") }),
+                               let segmentURL = URL(string: segment, relativeTo: candidate.url)?.absoluteURL {
+                                var segmentRequest = await WebResourceDownloadService.shared.resourceRequest(
+                                    segmentURL, pageURL: web.url, webView: web
+                                )
+                                segmentRequest.httpMethod = "HEAD"
+                                segmentRequest.timeoutInterval = 12
+                                do {
+                                    let (_, segmentResponse) = try await URLSession.shared.data(for: segmentRequest)
+                                    let segmentStatus = (segmentResponse as? HTTPURLResponse)?.statusCode ?? 0
+                                    print("SITE_QA_HLS_SEGMENT \(name) status=\(segmentStatus) host=\(segmentURL.host ?? "")")
+                                } catch {
+                                    print("SITE_QA_HLS_SEGMENT \(name) host=\(segmentURL.host ?? "") error=\(error.localizedDescription)")
+                                }
+                            }
+                        }
+                        if !attemptedDownload, status == 200, candidate.delivery == .direct,
+                           ProcessInfo.processInfo.environment["SOULO_QA_DOWNLOAD_SITE"] == name {
+                            attemptedDownload = true
+                            do {
+                                let file = try await WebResourceDownloadService.shared.download(
+                                    candidate, preferredFilename: "soulo-site-qa.mp4",
+                                    pageURL: web.url, webView: web
+                                )
+                                defer {
+                                    try? FileManager.default.removeItem(at: file)
+                                    if let item = DownloadManagerService.shared.downloads.first(where: { $0.localURL == file }) {
+                                        DownloadManagerService.shared.delete(item)
+                                    }
+                                }
+                                let bytes = (try? Data(contentsOf: file).count) ?? 0
+                                print("SITE_QA_DOWNLOAD_FILE \(name) bytes=\(bytes)")
+                                let asset = AVURLAsset(url: file)
+                                let tracks = try await asset.loadTracks(withMediaType: .video)
+                                let audioTracks = try await asset.loadTracks(withMediaType: .audio)
+                                print("SITE_QA_DOWNLOAD \(name) bytes=\(bytes) videoTracks=\(tracks.count) audioTracks=\(audioTracks.count)")
+                                XCTAssertGreaterThan(bytes, 0)
+                                XCTAssertFalse(tracks.isEmpty)
+                                XCTAssertFalse(audioTracks.isEmpty)
+                                completedDownload = true
+                            } catch {
+                                print("SITE_QA_DOWNLOAD \(name) error=\(error.localizedDescription)")
+                                XCTFail("\(name) direct download failed: \(error)")
+                            }
+                        }
+                    } catch {
+                        print("SITE_QA_FETCH \(name) index=\(index) error=\(error.localizedDescription)")
+                    }
+                }
+                if name == "YouTube",
+                   ProcessInfo.processInfo.environment["SOULO_QA_DOWNLOAD_SITE"] == name,
+                   let candidate = snapshot.videos.first(where: { $0.delivery == .youtubeSABR }) {
+                    do {
+                        let file = try await WebResourceDownloadService.shared.download(
+                            candidate, preferredFilename: "soulo-site-qa.mp4",
+                            pageURL: web.url, webView: web
+                        )
+                        defer {
+                            try? FileManager.default.removeItem(at: file)
+                            if let item = DownloadManagerService.shared.downloads.first(where: { $0.localURL == file }) {
+                                DownloadManagerService.shared.delete(item)
+                            }
+                        }
+                        let bytes = (try? Data(contentsOf: file).count) ?? 0
+                        let asset = AVURLAsset(url: file)
+                        let videoTracks = try await asset.loadTracks(withMediaType: .video)
+                        let audioTracks = try await asset.loadTracks(withMediaType: .audio)
+                        print("SITE_QA_DOWNLOAD \(name) bytes=\(bytes) videoTracks=\(videoTracks.count) audioTracks=\(audioTracks.count)")
+                        XCTAssertGreaterThan(bytes, 0)
+                        XCTAssertFalse(videoTracks.isEmpty)
+                        XCTAssertFalse(audioTracks.isEmpty)
+                        completedDownload = true
+                    } catch {
+                        print("SITE_QA_DOWNLOAD \(name) error=\(error.localizedDescription)")
+                        XCTFail("\(name) SABR download failed: \(error)")
+                    }
+                }
+                if ProcessInfo.processInfo.environment["SOULO_QA_DOWNLOAD_SITE"] == name {
+                    XCTAssertTrue(completedDownload, "\(name) did not complete a video download")
+                }
+                if ProcessInfo.processInfo.environment["SOULO_QA_PLAY_SITE"] == name,
+                   let candidate = snapshot.videos.first(where: { $0.delivery == .hls }) {
+                    let asset = await WebResourceMediaService.asset(for: candidate, webView: web)
+                    let item = AVPlayerItem(asset: asset)
+                    let output = AVPlayerItemVideoOutput(pixelBufferAttributes: nil)
+                    item.add(output)
+                    let player = AVPlayer(playerItem: item)
+                    player.play()
+                    var frameSize = ""
+                    for _ in 0..<200 {
+                        if item.status == .failed { break }
+                        let time = output.itemTime(forHostTime: CACurrentMediaTime())
+                        if let frame = output.copyPixelBuffer(forItemTime: time, itemTimeForDisplay: nil) {
+                            frameSize = "\(CVPixelBufferGetWidth(frame))x\(CVPixelBufferGetHeight(frame))"
+                            break
+                        }
+                        try await Task.sleep(for: .milliseconds(100))
+                    }
+                    player.pause()
+                    print("SITE_QA_PLAY \(name) frame=\(frameSize) status=\(item.status.rawValue) error=\(String(describing: item.error))")
+                    if frameSize.isEmpty {
+                        let plainAsset = AVURLAsset(url: candidate.url, options: [
+                            AVURLAssetHTTPUserAgentKey: AppConstants.mobileWebViewUserAgent
+                        ])
+                        let plainItem = AVPlayerItem(asset: plainAsset)
+                        let plainOutput = AVPlayerItemVideoOutput(pixelBufferAttributes: nil)
+                        plainItem.add(plainOutput)
+                        let plainPlayer = AVPlayer(playerItem: plainItem)
+                        plainPlayer.play()
+                        var plainFrame = ""
+                        for _ in 0..<100 {
+                            if plainItem.status == .failed { break }
+                            let time = plainOutput.itemTime(forHostTime: CACurrentMediaTime())
+                            if let buffer = plainOutput.copyPixelBuffer(forItemTime: time, itemTimeForDisplay: nil) {
+                                plainFrame = "\(CVPixelBufferGetWidth(buffer))x\(CVPixelBufferGetHeight(buffer))"
+                                break
+                            }
+                            try await Task.sleep(for: .milliseconds(100))
+                        }
+                        plainPlayer.pause()
+                        print("SITE_QA_PLAY_PLAIN \(name) frame=\(plainFrame) status=\(plainItem.status.rawValue) error=\(String(describing: plainItem.error))")
+                    }
+                }
+                if snapshot.videos.isEmpty {
+                    let detail = (try? await web.evaluateJavaScript(#"JSON.stringify({title:document.title,text:(document.body?.innerText||'').slice(0,180),videos:Array.from(document.querySelectorAll('video')).slice(0,2).map(v=>({src:v.currentSrc||v.src,html:v.outerHTML.slice(0,400)})),frames:Array.from(document.querySelectorAll('iframe')).slice(0,3).map(f=>f.src)})"#)) as? String ?? ""
+                    print("SITE_QA_DETAIL \(name) \(detail)")
+                }
+            } catch {
+                print("SITE_QA \(name) page=\(page) domVideos=\(domVideoCount) error=\(error)")
+            }
+            web.stopLoading()
+            web.removeFromSuperview()
+        }
+    }
+
+    @MainActor
+    func testLocalDirectVideoDownloadProducesFile() async throws {
+        guard let address = ProcessInfo.processInfo.environment["SOULO_QA_DIRECT_URL"],
+              let url = URL(string: address) else {
+            throw XCTSkip("Provide SOULO_QA_DIRECT_URL for a local MP4 fixture")
+        }
+        let resource = WebMediaResource(
+            kind: .video, url: url, title: "Soulo direct QA", posterURL: nil
+        )
+        let downloaded = try await WebResourceDownloadService.shared.download(
+            resource, preferredFilename: "soulo-direct-qa.mp4", pageURL: url, webView: nil
+        )
+        defer {
+            try? FileManager.default.removeItem(at: downloaded)
+            if let item = DownloadManagerService.shared.downloads.first(where: { $0.localURL == downloaded }) {
+                DownloadManagerService.shared.delete(item)
+            }
+        }
+        XCTAssertGreaterThan(try Data(contentsOf: downloaded).count, 1_000)
+        let tracks = try await AVURLAsset(url: downloaded).loadTracks(withMediaType: .video)
+        XCTAssertFalse(tracks.isEmpty)
+    }
+
     @MainActor
     func testEditingScriptCannotWidenAnEmptyScopeOrLoseExistingPreferences() throws {
         let service = BrowserExtensionService.shared
@@ -561,6 +979,7 @@ final class WebViewScriptsTests: XCTestCase {
     func testInjectedBrowserScriptsAreParsableJavaScript() {
         assertJavaScriptParses(AdBlockService.adHidingScript(cosmetic: true))
         assertJavaScriptParses(WebViewScripts.blankPageProbe)
+        assertJavaScriptParses(WebViewScripts.internalWebLinkNavigation)
         assertJavaScriptParses(WebViewScripts.privacyProtection(gpcEnabled: true, cookieBannerHandling: true))
         assertJavaScriptParses(WebViewScripts.downloadBridge)
         assertJavaScriptParses(WebViewScripts.contextMenuResourceTracking)
@@ -712,7 +1131,9 @@ final class WebViewScriptsTests: XCTestCase {
                 url_list: [
                   'https://cdn-a.example.com/video/tos/example?mime_type=video_mp4',
                   'https://cdn-b.example.com/video/tos/example?mime_type=video_mp4'
-                ]
+                ],
+                analytics: { url: 'https://data.example.com/log/web?url=https%3A%2F%2Fcdn.example.com%2Fmovie.mp4' },
+                profile: { link: 'https://account.example.com/profile' }
               }
             };
             </script></body></html>

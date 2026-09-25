@@ -1,4 +1,3 @@
-1.1.8
+1.1.9
 
-• Verbesserte Werbefilter und fortlaufende Werbemarkierung mit bearbeitbaren integrierten Regeln.
-• Bilder lange drücken, um sie zu vergrößern, zu speichern oder zu teilen. Einklappbare Videotools, Querformat und gespeicherter Fortschritt beim Tabwechsel.
+• Webadressen direkt öffnen, Suchbegriffe mit der gewählten Suchmaschine suchen. Übersetzung, Video und Downloads verbessert.

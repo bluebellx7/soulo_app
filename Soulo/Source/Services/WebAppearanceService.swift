@@ -27,6 +27,7 @@ final class WebAppearanceService: ObservableObject {
 
     private let defaults = UserDefaults.standard
     private var defaultsObserver: NSObjectProtocol?
+    private let appliedScripts = NSMapTable<WKWebView, NSString>.weakToStrongObjects()
 
     private init() {
         followsAppColorScheme = defaults.object(
@@ -52,7 +53,7 @@ final class WebAppearanceService: ObservableObject {
         HapticsManager.selection()
     }
 
-    func apply(to webView: WKWebView) {
+    func apply(to webView: WKWebView, force: Bool = false) {
         if forceDarkPages {
             webView.overrideUserInterfaceStyle = .dark
         } else if followsAppColorScheme {
@@ -61,15 +62,19 @@ final class WebAppearanceService: ObservableObject {
             webView.overrideUserInterfaceStyle = .light
         }
 
-        webView.evaluateJavaScript(
-            WebViewScripts.applyWebAppearance(
-                warmColorShift: warmColorShift,
-                forceDark: forceDarkPages,
-                reduceMotion: reducePageMotion,
-                underlineLinks: underlineLinks
-            ),
-            completionHandler: nil
+        let script = WebViewScripts.applyWebAppearance(
+            warmColorShift: warmColorShift,
+            forceDark: forceDarkPages,
+            reduceMotion: reducePageMotion,
+            underlineLinks: underlineLinks
         )
+        guard force || appliedScripts.object(forKey: webView) as String? != script else { return }
+        appliedScripts.setObject(script as NSString, forKey: webView)
+        webView.evaluateJavaScript(script) { [weak self, weak webView] _, error in
+            guard error != nil, let self, let webView,
+                  self.appliedScripts.object(forKey: webView) as String? == script else { return }
+            self.appliedScripts.removeObject(forKey: webView)
+        }
     }
 
     private var effectiveAppInterfaceStyle: UIUserInterfaceStyle {

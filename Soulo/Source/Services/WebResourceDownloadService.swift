@@ -337,7 +337,12 @@ final class WebResourceDownloadService {
     func resourceRequest(_ url: URL, pageURL: URL?, webView: WKWebView?) async -> URLRequest {
         var request = URLRequest(url: url)
         request.timeoutInterval = 60
-        request.setValue(AppConstants.mobileWebViewUserAgent, forHTTPHeaderField: "User-Agent")
+        request.setValue(
+            webView?.customUserAgent?.isEmpty == false
+                ? webView?.customUserAgent
+                : AppConstants.mobileWebViewUserAgent,
+            forHTTPHeaderField: "User-Agent"
+        )
         if let pageURL, let referrer = Self.referrerHeader(pageURL: pageURL, resourceURL: url) {
             request.setValue(referrer, forHTTPHeaderField: "Referer")
         }

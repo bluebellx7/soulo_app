@@ -95,7 +95,7 @@ private struct BrowserTabChip: View {
                 .font(.system(size: 12, weight: isActive ? .semibold : .regular))
                 .foregroundStyle(isActive ? Color.primary.opacity(0.9) : Color.primary.opacity(0.6))
                 .lineLimit(1)
-                .frame(maxWidth: 120)
+                .frame(maxWidth: 100)
 
             Button(action: onClose) {
                 Image(systemName: "xmark")
@@ -115,7 +115,7 @@ private struct BrowserTabChip: View {
         }
         .padding(.leading, 10)
         .padding(.trailing, 6)
-        .padding(.vertical, 7)
+        .padding(.vertical, 5)
         .background(
             Capsule()
                 .fill(.ultraThinMaterial)
@@ -393,7 +393,7 @@ struct TabSwitcherOverlay: View {
     }
 
     private func carouselHeight(in geo: GeometryProxy) -> CGFloat {
-        min(max(geo.size.height * 0.78, 500), max(geo.size.height - 130, 360))
+        min(max(geo.size.height * 0.70, 440), max(geo.size.height - 130, 360))
     }
 }
 
@@ -412,7 +412,7 @@ private struct TabSwitcherCarousel: View {
 
     var body: some View {
         GeometryReader { geo in
-            let cardWidth = min(max(geo.size.width * 0.74, 260), 390)
+            let cardWidth = min(max(geo.size.width * 0.64, 220), 340)
             let cardSpacing = -cardWidth * 0.24
             let stepDistance = cardWidth + cardSpacing
 

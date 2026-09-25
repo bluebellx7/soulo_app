@@ -327,6 +327,42 @@ final class WebViewModelTests: XCTestCase {
             BrowserNavigationResolver.resolve("example.com/docs"),
             URL(string: "https://example.com/docs")
         )
+        XCTAssertEqual(
+            BrowserNavigationResolver.resolve("appfavi.com"),
+            URL(string: "https://appfavi.com")
+        )
+    }
+
+    func testBrowserInputClassificationOpensFileURLsBeforeDecidingWhetherToDownload() {
+        XCTAssertEqual(
+            BrowserNavigationResolver.classify("appfavi.com"),
+            .webpage(URL(string: "https://appfavi.com")!)
+        )
+        XCTAssertEqual(
+            BrowserNavigationResolver.classify("https://example.com/?file=archive.zip"),
+            .webpage(URL(string: "https://example.com/?file=archive.zip")!)
+        )
+        XCTAssertEqual(
+            BrowserNavigationResolver.classify("example.com/archive.zip?token=123"),
+            .webpage(URL(string: "https://example.com/archive.zip?token=123")!)
+        )
+        XCTAssertEqual(
+            BrowserNavigationResolver.classify("https://example.com/movie.mp4"),
+            .webpage(URL(string: "https://example.com/movie.mp4")!)
+        )
+        XCTAssertEqual(BrowserNavigationResolver.classify("在必应搜索电影"), .search("在必应搜索电影"))
+        XCTAssertEqual(BrowserNavigationResolver.classify("user@example.com"), .search("user@example.com"))
+        XCTAssertEqual(BrowserNavigationResolver.classify("1.2"), .search("1.2"))
+        XCTAssertNil(BrowserNavigationResolver.classify("  "))
+    }
+
+    func testURLHelpersUseSameValidationAsBrowserInput() {
+        XCTAssertTrue(" appfavi.com ".isValidURL)
+        XCTAssertEqual(" appfavi.com ".asURL, URL(string: "https://appfavi.com"))
+        XCTAssertFalse("user@example.com".isValidURL)
+        XCTAssertFalse("javascript://example.com".isValidURL)
+        XCTAssertTrue("http://localhost:8080".isValidURL)
+        XCTAssertEqual("example.com:8080".asURL, URL(string: "https://example.com:8080"))
     }
 
     func testBrowserNavigationResolverSearchesUnsafeSchemesInsteadOfExecutingThem() {
@@ -691,24 +727,36 @@ final class WebViewModelTests: XCTestCase {
         )
     }
 
-    func testVideoViewportInsetUsesNativeBottomClearanceOnlyForActiveVideo() {
+    func testPageViewportInsetSupportsVideoAndLegacyToolbarClearance() {
         XCTAssertEqual(
-            BrowserChromeLayout.videoViewportBottomInset(
+            BrowserChromeLayout.pageViewportBottomInset(
                 isActiveTab: true,
                 isVideoPage: true,
+                showsBottomToolbar: false,
+                bottomClearance: 64
+            ),
+            64
+        )
+
+        XCTAssertEqual(
+            BrowserChromeLayout.pageViewportBottomInset(
+                isActiveTab: true,
+                isVideoPage: false,
+                showsBottomToolbar: true,
                 bottomClearance: 64
             ),
             64
         )
 
         for state in [
-            (isActiveTab: false, isVideoPage: true),
-            (isActiveTab: true, isVideoPage: false),
+            (isActiveTab: false, isVideoPage: true, showsBottomToolbar: true),
+            (isActiveTab: true, isVideoPage: false, showsBottomToolbar: false),
         ] {
             XCTAssertEqual(
-                BrowserChromeLayout.videoViewportBottomInset(
+                BrowserChromeLayout.pageViewportBottomInset(
                     isActiveTab: state.isActiveTab,
                     isVideoPage: state.isVideoPage,
+                    showsBottomToolbar: state.showsBottomToolbar,
                     bottomClearance: 64
                 ),
                 0
@@ -716,9 +764,10 @@ final class WebViewModelTests: XCTestCase {
         }
 
         XCTAssertEqual(
-            BrowserChromeLayout.videoViewportBottomInset(
+            BrowserChromeLayout.pageViewportBottomInset(
                 isActiveTab: true,
                 isVideoPage: true,
+                showsBottomToolbar: true,
                 bottomClearance: 34
             ),
             34
@@ -1337,6 +1386,26 @@ final class WebViewModelTests: XCTestCase {
             )
         )
         XCTAssertFalse(isGoogleTranslationPageURL(URL(string: "https://example.com/article")))
+    }
+
+    @MainActor
+    func testFollowLinkTranslationKeepsChoiceAcrossNavigationUntilRestored() {
+        let model = WebViewModel()
+        model.enableAppleFollowLinkTranslation(
+            source: Locale.Language(identifier: "en"),
+            target: Locale.Language(identifier: "zh-Hans")
+        )
+        let startedAt = model.pageRevision
+        XCTAssertEqual(model.followLinkTranslation?.startAfterPageRevision, startedAt)
+        model.resetPageTranslationState()
+        model.pageDidFinishLoading()
+        XCTAssertEqual(model.pageRevision, startedAt + 1)
+        XCTAssertEqual(model.followLinkTranslation?.targetIdentifier, "zh")
+        model.enableGoogleFollowLinkTranslation(target: "ja")
+        XCTAssertNil(model.followLinkTranslation)
+        XCTAssertEqual(model.googleFollowLinkTarget, "ja")
+        model.disableFollowLinkTranslation()
+        XCTAssertNil(model.googleFollowLinkTarget)
     }
 
     func testTranslationLanguageIdentifierUsesMinimalUnambiguousIdentifier() {

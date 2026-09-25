@@ -1,4 +1,3 @@
-1.1.8
+1.1.9
 
-• Improved ad filtering and repeated ad marking, with editable built-in rules.
-• Press and hold images to enlarge, save or share. Collapsible video tools add landscape playback, with playback progress preserved across tabs.
+• Open web addresses directly and search with your chosen engine. Improved translation across links, video playback and downloads.

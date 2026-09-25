@@ -1,4 +1,3 @@
-1.1.8
+1.1.9
 
-• Penapisan dan penandaan iklan berturutan ditambah baik, dengan peraturan terbina dalam yang boleh disunting.
-• Tekan lama imej untuk membesarkan, menyimpan atau berkongsi. Alat video boleh dilipat, dengan main balik landskap dan kemajuan kekal semasa menukar tab.
+• Buka alamat web terus dan cari dengan perkhidmatan pilihan. Terjemahan pautan, video dan muat turun ditambah baik.

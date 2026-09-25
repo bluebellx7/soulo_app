@@ -13,12 +13,24 @@ struct WebPageTranslationSheet: View {
     let webView: WKWebView?
     let pageURL: URL?
     let onOpenURL: (URL) -> Void
+    let onAppleTranslationApplied: (Locale.Language, Locale.Language) -> Void
+    let onGoogleTranslationOpened: (String) -> Void
+    let onRestore: () -> Void
 
     var body: some View {
         if #available(iOS 18.0, *) {
-            SystemWebPageTranslationView(webView: webView, pageURL: pageURL, onOpenURL: onOpenURL)
+            SystemWebPageTranslationView(
+                webView: webView, pageURL: pageURL, onOpenURL: onOpenURL,
+                onAppleTranslationApplied: onAppleTranslationApplied,
+                onGoogleTranslationOpened: onGoogleTranslationOpened,
+                onRestore: onRestore
+            )
         } else {
-            LegacyWebPageTranslationView(pageURL: pageURL, onOpenURL: onOpenURL)
+            LegacyWebPageTranslationView(
+                pageURL: pageURL, onOpenURL: onOpenURL,
+                onGoogleTranslationOpened: onGoogleTranslationOpened,
+                onRestore: onRestore
+            )
         }
     }
 }
@@ -511,6 +523,88 @@ enum WebPageTranslationBridge {
     }
 }
 
+@available(iOS 18.0, *)
+struct FollowLinkTranslationRuntime: View {
+    @ObservedObject var viewModel: WebViewModel
+    @State private var configuration: TranslationSession.Configuration?
+    @State private var configuredRevision = 0
+
+    var body: some View {
+        Color.clear
+            .task(id: viewModel.pageRevision) {
+                guard let preference = viewModel.followLinkTranslation,
+                      viewModel.pageRevision > preference.startAfterPageRevision,
+                      let url = viewModel.webView?.url,
+                      ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return }
+
+                configuredRevision = viewModel.pageRevision
+                let source = Locale.Language(identifier: preference.sourceIdentifier)
+                let target = Locale.Language(identifier: preference.targetIdentifier)
+                if var current = configuration,
+                   current.source == source, current.target == target {
+                    current.invalidate()
+                    configuration = current
+                } else {
+                    configuration = TranslationSession.Configuration(source: source, target: target)
+                }
+            }
+            .translationTask(configuration) { session in
+                await translateFollowingPage(using: session)
+            }
+    }
+
+    @MainActor
+    private func translateFollowingPage(using session: TranslationSession) async {
+        let revision = configuredRevision
+        guard revision == viewModel.pageRevision,
+              let preference = viewModel.followLinkTranslation,
+              revision > preference.startAfterPageRevision,
+              !viewModel.isPageTranslationApplied,
+              let webView = viewModel.webView,
+              let pageURL = webView.url?.absoluteString else { return }
+
+        do {
+            try await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled, revision == viewModel.pageRevision else { return }
+            let snapshot = try await WebPageTranslationBridge.extract(from: webView)
+            guard snapshot.pageURL == pageURL else { return }
+            if let detected = WebTranslationSourceDetector.dominantLanguage(in: snapshot.fragments),
+               !WebPageLanguageMatcher.representsSameLanguage(
+                detected.minimalIdentifier, preference.sourceIdentifier
+               ) {
+                return
+            }
+
+            let fragments = WebTranslationSourceDetector.matchingFragments(
+                snapshot.fragments,
+                source: Locale.Language(identifier: preference.sourceIdentifier)
+            )
+            var translated: [(id: String, text: String)] = []
+            for start in stride(from: 0, to: fragments.count, by: 24) {
+                guard !Task.isCancelled, revision == viewModel.pageRevision else { return }
+                let batch = Array(fragments[start..<min(start + 24, fragments.count)])
+                let requests = batch.map {
+                    TranslationSession.Request(sourceText: $0.text, clientIdentifier: $0.id)
+                }
+                let responses = try await session.translations(from: requests)
+                translated.append(contentsOf: responses.enumerated().compactMap { index, response in
+                    let identifier = response.clientIdentifier
+                        ?? (batch.indices.contains(index) ? batch[index].id : nil)
+                    return identifier.map { (id: $0, text: response.targetText) }
+                })
+            }
+            guard !Task.isCancelled, revision == viewModel.pageRevision,
+                  !translated.isEmpty else { return }
+            try await WebPageTranslationBridge.apply(translated, snapshot: snapshot, to: webView)
+            viewModel.updatePageTranslationApplied(true)
+        } catch {
+            webPageTranslationLogger.debug(
+                "Follow-link translation skipped: \(String(reflecting: error), privacy: .public)"
+            )
+        }
+    }
+}
+
 private struct TranslationLanguagePicker: View {
     let targets: [WebTranslationTarget]
     @Binding var selection: String
@@ -568,6 +662,9 @@ private struct SystemWebPageTranslationView: View {
     let webView: WKWebView?
     let pageURL: URL?
     let onOpenURL: (URL) -> Void
+    let onAppleTranslationApplied: (Locale.Language, Locale.Language) -> Void
+    let onGoogleTranslationOpened: (String) -> Void
+    let onRestore: () -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var provider = WebTranslationProvider.defaultProvider
@@ -1014,6 +1111,9 @@ private struct SystemWebPageTranslationView: View {
             }
             try await WebPageTranslationBridge.apply(translated, snapshot: snapshot, to: webView)
             guard activeRequestID == requestID else { return }
+            if let source = configuration?.source, let target = configuration?.target {
+                onAppleTranslationApplied(source, target)
+            }
 
             isTranslating = false
             didTranslate = true
@@ -1178,6 +1278,7 @@ private struct SystemWebPageTranslationView: View {
            isGoogleTranslationPageURL(pageURL),
            let sourceURL = googleTranslationSourcePageURL(from: pageURL) {
             onOpenURL(sourceURL)
+            onRestore()
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             dismiss()
             return
@@ -1186,6 +1287,7 @@ private struct SystemWebPageTranslationView: View {
         Task { @MainActor in
             do {
                 try await WebPageTranslationBridge.restore(on: webView)
+                onRestore()
                 didTranslate = false
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
             } catch {
@@ -1197,6 +1299,7 @@ private struct SystemWebPageTranslationView: View {
     private func openGoogleTranslation() {
         guard let target = selectedTarget,
               let url = googleTranslationURL(pageURL: pageURL, target: target.id) else { return }
+        onGoogleTranslationOpened(target.id)
         onOpenURL(url)
         dismiss()
     }
@@ -1205,6 +1308,8 @@ private struct SystemWebPageTranslationView: View {
 private struct LegacyWebPageTranslationView: View {
     let pageURL: URL?
     let onOpenURL: (URL) -> Void
+    let onGoogleTranslationOpened: (String) -> Void
+    let onRestore: () -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var targets: [WebTranslationTarget] = []
@@ -1252,6 +1357,7 @@ private struct LegacyWebPageTranslationView: View {
 
                     Button {
                         guard let url = googleTranslationURL(pageURL: pageURL, target: selectedTargetID) else { return }
+                        onGoogleTranslationOpened(selectedTargetID)
                         onOpenURL(url)
                         dismiss()
                     } label: {
@@ -1267,6 +1373,7 @@ private struct LegacyWebPageTranslationView: View {
                                   let sourceURL = googleTranslationSourcePageURL(from: pageURL) else {
                                 return
                             }
+                            onRestore()
                             onOpenURL(sourceURL)
                             dismiss()
                         } label: {

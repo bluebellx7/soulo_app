@@ -22,6 +22,7 @@ final class MediaSession: ObservableObject {
     @Published var error: String?
     @Published var expanded = false
     @Published private(set) var hasVideo = false
+    @Published private(set) var videoIsLandscape = false
     @Published var playerSurfaces = 0
     @Published var loop = false
     @Published var mirrored = false
@@ -31,6 +32,7 @@ final class MediaSession: ObservableObject {
     private var timer: Any?
     private var observations = Set<AnyCancellable>()
     private var itemObservation: NSKeyValueObservation?
+    private var presentationSizeObservation: NSKeyValueObservation?
     private var generation = UUID()
     private var preparation = UUID()
     func reservePreparation() -> UUID { preparation = UUID(); return preparation }
@@ -80,6 +82,10 @@ final class MediaSession: ObservableObject {
 
     static func validRate(_ value: Float) -> Bool { value.isFinite && (0.5...16).contains(value) }
 
+    static func prefersLandscape(width: CGFloat, height: CGFloat) -> Bool {
+        width.isFinite && height.isFinite && height > 0 && width > height * 1.1
+    }
+
     func open(url: URL, title: String? = nil, pageURL: URL? = nil, asset: AVURLAsset? = nil, webView: WKWebView? = nil, reservation: UUID? = nil) {
         if let reservation, !ownsPreparation(reservation) { return }
         preparation = UUID()
@@ -99,6 +105,7 @@ final class MediaSession: ObservableObject {
         self.pageURL = pageURL
         elapsed = 0; duration = 0; error = nil; lastSavedSecond = -1
         hasVideo = false
+        videoIsLandscape = false
         mirrored = false
         let item = AVPlayerItem(asset: asset ?? AVURLAsset(url: url))
         // Preserve pitch across the full speed range. The spectral algorithm also
@@ -109,7 +116,32 @@ final class MediaSession: ObservableObject {
         Task {
             let tracks = try? await item.asset.loadTracks(withMediaType: .video)
             guard self.generation == token else { return }
-            self.hasVideo = !(tracks?.isEmpty ?? true)
+            if let track = tracks?.first,
+               let size = try? await track.load(.naturalSize),
+               let transform = try? await track.load(.preferredTransform),
+               self.generation == token {
+                let orientedSize = size.applying(transform)
+                // The presentation size is authoritative for adaptive streams.
+                // Publish the video surface and its orientation together so a
+                // quick fullscreen tap cannot use the old portrait default.
+                let presented = item.presentationSize
+                let width = presented.width > 0 ? presented.width : abs(orientedSize.width)
+                let height = presented.height > 0 ? presented.height : abs(orientedSize.height)
+                if width > 0, height > 0 {
+                    self.videoIsLandscape = Self.prefersLandscape(width: width, height: height)
+                    self.hasVideo = true
+                }
+            }
+        }
+        presentationSizeObservation = item.observe(\.presentationSize, options: [.initial, .new]) { [weak self] item, _ in
+            Task { @MainActor in
+                guard let self, self.generation == token,
+                      item.presentationSize.width > 0, item.presentationSize.height > 0 else { return }
+                self.videoIsLandscape = Self.prefersLandscape(
+                    width: item.presentationSize.width, height: item.presentationSize.height
+                )
+                self.hasVideo = true
+            }
         }
         itemObservation = item.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
             Task { @MainActor in
@@ -185,10 +217,11 @@ final class MediaSession: ObservableObject {
     }
     func toggle() { playing ? pause() : play() }
     func stop() {
-        pause(); generation = UUID(); preparation = UUID(); itemObservation = nil
+        pause(); generation = UUID(); preparation = UUID(); itemObservation = nil; presentationSizeObservation = nil
         pictureInPicture.stop()
         retainedPiPController?.player = nil; retainedPiPController = nil; retainedPiPDelegate = nil
         player.replaceCurrentItem(with: nil); url = nil; expanded = false
+        hasVideo = false; videoIsLandscape = false
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }

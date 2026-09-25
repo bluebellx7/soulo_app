@@ -956,3 +956,5 @@
 "library_files_tab" = "Files";
 
 "library_books_tab" = "Books";
+"keep_page_above_toolbar" = "Avoid Overlap";
+"keep_page_above_toolbar_desc" = "Keep webpage controls above the toolbar.";

@@ -867,3 +867,5 @@
 "library_files_tab" = "ไฟล์";
 
 "library_books_tab" = "หนังสือ";
+"keep_page_above_toolbar" = "หลีกเลี่ยงการทับซ้อนกัน";
+"keep_page_above_toolbar_desc" = "คงการควบคุมหน้าเว็บไว้เหนือแถบเครื่องมือ";

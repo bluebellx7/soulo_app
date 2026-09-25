@@ -5,16 +5,24 @@ struct SearchBarView: View {
     var isCompact: Bool = false
     var isIncognito: Bool = false
     var isRecording: Bool = false
+    var respondsToHomeFocus: Bool = true
     var onSubmit: () -> Void
-    var onMicTap: () -> Void
+    var onMicTap: (() -> Void)? = nil
     var onClear: (() -> Void)?
     var onIncognitoTap: (() -> Void)?
     var onScanTap: (() -> Void)?
+    var selectedRegion: PlatformRegion?
+    var selectedGroupID: UUID?
+    var onRegionSelect: ((PlatformRegion) -> Void)?
+    var onGroupSelect: ((CustomGroup) -> Void)?
+    var onPlatformManagementTap: (() -> Void)?
 
     @ObservedObject var wallpaperManager = WallpaperManager.shared
+    @ObservedObject private var platformStore = PlatformDataStore.shared
 
     @FocusState private var isFocused: Bool
     @State private var animateGlow = false
+    @State private var showSearchActions = false
 
     private var isLight: Bool {
         !isCompact && wallpaperManager.isCurrentWallpaperLight
@@ -42,23 +50,9 @@ struct SearchBarView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            if let onIncognitoTap {
-                Menu {
-                    Button {
-                        isFocused = false
-                        onIncognitoTap()
-                    } label: {
-                        Label(LanguageManager.shared.localizedString(isIncognito ? "privacy_exit_incognito" : "privacy_enter_incognito"), systemImage: isIncognito ? "eye" : "eye.slash")
-                    }
-                    if let onScanTap {
-                        Button {
-                            isFocused = false
-                            onScanTap()
-                        } label: {
-                            Label(ToolText.text("scan_qr"), systemImage: "qrcode.viewfinder")
-                        }
-                        .accessibilityIdentifier("search.scan")
-                    }
+            if onIncognitoTap != nil || onRegionSelect != nil || onGroupSelect != nil {
+                Button {
+                    showSearchActions = true
                 } label: {
                     Image(systemName: isIncognito ? "eye.slash.fill" : "magnifyingglass")
                         .font(.system(size: 14, weight: .medium))
@@ -66,7 +60,6 @@ struct SearchBarView: View {
                         .frame(width: 26, height: 26)
                         .contentShape(Rectangle())
                 }
-                .menuOrder(.fixed)
                 .accessibilityIdentifier("search.actions")
                 .accessibilityLabel(
                     LanguageManager.shared.localizedString(
@@ -78,6 +71,10 @@ struct SearchBarView: View {
                         isIncognito ? "privacy_exit_incognito" : "privacy_enter_incognito"
                     )
                 )
+                .popover(isPresented: $showSearchActions, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
+                    searchActionsPanel(onIncognitoTap: onIncognitoTap, onScanTap: onScanTap)
+                        .presentationCompactAdaptation(.popover)
+                }
             } else {
                 Image(systemName: isIncognito ? "eye.slash.fill" : "magnifyingglass")
                     .font(.system(size: 14, weight: .medium))
@@ -105,7 +102,7 @@ struct SearchBarView: View {
                 )
             )
             .onReceive(NotificationCenter.default.publisher(for: .focusHomeSearch)) { _ in
-                guard !isCompact else { return }
+                guard respondsToHomeFocus && !isCompact else { return }
                 isFocused = true
             }
 
@@ -122,44 +119,46 @@ struct SearchBarView: View {
                 .accessibilityLabel(LanguageManager.shared.localizedString("accessibility_clear_search"))
             }
 
-            Rectangle()
-                .fill(dividerColor)
-                .frame(width: 1, height: 16)
-                .accessibilityHidden(true)
+            if let onMicTap {
+                Rectangle()
+                    .fill(dividerColor)
+                    .frame(width: 1, height: 16)
+                    .accessibilityHidden(true)
 
-            Button(action: onMicTap) {
-                ZStack {
-                    if isRecording {
-                        Circle()
-                            .fill(Color.red.opacity(0.2))
-                            .frame(width: 26, height: 26)
-                            .scaleEffect(animateGlow ? 1.4 : 1.0)
-                            .opacity(animateGlow ? 0 : 0.8)
+                Button(action: onMicTap) {
+                    ZStack {
+                        if isRecording {
+                            Circle()
+                                .fill(Color.red.opacity(0.2))
+                                .frame(width: 26, height: 26)
+                                .scaleEffect(animateGlow ? 1.4 : 1.0)
+                                .opacity(animateGlow ? 0 : 0.8)
+                        }
+                        Image(systemName: isRecording ? "mic.fill" : "mic")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(isRecording ? .red : iconColor)
                     }
-                    Image(systemName: isRecording ? "mic.fill" : "mic")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(isRecording ? .red : iconColor)
+                    .frame(width: 26, height: 26)
                 }
-                .frame(width: 26, height: 26)
-            }
-            .onChange(of: isRecording) { _, recording in
-                if recording {
-                    withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: false)) {
-                        animateGlow = true
+                .onChange(of: isRecording) { _, recording in
+                    if recording {
+                        withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: false)) {
+                            animateGlow = true
+                        }
+                    } else {
+                        animateGlow = false
                     }
-                } else {
-                    animateGlow = false
                 }
-            }
-            .accessibilityLabel(
-                LanguageManager.shared.localizedString(isRecording ? "voice_stop" : "voice_record")
-            )
-            .accessibilityValue(
-                LanguageManager.shared.localizedString(
-                    isRecording ? "accessibility_voice_recording" : "accessibility_voice_idle"
+                .accessibilityLabel(
+                    LanguageManager.shared.localizedString(isRecording ? "voice_stop" : "voice_record")
                 )
-            )
-            .accessibilityHint(LanguageManager.shared.localizedString("accessibility_voice_search_hint"))
+                .accessibilityValue(
+                    LanguageManager.shared.localizedString(
+                        isRecording ? "accessibility_voice_recording" : "accessibility_voice_idle"
+                    )
+                )
+                .accessibilityHint(LanguageManager.shared.localizedString("accessibility_voice_search_hint"))
+            }
 
         }
         .padding(.horizontal, 14)
@@ -186,5 +185,105 @@ struct SearchBarView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: isFocused)
+    }
+
+    private func searchActionsPanel(
+        onIncognitoTap: (() -> Void)?,
+        onScanTap: (() -> Void)?
+    ) -> some View {
+        VStack(spacing: 0) {
+            if let onIncognitoTap {
+                Button {
+                    showSearchActions = false
+                    isFocused = false
+                    onIncognitoTap()
+                } label: {
+                    Label(LanguageManager.shared.localizedString(isIncognito ? "privacy_exit_incognito" : "privacy_enter_incognito"), systemImage: isIncognito ? "eye" : "eye.slash")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .frame(height: 46)
+                }
+                .buttonStyle(.plain)
+            }
+
+            if let onScanTap {
+                Button {
+                    showSearchActions = false
+                    isFocused = false
+                    onScanTap()
+                } label: {
+                    Label(ToolText.text("scan_qr"), systemImage: "qrcode.viewfinder")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .frame(height: 46)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("search.scan")
+            }
+
+            if let onRegionSelect {
+                Divider()
+
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(PlatformRegion.sortedCases(preferring: selectedRegion ?? .international).filter { !platformStore.visiblePlatforms(for: $0).isEmpty }) { region in
+                            searchActionRow(
+                                title: "\(platformStore.regionDisplayName(for: region)) (\(platformStore.visiblePlatforms(for: region).count))",
+                                systemImage: selectedGroupID == nil && selectedRegion == region ? "checkmark" : nil
+                            ) {
+                                showSearchActions = false
+                                onRegionSelect(region)
+                            }
+                        }
+
+                        if let onGroupSelect {
+                            ForEach(platformStore.customGroups.filter { !platformStore.platformsForGroup($0).isEmpty }) { group in
+                                searchActionRow(
+                                    title: "\(group.name) (\(platformStore.platformsForGroup(group).count))",
+                                    systemImage: selectedGroupID == group.id ? "checkmark" : nil
+                                ) {
+                                    showSearchActions = false
+                                    onGroupSelect(group)
+                                }
+                            }
+                        }
+                    }
+                }
+                .frame(maxHeight: 190)
+
+                if let onPlatformManagementTap {
+                    Divider()
+                    Button {
+                        showSearchActions = false
+                        DispatchQueue.main.async { onPlatformManagementTap() }
+                    } label: {
+                        Label(LanguageManager.shared.localizedString("platform_management"), systemImage: "slider.horizontal.3")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .frame(height: 46)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .frame(width: 280)
+        .padding(.vertical, 6)
+    }
+
+    private func searchActionRow(title: String, systemImage: String?, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: systemImage ?? "checkmark")
+                    .font(.system(size: 14, weight: .medium))
+                    .opacity(systemImage == nil ? 0 : 1)
+                Text(title)
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .frame(height: 46)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }

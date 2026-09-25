@@ -1,8 +1,10 @@
 A Soulo többplatformos keresést kínáló böngésző iPhone-ra és iPadre. Írja be egyszer a keresést, majd váltson keresők, közösségi oldalak, videók, vásárlás, tudás és AI-platformok között újragépelés nélkül.
 
-Jobb reklámszűrés és egymást követő reklámjelölés, szerkeszthető beépített szabályokkal. Hosszan nyomva nagyíthatja, mentheti és megoszthatja a képeket. Összecsukható videóeszközök, fekvő lejátszás és megőrzött pozíció lapváltáskor.
+Nyissa meg közvetlenül a webcímeket, és keressen a választott szolgáltatással. Jobb fordítás, videó és letöltés.
 
 Keressen információt, olvasson cikkeket, játsszon le médiát és kezelje letöltéseit egy böngészőben.
+
+Használjon több lapot, hangalapú keresést, keresési előzményeket és platformcsoportokat. A kezdőlapon válthat platformot, és egy hivatkozás megnyitása után is folytathatja a fordítást. A weboldalakon felismerheti a gyakori videókat, hangfájlokat és képeket, mentheti a támogatott fájlokat, és követheti a letöltéseket. Van asztali és mobilnézet, lehúzásos frissítés, megosztás és más appokból érkező hivatkozások kezelése is.
 
 • Keresés: adjon hozzá platformokat, csoportosítsa és rendezze őket. Keressen a kijelölt szövegre új Soulo-lapon.
 • Hirdetések és adatvédelem: hirdetésszűrés, külső szabálylisták és kézzel kijelölt hirdetések elrejtése. Kezelje a szűrőket és a követésvédelmet webhelyenként. A privát böngészés nem ment előzményeket.

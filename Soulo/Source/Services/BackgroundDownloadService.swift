@@ -48,6 +48,29 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
         return stagedURL
     }
 
+    static func validateDownloadedFile(
+        at url: URL,
+        filename: String,
+        response: URLResponse?
+    ) throws {
+        let extensionName = (filename as NSString).pathExtension.lowercased()
+        guard ["mp4", "m4v", "mov", "webm", "m3u8"].contains(extensionName) else { return }
+        let mime = (response?.mimeType ?? "").lowercased()
+        if mime == "text/html" || mime == "application/json" {
+            throw WebResourceDownloadError.invalidResponse
+        }
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        let prefix = try handle.read(upToCount: 128) ?? Data()
+        let sample = String(data: prefix, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased() ?? ""
+        if sample.hasPrefix("<!doctype html") || sample.hasPrefix("<html")
+            || sample.hasPrefix("{") {
+            throw WebResourceDownloadError.invalidResponse
+        }
+    }
+
     private override init() {
         super.init()
         _ = session
@@ -193,6 +216,9 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
                 return
             }
             do {
+                try Self.validateDownloadedFile(
+                    at: stagedURL, filename: item.fileName, response: downloadTask.response
+                )
                 try FileManager.default.createDirectory(
                     at: item.localURL.deletingLastPathComponent(),
                     withIntermediateDirectories: true

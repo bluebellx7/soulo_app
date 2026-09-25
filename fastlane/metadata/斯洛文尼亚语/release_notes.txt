@@ -1,4 +1,3 @@
-1.1.8
+1.1.9
 
-• Izboljšano filtriranje in zaporedno označevanje oglasov z urejanjem vgrajenih pravil.
-• Pridržite sliko za povečavo, shranjevanje ali deljenje. Zložljiva videoorodja, ležeče predvajanje in ohranjen napredek ob menjavi zavihkov.
+• Spletne naslove odprite neposredno in iščite z izbrano storitvijo. Boljši prevod povezav, video in prenosi.

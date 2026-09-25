@@ -4,5 +4,4 @@
 "NSCameraUsageDescription" = "화상 통화, 코드 스캔, 사진 촬영 등 웹사이트 요청을 승인할 때 카메라 액세스를 허용하세요.";
 "NSMicrophoneUsageDescription" = "음성 검색과 승인 시 웹사이트 통화 또는 녹음을 위해 마이크 액세스를 허용합니다.";
 "NSSpeechRecognitionUsageDescription" = "음성 인식을 허용하면 음성이 검색 텍스트로 변환됩니다.";
-"NSPhotoLibraryUsageDescription" = "Soulo에서 맞춤 배경화면을 설정하려면 사진 라이브러리에 액세스해야 합니다.";
 "NSPhotoLibraryAddUsageDescription" = "Soulo에서 웹 이미지를 사진 라이브러리에 저장하려면 권한이 필요합니다.";

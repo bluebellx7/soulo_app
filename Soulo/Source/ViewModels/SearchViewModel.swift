@@ -119,6 +119,16 @@ class SearchViewModel: ObservableObject {
     @AppStorage("last_clipboard_hash") private var lastClipboardHash: String = ""
     @AppStorage("last_clipboard_change_count") private var lastClipboardChangeCount: Int = 0
 
+    @discardableResult
+    func setPrivateBrowsing(_ enabled: Bool, tabManager: TabManager) -> Bool {
+        isIncognito = enabled
+        guard tabManager.synchronizePrivacyMode() else { return false }
+        clearSearch()
+        clearSuggestions()
+        showClipboardPrompt = false
+        return true
+    }
+
     // MARK: - Search
 
     func performSearch(context: ModelContext? = nil) {
@@ -131,9 +141,7 @@ class SearchViewModel: ObservableObject {
         searchID = UUID()
         clearSuggestions()
 
-        if trimmed.isValidURL {
-            // URL detected — caller handles direct load
-        } else {
+        if case .search? = BrowserNavigationResolver.classify(trimmed) {
             if !isIncognito, let context {
                 recordHistory(keyword: trimmed, context: context)
             }

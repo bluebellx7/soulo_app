@@ -1,4 +1,3 @@
-1.1.8
+1.1.9
 
-• Poboljšano filtriranje i uzastopno označavanje oglasa uz uređivanje ugrađenih pravila.
-• Dugo pritisnite sliku za povećanje, spremanje ili dijeljenje. Sklopivi videoalati, vodoravna reprodukcija i očuvan napredak pri promjeni kartica.
+• Otvarajte web-adrese izravno i pretražujte odabranom uslugom. Poboljšani su prijevod poveznica, video i preuzimanja.

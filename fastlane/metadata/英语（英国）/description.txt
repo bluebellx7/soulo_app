@@ -1,20 +1,22 @@
 Soulo is a multi-search browser for iPhone and iPad. Enter a query once and switch between search, social, video, shopping, knowledge and AI platforms without typing it again.
 
-Improved ad filtering and repeated ad marking, with editable built-in rules. Press and hold images to enlarge, save or share. Collapsible video tools add landscape playback, with playback progress preserved across tabs.
+Open web addresses directly and search with your chosen engine. Improved translation across links, video playback and downloads.
 
 Find information, read articles, play media and manage downloads in one browser.
 
-• Search your way: Add platforms, organise groups and reorder them. Select text to search in a new Soulo tab.
-• Ads and privacy: Filter ads, subscribe to third-party rules and mark unwanted ads yourself. Manage filtering and tracking protection by site. Private browsing does not save history.
-• Audio and video: Playback speed, repeat, floating mini-player, Picture in Picture, background playback and AirPlay. Capture video frames, mirror the picture and press and hold for a temporary speed boost.
-• Downloads and files: Find images, audio, video and documents on webpages. Save images in batches. Browse files in a list or cover grid, rename them, import from Photos and transfer over Wi-Fi.
+Keep your place with multiple tabs, voice search, search history and platform groups. Switch platforms from the home screen, and continue translating after following a page link. Resource detection finds common video, audio and image files on webpages; save supported files and manage their progress in Downloads. Desktop and mobile site modes, pull to refresh, sharing and links from other apps make everyday browsing easier.
+
+• Search your way: Switch among search, social, video, shopping, knowledge and AI platforms. Add or hide platforms, organise groups and reorder them. Search selected text in a new tab, use voice input or return to search history.
+• Ads and privacy: Filter ads, subscribe to third-party rules and mark unwanted ads yourself. Manage filtering and tracking protection by site. Private browsing does not save history; you can also clear browsing data.
+• Audio and video: Playback speed, repeat, landscape fullscreen, floating mini-player, Picture in Picture, background playback and AirPlay. Capture video frames, mirror the picture and press and hold for a temporary speed boost. Play supported webpage video and HLS streams.
+• Downloads and files: Find images, audio, video and documents on webpages, and save files when the site permits. Save images in batches, check download progress and organize files. Browse in a list or cover grid, rename files, import from Photos and transfer over Wi-Fi.
 • Archives: Extract ZIP, RAR and 7z files. Create ZIP and 7z archives with optional password protection.
 • Books and reading: Read TXT, PDF, EPUB and supported DRM-free MOBI, AZW and AZW3 books. Adjust reading fonts, text size, line spacing and backgrounds. Reflowable books support simplified/traditional Chinese display conversion; webpage reading mode extracts articles and lets you continue to the next page.
 • Extensions: Import, edit and run JavaScript userscripts, manage site matching and permissions, and install compatible WebExtensions.
-• Web tools: Page translation, find in page, full-page screenshots, image text recognition, desktop/mobile modes, custom user agent and site certificate details.
+• Web tools: Page translation that continues after following links, find in page, full-page screenshots, image text recognition, desktop/mobile modes, custom user agent and site certificate details.
 • Bookmarks and sharing: Organise bookmarks in folders and import or export HTML bookmarks used by Chrome, Edge and other browsers. Create webpage QR codes with the site's icon, then share, save or copy them.
-• Make it yours: Customise wallpapers, the toolbar and app icon quick actions. Reach common tools through widgets, Shortcuts and URL schemes. Optionally sync settings with iCloud.
+• Make it yours: Choose a light or dark appearance; customise wallpapers, the toolbar and app icon quick actions. Reach common tools through widgets, Shortcuts and URL schemes. Optionally sync settings with iCloud.
 
-Media, ebook and extension availability depends on file formats, website restrictions and system version.
+Media, ebook and extension availability depends on file formats, website restrictions and system version. Protected or restricted media may not be detected, played or downloaded.
 
 Support: contact@dkluge.com

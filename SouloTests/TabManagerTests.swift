@@ -19,6 +19,49 @@ final class TabManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testPrivateEntryReleasesNormalRuntimeAndDoesNotResetTwice() throws {
+        let manager = TabManager()
+        let search = SearchViewModel()
+        let old = try XCTUnwrap(manager.activeWebViewModel)
+        old.webView = WKWebView()
+        search.searchText = "previous query"
+        search.currentKeyword = "previous query"
+        search.suggestions = ["previous suggestion"]
+        search.showClipboardPrompt = true
+
+        XCTAssertTrue(search.setPrivateBrowsing(true, tabManager: manager))
+        XCTAssertTrue(search.isIncognito)
+        XCTAssertNil(old.webView)
+        XCTAssertNil(manager.activeWebViewModel?.currentURL)
+        XCTAssertTrue(search.suggestions.isEmpty)
+        XCTAssertFalse(search.showClipboardPrompt)
+        let privateTab = try XCTUnwrap(manager.activeTab)
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .nonPersistent()
+        privateTab.webViewModel.webView = WKWebView(frame: .zero, configuration: configuration)
+        XCTAssertFalse(manager.synchronizePrivacyMode(), "A later SwiftUI update must not discard the new request")
+        XCTAssertEqual(manager.activeTab?.id, privateTab.id)
+        XCTAssertNotNil(privateTab.webViewModel.webView)
+
+        XCTAssertTrue(search.setPrivateBrowsing(false, tabManager: manager))
+        XCTAssertNil(privateTab.webViewModel.webView)
+        XCTAssertNotEqual(manager.activeTab?.id, privateTab.id)
+    }
+
+    @MainActor
+    func testPrivateModeChangeAlsoReconcilesOtherWindow() throws {
+        let first = TabManager(storageKey: "privacy-first-\(UUID())")
+        let second = TabManager(storageKey: "privacy-second-\(UUID())")
+        let old = try XCTUnwrap(second.activeWebViewModel)
+        old.webView = WKWebView()
+        let search = SearchViewModel()
+        search.setPrivateBrowsing(true, tabManager: first)
+        XCTAssertTrue(second.synchronizePrivacyMode())
+        XCTAssertNil(old.webView)
+        XCTAssertFalse(second.synchronizePrivacyMode())
+    }
+
+    @MainActor
     func testCreateTabWithoutURLCreatesBlankTab() {
         let manager = TabManager()
         let originalURL = URL(string: "https://example.com/article")!
@@ -35,6 +78,47 @@ final class TabManagerTests: XCTestCase {
         XCTAssertNil(newTab.keyword)
         XCTAssertNil(newTab.platform)
         XCTAssertTrue(newTab.webViewModel.pageTitle.isEmpty)
+    }
+
+    @MainActor
+    func testDesktopPreferenceAppliesToLaterTabsAndRestoredSession() throws {
+        let key = "desktop-preference-\(UUID())"
+        defer {
+            UserDefaults.standard.removeObject(forKey: key)
+            UserDefaults.standard.removeObject(forKey: "\(key).desktop_mode")
+        }
+        let manager = TabManager(storageKey: key)
+        manager.setDesktopModeEnabled(true, reload: false)
+        XCTAssertTrue(manager.createTab().webViewModel.isDesktopModeEnabled)
+
+        manager.setDesktopModeForCurrentNavigation(false)
+        XCTAssertTrue(manager.isDesktopMode, "A regular site must not undo the user's preference")
+        manager.saveToDisk()
+
+        let restored = TabManager(storageKey: key)
+        XCTAssertTrue(restored.prefersDesktopMode)
+        XCTAssertTrue(try XCTUnwrap(restored.activeWebViewModel).isDesktopModeEnabled)
+
+        restored.setDesktopModeEnabled(false, reload: false)
+        XCTAssertFalse(restored.createTab().webViewModel.isDesktopModeEnabled)
+    }
+
+    @MainActor
+    func testDesktopPreferenceIsSharedAcrossBrowserWindows() {
+        let defaults = UserDefaults.standard
+        let previous = defaults.object(forKey: "soulo_desktop_mode")
+        defaults.set(false, forKey: "soulo_desktop_mode")
+        defer {
+            if let previous { defaults.set(previous, forKey: "soulo_desktop_mode") }
+            else { defaults.removeObject(forKey: "soulo_desktop_mode") }
+        }
+
+        let first = TabManager(storageKey: "soulo_saved_tabs.\(UUID())")
+        let second = TabManager(storageKey: "soulo_saved_tabs.\(UUID())")
+        first.setDesktopModeEnabled(true, reload: false)
+        second.synchronizeDesktopMode()
+        XCTAssertTrue(second.prefersDesktopMode)
+        XCTAssertTrue(second.createTab().webViewModel.isDesktopModeEnabled)
     }
 
     @MainActor
@@ -179,6 +263,21 @@ final class TabManagerTests: XCTestCase {
 
 @MainActor
 final class PlatformDataStoreTests: XCTestCase {
+    func testBingIsAvailableInChinaAndInternationalGroups() throws {
+        let platforms = PlatformDataStore.shared.allPlatforms()
+            .filter { $0.isBuiltIn && $0.name == "platform_bing" }
+
+        XCTAssertEqual(Set(platforms.map(\.region)), Set([.china, .international]))
+        XCTAssertTrue(platforms.allSatisfy(\.isVisible))
+        XCTAssertEqual(Set(platforms.map(\.id)).count, 2)
+        for platform in platforms {
+            let url = try XCTUnwrap(platform.searchURL(for: "中国 搜索"))
+            XCTAssertEqual(url.host, "www.bing.com")
+            XCTAssertEqual(URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                .queryItems?.first(where: { $0.name == "q" })?.value, "中国 搜索")
+        }
+    }
+
     func testEveryBuiltInPlatformProducesARealSecureSearchURL() throws {
         let query = "Soulo browser test"
         let encodedQuery = "Soulo%20browser%20test"

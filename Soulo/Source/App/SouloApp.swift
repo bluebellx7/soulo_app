@@ -53,6 +53,7 @@ private struct SouloWindowRoot: View {
     @StateObject private var searchVM: SearchViewModel
     @StateObject private var tabManager: TabManager
     @State private var activationTask: Task<Void, Never>?
+    @AppStorage("is_incognito") private var isIncognito = false
 
     init(windowID: UUID) {
         _searchVM = StateObject(wrappedValue: SearchViewModel())
@@ -70,6 +71,7 @@ private struct SouloWindowRoot: View {
             }
             .onChange(of: scenePhase) { _, newPhase in
                 if newPhase == .active {
+                    tabManager.synchronizeDesktopMode()
                     handlePendingSharedAction()
                     AppQuickActionService.shared.configureShortcuts()
                     applyWebAppearanceToOpenTabs()
@@ -78,6 +80,13 @@ private struct SouloWindowRoot: View {
                     activationTask?.cancel()
                     LiveActivityService.shared.end()
                     tabManager.saveToDisk()
+                }
+            }
+            .onChange(of: isIncognito) { _, _ in
+                if tabManager.synchronizePrivacyMode() {
+                    searchVM.clearSearch()
+                    searchVM.clearSuggestions()
+                    searchVM.showClipboardPrompt = false
                 }
             }
             .onChange(of: themeManager.appearance) { _, _ in
@@ -107,7 +116,7 @@ private struct SouloWindowRoot: View {
 
     @MainActor
     private func handlePendingSharedAction() {
-        guard let action = SouloSharedAction.consume() else { return }
+        guard scenePhase == .active, let action = SouloSharedAction.consume() else { return }
         let suppliedText = action.text?.trimmingCharacters(in: .whitespacesAndNewlines)
         switch action.kind {
         case .openHome:
@@ -115,7 +124,7 @@ private struct SouloWindowRoot: View {
         case .openDownloads:
             NotificationCenter.default.post(name: .openSouloDownloads, object: nil)
         case .privateSearch:
-            searchVM.isIncognito = true
+            searchVM.setPrivateBrowsing(true, tabManager: tabManager)
             searchVM.clearSearch()
             if let suppliedText, !suppliedText.isEmpty {
                 searchVM.searchText = suppliedText
@@ -124,7 +133,7 @@ private struct SouloWindowRoot: View {
         case .search:
             let value = suppliedText.flatMap { $0.isEmpty ? nil : $0 }
                 ?? UIPasteboard.general.string?.trimmingCharacters(in: .whitespacesAndNewlines)
-            searchVM.isIncognito = false
+            searchVM.setPrivateBrowsing(false, tabManager: tabManager)
             if let value, !value.isEmpty {
                 searchVM.performIntentSearch(query: value, platformName: action.platformName)
             } else {

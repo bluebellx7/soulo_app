@@ -867,3 +867,5 @@
 "library_files_tab" = "ਫ਼ਾਈਲਾਂ";
 
 "library_books_tab" = "ਕਿਤਾਬਾਂ";
+"keep_page_above_toolbar" = "ਓਵਰਲੈਪ ਤੋਂ ਬਚੋ";
+"keep_page_above_toolbar_desc" = "ਵੈਬਪੇਜ ਨਿਯੰਤਰਣ ਨੂੰ ਟੂਲਬਾਰ ਦੇ ਉੱਪਰ ਰੱਖੋ।";

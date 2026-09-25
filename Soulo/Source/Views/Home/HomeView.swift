@@ -27,6 +27,7 @@ struct HomeView: View {
     @State private var urlRouteID = UUID()
     @State private var incomingDocument: IncomingDocument?
     @State private var showScanner = false
+    @State private var showPlatformManagement = false
     @State private var pendingScan: String?
     @State private var scannedContent: ScannedContent?
     @State private var showVoiceInput = false
@@ -75,7 +76,7 @@ struct HomeView: View {
                 return
             }
             let tab = tabManager.createTab(keyword: request.text, platform: request.platform)
-            tabManager.setDesktopModeEnabled(request.platform.requiresDesktopMode, reload: false)
+            tabManager.setDesktopModeForCurrentNavigation(request.platform.requiresDesktopMode)
             tab.webViewModel.loadURL(request.url)
         }
         .overlay { MediaMiniPlayer() }
@@ -170,6 +171,18 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
+        }
+        .sheet(isPresented: $showPlatformManagement) {
+            NavigationStack {
+                PlatformManagementView()
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(languageManager.localizedString("done")) {
+                                showPlatformManagement = false
+                            }
+                        }
+                    }
+            }
         }
         .sheet(isPresented: $showExtensionCenter) {
             NavigationStack {
@@ -472,7 +485,20 @@ struct HomeView: View {
                 onSubmit: { performSearch() },
                 onMicTap: { showVoiceInput = true },
                 onIncognitoTap: { togglePrivateModeFromSearchBar() },
-                onScanTap: { showScanner = true }
+                onScanTap: { showScanner = true },
+                selectedRegion: PlatformRegion(rawValue: lastRegion) ?? searchVM.selectedRegion,
+                selectedGroupID: UUID(uuidString: lastGroupID),
+                onRegionSelect: { region in
+                    lastRegion = region.rawValue
+                    lastGroupID = ""
+                    searchVM.selectRegion(region)
+                },
+                onGroupSelect: { group in
+                    lastGroupID = group.id.uuidString
+                    lastRegion = ""
+                    searchVM.prepareForHomeSearch(preferredRegion: nil, customGroup: group)
+                },
+                onPlatformManagementTap: { showPlatformManagement = true }
             )
             .matchedGeometryEffect(id: "searchBar", in: searchBarNamespace)
             .frame(maxWidth: isIPad ? 600 : .infinity)
@@ -803,7 +829,6 @@ struct HomeView: View {
 
     private func performSearch() {
         guard !searchVM.searchText.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-
         let selectedGroup = lastGroupID.isEmpty
             ? nil
             : platformStore.customGroups.first { $0.id.uuidString == lastGroupID }
@@ -817,8 +842,7 @@ struct HomeView: View {
 
     private func togglePrivateModeFromSearchBar() {
         let isEnteringPrivateMode = !searchVM.isIncognito
-        searchVM.isIncognito = isEnteringPrivateMode
-        tabManager.resetTabsForPrivacy()
+        searchVM.setPrivateBrowsing(isEnteringPrivateMode, tabManager: tabManager)
         searchVM.clearSearch()
         searchVM.showClipboardPrompt = false
         LiveActivityService.shared.end()
@@ -842,8 +866,9 @@ struct HomeView: View {
                 NotificationCenter.default.post(name: .focusHomeSearch, object: nil)
             }
         case .newPrivateTab:
-            searchVM.isIncognito = true
-            tabManager.resetTabsForPrivacy()
+            if !searchVM.setPrivateBrowsing(true, tabManager: tabManager) {
+                tabManager.resetTabsForPrivacy()
+            }
             searchVM.clearSearch()
             DispatchQueue.main.async {
                 NotificationCenter.default.post(name: .focusHomeSearch, object: nil)

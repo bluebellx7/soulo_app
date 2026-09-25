@@ -4,5 +4,4 @@
 "NSCameraUsageDescription" = "Permita o acesso à câmera ao aprovar uma solicitação de site, como para videochamadas, leitura de códigos ou tirar uma foto.";
 "NSMicrophoneUsageDescription" = "Permita o acesso ao microfone para pesquisa por voz e, quando você aprovar, chamadas ou gravações de sites.";
 "NSSpeechRecognitionUsageDescription" = "Permita que o reconhecimento de fala transforme sua voz em texto de pesquisa.";
-"NSPhotoLibraryUsageDescription" = "Soulo precisa de acesso à biblioteca de fotos para definir um papel de parede personalizado.";
 "NSPhotoLibraryAddUsageDescription" = "Soulo precisa de permissão para salvar imagens da web em sua biblioteca de fotos.";

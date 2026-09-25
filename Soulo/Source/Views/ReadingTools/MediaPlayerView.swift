@@ -43,22 +43,25 @@ struct VideoOrientationErrorAlert: ViewModifier {
     private weak var scene: UIWindowScene?
     private weak var sourceWindow: UIWindow?
     private var original: UIInterfaceOrientation = .portrait
+    private var prefersLandscape = true
     private var began = false
     private var transition: Task<Void, Never>?
 
-    func prepare(token: String, scene: UIWindowScene) {
+    func prepare(token: String, scene: UIWindowScene, prefersLandscape: Bool) {
         guard self.token == nil else { return }
         transition?.cancel()
         self.token = token
         self.scene = scene
         sourceWindow = scene.keyWindow
         original = scene.interfaceOrientation
+        self.prefersLandscape = prefersLandscape
         began = false
     }
 
     func begin(token: String, onError: @escaping (Error) -> Void) {
         guard self.token == token, !began else { return }
         began = true
+        guard prefersLandscape else { return }
         transition = Task { @MainActor [weak self] in
             // WebKit reports begin before AVKit finishes presenting. During
             // that transition AVKit temporarily supports portrait only. Wait
@@ -286,7 +289,6 @@ struct MediaControls: View {
     @ObservedObject var session = MediaSession.shared
     @ObservedObject private var pip = MediaSession.shared.pictureInPicture
     var fullScreen: (() -> Void)? = nil
-    var landscape: (() -> Void)? = nil
     var body: some View {
         VStack(spacing: 20) {
             if session.hasVideo {
@@ -302,20 +304,20 @@ struct MediaControls: View {
                     }
                     Spacer()
                     AirPlayRoutePicker().frame(width: 44, height: 44)
-                    if let landscape {
-                        Button(action: landscape) {
-                            LandscapePlaybackIcon().frame(width: 44, height: 44)
-                        }
-                        .disabled(pip.active)
-                        .accessibilityLabel(ToolText.text("media_landscape"))
-                        .accessibilityIdentifier("media.landscape")
-                    }
                     if let fullScreen {
                         Button(action: fullScreen) {
-                            Image(systemName: "arrow.up.left.and.arrow.down.right").frame(width: 44, height: 44)
+                            Group {
+                                if session.videoIsLandscape {
+                                    LandscapePlaybackIcon()
+                                } else {
+                                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                }
+                            }
+                            .frame(width: 44, height: 44)
                         }
                         .disabled(pip.active)
-                        .accessibilityLabel(ToolText.text("media_fullscreen"))
+                        .accessibilityLabel(ToolText.text(session.videoIsLandscape ? "media_landscape" : "media_fullscreen"))
+                        .accessibilityIdentifier("media.fullscreen")
                     }
                 }
                 .foregroundStyle(.primary)
@@ -396,6 +398,11 @@ enum MiniPlayerDocking {
     static func verticalPosition(offset: CGFloat, height: CGFloat) -> CGFloat {
         min(max(40, height - 140 + offset), max(40, height - 100))
     }
+
+    static func seekTarget(current: Double, duration: Double, translation: CGFloat) -> Double? {
+        guard duration.isFinite, duration > 0 else { return nil }
+        return min(duration, max(0, current + Double(translation) / 3))
+    }
 }
 
 struct MediaMiniPlayer: View {
@@ -404,6 +411,7 @@ struct MediaMiniPlayer: View {
     @State private var trailing = true
     @State private var docked = false
     @State private var y: CGFloat = 0
+    @State private var seekPreview: Double?
     @GestureState private var drag = CGSize.zero
     var body: some View {
         GeometryReader { geometry in
@@ -429,17 +437,43 @@ struct MediaMiniPlayer: View {
                                     .font(.system(size: 11, weight: .semibold))
                                     .foregroundStyle(.secondary).frame(width: 44, height: 44)
                             }.buttonStyle(.plain).accessibilityLabel(ToolText.text("dock_player"))
+                            if session.hasVideo {
+                                InlineVideoSurface(countsAsPlayerSurface: false)
+                                    .frame(width: 52, height: 38)
+                                    .clipShape(RoundedRectangle(cornerRadius: 7))
+                                    .contentShape(Rectangle())
+                                    .onTapGesture { session.expanded = true }
+                                    .highPriorityGesture(
+                                        DragGesture(minimumDistance: 12)
+                                            .onChanged { value in
+                                                guard abs(value.translation.width) > abs(value.translation.height),
+                                                      let target = MiniPlayerDocking.seekTarget(
+                                                        current: session.elapsed,
+                                                        duration: session.duration,
+                                                        translation: value.translation.width
+                                                      ) else { return }
+                                                seekPreview = target
+                                            }
+                                            .onEnded { value in
+                                                if abs(value.translation.width) > abs(value.translation.height),
+                                                   let target = MiniPlayerDocking.seekTarget(
+                                                    current: session.elapsed,
+                                                    duration: session.duration,
+                                                    translation: value.translation.width
+                                                   ) {
+                                                    session.seek(target)
+                                                }
+                                                seekPreview = nil
+                                            }
+                                    )
+                                    .accessibilityHint(ToolText.text("position"))
+                            } else {
+                                Image(systemName: "waveform").foregroundStyle(Color.themePrimary)
+                            }
                             Button { session.expanded = true } label: {
-                                HStack(spacing: 8) {
-                                    if session.hasVideo {
-                                        InlineVideoSurface(countsAsPlayerSurface: false).frame(width: 52, height: 38)
-                                            .clipShape(RoundedRectangle(cornerRadius: 7))
-                                    } else {
-                                        Image(systemName: "waveform").foregroundStyle(Color.themePrimary)
-                                    }
-                                    Text(session.title).font(.subheadline.weight(.medium)).lineLimit(1)
-                                        .foregroundStyle(.primary)
-                                }.frame(maxWidth: .infinity, alignment: .leading)
+                                Text(session.title).font(.subheadline.weight(.medium)).lineLimit(1)
+                                    .foregroundStyle(.primary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                             }.buttonStyle(.plain)
                             Button { session.toggle() } label: {
                                 CompactIconLabel(systemImage: session.playing ? "pause.fill" : "play.fill")
@@ -451,6 +485,17 @@ struct MediaMiniPlayer: View {
                         }
                         .padding(.horizontal, 4).frame(width: width, height: 58)
                         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+                    }
+                }
+                .overlay(alignment: .top) {
+                    if let seekPreview {
+                        Text("\(Int(seekPreview) / 60):\(String(format: "%02d", Int(seekPreview) % 60))")
+                            .font(.caption.monospacedDigit().weight(.semibold))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(.regularMaterial, in: Capsule())
+                            .offset(y: -38)
+                            .allowsHitTesting(false)
                     }
                 }
                 .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
@@ -614,9 +659,8 @@ struct MediaPlaybackContent: View {
 
     private var playbackControls: some View {
         MediaControls(fullScreen: {
-            landscapeFullScreen = false; showingFullScreen = true
-        }, landscape: {
-            landscapeFullScreen = true; showingFullScreen = true
+            landscapeFullScreen = session.videoIsLandscape
+            showingFullScreen = true
         })
     }
 

@@ -1,8 +1,10 @@
 Soulo là trình duyệt tìm kiếm đa nền tảng dành cho iPhone và iPad. Nhập một lần rồi chuyển giữa tìm kiếm, mạng xã hội, video, mua sắm, kiến thức và AI mà không cần nhập lại.
 
-Cải thiện lọc và đánh dấu quảng cáo liên tiếp, cho phép sửa quy tắc tích hợp. Nhấn giữ ảnh để phóng to, lưu hoặc chia sẻ. Công cụ video thu gọn, phát ngang và giữ tiến độ khi chuyển tab.
+Mở trực tiếp địa chỉ web và tìm bằng dịch vụ đã chọn. Cải thiện dịch liên kết, video và tải xuống.
 
 Tìm thông tin, đọc bài viết, phát nội dung và quản lý tải xuống trong một trình duyệt.
+
+Duyệt nhiều tab với tìm kiếm bằng giọng nói, lịch sử và nhóm nền tảng. Chuyển nền tảng ngay trên trang chủ và tiếp tục dịch sau khi mở liên kết. Phát hiện video, âm thanh và hình ảnh phổ biến trên trang web, lưu tệp được hỗ trợ và theo dõi tiến trình tải xuống. Có cả chế độ máy tính hoặc di động, kéo để làm mới, chia sẻ và mở liên kết từ ứng dụng khác.
 
 • Tìm kiếm: thêm nền tảng, sắp xếp nhóm và thứ tự. Chọn văn bản để tìm trong tab Soulo mới.
 • Quảng cáo và quyền riêng tư: lọc quảng cáo, đăng ký bộ quy tắc bên thứ ba và tự đánh dấu quảng cáo cần ẩn. Quản lý bộ lọc và bảo vệ chống theo dõi theo trang web. Duyệt riêng tư không lưu lịch sử.

@@ -23,6 +23,7 @@ struct SearchResultsView: View {
     @ObservedObject private var platformStore = PlatformDataStore.shared
     @ObservedObject private var webAppearance = WebAppearanceService.shared
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var appColorScheme
     @StateObject private var bookmarkVM = BookmarkViewModel()
     @Environment(\.modelContext) private var modelContext
@@ -32,6 +33,7 @@ struct SearchResultsView: View {
     @State private var isFullscreen: Bool = false
     @State private var showVoiceInput = false
     @State private var showPlatformManagement = false
+    @State private var showGroupPicker = false
     @State private var pageReady = false
     @State private var userScriptOpenedTabs: [String: UUID] = [:]
     /// Incremented each time performSearch runs; compared to detect new vs. returning
@@ -308,7 +310,8 @@ struct SearchResultsView: View {
                 )
             }
         }
-        .onChange(of: tabManager.activeTabIndex) { _, _ in
+        .onChange(of: tabManager.activeTab?.id) { _, _ in
+            cancelAIInteraction()
             if let vm = tabManager.activeWebViewModel {
                 pageReady = vm.hasVisibleContent || vm.estimatedProgress >= 0.98 || (!vm.isLoading && vm.currentURL != nil)
             }
@@ -424,6 +427,10 @@ struct SearchResultsView: View {
                 }
             }
             // Otherwise: returning to existing tabs, keep as-is
+        }
+        .onDisappear { cancelAIInteraction() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background { cancelAIInteraction() }
         }
         .onChange(of: searchVM.externalSearchRequestID) { _, requestID in
             guard requestID != nil, searchVM.searchID != lastSearchID,
@@ -542,52 +549,8 @@ struct SearchResultsView: View {
     }
 
     private var groupPickerMenu: some View {
-        Menu {
-            ForEach(PlatformRegion.sortedCases(preferring: searchVM.selectedRegion).filter { !platformStore.visiblePlatforms(for: $0).isEmpty }) { region in
-                let count = platformStore.visiblePlatforms(for: region).count
-                Button {
-                    selectedCustomGroup = nil
-                    lastGroupID = ""
-                    lastRegion = region.rawValue
-                    searchVM.selectRegion(region)
-                    loadCurrentPlatformURL()
-                } label: {
-                    HStack {
-                        Text("\(platformStore.regionDisplayName(for: region)) (\(count))")
-                        if selectedCustomGroup == nil && searchVM.selectedRegion == region {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
-            }
-
-            ForEach(platformStore.customGroups.filter { !platformStore.platformsForGroup($0).isEmpty }) { group in
-                let count = platformStore.platformsForGroup(group).count
-                Button {
-                    selectedCustomGroup = group
-                    lastGroupID = group.id.uuidString
-                    lastRegion = ""
-                    loadCurrentPlatformURL()
-                } label: {
-                    HStack {
-                        Text("\(group.name) (\(count))")
-                        if selectedCustomGroup?.id == group.id {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
-            }
-
-            Divider()
-
-            Button {
-                showPlatformManagement = true
-            } label: {
-                Label(
-                    languageManager.localizedString("platform_management"),
-                    systemImage: "slider.horizontal.3"
-                )
-            }
+        Button {
+            showGroupPicker = true
         } label: {
             Image(systemName: selectedCustomGroup != nil ? "folder.fill" : "square.stack.3d.up.fill")
                 .font(.system(size: 14, weight: .semibold))
@@ -613,6 +576,73 @@ struct SearchResultsView: View {
                 ?? platformStore.regionDisplayName(for: searchVM.selectedRegion)
         )
         .accessibilityHint(languageManager.localizedString("accessibility_group_picker_hint"))
+        .popover(isPresented: $showGroupPicker, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(PlatformRegion.sortedCases(preferring: searchVM.selectedRegion).filter { !platformStore.visiblePlatforms(for: $0).isEmpty }) { region in
+                            groupPickerRow(
+                                title: "\(platformStore.regionDisplayName(for: region)) (\(platformStore.visiblePlatforms(for: region).count))",
+                                selected: selectedCustomGroup == nil && searchVM.selectedRegion == region
+                            ) {
+                                showGroupPicker = false
+                                selectedCustomGroup = nil
+                                lastGroupID = ""
+                                lastRegion = region.rawValue
+                                searchVM.selectRegion(region)
+                                loadCurrentPlatformURL()
+                            }
+                        }
+                        ForEach(platformStore.customGroups.filter { !platformStore.platformsForGroup($0).isEmpty }) { group in
+                            groupPickerRow(
+                                title: "\(group.name) (\(platformStore.platformsForGroup(group).count))",
+                                selected: selectedCustomGroup?.id == group.id
+                            ) {
+                                showGroupPicker = false
+                                selectedCustomGroup = group
+                                lastGroupID = group.id.uuidString
+                                lastRegion = ""
+                                loadCurrentPlatformURL()
+                            }
+                        }
+                    }
+                }
+                .frame(maxHeight: 350)
+
+                Divider()
+
+                Button {
+                    showGroupPicker = false
+                    DispatchQueue.main.async { showPlatformManagement = true }
+                } label: {
+                    Label(languageManager.localizedString("platform_management"), systemImage: "slider.horizontal.3")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .frame(height: 48)
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(width: 260)
+            .padding(.vertical, 6)
+            .presentationCompactAdaptation(.popover)
+        }
+    }
+
+    private func groupPickerRow(title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 15, weight: .medium))
+                    .opacity(selected ? 1 : 0)
+                Text(title)
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .frame(height: 48)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     // Computed: platforms for current selection (region or custom group)
@@ -682,19 +712,35 @@ struct SearchResultsView: View {
     @State private var didShowXiaohongshuLoginHint = false
     @State private var showAILoading = false
     @State private var aiLoadingText = ""
+    @State private var aiRequestID = UUID()
+    @State private var aiInteractionWebView: WKWebView?
+
+    private func cancelAIInteraction() {
+        aiRequestID = UUID()
+        showAILoading = false
+        AIPlatformInteractionService.cancelInteraction(in: aiInteractionWebView)
+        aiInteractionWebView = nil
+    }
 
     private func loadCurrentPlatformURL() {
+        cancelAIInteraction()
         guard let webVM = tabManager.activeWebViewModel else { return }
         guard let platform = searchVM.selectedPlatform else { return }
         let keyword = searchVM.currentKeyword
-        let directURL = keyword.isValidURL && !searchVM.isSelectionSearch ? keyword.asURL : nil
+        let inputKind = searchVM.isSelectionSearch ? nil : BrowserNavigationResolver.classify(keyword)
+        let directURL: URL?
+        if case .webpage(let url)? = inputKind {
+            directURL = url
+        } else {
+            directURL = nil
+        }
 
         // Apply the platform's required content mode before starting navigation,
         // so the very first request already carries the correct user agent.
         let requiresDesktopMode = directURL.map {
             WebCompatibilityService.requiresDesktopMode(for: $0)
         } ?? platform.requiresDesktopMode
-        tabManager.setDesktopModeEnabled(requiresDesktopMode, reload: false)
+        tabManager.setDesktopModeForCurrentNavigation(requiresDesktopMode)
 
         let isXiaohongshu = platform.name == "platform_xiaohongshu"
             || WebCompatibilityService.requiresDesktopMode(for: directURL)
@@ -725,8 +771,17 @@ struct SearchResultsView: View {
                 aiLoadingText = LanguageManager.shared.localizedString("ai_loading_page")
                 webVM.loadURL(url)
 
-                // Poll until page finishes loading or timeout (10s max)
+                let requestID = aiRequestID
+                let searchID = searchVM.searchID
+                func isCurrentRequest() -> Bool {
+                    aiRequestID == requestID && searchVM.searchID == searchID
+                        && tabManager.activeWebViewModel === webVM
+                        && searchVM.selectedPlatform?.id == platform.id
+                }
+                // Poll until page finishes loading or timeout (10s max).
+                // Every delayed callback belongs to this exact search and tab.
                 func waitForPageLoad(attempt: Int = 0) {
+                    guard isCurrentRequest() else { return }
                     // Timeout after 20 attempts * 0.5s = 10 seconds
                     if attempt > 20 {
                         withAnimation { showAILoading = false }
@@ -735,9 +790,25 @@ struct SearchResultsView: View {
                     // Page loaded (skip first attempt to allow loading to start)
                     if !webVM.isLoading && attempt > 1 {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            guard isCurrentRequest() else { return }
+                            guard let webView = webVM.webView else {
+                                showAILoading = false
+                                return
+                            }
+                            let pageURL = webView.url
+                            guard pageURL?.host == url.host else {
+                                showAILoading = false
+                                return
+                            }
                             let checkJS = AIPlatformInteractionService.loginDetectionScript(for: platform.name)
-                            webVM.webView?.evaluateJavaScript(checkJS) { result, _ in
+                            webView.evaluateJavaScript(checkJS) { result, error in
                                 Task { @MainActor in
+                                    guard isCurrentRequest() else { return }
+                                    guard webVM.webView === webView, webView.url == pageURL else {
+                                        showAILoading = false
+                                        return
+                                    }
+                                    guard error == nil else { showAILoading = false; return }
                                     if let status = result as? String, status == "needs_login" {
                                         withAnimation { showAILoading = false }
                                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -745,13 +816,15 @@ struct SearchResultsView: View {
                                         }
                                     } else {
                                         aiLoadingText = LanguageManager.shared.localizedString("ai_loading_input")
+                                        aiInteractionWebView = webView
                                         AIPlatformInteractionService.interact(
-                                            webView: webVM.webView,
+                                            webView: webView,
                                             platform: platform,
                                             keyword: keyword
                                         )
                                         // Hide loading after injection completes
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+                                            guard isCurrentRequest() else { return }
                                             withAnimation { showAILoading = false }
                                         }
                                     }

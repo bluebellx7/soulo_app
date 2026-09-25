@@ -146,6 +146,15 @@ final class ReadingToolsTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(50))
         XCTAssertEqual(session.player.rate, 0, "An interruption while loading must not auto-resume")
     }
+
+    @MainActor func testVideoOrientationAndMiniPlayerSeek() {
+        XCTAssertTrue(MediaSession.prefersLandscape(width: 1920, height: 1080))
+        XCTAssertFalse(MediaSession.prefersLandscape(width: 1080, height: 1920))
+        XCTAssertFalse(MediaSession.prefersLandscape(width: 1000, height: 1000))
+        XCTAssertEqual(MiniPlayerDocking.seekTarget(current: 50, duration: 120, translation: 90), 80)
+        XCTAssertEqual(MiniPlayerDocking.seekTarget(current: 5, duration: 120, translation: -90), 0)
+        XCTAssertNil(MiniPlayerDocking.seekTarget(current: 5, duration: 0, translation: 90))
+    }
     @MainActor func testTXTReaderRendersSearchesAndChangesAppearance() async throws {
         let chunks = ["第一章\nSoulo first chapter " + String(repeating: "Readable text. ", count: 100), "第二章\nThe second chapter has a lighthouse."]
         let book = LibraryBook(id: UUID().uuidString, name: "Test", fileName: "test.txt")
@@ -290,10 +299,9 @@ final class ReadingToolsTests: XCTestCase {
         let session = MediaSession.shared
         let old = session.rate
         defer { session.setRate(old); session.stop() }
-        var wav = Self.wav(); wav.append(Data(repeating: 0, count: 44100 * 2 * 19))
-        func le(_ value: UInt32, offset: Int) { for i in 0..<4 { wav[offset+i] = UInt8((value >> (i*8)) & 255) } }
-        le(UInt32(wav.count - 8), offset: 4); le(UInt32(wav.count - 44), offset: 40)
-        let url = try file("rates.wav", wav)
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(
+            forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let url = try file("rates.mp4", Data(contentsOf: fixture))
         session.open(url: url)
         try await wait { session.player.currentItem?.status == .readyToPlay }
         for rate: Float in [0.5, 1, 2, 4, 8, 16] {
@@ -344,6 +352,7 @@ final class ReadingToolsTests: XCTestCase {
         session.setRate(1)
         session.open(url: url)
         try await wait { session.hasVideo && session.player.currentTime().seconds > 0.2 }
+        XCTAssertTrue(session.videoIsLandscape, "The fullscreen direction must be known when video controls appear")
         XCTAssertNil(session.error)
         session.pause()
         session.seek(3)

@@ -17,8 +17,8 @@ enum WebVideoOrientationRuntime {
       if (window.__souloVideoOrientation) return;
       const controls = new Map(), roots = new Set(), pending = new Set();
       let labels = ['Fullscreen', 'Speed', 'Download', 'Video tools'], frame = 0, scanTimer = 0, active = null, expandedGroup = null;
-      function send(action, token) {
-        try { window.webkit.messageHandlers.souloVideoOrientation.postMessage({action, token}); } catch (_) {}
+      function send(action, token, details = {}) {
+        try { window.webkit.messageHandlers.souloVideoOrientation.postMessage({action, token, ...details}); } catch (_) {}
       }
       function isFullscreen(video) {
         return video.webkitDisplayingFullscreen || video.webkitPresentationMode === 'fullscreen'
@@ -49,7 +49,11 @@ enum WebVideoOrientationRuntime {
         if (active) return;
         const token = globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36);
         active = {video, token, began:false, timeout:setTimeout(() => { if (active?.token === token) finish('failed'); }, 5000)};
-        send('prepare', token);
+        const rect = video.getBoundingClientRect();
+        const naturalRatio = video.videoWidth > 0 && video.videoHeight > 0 ? video.videoWidth / video.videoHeight : 0;
+        const ratio = naturalRatio || (rect.height > 0 ? rect.width / rect.height : 16 / 9);
+        const landscape = ratio > 1.1;
+        send('prepare', token, {landscape});
         try {
           // Keep this call synchronous within the real click's user activation.
           // The video stays in its original player: no URL extraction or reload.
@@ -57,8 +61,8 @@ enum WebVideoOrientationRuntime {
           // the video layer to AVKit, including through requestFullscreen().
           // Prepare the landscape fit size before transfer and restore only
           // our own overrides on exit. The media element and source stay intact.
-          const w = Math.max(screen.width, screen.height), h = Math.min(screen.width, screen.height);
-          const ratio = video.videoWidth > 0 && video.videoHeight > 0 ? video.videoWidth / video.videoHeight : 16 / 9;
+          const w = landscape ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+          const h = landscape ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height);
           const values = {width:Math.min(w, h * ratio) + 'px', height:Math.min(h, w / ratio) + 'px',
             'max-width':'none', 'max-height':'none', 'min-width':'0px', 'min-height':'0px', 'object-fit':'contain'};
           active.sizing = new Map();

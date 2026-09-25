@@ -867,3 +867,5 @@
 "library_files_tab" = "Αρχεία";
 
 "library_books_tab" = "Βιβλία";
+"keep_page_above_toolbar" = "Αποφύγετε την επικάλυψη";
+"keep_page_above_toolbar_desc" = "Διατηρήστε τα στοιχεία ελέγχου ιστοσελίδας πάνω από τη γραμμή εργαλείων.";

@@ -7,6 +7,7 @@ final class ShareViewController: UIViewController {
     private let activityIndicator = UIActivityIndicatorView(style: .medium)
     private var primaryButton: UIButton?
     private var sharedText: String?
+    private var savedForNextOpen = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -122,8 +123,7 @@ final class ShareViewController: UIViewController {
         activityIndicator.startAnimating()
         stack.arrangedSubviews.compactMap { $0 as? UIButton }.forEach { $0.isEnabled = false }
         guard let extensionContext else {
-            SouloSharedAction.discardPending()
-            finishWithError(messageKey: "open_external_failed")
+            showSavedForNextOpen()
             return
         }
         extensionContext.open(url) { [weak self] success in
@@ -132,15 +132,33 @@ final class ShareViewController: UIViewController {
                 if success {
                     extensionContext.completeRequest(returningItems: nil)
                 } else {
-                    SouloSharedAction.discardPending()
-                    self.finishWithError(messageKey: "open_external_failed")
+                    self.showSavedForNextOpen()
                 }
             }
         }
     }
 
     @objc private func cancel() {
-        extensionContext?.cancelRequest(withError: NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError))
+        if savedForNextOpen {
+            extensionContext?.completeRequest(returningItems: nil)
+        } else {
+            extensionContext?.cancelRequest(withError: NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError))
+        }
+    }
+
+    @MainActor
+    private func showSavedForNextOpen() {
+        savedForNextOpen = true
+        titleLabel.text = "\(NSLocalizedString("web_capture_saved", comment: "")) · \(NSLocalizedString("intent_open_soulo_title", comment: ""))"
+        activityIndicator.stopAnimating()
+        let buttons = stack.arrangedSubviews.compactMap { $0 as? UIButton }
+        buttons.dropLast().forEach { $0.isHidden = true }
+        if let done = buttons.last {
+            var configuration = done.configuration
+            configuration?.title = NSLocalizedString("done", comment: "")
+            done.configuration = configuration
+            done.isEnabled = true
+        }
     }
 
     private func finishWithError(messageKey: String = "share_extension_unsupported") {

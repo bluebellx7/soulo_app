@@ -14,6 +14,11 @@ enum SouloURLRoute: Equatable {
     case downloads
 
     static func parse(_ url: URL) -> Self? {
+        // Default-browser and direct Open In deliveries arrive as the web URL
+        // itself rather than as a soulo:// wrapper.
+        if let directWebURL = webURL(url.absoluteString) {
+            return .open(directWebURL)
+        }
         guard url.scheme?.lowercased() == "soulo",
               let separator = url.absoluteString.range(of: "://"),
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }

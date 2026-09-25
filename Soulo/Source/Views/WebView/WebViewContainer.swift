@@ -45,12 +45,13 @@ enum BrowserChromeLayout {
         return max(safeArea, toolbarClearance)
     }
 
-    static func videoViewportBottomInset(
+    static func pageViewportBottomInset(
         isActiveTab: Bool,
         isVideoPage: Bool,
+        showsBottomToolbar: Bool,
         bottomClearance: CGFloat
     ) -> CGFloat {
-        guard isActiveTab, isVideoPage else { return 0 }
+        guard isActiveTab, isVideoPage || showsBottomToolbar else { return 0 }
         return max(bottomClearance, 0)
     }
 }
@@ -122,11 +123,11 @@ struct WebViewContainer: View {
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(AppConstants.StorageKeys.keepFullscreenBrowsing) private var keepFullscreenBrowsing = false
+    @AppStorage(AppConstants.StorageKeys.keepPageAboveToolbar) private var keepPageAboveToolbar = false
     @StateObject private var safariCompatibilityPresenter = SafariCompatibilityPresenter()
 
     @State private var isBookmarked: Bool = false
-    @State private var showShareSheet: Bool = false
-    @State private var shareItems: [Any] = []
+    @State private var sharePresentation: PageSharePresentation?
     @State private var showExternalConfirm: Bool = false
     @State private var showBookmarkToast: Bool = false
     @State private var showLinkCopiedToast: Bool = false
@@ -208,25 +209,20 @@ struct WebViewContainer: View {
                 ZStack {
                     WebViewRepresentable(
                         viewModel: webViewModel,
-                        onAccessibilityPlatformPage: onAccessibilityPlatformPage
+                        onAccessibilityPlatformPage: onAccessibilityPlatformPage,
+                        obscuredBottomInset: webViewObscuredBottomInset
                     )
                         .id(webViewModel.runtimeRevision)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .opacity(isShowingNewTabPage ? 0 : 1)
                         .allowsHitTesting(!isShowingNewTabPage)
-
-                    if webViewModel.showSnapshotWhileRestoring,
-                       let snapshot = webViewModel.snapshot,
-                       webViewModel.currentURL != nil {
-                        Image(uiImage: snapshot)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .clipped()
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
-                            .transition(.opacity)
-                    }
+                        .overlay {
+                            if webViewModel.showSnapshotWhileRestoring,
+                               let snapshot = webViewModel.snapshot,
+                               webViewModel.currentURL != nil {
+                                RestoringPageSnapshot(image: snapshot)
+                            }
+                        }
 
                     // New Tab Page overlay
                     if isShowingNewTabPage {
@@ -251,7 +247,8 @@ struct WebViewContainer: View {
                         .transition(.opacity)
                     }
                 }
-                .padding(.bottom, videoViewportBottomInset)
+                // A shorter viewport keeps fixed page controls above the floating toolbar.
+                .padding(.bottom, pageViewportBottomInset)
             }
 
             if videoViewportBottomInset > 0 {
@@ -259,11 +256,7 @@ struct WebViewContainer: View {
                     .zIndex(40)
             }
 
-            if webViewModel.manualAdSelection == nil && webViewModel.manualAdSavedRuleID == nil && BrowserChromeLayout.showsBottomToolbar(
-                isActiveTab: isActiveTab,
-                isFullscreen: isFullscreen,
-                isManuallyHidden: toolbarManuallyHidden
-            ) {
+            if showsBottomToolbar {
                 browserToolbarChrome
                     .frame(height: bottomToolbarHeight, alignment: .top)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -404,6 +397,12 @@ struct WebViewContainer: View {
 
     private var browserLifecycle: some View {
         browserPageLayers
+        .background {
+            if #available(iOS 18.0, *) {
+                FollowLinkTranslationRuntime(viewModel: webViewModel)
+                    .frame(width: 0, height: 0)
+            }
+        }
         .animation(.easeOut(duration: 0.18), value: webViewModel.showSnapshotWhileRestoring)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if isActiveTab && (webViewModel.manualAdSelection != nil || webViewModel.manualAdSavedRuleID != nil) {
@@ -570,8 +569,8 @@ struct WebViewContainer: View {
 
     private var browserContent: some View {
         browserNotifications
-        .sheet(isPresented: $showShareSheet) {
-            ShareSheet(items: shareItems)
+        .sheet(item: $sharePresentation) { presentation in
+            ShareSheet(items: presentation.items)
         }
         .sheet(
             isPresented: $showAddressEditor,
@@ -902,11 +901,40 @@ struct WebViewContainer: View {
     }
 
     private var videoViewportBottomInset: CGFloat {
-        BrowserChromeLayout.videoViewportBottomInset(
+        BrowserChromeLayout.pageViewportBottomInset(
             isActiveTab: isActiveTab,
             isVideoPage: WebCompatibilityService.isDouyinVideoSurface(webViewModel.currentURL),
+            showsBottomToolbar: false,
             bottomClearance: pageBottomClearance
         )
+    }
+
+    private var showsBottomToolbar: Bool {
+        webViewModel.manualAdSelection == nil
+            && webViewModel.manualAdSavedRuleID == nil
+            && BrowserChromeLayout.showsBottomToolbar(
+                isActiveTab: isActiveTab,
+                isFullscreen: isFullscreen,
+                isManuallyHidden: toolbarManuallyHidden
+            )
+    }
+
+    private var pageViewportBottomInset: CGFloat {
+        if keepPageAboveToolbar, #available(iOS 26.0, *) {
+            return videoViewportBottomInset
+        }
+        return BrowserChromeLayout.pageViewportBottomInset(
+            isActiveTab: isActiveTab,
+            isVideoPage: WebCompatibilityService.isDouyinVideoSurface(webViewModel.currentURL),
+            showsBottomToolbar: showsBottomToolbar,
+            bottomClearance: pageBottomClearance
+        )
+    }
+
+    private var webViewObscuredBottomInset: CGFloat {
+        guard keepPageAboveToolbar, showsBottomToolbar,
+              !WebCompatibilityService.isDouyinVideoSurface(webViewModel.currentURL) else { return 0 }
+        return pageBottomClearance
     }
 
     private var videoBottomChromeBackdrop: some View {
@@ -1369,13 +1397,12 @@ struct WebViewContainer: View {
         // also adopts SafariServices' native Add to Home Screen activity.
         if #available(iOS 17.4, *),
            ["http", "https"].contains(url.scheme?.lowercased() ?? "") {
-            shareItems = [
+            sharePresentation = PageSharePresentation(items: [
                 WebPageShareActivityItem(url: url, title: fullscreenDisplayTitle)
-            ]
+            ])
         } else {
-            shareItems = [url]
+            sharePresentation = PageSharePresentation(items: [url])
         }
-        showShareSheet = true
     }
 
     private func handleAddressTranslationAction() {
@@ -1581,7 +1608,14 @@ private struct WebToolsPresentationModifier: ViewModifier {
                 WebPageTranslationSheet(
                     webView: webViewModel.webView,
                     pageURL: webViewModel.currentURL,
-                    onOpenURL: { url in webViewModel.loadURL(url) }
+                    onOpenURL: { url in webViewModel.loadURL(url) },
+                    onAppleTranslationApplied: { source, target in
+                        webViewModel.enableAppleFollowLinkTranslation(source: source, target: target)
+                    },
+                    onGoogleTranslationOpened: { target in
+                        webViewModel.enableGoogleFollowLinkTranslation(target: target)
+                    },
+                    onRestore: { webViewModel.disableFollowLinkTranslation() }
                 )
                 .presentationDetents([.fraction(0.68), .large])
                 .presentationDragIndicator(.visible)
@@ -2090,6 +2124,11 @@ struct FindInPageBar: View {
 
 // MARK: - ShareSheet
 
+private struct PageSharePresentation: Identifiable {
+    let id = UUID()
+    let items: [Any]
+}
+
 private struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
     func makeUIViewController(context: Context) -> UIActivityViewController {
@@ -2126,5 +2165,22 @@ final class WebPageShareActivityItem: NSObject, UIActivityItemSource, SFAddToHom
         subjectForActivityType activityType: UIActivity.ActivityType?
     ) -> String {
         title
+    }
+}
+
+/// A preview must never participate in sizing the live page or its toolbar.
+struct RestoringPageSnapshot: View {
+    let image: UIImage
+
+    var body: some View {
+        GeometryReader { geometry in
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .clipped()
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }

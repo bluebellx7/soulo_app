@@ -199,27 +199,30 @@ enum WebResourceInspectionService {
         function mediaKindForURL(value) {
             var raw = String(value || '');
             if (!raw || /^(blob|data):/i.test(raw)) return '';
-            var decoded = raw;
-            try { decoded = decodeURIComponent(raw); } catch (_) {}
-            decoded = decoded.toLowerCase();
-            if (/[?&]sabr=1(?:&|$)/i.test(decoded)
-                && !/[?&]itag=\d+(?:&|$)/i.test(decoded)) {
+            var url;
+            try { url = new URL(raw, document.baseURI); } catch (_) { return ''; }
+            if (!/^https?:$/.test(url.protocol)) return '';
+            var path = url.pathname.toLowerCase();
+            try { path = decodeURIComponent(path); } catch (_) {}
+            var mime = String(
+                url.searchParams.get('mime') || url.searchParams.get('mime_type')
+                || url.searchParams.get('type') || url.searchParams.get('content-type')
+                || url.searchParams.get('content_type') || ''
+            ).toLowerCase().replace(/^((?:audio|video))[_-]/, '$1/');
+            if (url.searchParams.get('sabr') === '1'
+                && !url.searchParams.has('itag')) {
                 return '';
             }
-            if (/[?&](?:mime|type|content[-_]?type)=audio(?:%2f|\/)/i.test(raw)
-                || /[?&](?:mime|type|content[-_]?type)=audio\//i.test(decoded)
-                || /[?&](?:mime|mime_type|type|content[-_]?type)=audio[_-](?:mp4|mpeg|aac|ogg|webm)(?:&|$)/i.test(decoded)
-                || /\.(?:mp3|m4a|aac|wav|ogg|oga|opus|flac)(?:$|[?#])/i.test(decoded)) {
+            if (mime.indexOf('audio/') === 0
+                || /\.(?:mp3|m4a|aac|wav|ogg|oga|opus|flac)$/.test(path)) {
                 return 'audio';
             }
-            if (/[?&](?:mime|type|content[-_]?type)=video(?:%2f|\/)/i.test(raw)
-                || /[?&](?:mime|type|content[-_]?type)=video\//i.test(decoded)
-                || /[?&](?:mime|mime_type|type|content[-_]?type)=video[_-](?:mp4|webm|quicktime)(?:&|$)/i.test(decoded)
-                || /\.(?:mp4|m4v|mov|webm|ogv|m3u8|mpd)(?:$|[?#])/i.test(decoded)
-                || /\/videoplayback(?:$|[?#])/i.test(decoded)
-                || /\/video\/tos\//i.test(decoded)
-                || /\/aweme\/v1\/(?:web\/)?play/i.test(decoded)
-                || /[?&]is_play_url=1(?:&|$)/i.test(decoded)) {
+            if (mime.indexOf('video/') === 0
+                || /\.(?:mp4|m4v|mov|webm|ogv|m3u8|mpd)$/.test(path)
+                || /\/videoplayback$/.test(path)
+                || /\/video\/tos\//.test(path)
+                || /\/aweme\/v1\/(?:web\/)?play/.test(path)
+                || url.searchParams.get('is_play_url') === '1') {
                 return 'video';
             }
             return '';
@@ -282,7 +285,12 @@ enum WebResourceInspectionService {
             if (mimeType.indexOf('video/') === 0) objectHint = 'video';
             Object.keys(value).slice(0, 300).forEach(function(key) {
                 var lowerKey = key.toLowerCase();
-                var nextHint = objectHint;
+                // A media parent can also contain telemetry, profile and app
+                // links. Only carry its hint through fields that hold media URLs.
+                var nextHint = [
+                    'url', 'urls', 'url_list', 'src', 'baseurl', 'base_url',
+                    'play_url', 'playurl', 'backup_url', 'backupurl'
+                ].indexOf(lowerKey) >= 0 ? objectHint : '';
                 if (lowerKey === 'audio') nextHint = 'audio';
                 if (lowerKey === 'video'
                     || lowerKey === 'play_addr'
@@ -657,17 +665,19 @@ enum WebResourceMediaService {
     @MainActor
     static func asset(
         for resource: WebMediaResource,
-        webView: WKWebView?
+        webView: WKWebView?,
+        preferDownloadedCopy: Bool = true
     ) async -> AVURLAsset {
-        if let downloaded = DownloadManagerService.shared.finishedDownload(for: resource.url) {
+        if preferDownloadedCopy,
+           let downloaded = DownloadManagerService.shared.finishedDownload(for: resource.url) {
             return AVURLAsset(url: downloaded.localURL)
         }
-        var options: [String: Any] = [
-            AVURLAssetHTTPUserAgentKey: AppConstants.mobileWebViewUserAgent,
-            AVURLAssetOverrideMIMETypeKey: resource.kind == .video ? "video/mp4" : "audio/mp4"
-        ]
+        var options = assetOptions(for: resource)
         guard let webView else {
             return AVURLAsset(url: resource.url, options: options)
+        }
+        if let userAgent = webView.customUserAgent, !userAgent.isEmpty {
+            options[AVURLAssetHTTPUserAgentKey] = userAgent
         }
         let cookies: [HTTPCookie] = await withCheckedContinuation { continuation in
             webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { cookies in
@@ -682,6 +692,24 @@ enum WebResourceMediaService {
             options[AVURLAssetHTTPCookiesKey] = matchingCookies
         }
         return AVURLAsset(url: resource.url, options: options)
+    }
+
+    static func assetOptions(for resource: WebMediaResource) -> [String: Any] {
+        var options: [String: Any] = [
+            AVURLAssetHTTPUserAgentKey: AppConstants.mobileWebViewUserAgent
+        ]
+        switch resource.delivery {
+        case .hls:
+            // An MP4 override makes AVFoundation ignore the playlist format.
+            options[AVURLAssetOverrideMIMETypeKey] = "application/vnd.apple.mpegurl"
+        case .direct:
+            // Use the server's actual MIME type for MP4, WebM, MOV and
+            // extensionless streams. Forcing MP4 can produce audio without video.
+            break
+        case .dash, .youtubeSABR, .separateTracks:
+            break
+        }
+        return options
     }
 
     static func isYouTubePageURL(_ url: URL) -> Bool {

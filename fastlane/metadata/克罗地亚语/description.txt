@@ -1,8 +1,10 @@
 Soulo je preglednik za iPhone i iPad s pretraživanjem na više platformi. Unesite upit jednom i prelazite između tražilica, društvenih mreža, videa, kupnje, znanja i umjetne inteligencije bez ponovnog unosa.
 
-Poboljšano filtriranje i uzastopno označavanje oglasa uz uređivanje ugrađenih pravila. Dugo pritisnite sliku za povećanje, spremanje ili dijeljenje. Sklopivi videoalati, vodoravna reprodukcija i očuvan napredak pri promjeni kartica.
+Otvarajte web-adrese izravno i pretražujte odabranom uslugom. Poboljšani su prijevod poveznica, video i preuzimanja.
 
 Pronađite informacije, čitajte članke, reproducirajte medije i upravljajte preuzimanjima u jednom pregledniku.
+
+Pregledavajte u više kartica uz glasovno pretraživanje, povijest i grupe platformi. Promijenite platformu na početnom zaslonu i nastavite prijevod nakon otvaranja poveznice. Pronađite uobičajene video, audio i slikovne datoteke na stranicama, spremite podržane datoteke i pratite preuzimanja. Dostupni su i prikaz za računalo ili mobitel, osvježavanje povlačenjem, dijeljenje i poveznice iz drugih aplikacija.
 
 • Pretraživanje: dodajte platforme, grupirajte ih i promijenite redoslijed. Pretražite označeni tekst u novoj kartici Soulo.
 • Oglasi i privatnost: filtrirajte oglase, pretplatite se na vanjska pravila i ručno označite oglase za skrivanje. Upravljajte filtrima i zaštitom od praćenja po web-mjestu. Privatno pregledavanje ne sprema povijest.

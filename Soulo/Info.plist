@@ -68,6 +68,17 @@
 				<string>soulo</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLName</key>
+			<string>com.dkluge.Soulo.browser</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>http</string>
+				<string>https</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
@@ -98,8 +109,6 @@
 	<string>Allow microphone access for voice search and, when you approve, website calls or recording.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Soulo needs permission to save web images to your photo library.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Soulo needs photo library access to set a custom wallpaper.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Allow speech recognition to turn your voice into search text.</string>
 	<key>NSSupportsLiveActivities</key>

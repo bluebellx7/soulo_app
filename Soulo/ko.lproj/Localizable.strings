@@ -867,3 +867,5 @@
 "library_files_tab" = "파일";
 
 "library_books_tab" = "서재";
+"keep_page_above_toolbar" = "겹침 방지";
+"keep_page_above_toolbar_desc" = "웹페이지 컨트롤을 도구 모음 위에 유지하세요.";

@@ -1,4 +1,3 @@
-1.1.8
+1.1.9
 
-• Mejoramos el filtrado y la selección consecutiva de anuncios, con reglas integradas editables.
-• Mantén pulsadas las imágenes para ampliar, guardar o compartir. Herramientas de video plegables, modo horizontal y progreso conservado entre pestañas.
+• Abre direcciones web directamente y busca con el motor elegido. Mejoras en traducción de enlaces, video y descargas.

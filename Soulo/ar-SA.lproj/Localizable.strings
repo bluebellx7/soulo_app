@@ -867,3 +867,5 @@
 "library_files_tab" = "الملفات";
 
 "library_books_tab" = "الكتب";
+"keep_page_above_toolbar" = "تجنب التداخل";
+"keep_page_above_toolbar_desc" = "احتفظ بعناصر التحكم في صفحة الويب أعلى شريط الأدوات.";

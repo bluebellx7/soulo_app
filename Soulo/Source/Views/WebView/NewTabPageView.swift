@@ -7,7 +7,8 @@ struct NewTabPageView: View {
     var onNavigate: (URL) -> Void
 
     @State private var urlText: String = ""
-    @FocusState private var isSearchFocused: Bool
+    @State private var selectedSearchRegion: PlatformRegion?
+    @State private var selectedSearchGroupID: UUID?
     @Environment(\.colorScheme) private var colorScheme
     @ObservedObject private var wallpaperManager = WallpaperManager.shared
     @ObservedObject private var platformStore = PlatformDataStore.shared
@@ -40,6 +41,15 @@ struct NewTabPageView: View {
     /// Platforms for the primary (detected) region — shown first.
     private var primaryPlatforms: [SearchPlatform] {
         platformStore.visiblePlatforms(for: detectedRegion)
+            .filter { $0.interactionType == .urlSearch }
+    }
+
+    private var searchPlatforms: [SearchPlatform] {
+        if let selectedSearchGroupID,
+           let group = platformStore.customGroups.first(where: { $0.id == selectedSearchGroupID }) {
+            return platformStore.platformsForGroup(group).filter { $0.interactionType == .urlSearch }
+        }
+        return platformStore.visiblePlatforms(for: selectedSearchRegion ?? detectedRegion)
             .filter { $0.interactionType == .urlSearch }
     }
 
@@ -113,54 +123,19 @@ struct NewTabPageView: View {
     // MARK: - Search Bar
 
     private var searchBar: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(secondaryTextColor)
-                .accessibilityHidden(true)
-
-            TextField(
-                LanguageManager.shared.localizedString("search_placeholder"),
-                text: $urlText
-            )
-            .font(.system(size: 15))
-            .foregroundStyle(primaryTextColor)
-            .textInputAutocapitalization(.never)
-            .autocorrectionDisabled()
-            .keyboardType(.webSearch)
-            .focused($isSearchFocused)
-            .onSubmit { navigateToInput() }
-            .accessibilityLabel(LanguageManager.shared.localizedString("search_placeholder"))
-
-            if !urlText.isEmpty {
-                Button {
-                    urlText = ""
-                } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 16))
-                            .foregroundStyle(secondaryTextColor.opacity(0.75))
-                }
-                .accessibilityLabel(LanguageManager.shared.localizedString("accessibility_clear_search"))
+        SearchBarView(
+            text: $urlText,
+            respondsToHomeFocus: false,
+            onSubmit: navigateToInput,
+            selectedRegion: selectedSearchRegion ?? detectedRegion,
+            selectedGroupID: selectedSearchGroupID,
+            onRegionSelect: { region in
+                selectedSearchRegion = region
+                selectedSearchGroupID = nil
+            },
+            onGroupSelect: { group in
+                selectedSearchGroupID = group.id
             }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(cardFillColor)
-                )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(
-                    isSearchFocused
-                        ? Color(hex: "6366F1").opacity(0.5)
-                        : primaryTextColor.opacity(0.14),
-                    lineWidth: 1
-                )
         )
     }
 
@@ -280,7 +255,7 @@ struct NewTabPageView: View {
     private func navigateToInput() {
         guard let url = BrowserNavigationResolver.resolve(
             urlText,
-            preferredSearchPlatform: primaryPlatforms.first
+            preferredSearchPlatform: searchPlatforms.first
         ) else { return }
         onNavigate(url)
     }

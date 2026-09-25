@@ -867,3 +867,5 @@
 "library_files_tab" = "Datoteke";
 
 "library_books_tab" = "Knjige";
+"keep_page_above_toolbar" = "Izogibajte se prekrivanju";
+"keep_page_above_toolbar_desc" = "Kontrolniki spletne strani naj bodo nad orodno vrstico.";

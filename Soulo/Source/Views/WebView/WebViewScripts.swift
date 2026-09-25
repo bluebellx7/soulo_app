@@ -1,6 +1,73 @@
 import Foundation
 
 enum WebViewScripts {
+    /// Keep ordinary cross-site web links inside Soulo. On a real device,
+    /// WebKit may hand the original click to an installed Universal Link app
+    /// before either navigation delegate sees a loadable web request.
+    static let internalWebLinkNavigation = #"""
+    (() => {
+        document.addEventListener('click', event => {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            const path = event.composedPath?.() || [event.target];
+            const anchor = path.map(node => node instanceof Element ? node.closest('a[href]') : null)
+                .find(Boolean);
+            if (!anchor || anchor.hasAttribute('download')) return;
+            let destination;
+            try { destination = new URL(anchor.href, document.baseURI); } catch (_) { return; }
+            if (!/^https?:$/.test(destination.protocol) || destination.host === location.host) return;
+            const address = destination.href.toLowerCase();
+            if (/\/oauth|\/authorize|\/authorization|\/auth\/|\/login|\/signin|\/sign-in|\/sso\//.test(address)
+                || /^(accounts\.google\.com|appleid\.apple\.com|login\.microsoftonline\.com|login\.live\.com)$/.test(destination.hostname)) return;
+            event.preventDefault();
+            window.webkit.messageHandlers.souloWebLink.postMessage({url: destination.href});
+        }, true);
+    })();
+    """#
+
+    /// Bing's in-page app promotion uses #sacs_win. Dismiss it through its own
+    /// "stay in browser" action so Bing also restores any scroll lock it set.
+    static let bingAppPromptSuppression = """
+    (() => {
+        const host = location.hostname.toLowerCase();
+        if (host !== 'bing.com' && !host.endsWith('.bing.com')) return;
+
+        let popup = null;
+        let popupObserver = null;
+        let dismissing = false;
+
+        function dismissAppPrompt() {
+            const panel = document.getElementById('sacs_win');
+            if (!panel || panel.style.display !== 'block' || dismissing) return;
+            const stay = panel.querySelector('#sacs_btn_stay, #sacs_close, #sacs_sa_close');
+            if (!stay) return;
+            dismissing = true;
+            stay.click();
+            queueMicrotask(() => { dismissing = false; });
+        }
+
+        function observePopup() {
+            const current = document.getElementById('sacs_win');
+            if (!current || current === popup) return;
+            popupObserver?.disconnect();
+            popup = current;
+            popupObserver = new MutationObserver(dismissAppPrompt);
+            popupObserver.observe(current, {
+                attributes: true,
+                attributeFilter: ['style'],
+                childList: true,
+                subtree: true
+            });
+            dismissAppPrompt();
+        }
+
+        new MutationObserver(observePopup).observe(document, {
+            childList: true,
+            subtree: true
+        });
+        observePopup();
+    })();
+    """
+
     /// WKWebView.pageZoom scales the document relative to the web view bounds,
     /// which can make the root document wider than the visible viewport. Keep
     /// the rendered page pinned to the device width while allowing all page
@@ -71,6 +138,8 @@ enum WebViewScripts {
         var originalStyles = new Map();
         var observer = null;
         var scanTimer = null;
+        var appliedConfig = null;
+        var pendingDarkRoots = new Set();
 
         function luminance(color) {
             var match = String(color || '').match(/rgba?\\((\\d+)[, ]+(\\d+)[, ]+(\\d+)/i);
@@ -144,15 +213,23 @@ enum WebViewScripts {
 
         function observeDarkContent(enabled) {
             if (observer) { observer.disconnect(); observer = null; }
+            clearTimeout(scanTimer); scanTimer = null; pendingDarkRoots.clear();
             if (!enabled || !document.documentElement) return;
             observer = new MutationObserver(function(mutations) {
-                clearTimeout(scanTimer);
-                scanTimer = setTimeout(function() {
-                    mutations.forEach(function(mutation) {
-                        Array.prototype.forEach.call(mutation.addedNodes || [], function(node) {
-                            if (node.nodeType === 1) darken(node);
-                        });
+                if (document.hidden) {
+                    pendingDarkRoots.clear(); pendingDarkRoots.add(document.documentElement);
+                    return;
+                }
+                mutations.forEach(function(mutation) {
+                    Array.prototype.forEach.call(mutation.addedNodes || [], function(node) {
+                        if (node.nodeType === 1) pendingDarkRoots.add(node);
                     });
+                });
+                if (scanTimer !== null || document.hidden) return;
+                scanTimer = setTimeout(function() {
+                    scanTimer = null;
+                    pendingDarkRoots.forEach(function(node) { if (node.isConnected) darken(node); });
+                    pendingDarkRoots.clear();
                 }, 120);
             });
             observer.observe(document.documentElement, { childList: true, subtree: true });
@@ -173,8 +250,22 @@ enum WebViewScripts {
             if (style.textContent !== css) style.textContent = css;
         }
 
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                clearTimeout(scanTimer); scanTimer = null;
+            } else {
+                pendingDarkRoots.forEach(function(node) { if (node.isConnected) darken(node); });
+                pendingDarkRoots.clear();
+            }
+        });
+
         window.__souloApplyWebAppearance = function(config) {
             config = config || {};
+            if (!document.documentElement) return;
+            var signature = JSON.stringify([!!config.forceDark, !!config.warmColorShift,
+                !!config.reduceMotion, !!config.underlineLinks]);
+            if (appliedConfig === signature) return;
+            appliedConfig = signature;
             var forceDark = !!config.forceDark;
             if (document.documentElement) {
                 document.documentElement.classList.toggle('soulo-force-dark', forceDark);
@@ -335,6 +426,7 @@ enum WebViewScripts {
         }
 
         window.__souloAccessibilityScan = function() {
+            if (document.hidden) return;
             var root = document;
             labelInteractiveElements(root);
             markResultCards(root);
@@ -345,7 +437,7 @@ enum WebViewScripts {
         window.__souloAccessibilityScan();
 
         function installObserver() {
-            if (!document.body || window.__souloAccessibilityObserver) return;
+            if (document.hidden || !document.body || window.__souloAccessibilityObserver) return;
             window.__souloAccessibilityObserver = new MutationObserver(function(mutations) {
                 var hasAddedContent = mutations.some(function(mutation) {
                     return mutation.addedNodes && mutation.addedNodes.length > 0;
@@ -361,6 +453,16 @@ enum WebViewScripts {
                 subtree: true
             });
         }
+
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                clearTimeout(window.__souloAccessibilityTimer);
+                if (window.__souloAccessibilityObserver) window.__souloAccessibilityObserver.disconnect();
+                window.__souloAccessibilityObserver = null;
+            } else {
+                window.__souloAccessibilityScan(); installObserver();
+            }
+        });
 
         installObserver();
         if (!document.body) {
@@ -1047,15 +1149,28 @@ enum WebViewScripts {
         }
 
         if (isYouTubeSite()) {
-            ['yt-navigate-start', 'yt-navigate-finish', 'yt-page-data-updated', 'popstate']
-                .forEach(function(eventName) {
-                    window.addEventListener(eventName, function() {
-                        [0, 100, 300, 800, 1500].forEach(function(delay) {
-                            setTimeout(refreshCurrentYouTubePlayerResponse, delay);
-                        });
-                    }, true);
+            // YouTube route events and resource interception already identify
+            // changes. Retry briefly for late player data, never poll forever.
+            var contextRetries = [];
+            function scheduleYouTubeContextRefresh() {
+                contextRetries.forEach(clearTimeout);
+                contextRetries = [];
+                if (document.hidden) return;
+                [0, 100, 300, 800, 1500].forEach(function(delay) {
+                    contextRetries.push(setTimeout(function() {
+                        if (!document.hidden) refreshCurrentYouTubePlayerResponse();
+                    }, delay));
                 });
-            window.__souloYouTubeContextTimer = setInterval(refreshCurrentYouTubePlayerResponse, 500);
+            }
+            ['yt-navigate-start', 'yt-navigate-finish', 'yt-page-data-updated', 'popstate', 'pageshow']
+                .forEach(function(eventName) {
+                    window.addEventListener(eventName, scheduleYouTubeContextRefresh, true);
+                });
+            document.addEventListener('visibilitychange', scheduleYouTubeContextRefresh);
+            window.addEventListener('pagehide', function() {
+                contextRetries.forEach(clearTimeout); contextRetries = [];
+            });
+            scheduleYouTubeContextRefresh();
         }
 
         function cacheYouTubePlayerResponsesDeep(root) {
@@ -1085,6 +1200,8 @@ enum WebViewScripts {
 
         function remember(value) {
             value = String(value || '');
+            if (!value) return;
+            try { value = new URL(value, document.baseURI).href; } catch (_) { return; }
             if (!/^https?:\/\//i.test(value) || observedSet.has(value)) return;
             if (observedURLs.length >= 2000) {
                 observedSet.delete(observedURLs.shift());
@@ -1102,7 +1219,7 @@ enum WebViewScripts {
                 || pageHost.endsWith('.youtube.com')
                 || pageHost === 'youtu.be';
             var pageFetch = window.fetch;
-            if (isYouTubePage && typeof pageFetch === 'function') {
+            if (typeof pageFetch === 'function') {
                 window.fetch = function(input) {
                     var value = '';
                     try {
@@ -1117,7 +1234,7 @@ enum WebViewScripts {
                         }
                     } catch (_) {}
                     var result = pageFetch.apply(this, arguments);
-                    if (/\/youtubei\/v1\/(?:player|next)(?:[?\/]|$)/i.test(value)) {
+                    if (isYouTubePage && /\/youtubei\/v1\/(?:player|next)(?:[?\/]|$)/i.test(value)) {
                         Promise.resolve(result).then(function(response) {
                             try {
                                 return response.clone().json()
@@ -1130,13 +1247,13 @@ enum WebViewScripts {
                 };
             }
 
-            if (isYouTubePage && typeof XMLHttpRequest === 'function') {
+            if (typeof XMLHttpRequest === 'function') {
                 var originalOpen = XMLHttpRequest.prototype.open;
                 XMLHttpRequest.prototype.open = function(method, url) {
                     try {
                         var value = String(url || '');
                         remember(value);
-                        if (/\/youtubei\/v1\/(?:player|next)(?:[?\/]|$)/i.test(value)) {
+                        if (isYouTubePage && /\/youtubei\/v1\/(?:player|next)(?:[?\/]|$)/i.test(value)) {
                             this.addEventListener('load', function() {
                                 try {
                                     cacheYouTubePlayerResponsesDeep(
@@ -1335,6 +1452,7 @@ enum WebViewScripts {
                     if (!el || el === document.body || el === document.documentElement) return true;
                     var tag = String(el.tagName || '').toLowerCase();
                     if (tag === 'main' || tag === 'article') return true;
+                    if (el.closest('nav, [role="navigation"], [role="menu"], [role="menubar"]')) return true;
 
                     var id = String(el.id || '').toLowerCase();
                     var role = String(el.getAttribute('role') || '').toLowerCase();
@@ -1353,7 +1471,7 @@ enum WebViewScripts {
             function hasCookieConsentLanguage(text) {
                 text = String(text || '').toLowerCase();
                 var hasCookieWord = /cookie|cookies|gdpr|ccpa/.test(text);
-                var hasConsentWord = /consent|agree|accept|reject|decline|deny|preferences|necessary|同意|接受|允许|拒绝|不同意|必要|偏好|設定|设置|拒絕/.test(text);
+                var hasConsentWord = /consent|agree|accept|reject|decline|deny|同意|接受|允许|拒绝|不同意|拒絕/.test(text);
                 var hasPrivacyWord = /privacy|隐私|隱私/.test(text);
                 return hasCookieWord || (hasPrivacyWord && hasConsentWord);
             }
@@ -1394,11 +1512,16 @@ enum WebViewScripts {
 
             function isCookieBanner(el) {
                 try {
-                    if (!el || isProtectedPageElement(el)) return false;
-                    var text = textOf(el);
+                    if (!el || !isOverlayLike(el) || isProtectedPageElement(el)) return false;
+                    // Account drawers commonly contain Cookie Policy and
+                    // Privacy Policy links. They are navigation, not consent.
+                    var content = el.cloneNode(true);
+                    content.querySelectorAll('a, [role="link"], nav, [role="navigation"], [role="menu"], [role="menubar"]').forEach(function(link) {
+                        link.remove();
+                    });
+                    var text = textOf(content);
                     if (text.length > 1400) return false;
-                    if (!hasCookieConsentLanguage(text)) return false;
-                    return isOverlayLike(el);
+                    return hasCookieConsentLanguage(text);
                 } catch (_) {
                     return false;
                 }
@@ -1417,9 +1540,10 @@ enum WebViewScripts {
                 selectors.forEach(function(selector) {
                     try {
                         document.querySelectorAll(selector).forEach(function(el) {
+                            if (!isCookieBanner(el)) return;
                             if (clickRejectButton(el)) {
                                 handled++;
-                            } else if (isCookieBanner(el)) {
+                            } else {
                                 el.style.setProperty('display', 'none', 'important');
                                 handled++;
                             }

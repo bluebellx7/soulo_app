@@ -503,8 +503,16 @@ final class ManualAdBlockTests: XCTestCase {
         }
         XCTAssertTrue(layoutReady)
         try await js("document.querySelectorAll('oldrandomtile,.qa-cover').forEach(e=>e.remove()); null", web)
+        let duringReplacement = try await js("window.__souloManualAds.selection()", web)
+        XCTAssertTrue(duringReplacement == nil || duringReplacement is NSNull,
+            "A temporary gap in a responsive ad must not validate stale tiles")
         try await addRandomBottomMosaic(web, tag: "replacementtile")
-        let selection = try await js("window.__souloManualAds.selection()", web) as? [String: Any]
+        var selection: [String: Any]?
+        for _ in 0..<100 {
+            selection = try await js("window.__souloManualAds.selection()", web) as? [String: Any]
+            if selection?["selector"] as? String == "[data-soulo-tiled-banner=\"bottom\"]" { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
         XCTAssertEqual(selection?["selector"] as? String, "[data-soulo-tiled-banner=\"bottom\"]")
         XCTAssertEqual(selection?["selected"] as? Bool, true)
         try await js("window.__souloManualAds.command('preview')", web)

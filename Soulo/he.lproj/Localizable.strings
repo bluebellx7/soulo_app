@@ -867,3 +867,5 @@
 "library_files_tab" = "קבצים";
 
 "library_books_tab" = "ספרים";
+"keep_page_above_toolbar" = "הימנע מחפיפה";
+"keep_page_above_toolbar_desc" = "שמור את פקדי דפי האינטרנט מעל סרגל הכלים.";

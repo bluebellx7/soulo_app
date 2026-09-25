@@ -181,6 +181,14 @@ final class WebNavigationPolicyServiceTests: XCTestCase {
 
     func testPageRequestedDownloadUsesNativeDownload() {
         XCTAssertTrue(BrowserDownloadPolicy.shouldDownload(requestedByPage: true))
+        XCTAssertTrue(BrowserDownloadPolicy.shouldDownloadNavigationAction(
+            requestedByPage: true,
+            nativeRequest: false
+        ))
+        XCTAssertFalse(BrowserDownloadPolicy.shouldDownloadNavigationAction(
+            requestedByPage: true,
+            nativeRequest: true
+        ))
     }
 
     func testAttachmentResponseDownloadsEvenWhenMIMETypeCanBeDisplayed() {
@@ -203,6 +211,20 @@ final class WebNavigationPolicyServiceTests: XCTestCase {
             canShowMIMEType: true,
             mimeType: "text/html",
             contentDisposition: "inline"
+        ))
+        XCTAssertFalse(BrowserDownloadPolicy.shouldDownload(
+            canShowMIMEType: false,
+            mimeType: "text/html; charset=utf-8"
+        ))
+        XCTAssertFalse(BrowserDownloadPolicy.shouldDownload(
+            canShowMIMEType: false,
+            mimeType: "text/html",
+            responseURL: URL(string: "https://example.com/extension.xpi")
+        ))
+        XCTAssertTrue(BrowserDownloadPolicy.shouldDownload(
+            canShowMIMEType: true,
+            mimeType: "text/javascript",
+            responseURL: URL(string: "https://example.com/helper.user.js")
         ))
     }
 

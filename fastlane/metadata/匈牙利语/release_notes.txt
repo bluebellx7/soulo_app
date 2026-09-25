@@ -1,4 +1,3 @@
-1.1.8
+1.1.9
 
-• Jobb reklámszűrés és egymást követő reklámjelölés, szerkeszthető beépített szabályokkal.
-• Hosszan nyomva nagyíthatja, mentheti és megoszthatja a képeket. Összecsukható videóeszközök, fekvő lejátszás és megőrzött pozíció lapváltáskor.
+• Nyissa meg közvetlenül a webcímeket, és keressen a választott szolgáltatással. Jobb fordítás, videó és letöltés.

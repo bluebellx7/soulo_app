@@ -867,3 +867,5 @@
 "library_files_tab" = "ಕಡತಗಳು";
 
 "library_books_tab" = "ಪುಸ್ತಕಗಳು";
+"keep_page_above_toolbar" = "ಅತಿಕ್ರಮಣವನ್ನು ತಪ್ಪಿಸಿ";
+"keep_page_above_toolbar_desc" = "ಟೂಲ್‌ಬಾರ್‌ನ ಮೇಲೆ ವೆಬ್‌ಪುಟ ನಿಯಂತ್ರಣಗಳನ್ನು ಇರಿಸಿ.";

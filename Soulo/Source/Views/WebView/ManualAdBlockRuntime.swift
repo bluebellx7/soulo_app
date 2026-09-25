@@ -483,7 +483,19 @@ enum ManualAdBlockRuntime {
         selection() {
           if (!picker || !allowed()) return null;
           restorePreview();
-          if (!refreshTiledSelection() || !selectedElements().every(safe)) { select(null); return null; }
+          if (!refreshTiledSelection() || !selectedElements().every(safe)) {
+            if (picker.group?.selector === tiledSelector) {
+              // Responsive pages can remove tiles before adding replacements.
+              // Keep the structural group so a later query can recover it.
+              picker.selected = null;
+              picker.invalid = true;
+              picker.outline.style.display = 'none';
+              notify();
+              return null;
+            }
+            select(null); return null;
+          }
+          picker.invalid = false;
           const result = describe(); draw(); return result;
         }
       };

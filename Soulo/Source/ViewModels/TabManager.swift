@@ -85,8 +85,9 @@ final class TabManager: ObservableObject {
     @Published var findText: String = ""
     @Published var findMatchCount: Int = 0
 
-    // Desktop Mode (per-tab tracking)
+    // Desktop mode is a browser preference; individual sites may additionally require it.
     @Published var desktopModeTabs: Set<UUID> = []
+    @Published private(set) var prefersDesktopMode = false
 
     static let maxTabs = 20
     static let maxRecentlyClosed = 10
@@ -94,13 +95,20 @@ final class TabManager: ObservableObject {
     /// Older tabs keep their URL, snapshot and media checkpoint without WebKit.
     static let maxAliveTabs = ProcessInfo.processInfo.physicalMemory >= 4 * 1_024 * 1_024 * 1_024 ? 8 : 5
     private var memoryWarningObserver: AnyCancellable?
+    private var desktopModeObserver: AnyCancellable?
 
     private let storageKey: String
+    private let desktopModeStorageKey: String
+    private var isPrivateSession = UserDefaults.standard.bool(forKey: "is_incognito")
 
     // MARK: - Init
 
     init(storageKey: String = "soulo_saved_tabs") {
         self.storageKey = storageKey
+        desktopModeStorageKey = storageKey.hasPrefix("soulo_saved_tabs")
+            ? "soulo_desktop_mode"
+            : "\(storageKey).desktop_mode"
+        prefersDesktopMode = UserDefaults.standard.bool(forKey: desktopModeStorageKey)
         if storageKey != "soulo_saved_tabs",
            UserDefaults.standard.data(forKey: storageKey) == nil,
            let legacy = UserDefaults.standard.data(forKey: "soulo_saved_tabs") {
@@ -110,6 +118,10 @@ final class TabManager: ObservableObject {
         memoryWarningObserver = NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)
             .sink { [weak self] _ in
                 Task { @MainActor in self?.releaseInactiveTabsForMemoryPressure() }
+            }
+        desktopModeObserver = NotificationCenter.default.publisher(for: .souloDesktopModeChanged)
+            .sink { [weak self] _ in
+                Task { @MainActor in self?.synchronizeDesktopMode() }
             }
         restoreFromDisk()
         if tabs.isEmpty {
@@ -132,8 +144,7 @@ final class TabManager: ObservableObject {
     var tabCount: Int { tabs.count }
 
     var isDesktopMode: Bool {
-        guard let tab = activeTab else { return false }
-        return desktopModeTabs.contains(tab.id)
+        activeWebViewModel?.isDesktopModeEnabled ?? prefersDesktopMode
     }
 
     // MARK: - Snapshots
@@ -155,6 +166,7 @@ final class TabManager: ObservableObject {
         }
 
         var tab = BrowserTab(keyword: keyword, platform: platform)
+        tab.webViewModel.setDesktopModeEnabled(prefersDesktopMode)
         if !switchTo { tab.lastAccessedAt = .distantPast }
         tabs.append(tab)
 
@@ -217,7 +229,18 @@ final class TabManager: ObservableObject {
         closeAllTabs(addingToRecentlyClosed: true)
     }
 
+    /// All windows share the browsing-mode preference. Reconcile each window
+    /// once so a private search can never reuse a persistent WKWebView.
+    @discardableResult
+    func synchronizePrivacyMode() -> Bool {
+        let isPrivate = UserDefaults.standard.bool(forKey: "is_incognito")
+        guard isPrivate != isPrivateSession else { return false }
+        resetTabsForPrivacy()
+        return true
+    }
+
     func resetTabsForPrivacy() {
+        isPrivateSession = UserDefaults.standard.bool(forKey: "is_incognito")
         closeAllTabs(addingToRecentlyClosed: false)
         recentlyClosed.removeAll()
         WebViewModel.deleteAllPersistedSnapshots()
@@ -458,23 +481,42 @@ final class TabManager: ObservableObject {
     // MARK: - Desktop Mode
 
     func toggleDesktopMode() {
-        setDesktopModeEnabled(!isDesktopMode)
+        setDesktopModeEnabled(!prefersDesktopMode)
     }
 
     func setDesktopModeEnabled(_ enabled: Bool, reload: Bool = true) {
-        guard let tab = activeTab else { return }
-        let isCurrentlyEnabled = desktopModeTabs.contains(tab.id)
-        guard isCurrentlyEnabled != enabled else { return }
+        applyDesktopMode(enabled, reload: reload)
+        UserDefaults.standard.set(enabled, forKey: desktopModeStorageKey)
+        NotificationCenter.default.post(name: .souloDesktopModeChanged, object: self)
+    }
 
-        if enabled {
-            desktopModeTabs.insert(tab.id)
-        } else {
-            desktopModeTabs.remove(tab.id)
+    func synchronizeDesktopMode() {
+        let enabled = UserDefaults.standard.bool(forKey: desktopModeStorageKey)
+        guard enabled != prefersDesktopMode else { return }
+        applyDesktopMode(enabled, reload: true)
+    }
+
+    private func applyDesktopMode(_ enabled: Bool, reload: Bool) {
+        let activeModel = activeWebViewModel
+        let activeChanged = activeModel?.isDesktopModeEnabled != enabled
+        prefersDesktopMode = enabled
+        for tab in tabs {
+            tab.webViewModel.setDesktopModeEnabled(enabled)
         }
+        desktopModeTabs = enabled ? Set(tabs.map(\.id)) : []
+        if reload, activeChanged, let activeModel, let url = activeModel.currentURL {
+            activeModel.webView?.stopLoading()
+            activeModel.loadURL(url, cachePolicy: .reloadIgnoringLocalCacheData)
+        }
+    }
+
+    /// Compatibility requirements affect the next page without overwriting the user's preference.
+    func setDesktopModeForCurrentNavigation(_ required: Bool) {
+        guard let tab = activeTab else { return }
+        let enabled = prefersDesktopMode || required
         tab.webViewModel.setDesktopModeEnabled(enabled)
-        if reload {
-            tab.webViewModel.webView?.reload()
-        }
+        if enabled { desktopModeTabs.insert(tab.id) }
+        else { desktopModeTabs.remove(tab.id) }
     }
 
     // MARK: - Persistence
@@ -539,6 +581,7 @@ final class TabManager: ObservableObject {
                 keyword: saved.keyword,
                 platform: platform
             )
+            tab.webViewModel.setDesktopModeEnabled(prefersDesktopMode)
             if let url = restoredURL {
                 tab.webViewModel.loadCachedURL(url)
             }
@@ -569,6 +612,7 @@ extension String {
 // MARK: - Notification for Opening New Tabs
 
 extension Notification.Name {
+    static let souloDesktopModeChanged = Notification.Name("souloDesktopModeChanged")
     static let openInNewTab = Notification.Name("soulo.openInNewTab")
     static let closeUserScriptTab = Notification.Name("soulo.closeUserScriptTab")
     static let closeUserScriptCurrentTab = Notification.Name("soulo.closeUserScriptCurrentTab")

@@ -867,3 +867,5 @@
 "library_files_tab" = "ফাইল";
 
 "library_books_tab" = "বই";
+"keep_page_above_toolbar" = "ওভারল্যাপ এড়িয়ে চলুন";
+"keep_page_above_toolbar_desc" = "টুলবারের উপরে ওয়েবপৃষ্ঠা নিয়ন্ত্রণ রাখুন।";

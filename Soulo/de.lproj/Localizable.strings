@@ -605,3 +605,5 @@ Erzahlen Sie uns:
 "library_files_tab" = "Dateien";
 
 "library_books_tab" = "Bücher";
+"keep_page_above_toolbar" = "Überlappung vermeiden";
+"keep_page_above_toolbar_desc" = "Behalten Sie die Webseitensteuerelemente über der Symbolleiste bei.";

@@ -4,5 +4,4 @@
 "NSCameraUsageDescription" = "當您批准網站請求（例如視訊通話、掃描代碼或拍照）時允許相機存取。";
 "NSMicrophoneUsageDescription" = "允許使用麥克風進行語音搜索，並在您批准後進行網站通話或錄音。";
 "NSSpeechRecognitionUsageDescription" = "允許語音識別將您的聲音轉換為搜尋文字。";
-"NSPhotoLibraryUsageDescription" = "Soulo 需要存取相片庫才能設定自訂桌布。";
 "NSPhotoLibraryAddUsageDescription" = "Soulo 需要權限才能將網頁影像儲存到您的相片庫。";

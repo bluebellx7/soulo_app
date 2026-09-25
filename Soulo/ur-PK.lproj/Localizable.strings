@@ -867,3 +867,5 @@
 "library_files_tab" = "فائلیں";
 
 "library_books_tab" = "کتابیں";
+"keep_page_above_toolbar" = "اوورلیپ سے بچیں۔";
+"keep_page_above_toolbar_desc" = "ویب پیج کنٹرولز کو ٹول بار کے اوپر رکھیں۔";

@@ -1569,6 +1569,15 @@ private struct WebResourceMediaPlayerView: View {
                     ?? AppLocalization.string("resource_download_invalid_response")
                 isPreparing = false
             }
+            .onReceive(MediaSession.shared.$error) { error in
+                guard let error, !useYouTubeWebPlayback,
+                      let currentURL = MediaSession.shared.url,
+                      currentURL == resource.url || currentURL == downloadedPlaybackURL
+                        || currentURL == finishedDownload?.localURL else { return }
+                if activateYouTubeWebPlaybackIfAvailable() { return }
+                playbackError = error
+                isPreparing = false
+            }
             .onReceive(NotificationCenter.default.publisher(for: .AVPlayerItemFailedToPlayToEndTime)) { notification in
                 guard let failedItem = notification.object as? AVPlayerItem,
                       failedItem === player.currentItem else { return }
@@ -1606,19 +1615,10 @@ private struct WebResourceMediaPlayerView: View {
         } else {
             asset = await assetProvider()
         }
-        do {
-            guard try await asset.load(.isPlayable) else {
-                throw WebResourceDownloadError.invalidResponse
-            }
-            guard !Task.isCancelled, playbackRequestID == requestID, MediaSession.shared.ownsPreparation(reservation) else { return }
-            MediaSession.shared.open(url: resolvedLocalURL ?? resource.url, title: resource.title, pageURL: pageURL, asset: asset, webView: sourceWebView, reservation: reservation)
-        } catch {
-            guard !Task.isCancelled, playbackRequestID == requestID, MediaSession.shared.ownsPreparation(reservation) else { return }
-            MediaSession.shared.stop()
-            if resolvedLocalURL != nil || !activateYouTubeWebPlaybackIfAvailable() {
-                playbackError = error.localizedDescription
-            }
-        }
+        guard !Task.isCancelled, playbackRequestID == requestID, MediaSession.shared.ownsPreparation(reservation) else { return }
+        // AVPlayerItem resolves the asset during playback. A separate isPlayable
+        // load duplicates remote HLS setup and delays the first frame.
+        MediaSession.shared.open(url: resolvedLocalURL ?? resource.url, title: resource.title, pageURL: pageURL, asset: asset, webView: sourceWebView, reservation: reservation)
         if !useYouTubeWebPlayback {
             isPreparing = false
         }

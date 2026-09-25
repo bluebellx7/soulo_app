@@ -867,3 +867,5 @@
 "library_files_tab" = "Filer";
 
 "library_books_tab" = "Bøger";
+"keep_page_above_toolbar" = "Undgå overlapning";
+"keep_page_above_toolbar_desc" = "Hold websidekontrol over værktøjslinjen.";

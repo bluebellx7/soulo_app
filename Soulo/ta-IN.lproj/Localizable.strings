@@ -867,3 +867,5 @@
 "library_files_tab" = "கோப்புகள்";
 
 "library_books_tab" = "புத்தகங்கள்";
+"keep_page_above_toolbar" = "மேலெழுவதைத் தவிர்க்கவும்";
+"keep_page_above_toolbar_desc" = "கருவிப்பட்டியின் மேல் வலைப்பக்கக் கட்டுப்பாடுகளை வைத்திருங்கள்.";

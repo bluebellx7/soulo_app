@@ -867,3 +867,5 @@
 "library_files_tab" = "ଫାଇଲ୍";
 
 "library_books_tab" = "ବହି";
+"keep_page_above_toolbar" = "ଓଭରଲପ୍ ଠାରୁ ଦୂରେଇ ରୁହନ୍ତୁ |";
+"keep_page_above_toolbar_desc" = "|\nଟୁଲ୍ ବାର୍ ଉପରେ ୱେବ୍ ପେଜ୍ ନିୟନ୍ତ୍ରଣ ରଖନ୍ତୁ |";

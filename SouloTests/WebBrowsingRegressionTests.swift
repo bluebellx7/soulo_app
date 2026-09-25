@@ -34,6 +34,42 @@ import Network
         super.tearDown()
     }
 
+    func testPrivacyHandlingPreservesAccountSidebarAndRejectsActualCookieBanner() async throws {
+        let model = WebViewModel()
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        model.webView = web
+        defer { model.releaseWebViewRuntime() }
+        web.loadHTMLString("""
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>.overlay {position:fixed;left:0;top:0;width:280px;height:600px;z-index:200}</style>
+        <button id="avatar" onclick="document.body.insertAdjacentHTML('beforeend', document.getElementById('drawerTemplate').innerHTML)">Account</button>
+        <template id="drawerTemplate">
+          <div id="drawer" role="dialog" class="overlay">
+            <nav><a href="/profile">Profile</a><a href="/bookmarks">Bookmarks</a></nav>
+            <div role="button">Settings and privacy</div>
+            <footer><a href="/privacy">Privacy Policy</a><a href="/cookies">Cookie Policy</a></footer>
+          </div>
+          <aside id="chineseDrawer" class="overlay"><div role="button">设置与隐私</div></aside>
+          <div id="consent-settings-menu" class="overlay"><a href="/reject-list" onclick="window.unrelatedClicks++;return false">Rejected requests</a><div>Settings and privacy</div></div>
+        </template>
+        <script>window.unrelatedClicks=0;window.rejectClicks=0;</script>
+        """, baseURL: URL(string: "https://x.com/home"))
+        try await wait(model, for: "!!document.getElementById('avatar')")
+        _ = try await web.evaluateJavaScript(WebViewScripts.privacyProtection(gpcEnabled: true, cookieBannerHandling: true))
+        _ = try await web.evaluateJavaScript("document.getElementById('avatar').click()")
+        try await Task.sleep(for: .milliseconds(700))
+        let visible = try await web.evaluateJavaScript("['drawer','chineseDrawer','consent-settings-menu'].map(id=>getComputedStyle(document.getElementById(id)).display !== 'none')")
+        XCTAssertEqual(visible as? [Bool], [true, true, true], "Policy links and privacy settings must not turn an account menu into a cookie banner")
+        let unrelatedClicks = try await web.evaluateJavaScript("window.unrelatedClicks") as? Int
+        XCTAssertEqual(unrelatedClicks, 0, "A consent-like ID must not cause unrelated controls to be clicked")
+        _ = try await web.evaluateJavaScript("""
+          document.body.insertAdjacentHTML('beforeend', '<div id="cookie-banner" class="overlay" style="height:120px"><p>We use cookies to personalize content.</p><button onclick="window.rejectClicks++;this.parentElement.remove()">Reject optional cookies</button></div>');
+        """)
+        try await wait(model, for: "window.rejectClicks === 1")
+        let drawerVisible = try await web.evaluateJavaScript("getComputedStyle(document.getElementById('drawer')).display !== 'none'") as? Bool
+        XCTAssertEqual(drawerVisible, true)
+    }
+
     func testTextSelectionPreservesEditableAndControlSubtrees() async throws {
         let web = WKWebView()
         web.loadHTMLString("""
@@ -75,6 +111,258 @@ import Network
         }
         XCTFail("Page condition timed out: \(script), URL: \(String(describing: model.currentURL)), error: \(String(describing: model.errorMessage))")
         throw ReadingToolError.invalid
+    }
+
+    func testRestoringTallSnapshotKeepsPageAndToolbarInsideViewport() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let format = UIGraphicsImageRendererFormat(); format.scale = 1
+        model.snapshot = UIGraphicsImageRenderer(size: CGSize(width: 430, height: 1800), format: format).image { context in
+            UIColor.systemGray5.setFill(); context.fill(CGRect(x: 0, y: 0, width: 430, height: 1800))
+        }
+        model.loadCachedURL(root.appendingPathComponent("unfinished-document"))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { close(model, window, previous) }
+        window.rootViewController = UIHostingController(rootView:
+            VStack(spacing: 0) {
+                Text("Platforms").frame(height: 48)
+                WebViewContainer(webViewModel: model, bookmarkViewModel: BookmarkViewModel(),
+                    isFullscreen: .constant(false), toolbarManuallyHiddenBinding: .constant(false))
+            }
+            .environmentObject(SearchViewModel())
+        )
+        window.makeKeyAndVisible()
+        try await wait(model, for: "document.body && document.body.getBoundingClientRect().height > 0")
+        try await Task.sleep(for: .milliseconds(250))
+        window.layoutIfNeeded()
+        let web = try XCTUnwrap(model.webView)
+        XCTAssertTrue(model.isLoading)
+        XCTAssertTrue(model.showSnapshotWhileRestoring)
+        let frame = web.convert(web.bounds, to: window)
+        XCTAssertGreaterThanOrEqual(frame.minY, 0)
+        XCTAssertLessThanOrEqual(frame.maxY, window.bounds.maxY + 1,
+            "A tall snapshot must not move page controls below the screen")
+        XCTAssertLessThanOrEqual(frame.height, window.bounds.height)
+        let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+        }
+        let attachment = XCTAttachment(image: image)
+        attachment.name = "restoring-tab-loading-toolbar"; attachment.lifetime = .keepAlways; add(attachment)
+        // Stop must work even when a parser-blocking resource never completes.
+        model.reload()
+        for _ in 0..<40 {
+            if !model.isLoading { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        XCTAssertFalse(model.isLoading)
+        XCTAssertFalse(model.showSnapshotWhileRestoring)
+    }
+
+    func testOldWrapperCleanupCannotDisconnectRemountedPage() async throws {
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        try await wait(model, for: "true")
+        let web = try XCTUnwrap(model.webView)
+        web.loadHTMLString("<html><body><input id='draft' value='kept'></body></html>", baseURL: nil)
+        try await wait(model, for: "!!document.getElementById('draft')")
+        let old = try XCTUnwrap(web.navigationDelegate as? WebViewRepresentable.Coordinator)
+        // Mount the retained view before dismantling the departing wrapper,
+        // as an interrupted SwiftUI tab transition can do.
+        let replacement = UIHostingController(rootView: WebViewRepresentable(viewModel: model))
+        let replacementWindow = UIWindow(windowScene: try XCTUnwrap(window.windowScene))
+        replacementWindow.rootViewController = replacement
+        replacementWindow.makeKeyAndVisible()
+        defer { replacementWindow.isHidden = true; replacementWindow.rootViewController = nil }
+        for _ in 0..<40 {
+            if web.navigationDelegate !== old { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        let owner = try XCTUnwrap(web.navigationDelegate as? WebViewRepresentable.Coordinator)
+        XCTAssertFalse(owner === old)
+        WebViewRepresentable.dismantleUIView(web, coordinator: old)
+        XCTAssertTrue(model.isWebViewRuntimeInstalled)
+        model.beginPageNavigation()
+        _ = try await web.evaluateJavaScript(
+            "window.webkit.messageHandlers.souloPageReady.postMessage({visible:true});true",
+            in: nil, contentWorld: .defaultClient)
+        for _ in 0..<40 {
+            if model.hasVisibleContent { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        XCTAssertTrue(model.hasVisibleContent, "Old cleanup must not remove the new page's bridge")
+        let draft = try await web.evaluateJavaScript("document.getElementById('draft').value")
+        XCTAssertEqual(draft as? String, "kept")
+        withExtendedLifetime(replacement) {}
+    }
+
+    func testAppearanceUpdatesDoNotRescanAnUnchangedDocument() async throws {
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        try await wait(model, for: "true")
+        let web = try XCTUnwrap(model.webView)
+        web.loadHTMLString("<html><body><p id='fixture' style='color:black;background:white'>Text</p></body></html>", baseURL: nil)
+        try await wait(model, for: "!!document.getElementById('fixture') && document.readyState === 'complete'")
+        let script = WebViewScripts.applyWebAppearance(warmColorShift: false, forceDark: true,
+            reduceMotion: false, underlineLinks: false)
+        _ = try await web.evaluateJavaScript(script)
+        _ = try await web.evaluateJavaScript("window.styleReads=0;const readStyle=window.getComputedStyle;window.getComputedStyle=(...args)=>{window.styleReads++;return readStyle(...args)};true")
+        for _ in 0..<20 { _ = try await web.evaluateJavaScript(script) }
+        let reads = try await web.evaluateJavaScript("window.styleReads")
+        XCTAssertEqual(reads as? Int, 0, "Repeated progress updates must not scan the DOM again")
+        _ = try await web.evaluateJavaScript("const p=document.createElement('p');p.id='added';p.style.cssText='color:black;background:white';document.body.append(p)")
+        try await Task.sleep(for: .milliseconds(300))
+        let color = try await web.evaluateJavaScript("document.getElementById('added').style.color")
+        XCTAssertEqual(color as? String, "rgb(231, 231, 235)", "New content must still receive dark appearance")
+        _ = try await web.evaluateJavaScript(WebViewScripts.applyWebAppearance(
+            warmColorShift: false, forceDark: false, reduceMotion: false, underlineLinks: false))
+        let original = try await web.evaluateJavaScript("document.getElementById('fixture').style.color")
+        XCTAssertEqual(original as? String, "black")
+    }
+
+    func testRemountReappliesPreferencesAfterUnobservedNavigation() async throws {
+        let appearance = WebAppearanceService.shared
+        let saved = appearance.reducePageMotion
+        appearance.reducePageMotion = false
+        defer { appearance.reducePageMotion = saved }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        try await wait(model, for: "true")
+        let web = try XCTUnwrap(model.webView)
+        web.loadHTMLString("<html><body id='first'>First</body></html>", baseURL: nil)
+        try await wait(model, for: "!!document.getElementById('first') && document.readyState === 'complete'")
+        appearance.reducePageMotion = true
+        appearance.apply(to: web)
+        try await wait(model, for: "!!document.getElementById('soulo-reduce-motion-style')")
+
+        window.rootViewController = UIHostingController(rootView: Color.clear)
+        for _ in 0..<100 {
+            if !model.isWebViewRuntimeInstalled { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertFalse(model.isWebViewRuntimeInstalled)
+        // Offscreen navigation may finish without any attached coordinator.
+        web.navigationDelegate = nil
+        web.loadHTMLString("<html><body id='second'>Second</body></html>", baseURL: nil)
+        try await wait(model, for: "!!document.getElementById('second') && document.readyState === 'complete'")
+        let staleStyle = try await web.evaluateJavaScript("!!document.getElementById('soulo-reduce-motion-style')")
+        XCTAssertEqual(staleStyle as? Bool, false, "The document-start script still holds the original preference")
+
+        window.rootViewController = UIHostingController(rootView: WebViewRepresentable(viewModel: model))
+        try await wait(model, for: "!!document.getElementById('soulo-reduce-motion-style')")
+        XCTAssertTrue(model.webView === web)
+    }
+
+    func testRecycledDarkElementsRestoreOriginalStyles() async throws {
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        try await wait(model, for: "true")
+        let web = try XCTUnwrap(model.webView)
+        web.loadHTMLString("<html><body><p id='recycled' style='color:black;background:white'>Text</p></body></html>", baseURL: nil)
+        try await wait(model, for: "!!document.getElementById('recycled') && document.readyState === 'complete'")
+        _ = try await web.evaluateJavaScript(WebViewScripts.applyWebAppearance(
+            warmColorShift: false, forceDark: true, reduceMotion: false, underlineLinks: false))
+        _ = try await web.evaluateJavaScript("window.recycled=document.getElementById('recycled');window.recycled.remove();true")
+        try await Task.sleep(for: .milliseconds(300))
+        _ = try await web.evaluateJavaScript("document.body.append(window.recycled);true")
+        try await Task.sleep(for: .milliseconds(300))
+        _ = try await web.evaluateJavaScript(WebViewScripts.applyWebAppearance(
+            warmColorShift: false, forceDark: false, reduceMotion: false, underlineLinks: false))
+        let color = try await web.evaluateJavaScript("document.getElementById('recycled').style.color")
+        XCTAssertEqual(color as? String, "black", "Virtualized pages must recover original styles after dark mode is disabled")
+    }
+
+    func testUnchangedAppearanceDoesNotCrossJavaScriptBridgeAgain() async throws {
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        try await wait(model, for: "true")
+        let web = try XCTUnwrap(model.webView)
+        web.loadHTMLString("<html><body><p id='fixture'>Text</p></body></html>", baseURL: nil)
+        try await wait(model, for: "!!document.getElementById('fixture') && document.readyState === 'complete'")
+        // Drain navigation callbacks before counting ordinary view updates.
+        try await Task.sleep(for: .milliseconds(200))
+        WebAppearanceService.shared.apply(to: web, force: true)
+        _ = try await web.evaluateJavaScript("window.appearanceCalls=0;const apply=window.__souloApplyWebAppearance;window.__souloApplyWebAppearance=c=>{window.appearanceCalls++;apply(c)};true")
+        for _ in 0..<30 { WebAppearanceService.shared.apply(to: web) }
+        let calls = try await web.evaluateJavaScript("window.appearanceCalls")
+        XCTAssertEqual(calls as? Int, 0)
+    }
+
+    private func loadAIForm(_ model: WebViewModel, disabled: Bool = false) async throws -> WKWebView {
+        try await wait(model, for: "true")
+        let web = try XCTUnwrap(model.webView)
+        web.loadHTMLString("""
+        <html><body><form onsubmit="event.preventDefault()">
+        <textarea id="prompt" onkeydown="if(event.key==='Enter') window.enters++"></textarea>
+        <button type="submit" data-testid="send-button" aria-label="Send" \(disabled ? "disabled" : "")
+          onclick="window.clicks++;this.setAttribute('aria-label','Stop generating')">Send</button>
+        </form><script>window.clicks=0;window.enters=0;</script></body></html>
+        """, baseURL: URL(string: "https://ai.fixture.test/"))
+        try await wait(model, for: "document.readyState === 'complete' && !!document.getElementById('prompt')")
+        return web
+    }
+
+    func testAIChatSubmitsOnceWithoutClickingStopGeneration() async throws {
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        let web = try await loadAIForm(model)
+        _ = try await web.evaluateJavaScript(AIPlatformInteractionService.aiChatScript(query: "test query"))
+        try await Task.sleep(for: .milliseconds(1900))
+        let clicks = try await web.evaluateJavaScript("window.clicks")
+        XCTAssertEqual(clicks as? Int, 1)
+    }
+
+    func testAIChatDoesNotForceEnableDisabledSendControl() async throws {
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        let web = try await loadAIForm(model, disabled: true)
+        _ = try await web.evaluateJavaScript(AIPlatformInteractionService.aiChatScript(query: "test query"))
+        try await Task.sleep(for: .milliseconds(2000))
+        let clicks = try await web.evaluateJavaScript("window.clicks")
+        let disabled = try await web.evaluateJavaScript("document.querySelector('button').disabled")
+        XCTAssertEqual(clicks as? Int, 0)
+        XCTAssertEqual(disabled as? Bool, true)
+        AIPlatformInteractionService.cancelInteraction(in: web)
+    }
+
+    func testLeavingAIInteractionCancelsDelayedInputAndSubmission() async throws {
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        let web = try await loadAIForm(model)
+        _ = try await web.evaluateJavaScript(AIPlatformInteractionService.aiChatScript(query: "old query"))
+        AIPlatformInteractionService.cancelInteraction(in: web)
+        try await Task.sleep(for: .milliseconds(1500))
+        let value = try await web.evaluateJavaScript("document.getElementById('prompt').value")
+        let clicks = try await web.evaluateJavaScript("window.clicks")
+        XCTAssertEqual(value as? String, "")
+        XCTAssertEqual(clicks as? Int, 0)
+    }
+
+    func testMetasoTextareaUsesCorrectSetterAndOneSubmitMethod() async throws {
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        let web = try await loadAIForm(model)
+        let query = "what's new?\n中文"
+        _ = try await web.evaluateJavaScript(AIPlatformInteractionService.metasoSearchScript(query: query))
+        try await Task.sleep(for: .milliseconds(1600))
+        let value = try await web.evaluateJavaScript("document.getElementById('prompt').value")
+        let clicks = try await web.evaluateJavaScript("window.clicks")
+        let enters = try await web.evaluateJavaScript("window.enters")
+        XCTAssertEqual(value as? String, query)
+        XCTAssertEqual(clicks as? Int, 1)
+        XCTAssertEqual(enters as? Int, 0, "Click and Enter must not submit the same query twice")
     }
 
     func testVisibleContentDoesNotWaitForHangingSubresource() async throws {
@@ -633,6 +921,39 @@ import Network
         XCTAssertEqual(server.requests.filter { $0.path == "/cache-page" }.count, 2)
         XCTAssertEqual(server.requests.filter { $0.path == "/cache-resource.js" }.count, 2)
         XCTAssertFalse(control.isRefreshing)
+        XCTAssertEqual(web.backForwardList.backList.count, historyCount)
+    }
+
+    func testDesktopModeReloadsCurrentPageWithDesktopPreferences() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let manager = TabManager(storageKey: "desktop-mode-\(UUID())")
+        let model = try XCTUnwrap(manager.activeWebViewModel)
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("destination"))
+        try await wait(model, for: "!!document.getElementById('destination')")
+        let web = try XCTUnwrap(model.webView)
+        let historyCount = web.backForwardList.backList.count
+
+        manager.setDesktopModeEnabled(true)
+        for _ in 0..<100 {
+            if server.requests.filter({ $0.path == "/destination" }).count >= 2 { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        try await wait(model, for: "navigator.userAgent.includes('Macintosh')")
+        XCTAssertEqual(web.configuration.defaultWebpagePreferences.preferredContentMode, .desktop)
+        XCTAssertEqual(server.requests.filter { $0.path == "/destination" }.count, 2)
+
+        manager.setDesktopModeEnabled(false)
+        for _ in 0..<100 {
+            if server.requests.filter({ $0.path == "/destination" }).count >= 3 { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        try await wait(model, for: "navigator.userAgent.includes('iPhone')")
+        XCTAssertEqual(web.configuration.defaultWebpagePreferences.preferredContentMode, .mobile)
+        XCTAssertEqual(server.requests.filter { $0.path == "/destination" }.count, 3)
         XCTAssertEqual(web.backForwardList.backList.count, historyCount)
     }
 

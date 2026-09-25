@@ -22,7 +22,7 @@ class PlatformDataStore: ObservableObject {
 
     // MARK: - Persistence
 
-    private let platformVersion = 41 // Increment when cached built-in defaults need migration
+    private let platformVersion = 42 // Increment when cached built-in defaults need migration
 
     private func load() {
         let savedVersion = UserDefaults.standard.integer(forKey: "platform_config_version")
@@ -323,6 +323,14 @@ class PlatformDataStore: ObservableObject {
                 .max() ?? -1) + 1
             platforms.append(Self.zLibraryPlatform(sortOrder: nextOrder))
         }
+        if version < 42,
+           !platforms.contains(where: { $0.isBuiltIn && $0.name == "platform_bing" && $0.region == .china }) {
+            let nextOrder = (platforms
+                .filter { $0.region == .china }
+                .map(\.sortOrder)
+                .max() ?? -1) + 1
+            platforms.append(Self.chinaBingPlatform(sortOrder: nextOrder))
+        }
     }
 
     @discardableResult
@@ -460,6 +468,7 @@ class PlatformDataStore: ObservableObject {
                 isCustom: false
             ))
         }
+        all.append(Self.chinaBingPlatform(sortOrder: chinaData.count))
 
         // MARK: International
         let internationalData: [(String, String, String, String)] = [
@@ -510,7 +519,7 @@ class PlatformDataStore: ObservableObject {
             region: .china,
             isBuiltIn: true,
             isVisible: true,
-            sortOrder: chinaData.count,
+            sortOrder: chinaData.count + 1,
             usageCount: 0,
             isCustom: false,
             requiresLogin: true
@@ -533,7 +542,7 @@ class PlatformDataStore: ObservableObject {
                 region: .china,
                 isBuiltIn: true,
                 isVisible: true,
-                sortOrder: chinaData.count + 1 + offset, // +1 for zhihu
+                sortOrder: chinaData.count + 2 + offset, // Bing and Zhihu follow chinaData
                 usageCount: 0,
                 isCustom: false,
                 requiresLogin: true,
@@ -637,6 +646,22 @@ class PlatformDataStore: ObservableObject {
         }
 
         return all
+    }
+
+    private static func chinaBingPlatform(sortOrder: Int) -> SearchPlatform {
+        SearchPlatform(
+            id: UUID(),
+            name: "platform_bing",
+            iconName: "icon_bing",
+            searchURLTemplate: "https://www.bing.com/search?q=%@",
+            homeURL: "https://www.bing.com",
+            region: .china,
+            isBuiltIn: true,
+            isVisible: true,
+            sortOrder: sortOrder,
+            usageCount: 0,
+            isCustom: false
+        )
     }
 
     private static func xiaohongshuPlatform(sortOrder: Int) -> SearchPlatform {

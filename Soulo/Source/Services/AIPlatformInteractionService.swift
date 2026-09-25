@@ -36,21 +36,49 @@ struct AIPlatformInteractionService {
         """
     }
 
+    /// Cancel delayed work when the user leaves or replaces the interaction.
+    private static let interactionLifecycle = """
+    if (window.__souloCancelAIInteraction) window.__souloCancelAIInteraction();
+    var cancelled = false, timers = new Set(), initialURL = location.href;
+    function cancelInteraction() {
+        cancelled = true;
+        timers.forEach(clearTimeout); timers.clear();
+        window.removeEventListener('pagehide', cancelInteraction);
+        document.removeEventListener('visibilitychange', visibilityChanged);
+    }
+    function visibilityChanged() { if (document.hidden) cancelInteraction(); }
+    function scheduleInteraction(action, delay) {
+        var timer = setTimeout(function() {
+            timers.delete(timer);
+            if (cancelled || document.hidden || location.href !== initialURL) {
+                cancelInteraction(); return;
+            }
+            action();
+        }, delay);
+        timers.add(timer);
+    }
+    window.__souloCancelAIInteraction = cancelInteraction;
+    window.addEventListener('pagehide', cancelInteraction);
+    document.addEventListener('visibilitychange', visibilityChanged);
+    """
+
+    @MainActor
+    static func cancelInteraction(in webView: WKWebView?) {
+        webView?.evaluateJavaScript("window.__souloCancelAIInteraction && window.__souloCancelAIInteraction();", completionHandler: nil)
+    }
+
     /// AI chat interaction script
     static func aiChatScript(query: String) -> String {
-        let escaped = query
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "'", with: "\\'")
-            .replacingOccurrences(of: "\n", with: "\\n")
-            .replacingOccurrences(of: "\r", with: "")
+        let escaped = query.escapedForJS
         return """
         (function() {
+            \(interactionLifecycle)
             var query = '\(escaped)';
             var attempts = 0;
 
             function tryInteract() {
                 attempts++;
-                if (attempts > 30) return;
+                if (attempts > 30) { cancelInteraction(); return; }
 
                 var textarea = document.querySelector('textarea') ||
                                document.querySelector('[contenteditable="true"][role="textbox"]') ||
@@ -58,7 +86,7 @@ struct AIPlatformInteractionService {
                                document.querySelector('#chat-input');
 
                 if (!textarea) {
-                    setTimeout(tryInteract, 500);
+                    scheduleInteraction(tryInteract, 500);
                     return;
                 }
 
@@ -83,7 +111,7 @@ struct AIPlatformInteractionService {
                 document.execCommand('insertText', false, query);
 
                 // Verify and fallback
-                setTimeout(function() {
+                scheduleInteraction(function() {
                     var val = textarea.value || textarea.innerText || '';
                     if (val.trim().length === 0) {
                         // Fallback: native setter
@@ -99,14 +127,14 @@ struct AIPlatformInteractionService {
             }
 
             function waitAndSend(textarea, attempt) {
-                if (attempt > 15) return;
+                if (attempt > 15 || !textarea.isConnected) { cancelInteraction(); return; }
 
                 // Find any non-disabled button that could be "send"
                 var sendBtn = findSendButton(textarea);
 
                 if (sendBtn && !sendBtn.disabled) {
+                    cancelInteraction();
                     sendBtn.click();
-                    setTimeout(function() { sendBtn.click(); }, 100);
                     return;
                 }
 
@@ -117,14 +145,9 @@ struct AIPlatformInteractionService {
                     textarea.dispatchEvent(new Event('change', { bubbles: true }));
                     textarea.dispatchEvent(new KeyboardEvent('keyup', { key: 'a', bubbles: true }));
 
-                    // Force enable and click
-                    setTimeout(function() {
-                        if (sendBtn.disabled) {
-                            sendBtn.removeAttribute('disabled');
-                            sendBtn.disabled = false;
-                        }
-                        sendBtn.click();
-                    }, 300);
+                    // Let the site enable its own control after processing
+                    // input. A disabled button may also mean rate limiting.
+                    scheduleInteraction(function() { waitAndSend(textarea, attempt + 1); }, 500);
                     return;
                 }
 
@@ -135,16 +158,18 @@ struct AIPlatformInteractionService {
                         key: 'Enter', code: 'Enter', keyCode: 13, which: 13,
                         bubbles: true, cancelable: true
                     });
+                    cancelInteraction();
                     textarea.dispatchEvent(enterEvent);
+                    return;
                 }
 
                 // Retry
-                setTimeout(function() { waitAndSend(textarea, attempt + 1); }, 500);
+                scheduleInteraction(function() { waitAndSend(textarea, attempt + 1); }, 500);
             }
 
             function isJunkButton(btn) {
-                var text = (btn.textContent || '').toLowerCase();
-                var junk = ['download', '下载', 'app store', 'install', '安装', 'get app', '获取'];
+                var text = ((btn.textContent || '') + ' ' + (btn.getAttribute('aria-label') || '')).toLowerCase();
+                var junk = ['download', '下载', 'app store', 'install', '安装', 'get app', '获取', 'stop generating', '停止生成', '停止回答'];
                 for (var j = 0; j < junk.length; j++) {
                     if (text.includes(junk[j])) return true;
                 }
@@ -180,7 +205,7 @@ struct AIPlatformInteractionService {
                 return null;
             }
 
-            setTimeout(tryInteract, 800);
+            scheduleInteraction(tryInteract, 800);
             return 'injecting';
         })();
         """
@@ -198,43 +223,44 @@ struct AIPlatformInteractionService {
 
     /// Metaso: fill search input and submit
     static func metasoSearchScript(query: String) -> String {
-        let escaped = query
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "'", with: "\\'")
-            .replacingOccurrences(of: "\n", with: "\\n")
+        let escaped = query.escapedForJS
         return """
         (function() {
+            \(interactionLifecycle)
             var query = '\(escaped)';
             var attempts = 0;
             function trySearch() {
                 attempts++;
-                if (attempts > 20) return;
+                if (attempts > 20) { cancelInteraction(); return; }
                 var input = document.querySelector('input[type="search"]') ||
                             document.querySelector('input[placeholder*="搜索"]') ||
                             document.querySelector('input[placeholder*="search" i]') ||
                             document.querySelector('textarea');
-                if (!input) { setTimeout(trySearch, 500); return; }
+                if (!input) { scheduleInteraction(trySearch, 500); return; }
                 input.focus();
                 if (input.tagName === 'INPUT' || input.tagName === 'TEXTAREA') {
-                    var s = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value') ||
-                            Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+                    var prototype = input.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+                    var s = Object.getOwnPropertyDescriptor(prototype, 'value');
                     if (s && s.set) s.set.call(input, query);
                 }
                 input.dispatchEvent(new Event('input', { bubbles: true }));
                 input.dispatchEvent(new Event('change', { bubbles: true }));
-                setTimeout(function() {
-                    // Try submit via Enter key
-                    input.dispatchEvent(new KeyboardEvent('keydown', {
-                        key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true
-                    }));
-                    // Also try clicking search button
+                scheduleInteraction(function() {
+                    if (!input.isConnected) { cancelInteraction(); return; }
                     var btn = document.querySelector('button[type="submit"]') ||
                               document.querySelector('[class*="search-btn" i]') ||
                               document.querySelector('[aria-label*="搜索"]');
-                    if (btn) btn.click();
+                    cancelInteraction();
+                    if (btn) {
+                        if (!btn.disabled) btn.click();
+                    } else {
+                        input.dispatchEvent(new KeyboardEvent('keydown', {
+                            key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true
+                        }));
+                    }
                 }, 300);
             }
-            setTimeout(trySearch, 800);
+            scheduleInteraction(trySearch, 800);
             return 'injecting';
         })();
         """

@@ -1,4 +1,3 @@
-1.1.8
+1.1.9
 
-• Verbeterde advertentiefilters en opeenvolgende advertentiemarkering, met bewerkbare ingebouwde regels.
-• Houd afbeeldingen ingedrukt om te vergroten, bewaren of delen. Inklapbare videotools, liggende weergave en behoud van de afspeelpositie tussen tabbladen.
+• Open webadressen direct en zoek met de gekozen zoekmachine. Vertaling na links, video en downloads zijn verbeterd.

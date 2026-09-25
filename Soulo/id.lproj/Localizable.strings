@@ -867,3 +867,5 @@
 "library_files_tab" = "Berkas";
 
 "library_books_tab" = "Buku";
+"keep_page_above_toolbar" = "Hindari Tumpang Tindih";
+"keep_page_above_toolbar_desc" = "Pertahankan kontrol halaman web di atas toolbar.";

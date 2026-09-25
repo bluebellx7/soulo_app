@@ -29,6 +29,9 @@ class SpeechRecognitionService: ObservableObject {
     private var speechRecognizer: SFSpeechRecognizer?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
+    private var recordingSessionID: UUID?
+    private var hasInputTap = false
+    private let authorize: (@escaping (SFSpeechRecognizerAuthorizationStatus) -> Void) -> Void
     private let audioEngine = AVAudioEngine()
 
     /// Domain vocabulary that boosts recognition accuracy (platform names, recent searches).
@@ -42,7 +45,9 @@ class SpeechRecognitionService: ObservableObject {
 
     // MARK: - Init
 
-    init(languageCode: String = "en") {
+    init(languageCode: String = "en",
+         authorize: @escaping (@escaping (SFSpeechRecognizerAuthorizationStatus) -> Void) -> Void = SFSpeechRecognizer.requestAuthorization) {
+        self.authorize = authorize
         let localeID = Self.localeIdentifier(for: languageCode)
         self.speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: localeID))
         self.isAvailable = speechRecognizer?.isAvailable ?? false
@@ -145,7 +150,7 @@ class SpeechRecognitionService: ObservableObject {
     // MARK: - Authorization
 
     func requestAuthorization() {
-        SFSpeechRecognizer.requestAuthorization { [weak self] status in
+        authorize { [weak self] status in
             DispatchQueue.main.async {
                 switch status {
                 case .authorized:
@@ -169,6 +174,7 @@ class SpeechRecognitionService: ObservableObject {
 
     /// Start recording. `locale` overrides the default; `contextualStrings` boosts accuracy.
     func startRecording(locale: String? = nil, contextualStrings: [String] = []) {
+        guard recordingSessionID == nil, !isRecording else { return }
         if let locale, !locale.isEmpty {
             let newLocale = Locale(identifier: Self.localeIdentifier(for: locale))
             speechRecognizer = SFSpeechRecognizer(locale: newLocale)
@@ -179,22 +185,24 @@ class SpeechRecognitionService: ObservableObject {
     }
 
     private func _startRecording() {
-        guard !isRecording else { return }
-
-        SFSpeechRecognizer.requestAuthorization { [weak self] status in
-            guard status == .authorized else {
-                DispatchQueue.main.async {
-                    self?.errorMessage = LanguageManager.shared.localizedString("speech_permission")
+        guard recordingSessionID == nil, !isRecording else { return }
+        let sessionID = UUID()
+        recordingSessionID = sessionID
+        authorize { [weak self] status in
+            Task { @MainActor in
+                guard let self, self.recordingSessionID == sessionID else { return }
+                guard status == .authorized else {
+                    self.recordingSessionID = nil
+                    self.errorMessage = LanguageManager.shared.localizedString("speech_permission")
+                    return
                 }
-                return
-            }
-            DispatchQueue.main.async {
-                self?.beginRecordingSession()
+                self.beginRecordingSession()
             }
         }
     }
 
-    private func beginRecordingSession() {
+    func beginRecordingSession() {
+        guard let sessionID = recordingSessionID else { return }
         // Cancel any existing task
         recognitionTask?.cancel()
         recognitionTask = nil
@@ -206,6 +214,7 @@ class SpeechRecognitionService: ObservableObject {
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
             errorMessage = "Failed to configure audio session: \(error.localizedDescription)"
+            cleanUp()
             return
         }
 
@@ -213,6 +222,7 @@ class SpeechRecognitionService: ObservableObject {
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         guard let recognitionRequest = recognitionRequest else {
             errorMessage = "Unable to create recognition request."
+            cleanUp()
             return
         }
 
@@ -233,11 +243,20 @@ class SpeechRecognitionService: ObservableObject {
         // Configure audio engine input
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
-            self?.recognitionRequest?.append(buffer)
-            // Calculate audio level for visualization
-            self?.updateAudioLevel(from: buffer)
+        guard recordingFormat.sampleRate > 0, recordingFormat.channelCount > 0 else {
+            errorMessage = ToolText.text("speech_failed")
+            cleanUp()
+            return
         }
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
+            recognitionRequest.append(buffer)
+            let level = Self.normalizedAudioLevel(from: buffer)
+            Task { @MainActor in
+                guard let self, self.recordingSessionID == sessionID else { return }
+                self.audioLevel = level
+            }
+        }
+        hasInputTap = true
 
         audioEngine.prepare()
         do {
@@ -250,10 +269,9 @@ class SpeechRecognitionService: ObservableObject {
 
         // Start recognition task
         recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { [weak self] result, error in
-            guard let self else { return }
-
-            if let result = result {
-                Task { @MainActor in
+            Task { @MainActor in
+                guard let self, self.recordingSessionID == sessionID else { return }
+                if let result {
                     let newText = result.bestTranscription.formattedString
                     if newText != self.lastTranscription {
                         self.lastTranscription = newText
@@ -261,22 +279,14 @@ class SpeechRecognitionService: ObservableObject {
                         self.lastActivityTime = Date()
                     }
                 }
-            }
-
-            if let error = error {
-                let nsError = error as NSError
-                // NSURLErrorCancelled / recognition cancelled — ignore
-                guard nsError.code != 301 && nsError.code != NSURLErrorCancelled else { return }
-                Task { @MainActor in
-                    self.errorMessage = ToolText.text("speech_failed")
-                    self.stopRecording()
+                if let error {
+                    let code = (error as NSError).code
+                    if code != 301 && code != NSURLErrorCancelled {
+                        self.errorMessage = ToolText.text("speech_failed")
+                        self.stopRecording()
+                    }
                 }
-            }
-
-            if result?.isFinal == true {
-                Task { @MainActor in
-                    self.stopRecording()
-                }
+                if result?.isFinal == true { self.stopRecording() }
             }
         }
 
@@ -306,10 +316,10 @@ class SpeechRecognitionService: ObservableObject {
 
     // MARK: - Audio Level
 
-    private func updateAudioLevel(from buffer: AVAudioPCMBuffer) {
-        guard let channelData = buffer.floatChannelData?[0] else { return }
+    nonisolated private static func normalizedAudioLevel(from buffer: AVAudioPCMBuffer) -> Float {
+        guard let channelData = buffer.floatChannelData?[0] else { return 0 }
         let frameLength = Int(buffer.frameLength)
-        guard frameLength > 0 else { return }
+        guard frameLength > 0 else { return 0 }
 
         var sum: Float = 0
         for i in 0..<frameLength {
@@ -318,14 +328,15 @@ class SpeechRecognitionService: ObservableObject {
         let rms = sqrt(sum / Float(frameLength))
         // Convert to 0...1 scale (normalized with log curve for perceptual accuracy)
         let normalized = max(0, min(1, (20 * log10(max(rms, 0.00001)) + 50) / 50))
-        Task { @MainActor in
-            self.audioLevel = normalized
-        }
+        return normalized
     }
 
     // MARK: - Stop Recording
 
     func stopRecording() {
+        // Cancellation must also invalidate a permission prompt that has not
+        // started the engine yet, and callbacks from an older recording.
+        recordingSessionID = nil
         guard isRecording else { return }
         cleanUp()
         isRecording = false
@@ -335,11 +346,15 @@ class SpeechRecognitionService: ObservableObject {
     // MARK: - Clean Up
 
     private func cleanUp() {
+        recordingSessionID = nil
         silenceTimer?.invalidate()
         silenceTimer = nil
 
         audioEngine.stop()
-        audioEngine.inputNode.removeTap(onBus: 0)
+        if hasInputTap {
+            audioEngine.inputNode.removeTap(onBus: 0)
+            hasInputTap = false
+        }
 
         recognitionRequest?.endAudio()
         recognitionRequest = nil

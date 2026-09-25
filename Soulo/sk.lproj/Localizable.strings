@@ -867,3 +867,5 @@
 "library_files_tab" = "Súbory";
 
 "library_books_tab" = "Knihy";
+"keep_page_above_toolbar" = "Vyhnite sa prekrývaniu";
+"keep_page_above_toolbar_desc" = "Ponechajte ovládacie prvky webovej stránky nad panelom s nástrojmi.";

@@ -1,4 +1,3 @@
-1.1.8
+1.1.9
 
-• Förbättrad annonsfiltrering och markering av flera annonser i följd, med redigerbara inbyggda regler.
-• Håll på bilder för att förstora, spara eller dela. Hopfällbara videoverktyg, liggande uppspelning och sparad position vid byte av flik.
+• Öppna webbadresser direkt och sök med vald tjänst. Bättre översättning av länkar, video och nedladdningar.

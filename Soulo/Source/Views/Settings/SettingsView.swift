@@ -16,6 +16,7 @@ struct SettingsView: View {
     @State private var selectedAppearance: String = ThemeManager.shared.appearance
     @AppStorage("show_top_search_bar") private var showTopSearchBar = BrowserInitialPreferences.showTopSearchBar
     @AppStorage(AppConstants.StorageKeys.keepFullscreenBrowsing) private var keepFullscreenBrowsing = false
+    @AppStorage(AppConstants.StorageKeys.keepPageAboveToolbar) private var keepPageAboveToolbar = false
     @AppStorage(AppConstants.StorageKeys.iCloudSyncEnabled) private var iCloudSyncEnabled = false
     @AppStorage(AppConstants.StorageKeys.shakeAction) private var shakeAction = BrowserShakeAction.none.rawValue
     @AppStorage(LiveActivityService.enabledKey) private var liveActivityEnabled: Bool = true
@@ -224,6 +225,16 @@ struct SettingsView: View {
                                 color: keepFullscreenBrowsing ? Color.themePrimary : Color(uiColor: .systemGray3),
                                 title: LanguageManager.shared.localizedString("keep_fullscreen_browsing"),
                                 description: LanguageManager.shared.localizedString("keep_fullscreen_browsing_desc")
+                            )
+                        }
+                        .tint(Color.themePrimary)
+
+                        Toggle(isOn: $keepPageAboveToolbar) {
+                            SettingsDescriptionLabel(
+                                icon: "rectangle.bottomthird.inset.filled",
+                                color: keepPageAboveToolbar ? Color.themePrimary : Color(uiColor: .systemGray3),
+                                title: LanguageManager.shared.localizedString("keep_page_above_toolbar"),
+                                description: LanguageManager.shared.localizedString("keep_page_above_toolbar_desc")
                             )
                         }
                         .tint(Color.themePrimary)

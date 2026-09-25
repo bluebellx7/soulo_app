@@ -1,4 +1,3 @@
-1.1.8
+1.1.9
 
-• Vylepšené filtrování a postupné označování reklam s úpravou vestavěných pravidel.
-• Podržením obrázek zvětšíte, uložíte či nasdílíte. Sbalitelné nástroje videa, přehrávání na šířku a zachování pozice při přepínání panelů.
+• Otevírejte webové adresy přímo a hledejte vybranou službou. Lepší překlad odkazů, video a stahování.

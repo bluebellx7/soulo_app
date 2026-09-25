@@ -867,3 +867,5 @@
 "library_files_tab" = "Fájlok";
 
 "library_books_tab" = "Könyvek";
+"keep_page_above_toolbar" = "Kerülje az átfedést";
+"keep_page_above_toolbar_desc" = "Tartsa a weboldal vezérlőit az eszköztár felett.";

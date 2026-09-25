@@ -867,3 +867,5 @@
 "library_files_tab" = "ഫയലുകൾ";
 
 "library_books_tab" = "പുസ്തകങ്ങൾ";
+"keep_page_above_toolbar" = "ഓവർലാപ്പ് ഒഴിവാക്കുക";
+"keep_page_above_toolbar_desc" = "ടൂൾബാറിന് മുകളിൽ വെബ്‌പേജ് നിയന്ത്രണങ്ങൾ സൂക്ഷിക്കുക.";

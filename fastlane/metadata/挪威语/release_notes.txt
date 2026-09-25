@@ -1,4 +1,3 @@
-1.1.8
+1.1.9
 
-• Bedre annonsefiltrering og fortløpende merking av annonser, med redigerbare innebygde regler.
-• Hold på bilder for å forstørre, lagre eller dele. Sammenleggbare videoverktøy, liggende avspilling og bevart fremdrift når du bytter fane.
+• Åpne nettadresser direkte og søk med valgt tjeneste. Bedre oversettelse av lenker, video og nedlastinger.

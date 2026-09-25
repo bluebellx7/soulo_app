@@ -1,4 +1,3 @@
-1.1.8
+1.1.9
 
-• Filtros e marcação consecutiva de anúncios melhorados, com regras integradas editáveis.
-• Prima imagens para ampliar, guardar ou partilhar. Ferramentas de vídeo recolhíveis, reprodução horizontal e progresso mantido entre separadores.
+• Abra endereços Web diretamente e pesquise com o motor escolhido. Tradução de ligações, vídeo e transferências melhoradas.

@@ -73,6 +73,23 @@ final class DownloadManagerServiceTests: XCTestCase {
         XCTAssertEqual(duration.seconds, 952.081, accuracy: 0.01)
     }
 
+    func testHLSDownloadCanPauseResumeAndCancelBeforeAssetTaskExists() {
+        let manager = DownloadManagerService.shared
+        let item = manager.beginDownload(
+            suggestedFilename: "hls-startup-race.mp4",
+            sourceURL: URL(string: "https://media.example.com/startup-race.m3u8"),
+            transport: .hls
+        ).0
+        defer { manager.delete(item) }
+
+        StreamingMediaDownloadService.shared.pause(itemID: item.id)
+        XCTAssertEqual(manager.downloads.first(where: { $0.id == item.id })?.status, .paused)
+        StreamingMediaDownloadService.shared.resume(itemID: item.id)
+        XCTAssertEqual(manager.downloads.first(where: { $0.id == item.id })?.status, .inProgress)
+        StreamingMediaDownloadService.shared.cancel(itemID: item.id)
+        XCTAssertEqual(manager.downloads.first(where: { $0.id == item.id })?.status, .canceled)
+    }
+
     func testBackgroundDownloadFallsBackOnlyForURLSessionUnknownError() {
         XCTAssertTrue(
             BackgroundDownloadService.shouldUseForegroundFallback(
@@ -89,6 +106,37 @@ final class DownloadManagerServiceTests: XCTestCase {
                 for: NSError(domain: "Example", code: NSURLErrorUnknown)
             )
         )
+    }
+
+    func testVideoDownloadRejectsHTMLResponseSavedAsMP4() throws {
+        let url = directory.appendingPathComponent("response.tmp")
+        try Data("<!doctype html><html>Open the app</html>".utf8).write(to: url)
+        let response = try XCTUnwrap(HTTPURLResponse(
+            url: try XCTUnwrap(URL(string: "https://video.example.com/play")),
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: ["Content-Type": "application/octet-stream"]
+        ))
+        XCTAssertThrowsError(try BackgroundDownloadService.validateDownloadedFile(
+            at: url, filename: "movie.mp4", response: response
+        ))
+        XCTAssertNoThrow(try BackgroundDownloadService.validateDownloadedFile(
+            at: url, filename: "page.html", response: response
+        ))
+        try (Data([0, 0, 0, 24]) + Data("ftypisom".utf8)).write(to: url)
+        XCTAssertNoThrow(try BackgroundDownloadService.validateDownloadedFile(
+            at: url, filename: "movie.mp4", response: response
+        ))
+        let playlist = try XCTUnwrap(HTTPURLResponse(
+            url: try XCTUnwrap(URL(string: "https://video.example.com/master.m3u8")),
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: ["Content-Type": "text/plain"]
+        ))
+        try Data("#EXTM3U\n#EXT-X-VERSION:3\n".utf8).write(to: url)
+        XCTAssertNoThrow(try BackgroundDownloadService.validateDownloadedFile(
+            at: url, filename: "master.m3u8", response: playlist
+        ))
     }
     private var defaults: UserDefaults!
     private var suiteName: String!

@@ -475,6 +475,9 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             throw StreamingMediaDownloadError.unavailable
         }
         let manager = DownloadManagerService.shared
+        guard manager.activeDownload(for: resource.url) == nil else {
+            throw StreamingMediaDownloadError.alreadyInProgress
+        }
         let filename = Self.videoFilename(
             preferredFilename ?? resource.suggestedFilename,
             fallback: resource.title
@@ -484,22 +487,24 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             sourceURL: resource.url,
             transport: .hls
         )
-        let cookies = await WebResourceDownloadService.shared.allCookies(in: webView)
-        var assetOptions: [String: Any] = [
-            AVURLAssetHTTPUserAgentKey: AppConstants.mobileWebViewUserAgent
-        ]
-        let matchingCookies = WebResourceDownloadService.matchingCookies(
-            from: cookies,
-            for: resource.url
+        let asset = await WebResourceMediaService.asset(
+            for: resource,
+            webView: webView,
+            preferDownloadedCopy: false
         )
-        if !matchingCookies.isEmpty {
-            assetOptions[AVURLAssetHTTPCookiesKey] = matchingCookies
+        guard let initialStatus = manager.downloads.first(where: { $0.id == item.id })?.status,
+              initialStatus == .inProgress || initialStatus == .paused else {
+            throw CancellationError()
         }
-        let asset = AVURLAsset(url: resource.url, options: assetOptions)
         let stagingDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent("SouloHLSDownloads", isDirectory: true)
             .appendingPathComponent(item.id.uuidString, isDirectory: true)
-        try FileManager.default.createDirectory(at: stagingDirectory, withIntermediateDirectories: true)
+        do {
+            try FileManager.default.createDirectory(at: stagingDirectory, withIntermediateDirectories: true)
+        } catch {
+            manager.markFailed(id: item.id, error: error)
+            throw error
+        }
 
         return try await withCheckedThrowingContinuation { continuation in
             guard let task = hlsSession.makeAssetDownloadTask(
@@ -509,6 +514,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                 options: nil
             ) else {
                 manager.markFailed(id: item.id, error: StreamingMediaDownloadError.unavailable)
+                try? FileManager.default.removeItem(at: stagingDirectory)
                 continuation.resume(throwing: StreamingMediaDownloadError.unavailable)
                 return
             }
@@ -519,7 +525,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                 stagingDirectoryURL: stagingDirectory,
                 continuation: continuation
             )
-            task.resume()
+            if initialStatus == .inProgress { task.resume() }
         }
     }
 
@@ -552,11 +558,17 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             DownloadManagerService.shared.markPaused(id: itemID)
             return
         }
+        guard DownloadManagerService.shared.downloads.first(where: { $0.id == itemID })?.status == .inProgress else {
+            return
+        }
+        DownloadManagerService.shared.markPaused(id: itemID)
         hlsSession.getAllTasks { tasks in
             guard let task = tasks.first(where: { $0.taskDescription == itemID.uuidString }) else { return }
-            task.suspend()
             Task { @MainActor in
-                DownloadManagerService.shared.markPaused(id: itemID)
+                guard DownloadManagerService.shared.downloads.first(where: { $0.id == itemID })?.status == .paused else {
+                    return
+                }
+                task.suspend()
             }
         }
     }
@@ -578,10 +590,19 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             tasks.forEach { $0.resume() }
             return
         }
+        guard DownloadManagerService.shared.downloads.first(where: { $0.id == itemID })?.status == .paused else {
+            return
+        }
+        DownloadManagerService.shared.markResumed(id: itemID)
+        guard DownloadManagerService.shared.downloads.first(where: { $0.id == itemID })?.status == .inProgress else {
+            return
+        }
         hlsSession.getAllTasks { tasks in
             guard let task = tasks.first(where: { $0.taskDescription == itemID.uuidString }) else { return }
             Task { @MainActor in
-                DownloadManagerService.shared.markResumed(id: itemID)
+                guard DownloadManagerService.shared.downloads.first(where: { $0.id == itemID })?.status == .inProgress else {
+                    return
+                }
                 task.resume()
             }
         }
@@ -1055,9 +1076,10 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
     }
 
     private func cancelHLSTransfer(itemID: UUID) {
-        guard let transfer = hlsTransfers.values.first(where: { $0.itemID == itemID }),
-              !transfer.isCanceled else { return }
-        transfer.isCanceled = true
+        if let transfer = hlsTransfers.values.first(where: { $0.itemID == itemID }) {
+            guard !transfer.isCanceled else { return }
+            transfer.isCanceled = true
+        }
         DownloadManagerService.shared.markCanceled(id: itemID)
         hlsSession.getAllTasks { tasks in
             tasks.first(where: { $0.taskDescription == itemID.uuidString })?.cancel()

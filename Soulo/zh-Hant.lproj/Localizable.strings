@@ -865,3 +865,5 @@
 "library_files_tab" = "檔案";
 
 "library_books_tab" = "書庫";
+"keep_page_above_toolbar" = "避免工具列遮擋";
+"keep_page_above_toolbar_desc" = "讓網頁控制項顯示在工具列上方。";

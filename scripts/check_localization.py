@@ -33,7 +33,7 @@ def main():
         if set(values)!=set(english): errors.append(f"{locale}: key parity {len(values)}/{len(english)}")
         for key,source in english.items():
             if PLACEHOLDER.findall(values.get(key,""))!=PLACEHOLDER.findall(source): errors.append(f"{locale}:{key}: placeholders")
-        if len(load(RESOURCES/f"{locale}.lproj"/"InfoPlist.strings"))!=6: errors.append(f"{locale}: InfoPlist")
+        if len(load(RESOURCES/f"{locale}.lproj"/"InfoPlist.strings"))!=5: errors.append(f"{locale}: InfoPlist")
         for filename in FILES:
             path=METADATA/label/filename
             if not path.exists() or not path.read_text(encoding="utf-8").strip(): errors.append(f"{label}/{filename}: missing"); continue

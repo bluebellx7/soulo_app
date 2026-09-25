@@ -96,7 +96,6 @@ targets:
         NSCameraUsageDescription: "Allow camera access when you approve a website request, such as for video calls, scanning codes, or taking a photo."
         NSMicrophoneUsageDescription: "Allow microphone access for voice search and, when you approve, website calls or recording."
         NSSpeechRecognitionUsageDescription: "Allow speech recognition to turn your voice into search text."
-        NSPhotoLibraryUsageDescription: "Soulo needs photo library access to set a custom wallpaper."
         NSPhotoLibraryAddUsageDescription: "Soulo needs permission to save web images to your photo library."
         NSSupportsLiveActivities: true
         UIBackgroundModes:
@@ -151,6 +150,11 @@ targets:
         CFBundleURLTypes:
           - CFBundleURLSchemes:
               - soulo
+          - CFBundleTypeRole: Viewer
+            CFBundleURLName: com.dkluge.Soulo.browser
+            CFBundleURLSchemes:
+              - http
+              - https
         NSAppTransportSecurity:
           NSAllowsArbitraryLoadsInWebContent: true
           NSExceptionDomains:
@@ -163,8 +167,8 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: Soulo/Soulo.entitlements
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.1.8"
-        CURRENT_PROJECT_VERSION: 25
+        MARKETING_VERSION: "1.1.9"
+        CURRENT_PROJECT_VERSION: 26
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_PREVIEWS: "YES"
@@ -206,8 +210,8 @@ targets:
         CODE_SIGN_ENTITLEMENTS: SouloWidget/SouloWidget.entitlements
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.1.8"
-        CURRENT_PROJECT_VERSION: 25
+        MARKETING_VERSION: "1.1.9"
+        CURRENT_PROJECT_VERSION: 26
         GENERATE_INFOPLIST_FILE: "YES"
         INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
         SKIP_INSTALL: "YES"
@@ -245,8 +249,8 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: SouloShareExtension/SouloShareExtension.entitlements
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.1.8"
-        CURRENT_PROJECT_VERSION: 25
+        MARKETING_VERSION: "1.1.9"
+        CURRENT_PROJECT_VERSION: 26
         SKIP_INSTALL: "YES"
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
 
@@ -266,6 +270,19 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dkluge.Soulo.Tests
         GENERATE_INFOPLIST_FILE: "YES"
+
+  SouloUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: SouloUITests
+    dependencies:
+      - target: Soulo
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dkluge.Soulo.UITests
+        GENERATE_INFOPLIST_FILE: "YES"
+        DEVELOPMENT_TEAM: 7S2LBJA9VA
 
 packages:
   ZipArchive:
@@ -287,11 +304,13 @@ schemes:
         Soulo: all
         SouloWidgetExtension: all
         SouloTests: [test]
+        SouloUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
         - SouloTests
+        - SouloUITests
     archive:
       config: Release

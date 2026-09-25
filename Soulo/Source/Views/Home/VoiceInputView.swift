@@ -12,6 +12,7 @@ private extension VerticalAlignment {
 
 struct VoiceInputView: View {
     @ObservedObject var speechService: SpeechRecognitionService
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var searchVM: SearchViewModel
     var onConfirm: (String) -> Void
@@ -116,7 +117,10 @@ struct VoiceInputView: View {
             withAnimation(.easeOut(duration: 0.4)) { appeared = true }
         }
         .onDisappear {
-            if speechService.isRecording { speechService.stopRecording() }
+            speechService.stopRecording()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background { speechService.stopRecording() }
         }
     }
 

@@ -114,6 +114,7 @@ enum AppConstants {
         static let browserToolbarActions = "browser_toolbar_actions"
         static let browserToolbarAddressAction = "browser_toolbar_address_action"
         static let browserToolbarHidden = "browser_toolbar_hidden"
+        static let keepPageAboveToolbar = "keep_page_above_toolbar"
         static let wallpaperMode = "wallpaper_mode"
         static let customWallpaperData = "custom_wallpaper_data"
         static let bingWallpaperCache = "bing_wallpapers_cache"

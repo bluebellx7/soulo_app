@@ -1,8 +1,10 @@
 Soulo on iPhonen ja iPadin selain, jolla haet useilta alustoilta. Kirjoita hakusi kerran ja vaihda hakukoneiden, somen, videoiden, ostosten, tiedon ja tekoälyn välillä kirjoittamatta uudelleen.
 
-Parannettu mainosten suodatus ja peräkkäinen merkintä sekä muokattavat sisäiset säännöt. Paina kuvaa pitkään suurentaaksesi, tallentaaksesi tai jakaaksesi sen. Videotyökalut voi supistaa, ja vaakatoisto sekä toiston kohta säilyvät välilehdissä.
+Avaa verkko-osoitteet suoraan ja hae valitulla palvelulla. Linkkien käännöstä, videoita ja latauksia parannettu.
 
 Etsi tietoa, lue artikkeleita, toista mediaa ja hallitse latauksia samassa selaimessa.
+
+Selaa useilla välilehdillä ja käytä puhehakua, hakuhistoriaa sekä palveluryhmiä. Vaihda palvelua aloitusnäytöltä ja jatka kääntämistä linkin avaamisen jälkeen. Tunnista sivuilta tavallisia videoita, äänitiedostoja ja kuvia, tallenna tuettuja tiedostoja ja seuraa latauksia. Käytössä ovat myös tietokone- ja mobiilinäkymä, päivitys vetämällä, jakaminen ja linkit muista apeista.
 
 • Haku: lisää alustoja, ryhmittele ja järjestä niitä. Hae valittua tekstiä uudessa Soulo-välilehdessä.
 • Mainokset ja yksityisyys: suodata mainoksia, tilaa ulkopuolisia sääntölistoja ja merkitse piilotettavat mainokset itse. Hallitse suodatusta ja seurannan estoa sivustoittain. Yksityinen selaus ei tallenna historiaa.

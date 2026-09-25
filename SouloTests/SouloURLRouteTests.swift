@@ -36,8 +36,18 @@ final class SouloURLRouteTests: XCTestCase {
         XCTAssertEqual(SouloURLRoute.parse(try XCTUnwrap(URL(string: "soulo://https%3A%2F%2Fexample.com%2F"))), .open(try XCTUnwrap(URL(string: "https://example.com/"))))
     }
 
+    func testDirectWebURLDeliveryOpensExactAddress() throws {
+        for address in [
+            "https://example.com/book%20one?q=a%2Bb#part",
+            "http://example.org/path?x=1"
+        ] {
+            let url = try XCTUnwrap(URL(string: address))
+            XCTAssertEqual(SouloURLRoute.parse(url), .open(url))
+        }
+    }
+
     func testInvalidAndReservedRoutesDoNotNavigateOrDownload() throws {
-        for source in ["https://example.com", "soulo://action", "soulo://open", "soulo://download", "soulo://download?url=file%3A%2F%2F%2Fetc%2Fhosts", "soulo://open?url=javascript%3Aalert(1)", "soulo://open?url=https%3A%2F%2F", "soulo://download?url=not-a-url", "soulo://file:///example"] {
+        for source in ["file:///etc/hosts", "javascript:alert(1)", "soulo://action", "soulo://open", "soulo://download", "soulo://download?url=file%3A%2F%2F%2Fetc%2Fhosts", "soulo://open?url=javascript%3Aalert(1)", "soulo://open?url=https%3A%2F%2F", "soulo://download?url=not-a-url", "soulo://file:///example"] {
             XCTAssertNil(SouloURLRoute.parse(try XCTUnwrap(URL(string: source))), source)
         }
     }

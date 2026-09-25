@@ -1,8 +1,10 @@
 Soulo adalah browser pencarian multiplatform untuk iPhone dan iPad. Ketik sekali, lalu beralih antara pencarian, media sosial, video, belanja, pengetahuan, dan AI tanpa mengulang kueri.
 
-Penyaringan dan penandaan iklan beruntun ditingkatkan, dengan aturan bawaan yang dapat diedit. Tekan lama gambar untuk memperbesar, menyimpan, atau berbagi. Alat video dapat dilipat, dengan mode lanskap dan progres tersimpan saat berganti tab.
+Buka alamat web langsung dan cari dengan layanan pilihan. Terjemahan tautan, video, dan unduhan ditingkatkan.
 
 Cari informasi, baca artikel, putar media, dan kelola unduhan dalam satu browser.
+
+Jelajahi dengan banyak tab, pencarian suara, riwayat, dan grup platform. Ganti platform dari beranda dan lanjutkan terjemahan setelah membuka tautan. Temukan video, audio, dan gambar umum di halaman web, simpan berkas yang didukung, dan pantau unduhan. Tersedia juga tampilan desktop atau seluler, tarik untuk memuat ulang, berbagi, dan membuka tautan dari aplikasi lain.
 
 • Pencarian: tambahkan platform, atur grup dan urutannya. Pilih teks untuk mencarinya di tab Soulo baru.
 • Iklan dan privasi: filter iklan, berlangganan aturan pihak ketiga, dan tandai iklan untuk disembunyikan. Kelola filter serta perlindungan pelacakan per situs. Penelusuran pribadi tidak menyimpan riwayat.

@@ -867,3 +867,5 @@
 "library_files_tab" = "Fitxers";
 
 "library_books_tab" = "Llibres";
+"keep_page_above_toolbar" = "Eviteu la superposició";
+"keep_page_above_toolbar_desc" = "Manteniu els controls de la pàgina web a sobre de la barra d'eines.";
