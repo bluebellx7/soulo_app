@@ -867,3 +867,4 @@
 "library_books_tab" = "书库";
 "keep_page_above_toolbar" = "避免工具栏遮挡";
 "keep_page_above_toolbar_desc" = "让网页控件显示在工具栏上方。";
+"downloads_play_while_downloading" = "边播边下";

@@ -277,6 +277,8 @@ final class AdBlockSubscriptionService: ObservableObject {
 
     @Published private(set) var subscriptions: [AdBlockSubscription] = []
     @Published private(set) var isUpdating = false
+    @Published private(set) var completedUpdates = 0
+    @Published private(set) var totalUpdates = 0
     @Published private(set) var lastError = ""
 
     private let subscriptionsKey: String
@@ -342,6 +344,11 @@ final class AdBlockSubscriptionService: ObservableObject {
         rebuildCacheFromStoredSubscriptions()
     }
 
+    nonisolated static func needsAutomaticUpdateCheck() -> Bool {
+        guard let archive = mergedArchiveURL(userDefaults: .standard, key: "soulo_ad_block_subscription_rules") else { return true }
+        return !AdBlockAutomaticUpdateState.canSkipCheck(archive: archive)
+    }
+
     func updateEnabledSubscriptionsIfNeeded() async {
         guard enabledSubscriptionCount > 0, !isUpdating else { return }
         let lastCheck = userDefaults.double(forKey: autoUpdateCheckKey)
@@ -354,6 +361,8 @@ final class AdBlockSubscriptionService: ObservableObject {
 
     func updateEnabledSubscriptions(reportErrors: Bool = true) async {
         guard !isUpdating else { return }
+        let candidates = subscriptions.filter(\.isEnabled)
+        completedUpdates = 0; totalUpdates = candidates.count
         isUpdating = true
         if reportErrors {
             lastError = ""
@@ -361,10 +370,10 @@ final class AdBlockSubscriptionService: ObservableObject {
         defer { isUpdating = false }
 
         var parsedByID = storedParsedRulesByID()
-        let candidates = subscriptions.filter(\.isEnabled)
 
         for candidate in candidates {
             guard !Task.isCancelled else { break }
+            defer { completedUpdates += 1 }
             guard let current = subscriptions.first(where: { $0.id == candidate.id }),
                   current.isEnabled, current.urlString == candidate.urlString else { continue }
 
@@ -525,7 +534,10 @@ final class AdBlockSubscriptionService: ObservableObject {
         // Starting the service must not invalidate compiled WebKit rules when
         // the enabled rule content is unchanged.
         if Self.cachedRules(userDefaults: userDefaults, key: cachedRulesKey) == merged,
-           userDefaults.object(forKey: versionKey) != nil { return }
+           userDefaults.object(forKey: versionKey) != nil {
+            recordValidatedAutomaticUpdateCache(merged)
+            return
+        }
         guard let data = try? JSONEncoder().encode(merged) else { return }
         if let url = Self.mergedArchiveURL(userDefaults: userDefaults, key: cachedRulesKey) {
             do {
@@ -541,6 +553,14 @@ final class AdBlockSubscriptionService: ObservableObject {
             userDefaults.set(data, forKey: cachedRulesKey)
         }
         userDefaults.set(Date().timeIntervalSince1970, forKey: versionKey)
+        recordValidatedAutomaticUpdateCache(merged)
+    }
+
+    private func recordValidatedAutomaticUpdateCache(_ rules: ParsedAdBlockRules) {
+        guard versionKey == "soulo_ad_block_subscription_rules_version",
+              let archive = Self.mergedArchiveURL(userDefaults: userDefaults, key: cachedRulesKey) else { return }
+        AdBlockAutomaticUpdateState.record(archive: archive, defaults: userDefaults,
+                                          hasRules: !rules.networkRules.isEmpty || !rules.cosmeticRules.isEmpty)
     }
 
     private final class RuleBox: NSObject {

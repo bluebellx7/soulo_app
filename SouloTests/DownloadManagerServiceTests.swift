@@ -5,6 +5,73 @@ import XCTest
 
 @MainActor
 final class DownloadManagerServiceTests: XCTestCase {
+    func testMediaDownloadsUsePageTitleAndKeepOutputExtension() {
+        let hls = WebMediaResource(
+            kind: .video,
+            url: URL(string: "https://cdn.example.com/play/index.m3u8")!,
+            title: "index.m3u8",
+            posterURL: nil,
+            delivery: .hls
+        )
+        let filename = WebDownloadFilename.media(
+            hls, requested: hls.suggestedFilename,
+            pageTitle: "动漫《财神窦占龙》第1集 - 片吧影院"
+        )
+        XCTAssertTrue(filename.contains("财神窦占龙"))
+        XCTAssertTrue(filename.hasSuffix(".mp4"))
+        XCTAssertFalse(filename.contains("index"))
+
+        let direct = WebMediaResource(
+            kind: .video,
+            url: URL(string: "https://cdn.example.com/videoplayback.webm")!,
+            title: "videoplayback",
+            posterURL: nil
+        )
+        XCTAssertEqual(WebDownloadFilename.media(
+            direct, requested: nil, pageTitle: "Nature Documentary"
+        ), "Nature Documentary.webm")
+        XCTAssertEqual(WebDownloadFilename.media(
+            direct, requested: nil, pageTitle: "Nature Documentary.webm"
+        ), "Nature Documentary.webm")
+        XCTAssertEqual(WebDownloadFilename.media(
+            direct, requested: "My Clip.webm", pageTitle: "Nature Documentary"
+        ), "My Clip.webm")
+        let audio = WebMediaResource(
+            kind: .audio,
+            url: URL(string: "https://cdn.example.com/stream.mp3")!,
+            title: "stream.mp3",
+            posterURL: nil
+        )
+        XCTAssertEqual(WebDownloadFilename.media(
+            audio, requested: audio.suggestedFilename, pageTitle: "Podcast Episode"
+        ), "Podcast Episode.mp3")
+    }
+
+    func testNativeDownloadsUsePageTitleOnlyForGenericServerNames() {
+        let url = URL(string: "https://example.com/download")!
+        let ordinary = HTTPURLResponse(
+            url: url, statusCode: 200, httpVersion: nil,
+            headerFields: ["Content-Type": "application/pdf"]
+        )!
+        XCTAssertEqual(WebDownloadFilename.native(
+            suggested: "index.pdf", pageTitle: "Research Paper", response: ordinary
+        ), "Research Paper.pdf")
+        XCTAssertEqual(WebDownloadFilename.native(
+            suggested: "annual-report.pdf", pageTitle: "Research Paper", response: ordinary
+        ), "annual-report.pdf")
+        XCTAssertEqual(WebDownloadFilename.native(
+            suggested: "download.pdf", pageTitle: "Research Paper"
+        ), "Research Paper.pdf")
+
+        let named = HTTPURLResponse(
+            url: url, statusCode: 200, httpVersion: nil,
+            headerFields: ["Content-Disposition": "attachment; filename=official.pdf"]
+        )!
+        XCTAssertEqual(WebDownloadFilename.native(
+            suggested: "index.pdf", pageTitle: "Research Paper", response: named
+        ), "index.pdf")
+    }
+
     func testCompletionNoticeIsSentOnceAndNotForCanceledOrFailedDownloads() throws {
         let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
         var completed: [UUID] = []

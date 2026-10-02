@@ -15,6 +15,7 @@ struct SouloApp: App {
     @StateObject private var wallpaperManager = WallpaperManager.shared
 
     init() {
+        BrowserStartupTrace.mark("app_init")
         UserDefaults.standard.register(defaults: [AppConstants.StorageKeys.appearance: "dark"])
         let savedLanguage = UserDefaults.standard.string(
             forKey: AppConstants.StorageKeys.selectedLanguage
@@ -69,7 +70,7 @@ private struct SouloWindowRoot: View {
             .task {
                 CloudSyncService.shared.startIfEnabled()
             }
-            .onChange(of: scenePhase) { _, newPhase in
+            .onChange(of: scenePhase, initial: true) { _, newPhase in
                 if newPhase == .active {
                     tabManager.synchronizeDesktopMode()
                     handlePendingSharedAction()
@@ -83,6 +84,9 @@ private struct SouloWindowRoot: View {
                 }
             }
             .onChange(of: isIncognito) { _, _ in
+                if scenePhase == .active, NSClassFromString("XCTestCase") == nil {
+                    BrowserWebViewPool.shared.activate(isIncognito: isIncognito)
+                }
                 if tabManager.synchronizePrivacyMode() {
                     searchVM.clearSearch()
                     searchVM.clearSuggestions()
@@ -147,10 +151,12 @@ private struct SouloWindowRoot: View {
         // Unit tests install isolated preferences and request fixtures. App-level
         // refreshes must not overwrite those fixtures while a test is running.
         guard NSClassFromString("XCTestCase") == nil else { return }
+        BrowserWebViewPool.shared.activate(isIncognito: isIncognito)
         activationTask?.cancel()
         activationTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 350_000_000)
             guard !Task.isCancelled else { return }
+            WebViewRepresentable.preWarm()
             searchVM.detectClipboard()
             try? await Task.sleep(nanoseconds: 450_000_000)
             guard !Task.isCancelled else { return }
@@ -160,10 +166,14 @@ private struct SouloWindowRoot: View {
             LiveActivityService.shared.cleanupStaleActivities()
             try? await Task.sleep(nanoseconds: 500_000_000)
             guard !Task.isCancelled else { return }
-            WebViewRepresentable.preWarm()
             try? await Task.sleep(nanoseconds: 700_000_000)
-            guard !Task.isCancelled else { return }
+            // Search may have begun since the earlier idle check. Recheck at
+            // the actual call, before initializing/parsing subscription archives.
+            guard !Task.isCancelled, !searchVM.isSearching,
+                  AdBlockSubscriptionService.needsAutomaticUpdateCheck() else { return }
+            BrowserStartupTrace.mark("subscription_check_start")
             await AdBlockSubscriptionService.shared.updateEnabledSubscriptionsIfNeeded()
+            BrowserStartupTrace.mark("subscription_check_end")
         }
     }
 

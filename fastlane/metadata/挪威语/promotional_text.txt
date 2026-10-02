@@ -1,1 +1,1 @@
-Åpne nettadresser direkte og søk med valgt tjeneste. Bedre oversettelse av lenker, video og nedlastinger.
+Spill av støttede videoer mens de lastes ned. Bedre bakgrunnsnedlasting og fullskjerm, med vern mot skjulte annonser og uønsket kopiering.

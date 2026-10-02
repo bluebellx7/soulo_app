@@ -1,1 +1,1 @@
-Abre direcciones web directamente y busca con el motor elegido. Mejoras en traducción de enlaces, vídeo y descargas.
+Reproduce vídeos compatibles mientras se descargan. Mejoras en segundo plano y pantalla completa, con protección contra anuncios ocultos y copias no deseadas.

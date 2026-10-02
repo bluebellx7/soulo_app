@@ -4,6 +4,57 @@ import UIKit
 @testable import Soulo
 
 @MainActor final class WebMediaPlaybackBridgeTests: XCTestCase {
+    func testBottomVideoClearanceFollowsPlayerLayoutAndResetsAfterDismissal() async throws {
+        let web = try await page("""
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <div id="player"><video id="v" controls style="width:300px;height:160px"></video></div>
+        """)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = UIViewController()
+        window.rootViewController?.view.addSubview(web)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let model = WebViewModel()
+        model.webView = web
+        let coordinator = WebViewRepresentable.Coordinator(viewModel: model)
+        let controller = web.configuration.userContentController
+        controller.add(coordinator, contentWorld: WebVideoOrientationRuntime.world, name: WebVideoOrientationRuntime.handler)
+        defer {
+            controller.removeScriptMessageHandler(forName: WebVideoOrientationRuntime.handler, contentWorld: WebVideoOrientationRuntime.world)
+            model.releaseWebViewRuntime()
+        }
+        _ = try await web.evaluateJavaScript(WebVideoOrientationRuntime.script(), in: nil, contentWorld: WebVideoOrientationRuntime.world)
+        try await Task.sleep(for: .milliseconds(250))
+        XCTAssertFalse(model.needsVideoViewportClearance, "An ordinary inline video must not resize the page")
+
+        func update(_ script: String, expected: Bool) async throws {
+            _ = try await web.evaluateJavaScript(script + "; null")
+            for _ in 0..<60 {
+                if model.hasBottomVideoControls == expected { break }
+                try await Task.sleep(for: .milliseconds(25))
+            }
+            XCTAssertEqual(model.hasBottomVideoControls, expected)
+        }
+        try await update("document.getElementById('player').style.cssText='position:fixed;inset:0'; document.getElementById('v').style.cssText='width:100%;height:100%'", expected: true)
+        // Native avoidance shortens the viewport; detection must remain stable.
+        web.frame.size.height = 536
+        _ = try await web.evaluateJavaScript("dispatchEvent(new Event('resize')); null")
+        try await Task.sleep(for: .milliseconds(400))
+        XCTAssertTrue(model.hasBottomVideoControls)
+        try await update("document.getElementById('player').style.opacity='0'", expected: false)
+        try await update("document.getElementById('player').style.opacity='1'", expected: true)
+        try await update("document.getElementById('player').remove()", expected: false)
+
+        // Players inside open shadow roots use the same geometry detection.
+        try await update("const host=document.createElement('div'); host.id='shadow-player'; host.attachShadow({mode:'open'}).innerHTML='<video controls style=\"position:fixed;inset:0;width:100%;height:100%\"></video>'; document.body.append(host)", expected: true)
+        try await update("document.getElementById('shadow-player').remove()", expected: false)
+        model.hasBottomVideoControls = true
+        model.beginPageNavigation()
+        XCTAssertFalse(model.hasBottomVideoControls, "Detection must not leak into the next page")
+    }
+
     func testVideoRotationControlsFollowDynamicVideosAndRejectSyntheticClicks() async throws {
         let web = try await page("<video id='v' style='width:300px;height:160px'></video>")
         let messages = RotationMessages()

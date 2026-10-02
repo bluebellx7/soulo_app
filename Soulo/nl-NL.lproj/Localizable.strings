@@ -869,3 +869,4 @@
 "library_books_tab" = "Boeken";
 "keep_page_above_toolbar" = "Vermijd overlap";
 "keep_page_above_toolbar_desc" = "Houd de besturingselementen voor webpagina's boven de werkbalk.";
+"downloads_play_while_downloading" = "Afspelen tijdens downloaden";

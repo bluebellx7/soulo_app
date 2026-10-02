@@ -312,11 +312,15 @@ final class TabManager: ObservableObject {
 
     func switchToTab(at index: Int) {
         guard tabs.indices.contains(index) else { return }
+        guard index != activeTabIndex else {
+            showTabOverview = false
+            return
+        }
         // Snapshot the tab we're leaving
         activeWebViewModel?.takeSnapshot()
+        dismissFindInPage()
         activeTabIndex = index
         showTabOverview = false
-        dismissFindInPage()
         manageTabLifecycles()
         saveToDisk()
     }
@@ -324,8 +328,8 @@ final class TabManager: ObservableObject {
     func focusTabInSwitcher(at index: Int) {
         guard tabs.indices.contains(index), index != activeTabIndex else { return }
         activeWebViewModel?.takeSnapshot()
-        activeTabIndex = index
         dismissFindInPage()
+        activeTabIndex = index
         manageTabLifecycles()
         saveToDisk()
     }
@@ -425,6 +429,7 @@ final class TabManager: ObservableObject {
     }
 
     func dismissFindInPage() {
+        guard showFindInPage || !findText.isEmpty || findMatchCount != 0 else { return }
         showFindInPage = false
         findText = ""
         findMatchCount = 0

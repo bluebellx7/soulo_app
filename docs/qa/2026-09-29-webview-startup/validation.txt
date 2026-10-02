@@ -1,0 +1,43 @@
+Initial full run (before file metadata fix)
+Test Suite 'AdBlockServiceTests' passed at 2026-09-29 09:45:11.913.
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.467 (0.473) seconds
+Test Suite 'AdBlockSettingsServiceTests' passed at 2026-09-29 09:45:11.929.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.014 (0.015) seconds
+/Users/shunfei.z/Desktop/MyProject/Soulo/SouloTests/AdBlockStartupCacheTests.swift:25: error: -[SouloTests.AdBlockStartupCacheTests testAutomaticUpdateFastPathRequiresValidatedCurrentNonemptyArchive] : XCTAssertFalse failed
+/Users/shunfei.z/Desktop/MyProject/Soulo/SouloTests/AdBlockStartupCacheTests.swift:39: error: -[SouloTests.AdBlockStartupCacheTests testAutomaticUpdateFastPathRequiresValidatedCurrentNonemptyArchive] : XCTAssertFalse failed
+Test Suite 'AdBlockStartupCacheTests' failed at 2026-09-29 09:45:49.765.
+	 Executed 5 tests, with 2 failures (0 unexpected) in 37.834 (37.836) seconds
+Test Suite 'AdBlockSubscriptionServiceTests' passed at 2026-09-29 09:45:50.351.
+	 Executed 14 tests, with 0 failures (0 unexpected) in 0.582 (0.586) seconds
+Test Suite 'BrowserWebViewPoolTests' passed at 2026-09-29 09:46:05.295.
+	 Executed 10 tests, with 0 failures (0 unexpected) in 14.941 (14.944) seconds
+Test Suite 'ExtensionLifecycleTests' passed at 2026-09-29 09:46:05.360.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.064 (0.065) seconds
+Test Suite 'ManualAdBlockTests' passed at 2026-09-29 09:46:36.213.
+	 Executed 29 tests, with 0 failures (0 unexpected) in 30.844 (30.853) seconds
+Test Suite 'SelectionSearchNavigationTests' passed at 2026-09-29 09:46:46.712.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 10.498 (10.499) seconds
+Test Suite 'TabManagerTests' passed at 2026-09-29 09:46:47.201.
+	 Executed 13 tests, with 0 failures (0 unexpected) in 0.484 (0.488) seconds
+Test Suite 'TabOverviewLifecycleTests' passed at 2026-09-29 09:46:49.488.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 2.286 (2.287) seconds
+Test Suite 'WebBrowsingRegressionTests' passed at 2026-09-29 09:47:39.300.
+	 Executed 31 tests, with 0 failures (0 unexpected) in 49.801 (49.811) seconds
+Test Suite 'WebViewModelTests' passed at 2026-09-29 09:47:50.062.
+	 Executed 74 tests, with 0 failures (0 unexpected) in 10.741 (10.762) seconds
+Test Suite 'SouloTests.xctest' failed at 2026-09-29 09:47:50.062.
+	 Executed 200 tests, with 2 failures (0 unexpected) in 158.556 (158.622) seconds
+Test Suite 'Selected tests' failed at 2026-09-29 09:47:50.063.
+	 Executed 200 tests, with 2 failures (0 unexpected) in 158.556 (158.623) seconds
+** TEST FAILED **
+
+Targeted rerun after fix
+Test Suite 'AdBlockStartupCacheTests' passed at 2026-09-29 09:49:25.083.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 8.252 (8.257) seconds
+Test Suite 'AdBlockSubscriptionServiceTests' passed at 2026-09-29 09:49:25.642.
+	 Executed 14 tests, with 0 failures (0 unexpected) in 0.555 (0.559) seconds
+Test Suite 'SouloTests.xctest' passed at 2026-09-29 09:49:25.642.
+	 Executed 19 tests, with 0 failures (0 unexpected) in 8.807 (8.817) seconds
+Test Suite 'Selected tests' passed at 2026-09-29 09:49:25.642.
+	 Executed 19 tests, with 0 failures (0 unexpected) in 8.807 (8.818) seconds
+** TEST SUCCEEDED **

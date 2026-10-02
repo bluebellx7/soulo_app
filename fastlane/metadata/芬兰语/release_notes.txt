@@ -1,3 +1,7 @@
-1.1.9
+1.2.0
 
-• Avaa verkko-osoitteet suoraan ja hae valitulla palvelulla. Linkkien käännöstä, videoita ja latauksia parannettu.
+• Sivut avautuvat nopeammin ja työkalupalkki sekä välilehdet reagoivat vakaammin.
+• Tuettujen videoiden toisto latauksen aikana ja taustalatausten parempi palautuminen.
+• Korjauksia koko näytön säätimiin ja pystyasentoon palaamiseen.
+• Piilomainosten napsautusten ja luvattomien leikepöytäkirjoitusten esto.
+• Edistymisen näyttö tuetuissa latauksissa, tuonneissa ja vienneissä.

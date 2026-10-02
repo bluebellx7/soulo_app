@@ -1,3 +1,7 @@
-1.1.9
+1.2.0
 
-• Åpne nettadresser direkte og søk med valgt tjeneste. Bedre oversettelse av lenker, video og nedlastinger.
+• Raskere sideåpning og mer stabil respons fra verktøylinjen og fanene.
+• Avspilling av støttede videoer under nedlasting og bedre gjenoppretting av bakgrunnsnedlastinger.
+• Rettelser til fullskjermkontroller og tilbakevending til stående visning.
+• Blokkering av klikk på skjulte annonser og uønsket skriving til utklippstavlen.
+• Visning av fremdrift for støttede nedlastinger, importer og eksporter.

@@ -1,5 +1,34 @@
 import Foundation
 import Combine
+import AVFoundation
+import WebKit
+
+/// Playback credentials and live HLS assets stay in memory, never in download history.
+@MainActor
+final class DownloadPlaybackSource {
+    let asset: AVURLAsset
+    let pageURL: URL?
+    let persistsPosition: Bool
+    weak var webView: WKWebView?
+    private var packageToRemove: URL?
+
+    func removePackageWhenReleased(_ url: URL) { packageToRemove = url }
+
+    deinit {
+        if let packageToRemove {
+            DispatchQueue.global(qos: .utility).async {
+                try? FileManager.default.removeItem(at: packageToRemove)
+            }
+        }
+    }
+
+    init(asset: AVURLAsset, pageURL: URL?, webView: WKWebView?, persistPosition: Bool? = nil) {
+        self.asset = asset
+        self.pageURL = pageURL
+        self.webView = webView
+        persistsPosition = persistPosition ?? webView?.configuration.websiteDataStore.isPersistent ?? true
+    }
+}
 
 enum DownloadFilenameSanitizer {
     static let maximumUTF8ByteCount = 180
@@ -104,6 +133,18 @@ final class DownloadManagerService: ObservableObject {
     private let storageKey: String
     private let storageDirectory: URL
     private let progressPersistence = DeferredPersistence()
+    private var playbackSources: [UUID: DownloadPlaybackSource] = [:]
+
+    func registerPlaybackSource(id: UUID, asset: AVURLAsset, pageURL: URL? = nil, webView: WKWebView? = nil, persistPosition: Bool? = nil) {
+        guard downloads.contains(where: { $0.id == id && [.inProgress, .paused].contains($0.status) }) else { return }
+        objectWillChange.send()
+        playbackSources[id] = DownloadPlaybackSource(asset: asset, pageURL: pageURL, webView: webView, persistPosition: persistPosition)
+    }
+
+    func playbackSource(for id: UUID) -> DownloadPlaybackSource? {
+        guard downloads.contains(where: { $0.id == id && $0.status == .inProgress }) else { return nil }
+        return playbackSources[id]
+    }
 
     init(
         userDefaults: UserDefaults = .standard,
@@ -148,6 +189,7 @@ final class DownloadManagerService: ObservableObject {
     func markFinished(id: UUID) {
         guard let index = downloads.firstIndex(where: { $0.id == id }),
               downloads[index].status == .inProgress else { return }
+        playbackSources.removeValue(forKey: id)
         downloads[index].status = .finished
         downloads[index].completedAt = Date()
         downloads[index].errorMessage = ""
@@ -206,6 +248,7 @@ final class DownloadManagerService: ObservableObject {
     func markFailed(id: UUID, error: Error) {
         guard let index = downloads.firstIndex(where: { $0.id == id }),
               downloads[index].status == .inProgress else { return }
+        playbackSources.removeValue(forKey: id)
         downloads[index].status = .failed
         downloads[index].completedAt = Date()
         downloads[index].errorMessage = error.localizedDescription
@@ -217,6 +260,7 @@ final class DownloadManagerService: ObservableObject {
     func markCanceled(id: UUID) {
         guard let index = downloads.firstIndex(where: { $0.id == id }),
               [.inProgress, .paused].contains(downloads[index].status) else { return }
+        playbackSources.removeValue(forKey: id)
         downloads[index].status = .canceled
         downloads[index].completedAt = Date()
         downloads[index].errorMessage = ""
@@ -259,6 +303,8 @@ final class DownloadManagerService: ObservableObject {
             switch current.transport {
             case .background:
                 BackgroundDownloadService.shared.abandon(id: current.id)
+            case .separated:
+                SeparatedMediaDownloadService.shared.cancel(id: current.id)
             case .streaming, .hls:
                 StreamingMediaDownloadService.shared.cancel(itemID: current.id)
             case .webKit:
@@ -272,6 +318,7 @@ final class DownloadManagerService: ObservableObject {
         }
         // Completed files belong to Files; removing download history keeps them.
         removeResumeData(id: item.id)
+        playbackSources.removeValue(forKey: item.id)
         downloads.removeAll { $0.id == item.id }
         save()
     }
@@ -286,7 +333,13 @@ final class DownloadManagerService: ObservableObject {
 
     func removeMissingFiles() {
         downloads.removeAll { item in
-            item.status == .finished && !FileManager.default.fileExists(atPath: item.localPath)
+            guard item.status == .finished else { return false }
+            if item.localURL.pathExtension.lowercased() == OfflineHLSReference.fileExtension,
+               (try? OfflineHLSReference.playableAsset(for: item.localURL)) == nil {
+                try? FileManager.default.removeItem(at: item.localURL)
+                return true
+            }
+            return !FileManager.default.fileExists(atPath: item.localPath)
         }
         save()
     }
@@ -304,6 +357,10 @@ final class DownloadManagerService: ObservableObject {
             $0.sourceURLString == sourceURL.absoluteString
                 && $0.status == .finished
                 && FileManager.default.fileExists(atPath: $0.localPath)
+                && ($0.localURL.pathExtension.lowercased() != OfflineHLSReference.fileExtension
+                    || (try? OfflineHLSReference.playableAsset(for: $0.localURL)) != nil)
+                && ($0.localURL.pathExtension.lowercased() != "movpkg"
+                    || (try? OfflineHLSReference.playablePackage(at: $0.localURL)) != nil)
         }
     }
 
@@ -379,7 +436,7 @@ final class DownloadManagerService: ObservableObject {
             return true
         case .webKit:
             return resumeData(id: item.id) == nil
-        case .background, .hls:
+        case .background, .hls, .separated:
             return false
         }
     }

@@ -1,3 +1,7 @@
-1.1.9
+1.2.0
 
-• Ouvrez directement les adresses Web et recherchez avec le moteur choisi. Traduction des liens, vidéo et téléchargements améliorés.
+• Ouverture des pages plus rapide et meilleure réactivité de la barre d’outils et des onglets.
+• Lecture des vidéos compatibles pendant le téléchargement et meilleure reprise en arrière-plan.
+• Correction des commandes en plein écran et du retour en mode portrait.
+• Blocage des clics sur les publicités masquées et des écritures non sollicitées dans le presse-papiers.
+• Affichage de la progression des téléchargements, imports et exports compatibles.

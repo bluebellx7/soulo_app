@@ -1,3 +1,7 @@
-1.1.9
+1.2.0
 
-• Deschide direct adresele web și caută cu serviciul ales. Traducerea linkurilor, video și descărcările au fost îmbunătățite.
+• Deschiderea paginilor mai rapidă și răspuns mai stabil al barei de instrumente și filelor.
+• Redarea videoclipurilor compatibile în timpul descărcării și recuperare mai bună a descărcărilor în fundal.
+• Corectarea comenzilor pe ecran complet și a revenirii la orientarea portret.
+• Blocarea clicurilor pe reclame ascunse și a scrierilor nesolicitate în clipboard.
+• Afișarea progresului pentru descărcările, importurile și exporturile compatibile.

@@ -1,6 +1,6 @@
 # Soulo Fastlane
 
-当前工程版本为 **1.1.5（Build 21）**。Fastlane 从 `project.yml` 读取版本，不再单独写死版本号。仓库使用 App Store Connect 中文语言名维护 50 个语言目录，上传时会自动导出为 Fastlane 所需的 locale code。
+当前工程版本为 **1.2.0（Build 27）**。Fastlane 从 `project.yml` 读取版本，不再单独写死版本号。仓库使用 App Store Connect 中文语言名维护 50 个语言目录，上传时会自动导出为 Fastlane 所需的 locale code。
 
 每个语言目录同步以下六类字段：
 

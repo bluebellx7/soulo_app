@@ -110,6 +110,7 @@ final class SouloAppDelegate: NSObject, UIApplicationDelegate {
     ) -> Bool {
         Task { @MainActor in
             AppQuickActionService.shared.configureShortcuts()
+            _ = SeparatedMediaDownloadService.shared
         }
         return true
     }
@@ -119,6 +120,10 @@ final class SouloAppDelegate: NSObject, UIApplicationDelegate {
         handleEventsForBackgroundURLSession identifier: String,
         completionHandler: @escaping () -> Void
     ) {
+        if identifier == SeparatedMediaDownloadService.sessionIdentifier {
+            SeparatedMediaDownloadService.shared.backgroundEventsCompletionHandler = completionHandler
+            return
+        }
         if identifier == StreamingMediaDownloadService.hlsSessionIdentifier {
             StreamingMediaDownloadService.shared.backgroundEventsCompletionHandler = completionHandler
             return

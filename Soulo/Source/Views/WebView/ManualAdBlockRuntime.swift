@@ -73,7 +73,8 @@ enum ManualAdBlockRuntime {
         const first = tile(seed) ? seed : hits.find(tile);
         if (!first || !first.parentElement || first.parentElement.children.length > 600) return null;
         const style = getComputedStyle(first), siblings = Array.from(first.parentElement.children);
-        if (strict && (!(first instanceof HTMLUnknownElement) && !first.localName.includes('-'))) return null;
+        if (strict && (!(first instanceof HTMLUnknownElement) && !first.localName.includes('-')
+          && !(first instanceof HTMLImageElement))) return null;
         if (strict && Number(style.zIndex) < 10000) return null;
         const tiles = siblings.filter(e => e.localName === first.localName && tile(e)
           && getComputedStyle(e).backgroundImage === style.backgroundImage);
@@ -93,11 +94,22 @@ enum ManualAdBlockRuntime {
           const emptyCover = s.position === 'fixed' && Number(s.zIndex) >= Number(style.zIndex) && Number(s.zIndex) <= Number(style.zIndex)+2
             && s.backgroundImage === 'none' && ['transparent','rgba(0, 0, 0, 0)'].includes(s.backgroundColor)
             && b.left >= r.left-8 && b.right <= r.right+8 && b.top >= r.top-64 && b.bottom <= r.bottom+8;
+          const fullCover = s.position === 'fixed' && Number(s.zIndex) >= Number(style.zIndex)
+            && s.backgroundImage === 'none' && ['transparent','rgba(0, 0, 0, 0)'].includes(s.backgroundColor)
+            // A fixed cover without an explicit left retains its static body
+            // offset (often 8px). The image tiles use slightly inset coordinates.
+            && Math.abs(b.left-r.left)<=Math.max(16,innerWidth*.05)
+            && Math.abs(b.right-r.right)<=Math.max(16,innerWidth*.05)
+            && Math.abs(b.top-r.top)<8 && Math.abs(b.bottom-r.bottom)<8;
+          const closeControl = e instanceof HTMLUnknownElement && s.position === 'fixed'
+            && Number(s.zIndex) >= Number(style.zIndex) && s.backgroundImage.startsWith('url("data:image/')
+            && b.width <= 36 && b.height <= 36 && b.width >= 12 && b.height >= 12
+            && b.left >= r.right-48 && b.right <= r.right+12 && b.top >= r.top-48 && b.bottom <= r.top+12;
           const matchingCover = e === seed && s.position === 'fixed' && s.backgroundImage === 'none'
             && Math.abs(b.left-r.left)<8 && Math.abs(b.right-r.right)<8 && Math.abs(b.top-r.top)<8 && Math.abs(b.bottom-r.bottom)<8;
           const spacer = e instanceof HTMLUnknownElement && s.position !== 'fixed'
             && Math.abs(b.width-r.width)<8 && Math.abs(b.height-r.height)<8;
-          return emptyCover || matchingCover || spacer;
+          return emptyCover || fullCover || closeControl || matchingCover || spacer;
         });
         return {elements: [...tiles,...extras], bounds:r};
       }
@@ -120,14 +132,15 @@ enum ManualAdBlockRuntime {
           // Confirm the renderer's slot/runtime ID, image and both handlers.
           // A fixed image or a similarly named ordinary element is insufficient.
           const match = /^_s_(s[a-z0-9]+)_(rt_\d+_\d+)$/.exec(el.id);
-          if (!match || el.style.position !== 'fixed' || el.style.bottom !== '0px'
+          if (!match || !['fixed','relative'].includes(el.style.position)
             || el.style.width !== '100%' || Number(el.style.zIndex) < 10000
-            || el.textContent.trim() || el.querySelector('form,input,video,audio,iframe,[role],[aria-label],[tabindex]')) continue;
+            || el.querySelector('form,input,video,audio,iframe,[role],[aria-label],[tabindex]')) continue;
           const children = Array.from(el.children), runtime = match[2];
           const imageLink = children.find(e => e.getAttribute('onclick') === "window['_j_" + runtime + "']()");
           const close = children.find(e => (e.getAttribute('onclick') || '').includes("window['_x_" + runtime + "']('" + el.id + "')"));
           const img = imageLink?.querySelector(':scope > img');
-          if (!img || !close || children.length !== 2) continue;
+          if (!img || !close || children.length !== 2 || imageLink.children.length !== 1
+            || imageLink.textContent.trim() || el.getBoundingClientRect().width < innerWidth * .5) continue;
           try { if (!/^https?:$/.test(new URL(img.src).protocol) || !new URL(img.src).pathname.startsWith('/navImgs/files/')) continue; }
           catch (_) { continue; }
           const elements = [el], mask = document.getElementById('mask_' + el.id);
@@ -140,7 +153,7 @@ enum ManualAdBlockRuntime {
         return groups;
       }
       function mark(group) {
-        window.__souloBannerInteractions.remember(group);
+        if (group.elements[0]?.style.position === 'fixed') window.__souloBannerInteractions.remember(group);
         group.elements.forEach(e => {
           if (e.getAttribute('data-soulo-image-banner') !== group.slot) e.setAttribute('data-soulo-image-banner', group.slot);
         });

@@ -698,6 +698,7 @@ import Network
         let scriptCount = web.configuration.userContentController.userScripts.count
         let scriptIDs = web.configuration.userContentController.userScripts.map(ObjectIdentifier.init)
         let requestCount = server.requests.count
+        let refreshControl = try XCTUnwrap(web.scrollView.refreshControl)
         for _ in 0..<3 {
             window.rootViewController = UIHostingController(rootView: Color.clear)
             for _ in 0..<100 {
@@ -713,6 +714,10 @@ import Network
             }
             XCTAssertTrue(model.isWebViewRuntimeInstalled)
             XCTAssertTrue(model.webView === web)
+            XCTAssertTrue(web.scrollView.refreshControl === refreshControl,
+                "Remounting must not rebuild refresh controls and invalidate scroll layout")
+            XCTAssertEqual(refreshControl.allTargets.compactMap { $0 as? WebViewRepresentable.Coordinator }.count, 1,
+                "Refresh must have exactly one browser coordinator, alongside UIKit's own target")
             try await wait(model, for: "window.tabMarker === 42 && document.querySelector('input')?.value === 'Unsaved draft'")
             XCTAssertEqual(web.configuration.userContentController.userScripts.count, scriptCount)
             XCTAssertTrue(web.canGoBack)

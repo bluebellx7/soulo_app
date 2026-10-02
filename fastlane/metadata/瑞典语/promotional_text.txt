@@ -1,1 +1,1 @@
-Öppna webbadresser direkt och sök med vald tjänst. Bättre översättning av länkar, video och nedladdningar.
+Spela upp videor som stöds under nedladdning. Bättre bakgrundsnedladdningar och helskärm, med skydd mot dolda annonser och oönskad kopiering.

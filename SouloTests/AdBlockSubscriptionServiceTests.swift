@@ -63,12 +63,17 @@ final class AdBlockSubscriptionServiceTests: XCTestCase {
         let subscription = try XCTUnwrap(service.subscriptions.first { $0.id == "easylist" })
         SubscriptionTestProtocol.handler = { request in
             Task { @MainActor in
+                XCTAssertTrue(service.isUpdating)
+                XCTAssertEqual(service.totalUpdates, 1)
+                XCTAssertEqual(service.completedUpdates, 0)
                 service.setEnabled(false, for: subscription)
                 request.respond(body: "||ads.example.com^\nexample.com##.advert", mimeType: "text/plain")
             }
         }
 
         await service.updateEnabledSubscriptions()
+        XCTAssertFalse(service.isUpdating)
+        XCTAssertEqual(service.completedUpdates, service.totalUpdates)
         let updated = try XCTUnwrap(service.subscriptions.first { $0.id == subscription.id })
         XCTAssertFalse(updated.isEnabled)
         XCTAssertEqual(updated.networkRuleCount, 1)

@@ -13,6 +13,78 @@ struct VideoOrientationErrorAlert: ViewModifier {
 }
 
 @MainActor enum VideoOrientation {
+    private struct Restoration {
+        let id: UUID
+        let orientation: UIInterfaceOrientation
+        let task: Task<Void, Never>
+        weak var window: UIWindow?
+        weak var controller: UIViewController?
+    }
+    private static var restorations: [ObjectIdentifier: Restoration] = [:]
+
+    static func capture(in scene: UIWindowScene) -> (UIInterfaceOrientation, UIWindow?, UIViewController?, Bool) {
+        // A quick re-entry inherits the page's orientation, not the landscape
+        // geometry left over from the fullscreen session still being dismissed.
+        if let pending = restorations.removeValue(forKey: ObjectIdentifier(scene)) {
+            pending.task.cancel()
+            return (pending.orientation, pending.window, pending.controller, true)
+        }
+        let orientation = scene.interfaceOrientation == .unknown ? UIInterfaceOrientation.portrait : scene.interfaceOrientation
+        return (orientation, scene.keyWindow, topController(in: scene.keyWindow), false)
+    }
+
+    static func topController(in window: UIWindow?) -> UIViewController? {
+        var controller = window?.rootViewController
+        while let presented = controller?.presentedViewController { controller = presented }
+        return controller
+    }
+
+    static func restore(_ orientation: UIInterfaceOrientation, in scene: UIWindowScene,
+                        sourceWindow: UIWindow?, sourceController: UIViewController?) {
+        let key = ObjectIdentifier(scene), id = UUID()
+        restorations.removeValue(forKey: key)?.task.cancel()
+        let task = Task { @MainActor [weak scene, weak sourceWindow, weak sourceController] in
+            var settled = 0
+            var lastRequest = -10
+            for attempt in 0..<120 {
+                guard !Task.isCancelled, let scene, let sourceWindow else { break }
+                let controller = topController(in: sourceWindow)
+                // Never ask the dismissing AVKit/SwiftUI fullscreen controller
+                // to restore the underlying page's orientation.
+                let ready = scene.activationState == .foregroundActive
+                    && scene.keyWindow === sourceWindow && controller != nil
+                    && controller === sourceController
+                    && controller?.isBeingPresented == false
+                    && controller?.isBeingDismissed == false
+                    && controller?.transitionCoordinator == nil
+                let mask = mask(for: orientation)
+                if ready, controller?.supportedInterfaceOrientations.intersection(mask).isEmpty == false {
+                    if lastRequest < 0 {
+                        // Supersede a landscape request still in flight even
+                        // when the scene currently reports the original geometry.
+                        lastRequest = attempt
+                        request(mask, in: scene) { _ in }
+                    }
+                    if scene.interfaceOrientation == orientation {
+                        settled += 1
+                        if settled >= 20 { break }
+                    } else {
+                        settled = 0
+                        if attempt - lastRequest >= 10 {
+                            lastRequest = attempt
+                            // UIKit can reject a request while its geometry is
+                            // changing. Keep checking and retry after it settles.
+                            request(mask, in: scene) { _ in }
+                        }
+                    }
+                } else { settled = 0 }
+                try? await Task.sleep(for: .milliseconds(50))
+            }
+            if restorations[key]?.id == id { restorations.removeValue(forKey: key) }
+        }
+        restorations[key] = Restoration(id: id, orientation: orientation, task: task, window: sourceWindow, controller: sourceController)
+    }
+
     static func mask(for orientation: UIInterfaceOrientation) -> UIInterfaceOrientationMask {
         switch orientation {
         case .landscapeLeft: return .landscapeLeft
@@ -42,9 +114,11 @@ struct VideoOrientationErrorAlert: ViewModifier {
     private var token: String?
     private weak var scene: UIWindowScene?
     private weak var sourceWindow: UIWindow?
+    private weak var sourceController: UIViewController?
     private var original: UIInterfaceOrientation = .portrait
     private var prefersLandscape = true
     private var began = false
+    private var inheritedRestoration = false
     private var transition: Task<Void, Never>?
 
     func prepare(token: String, scene: UIWindowScene, prefersLandscape: Bool) {
@@ -52,8 +126,7 @@ struct VideoOrientationErrorAlert: ViewModifier {
         transition?.cancel()
         self.token = token
         self.scene = scene
-        sourceWindow = scene.keyWindow
-        original = scene.interfaceOrientation
+        (original, sourceWindow, sourceController, inheritedRestoration) = VideoOrientation.capture(in: scene)
         self.prefersLandscape = prefersLandscape
         began = false
     }
@@ -72,9 +145,9 @@ struct VideoOrientationErrorAlert: ViewModifier {
                 var controller = window?.rootViewController
                 while let presented = controller?.presentedViewController { controller = presented }
                 let fullscreenPresented = window !== self.sourceWindow
-                    || self.sourceWindow?.rootViewController?.presentedViewController != nil
+                    || controller !== self.sourceController
                 if fullscreenPresented, let controller,
-                   !controller.isBeingPresented, controller.transitionCoordinator == nil,
+                   !controller.isBeingPresented, !controller.isBeingDismissed, controller.transitionCoordinator == nil,
                    !controller.supportedInterfaceOrientations.intersection(.landscape).isEmpty {
                     VideoOrientation.request(.landscape, in: scene, onError: onError)
                     return
@@ -89,32 +162,15 @@ struct VideoOrientationErrorAlert: ViewModifier {
     func end(token: String? = nil) {
         guard self.token != nil, token == nil || self.token == token else { return }
         transition?.cancel()
-        let scene = scene, source = sourceWindow, orientation = original, restore = began
+        let scene = scene, source = sourceWindow, controller = sourceController, orientation = original, restore = began || inheritedRestoration
         self.token = nil
         self.scene = nil
         self.sourceWindow = nil
+        self.sourceController = nil
         began = false
-        guard restore else { return }
-        transition = Task { @MainActor in
-            // AVKit also pins the current orientation while dismissing. Restore
-            // only once the original window has become key again.
-            for _ in 0..<60 {
-                guard !Task.isCancelled, let scene else { return }
-                var controller = source?.rootViewController
-                while let presented = controller?.presentedViewController { controller = presented }
-                let mask = VideoOrientation.mask(for: orientation)
-                if scene.keyWindow === source, let controller,
-                   !controller.isBeingDismissed, controller.transitionCoordinator == nil,
-                   !controller.supportedInterfaceOrientations.intersection(mask).isEmpty {
-                    if scene.interfaceOrientation != orientation {
-                        VideoOrientation.request(mask, in: scene) { _ in }
-                    }
-                    return
-                }
-                try? await Task.sleep(for: .milliseconds(50))
-            }
-        }
-
+        inheritedRestoration = false
+        guard restore, let scene else { return }
+        VideoOrientation.restore(orientation, in: scene, sourceWindow: source, sourceController: controller)
     }
 }
 
@@ -168,68 +224,149 @@ private struct VideoRotationButton: UIViewRepresentable {
     func updateUIView(_ view: Button, context: Context) { view.setNeedsLayout() }
 }
 
-private struct FullScreenVideoOrientation: UIViewControllerRepresentable {
-    let landscape: Bool
-    final class Controller: UIViewController {
-        var landscape = false
-        weak var playbackScene: UIWindowScene?
-        var originalOrientation: UIInterfaceOrientation?
-        override func viewDidAppear(_ animated: Bool) {
-            super.viewDidAppear(animated)
-            guard originalOrientation == nil, let scene = view.window?.windowScene else { return }
-            playbackScene = scene
-            originalOrientation = scene.interfaceOrientation
-            if landscape {
-                VideoOrientation.request(.landscape, in: scene) { MediaSession.shared.error = $0.localizedDescription }
-            }
-        }
-        func restore() {
-            guard let scene = playbackScene, let orientation = originalOrientation,
-                  scene.interfaceOrientation != orientation else { return }
-            VideoOrientation.request(VideoOrientation.mask(for: orientation), in: scene) {
-                MediaSession.shared.error = $0.localizedDescription
-            }
-        }
-    }
-    func makeUIViewController(context: Context) -> Controller {
-        let controller = Controller()
-        controller.landscape = landscape
-        controller.view.isUserInteractionEnabled = false
-        return controller
-    }
-    func updateUIViewController(_ controller: Controller, context: Context) {}
-    static func dismantleUIViewController(_ controller: Controller, coordinator: Void) {
-        // Let dismissal finish before requesting the previous page's geometry.
-        Task { @MainActor in controller.restore() }
-    }
+/// Capture the playback page's window before presenting the fullscreen cover.
+@MainActor private final class VideoPlaybackWindow {
+    weak var window: UIWindow?
 }
 
-struct SessionPlayerController: UIViewControllerRepresentable {
-    @ObservedObject var session = MediaSession.shared
-    func makeCoordinator() -> Coordinator { Coordinator() }
-    func makeUIViewController(context: Context) -> AVPlayerViewController {
-        let view = AVPlayerViewController()
-        view.player = session.player
-        Task { @MainActor in session.playerSurfaces += 1 }
-        view.delegate = context.coordinator
-        view.allowsPictureInPicturePlayback = true
-        view.canStartPictureInPictureAutomaticallyFromInline = true
-        let hold = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleHold(_:)))
-        hold.minimumPressDuration = 0.4
-        hold.delegate = context.coordinator
-        view.view.addGestureRecognizer(hold)
-        return view
-    }
-    func updateUIViewController(_ view: AVPlayerViewController, context: Context) {}
-    static func dismantleUIViewController(_ view: AVPlayerViewController, coordinator: Coordinator) {
-        coordinator.detached = true
-        if !coordinator.pipActive { view.player = nil }
-        Task { @MainActor in
-            MediaSession.shared.endTemporaryRate()
-            MediaSession.shared.playerSurfaces = max(0, MediaSession.shared.playerSurfaces - 1)
+private struct VideoPlaybackWindowReader: UIViewRepresentable {
+    let context: VideoPlaybackWindow
+    final class Host: UIView {
+        var context: VideoPlaybackWindow?
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            if let window { context?.window = window }
         }
     }
-    final class Coordinator: NSObject, AVPlayerViewControllerDelegate, UIGestureRecognizerDelegate {
+    func makeUIView(context: Context) -> Host {
+        let view = Host()
+        view.context = self.context
+        view.isUserInteractionEnabled = false
+        return view
+    }
+    func updateUIView(_ view: Host, context: Context) {}
+}
+
+/// Present AVKit itself rather than embedding it inside a SwiftUI fullscreen
+/// cover. AVKit owns the close button and the visibility of every native control.
+private struct SessionPlayerController: UIViewControllerRepresentable {
+    @Binding var isPresented: Bool
+    var onDismiss: () -> Void
+
+    func makeCoordinator() -> Presenter { Presenter() }
+    func makeUIViewController(context: Context) -> Host {
+        let host = Host()
+        host.onReady = { [weak host, weak presenter = context.coordinator] in
+            guard let host else { return }
+            presenter?.synchronize(host: host)
+        }
+        return host
+    }
+    func updateUIViewController(_ host: Host, context: Context) {
+        context.coordinator.isPresented = $isPresented
+        context.coordinator.onDismiss = onDismiss
+        context.coordinator.synchronize(host: host)
+    }
+    static func dismantleUIViewController(_ host: Host, coordinator: Presenter) {
+        coordinator.dismiss()
+    }
+
+    final class Host: UIViewController {
+        var onReady: (() -> Void)?
+        final class Anchor: UIView {
+            var onReady: (() -> Void)?
+            override func didMoveToWindow() {
+                super.didMoveToWindow()
+                if window != nil { onReady?() }
+            }
+        }
+        override func loadView() {
+            let anchor = Anchor()
+            anchor.onReady = { [weak self] in self?.onReady?() }
+            view = anchor
+        }
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            onReady?()
+        }
+    }
+
+    final class DismissalObserver: UIViewController {
+        var onDismiss: (() -> Void)?
+        private var closing = false
+        override func viewWillDisappear(_ animated: Bool) {
+            super.viewWillDisappear(animated)
+            closing = parent?.isBeingDismissed == true
+        }
+        override func viewDidDisappear(_ animated: Bool) {
+            super.viewDidDisappear(animated)
+            if closing {
+                closing = false
+                onDismiss?()
+            }
+        }
+    }
+
+    @MainActor final class Presenter {
+        var isPresented: Binding<Bool>?
+        var onDismiss: (() -> Void)?
+        private var player: AVPlayerViewController?
+        private var playbackDelegate: PlaybackDelegate?
+
+        func synchronize(host: Host) {
+            guard isPresented?.wrappedValue == true else { dismiss(); return }
+            guard player == nil, host.view.window != nil,
+                  !host.isBeingDismissed, host.presentedViewController == nil else { return }
+            let controller = AVPlayerViewController()
+            let delegate = PlaybackDelegate()
+            controller.player = MediaSession.shared.player
+            controller.delegate = delegate
+            controller.modalPresentationStyle = .fullScreen
+            controller.allowsPictureInPicturePlayback = true
+            controller.canStartPictureInPictureAutomaticallyFromInline = true
+            controller.showsPlaybackControls = true
+            controller.view.accessibilityIdentifier = "media.fullscreen.player"
+            let hold = UILongPressGestureRecognizer(target: delegate, action: #selector(PlaybackDelegate.handleHold(_:)))
+            hold.minimumPressDuration = 0.4
+            hold.delegate = delegate
+            controller.view.addGestureRecognizer(hold)
+            let observer = DismissalObserver()
+            observer.view.isUserInteractionEnabled = false
+            observer.view.frame = .zero
+            observer.onDismiss = { [weak self, weak controller] in
+                guard let self, let controller, self.player === controller else { return }
+                self.finish(controller: controller)
+            }
+            // AVPlayerViewController cannot be subclassed. A child observes
+            // UIKit dismissal without changing or inspecting AVKit's controls.
+            controller.addChild(observer)
+            controller.view.addSubview(observer.view)
+            observer.didMove(toParent: controller)
+            player = controller
+            playbackDelegate = delegate
+            MediaSession.shared.playerSurfaces += 1
+            // A zero-sized SwiftUI anchor is only a scene locator. Present from
+            // the visible controller so AVKit receives the full touch surface.
+            VideoOrientation.topController(in: host.view.window)?.present(controller, animated: true)
+        }
+
+        func dismiss() {
+            guard let player, !player.isBeingDismissed else { return }
+            player.dismiss(animated: true)
+        }
+
+        private func finish(controller: AVPlayerViewController) {
+            playbackDelegate?.detached = true
+            if playbackDelegate?.pipActive != true { controller.player = nil }
+            player = nil
+            playbackDelegate = nil
+            MediaSession.shared.endTemporaryRate()
+            MediaSession.shared.playerSurfaces = max(0, MediaSession.shared.playerSurfaces - 1)
+            isPresented?.wrappedValue = false
+            onDismiss?()
+        }
+    }
+    @MainActor final class PlaybackDelegate: NSObject, @preconcurrency AVPlayerViewControllerDelegate, UIGestureRecognizerDelegate {
         @objc func handleHold(_ gesture: UILongPressGestureRecognizer) {
             if gesture.state == .began { MediaSession.shared.beginTemporaryRate() }
             else if [.ended, .cancelled, .failed].contains(gesture.state) { MediaSession.shared.endTemporaryRate() }
@@ -649,7 +786,8 @@ private struct InlineVideoSurface: UIViewRepresentable {
 struct MediaPlaybackContent: View {
     @ObservedObject private var session = MediaSession.shared
     @State private var showingFullScreen = false
-    @State private var landscapeFullScreen = false
+    @State private var fullscreenOrientation = WebVideoFullscreenOrientation()
+    @State private var playbackWindow = VideoPlaybackWindow()
     @State private var frame: CapturedMediaFrame?
     @State private var capturing = false
     @State private var captureTask: Task<Void, Never>?
@@ -659,7 +797,10 @@ struct MediaPlaybackContent: View {
 
     private var playbackControls: some View {
         MediaControls(fullScreen: {
-            landscapeFullScreen = session.videoIsLandscape
+            if let scene = playbackWindow.window?.windowScene {
+                fullscreenOrientation.prepare(token: "native", scene: scene, prefersLandscape: session.videoIsLandscape)
+                fullscreenOrientation.begin(token: "native") { session.error = $0.localizedDescription }
+            }
             showingFullScreen = true
         })
     }
@@ -723,18 +864,26 @@ struct MediaPlaybackContent: View {
                 .accessibilityIdentifier("media.options")
             }
         }
-        .onDisappear { captureTask?.cancel(); session.endTemporaryRate() }
+        .background(VideoPlaybackWindowReader(context: playbackWindow))
+        .background {
+            SessionPlayerController(isPresented: Binding(
+                get: { showingFullScreen && !session.mirrored },
+                set: { showingFullScreen = $0 }
+            ), onDismiss: { fullscreenOrientation.end() })
+                .frame(width: 0, height: 0)
+        }
+        .onDisappear {
+            captureTask?.cancel(); session.endTemporaryRate()
+            if !showingFullScreen { fullscreenOrientation.end() }
+        }
         .sheet(item: $frame) { item in MediaFrameShare(image: item.image) }
-        .fullScreenCover(isPresented: $showingFullScreen) {
-            Group {
-                if session.mirrored {
-                    VStack(spacing: 0) {
-                        MediaPlaybackSurface()
-                        MediaControls()
-                    }.background(.black).preferredColorScheme(.dark)
-                } else { SessionPlayerController().ignoresSafeArea() }
-            }
-                .background(FullScreenVideoOrientation(landscape: landscapeFullScreen))
+        .fullScreenCover(isPresented: Binding(
+            get: { showingFullScreen && session.mirrored }, set: { showingFullScreen = $0 }
+        ), onDismiss: { fullscreenOrientation.end() }) {
+            VStack(spacing: 0) {
+                MediaPlaybackSurface()
+                MediaControls()
+            }.background(.black).preferredColorScheme(.dark)
                 .overlay(alignment: .topTrailing) {
                     VideoRotationButton().frame(width: 44, height: 44)
                         .background(.regularMaterial, in: Circle()).padding()
@@ -744,6 +893,7 @@ struct MediaPlaybackContent: View {
                         Image(systemName: "xmark").font(.headline).padding(14)
                             .background(.regularMaterial, in: Circle())
                     }.padding().accessibilityLabel(ToolText.text("close"))
+                        .accessibilityIdentifier("media.fullscreen.close")
                 }
         }
     }

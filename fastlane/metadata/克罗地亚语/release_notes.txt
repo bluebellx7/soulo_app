@@ -1,3 +1,7 @@
-1.1.9
+1.2.0
 
-• Otvarajte web-adrese izravno i pretražujte odabranom uslugom. Poboljšani su prijevod poveznica, video i preuzimanja.
+• Brže otvaranje stranica i stabilniji odziv alatne trake i kartica.
+• Reprodukcija podržanih videozapisa tijekom preuzimanja i bolji oporavak preuzimanja u pozadini.
+• Ispravljene kontrole cijelog zaslona i povratak u okomiti položaj.
+• Blokirani klikovi na skrivene oglase i neželjeno pisanje u međuspremnik.
+• Prikaz napretka podržanih preuzimanja, uvoza i izvoza.

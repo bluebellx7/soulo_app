@@ -1,3 +1,7 @@
-1.1.9
+1.2.0
 
-• Otwieraj adresy WWW bezpośrednio i szukaj wybraną wyszukiwarką. Ulepszono tłumaczenie linków, wideo i pobieranie.
+• Szybsze otwieranie stron i stabilniejsza reakcja paska narzędzi oraz kart.
+• Odtwarzanie obsługiwanych filmów podczas pobierania i lepsze wznawianie pobierania w tle.
+• Poprawki sterowania na pełnym ekranie i powrotu do orientacji pionowej.
+• Blokowanie kliknięć ukrytych reklam i niepożądanego zapisu do schowka.
+• Wyświetlanie postępu obsługiwanych pobrań, importu i eksportu.

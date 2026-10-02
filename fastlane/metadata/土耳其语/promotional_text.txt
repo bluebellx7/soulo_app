@@ -1,1 +1,1 @@
-Web adreslerini doğrudan açın, aramaları seçtiğiniz hizmette yapın. Bağlantı çevirisi, video ve indirmeler iyileştirildi.
+Desteklenen videoları indirilirken oynatın. Arka plan indirmeleri ve tam ekran iyileştirildi; gizli reklamlara ve istenmeyen kopyalamaya karşı koruma.

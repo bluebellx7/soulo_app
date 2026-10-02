@@ -1,3 +1,7 @@
-1.1.9
+1.2.0
 
-• Åbn webadresser direkte, og søg med den valgte tjeneste. Bedre oversættelse af links, video og downloads.
+• Hurtigere sideåbning og mere stabil respons fra værktøjslinjen og fanerne.
+• Afspilning af understøttede videoer under download og bedre gendannelse af baggrundsdownload.
+• Rettelser til fuldskærmskontroller og tilbagevenden til stående format.
+• Blokering af klik på skjulte annoncer og uønsket skrivning til udklipsholderen.
+• Visning af fremskridt for understøttede downloads, importer og eksporter.

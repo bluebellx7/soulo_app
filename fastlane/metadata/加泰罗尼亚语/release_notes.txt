@@ -1,3 +1,7 @@
-1.1.9
+1.2.0
 
-• Obre les adreces web directament i cerca amb el servei triat. Millores en traducció d’enllaços, vídeo i baixades.
+• Obertura de pàgines més ràpida i resposta més estable de la barra d’eines i les pestanyes.
+• Reproducció de vídeos compatibles durant la baixada i millor recuperació de les baixades en segon pla.
+• Correccions als controls de pantalla completa i al retorn a l’orientació vertical.
+• Bloqueig dels clics en anuncis ocults i de les escriptures no sol·licitades al porta-retalls.
+• Progrés visible en les baixades, importacions i exportacions compatibles.

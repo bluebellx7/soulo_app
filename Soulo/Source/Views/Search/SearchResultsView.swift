@@ -38,6 +38,14 @@ struct SearchResultsView: View {
     @State private var userScriptOpenedTabs: [String: UUID] = [:]
     /// Incremented each time performSearch runs; compared to detect new vs. returning
     @State private var lastSearchID: UUID = UUID()
+    @State private var lastNavigationRequest: SearchNavigationRequest?
+
+    private struct SearchNavigationRequest: Equatable {
+        let searchID: UUID
+        let tabID: UUID
+        let platformID: UUID
+        let keyword: String
+    }
 
     // Persist last selected group
     @AppStorage("last_selected_region") private var lastRegion: String = ""
@@ -109,7 +117,7 @@ struct SearchResultsView: View {
                                     usesContrastingControlSurface: !showTopSearchBar
                                 )
                                 .frame(maxWidth: .infinity)
-                                .onChange(of: searchVM.selectedPlatform) { _, _ in
+                                .onChange(of: searchVM.selectedPlatform?.id) { _, _ in
                                     loadCurrentPlatformURL()
                                 }
 
@@ -723,10 +731,15 @@ struct SearchResultsView: View {
     }
 
     private func loadCurrentPlatformURL() {
-        cancelAIInteraction()
         guard let webVM = tabManager.activeWebViewModel else { return }
         guard let platform = searchVM.selectedPlatform else { return }
+        guard let tabID = tabManager.activeTab?.id else { return }
         let keyword = searchVM.currentKeyword
+        let request = SearchNavigationRequest(searchID: searchVM.searchID, tabID: tabID,
+            platformID: platform.id, keyword: keyword)
+        guard lastNavigationRequest != request else { return }
+        lastNavigationRequest = request
+        cancelAIInteraction()
         let inputKind = searchVM.isSelectionSearch ? nil : BrowserNavigationResolver.classify(keyword)
         let directURL: URL?
         if case .webpage(let url)? = inputKind {

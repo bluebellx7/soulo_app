@@ -11,6 +11,9 @@ private actor FileThumbnailCache {
 
     func thumbnail(_ file: LocalFile) async -> UIImage? {
         guard !file.directory, !Task.isCancelled else { return nil }
+        if ["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased()) {
+            return nil
+        }
         let key = "\(file.id)|\(file.modifiedAt.timeIntervalSince1970)|\(file.info.size)|\(file.coverURL?.path ?? "")" as NSString
         if let cached = images.object(forKey: key) { return cached }
         let url = file.coverURL ?? file.url

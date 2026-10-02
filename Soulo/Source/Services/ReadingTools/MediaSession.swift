@@ -4,6 +4,53 @@ import Combine
 import WebKit
 import CryptoKit
 
+@MainActor
+final class VideoScreenAwakeService {
+    static let shared = VideoScreenAwakeService()
+    private var owners = Set<UUID>()
+    private var previousIdleTimerDisabled: Bool?
+
+    private init() {
+        NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification,
+            object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.suspend() }
+        }
+        NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification,
+            object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.refresh() }
+        }
+    }
+
+    func setActive(_ active: Bool, owner: UUID) {
+        if active {
+            if owners.isEmpty { previousIdleTimerDisabled = UIApplication.shared.isIdleTimerDisabled }
+            owners.insert(owner)
+        } else {
+            owners.remove(owner)
+        }
+        refresh()
+    }
+
+    private func refresh() {
+        if owners.isEmpty {
+            if let previousIdleTimerDisabled {
+                UIApplication.shared.isIdleTimerDisabled = previousIdleTimerDisabled
+                self.previousIdleTimerDisabled = nil
+            }
+        } else if UIApplication.shared.applicationState == .active {
+            UIApplication.shared.isIdleTimerDisabled = true
+        } else if let previousIdleTimerDisabled {
+            UIApplication.shared.isIdleTimerDisabled = previousIdleTimerDisabled
+        }
+    }
+
+    private func suspend() {
+        if let previousIdleTimerDisabled {
+            UIApplication.shared.isIdleTimerDisabled = previousIdleTimerDisabled
+        }
+    }
+}
+
 /// One player shared by local files, resource previews, the mini-player and system controls.
 @MainActor
 final class MediaSession: ObservableObject {
@@ -41,6 +88,15 @@ final class MediaSession: ObservableObject {
     private var wantsPlayback = false
     private var persistsPosition = true
     private weak var sourceWebView: WKWebView?
+    private var retainedDownloadSource: DownloadPlaybackSource?
+
+    func deferDownloadPackageRemoval(for asset: AVURLAsset, at url: URL) -> Bool {
+        guard let source = retainedDownloadSource, source.asset === asset,
+              player.currentItem?.asset === asset else { return false }
+        source.removePackageWhenReleased(url)
+        return true
+    }
+    private let screenAwakeOwner = UUID()
 
     init() {
         let saved = UserDefaults.standard.float(forKey: "media.rate")
@@ -56,6 +112,7 @@ final class MediaSession: ObservableObject {
         }
         player.publisher(for: \.timeControlStatus).receive(on: DispatchQueue.main).sink { [weak self] status in
             self?.playing = status == .playing
+            self?.updateScreenAwake()
             self?.updateNowPlaying()
         }.store(in: &observations)
         NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime).receive(on: DispatchQueue.main).sink { [weak self] event in
@@ -77,6 +134,9 @@ final class MediaSession: ObservableObject {
         NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification).receive(on: DispatchQueue.main).sink { [weak self] _ in
             self?.endTemporaryRate()
         }.store(in: &observations)
+        NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification).receive(on: DispatchQueue.main).sink { [weak self] _ in
+            self?.updateScreenAwake()
+        }.store(in: &observations)
         installRemoteControls()
     }
 
@@ -86,7 +146,7 @@ final class MediaSession: ObservableObject {
         width.isFinite && height.isFinite && height > 0 && width > height * 1.1
     }
 
-    func open(url: URL, title: String? = nil, pageURL: URL? = nil, asset: AVURLAsset? = nil, webView: WKWebView? = nil, reservation: UUID? = nil) {
+    func open(url: URL, title: String? = nil, pageURL: URL? = nil, asset: AVURLAsset? = nil, webView: WKWebView? = nil, reservation: UUID? = nil, persistPosition: Bool? = nil, downloadSource: DownloadPlaybackSource? = nil) {
         if let reservation, !ownsPreparation(reservation) { return }
         preparation = UUID()
         configureIfNeeded()
@@ -96,7 +156,7 @@ final class MediaSession: ObservableObject {
         generation = UUID()
         player.pause()
         sourceWebView = webView
-        persistsPosition = webView?.configuration.websiteDataStore.isPersistent ?? true
+        persistsPosition = persistPosition ?? webView?.configuration.websiteDataStore.isPersistent ?? true
         wantsPlayback = true
         // Pause page media only when explicitly handing this page's media to the player.
         webView?.evaluateJavaScript("document.querySelectorAll('audio,video').forEach(e=>e.pause()); true;", completionHandler: nil)
@@ -107,11 +167,37 @@ final class MediaSession: ObservableObject {
         hasVideo = false
         videoIsLandscape = false
         mirrored = false
-        let item = AVPlayerItem(asset: asset ?? AVURLAsset(url: url))
+        updateScreenAwake()
+        let playbackAsset: AVURLAsset
+        if let asset {
+            playbackAsset = asset
+        } else if url.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
+            do {
+                playbackAsset = try OfflineHLSReference.playableAsset(for: url)
+            } catch {
+                player.replaceCurrentItem(with: nil)
+                retainedDownloadSource = nil
+                self.error = ToolText.text("media_unavailable")
+                return
+            }
+        } else if url.pathExtension.lowercased() == "movpkg" {
+            do {
+                playbackAsset = try OfflineHLSReference.playablePackage(at: url)
+            } catch {
+                player.replaceCurrentItem(with: nil)
+                retainedDownloadSource = nil
+                self.error = ToolText.text("media_unavailable")
+                return
+            }
+        } else {
+            playbackAsset = AVURLAsset(url: url)
+        }
+        let item = AVPlayerItem(asset: playbackAsset)
         // Preserve pitch across the full speed range. The spectral algorithm also
         // avoids the observed time-domain clock stall when starting at 0.5×.
         item.audioTimePitchAlgorithm = .spectral
         player.replaceCurrentItem(with: item)
+        retainedDownloadSource = downloadSource
         let token = generation
         Task {
             let tracks = try? await item.asset.loadTracks(withMediaType: .video)
@@ -130,6 +216,7 @@ final class MediaSession: ObservableObject {
                 if width > 0, height > 0 {
                     self.videoIsLandscape = Self.prefersLandscape(width: width, height: height)
                     self.hasVideo = true
+                    self.updateScreenAwake()
                 }
             }
         }
@@ -141,6 +228,7 @@ final class MediaSession: ObservableObject {
                     width: item.presentationSize.width, height: item.presentationSize.height
                 )
                 self.hasVideo = true
+                self.updateScreenAwake()
             }
         }
         itemObservation = item.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
@@ -148,6 +236,7 @@ final class MediaSession: ObservableObject {
                 guard let self, self.generation == token else { return }
                 if item.status == .failed {
                     self.error = item.error?.localizedDescription ?? ToolText.text("media_unavailable")
+                    self.updateScreenAwake()
                 } else if item.status == .readyToPlay {
                     let saved = self.persistsPosition ? UserDefaults.standard.double(forKey: self.positionKey(url)) : 0
                     if saved > 0, item.duration.seconds.isFinite, saved < item.duration.seconds - 2 { self.seek(saved) }
@@ -172,20 +261,23 @@ final class MediaSession: ObservableObject {
             // Let AVPlayer prime its decoding/time-pitch pipeline even for a
             // local file. Bypassing readiness can leave a cold 0.5× clock stalled.
             player.play()
+            updateScreenAwake()
         } catch { self.error = error.localizedDescription }
     }
     func pause() {
         wantsPlayback = false; interruptedGeneration = nil
         endTemporaryRate(); player.pause(); savePosition(); updateNowPlaying()
+        updateScreenAwake()
     }
     func handleInterruption(began: Bool, shouldResume: Bool) {
         if began {
             if interruptedGeneration == nil { interruptedGeneration = wantsPlayback ? generation : nil }
             endTemporaryRate(); player.pause(); savePosition(); updateNowPlaying()
+            updateScreenAwake()
         } else {
             let resume = shouldResume && interruptedGeneration == generation && wantsPlayback
             interruptedGeneration = nil
-            if resume { play() } else { wantsPlayback = false }
+            if resume { play() } else { wantsPlayback = false; updateScreenAwake() }
         }
     }
     func beginTemporaryRate() {
@@ -221,7 +313,9 @@ final class MediaSession: ObservableObject {
         pictureInPicture.stop()
         retainedPiPController?.player = nil; retainedPiPController = nil; retainedPiPDelegate = nil
         player.replaceCurrentItem(with: nil); url = nil; expanded = false
+        retainedDownloadSource = nil
         hasVideo = false; videoIsLandscape = false
+        updateScreenAwake()
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
@@ -282,6 +376,13 @@ final class MediaSession: ObservableObject {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = [MPMediaItemPropertyTitle: title,
             MPMediaItemPropertyPlaybackDuration: duration, MPNowPlayingInfoPropertyElapsedPlaybackTime: elapsed,
             MPNowPlayingInfoPropertyPlaybackRate: playing ? player.rate : 0]
+    }
+    private func updateScreenAwake() {
+        let shouldStayAwake = UIApplication.shared.applicationState == .active
+            && url != nil && hasVideo && wantsPlayback
+            && player.currentItem?.status != .failed
+            && player.timeControlStatus != .paused
+        VideoScreenAwakeService.shared.setActive(shouldStayAwake, owner: screenAwakeOwner)
     }
     private func installRemoteControls() {
         let center = MPRemoteCommandCenter.shared()

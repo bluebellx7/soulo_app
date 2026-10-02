@@ -1,6 +1,79 @@
 import Foundation
 
 enum WebViewScripts {
+    // Page world, document start, every frame. A generic tap must not authorize
+    // the advertising pattern that writes to the clipboard on the first click.
+    static let clipboardProtection = #"""
+    (() => {
+        if (window.__souloClipboardProtectionInstalled) return;
+        window.__souloClipboardProtectionInstalled = true;
+        let intentUntil = 0, commandDepth = 0;
+        const now = performance.now.bind(performance);
+        const copyLabel = /copy|clipboard|复制|複製|拷贝|拷貝|コピー|복사|copier|copiar|copia|còpia|kopi[eéë]r|kopioi|kopiraj|копир|копія|kopiuj|kopyala|kopírova|másolás|salin|sao chép|αντιγραφή|העתק|نسخ|کاپی|कॉपी|प्रतिलिपि|কপি|ਕਾਪੀ|નકલ|କପି|நகலெடுக்க|కాపీ|ನಕಲು|പകർത്തുക|คัดลอก/i;
+        function copyControl(event) {
+            for (const el of event.composedPath()) {
+                if (!(el instanceof Element)) continue;
+                if (el === document.body || el === document.documentElement) break;
+                if (el.matches('[data-clipboard-text],[data-clipboard-target]')) return true;
+                const label = [el.getAttribute('aria-label'), el.getAttribute('title'),
+                    el.getAttribute('data-action'), el.id, typeof el.className === 'string' ? el.className : ''].join(' ');
+                if (copyLabel.test(label)) return true;
+                if (el.matches('button,a,[role="button"],input[type="button"],[onclick]')
+                    && copyLabel.test((el.innerText || el.value || '').slice(0,120))) return true;
+            }
+            return false;
+        }
+        function interacted(event) {
+            if (!event.isTrusted) return;
+            if (event.type === 'keydown' && !['Enter',' '].includes(event.key)) return;
+            intentUntil = copyControl(event) ? now()+1500 : 0;
+        }
+        window.addEventListener('click', interacted, true);
+        window.addEventListener('keydown', interacted, true);
+        function consumeIntent() {
+            const allowed = intentUntil > now();
+            intentUntil = 0;
+            return allowed;
+        }
+        function protectMethod(object, name, wrap) {
+            if (!object || typeof object[name] !== 'function') return;
+            const original = object[name];
+            try { Object.defineProperty(object, name, {value:wrap(original), configurable:false, writable:false}); }
+            catch (_) {}
+        }
+        const clipboard = navigator.clipboard;
+        for (const name of ['writeText','write']) {
+            if (!clipboard) break;
+            protectMethod(clipboard, name, original => function(...args) {
+                if (!consumeIntent()) return Promise.reject(new DOMException('User copy action required','NotAllowedError'));
+                return Reflect.apply(original,this,args);
+            });
+            // Protect the prototype entry too, so calling it directly cannot
+            // bypass the instance method. Both entries share one wrapper.
+            const prototype = Object.getPrototypeOf(clipboard);
+            if (Object.prototype.hasOwnProperty.call(prototype,name)) {
+                try { Object.defineProperty(prototype,name,{value:clipboard[name],configurable:false,writable:false}); }
+                catch (_) {}
+            }
+        }
+        protectMethod(Document.prototype, 'execCommand', original => function(command,...args) {
+            if (!/^(copy|cut)$/i.test(String(command))) return Reflect.apply(original,this,[command,...args]);
+            if (!consumeIntent()) return false;
+            commandDepth++;
+            try { return Reflect.apply(original,this,[command,...args]); }
+            finally { commandDepth--; }
+        });
+        // Native selection copy retains WebKit's default behavior, while page
+        // copy handlers cannot append advertisements or replace selected text.
+        // An explicitly authorized legacy copy command may supply clipboardData.
+        for (const type of ['copy','cut']) window.addEventListener(type, event => {
+            if (commandDepth) return;
+            event.stopImmediatePropagation();
+            if (!event.isTrusted) event.preventDefault();
+        }, true);
+    })();
+    """#
+
     /// Keep ordinary cross-site web links inside Soulo. On a real device,
     /// WebKit may hand the original click to an installed Universal Link app
     /// before either navigation delegate sees a loadable web request.
@@ -992,6 +1065,49 @@ enum WebViewScripts {
     })();
     """#
 
+    static let mediaFrameRegistration = #"""
+    (function() {
+        if (window === window.top) return;
+        try { window.webkit.messageHandlers.souloMediaFrame.postMessage({ ready: true }); } catch (_) {}
+    })();
+    """#
+
+    static let videoScreenAwake = #"""
+    (function() {
+        if (window.__souloVideoScreenAwake) return;
+        var frameID = String(Date.now()) + '-' + Math.random().toString(36).slice(2);
+        var lastActive = false;
+        function visibleVideo(video) {
+            if (video.paused || video.ended || video.readyState < 2) return false;
+            var rect = video.getBoundingClientRect(), style = getComputedStyle(video);
+            return rect.width >= 120 && rect.height >= 68 && rect.bottom > 0 && rect.top < innerHeight
+                && style.display !== 'none' && style.visibility !== 'hidden';
+        }
+        function send(active) {
+            try { window.webkit.messageHandlers.souloVideoAwake.postMessage({id:frameID, active:active}); } catch (_) {}
+        }
+        function sync() {
+            var active = Array.prototype.some.call(document.querySelectorAll('video'), visibleVideo);
+            if (active !== lastActive) { lastActive = active; send(active); }
+            return active;
+        }
+        var scheduled = false;
+        function schedule() {
+            if (scheduled) return;
+            scheduled = true;
+            requestAnimationFrame(function() { scheduled = false; sync(); });
+        }
+        ['playing','pause','ended','emptied','abort'].forEach(function(type) {
+            document.addEventListener(type, sync, true);
+        });
+        window.addEventListener('scroll', schedule, {passive:true});
+        window.addEventListener('resize', schedule);
+        window.addEventListener('pagehide', function() { lastActive = false; send(false); });
+        setInterval(function() { if (sync()) send(true); }, 10000);
+        window.__souloVideoScreenAwake = {sync:function() { lastActive = false; sync(); }};
+    })();
+    """#
+
     static let mediaResourceTracking = #"""
     (function() {
         if (window.__souloMediaResourceTrackingInstalled) return;
@@ -1000,6 +1116,21 @@ enum WebViewScripts {
         var observedURLs = [];
         var observedSet = new Set();
         window.__souloObservedResourceURLs = observedURLs;
+        var observedMediaResponses = [];
+        var observedMediaResponseSet = new Set();
+        window.__souloObservedMediaResponses = observedMediaResponses;
+
+        function rememberMediaResponse(value, contentType) {
+            var mime = String(contentType || '').split(';')[0].trim().toLowerCase();
+            if (!/^(?:video\/(?:mp4|webm|quicktime)|audio\/(?:mpeg|mp4|aac|ogg|webm)|application\/(?:vnd\.apple\.mpegurl|x-mpegurl|dash\+xml))$/.test(mime)) return;
+            try { value = new URL(String(value || ''), document.baseURI).href; } catch (_) { return; }
+            if (!/^https?:\/\//i.test(value) || observedMediaResponseSet.has(value)) return;
+            if (observedMediaResponses.length >= 300) {
+                observedMediaResponseSet.delete(observedMediaResponses.shift().url);
+            }
+            observedMediaResponseSet.add(value);
+            observedMediaResponses.push({ url: value, mime: mime });
+        }
 
         function currentYouTubeVideoID() {
             try {
@@ -1234,6 +1365,12 @@ enum WebViewScripts {
                         }
                     } catch (_) {}
                     var result = pageFetch.apply(this, arguments);
+                    Promise.resolve(result).then(function(response) {
+                        try {
+                            rememberMediaResponse(response.url || value,
+                                response.headers && response.headers.get('content-type'));
+                        } catch (_) {}
+                    }).catch(function() {});
                     if (isYouTubePage && /\/youtubei\/v1\/(?:player|next)(?:[?\/]|$)/i.test(value)) {
                         Promise.resolve(result).then(function(response) {
                             try {
@@ -1253,6 +1390,12 @@ enum WebViewScripts {
                     try {
                         var value = String(url || '');
                         remember(value);
+                        this.addEventListener('load', function() {
+                            try {
+                                rememberMediaResponse(this.responseURL || value,
+                                    this.getResponseHeader('Content-Type'));
+                            } catch (_) {}
+                        }, { once: true });
                         if (isYouTubePage && /\/youtubei\/v1\/(?:player|next)(?:[?\/]|$)/i.test(value)) {
                             this.addEventListener('load', function() {
                                 try {

@@ -18,8 +18,121 @@ enum WebResourceInspectionError: LocalizedError {
 }
 
 enum WebResourceInspectionService {
+    static func delivery(for url: URL) -> WebMediaResource.Delivery {
+        let fileExtension = url.pathExtension.lowercased()
+        let format = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+            .queryItems?.first(where: { ["type", "format"].contains($0.name.lowercased()) })?
+            .value?.lowercased() ?? ""
+        if fileExtension == "m3u8" || ["m3u8", "hls"].contains(format)
+            || format.contains("mpegurl") { return .hls }
+        if fileExtension == "mpd" || ["mpd", "dash"].contains(format) { return .dash }
+        return .direct
+    }
+
+    /// Resolve the video whose own control was tapped. The media element can
+    /// expose a blob URL even though its player configuration or recent network
+    /// requests still contain the downloadable stream URL.
     @MainActor
-    static func inspect(webView: WKWebView?) async throws -> WebResourceSnapshot {
+    static func currentVideoResource(webView: WKWebView, frame: WKFrameInfo, token: String) async -> WebMediaResource? {
+        guard let result = try? await webView.callAsyncJavaScript(
+            currentVideoScript, arguments: ["token": token], in: frame, contentWorld: .page
+        ) as? [String: String],
+              let raw = result["url"],
+              let url = URL(string: raw),
+              ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return nil }
+        let delivery = WebMediaResource.Delivery(rawValue: result["delivery"] ?? "") ?? .direct
+        let frameURL = frame.request.url
+        let sourcePageURL = ["http", "https"].contains(frameURL?.scheme?.lowercased() ?? "")
+            ? frameURL : webView.url
+        return WebMediaResource(
+            kind: .video, url: url, title: webView.title ?? "", posterURL: nil,
+            delivery: delivery, sourcePageURL: sourcePageURL
+        )
+    }
+
+    private static let currentVideoScript = #"""
+    return (() => {
+        const webURL = value => {
+            try {
+                const url = new URL(String(value || ''), document.baseURI);
+                return /^https?:$/.test(url.protocol) ? url.href : '';
+            } catch (_) { return ''; }
+        };
+        const result = (value, mime) => {
+            const url = webURL(value);
+            if (!url) return null;
+            const parsed = new URL(url);
+            const format = String(parsed.searchParams.get('type') || parsed.searchParams.get('format') || '').toLowerCase();
+            const delivery = /\.m3u8$/i.test(parsed.pathname) || /(?:m3u8|hls|mpegurl)/i.test(format + ' ' + String(mime || ''))
+                ? 'hls' : /\.mpd$/i.test(parsed.pathname) || /(?:mpd|dash)/i.test(format + ' ' + String(mime || ''))
+                ? 'dash' : 'direct';
+            return { url, delivery };
+        };
+        const mediaURL = (value, encoding) => {
+            let raw = String(value || '').trim();
+            if (!raw || raw.length > 8192) return '';
+            if (Number(encoding) === 2) {
+                try { raw = atob(raw); } catch (_) { return ''; }
+            }
+            for (let step = 0; step < 3; step++) {
+                if (/^https?%3a/i.test(raw)) {
+                    try { raw = decodeURIComponent(raw); } catch (_) { return ''; }
+                }
+                const direct = webURL(raw);
+                if (direct && (/\.(?:m3u8|mp4|m4v|mov|webm|mpd)(?:$|[?#])/i.test(direct)
+                    || /[?&](?:type|format)=(?:m3u8|hls|mpd|dash)(?:&|$)/i.test(direct))) return direct;
+                try {
+                    const parsed = new URL(raw, document.baseURI);
+                    for (const key of ['url', 'src', 'video', 'play', 'playurl', 'file']) {
+                        const nested = parsed.searchParams.get(key);
+                        const candidate = webURL(nested);
+                        if (candidate && (/\.(?:m3u8|mp4|m4v|mov|webm|mpd)(?:$|[?#])/i.test(candidate)
+                            || /[?&](?:type|format)=(?:m3u8|hls|mpd|dash)(?:&|$)/i.test(candidate)
+                            || /[?&](?:mime|type|format)=video(?:%2f|\/)/i.test(candidate))) return candidate;
+                    }
+                } catch (_) {}
+                try {
+                    const decoded = decodeURIComponent(raw);
+                    if (decoded === raw) break;
+                    raw = decoded;
+                } catch (_) { break; }
+            }
+            return '';
+        };
+        const video = Array.from(document.querySelectorAll('video'))
+            .find(element => element.getAttribute('data-soulo-media-id') === token);
+        if (!video || !video.isConnected) return null;
+        const currentURL = webURL(video.currentSrc || video.src);
+        if (currentURL) {
+            const response = Array.from(window.__souloObservedMediaResponses || []).reverse()
+                .find(item => webURL(item?.url) === currentURL);
+            return result(currentURL, response?.mime);
+        }
+        if (document.querySelectorAll('video').length > 1) return null;
+        for (const config of [window.player_aaaa, window.player_bbbb,
+                              window.player_config, window.__PLAYER_CONFIG__, window.videoInfo]) {
+            if (!config || typeof config !== 'object') continue;
+            const url = mediaURL(config.url || config.playUrl || config.play_url || config.src, config.encrypt);
+            if (url) return result(url);
+        }
+        const responses = Array.from(window.__souloObservedMediaResponses || []).reverse();
+        for (const response of responses) {
+            const mime = String(response?.mime || '').toLowerCase();
+            const url = webURL(response?.url);
+            if (url && (/mpegurl|video\/(?:mp4|webm|quicktime)/.test(mime)
+                || /\.(?:m3u8|mp4|m4v|mov|webm)(?:$|[?#])/i.test(url))) return result(url, mime);
+        }
+        const entries = performance.getEntriesByType('resource').slice().reverse();
+        for (const entry of entries) {
+            const url = webURL(entry.name);
+            if (url && /\.(?:m3u8|mp4|m4v|mov|webm|mpd)(?:$|[?#])/i.test(url)) return result(url);
+        }
+        return null;
+    })();
+    """#
+
+    @MainActor
+    static func inspect(webView: WKWebView?, frames: [WKFrameInfo] = []) async throws -> WebResourceSnapshot {
         guard let webView, webView.url != nil else {
             throw WebResourceInspectionError.pageUnavailable
         }
@@ -42,7 +155,16 @@ enum WebResourceInspectionService {
         guard let dictionary = value as? [String: Any] else {
             throw WebResourceInspectionError.invalidResult
         }
-        return WebResourceSnapshot(dictionary: dictionary)
+        var snapshot = WebResourceSnapshot(dictionary: dictionary)
+        for frame in frames.prefix(16) {
+            guard let value = try? await webView.evaluateJavaScript(
+                extractionScript,
+                in: frame,
+                contentWorld: .page
+            ), let dictionary = value as? [String: Any] else { continue }
+            snapshot = snapshot.mergingMedia(from: WebResourceSnapshot(dictionary: dictionary))
+        }
+        return snapshot
     }
 
     static let extractionScript = #"""
@@ -152,6 +274,12 @@ enum WebResourceInspectionService {
             try { decoded = decodeURIComponent(decoded); } catch (_) {}
             if (/\.m3u8(?:$|[?#])/i.test(decoded)) return 'hls';
             if (/\.mpd(?:$|[?#])/i.test(decoded)) return 'dash';
+            try {
+                var url = new URL(decoded, document.baseURI);
+                var type = String(url.searchParams.get('type') || url.searchParams.get('format') || '').toLowerCase();
+                if (type === 'm3u8' || type === 'hls' || type.indexOf('mpegurl') >= 0) return 'hls';
+                if (type === 'mpd' || type === 'dash') return 'dash';
+            } catch (_) {}
             return 'direct';
         }
 
@@ -218,12 +346,43 @@ enum WebResourceInspectionService {
                 return 'audio';
             }
             if (mime.indexOf('video/') === 0
+                || ['m3u8', 'hls', 'mpd', 'dash'].indexOf(mime) >= 0
                 || /\.(?:mp4|m4v|mov|webm|ogv|m3u8|mpd)$/.test(path)
                 || /\/videoplayback$/.test(path)
                 || /\/video\/tos\//.test(path)
                 || /\/aweme\/v1\/(?:web\/)?play/.test(path)
                 || url.searchParams.get('is_play_url') === '1') {
                 return 'video';
+            }
+            return '';
+        }
+
+        function embeddedMediaURL(value, encoding) {
+            var raw = String(value || '').trim();
+            if (!raw || raw.length > 8192) return '';
+            if (Number(encoding) === 2) {
+                try { raw = atob(raw); } catch (_) { return ''; }
+            }
+            for (var depth = 0; depth < 3; depth++) {
+                if (/^https?%3a/i.test(raw)) {
+                    try { raw = decodeURIComponent(raw); } catch (_) { return ''; }
+                }
+                if (mediaKindForURL(raw)) return absoluteWebURL(raw);
+                try {
+                    var parsed = new URL(raw, document.baseURI);
+                    for (var key of ['url', 'src', 'video', 'play', 'playurl', 'file', 'vid']) {
+                        var nested = parsed.searchParams.get(key);
+                        if (/^https?%3a/i.test(String(nested || ''))) {
+                            try { nested = decodeURIComponent(nested); } catch (_) { nested = ''; }
+                        }
+                        if (nested && mediaKindForURL(nested)) return absoluteWebURL(nested);
+                    }
+                } catch (_) {}
+                try {
+                    var decoded = decodeURIComponent(raw);
+                    if (decoded === raw) break;
+                    raw = decoded;
+                } catch (_) { break; }
             }
             return '';
         }
@@ -244,6 +403,16 @@ enum WebResourceInspectionService {
                     if (kind) addMedia(kind, value, filenameForURL(value), '');
                 });
             } catch (_) {}
+            try {
+                Array.from(window.__souloObservedMediaResponses || []).forEach(function(response) {
+                    if (!response || youtubeVideoID && isGoogleVideoURL(response.url)) return;
+                    var mime = String(response.mime || '').toLowerCase();
+                    var kind = mime.indexOf('audio/') === 0 ? 'audio' : 'video';
+                    var delivery = mime.indexOf('mpegurl') >= 0 ? 'hls'
+                        : mime === 'application/dash+xml' ? 'dash' : 'direct';
+                    addMedia(kind, response.url, filenameForURL(response.url), '', delivery);
+                });
+            } catch (_) {}
 
             Array.from(document.querySelectorAll('[data-src],[data-url],[data-play-url]')).slice(0, 1200)
                 .forEach(function(element) {
@@ -252,6 +421,11 @@ enum WebResourceInspectionService {
                         var kind = mediaKindForURL(value);
                         if (kind) addMedia(kind, value, titleFor(element, ''), element.getAttribute('poster'));
                     });
+                });
+            Array.from(document.querySelectorAll('iframe[src]')).slice(0, 40)
+                .forEach(function(frame) {
+                    var mediaURL = embeddedMediaURL(frame.getAttribute('src'), 0);
+                    if (mediaURL) addMedia('video', mediaURL, titleFor(frame, document.title), '');
                 });
         }
 
@@ -527,6 +701,19 @@ enum WebResourceInspectionService {
         function collectKnownPlayerData() {
             var candidates = [];
             var currentVideoID = currentYouTubeVideoID();
+            [window.player_aaaa, window.player_bbbb, window.player_config,
+                window.__PLAYER_CONFIG__, window.videoInfo].forEach(function(config) {
+                if (!config || typeof config !== 'object') return;
+                var mediaURL = embeddedMediaURL(
+                    config.url || config.playUrl || config.play_url || config.src,
+                    config.encrypt
+                );
+                if (mediaURL) {
+                    addMedia('video', mediaURL, cleanText(config.title || document.title),
+                        config.pic || config.poster || '');
+                }
+                candidates.push(config);
+            });
             try {
                 if (typeof window.__souloResolveCurrentYouTubePlayerResponse === 'function') {
                     candidates.push(window.__souloResolveCurrentYouTubePlayerResponse());
@@ -670,7 +857,17 @@ enum WebResourceMediaService {
     ) async -> AVURLAsset {
         if preferDownloadedCopy,
            let downloaded = DownloadManagerService.shared.finishedDownload(for: resource.url) {
-            return AVURLAsset(url: downloaded.localURL)
+            if downloaded.localURL.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
+                if let asset = try? OfflineHLSReference.playableAsset(for: downloaded.localURL) {
+                    return asset
+                }
+            } else if downloaded.localURL.pathExtension.lowercased() == "movpkg" {
+                if let asset = try? OfflineHLSReference.playablePackage(at: downloaded.localURL) {
+                    return asset
+                }
+            } else {
+                return AVURLAsset(url: downloaded.localURL)
+            }
         }
         var options = assetOptions(for: resource)
         guard let webView else {

@@ -1,3 +1,7 @@
-1.1.9
+1.2.0
 
-• Nyissa meg közvetlenül a webcímeket, és keressen a választott szolgáltatással. Jobb fordítás, videó és letöltés.
+• Gyorsabb oldalmegnyitás, stabilabb eszköztár és lapváltás.
+• Támogatott videók lejátszása letöltés közben, a háttérletöltések jobb helyreállítása.
+• A teljes képernyős vezérlők és az álló nézetbe visszatérés javítása.
+• Rejtett hirdetésekre kattintás és kéretlen vágólapírás blokkolása.
+• Folyamatjelzés a támogatott letöltésekhez, importáláshoz és exportáláshoz.

@@ -1,3 +1,7 @@
-1.1.9
+1.2.0
 
-• Apri direttamente gli indirizzi web e cerca con il motore scelto. Migliorati traduzione dei link, video e download.
+• Apertura delle pagine più rapida e risposta più stabile di barra degli strumenti e schede.
+• Riproduzione dei video compatibili durante il download e migliore ripresa dei download in background.
+• Corretti i controlli a schermo intero e il ritorno all’orientamento verticale.
+• Blocco dei clic sugli annunci nascosti e delle scritture non richieste negli appunti.
+• Avanzamento visibile per download, importazioni ed esportazioni compatibili.

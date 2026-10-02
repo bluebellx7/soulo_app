@@ -17,12 +17,37 @@ enum WebVideoOrientationRuntime {
       if (window.__souloVideoOrientation) return;
       const controls = new Map(), roots = new Set(), pending = new Set();
       let labels = ['Fullscreen', 'Speed', 'Download', 'Video tools'], frame = 0, scanTimer = 0, active = null, expandedGroup = null;
+      let bottomControls = {needed:false};
+      const observationOptions = {childList:true,subtree:true,attributes:true,attributeFilter:['class','style','hidden']};
       function send(action, token, details = {}) {
         try { window.webkit.messageHandlers.souloVideoOrientation.postMessage({action, token, ...details}); } catch (_) {}
       }
       function isFullscreen(video) {
         return video.webkitDisplayingFullscreen || video.webkitPresentationMode === 'fullscreen'
           || document.fullscreenElement === video;
+      }
+      function needsBottomClearance(video) {
+        if (window !== window.top || isFullscreen(video)) return false;
+        const rect = video.getBoundingClientRect();
+        if (rect.width < 100 || rect.height < 70 || rect.bottom <= 0 || rect.top >= innerHeight
+            || rect.right <= 0 || rect.left >= innerWidth) return false;
+        let anchored = false;
+        for (let node = video; node && node !== document.documentElement;
+             node = node.parentElement || node.getRootNode()?.host) {
+          const style = getComputedStyle(node);
+          if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+          if (node === document.body || !['fixed','absolute','sticky'].includes(style.position)) continue;
+          const r = node.getBoundingClientRect();
+          if (r.width >= innerWidth * 0.5 && r.height >= innerHeight * 0.5
+              && r.top <= innerHeight * 0.35 && r.right > innerWidth * 0.25 && r.left < innerWidth * 0.75
+              && Math.abs(r.bottom - innerHeight) <= 96) anchored = true;
+        }
+        return anchored;
+      }
+      function reportBottomControls(needed) {
+        if (window !== window.top || bottomControls.needed === needed) return;
+        bottomControls.needed = needed;
+        send('bottomControls', '', {needed});
       }
       function finish(action = 'end') {
         if (!active) return;
@@ -87,12 +112,13 @@ enum WebVideoOrientationRuntime {
         for (const root of roots) if (root.host && !root.host.isConnected) { roots.delete(root); removedRoot = true; }
         if (removedRoot) {
           observer.disconnect();
-          roots.forEach(root => observer.observe(root, {childList:true,subtree:true}));
+          roots.forEach(root => observer.observe(root, observationOptions));
         }
       }
       function layout() {
         frame = 0;
         prune();
+        reportBottomControls([...controls.keys()].some(needsBottomClearance));
         for (const [video, button] of controls) {
           const r = video.getBoundingClientRect(), style = getComputedStyle(video);
           const visible = !active?.began && r.width >= 100 && r.height >= 70 && r.right > 44 && r.bottom > 44
@@ -139,6 +165,7 @@ enum WebVideoOrientationRuntime {
         button.setAttribute('data-soulo-video-rotate', '');
         button.setAttribute('role', 'group');
         button.dataset.souloMediaID = globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36);
+        video.setAttribute('data-soulo-media-id', button.dataset.souloMediaID);
         button.style.cssText = 'all:initial!important;position:fixed!important;z-index:2147483646!important;display:none!important;width:36px!important;height:36px!important;align-items:center!important;justify-content:flex-end!important;border-radius:18px!important;background:rgba(24,25,29,.7)!important;backdrop-filter:blur(16px) saturate(1.2)!important;-webkit-backdrop-filter:blur(16px) saturate(1.2)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 2px 8px rgba(0,0,0,.16)!important;color:rgba(255,255,255,.94)!important;pointer-events:auto!important;touch-action:manipulation!important;isolation:isolate!important;overflow:hidden!important;user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;';
         const controlStyle = 'all:initial!important;box-sizing:border-box!important;width:36px!important;min-width:36px!important;height:36px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;border-radius:18px!important;color:rgba(255,255,255,.94)!important;cursor:pointer!important;user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;font:600 14px -apple-system,sans-serif!important;';
         const fullscreen = document.createElement('button'); fullscreen.type = 'button'; fullscreen.style.cssText = controlStyle;
@@ -158,7 +185,7 @@ enum WebVideoOrientationRuntime {
         download.addEventListener('click', event => {
           event.preventDefault(); event.stopImmediatePropagation(); if (!event.isTrusted) return;
           collapse();
-          try { window.webkit.messageHandlers.souloVideoOrientation.postMessage({action:'download',token:'download',url:video.currentSrc || video.src || ''}); } catch (_) {}
+          try { window.webkit.messageHandlers.souloVideoOrientation.postMessage({action:'download',token:button.dataset.souloMediaID,url:video.currentSrc || video.src || ''}); } catch (_) {}
         });
         const speed = document.createElement('button'); speed.type = 'button'; speed.style.cssText = controlStyle;
         speed.setAttribute('aria-label', labels[1]); speed.title = labels[1];
@@ -195,7 +222,7 @@ enum WebVideoOrientationRuntime {
       }
       function scan(root = document) {
         if ((root === document || root instanceof ShadowRoot) && !roots.has(root)) {
-          roots.add(root); observer.observe(root, {childList:true,subtree:true});
+          roots.add(root); observer.observe(root, observationOptions);
         }
         if (root instanceof Element && root.matches('video')) add(root);
         if (root instanceof Element && root.shadowRoot) scan(root.shadowRoot);
@@ -204,8 +231,10 @@ enum WebVideoOrientationRuntime {
         schedule();
       }
       const observer = new MutationObserver(records => {
-        if (records.every(r => [...r.addedNodes, ...r.removedNodes].every(n =>
-          (r.target instanceof Element && r.target.closest('[data-soulo-video-rotate]')) || (n instanceof Element && n.hasAttribute('data-soulo-video-rotate'))))) return;
+        if (records.every(r =>
+          (r.target instanceof Element && r.target.closest('[data-soulo-video-rotate]'))
+          || (r.type === 'childList' && [...r.addedNodes, ...r.removedNodes].every(n =>
+            n instanceof Element && n.hasAttribute('data-soulo-video-rotate'))))) return;
         for (const record of records) for (const node of record.addedNodes) {
           if (node instanceof Element && !node.hasAttribute('data-soulo-video-rotate')) pending.add(node);
         }
@@ -236,7 +265,8 @@ enum WebVideoOrientationRuntime {
         return false;
       }};
       document.addEventListener('fullscreenchange', fullscreenChanged);
-      window.addEventListener('pagehide', () => { collapse(); finish(); });
+      window.addEventListener('pagehide', () => { reportBottomControls(false); collapse(); finish(); });
+      window.addEventListener('pageshow', schedule);
       const collapseOutside = event => {
         if (expandedGroup && !event.composedPath().includes(expandedGroup)) collapse();
       };

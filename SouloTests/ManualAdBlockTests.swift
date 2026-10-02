@@ -339,19 +339,34 @@ final class ManualAdBlockTests: XCTestCase {
         XCTAssertNotEqual(body as? String, "none")
     }
 
-    private func addPairedImageBanner(_ web: WKWebView, runtime: String = "rt_123_456", valid: Bool = true) async throws {
+    private func addPairedImageBanner(_ web: WKWebView, runtime: String = "rt_123_456", valid: Bool = true, inline: Bool = false) async throws {
         try await js("""
         (() => {
           const runtime='\(runtime)', id='_s_sabc123_'+runtime;
           const root=document.createElement('div');root.id=id;
-          root.style.cssText='position:fixed;bottom:0;left:0;width:100%;height:120px;z-index:99999998';
+          root.style.cssText='\(inline ? "position:relative;margin:10px 0;width:100%;height:120px;z-index:99999998" : "position:fixed;bottom:0;left:0;width:100%;height:120px;z-index:99999998")';
           const close=document.createElement('div');close.setAttribute('onclick',`event.stopPropagation();window['_x_${runtime}']('${id}')`);
           const link=document.createElement('div');link.setAttribute('onclick',`window['_j_${runtime}']()`);
           const img=document.createElement('img');img.src='https://images.example.test/\(valid ? "navImgs/files/ad.gif" : "products/product.gif")';img.style.cssText='width:100%;height:120px';
           link.append(img);root.append(close,link);const wrapper=document.createElement('div');wrapper.append(root);document.body.append(wrapper);
-          const mask=document.createElement('div');mask.id='mask_'+id;mask.style.cssText='position:fixed;bottom:0;left:0;width:100%;height:25vh;z-index:99999997';document.body.append(mask);
+          if (!\(inline ? "true" : "false")) { const mask=document.createElement('div');mask.id='mask_'+id;mask.style.cssText='position:fixed;bottom:0;left:0;width:100%;height:25vh;z-index:99999997';document.body.append(mask); }
         })()
         """, web)
+    }
+
+    func testInlinePairedImageBannerHidesWholeClickTarget() async throws {
+        let web = try await fixture()
+        try await configure(web)
+        try await js(AdBlockService.adHidingScript(cosmetic: true) + "\nnull", web)
+        try await addPairedImageBanner(web, inline: true)
+        try await Task.sleep(for: .milliseconds(200))
+        let hidden = try await js("""
+          (() => { const root=document.querySelector('[id^="_s_"]');
+            return root.hasAttribute('data-soulo-image-banner')
+              && getComputedStyle(root).display === 'none'
+              && !root.contains(document.elementFromPoint(150, 50)); })()
+        """, web)
+        XCTAssertEqual(hidden as? Bool, true)
     }
 
     func testPairedImageBannerAutoFilteringAndPickerCancel() async throws {
@@ -429,6 +444,64 @@ final class ManualAdBlockTests: XCTestCase {
         XCTAssertEqual(allHidden as? Bool, true)
         let main = try await js("getComputedStyle(document.querySelector('#main')).display", web)
         XCTAssertNotEqual(main as? String, "none")
+    }
+
+    func testMosaicAlsoDisablesTransparentClickCover() async throws {
+        let web = try await fixture()
+        try await addRandomBottomMosaic(web, tag: "randomtile")
+        try await js("""
+          const sheet=document.createElement('style');sheet.textContent='.random-click-cover{position:fixed;bottom:0;left:0;width:100%;height:124px;z-index:2147483647;background:transparent}';document.head.append(sheet);
+          const cover=document.createElement('div');cover.className='random-click-cover';document.body.append(cover);null
+        """, web)
+        try await js(AdBlockService.adHidingScript(cosmetic: true) + "\nnull", web)
+        for _ in 0..<100 {
+            if try await js("getComputedStyle(document.querySelector('.random-click-cover')).pointerEvents", web) as? String == "none" { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let disabled = try await js("getComputedStyle(document.querySelector('.random-click-cover')).pointerEvents === 'none'", web)
+        XCTAssertEqual(disabled as? Bool, true)
+    }
+
+    func testImageTilesUseSameMosaicDetection() async throws {
+        let web = try await fixture()
+        try await addRandomBottomMosaic(web, tag: "img")
+        try await js(AdBlockService.adHidingScript(cosmetic: true) + "\nnull", web)
+        for _ in 0..<100 {
+            if try await js("getComputedStyle(document.querySelector('img')).pointerEvents", web) as? String == "none" { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let hidden = try await js("[...document.querySelectorAll('img')].every(e => getComputedStyle(e).pointerEvents === 'none')", web)
+        XCTAssertEqual(hidden as? Bool, true)
+    }
+
+    func testMosaicDisablesCoverWithDefaultBodyOffset() async throws {
+        let web = try await fixture()
+        try await js("document.body.style.margin='8px'; null", web)
+        try await addRandomBottomMosaic(web, tag: "randomtile")
+        try await js("""
+          const cover=document.createElement('div');cover.id='offset-cover';
+          cover.style.cssText='position:fixed;bottom:0;width:'+innerWidth+'px;height:124px;z-index:2147483647;background:transparent';
+          cover.addEventListener('touchstart',()=>{window.adJumped=true});document.body.append(cover);null
+        """, web)
+        try await js(AdBlockService.adHidingScript(cosmetic: true) + "\nnull", web)
+        let disabled = try await js("getComputedStyle(document.querySelector('#offset-cover')).pointerEvents", web)
+        let hidden = try await js("getComputedStyle(document.querySelector('#offset-cover')).clipPath !== 'none'", web)
+        XCTAssertEqual(disabled as? String, "none")
+        XCTAssertEqual(hidden as? Bool, true)
+    }
+
+    func testInlineImageBannerAlsoHidesItsSeparateFixedMask() async throws {
+        let web = try await fixture()
+        try await addPairedImageBanner(web, inline: true)
+        try await js("""
+          const root=document.querySelector('[id^="_s_"]'),mask=document.createElement('div');
+          mask.id='mask_'+root.id;
+          mask.style.cssText='position:fixed;top:50vh;left:0;width:100%;height:50vh;z-index:99999997;background:transparent';
+          document.body.append(mask);null
+        """, web)
+        try await js(AdBlockService.adHidingScript(cosmetic: true) + "\nnull", web)
+        let hidden = try await js("getComputedStyle(document.querySelector('[id^=mask_]')).display", web)
+        XCTAssertEqual(hidden as? String, "none")
     }
 
     func testAutomaticMosaicDetectionKeepsAccessibleToolbar() async throws {

@@ -1,3 +1,7 @@
-1.1.9
+1.2.0
 
-• Abra endereços web diretamente e pesquise com o serviço escolhido. Tradução de links, vídeo e downloads aprimorados.
+• Abertura de páginas mais rápida e respostas mais estáveis da barra de ferramentas e das abas.
+• Reprodução de vídeos compatíveis durante o download e melhor recuperação de downloads em segundo plano.
+• Correção dos controles em tela cheia e do retorno à orientação vertical.
+• Bloqueio de cliques em anúncios ocultos e de gravações não solicitadas na área de transferência.
+• Exibição do progresso de downloads, importações e exportações compatíveis.

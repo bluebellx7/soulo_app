@@ -1,3 +1,7 @@
-1.1.9
+1.2.0
 
-• Buka alamat web langsung dan cari dengan layanan pilihan. Terjemahan tautan, video, dan unduhan ditingkatkan.
+• Halaman terbuka lebih cepat; bilah alat dan tab merespons lebih stabil.
+• Putar video yang didukung saat diunduh dan pulihkan unduhan latar belakang dengan lebih baik.
+• Perbaikan kontrol layar penuh dan kembali ke orientasi potret.
+• Blokir klik pada iklan tersembunyi dan penulisan papan klip tanpa permintaan.
+• Tampilkan progres unduhan, impor, dan ekspor yang didukung.

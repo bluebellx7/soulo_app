@@ -7,6 +7,61 @@ import UIKit
 @testable import Soulo
 
 final class WebViewScriptsTests: XCTestCase {
+    private final class MediaFrameCapture: NSObject, WKScriptMessageHandler {
+        var frames: [WKFrameInfo] = []
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            if !message.frameInfo.isMainFrame { frames.append(message.frameInfo) }
+        }
+    }
+
+    private final class VideoAwakeCapture: NSObject, WKScriptMessageHandler {
+        var states: [Bool] = []
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            if let body = message.body as? [String: Any], let active = body["active"] as? Bool {
+                states.append(active)
+            }
+        }
+    }
+
+    @MainActor
+    func testVideoScreenAwakeTracksVisiblePlaybackAndPause() async throws {
+        let capture = VideoAwakeCapture()
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController.add(capture, contentWorld: .defaultClient, name: "souloVideoAwake")
+        configuration.userContentController.addUserScript(WKUserScript(
+            source: WebViewScripts.videoScreenAwake,
+            injectionTime: .atDocumentStart, forMainFrameOnly: false, in: .defaultClient
+        ))
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 600), configuration: configuration)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let host = UIViewController()
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        host.view.addSubview(web)
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        web.loadHTMLString("<video style='display:block;width:320px;height:180px'></video>", baseURL: URL(string: "https://example.com"))
+        for _ in 0..<100 {
+            if (try? await web.evaluateJavaScript("!!document.querySelector('video')")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        _ = try await web.evaluateJavaScript("""
+            const video=document.querySelector('video');
+            Object.defineProperty(video,'paused',{value:false,configurable:true});
+            Object.defineProperty(video,'readyState',{value:4,configurable:true});
+            video.dispatchEvent(new Event('playing')); true
+        """, in: nil, contentWorld: .defaultClient)
+        for _ in 0..<50 where capture.states.last != true { try await Task.sleep(for: .milliseconds(20)) }
+        XCTAssertEqual(capture.states.last, true)
+        _ = try await web.evaluateJavaScript("""
+            Object.defineProperty(document.querySelector('video'),'paused',{value:true,configurable:true});
+            document.querySelector('video').dispatchEvent(new Event('pause')); true
+        """, in: nil, contentWorld: .defaultClient)
+        for _ in 0..<50 where capture.states.last != false { try await Task.sleep(for: .milliseconds(20)) }
+        XCTAssertEqual(capture.states.last, false)
+    }
+
     private final class WebLinkCapture: NSObject, WKScriptMessageHandler {
         var destinations: [String] = []
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -145,6 +200,262 @@ final class WebViewScriptsTests: XCTestCase {
     }
 
     @MainActor
+    func testResourceInspectorFindsMediaInsidePlayerFrame() async throws {
+        let capture = MediaFrameCapture()
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController.add(
+            capture, contentWorld: .defaultClient, name: "souloMediaFrame"
+        )
+        configuration.userContentController.addUserScript(WKUserScript(
+            source: WebViewScripts.mediaFrameRegistration,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false,
+            in: .defaultClient
+        ))
+        configuration.userContentController.addUserScript(WKUserScript(
+            source: WebViewScripts.mediaResourceTracking,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false
+        ))
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.loadHTMLString(
+            """
+            <html><head><title>Outer page</title></head><body>
+            <iframe srcdoc="&lt;video src='https://cdn.example.com/inside-frame.m3u8'&gt;&lt;/video&gt;"></iframe>
+            </body></html>
+            """,
+            baseURL: URL(string: "https://example.com/watch")
+        )
+        for _ in 0..<100 {
+            if !capture.frames.isEmpty { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertFalse(capture.frames.isEmpty)
+        let snapshot = try await WebResourceInspectionService.inspect(
+            webView: webView, frames: capture.frames
+        )
+        XCTAssertTrue(snapshot.videos.contains {
+            $0.url.absoluteString == "https://cdn.example.com/inside-frame.m3u8"
+                && $0.delivery == .hls
+        })
+    }
+
+    @MainActor
+    func testPlayerDownloadResolvesBlobBackedFrameConfiguration() async throws {
+        let capture = MediaFrameCapture()
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController.add(
+            capture, contentWorld: .defaultClient, name: "souloMediaFrame"
+        )
+        configuration.userContentController.addUserScript(WKUserScript(
+            source: WebViewScripts.mediaFrameRegistration,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false,
+            in: .defaultClient
+        ))
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.loadHTMLString(
+            """
+            <html><body><iframe srcdoc="&lt;video data-soulo-media-id='player-1' src='blob:https://example.com/player/123'&gt;&lt;/video&gt;&lt;script&gt;window.player_aaaa={encrypt:2,url:btoa(encodeURIComponent('https://cdn.example.com/movie/index.m3u8'))};&lt;/script&gt;"></iframe></body></html>
+            """,
+            baseURL: URL(string: "https://example.com/watch")
+        )
+        for _ in 0..<100 {
+            if !capture.frames.isEmpty { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let frame = try XCTUnwrap(capture.frames.first)
+        let resource = await WebResourceInspectionService.currentVideoResource(webView: webView, frame: frame, token: "player-1")
+        XCTAssertEqual(resource?.url.absoluteString, "https://cdn.example.com/movie/index.m3u8")
+        XCTAssertEqual(resource?.delivery, .hls)
+    }
+
+    @MainActor
+    func testPlayerDownloadTargetsTappedVideoWhenFrameHasSeveral() async throws {
+        let capture = MediaFrameCapture()
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController.add(
+            capture, contentWorld: .defaultClient, name: "souloMediaFrame"
+        )
+        configuration.userContentController.addUserScript(WKUserScript(
+            source: WebViewScripts.mediaFrameRegistration,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false,
+            in: .defaultClient
+        ))
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.loadHTMLString(
+            """
+            <html><body><iframe srcdoc="&lt;video data-soulo-media-id='first' src='https://cdn.example.com/first.mp4'&gt;&lt;/video&gt;&lt;video data-soulo-media-id='second' src='https://cdn.example.com/second.mp4'&gt;&lt;/video&gt;"></iframe></body></html>
+            """,
+            baseURL: URL(string: "https://example.com/watch")
+        )
+        for _ in 0..<100 {
+            if !capture.frames.isEmpty { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let frame = try XCTUnwrap(capture.frames.first)
+        let selected = await WebResourceInspectionService.currentVideoResource(
+            webView: webView, frame: frame, token: "second"
+        )
+        XCTAssertEqual(selected?.url.absoluteString, "https://cdn.example.com/second.mp4")
+        let missing = await WebResourceInspectionService.currentVideoResource(
+            webView: webView, frame: frame, token: "unknown"
+        )
+        XCTAssertNil(missing)
+    }
+
+    @MainActor
+    func testPlayerDownloadRecognizesHLSFromResponseTypeWithoutFileExtension() async throws {
+        let capture = MediaFrameCapture()
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController.add(
+            capture, contentWorld: .defaultClient, name: "souloMediaFrame"
+        )
+        configuration.userContentController.addUserScript(WKUserScript(
+            source: WebViewScripts.mediaFrameRegistration,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false,
+            in: .defaultClient
+        ))
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.loadHTMLString(
+            """
+            <html><body><iframe srcdoc="&lt;video data-soulo-media-id='player' src='blob:https://example.com/watch'&gt;&lt;/video&gt;&lt;script&gt;window.__souloObservedMediaResponses=[{url:'https://cdn.example.com/media?id=7',mime:'application/vnd.apple.mpegurl'}];&lt;/script&gt;"></iframe></body></html>
+            """,
+            baseURL: URL(string: "https://example.com/watch")
+        )
+        for _ in 0..<100 {
+            if !capture.frames.isEmpty { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let frame = try XCTUnwrap(capture.frames.first)
+        let resource = await WebResourceInspectionService.currentVideoResource(
+            webView: webView, frame: frame, token: "player"
+        )
+        XCTAssertEqual(resource?.url.absoluteString, "https://cdn.example.com/media?id=7")
+        XCTAssertEqual(resource?.delivery, .hls)
+        XCTAssertEqual(
+            WebResourceInspectionService.delivery(
+                for: try XCTUnwrap(URL(string: "https://cdn.example.com/media?format=m3u8"))
+            ), .hls
+        )
+    }
+
+    @MainActor
+    func testPlayerDownloadUsesResponseTypeForExtensionlessVideoSource() async throws {
+        let capture = MediaFrameCapture()
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController.add(
+            capture, contentWorld: .defaultClient, name: "souloMediaFrame"
+        )
+        configuration.userContentController.addUserScript(WKUserScript(
+            source: WebViewScripts.mediaFrameRegistration,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false,
+            in: .defaultClient
+        ))
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.loadHTMLString(
+            """
+            <html><body><iframe srcdoc="&lt;video data-soulo-media-id='player' src='https://cdn.example.com/media?id=7'&gt;&lt;/video&gt;&lt;script&gt;window.__souloObservedMediaResponses=[{url:'https://cdn.example.com/media?id=7',mime:'application/vnd.apple.mpegurl'}];&lt;/script&gt;"></iframe></body></html>
+            """,
+            baseURL: URL(string: "https://example.com/watch")
+        )
+        for _ in 0..<100 {
+            if !capture.frames.isEmpty { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let frame = try XCTUnwrap(capture.frames.first)
+        let resource = await WebResourceInspectionService.currentVideoResource(
+            webView: webView, frame: frame, token: "player"
+        )
+        XCTAssertEqual(resource?.url.absoluteString, "https://cdn.example.com/media?id=7")
+        XCTAssertEqual(resource?.delivery, .hls)
+    }
+
+    @MainActor
+    func testResourceInspectorDecodesEmbeddedPlayerConfiguration() async throws {
+        let webView = WKWebView(frame: .zero)
+        webView.loadHTMLString(
+            """
+            <html><head><title>Player configuration</title></head><body><script>
+            window.player_aaaa = {
+                encrypt: 2,
+                url: btoa(encodeURIComponent('https://cdn.example.com/movie/master.m3u8'))
+            };
+            </script></body></html>
+            """,
+            baseURL: URL(string: "https://example.com/watch")
+        )
+        for _ in 0..<40 {
+            if !webView.isLoading { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let snapshot = try await WebResourceInspectionService.inspect(webView: webView)
+        XCTAssertEqual(snapshot.videos.first?.url.absoluteString,
+                       "https://cdn.example.com/movie/master.m3u8")
+        XCTAssertEqual(snapshot.videos.first?.delivery, .hls)
+    }
+
+    @MainActor
+    func testResourceInspectorUsesResponseMIMEForExtensionlessStream() async throws {
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController.addUserScript(WKUserScript(
+            source: "window.fetch = () => Promise.resolve(new Response('#EXTM3U', { headers: { 'Content-Type': 'application/vnd.apple.mpegurl' } }));",
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        ))
+        configuration.userContentController.addUserScript(WKUserScript(
+            source: WebViewScripts.mediaResourceTracking,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        ))
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.loadHTMLString("<html><body>Stream</body></html>",
+                               baseURL: URL(string: "https://example.com/watch"))
+        for _ in 0..<40 {
+            if (try? await webView.evaluateJavaScript(
+                "Array.isArray(window.__souloObservedMediaResponses)"
+            )) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        _ = try await webView.evaluateJavaScript("fetch('https://cdn.example.com/play?id=42'); true")
+        for _ in 0..<40 {
+            if (try? await webView.evaluateJavaScript(
+                "window.__souloObservedMediaResponses.length > 0"
+            )) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let snapshot = try await WebResourceInspectionService.inspect(webView: webView)
+        XCTAssertTrue(snapshot.videos.contains {
+            $0.url.absoluteString == "https://cdn.example.com/play?id=42"
+                && $0.delivery == .hls
+        })
+    }
+
+    @MainActor
+    func testEmbeddedVideoDownloadUsesItsFrameAsReferrer() async throws {
+        let page = WebResourceSnapshot(dictionary: [
+            "pageURL": "https://example.com/watch",
+            "videos": []
+        ])
+        let frame = WebResourceSnapshot(dictionary: [
+            "pageURL": "https://player.example.net/embed/42",
+            "videos": [["url": "https://cdn.example.net/video.mp4", "delivery": "direct"]]
+        ])
+        let media = try XCTUnwrap(page.mergingMedia(from: frame).videos.first)
+        XCTAssertEqual(media.sourcePageURL?.absoluteString,
+                       "https://player.example.net/embed/42")
+
+        let request = await WebResourceDownloadService.shared.resourceRequest(
+            media.url, pageURL: media.sourcePageURL, webView: nil
+        )
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Referer"),
+                       "https://player.example.net/")
+    }
+
+    @MainActor
     func testLiveHLSInspectionAndVideoFrames() async throws {
         guard ProcessInfo.processInfo.environment["SOULO_LIVE_MEDIA_QA"] == "1" else {
             throw XCTSkip("Run with SOULO_LIVE_MEDIA_QA=1 for the Apple public HLS stream")
@@ -190,6 +501,196 @@ final class WebViewScriptsTests: XCTestCase {
     }
 
     @MainActor
+    func testLocalHLSDownloadProducesPlayableOfflineVideo() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let port = environment["SOULO_QA_LOCAL_HLS_PORT"] else {
+            throw XCTSkip("Set SOULO_QA_LOCAL_HLS_PORT to run the device HLS test")
+        }
+        let host = environment["SOULO_QA_LOCAL_HLS_HOST"] ?? "127.0.0.1"
+        let path = environment["SOULO_QA_LOCAL_HLS_PATH"] ?? "master.m3u8"
+        let url = try XCTUnwrap(URL(string: "http://\(host):\(port)/\(path)"))
+        let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 600))
+        webView.loadHTMLString("<html><body><video src='\(url.absoluteString)'></video></body></html>",
+                               baseURL: url.deletingLastPathComponent())
+        for _ in 0..<100 {
+            if webView.url != nil { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let resource = WebMediaResource(kind: .video, url: url, title: "HLS QA",
+                                        posterURL: nil, delivery: .hls)
+        let file = try await WebResourceDownloadService.shared.download(
+            resource, preferredFilename: "HLS QA.mp4", pageURL: webView.url, webView: webView
+        )
+        defer {
+            if file.pathExtension == OfflineHLSReference.fileExtension {
+                try? OfflineHLSReference.removePackage(for: file)
+            }
+            try? FileManager.default.removeItem(at: file)
+            if let item = DownloadManagerService.shared.downloads.first(where: { $0.localURL == file }) {
+                DownloadManagerService.shared.delete(item)
+            }
+        }
+        let asset = file.pathExtension == OfflineHLSReference.fileExtension
+            ? try OfflineHLSReference.playableAsset(for: file) : AVURLAsset(url: file)
+        let playable = try await asset.load(.isPlayable)
+        XCTAssertTrue(playable)
+        let item = AVPlayerItem(asset: asset)
+        let output = AVPlayerItemVideoOutput(pixelBufferAttributes: nil)
+        item.add(output)
+        let player = AVPlayer(playerItem: item)
+        player.play()
+        defer { player.pause() }
+        var hasFrame = false
+        for _ in 0..<100 {
+            if item.status == .failed { break }
+            let time = output.itemTime(forHostTime: CACurrentMediaTime())
+            if output.copyPixelBuffer(forItemTime: time, itemTimeForDisplay: nil) != nil {
+                hasFrame = true
+                break
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertTrue(hasFrame, "The downloaded HLS must render video while offline")
+        if file.pathExtension == OfflineHLSReference.fileExtension {
+            let exported = try await PortableHLSBundle.export(
+                referenceURL: file, into: file.deletingLastPathComponent()
+            )
+            defer { try? FileManager.default.removeItem(at: exported) }
+            let playlist = try String(contentsOf: exported.appendingPathComponent("index.m3u8"), encoding: .utf8)
+            XCTAssertEqual(playlist.components(separatedBy: "#EXTINF:").count - 1, 4)
+            XCTAssertTrue(playlist.contains("#EXT-X-ENDLIST"))
+        }
+    }
+
+    @MainActor
+    func testTransportStreamOfflinePackageExportsPortableHLS() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SouloTSRemuxTest-\(UUID().uuidString)")
+        let rendition = root.appendingPathComponent("sample.movpkg/private/rendition")
+        try FileManager.default.createDirectory(at: rendition, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        for index in 0..<4 {
+            let source = try XCTUnwrap(Bundle(for: Self.self).url(
+                forResource: "segment\(index)", withExtension: "ts",
+                subdirectory: "ReadingFixtures/HLSFragments"
+            ))
+            let target = rendition.appendingPathComponent("(\(index * 2))_(0)_(2.00001).frag")
+            try FileManager.default.copyItem(at: source, to: target)
+        }
+        let packagePlaylist = """
+        #EXTM3U
+        #EXT-X-VERSION:3
+        #EXT-X-TARGETDURATION:2
+        #EXT-X-MEDIA-SEQUENCE:0
+        #EXTINF:2.000000,
+        segment0.ts
+        #EXTINF:2.000000,
+        segment1.ts
+        #EXTINF:2.000000,
+        segment2.ts
+        #EXTINF:2.000000,
+        segment3.ts
+        #EXT-X-ENDLIST
+        """
+        try packagePlaylist.write(to: rendition.appendingPathComponent("media.m3u8"),
+                                  atomically: true, encoding: .utf8)
+        let operation = FileOperationProgress()
+        let folder = try await PortableHLSBundle.export(
+            packageURL: root.appendingPathComponent("sample.movpkg"),
+            name: "movie", into: root, operation: operation
+        )
+        XCTAssertEqual(operation.progress.fractionCompleted, 1)
+        XCTAssertEqual(operation.progress.totalUnitCount, 5)
+        let canceled = FileOperationProgress(); canceled.progress.cancel()
+        do {
+            _ = try await PortableHLSBundle.export(
+                packageURL: root.appendingPathComponent("sample.movpkg"),
+                name: "canceled", into: root, operation: canceled
+            )
+            XCTFail("A canceled export must not write a partial output")
+        } catch ReadingToolError.canceled { }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("canceled.hls").path))
+        XCTAssertEqual(folder.pathExtension, "hls")
+        let playlist = try String(contentsOf: folder.appendingPathComponent("index.m3u8"), encoding: .utf8)
+        XCTAssertEqual(playlist.components(separatedBy: "#EXTINF:").count - 1, 4)
+        XCTAssertTrue(playlist.contains("#EXT-X-ENDLIST"))
+        XCTAssertTrue(playlist.contains("000003.ts"))
+        for index in 0..<4 {
+            let source = rendition.appendingPathComponent("(\(index * 2))_(0)_(2.00001).frag")
+            let exported = folder.appendingPathComponent(String(format: "%06d.ts", index))
+            XCTAssertEqual(try Data(contentsOf: exported), try Data(contentsOf: source))
+        }
+
+        try Data(repeating: 0, count: 564).write(
+            to: rendition.appendingPathComponent("(8)_(0)_(2.00001).frag")
+        )
+        do {
+            _ = try await PortableHLSBundle.export(
+                packageURL: root.appendingPathComponent("sample.movpkg"),
+                name: "invalid", into: root
+            )
+            XCTFail("Invalid package fragments must never become a portable HLS bundle")
+        } catch StreamingMediaDownloadError.unsupportedManifest { }
+    }
+
+    @MainActor
+    func testAES128OfflinePackageExportsPortableHLS() async throws {
+        let manager = FileManager.default
+        let root = manager.temporaryDirectory.appendingPathComponent("SouloEncryptedHLSTest-\(UUID().uuidString)")
+        let rendition = root.appendingPathComponent("sample.movpkg/private/0-128000-sample")
+        try manager.createDirectory(at: rendition, withIntermediateDirectories: true)
+        defer { try? manager.removeItem(at: root) }
+        for index in 0..<4 {
+            let source = try XCTUnwrap(Bundle(for: Self.self).url(
+                forResource: "segment\(index)", withExtension: "frag",
+                subdirectory: "ReadingFixtures/HLSEncryptedFragments"
+            ))
+            try manager.copyItem(at: source, to: rendition.appendingPathComponent("(\(index * 2))_(0)_(2.00001).frag"))
+        }
+        let packagePlaylist = """
+        #EXTM3U
+        #EXT-X-VERSION:3
+        #EXT-X-TARGETDURATION:2
+        #EXT-X-MEDIA-SEQUENCE:0
+        #EXT-X-KEY:METHOD=AES-128,URI="key.bin",IV=0x00000000000000000000000000000000
+        #EXTINF:2.000000,
+        segment0.ts
+        #EXTINF:2.000000,
+        segment1.ts
+        #EXTINF:2.000000,
+        segment2.ts
+        #EXTINF:2.000000,
+        segment3.ts
+        #EXT-X-ENDLIST
+        """
+        try packagePlaylist.write(to: rendition.appendingPathComponent("media.m3u8"),
+                                  atomically: true, encoding: .utf8)
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [PortableHLSFixtureProtocol.self]
+        let session = URLSession(configuration: config)
+        defer { session.invalidateAndCancel() }
+        let folder = try await PortableHLSBundle.export(
+            packageURL: root.appendingPathComponent("sample.movpkg"), name: "Encrypted film", into: root,
+            sourceURL: try XCTUnwrap(URL(string: "https://hls-fixture.test/aes/master.m3u8")),
+            session: session
+        )
+        let key = try XCTUnwrap(Bundle(for: Self.self).url(
+            forResource: "key", withExtension: "bin",
+            subdirectory: "ReadingFixtures/HLSEncryptedFragments"
+        ))
+        XCTAssertEqual(try Data(contentsOf: folder.appendingPathComponent("key.bin")), try Data(contentsOf: key))
+        let playlist = try String(contentsOf: folder.appendingPathComponent("index.m3u8"), encoding: .utf8)
+        XCTAssertTrue(playlist.contains("#EXT-X-KEY:METHOD=AES-128,URI=\"key.bin\",IV=0x00000000000000000000000000000000"))
+        XCTAssertEqual(playlist.components(separatedBy: "#EXTINF:").count - 1, 4)
+        XCTAssertTrue(playlist.contains("#EXT-X-ENDLIST"))
+        for index in 0..<4 {
+            let source = rendition.appendingPathComponent("(\(index * 2))_(0)_(2.00001).frag")
+            let exported = folder.appendingPathComponent(String(format: "%06d.ts", index))
+            XCTAssertEqual(try Data(contentsOf: exported), try Data(contentsOf: source))
+        }
+    }
+
+    @MainActor
     func testLiveVideoSiteInspectionMatrix() async throws {
         guard ProcessInfo.processInfo.environment["SOULO_LIVE_MEDIA_QA"] == "1" else {
             throw XCTSkip("Run with SOULO_LIVE_MEDIA_QA=1 for live video sites")
@@ -201,7 +702,8 @@ final class WebViewScriptsTests: XCTestCase {
             ("Youku", "https://v.youku.com/v_show/id_XNjU1ODU5NTQ5Ng%3D%3D.html"),
             ("MangoTV", "https://www.mgtv.com/b/292435/3285788.html"),
             ("Tencent", "https://v.qq.com/x/page/r0033a9ff42.html"),
-            ("iQIYI", "https://www.iqiyi.com/v_19rrbfgak0.html")
+            ("iQIYI", "https://www.iqiyi.com/v_19rrbfgak0.html"),
+            ("PBMovie", "https://www.pbpbw.com/player/235754-1-1.html")
         ]
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
         let previous = scene.windows.first(where: \.isKeyWindow)
@@ -223,6 +725,18 @@ final class WebViewScriptsTests: XCTestCase {
                 injectionTime: .atDocumentStart,
                 forMainFrameOnly: true
             ))
+            if name == "PBMovie" {
+                config.userContentController.addUserScript(WKUserScript(
+                    source: ManualAdBlockRuntime.configuredScript(
+                        enabled: true, allowlistedHosts: [], rules: []
+                    ), injectionTime: .atDocumentStart, forMainFrameOnly: true,
+                    in: ManualAdBlockRuntime.world
+                ))
+                config.userContentController.addUserScript(WKUserScript(
+                    source: AdBlockService.adHidingScript(cosmetic: true),
+                    injectionTime: .atDocumentEnd, forMainFrameOnly: true
+                ))
+            }
             config.userContentController.addScriptMessageHandler(
                 StreamingMediaDownloadService.shared,
                 contentWorld: .page,
@@ -238,6 +752,13 @@ final class WebViewScriptsTests: XCTestCase {
             try await Task.sleep(for: .seconds(3))
             let page = web.url?.absoluteString ?? "nil"
             let domVideoCount = (try? await web.evaluateJavaScript("document.querySelectorAll('video').length")) as? Int ?? -1
+            if name == "PBMovie" {
+                let adState = (try? await web.evaluateJavaScript(#"""
+                    JSON.stringify(Array.from(document.querySelectorAll('[data-soulo-image-banner], [data-soulo-tiled-banner]'))
+                        .map(el => ({tag:el.tagName, hidden:getComputedStyle(el).pointerEvents === 'none'})))
+                """#)) as? String ?? "unavailable"
+                print("SITE_QA_AD \(name) \(adState)")
+            }
             do {
                 let snapshot = try await WebResourceInspectionService.inspect(webView: web)
                 print("SITE_QA \(name) page=\(page) domVideos=\(domVideoCount) resources=\(snapshot.videos.count) delivery=\(snapshot.videos.map(\.delivery.rawValue))")
@@ -2387,4 +2908,55 @@ final class WebViewScriptsTests: XCTestCase {
         }
     }
 
+}
+
+private final class PortableHLSFixtureProtocol: URLProtocol, @unchecked Sendable {
+    override class func canInit(with request: URLRequest) -> Bool {
+        request.url?.host == "hls-fixture.test"
+    }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        guard let url = request.url else { return }
+        let data: Data?
+        switch url.path {
+        case "/aes/master.m3u8":
+            data = Data("""
+            #EXTM3U
+            #EXT-X-VERSION:3
+            #EXT-X-STREAM-INF:BANDWIDTH=128000,CODECS="avc1.42E01E,mp4a.40.2",RESOLUTION=320x180
+            playlist.m3u8
+            """.utf8)
+        case "/aes/playlist.m3u8":
+            data = Data("""
+            #EXTM3U
+            #EXT-X-VERSION:3
+            #EXT-X-TARGETDURATION:2
+            #EXT-X-MEDIA-SEQUENCE:0
+            #EXT-X-KEY:METHOD=AES-128,URI="enc.key",IV=0x00000000000000000000000000000000
+            #EXTINF:2.0,
+            segment0.ts
+            #EXT-X-ENDLIST
+            """.utf8)
+        case "/aes/enc.key":
+            data = Bundle(for: WebViewScriptsTests.self).url(
+                forResource: "key", withExtension: "bin",
+                subdirectory: "ReadingFixtures/HLSEncryptedFragments"
+            ).flatMap { try? Data(contentsOf: $0) }
+        default:
+            data = nil
+        }
+        guard let data,
+              let response = HTTPURLResponse(url: url, statusCode: 200,
+                                             httpVersion: "HTTP/1.1", headerFields: nil) else {
+            client?.urlProtocol(self, didFailWithError: URLError(.fileDoesNotExist))
+            return
+        }
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: data)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+
+    override func stopLoading() {}
 }

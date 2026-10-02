@@ -32,12 +32,31 @@ final class BrowsingRefinementTests: XCTestCase {
         }
     }
     func testFileTypesAndOriginalPreviewLifetime() throws {
-        for (ext,kind) in [("mp4",FilePresentation.Kind.video),("mp3",.audio),("pdf",.pdf),("epub",.book),("7z",.archive),("txt",.text),("bin",.other)] {
+        for (ext,kind) in [("mp4",FilePresentation.Kind.video),("mp3",.audio),("pdf",.pdf),("epub",.book),("7z",.archive),("txt",.text),("bin",.other),("soulohls",.video)] {
             let url = root.appendingPathComponent("sample." + ext); try Data().write(to: url)
             XCTAssertEqual(FilePresentation.inspect(url).kind, kind)
             let preview = try PreparedFilePreview.prepare(url); XCTAssertNil(preview.temporaryDirectory)
             preview.removeTemporaryFile(); XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
         }
+    }
+    func testOfflineHLSReferenceKeepsPackageAtSystemLocationAndDeletesBothFiles() throws {
+        let packageFolder = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
+            .appendingPathComponent("Library/HLSRefTest-" + UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: packageFolder) }
+        let package = packageFolder.appendingPathComponent("movie.movpkg")
+        let reference = root.appendingPathComponent("movie.soulohls")
+        try FileManager.default.createDirectory(at: package, withIntermediateDirectories: true)
+        let systemCallbackURL = URL(fileURLWithPath: "/.nofollow/private" + package.path)
+        XCTAssertEqual(try OfflineHLSReference.canonicalPackageURL(for: systemCallbackURL).path, package.path)
+        let source = try XCTUnwrap(URL(string: "https://example.test/master.m3u8"))
+        try OfflineHLSReference.write(packageURL: systemCallbackURL, sourceURL: source, to: reference)
+        XCTAssertEqual(try OfflineHLSReference.packageURL(for: reference).path, package.path)
+        XCTAssertEqual(OfflineHLSReference.sourceURL(for: reference), source)
+        XCTAssertEqual(FilePresentation.inspect(package).kind, .video)
+        XCTAssertEqual(FilePresentation.inspect(reference).kind, .video)
+        try LibraryFileActions.delete([reference], in: root)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: reference.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: package.path))
     }
     func testDeletionPreflightRejectsOutsideFilesDirectoriesAndSymlinks() throws {
         let file = root.appendingPathComponent("keep.txt"); try Data("keep".utf8).write(to: file)

@@ -8,16 +8,91 @@ import WebKit
     private struct ResultsHost: View {
         @Namespace private var namespace
         @StateObject private var speech = SpeechRecognitionService()
+        @EnvironmentObject private var search: SearchViewModel
         var useHome = false
+        var onlyWhenSearching = false
         var body: some View {
             if useHome {
                 HomeView()
             } else {
                 NavigationStack {
-                    SearchResultsView(searchBarNamespace: namespace, speechService: speech)
+                    if !onlyWhenSearching || search.isSearching {
+                        SearchResultsView(searchBarNamespace: namespace, speechService: speech)
+                    } else {
+                        Color.clear
+                    }
                 }
             }
         }
+    }
+
+    private final class CountingWebView: WKWebView {
+        var loads = 0
+        override func load(_ request: URLRequest) -> WKNavigation? {
+            loads += 1
+            return super.load(request)
+        }
+    }
+
+    func testHomeSearchReusesWebViewAndPlatformStatisticsDoNotRestartNavigation() async throws {
+        let defaults = UserDefaults.standard
+        let keys = ["last_selected_region", "last_selected_group_id", "is_incognito"]
+        let saved = keys.map { defaults.object(forKey: $0) }
+        defer { for (key, value) in zip(keys, saved) { defaults.set(value, forKey: key) } }
+        defaults.set("", forKey: "last_selected_region")
+        defaults.set("", forKey: "last_selected_group_id")
+        defaults.set(true, forKey: "is_incognito")
+        let key = "soulo.test.home-search.\(UUID())"
+        defer { defaults.removeObject(forKey: key) }
+        let tabs = TabManager(storageKey: key)
+        let model = try XCTUnwrap(tabs.activeWebViewModel)
+        let web = CountingWebView()
+        model.webView = web
+        let html = "<html><body><p id='result'>Search loaded</p></body></html>"
+        let platform = SearchPlatform(id: UUID(), name: "Search fixture", iconName: "globe",
+            searchURLTemplate: "data:text/html;base64,\(Data(html.utf8).base64EncodedString())#%@",
+            homeURL: "https://example.com", region: .international, isBuiltIn: false,
+            isVisible: true, sortOrder: 999, usageCount: 0, isCustom: true)
+        let search = SearchViewModel()
+        search.selectedRegion = .international
+        search.selectedPlatform = platform
+        let container = try ModelContainer(for: SearchHistoryItem.self, BookmarkItem.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = UIHostingController(rootView: ResultsHost(onlyWhenSearching: true)
+            .environmentObject(search).environmentObject(tabs)
+            .environmentObject(LanguageManager.shared).modelContainer(container))
+        window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true; window.rootViewController = nil
+            model.releaseWebViewRuntime(); previous?.makeKeyAndVisible()
+        }
+        for attempt in 1...2 {
+            search.searchText = "query \(attempt)"
+            search.performSearch()
+            for _ in 0..<120 {
+                if model.isWebViewRuntimeInstalled, !model.isLoading, web.loads >= attempt { break }
+                try await Task.sleep(for: .milliseconds(25))
+            }
+            XCTAssertTrue(model.webView === web)
+            XCTAssertEqual(web.loads, attempt, "One submission must issue exactly one navigation")
+            var updated = platform
+            updated.usageCount = attempt
+            search.selectedPlatform = updated
+            try await Task.sleep(for: .milliseconds(200))
+            XCTAssertEqual(web.loads, attempt, "Usage statistics must not cancel and restart a search")
+            search.clearSearch()
+            for _ in 0..<80 {
+                if !model.isWebViewRuntimeInstalled { break }
+                try await Task.sleep(for: .milliseconds(25))
+            }
+            XCTAssertTrue(model.webView === web, "Returning home must retain the existing web view")
+        }
+        window.isHidden = true; window.rootViewController = nil
+        try await Task.sleep(for: .milliseconds(150))
+        withExtendedLifetime(container) {}
     }
 
     func testPreparedSelectionSearchRendersWithoutRestoringAnotherPlatform() async throws {

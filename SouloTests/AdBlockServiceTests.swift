@@ -48,7 +48,7 @@ final class AdBlockServiceTests: XCTestCase {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let store = BuiltInAdRuleStore(defaults: defaults)
-        var rule = try XCTUnwrap(store.rules.first { $0.id == "pbpbw:site-render" })
+        var rule = try XCTUnwrap(store.rules.first { $0.kind == .network })
         let original = rule
         rule.pattern = "qa-tracker\\.example"
         rule.domains = ["news.example.com"]
@@ -86,13 +86,13 @@ final class AdBlockServiceTests: XCTestCase {
         defer { for (key, value) in zip(keys, saved) { if let value { defaults.set(value, forKey: key) } else { defaults.removeObject(forKey: key) } } }
         defaults.removeObject(forKey: BuiltInAdRuleStore.storageKey)
         let store = BuiltInAdRuleStore(defaults: defaults)
-        var rule = try XCTUnwrap(store.rules.first { $0.id == "pbpbw:site-render" })
+        var rule = try XCTUnwrap(store.rules.first { $0.kind == .network })
         rule.isEnabled = false
         let disabled = await store.save(rule)
         XCTAssertTrue(disabled)
         let json = try XCTUnwrap(AdBlockService.encodedContentRuleList())
-        XCTAssertFalse(json.contains("site-render"))
-        XCTAssertTrue(json.contains("site-config"))
+        XCTAssertFalse(json.contains(rule.pattern))
+        XCTAssertTrue(json.contains("googleadservices"))
         var cosmetic = try XCTUnwrap(store.rules.first { $0.kind == .cosmetic })
         cosmetic.pattern = ".unique-qa-sponsor"
         let edited = await store.save(cosmetic)
@@ -333,21 +333,20 @@ final class AdBlockServiceTests: XCTestCase {
         XCTAssertTrue(script.contains("example.com"))
     }
 
-    func testPBPBWAdLoadersAreScopedAndRespectSiteAllowlist() throws {
-        func loaders(_ allowlist: [String]) throws -> [[String: Any]] {
-            let json = try XCTUnwrap(AdBlockService.encodedContentRuleList(allowlistedHosts: allowlist))
-            let rules = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [[String: Any]])
-            return rules.compactMap { $0["trigger"] as? [String: Any] }
-                .filter { ($0["url-filter"] as? String)?.contains("/assets/chunks/site-") == true }
+    func testBuiltInRulesDoNotBlockPBPBWPageScripts() throws {
+        let rules = AdBlockService.defaultBuiltInRules
+        XCTAssertFalse(rules.contains { $0.id.hasPrefix("pbpbw:") })
+        for url in [
+            "https://www.pbpbw.com/assets/chunks/site-render.js?v=2",
+            "https://www.pbpbw.com/assets/chunks/site-config.js?v=2"
+        ] {
+            for rule in rules where rule.isEnabled && rule.kind == .network {
+                let hostMatches = rule.domains.isEmpty || rule.domains.contains("pbpbw.com")
+                guard hostMatches else { continue }
+                let regex = try NSRegularExpression(pattern: rule.pattern)
+                XCTAssertNil(regex.firstMatch(in: url, range: NSRange(url.startIndex..., in: url)), "\(rule.id) blocks \(url)")
+            }
         }
-        let rules = try loaders([])
-        XCTAssertEqual(rules.count, 2)
-        for rule in rules {
-            XCTAssertEqual(rule["if-domain"] as? [String], ["*pbpbw.com"])
-            XCTAssertEqual(rule["resource-type"] as? [String], ["script"])
-            let filter = try XCTUnwrap(rule["url-filter"] as? String)
-            XCTAssertNotNil("https://www.pbpbw.com/assets/chunks/\(filter.contains("site-render") ? "site-render" : "site-config").js?v=2".range(of: filter, options: .regularExpression))
-        }
-        XCTAssertTrue(try loaders(["www.pbpbw.com"]).isEmpty)
     }
+
 }

@@ -1,3 +1,7 @@
-1.1.9
+1.2.0
 
-• Web adreslerini doğrudan açın, aramaları seçtiğiniz hizmette yapın. Bağlantı çevirisi, video ve indirmeler iyileştirildi.
+• Sayfalar daha hızlı açılır; araç çubuğu ve sekmeler daha kararlı yanıt verir.
+• Desteklenen videoları indirme sırasında oynatın; arka plan indirmelerini kurtarma iyileştirildi.
+• Tam ekran denetimleri ve dikey görünüme dönüş düzeltildi.
+• Gizli reklamlara tıklamalar ve panoya istenmeyen yazmalar engellenir.
+• Desteklenen indirme, içe aktarma ve dışa aktarmaların ilerlemesi gösterilir.

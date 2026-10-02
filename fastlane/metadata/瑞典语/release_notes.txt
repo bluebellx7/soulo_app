@@ -1,3 +1,7 @@
-1.1.9
+1.2.0
 
-• Öppna webbadresser direkt och sök med vald tjänst. Bättre översättning av länkar, video och nedladdningar.
+• Snabbare sidöppning och stabilare respons från verktygsfält och flikar.
+• Uppspelning av videor som stöds under nedladdning och bättre återställning av bakgrundsnedladdningar.
+• Korrigeringar av helskärmskontroller och återgång till stående läge.
+• Blockering av klick på dolda annonser och oönskade skrivningar till urklipp.
+• Visa förlopp för nedladdningar, importer och exporter som stöds.

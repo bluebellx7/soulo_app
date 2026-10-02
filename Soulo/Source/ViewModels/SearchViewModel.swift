@@ -135,6 +135,7 @@ class SearchViewModel: ObservableObject {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
+        BrowserStartupTrace.mark("search_submit")
         currentKeyword = trimmed
         isSelectionSearch = false
         isSearching = true

@@ -869,3 +869,4 @@
 "library_books_tab" = "Buku";
 "keep_page_above_toolbar" = "Hindari Tumpang Tindih";
 "keep_page_above_toolbar_desc" = "Pertahankan kontrol halaman web di atas toolbar.";
+"downloads_play_while_downloading" = "Putar sambil mengunduh";

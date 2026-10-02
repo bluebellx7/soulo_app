@@ -1,6 +1,6 @@
 Soulo är en webbläsare för iPhone och iPad med sökning på flera plattformar. Skriv en gång och växla mellan sökmotorer, sociala medier, video, shopping, kunskap och AI utan att skriva igen.
 
-Öppna webbadresser direkt och sök med vald tjänst. Bättre översättning av länkar, video och nedladdningar.
+Spela upp videor som stöds under nedladdning. Bättre bakgrundsnedladdningar och helskärm, med skydd mot dolda annonser och oönskad kopiering.
 
 Hitta information, läs artiklar, spela upp media och hantera hämtningar i samma webbläsare.
 

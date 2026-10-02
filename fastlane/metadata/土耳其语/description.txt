@@ -1,6 +1,6 @@
 Soulo, iPhone ve iPad için çok platformlu bir arama tarayıcısıdır. Bir kez yazın; arama, sosyal medya, video, alışveriş, bilgi ve yapay zekâ platformları arasında sorgunuzu yeniden yazmadan geçiş yapın.
 
-Web adreslerini doğrudan açın, aramaları seçtiğiniz hizmette yapın. Bağlantı çevirisi, video ve indirmeler iyileştirildi.
+Desteklenen videoları indirilirken oynatın. Arka plan indirmeleri ve tam ekran iyileştirildi; gizli reklamlara ve istenmeyen kopyalamaya karşı koruma.
 
 Bilgi bulun, makale okuyun, medya oynatın ve indirmelerinizi tek tarayıcıda yönetin.
 

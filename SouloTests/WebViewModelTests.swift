@@ -8,6 +8,23 @@ import WebKit
 
 @MainActor
 final class WebViewModelTests: XCTestCase {
+    func testVideoPagesRequireClearanceWithoutChangingGlobalPreference() {
+        let model = WebViewModel()
+        let key = AppConstants.StorageKeys.keepPageAboveToolbar
+        let saved = UserDefaults.standard.object(forKey: key)
+        defer { UserDefaults.standard.set(saved, forKey: key) }
+        UserDefaults.standard.set(false, forKey: key)
+        model.updateCurrentURL(URL(string: "https://www.douyin.com/video/123"))
+        XCTAssertTrue(model.needsVideoViewportClearance)
+        model.updateCurrentURL(URL(string: "https://example.com/article"))
+        XCTAssertFalse(model.needsVideoViewportClearance)
+        model.hasBottomVideoControls = true
+        XCTAssertTrue(model.needsVideoViewportClearance)
+        model.releaseWebViewRuntime()
+        XCTAssertFalse(model.needsVideoViewportClearance)
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: key))
+    }
+
     func testCustomSearchURLsValidateWithoutLosingTemplateOrPort() {
         XCTAssertEqual(SearchPlatformURLInput.searchTemplate(" \nhttps://example.com:8443/search?q=%@&lang=zh \n"),
                        "https://example.com:8443/search?q=%@&lang=zh")
@@ -1076,7 +1093,12 @@ final class WebViewModelTests: XCTestCase {
         )
         defer { window.isHidden = true }
 
-        let result = try await WebPageCaptureService.capture(.fullPage, from: webView)
+        var progress: [(completed: Int, total: Int)] = []
+        let result = try await WebPageCaptureService.capture(.fullPage, from: webView) { progress.append(($0, $1)) }
+        let total = try XCTUnwrap(progress.last?.total)
+        XCTAssertGreaterThan(total, 1)
+        XCTAssertEqual(progress.map(\.completed), Array(0...total))
+        XCTAssertTrue(progress.allSatisfy { $0.total == total })
 
         XCTAssertEqual(result.image.size.width, 780, accuracy: 1)
         XCTAssertEqual(result.image.size.height, 1200, accuracy: 1)
@@ -1158,7 +1180,10 @@ final class WebViewModelTests: XCTestCase {
         )
         defer { window.isHidden = true }
 
-        let result = try await WebPagePDFService.export(from: webView, title: "Vector PDF Test")
+        var progress: [(completed: Int, total: Int)] = []
+        let result = try await WebPagePDFService.export(from: webView, title: "Vector PDF Test") { progress.append(($0, $1)) }
+        XCTAssertEqual(progress.map(\.completed), Array(0...result.pageCount))
+        XCTAssertTrue(progress.allSatisfy { $0.total == result.pageCount })
         let document = try XCTUnwrap(PDFDocument(data: result.data))
         let selectableText = (0..<document.pageCount)
             .compactMap { document.page(at: $0)?.string }

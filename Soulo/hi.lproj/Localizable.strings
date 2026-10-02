@@ -869,3 +869,4 @@
 "library_books_tab" = "किताबें";
 "keep_page_above_toolbar" = "ओवरलैप से बचें";
 "keep_page_above_toolbar_desc" = "वेबपेज नियंत्रण को टूलबार के ऊपर रखें।";
+"downloads_play_while_downloading" = "डाउनलोड के दौरान चलाएँ";

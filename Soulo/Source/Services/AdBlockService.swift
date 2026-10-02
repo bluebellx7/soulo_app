@@ -67,10 +67,6 @@ struct AdBlockService {
         let resources = ["script", "image", "style-sheet", "font", "media", "raw", "popup"]
         var rules = adDomains.map { BuiltInAdRule(id: "domain:" + $0, kind: .network, pattern: $0, resourceTypes: resources) }
         rules += adPatterns.map { BuiltInAdRule(id: "pattern:" + $0, kind: .network, pattern: $0, resourceTypes: ["script", "image", "raw"]) }
-        for name in ["site-render", "site-config"] {
-            rules.append(BuiltInAdRule(id: "pbpbw:" + name, kind: .network,
-                pattern: "^https?://[^/]+/assets/chunks/\(name)\\.js([?].*)?$", domains: ["pbpbw.com"], resourceTypes: ["script"]))
-        }
         let selectors = [
             ".adsbygoogle",
             "ins.adsbygoogle",
@@ -267,6 +263,22 @@ struct AdBlockService {
     }
 
     static func compileRuleLists(allowlistedHosts: [String] = []) async -> [WKContentRuleList]? {
+        BrowserStartupTrace.mark("content_rules_start")
+        defer { BrowserStartupTrace.mark("content_rules_end") }
+        let cacheKey = startupCacheKey(allowlistedHosts: allowlistedHosts)
+        if let cacheKey,
+           let identifiers = AdBlockStartupCache.shared.read([String].self, slot: .contentRuleIdentifiers, key: cacheKey),
+           !identifiers.isEmpty {
+            var cached: [WKContentRuleList] = []
+            for identifier in identifiers {
+                guard let list = await lookupContentRules(identifier: identifier) else { break }
+                cached.append(list)
+            }
+            if cached.count == identifiers.count, cacheKey == startupCacheKey(allowlistedHosts: allowlistedHosts) {
+                BrowserStartupTrace.mark("content_rules_disk_hit")
+                return cached
+            }
+        }
         var compiled: [WKContentRuleList] = []
         // Encode only the current batch; do not retain every large JSON string.
         for batch in contentRuleBatches(allowlistedHosts: allowlistedHosts, batchSize: 20_000) {
@@ -275,19 +287,29 @@ struct AdBlockService {
             guard let list = await compileContentRules(identifier: identifier, json: json) else { return nil }
             compiled.append(list)
         }
+        if let cacheKey {
+            let identifiers = await MainActor.run { [compiled] in compiled.map { $0.identifier } }
+            if cacheKey == startupCacheKey(allowlistedHosts: allowlistedHosts) {
+                AdBlockStartupCache.shared.write(identifiers, slot: .contentRuleIdentifiers, key: cacheKey)
+            }
+        }
         return compiled
+    }
+
+    @MainActor
+    private static func lookupContentRules(identifier: String) async -> WKContentRuleList? {
+        await withCheckedContinuation { continuation in
+            WKContentRuleListStore.default().lookUpContentRuleList(forIdentifier: identifier) { list, _ in
+                continuation.resume(returning: list)
+            }
+        }
     }
 
     @MainActor
     private static func compileContentRules(identifier: String, json: String) async -> WKContentRuleList? {
         // WebKit parses CSS selectors synchronously before dispatching compilation.
         // Keep its initialization on the main actor; JSON preparation stays off it.
-        let cached: WKContentRuleList? = await withCheckedContinuation { continuation in
-            WKContentRuleListStore.default().lookUpContentRuleList(forIdentifier: identifier) { list, _ in
-                continuation.resume(returning: list)
-            }
-        }
-        if let cached { return cached }
+        if let cached = await lookupContentRules(identifier: identifier) { return cached }
         return await withCheckedContinuation { continuation in
             WKContentRuleListStore.default().compileContentRuleList(
                 forIdentifier: identifier,
@@ -534,11 +556,45 @@ struct AdBlockService {
         return cache
     }()
 
+    private static let startupBuildIdentity: String = {
+        let executable = Bundle.main.executableURL.flatMap {
+            try? $0.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey])
+        }
+        return "\(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") ?? "")|\(executable?.contentModificationDate?.timeIntervalSince1970 ?? 0)|\(executable?.fileSize ?? 0)"
+    }()
+
+    /// Include source revisions, file replacement, overrides and allowlist.
+    /// Legacy/in-memory fixtures deliberately bypass persistent derived caches.
+    static func startupCacheKey(allowlistedHosts: [String], cosmetic: Bool? = nil) -> String? {
+        let defaults = UserDefaults.standard
+        guard defaults.data(forKey: "soulo_ad_block_subscription_rules") == nil else { return nil }
+        let archive = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("AdBlock/merged-rules.json")
+        let attributes = archive.flatMap { try? $0.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]) }
+        let fields = [
+            "startup-cache-v1", startupBuildIdentity,
+            normalizedAllowlist(allowlistedHosts).joined(separator: ","),
+            cosmetic.map(String.init) ?? "native", AdBlockSubscriptionService.rulesSignature(),
+            BuiltInAdRuleStore.signature(),
+            defaults.data(forKey: BuiltInAdRuleStore.storageKey)?.base64EncodedString() ?? "",
+            String(attributes?.contentModificationDate?.timeIntervalSince1970 ?? 0),
+            String(attributes?.fileSize ?? 0)
+        ]
+        return (try? JSONEncoder().encode(fields)).flatMap { String(data: $0, encoding: .utf8) }
+    }
+
     static func adHidingScript(cosmetic: Bool = true, allowlistedHosts: [String] = []) -> String {
-        // Legacy/in-memory rule overrides have no file revision; do not cache them.
-        let usesArchive = UserDefaults.standard.data(forKey: "soulo_ad_block_subscription_rules") == nil
-        let cacheKey = "\(cosmetic)|\(normalizedAllowlist(allowlistedHosts).joined(separator: ","))|\(AdBlockSubscriptionService.rulesSignature())|\(BuiltInAdRuleStore.signature())" as NSString
-        if usesArchive, let cached = hidingScriptCache.object(forKey: cacheKey) { return cached as String }
+        let persistentKey = startupCacheKey(allowlistedHosts: allowlistedHosts, cosmetic: cosmetic)
+        if let persistentKey {
+            if let cached = hidingScriptCache.object(forKey: persistentKey as NSString) { return cached as String }
+            if let cached = AdBlockStartupCache.shared.read(String.self, slot: .cosmeticScript, key: persistentKey) {
+                hidingScriptCache.setObject(cached as NSString, forKey: persistentKey as NSString)
+                BrowserStartupTrace.mark("ad_script_disk_hit")
+                return cached
+            }
+        }
+        BrowserStartupTrace.mark("ad_script_build_start", detail: "main=\(Thread.isMainThread)")
+        defer { BrowserStartupTrace.mark("ad_script_build_end") }
         let cachedRules = AdBlockSubscriptionService.cachedRules()
         let builtInRules = BuiltInAdRuleStore.effectiveRules().filter(\.isEnabled)
         let subscriptionRules = cachedRules.cosmeticRules.isEmpty
@@ -802,8 +858,13 @@ struct AdBlockService {
                             }
                             if (node) scope = 'html > ' + parts.join(' > ');
                         }
-                        if (scope && el.getAttribute('style')) selectors.push(scope + ' > ' + CSS.escape(el.localName)
-                            + '[style="' + CSS.escape(el.getAttribute('style')) + '"]');
+                        if (scope) {
+                            var siblings = Array.from(parent.children).filter(function(sibling) { return sibling.localName === el.localName; });
+                            var identity = el.style.backgroundPosition && el.getAttribute('style')
+                                ? '[style="' + CSS.escape(el.getAttribute('style')) + '"]'
+                                : ':nth-of-type(' + (siblings.indexOf(el) + 1) + ')';
+                            selectors.push(scope + ' > ' + CSS.escape(el.localName) + identity);
+                        }
                     });
                 });
                 var css = selectors.length ? selectors.join(',') + ' { clip-path:inset(50%) !important; pointer-events:none !important; }' : '';
@@ -895,7 +956,10 @@ struct AdBlockService {
 
         })();
         """
-        if usesArchive { hidingScriptCache.setObject(script as NSString, forKey: cacheKey) }
+        if let persistentKey, persistentKey == startupCacheKey(allowlistedHosts: allowlistedHosts, cosmetic: cosmetic) {
+            hidingScriptCache.setObject(script as NSString, forKey: persistentKey as NSString)
+            AdBlockStartupCache.shared.write(script, slot: .cosmeticScript, key: persistentKey)
+        }
         return script
     }
 }

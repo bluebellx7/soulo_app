@@ -32,6 +32,11 @@ final class WebViewModel: ObservableObject {
     @Published var canGoForward: Bool = false
     @Published var errorMessage: String?
     @Published var isScrollingUp: Bool = false
+    @Published var hasBottomVideoControls = false
+
+    var needsVideoViewportClearance: Bool {
+        hasBottomVideoControls || WebCompatibilityService.isDouyinVideoSurface(currentURL)
+    }
     @Published var snapshot: UIImage?
     @Published var showSnapshotWhileRestoring: Bool = false
     @Published private(set) var pageZoom: CGFloat = 1
@@ -57,6 +62,7 @@ final class WebViewModel: ObservableObject {
     let userScriptBridgeToken = UUID().uuidString
     var isStreamingDownloadHandlerInstalled: Bool = false
     var isDesktopModeEnabled: Bool = false
+    private(set) var mediaFrameInfos: [WKFrameInfo] = []
     private var snapshotPersistenceID: String?
     private var pageLanguageDetectionID = UUID()
 
@@ -105,6 +111,7 @@ final class WebViewModel: ObservableObject {
         cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
         keepSnapshotUntilLoaded: Bool = false
     ) {
+        BrowserStartupTrace.mark("load_requested", detail: webView == nil ? "pending" : "attached")
         errorMessage = nil
         if !keepSnapshotUntilLoaded { mediaSession.reset() }
         currentURL = url
@@ -144,12 +151,16 @@ final class WebViewModel: ObservableObject {
     }
 
     func applyWebPreferences(to webView: WKWebView) {
-        webView.customUserAgent = userAgentOverride ?? (isDesktopModeEnabled
+        let userAgent = userAgentOverride ?? (isDesktopModeEnabled
             ? AppConstants.desktopWebViewUserAgent
             : AppConstants.mobileWebViewUserAgent)
-        webView.configuration.defaultWebpagePreferences.preferredContentMode = isDesktopModeEnabled
-            ? .desktop
-            : .mobile
+        if webView.customUserAgent != userAgent {
+            webView.customUserAgent = userAgent
+        }
+        let contentMode: WKWebpagePreferences.ContentMode = isDesktopModeEnabled ? .desktop : .mobile
+        if webView.configuration.defaultWebpagePreferences.preferredContentMode != contentMode {
+            webView.configuration.defaultWebpagePreferences.preferredContentMode = contentMode
+        }
         applyPageZoom(to: webView)
     }
 
@@ -178,7 +189,9 @@ final class WebViewModel: ObservableObject {
     /// contents. Native pageZoom alone can let the document root grow past the
     /// right edge on mobile pages, so compensate the root width inversely.
     func applyPageZoom(to webView: WKWebView) {
-        webView.pageZoom = pageZoom
+        if webView.pageZoom != pageZoom {
+            webView.pageZoom = pageZoom
+        }
         webView.evaluateJavaScript(
             WebViewScripts.compensatePageZoomWidth(scale: pageZoom),
             completionHandler: nil
@@ -229,10 +242,12 @@ final class WebViewModel: ObservableObject {
     /// Releases the expensive WebKit runtime while preserving the tab URL and snapshot.
     /// The view is recreated lazily the next time the tab becomes active.
     func releaseWebViewRuntime() {
+        hasBottomVideoControls = false
         cancelMarkingAdvertisement()
         webView?.stopLoading()
         WebViewRepresentable.forgetContentRules(on: webView)
         webView = nil
+        mediaFrameInfos.removeAll()
         pendingRequest = nil
         isWebViewRuntimeInstalled = false
         hasInstalledWebViewScripts = false
@@ -251,6 +266,7 @@ final class WebViewModel: ObservableObject {
         webView?.stopLoading()
         WebViewRepresentable.forgetContentRules(on: webView)
         webView = nil
+        mediaFrameInfos.removeAll()
         pendingRequest = nil
         isWebViewRuntimeInstalled = false
         hasInstalledWebViewScripts = false
@@ -358,10 +374,19 @@ final class WebViewModel: ObservableObject {
     }
 
     func beginPageNavigation() {
+        hasBottomVideoControls = false
         hasVisibleContent = false
+        mediaFrameInfos.removeAll()
+    }
+
+    func registerMediaFrame(_ frame: WKFrameInfo) {
+        guard !frame.isMainFrame else { return }
+        if mediaFrameInfos.count >= 16 { mediaFrameInfos.removeFirst() }
+        mediaFrameInfos.append(frame)
     }
 
     func markPageContentVisible() {
+        if !hasVisibleContent { BrowserStartupTrace.mark("content_visible") }
         hasVisibleContent = true
         showSnapshotWhileRestoring = false
     }
@@ -505,6 +530,9 @@ final class WebViewModel: ObservableObject {
         }
         let config = WKSnapshotConfiguration()
         config.snapshotWidth = NSNumber(value: 430)
+        // Tab switching needs the last displayed frame without waiting for a
+        // new render commit from the page we are leaving.
+        config.afterScreenUpdates = false
         webView.takeSnapshot(with: config) { [weak self] image, _ in
             Task { @MainActor in
                 if let image {

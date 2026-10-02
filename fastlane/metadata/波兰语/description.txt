@@ -1,6 +1,6 @@
 Soulo to przeglądarka na iPhone’a i iPada z wyszukiwaniem na wielu platformach. Wpisz zapytanie raz i przełączaj się między wyszukiwarkami, mediami społecznościowymi, filmami, zakupami, wiedzą i AI.
 
-Otwieraj adresy WWW bezpośrednio i szukaj wybraną wyszukiwarką. Ulepszono tłumaczenie linków, wideo i pobieranie.
+Odtwarzaj obsługiwane filmy podczas pobierania. Lepsze pobieranie w tle i pełny ekran oraz ochrona przed ukrytymi reklamami i niechcianym kopiowaniem.
 
 Szukaj informacji, czytaj artykuły, odtwarzaj multimedia i zarządzaj pobraniami w jednej przeglądarce.
 

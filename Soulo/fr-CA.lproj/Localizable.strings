@@ -869,3 +869,4 @@
 "library_books_tab" = "Livres";
 "keep_page_above_toolbar" = "Évitez les chevauchements";
 "keep_page_above_toolbar_desc" = "Conservez les contrôles de la page Web au-dessus de la barre d’outils.";
+"downloads_play_while_downloading" = "Lire pendant le téléchargement";

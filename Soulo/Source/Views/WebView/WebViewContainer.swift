@@ -164,6 +164,8 @@ struct WebViewContainer: View {
     @State private var imageTextResult: ImageTextRecognitionResult?
     @State private var imageTextError: String?
     @State private var isCapturingPage = false
+    @State private var completedCaptureParts = 0
+    @State private var totalCaptureParts = 0
     @State private var captureResult: WebPageCaptureResult?
     @State private var pdfResult: WebPagePDFResult?
     @State private var captureError: String?
@@ -428,7 +430,7 @@ struct WebViewContainer: View {
         )
         .onChange(of: webViewModel.isScrollingUp) { _, scrollingUp in
             if isActiveTab {
-                guard !voiceOverEnabled else {
+                guard !voiceOverEnabled, !shouldKeepPageAboveToolbar else {
                     toolbarMinimized = false
                     return
                 }
@@ -457,6 +459,11 @@ struct WebViewContainer: View {
             if enabled {
                 toolbarMinimized = false
                 toolbarManuallyHidden = false
+            }
+        }
+        .onChange(of: shouldKeepPageAboveToolbar) { _, enabled in
+            if enabled {
+                toolbarMinimized = false
             }
         }
         .onChange(of: isFullscreen) { _, fullscreen in
@@ -512,7 +519,7 @@ struct WebViewContainer: View {
             }
         }
         .onChange(of: videoViewportBottomInset) { _, _ in
-            guard WebCompatibilityService.isDouyinVideoSurface(webViewModel.currentURL) else { return }
+            guard webViewModel.needsVideoViewportClearance else { return }
             DispatchQueue.main.async {
                 webViewModel.synchronizePageViewport()
             }
@@ -706,6 +713,8 @@ struct WebViewContainer: View {
                 showCaptureOptions: $showCaptureOptions,
                 captureAtTop: isFullscreen,
                 isCapturingPage: isCapturingPage,
+                completedCaptureParts: completedCaptureParts,
+                totalCaptureParts: totalCaptureParts,
                 captureResult: $captureResult,
                 pdfResult: $pdfResult,
                 captureError: $captureError,
@@ -901,9 +910,9 @@ struct WebViewContainer: View {
     }
 
     private var videoViewportBottomInset: CGFloat {
-        BrowserChromeLayout.pageViewportBottomInset(
+        return BrowserChromeLayout.pageViewportBottomInset(
             isActiveTab: isActiveTab,
-            isVideoPage: WebCompatibilityService.isDouyinVideoSurface(webViewModel.currentURL),
+            isVideoPage: webViewModel.needsVideoViewportClearance,
             showsBottomToolbar: false,
             bottomClearance: pageBottomClearance
         )
@@ -919,21 +928,26 @@ struct WebViewContainer: View {
             )
     }
 
+    private var shouldKeepPageAboveToolbar: Bool {
+        keepPageAboveToolbar || webViewModel.needsVideoViewportClearance
+    }
+
     private var pageViewportBottomInset: CGFloat {
-        if keepPageAboveToolbar, #available(iOS 26.0, *) {
+        guard shouldKeepPageAboveToolbar else { return 0 }
+        if #available(iOS 26.0, *) {
             return videoViewportBottomInset
         }
         return BrowserChromeLayout.pageViewportBottomInset(
             isActiveTab: isActiveTab,
-            isVideoPage: WebCompatibilityService.isDouyinVideoSurface(webViewModel.currentURL),
+            isVideoPage: webViewModel.needsVideoViewportClearance,
             showsBottomToolbar: showsBottomToolbar,
             bottomClearance: pageBottomClearance
         )
     }
 
     private var webViewObscuredBottomInset: CGFloat {
-        guard keepPageAboveToolbar, showsBottomToolbar,
-              !WebCompatibilityService.isDouyinVideoSurface(webViewModel.currentURL) else { return 0 }
+        guard shouldKeepPageAboveToolbar, showsBottomToolbar,
+              !webViewModel.needsVideoViewportClearance else { return 0 }
         return pageBottomClearance
     }
 
@@ -961,7 +975,7 @@ struct WebViewContainer: View {
     private var browserToolbarChrome: some View {
         VStack(spacing: 0) {
             Group {
-                if toolbarMinimized {
+                if toolbarMinimized && !shouldKeepPageAboveToolbar {
                     miniToolbarPill
                         .transition(.asymmetric(
                             insertion: .scale(scale: 0.6).combined(with: .opacity),
@@ -1428,10 +1442,13 @@ struct WebViewContainer: View {
 
     private func capturePage(_ mode: WebPageCaptureMode) {
         guard !isCapturingPage else { return }
+        completedCaptureParts = 0; totalCaptureParts = 0
         isCapturingPage = true
         Task { @MainActor in
             do {
-                captureResult = try await WebPageCaptureService.capture(mode, from: webViewModel.webView)
+                captureResult = try await WebPageCaptureService.capture(mode, from: webViewModel.webView) { completed, total in
+                    completedCaptureParts = completed; totalCaptureParts = total
+                }
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
             } catch {
                 captureError = error.localizedDescription
@@ -1443,13 +1460,17 @@ struct WebViewContainer: View {
 
     private func exportPagePDF() {
         guard !isCapturingPage else { return }
+        completedCaptureParts = 0; totalCaptureParts = 0
         isCapturingPage = true
         let title = webViewModel.pageTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         Task { @MainActor in
             do {
                 pdfResult = try await WebPagePDFService.export(
                     from: webViewModel.webView,
-                    title: title
+                    title: title,
+                    onProgress: { completed, total in
+                        completedCaptureParts = completed; totalCaptureParts = total
+                    }
                 )
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
             } catch {
@@ -1567,6 +1588,8 @@ private struct WebToolsPresentationModifier: ViewModifier {
     @Binding var showCaptureOptions: Bool
     let captureAtTop: Bool
     let isCapturingPage: Bool
+    let completedCaptureParts: Int
+    let totalCaptureParts: Int
     @Binding var captureResult: WebPageCaptureResult?
     @Binding var pdfResult: WebPagePDFResult?
     @Binding var captureError: String?
@@ -1636,7 +1659,9 @@ private struct WebToolsPresentationModifier: ViewModifier {
                     ZStack {
                         Color.black.opacity(0.12).ignoresSafeArea()
                         VStack(spacing: 10) {
-                            ProgressView()
+                            CountedProgressView(completed: completedCaptureParts, total: totalCaptureParts)
+                                .frame(maxWidth: totalCaptureParts > 0 ? 250 : nil)
+                                .accessibilityIdentifier("browser.captureProgress")
                             Text(LanguageManager.shared.localizedString("web_capture_processing"))
                                 .font(.subheadline.weight(.medium))
                         }

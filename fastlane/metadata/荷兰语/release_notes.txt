@@ -1,3 +1,7 @@
-1.1.9
+1.2.0
 
-• Open webadressen direct en zoek met de gekozen zoekmachine. Vertaling na links, video en downloads zijn verbeterd.
+• Sneller openen van pagina’s en stabielere reacties van werkbalk en tabbladen.
+• Ondersteunde video’s afspelen tijdens het downloaden en beter herstel van achtergronddownloads.
+• Oplossingen voor bediening op volledig scherm en terugkeren naar de staande stand.
+• Blokkering van klikken op verborgen advertenties en ongevraagd schrijven naar het klembord.
+• Voortgang tonen voor ondersteunde downloads, import en export.

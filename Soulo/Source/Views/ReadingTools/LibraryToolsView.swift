@@ -33,6 +33,8 @@ struct LibraryFilesView: View {
     @State private var compressionDirectory: URL?
     @State private var busy = false
     @State private var archiveRunning = false
+    @State private var completedImports = 0
+    @State private var totalImports = 0
     @State private var error: String?
     @State private var operation = FileOperationProgress()
     @State private var reloadTask: Task<Void, Never>?
@@ -105,8 +107,9 @@ struct LibraryFilesView: View {
                 do {
                     let urls = try result.get()
                     busy = true
+                    completedImports = 0; totalImports = urls.count
                     defer {
-                        busy = false
+                        busy = false; totalImports = 0
                         reload()
                     }
                     for url in urls {
@@ -114,6 +117,7 @@ struct LibraryFilesView: View {
                         defer { if access { url.stopAccessingSecurityScopedResource() } }
                         let target = FileSafety.availableURL(name: url.lastPathComponent, directory: directory)
                         try await Task.detached { try FileManager.default.copyItem(at: url, to: target) }.value
+                        completedImports += 1
                     }
                 } catch { self.error = error.localizedDescription }
             }
@@ -122,12 +126,14 @@ struct LibraryFilesView: View {
         .onChange(of: photos) { _, items in
             guard !items.isEmpty else { return }
             busy = true
+            completedImports = 0; totalImports = items.count
             Task {
-                defer { busy = false; photos = []; reload() }
+                defer { busy = false; totalImports = 0; photos = []; reload() }
                 do {
                     for item in items {
                         guard let file = try await item.loadTransferable(type: LibraryImportFile.self) else { throw ReadingToolError.unsupported }
                         _ = try await Task.detached { try LibraryFileImport.commit(file.url, to: directory) }.value
+                        completedImports += 1
                     }
                 } catch { self.error = error.localizedDescription }
             }
@@ -173,7 +179,17 @@ struct LibraryFilesView: View {
                 .toolbar { Button(ToolText.text("cancel")) { compressing = false } }
 
         }
-        .overlay { if busy { if archiveRunning { FileOperationOverlay(operation: operation) } else { ProgressView().padding(24).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16)) } } }
+        .overlay {
+            if busy {
+                if archiveRunning { FileOperationOverlay(operation: operation) }
+                else {
+                    CountedProgressView(completed: completedImports, total: totalImports)
+                        .padding(24).frame(width: 230)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                        .accessibilityIdentifier("files.importProgress")
+                }
+            }
+        }
         .alert(ToolText.text("error"), isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
             Button(ToolText.text("done")) { error = nil }
         } message: {
@@ -182,12 +198,14 @@ struct LibraryFilesView: View {
     }
     private func importProviders(_ providers: [NSItemProvider]) {
         busy = true
+        completedImports = 0; totalImports = providers.count
         Task {
-            defer { busy = false; reload() }
+            defer { busy = false; totalImports = 0; reload() }
             do {
                 for provider in providers {
                     let staged = try await LibraryFileImport.receive(provider)
                     _ = try await Task.detached { try LibraryFileImport.commit(staged, to: directory) }.value
+                    completedImports += 1
                 }
             } catch { self.error = error.localizedDescription }
         }
@@ -226,12 +244,24 @@ struct LibraryFilesView: View {
                 .listRowBackground(selected.contains(file.id) ? Color.themePrimary.opacity(0.07) : Color.clear)
                 .listRowSeparatorTint(Color.primary.opacity(0.08))
                 .alignmentGuide(.listRowSeparatorLeading) { _ in 56 }
-                .modifier(LibraryFileDragModifier(url: file.url, enabled: !file.directory && !isSelecting && !busy))
+                .modifier(LibraryFileDragModifier(url: file.url, enabled: !file.directory && !isSelecting && !busy
+                    && !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased())))
                 .contextMenu {
                     if !file.directory {
-                        Button { plainTextFile = file } label: { ToolMenuLabel(key: "open_as_text", symbol: "doc.text") }
-                        renameAction(file)
-                        ShareLink(item: file.url) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
+                        if !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased()) {
+                            Button { plainTextFile = file } label: { ToolMenuLabel(key: "open_as_text", symbol: "doc.text") }
+                        }
+                        if file.url.pathExtension.lowercased() != "movpkg" { renameAction(file) }
+                        if !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased()) {
+                            ShareLink(item: file.url) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
+                        }
+                        if file.url.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
+                            Button {
+                                exportHLS(file)
+                            } label: {
+                                Label(LanguageManager.shared.localizedString("save") + " HLS", systemImage: "square.and.arrow.down")
+                            }
+                        }
                         Button(ToolText.text("delete_files"), systemImage: "trash", role: .destructive) {
                             pendingDeletion = [file.url]; deletionAnchor = file.id
                         }
@@ -294,12 +324,24 @@ struct LibraryFilesView: View {
                                     .accessibilityAddTraits(selected.contains(file.id) ? .isSelected : [])
                                 }
                             }
-                            .modifier(LibraryFileDragModifier(url: file.url, enabled: !file.directory && !isSelecting && !busy))
+                            .modifier(LibraryFileDragModifier(url: file.url, enabled: !file.directory && !isSelecting && !busy
+                                && !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased())))
                             .contextMenu {
                                 if !file.directory {
-                                    Button { plainTextFile = file } label: { ToolMenuLabel(key: "open_as_text", symbol: "doc.text") }
-                                    renameAction(file)
-                                    ShareLink(item: file.url) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
+                                    if !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased()) {
+                                        Button { plainTextFile = file } label: { ToolMenuLabel(key: "open_as_text", symbol: "doc.text") }
+                                    }
+                                    if file.url.pathExtension.lowercased() != "movpkg" { renameAction(file) }
+                                    if !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased()) {
+                                        ShareLink(item: file.url) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
+                                    }
+                                    if file.url.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
+                                        Button {
+                                            exportHLS(file)
+                                        } label: {
+                                            Label(LanguageManager.shared.localizedString("save") + " HLS", systemImage: "square.and.arrow.down")
+                                        }
+                                    }
                                     Button(ToolText.text("delete_files"), systemImage: "trash", role: .destructive) {
                                         pendingDeletion = [file.url]; deletionAnchor = file.id
                                     }
@@ -346,8 +388,10 @@ struct LibraryFilesView: View {
                     HStack(spacing: 8) {
                         Text(file.info.badge)
                             .font(.system(.caption2, design: .rounded).weight(.semibold))
-                        Text(ByteCountFormatter.string(fromByteCount: file.info.size, countStyle: .file))
-                            .font(.caption)
+                        if !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased()) {
+                            Text(ByteCountFormatter.string(fromByteCount: file.info.size, countStyle: .file))
+                                .font(.caption)
+                        }
                     }.foregroundStyle(.secondary)
                 }
             }
@@ -366,8 +410,10 @@ struct LibraryFilesView: View {
             AdaptiveActionRow(spacing: 8) {
                 Button { compressing = true } label: { Label(ToolText.text("compress"), systemImage: "doc.zipper") }
                     .buttonStyle(CompactActionButtonStyle())
+                    .disabled(selectedURLs.contains(where: { ["movpkg", OfflineHLSReference.fileExtension].contains($0.pathExtension.lowercased()) }))
                 ShareLink(items: selectedURLs) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
                     .buttonStyle(CompactActionButtonStyle())
+                    .disabled(selectedURLs.contains(where: { ["movpkg", OfflineHLSReference.fileExtension].contains($0.pathExtension.lowercased()) }))
                 Button(role: .destructive) {
                     pendingDeletion = selectedURLs; deletionAnchor = "selection"
                 } label: { Label(ToolText.text("delete_files"), systemImage: "trash") }
@@ -451,7 +497,10 @@ struct LibraryFilesView: View {
                         .compactMap { url -> LocalFile? in
                             let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey, .contentModificationDateKey])
                             guard values.isSymbolicLink != true else { return nil }
-                            return LocalFile(url: url, directory: values.isDirectory == true, info: FilePresentation.inspect(url), modifiedAt: values.contentModificationDate ?? .distantPast, coverURL: covers[url.standardizedFileURL])
+                            return LocalFile(url: url,
+                                directory: values.isDirectory == true && url.pathExtension.lowercased() != "movpkg",
+                                info: FilePresentation.inspect(url), modifiedAt: values.contentModificationDate ?? .distantPast,
+                                coverURL: covers[url.standardizedFileURL])
                         }.sorted { $0.url.lastPathComponent.localizedStandardCompare($1.url.lastPathComponent) == .orderedAscending }
                 }.value
                 guard !Task.isCancelled else { return }
@@ -474,13 +523,38 @@ struct LibraryFilesView: View {
                     self.error = error.localizedDescription
                 }
             }
-        } else if let type = UTType(filenameExtension: ext), type.conforms(to: .audio) || type.conforms(to: .movie) {
+        } else if ["movpkg", OfflineHLSReference.fileExtension].contains(ext)
+                    || (UTType(filenameExtension: ext).map { $0.conforms(to: .audio) || $0.conforms(to: .movie) } ?? false) {
             MediaSession.shared.open(url: file.url)
             showMedia = true
         } else {
             preview = file
         }
     }
+    private func exportHLS(_ file: LocalFile) {
+        let referenceURL = file.url
+        let sourceURL = DownloadManagerService.shared.downloads
+            .first(where: { $0.localURL == referenceURL })
+            .flatMap { URL(string: $0.sourceURLString) }
+        let directory = referenceURL.deletingLastPathComponent()
+        let progress = FileOperationProgress()
+        progress.progress.totalUnitCount = 0
+        operation = progress; archiveRunning = true
+        busy = true
+        Task {
+            do {
+                _ = try await Task.detached(priority: .userInitiated) {
+                    try await PortableHLSBundle.export(
+                        referenceURL: referenceURL, sourceURL: sourceURL, into: directory, operation: progress
+                    )
+                }.value
+            } catch ReadingToolError.canceled { }
+            catch { self.error = error.localizedDescription }
+            busy = false; archiveRunning = false
+            reload()
+        }
+    }
+
     private func run(_ action: @escaping () throws -> URL) {
         operation = FileOperationProgress()
         archiveRunning = true
@@ -503,7 +577,11 @@ struct FileOperationOverlay: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 0.25)) { _ in
             VStack(spacing: 16) {
-                ProgressView(value: operation.progress.fractionCompleted)
+                if operation.progress.totalUnitCount > 0 {
+                    ProgressView(value: operation.progress.fractionCompleted).progressViewStyle(.linear)
+                    Text(operation.progress.fractionCompleted, format: .percent.precision(.fractionLength(0)))
+                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                } else { ProgressView() }
                 Button(ToolText.text("cancel")) { operation.progress.cancel() }
             }.padding(24).frame(width: 230).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
         }

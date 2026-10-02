@@ -433,3 +433,20 @@ struct EmptyStateView: View {
         .padding(40)
     }
 }
+
+/// Counts completed items without inventing an elapsed-time estimate.
+struct CountedProgressView: View {
+    let completed: Int
+    let total: Int
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if total > 0 {
+                ProgressView(value: Double(min(max(0, completed), total)), total: Double(total))
+                    .progressViewStyle(.linear)
+                Text("\(min(max(0, completed), total)) / \(total)")
+                    .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+            } else { ProgressView() }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}

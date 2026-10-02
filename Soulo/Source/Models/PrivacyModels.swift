@@ -161,7 +161,7 @@ enum BrowserDownloadStatus: String, Codable, Hashable {
 }
 
 struct BrowserDownloadItem: Identifiable, Codable, Equatable {
-    enum Transport: String, Codable { case webKit, background, streaming, hls }
+    enum Transport: String, Codable { case webKit, background, streaming, hls, separated }
     let id: UUID
     var fileName: String
     var sourceURLString: String

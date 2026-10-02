@@ -7,6 +7,23 @@ import ZipArchive
 @testable import Soulo
 
 final class ReadingToolsTests: XCTestCase {
+    @MainActor
+    func testVideoScreenAwakeWaitsForEveryPlayerToStop() {
+        let service = VideoScreenAwakeService.shared
+        let first = UUID(), second = UUID()
+        let original = UIApplication.shared.isIdleTimerDisabled
+        defer {
+            service.setActive(false, owner: first)
+            service.setActive(false, owner: second)
+        }
+        service.setActive(true, owner: first)
+        service.setActive(true, owner: second)
+        XCTAssertTrue(UIApplication.shared.isIdleTimerDisabled)
+        service.setActive(false, owner: first)
+        XCTAssertTrue(UIApplication.shared.isIdleTimerDisabled)
+        service.setActive(false, owner: second)
+        XCTAssertEqual(UIApplication.shared.isIdleTimerDisabled, original)
+    }
     private var root: URL!
     override func setUpWithError() throws {
         root = FileManager.default.temporaryDirectory.appendingPathComponent("reading-tests-" + UUID().uuidString)
@@ -122,6 +139,7 @@ final class ReadingToolsTests: XCTestCase {
     }
     @MainActor func testMediaRejectsInvalidRatesAndReplacesSingleSession() async throws {
         let session = MediaSession.shared
+        let initialIdleTimerDisabled = UIApplication.shared.isIdleTimerDisabled
         defer { session.stop() }
         XCTAssertFalse(MediaSession.validRate(.nan)); XCTAssertFalse(MediaSession.validRate(0)); XCTAssertFalse(MediaSession.validRate(17))
         XCTAssertTrue(MediaSession.validRate(16))
@@ -136,6 +154,8 @@ final class ReadingToolsTests: XCTestCase {
         try await wait { session.player.currentItem?.status != .unknown }
         XCTAssertEqual(session.url, second)
         XCTAssertEqual(session.player.currentItem?.status, .readyToPlay)
+        XCTAssertEqual(UIApplication.shared.isIdleTimerDisabled, initialIdleTimerDisabled,
+            "Audio playback must not prevent the screen from locking")
         XCTAssertTrue(session.setRate(1.5)); XCTAssertEqual(session.rate, 1.5)
         session.pause(); XCTAssertEqual(session.player.rate, 0)
         session.seek(.nan); XCTAssertTrue(session.elapsed.isFinite)
@@ -343,6 +363,7 @@ final class ReadingToolsTests: XCTestCase {
     }
 
     @MainActor func testLocalVideoAdvancesAfterSeekAndResume() async throws {
+        let initialIdleTimerDisabled = UIApplication.shared.isIdleTimerDisabled
         let fixture = try XCTUnwrap(Bundle(for: Self.self).url(
             forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
         let url = try file("video-playback.mp4", Data(contentsOf: fixture))
@@ -351,17 +372,22 @@ final class ReadingToolsTests: XCTestCase {
         defer { session.setRate(oldRate); session.stop() }
         session.setRate(1)
         session.open(url: url)
-        try await wait { session.hasVideo && session.player.currentTime().seconds > 0.2 }
+        try await wait { session.hasVideo && session.player.currentTime().seconds > 0.2
+            && UIApplication.shared.isIdleTimerDisabled }
         XCTAssertTrue(session.videoIsLandscape, "The fullscreen direction must be known when video controls appear")
         XCTAssertNil(session.error)
         session.pause()
+        XCTAssertEqual(UIApplication.shared.isIdleTimerDisabled, initialIdleTimerDisabled)
         session.seek(3)
         try await wait { abs(session.player.currentTime().seconds - 3) < 0.1 }
         session.play()
         try await wait { session.player.currentTime().seconds > 3.3 }
+        XCTAssertTrue(UIApplication.shared.isIdleTimerDisabled)
         XCTAssertNil(session.error)
         XCTAssertTrue(session.playing)
         XCTAssertEqual(AVAudioSession.sharedInstance().category, .playback)
+        session.stop()
+        XCTAssertEqual(UIApplication.shared.isIdleTimerDisabled, initialIdleTimerDisabled)
     }
 
     @MainActor func testHTMLMediaRatesUseActualElementValues() async throws {

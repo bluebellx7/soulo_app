@@ -200,8 +200,7 @@ private struct AdBlockSubscriptionsView: View {
                             onChanged?()
                         }
                     } label: {
-                        if subscriptionService.isUpdating { ProgressView().frame(width: 44, height: 44) }
-                        else { CompactIconLabel(systemImage: "arrow.clockwise", emphasized: true) }
+                        CompactIconLabel(systemImage: "arrow.clockwise", emphasized: true)
                     }
                     .buttonStyle(.plain)
                     .disabled(subscriptionService.isUpdating || !adBlockEnabled)
@@ -211,6 +210,14 @@ private struct AdBlockSubscriptionsView: View {
                 Text(adBlockEnabled ? ToolText.text("ad_subscription_hint") : LanguageManager.shared.localizedString("ad_block_master_disabled_desc"))
             }
             .opacity(adBlockEnabled ? 1 : 0.48)
+
+            if subscriptionService.isUpdating {
+                Section {
+                    CountedProgressView(completed: subscriptionService.completedUpdates, total: subscriptionService.totalUpdates)
+                        .accessibilityLabel(LanguageManager.shared.localizedString("ad_block_subscription_update"))
+                        .accessibilityIdentifier("adBlock.updateProgress")
+                }
+            }
 
             Section(ToolText.text("rule_maintenance")) {
                 Button(role: .destructive) {

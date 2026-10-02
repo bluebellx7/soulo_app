@@ -1,3 +1,7 @@
-1.1.9
+1.2.0
 
-• Otvárajte webové adresy priamo a hľadajte vybranou službou. Lepší preklad odkazov, video a sťahovanie.
+• Rýchlejšie otváranie stránok a stabilnejšia odozva panela nástrojov a kariet.
+• Prehrávanie podporovaných videí počas sťahovania a lepšie obnovenie sťahovania na pozadí.
+• Opravené ovládanie celej obrazovky a návrat na výšku.
+• Blokovanie kliknutí na skryté reklamy a nevyžiadaného zápisu do schránky.
+• Zobrazenie priebehu podporovaného sťahovania, importu a exportu.

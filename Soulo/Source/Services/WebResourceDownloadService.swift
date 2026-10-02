@@ -5,6 +5,82 @@ import UniformTypeIdentifiers
 import UIKit
 import WebKit
 
+enum WebDownloadFilename {
+    static func media(
+        _ resource: WebMediaResource,
+        requested: String?,
+        pageTitle: String?
+    ) -> String {
+        if let requested, !requested.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+           requested != resource.suggestedFilename {
+            return requested
+        }
+        guard let title = usableTitle(pageTitle) ?? usableTitle(resource.title) else {
+            return requested ?? resource.suggestedFilename
+        }
+        let fileExtension: String
+        if resource.delivery == .direct {
+            let sourceExtension = (resource.suggestedFilename as NSString).pathExtension.lowercased()
+            let videoExtensions: Set<String> = [
+                "mp4", "m4v", "mov", "webm", "mkv", "avi", "ts", "m2ts", "3gp", "3g2",
+                "ogv", "mpeg", "mpg", "wmv", "flv", "f4v", "vob"
+            ]
+            let audioExtensions: Set<String> = [
+                "mp3", "m4a", "m4b", "aac", "wav", "flac", "ogg", "oga", "opus",
+                "wma", "aiff", "ape", "alac", "amr"
+            ]
+            fileExtension = (resource.kind == .video ? videoExtensions : audioExtensions)
+                .contains(sourceExtension) ? sourceExtension : (resource.kind == .video ? "mp4" : "m4a")
+        } else {
+            fileExtension = "mp4"
+        }
+        return titledFilename(title, fileExtension: fileExtension)
+    }
+
+    static func native(
+        suggested: String,
+        pageTitle: String?,
+        response: URLResponse? = nil
+    ) -> String {
+        if let disposition = (response as? HTTPURLResponse)?
+            .value(forHTTPHeaderField: "Content-Disposition")?.lowercased(),
+           disposition.contains("filename=") || disposition.contains("filename*=") {
+            return suggested
+        }
+        let stem = (suggested as NSString).deletingPathExtension.lowercased()
+        let genericNames: Set<String> = [
+            "download", "file", "index", "master", "playlist", "stream",
+            "media", "video", "audio", "play", "playback", "videoplayback"
+        ]
+        guard genericNames.contains(stem), let title = usableTitle(pageTitle) else {
+            return suggested
+        }
+        let fileExtension = (suggested as NSString).pathExtension
+        let inferredExtension = fileExtension.isEmpty
+            ? response?.mimeType.flatMap { UTType(mimeType: $0)?.preferredFilenameExtension } ?? ""
+            : fileExtension
+        return titledFilename(title, fileExtension: inferredExtension)
+    }
+
+    private static func titledFilename(_ title: String, fileExtension: String) -> String {
+        let existingExtension = (title as NSString).pathExtension.lowercased()
+        let baseName = existingExtension == fileExtension.lowercased()
+            || (existingExtension == "m3u8" && fileExtension.lowercased() == "mp4")
+            ? (title as NSString).deletingPathExtension : title
+        let suffix = fileExtension.isEmpty ? "" : ".\(fileExtension)"
+        return DownloadFilenameSanitizer.sanitize(baseName + suffix, preferredExtension: fileExtension)
+    }
+
+    private static func usableTitle(_ value: String?) -> String? {
+        guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !value.isEmpty else { return nil }
+        let lowered = value.lowercased()
+        guard !["untitled", "new tab", "新标签页", "about:blank"].contains(lowered),
+              !lowered.hasPrefix("http://"), !lowered.hasPrefix("https://") else { return nil }
+        return value
+    }
+}
+
 enum WebResourceDownloadError: LocalizedError {
     case invalidResponse
     case photoAccessDenied
@@ -44,12 +120,17 @@ final class WebResourceDownloadService {
         pageURL: URL? = nil,
         webView: WKWebView?
     ) async throws -> URL {
+        let filename = WebDownloadFilename.media(
+            resource,
+            requested: preferredFilename,
+            pageTitle: webView?.title
+        )
         switch resource.delivery {
         case .youtubeSABR:
             guard let webView else { throw StreamingMediaDownloadError.unavailable }
             return try await StreamingMediaDownloadService.shared.downloadYouTubeVideo(
                 resource: resource,
-                preferredFilename: preferredFilename,
+                preferredFilename: filename,
                 pageURL: pageURL,
                 webView: webView
             )
@@ -60,7 +141,7 @@ final class WebResourceDownloadService {
             return try await StreamingMediaDownloadService.shared.downloadSeparatedTracks(
                 resource: resource,
                 audioURL: audioURL,
-                preferredFilename: preferredFilename,
+                preferredFilename: filename,
                 pageURL: pageURL,
                 webView: webView
             )
@@ -68,7 +149,7 @@ final class WebResourceDownloadService {
             guard let webView else { throw StreamingMediaDownloadError.unavailable }
             return try await StreamingMediaDownloadService.shared.downloadHLS(
                 resource: resource,
-                preferredFilename: preferredFilename,
+                preferredFilename: filename,
                 pageURL: pageURL,
                 webView: webView
             )
@@ -77,10 +158,11 @@ final class WebResourceDownloadService {
         case .direct:
             return try await download(
                 resource.url,
-                preferredFilename: preferredFilename,
+                preferredFilename: filename,
                 pageURL: pageURL,
                 webView: webView,
-                fallbackBaseName: resource.kind == .video ? "Video" : "Audio"
+                fallbackBaseName: resource.kind == .video ? "Video" : "Audio",
+                playbackResource: resource.kind == .video ? resource : nil
             )
         }
     }
@@ -90,10 +172,14 @@ final class WebResourceDownloadService {
         preferredFilename: String? = nil,
         pageURL: URL? = nil,
         webView: WKWebView? = nil,
-        fallbackBaseName: String = "Download"
+        fallbackBaseName: String = "Download",
+        playbackResource: WebMediaResource? = nil
     ) async throws -> URL {
+        let automaticName = preferredFilename == nil
+            ? WebDownloadFilename.native(suggested: url.lastPathComponent, pageTitle: webView?.title)
+            : nil
         let suggestedFilename = normalizedFilename(
-            preferredFilename,
+            preferredFilename ?? automaticName,
             responseFilename: nil,
             responseMIMEType: nil,
             fallbackBaseName: fallbackBaseName,
@@ -108,6 +194,18 @@ final class WebResourceDownloadService {
 
         _ = destinationURL
         let request = await resourceRequest(url, pageURL: pageURL, webView: webView)
+        let nativeVideoExtensions: Set<String> = ["mp4", "m4v", "mov", "3gp", "3g2"]
+        let isNativeVideo = nativeVideoExtensions.contains((suggestedFilename as NSString).pathExtension.lowercased())
+            && ["http", "https"].contains(url.scheme?.lowercased() ?? "")
+        let video = playbackResource ?? (isNativeVideo
+            ? WebMediaResource(kind: .video, url: url, title: suggestedFilename, posterURL: nil) : nil)
+        if isNativeVideo, let resource = video, resource.delivery == .direct, resource.kind == .video {
+            let asset = await WebResourceMediaService.asset(for: resource, webView: webView, preferDownloadedCopy: false)
+            manager.registerPlaybackSource(id: item.id, asset: asset, pageURL: pageURL, webView: webView)
+        }
+        guard manager.downloads.contains(where: { $0.id == item.id && $0.status == .inProgress }) else {
+            throw CancellationError()
+        }
         return try await BackgroundDownloadService.shared.start(request: request, item: item)
     }
 
@@ -352,6 +450,31 @@ final class WebResourceDownloadService {
                 request.setValue(value, forHTTPHeaderField: field)
             }
         }
+        return request
+    }
+
+    // Only replay ordinary GET downloads. Blob URLs and form submissions must
+    // remain owned by WebKit, which has their body and page-process context.
+    static func canDownloadInBackground(_ request: URLRequest?) -> Bool {
+        guard let request, let url = request.url,
+              ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
+              (request.httpMethod ?? "GET").uppercased() == "GET",
+              request.httpBody == nil, request.httpBodyStream == nil,
+              request.value(forHTTPHeaderField: "Range") == nil else { return false }
+        return true
+    }
+
+    func backgroundRequest(
+        from original: URLRequest, pageURL: URL?, webView: WKWebView?
+    ) async -> URLRequest {
+        guard let url = original.url else { return original }
+        let browserRequest = await resourceRequest(url, pageURL: pageURL, webView: webView)
+        var request = original
+        for (field, value) in browserRequest.allHTTPHeaderFields ?? [:]
+        where request.value(forHTTPHeaderField: field) == nil {
+            request.setValue(value, forHTTPHeaderField: field)
+        }
+        request.httpShouldHandleCookies = false
         return request
     }
 

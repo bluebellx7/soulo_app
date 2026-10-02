@@ -9,11 +9,15 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
         configuration.sessionSendsLaunchEvents = true
         configuration.isDiscretionary = false
         configuration.waitsForConnectivity = true
+        configuration.httpCookieStorage = nil
+        configuration.httpShouldSetCookies = false
         return URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
     }()
     private lazy var foregroundFallbackSession: URLSession = {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.waitsForConnectivity = true
+        configuration.httpCookieStorage = nil
+        configuration.httpShouldSetCookies = false
         return URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
     }()
     private let lock = NSLock()
@@ -87,6 +91,10 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
             return try await startTask(in: session, request: request, item: item)
         } catch {
             guard Self.shouldUseForegroundFallback(for: error) else { throw error }
+            let isActive = await MainActor.run {
+                DownloadManagerService.shared.downloads.contains { $0.id == item.id && $0.status == .inProgress }
+            }
+            guard isActive else { throw CancellationError() }
             await MainActor.run {
                 DownloadManagerService.shared.markResumed(id: item.id)
             }
@@ -210,7 +218,8 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
         }
 
         Task { @MainActor in
-            guard let item = DownloadManagerService.shared.downloads.first(where: { $0.id == id }) else {
+            guard let item = DownloadManagerService.shared.downloads.first(where: { $0.id == id }),
+                  [.inProgress, .paused].contains(item.status) else {
                 try? FileManager.default.removeItem(at: stagedURL)
                 self.complete(id: id, result: .failure(WebResourceDownloadError.invalidResponse))
                 return
@@ -225,6 +234,9 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
                 )
                 try? FileManager.default.removeItem(at: item.localURL)
                 try FileManager.default.moveItem(at: stagedURL, to: item.localURL)
+                // A pause can race the final response. Preserve the completed
+                // file rather than leaving a paused row with no network task.
+                if item.status == .paused { DownloadManagerService.shared.markResumed(id: id) }
                 DownloadManagerService.shared.markFinished(id: id)
                 self.complete(id: id, result: .success(item.localURL))
             } catch {
@@ -245,6 +257,12 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
         let nsError = error as NSError
         let resumeData = nsError.userInfo[NSURLSessionDownloadTaskResumeData] as? Data
         Task { @MainActor in
+            if session === self.session && Self.shouldUseForegroundFallback(for: error) {
+                // The caller retries with the foreground session. Do not remove
+                // the live playback asset or briefly publish a failed row.
+                self.complete(id: id, result: .failure(error))
+                return
+            }
             if nsError.code == NSURLErrorCancelled,
                let resumeData,
                !resumeData.isEmpty {

@@ -142,7 +142,8 @@ enum WebPageCaptureService {
     return { imageCount: imageTasks.length, documentHeight: documentHeight };
     """#
 
-    static func capture(_ mode: WebPageCaptureMode, from webView: WKWebView?) async throws -> WebPageCaptureResult {
+    static func capture(_ mode: WebPageCaptureMode, from webView: WKWebView?,
+                        onProgress: ((Int, Int) -> Void)? = nil) async throws -> WebPageCaptureResult {
         guard let webView else { throw WebPageCaptureError.unavailable }
         let bounds = captureBounds(for: webView.bounds)
         guard bounds.width > 1, bounds.height > 1 else { throw WebPageCaptureError.emptyPage }
@@ -171,7 +172,8 @@ enum WebPageCaptureService {
                 webView,
                 bounds: bounds,
                 contentSize: contentSize,
-                captureSize: CGSize(width: captureWidth, height: captureHeight)
+                captureSize: CGSize(width: captureWidth, height: captureHeight),
+                onProgress: onProgress
             )
             return WebPageCaptureResult(
                 image: image,
@@ -200,7 +202,8 @@ enum WebPageCaptureService {
         _ webView: WKWebView,
         bounds: CGRect,
         contentSize: CGSize,
-        captureSize: CGSize
+        captureSize: CGSize,
+        onProgress: ((Int, Int) -> Void)?
     ) async throws -> UIImage {
         let originalOffset = webView.scrollView.contentOffset
         let maximumOffsetX = max(0, contentSize.width - bounds.width)
@@ -244,10 +247,13 @@ enum WebPageCaptureService {
             maximumContentOffset: maximumOffsetY
         )
         var renderedTileCount = 0
+        let totalTileCount = horizontalTiles.count * verticalTiles.count
+        onProgress?(0, totalTileCount)
 
         do {
             for horizontalTile in horizontalTiles {
                 for verticalTile in verticalTiles {
+                    try Task.checkCancellation()
                     webView.scrollView.setContentOffset(
                         CGPoint(
                             x: horizontalTile.contentOffset,
@@ -281,6 +287,7 @@ enum WebPageCaptureService {
                     UIGraphicsPopContext()
                     canvas.restoreGState()
                     renderedTileCount += 1
+                    onProgress?(renderedTileCount, totalTileCount)
                 }
             }
         } catch {
@@ -445,7 +452,8 @@ enum WebPagePDFService {
 
     static func export(
         from webView: WKWebView?,
-        title: String
+        title: String,
+        onProgress: ((Int, Int) -> Void)? = nil
     ) async throws -> WebPagePDFResult {
         guard let webView else { throw WebPageCaptureError.unavailable }
         let bounds = WebPageCaptureService.captureBounds(for: webView.bounds)
@@ -472,6 +480,7 @@ enum WebPagePDFService {
             PDFDocumentAttribute.producerAttribute: "Soulo WebKit PDF"
         ]
 
+        onProgress?(0, layout.rects.count)
         for rect in layout.rects {
             try Task.checkCancellation()
             let configuration = WKPDFConfiguration()
@@ -486,6 +495,7 @@ enum WebPagePDFService {
                 throw WebPageCaptureError.captureFailed
             }
             output.insert(copiedPage, at: output.pageCount)
+            onProgress?(output.pageCount, layout.rects.count)
         }
 
         guard output.pageCount == layout.rects.count,

@@ -30,6 +30,7 @@ struct WebMediaResource: Identifiable, Hashable {
     let posterURL: URL?
     let delivery: Delivery
     let companionAudioURL: URL?
+    let sourcePageURL: URL?
 
     init(
         kind: Kind,
@@ -37,7 +38,8 @@ struct WebMediaResource: Identifiable, Hashable {
         title: String,
         posterURL: URL?,
         delivery: Delivery = .direct,
-        companionAudioURL: URL? = nil
+        companionAudioURL: URL? = nil,
+        sourcePageURL: URL? = nil
     ) {
         self.kind = kind
         self.url = url
@@ -45,6 +47,7 @@ struct WebMediaResource: Identifiable, Hashable {
         self.posterURL = posterURL
         self.delivery = delivery
         self.companionAudioURL = companionAudioURL
+        self.sourcePageURL = sourcePageURL
     }
 
     var id: String { "\(kind.rawValue):\(url.absoluteString)" }
@@ -188,8 +191,10 @@ struct WebResourceSnapshot {
             )
         }, id: \.id)
 
-        videos = Self.mediaResources(dictionary["videos"], kind: .video)
-        audio = Self.mediaResources(dictionary["audio"], kind: .audio)
+        let mediaSourcePageURL = ["http", "https"].contains(pageURL?.scheme?.lowercased() ?? "")
+            ? pageURL : nil
+        videos = Self.mediaResources(dictionary["videos"], kind: .video, sourcePageURL: mediaSourcePageURL)
+        audio = Self.mediaResources(dictionary["audio"], kind: .audio, sourcePageURL: mediaSourcePageURL)
 
         links = Self.uniqueLinks((dictionary["links"] as? [[String: Any]] ?? []).compactMap { value in
             guard let url = Self.webURL(value["url"] as? String) else { return nil }
@@ -218,7 +223,36 @@ struct WebResourceSnapshot {
         }, id: \.id)
     }
 
-    private static func mediaResources(_ rawValue: Any?, kind: WebMediaResource.Kind) -> [WebMediaResource] {
+    func mergingMedia(from frame: WebResourceSnapshot) -> WebResourceSnapshot {
+        func merged(_ original: [WebMediaResource], _ extra: [WebMediaResource]) -> [WebMediaResource] {
+            var values = original
+            for resource in extra {
+                if let index = values.firstIndex(where: { $0.id == resource.id }) {
+                    values[index] = resource
+                } else {
+                    values.append(resource)
+                }
+            }
+            return values
+        }
+        return WebResourceSnapshot(
+            pageTitle: pageTitle,
+            pageURL: pageURL,
+            images: images,
+            videos: merged(videos, frame.videos),
+            audio: merged(audio, frame.audio),
+            links: links,
+            textFragments: textFragments,
+            colors: colors,
+            documents: documents
+        )
+    }
+
+    private static func mediaResources(
+        _ rawValue: Any?,
+        kind: WebMediaResource.Kind,
+        sourcePageURL: URL?
+    ) -> [WebMediaResource] {
         unique((rawValue as? [[String: Any]] ?? []).compactMap { value in
             guard let url = webURL(value["url"] as? String) else { return nil }
             return WebMediaResource(
@@ -229,7 +263,8 @@ struct WebResourceSnapshot {
                 delivery: WebMediaResource.Delivery(
                     rawValue: value["delivery"] as? String ?? ""
                 ) ?? inferredDelivery(for: url),
-                companionAudioURL: webURL(value["audioURL"] as? String)
+                companionAudioURL: webURL(value["audioURL"] as? String),
+                sourcePageURL: sourcePageURL
             )
         }, id: \.id)
     }

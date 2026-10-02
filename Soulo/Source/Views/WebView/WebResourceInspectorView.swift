@@ -31,7 +31,8 @@ private final class WebResourceInspectorViewModel: ObservableObject {
         defer { isLoading = false }
         do {
             snapshot = try await WebResourceInspectionService.inspect(
-                webView: webViewModel?.webView
+                webView: webViewModel?.webView,
+                frames: webViewModel?.mediaFrameInfos ?? []
             )
         } catch {
             errorMessage = error.localizedDescription
@@ -100,7 +101,7 @@ private final class WebResourceInspectorViewModel: ObservableObject {
             let localURL = try await WebResourceDownloadService.shared.download(
                 resource,
                 preferredFilename: resource.suggestedFilename,
-                pageURL: snapshot.pageURL,
+                pageURL: resource.sourcePageURL ?? snapshot.pageURL,
                 webView: webViewModel?.webView
             )
             statusMessage = LanguageManager.shared.localizedString("resource_download_complete")
@@ -229,7 +230,7 @@ struct WebResourceInspectorView: View {
         .sheet(item: $selectedMedia) { media in
             WebResourceMediaPlayerView(
                 resource: media,
-                pageURL: viewModel.snapshot.pageURL,
+                pageURL: media.sourcePageURL ?? viewModel.snapshot.pageURL,
                 sourceWebView: viewModel.sourceWebView,
                 assetProvider: { await viewModel.playbackAsset(for: media) },
                 downloadAction: { await viewModel.download(media: media) }

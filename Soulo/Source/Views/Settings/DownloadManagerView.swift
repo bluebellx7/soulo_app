@@ -30,10 +30,13 @@ struct DownloadManagerContentView: View {
     let highlightedItemID: UUID?
     var embeddedInLibrary = false
     @State private var previewItem: BrowserDownloadItem?
+    @State private var playingDownload: BrowserDownloadItem?
     @State private var shareItem: BrowserDownloadItem?
     @State private var showDownloadsFolder = false
     @State private var showClearConfirmation = false
     @State private var systemFile: URL?
+    @State private var exportedHLSFolder: URL?
+    @State private var hlsExportProgress: FileOperationProgress?
     @State private var fileError: String?
 
     private var hasFinishedDownloads: Bool {
@@ -110,6 +113,13 @@ struct DownloadManagerContentView: View {
         .navigationDestination(isPresented: Binding(get: { previewItem != nil }, set: { if !$0 { previewItem = nil } })) {
             if let item = previewItem { DownloadContentPreview(item: item) }
         }
+        .navigationDestination(isPresented: Binding(get: { playingDownload != nil }, set: { if !$0 { playingDownload = nil } })) {
+            if let item = playingDownload {
+                MediaPlaybackContent()
+                    .navigationTitle(item.fileName)
+                    .navigationBarTitleDisplayMode(.inline)
+            }
+        }
         .fileImporter(isPresented: $showDownloadsFolder, allowedContentTypes: [.data]) { result in
             Task {
                 do {
@@ -121,6 +131,11 @@ struct DownloadManagerContentView: View {
             }
         }
         .navigationDestination(item: $systemFile) { LocalDocumentContent(url: $0) }
+        .navigationDestination(item: $exportedHLSFolder) { LibraryFilesView(directory: $0) }
+        .disabled(hlsExportProgress != nil)
+        .overlay {
+            if let progress = hlsExportProgress { FileOperationOverlay(operation: progress) }
+        }
         .alert(ToolText.text("error"), isPresented: Binding(get: { fileError != nil }, set: { if !$0 { fileError = nil } })) {
             Button(ToolText.text("done")) { fileError = nil }
         } message: { Text(fileError ?? "") }
@@ -145,7 +160,16 @@ struct DownloadManagerContentView: View {
                 downloadSummary(item)
             }
 
-            if item.status == .finished {
+            if item.status == .finished,
+               item.localURL.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
+                Button { exportHLS(item) } label: {
+                    Image(systemName: "square.and.arrow.down")
+                        .frame(minWidth: 44, minHeight: 44)
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(LanguageManager.shared.localizedString("save") + " HLS")
+            } else if item.status == .finished
+                && item.localURL.pathExtension.lowercased() != "movpkg" {
                 Button {
                     shareItem = item
                 } label: {
@@ -159,6 +183,8 @@ struct DownloadManagerContentView: View {
                     switch item.transport {
                     case .background:
                         BackgroundDownloadService.shared.pause(id: item.id)
+                    case .separated:
+                        SeparatedMediaDownloadService.shared.pause(id: item.id)
                     case .webKit:
                         NotificationCenter.default.post(name: .pauseBrowserDownload, object: nil, userInfo: ["id": item.id])
                     case .streaming, .hls:
@@ -175,6 +201,8 @@ struct DownloadManagerContentView: View {
                     switch item.transport {
                     case .background:
                         BackgroundDownloadService.shared.resume(id: item.id)
+                    case .separated:
+                        SeparatedMediaDownloadService.shared.resume(id: item.id)
                     case .webKit:
                         NotificationCenter.default.post(name: .resumeBrowserDownload, object: nil, userInfo: ["id": item.id])
                     case .streaming, .hls:
@@ -200,11 +228,40 @@ struct DownloadManagerContentView: View {
                 )
             }.tint(.red)
         }
+        .contextMenu {
+            if item.status == .finished,
+               item.localURL.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
+                Button { exportHLS(item) } label: {
+                    Label(LanguageManager.shared.localizedString("save") + " HLS", systemImage: "square.and.arrow.down")
+                }
+            }
+        }
         .listRowBackground(
             item.id == highlightedItemID
                 ? Color.themePrimary.opacity(0.12)
                 : Color(uiColor: .secondarySystemGroupedBackground)
         )
+    }
+
+    private func exportHLS(_ item: BrowserDownloadItem) {
+        guard hlsExportProgress == nil else { return }
+        let progress = FileOperationProgress()
+        progress.progress.totalUnitCount = 0
+        hlsExportProgress = progress
+        let referenceURL = item.localURL
+        let sourceURL = URL(string: item.sourceURLString)
+        let directory = DownloadManagerService.downloadsDirectory
+        Task {
+            defer { hlsExportProgress = nil }
+            do {
+                exportedHLSFolder = try await Task.detached(priority: .userInitiated) {
+                    try await PortableHLSBundle.export(
+                        referenceURL: referenceURL, sourceURL: sourceURL, into: directory, operation: progress
+                    )
+                }.value
+            } catch ReadingToolError.canceled { }
+            catch { fileError = error.localizedDescription }
+        }
     }
 
     private func downloadSummary(_ item: BrowserDownloadItem) -> some View {
@@ -243,6 +300,25 @@ struct DownloadManagerContentView: View {
                     Text(progressText(item))
                         .font(.caption2.monospacedDigit())
                         .foregroundStyle(.tertiary)
+                    if downloadManager.playbackSource(for: item.id) != nil {
+                        Button {
+                            guard let source = downloadManager.playbackSource(for: item.id) else { return }
+                            MediaSession.shared.open(
+                                url: source.asset.url, title: item.fileName, pageURL: source.pageURL,
+                                asset: source.asset, webView: source.webView, persistPosition: source.persistsPosition,
+                                downloadSource: source
+                            )
+                            playingDownload = item
+                        } label: {
+                            Text(LanguageManager.shared.localizedString("downloads_play_while_downloading"))
+                                .font(.caption)
+                                .foregroundStyle(Color.themePrimary)
+                                .padding(.vertical, 5)
+                                .frame(minHeight: 44, alignment: .leading)
+                        }
+                        .buttonStyle(.borderless)
+                        .accessibilityIdentifier("downloads.playWhileDownloading.\(item.id)")
+                    }
                 }
             }
 
@@ -408,6 +484,7 @@ struct LocalDocumentContent: View {
     }
 
     private var isPlayableMedia: Bool {
+        if ["movpkg", OfflineHLSReference.fileExtension].contains(url.pathExtension.lowercased()) { return true }
         guard let type = UTType(filenameExtension: url.pathExtension) else {
             return false
         }

@@ -378,7 +378,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
     /// Call once at app launch to pre-compile ad blocking rules
     static func preWarm() {
-        Task(priority: .utility) {
+        Task.detached(priority: .utility) {
             _ = TrackerRadarService.shared
         }
 
@@ -388,13 +388,23 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         Task(priority: .utility) {
-            let allowlist = AdBlockSettingsService.shared.allowlistedHosts
+            // Match the exact rule set installed by updateUIView. Omitting
+            // compatibility exceptions makes the first page compile it again.
+            let allowlist = WebCompatibilityService.protectionBypassHosts(
+                adding: AdBlockSettingsService.shared.allowlistedHosts
+            )
             let signature = allowlistSignature(for: allowlist)
-            guard compilingAdBlockAllowlistSignature != signature else { return }
+            guard compilingAdBlockAllowlistSignature != signature,
+                  cachedAdBlockAllowlistSignature != signature || cachedAdBlockRules == nil else { return }
             compilingAdBlockAllowlistSignature = signature
             cachedAdBlockAllowlistSignature = signature
             cachedAdBlockRules = nil
-            let rules = await AdBlockService.compileRuleLists(allowlistedHosts: allowlist)
+            let rules = await Task.detached(priority: .utility) {
+                // The first archive decode and cosmetic JSON generation must
+                // not hold the main actor while a user opens the first page.
+                _ = AdBlockService.adHidingScript(allowlistedHosts: allowlist)
+                return await AdBlockService.compileRuleLists(allowlistedHosts: allowlist)
+            }.value
             // A newer allowlist may have started compiling while this task waited.
             if cachedAdBlockAllowlistSignature == signature {
                 cachedAdBlockRules = rules
@@ -409,6 +419,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         if let existingWebView = viewModel.webView {
             installRuntimeIfNeeded(on: existingWebView.configuration.userContentController, context: context)
             configureWebView(existingWebView, context: context)
+            context.coordinator.resyncVideoAwake(on: existingWebView)
             if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
                !isIncognito, #available(iOS 18.4, *) {
                 NativeWebExtensionRuntime.shared.register(existingWebView)
@@ -416,36 +427,12 @@ struct WebViewRepresentable: UIViewRepresentable {
             return existingWebView
         }
 
-        let configuration: WKWebViewConfiguration
-        if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
-           !isIncognito, #available(iOS 18.4, *),
-           let extensionConfiguration = NativeWebExtensionRuntime.shared
-            .webViewConfiguration(for: viewModel.currentURL) {
-            configuration = extensionConfiguration
-        } else {
-            configuration = WKWebViewConfiguration()
-            if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
-               !isIncognito, #available(iOS 18.4, *) {
-                NativeWebExtensionRuntime.shared.apply(to: configuration)
-            }
-        }
-
-        // Custom user agent
-        configuration.applicationNameForUserAgent = nil
-
-        // Inline media playback
-        configuration.allowsInlineMediaPlayback = true
-        configuration.preferences.isElementFullscreenEnabled = true
-        configuration.mediaTypesRequiringUserActionForPlayback = []
-        configuration.websiteDataStore = isIncognito ? .nonPersistent() : .default()
-
-        // Content controller for JS message handler
-        let contentController = WKUserContentController()
-        installRuntimeIfNeeded(on: contentController, context: context)
-        configuration.userContentController = contentController
-
-        // Build the WKWebView
-        let webView = AccessibleWebView(frame: .zero, configuration: configuration)
+        let webView = BrowserWebViewPool.shared.makeWebView(isIncognito: isIncognito, for: viewModel.currentURL)
+        // Bind the current tab's scripts and bridges before its first request,
+        // including when WebKit was already started by the spare-view pool.
+        BrowserStartupTrace.mark("runtime_start")
+        installRuntimeIfNeeded(on: webView.configuration.userContentController, context: context)
+        BrowserStartupTrace.mark("runtime_end")
         configureWebView(webView, context: context)
         if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
            !isIncognito, #available(iOS 18.4, *) {
@@ -454,6 +441,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         // Hand the webView reference back to the ViewModel. This triggers any pending initial load.
         viewModel.webView = webView
+        BrowserStartupTrace.mark("view_attached")
 
         return webView
     }
@@ -478,6 +466,8 @@ struct WebViewRepresentable: UIViewRepresentable {
         contentController.add(context.coordinator, name: "souloPrivacy")
         contentController.add(context.coordinator, contentWorld: .defaultClient, name: "souloContextResource")
         contentController.add(context.coordinator, contentWorld: .defaultClient, name: "souloPageReady")
+        contentController.add(context.coordinator, contentWorld: .defaultClient, name: "souloMediaFrame")
+        contentController.add(context.coordinator, contentWorld: .defaultClient, name: "souloVideoAwake")
         contentController.add(context.coordinator, contentWorld: .defaultClient, name: "souloWebLink")
         contentController.add(context.coordinator, contentWorld: BrowserAutomaticNavigationPolicy.world, name: BrowserAutomaticNavigationPolicy.handler)
         contentController.add(context.coordinator, contentWorld: WebVideoOrientationRuntime.world, name: WebVideoOrientationRuntime.handler)
@@ -496,6 +486,8 @@ struct WebViewRepresentable: UIViewRepresentable {
         guard !viewModel.hasInstalledWebViewScripts else { return }
         viewModel.hasInstalledWebViewScripts = true
         viewModel.mediaSession.install(on: contentController)
+        contentController.addUserScript(WKUserScript(source: WebViewScripts.clipboardProtection,
+            injectionTime: .atDocumentStart, forMainFrameOnly: false, in: .page))
         contentController.addUserScript(WKUserScript(source: WebViewScripts.pageContentReady,
             injectionTime: .atDocumentStart, forMainFrameOnly: true, in: .defaultClient))
         contentController.addUserScript(WKUserScript(source: WebViewScripts.bingAppPromptSuppression,
@@ -582,9 +574,19 @@ struct WebViewRepresentable: UIViewRepresentable {
             WKUserScript(
                 source: WebViewScripts.mediaResourceTracking,
                 injectionTime: .atDocumentStart,
-                forMainFrameOnly: true
+                forMainFrameOnly: false
             )
         )
+        contentController.addUserScript(WKUserScript(
+            source: WebViewScripts.mediaFrameRegistration,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false, in: .defaultClient
+        ))
+        contentController.addUserScript(WKUserScript(
+            source: WebViewScripts.videoScreenAwake,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false, in: .defaultClient
+        ))
 
         contentController.addUserScript(
             WKUserScript(
@@ -649,10 +651,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         webView.configuration.preferences.javaScriptCanOpenWindowsAutomatically = true
         webView.allowsBackForwardNavigationGestures = true
         webView.scrollView.contentInsetAdjustmentBehavior = .never
-        if #available(iOS 26.0, *) {
-            webView.obscuredContentInsets = UIEdgeInsets(top: 0, left: 0, bottom: obscuredBottomInset, right: 0)
-            webView.scrollView.bottomEdgeEffect.isHidden = obscuredBottomInset > 0
-        }
+        updateObscuredInsets(on: webView)
         webView.backgroundColor = UIColor.systemBackground
         webView.scrollView.backgroundColor = UIColor.systemBackground
         webView.isOpaque = true
@@ -683,19 +682,19 @@ struct WebViewRepresentable: UIViewRepresentable {
         context.coordinator.observe(webView: webView, viewModel: viewModel)
 
         // Pull-to-refresh
-        let refreshControl = BrowserRefreshControl()
+        let refreshControl = (webView.scrollView.refreshControl as? BrowserRefreshControl) ?? BrowserRefreshControl()
+        refreshControl.removeTarget(nil, action: #selector(Coordinator.handleRefresh(_:)), for: .valueChanged)
         refreshControl.addTarget(context.coordinator, action: #selector(Coordinator.handleRefresh(_:)), for: .valueChanged)
-        webView.scrollView.refreshControl = refreshControl
+        if webView.scrollView.refreshControl !== refreshControl {
+            webView.scrollView.refreshControl = refreshControl
+        }
 
         // Scroll direction detection
         webView.scrollView.delegate = context.coordinator
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
-        if #available(iOS 26.0, *) {
-            uiView.obscuredContentInsets = UIEdgeInsets(top: 0, left: 0, bottom: obscuredBottomInset, right: 0)
-            uiView.scrollView.bottomEdgeEffect.isHidden = obscuredBottomInset > 0
-        }
+        updateObscuredInsets(on: uiView)
         context.coordinator.updateManualAdTap(on: uiView)
         context.coordinator.synchronizeManualAdRules(on: uiView)
         // URL loading is driven imperatively via viewModel.loadURL(_:)
@@ -727,6 +726,19 @@ struct WebViewRepresentable: UIViewRepresentable {
         } else {
             uiView.configuration.userContentController.removeAllContentRuleLists()
             Self.installedContentRuleSignatures.removeValue(forKey: ObjectIdentifier(uiView))
+        }
+    }
+
+    private func updateObscuredInsets(on webView: WKWebView) {
+        if #available(iOS 26.0, *) {
+            let insets = UIEdgeInsets(top: 0, left: 0, bottom: obscuredBottomInset, right: 0)
+            if webView.obscuredContentInsets != insets {
+                webView.obscuredContentInsets = insets
+            }
+            let hidesEdgeEffect = obscuredBottomInset > 0
+            if webView.scrollView.bottomEdgeEffect.isHidden != hidesEdgeEffect {
+                webView.scrollView.bottomEdgeEffect.isHidden = hidesEdgeEffect
+            }
         }
     }
 
@@ -829,6 +841,8 @@ struct WebViewRepresentable: UIViewRepresentable {
 
     private static func removeRuntimeMessageHandlers(from controller: WKUserContentController) {
         controller.removeScriptMessageHandler(forName: "souloPageReady", contentWorld: .defaultClient)
+        controller.removeScriptMessageHandler(forName: "souloMediaFrame", contentWorld: .defaultClient)
+        controller.removeScriptMessageHandler(forName: "souloVideoAwake", contentWorld: .defaultClient)
         controller.removeScriptMessageHandler(forName: "souloContextResource", contentWorld: .defaultClient)
         controller.removeScriptMessageHandler(forName: "souloWebLink", contentWorld: .defaultClient)
         controller.removeScriptMessageHandler(
@@ -861,6 +875,14 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         private weak var manualAdTapRecognizer: UITapGestureRecognizer?
         private let videoFullscreenOrientation = WebVideoFullscreenOrientation()
+        private let screenAwakeOwner = UUID()
+        private var playingVideoFrames: [String: TimeInterval] = [:]
+        private var videoAwakeTimer: Timer?
+        deinit {
+            videoAwakeTimer?.invalidate()
+            let owner = screenAwakeOwner
+            Task { @MainActor in VideoScreenAwakeService.shared.setActive(false, owner: owner) }
+        }
         private var navigationGesture: (webView: ObjectIdentifier, frameURL: URL, time: TimeInterval)?
         private var provisionalNavigation: WKNavigation?
         private var lastContentOffset: CGFloat = 0
@@ -874,6 +896,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var downloadIDs: [ObjectIdentifier: UUID] = [:]
         private var activeDownloads: [ObjectIdentifier: WKDownload] = [:]
         private var activeDownloadNames: [ObjectIdentifier: String] = [:]
+        private var backgroundDownloadNames: [UUID: String] = [:]
         private var downloadProgressObservations: [ObjectIdentifier: NSKeyValueObservation] = [:]
         private var pageDownloadTransfers: [String: PageDownloadTransfer] = [:]
         private var downloadCancelObserver: NSObjectProtocol?
@@ -1026,6 +1049,39 @@ struct WebViewRepresentable: UIViewRepresentable {
             viewModel.isWebViewRuntimeInstalled = false
         }
 
+        func resyncVideoAwake(on webView: WKWebView) {
+            Task { @MainActor [weak self, weak webView] in
+                try? await Task.sleep(for: .milliseconds(250))
+                guard let self, let webView, self.viewModel.webView === webView else { return }
+                let script = "window.__souloVideoScreenAwake?.sync()"
+                _ = try? await webView.evaluateJavaScript(script, in: nil, contentWorld: .defaultClient)
+                for frame in self.viewModel.mediaFrameInfos {
+                    _ = try? await webView.evaluateJavaScript(script, in: frame, contentWorld: .defaultClient)
+                }
+                self.refreshVideoAwake()
+            }
+        }
+
+        private func refreshVideoAwake() {
+            let cutoff = ProcessInfo.processInfo.systemUptime - 25
+            playingVideoFrames = playingVideoFrames.filter { $0.value >= cutoff }
+            let active = !playingVideoFrames.isEmpty && viewModel.webView?.window != nil
+            VideoScreenAwakeService.shared.setActive(active, owner: screenAwakeOwner)
+            if !playingVideoFrames.isEmpty && videoAwakeTimer == nil {
+                videoAwakeTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
+                    self?.refreshVideoAwake()
+                }
+            } else if playingVideoFrames.isEmpty {
+                videoAwakeTimer?.invalidate()
+                videoAwakeTimer = nil
+            }
+        }
+
+        private func clearVideoAwake() {
+            playingVideoFrames.removeAll()
+            refreshVideoAwake()
+        }
+
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             guard let body = message.body as? [String: Any] else { return }
 
@@ -1055,6 +1111,24 @@ struct WebViewRepresentable: UIViewRepresentable {
                 return
             }
 
+            if message.name == "souloMediaFrame" {
+                guard message.webView === viewModel.webView,
+                      message.world == .defaultClient,
+                      !message.frameInfo.isMainFrame else { return }
+                viewModel.registerMediaFrame(message.frameInfo)
+                return
+            }
+
+            if message.name == "souloVideoAwake" {
+                guard message.webView === viewModel.webView, message.world == .defaultClient,
+                      let id = body["id"] as? String, !id.isEmpty, id.count < 80,
+                      let active = body["active"] as? Bool else { return }
+                if active { playingVideoFrames[id] = ProcessInfo.processInfo.systemUptime }
+                else { playingVideoFrames.removeValue(forKey: id) }
+                refreshVideoAwake()
+                return
+            }
+
             if message.name == "souloContextResource" {
                 guard message.webView === viewModel.webView, message.world == .defaultClient else { return }
                 let link = (body["linkURL"] as? String).flatMap(URL.init(string:))
@@ -1079,6 +1153,11 @@ struct WebViewRepresentable: UIViewRepresentable {
                       let action = body["action"] as? String,
                       let token = body["token"] as? String, token.count <= 80 else { return }
                 switch action {
+                case "bottomControls":
+                    guard message.frameInfo.isMainFrame, let needed = body["needed"] as? Bool else { return }
+                    if viewModel.hasBottomVideoControls != needed {
+                        viewModel.hasBottomVideoControls = needed
+                    }
                 case "speed":
                     guard let webView = message.webView, let host = topViewController(for: webView) else { return }
                     let currentRate = body["rate"] as? Double ?? 1
@@ -1100,18 +1179,37 @@ struct WebViewRepresentable: UIViewRepresentable {
                     menu.popoverPresentationController?.sourceRect = CGRect(x: webView.bounds.midX, y: webView.bounds.midY, width: 1, height: 1)
                     host.present(menu, animated: true)
                 case "download":
-                    guard let source = body["url"] as? String, let url = URL(string: source),
-                          ["http", "https"].contains(url.scheme?.lowercased() ?? "") else {
-                        viewModel.showMediaDownloads = true
-                        return
-                    }
-                    guard viewModel.beginMediaDownload(url: url, name: viewModel.pageTitle) else { return }
-                    let delivery: WebMediaResource.Delivery = url.pathExtension.lowercased() == "m3u8" ? .hls : .direct
-                    let resource = WebMediaResource(kind: .video, url: url, title: viewModel.pageTitle, posterURL: nil, delivery: delivery)
-                    Task { @MainActor [self, webView = message.webView] in
+                    guard let webView = message.webView else { return }
+                    let frame = message.frameInfo
+                    let source = (body["url"] as? String).flatMap(URL.init(string:))
+                    Task { @MainActor [self, webView] in
+                        let resource: WebMediaResource?
+                        if let current = await WebResourceInspectionService.currentVideoResource(
+                            webView: webView, frame: frame, token: token
+                        ) {
+                            resource = current
+                        } else if let source, ["http", "https"].contains(source.scheme?.lowercased() ?? "") {
+                            let delivery = WebResourceInspectionService.delivery(for: source)
+                            let frameURL = frame.request.url
+                            let sourcePageURL = ["http", "https"].contains(frameURL?.scheme?.lowercased() ?? "")
+                                ? frameURL : webView.url
+                            resource = WebMediaResource(kind: .video, url: source, title: viewModel.pageTitle,
+                                posterURL: nil, delivery: delivery, sourcePageURL: sourcePageURL)
+                        } else {
+                            let snapshot = try? await WebResourceInspectionService.inspect(
+                                webView: webView, frames: viewModel.mediaFrameInfos
+                            )
+                            resource = snapshot?.videos.count == 1 ? snapshot?.videos.first : nil
+                        }
+                        guard let resource else {
+                            viewModel.showMediaDownloads = true
+                            return
+                        }
+                        let url = resource.url
+                        guard viewModel.beginMediaDownload(url: url, name: viewModel.pageTitle) else { return }
                         do {
                             let file = try await WebResourceDownloadService.shared.download(resource,
-                                pageURL: message.frameInfo.request.url ?? webView?.url, webView: webView)
+                                pageURL: resource.sourcePageURL ?? frame.request.url ?? webView.url, webView: webView)
                             self.viewModel.finishMediaDownload(url: url)
                             self.presentDownloadedFile(file, sourceURL: url)
                         } catch {
@@ -1684,9 +1782,10 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         @MainActor
         private func refreshDownloadPresentation(preferredFilename: String? = nil) {
-            let activeCount = activeDownloads.count + pageDownloadTransfers.count
+            let activeCount = activeDownloads.count + pageDownloadTransfers.count + backgroundDownloadNames.count
             let fallbackFilename = pageDownloadTransfers.values.first?.fileName
                 ?? activeDownloadNames.values.first
+                ?? backgroundDownloadNames.values.first
             viewModel.updateDownloadState(
                 activeCount: activeCount,
                 fileName: preferredFilename ?? fallbackFilename
@@ -1782,6 +1881,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func invalidateObservations() {
             videoFullscreenOrientation.end()
+            clearVideoAwake()
             observations.forEach { $0.invalidate() }
             observations.removeAll()
             if let downloadCancelObserver {
@@ -1881,8 +1981,10 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+            BrowserStartupTrace.mark("navigation_start")
             provisionalNavigation = navigation
             if webView === viewModel.webView {
+                clearVideoAwake()
                 viewModel.beginPageNavigation()
                 videoFullscreenOrientation.end()
                 viewModel.cancelMarkingAdvertisement()
@@ -1900,6 +2002,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+            BrowserStartupTrace.mark("navigation_commit")
             provisionalNavigation = nil
             navigationGesture = nil
             if viewModel.manualAdSelection != nil { viewModel.cancelMarkingAdvertisement() }
@@ -1917,6 +2020,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            BrowserStartupTrace.mark("navigation_finish")
             webView.scrollView.refreshControl?.endRefreshing()
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -2267,7 +2371,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             in webView: WKWebView,
             nativeRequest: Bool
         ) -> Bool {
-            guard let destination = action.request.url else { return false }
+            guard action.request.url != nil else { return false }
             if viewModel.manualAdSelection != nil && !nativeRequest { return false }
             if UserDefaults.standard.object(forKey: BrowserAutomaticNavigationPolicy.preferenceKey) as? Bool ?? true { return true }
             if nativeRequest || action.navigationType == .backForward || action.navigationType == .reload { return true }
@@ -2983,9 +3087,50 @@ struct WebViewRepresentable: UIViewRepresentable {
                 completionHandler(existing.localURL)
                 return
             }
+            if WebResourceDownloadService.canDownloadInBackground(download.originalRequest),
+               let originalRequest = download.originalRequest {
+                let (item, _) = DownloadManagerService.shared.beginDownload(
+                    suggestedFilename: WebDownloadFilename.native(
+                        suggested: suggestedFilename,
+                        pageTitle: viewModel.pageTitle,
+                        response: response
+                    ),
+                    sourceURL: originalRequest.url,
+                    transport: .background
+                )
+                // Declining WebKit's destination stops its transfer. The
+                // independent session keeps running when this tab is closed.
+                backgroundDownloadNames[item.id] = item.fileName
+                completionHandler(nil)
+                refreshDownloadPresentation(preferredFilename: item.fileName)
+                let pageURL = viewModel.currentURL
+                Task { @MainActor [weak self, weak webView = viewModel.webView] in
+                    defer {
+                        self?.backgroundDownloadNames.removeValue(forKey: item.id)
+                        self?.refreshDownloadPresentation()
+                    }
+                    let request = await WebResourceDownloadService.shared.backgroundRequest(
+                        from: originalRequest, pageURL: pageURL, webView: webView
+                    )
+                    guard DownloadManagerService.shared.downloads.first(where: { $0.id == item.id })?.status == .inProgress else {
+                        return
+                    }
+                    do {
+                        let fileURL = try await BackgroundDownloadService.shared.start(request: request, item: item)
+                        self?.presentDownloadedFile(fileURL, sourceURL: originalRequest.url)
+                    } catch {
+                        // The service has already published the failed state.
+                    }
+                }
+                return
+            }
             let (item, fileURL) = DownloadManagerService.shared.beginDownload(
-                suggestedFilename: suggestedFilename,
-                sourceURL: viewModel.currentURL ?? response.url
+                suggestedFilename: WebDownloadFilename.native(
+                    suggested: suggestedFilename,
+                    pageTitle: viewModel.pageTitle,
+                    response: response
+                ),
+                sourceURL: response.url ?? download.originalRequest?.url ?? viewModel.currentURL
             )
             downloadIDs[identifier] = item.id
             activeDownloads[identifier] = download

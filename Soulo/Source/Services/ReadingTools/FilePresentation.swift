@@ -21,10 +21,19 @@ struct FilePresentation: Sendable, Hashable {
         case .other: "doc"
         }
     }
-    var badge: String { fileExtension.isEmpty ? ToolText.text("file_data") : fileExtension.uppercased() }
+    var badge: String {
+        if fileExtension == OfflineHLSReference.fileExtension { return "HLS" }
+        return fileExtension.isEmpty ? ToolText.text("file_data") : fileExtension.uppercased()
+    }
 
     static func inspect(_ url: URL) -> FilePresentation {
         let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey])
+        if url.pathExtension.lowercased() == "movpkg" {
+            return FilePresentation(kind: .video, fileExtension: "movpkg", size: 0)
+        }
+        if url.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
+            return FilePresentation(kind: .video, fileExtension: OfflineHLSReference.fileExtension, size: 0)
+        }
         if values?.isDirectory == true { return FilePresentation(kind: .folder, fileExtension: "", size: 0) }
         var ext = url.pathExtension.lowercased()
         // ImageIO identifies bytes, including extensionless JPEG/WebP/HEIF downloads.
@@ -75,7 +84,8 @@ struct PreparedFilePreview: Sendable {
     func removeTemporaryFile() { if let temporaryDirectory { try? FileManager.default.removeItem(at: temporaryDirectory) } }
 }
 
-/// Only selected, app-owned regular files are removed. Directory and symlink deletion are excluded.
+/// Only selected, app-owned files and legacy HLS packages are removed.
+/// Ordinary directories and symlinks are excluded.
 enum LibraryFileActions {
     static func rename(_ file: URL, baseName: String, in directory: URL) throws -> URL {
         let name = baseName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -102,12 +112,18 @@ enum LibraryFileActions {
     static func delete(_ files: [URL], in directory: URL) throws {
         let root = directory.standardizedFileURL.resolvingSymlinksInPath()
         for file in files {
-            let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
-            guard values.isRegularFile == true, values.isSymbolicLink != true,
+            let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey, .isSymbolicLinkKey])
+            let isManagedPackage = file.pathExtension.lowercased() == "movpkg" && values.isDirectory == true
+            guard (values.isRegularFile == true || isManagedPackage), values.isSymbolicLink != true,
                   file.standardizedFileURL.deletingLastPathComponent().resolvingSymlinksInPath() == root,
                   !file.lastPathComponent.hasPrefix(".") else { throw ReadingToolError.unsafePath }
         }
-        for file in files { try FileManager.default.removeItem(at: file) }
+        for file in files {
+            if file.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
+                try? OfflineHLSReference.removePackage(for: file)
+            }
+            try FileManager.default.removeItem(at: file)
+        }
     }
 }
 

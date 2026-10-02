@@ -1,0 +1,3931 @@
+{
+  "local_before": [
+    {
+      "label": "delay-0.1-run-0-cold",
+      "warm": false,
+      "delay": 0.1,
+      "url": "http://127.0.0.1:54931/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 3353.2,
+        "submit_to_commit_ms": 3238.2,
+        "submit_to_finish_ms": 3408.1,
+        "acquire_ms": 37.4,
+        "runtime_ms": 335.7,
+        "submit_to_attached_ms": 894.6,
+        "attached_to_commit_ms": 2343.6,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 348837.0083428334,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 348837.78616354166,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 348850.427803875,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 348850.9365385,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 348850.93663662503,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 348850.9739179583,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 348850.97402279166,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 348851.30972583336,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 348851.32239183335,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 348851.472105125,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 348851.6705862917,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 348853.5086954167,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 348853.665954,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 348853.78099620837,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 348853.8359017917,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": false,
+      "exclusion_reason": "First external URL confirmation required manual input; not a valid early-entry sample."
+    },
+    {
+      "label": "delay-0.1-run-0-warm",
+      "warm": true,
+      "delay": 0.1,
+      "url": "http://127.0.0.1:54931/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 3771.1,
+        "submit_to_commit_ms": 3705.7,
+        "submit_to_finish_ms": 3813.6,
+        "acquire_ms": 57.4,
+        "runtime_ms": 1516.6,
+        "submit_to_attached_ms": 1990.4,
+        "attached_to_commit_ms": 1715.3,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 348855.83579258336,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 348856.64809275,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 348856.9425875417,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 348857.35181016667,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 348857.35192391666,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 348857.409243625,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 348857.40935875004,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 348858.9259373334,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 348858.93299325,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 348859.02960375004,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 348860.54846662504,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 348860.648282375,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 348860.713686125,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 348860.7561451667,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-0.1-run-1-warm",
+      "warm": true,
+      "delay": 0.1,
+      "url": "http://127.0.0.1:54931/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 3644.5,
+        "submit_to_commit_ms": 3584.4,
+        "submit_to_finish_ms": 3684.7,
+        "acquire_ms": 1.2,
+        "runtime_ms": 1439.8,
+        "submit_to_attached_ms": 1974.8,
+        "attached_to_commit_ms": 1609.7,
+        "pool_hit": true
+      },
+      "events": [
+        {
+          "time": 348862.58408633334,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 348863.3728173334,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 348863.69942383334,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 348863.8728591667,
+          "event": "warmup_start",
+          "detail": ""
+        },
+        {
+          "time": 348864.2266997084,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 348864.2278219167,
+          "event": "pool_hit",
+          "detail": "ready=false"
+        },
+        {
+          "time": 348864.2278852917,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 348864.2279417917,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 348865.6677267917,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 348865.674189375,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 348865.756557375,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 348867.1868227917,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 348867.2838616667,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 348867.34393025003,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 348867.3841240833,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-0.1-run-1-cold",
+      "warm": false,
+      "delay": 0.1,
+      "url": "http://127.0.0.1:54931/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 3607.6,
+        "submit_to_commit_ms": 3546.4,
+        "submit_to_finish_ms": 3645.9,
+        "acquire_ms": 42.6,
+        "runtime_ms": 1429.1,
+        "submit_to_attached_ms": 1876.8,
+        "attached_to_commit_ms": 1669.6,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 348869.19148875005,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 348869.98549125,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 348870.3039338334,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 348870.7014928334,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 348870.7015985417,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 348870.7441029167,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 348870.74420075,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 348872.1733196667,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 348872.18068912503,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 348872.2692588334,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 348873.7397055417,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 348873.85030600004,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 348873.91157945833,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 348873.94983162504,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-0.1-run-2-cold",
+      "warm": false,
+      "delay": 0.1,
+      "url": "http://127.0.0.1:54931/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 3608.4,
+        "submit_to_commit_ms": 3551.0,
+        "submit_to_finish_ms": 3649.7,
+        "acquire_ms": 45.4,
+        "runtime_ms": 1439.9,
+        "submit_to_attached_ms": 1887.5,
+        "attached_to_commit_ms": 1663.5,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 348875.81338887505,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 348876.566260125,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 348876.8597569584,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 348877.25486625003,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 348877.25497070834,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 348877.300220125,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 348877.30032075004,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 348878.7402416667,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 348878.7472779584,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 348878.8456227917,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 348880.31277562503,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 348880.41074637504,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 348880.4681085417,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 348880.509468875,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-0.1-run-2-warm",
+      "warm": true,
+      "delay": 0.1,
+      "url": "http://127.0.0.1:54931/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 3687.8,
+        "submit_to_commit_ms": 3621.8,
+        "submit_to_finish_ms": 3688.2,
+        "acquire_ms": 0.2,
+        "runtime_ms": 1456.7,
+        "submit_to_attached_ms": 1987.5,
+        "attached_to_commit_ms": 1634.3,
+        "pool_hit": true
+      },
+      "events": [
+        {
+          "time": 348882.3490335417,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 348883.0956597084,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 348883.39968025003,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 348883.49723033333,
+          "event": "warmup_start",
+          "detail": ""
+        },
+        {
+          "time": 348883.92386083334,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 348883.92397062504,
+          "event": "pool_hit",
+          "detail": "ready=false"
+        },
+        {
+          "time": 348883.92402570834,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 348883.92407770833,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 348885.3808215417,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 348885.38719420834,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 348885.4685092917,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 348886.90971545834,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 348887.0215101667,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 348887.08745029167,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 348887.0878682917,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-0-cold",
+      "warm": false,
+      "delay": 2.5,
+      "url": "http://127.0.0.1:54931/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 6235.8,
+        "submit_to_commit_ms": 6171.0,
+        "submit_to_finish_ms": 6278.5,
+        "acquire_ms": 47.9,
+        "runtime_ms": 1642.6,
+        "submit_to_attached_ms": 1988.6,
+        "attached_to_commit_ms": 4182.4,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 348888.997296,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 348889.7843847917,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 348892.4881595,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 348892.7795495833,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 348892.7796597917,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 348892.82740020833,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 348892.827509375,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 348894.47010020836,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 348894.47678225004,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 348894.56049166666,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 348898.5565405834,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 348898.6591669167,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 348898.7239161667,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 348898.76661320834,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-0-warm",
+      "warm": true,
+      "delay": 2.5,
+      "url": "http://127.0.0.1:54931/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 4832.1,
+        "submit_to_commit_ms": 4773.0,
+        "submit_to_finish_ms": 4871.2,
+        "acquire_ms": 0.2,
+        "runtime_ms": 1630.4,
+        "submit_to_attached_ms": 1917.0,
+        "attached_to_commit_ms": 2856.0,
+        "warmup_ms": 535.2,
+        "pool_hit": true
+      },
+      "events": [
+        {
+          "time": 348900.5961786667,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 348901.34213320835,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 348901.7306599167,
+          "event": "warmup_start",
+          "detail": ""
+        },
+        {
+          "time": 348902.26583608333,
+          "event": "warmup_ready",
+          "detail": ""
+        },
+        {
+          "time": 348904.0265870417,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 348904.30534795835,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 348904.30544120836,
+          "event": "pool_hit",
+          "detail": "ready=true"
+        },
+        {
+          "time": 348904.305500875,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 348904.3055521667,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 348905.93590820837,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 348905.94357141666,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 348906.0297279584,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 348908.7008786667,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 348908.79954562505,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 348908.8587130417,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 348908.8977835417,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-1-warm",
+      "warm": true,
+      "delay": 2.5,
+      "url": "http://127.0.0.1:54931/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 4848.0,
+        "submit_to_commit_ms": 4783.8,
+        "submit_to_finish_ms": 4888.6,
+        "acquire_ms": 0.2,
+        "runtime_ms": 1637.1,
+        "submit_to_attached_ms": 1916.9,
+        "attached_to_commit_ms": 2866.9,
+        "warmup_ms": 509.7,
+        "pool_hit": true
+      },
+      "events": [
+        {
+          "time": 348910.694459375,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 348911.43977650005,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 348911.82549358334,
+          "event": "warmup_start",
+          "detail": ""
+        },
+        {
+          "time": 348912.33514695836,
+          "event": "warmup_ready",
+          "detail": ""
+        },
+        {
+          "time": 348914.1327970417,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 348914.4046175834,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 348914.404734125,
+          "event": "pool_hit",
+          "detail": "ready=true"
+        },
+        {
+          "time": 348914.4047935,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 348914.40496733336,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 348916.04203529167,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 348916.049702375,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 348916.1360765417,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 348918.81674083334,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 348918.9165588333,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 348918.98075316666,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 348919.02137725,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-1-cold",
+      "warm": false,
+      "delay": 2.5,
+      "url": "http://127.0.0.1:54931/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 6282.4,
+        "submit_to_commit_ms": 6244.8,
+        "submit_to_finish_ms": 6282.8,
+        "acquire_ms": 44.9,
+        "runtime_ms": 1633.4,
+        "submit_to_attached_ms": 1989.5,
+        "attached_to_commit_ms": 4255.3,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 348920.89901550004,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 348921.71103845834,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 348924.37847725,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 348924.6826925,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 348924.6827979167,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 348924.7275902917,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 348924.72769525,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 348926.3611202917,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 348926.3679360417,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 348926.45315429167,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 348930.4765526667,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 348930.62326620833,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 348930.660832875,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 348930.6612445417,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-2-cold",
+      "warm": false,
+      "delay": 2.5,
+      "url": "http://127.0.0.1:54931/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 6175.7,
+        "submit_to_commit_ms": 6134.5,
+        "submit_to_finish_ms": 6222.2,
+        "acquire_ms": 43.8,
+        "runtime_ms": 1630.6,
+        "submit_to_attached_ms": 1954.8,
+        "attached_to_commit_ms": 4179.7,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 348932.5104194583,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 348933.3197615417,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 348935.98312650004,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 348936.2560689167,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 348936.2561805417,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 348936.299877125,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 348936.29998020834,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 348937.93054900004,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 348937.93797545834,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 348938.0226160833,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 348941.98630029167,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 348942.11764350004,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 348942.15881925,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 348942.2053670417,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-2-warm",
+      "warm": true,
+      "delay": 2.5,
+      "url": "http://127.0.0.1:54931/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 4932.9,
+        "submit_to_commit_ms": 4893.5,
+        "submit_to_finish_ms": 4976.3,
+        "acquire_ms": 0.3,
+        "runtime_ms": 1634.1,
+        "submit_to_attached_ms": 1936.8,
+        "attached_to_commit_ms": 2956.6,
+        "warmup_ms": 523.3,
+        "pool_hit": true
+      },
+      "events": [
+        {
+          "time": 348944.0319181667,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 348944.85750175,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 348945.2434835417,
+          "event": "warmup_start",
+          "detail": ""
+        },
+        {
+          "time": 348945.76682012505,
+          "event": "warmup_ready",
+          "detail": ""
+        },
+        {
+          "time": 348947.550058,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 348947.8445589584,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 348947.84472212504,
+          "event": "pool_hit",
+          "detail": "ready=true"
+        },
+        {
+          "time": 348947.8448090833,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 348947.8448659584,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 348949.4790030417,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 348949.48690637504,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 348949.5730039167,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 348952.4101296667,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 348952.44351350004,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 348952.48291345837,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 348952.52639429166,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    }
+  ],
+  "bing_before": [
+    {
+      "label": "delay-2.5-run-0-cold",
+      "warm": false,
+      "delay": 2.5,
+      "url": "https://www.bing.com/search?q=swift",
+      "metrics": {
+        "submit_to_visible_ms": 7927.4,
+        "submit_to_commit_ms": 6622.7,
+        "submit_to_finish_ms": 8135.3,
+        "acquire_ms": 50.0,
+        "runtime_ms": 1613.5,
+        "submit_to_attached_ms": 1979.4,
+        "attached_to_commit_ms": 4643.3,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 348976.99280479166,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 348977.85747729166,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 348980.53760387504,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 348980.84611425,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 348980.8462081667,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 348980.89614070836,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 348980.89623608335,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 348982.50975670834,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 348982.51701916667,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 348982.60368208337,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 348986.6703149584,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 348987.16032908333,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 348988.46495470835,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 348988.67292383336,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-0-warm",
+      "warm": true,
+      "delay": 2.5,
+      "url": "https://www.bing.com/search?q=swift",
+      "metrics": {
+        "submit_to_visible_ms": 6985.9,
+        "submit_to_commit_ms": 5707.7,
+        "submit_to_finish_ms": 7480.6,
+        "acquire_ms": 0.2,
+        "runtime_ms": 1673.4,
+        "submit_to_attached_ms": 1983.9,
+        "attached_to_commit_ms": 3723.7,
+        "warmup_ms": 574.3,
+        "pool_hit": true
+      },
+      "events": [
+        {
+          "time": 348990.6214044167,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 348991.4562130417,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 348991.8537442917,
+          "event": "warmup_start",
+          "detail": ""
+        },
+        {
+          "time": 348992.42804925004,
+          "event": "warmup_ready",
+          "detail": ""
+        },
+        {
+          "time": 348994.1452835,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 348994.44733837503,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 348994.44744383334,
+          "event": "pool_hit",
+          "detail": "ready=true"
+        },
+        {
+          "time": 348994.44750220835,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 348994.44755237503,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 348996.12095504167,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 348996.12923045835,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 348996.2162042084,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 348999.143258625,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 348999.85296645836,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349001.13115908334,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349001.62583954167,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-1-warm",
+      "warm": true,
+      "delay": 2.5,
+      "url": "https://www.bing.com/search?q=swift",
+      "metrics": {
+        "submit_to_visible_ms": 6795.3,
+        "submit_to_commit_ms": 5554.3,
+        "submit_to_finish_ms": 7020.5,
+        "acquire_ms": 0.2,
+        "runtime_ms": 1640.5,
+        "submit_to_attached_ms": 1936.3,
+        "attached_to_commit_ms": 3618.0,
+        "warmup_ms": 504.3,
+        "pool_hit": true
+      },
+      "events": [
+        {
+          "time": 349003.8031917917,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349004.5956356667,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 349004.9899211667,
+          "event": "warmup_start",
+          "detail": ""
+        },
+        {
+          "time": 349005.49425391667,
+          "event": "warmup_ready",
+          "detail": ""
+        },
+        {
+          "time": 349007.2653959167,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349007.55303970835,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349007.55314883334,
+          "event": "pool_hit",
+          "detail": "ready=true"
+        },
+        {
+          "time": 349007.55320970836,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349007.55326095835,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349009.19374245836,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349009.2016725417,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349009.28618837503,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349012.39327037503,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349012.81969425,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349014.06069925,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349014.28589262505,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-1-cold",
+      "warm": false,
+      "delay": 2.5,
+      "url": "https://www.bing.com/search?q=swift",
+      "metrics": {
+        "submit_to_visible_ms": 7741.7,
+        "submit_to_commit_ms": 6494.2,
+        "submit_to_finish_ms": 7955.9,
+        "acquire_ms": 44.3,
+        "runtime_ms": 1612.1,
+        "submit_to_attached_ms": 1933.3,
+        "attached_to_commit_ms": 4560.8,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 349016.25442504167,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349016.9992809584,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 349019.69422225,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349019.96400516666,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349019.96411145834,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 349020.0082996667,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349020.0084038334,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349021.6204755,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349021.62754733337,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349021.713824375,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349025.665367875,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349026.18839158333,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349027.43596129166,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349027.6501099167,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-2-cold",
+      "warm": false,
+      "delay": 2.5,
+      "url": "https://www.bing.com/search?q=swift",
+      "metrics": {
+        "submit_to_visible_ms": 7777.4,
+        "submit_to_commit_ms": 6551.6,
+        "submit_to_finish_ms": 8004.5,
+        "acquire_ms": 47.5,
+        "runtime_ms": 1680.0,
+        "submit_to_attached_ms": 2013.0,
+        "attached_to_commit_ms": 4538.6,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 349029.59907895833,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349030.40422233334,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 349033.10420070833,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349033.38273420837,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349033.38284337503,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 349033.4302001667,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349033.43029391667,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349035.11024454166,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349035.1171753334,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349035.2003805417,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349039.1298146667,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349039.65576033335,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349040.88160845835,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349041.10866695835,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-2-warm",
+      "warm": true,
+      "delay": 2.5,
+      "url": "https://www.bing.com/search?q=swift",
+      "metrics": {
+        "submit_to_visible_ms": 6317.9,
+        "submit_to_commit_ms": 5168.2,
+        "submit_to_finish_ms": 6761.3,
+        "acquire_ms": 0.2,
+        "runtime_ms": 1652.6,
+        "submit_to_attached_ms": 1931.0,
+        "attached_to_commit_ms": 3237.2,
+        "warmup_ms": 503.9,
+        "pool_hit": true
+      },
+      "events": [
+        {
+          "time": 349043.01719770837,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349043.8689720834,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 349044.2874275417,
+          "event": "warmup_start",
+          "detail": ""
+        },
+        {
+          "time": 349044.7913635,
+          "event": "warmup_ready",
+          "detail": ""
+        },
+        {
+          "time": 349046.5456019167,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349046.815696,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349046.81579970836,
+          "event": "pool_hit",
+          "detail": "ready=true"
+        },
+        {
+          "time": 349046.81585275003,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349046.81590108335,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349048.468454875,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349048.4766072084,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349048.5624057917,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349051.32841995836,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349051.713777375,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349052.86352775,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349053.3069194584,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    }
+  ],
+  "local_after": [
+    {
+      "label": "delay-0.1-run-0-cold",
+      "warm": false,
+      "delay": 0.1,
+      "url": "http://127.0.0.1:56516/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 2385.8,
+        "submit_to_commit_ms": 2324.4,
+        "submit_to_finish_ms": 2425.8,
+        "acquire_ms": 45.3,
+        "runtime_ms": 119.2,
+        "submit_to_attached_ms": 567.1,
+        "attached_to_commit_ms": 1757.3,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 349732.989730625,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349733.91779395833,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 349734.26692545833,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349734.66246687504,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349734.66257491667,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 349734.70777483337,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349734.7078757917,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349734.7963949167,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349734.82710783335,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349734.8340605834,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349734.940564375,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349735.0514521667,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349735.20167283335,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349735.20175470837,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349736.48361600004,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349736.5913234167,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349736.6527425,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349736.6927279584,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-0.1-run-0-warm",
+      "warm": true,
+      "delay": 0.1,
+      "url": "http://127.0.0.1:56516/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 2386.6,
+        "submit_to_commit_ms": 2315.9,
+        "submit_to_finish_ms": 2387.0,
+        "acquire_ms": 46.2,
+        "runtime_ms": 115.0,
+        "submit_to_attached_ms": 591.2,
+        "attached_to_commit_ms": 1724.7,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 349738.4867720417,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349739.2718815,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 349739.610955375,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349740.0339319167,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349740.0340337917,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 349740.0801346667,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349740.0802265,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349740.1639694167,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349740.19522495836,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349740.20217216667,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349740.29829858337,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349740.4439300417,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349740.57853625005,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349740.578619125,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349741.81636245834,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349741.926831375,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349741.99757270835,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349741.9979320834,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-0.1-run-1-warm",
+      "warm": true,
+      "delay": 0.1,
+      "url": "http://127.0.0.1:56516/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 2316.0,
+        "submit_to_commit_ms": 2252.4,
+        "submit_to_finish_ms": 2316.4,
+        "acquire_ms": 0.2,
+        "runtime_ms": 113.3,
+        "submit_to_attached_ms": 624.7,
+        "attached_to_commit_ms": 1627.7,
+        "pool_hit": true
+      },
+      "events": [
+        {
+          "time": 349743.83849908336,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349744.7033340417,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 349745.0238010833,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349745.16567791667,
+          "event": "warmup_start",
+          "detail": ""
+        },
+        {
+          "time": 349745.5288977917,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349745.52900287503,
+          "event": "pool_hit",
+          "detail": "ready=false"
+        },
+        {
+          "time": 349745.5290566667,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349745.52910883335,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349745.61223075003,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349745.642382875,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349745.6484945,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349745.72989295836,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349745.85180070833,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349746.004292,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349746.00437208335,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349747.16765354166,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349747.27623870835,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349747.33975420834,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349747.3402200417,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-0.1-run-1-cold",
+      "warm": false,
+      "delay": 0.1,
+      "url": "http://127.0.0.1:56516/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 2360.7,
+        "submit_to_commit_ms": 2300.8,
+        "submit_to_finish_ms": 2397.0,
+        "acquire_ms": 45.0,
+        "runtime_ms": 113.9,
+        "submit_to_attached_ms": 610.6,
+        "attached_to_commit_ms": 1690.2,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 349749.12754270836,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349749.8998710833,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 349750.2010465417,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349750.64527845837,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349750.6453859167,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 349750.6902835,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349750.69039112504,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349750.77472108335,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349750.8043095417,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349750.8116667084,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349750.9095722917,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349751.0150204584,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349751.17802287504,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349751.17821650003,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349752.40276945836,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349752.50184858334,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349752.561761,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349752.59805025003,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-0.1-run-2-cold",
+      "warm": false,
+      "delay": 0.1,
+      "url": "http://127.0.0.1:56516/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 2290.1,
+        "submit_to_commit_ms": 2223.8,
+        "submit_to_finish_ms": 2290.6,
+        "acquire_ms": 46.8,
+        "runtime_ms": 115.0,
+        "submit_to_attached_ms": 556.4,
+        "attached_to_commit_ms": 1667.4,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 349754.38421704166,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349755.1878100833,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 349755.5183535417,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349755.906085,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349755.90619141667,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 349755.95283920836,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349755.952939125,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349756.037377125,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349756.06792033336,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349756.0747989584,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349756.17281558336,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349756.31766,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349756.44973570836,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349756.4498235417,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349757.6340544167,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349757.7421495,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349757.8084487917,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349757.80895475,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-0.1-run-2-warm",
+      "warm": true,
+      "delay": 0.1,
+      "url": "http://127.0.0.1:56516/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 2374.7,
+        "submit_to_commit_ms": 2286.8,
+        "submit_to_finish_ms": 2375.3,
+        "acquire_ms": 45.9,
+        "runtime_ms": 116.8,
+        "submit_to_attached_ms": 533.1,
+        "attached_to_commit_ms": 1753.7,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 349759.58566175,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349760.40225004166,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 349760.708789,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349761.0716931667,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349761.0717900417,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 349761.117619125,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349761.11770862504,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349761.20345612505,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349761.234557625,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349761.241904125,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349761.3465479167,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349761.50454633334,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349761.64204091666,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349761.64216237504,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349762.883657625,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349762.9956286667,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349763.08353545837,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349763.0840690417,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-0-cold",
+      "warm": false,
+      "delay": 2.5,
+      "url": "http://127.0.0.1:56516/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 2263.4,
+        "submit_to_commit_ms": 2203.5,
+        "submit_to_finish_ms": 2302.5,
+        "acquire_ms": 44.7,
+        "runtime_ms": 46.8,
+        "submit_to_attached_ms": 403.9,
+        "attached_to_commit_ms": 1799.6,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 349764.922013,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349765.718202,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 349766.2089257084,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349766.20904704166,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349766.2227552084,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349766.2228630417,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349768.3934111667,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349768.69880845834,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349768.6989049167,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 349768.7435091667,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349768.74360620836,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349768.790393,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349768.79727925,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349768.87878537504,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349770.48542054166,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349770.5968787917,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349770.656783375,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349770.695933,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-0-warm",
+      "warm": true,
+      "delay": 2.5,
+      "url": "http://127.0.0.1:56516/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 1673.5,
+        "submit_to_commit_ms": 1614.7,
+        "submit_to_finish_ms": 1721.5,
+        "acquire_ms": 0.2,
+        "runtime_ms": 45.2,
+        "submit_to_attached_ms": 347.6,
+        "attached_to_commit_ms": 1267.1,
+        "warmup_ms": 631.0,
+        "pool_hit": true
+      },
+      "events": [
+        {
+          "time": 349772.502281375,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349773.33188558335,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 349773.73901945836,
+          "event": "warmup_start",
+          "detail": ""
+        },
+        {
+          "time": 349773.9583965417,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349773.95847975,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349773.9685617917,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349773.96865945833,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349774.3700485417,
+          "event": "warmup_ready",
+          "detail": ""
+        },
+        {
+          "time": 349776.00404125004,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349776.29855133337,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349776.29868770833,
+          "event": "pool_hit",
+          "detail": "ready=true"
+        },
+        {
+          "time": 349776.2987482917,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349776.29881191667,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349776.3440407084,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349776.35169070837,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349776.43600125,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349777.5182121667,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349777.6187909167,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349777.6775317084,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349777.7255505417,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-1-warm",
+      "warm": true,
+      "delay": 2.5,
+      "url": "http://127.0.0.1:56516/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 1645.2,
+        "submit_to_commit_ms": 1587.1,
+        "submit_to_finish_ms": 1684.6,
+        "acquire_ms": 0.1,
+        "runtime_ms": 47.5,
+        "submit_to_attached_ms": 348.2,
+        "attached_to_commit_ms": 1238.9,
+        "warmup_ms": 523.6,
+        "pool_hit": true
+      },
+      "events": [
+        {
+          "time": 349779.590981125,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349780.36126483337,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 349780.772996,
+          "event": "warmup_start",
+          "detail": ""
+        },
+        {
+          "time": 349781.032469375,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349781.03260487504,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349781.0433272084,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349781.0435435,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349781.29662595835,
+          "event": "warmup_ready",
+          "detail": ""
+        },
+        {
+          "time": 349783.03463008336,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349783.32695895835,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349783.32705375005,
+          "event": "pool_hit",
+          "detail": "ready=true"
+        },
+        {
+          "time": 349783.32710520836,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349783.3271536667,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349783.3746492917,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349783.3828499584,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349783.470928625,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349784.51374975004,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349784.6217082917,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349784.6798177083,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349784.71918795834,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-1-cold",
+      "warm": false,
+      "delay": 2.5,
+      "url": "http://127.0.0.1:56516/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 2269.8,
+        "submit_to_commit_ms": 2215.7,
+        "submit_to_finish_ms": 2311.9,
+        "acquire_ms": 45.3,
+        "runtime_ms": 46.2,
+        "submit_to_attached_ms": 400.0,
+        "attached_to_commit_ms": 1815.7,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 349786.5519647084,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349787.3654902917,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 349787.84921375004,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349787.8493259167,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349787.8642589584,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349787.86436070834,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349790.0532773334,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349790.35457725,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349790.35467508336,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 349790.399887375,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349790.40001283336,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349790.44618475,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349790.4532429167,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349790.5372174167,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349792.15451741667,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349792.2689535417,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349792.32312404166,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349792.365184625,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-2-cold",
+      "warm": false,
+      "delay": 2.5,
+      "url": "http://127.0.0.1:56516/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 2180.8,
+        "submit_to_commit_ms": 2111.8,
+        "submit_to_finish_ms": 2181.2,
+        "acquire_ms": 43.9,
+        "runtime_ms": 45.5,
+        "submit_to_attached_ms": 392.0,
+        "attached_to_commit_ms": 1719.7,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 349794.17855812504,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349795.00481170835,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 349795.49078558333,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349795.49089920835,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349795.502590875,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349795.50271770835,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349797.66313870833,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349797.958808,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349797.9589107084,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 349798.0027271667,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349798.002831,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349798.04835033335,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349798.05516725004,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349798.13768658333,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349799.6630510417,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349799.77490658336,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349799.84390595835,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349799.844352625,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-2-warm",
+      "warm": true,
+      "delay": 2.5,
+      "url": "http://127.0.0.1:56516/fixture",
+      "metrics": {
+        "submit_to_visible_ms": 1636.7,
+        "submit_to_commit_ms": 1582.1,
+        "submit_to_finish_ms": 1681.0,
+        "acquire_ms": 0.2,
+        "runtime_ms": 46.1,
+        "submit_to_attached_ms": 361.3,
+        "attached_to_commit_ms": 1220.9,
+        "warmup_ms": 509.5,
+        "pool_hit": true
+      },
+      "events": [
+        {
+          "time": 349801.6852612917,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349802.46915983333,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 349802.8746626667,
+          "event": "warmup_start",
+          "detail": ""
+        },
+        {
+          "time": 349803.11130804167,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349803.11141275003,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349803.12524875003,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349803.12534375,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349803.384168,
+          "event": "warmup_ready",
+          "detail": ""
+        },
+        {
+          "time": 349805.1718584584,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349805.47896512505,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349805.47907183337,
+          "event": "pool_hit",
+          "detail": "ready=true"
+        },
+        {
+          "time": 349805.47913620836,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349805.47918820835,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349805.5252750834,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349805.5331371667,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349805.618582375,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349806.6571330417,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349806.7540005417,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349806.80851445836,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349806.85290225,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    }
+  ],
+  "bing_after": [
+    {
+      "label": "delay-2.5-run-0-cold",
+      "warm": false,
+      "delay": 2.5,
+      "url": "https://www.bing.com/search?q=swift",
+      "metrics": {
+        "submit_to_visible_ms": 3791.4,
+        "submit_to_commit_ms": 2632.8,
+        "submit_to_finish_ms": 3845.7,
+        "acquire_ms": 44.3,
+        "runtime_ms": 47.7,
+        "submit_to_attached_ms": 407.3,
+        "attached_to_commit_ms": 2225.5,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 349818.5771681667,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349819.46996283333,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 349819.95251750003,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349819.95263795834,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349819.98109783337,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349819.981186375,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349822.17038145836,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349822.4783965417,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349822.4785000834,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 349822.5227290834,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349822.5228219167,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349822.5705350417,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349822.57763683336,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349822.66683170834,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349824.2611343333,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349824.8031709167,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349825.96177208336,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349826.01604645833,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-0-warm",
+      "warm": true,
+      "delay": 2.5,
+      "url": "https://www.bing.com/search?q=swift",
+      "metrics": {
+        "submit_to_visible_ms": 2988.3,
+        "submit_to_commit_ms": 1869.0,
+        "submit_to_finish_ms": 3042.0,
+        "acquire_ms": 0.2,
+        "runtime_ms": 45.4,
+        "submit_to_attached_ms": 347.1,
+        "attached_to_commit_ms": 1521.9,
+        "warmup_ms": 510.7,
+        "pool_hit": true
+      },
+      "events": [
+        {
+          "time": 349827.81983083335,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349828.701761875,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 349829.07008954167,
+          "event": "warmup_start",
+          "detail": ""
+        },
+        {
+          "time": 349829.344237125,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349829.34434383333,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349829.35309345834,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349829.353180625,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349829.580774875,
+          "event": "warmup_ready",
+          "detail": ""
+        },
+        {
+          "time": 349831.4032695417,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349831.6974333334,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349831.69753875,
+          "event": "pool_hit",
+          "detail": "ready=true"
+        },
+        {
+          "time": 349831.697605125,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349831.69765683333,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349831.7430245417,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349831.75038854167,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349831.8394570834,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349832.87121783337,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349833.27229195833,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349834.3915800417,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349834.44525412505,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-1-warm",
+      "warm": true,
+      "delay": 2.5,
+      "url": "https://www.bing.com/search?q=swift",
+      "metrics": {
+        "submit_to_visible_ms": 3000.8,
+        "submit_to_commit_ms": 1887.6,
+        "submit_to_finish_ms": 3095.5,
+        "acquire_ms": 0.2,
+        "runtime_ms": 46.0,
+        "submit_to_attached_ms": 350.4,
+        "attached_to_commit_ms": 1537.2,
+        "warmup_ms": 532.0,
+        "pool_hit": true
+      },
+      "events": [
+        {
+          "time": 349836.26771054167,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349837.0913871667,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 349837.47765637503,
+          "event": "warmup_start",
+          "detail": ""
+        },
+        {
+          "time": 349837.7566587083,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349837.75676533335,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349837.76653233333,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349837.76662433334,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349838.009608,
+          "event": "warmup_ready",
+          "detail": ""
+        },
+        {
+          "time": 349839.76942229166,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349840.06573925004,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349840.06584237504,
+          "event": "pool_hit",
+          "detail": "ready=true"
+        },
+        {
+          "time": 349840.0659011667,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349840.0659509167,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349840.111909,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349840.11981604167,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349840.2047147917,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349841.23983516666,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349841.6570231667,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349842.77025875,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349842.8649192917,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-1-cold",
+      "warm": false,
+      "delay": 2.5,
+      "url": "https://www.bing.com/search?q=swift",
+      "metrics": {
+        "submit_to_visible_ms": 3616.1,
+        "submit_to_commit_ms": 2372.5,
+        "submit_to_finish_ms": 3668.9,
+        "acquire_ms": 44.6,
+        "runtime_ms": 48.3,
+        "submit_to_attached_ms": 397.5,
+        "attached_to_commit_ms": 1975.0,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 349844.68520966667,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349845.50120450003,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 349845.97224133334,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349845.9723736667,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349845.9855257917,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349845.98562162503,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349848.21339258336,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349848.5106339583,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349848.510735,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 349848.55525545834,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349848.5553556667,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349848.6036454167,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349848.61090975004,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349848.69683520833,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349850.20922200003,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349850.5859289167,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349851.8294481667,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349851.88233112503,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-2-cold",
+      "warm": false,
+      "delay": 2.5,
+      "url": "https://www.bing.com/search?q=swift",
+      "metrics": {
+        "submit_to_visible_ms": 3649.4,
+        "submit_to_commit_ms": 2493.6,
+        "submit_to_finish_ms": 3735.5,
+        "acquire_ms": 44.7,
+        "runtime_ms": 47.2,
+        "submit_to_attached_ms": 386.4,
+        "attached_to_commit_ms": 2107.1,
+        "pool_hit": false
+      },
+      "events": [
+        {
+          "time": 349853.7107431667,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349854.5491981667,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 349855.02430325,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349855.02447137504,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349855.0383395,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349855.03842579166,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349857.24432908336,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349857.53144475,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349857.53154187504,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 349857.576111625,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349857.57622366666,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349857.6234105417,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349857.6307530417,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349857.71914912504,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349859.2125539167,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349859.7378961667,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349860.89370720834,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349860.97981275,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    },
+    {
+      "label": "delay-2.5-run-2-warm",
+      "warm": true,
+      "delay": 2.5,
+      "url": "https://www.bing.com/search?q=swift",
+      "metrics": {
+        "submit_to_visible_ms": 3060.2,
+        "submit_to_commit_ms": 1938.6,
+        "submit_to_finish_ms": 3153.1,
+        "acquire_ms": 0.2,
+        "runtime_ms": 46.9,
+        "submit_to_attached_ms": 365.1,
+        "attached_to_commit_ms": 1573.5,
+        "warmup_ms": 544.3,
+        "pool_hit": true
+      },
+      "events": [
+        {
+          "time": 349862.8165010417,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 349863.72029983334,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 349864.12591862504,
+          "event": "warmup_start",
+          "detail": ""
+        },
+        {
+          "time": 349864.3438280417,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349864.3439394167,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 349864.3589137917,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 349864.35899566667,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 349864.670257875,
+          "event": "warmup_ready",
+          "detail": ""
+        },
+        {
+          "time": 349866.41609420837,
+          "event": "search_submit",
+          "detail": ""
+        },
+        {
+          "time": 349866.7261299167,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 349866.7262305833,
+          "event": "pool_hit",
+          "detail": "ready=true"
+        },
+        {
+          "time": 349866.7262881667,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 349866.72634320834,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 349866.7732684584,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 349866.7811747917,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 349866.87456050003,
+          "event": "load_requested",
+          "detail": "attached"
+        },
+        {
+          "time": 349867.93703475,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 349868.35471045837,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 349869.4762870417,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 349869.569230875,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "valid": true
+    }
+  ],
+  "manual_tab_restore_after": {
+    "warm": {
+      "events": [
+        {
+          "time": 350102.10188595834,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 350102.5098736667,
+          "event": "load_requested",
+          "detail": "pending"
+        },
+        {
+          "time": 350103.0086461667,
+          "event": "pool_activate",
+          "detail": "disabled=false"
+        },
+        {
+          "time": 350103.39617404167,
+          "event": "warmup_start",
+          "detail": ""
+        },
+        {
+          "time": 350103.6253864167,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 350103.6254812917,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 350103.69915966666,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 350103.69927312504,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 350103.89700654167,
+          "event": "warmup_ready",
+          "detail": ""
+        },
+        {
+          "time": 350125.53538683336,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 350125.5364668334,
+          "event": "pool_hit",
+          "detail": "ready=true"
+        },
+        {
+          "time": 350125.53658354166,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 350125.5366415,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 350125.5859782917,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 350125.594115625,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 350126.63885366666,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 350126.7408641667,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 350127.89722079167,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 350128.36709875,
+          "event": "navigation_finish",
+          "detail": ""
+        },
+        {
+          "time": 350128.5030542917,
+          "event": "warmup_start",
+          "detail": ""
+        },
+        {
+          "time": 350128.8165280417,
+          "event": "warmup_ready",
+          "detail": ""
+        }
+      ],
+      "acquire_to_visible_ms": 2361.8,
+      "acquire_ms": 1.2
+    },
+    "cold": {
+      "events": [
+        {
+          "time": 350162.0854179167,
+          "event": "app_init",
+          "detail": ""
+        },
+        {
+          "time": 350162.5502793334,
+          "event": "load_requested",
+          "detail": "pending"
+        },
+        {
+          "time": 350163.05598966667,
+          "event": "pool_activate",
+          "detail": "disabled=true"
+        },
+        {
+          "time": 350163.5031719584,
+          "event": "ad_script_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 350163.50327908335,
+          "event": "content_rules_start",
+          "detail": ""
+        },
+        {
+          "time": 350163.5293772917,
+          "event": "content_rules_disk_hit",
+          "detail": ""
+        },
+        {
+          "time": 350163.52945483336,
+          "event": "content_rules_end",
+          "detail": ""
+        },
+        {
+          "time": 350187.03685516666,
+          "event": "acquire_start",
+          "detail": ""
+        },
+        {
+          "time": 350187.03697025,
+          "event": "pool_miss",
+          "detail": ""
+        },
+        {
+          "time": 350187.085309375,
+          "event": "acquire_end",
+          "detail": ""
+        },
+        {
+          "time": 350187.085421375,
+          "event": "runtime_start",
+          "detail": ""
+        },
+        {
+          "time": 350187.1342924167,
+          "event": "runtime_end",
+          "detail": ""
+        },
+        {
+          "time": 350187.1420834167,
+          "event": "view_attached",
+          "detail": ""
+        },
+        {
+          "time": 350188.8448543334,
+          "event": "navigation_start",
+          "detail": ""
+        },
+        {
+          "time": 350188.97335108335,
+          "event": "navigation_commit",
+          "detail": ""
+        },
+        {
+          "time": 350190.20431320835,
+          "event": "content_visible",
+          "detail": ""
+        },
+        {
+          "time": 350190.31384320837,
+          "event": "navigation_finish",
+          "detail": ""
+        }
+      ],
+      "acquire_to_visible_ms": 3167.5,
+      "acquire_ms": 48.5
+    }
+  }
+}
