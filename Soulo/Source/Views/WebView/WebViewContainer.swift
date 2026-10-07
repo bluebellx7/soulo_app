@@ -961,11 +961,9 @@ struct WebViewContainer: View {
     }
 
     private var windowSafeAreaInsets: UIEdgeInsets {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first { $0.activationState == .foregroundActive }?
-            .keyWindow?
-            .safeAreaInsets ?? .zero
+        // The first foreground scene can belong to another browser window.
+        // Use the page's own window when computing toolbar/video clearance.
+        webViewModel.webView?.window?.safeAreaInsets ?? .zero
     }
 
     private var toolbarGlassTint: Color? {

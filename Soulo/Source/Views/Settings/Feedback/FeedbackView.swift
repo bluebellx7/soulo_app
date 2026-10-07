@@ -201,7 +201,9 @@ struct FeedbackView: View {
                         .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 }
             }
-            .task { if diagnostics == nil { diagnostics = FeedbackDiagnostics.capture() } }
+            .background(ViewWindowReader { window in
+                if let window { diagnostics = FeedbackDiagnostics.capture(in: window) }
+            })
             .interactiveDismissDisabled(isSubmitting)
             .navigationTitle(lm.localizedString("feedback_title"))
             .navigationBarTitleDisplayMode(.inline)

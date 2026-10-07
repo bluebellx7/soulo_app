@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Gyorsabb oldalmegnyitás, stabilabb eszköztár és lapváltás.
-• Támogatott videók lejátszása letöltés közben, a háttérletöltések jobb helyreállítása.
-• A teljes képernyős vezérlők és az álló nézetbe visszatérés javítása.
-• Rejtett hirdetésekre kattintás és kéretlen vágólapírás blokkolása.
-• Folyamatjelzés a támogatott letöltésekhez, importáláshoz és exportáláshoz.
+• Javult a weboldalak betöltése, a hirdetésszűrés és a navigáció válaszkészsége.
+• Javult az elrendezés, a háttérképek vágása és az olvasás az ablak méretének változásakor.

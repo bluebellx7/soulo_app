@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Rychlejší otevírání stránek a stabilnější odezva panelu nástrojů a karet.
-• Přehrávání podporovaných videí během stahování a lepší obnovení stahování na pozadí.
-• Opravené ovládání celé obrazovky a návrat na výšku.
-• Blokování kliknutí na skryté reklamy a nevyžádaného zápisu do schránky.
-• Zobrazení průběhu podporovaného stahování, importu a exportu.
+• Vylepšeno načítání webových stránek, filtrování reklam a odezva při navigaci.
+• Vylepšeno rozvržení, ořez tapety a čtení při změně velikosti okna.

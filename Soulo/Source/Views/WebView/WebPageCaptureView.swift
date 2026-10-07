@@ -212,7 +212,7 @@ enum WebPageCaptureService {
         let captureScale = fullPageCaptureScale(
             width: captureSize.width,
             height: captureSize.height,
-            displayScale: UIScreen.main.scale
+            displayScale: webView.traitCollection.displayScale
         )
         let pixelWidth = max(Int(ceil(captureSize.width * captureScale)), 1)
         let pixelHeight = max(Int(ceil(captureSize.height * captureScale)), 1)

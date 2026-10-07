@@ -11,10 +11,16 @@ struct FeedbackDiagnostics: Equatable {
     let fields: [FeedbackDiagnosticField]
     var values: [String: String] { Dictionary(uniqueKeysWithValues: fields.map { ($0.id, $0.value) }) }
 
-    @MainActor static func capture() -> FeedbackDiagnostics {
+    @MainActor static func capture(in window: UIWindow? = nil) -> FeedbackDiagnostics {
         let device = UIDevice.current
         let process = ProcessInfo.processInfo
-        let screen = (UIApplication.shared.connectedScenes.first { $0.activationState == .foregroundActive } as? UIWindowScene)?.screen ?? UIScreen.main
+        let screenDescription: String
+        if let window, let screen = window.windowScene?.screen {
+            screenDescription = "\(Int(screen.bounds.width)) × \(Int(screen.bounds.height)) pt · @\(screen.scale) · window \(Int(window.bounds.width)) × \(Int(window.bounds.height)) pt"
+        } else {
+            // Diagnostics without a mounted view must not guess another scene.
+            screenDescription = "unavailable"
+        }
         var machine = utsname()
         uname(&machine)
         let machineSize = MemoryLayout.size(ofValue: machine.machine)
@@ -34,7 +40,7 @@ struct FeedbackDiagnostics: Equatable {
             .init(id: "bundleID", titleKey: "feedback_diag_bundle", value: Bundle.main.bundleIdentifier ?? "unknown"),
             .init(id: "device", titleKey: "feedback_diag_device", value: "\(device.model) · \(model)"),
             .init(id: "system", titleKey: "feedback_diag_system", value: "\(device.systemName) \(device.systemVersion)"),
-            .init(id: "screen", titleKey: "feedback_diag_screen", value: "\(Int(screen.bounds.width)) × \(Int(screen.bounds.height)) pt · @\(screen.scale)"),
+            .init(id: "screen", titleKey: "feedback_diag_screen", value: screenDescription),
             .init(id: "memory", titleKey: "feedback_diag_memory", value: ByteCountFormatter.string(fromByteCount: Int64(process.physicalMemory), countStyle: .memory)),
             .init(id: "language", titleKey: "feedback_diag_language", value: LanguageManager.shared.currentLanguage),
             .init(id: "locale", titleKey: "feedback_diag_locale", value: Locale.current.identifier),

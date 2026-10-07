@@ -1,6 +1,7 @@
 import WebKit
 
 struct AdBlockService {
+    static let hidingScriptPrefix = "/* SouloAdHiding v2 */"
 
     static var defaultBuiltInRules: [BuiltInAdRule] {
         let adDomains = [
@@ -572,7 +573,7 @@ struct AdBlockService {
             .appendingPathComponent("AdBlock/merged-rules.json")
         let attributes = archive.flatMap { try? $0.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]) }
         let fields = [
-            "startup-cache-v1", startupBuildIdentity,
+            "startup-cache-v2", startupBuildIdentity,
             normalizedAllowlist(allowlistedHosts).joined(separator: ","),
             cosmetic.map(String.init) ?? "native", AdBlockSubscriptionService.rulesSignature(),
             BuiltInAdRuleStore.signature(),
@@ -601,26 +602,29 @@ struct AdBlockService {
             ? cachedRules.cosmeticSelectors.map { AdBlockCosmeticRule(selector: $0) }
             : cachedRules.cosmeticRules
         let cosmeticRules = subscriptionRules + builtInRules.filter { $0.kind == .cosmetic }.map(\.cosmeticRule)
+        // Compact triples avoid repeating field names for tens of thousands of
+        // subscription entries. JSON.parse also avoids compiling a huge nested
+        // JavaScript object literal before the document can render.
         let cosmeticPayload = cosmeticRules.map { rule in
-            [
-                "selector": rule.selector,
-                "ifDomains": rule.ifDomains,
-                "unlessDomains": rule.unlessDomains
-            ] as [String: Any]
+            [rule.selector, rule.ifDomains, rule.unlessDomains] as [Any]
         }
         let subscriptionCosmeticRulesJSON = (try? JSONSerialization.data(withJSONObject: cosmeticPayload))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
+        let literalEncoder = JSONEncoder()
+        literalEncoder.outputFormatting = .withoutEscapingSlashes
+        let subscriptionCosmeticRulesLiteral = (try? literalEncoder.encode(subscriptionCosmeticRulesJSON))
+            .flatMap { String(data: $0, encoding: .utf8) } ?? "\"[]\""
         let pageExceptionsJSON = (try? JSONEncoder().encode(cachedRules.networkRules.filter { $0.isException && $0.exceptionScope != "network" }))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
         let cosmeticExceptionsJSON = (try? JSONEncoder().encode(cachedRules.cosmeticExceptions))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
         let allowlistJSON = (try? JSONSerialization.data(withJSONObject: normalizedAllowlist(allowlistedHosts)))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
-        let script = ManualAdBlockRuntime.tiledBannerDetection + "\n" + """
+        let script = hidingScriptPrefix + "\n" + ManualAdBlockRuntime.tiledBannerDetection + "\n" + """
         (function() {
             var souloCosmeticEnabled = \(cosmetic ? "true" : "false");
             var souloAllowlistedHosts = \(allowlistJSON);
-            var souloSubscriptionCosmeticRules = \(subscriptionCosmeticRulesJSON);
+            var souloSubscriptionCosmeticRules = [];
             window.__souloAdBlockConfig = {
                 cosmeticEnabled: souloCosmeticEnabled,
                 tiledBanners: \(builtInRules.contains { $0.kind == .tiledBanner } ? "true" : "false"),
@@ -669,6 +673,15 @@ struct AdBlockService {
                 return isSensitiveChallengePage() || isSouloAllowlisted() || pageExceptionMatches(['document']);
             }
 
+            // Allowlisted and challenge documents must not allocate/scan the
+            // subscription payload. A live bypass still clears existing styles.
+            if (!souloCosmeticEnabled || shouldDisableAdBlock()) {
+                if (typeof window.__souloAdBlockRemoveAds === 'function') window.__souloAdBlockRemoveAds();
+                return;
+            }
+            souloSubscriptionCosmeticRules = JSON.parse(\(subscriptionCosmeticRulesLiteral));
+            window.__souloAdBlockConfig.subscriptionCosmeticRules = souloSubscriptionCosmeticRules;
+
             if (window.__souloAdBlockInstalled) {
                 if (typeof window.__souloAdBlockRemoveAds === 'function') {
                     window.__souloAdBlockRemoveAds();
@@ -676,7 +689,6 @@ struct AdBlockService {
                 return;
             }
 
-            if (shouldDisableAdBlock()) return;
             window.__souloAdBlockInstalled = true;
 
             var matchedConfig = null, matchedHost = '', matchedURL = '', matchedSelectors = [], matchedCSS = '', selectorGroups = [];
@@ -692,12 +704,12 @@ struct AdBlockService {
                         && !(rule.unlessDomains || []).some(function(domain) { return domainMatches(domain, host); });
                 }).map(function(rule) { return rule.selector; }));
                 (adBlockConfig().subscriptionCosmeticRules || []).forEach(function(rule) {
-                    var selector = rule.selector || '';
+                    var selector = rule[0] || '';
                     if (!selector || hideDisabled || excepted.has(selector)) return;
-                    if (genericDisabled && !(rule.ifDomains || []).length) return;
+                    if (genericDisabled && !(rule[1] || []).length) return;
                     if (isUnsafeSelector(selector)) return;
-                    var ifDomains = rule.ifDomains || [];
-                    var unlessDomains = rule.unlessDomains || [];
+                    var ifDomains = rule[1] || [];
+                    var unlessDomains = rule[2] || [];
                     var included = ifDomains.length === 0 || ifDomains.some(function(domain) { return domainMatches(domain, host); });
                     var excluded = unlessDomains.some(function(domain) { return domainMatches(domain, host); });
                     if (included && !excluded) selectors.push(selector);

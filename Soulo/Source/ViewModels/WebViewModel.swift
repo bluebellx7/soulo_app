@@ -58,7 +58,9 @@ final class WebViewModel: ObservableObject {
     var isWebViewRuntimeInstalled: Bool = false
     var hasInstalledWebViewScripts = false
     var lastAdHidingSignature = ""
+    var adHidingNeedsBootstrap = false
     var lastManualAdSignature = ""
+    var installedManualAdScriptSignature = ""
     let userScriptBridgeToken = UUID().uuidString
     var isStreamingDownloadHandlerInstalled: Bool = false
     var isDesktopModeEnabled: Bool = false
@@ -252,7 +254,9 @@ final class WebViewModel: ObservableObject {
         isWebViewRuntimeInstalled = false
         hasInstalledWebViewScripts = false
         lastAdHidingSignature = ""
+        adHidingNeedsBootstrap = false
         lastManualAdSignature = ""
+        installedManualAdScriptSignature = ""
         hasVisibleContent = false
         isLoading = false
         estimatedProgress = currentURL == nil ? 0 : 1
@@ -271,7 +275,9 @@ final class WebViewModel: ObservableObject {
         isWebViewRuntimeInstalled = false
         hasInstalledWebViewScripts = false
         lastAdHidingSignature = ""
+        adHidingNeedsBootstrap = false
         lastManualAdSignature = ""
+        installedManualAdScriptSignature = ""
         hasVisibleContent = false
         runtimeRevision = UUID()
         if currentURL != nil {

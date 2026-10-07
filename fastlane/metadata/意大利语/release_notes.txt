@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Apertura delle pagine più rapida e risposta più stabile di barra degli strumenti e schede.
-• Riproduzione dei video compatibili durante il download e migliore ripresa dei download in background.
-• Corretti i controlli a schermo intero e il ritorno all’orientamento verticale.
-• Blocco dei clic sugli annunci nascosti e delle scritture non richieste negli appunti.
-• Avanzamento visibile per download, importazioni ed esportazioni compatibili.
+• Migliorati il caricamento delle pagine, il filtro degli annunci e la reattività della navigazione.
+• Migliorati i layout, il ritaglio degli sfondi e la lettura quando cambia la dimensione della finestra.

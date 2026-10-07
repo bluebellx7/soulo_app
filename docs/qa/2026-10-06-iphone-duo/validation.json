@@ -1,0 +1,295 @@
+{
+  "date": "2026-10-06",
+  "xcode": "26.2 (17C52)",
+  "duoDeviceAvailable": false,
+  "releaseBuild": {
+    "exitCode": 0,
+    "log": "/tmp/soulo-duo-release-20261006.log",
+    "signed": false
+  },
+  "screenshotValidatorTests": {
+    "passed": 5
+  },
+  "realDuoScreenshotCheck": {
+    "exitCode": 1,
+    "reason": "No real Duo screenshots available"
+  },
+  "testRuns": {
+    "adaptive_preferences_feedback": {
+      "bundlePath": "/tmp/soulo-duo-adaptive-fixed-20261006.xcresult",
+      "summary": {
+        "devicesAndConfigurations": [
+          {
+            "device": {
+              "architecture": "arm64",
+              "deviceId": "FE8ED7B2-0818-46A7-AC9C-051B058C7148",
+              "deviceName": "Soulo WebView Startup AB",
+              "modelName": "iPhone 17 Pro",
+              "osBuildNumber": "23C54",
+              "osVersion": "26.2",
+              "platform": "iOS Simulator"
+            },
+            "expectedFailures": 0,
+            "failedTests": 0,
+            "passedTests": 15,
+            "skippedTests": 0,
+            "testPlanConfiguration": {
+              "configurationId": "1",
+              "configurationName": "Test Scheme Action"
+            }
+          }
+        ],
+        "environmentDescription": "Soulo · Built with macOS 26.3.1",
+        "expectedFailures": 0,
+        "failedTests": 0,
+        "finishTime": 1791288267.628,
+        "passedTests": 15,
+        "result": "Passed",
+        "skippedTests": 0,
+        "startTime": 1791288202.8,
+        "statistics": [],
+        "testFailures": [],
+        "title": "Test - Soulo",
+        "topInsights": [],
+        "totalTestCount": 15
+      }
+    },
+    "reading_webview_toolbar_video": {
+      "bundlePath": "/tmp/soulo-duo-regressions-20261006.xcresult",
+      "summary": {
+        "devicesAndConfigurations": [
+          {
+            "device": {
+              "architecture": "arm64",
+              "deviceId": "FE8ED7B2-0818-46A7-AC9C-051B058C7148",
+              "deviceName": "Soulo WebView Startup AB",
+              "modelName": "iPhone 17 Pro",
+              "osBuildNumber": "23C54",
+              "osVersion": "26.2",
+              "platform": "iOS Simulator"
+            },
+            "expectedFailures": 0,
+            "failedTests": 0,
+            "passedTests": 113,
+            "skippedTests": 0,
+            "testPlanConfiguration": {
+              "configurationId": "1",
+              "configurationName": "Test Scheme Action"
+            }
+          }
+        ],
+        "environmentDescription": "Soulo · Built with macOS 26.3.1",
+        "expectedFailures": 0,
+        "failedTests": 0,
+        "finishTime": 1791288519.452,
+        "passedTests": 113,
+        "result": "Passed",
+        "skippedTests": 0,
+        "startTime": 1791288286.645,
+        "statistics": [],
+        "testFailures": [],
+        "title": "Test - Soulo",
+        "topInsights": [
+          {
+            "category": "Longest Test Runs",
+            "impact": "31% of duration",
+            "text": "4 longest test runs with outlier durations exceeding 1.74s (three standard deviations)"
+          }
+        ],
+        "totalTestCount": 113
+      }
+    },
+    "failed_temporary_container_lifetime": {
+      "bundlePath": "/tmp/soulo-duo-final-20261006.xcresult",
+      "summary": {
+        "devicesAndConfigurations": [
+          {
+            "device": {
+              "architecture": "arm64",
+              "deviceId": "FE8ED7B2-0818-46A7-AC9C-051B058C7148",
+              "deviceName": "Soulo WebView Startup AB",
+              "modelName": "iPhone 17 Pro",
+              "osBuildNumber": "23C54",
+              "osVersion": "26.2",
+              "platform": "iOS Simulator"
+            },
+            "expectedFailures": 0,
+            "failedTests": 1,
+            "passedTests": 79,
+            "skippedTests": 0,
+            "testPlanConfiguration": {
+              "configurationId": "1",
+              "configurationName": "Test Scheme Action"
+            }
+          }
+        ],
+        "environmentDescription": "Soulo · Built with macOS 26.3.1",
+        "expectedFailures": 0,
+        "failedTests": 1,
+        "finishTime": 1791288712.774,
+        "passedTests": 79,
+        "result": "Failed",
+        "skippedTests": 0,
+        "startTime": 1791288566.062,
+        "statistics": [],
+        "testFailures": [
+          {
+            "failureText": "Crash: Soulo at WebViewModelTests.testBrowsingHistoryKeepsOnlyLastThreeDaysWithoutDeletingSearchTerms()",
+            "targetName": "SouloTests",
+            "testIdentifier": 13,
+            "testIdentifierString": "WebViewModelTests/testBrowsingHistoryKeepsOnlyLastThreeDaysWithoutDeletingSearchTerms()",
+            "testIdentifierURL": "test://com.apple.xcode/Soulo/SouloTests/WebViewModelTests/testBrowsingHistoryKeepsOnlyLastThreeDaysWithoutDeletingSearchTerms",
+            "testName": "testBrowsingHistoryKeepsOnlyLastThreeDaysWithoutDeletingSearchTerms()"
+          }
+        ],
+        "title": "Test - Soulo",
+        "topInsights": [
+          {
+            "category": "Longest Test Runs",
+            "impact": "51% of duration",
+            "text": "3 longest test runs with outlier durations exceeding 1.79s (three standard deviations)"
+          }
+        ],
+        "totalTestCount": 80
+      }
+    },
+    "failed_view_unmount_only": {
+      "bundlePath": "/tmp/soulo-duo-final-cleanup-20261006.xcresult",
+      "summary": {
+        "devicesAndConfigurations": [
+          {
+            "device": {
+              "architecture": "arm64",
+              "deviceId": "FE8ED7B2-0818-46A7-AC9C-051B058C7148",
+              "deviceName": "Soulo WebView Startup AB",
+              "modelName": "iPhone 17 Pro",
+              "osBuildNumber": "23C54",
+              "osVersion": "26.2",
+              "platform": "iOS Simulator"
+            },
+            "expectedFailures": 0,
+            "failedTests": 1,
+            "passedTests": 78,
+            "skippedTests": 0,
+            "testPlanConfiguration": {
+              "configurationId": "1",
+              "configurationName": "Test Scheme Action"
+            }
+          }
+        ],
+        "environmentDescription": "Soulo · Built with macOS 26.3.1",
+        "expectedFailures": 0,
+        "failedTests": 1,
+        "finishTime": 1791288934.152,
+        "passedTests": 78,
+        "result": "Failed",
+        "skippedTests": 0,
+        "startTime": 1791288859.285,
+        "statistics": [],
+        "testFailures": [
+          {
+            "failureText": "Crash: Soulo at WebViewModelTests.testBrowsingHistoryKeepsOnlyLastThreeDaysWithoutDeletingSearchTerms()",
+            "targetName": "SouloTests",
+            "testIdentifier": 13,
+            "testIdentifierString": "WebViewModelTests/testBrowsingHistoryKeepsOnlyLastThreeDaysWithoutDeletingSearchTerms()",
+            "testIdentifierURL": "test://com.apple.xcode/Soulo/SouloTests/WebViewModelTests/testBrowsingHistoryKeepsOnlyLastThreeDaysWithoutDeletingSearchTerms",
+            "testName": "testBrowsingHistoryKeepsOnlyLastThreeDaysWithoutDeletingSearchTerms()"
+          }
+        ],
+        "title": "Test - Soulo",
+        "topInsights": [
+          {
+            "category": "Longest Test Runs",
+            "impact": "49% of duration",
+            "text": "3 longest test runs with outlier durations exceeding 1.68s (three standard deviations)"
+          }
+        ],
+        "totalTestCount": 79
+      }
+    },
+    "history_isolated": {
+      "bundlePath": "/tmp/soulo-duo-history-isolated-20261006.xcresult",
+      "summary": {
+        "devicesAndConfigurations": [
+          {
+            "device": {
+              "architecture": "arm64",
+              "deviceId": "FE8ED7B2-0818-46A7-AC9C-051B058C7148",
+              "deviceName": "Soulo WebView Startup AB",
+              "modelName": "iPhone 17 Pro",
+              "osBuildNumber": "23C54",
+              "osVersion": "26.2",
+              "platform": "iOS Simulator"
+            },
+            "expectedFailures": 0,
+            "failedTests": 0,
+            "passedTests": 1,
+            "skippedTests": 0,
+            "testPlanConfiguration": {
+              "configurationId": "1",
+              "configurationName": "Test Scheme Action"
+            }
+          }
+        ],
+        "environmentDescription": "Soulo · Built with macOS 26.3.1",
+        "expectedFailures": 0,
+        "failedTests": 0,
+        "finishTime": 1791289029.231,
+        "passedTests": 1,
+        "result": "Passed",
+        "skippedTests": 0,
+        "startTime": 1791289014.957,
+        "statistics": [],
+        "testFailures": [],
+        "title": "Test - Soulo",
+        "topInsights": [],
+        "totalTestCount": 1
+      }
+    },
+    "final_adaptive_and_webview": {
+      "bundlePath": "/tmp/soulo-duo-final-lifetime-20261006.xcresult",
+      "summary": {
+        "devicesAndConfigurations": [
+          {
+            "device": {
+              "architecture": "arm64",
+              "deviceId": "FE8ED7B2-0818-46A7-AC9C-051B058C7148",
+              "deviceName": "Soulo WebView Startup AB",
+              "modelName": "iPhone 17 Pro",
+              "osBuildNumber": "23C54",
+              "osVersion": "26.2",
+              "platform": "iOS Simulator"
+            },
+            "expectedFailures": 0,
+            "failedTests": 0,
+            "passedTests": 79,
+            "skippedTests": 0,
+            "testPlanConfiguration": {
+              "configurationId": "1",
+              "configurationName": "Test Scheme Action"
+            }
+          }
+        ],
+        "environmentDescription": "Soulo · Built with macOS 26.3.1",
+        "expectedFailures": 0,
+        "failedTests": 0,
+        "finishTime": 1791289170.275,
+        "passedTests": 79,
+        "result": "Passed",
+        "skippedTests": 0,
+        "startTime": 1791289138.89,
+        "statistics": [],
+        "testFailures": [],
+        "title": "Test - Soulo",
+        "topInsights": [
+          {
+            "category": "Longest Test Runs",
+            "impact": "56% of duration",
+            "text": "4 longest test runs with outlier durations exceeding 1.75s (three standard deviations)"
+          }
+        ],
+        "totalTestCount": 79
+      }
+    }
+  }
+}

@@ -474,6 +474,96 @@ import Network
         print("WARM_TAB_ROUND_TRIP", views.count, Date().timeIntervalSince(started), "seconds; no document reloads")
     }
 
+    func testOrdinaryNavigationsReuseScriptsAndInjectAdConfigurationOnce() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let rules = AdBlockRuleParser.parse("##.qa-performance-ad")
+        UserDefaults.standard.set(try JSONEncoder().encode(rules), forKey: "soulo_ad_block_subscription_rules")
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        for _ in 0..<100 {
+            if model.webView != nil { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let web = try XCTUnwrap(model.webView)
+        let controller = web.configuration.userContentController
+        controller.addUserScript(WKUserScript(source: "window.qaInitialAdConfiguration = window.__souloAdBlockConfig;",
+            injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        let identities = controller.userScripts.map(ObjectIdentifier.init)
+        let localhost = try XCTUnwrap(URL(string: root.absoluteString.replacingOccurrences(of: "127.0.0.1", with: "localhost")))
+        for base in [root, localhost, root] {
+            model.loadURL(base.appendingPathComponent("runtime-reuse"))
+            try await wait(model, for: "document.querySelector('.qa-performance-ad') && getComputedStyle(document.querySelector('.qa-performance-ad')).display === 'none'")
+            for _ in 0..<100 {
+                if !model.isLoading { break }
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            let sameConfiguration = try await web.evaluateJavaScript("window.qaInitialAdConfiguration === window.__souloAdBlockConfig")
+            XCTAssertEqual(sameConfiguration as? Bool, true, "Normal loads must not resend the cosmetic rule payload")
+            XCTAssertEqual(controller.userScripts.map(ObjectIdentifier.init), identities,
+                "Changing URLs must not remove and re-add every user script")
+        }
+    }
+
+    func testAdPreferenceChangeUpdatesCurrentAndFutureDocuments() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("runtime-reuse"))
+        try await wait(model, for: "!!window.__souloAdBlockConfig")
+        let web = try XCTUnwrap(model.webView)
+        let coordinator = try XCTUnwrap(web.navigationDelegate as? WebViewRepresentable.Coordinator)
+        let customScript = WKUserScript(source: "window.qaUserScriptReadsAds = !!window.__souloAdBlockConfig;",
+            injectionTime: .atDocumentStart, forMainFrameOnly: true)
+        web.configuration.userContentController.addUserScript(customScript)
+        UserDefaults.standard.set(false, forKey: "ad_block_enabled")
+        coordinator.applyAdHidingIfNeeded(on: web, enabled: false, cosmetic: true, allowlistedHosts: [], host: root.host)
+        try await wait(model, for: "window.__souloAdBlockConfig.cosmeticEnabled === false")
+        XCTAssertTrue(web.configuration.userContentController.userScripts.contains { $0 === customScript })
+        model.loadURL(root.appendingPathComponent("runtime-reuse-next"))
+        try await wait(model, for: "!!document.querySelector('.qa-performance-ad') && typeof window.__souloAdBlockConfig === 'undefined'")
+        UserDefaults.standard.set(true, forKey: "ad_block_enabled")
+        coordinator.applyAdHidingIfNeeded(on: web, enabled: true, cosmetic: true, allowlistedHosts: [], host: root.host)
+        try await wait(model, for: "window.__souloAdBlockConfig?.cosmeticEnabled === true")
+        XCTAssertTrue(web.configuration.userContentController.userScripts.contains { $0 === customScript })
+        model.loadURL(root.appendingPathComponent("runtime-reuse"))
+        try await wait(model, for: "window.__souloAdBlockConfig?.cosmeticEnabled === true && !!document.querySelector('.qa-performance-ad')")
+    }
+
+    func testLeavingChallengeThroughHistoryRestoresAdFiltering() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let rules = AdBlockRuleParser.parse("##.qa-performance-ad")
+        UserDefaults.standard.set(try JSONEncoder().encode(rules), forKey: "soulo_ad_block_subscription_rules")
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("login"))
+        try await wait(model, for: "!!document.getElementById('destination')")
+        let web = try XCTUnwrap(model.webView)
+        for _ in 0..<100 {
+            if !web.isLoading { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let bypassed = try await web.evaluateJavaScript("!window.__souloAdBlockInstalled")
+        XCTAssertEqual(bypassed as? Bool, true)
+        let scripts = web.configuration.userContentController.userScripts.map(ObjectIdentifier.init)
+        _ = try await web.evaluateJavaScript("""
+        history.pushState({}, '', '/runtime-reuse');
+        document.body.insertAdjacentHTML('beforeend', '<aside class=qa-performance-ad>Advertisement</aside>');
+        """)
+        try await wait(model, for: "getComputedStyle(document.querySelector('.qa-performance-ad')).display === 'none'")
+        XCTAssertEqual(web.configuration.userContentController.userScripts.map(ObjectIdentifier.init), scripts)
+        XCTAssertEqual(server.requests.filter { $0.path == "/login" }.count, 1)
+        XCTAssertFalse(server.requests.contains { $0.path == "/runtime-reuse" }, "History navigation must not reload the document")
+    }
+
     func testAdFilteringStartsBeforeBlockedParserFinishes() async throws {
         let server = try BrowsingHTTPFixture()
         let root = try await server.start()
@@ -1125,6 +1215,7 @@ private final class BrowsingHTTPFixture: @unchecked Sendable {
         case "/auth-parent": body = "<button id='open-login' onclick=\"window.open('/login-popup','fixture-auth')\">Sign in</button><script>addEventListener('message', e => { if (e.origin === location.origin) window.authResult = e.data; });</script>"
         case "/login-popup": body = "<script>const shared = document.cookie.includes('fixture_session=parent'); document.cookie='fixture_login=complete; path=/'; window.opener.postMessage(shared ? 'session-shared' : 'missing-session', location.origin); window.close();</script>"
         case "/disconnect": connection.cancel(); return
+        case "/runtime-reuse", "/runtime-reuse-next": body = "<main>Article content</main><aside class='qa-performance-ad'>Advertisement</aside>"
         case "/dynamic", "/dynamic-next": body = "<main>Article content</main><aside id='user-chosen-panel'>Selected panel</aside>"
         case "/iframe": body = "<h1 id='parent'>Parent page</h1><iframe id='frame' src='/child'></iframe>"
         case "/child": body = "<p id='child'>Embedded content</p>"

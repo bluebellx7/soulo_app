@@ -1,6 +1,6 @@
 # Soulo Fastlane
 
-当前工程版本为 **1.2.0（Build 27）**。Fastlane 从 `project.yml` 读取版本，不再单独写死版本号。仓库使用 App Store Connect 中文语言名维护 50 个语言目录，上传时会自动导出为 Fastlane 所需的 locale code。
+当前工程版本为 **1.2.1（Build 28）**。Fastlane 从 `project.yml` 读取版本，不再单独写死版本号。仓库使用 App Store Connect 中文语言名维护 50 个语言目录，上传时会自动导出为 Fastlane 所需的 locale code。
 
 每个语言目录同步以下六类字段：
 
@@ -47,3 +47,15 @@ python3 scripts/export_metadata_json.py
 python3 scripts/export_metadata_json.py --check
 python3 scripts/check_localization.py --strict
 ```
+
+## iPhone Duo 截屏
+
+Duo 基础适配与待验收项见 [适配记录](../docs/qa/2026-10-06-iphone-duo.md)。完整验收和截图需要 Xcode 27.1 或更高版本的 Duo Device Hub / 实机。
+
+将真实截图按语言放入 `fastlane/screenshots/iphone-duo/<locale>/`，上传前运行：
+
+```bash
+python3 scripts/check_iphone_duo_screenshots.py --require-both
+```
+
+`--require-both` 是项目建议的内外屏验收检查。当前 `metadata` 和 `release` 流程跳过截屏，检查通过后仍需在 App Store Connect 上传并预览；生成的 `app_store_metadata.json` 不包含截屏。

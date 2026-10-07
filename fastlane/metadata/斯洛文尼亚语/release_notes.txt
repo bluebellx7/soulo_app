@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Hitrejše odpiranje strani in stabilnejši odziv orodne vrstice in zavihkov.
-• Predvajanje podprtih videov med prenosom in boljša obnovitev prenosov v ozadju.
-• Popravki celozaslonskih kontrolnikov in vrnitve v pokončno usmerjenost.
-• Blokiranje klikov na skrite oglase in neželenega pisanja v odložišče.
-• Prikaz napredka pri podprtih prenosih, uvozih in izvozih.
+• Izboljšano nalaganje spletnih strani, filtriranje oglasov in odzivnost pri krmarjenju.
+• Izboljšana postavitev, obrezovanje ozadij in branje ob spremembi velikosti okna.

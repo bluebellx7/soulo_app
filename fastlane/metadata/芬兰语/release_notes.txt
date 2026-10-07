@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Sivut avautuvat nopeammin ja työkalupalkki sekä välilehdet reagoivat vakaammin.
-• Tuettujen videoiden toisto latauksen aikana ja taustalatausten parempi palautuminen.
-• Korjauksia koko näytön säätimiin ja pystyasentoon palaamiseen.
-• Piilomainosten napsautusten ja luvattomien leikepöytäkirjoitusten esto.
-• Edistymisen näyttö tuetuissa latauksissa, tuonneissa ja vienneissä.
+• Parannettu verkkosivujen latausta, mainosten suodatusta ja navigoinnin reagointia.
+• Parannettu asettelua, taustakuvien rajausta ja lukukokemusta ikkunan koon muuttuessa.

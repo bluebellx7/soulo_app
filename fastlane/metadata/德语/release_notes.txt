@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Schnelleres Öffnen von Seiten und stabilere Reaktion von Symbolleiste und Tabs.
-• Unterstützte Videos während des Downloads abspielen; Hintergrunddownloads besser wiederherstellen.
-• Vollbildsteuerung und Rückkehr ins Hochformat korrigiert.
-• Klicks auf versteckte Werbung und unerwünschte Schreibzugriffe auf die Zwischenablage blockiert.
-• Fortschritt bei unterstützten Downloads, Importen und Exporten anzeigen.
+• Verbessertes Laden von Webseiten, Filtern von Werbung und Reaktionsverhalten bei der Navigation.
+• Verbesserte Layouts, Hintergrundzuschnitte und Leseansicht bei Änderungen der Fenstergröße.

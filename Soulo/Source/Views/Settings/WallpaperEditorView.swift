@@ -4,7 +4,9 @@ struct WallpaperEditorView: View {
     let image: UIImage
     var onSave: (UIImage) -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.displayScale) private var displayScale
 
+    @State private var canvasSize: CGSize = .zero
     @State private var offset: CGSize = .zero
     @State private var lastOffset: CGSize = .zero
     @State private var scale: CGFloat = 1.0
@@ -23,6 +25,7 @@ struct WallpaperEditorView: View {
                     .scaleEffect(scale)
                     .offset(offset)
                     .clipped()
+                    .onChange(of: geo.size, initial: true) { _, size in canvasSize = size }
                     .gesture(
                         DragGesture()
                             .onChanged { v in
@@ -114,7 +117,10 @@ struct WallpaperEditorView: View {
 
                     // Confirm
                     Button {
-                        let result = renderImage()
+                        guard let result = WallpaperCropRenderer.render(
+                            image, canvasSize: canvasSize, displayScale: displayScale,
+                            zoom: scale, offset: offset
+                        ) else { return }
                         onSave(result)
                         dismiss()
                     } label: {
@@ -133,24 +139,11 @@ struct WallpaperEditorView: View {
                                 .stroke(.white.opacity(0.25), lineWidth: 0.5)
                         )
                     }
+                    .disabled(canvasSize.width <= 0 || canvasSize.height <= 0)
                 }
                 .padding(.horizontal, 24)
-                .padding(.bottom, 50)
+                .padding(.bottom, 24)
             }
-        }
-    }
-
-    private func renderImage() -> UIImage {
-        let screenSize = UIScreen.main.bounds.size
-        let renderer = UIGraphicsImageRenderer(size: screenSize)
-        return renderer.image { _ in
-            let imgSize = image.size
-            let aspect = imgSize.width / imgSize.height
-            let drawH = screenSize.height * scale
-            let drawW = drawH * aspect
-            let x = (screenSize.width - drawW) / 2 + offset.width
-            let y = (screenSize.height - drawH) / 2 + offset.height
-            image.draw(in: CGRect(x: x, y: y, width: drawW, height: drawH))
         }
     }
 
@@ -158,5 +151,30 @@ struct WallpaperEditorView: View {
         offset.width += dx
         offset.height += dy
         lastOffset = offset
+    }
+}
+
+enum WallpaperCropRenderer {
+    /// Match the preview's aspect-fill, zoom and offset in its local canvas,
+    /// including a wide or resized window rather than the main screen.
+    static func render(_ image: UIImage, canvasSize: CGSize, displayScale: CGFloat,
+                       zoom: CGFloat, offset: CGSize) -> UIImage? {
+        guard canvasSize.width > 0, canvasSize.height > 0,
+              canvasSize.width.isFinite, canvasSize.height.isFinite,
+              image.size.width > 0, image.size.height > 0,
+              zoom > 0, zoom.isFinite, displayScale > 0, displayScale.isFinite else { return nil }
+        let fill = max(canvasSize.width / image.size.width, canvasSize.height / image.size.height)
+        let size = CGSize(width: image.size.width * fill * zoom, height: image.size.height * fill * zoom)
+        let rect = CGRect(x: (canvasSize.width - size.width) / 2 + offset.width,
+                          y: (canvasSize.height - size.height) / 2 + offset.height,
+                          width: size.width, height: size.height)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = displayScale
+        format.opaque = true
+        return UIGraphicsImageRenderer(size: canvasSize, format: format).image { context in
+            UIColor.black.setFill()
+            context.fill(CGRect(origin: .zero, size: canvasSize))
+            image.draw(in: rect)
+        }
     }
 }

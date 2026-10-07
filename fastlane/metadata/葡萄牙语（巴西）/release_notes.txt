@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Abertura de páginas mais rápida e respostas mais estáveis da barra de ferramentas e das abas.
-• Reprodução de vídeos compatíveis durante o download e melhor recuperação de downloads em segundo plano.
-• Correção dos controles em tela cheia e do retorno à orientação vertical.
-• Bloqueio de cliques em anúncios ocultos e de gravações não solicitadas na área de transferência.
-• Exibição do progresso de downloads, importações e exportações compatíveis.
+• Melhorias no carregamento de páginas, na filtragem de anúncios e na resposta da navegação.
+• Melhorias no layout, no recorte de papéis de parede e na leitura ao redimensionar a janela.

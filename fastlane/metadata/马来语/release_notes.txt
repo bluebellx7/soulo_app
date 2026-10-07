@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Halaman dibuka lebih cepat; bar alat dan tab memberikan respons lebih stabil.
-• Mainkan video yang disokong semasa muat turun dan pulihkan muat turun latar dengan lebih baik.
-• Kawalan skrin penuh dan kembali ke orientasi potret dibetulkan.
-• Sekat klik pada iklan tersembunyi dan penulisan papan keratan tanpa permintaan.
-• Paparkan kemajuan muat turun, import dan eksport yang disokong.
+• Penambahbaikan pemuatan halaman web, penapisan iklan dan respons navigasi.
+• Penambahbaikan susun atur, pemangkasan kertas dinding dan pengalaman membaca apabila saiz tetingkap berubah.

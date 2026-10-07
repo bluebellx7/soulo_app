@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Sneller openen van pagina’s en stabielere reacties van werkbalk en tabbladen.
-• Ondersteunde video’s afspelen tijdens het downloaden en beter herstel van achtergronddownloads.
-• Oplossingen voor bediening op volledig scherm en terugkeren naar de staande stand.
-• Blokkering van klikken op verborgen advertenties en ongevraagd schrijven naar het klembord.
-• Voortgang tonen voor ondersteunde downloads, import en export.
+• Verbeterd laden van webpagina’s, advertentiefiltering en reacties tijdens het navigeren.
+• Verbeterde indeling, uitsnede van achtergronden en leeservaring bij het wijzigen van de venstergrootte.

@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Deschiderea paginilor mai rapidă și răspuns mai stabil al barei de instrumente și filelor.
-• Redarea videoclipurilor compatibile în timpul descărcării și recuperare mai bună a descărcărilor în fundal.
-• Corectarea comenzilor pe ecran complet și a revenirii la orientarea portret.
-• Blocarea clicurilor pe reclame ascunse și a scrierilor nesolicitate în clipboard.
-• Afișarea progresului pentru descărcările, importurile și exporturile compatibile.
+• Îmbunătățiri la încărcarea paginilor, filtrarea reclamelor și răspunsul navigării.
+• Îmbunătățiri ale aspectului, decupării imaginilor de fundal și lecturii când se schimbă dimensiunea ferestrei.

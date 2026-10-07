@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Hurtigere sideåbning og mere stabil respons fra værktøjslinjen og fanerne.
-• Afspilning af understøttede videoer under download og bedre gendannelse af baggrundsdownload.
-• Rettelser til fuldskærmskontroller og tilbagevenden til stående format.
-• Blokering af klik på skjulte annoncer og uønsket skrivning til udklipsholderen.
-• Visning af fremskridt for understøttede downloads, importer og eksporter.
+• Forbedret indlæsning af websider, annoncefiltrering og respons under navigation.
+• Forbedret layout, beskæring af baggrunde og læsning, når vinduets størrelse ændres.

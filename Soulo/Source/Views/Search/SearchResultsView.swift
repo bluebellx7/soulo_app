@@ -269,7 +269,9 @@ struct SearchResultsView: View {
             }
             .ignoresSafeArea()
         )
-        .ignoresSafeArea(isFullscreen ? .container : [], edges: .all)
+        // Side insets may be asymmetric on a folding display or in Split View.
+        // Keep page controls clear of cameras and system bars on either side.
+        .ignoresSafeArea(isFullscreen ? .container : [], edges: .vertical)
         .statusBarHidden(isFullscreen)
         .persistentSystemOverlays(isFullscreen ? .hidden : .automatic)
         .tabOverviewScale(isActive: tabManager.showTabOverview)

@@ -260,6 +260,45 @@ final class ManualAdBlockTests: XCTestCase {
         XCTAssertEqual(hidden as? Bool, true)
     }
 
+    func testCosmeticPayloadPreservesQuotedSelectorsDomainScopesAndExceptions() async throws {
+        let defaults = UserDefaults.standard
+        let key = "soulo_ad_block_subscription_rules"
+        let previous = defaults.object(forKey: key)
+        defer { defaults.set(previous, forKey: key) }
+        let rules = ParsedAdBlockRules(cosmeticRules: [
+            AdBlockCosmeticRule(selector: #".qa-quoted[data-note="推广/\"报价\""]"#, ifDomains: ["example.com"]),
+            AdBlockCosmeticRule(selector: ".qa-other", ifDomains: ["other.example.com"]),
+            AdBlockCosmeticRule(selector: ".qa-excluded", unlessDomains: ["news.example.com"]),
+            AdBlockCosmeticRule(selector: ".qa-excepted")
+        ], cosmeticExceptions: [AdBlockCosmeticRule(selector: ".qa-excepted", ifDomains: ["news.example.com"])])
+        defaults.set(try JSONEncoder().encode(rules), forKey: key)
+        let web = try await fixture()
+        try await js("""
+        document.body.insertAdjacentHTML('beforeend', `<aside class='qa-quoted' data-note='推广/"报价"'>Advertisement</aside><aside class='qa-other'>Other site</aside><aside class='qa-excluded'>Excluded site</aside><aside class='qa-excepted'>Exception</aside>`); null
+        """, web)
+        try await js(AdBlockService.adHidingScript() + "\nnull", web)
+        let displays = try await js("['qa-quoted','qa-other','qa-excluded','qa-excepted'].map(c=>getComputedStyle(document.querySelector('.'+c)).display)", web) as? [String]
+        XCTAssertEqual(displays?.first, "none")
+        XCTAssertEqual(displays?.dropFirst().contains("none"), false,
+            "Other-domain rules, excluded hosts and cosmetic exceptions must preserve content")
+    }
+
+    func testAllowlistedPageSkipsCosmeticPayloadAndCanEnableFilteringLater() async throws {
+        let defaults = UserDefaults.standard
+        let key = "soulo_ad_block_subscription_rules"
+        let previous = defaults.object(forKey: key)
+        defer { defaults.set(previous, forKey: key) }
+        defaults.set(try JSONEncoder().encode(ParsedAdBlockRules(cosmeticSelectors: [".qa-lazy-ad"])), forKey: key)
+        let web = try await fixture()
+        try await js("document.body.insertAdjacentHTML('beforeend', '<aside class=qa-lazy-ad>Advertisement</aside>'); null", web)
+        try await js(AdBlockService.adHidingScript(allowlistedHosts: ["example.com"]) + "\nnull", web)
+        let skipped = try await js("window.__souloAdBlockConfig.subscriptionCosmeticRules.length === 0 && !window.__souloAdBlockInstalled && getComputedStyle(document.querySelector('.qa-lazy-ad')).display !== 'none'", web)
+        XCTAssertEqual(skipped as? Bool, true)
+        try await js(AdBlockService.adHidingScript() + "\nnull", web)
+        let enabled = try await js("getComputedStyle(document.querySelector('.qa-lazy-ad')).display === 'none'", web)
+        XCTAssertEqual(enabled as? Bool, true)
+    }
+
     func testBottomAdFilteringHandlesLateInsertionWithoutHidingFooter() async throws {
         let web = try await fixture()
         try await js(AdBlockService.adHidingScript(cosmetic: true) + "\nnull", web)

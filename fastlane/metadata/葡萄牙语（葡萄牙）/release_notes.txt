@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Abertura de páginas mais rápida e respostas mais estáveis da barra de ferramentas e dos separadores.
-• Reprodução de vídeos compatíveis durante a transferência e melhor recuperação em segundo plano.
-• Correção dos controlos em ecrã inteiro e do regresso à orientação vertical.
-• Bloqueio de cliques em anúncios ocultos e de escritas não solicitadas na área de transferência.
-• Apresentação do progresso de transferências, importações e exportações compatíveis.
+• Melhorias no carregamento de páginas, na filtragem de anúncios e na resposta da navegação.
+• Melhorias na disposição, no recorte de imagens de fundo e na leitura ao redimensionar a janela.

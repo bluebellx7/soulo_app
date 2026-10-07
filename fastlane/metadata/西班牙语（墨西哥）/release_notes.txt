@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Apertura de páginas más rápida y respuesta más estable de la barra de herramientas y las pestañas.
-• Reproducción de videos compatibles durante la descarga y mejor recuperación de descargas en segundo plano.
-• Corrección de los controles de pantalla completa y del regreso a la orientación vertical.
-• Bloqueo de clics en anuncios ocultos y de escrituras no solicitadas en el portapapeles.
-• Progreso visible en descargas, importaciones y exportaciones compatibles.
+• Mejoras en la carga de páginas, el filtrado de anuncios y la respuesta de navegación.
+• Mejoras en el diseño, el recorte de fondos y la lectura al cambiar el tamaño de la ventana.

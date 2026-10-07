@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Faster page startup and steadier toolbar and tab responses.
-• Play supported videos while downloading, with improved background download recovery.
-• Fixed fullscreen controls and returning to portrait after playback.
-• Block clicks on hidden ads and unsolicited clipboard writes.
-• Show progress for supported downloads, imports and exports.
+• Improved web page loading, ad filtering and navigation responsiveness.
+• Improved layouts, wallpaper cropping and reading when the window size changes.

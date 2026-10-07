@@ -77,7 +77,8 @@ struct BookReaderView: View {
     @State private var fileModified: Date?
     @State private var seekPosition = 0.0
     @State private var isSeeking = false
-    @State private var brightness = UIScreen.main.brightness
+    @State private var brightness = 0.5
+    @State private var brightnessScreen: UIScreen?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var query = ""
@@ -101,6 +102,13 @@ struct BookReaderView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(readerBackground.ignoresSafeArea())
+        .background(ViewWindowReader { window in
+            let screen = window?.windowScene?.screen
+            if brightnessScreen !== screen {
+                brightnessScreen = screen
+                if let screen { brightness = screen.brightness }
+            }
+        })
         .overlay(alignment: .top) {
             if controller.controlsVisible || controller.error != nil {
                 readerHeader.transition(.opacity)
@@ -172,7 +180,7 @@ struct BookReaderView: View {
                     Image(systemName: "sun.min")
                     Slider(value: $brightness, in: 0.05...1)
                         .accessibilityLabel(ToolText.text("appearance"))
-                        .onChange(of: brightness) { _, value in UIScreen.main.brightness = value }
+                        .onChange(of: brightness) { _, value in brightnessScreen?.brightness = value }
                     Image(systemName: "sun.max")
                 }
                 themePicker
@@ -317,8 +325,12 @@ struct BookReaderView: View {
                     .accessibilityLabel(ToolText.text("search_book"))
                     .accessibilityIdentifier("reader.search")
                 Spacer()
-                Button { brightness = UIScreen.main.brightness; showBrightness = true } label: { Image(systemName: "sun.max") }
+                Button {
+                    if let brightnessScreen { brightness = brightnessScreen.brightness }
+                    showBrightness = true
+                } label: { Image(systemName: "sun.max") }
                     .accessibilityLabel(ToolText.text("appearance"))
+                    .disabled(brightnessScreen == nil)
                 Spacer()
                 Button { showStyle = true } label: { Image(systemName: isPDF ? "slider.horizontal.3" : "textformat.size") }
                     .accessibilityLabel(ToolText.text("appearance"))

@@ -392,33 +392,22 @@ struct HomeView: View {
 
     // MARK: - Home Content
 
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    private var isIPad: Bool { horizontalSizeClass == .regular }
-
     private var homeContent: some View {
         VStack(spacing: 0) {
             topBar.padding(.top, 8)
-            if verticalSizeClass == .compact {
-                GeometryReader { geometry in
-                    ScrollView {
-                        VStack(spacing: 12) {
-                            homeHeading
-                            homeSearchContent
-                                .frame(maxWidth: 600)
-                        }
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 16)
-                        .frame(maxWidth: .infinity, minHeight: geometry.size.height)
+            // Keep the search field mounted while the window changes size.
+            // Center when there is room, scroll when folding or the keyboard
+            // reduces the available height.
+            GeometryReader { geometry in
+                ScrollView {
+                    VStack(spacing: verticalSizeClass == .compact ? 12 : 24) {
+                        homeHeading.padding(.horizontal, 24)
+                        homeSearchContent.frame(maxWidth: 656)
                     }
-                    .scrollDismissesKeyboard(.interactively)
+                    .padding(.vertical, 16)
+                    .frame(maxWidth: .infinity, minHeight: geometry.size.height)
                 }
-            } else {
-                Spacer()
-                VStack(spacing: 24) {
-                    homeHeading
-                    homeSearchContent
-                }
-                Spacer()
+                .scrollDismissesKeyboard(.interactively)
             }
             // Keep the footer informational only so search remains the single focal point.
             Text(wallpaperManager.source == .bing ? "Bing Daily" : wallpaperManager.searchTopic)
@@ -501,7 +490,7 @@ struct HomeView: View {
                 onPlatformManagementTap: { showPlatformManagement = true }
             )
             .matchedGeometryEffect(id: "searchBar", in: searchBarNamespace)
-            .frame(maxWidth: isIPad ? 600 : .infinity)
+            .frame(maxWidth: 600)
             .padding(.horizontal, 28)
 
             // Floating autocomplete — zero-height anchor, overlay extends downward
@@ -521,7 +510,7 @@ struct HomeView: View {
                                 searchVM.searchText = suggestion
                             }
                         )
-                        .frame(maxWidth: isIPad ? 600 : .infinity)
+                        .frame(maxWidth: 600)
                         .padding(.horizontal, 28)
                         .padding(.top, 8)
                         .fixedSize(horizontal: false, vertical: true)
@@ -632,7 +621,7 @@ struct HomeView: View {
                     )
                 }
             }
-            .frame(maxWidth: isIPad ? 600 : .infinity)
+            .frame(maxWidth: 600)
             .padding(.horizontal, 32)
         }
     }
@@ -664,7 +653,7 @@ struct HomeView: View {
                     )
                 }
             }
-            .frame(maxWidth: isIPad ? 600 : .infinity)
+            .frame(maxWidth: 600)
             .padding(.horizontal, 32)
         }
     }

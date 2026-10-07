@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Obertura de pàgines més ràpida i resposta més estable de la barra d’eines i les pestanyes.
-• Reproducció de vídeos compatibles durant la baixada i millor recuperació de les baixades en segon pla.
-• Correccions als controls de pantalla completa i al retorn a l’orientació vertical.
-• Bloqueig dels clics en anuncis ocults i de les escriptures no sol·licitades al porta-retalls.
-• Progrés visible en les baixades, importacions i exportacions compatibles.
+• Millores en la càrrega de pàgines, el filtratge d’anuncis i la resposta en navegar.
+• Millores en el disseny, el retall de fons i la lectura en canviar la mida de la finestra.

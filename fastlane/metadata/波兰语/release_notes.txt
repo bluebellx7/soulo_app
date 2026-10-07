@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Szybsze otwieranie stron i stabilniejsza reakcja paska narzędzi oraz kart.
-• Odtwarzanie obsługiwanych filmów podczas pobierania i lepsze wznawianie pobierania w tle.
-• Poprawki sterowania na pełnym ekranie i powrotu do orientacji pionowej.
-• Blokowanie kliknięć ukrytych reklam i niepożądanego zapisu do schowka.
-• Wyświetlanie postępu obsługiwanych pobrań, importu i eksportu.
+• Usprawniono ładowanie stron, filtrowanie reklam i szybkość reakcji podczas nawigacji.
+• Ulepszono układ, kadrowanie tapet i czytanie przy zmianie rozmiaru okna.

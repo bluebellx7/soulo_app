@@ -8,6 +8,13 @@ enum ManualAdBlockRuntime {
 
     @MainActor
     static func configuredScript(enabled: Bool, allowlistedHosts: [String], rules: [ManualAdRule]) -> String {
+        prefix + "\n" + tiledBannerDetection + "\n" + source + "\n" + configurationUpdateScript(
+            enabled: enabled, allowlistedHosts: allowlistedHosts, rules: rules
+        )
+    }
+
+    @MainActor
+    static func configurationUpdateScript(enabled: Bool, allowlistedHosts: [String], rules: [ManualAdRule]) -> String {
         let payload: [String: Any] = [
             "enabled": enabled,
             "allowlist": WebCompatibilityService.protectionBypassHosts(adding: allowlistedHosts),
@@ -15,7 +22,7 @@ enum ManualAdBlockRuntime {
         ]
         let json = (try? JSONSerialization.data(withJSONObject: payload))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
-        return prefix + "\n" + tiledBannerDetection + "\n" + source + "\nwindow.__souloManualAds.configure(\(json));"
+        return "window.__souloManualAds?.configure(\(json));"
     }
 
     // Structural detection shared by automatic filtering and the isolated picker.

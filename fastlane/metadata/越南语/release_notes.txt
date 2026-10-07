@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Mở trang nhanh hơn; thanh công cụ và tab phản hồi ổn định hơn.
-• Phát video được hỗ trợ trong khi tải và cải thiện khôi phục tải xuống nền.
-• Sửa điều khiển toàn màn hình và trở lại chế độ dọc sau khi phát.
-• Chặn nhấp vào quảng cáo ẩn và ghi nội dung không được yêu cầu vào bảng nhớ tạm.
-• Hiển thị tiến độ tải xuống, nhập và xuất được hỗ trợ.
+• Cải thiện tốc độ tải trang web, lọc quảng cáo và phản hồi khi điều hướng.
+• Cải thiện bố cục, cắt hình nền và trải nghiệm đọc khi kích thước cửa sổ thay đổi.

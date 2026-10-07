@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Sayfalar daha hızlı açılır; araç çubuğu ve sekmeler daha kararlı yanıt verir.
-• Desteklenen videoları indirme sırasında oynatın; arka plan indirmelerini kurtarma iyileştirildi.
-• Tam ekran denetimleri ve dikey görünüme dönüş düzeltildi.
-• Gizli reklamlara tıklamalar ve panoya istenmeyen yazmalar engellenir.
-• Desteklenen indirme, içe aktarma ve dışa aktarmaların ilerlemesi gösterilir.
+• Web sayfası yükleme, reklam filtreleme ve gezinme tepkileri iyileştirildi.
+• Pencere boyutu değiştiğinde düzen, duvar kâğıdı kırpma ve okuma deneyimi iyileştirildi.

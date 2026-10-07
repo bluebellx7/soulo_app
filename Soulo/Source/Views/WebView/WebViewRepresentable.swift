@@ -417,7 +417,23 @@ struct WebViewRepresentable: UIViewRepresentable {
 
     func makeUIView(context: Context) -> WKWebView {
         if let existingWebView = viewModel.webView {
+            let installInCurrentDocument = !viewModel.hasInstalledWebViewScripts && existingWebView.url != nil
             installRuntimeIfNeeded(on: existingWebView.configuration.userContentController, context: context)
+            if installInCurrentDocument {
+                // A supplied WebView may already contain a document that never
+                // received our document-start scripts. Bootstrap it once; normal
+                // tab remounts and new navigations keep the lightweight path.
+                existingWebView.evaluateJavaScript(
+                    ManualAdBlockRuntime.configuredScript(enabled: adBlockEnabled,
+                        allowlistedHosts: adBlockSettings.allowlistedHosts, rules: manualAdRules.rules),
+                    in: nil, in: ManualAdBlockRuntime.world, completionHandler: nil
+                )
+                if adBlockEnabled {
+                    existingWebView.evaluateJavaScript(AdBlockService.adHidingScript(
+                        allowlistedHosts: WebCompatibilityService.protectionBypassHosts(adding: adBlockSettings.allowlistedHosts)
+                    ), completionHandler: nil)
+                }
+            }
             configureWebView(existingWebView, context: context)
             context.coordinator.resyncVideoAwake(on: existingWebView)
             if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
@@ -508,6 +524,9 @@ struct WebViewRepresentable: UIViewRepresentable {
                 allowlistedHosts: adBlockSettings.allowlistedHosts, rules: manualAdRules.rules),
             injectionTime: .atDocumentStart, forMainFrameOnly: true, in: ManualAdBlockRuntime.world
         ))
+        viewModel.installedManualAdScriptSignature = Self.manualAdConfigurationSignature(
+            enabled: adBlockEnabled, allowlist: adBlockSettings.allowlistedHosts, revision: manualAdRules.revision
+        )
         if !isIncognito {
             for script in BrowserExtensionService.shared.userScripts where script.isEnabled {
                 let injectionTime: WKUserScriptInjectionTime = script.injectionTime == .documentStart
@@ -622,7 +641,11 @@ struct WebViewRepresentable: UIViewRepresentable {
         )
         let hostIsAllowlisted = shouldBypassWebProtection
             || adBlockSettings.isAllowlisted(viewModel.currentURL?.host)
-        if adBlockEnabled && !hostIsAllowlisted {
+        viewModel.adHidingNeedsBootstrap = hostIsAllowlisted
+        // The script checks each document's host and challenge URL itself.
+        // Install it once for subsequent navigations, including tabs that start
+        // on an allowlisted site, instead of sending the large payload at commit.
+        if adBlockEnabled {
             let adScript = WKUserScript(
                 source: AdBlockService.adHidingScript(
                     cosmetic: true,
@@ -633,6 +656,9 @@ struct WebViewRepresentable: UIViewRepresentable {
             )
             contentController.addUserScript(adScript)
         }
+        viewModel.lastAdHidingSignature = Self.adHidingConfigurationSignature(
+            enabled: adBlockEnabled, cosmetic: true, allowlist: protectionBypassHosts
+        )
 
         // Apply pre-compiled content rules before the first navigation whenever possible.
         if adBlockEnabled && !hostIsAllowlisted, let cached = Self.cachedAdBlockRules {
@@ -716,7 +742,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         )
         context.coordinator.applyAdHidingIfNeeded(
             on: uiView,
-            enabled: adBlockEnabled && !shouldBypassWebProtection,
+            enabled: adBlockEnabled,
             cosmetic: true,
             allowlistedHosts: adBlockAllowlist,
             host: host
@@ -793,24 +819,37 @@ struct WebViewRepresentable: UIViewRepresentable {
         return "\(hosts)|rules:\(AdBlockSubscriptionService.rulesSignature())|builtIn:\(BuiltInAdRuleStore.signature())"
     }
 
+    private static func adHidingConfigurationSignature(enabled: Bool, cosmetic: Bool, allowlist: [String]) -> String {
+        "\(enabled)|\(cosmetic)|\(allowlistSignature(for: allowlist))"
+    }
+
+    private static func manualAdConfigurationSignature(enabled: Bool, allowlist: [String], revision: UUID) -> String {
+        "\(enabled)|\(revision)|\(WebCompatibilityService.protectionBypassHosts(adding: allowlist).joined(separator: ","))"
+    }
+
     static func reloadWithCurrentAdRules(_ model: WebViewModel) {
         guard let webView = model.webView else { return }
-        let allowlist = AdBlockSettingsService.shared.allowlistedHosts
+        let allowlist = WebCompatibilityService.protectionBypassHosts(adding: AdBlockSettingsService.shared.allowlistedHosts)
         let signature = allowlistSignature(for: allowlist)
         Task { @MainActor [weak webView, weak model] in
             let rules = await AdBlockService.compileRuleLists(allowlistedHosts: allowlist)
             guard let webView, let model, model.webView === webView,
-                  signature == allowlistSignature(for: AdBlockSettingsService.shared.allowlistedHosts) else { return }
+                  signature == allowlistSignature(for: WebCompatibilityService.protectionBypassHosts(
+                    adding: AdBlockSettingsService.shared.allowlistedHosts
+                  )) else { return }
             cachedAdBlockAllowlistSignature = signature
             cachedAdBlockRules = rules
             applyContentRules(rules, on: webView, allowlist: allowlist)
             let controller = webView.configuration.userContentController
-            let others = controller.userScripts.filter { !$0.source.contains("window.__souloAdBlockConfig") }
+            let others = controller.userScripts.filter { !$0.source.hasPrefix(AdBlockService.hidingScriptPrefix) }
             controller.removeAllUserScripts()
             others.forEach(controller.addUserScript)
             let enabled = UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true
-            controller.addUserScript(WKUserScript(source: AdBlockService.adHidingScript(cosmetic: enabled, allowlistedHosts: allowlist),
-                injectionTime: .atDocumentStart, forMainFrameOnly: false))
+            if enabled {
+                controller.addUserScript(WKUserScript(source: AdBlockService.adHidingScript(allowlistedHosts: allowlist),
+                    injectionTime: .atDocumentStart, forMainFrameOnly: false))
+            }
+            model.lastAdHidingSignature = adHidingConfigurationSignature(enabled: enabled, cosmetic: true, allowlist: allowlist)
             webView.reloadFromOrigin()
         }
     }
@@ -1911,27 +1950,46 @@ struct WebViewRepresentable: UIViewRepresentable {
             allowlistedHosts: [String],
             host: String?
         ) {
-            let signature = [
-                host ?? "",
-                enabled ? "1" : "0",
-                cosmetic ? "1" : "0",
-                allowlistedHosts.joined(separator: ","),
-                AdBlockSettingsService.isHostAllowlisted(host) ? "1" : "0",
-                BuiltInAdRuleStore.signature(),
-                AdBlockSubscriptionService.rulesSignature()
-            ].joined(separator: "|")
-            guard signature != lastAdHidingSignature else { return }
-            lastAdHidingSignature = signature
-
-            guard enabled,
-                  !AdBlockSettingsService.isHostAllowlisted(host),
-                  cosmetic else {
+            let allowlist = WebCompatibilityService.protectionBypassHosts(adding: allowlistedHosts)
+            let signature = WebViewRepresentable.adHidingConfigurationSignature(
+                enabled: enabled, cosmetic: cosmetic, allowlist: allowlist
+            )
+            let bypassesPage = WebCompatibilityService.shouldBypassWebProtection(for: webView.url, fallbackHost: host)
+                || AdBlockSettingsService.isHostAllowlisted(host, allowlistedHosts: allowlist)
+            if bypassesPage { viewModel.adHidingNeedsBootstrap = true }
+            guard signature != lastAdHidingSignature else {
+                // A challenge document can change its URL through History API
+                // without running document-start scripts again. Bootstrap only
+                // when that retained document becomes eligible for filtering.
+                if enabled && cosmetic && !bypassesPage && viewModel.adHidingNeedsBootstrap,
+                   webView.url != nil && !webView.isLoading {
+                    viewModel.adHidingNeedsBootstrap = false
+                    webView.evaluateJavaScript(AdBlockService.adHidingScript(allowlistedHosts: allowlist), completionHandler: nil)
+                }
                 return
             }
-            webView.evaluateJavaScript(
-                AdBlockService.adHidingScript(cosmetic: cosmetic, allowlistedHosts: allowlistedHosts),
-                completionHandler: nil
-            )
+            lastAdHidingSignature = signature
+            viewModel.adHidingNeedsBootstrap = bypassesPage
+            let controller = webView.configuration.userContentController
+            let others = controller.userScripts.filter { !$0.source.hasPrefix(AdBlockService.hidingScriptPrefix) }
+            controller.removeAllUserScripts()
+            others.forEach(controller.addUserScript)
+            let source: String
+            if enabled && cosmetic {
+                source = AdBlockService.adHidingScript(allowlistedHosts: allowlist)
+                controller.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: false))
+            } else {
+                source = """
+                if (window.__souloAdBlockConfig) {
+                    window.__souloAdBlockConfig.cosmeticEnabled = false;
+                    window.__souloAdBlockConfig.tiledBanners = false;
+                    window.__souloAdBlockRemoveAds?.();
+                }
+                """
+            }
+            // Document-start injection handles each normal navigation. Only a
+            // live settings change needs an extra evaluation in this document.
+            if webView.url != nil { webView.evaluateJavaScript(source, completionHandler: nil) }
         }
 
         func applyPrivacyProtectionIfNeeded(on webView: WKWebView) {
@@ -1958,7 +2016,10 @@ struct WebViewRepresentable: UIViewRepresentable {
             let enabled = UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true
             let service = ManualAdBlockService.shared
             let allowlist = AdBlockSettingsService.shared.allowlistedHosts
-            let signature = "\(enabled)|\(service.revision)|\(allowlist.joined(separator: ","))|\(webView.url?.absoluteString ?? "")"
+            let configurationSignature = WebViewRepresentable.manualAdConfigurationSignature(
+                enabled: enabled, allowlist: allowlist, revision: service.revision
+            )
+            let signature = "\(configurationSignature)|\(webView.url?.absoluteString ?? "")"
             guard signature != lastManualAdSignature else { return }
             lastManualAdSignature = signature
             if let selection = viewModel.manualAdSelection,
@@ -1968,16 +2029,22 @@ struct WebViewRepresentable: UIViewRepresentable {
                     self.viewModel.cancelMarkingAdvertisement()
                 }
             }
-            let source = ManualAdBlockRuntime.configuredScript(enabled: enabled, allowlistedHosts: allowlist, rules: service.rules)
-            let controller = webView.configuration.userContentController
-            // WebKit has no remove-one-user-script API. Preserve every unrelated
-            // runtime and handler when updating the rules used by future loads.
-            let others = controller.userScripts.filter { !$0.source.hasPrefix(ManualAdBlockRuntime.prefix) }
-            controller.removeAllUserScripts()
-            others.forEach(controller.addUserScript)
-            controller.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart,
-                forMainFrameOnly: true, in: ManualAdBlockRuntime.world))
-            webView.evaluateJavaScript(source, in: nil, in: ManualAdBlockRuntime.world, completionHandler: nil)
+            if configurationSignature != viewModel.installedManualAdScriptSignature {
+                viewModel.installedManualAdScriptSignature = configurationSignature
+                let source = ManualAdBlockRuntime.configuredScript(enabled: enabled, allowlistedHosts: allowlist, rules: service.rules)
+                let controller = webView.configuration.userContentController
+                // Rebuild future-document scripts only when preferences/rules
+                // change. URL changes are already handled by this runtime.
+                let others = controller.userScripts.filter { !$0.source.hasPrefix(ManualAdBlockRuntime.prefix) }
+                controller.removeAllUserScripts()
+                others.forEach(controller.addUserScript)
+                controller.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart,
+                    forMainFrameOnly: true, in: ManualAdBlockRuntime.world))
+            }
+            if webView.url != nil {
+                let update = ManualAdBlockRuntime.configurationUpdateScript(enabled: enabled, allowlistedHosts: allowlist, rules: service.rules)
+                webView.evaluateJavaScript(update, in: nil, in: ManualAdBlockRuntime.world, completionHandler: nil)
+            }
         }
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
@@ -1997,7 +2064,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                 viewModel.clearUserScriptMenuCommands()
                 viewModel.resetPageTranslationState()
             }
-            lastAdHidingSignature = ""
             lastManualAdSignature = ""
         }
 
@@ -2005,6 +2071,10 @@ struct WebViewRepresentable: UIViewRepresentable {
             BrowserStartupTrace.mark("navigation_commit")
             provisionalNavigation = nil
             navigationGesture = nil
+            // A new document receives its own user scripts. The bootstrap flag
+            // is needed only when a bypassed document is reused by an SPA.
+            viewModel.adHidingNeedsBootstrap = WebCompatibilityService.shouldBypassWebProtection(for: webView.url)
+                || AdBlockSettingsService.isHostAllowlisted(webView.url?.host)
             if viewModel.manualAdSelection != nil { viewModel.cancelMarkingAdvertisement() }
             synchronizeManualAdRules(on: webView)
             Task { @MainActor [weak self] in

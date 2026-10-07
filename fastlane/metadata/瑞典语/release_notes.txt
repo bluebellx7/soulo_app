@@ -1,7 +1,4 @@
-1.2.0
+1.2.1
 
-• Snabbare sidöppning och stabilare respons från verktygsfält och flikar.
-• Uppspelning av videor som stöds under nedladdning och bättre återställning av bakgrundsnedladdningar.
-• Korrigeringar av helskärmskontroller och återgång till stående läge.
-• Blockering av klick på dolda annonser och oönskade skrivningar till urklipp.
-• Visa förlopp för nedladdningar, importer och exporter som stöds.
+• Förbättrad inläsning av webbsidor, annonsfiltrering och respons vid navigering.
+• Förbättrad layout, beskärning av bakgrunder och läsning när fönstrets storlek ändras.
