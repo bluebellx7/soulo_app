@@ -11,7 +11,7 @@ struct BrowserTabBar: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
+                LazyHStack(spacing: 6) {
                     ForEach(Array(tabManager.tabs.enumerated()), id: \.element.id) { index, tab in
                         BrowserTabChip(
                             webViewModel: tab.webViewModel,
@@ -53,6 +53,10 @@ struct BrowserTabBar: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
+            }
+            .frame(height: 42)
+            .onAppear {
+                if let id = tabManager.activeTab?.id { proxy.scrollTo(id, anchor: .center) }
             }
             .onChange(of: tabManager.activeTabIndex) { _, _ in
                 if let id = tabManager.activeTab?.id {
@@ -176,6 +180,8 @@ private struct BrowserTabChip: View {
 
 struct TabSwitcherOverlay: View {
     @AppStorage("show_top_tab_bar") private var showTopTabBar = true
+    @AppStorage("tab_overview_grouped") private var showsDomainGroups = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showTabOptions = false
     @ObservedObject var tabManager: TabManager
     let onSelectTab: (Int) -> Void
@@ -202,50 +208,65 @@ struct TabSwitcherOverlay: View {
                     .accessibilityHidden(true)
 
                 VStack(spacing: 0) {
-                    Spacer(minLength: max(geo.safeAreaInsets.top, 12) + 36)
-
-                    if tabManager.tabs.isEmpty {
-                        emptyState
+                    if showsDomainGroups && !tabManager.tabs.isEmpty {
+                        TabSwitcherDomainGroups(tabManager: tabManager, onSelect: selectTab, onClose: closeTab)
+                            .padding(.top, 12)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .transition(.opacity)
                     } else {
-                        TabSwitcherCarousel(
-                            tabManager: tabManager,
-                            isExpanding: $isExpanding,
-                            expandingIndex: $expandingIndex,
-                            onSelect: { index in
-                                HapticsManager.selection()
-                                var transaction = Transaction()
-                                transaction.disablesAnimations = true
-                                withTransaction(transaction) {
-                                    onSelectTab(index)
-                                    onDismiss()
-                                }
-                            },
-                            onClose: { index in
-                                HapticsManager.light()
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
-                                    tabManager.closeTab(at: index)
-                                }
+                        VStack(spacing: 0) {
+                            Spacer(minLength: max(geo.safeAreaInsets.top, 12) + 36)
+                            if tabManager.tabs.isEmpty {
+                                emptyState
+                            } else {
+                                TabSwitcherCarousel(
+                                    tabManager: tabManager,
+                                    isExpanding: $isExpanding,
+                                    expandingIndex: $expandingIndex,
+                                    onSelect: selectTab,
+                                    onClose: closeTab
+                                )
+                                .frame(height: carouselHeight(in: geo))
+                                .offset(y: -16)
                             }
-                        )
-                        .frame(height: carouselHeight(in: geo))
-                        .offset(y: -16)
+                            Spacer(minLength: 18)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .transition(.opacity)
                     }
-
-                    Spacer(minLength: 18)
 
                     bottomDock
                         .opacity(isExpanding ? 0 : 1)
                         .scaleEffect(isExpanding ? 0.9 : 1.0)
-                        .padding(.bottom, max(geo.safeAreaInsets.bottom, 12) + 10)
+                        .padding(.top, 16)
+                        .padding(.bottom, 22)
                 }
             }
         }
-        .transition(.opacity.combined(with: .scale(scale: 0.98)))
+        .transition(.opacity)
         .zIndex(500)
     }
 
     private var bottomDock: some View {
         HStack(spacing: 14) {
+            Button {
+                HapticsManager.selection()
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+                    showsDomainGroups.toggle()
+                }
+            } label: {
+                Image(systemName: showsDomainGroups ? "rectangle.stack" : "rectangle.3.group")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(showsDomainGroups ? Color.black.opacity(0.85) : .white.opacity(0.9))
+                    .frame(width: 44, height: 44)
+                    .background(showsDomainGroups ? .white.opacity(0.94) : .black.opacity(0.34), in: Circle())
+                    .overlay(Circle().stroke(.white.opacity(0.2), lineWidth: 0.5))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(LanguageManager.shared.localizedString(showsDomainGroups ? "tab_view_carousel" : "tab_view_grouped"))
+            .accessibilityValue(LanguageManager.shared.localizedString(showsDomainGroups ? "tab_view_grouped" : "tab_view_carousel"))
+            .accessibilityIdentifier("tabs.view-mode")
+
             iconButton("plus", label: "tab_new_tab") {
                 HapticsManager.light()
                 onNewTab()
@@ -281,6 +302,25 @@ struct TabSwitcherOverlay: View {
             }
         }
         .padding(.horizontal, 14)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("tabs.dock")
+    }
+
+    private func selectTab(_ index: Int) {
+        HapticsManager.selection()
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            onSelectTab(index)
+            onDismiss()
+        }
+    }
+
+    private func closeTab(_ index: Int) {
+        HapticsManager.light()
+        withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.82)) {
+            tabManager.closeTab(at: index)
+        }
     }
 
     private var tabOptionsPanel: some View {
@@ -397,6 +437,165 @@ struct TabSwitcherOverlay: View {
     }
 }
 
+// MARK: - Domain Groups
+
+@MainActor
+struct TabOverviewDomainGroup: Identifiable {
+    let id: String
+    let title: String
+    var tabs: [BrowserTab]
+
+    /// Keep the user's tab order within each site and the first-seen order of
+    /// sites. Only the conventional www alias is folded; unrelated subdomains,
+    /// hosted sites and IP addresses must never be merged by a suffix guess.
+    static func make(from tabs: [BrowserTab]) -> [Self] {
+        var groups: [Self] = []
+        var positions: [String: Int] = [:]
+        for tab in tabs {
+            let url = tab.webViewModel.currentURL ?? tab.suspendedURL
+            let key: String
+            let title: String
+            if url?.isFileURL == true {
+                key = "local-files"
+                title = LanguageManager.shared.localizedString("library_files_tab")
+            } else if var host = url?.host?.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: ".")), !host.isEmpty {
+                if host.hasPrefix("www.") { host.removeFirst(4) }
+                key = "host:\(host)"
+                title = host
+            } else if let scheme = url?.scheme {
+                key = "scheme:\(scheme.lowercased())"
+                title = scheme + ":"
+            } else {
+                key = "new-tabs"
+                title = LanguageManager.shared.localizedString("tab_new_tab")
+            }
+            if let position = positions[key] {
+                groups[position].tabs.append(tab)
+            } else {
+                positions[key] = groups.count
+                groups.append(Self(id: key, title: title, tabs: [tab]))
+            }
+        }
+        return groups
+    }
+}
+
+private struct TabSwitcherDomainGroups: View {
+    @ObservedObject var tabManager: TabManager
+    let onSelect: (Int) -> Void
+    let onClose: (Int) -> Void
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        GeometryReader { geometry in
+            let groups = TabOverviewDomainGroup.make(from: tabManager.tabs)
+            let columns: CGFloat = dynamicTypeSize.isAccessibilitySize ? 2 : 3
+            let cardWidth = min(156, max(90, (geometry.size.width - 48 - (columns - 1) * 12) / columns))
+            let previewHeight = min(132, max(96, geometry.size.height / 3.5 - 58))
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: false) {
+                    LazyVStack(alignment: .leading, spacing: 22) {
+                        ForEach(groups) { group in
+                            TabDomainGroupRow(
+                                group: group, tabManager: tabManager,
+                                cardWidth: cardWidth, previewHeight: previewHeight,
+                                onSelect: onSelect, onClose: onClose
+                            )
+                            .id(group.id)
+                        }
+                    }
+                    .padding(.vertical, 12)
+                }
+                .accessibilityIdentifier("tabs.groups")
+                .onAppear {
+                    if let activeID = tabManager.activeTab?.id,
+                       let group = groups.first(where: { $0.tabs.contains { $0.id == activeID } }),
+                       group.id != groups.first?.id {
+                        proxy.scrollTo(group.id, anchor: .top)
+                    }
+                }
+                .mask {
+                    VStack(spacing: 0) {
+                        LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: 8)
+                        Rectangle()
+                        LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 16)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct TabDomainGroupRow: View {
+    let group: TabOverviewDomainGroup
+    @ObservedObject var tabManager: TabManager
+    let cardWidth: CGFloat
+    let previewHeight: CGFloat
+    let onSelect: (Int) -> Void
+    let onClose: (Int) -> Void
+    @State private var focusedID: UUID?
+    @ScaledMetric(relativeTo: .caption) private var titleHeight: CGFloat = 30
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Text(group.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.94))
+                    .lineLimit(1)
+                Text("\(group.tabs.count)")
+                    .font(.caption2.monospacedDigit().weight(.medium))
+                    .foregroundStyle(.white.opacity(0.65))
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(.white.opacity(0.08), in: Capsule())
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 24)
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier("tabs.group.\(group.id)")
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: 12) {
+                    ForEach(group.tabs) { tab in
+                        TabOverviewCard(
+                            webViewModel: tab.webViewModel,
+                            keyword: tab.keyword,
+                            isActive: tab.id == tabManager.activeTab?.id,
+                            isExpanding: false,
+                            position: (tabManager.tabs.firstIndex { $0.id == tab.id } ?? 0) + 1,
+                            total: tabManager.tabCount,
+                            onTap: { select(tab.id, action: onSelect) },
+                            onClose: { select(tab.id, action: onClose) },
+                            compactPreviewHeight: previewHeight
+                        )
+                        .frame(width: cardWidth)
+                        .id(tab.id)
+                    }
+                }
+                .scrollTargetLayout()
+                .padding(.vertical, 2)
+            }
+            .contentMargins(.horizontal, 24, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+            .scrollPosition(id: $focusedID, anchor: .leading)
+            .frame(height: previewHeight + 7 + titleHeight + 4)
+            .onAppear {
+                if group.tabs.first?.id != tabManager.activeTab?.id,
+                   group.tabs.contains(where: { $0.id == tabManager.activeTab?.id }) {
+                    focusedID = tabManager.activeTab?.id
+                }
+            }
+            .accessibilityIdentifier("tabs.group-row.\(group.id)")
+        }
+    }
+
+    private func select(_ id: UUID, action: (Int) -> Void) {
+        if let index = tabManager.tabs.firstIndex(where: { $0.id == id }) { action(index) }
+    }
+}
+
 // MARK: - Tab Switcher Carousel
 
 private struct TabSwitcherCarousel: View {
@@ -408,7 +607,20 @@ private struct TabSwitcherCarousel: View {
 
     @State private var dragOffset: CGFloat = 0
     @State private var isHorizontalDragging = false
+    @State private var focusedTabID: UUID?
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+
+    private var focusedIndex: Int {
+        focusedTabID.flatMap { id in tabManager.tabs.firstIndex { $0.id == id } }
+            ?? tabManager.activeTabIndex
+    }
+
+    private func previewIndices(stepDistance: CGFloat) -> Range<Int> {
+        guard !tabManager.tabs.isEmpty else { return 0..<0 }
+        let offset = stepDistance > 0 ? Int((dragOffset / stepDistance).rounded()) : 0
+        let center = min(max(focusedIndex - offset, 0), tabManager.tabs.count - 1)
+        return max(0, center - 3)..<min(tabManager.tabs.count, center + 4)
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -417,11 +629,14 @@ private struct TabSwitcherCarousel: View {
             let stepDistance = cardWidth + cardSpacing
 
             ZStack {
-                ForEach(Array(tabManager.tabs.enumerated()), id: \.element.id) { index, tab in
+                // Only nearby cards participate in layout, image loading and
+                // gestures, regardless of the number of saved tabs.
+                ForEach(previewIndices(stepDistance: stepDistance).map { ($0, tabManager.tabs[$0]) }, id: \.1.id) { index, tab in
                     TabSwitcherCardItem(
                         index: index,
                         tab: tab,
-                        isActive: index == tabManager.activeTabIndex,
+                        isActive: index == focusedIndex,
+                        focusedIndex: focusedIndex,
                         isExpanding: isExpanding,
                         isAnyExpanding: isExpanding,
                         expandingIndex: expandingIndex,
@@ -429,8 +644,17 @@ private struct TabSwitcherCarousel: View {
                         stepDistance: stepDistance,
                         dragOffset: dragOffset,
                         viewportWidth: geo.size.width,
-                        onSelect: onSelect,
-                        onClose: onClose,
+                        onSelect: { _ in
+                            if let index = tabManager.tabs.firstIndex(where: { $0.id == tab.id }) { onSelect(index) }
+                        },
+                        onClose: { _ in
+                            guard let index = tabManager.tabs.firstIndex(where: { $0.id == tab.id }) else { return }
+                            if index == focusedIndex {
+                                let neighbor = index + 1 < tabManager.tabs.count ? index + 1 : index - 1
+                                focusedTabID = tabManager.tabs.indices.contains(neighbor) ? tabManager.tabs[neighbor].id : nil
+                            }
+                            onClose(index)
+                        },
                         tabManager: tabManager
                     )
                 }
@@ -465,10 +689,10 @@ private struct TabSwitcherCarousel: View {
                         let projected = resistedOffset(value.predictedEndTranslation.width, stepDistance: stepDistance)
                         let targetIndex = targetIndex(for: projected, stepDistance: stepDistance)
 
-                        if targetIndex != tabManager.activeTabIndex {
+                        if targetIndex != focusedIndex {
                             HapticsManager.selection()
                             withAnimation(.spring(response: 0.36, dampingFraction: 0.84)) {
-                                tabManager.focusTabInSwitcher(at: targetIndex)
+                                focusedTabID = tabManager.tabs[targetIndex].id
                                 dragOffset = 0
                             }
                         } else {
@@ -477,8 +701,35 @@ private struct TabSwitcherCarousel: View {
                         isHorizontalDragging = false
                     }
             )
-            .onChange(of: tabManager.activeTabIndex) { _, _ in
+            .onChange(of: tabManager.activeTab?.id) { _, _ in
+                focusedTabID = tabManager.activeTab?.id
                 resetDrag()
+            }
+            .accessibilityScrollAction { direction in
+                let delta = direction == .leading ? 1 : -1
+                let index = min(max(focusedIndex + delta, 0), tabManager.tabCount - 1)
+                if tabManager.tabs.indices.contains(index) { focusedTabID = tabManager.tabs[index].id }
+            }
+            .overlay(alignment: .bottom) {
+                if tabManager.tabCount > 20 {
+                    VStack(spacing: 0) {
+                        Text("\(focusedIndex + 1) / \(tabManager.tabCount)")
+                            .font(.caption.monospacedDigit()).foregroundStyle(.white.opacity(0.8))
+                        Slider(value: Binding(
+                            get: { Double(focusedIndex) },
+                            set: { value in
+                                let index = Int(value)
+                                if tabManager.tabs.indices.contains(index) { focusedTabID = tabManager.tabs[index].id }
+                            }
+                        ), in: 0...Double(tabManager.tabCount - 1), step: 1)
+                        .tint(.white)
+                        .accessibilityLabel(LanguageManager.shared.localizedString("tab_tabs"))
+                        .accessibilityValue("\(focusedIndex + 1) / \(tabManager.tabCount)")
+                        .accessibilityIdentifier("tabs.position")
+                    }
+                    .padding(.horizontal, 40)
+                    .offset(y: 42)
+                }
             }
         }
     }
@@ -491,7 +742,7 @@ private struct TabSwitcherCarousel: View {
     }
 
     private func resistedOffset(_ proposed: CGFloat, stepDistance: CGFloat) -> CGFloat {
-        let activeIndex = tabManager.activeTabIndex
+        let activeIndex = focusedIndex
         let rightLimit = CGFloat(activeIndex) * stepDistance
         let leftLimit = CGFloat(max(tabManager.tabs.count - 1 - activeIndex, 0)) * stepDistance
 
@@ -505,7 +756,7 @@ private struct TabSwitcherCarousel: View {
     }
 
     private func targetIndex(for projectedOffset: CGFloat, stepDistance: CGFloat) -> Int {
-        guard stepDistance > 0 else { return tabManager.activeTabIndex }
+        guard stepDistance > 0 else { return focusedIndex }
         let rawDelta = -projectedOffset / stepDistance
         var delta = Int(rawDelta.rounded())
 
@@ -513,7 +764,7 @@ private struct TabSwitcherCarousel: View {
             delta = projectedOffset < 0 ? 1 : -1
         }
 
-        let proposedIndex = tabManager.activeTabIndex + delta
+        let proposedIndex = focusedIndex + delta
         return min(max(proposedIndex, 0), max(tabManager.tabs.count - 1, 0))
     }
 }
@@ -524,6 +775,7 @@ private struct TabSwitcherCardItem: View {
     let index: Int
     let tab: BrowserTab
     let isActive: Bool
+    let focusedIndex: Int
     let isExpanding: Bool
     let isAnyExpanding: Bool
     let expandingIndex: Int?
@@ -538,7 +790,7 @@ private struct TabSwitcherCardItem: View {
     var body: some View {
         let isThisExpanding = isExpanding && index == expandingIndex
         let scaleValMultiplier: CGFloat = 1.0
-        let baseOffsetX = CGFloat(index - tabManager.activeTabIndex) * stepDistance + dragOffset
+        let baseOffsetX = CGFloat(index - focusedIndex) * stepDistance + dragOffset
         let layerDistance = stepDistance > 0 ? abs(baseOffsetX / stepDistance) : 0
         let zIndexVal: Double = isThisExpanding ? 200.0 : Double(100.0 - min(layerDistance, 5.0))
 
@@ -682,6 +934,8 @@ private struct TabOverviewCard: View {
     let total: Int
     let onTap: () -> Void
     let onClose: () -> Void
+    var compactPreviewHeight: CGFloat? = nil
+    @ScaledMetric(relativeTo: .caption) private var compactTitleHeight: CGFloat = 30
 
     private var displayTitle: String {
         let title = webViewModel.pageTitle
@@ -698,12 +952,27 @@ private struct TabOverviewCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            cardHeader
-                .padding(.horizontal, 4)
-                .frame(height: 44)
-
-            previewCard
+        VStack(alignment: .leading, spacing: compactPreviewHeight == nil ? 10 : 7) {
+            if let compactPreviewHeight {
+                previewSurface
+                    .frame(height: compactPreviewHeight)
+                    .overlay(alignment: .topTrailing) {
+                        closeButton(size: 26)
+                    }
+                Text(displayTitle)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.white.opacity(isActive ? 1 : 0.78))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, minHeight: compactTitleHeight, maxHeight: compactTitleHeight, alignment: .topLeading)
+                    .padding(.horizontal, 2)
+            } else {
+                cardHeader
+                    .padding(.horizontal, 4)
+                    .frame(height: 44)
+                previewSurface
+                    .aspectRatio(0.56, contentMode: .fit)
+            }
         }
         .contentShape(Rectangle())
         .onTapGesture {
@@ -762,6 +1031,11 @@ private struct TabOverviewCard: View {
         .accessibilityAction(named: Text(LanguageManager.shared.localizedString("tab_close"))) {
             if !isExpanding { onClose() }
         }
+        .accessibilityIdentifier(webViewModel.snapshot == nil ? "tabs.card.placeholder" : "tabs.card.preview")
+        .task(id: webViewModel.snapshotRevision) { await webViewModel.loadSnapshotIfNeeded() }
+        .onDisappear {
+            if !webViewModel.showSnapshotWhileRestoring { webViewModel.releaseSnapshotMemory() }
+        }
     }
 
     private var cardHeader: some View {
@@ -793,35 +1067,50 @@ private struct TabOverviewCard: View {
 
             Spacer(minLength: 6)
 
-            Button(action: onClose) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.9))
-                    .frame(width: 30, height: 30)
-                    .background(.black.opacity(0.36), in: Circle())
-                    .overlay(Circle().stroke(.white.opacity(0.14), lineWidth: 0.5))
-            }
-            .buttonStyle(.plain)
+            closeButton(size: 30)
         }
     }
 
-    private var previewCard: some View {
-        RoundedRectangle(cornerRadius: 34, style: .continuous)
+    private func closeButton(size: CGFloat) -> some View {
+        Button(action: onClose) {
+            Image(systemName: "xmark")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(.white.opacity(0.95))
+                .frame(width: size, height: size)
+                .background(.black.opacity(0.5), in: Circle())
+                .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 0.5))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(LanguageManager.shared.localizedString("tab_close"))
+    }
+
+    private var previewSurface: some View {
+        let radius: CGFloat = compactPreviewHeight == nil ? 18 : 12
+        return RoundedRectangle(cornerRadius: radius, style: .continuous)
             .fill(Color(UIColor.secondarySystemBackground))
             // The card owns the aspect ratio. Snapshot dimensions must never
             // participate in layout because WKWebView can briefly report a
             // transitional viewport while the switcher is opening.
-            .aspectRatio(0.56, contentMode: .fit)
             .overlay {
-            preview
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .clipped()
+                GeometryReader { proxy in
+                    preview
+                        .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
+                        .clipped()
+                }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .overlay {
+                if compactPreviewHeight != nil {
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .strokeBorder(.white.opacity(isActive ? 0.92 : 0.12), lineWidth: isActive ? 1.5 : 0.5)
+                }
+            }
             .shadow(
                 color: .black.opacity(isActive ? 0.34 : 0.24),
-                radius: isActive ? 30 : 18,
-                y: isActive ? 18 : 10
+                radius: compactPreviewHeight == nil ? (isActive ? 30 : 18) : 6,
+                y: compactPreviewHeight == nil ? (isActive ? 18 : 10) : 3
             )
     }
 
@@ -841,16 +1130,21 @@ private struct TabOverviewCard: View {
                             .foregroundStyle(.quaternary)
                     } else {
                         VStack(spacing: 8) {
-                            Image(systemName: webViewModel.currentURL?.scheme == "https" ? "lock.fill" : "globe")
+                            Image(systemName: webViewModel.errorMessage == nil ? "globe" : "wifi.exclamationmark")
                                 .font(.system(size: 30, weight: .light))
                                 .foregroundStyle(.quaternary)
                             if let host = webViewModel.currentURL?.host {
                                 Text(host)
                                     .font(.system(size: 12, weight: .medium))
                                     .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                                    .padding(.horizontal, 24)
+                                    .lineLimit(2)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 12)
                             }
+                            Text(LanguageManager.shared.localizedString(webViewModel.errorMessage == nil ? "browser_open_page" : "load_error"))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
                         }
                     }
                 }
@@ -866,9 +1160,9 @@ struct TabCountSymbol: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .stroke(lineWidth: 1.5).frame(width: 18, height: 18)
+                .stroke(lineWidth: 1.5).frame(width: count > 99 ? 22 : 18, height: 18)
                 .opacity(outlineOpacity)
-            Text("\(min(count, 99))")
+            Text(count > 99 ? "99+" : "\(count)")
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .opacity(numberOpacity)
         }.frame(width: 23, height: 23)
@@ -904,11 +1198,14 @@ extension View {
     func tabOverviewScale(isActive: Bool) -> some View {
         // Preserve structural identity: branching here dismantles and reattaches
         // the live WKWebView while WebKit is presenting its text-selection menu.
-        // Do not clip this root: browser chrome extends into the safe area, and
-        // even a zero-radius clip cuts off the bottom toolbar in normal browsing.
+        // Keep layout and safe-area geometry unchanged during presentation.
+        // Extending safe areas only while active moves both browser toolbars,
+        // causing visible jumps beneath the full-screen backdrop.
         self
-            .scaleEffect(isActive ? 0.90 : 1)
-            .ignoresSafeArea(.container, edges: isActive ? .all : [])
+            .scaleEffect(isActive ? 0.96 : 1)
+            .opacity(isActive ? 0.45 : 1)
+            .allowsHitTesting(!isActive)
+            .accessibilityHidden(isActive)
     }
 }
 

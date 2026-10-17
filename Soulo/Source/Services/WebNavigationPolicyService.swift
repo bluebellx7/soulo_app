@@ -29,6 +29,9 @@ struct WebNavigationPolicyService {
     ]
 
     func decision(for url: URL) -> WebNavigationDecision {
+        if let appURL = baiduAppHandoffURL(for: url) {
+            return .external(appURL)
+        }
         let scheme = url.scheme?.lowercased() ?? ""
         let host = url.host?.lowercased() ?? ""
 
@@ -41,6 +44,21 @@ struct WebNavigationPolicyService {
         }
 
         return .allow
+    }
+
+    /// Baidu's share-page SDK wraps its app scheme in an HTTPS Universal Link.
+    /// Resolve only that specific SDK link shape, so ordinary cross-site pages
+    /// continue through the browser's ad-navigation checks.
+    private func baiduAppHandoffURL(for url: URL) -> URL? {
+        guard url.scheme?.lowercased() == "https",
+              url.host?.lowercased() == "boxer.baidu.com",
+              url.path == "/scheme", url.port == nil || url.port == 443,
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }
+        let schemes = components.queryItems?.filter { $0.name == "scheme" } ?? []
+        guard schemes.count == 1, let value = schemes.first?.value,
+              let appURL = URL(string: value),
+              appURL.scheme?.lowercased() == "baiduboxapp" else { return nil }
+        return appURL
     }
 
     func isAppleAppStoreURL(_ url: URL) -> Bool {

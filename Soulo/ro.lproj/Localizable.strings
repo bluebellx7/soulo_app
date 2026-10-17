@@ -814,7 +814,7 @@
 "share_extension_title" = "Căutați cu Soulo";
 "share_search_in_soulo" = "Căutați în Soulo";
 "share_private_search" = "Căutați în mod privat";
-"share_extension_unsupported" = "Acest articol nu poate fi căutat.";
+"share_extension_unsupported" = "Conținutul partajat nu poate fi citit.";
 "image_extract_text" = "Extrage text din imagine";
 "image_text_unavailable" = "Live Text nu este disponibil pe acest dispozitiv.";
 "image_text_none" = "Nu a fost găsit niciun text care poate fi citit în această imagine.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "Evitați suprapunerea";
 "keep_page_above_toolbar_desc" = "Păstrați comenzile paginii web deasupra barei de instrumente.";
 "downloads_play_while_downloading" = "Redă în timpul descărcării";
+
+// Default browser
+"settings_default_browser" = "Browser implicit";
+"settings_default_browser_hint" = "Alege Soulo ca browser implicit în Configurări pentru a deschide linkuri din alte aplicații.";
+"settings_backups" = "Copii de siguranță ale setărilor";
+"settings_backup_restore_message" = "Restaurarea va dezactiva sincronizarea iCloud și va salva mai întâi o copie a setărilor actuale.";
+"settings_backup_error" = "Operațiunea nu a putut fi finalizată. Setările actuale au fost păstrate.";
+"share_saved_for_open" = "Salvat. Deschide Soulo pentru a continua.";
+"intent_open_webpage_title" = "Deschide linkul în Soulo";
+"intent_webpage_url" = "Adresă web";
+
+"external_navigation_prompt" = "Confirmă linkurile către aplicații";
+"external_navigation_prompt_desc" = "Cere confirmare înainte de a deschide altă aplicație. Dezactivează pentru a deschide linkurile direct.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "Grupează după domeniu";
+"tab_view_carousel" = "Vizualizare carduri";

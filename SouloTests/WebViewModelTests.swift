@@ -373,6 +373,23 @@ final class WebViewModelTests: XCTestCase {
         XCTAssertNil(BrowserNavigationResolver.classify("  "))
     }
 
+    func testExplicitWebLinksKeepSingleLabelHostsAndEncodedAddress() throws {
+        for address in [
+            "http://intranet:8080/docs%2Fguide?q=a%2Bb&percent=100%25#section",
+            "https://router/admin?value=a+b#settings"
+        ] {
+            let url = try XCTUnwrap(URL(string: address))
+            XCTAssertEqual(SouloURLRoute.parse(url), .open(url))
+            XCTAssertEqual(BrowserNavigationResolver.classify(address), .webpage(url))
+            XCTAssertEqual(BrowserNavigationResolver.resolve(address), url)
+            XCTAssertTrue(address.isValidURL)
+        }
+        XCTAssertEqual(BrowserNavigationResolver.classify("intranet"), .search("intranet"))
+        XCTAssertEqual(BrowserNavigationResolver.classify("router"), .search("router"))
+        XCTAssertNil(BrowserNavigationResolver.webURL(for: "https:///"))
+        XCTAssertNil(BrowserNavigationResolver.webURL(for: "javascript://router/alert(1)"))
+    }
+
     func testURLHelpersUseSameValidationAsBrowserInput() {
         XCTAssertTrue(" appfavi.com ".isValidURL)
         XCTAssertEqual(" appfavi.com ".asURL, URL(string: "https://appfavi.com"))
@@ -891,7 +908,7 @@ final class WebViewModelTests: XCTestCase {
 
         XCTAssertEqual(target.string(forKey: "appearance"), "dark")
         XCTAssertEqual(target.stringArray(forKey: "allowlist"), ["example.com"])
-        XCTAssertNil(target.object(forKey: "missing_setting"))
+        XCTAssertEqual(target.string(forKey: "missing_setting"), "stale", "Legacy missing keys must not erase another device’s data")
     }
 
     func testCloudSyncInitializationDoesNotStartSynchronously() {

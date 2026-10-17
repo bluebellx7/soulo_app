@@ -101,6 +101,98 @@ enum FullscreenHandleLayout {
     static let minimumHitSize = CGSize(width: 104, height: 52)
 }
 
+private struct BrowserNavigationConfirmationBar: View {
+    let icon: String
+    let title: String
+    let destination: String
+    var address: String? = nil
+    let cancelTitle: String
+    let confirmTitle: String
+    let identifier: String
+    let onCancel: () -> Void
+    let onConfirm: () -> Void
+    var alternativeTitle: String? = nil
+    var onAlternative: (() -> Void)? = nil
+    var trustDomain: String? = nil
+    var onTrust: (() -> Void)? = nil
+
+    var body: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(.orange)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Text(destination)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .lineLimit(address == nil ? 1 : 2)
+                }
+                Spacer(minLength: 0)
+            }
+            if let address {
+                Text(address)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .lineLimit(2)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("\(identifier).address")
+            }
+            if let trustDomain, let onTrust {
+                Button(action: onTrust) {
+                    Label(String(format: ToolText.text("cross_domain_trust"), trustDomain), systemImage: "checkmark.shield")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.yellow)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityIdentifier("\(identifier).trust")
+            }
+            HStack(spacing: 10) {
+                Button(action: onCancel) {
+                    Text(cancelTitle)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .contentShape(Rectangle())
+                }
+                .accessibilityIdentifier("\(identifier).cancel")
+                if let alternativeTitle, let onAlternative {
+                    Button(action: onAlternative) {
+                        Text(alternativeTitle)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.8))
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityIdentifier("\(identifier).new-tab")
+                }
+                Button(action: onConfirm) {
+                    Text(confirmTitle)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .background(Color.orange, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .contentShape(Rectangle())
+                }
+                .accessibilityIdentifier("\(identifier).continue")
+            }
+        }
+        .buttonStyle(.plain)
+        .padding(14)
+        .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(identifier)
+    }
+}
+
 struct WebViewContainer: View {
     @ObservedObject var webViewModel: WebViewModel
     @ObservedObject var bookmarkViewModel: BookmarkViewModel
@@ -132,8 +224,6 @@ struct WebViewContainer: View {
     @State private var showBookmarkToast: Bool = false
     @State private var showLinkCopiedToast: Bool = false
     @State private var externalURL: URL? = nil
-    @State private var externalRequestIsExplicit: Bool = false
-    @State private var externalDismissTask: DispatchWorkItem? = nil
     @State private var showNewTabPage: Bool = true
     @State private var toolbarMinimized: Bool = false
     @State private var localToolbarManuallyHidden: Bool = false
@@ -192,12 +282,6 @@ struct WebViewContainer: View {
         ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
                 if !isFullscreen {
-                    // Find in Page bar (only on active tab)
-                    if isActiveTab, let tm = tabManager, tm.showFindInPage {
-                        FindInPageBar(tabManager: tm)
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                    }
-
                     WebViewProgressBar(
                         progress: webViewModel.estimatedProgress,
                         isLoading: webViewModel.isLoading
@@ -239,13 +323,14 @@ struct WebViewContainer: View {
                        !webViewModel.isLoading {
                         BrowserLoadErrorView(
                             message: error,
-                            host: webViewModel.currentURL?.host,
+                            url: webViewModel.currentURL,
                             onRetry: { webViewModel.retryCurrentPage() },
                             onGoHome: onGoHome,
                             onOpenCompatibility: canOpenSafariCompatibility
                                 ? { openSafariCompatibilityMode() }
                                 : nil
                         )
+                        .padding(.bottom, showsBottomToolbar ? max(0, pageBottomClearance - pageViewportBottomInset) : 0)
                         .transition(.opacity)
                     }
                 }
@@ -322,70 +407,75 @@ struct WebViewContainer: View {
                 )
             }
 
-            // External app confirmation bar
-            if showExternalConfirm, let extURL = externalURL {
+            if isActiveTab, let request = webViewModel.domainNavigationConfirmation {
                 VStack {
                     Spacer()
-                    VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "arrow.up.forward.app")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundStyle(.orange)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(LanguageManager.shared.localizedString("open_external_title"))
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(.white)
-                                Text(WebNavigationPolicyService.shared.externalDestinationName(for: extURL))
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(.white.opacity(0.6))
-                                    .lineLimit(1)
+                    BrowserNavigationConfirmationBar(
+                        icon: "arrow.up.forward.square",
+                        title: ToolText.text("cross_domain_title"),
+                        destination: "\(request.sourceURL.host ?? "") → \(request.destinationURL.host ?? "")",
+                        address: request.destinationURL.absoluteString,
+                        cancelTitle: ToolText.text("cancel"),
+                        confirmTitle: ToolText.text("cross_domain_continue"),
+                        identifier: "browser.domain-confirmation",
+                        onCancel: {
+                            withAnimation {
+                                webViewModel.resolveDomainNavigationConfirmation(id: request.id, allowed: false)
                             }
-                            Spacer()
-                        }
-                        HStack(spacing: 10) {
-                            Button {
-                                withAnimation { showExternalConfirm = false }
-                                externalDismissTask?.cancel()
-                            } label: {
-                                Text(LanguageManager.shared.localizedString("cancel"))
-                                    .font(.system(size: 13, weight: .medium))
-                                    .foregroundStyle(.white.opacity(0.8))
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
-                                    .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        },
+                        onConfirm: {
+                            withAnimation {
+                                webViewModel.resolveDomainNavigationConfirmation(id: request.id, allowed: true)
                             }
-                            Button {
-                                withAnimation { showExternalConfirm = false }
-                                externalDismissTask?.cancel()
-                                UIApplication.shared.open(extURL) { success in
-                                    guard !success else { return }
-                                    DispatchQueue.main.async {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                            showExternalOpenFailed = true
-                                        }
-                                        UINotificationFeedbackGenerator().notificationOccurred(.error)
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                            withAnimation { showExternalOpenFailed = false }
-                                        }
-                                    }
-                                }
-                            } label: {
-                                Text(LanguageManager.shared.localizedString("confirm"))
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
-                                    .background(Color.orange, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        },
+                        alternativeTitle: tabManager != nil ? ToolText.text("cross_domain_new_tab") : nil,
+                        onAlternative: {
+                            tabManager?.openDomainNavigationInNewTab(from: webViewModel, confirmationID: request.id)
+                        },
+                        trustDomain: BrowserDomainNavigationPolicy.trustRule(for: request.destinationURL),
+                        onTrust: {
+                            guard webViewModel.domainNavigationConfirmation?.id == request.id,
+                                  let rule = BrowserDomainNavigationPolicy.trustRule(for: request.destinationURL),
+                                  BrowserDomainAllowlist.shared.add(rule) else { return }
+                            withAnimation {
+                                webViewModel.resolveDomainNavigationConfirmation(id: request.id, allowed: true)
                             }
                         }
-                    }
-                    .padding(14)
-                    .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, bottomOverlayClearance)
+                }
+                .id(request.id)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .zIndex(80)
+                .onAppear {
+                    AppAccessibility.announce(
+                        String(format: ToolText.text("cross_domain_message"),
+                               request.sourceURL.host ?? "", request.destinationURL.host ?? "")
+                    )
+                }
+            } else if isActiveTab, showExternalConfirm, let extURL = externalURL {
+                VStack {
+                    Spacer()
+                    BrowserNavigationConfirmationBar(
+                        icon: "arrow.up.forward.app",
+                        title: LanguageManager.shared.localizedString("open_external_title"),
+                        destination: WebNavigationPolicyService.shared.externalDestinationName(for: extURL),
+                        cancelTitle: LanguageManager.shared.localizedString("cancel"),
+                        confirmTitle: LanguageManager.shared.localizedString("confirm"),
+                        identifier: "browser.external-app-confirmation",
+                        onCancel: {
+                            withAnimation { showExternalConfirm = false }
+                        },
+                        onConfirm: {
+                            openExternalURL(extURL)
+                        }
+                    )
                     .padding(.horizontal, 16)
                     .padding(.bottom, bottomOverlayClearance)
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
-                .accessibilityElement(children: .contain)
+                .zIndex(80)
                 .onAppear {
                     AppAccessibility.announce(
                         "\(LanguageManager.shared.localizedString("open_external_title")), \(WebNavigationPolicyService.shared.externalDestinationName(for: extURL))"
@@ -420,7 +510,20 @@ struct WebViewContainer: View {
         }
         .modifier(VideoOrientationErrorAlert(message: $webViewModel.videoOrientationError))
         .onChange(of: isActiveTab) { _, active in
-            if !active { webViewModel.cancelMarkingAdvertisement() }
+            if !active {
+                webViewModel.cancelMarkingAdvertisement()
+                webViewModel.resolveDomainNavigationConfirmation(allowed: false)
+                showExternalConfirm = false
+            }
+        }
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: webViewModel.domainNavigationConfirmation?.id)
+        .onChange(of: webViewModel.domainNavigationConfirmation?.id) { _, id in
+            guard id != nil else { return }
+            guard isActiveTab else {
+                webViewModel.resolveDomainNavigationConfirmation(id: id, allowed: false)
+                return
+            }
+            showExternalConfirm = false
         }
         .simultaneousGesture(
             fullscreenHandleRevealGesture,
@@ -480,6 +583,8 @@ struct WebViewContainer: View {
         }
         .onDisappear {
             webViewModel.cancelMarkingAdvertisement()
+            webViewModel.resolveDomainNavigationConfirmation(allowed: false)
+            showExternalConfirm = false
             fullscreenHintDismissTask?.cancel()
             fullscreenHintDismissTask = nil
         }
@@ -495,7 +600,11 @@ struct WebViewContainer: View {
             showArticleReader = false
         }
         .accessibilityAction(.escape) {
-            if isFullscreen {
+            if webViewModel.domainNavigationConfirmation != nil {
+                webViewModel.resolveDomainNavigationConfirmation(allowed: false)
+            } else if showExternalConfirm {
+                showExternalConfirm = false
+            } else if isFullscreen {
                 exitFullscreen()
             }
         }
@@ -512,6 +621,8 @@ struct WebViewContainer: View {
             url: BrowserHandoff.eligibleURL(webViewModel.currentURL, isPrivate: searchVM.isIncognito),
             title: webViewModel.pageTitle, enabled: isActiveTab))
         .onChange(of: webViewModel.currentURL) { _, url in
+            showExternalConfirm = false
+            if isActiveTab { tabManager?.dismissFindInPage() }
             onPageStarted?()
             syncBookmarkState(for: url)
             if url != nil {
@@ -529,26 +640,18 @@ struct WebViewContainer: View {
         }
         // Scoped notifications — only process when this is the active tab
         .onReceive(NotificationCenter.default.publisher(for: .webViewExternalURLRequest)) { notification in
-            guard isActiveTab else { return }
+            guard isActiveTab, notification.object as? WebViewModel === webViewModel else { return }
             if let url = notification.userInfo?["url"] as? URL {
+                webViewModel.resolveDomainNavigationConfirmation(allowed: false)
+                guard ExternalNavigationService.shared.promptEnabled else {
+                    openExternalURL(url)
+                    return
+                }
                 externalURL = url
-                externalRequestIsExplicit = notification.userInfo?["explicitUserAction"] as? Bool ?? false
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                     showExternalConfirm = true
                 }
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                externalDismissTask?.cancel()
-                externalDismissTask = nil
-                if !externalRequestIsExplicit && !voiceOverEnabled {
-                    // Unsolicited app-jump prompts remain lightweight. A prompt
-                    // caused by an explicit download waits for the user's choice.
-                    externalDismissTask = DispatchWorkItem { [self] in
-                        withAnimation { showExternalConfirm = false }
-                    }
-                    if let task = externalDismissTask {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: task)
-                    }
-                }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .linkCopied)) { _ in
@@ -572,6 +675,22 @@ struct WebViewContainer: View {
             }
         }
         // Link & image long-press handled by native WKUIDelegate context menus
+    }
+
+    private func openExternalURL(_ url: URL) {
+        withAnimation { showExternalConfirm = false }
+        UIApplication.shared.open(url) { success in
+            guard !success else { return }
+            DispatchQueue.main.async {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    showExternalOpenFailed = true
+                }
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    withAnimation { showExternalOpenFailed = false }
+                }
+            }
+        }
     }
 
     private var browserContent: some View {
@@ -688,6 +807,11 @@ struct WebViewContainer: View {
         }
         .sheet(isPresented: $showArticleReader) {
             if let webView = webViewModel.webView { ArticleReaderView(source: webView) }
+        }
+        .sheet(isPresented: $webViewModel.showEpisodes) {
+            WebEpisodePickerView(viewModel: webViewModel)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
         .fullScreenCover(isPresented: $showResourceInspector) {
             NavigationStack {
@@ -1916,61 +2040,128 @@ private struct AddressEditorIconButtonStyle: ButtonStyle {
 
 // MARK: - Load Error
 
-private struct BrowserLoadErrorView: View {
+struct BrowserLoadErrorView: View {
     let message: String
-    let host: String?
+    let url: URL?
     let onRetry: () -> Void
     let onGoHome: (() -> Void)?
     let onOpenCompatibility: (() -> Void)?
+    @State private var copied = false
+    @State private var copyResetTask: Task<Void, Never>?
 
     var body: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "wifi.exclamationmark")
-                .font(.system(size: 34, weight: .light))
-                .foregroundStyle(.secondary)
-
-            Text(LanguageManager.shared.localizedString("load_error"))
-                .font(.system(size: 18, weight: .semibold))
-
-            if let host, !host.isEmpty {
-                Text(host)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+        GeometryReader { geometry in
+            ScrollView(.vertical, showsIndicators: false) {
+                content
+                .frame(maxWidth: .infinity, minHeight: geometry.size.height)
             }
-
-            Text(message)
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .lineLimit(3)
-                .padding(.horizontal, 28)
-
-            HStack(spacing: 10) {
-                if let onGoHome {
-                    Button(LanguageManager.shared.localizedString("home_screen"), action: onGoHome)
-                        .buttonStyle(.bordered)
-                }
-
-                Button(LanguageManager.shared.localizedString("retry"), action: onRetry)
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color(hex: "6366F1"))
-            }
-            .padding(.top, 4)
-
-            if let onOpenCompatibility {
-                Button(action: onOpenCompatibility) {
-                    Label(
-                        LanguageManager.shared.localizedString("safari_compatibility_mode"),
-                        systemImage: "safari"
-                    )
-                }
-                .buttonStyle(.bordered)
-            }
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(UIColor.systemBackground))
         .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("browser.error")
+        .onChange(of: url) { _, _ in copied = false; copyResetTask?.cancel() }
+        .onDisappear { copyResetTask?.cancel() }
+    }
+
+    // The same native content renders tab covers without an offscreen ScrollView.
+    var content: some View {
+        VStack(spacing: 24) {
+            VStack(spacing: 14) {
+                Image(systemName: "wifi.exclamationmark")
+                    .font(.system(size: 27, weight: .regular))
+                    .foregroundStyle(Color.themePrimary)
+                    .frame(width: 64, height: 64)
+                    .background(Color.themePrimary.opacity(0.1), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .accessibilityHidden(true)
+                Text(LanguageManager.shared.localizedString("load_error"))
+                    .font(.title2.weight(.semibold))
+                Text(message)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("browser.error.message")
+            }
+
+            if let url {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text(verbatim: url.absoluteString)
+                        .font(.subheadline)
+                        .foregroundStyle(.primary.opacity(0.85))
+                        .textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("browser.error.url")
+                    Divider()
+                    Button { copyAddress(url) } label: {
+                        Label(LanguageManager.shared.localizedString(copied ? "link_copied" : "copy_link"),
+                              systemImage: copied ? "checkmark" : "doc.on.doc")
+                            .font(.subheadline.weight(.medium))
+                            .frame(maxWidth: .infinity, minHeight: 32)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.themePrimary)
+                    .transaction { transaction in
+                        transaction.animation = nil
+                        transaction.disablesAnimations = true
+                    }
+                    .accessibilityIdentifier("browser.error.copy-url")
+                }
+                .padding(16)
+                .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Color(uiColor: .separator).opacity(0.18), lineWidth: 0.5))
+            }
+
+            VStack(spacing: 10) {
+                Button(action: onRetry) {
+                    Label(LanguageManager.shared.localizedString("retry"), systemImage: "arrow.clockwise")
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .background(Color.themePrimary, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                        .foregroundStyle(.white)
+                }
+                .accessibilityIdentifier("browser.error.retry")
+
+                if let onGoHome {
+                    Button(action: onGoHome) {
+                        Label(LanguageManager.shared.localizedString("home_screen"), systemImage: "house")
+                            .font(.subheadline.weight(.medium))
+                            .frame(maxWidth: .infinity, minHeight: 46)
+                            .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                    }
+                    .foregroundStyle(.primary)
+                    .accessibilityIdentifier("browser.error.home")
+                }
+                if let onOpenCompatibility {
+                    Button(action: onOpenCompatibility) {
+                        Label(LanguageManager.shared.localizedString("safari_compatibility_mode"), systemImage: "safari")
+                            .font(.subheadline.weight(.medium))
+                            .frame(maxWidth: .infinity, minHeight: 46)
+                    }
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("browser.error.compatibility")
+                }
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: 420)
+        .padding(.horizontal, 28)
+        .padding(.vertical, 32)
+    }
+
+    private func copyAddress(_ url: URL) {
+        UIPasteboard.general.string = url.absoluteString
+        HapticsManager.selection()
+        copied = true
+        AppAccessibility.announce(LanguageManager.shared.localizedString("link_copied"))
+        copyResetTask?.cancel()
+        copyResetTask = Task { @MainActor in
+            do { try await Task.sleep(for: .seconds(2)) } catch { return }
+            copied = false
+        }
     }
 }
 
@@ -2068,80 +2259,6 @@ private struct SafariCompatibilityFeedback: ViewModifier {
         .alert(ToolText.text("error"), isPresented: $presenter.failedToOpen) {
             Button(ToolText.text("done"), role: .cancel) {}
         } message: { Text(ToolText.text("safari_open_failed")) }
-    }
-}
-
-// MARK: - Find in Page Bar
-
-struct FindInPageBar: View {
-    @ObservedObject var tabManager: TabManager
-    @FocusState private var isFocused: Bool
-
-    var body: some View {
-        HStack(spacing: 4) {
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-                    .accessibilityHidden(true)
-
-                TextField(
-                    LanguageManager.shared.localizedString("find_in_page"),
-                    text: $tabManager.findText
-                )
-                .font(.system(size: 14))
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .focused($isFocused)
-                .onSubmit { tabManager.findNext() }
-                .onChange(of: tabManager.findText) { _, _ in
-                    tabManager.performFind()
-                }
-                .accessibilityLabel(LanguageManager.shared.localizedString("find_in_page"))
-
-                if !tabManager.findText.isEmpty {
-                    Text("\(tabManager.findMatchCount)")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color(UIColor.tertiarySystemFill), in: Capsule())
-                }
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(Color(UIColor.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-            Button { tabManager.findPrevious() } label: {
-                Image(systemName: "chevron.up")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(tabManager.findMatchCount > 0 ? .primary : .tertiary)
-            }
-            .disabled(tabManager.findMatchCount == 0)
-            .accessibilityLabel(LanguageManager.shared.localizedString("accessibility_previous_match"))
-
-            Button { tabManager.findNext() } label: {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(tabManager.findMatchCount > 0 ? .primary : .tertiary)
-            }
-            .disabled(tabManager.findMatchCount == 0)
-            .accessibilityLabel(LanguageManager.shared.localizedString("accessibility_next_match"))
-
-            Button {
-                isFocused = false
-                tabManager.dismissFindInPage()
-            } label: {
-                Text(LanguageManager.shared.localizedString("done"))
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color(hex: "6366F1"))
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(Color(UIColor.secondarySystemBackground))
-        .onAppear { isFocused = true }
-        .onDisappear { isFocused = false }
     }
 }
 

@@ -362,7 +362,7 @@ class PlatformDataStore: ObservableObject {
 
     private func loadGroups() {
         guard let data = UserDefaults.standard.data(forKey: groupsKey),
-              let decoded = try? JSONDecoder().decode([CustomGroup].self, from: data) else { return }
+              let decoded = try? JSONDecoder().decode([CustomGroup].self, from: data) else { customGroups = []; return }
         customGroups = decoded
     }
 
@@ -411,7 +411,7 @@ class PlatformDataStore: ObservableObject {
 
     private func loadRegionNames() {
         guard let data = UserDefaults.standard.data(forKey: regionNamesKey),
-              let decoded = try? JSONDecoder().decode([String: String].self, from: data) else { return }
+              let decoded = try? JSONDecoder().decode([String: String].self, from: data) else { regionNameOverrides = [:]; return }
         regionNameOverrides = decoded
     }
 
@@ -432,7 +432,7 @@ class PlatformDataStore: ObservableObject {
 
     // MARK: - Default Platforms
 
-    private static func defaultPlatforms() -> [SearchPlatform] {
+    static func defaultPlatforms() -> [SearchPlatform] {
         var all: [SearchPlatform] = []
 
         // MARK: China

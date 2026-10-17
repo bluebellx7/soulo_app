@@ -620,3 +620,17 @@
 "keep_page_above_toolbar" = "تجنب التداخل";
 "keep_page_above_toolbar_desc" = "احتفظ بعناصر التحكم في صفحة الويب أعلى شريط الأدوات.";
 "downloads_play_while_downloading" = "تشغيل أثناء التنزيل";
+"settings_backups" = "نسخ الإعدادات الاحتياطية";
+"settings_backup_restore_message" = "ستؤدي الاستعادة إلى إيقاف مزامنة iCloud وحفظ نسخة احتياطية من إعداداتك الحالية أولاً.";
+"settings_backup_error" = "تعذّر إكمال العملية. تم الاحتفاظ بإعداداتك الحالية.";
+"share_saved_for_open" = "تم الحفظ. افتح Soulo للمتابعة.";
+"intent_open_webpage_title" = "فتح الرابط في Soulo";
+"intent_webpage_url" = "عنوان الويب";
+"share_extension_unsupported" = "تعذّرت قراءة المحتوى المشارَك.";
+
+"external_navigation_prompt" = "تأكيد فتح التطبيقات";
+"external_navigation_prompt_desc" = "اطلب التأكيد قبل فتح تطبيق آخر. أوقف الخيار لفتح روابط التطبيقات مباشرة.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "تجميع حسب النطاق";
+"tab_view_carousel" = "عرض البطاقات";

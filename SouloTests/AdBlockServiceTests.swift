@@ -24,6 +24,32 @@ final class AdBlockServiceTests: XCTestCase {
         super.tearDown()
     }
 
+    func testNativeCosmeticFilteringOnlyRemovesSafeDuplicateWork() {
+        let plain = AdBlockCosmeticRule(selector: ".advert-slot")
+        let domain = AdBlockCosmeticRule(selector: ".sponsor", ifDomains: ["*example.com"])
+        let mixed = AdBlockCosmeticRule(selector: ".conditional", ifDomains: ["example.com"], unlessDomains: ["sub.example.com"])
+        let excepted = AdBlockCosmeticRule(selector: ".excepted")
+        let overlay = AdBlockCosmeticRule(selector: ".popup-ad")
+        let rules = [plain, domain, mixed, excepted, overlay]
+        let remaining = AdBlockService.javaScriptCosmeticRules(rules, exceptions: [excepted],
+            hasGenericExceptions: false, nativeFiltering: true)
+        XCTAssertEqual(remaining, [mixed, excepted, overlay])
+        XCTAssertEqual(AdBlockService.javaScriptCosmeticRules(rules, exceptions: [excepted],
+            hasGenericExceptions: false, nativeFiltering: false), rules, "Compilation failure retains the full fallback")
+        XCTAssertTrue(AdBlockService.javaScriptCosmeticRules([plain], exceptions: [],
+            hasGenericExceptions: true, nativeFiltering: true).contains(plain))
+    }
+
+    func testNativeCosmeticFilteringReducesLargeSubscriptionPayload() throws {
+        let rules = ParsedAdBlockRules(networkURLFilters: [], cosmeticSelectors: [],
+            cosmeticRules: (0..<10_000).map { AdBlockCosmeticRule(selector: ".qa-ad-\($0)") })
+        UserDefaults.standard.set(try JSONEncoder().encode(rules), forKey: "soulo_ad_block_subscription_rules")
+        let fallback = AdBlockService.adHidingScript()
+        let native = AdBlockService.adHidingScript(nativeCosmeticFiltering: true)
+        XCTAssertLessThan(native.utf8.count, fallback.utf8.count / 2)
+        print("NATIVE_AD_SCRIPT_BYTES fallback=\(fallback.utf8.count), native=\(native.utf8.count)")
+    }
+
     func testLegacyImageBannerOverrideKeepsChoiceButNoLongerRevealsOnPicker() throws {
         let suite = "ImageBannerMigration-\(UUID())"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -285,7 +311,7 @@ final class AdBlockServiceTests: XCTestCase {
             guard let action = rule["action"] as? [String: Any],
                   let trigger = rule["trigger"] as? [String: Any] else { return false }
             return (action["type"] as? String) == "css-display-none"
-                && (action["selector"] as? String) == ".site-ad"
+                && (action["selector"] as? String) == ":root:not([data-soulo-native-ads-disabled]) :is(.site-ad)"
                 && ((trigger["if-domain"] as? [String])?.contains("*example.com") == true)
                 && trigger["unless-domain"] == nil
         })
@@ -333,12 +359,14 @@ final class AdBlockServiceTests: XCTestCase {
         XCTAssertTrue(script.contains("example.com"))
     }
 
-    func testBuiltInRulesDoNotBlockPBPBWPageScripts() throws {
+    func testBuiltInRulesPreservePBPBWPlayerScripts() throws {
         let rules = AdBlockService.defaultBuiltInRules
         XCTAssertFalse(rules.contains { $0.id.hasPrefix("pbpbw:") })
         for url in [
             "https://www.pbpbw.com/assets/chunks/site-render.js?v=2",
-            "https://www.pbpbw.com/assets/chunks/site-config.js?v=2"
+            "https://www.pbpbw.com/static/js/playerconfig.js?t=20261015",
+            "https://www.pbpbw.com/static/js/player.js?t=a20261015",
+            "https://www.pbpbw.com/statics/js/stui_default.js"
         ] {
             for rule in rules where rule.isEnabled && rule.kind == .network {
                 let hostMatches = rule.domains.isEmpty || rule.domains.contains("pbpbw.com")

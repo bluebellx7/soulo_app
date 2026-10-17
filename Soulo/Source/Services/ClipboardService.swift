@@ -1,6 +1,45 @@
 import UIKit
 import Foundation
 
+@MainActor
+protocol ClipboardReading {
+    var changeCount: Int { get }
+    func hasSearchableContent() async -> Bool
+    func readText() async -> String?
+}
+
+@MainActor
+struct SystemClipboardReader: ClipboardReading {
+    var changeCount: Int { UIPasteboard.general.changeCount }
+
+    func hasSearchableContent() async -> Bool {
+        // Pattern detection does not read the copied text or request permission.
+        let patterns = try? await UIPasteboard.general.detectedPatterns(for: [\.probableWebURL, \.number, \.probableWebSearch])
+        return patterns?.isEmpty == false
+    }
+
+    func readText() async -> String? {
+        guard let provider = UIPasteboard.general.itemProviders.first else { return nil }
+        let text: String?
+        if provider.canLoadObject(ofClass: NSString.self) {
+            text = await withCheckedContinuation { continuation in
+                _ = provider.loadObject(ofClass: NSString.self) { value, _ in
+                    continuation.resume(returning: value as? String)
+                }
+            }
+        } else if provider.canLoadObject(ofClass: NSURL.self) {
+            text = await withCheckedContinuation { continuation in
+                _ = provider.loadObject(ofClass: NSURL.self) { value, _ in
+                    continuation.resume(returning: (value as? URL)?.absoluteString)
+                }
+            }
+        } else {
+            text = nil
+        }
+        return text?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
 struct ClipboardService {
 
     private static let lastHashKey = "last_clipboard_hash"

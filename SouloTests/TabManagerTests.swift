@@ -6,6 +6,108 @@ import WebKit
 final class TabManagerTests: XCTestCase {
     private let storageKey = "soulo_saved_tabs"
 
+    @MainActor
+    func testSystemFindCountsNavigatesAndDismissesWithoutPageScripts() async throws {
+        let key = "native-find-\(UUID())"
+        let manager = TabManager(storageKey: key)
+        let model = try XCTUnwrap(manager.activeWebViewModel)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 700))
+        window.rootViewController = UIViewController()
+        window.rootViewController?.view.addSubview(web)
+        window.makeKeyAndVisible()
+        model.webView = web
+        defer {
+            manager.dismissFindInPage(); model.releaseWebViewRuntime()
+            window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
+            manager.saveToDisk(); UserDefaults.standard.removeObject(forKey: key)
+        }
+        web.loadHTMLString("""
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <p>needle one</p><p style="margin-top:1000px">needle two</p>
+        <p>a+b's [draft]</p><p style="display:none">a+b's [draft]</p>
+        <script>window.find=undefined;window.pageMarker=42;</script>
+        """, baseURL: URL(string: "https://example.com/find"))
+        for _ in 0..<100 {
+            if !web.isLoading, web.url != nil { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        manager.startFindInPage()
+        let interaction = try XCTUnwrap(web.findInteraction)
+        for _ in 0..<100 {
+            if interaction.activeFindSession != nil { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        XCTAssertTrue(interaction.isFindNavigatorVisible)
+        let session = try XCTUnwrap(interaction.activeFindSession)
+        interaction.searchText = "needle"
+        session.performSearch(query: "needle", options: nil)
+        for _ in 0..<100 {
+            if session.resultCount == 2 { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        XCTAssertEqual(session.resultCount, 2)
+        session.highlightNextResult(in: .forward)
+        try await Task.sleep(for: .milliseconds(150))
+        let first = session.highlightedResultIndex
+        session.highlightNextResult(in: .forward)
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertNotEqual(session.highlightedResultIndex, first)
+        session.highlightNextResult(in: .backward)
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertEqual(session.highlightedResultIndex, first)
+        session.performSearch(query: "a+b's [draft]", options: nil)
+        for _ in 0..<100 {
+            if session.resultCount == 1 { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        XCTAssertEqual(session.resultCount, 1)
+        XCTAssertTrue(web.configuration.userContentController.userScripts.isEmpty)
+        let marker = try await web.evaluateJavaScript("window.pageMarker")
+        XCTAssertEqual(marker as? Int, 42)
+        manager.createTab()
+        try await Task.sleep(for: .milliseconds(250))
+        XCTAssertFalse(interaction.isFindNavigatorVisible)
+    }
+
+    @MainActor
+    func testDefaultWindowIdentityRestoresLatestWindowAndNewWindowsRemainIndependent() throws {
+        let suite = "window-identity-\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let older = UUID(), latest = UUID()
+        for (id, date) in [(older, 10.0), (latest, 20.0)] {
+            let state: [String: Any] = ["tabs": [["id": UUID().uuidString, "urlString": "https://example.com/article"]],
+                "activeIndex": 0, "savedAt": date]
+            defaults.set(try JSONSerialization.data(withJSONObject: state), forKey: "soulo_saved_tabs.\(id.uuidString)")
+        }
+        XCTAssertEqual(TabManager.mostRecentSavedWindowID(userDefaults: defaults), latest)
+        let restored = BrowserWindowConfiguration.primaryID(userDefaults: defaults)
+        XCTAssertEqual(restored, latest)
+        XCTAssertEqual(BrowserWindowConfiguration.primaryID(userDefaults: defaults), restored)
+        XCTAssertNotEqual(BrowserWindowConfiguration().id, restored)
+        defaults.set(true, forKey: "is_incognito")
+        XCTAssertNil(TabManager.mostRecentSavedWindowID(userDefaults: defaults))
+        XCTAssertNotNil(defaults.data(forKey: "soulo_saved_tabs.\(older.uuidString)"), "Migrating the default window must preserve other windows")
+    }
+
+    @MainActor
+    func testSavedTabsRestoreTheirTitlesWithoutCreatingWebViews() async throws {
+        let key = "tab-titles-\(UUID())"
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        let manager = TabManager(storageKey: key)
+        let url = try XCTUnwrap(URL(string: "https://example.com/article"))
+        manager.activeWebViewModel?.loadURL(url)
+        manager.activeWebViewModel?.updateTitle("Saved article")
+        try await Task.sleep(for: .milliseconds(400))
+        let restored = TabManager(storageKey: key)
+        XCTAssertEqual(restored.activeWebViewModel?.pageTitle, "Saved article")
+        XCTAssertEqual(restored.activeWebViewModel?.currentURL, url)
+        XCTAssertNil(restored.activeWebViewModel?.webView)
+    }
+
     override func setUp() {
         super.setUp()
         UserDefaults.standard.removeObject(forKey: storageKey)
@@ -59,6 +161,98 @@ final class TabManagerTests: XCTestCase {
         XCTAssertTrue(second.synchronizePrivacyMode())
         XCTAssertNil(old.webView)
         XCTAssertFalse(second.synchronizePrivacyMode())
+    }
+
+    @MainActor
+    func testHomeSearchPreservesOriginalPageAndBrowserSearchReusesNewTab() throws {
+        UserDefaults.standard.set(true, forKey: "is_incognito")
+        let manager = TabManager()
+        let search = SearchViewModel()
+        let original = try XCTUnwrap(manager.activeTab)
+        let originalURL = try XCTUnwrap(URL(string: "https://example.com/article"))
+        original.webViewModel.loadURL(originalURL)
+        manager.tabs[0].keyword = "original query"
+
+        search.searchText = "new query"
+        XCTAssertTrue(search.performHomeSearch(tabManager: manager, preferredRegion: .international, customGroup: nil))
+        let result = try XCTUnwrap(manager.activeTab)
+        XCTAssertEqual(manager.tabCount, 2)
+        XCTAssertNotEqual(result.id, original.id)
+        XCTAssertEqual(original.webViewModel.currentURL, originalURL)
+        XCTAssertEqual(manager.tabs[0].keyword, "original query")
+        XCTAssertEqual(result.keyword, "new query")
+        XCTAssertTrue(search.isSearching)
+
+        search.searchText = "refined query"
+        search.performSearch()
+        XCTAssertEqual(manager.activeTab?.id, result.id)
+        XCTAssertEqual(manager.tabCount, 2)
+
+        // A search waiting for its first WebKit load is already an occupied tab.
+        search.clearSearch()
+        search.searchText = "another home query"
+        XCTAssertTrue(search.performHomeSearch(tabManager: manager, preferredRegion: .international, customGroup: nil))
+        XCTAssertEqual(manager.tabCount, 3)
+        XCTAssertNotEqual(manager.activeTab?.id, result.id)
+        XCTAssertEqual(manager.tabs[1].keyword, "new query")
+    }
+
+    @MainActor
+    func testHomeSearchReusesActiveBlankTabWithOtherPagesOpen() throws {
+        UserDefaults.standard.set(true, forKey: "is_incognito")
+        let manager = TabManager()
+        let originalURL = try XCTUnwrap(URL(string: "https://example.com/article"))
+        manager.activeWebViewModel?.loadURL(originalURL)
+        let blank = manager.createTab()
+        let search = SearchViewModel()
+        search.searchText = "reuse blank"
+
+        XCTAssertTrue(search.performHomeSearch(tabManager: manager, preferredRegion: .international, customGroup: nil))
+        XCTAssertEqual(manager.tabCount, 2)
+        XCTAssertEqual(manager.activeTab?.id, blank.id)
+        XCTAssertEqual(manager.tabs[0].webViewModel.currentURL, originalURL)
+        XCTAssertEqual(manager.activeTab?.keyword, "reuse blank")
+    }
+
+    @MainActor
+    func testHomeSearchCreatesNewTabBeyondFormerLimitAndReusesBlankTab() throws {
+        UserDefaults.standard.set(true, forKey: "is_incognito")
+        let manager = TabManager()
+        let originalURL = try XCTUnwrap(URL(string: "https://example.com/article"))
+        manager.activeWebViewModel?.loadURL(originalURL)
+        for index in 1..<100 { manager.createTab(keyword: "pending query \(index)") }
+        let ids = manager.tabs.map(\.id)
+        let search = SearchViewModel()
+        search.searchText = "new home query"
+
+        XCTAssertTrue(search.performHomeSearch(tabManager: manager, preferredRegion: .international, customGroup: nil))
+        XCTAssertEqual(manager.tabCount, 101)
+        XCTAssertEqual(Array(manager.tabs.prefix(100)).map(\.id), ids)
+        XCTAssertEqual(manager.tabs[0].webViewModel.currentURL, originalURL)
+        XCTAssertEqual(manager.activeTab?.keyword, "new home query")
+        let blank = manager.createTab()
+        search.clearSearch()
+        search.searchText = "reuse blank"
+        XCTAssertTrue(search.performHomeSearch(tabManager: manager, preferredRegion: .international, customGroup: nil))
+        XCTAssertEqual(manager.tabCount, 102)
+        XCTAssertEqual(manager.activeTab?.id, blank.id)
+    }
+
+    @MainActor
+    func testEmptyHomeSearchLeavesExistingPageAlone() throws {
+        UserDefaults.standard.set(true, forKey: "is_incognito")
+        let manager = TabManager()
+        let originalURL = try XCTUnwrap(URL(string: "https://example.com/article"))
+        manager.activeWebViewModel?.loadURL(originalURL)
+        let activeID = manager.activeTab?.id
+        let search = SearchViewModel()
+        search.searchText = " \n\t "
+
+        XCTAssertFalse(search.performHomeSearch(tabManager: manager, preferredRegion: .international, customGroup: nil))
+        XCTAssertEqual(manager.tabCount, 1)
+        XCTAssertEqual(manager.activeTab?.id, activeID)
+        XCTAssertEqual(manager.activeWebViewModel?.currentURL, originalURL)
+        XCTAssertFalse(search.isSearching)
     }
 
     @MainActor
@@ -135,21 +329,37 @@ final class TabManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testTabLimitNeverSilentlyEvictsExistingTab() {
-        let manager = TabManager()
-        for index in 1..<TabManager.maxTabs {
-            manager.createTab(url: URL(string: "https://example.com/\(index)"))
+    func testHundredsOfTabsKeepTheirIdentityAndRestoreWithoutLoadingWebKit() throws {
+        let key = "many-tabs-\(UUID())"
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        let manager = TabManager(storageKey: key)
+        for index in 1..<500 {
+            manager.createTab(url: URL(string: "https://example.com/\(index)"), keyword: "Query \(index)")
         }
-        let idsBeforeAttempt = manager.tabs.map(\.id)
-        let activeID = manager.activeTab?.id
-
-        let returnedTab = manager.createTab(url: URL(string: "https://example.com/overflow"))
-
-        XCTAssertEqual(manager.tabs.count, TabManager.maxTabs)
-        XCTAssertEqual(manager.tabs.map(\.id), idsBeforeAttempt)
-        XCTAssertEqual(returnedTab.id, activeID)
-        XCTAssertTrue(manager.didReachTabLimit)
+        XCTAssertEqual(manager.tabCount, 500)
         XCTAssertTrue(manager.recentlyClosed.isEmpty)
+        XCTAssertLessThanOrEqual(manager.tabs.filter(\.isAlive).count, TabManager.maxAliveTabs)
+        XCTAssertTrue(manager.tabs.allSatisfy { $0.webViewModel.webView == nil })
+        manager.switchToTab(at: 247)
+        let ids = manager.tabs.map(\.id)
+        manager.saveToDisk()
+        let restored = TabManager(storageKey: key)
+        XCTAssertEqual(restored.tabs.map(\.id), ids)
+        XCTAssertEqual(restored.activeTabIndex, 247)
+        XCTAssertEqual(restored.activeTab?.keyword, "Query 247")
+        XCTAssertEqual(restored.tabs.filter(\.isAlive).count, 1)
+        XCTAssertTrue(restored.tabs.allSatisfy { $0.webViewModel.webView == nil && $0.webViewModel.snapshot == nil })
+        for index in [1, 247, 499] {
+            XCTAssertEqual(restored.tabs[index].webViewModel.currentURL?.path, "/\(index)")
+        }
+        restored.switchToTab(at: 499)
+        XCTAssertEqual(restored.activeWebViewModel?.currentURL?.path, "/499")
+        XCTAssertTrue(restored.tabs[499].isAlive)
+        restored.closeTab(at: 10)
+        XCTAssertEqual(restored.activeTab?.id, ids[499])
+        XCTAssertEqual(restored.tabCount, 499)
+        // Leave no pending debounced writes after the storage fixture is removed.
+        restored.saveToDisk()
     }
 
     @MainActor

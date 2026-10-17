@@ -62,47 +62,6 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertEqual(capture.states.last, false)
     }
 
-    private final class WebLinkCapture: NSObject, WKScriptMessageHandler {
-        var destinations: [String] = []
-        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-            if let body = message.body as? [String: String], let url = body["url"] {
-                destinations.append(url)
-            }
-        }
-    }
-
-    @MainActor
-    func testCrossSiteClicksInterceptBothSameWindowAndNewWindow() async throws {
-        let capture = WebLinkCapture()
-        let configuration = WKWebViewConfiguration()
-        configuration.userContentController.add(capture, contentWorld: .defaultClient, name: "souloWebLink")
-        configuration.userContentController.addUserScript(WKUserScript(
-            source: WebViewScripts.internalWebLinkNavigation,
-            injectionTime: .atDocumentStart,
-            forMainFrameOnly: false,
-            in: .defaultClient
-        ))
-        let webView = WKWebView(frame: .zero, configuration: configuration)
-        webView.loadHTMLString("""
-            <a id='same-window' href='https://www.douyin.com/video/123'>Douyin</a>
-            <a id='new-window' href='https://www.bilibili.com/video/456' target='_blank'>Bilibili</a>
-            """, baseURL: URL(string: "https://www.bing.com/"))
-        for _ in 0..<100 {
-            if (try? await webView.evaluateJavaScript("document.getElementById('new-window') !== null")) as? Bool == true { break }
-            try await Task.sleep(for: .milliseconds(50))
-        }
-        _ = try await webView.evaluateJavaScript("document.getElementById('same-window').click()")
-        _ = try await webView.evaluateJavaScript("document.getElementById('new-window').click()")
-        for _ in 0..<100 {
-            if capture.destinations.count >= 2 { break }
-            try await Task.sleep(for: .milliseconds(50))
-        }
-        XCTAssertEqual(capture.destinations, [
-            "https://www.douyin.com/video/123",
-            "https://www.bilibili.com/video/456"
-        ])
-    }
-
     @MainActor
     func testHLSPlaybackAssetUsesPlaylistMIMEType() throws {
         let resource = WebMediaResource(
@@ -1498,9 +1457,15 @@ final class WebViewScriptsTests: XCTestCase {
     }
 
     func testInjectedBrowserScriptsAreParsableJavaScript() {
+        assertJavaScriptParses(WebViewScripts.clipboardProtection)
+        assertJavaScriptParses(WebViewScripts.pageContentReady)
+        assertJavaScriptParses(WebViewScripts.bingAppPromptSuppression)
+        assertJavaScriptParses(WebViewScripts.textSelection)
+        assertJavaScriptParses(WebViewScripts.mediaFrameRegistration)
+        assertJavaScriptParses(WebViewScripts.videoScreenAwake)
         assertJavaScriptParses(AdBlockService.adHidingScript(cosmetic: true))
         assertJavaScriptParses(WebViewScripts.blankPageProbe)
-        assertJavaScriptParses(WebViewScripts.internalWebLinkNavigation)
+        assertJavaScriptParses(BrowserNavigationGesture.script)
         assertJavaScriptParses(WebViewScripts.privacyProtection(gpcEnabled: true, cookieBannerHandling: true))
         assertJavaScriptParses(WebViewScripts.downloadBridge)
         assertJavaScriptParses(WebViewScripts.contextMenuResourceTracking)
@@ -1519,7 +1484,6 @@ final class WebViewScriptsTests: XCTestCase {
         assertJavaScriptParses(WebViewScripts.webAppearanceBootstrap)
         assertJavaScriptParses(
             WebViewScripts.applyWebAppearance(
-                warmColorShift: true,
                 forceDark: true,
                 reduceMotion: true,
                 underlineLinks: true
@@ -2263,13 +2227,11 @@ final class WebViewScriptsTests: XCTestCase {
 
     func testWebAppearanceReadabilityPreferencesCanBeAppliedAndRemoved() {
         let enabled = WebViewScripts.applyWebAppearance(
-            warmColorShift: false,
             forceDark: false,
             reduceMotion: true,
             underlineLinks: true
         )
         let disabled = WebViewScripts.applyWebAppearance(
-            warmColorShift: false,
             forceDark: false,
             reduceMotion: false,
             underlineLinks: false
@@ -2874,6 +2836,20 @@ final class WebViewScriptsTests: XCTestCase {
             script: script,
             pageURL: pageURL
         ))
+    }
+
+    @MainActor
+    func testXiaohongshuSearchURLPreservesArbitrarySearchText() throws {
+        let platform = try XCTUnwrap(PlatformDataStore.shared.allPlatforms().first { $0.name == "platform_xiaohongshu" })
+        XCTAssertEqual(platform.interactionType, .urlSearch)
+        for query in ["O'Reilly", "猫 & 狗 + #tag?x=1", "');window.injected=true;//", "line\nnext\u{2028}行"] {
+            let url = try XCTUnwrap(platform.searchURL(for: query))
+            let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+            XCTAssertEqual(components.host, "www.xiaohongshu.com")
+            XCTAssertEqual(components.queryItems?.first(where: { $0.name == "keyword" })?.value, query)
+            XCTAssertEqual(components.queryItems?.count, 3)
+            XCTAssertNil(components.fragment)
+        }
     }
 
     private func assertJavaScriptParses(_ script: String, file: StaticString = #filePath, line: UInt = #line) {

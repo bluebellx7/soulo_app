@@ -1,6 +1,14 @@
 Soulo è un browser per iPhone e iPad che ti permette di cercare su più piattaforme. Scrivi una volta e passa tra ricerca, social, video, acquisti, conoscenza e IA senza ripetere le parole chiave.
 
+Scegli Soulo come browser predefinito in Impostazioni per aprire i link da altre app.
+
+Risolto il problema che sovrascriveva le impostazioni attivando la sincronizzazione iCloud su un nuovo dispositivo. Aggiunti backup locali delle impostazioni e semplificata la gestione dei link condivisi.
+
 Riproduci i video compatibili durante il download. Download in background e schermo intero migliorati, con protezione da annunci nascosti e copie indesiderate.
+
+Scegli gli episodi sui siti compatibili, inverti l’ordine e scaricane più insieme, riprovando i download non riusciti. Tieni premuto per accelerare, rilascia per ripristinare la velocità. Controlli video più fluidi.
+
+Conferma facoltativa dei reindirizzamenti automatici verso altri domini, domini attendibili e apertura in una nuova scheda. Migliorate la rimozione delle sovrapposizioni pubblicitarie e la navigazione indietro.
 
 Trova informazioni, leggi articoli, riproduci contenuti e gestisci i download nello stesso browser.
 

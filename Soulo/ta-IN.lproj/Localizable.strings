@@ -814,7 +814,7 @@
 "share_extension_title" = "Soulo மூலம் தேடவும்";
 "share_search_in_soulo" = "Soulo இல் தேடவும்";
 "share_private_search" = "தனிப்பட்ட முறையில் தேடவும்";
-"share_extension_unsupported" = "இந்த உருப்படியை தேட முடியாது.";
+"share_extension_unsupported" = "பகிரப்பட்ட உள்ளடக்கத்தைப் படிக்க முடியவில்லை.";
 "image_extract_text" = "படத்திலிருந்து உரையைப் பிரித்தெடுக்கவும்";
 "image_text_unavailable" = "இந்தச் சாதனத்தில் Live Text இல்லை.";
 "image_text_none" = "இந்தப் படத்தில் படிக்கக்கூடிய உரை எதுவும் இல்லை.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "மேலெழுவதைத் தவிர்க்கவும்";
 "keep_page_above_toolbar_desc" = "கருவிப்பட்டியின் மேல் வலைப்பக்கக் கட்டுப்பாடுகளை வைத்திருங்கள்.";
 "downloads_play_while_downloading" = "பதிவிறக்கும்போதே இயக்கவும்";
+
+// Default browser
+"settings_default_browser" = "இயல்புநிலை உலாவி";
+"settings_default_browser_hint" = "மற்ற செயலிகளின் இணைப்புகளைத் திறக்க, அமைப்புகளில் Soulo-வை இயல்புநிலை உலாவியாகத் தேர்ந்தெடுக்கவும்.";
+"settings_backups" = "அமைப்புகளின் காப்புப்பிரதிகள்";
+"settings_backup_restore_message" = "மீட்டெடுப்பதற்கு முன் தற்போதைய அமைப்புகள் காப்புப் பிரதி எடுக்கப்படும், மேலும் iCloud ஒத்திசைவு அணைக்கப்படும்.";
+"settings_backup_error" = "இந்தச் செயலை முடிக்க முடியவில்லை. தற்போதைய அமைப்புகள் பாதுகாக்கப்பட்டுள்ளன.";
+"share_saved_for_open" = "சேமிக்கப்பட்டது. தொடர Soulo-ஐத் திறக்கவும்.";
+"intent_open_webpage_title" = "Soulo-இல் இணைப்பைத் திற";
+"intent_webpage_url" = "இணைய முகவரி";
+
+"external_navigation_prompt" = "செயலி இணைப்புகளை உறுதிசெய்";
+"external_navigation_prompt_desc" = "மற்றொரு செயலியைத் திறக்கும் முன் கேட்கும். அணைத்தால் செயலி இணைப்புகள் நேரடியாகத் திறக்கும்.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "டொமைன் வாரியாகக் குழுவாக்கு";
+"tab_view_carousel" = "அட்டை காட்சி";

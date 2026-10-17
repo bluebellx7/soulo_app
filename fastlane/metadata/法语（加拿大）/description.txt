@@ -1,6 +1,14 @@
 Soulo est un navigateur multi-recherche pour iPhone et iPad. Entrez votre recherche une fois, puis passez entre moteurs de recherche, réseaux sociaux, vidéos, achats, connaissances et plateformes d’IA sans la retaper.
 
+Choisissez Soulo comme navigateur par défaut dans Réglages pour ouvrir les liens des autres apps.
+
+Correction de l’écrasement des réglages lors de l’activation de la synchronisation iCloud sur un nouvel appareil. Ajout de sauvegardes locales des réglages et simplification des liens partagés.
+
 Lisez les vidéos compatibles pendant le téléchargement. Téléchargements en arrière-plan et plein écran améliorés, avec protection contre les copies indésirables.
+
+Choisissez les épisodes sur les sites compatibles, inversez leur ordre et téléchargez-en plusieurs à la fois, avec reprise des échecs. Maintenez le doigt pour accélérer, relâchez pour rétablir la vitesse. Commandes vidéo plus fluides.
+
+Confirmation facultative des redirections automatiques vers un autre domaine, domaines de confiance et ouverture dans un nouvel onglet. Nettoyage des caches publicitaires, retour et sous-menus améliorés.
 
 Recherchez, lisez, regardez des vidéos et gérez vos téléchargements au même endroit.
 

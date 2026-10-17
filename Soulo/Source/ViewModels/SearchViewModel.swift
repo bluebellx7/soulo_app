@@ -19,7 +19,16 @@ class SearchViewModel: ObservableObject {
     @Published var selectedRegion: PlatformRegion = .international
     @Published var selectedPlatform: SearchPlatform?
     @Published var clipboardContent: String? = nil
-    @Published var showClipboardPrompt: Bool = false
+    @Published var showClipboardPrompt: Bool = false {
+        didSet {
+            if !showClipboardPrompt {
+                clipboardSearchID = UUID()
+                isReadingClipboard = false
+            }
+        }
+    }
+    @Published private(set) var isReadingClipboard = false
+    private var clipboardSearchID = UUID()
     @Published var recentSearches: [String] = []
 
     // Live autocomplete suggestions
@@ -27,8 +36,10 @@ class SearchViewModel: ObservableObject {
     @Published var isLoadingSuggestions: Bool = false
     private var suggestionTask: Task<Void, Never>?
     private var suggestCancellables = Set<AnyCancellable>()
+    private let clipboardReader: any ClipboardReading
 
-    init() {
+    init(clipboardReader: (any ClipboardReading)? = nil) {
+        self.clipboardReader = clipboardReader ?? SystemClipboardReader()
         selectedRegion = Self.detectDefaultRegion()
         selectedPlatform = PlatformDataStore.shared.firstVisiblePlatform(for: selectedRegion)
         setupSuggestionDebouncer()
@@ -131,6 +142,27 @@ class SearchViewModel: ObservableObject {
 
     // MARK: - Search
 
+    @discardableResult
+    func performHomeSearch(
+        tabManager: TabManager,
+        preferredRegion: PlatformRegion?,
+        customGroup: CustomGroup?,
+        context: ModelContext? = nil
+    ) -> Bool {
+        guard !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let tab = tabManager.prepareTabForHomeSearch() else { return false }
+
+        prepareForHomeSearch(preferredRegion: preferredRegion, customGroup: customGroup)
+        performSearch(context: context)
+        // Reserve the tab before SwiftUI starts loading, so another submission
+        // cannot mistake a pending search for an unused blank tab.
+        if let index = tabManager.tabs.firstIndex(where: { $0.id == tab.id }) {
+            tabManager.tabs[index].keyword = currentKeyword
+            tabManager.tabs[index].platform = selectedPlatform
+        }
+        return true
+    }
+
     func performSearch(context: ModelContext? = nil) {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
@@ -223,77 +255,51 @@ class SearchViewModel: ObservableObject {
     // MARK: - Clipboard (F7 Enhanced)
 
     func detectClipboard() {
-        let pasteboard = UIPasteboard.general
-        let changeCount = pasteboard.changeCount
+        let changeCount = clipboardReader.changeCount
         guard changeCount != lastClipboardChangeCount else { return }
-        Task { @MainActor in
-            guard let patterns = try? await pasteboard.detectedPatterns(for: [\.probableWebURL, \.number, \.probableWebSearch]),
-                  !patterns.isEmpty, pasteboard.changeCount == changeCount else { return }
-            // Read each detected revision once. iOS owns paste permission; marking
-            // the revision first avoids requesting again when its prompt closes.
-            lastClipboardChangeCount = changeCount
-            let text = await Self.readClipboardText()
-            guard pasteboard.changeCount == changeCount else { return }
-            if let text, !text.isEmpty {
-                guard Self.stableHash(for: text) != lastClipboardHash else { return }
-                clipboardContent = text
-            } else {
-                clipboardContent = nil
-            }
-            suggestedClipboardPlatforms = []
-            showClipboardPrompt = true
+        Task { @MainActor [weak self, clipboardReader] in
+            guard await clipboardReader.hasSearchableContent(), let self,
+                  clipboardReader.changeCount == changeCount,
+                  self.lastClipboardChangeCount != changeCount else { return }
+            self.lastClipboardChangeCount = changeCount
+            // Show the existing generic prompt. Read copied text only after
+            // the user presses Search, so activation cannot interrupt browsing
+            // with a paste-permission dialog or expose a stale preview.
+            self.clipboardContent = nil
+            self.clipboardContentType = .generalText
+            self.suggestedClipboardPlatforms = []
+            self.showClipboardPrompt = true
         }
     }
 
     func dismissClipboard() {
         showClipboardPrompt = false
-        lastClipboardChangeCount = UIPasteboard.general.changeCount
+        lastClipboardChangeCount = clipboardReader.changeCount
         if let content = clipboardContent {
             lastClipboardHash = Self.stableHash(for: content)
         }
     }
 
-    func searchFromClipboard(context: ModelContext? = nil) {
-        Task {
-            guard let content = await readClipboardForUserAction() else {
-                dismissClipboard()
+    func searchFromClipboard(onSearch: @escaping () -> Void) {
+        guard !isReadingClipboard else { return }
+        let requestID = UUID()
+        clipboardSearchID = requestID
+        isReadingClipboard = true
+        Task { @MainActor [weak self, clipboardReader] in
+            let text = await clipboardReader.readText()
+            guard let self, self.clipboardSearchID == requestID else { return }
+            guard let content = text, !content.isEmpty else {
+                self.dismissClipboard()
                 return
             }
-            searchText = content
-            performSearch(context: context)
-            dismissClipboard()
+            self.updateClipboardAnalysis(content)
+            self.searchText = content
+            onSearch()
+            self.dismissClipboard()
         }
     }
 
-    private static func readClipboardText() async -> String? {
-        // Item providers deliver their contents asynchronously, including when
-        // iOS is waiting for paste permission. Never block the UI on .string.
-        guard let provider = UIPasteboard.general.itemProviders.first else { return nil }
-        let text: String?
-        if provider.canLoadObject(ofClass: NSString.self) {
-            text = await withCheckedContinuation { continuation in
-                _ = provider.loadObject(ofClass: NSString.self) { value, _ in
-                    continuation.resume(returning: value as? String)
-                }
-            }
-        } else if provider.canLoadObject(ofClass: NSURL.self) {
-            text = await withCheckedContinuation { continuation in
-                _ = provider.loadObject(ofClass: NSURL.self) { value, _ in
-                    continuation.resume(returning: (value as? URL)?.absoluteString)
-                }
-            }
-        } else {
-            text = nil
-        }
-        return text?.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private func readClipboardForUserAction() async -> String? {
-        guard let text = await Self.readClipboardText(), !text.isEmpty else { return nil }
-
-        let hash = Self.stableHash(for: text)
-        guard hash != lastClipboardHash else { return nil }
-
+    private func updateClipboardAnalysis(_ text: String) {
         clipboardContent = text
 
         let analysis = ClipboardAnalyzer.analyze(text)
@@ -303,8 +309,6 @@ class SearchViewModel: ObservableObject {
         suggestedClipboardPlatforms = analysis.suggestedPlatforms.compactMap { name in
             allPlatforms.first { $0.name == name && $0.isVisible }
         }
-
-        return text
     }
 
     // MARK: - Clear
@@ -321,25 +325,7 @@ class SearchViewModel: ObservableObject {
     // MARK: - History
 
     func loadRecentSearches(context: ModelContext) {
-        let descriptor = FetchDescriptor<SearchHistoryItem>(
-            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
-        )
-        do {
-            let items = try context.fetch(descriptor)
-            var seen = Set<String>()
-            var unique: [String] = []
-            for item in items {
-                guard !item.isWebVisit else { continue }
-                if !seen.contains(item.keyword) {
-                    seen.insert(item.keyword)
-                    unique.append(item.keyword)
-                    if unique.count >= 20 { break }
-                }
-            }
-            recentSearches = unique
-        } catch {
-            recentSearches = []
-        }
+        recentSearches = SearchHistoryService.recentSearchKeywords(context: context)
     }
 
     func deleteHistoryItem(keyword: String, context: ModelContext) {

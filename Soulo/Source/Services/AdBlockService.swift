@@ -67,6 +67,11 @@ struct AdBlockService {
         ]
         let resources = ["script", "image", "style-sheet", "font", "media", "raw", "popup"]
         var rules = adDomains.map { BuiltInAdRule(id: "domain:" + $0, kind: .network, pattern: $0, resourceTypes: resources) }
+        // This first-party loader fetches an obfuscated mobile click-through ad
+        // script. Keep the rule scoped to the verified host and exact path.
+        rules.append(BuiltInAdRule(id: "pbpbw-click-ad-loader", kind: .network,
+            pattern: #"^https?://(www\.)?pbpbw\.com/assets/chunks/site-config\.js([?]|$)"#,
+            resourceTypes: ["script"]))
         rules += adPatterns.map { BuiltInAdRule(id: "pattern:" + $0, kind: .network, pattern: $0, resourceTypes: ["script", "image", "raw"]) }
         let selectors = [
             ".adsbygoogle",
@@ -440,7 +445,7 @@ struct AdBlockService {
         for selectorGroup in chunkedSelectors(hideSelectors) {
             rulesArray.append([
                 "trigger": trigger(".*"),
-                "action": ["type": "css-display-none", "selector": selectorGroup.joined(separator: ",")]
+                "action": ["type": "css-display-none", "selector": switchableNativeSelector(selectorGroup.joined(separator: ","))]
             ])
         }
 
@@ -462,7 +467,7 @@ struct AdBlockService {
             }
             rulesArray.append([
                 "trigger": cosmeticTrigger,
-                "action": ["type": "css-display-none", "selector": selector]
+                "action": ["type": "css-display-none", "selector": switchableNativeSelector(selector)]
             ])
         }
 
@@ -472,6 +477,12 @@ struct AdBlockService {
 
     private static func normalizedAllowlist(_ hosts: [String]) -> [String] {
         WebCompatibilityService.protectionBypassHosts(adding: hosts)
+    }
+
+    /// WebKit retains cosmetic styles in already loaded documents after their
+    /// rule list is removed. One root attribute can disable those styles live.
+    private static func switchableNativeSelector(_ selector: String) -> String {
+        ":root:not([data-soulo-native-ads-disabled]) :is(\(selector))"
     }
 
     static func sanitizedContentBlockerURLFilter(_ value: String) -> String? {
@@ -566,14 +577,14 @@ struct AdBlockService {
 
     /// Include source revisions, file replacement, overrides and allowlist.
     /// Legacy/in-memory fixtures deliberately bypass persistent derived caches.
-    static func startupCacheKey(allowlistedHosts: [String], cosmetic: Bool? = nil) -> String? {
+    static func startupCacheKey(allowlistedHosts: [String], cosmetic: Bool? = nil, nativeCosmeticFiltering: Bool = false) -> String? {
         let defaults = UserDefaults.standard
         guard defaults.data(forKey: "soulo_ad_block_subscription_rules") == nil else { return nil }
         let archive = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
             .appendingPathComponent("AdBlock/merged-rules.json")
         let attributes = archive.flatMap { try? $0.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]) }
         let fields = [
-            "startup-cache-v2", startupBuildIdentity,
+            "startup-cache-v4", startupBuildIdentity, String(nativeCosmeticFiltering),
             normalizedAllowlist(allowlistedHosts).joined(separator: ","),
             cosmetic.map(String.init) ?? "native", AdBlockSubscriptionService.rulesSignature(),
             BuiltInAdRuleStore.signature(),
@@ -584,8 +595,25 @@ struct AdBlockService {
         return (try? JSONEncoder().encode(fields)).flatMap { String(data: $0, encoding: .utf8) }
     }
 
-    static func adHidingScript(cosmetic: Bool = true, allowlistedHosts: [String] = []) -> String {
-        let persistentKey = startupCacheKey(allowlistedHosts: allowlistedHosts, cosmetic: cosmetic)
+    static func javaScriptCosmeticRules(
+        _ rules: [AdBlockCosmeticRule], exceptions: [AdBlockCosmeticRule],
+        hasGenericExceptions: Bool, nativeFiltering: Bool
+    ) -> [AdBlockCosmeticRule] {
+        guard nativeFiltering else { return rules }
+        let exceptionSelectors = Set(exceptions.map(\.selector))
+        return rules.filter { rule in
+            sanitizedContentBlockerSelector(rule.selector) == nil
+                || exceptionSelectors.contains(rule.selector)
+                || (hasGenericExceptions && rule.ifDomains.isEmpty)
+                || (!rule.ifDomains.isEmpty && !rule.unlessDomains.isEmpty)
+                || rule.ifDomains.contains { !$0.hasPrefix("*") }
+                || rule.unlessDomains.contains { !$0.hasPrefix("*") }
+                || rule.selector.range(of: "popup|overlay|modal|interstitial|float|sticky", options: [.caseInsensitive, .regularExpression]) != nil
+        }
+    }
+
+    static func adHidingScript(cosmetic: Bool = true, allowlistedHosts: [String] = [], nativeCosmeticFiltering: Bool = false) -> String {
+        let persistentKey = startupCacheKey(allowlistedHosts: allowlistedHosts, cosmetic: cosmetic, nativeCosmeticFiltering: nativeCosmeticFiltering)
         if let persistentKey {
             if let cached = hidingScriptCache.object(forKey: persistentKey as NSString) { return cached as String }
             if let cached = AdBlockStartupCache.shared.read(String.self, slot: .cosmeticScript, key: persistentKey) {
@@ -601,7 +629,12 @@ struct AdBlockService {
         let subscriptionRules = cachedRules.cosmeticRules.isEmpty
             ? cachedRules.cosmeticSelectors.map { AdBlockCosmeticRule(selector: $0) }
             : cachedRules.cosmeticRules
-        let cosmeticRules = subscriptionRules + builtInRules.filter { $0.kind == .cosmetic }.map(\.cosmeticRule)
+        let cosmeticRules = javaScriptCosmeticRules(
+            subscriptionRules + builtInRules.filter { $0.kind == .cosmetic }.map(\.cosmeticRule),
+            exceptions: cachedRules.cosmeticExceptions,
+            hasGenericExceptions: cachedRules.networkRules.contains { $0.exceptionScope == "generichide" },
+            nativeFiltering: nativeCosmeticFiltering
+        )
         // Compact triples avoid repeating field names for tens of thousands of
         // subscription entries. JSON.parse also avoids compiling a huge nested
         // JavaScript object literal before the document can render.
@@ -626,6 +659,7 @@ struct AdBlockService {
             var souloAllowlistedHosts = \(allowlistJSON);
             var souloSubscriptionCosmeticRules = [];
             window.__souloAdBlockConfig = {
+                nativeCosmeticFiltering: \(nativeCosmeticFiltering ? "true" : "false"),
                 cosmeticEnabled: souloCosmeticEnabled,
                 tiledBanners: \(builtInRules.contains { $0.kind == .tiledBanner } ? "true" : "false"),
                 allowlistedHosts: souloAllowlistedHosts,
@@ -829,21 +863,42 @@ struct AdBlockService {
                 return false;
             }
 
+            var hiddenStyles = new Map();
+            var hiddenProperties = {'display':'none', 'height':'0px', 'max-height':'0px', 'overflow':'hidden', 'visibility':'hidden', 'pointer-events':'none'};
+            function restoreUnmatchedAds() {
+                var selectors = matchingSubscriptionSelectors();
+                hiddenStyles.forEach(function(style, el) {
+                    var keepHidden = adBlockConfig().cosmeticEnabled && !shouldDisableAdBlock()
+                        && selectors.some(function(selector) { try { return el.matches(selector); } catch (_) { return false; } });
+                    if (keepHidden && el.isConnected) return;
+                    Object.keys(hiddenProperties).forEach(function(property) {
+                        if (el.style.getPropertyValue(property) !== hiddenProperties[property] || el.style.getPropertyPriority(property) !== 'important') return;
+                        var original = style[property];
+                        if (original.value) el.style.setProperty(property, original.value, original.priority);
+                        else el.style.removeProperty(property);
+                    });
+                    el.removeAttribute('data-soulo-hidden-ad');
+                    hiddenStyles.delete(el);
+                });
+            }
+
             function hideAdElement(el) {
                 try {
                     if (!el || isProtectedPageElement(el) || isAuthenticationElement(el) || el.hasAttribute('data-soulo-hidden-ad')) return false;
                     el.setAttribute('data-soulo-hidden-ad', 'true');
-                    el.style.setProperty('display', 'none', 'important');
-                    el.style.setProperty('height', '0', 'important');
-                    el.style.setProperty('max-height', '0', 'important');
-                    el.style.setProperty('overflow', 'hidden', 'important');
-                    el.style.setProperty('visibility', 'hidden', 'important');
-                    el.style.setProperty('pointer-events', 'none', 'important');
+                    var original = {};
+                    Object.keys(hiddenProperties).forEach(function(property) {
+                        original[property] = {value: el.style.getPropertyValue(property), priority: el.style.getPropertyPriority(property)};
+                        el.style.setProperty(property, hiddenProperties[property], 'important');
+                    });
+                    hiddenStyles.set(el, original);
                     return true;
                 } catch(e) {
                     return false;
                 }
             }
+
+            \(WebAdOverlayCleanup.source)
 
             var mosaicSheet = null, mosaicCSS = '', mosaicSeen = new WeakSet(), pendingMosaicCount = 0;
             function maskMosaics(groups) {
@@ -896,7 +951,9 @@ struct AdBlockService {
             }, true);
 
             function removeAds() {
+                if (document.documentElement) document.documentElement.toggleAttribute('data-soulo-native-ads-disabled', !adBlockConfig().cosmeticEnabled || shouldDisableAdBlock());
                 applyStaticStyles();
+                restoreUnmatchedAds();
                 refreshMosaics();
                 if (shouldDisableAdBlock()) return;
                 // Keep visible targets stable while the user marks them. The
@@ -922,6 +979,7 @@ struct AdBlockService {
                         try { hideMatches(group.join(',')); }
                         catch (_) { group.forEach(function(sel) { try { hideMatches(sel); } catch (_) {} }); }
                     }
+                    cleanupAdOverlays();
                 }
 
                 if (hiddenCount > 0 && window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.souloAdBlocker) {
@@ -944,6 +1002,11 @@ struct AdBlockService {
                 window.__souloAdBlockObserver = new MutationObserver(function(mutations) {
                     var needsClean = false;
                     mutations.forEach(function(m) {
+                        var target = m.target.nodeType === 1 ? m.target : m.target.parentElement;
+                        var toolSelector = '[data-soulo-video-rotate],#soulo-episode-dock,[data-soulo-hold-speed]';
+                        if (target && target.closest(toolSelector)) return;
+                        var changed = Array.from(m.addedNodes).concat(Array.from(m.removedNodes));
+                        if (changed.length && changed.every(function(node) { return node.nodeType === 1 && node.matches(toolSelector); })) return;
                         // Clocks, subtitles and counters only replace text. They
                         // cannot insert an ad element and need no full DOM scan.
                         if (Array.from(m.addedNodes).some(function(n) { return n.nodeType === 1; }) ||
@@ -968,7 +1031,7 @@ struct AdBlockService {
 
         })();
         """
-        if let persistentKey, persistentKey == startupCacheKey(allowlistedHosts: allowlistedHosts, cosmetic: cosmetic) {
+        if let persistentKey, persistentKey == startupCacheKey(allowlistedHosts: allowlistedHosts, cosmetic: cosmetic, nativeCosmeticFiltering: nativeCosmeticFiltering) {
             hidingScriptCache.setObject(script as NSString, forKey: persistentKey as NSString)
             AdBlockStartupCache.shared.write(script, slot: .cosmeticScript, key: persistentKey)
         }

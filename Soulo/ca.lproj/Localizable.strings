@@ -814,7 +814,7 @@
 "share_extension_title" = "Cerca amb Soulo";
 "share_search_in_soulo" = "Cerca a Soulo";
 "share_private_search" = "Cerca en privat";
-"share_extension_unsupported" = "Aquest element no es pot cercar.";
+"share_extension_unsupported" = "No s’ha pogut llegir el contingut compartit.";
 "image_extract_text" = "Extreu text de la imatge";
 "image_text_unavailable" = "Live Text no està disponible en aquest dispositiu.";
 "image_text_none" = "No s'ha trobat cap text llegible en aquesta imatge.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "Eviteu la superposició";
 "keep_page_above_toolbar_desc" = "Manteniu els controls de la pàgina web a sobre de la barra d'eines.";
 "downloads_play_while_downloading" = "Reprodueix mentre es baixa";
+
+// Default browser
+"settings_default_browser" = "Navegador per defecte";
+"settings_default_browser_hint" = "Tria Soulo com a navegador per defecte a Configuració per obrir enllaços d’altres apps.";
+"settings_backups" = "Còpies dels ajustos";
+"settings_backup_restore_message" = "La restauració desactivarà la sincronització amb iCloud i primer desarà una còpia dels ajustos actuals.";
+"settings_backup_error" = "No s’ha pogut completar l’operació. S’han conservat els ajustos actuals.";
+"share_saved_for_open" = "Desat. Obre Soulo per continuar.";
+"intent_open_webpage_title" = "Obrir enllaç al Soulo";
+"intent_webpage_url" = "URL web";
+
+"external_navigation_prompt" = "Confirma els enllaços d’apps";
+"external_navigation_prompt_desc" = "Demana confirmació abans d’obrir una altra app. Desactiva-ho per obrir els enllaços directament.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "Agrupa per domini";
+"tab_view_carousel" = "Vista de targetes";

@@ -1,4 +1,10 @@
-1.2.1
+1.2.2
 
+• Vælg episoder på understøttede websteder, vend rækkefølgen, hent flere på én gang og prøv mislykkede downloads igen. Hold nede for at øge hastigheden, og slip for at gendanne den. Mere flydende videobetjening.
+• Valgfri bekræftelse af automatiske skift til andre domæner, betroede domæner og åbning i en ny fane. Bedre fjernelse af reklameoverlejringer og navigation tilbage.
+
+• Rettet en fejl, hvor eksisterende indstillinger blev overskrevet, når iCloud-synkronisering blev aktiveret på en ny enhed. Tilføjet lokale sikkerhedskopier af indstillinger og forenklet håndteringen af delte links.
+
+• Vælg Soulo som standardbrowser i Indstillinger for at åbne links fra andre apps.
 • Forbedret indlæsning af websider, annoncefiltrering og respons under navigation.
 • Forbedret layout, beskæring af baggrunde og læsning, når vinduets størrelse ændres.

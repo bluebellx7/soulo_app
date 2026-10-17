@@ -5,10 +5,13 @@ struct AdBlockManagementView: View {
     @ObservedObject private var subscriptionService = AdBlockSubscriptionService.shared
     @ObservedObject private var manualRules = ManualAdBlockService.shared
     @ObservedObject private var builtInRules = BuiltInAdRuleStore.shared
+    @ObservedObject private var externalNavigation = ExternalNavigationService.shared
     @Environment(\.dismiss) private var dismiss
     @AppStorage("ad_block_enabled") private var adBlockEnabled = true
-    @AppStorage(BrowserAutomaticNavigationPolicy.preferenceKey) private var allowsAutomaticNavigation = true
+    @AppStorage(BrowserDomainNavigationPolicy.preferenceKey) private var confirmCrossDomain = false
+    @ObservedObject private var domainAllowlist = BrowserDomainAllowlist.shared
     @State private var showsStatistics = false
+    @State private var showsDomainAllowlist = false
 
     let currentHost: String?
     var showsDoneButton = false
@@ -31,10 +34,34 @@ struct AdBlockManagementView: View {
                 }
                 .tint(.green)
                 .accessibilityIdentifier("adBlock.enabled")
-                Toggle(isOn: $allowsAutomaticNavigation) {
-                    Label(ToolText.text("ad_allow_redirects"), systemImage: "arrow.turn.up.right")
+            }
+
+            Section {
+                Toggle(isOn: $externalNavigation.promptEnabled) {
+                    Label(LanguageManager.shared.localizedString("external_navigation_prompt"), systemImage: "arrow.up.forward.app")
                 }
-                .accessibilityIdentifier("adBlock.allowAutomaticNavigation")
+                .accessibilityIdentifier("adBlock.promptBeforeOpeningApp")
+            } footer: {
+                Text(LanguageManager.shared.localizedString("external_navigation_prompt_desc"))
+            }
+
+            Section {
+                Toggle(isOn: $confirmCrossDomain) {
+                    Label(ToolText.text("cross_domain_confirm"), systemImage: "arrow.up.forward.square")
+                }
+                .accessibilityIdentifier("adBlock.confirmCrossDomain")
+                Button { showsDomainAllowlist = true } label: {
+                    HStack {
+                        ruleRow(ToolText.text("cross_domain_allowlist"), icon: "checkmark.shield", count: domainAllowlist.rules.count)
+                        Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("adBlock.domainAllowlist")
+            } footer: {
+                Text(ToolText.text("cross_domain_confirm_description"))
             }
 
             if let currentHost {
@@ -123,6 +150,9 @@ struct AdBlockManagementView: View {
             }
         }
         .onChange(of: adBlockEnabled) { _, _ in onChanged?() }
+        .navigationDestination(isPresented: $showsDomainAllowlist) {
+            BrowserDomainAllowlistView()
+        }
     }
 
     private func ruleRow(_ title: String, icon: String, count: Int) -> some View {
@@ -132,6 +162,66 @@ struct AdBlockManagementView: View {
             Spacer(minLength: 8)
             Text(count.formatted()).foregroundStyle(.secondary).monospacedDigit()
         }
+    }
+}
+
+private struct BrowserDomainAllowlistView: View {
+    @ObservedObject private var service = BrowserDomainAllowlist.shared
+    @State private var draft = ""
+    @State private var invalid = false
+
+    private var displayedRules: [String] {
+        let builtIn = Set(BrowserDomainNavigationPolicy.defaultAllowlist)
+        return service.rules.sorted {
+            if builtIn.contains($0) != builtIn.contains($1) { return !builtIn.contains($0) }
+            return $0 < $1
+        }
+    }
+
+    var body: some View {
+        List {
+            Section {
+                HStack {
+                    TextField("*.example.com", text: $draft)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .keyboardType(.URL)
+                        .accessibilityIdentifier("domainAllowlist.input")
+                        .onSubmit(add)
+                    Button(ToolText.text("cross_domain_add"), action: add)
+                        .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .accessibilityIdentifier("domainAllowlist.add")
+                }
+                if invalid { Text(ToolText.text("cross_domain_invalid")).foregroundStyle(.red).font(.footnote) }
+            } footer: { Text(ToolText.text("cross_domain_allowlist_hint")) }
+            Section {
+                ForEach(displayedRules, id: \.self) { rule in
+                    Text(rule).accessibilityIdentifier("domainAllowlist.rule.\(rule)")
+                }
+                .onDelete { indices in
+                    let removed = indices.map { displayedRules[$0] }
+                    removed.forEach(service.remove)
+                }
+            }
+        }
+        .navigationTitle(ToolText.text("cross_domain_allowlist"))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                EditButton()
+                Menu {
+                    Button(ToolText.text("cross_domain_reset")) { service.reset() }
+                        .accessibilityIdentifier("domainAllowlist.reset")
+                } label: { Image(systemName: "ellipsis.circle") }
+                .accessibilityIdentifier("domainAllowlist.actions")
+                .accessibilityLabel(ToolText.text("cross_domain_allowlist"))
+            }
+        }
+    }
+
+    private func add() {
+        if service.add(draft) { draft = ""; invalid = false }
+        else { invalid = true }
     }
 }
 

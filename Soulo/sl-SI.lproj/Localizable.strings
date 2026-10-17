@@ -814,7 +814,7 @@
 "share_extension_title" = "Išči z Soulo";
 "share_search_in_soulo" = "Išči v Soulo";
 "share_private_search" = "Išči Zasebno";
-"share_extension_unsupported" = "Tega predmeta ni mogoče iskati.";
+"share_extension_unsupported" = "Deljene vsebine ni mogoče prebrati.";
 "image_extract_text" = "Izvleček besedila iz slike";
 "image_text_unavailable" = "Live Text ni na voljo v tej napravi.";
 "image_text_none" = "Na tej sliki ni bilo mogoče najti berljivega besedila.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "Izogibajte se prekrivanju";
 "keep_page_above_toolbar_desc" = "Kontrolniki spletne strani naj bodo nad orodno vrstico.";
 "downloads_play_while_downloading" = "Predvajaj med prenosom";
+
+// Default browser
+"settings_default_browser" = "Privzeti brskalnik";
+"settings_default_browser_hint" = "V Nastavitvah izberite Soulo kot privzeti brskalnik za odpiranje povezav iz drugih aplikacij.";
+"settings_backups" = "Varnostne kopije nastavitev";
+"settings_backup_restore_message" = "Obnovitev bo izklopila sinhronizacijo iCloud in najprej shranila varnostno kopijo trenutnih nastavitev.";
+"settings_backup_error" = "Postopka ni bilo mogoče dokončati. Trenutne nastavitve so ohranjene.";
+"share_saved_for_open" = "Shranjeno. Za nadaljevanje odprite Soulo.";
+"intent_open_webpage_title" = "Odpri povezavo v Soulu";
+"intent_webpage_url" = "Spletni naslov";
+
+"external_navigation_prompt" = "Potrdi povezave do aplikacij";
+"external_navigation_prompt_desc" = "Vprašaj pred odpiranjem druge aplikacije. Izklopi za neposredno odpiranje povezav.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "Združi po domeni";
+"tab_view_carousel" = "Prikaz kartic";

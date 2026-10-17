@@ -3,6 +3,27 @@ import SwiftUI
 @testable import Soulo
 
 final class LocalizationLayoutTests: XCTestCase {
+    @MainActor
+    func testLoadErrorLayoutKeepsLongAddressAndActionsReadable() async throws {
+        let manager = LanguageManager.shared
+        let language = manager.currentLanguage
+        defer { manager.currentLanguage = language }
+        let url = try XCTUnwrap(URL(string: "https://dkluge.shop/library/articles/reading-notes?query=%E4%B8%AD%E6%96%87&section=browser#full-address"))
+        for code in ["zh-Hans", "en-US", "de-DE", "ar-SA"] {
+            manager.currentLanguage = code
+            let image = try await snapshot(BrowserLoadErrorView(
+                message: manager.localizedString("error_ssl"), url: url,
+                onRetry: {}, onGoHome: {}, onOpenCompatibility: {})
+                .environment(\.colorScheme, .dark)
+                .environment(\.layoutDirection, code == "ar-SA" ? .rightToLeft : .leftToRight)
+                .environment(\.dynamicTypeSize, code == "de-DE" ? .accessibility1 : .large)
+                .frame(height: 720))
+            let attachment = XCTAttachment(image: image)
+            attachment.name = "load-error-long-address-\(code)"; attachment.lifetime = .keepAlways; add(attachment)
+            XCTAssertEqual(image.size.width, 320, accuracy: 0.5)
+        }
+    }
+
     func testToolLabelsUseSelectedAndRegionalLanguagesWithoutChangingPreferences() {
         let saved = UserDefaults.standard.object(forKey: "app_language") as? String
         XCTAssertEqual(ToolText.text("files", language: "de-DE"), "Dateien")

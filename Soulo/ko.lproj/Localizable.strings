@@ -814,7 +814,7 @@
 "share_extension_title" = "Soulo으로 검색";
 "share_search_in_soulo" = "Soulo에서 검색";
 "share_private_search" = "비공개 검색";
-"share_extension_unsupported" = "이 항목을 검색할 수 없습니다.";
+"share_extension_unsupported" = "공유된 내용을 읽을 수 없습니다.";
 "image_extract_text" = "이미지에서 텍스트 추출";
 "image_text_unavailable" = "Live Text은 이 장치에서 사용할 수 없습니다.";
 "image_text_none" = "이 이미지에는 읽을 수 있는 텍스트가 없습니다.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "겹침 방지";
 "keep_page_above_toolbar_desc" = "웹페이지 컨트롤을 도구 모음 위에 유지하세요.";
 "downloads_play_while_downloading" = "다운로드 중 재생";
+
+// Default browser
+"settings_default_browser" = "기본 브라우저";
+"settings_default_browser_hint" = "설정에서 Soulo를 기본 브라우저로 선택하면 다른 앱의 웹 링크를 바로 열 수 있습니다.";
+"settings_backups" = "설정 백업";
+"settings_backup_restore_message" = "복원하면 먼저 현재 설정을 백업한 후 iCloud 동기화가 꺼집니다.";
+"settings_backup_error" = "작업을 완료하지 못했습니다. 현재 설정은 유지되었습니다.";
+"share_saved_for_open" = "저장했습니다. Soulo를 열면 계속할 수 있습니다.";
+"intent_open_webpage_title" = "Soulo에서 링크 열기";
+"intent_webpage_url" = "웹 URL";
+
+"external_navigation_prompt" = "외부 앱 열기 전 확인";
+"external_navigation_prompt_desc" = "다른 앱을 열기 전에 확인합니다. 끄면 앱 링크를 바로 엽니다.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "도메인별 그룹화";
+"tab_view_carousel" = "카드 보기";

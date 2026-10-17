@@ -820,7 +820,7 @@
 "share_extension_title" = "使用 Soulo 搜索";
 "share_search_in_soulo" = "在 Soulo 中搜索";
 "share_private_search" = "私人搜索";
-"share_extension_unsupported" = "无法搜索该项目。";
+"share_extension_unsupported" = "无法读取分享内容。";
 "image_extract_text" = "从图像中提取文本";
 "image_text_unavailable" = "Live Text 在此设备上不可用。";
 "image_text_none" = "在此图像中找不到可读的文本。";
@@ -868,3 +868,20 @@
 "keep_page_above_toolbar" = "避免工具栏遮挡";
 "keep_page_above_toolbar_desc" = "让网页控件显示在工具栏上方。";
 "downloads_play_while_downloading" = "边播边下";
+
+// Default browser
+"settings_default_browser" = "默认浏览器";
+"settings_default_browser_hint" = "在系统设置中选择 Soulo 为默认浏览器，直接打开其他 App 中的网页链接。";
+"settings_backups" = "设置备份";
+"settings_backup_restore_message" = "恢复前会备份当前设置，并关闭 iCloud 同步。";
+"settings_backup_error" = "未能完成操作，当前设置已保留。";
+"share_saved_for_open" = "已保存，打开 Soulo 后会自动继续。";
+"intent_open_webpage_title" = "用 Soulo 打开链接";
+"intent_webpage_url" = "网址";
+
+"external_navigation_prompt" = "外部 App 跳转提示";
+"external_navigation_prompt_desc" = "开启后，跳转到其他 App 前会先提示；关闭后直接跳转。";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "按域名分组";
+"tab_view_carousel" = "卡片视图";

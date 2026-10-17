@@ -814,7 +814,7 @@
 "share_extension_title" = "Pesquise com Soulo";
 "share_search_in_soulo" = "Pesquise em Soulo";
 "share_private_search" = "Pesquisar em particular";
-"share_extension_unsupported" = "Este item não pode ser pesquisado.";
+"share_extension_unsupported" = "Não foi possível ler o conteúdo partilhado.";
 "image_extract_text" = "Extrair texto da imagem";
 "image_text_unavailable" = "Live Text não está disponível neste dispositivo.";
 "image_text_none" = "Nenhum texto legível foi encontrado nesta imagem.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "Evite sobreposição";
 "keep_page_above_toolbar_desc" = "Mantenha os controles da página da web acima da barra de ferramentas.";
 "downloads_play_while_downloading" = "Reproduzir durante a transferência";
+
+// Default browser
+"settings_default_browser" = "Navegador predefinido";
+"settings_default_browser_hint" = "Escolha o Soulo como navegador predefinido nas Definições para abrir ligações de outras apps.";
+"settings_backups" = "Cópias das definições";
+"settings_backup_restore_message" = "O restauro desativará a sincronização do iCloud e criará primeiro uma cópia das definições atuais.";
+"settings_backup_error" = "Não foi possível concluir a operação. As definições atuais foram mantidas.";
+"share_saved_for_open" = "Guardado. Abra o Soulo para continuar.";
+"intent_open_webpage_title" = "Abrir ligação no Soulo";
+"intent_webpage_url" = "URL da web";
+
+"external_navigation_prompt" = "Confirmar ligações a apps";
+"external_navigation_prompt_desc" = "Pedir confirmação antes de abrir outra app. Desative para abrir as ligações diretamente.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "Agrupar por domínio";
+"tab_view_carousel" = "Vista de cartões";

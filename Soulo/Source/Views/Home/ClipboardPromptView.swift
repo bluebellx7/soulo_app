@@ -2,9 +2,10 @@ import SwiftUI
 import SwiftData
 
 struct ClipboardPromptView: View {
+    var onSearch: () -> Void
+
     @EnvironmentObject var searchVM: SearchViewModel
     @EnvironmentObject var languageManager: LanguageManager
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Environment(\.colorScheme) private var colorScheme
 
@@ -45,7 +46,7 @@ struct ClipboardPromptView: View {
 
                 // Search button
                 Button {
-                    searchVM.searchFromClipboard(context: modelContext)
+                    searchVM.searchFromClipboard(onSearch: onSearch)
                 } label: {
                     Text(languageManager.localizedString("search"))
                         .font(.system(size: 13, weight: .semibold))
@@ -53,8 +54,10 @@ struct ClipboardPromptView: View {
                         .padding(.horizontal, 18)
                         .frame(minHeight: 40)
                         .background(Color(uiColor: .label).opacity(colorScheme == .dark ? 0.9 : 0.82), in: Capsule())
+                        .opacity(searchVM.isReadingClipboard ? 0.5 : 1)
                 }
                 .buttonStyle(.plain)
+                .disabled(searchVM.isReadingClipboard)
 
                 // Dismiss
                 Button {
@@ -90,6 +93,7 @@ struct ClipboardPromptView: View {
             do {
                 try await Task.sleep(for: .seconds(8))
                 try Task.checkCancellation()
+                guard !searchVM.isReadingClipboard else { return }
                 withAnimation(.easeOut(duration: 0.3)) {
                     offset = -100
                     opacity = 0

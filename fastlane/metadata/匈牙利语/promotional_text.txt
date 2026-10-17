@@ -1,1 +1,1 @@
-Támogatott videók lejátszása letöltés közben. Jobb háttérletöltés és teljes képernyő, védelem a rejtett hirdetések és kéretlen másolás ellen.
+Válaszd a Soulót alapértelmezett böngészőnek a Beállításokban, hogy más appok hivatkozásait is megnyithasd. Videóeszközök és epizódválasztás.

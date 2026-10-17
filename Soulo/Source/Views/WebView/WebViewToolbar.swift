@@ -89,6 +89,33 @@ private struct NativeMoreMenuButton: UIViewRepresentable {
     }
 }
 
+/// Run tool actions after the popover has finished disappearing. Starting a
+/// keyboard or another presentation while its native submenu is closing can
+/// leave an orphaned popover on screen.
+private struct MoreMenuDismissalObserver: UIViewControllerRepresentable {
+    let onDismiss: () -> Void
+
+    final class Controller: UIViewController {
+        var onDismiss: (() -> Void)?
+
+        override func viewDidDisappear(_ animated: Bool) {
+            super.viewDidDisappear(animated)
+            onDismiss?()
+        }
+    }
+
+    func makeUIViewController(context: Context) -> Controller {
+        let controller = Controller()
+        controller.view.isUserInteractionEnabled = false
+        controller.onDismiss = onDismiss
+        return controller
+    }
+
+    func updateUIViewController(_ controller: Controller, context: Context) {
+        controller.onDismiss = onDismiss
+    }
+}
+
 enum BrowserAddressDisplay {
     static func text(keyword: String?, host: String, maximumKeywordLength: Int) -> String {
         guard maximumKeywordLength > 0,
@@ -132,6 +159,8 @@ struct WebViewToolbar: View {
     @State private var isChangingMediaRate = false
     @State private var showMoreMenu = false
     @State private var menuAnchorGeneration = 0
+    @State private var menuAnchorNeedsRefresh = false
+    @State private var pendingMoreMenuAction: (() -> Void)?
     @State private var menuKeyboardVisible = false
     @State private var presentMenuAfterKeyboard = false
     @State private var extensionActionRevision = 0
@@ -469,24 +498,9 @@ struct WebViewToolbar: View {
         _ systemName: String,
         isActive: Bool?,
         activeColor: UIColor
-    ) -> Image {
-        let color: UIColor
-        switch isActive {
-        case true:
-            color = activeColor
-        case false:
-            color = .label
-        case nil:
-            color = .label
-        }
-
-        guard let image = UIImage(systemName: systemName)?.withTintColor(
-            color,
-            renderingMode: .alwaysOriginal
-        ) else {
-            return Image(systemName: systemName)
-        }
-        return Image(uiImage: image)
+    ) -> some View {
+        Image(systemName: systemName)
+            .foregroundStyle(isActive == true ? Color(uiColor: activeColor) : Color.primary)
     }
 
     private var moreMenu: some View {
@@ -517,6 +531,7 @@ struct WebViewToolbar: View {
             arrowEdge: .bottom
         ) {
             moreMenuPanel
+                .background(MoreMenuDismissalObserver(onDismiss: completeMoreMenuAction))
                 .presentationCompactAdaptation(.popover)
                 .presentationBackground(.ultraThinMaterial)
                 .presentationCornerRadius(26)
@@ -527,13 +542,17 @@ struct WebViewToolbar: View {
             showMoreMenu = false
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
+            // Hardware keyboards and native presentations may emit an unpaired hide.
+            // Only rebuild the anchor after a keyboard that we actually observed.
+            guard menuKeyboardVisible || presentMenuAfterKeyboard else { return }
             menuKeyboardVisible = false
             showMoreMenu = false
-            // Recreate the native popover anchor after keyboard avoidance ends.
-            menuAnchorGeneration &+= 1
+            // Rebuild only before the next presentation. Replacing an anchor
+            // while its popover/submenu is dismissing leaves stale menu chrome.
+            menuAnchorNeedsRefresh = true
             if presentMenuAfterKeyboard {
                 presentMenuAfterKeyboard = false
-                DispatchQueue.main.async { showMoreMenu = true }
+                presentMoreMenuOnStableAnchor()
             }
         }
         .sheet(isPresented: $showZoomControls) {
@@ -731,6 +750,11 @@ struct WebViewToolbar: View {
                 }
             }
             Divider()
+            if viewModel.episodeList != nil {
+                Button { performMoreMenuAction { viewModel.showEpisodes = true } } label: {
+                    Label(ToolText.text("episodes"), systemImage: "list.number")
+                }
+            }
             if pageAvailability.shouldShowMediaRate(for: viewModel.currentURL) {
                 Button { performMoreMenuAction { showMediaRateControls = true } } label: {
                     Label {
@@ -761,10 +785,11 @@ struct WebViewToolbar: View {
                 showsDisclosure: true
             )
         }
-        .buttonStyle(.plain)
         .menuOrder(.fixed)
         .disabled(viewModel.currentURL == nil)
         .opacity(viewModel.currentURL == nil ? 0.35 : 1)
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("browser.moreMenu.pageTools")
     }
 
     private var readerCommandAvailable: Bool {
@@ -814,6 +839,7 @@ struct WebViewToolbar: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("browser.moreMenu.scriptCommands")
     }
 
     private var webExtensionActionItems: [(record: WebExtensionRecord, action: WebExtensionActionPresentation)] {
@@ -925,6 +951,7 @@ struct WebViewToolbar: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("browser.moreMenu.openPage")
     }
 
     private var moreMenuShortcutGrid: some View {
@@ -1156,15 +1183,30 @@ struct WebViewToolbar: View {
             presentMenuAfterKeyboard = true
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         } else {
+            presentMoreMenuOnStableAnchor()
+        }
+    }
+
+    private func presentMoreMenuOnStableAnchor() {
+        guard pendingMoreMenuAction == nil else { return }
+        if menuAnchorNeedsRefresh {
+            menuAnchorNeedsRefresh = false
+            menuAnchorGeneration &+= 1
+            DispatchQueue.main.async { showMoreMenu = true }
+        } else {
             showMoreMenu = true
         }
     }
 
     private func performMoreMenuAction(_ action: @escaping () -> Void) {
+        pendingMoreMenuAction = action
         showMoreMenu = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            action()
-        }
+    }
+
+    private func completeMoreMenuAction() {
+        guard let action = pendingMoreMenuAction else { return }
+        pendingMoreMenuAction = nil
+        DispatchQueue.main.async(execute: action)
     }
 
     private func performWebExtensionAction(_ id: UUID) {

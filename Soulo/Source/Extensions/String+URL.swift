@@ -43,7 +43,10 @@ enum BrowserNavigationResolver {
         let candidate = hasExplicitScheme ? trimmed : "https://\(trimmed)"
         guard let parts = URLComponents(string: candidate),
               ["http", "https"].contains(parts.scheme?.lowercased() ?? ""),
-              let host = parts.host, isPlausibleHost(host),
+              let host = parts.host, !host.isEmpty,
+              // Explicit web links may use single-label intranet/device hosts.
+              // Only bare omnibox input needs the host-vs-search heuristic.
+              hasExplicitScheme || isPlausibleHost(host),
               let url = parts.url else { return nil }
         return url
     }

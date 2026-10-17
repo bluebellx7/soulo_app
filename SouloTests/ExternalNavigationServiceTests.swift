@@ -47,4 +47,37 @@ final class ExternalNavigationServiceTests: XCTestCase {
 
         XCTAssertFalse(service.shouldSilentlyBlock(url))
     }
+
+    func testAppPromptsDefaultToEnabledRegardlessOfLegacyBlockingPreference() {
+        defaults.set(true, forKey: "suppress")
+        let service = ExternalNavigationService(suppressPromptsKey: "suppress", userDefaults: defaults)
+        XCTAssertTrue(service.promptEnabled)
+    }
+
+    func testAppPromptPreferencePersistsAcrossServiceInstances() {
+        let service = ExternalNavigationService(userDefaults: defaults)
+        service.promptEnabled = false
+        XCTAssertFalse(ExternalNavigationService(userDefaults: defaults).promptEnabled)
+        service.promptEnabled = true
+        XCTAssertTrue(ExternalNavigationService(userDefaults: defaults).promptEnabled)
+    }
+
+    func testFoundationBooleanStringsAreRespected() {
+        defaults.set("NO", forKey: ExternalNavigationService.promptEnabledKey)
+        let service = ExternalNavigationService(userDefaults: defaults)
+        XCTAssertFalse(service.promptEnabled)
+        defaults.set("YES", forKey: ExternalNavigationService.promptEnabledKey)
+        service.reloadFromDefaults()
+        XCTAssertTrue(service.promptEnabled)
+    }
+
+    func testReloadAppliesSyncedPromptPreferenceAndMissingValueDefaultsToEnabled() {
+        let service = ExternalNavigationService(userDefaults: defaults)
+        defaults.set(false, forKey: ExternalNavigationService.promptEnabledKey)
+        service.reloadFromDefaults()
+        XCTAssertFalse(service.promptEnabled)
+        defaults.removeObject(forKey: ExternalNavigationService.promptEnabledKey)
+        service.reloadFromDefaults()
+        XCTAssertTrue(service.promptEnabled)
+    }
 }

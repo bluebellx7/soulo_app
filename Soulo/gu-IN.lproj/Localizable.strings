@@ -814,7 +814,7 @@
 "share_extension_title" = "Soulo વડે શોધો";
 "share_search_in_soulo" = "Soulo માં શોધો";
 "share_private_search" = "ખાનગી રીતે શોધો";
-"share_extension_unsupported" = "આ આઇટમ શોધી શકાતી નથી.";
+"share_extension_unsupported" = "શેર કરેલી સામગ્રી વાંચી શકાઈ નથી.";
 "image_extract_text" = "છબીમાંથી ટેક્સ્ટ કાઢો";
 "image_text_unavailable" = "Live Text આ ઉપકરણ પર ઉપલબ્ધ નથી.";
 "image_text_none" = "આ છબીમાં વાંચી શકાય તેવું કોઈ લખાણ મળ્યું નથી.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "ઓવરલેપ ટાળો";
 "keep_page_above_toolbar_desc" = "વેબપેજ નિયંત્રણોને ટૂલબારની ઉપર રાખો.";
 "downloads_play_while_downloading" = "ડાઉનલોડ દરમિયાન ચલાવો";
+
+// Default browser
+"settings_default_browser" = "ડિફૉલ્ટ બ્રાઉઝર";
+"settings_default_browser_hint" = "અન્ય ઍપની લિંક્સ ખોલવા માટે સેટિંગ્સમાં Souloને ડિફૉલ્ટ બ્રાઉઝર તરીકે પસંદ કરો.";
+"settings_backups" = "સેટિંગ્સના બેકઅપ";
+"settings_backup_restore_message" = "પુનઃસ્થાપિત કરતાં પહેલાં વર્તમાન સેટિંગ્સનો બેકઅપ લેવાશે અને iCloud સમન્વય બંધ થશે.";
+"settings_backup_error" = "આ કાર્ય પૂર્ણ થઈ શક્યું નથી. વર્તમાન સેટિંગ્સ સાચવી રાખવામાં આવી છે.";
+"share_saved_for_open" = "સાચવ્યું. આગળ વધવા માટે Soulo ખોલો.";
+"intent_open_webpage_title" = "Souloમાં લિંક ખોલો";
+"intent_webpage_url" = "વેબ સરનામું";
+
+"external_navigation_prompt" = "ઍપ લિંકની પુષ્ટિ કરો";
+"external_navigation_prompt_desc" = "બીજી ઍપ ખોલતાં પહેલાં પૂછો. બંધ કરવાથી ઍપ લિંક સીધી ખુલશે.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "ડોમેન મુજબ જૂથ બનાવો";
+"tab_view_carousel" = "કાર્ડ દૃશ્ય";

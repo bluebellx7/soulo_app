@@ -44,6 +44,29 @@ struct SearchHistoryService {
         return (try? context.fetch(descriptor)) ?? []
     }
 
+    /// Fetch only search terms, stopping once the home page has enough unique
+    /// chips. Browsing visits can greatly outnumber searches in the same store.
+    static func recentSearchKeywords(limit: Int = 20, context: ModelContext) -> [String] {
+        guard limit > 0 else { return [] }
+        var descriptor = FetchDescriptor<SearchHistoryItem>(
+            predicate: #Predicate { $0.visitedURLString == nil },
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+        let batchSize = 64
+        descriptor.fetchLimit = batchSize
+        var seen = Set<String>()
+        var results: [String] = []
+        while let batch = try? context.fetch(descriptor), !batch.isEmpty {
+            for item in batch where seen.insert(item.keyword).inserted {
+                results.append(item.keyword)
+                if results.count == limit { return results }
+            }
+            if batch.count < batchSize { break }
+            descriptor.fetchOffset = (descriptor.fetchOffset ?? 0) + batch.count
+        }
+        return results
+    }
+
     // MARK: - Browsing History
 
     /// Records a completed HTTP(S) page visit. Repeated visits update the same
@@ -56,7 +79,16 @@ struct SearchHistoryService {
     ) {
         guard let canonicalURL = canonicalHistoryURLString(for: url) else { return }
 
-        purgeExpiredBrowsingHistory(referenceDate: visitedAt, context: context, save: false)
+        // The hot path runs when a page finishes loading. Do not materialize
+        // and parse the entire library for every visit. History's maintenance
+        // pass still normalizes legacy URLs and merges old duplicates.
+        let cutoff = visitedAt.addingTimeInterval(-browsingHistoryLifetime)
+        let expired = FetchDescriptor<SearchHistoryItem>(predicate: #Predicate {
+            $0.visitedURLString != nil && $0.timestamp < cutoff
+        })
+        if let entries = try? context.fetch(expired) {
+            entries.forEach { context.delete($0) }
+        }
 
         let descriptor = FetchDescriptor<SearchHistoryItem>(
             predicate: #Predicate { $0.visitedURLString == canonicalURL },

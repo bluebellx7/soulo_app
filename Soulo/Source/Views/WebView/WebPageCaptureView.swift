@@ -150,11 +150,12 @@ enum WebPageCaptureService {
         webView.layoutIfNeeded()
         await waitForRenderingCycle(in: webView)
 
+        let warm = WebAppearanceService.hasWarmOverlay(on: webView)
         switch mode {
         case .viewport:
             let configuration = snapshotConfiguration(for: bounds)
             let image = try await snapshot(webView, configuration: configuration)
-            return WebPageCaptureResult(image: image, mode: mode, wasHeightLimited: false)
+            return WebPageCaptureResult(image: WebAppearanceService.applyingWarmColor(to: image, enabled: warm), mode: mode, wasHeightLimited: false)
         case .fullPage:
             await prepareResourcesForCapture(
                 in: webView,
@@ -176,7 +177,7 @@ enum WebPageCaptureService {
                 onProgress: onProgress
             )
             return WebPageCaptureResult(
-                image: image,
+                image: WebAppearanceService.applyingWarmColor(to: image, enabled: warm),
                 mode: mode,
                 wasHeightLimited: contentHeight > captureHeight + 1
             )

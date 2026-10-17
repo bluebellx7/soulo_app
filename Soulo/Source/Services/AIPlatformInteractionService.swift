@@ -211,16 +211,6 @@ struct AIPlatformInteractionService {
         """
     }
 
-    /// Xiaohongshu: navigate to search results page directly via JS
-    static func xiaohongshuSearchScript(query: String) -> String {
-        let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
-        return """
-        (function() {
-            window.location.href = 'https://www.xiaohongshu.com/search_result?keyword=\(encoded)&source=web_explore_feed&type=51';
-        })();
-        """
-    }
-
     /// Metaso: fill search input and submit
     static func metasoSearchScript(query: String) -> String {
         let escaped = query.escapedForJS
@@ -270,7 +260,7 @@ struct AIPlatformInteractionService {
     static func interact(webView: WKWebView?, platform: SearchPlatform, keyword: String) {
         guard let webView else { return }
         if platform.name == "platform_xiaohongshu" {
-            webView.evaluateJavaScript(xiaohongshuSearchScript(query: keyword)) { _, _ in }
+            if let url = platform.searchURL(for: keyword) { webView.load(URLRequest(url: url)) }
         } else if platform.name == "platform_metaso" {
             webView.evaluateJavaScript(metasoSearchScript(query: keyword)) { _, _ in }
         } else {

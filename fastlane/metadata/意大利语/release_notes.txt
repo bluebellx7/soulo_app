@@ -1,4 +1,10 @@
-1.2.1
+1.2.2
 
+• Scegli gli episodi sui siti compatibili, inverti l’ordine e scaricane più insieme, riprovando i download non riusciti. Tieni premuto per accelerare, rilascia per ripristinare la velocità. Controlli video più fluidi.
+• Conferma facoltativa dei reindirizzamenti automatici verso altri domini, domini attendibili e apertura in una nuova scheda. Migliorate la rimozione delle sovrapposizioni pubblicitarie e la navigazione indietro.
+
+• Risolto il problema che sovrascriveva le impostazioni attivando la sincronizzazione iCloud su un nuovo dispositivo. Aggiunti backup locali delle impostazioni e semplificata la gestione dei link condivisi.
+
+• Scegli Soulo come browser predefinito in Impostazioni per aprire i link da altre app.
 • Migliorati il caricamento delle pagine, il filtro degli annunci e la reattività della navigazione.
 • Migliorati i layout, il ritaglio degli sfondi e la lettura quando cambia la dimensione della finestra.

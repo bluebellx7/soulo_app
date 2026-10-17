@@ -62,18 +62,63 @@ final class WebAppearanceService: ObservableObject {
             webView.overrideUserInterfaceStyle = .light
         }
 
-        let script = WebViewScripts.applyWebAppearance(
-            warmColorShift: warmColorShift,
+        let overlay = webView.subviews.first { $0 is WebWarmColorOverlay }
+        if warmColorShift {
+            let tint = overlay ?? WebWarmColorOverlay(frame: webView.bounds)
+            tint.frame = webView.bounds
+            if tint.superview == nil { webView.addSubview(tint) }
+            webView.bringSubviewToFront(tint)
+        } else {
+            overlay?.removeFromSuperview()
+        }
+
+        let needsDOMAppearance = forceDarkPages || reducePageMotion || underlineLinks
+        let source = needsDOMAppearance ? Self.scriptPrefix + WebViewScripts.applyWebAppearance(
             forceDark: forceDarkPages,
             reduceMotion: reducePageMotion,
             underlineLinks: underlineLinks
-        )
-        guard force || appliedScripts.object(forKey: webView) as String? != script else { return }
-        appliedScripts.setObject(script as NSString, forKey: webView)
-        webView.evaluateJavaScript(script) { [weak self, weak webView] _, error in
+        ) : ""
+        let controller = webView.configuration.userContentController
+        let existing = controller.userScripts.filter { $0.source.hasPrefix(Self.scriptPrefix) }
+        if existing.count != (source.isEmpty ? 0 : 1) || existing.first?.source != (source.isEmpty ? nil : source) {
+            let others = controller.userScripts.filter { !$0.source.hasPrefix(Self.scriptPrefix) }
+            controller.removeAllUserScripts()
+            others.forEach(controller.addUserScript)
+            if !source.isEmpty {
+                controller.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+            }
+        }
+        let previous = appliedScripts.object(forKey: webView) as String?
+        guard needsDOMAppearance || previous != nil else { return }
+        guard force || previous != source else { return }
+        if source.isEmpty { appliedScripts.removeObject(forKey: webView) }
+        else { appliedScripts.setObject(source as NSString, forKey: webView) }
+        let update = source.isEmpty
+            ? "window.__souloApplyWebAppearance?.({forceDark:false,reduceMotion:false,underlineLinks:false});true;"
+            : source
+        webView.evaluateJavaScript(update) { [weak self, weak webView] _, error in
             guard error != nil, let self, let webView,
-                  self.appliedScripts.object(forKey: webView) as String? == script else { return }
+                  self.appliedScripts.object(forKey: webView) as String? == source else { return }
             self.appliedScripts.removeObject(forKey: webView)
+        }
+    }
+
+    static let scriptPrefix = "// soulo-web-appearance\n"
+
+    static func hasWarmOverlay(on webView: WKWebView) -> Bool {
+        webView.subviews.contains { $0 is WebWarmColorOverlay }
+    }
+
+    /// WebKit snapshots contain webpage pixels, so apply the native viewing
+    /// tint explicitly when exporting a screenshot or saving a tab preview.
+    static func applyingWarmColor(to image: UIImage, enabled: Bool) -> UIImage {
+        guard enabled else { return image }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = image.scale
+        return UIGraphicsImageRenderer(size: image.size, format: format).image { context in
+            image.draw(at: .zero)
+            WebWarmColorOverlay.tint.setFill()
+            context.fill(CGRect(origin: .zero, size: image.size))
         }
     }
 
@@ -91,7 +136,7 @@ final class WebAppearanceService: ObservableObject {
         NotificationCenter.default.post(name: .webAppearanceChanged, object: nil)
     }
 
-    private func refreshFromDefaults() {
+    func refreshFromDefaults() {
         let follows = defaults.object(forKey: AppConstants.StorageKeys.webFollowsAppColorScheme) as? Bool ?? true
         let warm = defaults.bool(forKey: AppConstants.StorageKeys.webWarmColorShift)
         let dark = defaults.bool(forKey: AppConstants.StorageKeys.webForceDarkPages)
@@ -107,4 +152,20 @@ final class WebAppearanceService: ObservableObject {
 
 extension Notification.Name {
     static let webAppearanceChanged = Notification.Name("soulo.webAppearanceChanged")
+}
+
+private final class WebWarmColorOverlay: UIView {
+    static let tint = UIColor(red: 1, green: 154.0 / 255, blue: 61.0 / 255, alpha: 0.055)
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = Self.tint
+        isUserInteractionEnabled = false
+        accessibilityElementsHidden = true
+        accessibilityIdentifier = "browser.web.warmOverlay"
+        autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        layer.zPosition = 1_000
+    }
+
+    required init?(coder: NSCoder) { return nil }
 }

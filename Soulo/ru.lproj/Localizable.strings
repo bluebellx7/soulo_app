@@ -814,7 +814,7 @@
 "share_extension_title" = "Поиск с помощью Soulo";
 "share_search_in_soulo" = "Искать в Soulo";
 "share_private_search" = "Поиск в частном порядке";
-"share_extension_unsupported" = "Этот элемент не может быть найден.";
+"share_extension_unsupported" = "Не удалось прочитать содержимое, которым поделились.";
 "image_extract_text" = "Извлечь текст из изображения";
 "image_text_unavailable" = "Live Text недоступен на этом устройстве.";
 "image_text_none" = "На этом изображении не найден читаемый текст.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "Без перекрытия";
 "keep_page_above_toolbar_desc" = "Держите элементы управления веб-страницей над панелью инструментов.";
 "downloads_play_while_downloading" = "Смотреть во время загрузки";
+
+// Default browser
+"settings_default_browser" = "Браузер по умолчанию";
+"settings_default_browser_hint" = "Выберите Soulo браузером по умолчанию в Настройках, чтобы открывать ссылки из других приложений.";
+"settings_backups" = "Резервные копии настроек";
+"settings_backup_restore_message" = "Восстановление отключит синхронизацию iCloud и сначала сохранит копию текущих настроек.";
+"settings_backup_error" = "Не удалось завершить операцию. Текущие настройки сохранены.";
+"share_saved_for_open" = "Сохранено. Откройте Soulo, чтобы продолжить.";
+"intent_open_webpage_title" = "Открыть ссылку в Soulo";
+"intent_webpage_url" = "Веб-адрес";
+
+"external_navigation_prompt" = "Подтверждать переход в приложения";
+"external_navigation_prompt_desc" = "Спрашивать перед открытием другого приложения. Выключите, чтобы открывать ссылки напрямую.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "Группировать по домену";
+"tab_view_carousel" = "Вид карточек";

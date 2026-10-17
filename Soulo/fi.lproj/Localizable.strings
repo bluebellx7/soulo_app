@@ -814,7 +814,7 @@
 "share_extension_title" = "Hae koodilla Soulo";
 "share_search_in_soulo" = "Hae kentästä Soulo";
 "share_private_search" = "Etsi yksityisesti";
-"share_extension_unsupported" = "Tätä kohdetta ei voi etsiä.";
+"share_extension_unsupported" = "Jaettua sisältöä ei voitu lukea.";
 "image_extract_text" = "Poimi teksti kuvasta";
 "image_text_unavailable" = "Live Text ei ole käytettävissä tällä laitteella.";
 "image_text_none" = "Tästä kuvasta ei löytynyt luettavaa tekstiä.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "Vältä päällekkäisyyttä";
 "keep_page_above_toolbar_desc" = "Pidä verkkosivun säätimet työkalupalkin yläpuolella.";
 "downloads_play_while_downloading" = "Toista latauksen aikana";
+
+// Default browser
+"settings_default_browser" = "Oletusselain";
+"settings_default_browser_hint" = "Valitse asetuksissa Soulo oletusselaimeksi, jotta voit avata linkkejä muista apeista.";
+"settings_backups" = "Asetusten varmuuskopiot";
+"settings_backup_restore_message" = "Palautus poistaa iCloud-synkronoinnin käytöstä ja varmuuskopioi ensin nykyiset asetukset.";
+"settings_backup_error" = "Toimintoa ei voitu suorittaa. Nykyiset asetuksesi on säilytetty.";
+"share_saved_for_open" = "Tallennettu. Avaa Soulo jatkaaksesi.";
+"intent_open_webpage_title" = "Avaa linkki Soulossa";
+"intent_webpage_url" = "Verkko-osoite";
+
+"external_navigation_prompt" = "Vahvista sovelluslinkit";
+"external_navigation_prompt_desc" = "Kysy ennen toisen sovelluksen avaamista. Poista käytöstä avataksesi sovelluslinkit suoraan.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "Ryhmittele verkkotunnuksittain";
+"tab_view_carousel" = "Korttinäkymä";

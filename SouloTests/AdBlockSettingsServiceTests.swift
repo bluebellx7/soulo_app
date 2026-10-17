@@ -38,4 +38,19 @@ final class AdBlockSettingsServiceTests: XCTestCase {
         let second = AdBlockSettingsService(userDefaults: defaults)
         XCTAssertEqual(second.hiddenElementCount(for: "example.com"), 5)
     }
+
+    func testPrivateFilteringDoesNotRecordVisitedDomains() {
+        let service = AdBlockSettingsService(userDefaults: defaults)
+        service.recordHiddenElementCount(2, for: "public.example")
+        defaults.set(true, forKey: "is_incognito")
+        service.recordHiddenElementCount(3, for: "private.example")
+        service.recordHiddenElementCount(1, for: "public.example")
+        service.flushPendingStatistics()
+        let restored = AdBlockSettingsService(userDefaults: defaults)
+        XCTAssertEqual(restored.hiddenElementCount(for: "private.example"), 0)
+        XCTAssertEqual(restored.hiddenElementCount(for: "public.example"), 2)
+        defaults.set(false, forKey: "is_incognito")
+        service.recordHiddenElementCount(1, for: "resumed.example")
+        XCTAssertEqual(service.hiddenElementCount(for: "resumed.example"), 1)
+    }
 }

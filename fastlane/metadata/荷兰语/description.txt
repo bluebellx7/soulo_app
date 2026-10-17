@@ -1,6 +1,14 @@
 Soulo is een browser voor iPhone en iPad waarmee je op meerdere platforms zoekt. Voer je zoekopdracht één keer in en wissel tussen zoekmachines, sociale media, video, winkelen, kennis en AI.
 
+Kies Soulo als standaardbrowser in Instellingen om links uit andere apps te openen.
+
+Een probleem opgelost waarbij bestaande instellingen werden overschreven bij het inschakelen van iCloud-synchronisatie op een nieuw apparaat. Lokale back-ups van instellingen toegevoegd en het verwerken van gedeelde links vereenvoudigd.
+
 Speel ondersteunde video’s af tijdens het downloaden. Betere achtergronddownloads en volledig scherm, met bescherming tegen verborgen advertenties en ongewenst kopiëren.
+
+Kies afleveringen op ondersteunde sites, keer de volgorde om en download meerdere tegelijk, met opnieuw proberen bij fouten. Houd ingedrukt voor extra snelheid en laat los om de snelheid te herstellen. Soepelere videobediening.
+
+Optionele bevestiging bij automatisch doorsturen naar andere domeinen, met vertrouwde domeinen en openen in een nieuw tabblad. Betere verwijdering van advertentieoverlays en terugnavigatie.
 
 Zoek informatie, lees artikelen, speel media af en beheer downloads in één browser.
 

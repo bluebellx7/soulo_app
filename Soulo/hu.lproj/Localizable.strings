@@ -814,7 +814,7 @@
 "share_extension_title" = "Keressen a következővel: Soulo";
 "share_search_in_soulo" = "Keresés a következőben: Soulo";
 "share_private_search" = "Keresés privátban";
-"share_extension_unsupported" = "Ez az elem nem kereshető.";
+"share_extension_unsupported" = "A megosztott tartalom nem olvasható.";
 "image_extract_text" = "Szöveg kibontása a képből";
 "image_text_unavailable" = "A Live Text nem érhető el ezen az eszközön.";
 "image_text_none" = "Ezen a képen nem található olvasható szöveg.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "Kerülje az átfedést";
 "keep_page_above_toolbar_desc" = "Tartsa a weboldal vezérlőit az eszköztár felett.";
 "downloads_play_while_downloading" = "Lejátszás letöltés közben";
+
+// Default browser
+"settings_default_browser" = "Alapértelmezett böngésző";
+"settings_default_browser_hint" = "Válaszd a Soulót alapértelmezett böngészőnek a Beállításokban, hogy más appok hivatkozásait is megnyithasd.";
+"settings_backups" = "Beállítások biztonsági mentései";
+"settings_backup_restore_message" = "A visszaállítás kikapcsolja az iCloud-szinkronizálást, és előbb menti a jelenlegi beállításokat.";
+"settings_backup_error" = "A művelet nem fejezhető be. A jelenlegi beállítások megmaradtak.";
+"share_saved_for_open" = "Mentve. A folytatáshoz nyisd meg a Soulót.";
+"intent_open_webpage_title" = "Hivatkozás megnyitása a Soulóban";
+"intent_webpage_url" = "Webcím";
+
+"external_navigation_prompt" = "Alkalmazáshivatkozások jóváhagyása";
+"external_navigation_prompt_desc" = "Kérdezzen másik alkalmazás megnyitása előtt. Kikapcsolva a hivatkozások közvetlenül nyílnak meg.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "Csoportosítás domain szerint";
+"tab_view_carousel" = "Kártyanézet";

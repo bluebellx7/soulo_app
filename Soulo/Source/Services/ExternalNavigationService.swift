@@ -3,6 +3,11 @@ import Foundation
 @MainActor
 final class ExternalNavigationService: ObservableObject {
     static let shared = ExternalNavigationService()
+    nonisolated static let promptEnabledKey = "soulo_external_navigation_prompt_enabled"
+
+    @Published var promptEnabled: Bool {
+        didSet { userDefaults.set(promptEnabled, forKey: promptEnabledKey) }
+    }
 
     @Published private(set) var blockedHosts: Set<String> = []
     @Published var suppressPrompts: Bool {
@@ -11,18 +16,23 @@ final class ExternalNavigationService: ObservableObject {
 
     private let blockedHostsKey: String
     private let suppressPromptsKey: String
+    private let promptEnabledKey: String
     private let userDefaults: UserDefaults
 
     init(
         blockedHostsKey: String = "soulo_external_navigation_blocked_hosts",
         suppressPromptsKey: String = "soulo_external_navigation_suppress_prompts",
+        promptEnabledKey: String = ExternalNavigationService.promptEnabledKey,
         userDefaults: UserDefaults = .standard
     ) {
         self.blockedHostsKey = blockedHostsKey
         self.suppressPromptsKey = suppressPromptsKey
+        self.promptEnabledKey = promptEnabledKey
         self.userDefaults = userDefaults
         blockedHosts = Set(userDefaults.stringArray(forKey: blockedHostsKey) ?? [])
         suppressPrompts = userDefaults.bool(forKey: suppressPromptsKey)
+        promptEnabled = userDefaults.object(forKey: promptEnabledKey) == nil
+            || userDefaults.bool(forKey: promptEnabledKey)
     }
 
     func shouldSilentlyBlock(_ url: URL) -> Bool {
@@ -53,6 +63,8 @@ final class ExternalNavigationService: ObservableObject {
     }
 
     func reloadFromDefaults() {
+        promptEnabled = userDefaults.object(forKey: promptEnabledKey) == nil
+            || userDefaults.bool(forKey: promptEnabledKey)
         blockedHosts = Set(userDefaults.stringArray(forKey: blockedHostsKey) ?? [])
         suppressPrompts = userDefaults.bool(forKey: suppressPromptsKey)
     }

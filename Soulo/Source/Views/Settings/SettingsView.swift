@@ -6,6 +6,7 @@ import StoreKit
 struct SettingsView: View {
     private let neutralIconColor = Color(uiColor: .secondaryLabel)
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.colorScheme) private var colorScheme
@@ -18,6 +19,7 @@ struct SettingsView: View {
     @AppStorage(AppConstants.StorageKeys.keepFullscreenBrowsing) private var keepFullscreenBrowsing = false
     @AppStorage(AppConstants.StorageKeys.keepPageAboveToolbar) private var keepPageAboveToolbar = false
     @AppStorage(AppConstants.StorageKeys.iCloudSyncEnabled) private var iCloudSyncEnabled = false
+    @ObservedObject private var cloudSync = CloudSyncService.shared
     @AppStorage(AppConstants.StorageKeys.shakeAction) private var shakeAction = BrowserShakeAction.none.rawValue
     @AppStorage(LiveActivityService.enabledKey) private var liveActivityEnabled: Bool = true
     @AppStorage("show_bookmarks_on_home") private var showBookmarksOnHome: Bool = false
@@ -209,6 +211,21 @@ struct SettingsView: View {
 
                     // MARK: - Browsing
                     Section {
+                        Button {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                openURL(url)
+                            }
+                        } label: {
+                            SettingsActionLabel(
+                                icon: "globe",
+                                color: neutralIconColor,
+                                title: LanguageManager.shared.localizedString("settings_default_browser")
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("settings.defaultBrowser")
+                        .accessibilityHint(LanguageManager.shared.localizedString("settings_default_browser_hint"))
+
                         Toggle(isOn: $showTopSearchBar) {
                             SettingsDescriptionLabel(
                                 icon: "rectangle.topthird.inset.filled",
@@ -343,6 +360,23 @@ struct SettingsView: View {
                         .onChange(of: iCloudSyncEnabled) { _, enabled in
                             CloudSyncService.shared.setEnabled(enabled)
                         }
+                        .accessibilityIdentifier("settings.icloud-sync")
+                        if cloudSync.hasSyncIssue {
+                            Text(LanguageManager.shared.localizedString("settings_backup_error"))
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                            if iCloudSyncEnabled {
+                                Button(LanguageManager.shared.localizedString("retry")) { cloudSync.refresh() }
+                            }
+                        }
+                        NavigationLink(destination: SettingsBackupsView()) {
+                            Label {
+                                Text(LanguageManager.shared.localizedString("settings_backups"))
+                            } icon: {
+                                IconBadge(systemName: "clock.arrow.circlepath", color: neutralIconColor)
+                            }
+                        }
+                        .accessibilityIdentifier("settings.backups")
                         NavigationLink(destination: AppQuickActionSettingsView()) {
                             Label {
                                 Text(ToolText.text("quick_actions_title"))

@@ -814,7 +814,7 @@
 "share_extension_title" = "Hľadajte pomocou Soulo";
 "share_search_in_soulo" = "Hľadajte v Soulo";
 "share_private_search" = "Hľadaj súkromne";
-"share_extension_unsupported" = "Túto položku nie je možné vyhľadať.";
+"share_extension_unsupported" = "Zdieľaný obsah sa nedá prečítať.";
 "image_extract_text" = "Extrahujte text z obrázka";
 "image_text_unavailable" = "Live Text nie je na tomto zariadení k dispozícii.";
 "image_text_none" = "Na tomto obrázku sa nenašiel žiadny čitateľný text.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "Vyhnite sa prekrývaniu";
 "keep_page_above_toolbar_desc" = "Ponechajte ovládacie prvky webovej stránky nad panelom s nástrojmi.";
 "downloads_play_while_downloading" = "Prehrať počas sťahovania";
+
+// Default browser
+"settings_default_browser" = "Predvolený prehliadač";
+"settings_default_browser_hint" = "V Nastaveniach vyberte Soulo ako predvolený prehliadač na otváranie odkazov z iných aplikácií.";
+"settings_backups" = "Zálohy nastavení";
+"settings_backup_restore_message" = "Obnovenie vypne synchronizáciu iCloudu a najprv zálohuje aktuálne nastavenia.";
+"settings_backup_error" = "Operáciu sa nepodarilo dokončiť. Aktuálne nastavenia zostali zachované.";
+"share_saved_for_open" = "Uložené. Pokračujte otvorením Soulo.";
+"intent_open_webpage_title" = "Otvoriť odkaz v Soulo";
+"intent_webpage_url" = "Webová adresa";
+
+"external_navigation_prompt" = "Potvrdiť odkazy do aplikácií";
+"external_navigation_prompt_desc" = "Pred otvorením inej aplikácie požiadať o potvrdenie. Po vypnutí sa odkazy otvoria priamo.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "Zoskupiť podľa domény";
+"tab_view_carousel" = "Zobrazenie kariet";

@@ -74,29 +74,6 @@ enum WebViewScripts {
     })();
     """#
 
-    /// Keep ordinary cross-site web links inside Soulo. On a real device,
-    /// WebKit may hand the original click to an installed Universal Link app
-    /// before either navigation delegate sees a loadable web request.
-    static let internalWebLinkNavigation = #"""
-    (() => {
-        document.addEventListener('click', event => {
-            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-            const path = event.composedPath?.() || [event.target];
-            const anchor = path.map(node => node instanceof Element ? node.closest('a[href]') : null)
-                .find(Boolean);
-            if (!anchor || anchor.hasAttribute('download')) return;
-            let destination;
-            try { destination = new URL(anchor.href, document.baseURI); } catch (_) { return; }
-            if (!/^https?:$/.test(destination.protocol) || destination.host === location.host) return;
-            const address = destination.href.toLowerCase();
-            if (/\/oauth|\/authorize|\/authorization|\/auth\/|\/login|\/signin|\/sign-in|\/sso\//.test(address)
-                || /^(accounts\.google\.com|appleid\.apple\.com|login\.microsoftonline\.com|login\.live\.com)$/.test(destination.hostname)) return;
-            event.preventDefault();
-            window.webkit.messageHandlers.souloWebLink.postMessage({url: destination.href});
-        }, true);
-    })();
-    """#
-
     /// Bing's in-page app promotion uses #sacs_win. Dismiss it through its own
     /// "stay in browser" action so Bing also restores any scroll lock it set.
     static let bingAppPromptSuppression = """
@@ -270,20 +247,6 @@ enum WebViewScripts {
             originalStyles.clear();
         }
 
-        function setWarmOverlay(enabled) {
-            var overlay = document.getElementById('soulo-warm-color-overlay');
-            if (!enabled) {
-                if (overlay) overlay.remove();
-                return;
-            }
-            if (!document.documentElement || overlay) return;
-            overlay = document.createElement('div');
-            overlay.id = 'soulo-warm-color-overlay';
-            overlay.setAttribute('aria-hidden', 'true');
-            overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;background:rgba(255,154,61,.055);mix-blend-mode:multiply;z-index:2147483646;';
-            document.documentElement.appendChild(overlay);
-        }
-
         function observeDarkContent(enabled) {
             if (observer) { observer.disconnect(); observer = null; }
             clearTimeout(scanTimer); scanTimer = null; pendingDarkRoots.clear();
@@ -335,7 +298,7 @@ enum WebViewScripts {
         window.__souloApplyWebAppearance = function(config) {
             config = config || {};
             if (!document.documentElement) return;
-            var signature = JSON.stringify([!!config.forceDark, !!config.warmColorShift,
+            var signature = JSON.stringify([!!config.forceDark,
                 !!config.reduceMotion, !!config.underlineLinks]);
             if (appliedConfig === signature) return;
             appliedConfig = signature;
@@ -351,7 +314,6 @@ enum WebViewScripts {
                     restore();
                 }
             }
-            setWarmOverlay(!!config.warmColorShift);
             observeDarkContent(forceDark);
             setPreferenceStyle(
                 'soulo-reduce-motion-style',
@@ -368,7 +330,6 @@ enum WebViewScripts {
     """
 
     static func applyWebAppearance(
-        warmColorShift: Bool,
         forceDark: Bool,
         reduceMotion: Bool,
         underlineLinks: Bool
@@ -376,7 +337,6 @@ enum WebViewScripts {
         """
         \(webAppearanceBootstrap)
         window.__souloApplyWebAppearance && window.__souloApplyWebAppearance({
-            warmColorShift: \(warmColorShift ? "true" : "false"),
             forceDark: \(forceDark ? "true" : "false"),
             reduceMotion: \(reduceMotion ? "true" : "false"),
             underlineLinks: \(underlineLinks ? "true" : "false")
@@ -1432,10 +1392,12 @@ enum WebViewScripts {
     })();
     """#
 
+    static let privacyProtectionScriptPrefix = "// soulo-privacy-protection\n"
+
     static func privacyProtection(gpcEnabled: Bool, cookieBannerHandling: Bool, disabledHosts: [String] = []) -> String {
         let disabledHostsJSON = (try? JSONSerialization.data(withJSONObject: disabledHosts))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
-        return """
+        return privacyProtectionScriptPrefix + """
         (function() {
             var souloGPCEnabled = \(gpcEnabled ? "true" : "false");
             var souloCookieBannerHandling = \(cookieBannerHandling ? "true" : "false");
@@ -1474,16 +1436,29 @@ enum WebViewScripts {
                 return /(^|[\\/?&#_=.-])(captcha|wappoc|verify|verification|challenge|security|passport|login|auth)([\\/?&#_=.-]|$)/.test(String(location.href || '').toLowerCase());
             }
 
-            if (siteProtectionDisabled() || isSensitiveChallengePage()) return;
-
-            if (privacyConfig().gpcEnabled) {
+            var bypassProtection = siteProtectionDisabled() || isSensitiveChallengePage();
+            if (privacyConfig().gpcEnabled && !bypassProtection) {
                 try {
+                    if (!window.__souloGPCState) {
+                        window.__souloGPCState = {
+                            original: Object.getOwnPropertyDescriptor(navigator, 'globalPrivacyControl')
+                        };
+                    }
                     Object.defineProperty(navigator, 'globalPrivacyControl', {
                         value: true,
                         configurable: true
                     });
                 } catch (_) {}
+            } else if (window.__souloGPCState) {
+                try {
+                    var originalGPC = window.__souloGPCState.original;
+                    if (originalGPC) Object.defineProperty(navigator, 'globalPrivacyControl', originalGPC);
+                    else delete navigator.globalPrivacyControl;
+                    delete window.__souloGPCState;
+                } catch (_) {}
             }
+
+            if (bypassProtection) return;
 
             if (window.__souloPrivacyProtectionInstalled) {
                 if (typeof window.__souloPrivacyScan === 'function') {
@@ -1532,7 +1507,7 @@ enum WebViewScripts {
             }
 
             function scanTrackers() {
-                if (siteProtectionDisabled()) return;
+                if (siteProtectionDisabled() || isSensitiveChallengePage()) return;
                 var hosts = [];
                 var observations = [];
                 var seen = Object.create(null);
@@ -1653,9 +1628,29 @@ enum WebViewScripts {
                 return false;
             }
 
+            \(WebAdOverlayCleanup.filteredModalCleanup)
+
+            function isServiceAgreement(el) {
+                // A contract/privacy-policy gate needs the user's own choice.
+                // It is not an optional-cookie banner, even if it says agree.
+                var termsLink = Array.from(el.querySelectorAll('a')).some(function(link) {
+                    return /用户.{0,6}协议|服务.{0,6}(协议|条款)|使用条款|使用條款|服務.{0,6}(協議|條款)|用戶.{0,6}協議|terms of (service|use)|user agreement|eula/i.test(textOf(link));
+                });
+                if (!termsLink) return false;
+                var text = textOf(el);
+                var cookieWords = /cookies?|gdpr|ccpa/i.test(text);
+                var bindingChoice = /(?:如|如果|当|當).{0,12}(?:点击|點擊|选择|選擇).{0,12}(?:同意|接受).{0,20}(?:代表|视为|視為|确认|確認)|by (?:clicking|selecting|continuing).{0,80}(?:agree|accept)/i.test(text);
+                return !cookieWords || bindingChoice;
+            }
+
+            function hideCookieBanner(el) {
+                el.setAttribute('data-soulo-hidden-consent', 'true');
+                el.style.setProperty('display', 'none', 'important');
+            }
+
             function isCookieBanner(el) {
                 try {
-                    if (!el || !isOverlayLike(el) || isProtectedPageElement(el)) return false;
+                    if (!el || !isOverlayLike(el) || isProtectedPageElement(el) || isServiceAgreement(el)) return false;
                     // Account drawers commonly contain Cookie Policy and
                     // Privacy Policy links. They are navigation, not consent.
                     var content = el.cloneNode(true);
@@ -1671,7 +1666,7 @@ enum WebViewScripts {
             }
 
             function handleCookieBanners() {
-                if (siteProtectionDisabled() || !privacyConfig().cookieBannerHandling) return;
+                if (siteProtectionDisabled() || isSensitiveChallengePage() || !privacyConfig().cookieBannerHandling) return;
                 var handled = 0;
                 var selectors = [
                     '#onetrust-banner-sdk', '#onetrust-consent-sdk', '.ot-sdk-container',
@@ -1687,7 +1682,7 @@ enum WebViewScripts {
                             if (clickRejectButton(el)) {
                                 handled++;
                             } else {
-                                el.style.setProperty('display', 'none', 'important');
+                                hideCookieBanner(el);
                                 handled++;
                             }
                         });
@@ -1698,7 +1693,7 @@ enum WebViewScripts {
                     document.querySelectorAll('div, section, aside, dialog').forEach(function(el) {
                         if (isCookieBanner(el)) {
                             if (!clickRejectButton(el)) {
-                                el.style.setProperty('display', 'none', 'important');
+                                hideCookieBanner(el);
                             }
                             handled++;
                         }
@@ -1706,10 +1701,7 @@ enum WebViewScripts {
                 } catch (_) {}
 
                 if (handled > 0) {
-                    try {
-                        document.body.style.overflow = '';
-                        document.documentElement.style.overflow = '';
-                    } catch (_) {}
+                    cleanupFilteredModalOverlays(true);
                     postPrivacyMessage({ type: 'cookieBanner', actionCount: handled });
                 }
             }
@@ -1724,7 +1716,14 @@ enum WebViewScripts {
                 if (!document.body || window.__souloPrivacyObserver) return;
                 window.__souloPrivacyObserver = new MutationObserver(function(mutations) {
                     var needsScan = false;
-                    mutations.forEach(function(m) { if (m.addedNodes.length > 0) needsScan = true; });
+                    mutations.forEach(function(m) {
+                        var target = m.target.nodeType === 1 ? m.target : m.target.parentElement;
+                        var toolSelector = '[data-soulo-video-rotate],#soulo-episode-dock,[data-soulo-hold-speed]';
+                        if (target && target.closest(toolSelector)) return;
+                        var changed = Array.from(m.addedNodes).concat(Array.from(m.removedNodes));
+                        if (changed.length && changed.every(function(node) { return node.nodeType === 1 && node.matches(toolSelector); })) return;
+                        if (Array.from(m.addedNodes).some(function(node) { return node.nodeType === 1; })) needsScan = true;
+                    });
                     if (needsScan) {
                         clearTimeout(window.__souloPrivacyTimer);
                         window.__souloPrivacyTimer = setTimeout(function() {
@@ -1738,8 +1737,11 @@ enum WebViewScripts {
             }
 
             installPrivacyObserver();
-            if (!document.body) {
-                document.addEventListener('DOMContentLoaded', installPrivacyObserver, { once: true });
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    window.__souloPrivacyScan();
+                    installPrivacyObserver();
+                }, { once: true });
             }
         })();
         """

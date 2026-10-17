@@ -2,9 +2,35 @@ import CoreSpotlight
 import SwiftData
 import SwiftUI
 
-private struct BrowserWindowConfiguration: Codable, Hashable {
+struct BrowserWindowConfiguration: Codable, Hashable {
     let id: UUID
     init(id: UUID = UUID()) { self.id = id }
+
+    private static let primaryIDKey = "soulo_primary_browser_window_id"
+    @MainActor private static var hasOpenedWindow = false
+
+    @MainActor
+    static func primaryID(userDefaults: UserDefaults = .standard) -> UUID {
+        if let value = userDefaults.string(forKey: primaryIDKey), let id = UUID(uuidString: value) { return id }
+        let id = TabManager.mostRecentSavedWindowID(userDefaults: userDefaults) ?? UUID()
+        userDefaults.set(id.uuidString, forKey: primaryIDKey)
+        return id
+    }
+
+    @MainActor
+    static func defaultWindow() -> Self {
+        let id = hasOpenedWindow ? UUID() : primaryID()
+        hasOpenedWindow = true
+        return Self(id: id)
+    }
+
+    @MainActor
+    static func registerExistingWindow(_ id: UUID) {
+        hasOpenedWindow = true
+        if UserDefaults.standard.string(forKey: primaryIDKey) == nil {
+            UserDefaults.standard.set(id.uuidString, forKey: primaryIDKey)
+        }
+    }
 }
 
 @main
@@ -40,7 +66,7 @@ struct SouloApp: App {
                 .tint(Color.themePrimary)
                 .accentColor(Color.themePrimary)
         } defaultValue: {
-            BrowserWindowConfiguration()
+            BrowserWindowConfiguration.defaultWindow()
         }
         .modelContainer(for: [SearchHistoryItem.self, BookmarkItem.self, BookmarkFolder.self])
     }
@@ -57,6 +83,7 @@ private struct SouloWindowRoot: View {
     @AppStorage("is_incognito") private var isIncognito = false
 
     init(windowID: UUID) {
+        BrowserWindowConfiguration.registerExistingWindow(windowID)
         _searchVM = StateObject(wrappedValue: SearchViewModel())
         _tabManager = StateObject(
             wrappedValue: TabManager(storageKey: "soulo_saved_tabs.\(windowID.uuidString)")
@@ -72,6 +99,7 @@ private struct SouloWindowRoot: View {
             }
             .onChange(of: scenePhase, initial: true) { _, newPhase in
                 if newPhase == .active {
+                    CloudSyncService.shared.refresh()
                     tabManager.synchronizeDesktopMode()
                     handlePendingSharedAction()
                     AppQuickActionService.shared.configureShortcuts()
@@ -100,7 +128,9 @@ private struct SouloWindowRoot: View {
                 if url.isFileURL {
                     NotificationCenter.default.post(name: .openSouloDocument, object: url)
                 } else if url.scheme?.lowercased() == "soulo" && url.host?.lowercased() == "action" {
-                    handlePendingSharedAction()
+                    let id = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?
+                        .first(where: { $0.name == "id" })?.value.flatMap(UUID.init(uuidString:))
+                    if let id { handlePendingSharedAction(matchingID: id) }
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .souloSharedActionRequested)) { _ in
@@ -119,10 +149,15 @@ private struct SouloWindowRoot: View {
     }
 
     @MainActor
-    private func handlePendingSharedAction() {
-        guard scenePhase == .active, let action = SouloSharedAction.consume() else { return }
+    private func handlePendingSharedAction(matchingID: UUID? = nil) {
+        guard scenePhase == .active, let action = SouloSharedAction.consume(matchingID: matchingID) else { return }
         let suppliedText = action.text?.trimmingCharacters(in: .whitespacesAndNewlines)
+        NotificationCenter.default.post(name: .prepareSouloExternalEntry, object: searchVM)
         switch action.kind {
+        case .openURL:
+            guard let suppliedText, let url = SouloSharedContent.webURL(in: suppliedText) else { return }
+            searchVM.setPrivateBrowsing(false, tabManager: tabManager)
+            NotificationCenter.default.post(name: .openSouloWebURL, object: url, userInfo: ["owner": searchVM])
         case .openHome:
             searchVM.clearSearch()
         case .openDownloads:

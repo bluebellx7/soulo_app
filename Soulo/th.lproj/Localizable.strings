@@ -814,7 +814,7 @@
 "share_extension_title" = "ค้นหาด้วย Soulo";
 "share_search_in_soulo" = "ค้นหาใน Soulo";
 "share_private_search" = "ค้นหาแบบส่วนตัว";
-"share_extension_unsupported" = "ไม่สามารถค้นหารายการนี้ได้";
+"share_extension_unsupported" = "ไม่สามารถอ่านเนื้อหาที่แชร์ได้";
 "image_extract_text" = "แยกข้อความจากรูปภาพ";
 "image_text_unavailable" = "Live Text ไม่พร้อมใช้งานบนอุปกรณ์นี้";
 "image_text_none" = "ไม่พบข้อความที่สามารถอ่านได้ในภาพนี้";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "หลีกเลี่ยงการทับซ้อนกัน";
 "keep_page_above_toolbar_desc" = "คงการควบคุมหน้าเว็บไว้เหนือแถบเครื่องมือ";
 "downloads_play_while_downloading" = "เล่นขณะดาวน์โหลด";
+
+// Default browser
+"settings_default_browser" = "เบราว์เซอร์เริ่มต้น";
+"settings_default_browser_hint" = "เลือก Soulo เป็นเบราว์เซอร์เริ่มต้นในการตั้งค่า เพื่อเปิดลิงก์จากแอปอื่น";
+"settings_backups" = "ข้อมูลสำรองการตั้งค่า";
+"settings_backup_restore_message" = "การกู้คืนจะสำรองการตั้งค่าปัจจุบันก่อน แล้วปิดการซิงค์ iCloud";
+"settings_backup_error" = "ดำเนินการไม่สำเร็จ การตั้งค่าปัจจุบันยังคงอยู่";
+"share_saved_for_open" = "บันทึกแล้ว เปิด Soulo เพื่อดำเนินการต่อ";
+"intent_open_webpage_title" = "เปิดลิงก์ใน Soulo";
+"intent_webpage_url" = "ที่อยู่เว็บ";
+
+"external_navigation_prompt" = "ยืนยันก่อนเปิดแอปอื่น";
+"external_navigation_prompt_desc" = "ถามก่อนเปิดแอปอื่น ปิดตัวเลือกนี้เพื่อเปิดลิงก์แอปโดยตรง";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "จัดกลุ่มตามโดเมน";
+"tab_view_carousel" = "มุมมองการ์ด";

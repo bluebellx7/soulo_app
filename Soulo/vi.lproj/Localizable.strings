@@ -814,7 +814,7 @@
 "share_extension_title" = "Tìm kiếm với Soulo";
 "share_search_in_soulo" = "Tìm kiếm trong Soulo";
 "share_private_search" = "Tìm kiếm riêng tư";
-"share_extension_unsupported" = "Mục này không thể được tìm kiếm.";
+"share_extension_unsupported" = "Không thể đọc nội dung được chia sẻ.";
 "image_extract_text" = "Trích xuất văn bản từ hình ảnh";
 "image_text_unavailable" = "Live Text không khả dụng trên thiết bị này.";
 "image_text_none" = "Không tìm thấy văn bản có thể đọc được trong hình ảnh này.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "Tránh chồng chéo";
 "keep_page_above_toolbar_desc" = "Giữ các điều khiển trang web phía trên thanh công cụ.";
 "downloads_play_while_downloading" = "Phát khi đang tải xuống";
+
+// Default browser
+"settings_default_browser" = "Trình duyệt mặc định";
+"settings_default_browser_hint" = "Chọn Soulo làm trình duyệt mặc định trong Cài đặt để mở liên kết từ các ứng dụng khác.";
+"settings_backups" = "Bản sao lưu cài đặt";
+"settings_backup_restore_message" = "Khôi phục sẽ tắt đồng bộ iCloud và sao lưu cài đặt hiện tại trước.";
+"settings_backup_error" = "Không thể hoàn tất thao tác. Cài đặt hiện tại đã được giữ lại.";
+"share_saved_for_open" = "Đã lưu. Mở Soulo để tiếp tục.";
+"intent_open_webpage_title" = "Mở liên kết trong Soulo";
+"intent_webpage_url" = "Địa chỉ web";
+
+"external_navigation_prompt" = "Xác nhận liên kết ứng dụng";
+"external_navigation_prompt_desc" = "Hỏi trước khi mở ứng dụng khác. Tắt để mở trực tiếp liên kết ứng dụng.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "Nhóm theo tên miền";
+"tab_view_carousel" = "Dạng thẻ";

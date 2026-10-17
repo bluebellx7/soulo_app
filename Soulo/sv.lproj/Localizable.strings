@@ -814,7 +814,7 @@
 "share_extension_title" = "Sök med Soulo";
 "share_search_in_soulo" = "Sök i Soulo";
 "share_private_search" = "Sök privat";
-"share_extension_unsupported" = "Detta objekt kan inte sökas.";
+"share_extension_unsupported" = "Det gick inte att läsa det delade innehållet.";
 "image_extract_text" = "Extrahera text från bild";
 "image_text_unavailable" = "Live Text är inte tillgängligt på den här enheten.";
 "image_text_none" = "Ingen läsbar text hittades i denna bild.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "Undvik överlappning";
 "keep_page_above_toolbar_desc" = "Håll webbsideskontroller ovanför verktygsfältet.";
 "downloads_play_while_downloading" = "Spela under nedladdning";
+
+// Default browser
+"settings_default_browser" = "Förvald webbläsare";
+"settings_default_browser_hint" = "Välj Soulo som förvald webbläsare i Inställningar för att öppna länkar från andra appar.";
+"settings_backups" = "Säkerhetskopior av inställningar";
+"settings_backup_restore_message" = "Vid återställning stängs iCloud-synkronisering av och dina nuvarande inställningar säkerhetskopieras först.";
+"settings_backup_error" = "Åtgärden kunde inte slutföras. Dina nuvarande inställningar har bevarats.";
+"share_saved_for_open" = "Sparat. Öppna Soulo för att fortsätta.";
+"intent_open_webpage_title" = "Öppna länk i Soulo";
+"intent_webpage_url" = "Webbadress";
+
+"external_navigation_prompt" = "Bekräfta applänkar";
+"external_navigation_prompt_desc" = "Fråga innan en annan app öppnas. Stäng av för att öppna applänkar direkt.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "Gruppera efter domän";
+"tab_view_carousel" = "Kortvy";

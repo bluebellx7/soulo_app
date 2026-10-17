@@ -1,4 +1,10 @@
-1.2.1
+1.2.2
 
+• Desteklenen sitelerde bölüm seçin, sıralamayı tersine çevirin, birkaç bölümü birlikte indirin ve başarısız indirmeleri yeniden deneyin. Hızlandırmak için basılı tutun, önceki hıza dönmek için bırakın. Daha akıcı video kontrolleri.
+• Başka bir alan adına otomatik geçiş için isteğe bağlı onay, güvenilen alan adları ve yeni sekmede açma eklendi. Reklam katmanlarının temizlenmesi ve geri gezinme iyileştirildi.
+
+• Yeni bir aygıtta iCloud eşzamanlaması açıldığında mevcut ayarların üzerine yazılması sorunu düzeltildi. Yerel ayar yedekleri eklendi ve paylaşılan bağlantıların işlenmesi kolaylaştırıldı.
+
+• Diğer uygulamalardaki bağlantıları açmak için Ayarlar’da Soulo’yu varsayılan tarayıcı olarak seçin.
 • Web sayfası yükleme, reklam filtreleme ve gezinme tepkileri iyileştirildi.
 • Pencere boyutu değiştiğinde düzen, duvar kâğıdı kırpma ve okuma deneyimi iyileştirildi.

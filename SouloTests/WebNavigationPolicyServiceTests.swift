@@ -1,7 +1,57 @@
 import XCTest
+import WebKit
 @testable import Soulo
 
 final class WebNavigationPolicyServiceTests: XCTestCase {
+    func testScriptedCrossSiteRedirectStartsInBrowserWithoutRequiringGesture() {
+        let source = URL(string: "https://cn.bing.com/videos/search?q=eggs")!
+        let destination = URL(string: "https://www.bilibili.com/video/BV1example")!
+        XCTAssertTrue(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
+            navigationType: .other, targetsMainFrame: true, method: "GET", nativeRequest: false))
+        XCTAssertTrue(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
+            navigationType: .linkActivated, targetsMainFrame: nil, method: "GET", nativeRequest: false))
+        XCTAssertFalse(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
+            navigationType: .other, targetsMainFrame: true, method: "GET", nativeRequest: true),
+            "The app's replacement request must load once without a cancellation loop")
+    }
+
+    func testBrowserLinkRoutingPreservesFramesFormsHistoryAndFragments() {
+        let source = URL(string: "https://example.com/article")!
+        let destination = URL(string: "https://other.test/page")!
+        for type in [WKNavigationType.backForward, .reload] {
+            XCTAssertFalse(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
+                navigationType: type, targetsMainFrame: true, method: "GET", nativeRequest: false))
+        }
+        XCTAssertFalse(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
+            navigationType: .linkActivated, targetsMainFrame: false, method: "GET", nativeRequest: false))
+        XCTAssertFalse(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
+            navigationType: .formSubmitted, targetsMainFrame: nil, method: "POST", nativeRequest: false))
+        XCTAssertFalse(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
+            navigationType: .formSubmitted, targetsMainFrame: nil, method: "GET", nativeRequest: false))
+        XCTAssertFalse(BrowserWebLinkPolicy.shouldLoadInBrowser(url: URL(string: "https://example.com/article#part")!, sourceURL: source,
+            navigationType: .linkActivated, targetsMainFrame: true, method: "GET", nativeRequest: false))
+    }
+
+    func testBaiduSDKAppHandoffResolvesToItsAppScheme() throws {
+        let appURL = try XCTUnwrap(URL(string: "baiduboxapp://video/invokeVideoDetail?params=%7B%22name%22%3A%22a%2Bb%22%7D"))
+        var wrapper = try XCTUnwrap(URLComponents(string: "https://boxer.baidu.com/scheme"))
+        wrapper.queryItems = [URLQueryItem(name: "scheme", value: appURL.absoluteString),
+                              URLQueryItem(name: "target", value: "https://apps.apple.com/app/id123")]
+        XCTAssertEqual(WebNavigationPolicyService.shared.decision(for: try XCTUnwrap(wrapper.url)), .external(appURL))
+    }
+
+    func testBaiduHandoffDoesNotMatchOtherHostsPathsOrEmbeddedWebLinks() throws {
+        for address in [
+            "https://boxer.baidu.com.evil.test/scheme?scheme=baiduboxapp%3A%2F%2Fvideo",
+            "https://boxer.baidu.com/other?scheme=baiduboxapp%3A%2F%2Fvideo",
+            "https://boxer.baidu.com/scheme?scheme=https%3A%2F%2Fevil.test",
+            "https://boxer.baidu.com/scheme?scheme=javascript%3Aalert(1)",
+            "https://boxer.baidu.com/scheme?scheme=baiduboxapp%3A%2F%2Fvideo&scheme=otherapp%3A%2F%2Fopen"
+        ] {
+            XCTAssertEqual(WebNavigationPolicyService.shared.decision(for: try XCTUnwrap(URL(string: address))), .allow)
+        }
+    }
+
     @MainActor
     func testExtensionInstallBannerUsesBundledSouloLogo() throws {
         let dataURL = WebExtensionInstallBrandAssets.logoDataURL

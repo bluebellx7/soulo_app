@@ -1,0 +1,504 @@
+import XCTest
+
+final class WebEpisodeAndAdNavigationUITests: XCTestCase {
+    @MainActor
+    private func open(_ url: URL, app: XCUIApplication) throws {
+        var route = URLComponents()
+        route.scheme = "soulo"; route.host = "open"
+        route.queryItems = [URLQueryItem(name: "url", value: url.absoluteString)]
+        app.open(try XCTUnwrap(route.url))
+    }
+
+    @MainActor
+    private func launch() -> XCUIApplication {
+        continueAfterFailure = false
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-privacy_https_upgrade_enabled", "NO",
+            "-ad_block_enabled", "YES",
+            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-is_incognito", "NO"]
+        app.launch()
+        return app
+    }
+
+    @MainActor
+    func testPageClickAdsAreBlockedAndExplicitExternalLinkStillOpens() async throws {
+        let html = #"""
+        <html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+        <body style="font:20px system-ui"><h3>Navigation fixture</h3>
+        <p id="popup">Popup action</p><p id="replace">Replacement action</p>
+        <p id="synthetic">Synthetic link action</p><p id="status">Waiting</p>
+        <a id="external">Open chosen page</a>
+        <script>
+        const other=location.origin.replace('127.0.0.1','localhost');
+        document.getElementById('external').href=other+'/chosen.html';
+        document.addEventListener('pointerdown', e => {
+          if(e.target.id==='popup')window.open(other+'/ad.html','_blank');
+          if(e.target.id==='replace')location.href=other+'/ad.html';
+          if(e.target.id==='synthetic'){
+            const a=document.createElement('a');a.href=other+'/ad.html';a.target='_blank';
+            document.body.append(a);a.click();a.remove();
+          }
+        });
+        document.addEventListener('click',e=>{if(['popup','replace','synthetic'].includes(e.target.id))document.getElementById('status').textContent=e.target.id+' remained'});
+        </script></body></html>
+        """#
+        let server = try DownloadPlaybackHTTPFixture(files: ["/page.html": Data(html.utf8),
+            "/ad.html": Data("<html><body>Unexpected advertisement</body></html>".utf8),
+            "/chosen.html": Data("<html><body>Chosen destination</body></html>".utf8)])
+        let root = try await server.start()
+        defer { server.stop() }
+        let app = launch()
+        try open(root.appendingPathComponent("page.html"), app: app)
+        XCTAssertTrue(app.webViews.staticTexts["Navigation fixture"].firstMatch.waitForExistence(timeout: 20), app.debugDescription)
+        for (label, status) in [("Popup action", "popup remained"), ("Replacement action", "replace remained"),
+                                ("Synthetic link action", "synthetic remained")] {
+            app.webViews.staticTexts[label].firstMatch.tap()
+            XCTAssertTrue(app.webViews.staticTexts[status].firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertFalse(app.webViews.staticTexts["Unexpected advertisement"].exists)
+        }
+        app.webViews.links["Open chosen page"].tap()
+        if app.buttons["browser.domain-confirmation.continue"].waitForExistence(timeout: 2) {
+            app.buttons["browser.domain-confirmation.continue"].tap()
+        }
+        XCTAssertTrue(app.webViews.staticTexts["Chosen destination"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+    }
+
+    @MainActor
+    func testSearchResultCardsPreserveSiteHandlersAndWebViewRedirects() async throws {
+        let html = #"""
+        <meta name="viewport" content="width=device-width,initial-scale=1"><body style="font:20px system-ui">
+        <h3>Search results fixture</h3>
+        <p><a id="handled" href="/wrong.html">Site handled result</a></p>
+        <article id="card" data-sf-href="/tracking.html" style="padding:15px">Delegated result card</article>
+        <article id="logcard" style="padding:15px">Result metadata card</article>
+        <a id="newtab" target="_blank">Native new window result</a>
+        <form id="form" action="/receipt.html"><input name="q" value="movie"><button>Search chosen site</button></form>
+        <script>
+        const other=location.origin.replace('127.0.0.1','localhost');
+        handled.href=other+'/wrong.html';
+        handled.onclick=e=>{e.preventDefault();location.href=other+'/chosen.html?handler=original'};
+        card.onclick=()=>location.href=other+'/redirect.html';
+        logcard.setAttribute('data-log',JSON.stringify({mu:other+'/chosen.html'}));
+        logcard.onclick=()=>location.href=other+'/chosen.html';
+        newtab.href=other+'/chosen.html';form.action=other+'/receipt.html';
+        </script></body>
+        """#
+        let server=try DownloadPlaybackHTTPFixture(files:["/results.html":Data(html.utf8),
+            "/chosen.html":Data("<body>Chosen search result</body>".utf8),
+            "/wrong.html":Data("<body>Wrong intercepted href</body>".utf8),
+            "/receipt.html":Data("<body>Chosen search submitted</body>".utf8)],
+            redirects:["/redirect.html":(host:"127.0.0.1",path:"/chosen.html")])
+        let root=try await server.start();defer{server.stop()}
+        let app=launch(),origin=root.appendingPathComponent("results.html")
+        try open(origin,app:app)
+        XCTAssertTrue(app.webViews.staticTexts["Search results fixture"].firstMatch.waitForExistence(timeout:20))
+        setConfirmation(true,app:app)
+        for label in ["Site handled result","Delegated result card","Result metadata card","Native new window result"] {
+            try open(origin,app:app)
+            let target=app.webViews.descendants(matching:.any).matching(NSPredicate(format:"label == %@",label)).firstMatch
+            XCTAssertTrue(target.waitForExistence(timeout:10),app.debugDescription)
+            target.tap()
+            XCTAssertTrue(app.webViews.staticTexts["Chosen search result"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
+            XCTAssertFalse(app.buttons["browser.domain-confirmation.continue"].exists)
+            XCTAssertFalse(app.webViews.staticTexts["Wrong intercepted href"].exists)
+        }
+        try open(origin,app:app)
+        let submit=app.webViews.buttons["Search chosen site"].firstMatch
+        XCTAssertTrue(submit.waitForExistence(timeout:10));submit.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Chosen search submitted"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
+        XCTAssertFalse(app.buttons["browser.domain-confirmation.continue"].exists)
+        setConfirmation(false,app:app)
+    }
+
+    @MainActor
+    func testDomainAllowlistEntryRespondsAcrossWholeRowOnRepeatedPresentation() async throws {
+        let server=try DownloadPlaybackHTTPFixture(files:["/origin.html":Data("<body>Settings entry fixture</body>".utf8)])
+        let root=try await server.start();defer{server.stop()}
+        let app=launch();try open(root.appendingPathComponent("origin.html"),app:app)
+        XCTAssertTrue(app.webViews.staticTexts["Settings entry fixture"].firstMatch.waitForExistence(timeout:20))
+        for _ in 0..<2 {
+            app.buttons["browser.siteInformation"].tap();app.buttons["site.ad-block-details"].tap()
+            let entry=app.buttons["adBlock.domainAllowlist"]
+            XCTAssertTrue(entry.waitForExistence(timeout:5))
+            entry.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+            guard app.textFields["domainAllowlist.input"].waitForExistence(timeout:5) else { XCTFail(app.debugDescription);return }
+            app.navigationBars.buttons.element(boundBy:0).tap()
+            app.buttons["Done"].firstMatch.tap()
+        }
+    }
+
+    @MainActor
+    func testTrustFromConfirmationPersistsAndSettingsManageDomains() async throws {
+        let auto="<meta name='viewport' content='width=device-width,initial-scale=1'><h3>Automatic trust fixture</h3><script>setTimeout(()=>location.href=location.origin.replace('127.0.0.1','localhost')+'/chosen.html',600)</script>"
+        let server=try DownloadPlaybackHTTPFixture(files:["/origin.html":Data("<body>Trust origin</body>".utf8),
+            "/auto.html":Data(auto.utf8),"/chosen.html":Data("<body>Trusted destination</body>".utf8)])
+        let root=try await server.start();defer{server.stop()}
+        let app=launch()
+        try open(root.appendingPathComponent("origin.html"),app:app)
+        XCTAssertTrue(app.webViews.staticTexts["Trust origin"].firstMatch.waitForExistence(timeout:20))
+        app.buttons["browser.siteInformation"].tap();app.buttons["site.ad-block-details"].tap()
+        let initialToggle=app.switches["adBlock.confirmCrossDomain"]
+        XCTAssertTrue(initialToggle.waitForExistence(timeout:5))
+        if initialToggle.value as? String != "1" { initialToggle.coordinate(withNormalizedOffset:CGVector(dx:0.92,dy:0.5)).tap() }
+        app.buttons["adBlock.domainAllowlist"].tap()
+        guard app.textFields["domainAllowlist.input"].waitForExistence(timeout:5) else { XCTFail(app.debugDescription);return }
+        app.buttons["domainAllowlist.actions"].tap();app.buttons["domainAllowlist.reset"].tap()
+        app.navigationBars.buttons.element(boundBy:0).tap()
+        app.buttons["Done"].firstMatch.tap()
+        try open(root.appendingPathComponent("auto.html"),app:app)
+        let trust=app.buttons["browser.domain-confirmation.trust"]
+        XCTAssertTrue(trust.waitForExistence(timeout:10),app.debugDescription)
+        let screenshot=XCTAttachment(screenshot:app.screenshot());screenshot.name="Domain confirmation with trust action";screenshot.lifetime = .keepAlways;add(screenshot)
+        trust.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Trusted destination"].firstMatch.waitForExistence(timeout:10))
+        try open(root.appendingPathComponent("auto.html"),app:app)
+        XCTAssertTrue(app.webViews.staticTexts["Trusted destination"].firstMatch.waitForExistence(timeout:10))
+        XCTAssertFalse(trust.exists)
+        app.buttons["browser.siteInformation"].tap();app.buttons["site.ad-block-details"].tap()
+        let entry=app.buttons["adBlock.domainAllowlist"]
+        XCTAssertTrue(entry.waitForExistence(timeout:5),app.debugDescription)
+        entry.tap()
+        let input=app.textFields["domainAllowlist.input"]
+        guard input.waitForExistence(timeout:5) else { XCTFail(app.debugDescription);return }
+        input.tap();input.typeText("*.example.test")
+        app.buttons["domainAllowlist.add"].tap()
+        let added=app.staticTexts["domainAllowlist.rule.*.example.test"]
+        XCTAssertTrue(added.waitForExistence(timeout:5),app.debugDescription)
+        added.swipeLeft();app.buttons["Delete"].firstMatch.tap()
+        XCTAssertFalse(added.exists)
+        app.buttons["domainAllowlist.actions"].tap();app.buttons["domainAllowlist.reset"].tap()
+        app.navigationBars.buttons.element(boundBy:0).tap()
+        let toggle=app.switches["adBlock.confirmCrossDomain"]
+        XCTAssertTrue(toggle.waitForExistence(timeout:5),app.debugDescription)
+        if toggle.value as? String == "1" { toggle.coordinate(withNormalizedOffset:CGVector(dx:0.92,dy:0.5)).tap() }
+        app.buttons["Done"].firstMatch.tap()
+    }
+
+    @MainActor
+    func testExplicitFormAndSignInPopupRemainUsable() async throws {
+        let html = #"""
+        <html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+        <body style="font:20px system-ui"><h3>Explicit actions fixture</h3>
+        <button onclick="window.open('/login-popup.html','login')">Sign in</button>
+        <p id="result">Not signed in</p>
+        <form id="form" method="post" action="/submit.html" target="_blank"><input name="query" value="chosen"><button>Submit form</button></form>
+        <script>
+        document.getElementById('form').action=location.origin.replace('127.0.0.1','localhost')+'/submit.html';
+        addEventListener('message',e=>{if(e.origin===location.origin)document.getElementById('result').textContent=e.data});
+        </script>
+        </body></html>
+        """#
+        let popup = "<html><body><script>window.opener.postMessage('Sign in completed',location.origin);window.close()</script></body></html>"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/page.html": Data(html.utf8),
+            "/login-popup.html": Data(popup.utf8), "/submit.html": Data("<body>Form submitted</body>".utf8)])
+        let root = try await server.start()
+        defer { server.stop() }
+        let app = launch()
+        try open(root.appendingPathComponent("page.html"), app: app)
+        XCTAssertTrue(app.webViews.buttons["Sign in"].firstMatch.waitForExistence(timeout: 20), app.debugDescription)
+        app.webViews.buttons["Sign in"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Sign in completed"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        app.webViews.buttons["Submit form"].firstMatch.tap()
+        if app.buttons["browser.domain-confirmation.continue"].waitForExistence(timeout: 2) {
+            app.buttons["browser.domain-confirmation.continue"].tap()
+        }
+        XCTAssertTrue(app.webViews.staticTexts["Form submitted"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+    }
+
+    @MainActor
+    private func openEpisodes(_ app: XCUIApplication, video: Bool = false) {
+        if video {
+            let tools = app.webViews.buttons["Video tools"].firstMatch
+            XCTAssertTrue(tools.waitForExistence(timeout: 10), app.debugDescription)
+            tools.tap()
+        }
+        let episodes = app.webViews.buttons["Episodes"].firstMatch
+        XCTAssertTrue(episodes.waitForExistence(timeout: 10), app.debugDescription)
+        episodes.tap()
+        XCTAssertTrue(app.buttons["browser.episodes-order"].waitForExistence(timeout: 5), app.debugDescription)
+    }
+
+    @MainActor
+    private func setConfirmation(_ enabled: Bool, app: XCUIApplication, expectDefaultOff: Bool = false) {
+        let site = app.buttons["browser.siteInformation"]
+        XCTAssertTrue(site.waitForExistence(timeout: 5), app.debugDescription)
+        site.tap()
+        let details = app.buttons["site.ad-block-details"]
+        XCTAssertTrue(details.waitForExistence(timeout: 5), app.debugDescription)
+        details.tap()
+        let toggle = app.switches["adBlock.confirmCrossDomain"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5), app.debugDescription)
+        if expectDefaultOff { XCTAssertEqual(toggle.value as? String,"0") }
+        if (toggle.value as? String == "1") != enabled {
+            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        }
+        XCTAssertEqual(toggle.value as? String, enabled ? "1" : "0", app.debugDescription)
+        app.buttons["Done"].firstMatch.tap()
+    }
+
+    @MainActor
+    func testVideoToolsUseIconsAndPickerReversesAndSwitchesWithoutSearch() async throws {
+        func page(_ episode: Int) -> Data {
+            let links = (1...12).map { "<li><a href='/player/7-1-\($0).html'>EP\($0)</a></li>" }.joined()
+            return Data("""
+            <html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+            <body style="font:20px system-ui"><video style="width:100%;height:200px" playsinline controls></video><h3>Playing EP\(episode)</h3>
+            <h3>Line A</h3><ul class='stui-content__playlist'>\(links)</ul>
+            <script>document.addEventListener('click',()=>{location.href='/ad.html'},true)</script>
+            </body></html>
+            """.utf8)
+        }
+        var files: [String: Data] = ["/ad.html": Data("<body>Unexpected advertisement</body>".utf8)]
+        for index in 1...12 { files["/player/7-1-\(index).html"] = page(index) }
+        let server = try DownloadPlaybackHTTPFixture(files: files)
+        let root = try await server.start(); defer { server.stop() }
+        let app = launch()
+        try open(root.appendingPathComponent("player/7-1-2.html"), app: app)
+        let tools = app.webViews.buttons["Video tools"].firstMatch
+        XCTAssertTrue(tools.waitForExistence(timeout: 20),app.debugDescription)
+        tools.tap()
+        for title in ["Download","Speed","Fullscreen","Episodes"] {
+            XCTAssertTrue(app.webViews.buttons[title].firstMatch.exists, app.debugDescription)
+        }
+        let menu = XCTAttachment(screenshot:app.screenshot());menu.name="Compact video tools with icons";menu.lifetime = .keepAlways;add(menu)
+        app.webViews.buttons["Episodes"].firstMatch.tap()
+        let order = app.buttons["browser.episodes-order"]
+        XCTAssertTrue(order.waitForExistence(timeout: 5),app.debugDescription)
+        XCTAssertFalse(app.textFields["browser.episodes-search"].exists)
+        XCTAssertFalse(app.switches["video-helper.cross-domain-toggle"].exists)
+        if order.label.contains("Ascending") { order.tap() }
+        XCTAssertTrue(order.label.contains("Descending"))
+        XCTAssertLessThan(app.buttons["EP12"].firstMatch.frame.minY,app.buttons["EP9"].firstMatch.frame.minY)
+        app.buttons["EP12"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Playing EP12"].firstMatch.waitForExistence(timeout: 10),app.debugDescription)
+        openEpisodes(app,video:true)
+        XCTAssertFalse(app.buttons["browser.episodes-next"].isEnabled)
+        app.buttons["browser.episodes-previous"].tap()
+        XCTAssertTrue(app.webViews.staticTexts["Playing EP11"].firstMatch.waitForExistence(timeout: 10),app.debugDescription)
+        XCTAssertFalse(app.webViews.staticTexts["Unexpected advertisement"].exists)
+    }
+
+    @MainActor
+    func testVideoToolsHideMissingEpisodesAndReuseIconsWhenExpanded() async throws {
+        let html=#"""
+        <meta name="viewport" content="width=device-width,initial-scale=1"><body style="font:18px system-ui">
+        <video style="width:100%;height:200px" playsinline controls></video><h3>Icon toolbar fixture</h3>
+        <button onclick="document.getElementById('playlist').innerHTML='<ul class=episode-list><li><a href=/ep1.html>EP1</a></li><li><a href=/ep2.html>EP2</a></li></ul>'">Add episodes</button>
+        <button onclick="document.getElementById('playlist').replaceChildren()">Remove episodes</button>
+        <div id="playlist"></div><p id="status">Waiting for tools</p>
+        <script>
+        let changes=0;
+        new MutationObserver(records=>{
+          let stateChanged=false;
+          for(const r of records){
+            if(!r.target.closest?.('[data-soulo-video-rotate]'))continue;
+            if(r.type==='childList')changes++;
+            if(r.type==='attributes')stateChanged=true;
+          }
+          if(stateChanged){
+            const group=document.querySelector('[data-soulo-video-rotate]');
+            document.getElementById('status').textContent=group.textContent.trim()===''?'Icons only; node changes '+changes:'Unexpected toolbar text';
+          }
+        }).observe(document,{childList:true,subtree:true,attributes:true,attributeFilter:['aria-expanded']});
+        </script></body>
+        """#
+        let server=try DownloadPlaybackHTTPFixture(files:["/icons.html":Data(html.utf8)])
+        let root=try await server.start();defer{server.stop()}
+        let app=launch();try open(root.appendingPathComponent("icons.html"),app:app)
+        let tools=app.webViews.buttons["Video tools"].firstMatch
+        XCTAssertTrue(tools.waitForExistence(timeout:20))
+        for _ in 0..<2 {
+            tools.tap()
+            for label in ["Download","Speed","Fullscreen"] { XCTAssertTrue(app.webViews.buttons[label].firstMatch.waitForExistence(timeout:5),app.debugDescription) }
+            XCTAssertFalse(app.webViews.buttons["Episodes"].firstMatch.exists)
+            XCTAssertTrue(app.webViews.staticTexts["Icons only; node changes 0"].firstMatch.waitForExistence(timeout:5),app.debugDescription)
+            app.webViews.buttons["Close"].firstMatch.tap()
+            XCTAssertTrue(tools.waitForExistence(timeout:5))
+        }
+        app.webViews.buttons["Add episodes"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.links["EP2"].firstMatch.waitForExistence(timeout:5))
+        tools.tap()
+        let episodes=app.webViews.buttons["Episodes"].firstMatch
+        XCTAssertTrue(episodes.waitForExistence(timeout:5),app.debugDescription)
+        let image=XCTAttachment(screenshot:app.screenshot());image.name="Compact icons with detected episodes";image.lifetime = .keepAlways;add(image)
+        app.webViews.buttons["Close"].firstMatch.tap()
+        XCTAssertTrue(tools.waitForExistence(timeout:5))
+        app.webViews.buttons["Remove episodes"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.links["EP2"].firstMatch.waitForNonExistence(timeout:5))
+        tools.tap()
+        XCTAssertTrue(app.webViews.buttons["Speed"].firstMatch.waitForExistence(timeout:5))
+        let disappears=NSPredicate(format:"exists == false")
+        let hidden=expectation(for:disappears,evaluatedWith:episodes)
+        await fulfillment(of:[hidden],timeout:5)
+    }
+
+    @MainActor
+    func testDetailPageDockDragsAndBatchSelectionDownloadsMedia() async throws {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource:"playback-h264-aac",withExtension:"mp4"))
+        let links=(1...3).map { "<li><a href='/ep\($0).html'>EP\($0)</a></li>" }.joined()
+        let detail="<meta name='viewport' content='width=device-width,initial-scale=1'><h2>Series details</h2><ul class='episode-list'>"+links+"</ul>"
+        let player="<script>window.player_aaaa={url:'/clip.mp4',encrypt:0}</script>"
+        let server=try DownloadPlaybackHTTPFixture(files:["/detail.html":Data(detail.utf8),"/ep1.html":Data(player.utf8),"/ep2.html":Data(player.utf8),"/clip.mp4":try Data(contentsOf:fixture)])
+        let root=try await server.start();server.releaseDownloads();defer{server.stop()}
+        let app=launch();try open(root.appendingPathComponent("detail.html"),app:app)
+        let dock=app.webViews.buttons["Episodes"].firstMatch
+        XCTAssertTrue(dock.waitForExistence(timeout:20),app.debugDescription)
+        let web=app.webViews.firstMatch
+        dock.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).press(forDuration:0.15,thenDragTo:web.coordinate(withNormalizedOffset:CGVector(dx:0.03,dy:0.35)))
+        XCTAssertLessThan(dock.frame.minX,15)
+        XCTAssertFalse(app.buttons["browser.episodes-order"].exists)
+        dock.tap()
+        XCTAssertTrue(app.buttons["browser.episodes-select"].waitForExistence(timeout:5))
+        app.buttons["browser.episodes-select"].tap()
+        app.buttons["EP1"].firstMatch.tap();app.buttons["EP2"].firstMatch.tap()
+        let download=app.buttons["browser.episodes-download"]
+        XCTAssertTrue(download.label.contains("2"),app.debugDescription)
+        let selected=XCTAttachment(screenshot:app.screenshot());selected.name="Episode batch selection";selected.lifetime = .keepAlways;add(selected)
+        download.tap()
+        XCTAssertTrue(app.staticTexts["Processed 2 of 2"].waitForExistence(timeout:30),app.debugDescription)
+        XCTAssertFalse(app.buttons["browser.episodes-download-failures"].exists)
+        XCTAssertFalse(app.webViews.staticTexts["Unexpected advertisement"].exists)
+    }
+
+    @MainActor
+    func testCrossDomainSettingOnlyConfirmsAutomaticNavigation() async throws {
+        let html = #"""
+        <html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+        <body style="font:20px system-ui"><h3>Domain fixture</h3>
+        <a id="other">Other website</a><p><a href='/redirect.html'>Chosen redirect</a></p><iframe id="embed" style="height:40px"></iframe>
+        <script>const other=location.origin.replace('127.0.0.1','localhost');document.getElementById('other').href=other+'/chosen.html';document.getElementById('embed').src=other+'/embedded.html';</script></body></html>
+        """#
+        let server=try DownloadPlaybackHTTPFixture(files:["/origin.html":Data(html.utf8),"/chosen.html":Data("<body>Confirmed destination</body>".utf8),"/embedded.html":Data("<body>Embedded content</body>".utf8),"/automatic.html":Data("<head><title>Automatic origin</title></head><body><h3>Automatic origin</h3><script>setTimeout(()=>location.href='/redirect.html',600)</script></body>".utf8)],redirects:["/redirect.html":(host:"localhost",path:"/chosen.html")])
+        let root=try await server.start();defer{server.stop()}
+        let app=launch(),origin=root.appendingPathComponent("origin.html")
+        try open(origin,app:app)
+        XCTAssertTrue(app.webViews.staticTexts["Domain fixture"].firstMatch.waitForExistence(timeout:20))
+        let confirm=app.buttons["browser.domain-confirmation.continue"],cancel=app.buttons["browser.domain-confirmation.cancel"]
+        XCTAssertFalse(confirm.exists)
+        setConfirmation(true,app:app,expectDefaultOff:true)
+        app.webViews.links["Other website"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Confirmed destination"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
+        XCTAssertFalse(confirm.exists,"A chosen link is explicit consent")
+        try open(origin,app:app)
+        XCTAssertTrue(app.webViews.links["Chosen redirect"].firstMatch.waitForExistence(timeout:10))
+        app.webViews.links["Chosen redirect"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Confirmed destination"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
+        XCTAssertFalse(confirm.exists,"A chosen link's HTTP redirects keep its user intent")
+        try open(root.appendingPathComponent("redirect.html"),app:app)
+        XCTAssertTrue(app.webViews.staticTexts["Confirmed destination"].firstMatch.waitForExistence(timeout:10))
+        XCTAssertFalse(confirm.exists,"Native address entry and platform actions must not prompt")
+        try open(root.appendingPathComponent("automatic.html"),app:app)
+        XCTAssertTrue(confirm.waitForExistence(timeout:10),app.debugDescription)
+        XCTAssertFalse(app.alerts["Leave this website?"].exists)
+        cancel.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Automatic origin"].exists)
+        try open(root.appendingPathComponent("automatic.html"),app:app)
+        XCTAssertTrue(confirm.waitForExistence(timeout:10))
+        let screenshot=XCTAttachment(screenshot:app.screenshot());screenshot.name="Automatic navigation confirmation";screenshot.lifetime = .keepAlways;add(screenshot)
+        confirm.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Confirmed destination"].firstMatch.waitForExistence(timeout:10))
+        for horizontalEdge in [0.05,0.95] {
+            try open(root.appendingPathComponent("automatic.html"),app:app)
+            let newTab=app.buttons["browser.domain-confirmation.new-tab"]
+            XCTAssertTrue(newTab.waitForExistence(timeout:10),app.debugDescription)
+            XCTAssertTrue(newTab.isEnabled)
+            XCTAssertGreaterThanOrEqual(newTab.frame.height,44)
+            let image=XCTAttachment(screenshot:app.screenshot());image.name="Domain confirmation buttons and yellow trust";image.lifetime = .keepAlways;add(image)
+            newTab.coordinate(withNormalizedOffset:CGVector(dx:horizontalEdge,dy:0.5)).tap()
+            XCTAssertTrue(app.webViews.staticTexts["Confirmed destination"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
+            app.buttons["browser.tabs"].tap()
+            let retained=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Automatic origin,")).firstMatch
+            XCTAssertTrue(retained.waitForExistence(timeout:5),app.debugDescription)
+            retained.tap()
+            XCTAssertTrue(app.webViews.staticTexts["Automatic origin"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
+            XCTAssertFalse(confirm.exists)
+        }
+        setConfirmation(false,app:app)
+        try open(root.appendingPathComponent("automatic.html"),app:app)
+        XCTAssertTrue(app.webViews.staticTexts["Confirmed destination"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
+        XCTAssertFalse(confirm.exists)
+    }
+
+    @MainActor
+    func testLongEpisodeListKeepsCurrentEpisodeVisibleWhenOrderChanges() async throws {
+        let links=(1...180).map { "<li><a href='/player/8-1-\($0).html'>EP\($0)</a></li>" }.joined()
+        let html="<meta name='viewport' content='width=device-width,initial-scale=1'><video style='width:100%;height:200px' playsinline></video><ul class='episode-list'>"+links+"</ul>"
+        let server=try DownloadPlaybackHTTPFixture(files:["/player/8-1-28.html":Data(html.utf8)])
+        let root=try await server.start();defer{server.stop()}
+        let app=launch();try open(root.appendingPathComponent("player/8-1-28.html"),app:app)
+        openEpisodes(app,video:true)
+        let current=app.buttons["EP28"].firstMatch
+        XCTAssertTrue(current.waitForExistence(timeout:5),app.debugDescription)
+        XCTAssertTrue(current.isHittable)
+        XCTAssertTrue(current.isSelected)
+        app.buttons["browser.episodes-order"].tap()
+        XCTAssertTrue(current.waitForExistence(timeout:5))
+        XCTAssertTrue(current.isHittable,app.debugDescription)
+        XCTAssertTrue(current.isSelected)
+        app.buttons["browser.episodes-select"].tap()
+        current.tap()
+        XCTAssertTrue(app.buttons["browser.episodes-download"].label.contains("1"))
+    }
+
+    @MainActor
+    func testAutomaticPostNavigationKeepsNewTabActionAndRetainsSource() async throws {
+        let html = #"""
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Automatic POST origin</title><h3>Automatic POST origin</h3>
+        <form id="submission" method="post"><input name="query" value="chosen"></form>
+        <script>
+        submission.action=location.origin.replace('127.0.0.1','localhost')+'/post-destination.html';
+        setTimeout(()=>submission.submit(),600);
+        </script>
+        """#
+        let server=try DownloadPlaybackHTTPFixture(files:[
+            "/origin.html":Data("<body>POST settings fixture</body>".utf8),
+            "/automatic-post.html":Data(html.utf8),
+            "/post-destination.html":Data("<body>New tab destination</body>".utf8)])
+        let root=try await server.start();defer{server.stop()}
+        let app=launch();try open(root.appendingPathComponent("origin.html"),app:app)
+        XCTAssertTrue(app.webViews.staticTexts["POST settings fixture"].firstMatch.waitForExistence(timeout:20))
+        setConfirmation(true,app:app)
+        try open(root.appendingPathComponent("automatic-post.html"),app:app)
+        let newTab=app.buttons["browser.domain-confirmation.new-tab"]
+        XCTAssertTrue(newTab.waitForExistence(timeout:10),app.debugDescription)
+        XCTAssertTrue(newTab.isEnabled)
+        let image=XCTAttachment(screenshot:app.screenshot());image.name="POST confirmation keeps New Tab action";image.lifetime = .keepAlways;add(image)
+        newTab.tap()
+        XCTAssertTrue(app.webViews.staticTexts["New tab destination"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
+        app.buttons["browser.tabs"].tap()
+        let retained=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Automatic POST origin,")).firstMatch
+        XCTAssertTrue(retained.waitForExistence(timeout:5),app.debugDescription)
+        retained.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Automatic POST origin"].firstMatch.waitForExistence(timeout:10))
+        XCTAssertFalse(app.buttons["browser.domain-confirmation.continue"].exists)
+        setConfirmation(false,app:app)
+    }
+
+    @MainActor
+    func testHoldingVideoTemporarilyAcceleratesAndRestoresItsPreviousRate() async throws {
+        let file=try XCTUnwrap(Bundle(for:Self.self).url(forResource:"playback-h264-aac",withExtension:"mp4"))
+        let html=#"""
+        <meta name="viewport" content="width=device-width,initial-scale=1"><body style="margin:0;font:18px system-ui"><h3>Hold speed fixture</h3>
+        <button onclick="v.playbackRate=1.5;v.play();">Play fixture</button>
+        <video id="v" src="/clip.mp4" playsinline loop style="width:100%;height:240px;display:block"></video><p id="status">Waiting</p>
+        <button id="other" onclick="document.getElementById('actions').textContent='Other control '+(++clicks)">Other control</button><p id="actions">No actions</p>
+        <script>let maximum=0,clicks=0;v.addEventListener('ratechange',()=>{maximum=Math.max(maximum,v.playbackRate);document.getElementById('status').textContent='Maximum '+maximum+'; current '+v.playbackRate});
+        document.addEventListener('pointerup',event=>{if(event.target===v)document.getElementById('other').click()});
+        </script></body>
+        """#
+        let server=try DownloadPlaybackHTTPFixture(files:["/hold.html":Data(html.utf8),"/clip.mp4":try Data(contentsOf:file)])
+        let root=try await server.start();server.releaseDownloads();defer{server.stop()}
+        let app=launch();try open(root.appendingPathComponent("hold.html"),app:app)
+        let play=app.webViews.buttons["Play fixture"].firstMatch
+        XCTAssertTrue(play.waitForExistence(timeout:20));play.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Maximum 1.5; current 1.5"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
+        let point=app.coordinate(withNormalizedOffset:CGVector(dx:0,dy:0)).withOffset(CGVector(dx:app.frame.midX,dy:play.frame.maxY+100))
+        point.press(forDuration:0.9)
+        XCTAssertTrue(app.webViews.staticTexts["Maximum 2; current 1.5"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
+        XCTAssertTrue(app.webViews.staticTexts["Other control 1"].firstMatch.waitForExistence(timeout:5),app.debugDescription)
+        app.webViews.buttons["Other control"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Other control 2"].firstMatch.waitForExistence(timeout:5),app.debugDescription)
+    }
+}

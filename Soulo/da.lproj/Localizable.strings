@@ -814,7 +814,7 @@
 "share_extension_title" = "Søg med Soulo";
 "share_search_in_soulo" = "Søg i Soulo";
 "share_private_search" = "Søg privat";
-"share_extension_unsupported" = "Dette element kan ikke søges.";
+"share_extension_unsupported" = "Det delte indhold kunne ikke læses.";
 "image_extract_text" = "Udtræk tekst fra billede";
 "image_text_unavailable" = "Live Text er ikke tilgængelig på denne enhed.";
 "image_text_none" = "Der blev ikke fundet nogen læsbar tekst i dette billede.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "Undgå overlapning";
 "keep_page_above_toolbar_desc" = "Hold websidekontrol over værktøjslinjen.";
 "downloads_play_while_downloading" = "Afspil under download";
+
+// Default browser
+"settings_default_browser" = "Standardbrowser";
+"settings_default_browser_hint" = "Vælg Soulo som standardbrowser i Indstillinger for at åbne links fra andre apps.";
+"settings_backups" = "Sikkerhedskopier af indstillinger";
+"settings_backup_restore_message" = "Gendannelse slår iCloud-synkronisering fra og sikkerhedskopierer først dine nuværende indstillinger.";
+"settings_backup_error" = "Handlingen kunne ikke fuldføres. Dine nuværende indstillinger er bevaret.";
+"share_saved_for_open" = "Gemt. Åbn Soulo for at fortsætte.";
+"intent_open_webpage_title" = "Åbn link i Soulo";
+"intent_webpage_url" = "Webadresse";
+
+"external_navigation_prompt" = "Bekræft applinks";
+"external_navigation_prompt_desc" = "Spørg, før en anden app åbnes. Slå fra for at åbne applinks direkte.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "Gruppér efter domæne";
+"tab_view_carousel" = "Kortvisning";

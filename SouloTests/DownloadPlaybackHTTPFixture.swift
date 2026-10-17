@@ -10,6 +10,7 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
     private let requiredCookie: String?
     private let heldPaths: Set<String>
     private let responseHeaders: [String: [String: String]]
+    private let redirects: [String: (host: String, path: String)]
     private var connections: [NWConnection] = []
     private var released = false
     private var started = false
@@ -20,9 +21,11 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
     var rangeRequests: Int { queue.sync { ranges } }
 
     init(files: [String: Data], heldPaths: Set<String> = [], requiredCookie: String? = nil,
-         responseHeaders: [String: [String: String]] = [:]) throws {
+         responseHeaders: [String: [String: String]] = [:],
+         redirects: [String: (host: String, path: String)] = [:]) throws {
         self.files = files; self.heldPaths = heldPaths; self.requiredCookie = requiredCookie
         self.responseHeaders = responseHeaders
+        self.redirects = redirects
         listener = try NWListener(using: .tcp, on: .any)
     }
 
@@ -85,6 +88,13 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
     }
 
     private func respond(_ connection: NWConnection, path: String, range: String?, isHead: Bool) {
+        if let target = redirects[path], let port = listener.port {
+            var url = URLComponents()
+            url.scheme = "http"; url.host = target.host; url.port = Int(port.rawValue); url.path = target.path
+            let response = "HTTP/1.1 302 Found\r\nLocation: \(url.url!.absoluteString)\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+            connection.send(content: Data(response.utf8), completion: .contentProcessed { _ in connection.cancel() })
+            return
+        }
         guard let file = files[path], !file.isEmpty else { sendError(connection, code: 404); return }
         if heldPaths.contains(path), !released {
             queue.asyncAfter(deadline: .now() + 0.25) { [weak self] in

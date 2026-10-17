@@ -31,8 +31,7 @@ enum WebNavigationErrorClassifier {
     }
 }
 
-enum BrowserAutomaticNavigationPolicy {
-    static let preferenceKey = "ad_block_allow_automatic_navigation"
+enum BrowserNavigationGesture {
     static let world = WKContentWorld.world(name: "SouloNavigationGesture")
     static let handler = "souloNavigationGesture"
     static let script = """
@@ -42,8 +41,40 @@ enum BrowserAutomaticNavigationPolicy {
       function interacted(event) {
         if (!event.isTrusted) return;
         if (event.type === 'keydown' && !['Enter', ' '].includes(event.key)) return;
-        window.webkit.messageHandlers.souloNavigationGesture.postMessage({url: location.href});
+        const path = event.composedPath?.() || [event.target];
+        const anchor = path.find(node => node instanceof Element && node.matches('a[href],area[href]'));
+        const control = path.find(node => node instanceof Element && node.matches('button,input[type=submit],input[type=button],[role=button]'));
+        const form = control?.type === 'submit' ? control.form
+          : event.type === 'keydown' && event.key === 'Enter' ? path.find(node => node instanceof HTMLFormElement) : null;
+        const destinations = [];
+        function record(value) {
+          if (typeof value !== 'string' || !value.trim() || value.length > 8192) return false;
+          try {
+            const url = new URL(value, document.baseURI);
+            if (!/^https?:$/.test(url.protocol)) return false;
+            if (!destinations.includes(url.href)) destinations.push(url.href);
+            return true;
+          } catch (_) { return false; }
+        }
+        let link = !!anchor;
+        // Observe the clicked path only. Do not rewrite hrefs, cancel clicks,
+        // invoke site handlers, or navigate on the page's behalf.
+        for (const node of path.slice(0, 12)) {
+          if (!(node instanceof Element) || node === document.body || node === document.documentElement) continue;
+          if (node.getAttribute('role') === 'link') link = true;
+          for (const name of ['href', 'data-href', 'data-url', 'data-sf-href', 'data-landurl', 'mu']) {
+            if (record(node.getAttribute(name))) link = true;
+          }
+          const log = node.getAttribute('data-log');
+          if (log && log.length < 16384) {
+            try { const data = JSON.parse(log); if (record(data.mu) || record(data.url)) link = true; } catch (_) {}
+          }
+        }
+        if (form) record(control?.hasAttribute('formaction') ? control.formAction : form.action);
+        window.webkit.messageHandlers.souloNavigationGesture.postMessage({destinations: destinations.slice(0, 16), link, form: !!form, control: !!control || !!form});
       }
+      window.addEventListener('pointerdown', interacted, true);
+      window.addEventListener('touchstart', interacted, true);
       window.addEventListener('click', interacted, true);
       window.addEventListener('keydown', interacted, true);
     })();
@@ -83,6 +114,35 @@ enum BrowserPopupPolicy {
         }
         let normalizedURL = url.absoluteString.lowercased()
         return authenticationURLMarkers.contains { normalizedURL.contains($0) }
+    }
+}
+
+enum BrowserWebLinkPolicy {
+    /// Cancel page-created GET navigations before WebKit tries an associated
+    /// native app, then start the same request through WKWebView.load. New
+    /// windows must be handled here: app links run before createWebViewWith.
+    static func shouldLoadInBrowser(
+        url: URL, sourceURL: URL?, navigationType: WKNavigationType,
+        targetsMainFrame: Bool?, method: String, nativeRequest: Bool
+    ) -> Bool {
+        guard !nativeRequest, targetsMainFrame != false, method.uppercased() == "GET",
+              ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
+              navigationType != .backForward, navigationType != .reload,
+              !BrowserPopupPolicy.shouldPreserveJavaScriptContext(navigationType: navigationType, url: url)
+        else { return false }
+        if targetsMainFrame == nil {
+            // Forms need the new window's opener and submission context.
+            return navigationType != .formSubmitted && navigationType != .formResubmitted
+        }
+        var source = sourceURL.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) }
+        var destination = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        source?.fragment = nil
+        destination?.fragment = nil
+        guard source?.url != destination?.url else { return false }
+        // Scripted and redirected navigations may arrive without a gesture or
+        // with their source still pointing at the previous document.
+        return navigationType == .linkActivated
+            || (sourceURL?.host != nil && sourceURL?.host?.lowercased() != url.host?.lowercased())
     }
 }
 
@@ -418,7 +478,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         if let existingWebView = viewModel.webView {
             let installInCurrentDocument = !viewModel.hasInstalledWebViewScripts && existingWebView.url != nil
-            installRuntimeIfNeeded(on: existingWebView.configuration.userContentController, context: context)
+            installRuntimeIfNeeded(on: existingWebView, context: context)
             if installInCurrentDocument {
                 // A supplied WebView may already contain a document that never
                 // received our document-start scripts. Bootstrap it once; normal
@@ -447,7 +507,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         // Bind the current tab's scripts and bridges before its first request,
         // including when WebKit was already started by the spare-view pool.
         BrowserStartupTrace.mark("runtime_start")
-        installRuntimeIfNeeded(on: webView.configuration.userContentController, context: context)
+        installRuntimeIfNeeded(on: webView, context: context)
         BrowserStartupTrace.mark("runtime_end")
         configureWebView(webView, context: context)
         if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
@@ -462,7 +522,8 @@ struct WebViewRepresentable: UIViewRepresentable {
         return webView
     }
 
-    private func installRuntimeIfNeeded(on contentController: WKUserContentController, context: Context) {
+    private func installRuntimeIfNeeded(on webView: WKWebView, context: Context) {
+        let contentController = webView.configuration.userContentController
         // Streaming transfers continue inside the retained page even when SwiftUI
         // temporarily dismantles this wrapper. Keep their page-world bridge alive
         // for the lifetime of that WKWebView instead of tying it to the wrapper.
@@ -484,9 +545,9 @@ struct WebViewRepresentable: UIViewRepresentable {
         contentController.add(context.coordinator, contentWorld: .defaultClient, name: "souloPageReady")
         contentController.add(context.coordinator, contentWorld: .defaultClient, name: "souloMediaFrame")
         contentController.add(context.coordinator, contentWorld: .defaultClient, name: "souloVideoAwake")
-        contentController.add(context.coordinator, contentWorld: .defaultClient, name: "souloWebLink")
-        contentController.add(context.coordinator, contentWorld: BrowserAutomaticNavigationPolicy.world, name: BrowserAutomaticNavigationPolicy.handler)
+        contentController.add(context.coordinator, contentWorld: BrowserNavigationGesture.world, name: BrowserNavigationGesture.handler)
         contentController.add(context.coordinator, contentWorld: WebVideoOrientationRuntime.world, name: WebVideoOrientationRuntime.handler)
+        contentController.add(context.coordinator, contentWorld: WebEpisodeRuntime.world, name: WebEpisodeRuntime.handler)
         contentController.add(context.coordinator, contentWorld: ManualAdBlockRuntime.world, name: ManualAdBlockRuntime.handler)
         if !isIncognito {
             contentController.addScriptMessageHandler(context.coordinator, contentWorld: .page, name: "souloUserScriptXHR")
@@ -508,13 +569,15 @@ struct WebViewRepresentable: UIViewRepresentable {
             injectionTime: .atDocumentStart, forMainFrameOnly: true, in: .defaultClient))
         contentController.addUserScript(WKUserScript(source: WebViewScripts.bingAppPromptSuppression,
             injectionTime: .atDocumentStart, forMainFrameOnly: true, in: .defaultClient))
-        contentController.addUserScript(WKUserScript(source: WebViewScripts.internalWebLinkNavigation,
-            injectionTime: .atDocumentStart, forMainFrameOnly: false, in: .defaultClient))
 
         contentController.addUserScript(WKUserScript(source: WebViewScripts.textSelection,
             injectionTime: .atDocumentStart, forMainFrameOnly: false, in: .defaultClient))
-        contentController.addUserScript(WKUserScript(source: BrowserAutomaticNavigationPolicy.script,
-            injectionTime: .atDocumentStart, forMainFrameOnly: false, in: BrowserAutomaticNavigationPolicy.world))
+        contentController.addUserScript(WKUserScript(source: BrowserNavigationGesture.script,
+            injectionTime: .atDocumentStart, forMainFrameOnly: false, in: BrowserNavigationGesture.world))
+        contentController.addUserScript(WKUserScript(
+            source: WebEpisodeRuntime.configuredScript(enabled: true), injectionTime: .atDocumentStart,
+            forMainFrameOnly: true, in: WebEpisodeRuntime.world
+        ))
         contentController.addUserScript(WKUserScript(
             source: WebVideoOrientationRuntime.script(), injectionTime: .atDocumentEnd,
             forMainFrameOnly: false, in: WebVideoOrientationRuntime.world
@@ -544,19 +607,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                 )
             }
         }
-        contentController.addUserScript(
-            WKUserScript(
-                source: WebViewScripts.applyWebAppearance(
-                    warmColorShift: webAppearance.warmColorShift,
-                    forceDark: webAppearance.forceDarkPages,
-                    reduceMotion: webAppearance.reducePageMotion,
-                    underlineLinks: webAppearance.underlineLinks
-                ),
-                injectionTime: .atDocumentStart,
-                forMainFrameOnly: true
-            )
-        )
-
         if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled {
             contentController.addUserScript(
                 WKUserScript(
@@ -615,19 +665,21 @@ struct WebViewRepresentable: UIViewRepresentable {
             )
         )
 
+        let privacySource = WebViewScripts.privacyProtection(
+            gpcEnabled: gpcEnabled,
+            cookieBannerHandling: cookieBannerEnabled,
+            disabledHosts: WebCompatibilityService.protectionBypassHosts(
+                adding: privacyService.protectionDisabledHosts
+            )
+        )
         contentController.addUserScript(
             WKUserScript(
-                source: WebViewScripts.privacyProtection(
-                    gpcEnabled: gpcEnabled,
-                    cookieBannerHandling: cookieBannerEnabled,
-                    disabledHosts: WebCompatibilityService.protectionBypassHosts(
-                        adding: privacyService.protectionDisabledHosts
-                    )
-                ),
-                injectionTime: .atDocumentEnd,
+                source: privacySource,
+                injectionTime: .atDocumentStart,
                 forMainFrameOnly: false
             )
         )
+        viewModel.installedPrivacyProtectionSource = privacySource
 
         // Long-press context menus are handled natively via WKUIDelegate contextMenuConfigurationForElement.
 
@@ -642,6 +694,9 @@ struct WebViewRepresentable: UIViewRepresentable {
         let hostIsAllowlisted = shouldBypassWebProtection
             || adBlockSettings.isAllowlisted(viewModel.currentURL?.host)
         viewModel.adHidingNeedsBootstrap = hostIsAllowlisted
+        let ruleSignature = Self.allowlistSignature(for: protectionBypassHosts)
+        let nativeRules = Self.cachedAdBlockAllowlistSignature == ruleSignature ? Self.cachedAdBlockRules : nil
+        let nativeFiltering = adBlockEnabled && !hostIsAllowlisted && nativeRules != nil
         // The script checks each document's host and challenge URL itself.
         // Install it once for subsequent navigations, including tabs that start
         // on an allowlisted site, instead of sending the large payload at commit.
@@ -649,7 +704,8 @@ struct WebViewRepresentable: UIViewRepresentable {
             let adScript = WKUserScript(
                 source: AdBlockService.adHidingScript(
                     cosmetic: true,
-                    allowlistedHosts: protectionBypassHosts
+                    allowlistedHosts: protectionBypassHosts,
+                    nativeCosmeticFiltering: nativeFiltering
                 ),
                 injectionTime: .atDocumentStart,
                 forMainFrameOnly: false
@@ -657,12 +713,13 @@ struct WebViewRepresentable: UIViewRepresentable {
             contentController.addUserScript(adScript)
         }
         viewModel.lastAdHidingSignature = Self.adHidingConfigurationSignature(
-            enabled: adBlockEnabled, cosmetic: true, allowlist: protectionBypassHosts
+            enabled: adBlockEnabled, cosmetic: true, allowlist: protectionBypassHosts, nativeCosmeticFiltering: nativeFiltering
         )
 
         // Apply pre-compiled content rules before the first navigation whenever possible.
-        if adBlockEnabled && !hostIsAllowlisted, let cached = Self.cachedAdBlockRules {
-            cached.forEach { contentController.add($0) }
+        if nativeFiltering, let nativeRules {
+            nativeRules.forEach { contentController.add($0) }
+            Self.installedContentRuleSignatures[ObjectIdentifier(webView)] = ruleSignature
         }
 
         viewModel.isWebViewRuntimeInstalled = true
@@ -676,6 +733,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         // The native navigation policy applies the live user preference to pop-ups.
         webView.configuration.preferences.javaScriptCanOpenWindowsAutomatically = true
         webView.allowsBackForwardNavigationGestures = true
+        webView.isFindInteractionEnabled = true
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         updateObscuredInsets(on: webView)
         webView.backgroundColor = UIColor.systemBackground
@@ -695,6 +753,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         // receiving didCommit/didFinish. Recheck once on mount; the page script
         // still skips DOM work when its own configuration is unchanged.
         webAppearance.apply(to: webView, force: true)
+        context.coordinator.applyPrivacyProtectionIfNeeded(on: webView, forceCurrentDocument: true)
 
         if webView.url != nil, !viewModel.hasVisibleContent {
             webView.evaluateJavaScript("window.__souloPageHasVisibleContent === true", in: nil, in: .defaultClient) { [weak webView, weak model = viewModel] result in
@@ -723,36 +782,32 @@ struct WebViewRepresentable: UIViewRepresentable {
         updateObscuredInsets(on: uiView)
         context.coordinator.updateManualAdTap(on: uiView)
         context.coordinator.synchronizeManualAdRules(on: uiView)
+        context.coordinator.applyPrivacyProtectionIfNeeded(on: uiView)
         // URL loading is driven imperatively via viewModel.loadURL(_:)
         if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
            !isIncognito, #available(iOS 18.4, *) {
             NativeWebExtensionRuntime.shared.activate(uiView)
         }
-        let host = uiView.url?.host ?? viewModel.currentURL?.host
         if let accessibleWebView = uiView as? AccessibleWebView {
             accessibleWebView.onAccessibilityPlatformPage = onAccessibilityPlatformPage
         }
         webAppearance.apply(to: uiView)
-        let shouldBypassWebProtection = WebCompatibilityService.shouldBypassWebProtection(
-            for: uiView.url ?? viewModel.currentURL,
-            fallbackHost: host
-        )
         let adBlockAllowlist = WebCompatibilityService.protectionBypassHosts(
             adding: adBlockSettings.allowlistedHosts
         )
-        context.coordinator.applyAdHidingIfNeeded(
-            on: uiView,
-            enabled: adBlockEnabled,
-            cosmetic: true,
-            allowlistedHosts: adBlockAllowlist,
-            host: host
-        )
-        if adBlockEnabled && !shouldBypassWebProtection {
-            Self.ensureCurrentContentRules(on: uiView, allowlist: adBlockAllowlist, model: viewModel)
+        Self.synchronizeAdProtection(on: uiView, model: viewModel, enabled: adBlockEnabled, allowlist: adBlockAllowlist)
+    }
+
+    static func synchronizeAdProtection(on webView: WKWebView, model: WebViewModel, enabled: Bool, allowlist: [String]) {
+        if enabled && !WebCompatibilityService.shouldBypassWebProtection(for: webView.url ?? model.currentURL) {
+            ensureCurrentContentRules(on: webView, allowlist: allowlist, model: model)
         } else {
-            uiView.configuration.userContentController.removeAllContentRuleLists()
-            Self.installedContentRuleSignatures.removeValue(forKey: ObjectIdentifier(uiView))
+            webView.configuration.userContentController.removeAllContentRuleLists()
+            installedContentRuleSignatures.removeValue(forKey: ObjectIdentifier(webView))
         }
+        (webView.navigationDelegate as? Coordinator)?.applyAdHidingIfNeeded(
+            on: webView, enabled: enabled, cosmetic: true, allowlistedHosts: allowlist, host: webView.url?.host
+        )
     }
 
     private func updateObscuredInsets(on webView: WKWebView) {
@@ -771,8 +826,8 @@ struct WebViewRepresentable: UIViewRepresentable {
     private static func ensureCurrentContentRules(on webView: WKWebView, allowlist: [String], model: WebViewModel) {
         let signature = allowlistSignature(for: allowlist)
         let webViewID = ObjectIdentifier(webView)
+        guard installedContentRuleSignatures[webViewID] != signature else { return }
         if signature == cachedAdBlockAllowlistSignature, let cachedAdBlockRules {
-            guard installedContentRuleSignatures[webViewID] != signature else { return }
             applyContentRules(cachedAdBlockRules, on: webView, allowlist: allowlist)
             return
         }
@@ -809,18 +864,27 @@ struct WebViewRepresentable: UIViewRepresentable {
         let id = ObjectIdentifier(webView)
         webView.configuration.userContentController.removeAllContentRuleLists()
         installedContentRuleSignatures.removeValue(forKey: id)
-        guard enabled, let rules else { return }
-        rules.forEach { webView.configuration.userContentController.add($0) }
-        installedContentRuleSignatures[id] = allowlistSignature(for: allowlist)
+        if let coordinator = webView.navigationDelegate as? Coordinator {
+            coordinator.nativeCosmeticRulesChanged(on: webView)
+        }
+        if enabled, let rules {
+            rules.forEach { webView.configuration.userContentController.add($0) }
+            installedContentRuleSignatures[id] = allowlistSignature(for: allowlist)
+        }
+        (webView.navigationDelegate as? Coordinator)?.applyCurrentAdHidingIfNeeded(on: webView)
     }
 
     private static func allowlistSignature(for allowlist: [String]) -> String {
-        let hosts = Array(Set(allowlist.map { AdBlockSettingsService.normalizedHost($0) }.filter { !$0.isEmpty })).sorted().joined(separator: ",")
-        return "\(hosts)|rules:\(AdBlockSubscriptionService.rulesSignature())|builtIn:\(BuiltInAdRuleStore.signature())"
+        let hosts = WebCompatibilityService.protectionBypassHosts(adding: allowlist).joined(separator: ",")
+        // An explicit legacy payload can change independently of its revision.
+        // Never label an older compiled list as covering the new selectors.
+        let legacy = UserDefaults.standard.data(forKey: "soulo_ad_block_subscription_rules")
+            .map { String($0.hashValue) } ?? "disk"
+        return "\(hosts)|rules:\(AdBlockSubscriptionService.rulesSignature())|legacy:\(legacy)|builtIn:\(BuiltInAdRuleStore.signature())"
     }
 
-    private static func adHidingConfigurationSignature(enabled: Bool, cosmetic: Bool, allowlist: [String]) -> String {
-        "\(enabled)|\(cosmetic)|\(allowlistSignature(for: allowlist))"
+    private static func adHidingConfigurationSignature(enabled: Bool, cosmetic: Bool, allowlist: [String], nativeCosmeticFiltering: Bool = false) -> String {
+        "\(enabled)|\(cosmetic)|\(allowlistSignature(for: allowlist))|native:\(nativeCosmeticFiltering)"
     }
 
     private static func manualAdConfigurationSignature(enabled: Bool, allowlist: [String], revision: UUID) -> String {
@@ -869,6 +933,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         // WKWebView alive. Keep the native extension tab registered until the browser tab
         // is actually closed or suspended so extensions can still enumerate all tabs.
         coordinator.invalidateObservations()
+        coordinator.cancelDomainConfirmation()
         coordinator.removeManualAdTap()
         coordinator.removeImageLongPress()
         guard uiView.navigationDelegate === coordinator else { return }
@@ -883,11 +948,11 @@ struct WebViewRepresentable: UIViewRepresentable {
         controller.removeScriptMessageHandler(forName: "souloMediaFrame", contentWorld: .defaultClient)
         controller.removeScriptMessageHandler(forName: "souloVideoAwake", contentWorld: .defaultClient)
         controller.removeScriptMessageHandler(forName: "souloContextResource", contentWorld: .defaultClient)
-        controller.removeScriptMessageHandler(forName: "souloWebLink", contentWorld: .defaultClient)
         controller.removeScriptMessageHandler(
-            forName: BrowserAutomaticNavigationPolicy.handler, contentWorld: BrowserAutomaticNavigationPolicy.world)
+            forName: BrowserNavigationGesture.handler, contentWorld: BrowserNavigationGesture.world)
         controller.removeScriptMessageHandler(forName: "souloAdBlocker")
         controller.removeScriptMessageHandler(forName: WebVideoOrientationRuntime.handler, contentWorld: WebVideoOrientationRuntime.world)
+        controller.removeScriptMessageHandler(forName: WebEpisodeRuntime.handler, contentWorld: WebEpisodeRuntime.world)
         controller.removeScriptMessageHandler(forName: ManualAdBlockRuntime.handler, contentWorld: ManualAdBlockRuntime.world)
         controller.removeScriptMessageHandler(forName: "souloPrivacy")
         controller.removeScriptMessageHandler(forName: "souloExtensionInstaller")
@@ -922,8 +987,12 @@ struct WebViewRepresentable: UIViewRepresentable {
             let owner = screenAwakeOwner
             Task { @MainActor in VideoScreenAwakeService.shared.setActive(false, owner: owner) }
         }
-        private var navigationGesture: (webView: ObjectIdentifier, frameURL: URL, time: TimeInterval)?
+        private var navigationGesture: (webView: ObjectIdentifier, frameURL: URL, time: TimeInterval, destinations: [URL], isLink: Bool, isForm: Bool, isControl: Bool)?
         private var provisionalNavigation: WKNavigation?
+        private var navigationOriginURL: URL?
+        private var userInitiatedNavigationChain = false
+        private var domainConfirmationID: UUID?
+        private var popupDomainDelegates: [ObjectIdentifier: WebDomainPopupDelegate] = [:]
         private var lastContentOffset: CGFloat = 0
         private var lastReportedScrollingUp: Bool?
         private var isUserZooming = false
@@ -1124,25 +1193,6 @@ struct WebViewRepresentable: UIViewRepresentable {
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             guard let body = message.body as? [String: Any] else { return }
 
-            if message.name == "souloWebLink" {
-                guard message.world.name == WKContentWorld.defaultClient.name,
-                      let webView = message.webView, webView === viewModel.webView,
-                      let raw = body["url"] as? String, let url = URL(string: raw),
-                      ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return }
-                switch WebNavigationPolicyService.shared.decision(for: url) {
-                case .allow:
-                    DispatchQueue.main.async { [weak self, weak webView] in
-                        guard let self, let webView, self.viewModel.webView === webView else { return }
-                        self.viewModel.loadURL(url)
-                    }
-                case .external(let externalURL):
-                    routeExternalURL(externalURL, userInitiated: true)
-                case .cancel:
-                    break
-                }
-                return
-            }
-
             if message.name == "souloPageReady" {
                 guard message.webView === viewModel.webView, message.frameInfo.isMainFrame,
                       message.world == .defaultClient, body["visible"] as? Bool == true else { return }
@@ -1176,13 +1226,42 @@ struct WebViewRepresentable: UIViewRepresentable {
                 return
             }
 
-            if message.name == BrowserAutomaticNavigationPolicy.handler {
-                guard message.world.name == BrowserAutomaticNavigationPolicy.world.name,
+            if message.name == BrowserNavigationGesture.handler {
+                guard message.world.name == BrowserNavigationGesture.world.name,
                       let webView = message.webView, let parent = viewModel.webView,
                       webView === parent || webView.isDescendant(of: parent),
-                      let url = message.frameInfo.request.url,
-                      body["url"] as? String == url.absoluteString else { return }
-                navigationGesture = (ObjectIdentifier(webView), url, ProcessInfo.processInfo.systemUptime)
+                      let url = message.frameInfo.request.url else { return }
+                let destinations = (body["destinations"] as? [String] ?? []).prefix(16).compactMap { raw -> URL? in
+                    guard raw.count <= 8192, let target = URL(string: raw),
+                          ["http", "https"].contains(target.scheme?.lowercased() ?? "") else { return nil }
+                    return target
+                }
+                navigationGesture = (ObjectIdentifier(webView), url, ProcessInfo.processInfo.systemUptime,
+                    destinations, body["link"] as? Bool ?? false, body["form"] as? Bool ?? false, body["control"] as? Bool ?? false)
+                return
+            }
+
+            if message.name == WebEpisodeRuntime.handler {
+                guard message.webView === viewModel.webView, message.frameInfo.isMainFrame,
+                      message.world.name == WebEpisodeRuntime.world.name,
+                      let currentURL = viewModel.webView?.url,
+                      let reported = body["pageURL"] as? String, let reportedURL = URL(string: reported),
+                      WebEpisodeList.matches(reportedURL, currentURL) else { return }
+                if let action = body["action"] as? String {
+                    if action == "refresh", let webView = message.webView { refreshSiteEpisodeData(on: webView) }
+                    if action == "open", viewModel.episodeList != nil { viewModel.showEpisodes = true }
+                    if action == "position", let edge = body["edge"] as? String, ["left", "right"].contains(edge),
+                       let fraction = body["fraction"] as? Double, fraction.isFinite, (0...1).contains(fraction) {
+                        UserDefaults.standard.set(edge, forKey: "web_episode_dock_edge")
+                        UserDefaults.standard.set(fraction, forKey: "web_episode_dock_fraction")
+                    }
+                    return
+                }
+                viewModel.episodeList = WebEpisodeList.parse(body, pageURL: currentURL)
+                if let webView = message.webView {
+                    synchronizeVideoEpisodeAvailability(on: webView)
+                    refreshSiteEpisodeData(on: webView)
+                }
                 return
             }
 
@@ -1197,6 +1276,12 @@ struct WebViewRepresentable: UIViewRepresentable {
                     if viewModel.hasBottomVideoControls != needed {
                         viewModel.hasBottomVideoControls = needed
                     }
+                case "ready":
+                    guard let webView = message.webView else { return }
+                    let source = "window.__souloVideoOrientation?.setEpisodesAvailable(\(viewModel.episodeList != nil));"
+                    webView.evaluateJavaScript(source, in: message.frameInfo, in: WebVideoOrientationRuntime.world, completionHandler: nil)
+                case "episodes":
+                    if viewModel.episodeList != nil { viewModel.showEpisodes = true }
                 case "speed":
                     guard let webView = message.webView, let host = topViewController(for: webView) else { return }
                     let currentRate = body["rate"] as? Double ?? 1
@@ -1289,6 +1374,8 @@ struct WebViewRepresentable: UIViewRepresentable {
             }
 
             if message.name == "souloAdBlocker" {
+                guard message.webView === viewModel.webView, message.world == .page,
+                      message.webView?.configuration.websiteDataStore.isPersistent == true else { return }
                 let count = body["hiddenCount"] as? Int ?? 0
                 let host = (body["host"] as? String) ?? viewModel.currentURL?.host
                 let trackerHosts = body["trackerHosts"] as? [String] ?? []
@@ -1300,7 +1387,9 @@ struct WebViewRepresentable: UIViewRepresentable {
                 return
             }
 
-            guard message.name == "souloPrivacy" else { return }
+            guard message.name == "souloPrivacy", message.webView === viewModel.webView,
+                  message.world == .page,
+                  message.webView?.configuration.websiteDataStore.isPersistent == true else { return }
             let type = body["type"] as? String ?? ""
             let host = (body["host"] as? String) ?? viewModel.currentURL?.host
             Task { @MainActor in
@@ -1904,6 +1993,8 @@ struct WebViewRepresentable: UIViewRepresentable {
                         let previousURL = self.viewModel.currentURL
                         self.viewModel.updateCurrentURL(wv.url)
                         if previousURL != wv.url, !wv.isLoading {
+                            wv.evaluateJavaScript("window.__souloEpisodes?.refresh();", in: nil,
+                                in: WebEpisodeRuntime.world, completionHandler: nil)
                             if self.viewModel.followLinkTranslation != nil,
                                let previousURL, let nextURL = wv.url,
                                previousURL.absoluteString.split(separator: "#", maxSplits: 1).first
@@ -1951,8 +2042,10 @@ struct WebViewRepresentable: UIViewRepresentable {
             host: String?
         ) {
             let allowlist = WebCompatibilityService.protectionBypassHosts(adding: allowlistedHosts)
+            let nativeFiltering = WebViewRepresentable.installedContentRuleSignatures[ObjectIdentifier(webView)]
+                == WebViewRepresentable.allowlistSignature(for: allowlist)
             let signature = WebViewRepresentable.adHidingConfigurationSignature(
-                enabled: enabled, cosmetic: cosmetic, allowlist: allowlist
+                enabled: enabled, cosmetic: cosmetic, allowlist: allowlist, nativeCosmeticFiltering: nativeFiltering
             )
             let bypassesPage = WebCompatibilityService.shouldBypassWebProtection(for: webView.url, fallbackHost: host)
                 || AdBlockSettingsService.isHostAllowlisted(host, allowlistedHosts: allowlist)
@@ -1964,7 +2057,8 @@ struct WebViewRepresentable: UIViewRepresentable {
                 if enabled && cosmetic && !bypassesPage && viewModel.adHidingNeedsBootstrap,
                    webView.url != nil && !webView.isLoading {
                     viewModel.adHidingNeedsBootstrap = false
-                    webView.evaluateJavaScript(AdBlockService.adHidingScript(allowlistedHosts: allowlist), completionHandler: nil)
+                    webView.evaluateJavaScript(AdBlockService.adHidingScript(allowlistedHosts: allowlist,
+                        nativeCosmeticFiltering: nativeFiltering && viewModel.nativeCosmeticDocumentReady), completionHandler: nil)
                 }
                 return
             }
@@ -1976,10 +2070,11 @@ struct WebViewRepresentable: UIViewRepresentable {
             others.forEach(controller.addUserScript)
             let source: String
             if enabled && cosmetic {
-                source = AdBlockService.adHidingScript(allowlistedHosts: allowlist)
+                source = AdBlockService.adHidingScript(allowlistedHosts: allowlist, nativeCosmeticFiltering: nativeFiltering)
                 controller.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: false))
             } else {
                 source = """
+                document.documentElement?.setAttribute('data-soulo-native-ads-disabled', '');
                 if (window.__souloAdBlockConfig) {
                     window.__souloAdBlockConfig.cosmeticEnabled = false;
                     window.__souloAdBlockConfig.tiledBanners = false;
@@ -1989,23 +2084,44 @@ struct WebViewRepresentable: UIViewRepresentable {
             }
             // Document-start injection handles each normal navigation. Only a
             // live settings change needs an extra evaluation in this document.
-            if webView.url != nil { webView.evaluateJavaScript(source, completionHandler: nil) }
+            if webView.url != nil {
+                let liveSource = enabled && cosmetic && nativeFiltering && !viewModel.nativeCosmeticDocumentReady
+                    ? AdBlockService.adHidingScript(allowlistedHosts: allowlist) : source
+                webView.evaluateJavaScript(liveSource, completionHandler: nil)
+                for frame in viewModel.mediaFrameInfos {
+                    // Frames may have begun loading before compilation. Keep a
+                    // fallback in existing frames; future frames use user scripts.
+                    let frameSource = enabled && cosmetic ? AdBlockService.adHidingScript(allowlistedHosts: allowlist) : source
+                    webView.evaluateJavaScript(frameSource, in: frame, in: .page, completionHandler: nil)
+                }
+            }
         }
 
-        func applyPrivacyProtectionIfNeeded(on webView: WKWebView) {
+        func applyPrivacyProtectionIfNeeded(on webView: WKWebView, forceCurrentDocument: Bool = false) {
             let defaults = UserDefaults.standard
-            webView.evaluateJavaScript(
-                WebViewScripts.privacyProtection(
-                    gpcEnabled: defaults.object(forKey: "privacy_gpc_enabled") as? Bool
-                        ?? PrivacyFeatureDefaults.gpcEnabled,
-                    cookieBannerHandling: defaults.object(forKey: "privacy_cookie_banner_enabled") as? Bool
-                        ?? PrivacyFeatureDefaults.cookieBannerHandling,
-                    disabledHosts: WebCompatibilityService.protectionBypassHosts(
-                        adding: defaults.stringArray(forKey: "soulo_privacy_disabled_hosts") ?? []
-                    )
-                ),
-                completionHandler: nil
+            let source = WebViewScripts.privacyProtection(
+                gpcEnabled: defaults.object(forKey: "privacy_gpc_enabled") as? Bool
+                    ?? PrivacyFeatureDefaults.gpcEnabled,
+                cookieBannerHandling: defaults.object(forKey: "privacy_cookie_banner_enabled") as? Bool
+                    ?? PrivacyFeatureDefaults.cookieBannerHandling,
+                disabledHosts: WebCompatibilityService.protectionBypassHosts(
+                    adding: defaults.stringArray(forKey: "soulo_privacy_disabled_hosts") ?? []
+                )
             )
+            let changed = source != viewModel.installedPrivacyProtectionSource
+            if changed {
+                viewModel.installedPrivacyProtectionSource = source
+                let controller = webView.configuration.userContentController
+                let others = controller.userScripts.filter { !$0.source.hasPrefix(WebViewScripts.privacyProtectionScriptPrefix) }
+                controller.removeAllUserScripts()
+                others.forEach(controller.addUserScript)
+                controller.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: false))
+            }
+            guard (changed || forceCurrentDocument), webView.url != nil else { return }
+            webView.evaluateJavaScript(source, completionHandler: nil)
+            for frame in viewModel.mediaFrameInfos {
+                webView.evaluateJavaScript(source, in: frame, in: .page, completionHandler: nil)
+            }
         }
 
         // MARK: WKNavigationDelegate
@@ -2050,7 +2166,11 @@ struct WebViewRepresentable: UIViewRepresentable {
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
             BrowserStartupTrace.mark("navigation_start")
             provisionalNavigation = navigation
+            let allowlist = WebCompatibilityService.protectionBypassHosts(adding: AdBlockSettingsService.shared.allowlistedHosts)
+            viewModel.nativeCosmeticDocumentReady = WebViewRepresentable.installedContentRuleSignatures[ObjectIdentifier(webView)]
+                == WebViewRepresentable.allowlistSignature(for: allowlist)
             if webView === viewModel.webView {
+                cancelDomainConfirmation()
                 clearVideoAwake()
                 viewModel.beginPageNavigation()
                 videoFullscreenOrientation.end()
@@ -2070,11 +2190,15 @@ struct WebViewRepresentable: UIViewRepresentable {
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
             BrowserStartupTrace.mark("navigation_commit")
             provisionalNavigation = nil
+            userInitiatedNavigationChain = false
             navigationGesture = nil
+            navigationOriginURL = webView.url
             // A new document receives its own user scripts. The bootstrap flag
             // is needed only when a bypassed document is reused by an SPA.
             viewModel.adHidingNeedsBootstrap = WebCompatibilityService.shouldBypassWebProtection(for: webView.url)
                 || AdBlockSettingsService.isHostAllowlisted(webView.url?.host)
+                || (!viewModel.nativeCosmeticDocumentReady
+                    && WebViewRepresentable.installedContentRuleSignatures[ObjectIdentifier(webView)] != nil)
             if viewModel.manualAdSelection != nil { viewModel.cancelMarkingAdvertisement() }
             synchronizeManualAdRules(on: webView)
             Task { @MainActor [weak self] in
@@ -2092,6 +2216,12 @@ struct WebViewRepresentable: UIViewRepresentable {
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             BrowserStartupTrace.mark("navigation_finish")
             webView.scrollView.refreshControl?.endRefreshing()
+            refreshSiteEpisodeData(on: webView)
+            let episodeGeneration = navigationGeneration
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self, weak webView] in
+                guard let self, let webView, self.navigationGeneration == episodeGeneration else { return }
+                self.refreshSiteEpisodeData(on: webView)
+            }
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.viewModel.updateLoading(false)
@@ -2100,16 +2230,38 @@ struct WebViewRepresentable: UIViewRepresentable {
                 self.viewModel.pageDidFinishLoading()
                 self.viewModel.applyPageZoom(to: webView)
                 self.applyCurrentAdHidingIfNeeded(on: webView)
-                self.applyPrivacyProtectionIfNeeded(on: webView)
+                self.applyPrivacyProtectionIfNeeded(on: webView, forceCurrentDocument: true)
                 WebAppearanceService.shared.apply(to: webView, force: true)
                 self.scheduleBlankPageRecovery(on: webView)
-                // Capture snapshot for tab preview (slight delay for render)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                    self?.viewModel.takeSnapshot()
-                }
+                self.viewModel.scheduleSnapshotCapture()
                 self.focusAccessibilityOnLoadedPage(webView)
                 self.scheduleVideoViewportSynchronization(on: webView)
                 await self.viewModel.refreshPageTranslationState()
+            }
+        }
+
+        private func synchronizeVideoEpisodeAvailability(on webView: WKWebView) {
+            let source = "window.__souloVideoOrientation?.setEpisodesAvailable(\(viewModel.episodeList != nil));"
+            let frames: [WKFrameInfo?] = [nil] + viewModel.mediaFrameInfos.map { Optional($0) }
+            for frame in frames {
+                webView.evaluateJavaScript(source, in: frame, in: WebVideoOrientationRuntime.world, completionHandler: nil)
+            }
+        }
+
+        private func refreshSiteEpisodeData(on webView: WKWebView) {
+            guard webView === viewModel.webView, let url = webView.url else { return }
+            let generation = navigationGeneration
+            webView.evaluateJavaScript(WebEpisodeSiteData.script) { [weak self, weak webView] result, _ in
+                guard let self, let webView, self.viewModel.webView === webView,
+                      self.navigationGeneration == generation, webView.url == url,
+                      let body = result as? [String: Any] else { return }
+                let list = WebEpisodeList.parse(body, pageURL: url)
+                guard let data = try? JSONEncoder().encode(list?.sources ?? []),
+                      let sources = try? JSONSerialization.jsonObject(with: data) else { return }
+                // The isolated runtime merges page data with DOM links and
+                // reports one result, including when cached page data disappears.
+                webView.callAsyncJavaScript("window.__souloEpisodes?.setPageSources(sources);",
+                    arguments: ["sources": sources], in: nil, in: WebEpisodeRuntime.world, completionHandler: nil)
             }
         }
 
@@ -2319,121 +2471,142 @@ struct WebViewRepresentable: UIViewRepresentable {
             }
 
             let nativeRequest = (webView as? AccessibleWebView)?.consumeNativeNavigation(to: url) == true
+            if nativeRequest, navigationAction.targetFrame?.isMainFrame == true { navigationOriginURL = url }
             guard allowsNavigation(navigationAction, in: webView, nativeRequest: nativeRequest) else {
                 decide(.cancel)
                 return
             }
 
-            // An address typed in Soulo must reach the response policy first.
-            // WebKit may flag an action as a download before its HTML MIME type
-            // is known; honor that flag only for navigation initiated by a page.
-            if BrowserDownloadPolicy.shouldDownloadNavigationAction(
-                requestedByPage: navigationAction.shouldPerformDownload,
-                nativeRequest: nativeRequest
-            ) {
-                decide(.download)
-                return
+            if navigationAction.targetFrame?.isMainFrame == true {
+                if isExplicitNavigation(navigationAction, in: webView, nativeRequest: nativeRequest) {
+                    userInitiatedNavigationChain = true
+                } else if provisionalNavigation == nil {
+                    userInitiatedNavigationChain = false
+                }
             }
 
-            switch WebNavigationPolicyService.shared.decision(for: url) {
-            case .allow:
-                let method = navigationAction.request.httpMethod?.uppercased() ?? "GET"
-                let isMainFrame = navigationAction.targetFrame?.isMainFrame == true
-                let shouldSkipPrivacyTransform = oneShotHTTPFallbacks.remove(url.absoluteString) != nil
-
-                if isMainFrame, method == "GET",
-                   navigationAction.navigationType == .linkActivated,
-                   let target = viewModel.googleFollowLinkTarget,
-                   isGoogleTranslationPageURL(webView.url),
-                   !isGoogleTranslationPageURL(url),
-                   let translatedURL = googleTranslationURL(pageURL: url, target: target) {
-                    decide(.cancel)
-                    webView.load(URLRequest(url: translatedURL))
+            let continueNavigation = { [self] in
+                // An address typed in Soulo must reach the response policy first.
+                // WebKit may flag an action as a download before its HTML MIME type
+                // is known; honor that flag only for navigation initiated by a page.
+                if BrowserDownloadPolicy.shouldDownloadNavigationAction(
+                    requestedByPage: navigationAction.shouldPerformDownload,
+                    nativeRequest: nativeRequest
+                ) {
+                    decide(.download)
                     return
                 }
 
-                if method == "GET", !shouldSkipPrivacyTransform {
-                    switch PrivacyNavigationService.shared.decision(for: url, isMainFrame: isMainFrame) {
-                    case .allow:
-                        break
-                    case .redirect(let transformedURL):
-                        if isHTTPSUpgrade(from: url, to: transformedURL) {
-                            httpsUpgradeFallbacks[transformedURL.absoluteString] = url
-                        }
-                        let strippedCount = PrivacyNavigationService.shared.strippedTrackingParameterCount(from: url, to: transformedURL)
-                        Task { @MainActor in
-                            if self.isHTTPSUpgrade(from: url, to: transformedURL) {
-                                PrivacyProtectionService.shared.recordHTTPSUpgrade(for: transformedURL.host ?? url.host)
-                            }
-                            PrivacyProtectionService.shared.recordTrackingParametersStripped(strippedCount, for: transformedURL.host ?? url.host)
-                        }
-                        var transformedRequest = navigationAction.request
-                        transformedRequest.url = transformedURL
-                        if let privacyHeaderRequest = privacyHeaderRequestIfNeeded(for: transformedRequest) {
-                            transformedRequest = privacyHeaderRequest
-                            privacyHeaderBypassURLs.insert(privacyHeaderRequest.url?.absoluteString ?? transformedURL.absoluteString)
-                        }
+                switch WebNavigationPolicyService.shared.decision(for: url) {
+                case .allow:
+                    let method = navigationAction.request.httpMethod?.uppercased() ?? "GET"
+                    let isMainFrame = navigationAction.targetFrame?.isMainFrame == true
+                    let shouldSkipPrivacyTransform = oneShotHTTPFallbacks.remove(url.absoluteString) != nil
+
+                    if isMainFrame, method == "GET",
+                       navigationAction.navigationType == .linkActivated,
+                       let target = viewModel.googleFollowLinkTarget,
+                       isGoogleTranslationPageURL(webView.url),
+                       !isGoogleTranslationPageURL(url),
+                       let translatedURL = googleTranslationURL(pageURL: url, target: target) {
                         decide(.cancel)
-                        webView.load(transformedRequest)
+                        webView.load(URLRequest(url: translatedURL))
                         return
                     }
-                }
 
-                // Loading a rewritten request on WKWebView always navigates its
-                // main frame. Leave iframe requests and new-window contexts to
-                // WebKit instead of replacing the page that contains them.
-                if isMainFrame, method == "GET",
-                   let privacyHeaderRequest = privacyHeaderRequestIfNeeded(for: navigationAction.request) {
-                    privacyHeaderBypassURLs.insert(privacyHeaderRequest.url?.absoluteString ?? url.absoluteString)
-                    decide(.cancel)
-                    webView.load(privacyHeaderRequest)
-                    return
-                }
-
-                let sourceURL = navigationAction.sourceFrame.request.url
-                let recentGesture = navigationGesture.map { gesture in
-                    gesture.webView == ObjectIdentifier(webView)
-                        && gesture.frameURL == sourceURL
-                        && ProcessInfo.processInfo.systemUptime - gesture.time <= 3
-                } ?? false
-                let crossSite = sourceURL?.host.map {
-                    $0.caseInsensitiveCompare(url.host ?? "") != .orderedSame
-                } ?? false
-                var sourceWithoutFragment = sourceURL.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) }
-                var destinationWithoutFragment = URLComponents(url: url, resolvingAgainstBaseURL: false)
-                sourceWithoutFragment?.fragment = nil
-                destinationWithoutFragment?.fragment = nil
-                let sameDocument = sourceWithoutFragment?.url == destinationWithoutFragment?.url
-                let shouldStartInBrowser = navigationAction.navigationType == .linkActivated
-                    ? !sameDocument
-                    : crossSite && (navigationAction.navigationType == .formSubmitted
-                        || (navigationAction.navigationType == .other && recentGesture))
-                if isMainFrame, method == "GET", !nativeRequest,
-                   shouldStartInBrowser,
-                   ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
-                   !BrowserPopupPolicy.shouldPreserveJavaScriptContext(
-                    navigationType: navigationAction.navigationType, url: url
-                   ) {
-                    // Start ordinary links in this browser, including same-site
-                    // search redirects that may lead to an app's Universal Link.
-                    decide(.cancel)
-                    let request = navigationAction.request
-                    DispatchQueue.main.async { [weak webView] in
-                        webView?.load(request)
+                    if method == "GET", !shouldSkipPrivacyTransform {
+                        switch PrivacyNavigationService.shared.decision(for: url, isMainFrame: isMainFrame) {
+                        case .allow:
+                            break
+                        case .redirect(let transformedURL):
+                            if isHTTPSUpgrade(from: url, to: transformedURL) {
+                                httpsUpgradeFallbacks[transformedURL.absoluteString] = url
+                            }
+                            let strippedCount = PrivacyNavigationService.shared.strippedTrackingParameterCount(from: url, to: transformedURL)
+                            Task { @MainActor in
+                                if self.isHTTPSUpgrade(from: url, to: transformedURL) {
+                                    PrivacyProtectionService.shared.recordHTTPSUpgrade(for: transformedURL.host ?? url.host)
+                                }
+                                PrivacyProtectionService.shared.recordTrackingParametersStripped(strippedCount, for: transformedURL.host ?? url.host)
+                            }
+                            var transformedRequest = navigationAction.request
+                            transformedRequest.url = transformedURL
+                            if let privacyHeaderRequest = privacyHeaderRequestIfNeeded(for: transformedRequest) {
+                                transformedRequest = privacyHeaderRequest
+                                privacyHeaderBypassURLs.insert(privacyHeaderRequest.url?.absoluteString ?? transformedURL.absoluteString)
+                            }
+                            decide(.cancel)
+                            webView.load(transformedRequest)
+                            return
+                        }
                     }
-                    return
-                }
 
-                decide(.allow)
-            case .cancel:
-                decide(.cancel)
-            case .external(let externalURL):
-                decide(.cancel)
-                routeExternalURL(
-                    externalURL,
-                    userInitiated: navigationAction.navigationType == .linkActivated
-                )
+                    // Loading a rewritten request on WKWebView always navigates its
+                    // main frame. Leave iframe requests and new-window contexts to
+                    // WebKit instead of replacing the page that contains them.
+                    if isMainFrame, method == "GET",
+                       let privacyHeaderRequest = privacyHeaderRequestIfNeeded(for: navigationAction.request) {
+                        privacyHeaderBypassURLs.insert(privacyHeaderRequest.url?.absoluteString ?? url.absoluteString)
+                        decide(.cancel)
+                        webView.load(privacyHeaderRequest)
+                        return
+                    }
+
+                    if BrowserWebLinkPolicy.shouldLoadInBrowser(
+                        url: url, sourceURL: navigationAction.sourceFrame.request.url,
+                        navigationType: navigationAction.navigationType,
+                        targetsMainFrame: navigationAction.targetFrame?.isMainFrame,
+                        method: method, nativeRequest: nativeRequest
+                    ) {
+                        if navigationAction.targetFrame == nil, !isExplicitNavigation(navigationAction, in: webView),
+                           requestDomainConfirmation(to: url, from: webView.url, in: webView,
+                            request: navigationAction.request, completion: { [weak webView] allowed in
+                                if allowed { webView?.load(navigationAction.request) }
+                            }) {
+                            decide(.cancel)
+                            return
+                        }
+                        decide(.cancel)
+                        let request = navigationAction.request
+                        DispatchQueue.main.async { [weak webView] in
+                            webView?.load(request)
+                        }
+                        return
+                    }
+
+                    decide(.allow)
+                case .cancel:
+                    decide(.cancel)
+                case .external(let externalURL):
+                    decide(.cancel)
+                    routeExternalURL(externalURL)
+                }
             }
+            if !userInitiatedNavigationChain, navigationAction.targetFrame?.isMainFrame == true,
+               navigationAction.navigationType != .backForward, navigationAction.navigationType != .reload {
+                let origin = provisionalNavigation != nil ? navigationOriginURL : webView.url
+                if requestDomainConfirmation(to: url, from: origin, in: webView, request: navigationAction.request, completion: { allowed in
+                    if allowed { continueNavigation() } else { decide(.cancel) }
+                }) { return }
+            }
+            continueNavigation()
+        }
+
+        private func isExplicitNavigation(_ action: WKNavigationAction, in webView: WKWebView,
+                                          nativeRequest: Bool = false) -> Bool {
+            guard let destination = action.request.url else { return false }
+            if nativeRequest { return true }
+            guard let gesture = navigationGesture,
+                  gesture.webView == ObjectIdentifier(webView),
+                  gesture.frameURL == action.sourceFrame.request.url,
+                  ProcessInfo.processInfo.systemUptime - gesture.time <= 3 else { return false }
+            if gesture.destinations.contains(where: {
+                BrowserDomainNavigationPolicy.isExplicitNavigation(nativeRequest: false,
+                    destination: destination, recentGestureDestination: $0)
+            }) { return true }
+            if gesture.isForm && [.formSubmitted, .formResubmitted].contains(action.navigationType) { return true }
+            return gesture.isLink && (action.navigationType == .linkActivated
+                || (action.targetFrame?.isMainFrame == true && action.navigationType == .other))
         }
 
         private func allowsNavigation(
@@ -2441,21 +2614,58 @@ struct WebViewRepresentable: UIViewRepresentable {
             in webView: WKWebView,
             nativeRequest: Bool
         ) -> Bool {
-            guard action.request.url != nil else { return false }
+            guard let url = action.request.url else { return false }
             if viewModel.manualAdSelection != nil && !nativeRequest { return false }
-            if UserDefaults.standard.object(forKey: BrowserAutomaticNavigationPolicy.preferenceKey) as? Bool ?? true { return true }
-            if nativeRequest || action.navigationType == .backForward || action.navigationType == .reload { return true }
-            // HTTP redirects belong to the already-approved provisional load.
-            // A new document cannot run redirect scripts until it commits.
-            if provisionalNavigation != nil && action.targetFrame?.isMainFrame == true { return true }
-            // Embedded document loads must not break players or other page content.
-            if let target = action.targetFrame, !target.isMainFrame { return true }
-            if webView.url == nil && action.targetFrame != nil { return true }
-            if let source = action.sourceFrame.request.url,
-               let gesture = navigationGesture,
-               gesture.webView == ObjectIdentifier(webView), gesture.frameURL == source,
-               ProcessInfo.processInfo.systemUptime - gesture.time <= 3 { return true }
-            return false
+            // App handoffs have their own confirmation setting. Web ad-navigation
+            // heuristics must not swallow SDK handoffs through buttons or iframes.
+            if case .external = WebNavigationPolicyService.shared.decision(for: url) { return true }
+            let targetsTopLevel = action.targetFrame == nil || action.targetFrame?.isMainFrame == true
+            let sourceURL = action.sourceFrame.request.url
+            let recentGesture = navigationGesture.map {
+                $0.webView == ObjectIdentifier(webView) && $0.frameURL == sourceURL
+                    && ProcessInfo.processInfo.systemUptime - $0.time <= 3
+            } ?? false
+            let adBlockingEnabled = UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true
+            let bypassesProtection = WebCompatibilityService.shouldBypassWebProtection(for: webView.url)
+                || AdBlockSettingsService.isHostAllowlisted(webView.url?.host)
+            if adBlockingEnabled, !bypassesProtection, !nativeRequest, targetsTopLevel,
+               !(provisionalNavigation != nil && action.targetFrame?.isMainFrame == true),
+               BrowserAdNavigationPolicy.shouldBlock(url: url, sourceURL: sourceURL,
+                navigationType: action.navigationType, isNewWindow: action.targetFrame == nil,
+                sourceIsMainFrame: action.sourceFrame.isMainFrame, hasRecentGesture: recentGesture,
+                gestureDestination: navigationGesture?.destinations.first(where: {
+                    BrowserDomainNavigationPolicy.isExplicitNavigation(nativeRequest: false,
+                        destination: url, recentGestureDestination: $0)
+                }), gestureIsControl: navigationGesture?.isControl ?? false,
+                gestureIsLink: navigationGesture?.isLink ?? false, gestureIsForm: navigationGesture?.isForm ?? false) {
+                return false
+            }
+            return true
+        }
+
+        @discardableResult
+        private func requestDomainConfirmation(to url: URL, from source: URL?, in webView: WKWebView,
+                                               request: URLRequest? = nil,
+                                               completion: @escaping (Bool) -> Void) -> Bool {
+            guard BrowserDomainNavigationPolicy.requiresConfirmation(from: source, to: url) else { return false }
+            guard let source, viewModel.mediaSession.isActive,
+                  domainConfirmationID == nil, viewModel.domainNavigationConfirmation == nil,
+                  let host = topViewController(for: webView), host.presentedViewController == nil else {
+                completion(false)
+                return true
+            }
+            let generation = navigationGeneration
+            domainConfirmationID = viewModel.requestDomainNavigationConfirmation(from: source, to: url, originalRequest: request) { [weak self, weak webView] allowed in
+                self?.domainConfirmationID = nil
+                completion(allowed && self?.navigationGeneration == generation && self?.viewModel.webView === webView)
+            }
+            return true
+        }
+
+        func cancelDomainConfirmation() {
+            guard let id = domainConfirmationID else { return }
+            domainConfirmationID = nil
+            viewModel.resolveDomainNavigationConfirmation(id: id, allowed: false)
         }
 
         private func privacyHeaderRequestIfNeeded(for request: URLRequest) -> URLRequest? {
@@ -2516,31 +2726,21 @@ struct WebViewRepresentable: UIViewRepresentable {
             return nil
         }
 
-        private func postExternalURLRequestIfNeeded(
-            _ url: URL,
-            explicitUserAction: Bool = false
-        ) {
+        private func routeExternalURL(_ url: URL) {
+            guard viewModel.mediaSession.isActive else { return }
             NotificationCenter.default.post(
                 name: .webViewExternalURLRequest,
-                object: nil,
-                userInfo: [
-                    "url": url,
-                    "explicitUserAction": explicitUserAction
-                ]
+                object: viewModel,
+                userInfo: ["url": url]
             )
         }
 
-        private func routeExternalURL(_ url: URL, userInitiated _: Bool) {
-            if WebNavigationPolicyService.shared.isAppleAppStoreURL(url) {
-                // Explicit downloads always ask before leaving Soulo. They are not
-                // swallowed by the setting that blocks unsolicited app jumps.
-                postExternalURLRequestIfNeeded(url, explicitUserAction: true)
-                return
-            }
-            postExternalURLRequestIfNeeded(url)
+        fileprivate func nativeCosmeticRulesChanged(on webView: WKWebView) {
+            viewModel.nativeCosmeticDocumentReady = false
+            if webView.url != nil { viewModel.adHidingNeedsBootstrap = true }
         }
 
-        private func applyCurrentAdHidingIfNeeded(on webView: WKWebView) {
+        fileprivate func applyCurrentAdHidingIfNeeded(on webView: WKWebView) {
             let defaults = UserDefaults.standard
             applyAdHidingIfNeeded(
                 on: webView,
@@ -2597,19 +2797,26 @@ struct WebViewRepresentable: UIViewRepresentable {
                 (webView as? AccessibleWebView)?.consumeNativeNavigation(to: $0)
             } == true
             guard allowsNavigation(navigationAction, in: webView, nativeRequest: nativeRequest) else { return nil }
+            let explicit = isExplicitNavigation(navigationAction, in: webView, nativeRequest: nativeRequest)
             if navigationAction.targetFrame == nil || !(navigationAction.targetFrame?.isMainFrame ?? false) {
                 if let url = navigationAction.request.url {
                     switch WebNavigationPolicyService.shared.decision(for: url) {
                     case .allow:
-                        if BrowserPopupPolicy.shouldPreserveJavaScriptContext(
+                        let crossDomainForm = [WKNavigationType.formSubmitted, .formResubmitted].contains(navigationAction.navigationType)
+                            && BrowserDomainNavigationPolicy.requiresConfirmation(from: webView.url, to: url)
+                        if crossDomainForm || BrowserPopupPolicy.shouldPreserveJavaScriptContext(
                             navigationType: navigationAction.navigationType,
                             url: url
                         ) {
                             return makeEmbeddedPopup(
                                 in: webView,
-                                configuration: configuration
+                                configuration: configuration,
+                                userInitiated: explicit
                             )
                         } else {
+                            if !explicit, requestDomainConfirmation(to: url, from: webView.url, in: webView, request: navigationAction.request, completion: { [weak webView] allowed in
+                                if allowed { webView?.load(navigationAction.request) }
+                            }) { return nil }
                             // Regular target="_blank" and script-created links do
                             // not need a separate browser surface. Keep navigation
                             // in the current Soulo tab; explicit context-menu actions
@@ -2626,12 +2833,9 @@ struct WebViewRepresentable: UIViewRepresentable {
                     case .cancel:
                         break
                     case .external(let externalURL):
-                        // New-window requests do not pass through the navigation
-                        // delegate, so route them through the same confirmation UI.
-                        routeExternalURL(
-                            externalURL,
-                            userInitiated: true
-                        )
+                        // Keep this fallback on the same confirmation route as
+                        // requests intercepted by the navigation delegate.
+                        routeExternalURL(externalURL)
                     }
                 } else {
                     // Fallback: load in current webView
@@ -2643,7 +2847,8 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         private func makeEmbeddedPopup(
             in parentWebView: WKWebView,
-            configuration: WKWebViewConfiguration
+            configuration: WKWebViewConfiguration,
+            userInitiated: Bool
         ) -> WKWebView {
             // WebKit supplies a new-window configuration, but per-view settings
             // such as the custom user agent are not copied automatically. Match
@@ -2659,6 +2864,32 @@ struct WebViewRepresentable: UIViewRepresentable {
             container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
 
             let popupWebView = WKWebView(frame: container.bounds, configuration: configuration)
+            let domainDelegate = WebDomainPopupDelegate()
+            domainDelegate.originURL = parentWebView.url
+            domainDelegate.userInitiatedNavigationChain = userInitiated
+            domainDelegate.decide = { [weak self, weak parentWebView, weak domainDelegate] popup, action, origin, decision in
+                guard let self, let parentWebView, let url = action.request.url else { decision(.cancel); return }
+                switch WebNavigationPolicyService.shared.decision(for: url) {
+                case .external(let externalURL):
+                    decision(.cancel)
+                    self.routeExternalURL(externalURL)
+                    return
+                case .cancel:
+                    decision(.cancel)
+                    return
+                case .allow:
+                    break
+                }
+                if domainDelegate?.userInitiatedNavigationChain != true,
+                   !self.isExplicitNavigation(action, in: popup),
+                   self.requestDomainConfirmation(to: url, from: origin, in: parentWebView, request: action.request, completion: { allowed in
+                    decision(allowed ? .allow : .cancel)
+                    if !allowed, domainDelegate?.hasCommittedDocument != true { self.dismissEmbeddedPopups(in: parentWebView) }
+                }) { return }
+                decision(.allow)
+            }
+            popupDomainDelegates[ObjectIdentifier(popupWebView)] = domainDelegate
+            popupWebView.navigationDelegate = domainDelegate
             popupWebView.customUserAgent = parentWebView.customUserAgent
             popupWebView.pageZoom = parentWebView.pageZoom
             popupWebView.uiDelegate = self
@@ -2715,23 +2946,33 @@ struct WebViewRepresentable: UIViewRepresentable {
                   let url = popupWebView.url else {
                 return
             }
-            container.removeFromSuperview()
+            removeEmbeddedPopup(container)
             viewModel.loadURL(url)
         }
 
         @objc private func closeEmbeddedPopup(_ sender: UIButton) {
-            sender.superview?.removeFromSuperview()
+            if let container = sender.superview { removeEmbeddedPopup(container) }
+        }
+
+        private func removeEmbeddedPopup(_ container: UIView) {
+            cancelDomainConfirmation()
+            for popup in container.subviews.compactMap({ $0 as? WKWebView }) {
+                popup.stopLoading()
+                popup.navigationDelegate = nil
+                popupDomainDelegates.removeValue(forKey: ObjectIdentifier(popup))
+            }
+            container.removeFromSuperview()
         }
 
         func dismissEmbeddedPopups(in webView: WKWebView) {
             webView.subviews
                 .filter { $0.tag == EmbeddedBrowserPopupTag.container }
-                .forEach { $0.removeFromSuperview() }
+                .forEach { removeEmbeddedPopup($0) }
         }
 
         func webViewDidClose(_ webView: WKWebView) {
             guard webView !== viewModel.webView else { return }
-            webView.superview?.removeFromSuperview()
+            if let container = webView.superview { removeEmbeddedPopup(container) }
         }
 
         // MARK: WKUIDelegate — device permissions

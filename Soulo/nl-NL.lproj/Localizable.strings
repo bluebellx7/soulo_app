@@ -814,7 +814,7 @@
 "share_extension_title" = "Zoek met Soulo";
 "share_search_in_soulo" = "Zoek in Soulo";
 "share_private_search" = "Zoek privé";
-"share_extension_unsupported" = "Dit item kan niet worden doorzocht.";
+"share_extension_unsupported" = "De gedeelde inhoud kon niet worden gelezen.";
 "image_extract_text" = "Extraheer tekst uit afbeelding";
 "image_text_unavailable" = "Live Text is niet beschikbaar op dit apparaat.";
 "image_text_none" = "Er is geen leesbare tekst gevonden in deze afbeelding.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "Vermijd overlap";
 "keep_page_above_toolbar_desc" = "Houd de besturingselementen voor webpagina's boven de werkbalk.";
 "downloads_play_while_downloading" = "Afspelen tijdens downloaden";
+
+// Default browser
+"settings_default_browser" = "Standaardbrowser";
+"settings_default_browser_hint" = "Kies Soulo als standaardbrowser in Instellingen om links uit andere apps te openen.";
+"settings_backups" = "Back-ups van instellingen";
+"settings_backup_restore_message" = "Bij het herstellen wordt iCloud-synchronisatie uitgeschakeld en eerst een back-up van je huidige instellingen gemaakt.";
+"settings_backup_error" = "Deze bewerking kon niet worden voltooid. Je huidige instellingen zijn behouden.";
+"share_saved_for_open" = "Opgeslagen. Open Soulo om door te gaan.";
+"intent_open_webpage_title" = "Link openen in Soulo";
+"intent_webpage_url" = "Web-URL";
+
+"external_navigation_prompt" = "Applinks bevestigen";
+"external_navigation_prompt_desc" = "Vraag voordat een andere app wordt geopend. Schakel uit om applinks direct te openen.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "Groeperen op domein";
+"tab_view_carousel" = "Kaartweergave";

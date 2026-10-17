@@ -1,6 +1,14 @@
 Soulo je prehliadač pre iPhone a iPad s vyhľadávaním na viacerých platformách. Zadajte dopyt raz a prepínajte medzi vyhľadávačmi, sociálnymi sieťami, videom, nákupmi, znalosťami a AI bez opakovaného písania.
 
+V Nastaveniach vyberte Soulo ako predvolený prehliadač na otváranie odkazov z iných aplikácií.
+
+Opravené prepisovanie existujúcich nastavení pri zapnutí synchronizácie iCloudu na novom zariadení. Pridané miestne zálohy nastavení a zjednodušené spracovanie zdieľaných odkazov.
+
 Prehrávajte podporované videá počas sťahovania. Lepšie sťahovanie na pozadí, celá obrazovka a ochrana pred skrytými reklamami a nechceným kopírovaním.
+
+Výber a obrátené poradie epizód na podporovaných weboch, hromadné sťahovanie vybraných epizód a opakovanie neúspešných stiahnutí. Podržaním zrýchlite, uvoľnením obnovíte rýchlosť. Plynulejšie ovládanie videa.
+
+Voliteľné potvrdenie automatického prechodu na inú doménu, dôveryhodné domény a otvorenie na novej karte. Lepšie odstraňovanie reklamných prekrytí a návrat na predošlú stránku.
 
 Hľadajte informácie, čítajte články, prehrávajte médiá a spravujte sťahovanie v jednom prehliadači.
 

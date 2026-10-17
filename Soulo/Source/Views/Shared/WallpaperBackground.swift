@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct WallpaperBackground: View {
+    var isAnimating = true
     @ObservedObject var wallpaperManager = WallpaperManager.shared
 
     var body: some View {
@@ -20,7 +21,7 @@ struct WallpaperBackground: View {
         switch wallpaperManager.source {
         case .gradient:
             let p = wallpaperManager.currentGradient
-            DynamicGradientView(colors: p.colors)
+            DynamicGradientView(colors: p.colors, isPaused: !isAnimating)
 
         case .solid:
             Color(hex: wallpaperManager.solidColor)
@@ -32,7 +33,7 @@ struct WallpaperBackground: View {
                     .transition(.opacity.animation(.easeInOut(duration: 0.8)))
                 Color.black.opacity(0.3)
             } else {
-                DynamicGradientView.fallback
+                DynamicGradientView.fallback(isPaused: !isAnimating)
             }
 
         case .bing, .pexels, .pixabay:
@@ -42,7 +43,7 @@ struct WallpaperBackground: View {
                     .transition(.opacity.animation(.easeInOut(duration: 0.8)))
                 Color.black.opacity(0.3)
             } else {
-                DynamicGradientView.fallback
+                DynamicGradientView.fallback(isPaused: !isAnimating)
             }
         }
     }
@@ -92,21 +93,22 @@ struct WallpaperBackground: View {
 /// 5 color pools drift slowly across the screen, blending into each other.
 struct DynamicGradientView: View {
     let colors: [Color]
+    var isPaused = false
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isVisible = false
 
-    static var fallback: DynamicGradientView {
+    static func fallback(isPaused: Bool = false) -> DynamicGradientView {
         DynamicGradientView(colors: [
             Color(red: 0.05, green: 0.07, blue: 0.16),
             Color(red: 0.08, green: 0.12, blue: 0.22),
             Color(red: 0.15, green: 0.22, blue: 0.35),
-        ])
+        ], isPaused: isPaused)
     }
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 24.0,
-            paused: !isVisible || scenePhase != .active || reduceMotion)) { timeline in
+            paused: isPaused || !isVisible || scenePhase != .active || reduceMotion)) { timeline in
             Canvas { ctx, size in
                 render(ctx: ctx, size: size, time: timeline.date.timeIntervalSinceReferenceDate)
             }

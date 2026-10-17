@@ -1,4 +1,10 @@
-1.2.1
+1.2.2
 
+• Chọn tập trên trang được hỗ trợ, đảo thứ tự, tải nhiều tập đã chọn cùng lúc và thử lại khi tải lỗi. Nhấn giữ để tăng tốc, thả ra để về tốc độ cũ. Điều khiển video mượt hơn.
+• Tùy chọn xác nhận khi tự động chuyển sang tên miền khác, tên miền tin cậy và mở trong thẻ mới. Cải thiện việc dọn lớp phủ quảng cáo và quay lại trang trước.
+
+• Đã sửa lỗi ghi đè cài đặt hiện có khi bật đồng bộ iCloud trên thiết bị mới. Thêm bản sao lưu cài đặt trên thiết bị và đơn giản hóa việc xử lý liên kết được chia sẻ.
+
+• Chọn Soulo làm trình duyệt mặc định trong Cài đặt để mở liên kết từ các ứng dụng khác.
 • Cải thiện tốc độ tải trang web, lọc quảng cáo và phản hồi khi điều hướng.
 • Cải thiện bố cục, cắt hình nền và trải nghiệm đọc khi kích thước cửa sổ thay đổi.

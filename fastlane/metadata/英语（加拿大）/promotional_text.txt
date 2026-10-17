@@ -1,1 +1,1 @@
-Play supported videos while downloading. Improved background downloads, fullscreen controls and protection against hidden ads and unwanted clipboard writes.
+Choose Soulo as your default browser in Settings to open links from other apps. Video tools and episode selection.

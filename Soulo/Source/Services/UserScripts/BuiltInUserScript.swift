@@ -53,7 +53,8 @@ enum BuiltInUserScripts {
     ]
 
     static let retiredNamespaces: Set<String> = [
-        "com.dkluge.soulo.examples.reading-mode"
+        "com.dkluge.soulo.examples.reading-mode",
+        "com.dkluge.soulo.builtin.video-helper"
     ]
 
     static let all: [BuiltInUserScriptDefinition] = discover()

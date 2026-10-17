@@ -7,9 +7,9 @@ import Network
 /// Real HTTP navigation through the production representable and its delegates.
 @MainActor final class WebBrowsingRegressionTests: XCTestCase {
     private var saved: [String: Any] = [:]
-    private let keys = ["privacy_gpc_enabled", "privacy_gpc_header_enabled_sites",
+    private let keys = ["privacy_gpc_enabled", "privacy_gpc_header_enabled_sites", "privacy_cookie_banner_enabled", "soulo_privacy_disabled_hosts",
                         "privacy_https_upgrade_enabled", "privacy_strip_tracking_parameters", "is_incognito", "ad_block_enabled",
-                        "soulo_ad_block_subscription_rules", BrowserAutomaticNavigationPolicy.preferenceKey, BuiltInAdRuleStore.storageKey, BuiltInAdRuleStore.versionKey]
+                        "soulo_ad_block_subscription_rules", BuiltInAdRuleStore.storageKey, BuiltInAdRuleStore.versionKey]
 
     override func setUp() {
         super.setUp()
@@ -17,6 +17,8 @@ import Network
         for key in keys { saved[key] = defaults.object(forKey: key) }
         defaults.set(try? JSONEncoder().encode(ParsedAdBlockRules.empty), forKey: "soulo_ad_block_subscription_rules")
         defaults.set(true, forKey: "privacy_gpc_enabled")
+        defaults.set(false, forKey: "privacy_cookie_banner_enabled")
+        defaults.set([], forKey: "soulo_privacy_disabled_hosts")
         defaults.set(["127.0.0.1"], forKey: "privacy_gpc_header_enabled_sites")
         defaults.set(false, forKey: "privacy_https_upgrade_enabled")
         defaults.set(false, forKey: "privacy_strip_tracking_parameters")
@@ -25,7 +27,6 @@ import Network
         defaults.removeObject(forKey: BuiltInAdRuleStore.storageKey)
         defaults.removeObject(forKey: BuiltInAdRuleStore.versionKey)
         // These regression fixtures drive navigation with synthetic JavaScript.
-        defaults.set(true, forKey: BrowserAutomaticNavigationPolicy.preferenceKey)
     }
 
     override func tearDown() {
@@ -70,6 +71,103 @@ import Network
         XCTAssertEqual(drawerVisible, true)
     }
 
+    func testGPCScriptRestoresOriginalPropertyWhenDisabledOrSiteBypassed() async throws {
+        let model = WebViewModel()
+        let web = WKWebView()
+        model.webView = web
+        defer { model.releaseWebViewRuntime() }
+        web.loadHTMLString("<p id='ready'>Privacy fixture</p>", baseURL: URL(string: "https://example.com/article"))
+        try await wait(model, for: "!!document.getElementById('ready')")
+        for original in ["false", "undefined", "true"] {
+            _ = try await web.evaluateJavaScript("delete navigator.globalPrivacyControl;" +
+                (original == "undefined" ? "" : "Object.defineProperty(navigator,'globalPrivacyControl',{value:\(original),configurable:true,enumerable:true});") +
+                "window.originalGPCDescriptor = Object.getOwnPropertyDescriptor(navigator,'globalPrivacyControl');")
+            for bypass in [false, true] {
+                _ = try await web.evaluateJavaScript(WebViewScripts.privacyProtection(gpcEnabled: true, cookieBannerHandling: false))
+                let enabled = try await web.evaluateJavaScript("navigator.globalPrivacyControl === true")
+                XCTAssertEqual(enabled as? Bool, true)
+                _ = try await web.evaluateJavaScript(WebViewScripts.privacyProtection(gpcEnabled: bypass, cookieBannerHandling: false,
+                    disabledHosts: bypass ? ["example.com"] : []))
+                let restored = try await web.evaluateJavaScript("JSON.stringify(Object.getOwnPropertyDescriptor(navigator,'globalPrivacyControl')) === JSON.stringify(window.originalGPCDescriptor)")
+                XCTAssertEqual(restored as? Bool, true, "Restore the original descriptor, including a browser-provided true value")
+            }
+        }
+    }
+
+    func testProtectionChangesReachLoadedAndFutureFramesWithoutReloading() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("iframe"))
+        try await wait(model, for: "document.getElementById('frame')?.contentWindow.__souloPrivacyConfig?.gpcEnabled === true")
+        let web = try XCTUnwrap(model.webView)
+        try await wait(model, for: "document.getElementById('frame')?.contentWindow.__souloAdBlockConfig?.cosmeticEnabled === true")
+        let scriptCount = web.configuration.userContentController.userScripts.count
+        _ = try await web.evaluateJavaScript("window.retainedDocument = true")
+        UserDefaults.standard.set(false, forKey: "privacy_gpc_enabled")
+        UserDefaults.standard.set(true, forKey: "privacy_cookie_banner_enabled")
+        UserDefaults.standard.set(false, forKey: "ad_block_enabled")
+        try await wait(model, for: "window.__souloPrivacyConfig?.gpcEnabled === false && navigator.globalPrivacyControl !== true")
+        try await wait(model, for: "document.getElementById('frame').contentWindow.__souloPrivacyConfig?.gpcEnabled === false && document.getElementById('frame').contentWindow.navigator.globalPrivacyControl !== true")
+        try await wait(model, for: "document.getElementById('frame').contentWindow.__souloAdBlockConfig?.cosmeticEnabled === false")
+        _ = try await web.evaluateJavaScript("let frame=document.createElement('iframe');frame.id='late';frame.src='/child';document.body.appendChild(frame);true")
+        try await wait(model, for: "document.getElementById('late').contentWindow.__souloPrivacyConfig?.gpcEnabled === false && document.getElementById('late').contentWindow.__souloPrivacyConfig?.cookieBannerHandling === true")
+        UserDefaults.standard.set(true, forKey: "privacy_gpc_enabled")
+        UserDefaults.standard.set(true, forKey: "ad_block_enabled")
+        try await wait(model, for: "navigator.globalPrivacyControl === true && ['frame','late'].every(id => { const w=document.getElementById(id).contentWindow;return w.navigator.globalPrivacyControl === true && w.__souloAdBlockConfig?.cosmeticEnabled === true; })")
+        XCTAssertEqual(web.configuration.userContentController.userScripts.count, scriptCount,
+            "Settings changes must replace their own registration without accumulating scripts")
+        let retained = try await web.evaluateJavaScript("window.retainedDocument === true")
+        XCTAssertEqual(retained as? Bool, true)
+        XCTAssertEqual(server.requests.filter { $0.path == "/iframe" }.count, 1)
+    }
+
+    func testGPCIsAvailableToFirstPageScriptAndStaticCookieBannerIsHandled() async throws {
+        UserDefaults.standard.set(true, forKey: "privacy_cookie_banner_enabled")
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("privacy-early"))
+        try await wait(model, for: "typeof window.rejectClicks === 'number' && document.readyState === 'complete'")
+        let early = try await model.webView?.evaluateJavaScript("window.earlyGPC === true")
+        XCTAssertEqual(early as? Bool, true, "Privacy signal must be set before the site's first script reads it")
+        try await wait(model, for: "window.rejectClicks === 1")
+    }
+
+    func testPrivatePageMessagesCannotPersistDomainsAfterModeChanges() async throws {
+        let domain = "private-\(UUID().uuidString.lowercased()).example"
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer {
+            close(model, window, previous)
+            PrivacyProtectionService.shared.resetSummary(for: domain)
+            AdBlockSettingsService.shared.resetStats(for: domain)
+        }
+        try await wait(model, for: "true")
+        let web = try XCTUnwrap(model.webView)
+        XCTAssertFalse(web.configuration.websiteDataStore.isPersistent)
+        web.loadHTMLString("<main id='private-fixture'>Private page</main><aside id='float-bottom-ad'>Advertisement</aside>",
+            baseURL: URL(string: "https://\(domain)/article"))
+        try await wait(model, for: "!!document.getElementById('private-fixture') && getComputedStyle(document.getElementById('float-bottom-ad')).display === 'none'")
+        // A queued message belongs to this temporary store even after the
+        // global mode changes; checking the current preference alone is too late.
+        UserDefaults.standard.set(false, forKey: "is_incognito")
+        _ = try await web.evaluateJavaScript("""
+            window.webkit.messageHandlers.souloAdBlocker.postMessage({host:'\(domain)',hiddenCount:7});
+            window.webkit.messageHandlers.souloPrivacy.postMessage({host:'\(domain)',type:'cookieBanner',actionCount:3});
+            true;
+            """)
+        try await Task.sleep(for: .milliseconds(250))
+        XCTAssertNil(PrivacyProtectionService.shared.summariesByHost[domain])
+        XCTAssertEqual(AdBlockSettingsService.shared.hiddenElementCount(for: domain), 0)
+    }
+
     func testTextSelectionPreservesEditableAndControlSubtrees() async throws {
         let web = WKWebView()
         web.loadHTMLString("""
@@ -94,6 +192,32 @@ import Network
         window.rootViewController = UIHostingController(rootView: WebViewRepresentable(viewModel: model))
         window.makeKeyAndVisible()
         return (window, previous)
+    }
+
+    func testNewWindowWebLinkIsCancelledBeforeWebKitCanLaunchAnApp() async throws {
+        // This test drives a synthetic click. Exercise the external-app policy
+        // independently of ad blocking, which correctly rejects untrusted popups.
+        UserDefaults.standard.set(false, forKey: "ad_block_enabled")
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/page": Data("<a id='result' target='_blank' href='/next'>Video result</a>".utf8),
+            "/next": Data("<h1 id='destination'>Destination</h1>".utf8)
+        ])
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("page"))
+        try await wait(model, for: "!!document.getElementById('result')")
+        let web = try XCTUnwrap(model.webView)
+        let coordinator = try XCTUnwrap(web.navigationDelegate as? WebViewRepresentable.Coordinator)
+        let observer = WebLinkNavigationObserver(coordinator: coordinator)
+        web.navigationDelegate = observer
+        defer { web.navigationDelegate = coordinator }
+        _ = try await web.evaluateJavaScript("document.getElementById('result').click()")
+        try await wait(model, for: "!!document.getElementById('destination')")
+        XCTAssertEqual(observer.newWindowPolicies, [.cancel],
+            "Allowing this action lets WebKit launch a Universal Link before WKUIDelegate can handle it")
     }
 
     private func close(_ model: WebViewModel, _ window: UIWindow, _ previous: UIWindow?) {
@@ -200,6 +324,47 @@ import Network
         withExtendedLifetime(replacement) {}
     }
 
+    func testWarmTintIsNativeAndDoesNotInstallDOMAppearanceScripts() async throws {
+        let appearance = WebAppearanceService.shared
+        let saved = (appearance.warmColorShift, appearance.forceDarkPages, appearance.reducePageMotion, appearance.underlineLinks)
+        defer {
+            appearance.warmColorShift = saved.0; appearance.forceDarkPages = saved.1
+            appearance.reducePageMotion = saved.2; appearance.underlineLinks = saved.3
+        }
+        appearance.forceDarkPages = false; appearance.reducePageMotion = false; appearance.underlineLinks = false
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 700))
+        web.loadHTMLString("<p id='warm-fixture'>Original page</p>", baseURL: URL(string: "https://example.com/article"))
+        for _ in 0..<100 {
+            if (try? await web.evaluateJavaScript("!!document.getElementById('warm-fixture')")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        appearance.warmColorShift = true
+        appearance.apply(to: web, force: true)
+        XCTAssertTrue(WebAppearanceService.hasWarmOverlay(on: web))
+        XCTAssertEqual(web.subviews.filter { $0.accessibilityIdentifier == "browser.web.warmOverlay" }.count, 1)
+        appearance.apply(to: web)
+        XCTAssertEqual(web.subviews.filter { $0.accessibilityIdentifier == "browser.web.warmOverlay" }.count, 1)
+        let untouched = try await web.evaluateJavaScript("!document.getElementById('soulo-warm-color-overlay') && typeof window.__souloApplyWebAppearance === 'undefined'")
+        XCTAssertEqual(untouched as? Bool, true)
+        XCTAssertTrue(web.configuration.userContentController.userScripts.isEmpty)
+        appearance.warmColorShift = false
+        appearance.apply(to: web)
+        XCTAssertFalse(WebAppearanceService.hasWarmOverlay(on: web))
+    }
+
+    func testOrdinaryViewportUpdatesDoNotDispatchSyntheticPageEvents() async throws {
+        let model = WebViewModel()
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 700))
+        model.webView = web
+        defer { model.releaseWebViewRuntime() }
+        web.loadHTMLString("<p id='viewport-fixture'>Viewport</p><script>window.syntheticEvents=0;['resize','orientationchange'].forEach(name=>addEventListener(name,e=>{if(!e.isTrusted)syntheticEvents++}));</script>",
+            baseURL: URL(string: "https://example.com/article"))
+        try await wait(model, for: "!!document.getElementById('viewport-fixture') && typeof syntheticEvents === 'number'")
+        for _ in 0..<5 { model.synchronizePageViewport(); model.applyPageZoom(to: web) }
+        let unchanged = try await web.evaluateJavaScript("syntheticEvents === 0 && typeof window.__souloPageZoomWidthState === 'undefined'")
+        XCTAssertEqual(unchanged as? Bool, true)
+    }
+
     func testAppearanceUpdatesDoNotRescanAnUnchangedDocument() async throws {
         let model = WebViewModel()
         let (window, previous) = try host(model)
@@ -208,7 +373,7 @@ import Network
         let web = try XCTUnwrap(model.webView)
         web.loadHTMLString("<html><body><p id='fixture' style='color:black;background:white'>Text</p></body></html>", baseURL: nil)
         try await wait(model, for: "!!document.getElementById('fixture') && document.readyState === 'complete'")
-        let script = WebViewScripts.applyWebAppearance(warmColorShift: false, forceDark: true,
+        let script = WebViewScripts.applyWebAppearance(forceDark: true,
             reduceMotion: false, underlineLinks: false)
         _ = try await web.evaluateJavaScript(script)
         _ = try await web.evaluateJavaScript("window.styleReads=0;const readStyle=window.getComputedStyle;window.getComputedStyle=(...args)=>{window.styleReads++;return readStyle(...args)};true")
@@ -219,8 +384,7 @@ import Network
         try await Task.sleep(for: .milliseconds(300))
         let color = try await web.evaluateJavaScript("document.getElementById('added').style.color")
         XCTAssertEqual(color as? String, "rgb(231, 231, 235)", "New content must still receive dark appearance")
-        _ = try await web.evaluateJavaScript(WebViewScripts.applyWebAppearance(
-            warmColorShift: false, forceDark: false, reduceMotion: false, underlineLinks: false))
+        _ = try await web.evaluateJavaScript(WebViewScripts.applyWebAppearance(forceDark: false, reduceMotion: false, underlineLinks: false))
         let original = try await web.evaluateJavaScript("document.getElementById('fixture').style.color")
         XCTAssertEqual(original as? String, "black")
     }
@@ -252,7 +416,7 @@ import Network
         web.loadHTMLString("<html><body id='second'>Second</body></html>", baseURL: nil)
         try await wait(model, for: "!!document.getElementById('second') && document.readyState === 'complete'")
         let staleStyle = try await web.evaluateJavaScript("!!document.getElementById('soulo-reduce-motion-style')")
-        XCTAssertEqual(staleStyle as? Bool, false, "The document-start script still holds the original preference")
+        XCTAssertEqual(staleStyle as? Bool, true, "New documents must receive current appearance preferences even without a coordinator")
 
         window.rootViewController = UIHostingController(rootView: WebViewRepresentable(viewModel: model))
         try await wait(model, for: "!!document.getElementById('soulo-reduce-motion-style')")
@@ -267,14 +431,12 @@ import Network
         let web = try XCTUnwrap(model.webView)
         web.loadHTMLString("<html><body><p id='recycled' style='color:black;background:white'>Text</p></body></html>", baseURL: nil)
         try await wait(model, for: "!!document.getElementById('recycled') && document.readyState === 'complete'")
-        _ = try await web.evaluateJavaScript(WebViewScripts.applyWebAppearance(
-            warmColorShift: false, forceDark: true, reduceMotion: false, underlineLinks: false))
+        _ = try await web.evaluateJavaScript(WebViewScripts.applyWebAppearance(forceDark: true, reduceMotion: false, underlineLinks: false))
         _ = try await web.evaluateJavaScript("window.recycled=document.getElementById('recycled');window.recycled.remove();true")
         try await Task.sleep(for: .milliseconds(300))
         _ = try await web.evaluateJavaScript("document.body.append(window.recycled);true")
         try await Task.sleep(for: .milliseconds(300))
-        _ = try await web.evaluateJavaScript(WebViewScripts.applyWebAppearance(
-            warmColorShift: false, forceDark: false, reduceMotion: false, underlineLinks: false))
+        _ = try await web.evaluateJavaScript(WebViewScripts.applyWebAppearance(forceDark: false, reduceMotion: false, underlineLinks: false))
         let color = try await web.evaluateJavaScript("document.getElementById('recycled').style.color")
         XCTAssertEqual(color as? String, "black", "Virtualized pages must recover original styles after dark mode is disabled")
     }
@@ -489,6 +651,9 @@ import Network
         }
         let web = try XCTUnwrap(model.webView)
         let controller = web.configuration.userContentController
+        let compiledResult = await AdBlockService.compileRuleLists()
+        let compiled = try XCTUnwrap(compiledResult)
+        WebViewRepresentable.applyContentRules(compiled, on: web, allowlist: [])
         controller.addUserScript(WKUserScript(source: "window.qaInitialAdConfiguration = window.__souloAdBlockConfig;",
             injectionTime: .atDocumentStart, forMainFrameOnly: true))
         let identities = controller.userScripts.map(ObjectIdentifier.init)
@@ -505,6 +670,36 @@ import Network
             XCTAssertEqual(controller.userScripts.map(ObjectIdentifier.init), identities,
                 "Changing URLs must not remove and re-add every user script")
         }
+    }
+
+    func testNativeCosmeticHandoffAndDisablingRestoreActualPageElements() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        UserDefaults.standard.set(try JSONEncoder().encode(AdBlockRuleParser.parse("##.qa-performance-ad")), forKey: "soulo_ad_block_subscription_rules")
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("runtime-reuse"))
+        try await wait(model, for: "document.querySelector('.qa-performance-ad') && getComputedStyle(document.querySelector('.qa-performance-ad')).display === 'none'")
+        let web = try XCTUnwrap(model.webView)
+        let rulesResult = await AdBlockService.compileRuleLists()
+        WebViewRepresentable.applyContentRules(try XCTUnwrap(rulesResult), on: web, allowlist: [])
+        UserDefaults.standard.set(false, forKey: "ad_block_enabled")
+        WebViewRepresentable.synchronizeAdProtection(on: web, model: model, enabled: false, allowlist: [])
+        try await wait(model, for: "getComputedStyle(document.querySelector('.qa-performance-ad')).display !== 'none'")
+        let restoredLayout = try await web.evaluateJavaScript("(() => {const ad=document.querySelector('.qa-performance-ad');return ad.getBoundingClientRect().height > 0 && getComputedStyle(ad).visibility === 'visible' && ad.style.cssText === '';})()")
+        XCTAssertEqual(restoredLayout as? Bool, true)
+        UserDefaults.standard.set(true, forKey: "ad_block_enabled")
+        WebViewRepresentable.synchronizeAdProtection(on: web, model: model, enabled: true, allowlist: [])
+        try await wait(model, for: "getComputedStyle(document.querySelector('.qa-performance-ad')).display === 'none'")
+        model.loadURL(root.appendingPathComponent("runtime-reuse-next"))
+        try await wait(model, for: "location.pathname === '/runtime-reuse-next' && window.__souloAdBlockConfig?.nativeCosmeticFiltering === true && getComputedStyle(document.querySelector('.qa-performance-ad')).display === 'none'")
+        let duplicate = try await web.evaluateJavaScript("window.__souloAdBlockConfig.subscriptionCosmeticRules.some(rule=>rule[0] === '.qa-performance-ad')")
+        XCTAssertEqual(duplicate as? Bool, false, "Precompiled static selectors no longer need DOM scanning")
+        UserDefaults.standard.set(false, forKey: "ad_block_enabled")
+        WebViewRepresentable.synchronizeAdProtection(on: web, model: model, enabled: false, allowlist: [])
+        try await wait(model, for: "getComputedStyle(document.querySelector('.qa-performance-ad')).display !== 'none'")
     }
 
     func testAdPreferenceChangeUpdatesCurrentAndFutureDocuments() async throws {
@@ -553,13 +748,13 @@ import Network
         }
         let bypassed = try await web.evaluateJavaScript("!window.__souloAdBlockInstalled")
         XCTAssertEqual(bypassed as? Bool, true)
-        let scripts = web.configuration.userContentController.userScripts.map(ObjectIdentifier.init)
+        let scripts = web.configuration.userContentController.userScripts.filter { !$0.source.hasPrefix(AdBlockService.hidingScriptPrefix) }.map(ObjectIdentifier.init)
         _ = try await web.evaluateJavaScript("""
         history.pushState({}, '', '/runtime-reuse');
         document.body.insertAdjacentHTML('beforeend', '<aside class=qa-performance-ad>Advertisement</aside>');
         """)
         try await wait(model, for: "getComputedStyle(document.querySelector('.qa-performance-ad')).display === 'none'")
-        XCTAssertEqual(web.configuration.userContentController.userScripts.map(ObjectIdentifier.init), scripts)
+        XCTAssertEqual(web.configuration.userContentController.userScripts.filter { !$0.source.hasPrefix(AdBlockService.hidingScriptPrefix) }.map(ObjectIdentifier.init), scripts)
         XCTAssertEqual(server.requests.filter { $0.path == "/login" }.count, 1)
         XCTAssertFalse(server.requests.contains { $0.path == "/runtime-reuse" }, "History navigation must not reload the document")
     }
@@ -674,6 +869,9 @@ import Network
     }
 
     func testPOSTRedirectHistoryAndNewWindowLinks() async throws {
+        // This transport fixture uses synthetic clicks; trusted interaction is
+        // covered by WebEpisodeAndAdNavigationUITests with ad blocking enabled.
+        UserDefaults.standard.set(false, forKey: "ad_block_enabled")
         let server = try BrowsingHTTPFixture()
         let root = try await server.start()
         defer { server.stop() }
@@ -728,6 +926,7 @@ import Network
     }
 
     func testNewWindowPOSTKeepsSubmittedBody() async throws {
+        UserDefaults.standard.set(false, forKey: "ad_block_enabled")
         let server = try BrowsingHTTPFixture()
         let root = try await server.start()
         defer { server.stop() }
@@ -749,6 +948,7 @@ import Network
     }
 
     func testAuthenticationPopupSharesSessionAndReturnsToOpener() async throws {
+        UserDefaults.standard.set(false, forKey: "ad_block_enabled")
         let server = try BrowsingHTTPFixture()
         let root = try await server.start()
         defer { server.stop() }
@@ -941,45 +1141,30 @@ import Network
         XCTAssertTrue(challenge, "Late compilation must respect the current challenge page bypass")
     }
 
-    func testAutomaticNavigationIsAllowedByDefaultAndSettingAppliesImmediately() async throws {
-        UserDefaults.standard.removeObject(forKey: BrowserAutomaticNavigationPolicy.preferenceKey)
+    func testPageRedirectsRemainAvailableAndAdPopupsStayBlocked() async throws {
         let server = try BrowsingHTTPFixture()
         let root = try await server.start()
         defer { server.stop() }
         let model = WebViewModel()
         let (window, previous) = try host(model)
         defer { close(model, window, previous) }
-        model.loadURL(root.appendingPathComponent("automatic-location"))
-        try await wait(model, for: "!!document.getElementById('destination')")
-        UserDefaults.standard.set(false, forKey: BrowserAutomaticNavigationPolicy.preferenceKey)
-        let previousDestinationCount = server.requests.filter { $0.path == "/destination" }.count
-        for path in ["automatic-location", "automatic-immediate", "automatic-meta", "automatic-popup", "automatic-link", "automatic-form", "automatic-frame"] {
+        for path in ["automatic-location", "automatic-immediate", "automatic-meta", "automatic-link", "automatic-form"] {
             model.loadURL(root.appendingPathComponent(path))
-            try await wait(model, for: "!!document.getElementById('automatic')")
-            try await Task.sleep(for: .milliseconds(1300))
-            XCTAssertEqual(model.webView?.url?.path, "/" + path)
-            XCTAssertNil(model.errorMessage)
-            XCTAssertFalse(model.webView?.subviews.contains(where: { $0.subviews.contains(where: { $0 is WKWebView }) }) == true)
+            try await wait(model, for: "!!document.getElementById('destination')")
         }
-        XCTAssertEqual(server.requests.filter { $0.path == "/destination" }.count, previousDestinationCount)
-        XCTAssertFalse(server.requests.contains { $0.path == "/login-popup" })
-        UserDefaults.standard.set(true, forKey: BrowserAutomaticNavigationPolicy.preferenceKey)
+        model.loadURL(root.appendingPathComponent("automatic-popup"))
+        try await wait(model, for: "!!document.getElementById('automatic')")
+        try await Task.sleep(for: .milliseconds(500))
+        XCTAssertFalse(server.requests.contains { $0.path == "/login-popup" }, "Ad protection still blocks unsolicited popups")
+        UserDefaults.standard.set(false, forKey: "ad_block_enabled")
         model.loadURL(root.appendingPathComponent("automatic-popup"))
         for _ in 0..<100 {
             if server.requests.contains(where: { $0.path == "/login-popup" }) { break }
             try await Task.sleep(for: .milliseconds(30))
         }
         XCTAssertTrue(server.requests.contains { $0.path == "/login-popup" })
-        model.loadURL(root.appendingPathComponent("automatic-location"))
-        try await wait(model, for: "!!document.getElementById('destination')")
-        UserDefaults.standard.set(false, forKey: BrowserAutomaticNavigationPolicy.preferenceKey)
-        // Native navigation and its HTTP redirect must still work while blocking page scripts.
         model.loadURL(root.appendingPathComponent("submit"))
         try await wait(model, for: "!!document.getElementById('receipt')")
-        model.loadURL(root.appendingPathComponent("automatic-location"))
-        try await wait(model, for: "!!document.getElementById('automatic')")
-        try await Task.sleep(for: .milliseconds(600))
-        XCTAssertEqual(model.webView?.url?.path, "/automatic-location")
     }
 
     func testPullToRefreshRevalidatesCachedPageAndResources() async throws {
@@ -1082,6 +1267,23 @@ import Network
         try await wait(model, for: "!!document.getElementById('form')")
         XCTAssertNil(model.errorMessage)
         XCTAssertEqual(web.url?.path, "/form")
+    }
+}
+
+@MainActor
+private final class WebLinkNavigationObserver: NSObject, WKNavigationDelegate {
+    let coordinator: WebViewRepresentable.Coordinator
+    var newWindowPolicies: [WKNavigationActionPolicy] = []
+
+    init(coordinator: WebViewRepresentable.Coordinator) { self.coordinator = coordinator }
+
+    func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
+                 preferences: WKWebpagePreferences,
+                 decisionHandler: @escaping (WKNavigationActionPolicy, WKWebpagePreferences) -> Void) {
+        coordinator.webView(webView, decidePolicyFor: action, preferences: preferences) { policy, preferences in
+            if action.targetFrame == nil { self.newWindowPolicies.append(policy) }
+            decisionHandler(policy, preferences)
+        }
     }
 }
 
@@ -1217,6 +1419,13 @@ private final class BrowsingHTTPFixture: @unchecked Sendable {
         case "/disconnect": connection.cancel(); return
         case "/runtime-reuse", "/runtime-reuse-next": body = "<main>Article content</main><aside class='qa-performance-ad'>Advertisement</aside>"
         case "/dynamic", "/dynamic-next": body = "<main>Article content</main><aside id='user-chosen-panel'>Selected panel</aside>"
+        case "/privacy-early": body = """
+            <script>window.earlyGPC=navigator.globalPrivacyControl;window.rejectClicks=0;</script>
+            <div id="cookie-banner" style="position:fixed;left:0;bottom:0;width:100%;height:120px;z-index:200">
+              <p>We use cookies to personalize content.</p>
+              <button onclick="window.rejectClicks++;this.parentElement.remove()">Reject optional cookies</button>
+            </div>
+            """
         case "/iframe": body = "<h1 id='parent'>Parent page</h1><iframe id='frame' src='/child'></iframe>"
         case "/child": body = "<p id='child'>Embedded content</p>"
         case "/delayed-form": body = "<form id='form'><input></form><script src='/delayed.js'></script>"

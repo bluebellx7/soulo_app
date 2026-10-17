@@ -814,7 +814,7 @@
 "share_extension_title" = "Cari dengan Soulo";
 "share_search_in_soulo" = "Cari dalam Soulo";
 "share_private_search" = "Cari Secara Persendirian";
-"share_extension_unsupported" = "Item ini tidak boleh dicari.";
+"share_extension_unsupported" = "Kandungan yang dikongsi tidak dapat dibaca.";
 "image_extract_text" = "Ekstrak Teks daripada Imej";
 "image_text_unavailable" = "Live Text tidak tersedia pada peranti ini.";
 "image_text_none" = "Tiada teks yang boleh dibaca ditemui dalam imej ini.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "Elakkan Bertindih";
 "keep_page_above_toolbar_desc" = "Simpan kawalan halaman web di atas bar alat.";
 "downloads_play_while_downloading" = "Main sambil memuat turun";
+
+// Default browser
+"settings_default_browser" = "Pelayar Lalai";
+"settings_default_browser_hint" = "Pilih Soulo sebagai pelayar lalai dalam Tetapan untuk membuka pautan daripada app lain.";
+"settings_backups" = "Sandaran tetapan";
+"settings_backup_restore_message" = "Pemulihan akan mematikan penyegerakan iCloud dan menyandarkan tetapan semasa terlebih dahulu.";
+"settings_backup_error" = "Operasi tidak dapat diselesaikan. Tetapan semasa dikekalkan.";
+"share_saved_for_open" = "Disimpan. Buka Soulo untuk meneruskan.";
+"intent_open_webpage_title" = "Buka pautan dalam Soulo";
+"intent_webpage_url" = "URL web";
+
+"external_navigation_prompt" = "Sahkan Pautan Aplikasi";
+"external_navigation_prompt_desc" = "Tanya sebelum membuka aplikasi lain. Matikan untuk membuka pautan aplikasi secara terus.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "Kumpulkan mengikut domain";
+"tab_view_carousel" = "Paparan kad";

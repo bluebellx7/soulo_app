@@ -2,6 +2,7 @@ import UIKit
 import WebKit
 import Combine
 import NaturalLanguage
+import SwiftUI
 
 struct UserScriptMenuCommand: Identifiable, Equatable {
     let id: String
@@ -14,6 +15,23 @@ struct FollowLinkTranslation: Equatable {
     let sourceIdentifier: String
     let targetIdentifier: String
     let startAfterPageRevision: Int
+}
+
+struct WebDomainNavigationConfirmation: Identifiable {
+    let id = UUID()
+    let sourceURL: URL
+    let destinationURL: URL
+    var originalRequest: URLRequest? = nil
+    /// Opening an address in a new tab must remain available for every prompt.
+    /// Keep ordinary GET context, but do not replay a form or consume its stream.
+    var requestForNewTab: URLRequest {
+        if let originalRequest,
+           (originalRequest.httpMethod ?? "GET").uppercased() == "GET",
+           originalRequest.httpBody == nil, originalRequest.httpBodyStream == nil {
+            return originalRequest
+        }
+        return URLRequest(url: destinationURL)
+    }
 }
 
 @MainActor
@@ -33,6 +51,10 @@ final class WebViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var isScrollingUp: Bool = false
     @Published var hasBottomVideoControls = false
+    @Published var episodeList: WebEpisodeList?
+    @Published var showEpisodes = false
+    @Published private(set) var domainNavigationConfirmation: WebDomainNavigationConfirmation?
+    private var domainNavigationDecision: ((Bool) -> Void)?
 
     var needsVideoViewportClearance: Bool {
         hasBottomVideoControls || WebCompatibilityService.isDouyinVideoSurface(currentURL)
@@ -58,14 +80,27 @@ final class WebViewModel: ObservableObject {
     var isWebViewRuntimeInstalled: Bool = false
     var hasInstalledWebViewScripts = false
     var lastAdHidingSignature = ""
+    var installedPrivacyProtectionSource = ""
     var adHidingNeedsBootstrap = false
+    var nativeCosmeticDocumentReady = false
     var lastManualAdSignature = ""
     var installedManualAdScriptSignature = ""
+    private var hasAppliedCustomPageZoom = false
     let userScriptBridgeToken = UUID().uuidString
     var isStreamingDownloadHandlerInstalled: Bool = false
     var isDesktopModeEnabled: Bool = false
     private(set) var mediaFrameInfos: [WKFrameInfo] = []
     private var snapshotPersistenceID: String?
+    private var snapshotGeneration = UUID()
+    @Published private(set) var snapshotRevision = 0
+    private var isLoadingSnapshot = false
+    private var isCapturingSnapshot = false
+    private var snapshotNeedsRefresh = false
+    private var scheduledSnapshotTask: Task<Void, Never>?
+    private var snapshotCompletions: [() -> Void] = []
+    private var snapshotDocumentGeneration = UUID()
+    private var allowsSnapshotPersistence = false
+    private var memorySnapshotData: Data?
     private var pageLanguageDetectionID = UUID()
 
     // Download state
@@ -83,6 +118,7 @@ final class WebViewModel: ObservableObject {
     // MARK: - WebView Reference
 
     private var pendingRequest: URLRequest?
+    private let historyTransition = WebHistoryTransition()
 
     var webView: WKWebView? {
         didSet {
@@ -113,6 +149,15 @@ final class WebViewModel: ObservableObject {
         cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
         keepSnapshotUntilLoaded: Bool = false
     ) {
+        loadRequest(URLRequest(url: url, cachePolicy: cachePolicy, timeoutInterval: 30),
+                    keepSnapshotUntilLoaded: keepSnapshotUntilLoaded)
+    }
+
+    func loadRequest(_ request: URLRequest, keepSnapshotUntilLoaded: Bool = false) {
+        guard let url = request.url else { return }
+        cancelScheduledSnapshot()
+        historyTransition.cancel()
+        resolveDomainNavigationConfirmation(allowed: false)
         BrowserStartupTrace.mark("load_requested", detail: webView == nil ? "pending" : "attached")
         errorMessage = nil
         if !keepSnapshotUntilLoaded { mediaSession.reset() }
@@ -122,7 +167,6 @@ final class WebViewModel: ObservableObject {
         hasVisibleContent = false
         estimatedProgress = 0.0
         showSnapshotWhileRestoring = keepSnapshotUntilLoaded && snapshot != nil
-        let request = URLRequest(url: url, cachePolicy: cachePolicy, timeoutInterval: 30)
 
         guard let webView = webView else {
             pendingRequest = request
@@ -130,6 +174,25 @@ final class WebViewModel: ObservableObject {
         }
 
         webView.load(request)
+    }
+
+    @discardableResult
+    func requestDomainNavigationConfirmation(from source: URL, to destination: URL,
+                                             originalRequest: URLRequest? = nil,
+                                             decision: @escaping (Bool) -> Void) -> UUID? {
+        guard domainNavigationConfirmation == nil else { return nil }
+        let request = WebDomainNavigationConfirmation(sourceURL: source, destinationURL: destination, originalRequest: originalRequest)
+        domainNavigationDecision = decision
+        domainNavigationConfirmation = request
+        return request.id
+    }
+
+    func resolveDomainNavigationConfirmation(id: UUID? = nil, allowed: Bool) {
+        guard let request = domainNavigationConfirmation, id == nil || id == request.id else { return }
+        let decision = domainNavigationDecision
+        domainNavigationDecision = nil
+        domainNavigationConfirmation = nil
+        decision?(allowed)
     }
 
     func setDesktopModeEnabled(_ enabled: Bool) {
@@ -194,6 +257,10 @@ final class WebViewModel: ObservableObject {
         if webView.pageZoom != pageZoom {
             webView.pageZoom = pageZoom
         }
+        if pageZoom != 1 { hasAppliedCustomPageZoom = true }
+        // Keep the compatibility reset after a user has zoomed, including
+        // restored history documents. Ordinary 100% pages need no DOM writes.
+        guard hasAppliedCustomPageZoom else { return }
         webView.evaluateJavaScript(
             WebViewScripts.compensatePageZoomWidth(scale: pageZoom),
             completionHandler: nil
@@ -206,15 +273,20 @@ final class WebViewModel: ObservableObject {
 
     func goBack() {
         guard canGoBack else { return }
-        webView?.goBack()
+        resolveDomainNavigationConfirmation(allowed: false)
+        if let webView { historyTransition.goBack(in: webView) }
     }
 
     func goForward() {
         guard canGoForward else { return }
+        resolveDomainNavigationConfirmation(allowed: false)
+        historyTransition.cancel()
         webView?.goForward()
     }
 
     func reload() {
+        historyTransition.cancel()
+        resolveDomainNavigationConfirmation(allowed: false)
         if isLoading {
             pendingRequest = nil
             webView?.stopLoading()
@@ -233,7 +305,9 @@ final class WebViewModel: ObservableObject {
         webView.scrollView.setNeedsLayout()
         webView.layoutIfNeeded()
         webView.scrollView.layoutIfNeeded()
-        webView.evaluateJavaScript(WebViewScripts.synchronizeViewport, completionHandler: nil)
+        if WebCompatibilityService.isDouyinVideoSurface(webView.url) {
+            webView.evaluateJavaScript(WebViewScripts.synchronizeViewport, completionHandler: nil)
+        }
     }
 
     func retryCurrentPage() {
@@ -244,6 +318,9 @@ final class WebViewModel: ObservableObject {
     /// Releases the expensive WebKit runtime while preserving the tab URL and snapshot.
     /// The view is recreated lazily the next time the tab becomes active.
     func releaseWebViewRuntime() {
+        cancelScheduledSnapshot()
+        historyTransition.cancel()
+        resolveDomainNavigationConfirmation(allowed: false)
         hasBottomVideoControls = false
         cancelMarkingAdvertisement()
         webView?.stopLoading()
@@ -253,8 +330,11 @@ final class WebViewModel: ObservableObject {
         pendingRequest = nil
         isWebViewRuntimeInstalled = false
         hasInstalledWebViewScripts = false
+        hasAppliedCustomPageZoom = false
         lastAdHidingSignature = ""
+        installedPrivacyProtectionSource = ""
         adHidingNeedsBootstrap = false
+        nativeCosmeticDocumentReady = false
         lastManualAdSignature = ""
         installedManualAdScriptSignature = ""
         hasVisibleContent = false
@@ -266,6 +346,9 @@ final class WebViewModel: ObservableObject {
     /// Recreates WebKit so document-start UserScripts and their permissions are
     /// rebuilt before the next navigation, while preserving the current page.
     func rebuildWebViewRuntime() {
+        cancelScheduledSnapshot()
+        historyTransition.cancel()
+        resolveDomainNavigationConfirmation(allowed: false)
         cancelMarkingAdvertisement()
         webView?.stopLoading()
         WebViewRepresentable.forgetContentRules(on: webView)
@@ -274,8 +357,11 @@ final class WebViewModel: ObservableObject {
         pendingRequest = nil
         isWebViewRuntimeInstalled = false
         hasInstalledWebViewScripts = false
+        hasAppliedCustomPageZoom = false
         lastAdHidingSignature = ""
+        installedPrivacyProtectionSource = ""
         adHidingNeedsBootstrap = false
+        nativeCosmeticDocumentReady = false
         lastManualAdSignature = ""
         installedManualAdScriptSignature = ""
         hasVisibleContent = false
@@ -380,7 +466,10 @@ final class WebViewModel: ObservableObject {
     }
 
     func beginPageNavigation() {
+        cancelScheduledSnapshot()
+        snapshotDocumentGeneration = UUID()
         hasBottomVideoControls = false
+        episodeList = nil
         hasVisibleContent = false
         mediaFrameInfos.removeAll()
     }
@@ -392,9 +481,13 @@ final class WebViewModel: ObservableObject {
     }
 
     func markPageContentVisible() {
-        if !hasVisibleContent { BrowserStartupTrace.mark("content_visible") }
-        hasVisibleContent = true
         showSnapshotWhileRestoring = false
+        guard !hasVisibleContent else { return }
+        BrowserStartupTrace.mark("content_visible")
+        hasVisibleContent = true
+        // A visible page can keep loading ads/images indefinitely. Save its
+        // first painted content without waiting for WebKit's load event.
+        scheduleSnapshotCapture()
     }
 
     func updateTitle(_ title: String?) {
@@ -518,76 +611,251 @@ final class WebViewModel: ObservableObject {
         errorMessage = message
         isLoading = false
         showSnapshotWhileRestoring = false
+        takeSnapshot()
     }
 
     // MARK: - Snapshot
 
     func configureSnapshotPersistence(id: UUID) {
         snapshotPersistenceID = id.uuidString
-        if snapshot == nil {
-            snapshot = Self.loadSnapshot(id: id.uuidString)
+        allowsSnapshotPersistence = !UserDefaults.standard.bool(forKey: "is_incognito")
+    }
+
+    /// Decode only the visible cards. Private tabs use compressed memory data;
+    /// normal tabs keep durable previews independently of WebKit and its cache.
+    func loadSnapshotIfNeeded(forRestoration: Bool = false) async {
+        guard !Task.isCancelled, snapshot == nil, !isLoadingSnapshot, let id = snapshotPersistenceID else { return }
+        isLoadingSnapshot = true
+        let generation = snapshotGeneration
+        let url = currentURL
+        while true {
+            let revision = snapshotRevision
+            let memoryData = memorySnapshotData
+            let canReadDisk = allowsSnapshotPersistence
+            let image = await withCheckedContinuation { continuation in
+                Self.snapshotWriteQueue.async {
+                    continuation.resume(returning: memoryData.flatMap(UIImage.init(data:))
+                        ?? (canReadDisk ? Self.loadSnapshot(id: id) : nil))
+                }
+            }
+            guard snapshotGeneration == generation else { return }
+            // A capture can finish while this read is still pending. Its
+            // durable write is queued before the revision changes; re-read
+            // instead of publishing an earlier cache miss or stale preview.
+            if snapshotRevision != revision { continue }
+            isLoadingSnapshot = false
+            // A different preview can join this read while its initiating SwiftUI
+            // task disappears during a layout switch. The generation owns eviction;
+            // cancellation of one view must not discard the shared image read.
+            guard snapshot == nil, snapshotPersistenceID == id else { return }
+            snapshot = image
+            if forRestoration, currentURL == url, isLoading, !hasVisibleContent, mediaSession.isActive {
+                showSnapshotWhileRestoring = image != nil
+            }
+            return
         }
+    }
+
+    func releaseSnapshotMemory() {
+        guard snapshot != nil || isLoadingSnapshot || isCapturingSnapshot else { return }
+        snapshotGeneration = UUID()
+        snapshotRevision &+= 1
+        isLoadingSnapshot = false
+        snapshot = nil
+        showSnapshotWhileRestoring = false
+        // An in-flight capture may still finish saving the compressed preview.
+        // Evicting the decoded bitmap must not cancel the only copy of a tab.
+    }
+
+    func captureSnapshot() async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            takeSnapshot { continuation.resume() }
+        }
+    }
+
+    func scheduleSnapshotCapture() {
+        cancelScheduledSnapshot()
+        let document = snapshotDocumentGeneration
+        let url = currentURL
+        scheduledSnapshotTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
+            guard let self, self.snapshotDocumentGeneration == document, self.currentURL == url else { return }
+            self.scheduledSnapshotTask = nil
+            self.takeSnapshot()
+        }
+    }
+
+    private func cancelScheduledSnapshot() {
+        scheduledSnapshotTask?.cancel()
+        scheduledSnapshotTask = nil
     }
 
     func takeSnapshot(completion: (() -> Void)? = nil) {
-        guard let webView = webView else {
-            completion?()
+        cancelScheduledSnapshot()
+        if let completion { snapshotCompletions.append(completion) }
+        guard !isCapturingSnapshot else { snapshotNeedsRefresh = true; return }
+        if let errorMessage, !errorMessage.isEmpty, currentURL != nil {
+            let size = webView.flatMap { $0.bounds.width > 1 && $0.bounds.height > 1 ? $0.bounds.size : nil }
+                ?? CGSize(width: 390, height: 700)
+            let renderer = ImageRenderer(content: BrowserLoadErrorView(
+                message: errorMessage, url: currentURL, onRetry: {}, onGoHome: nil, onOpenCompatibility: nil)
+                .content
+                .frame(width: size.width, height: size.height)
+                .background(Color(uiColor: .systemBackground))
+                .environment(\.colorScheme, webView?.traitCollection.userInterfaceStyle == .dark ? .dark : .light))
+            renderer.scale = 1
+            guard let image = renderer.uiImage else { finishSnapshotCapture(); return }
+            isCapturingSnapshot = true
+            saveCapturedSnapshot(image, from: webView, generation: snapshotGeneration, error: errorMessage, warm: false)
             return
         }
+        guard let webView, webView.window != nil, webView.bounds.width > 1, webView.bounds.height > 1,
+              currentURL != nil, webView.url == currentURL, !showSnapshotWhileRestoring,
+              hasVisibleContent || (!hasInstalledWebViewScripts && !webView.isLoading) else {
+            finishSnapshotCapture()
+            return
+        }
+        isCapturingSnapshot = true
         let config = WKSnapshotConfiguration()
+        let generation = snapshotGeneration
+        let documentGeneration = snapshotDocumentGeneration
+        let pageURL = currentURL
+        let persistenceID = snapshotPersistenceID
+        let warm = WebAppearanceService.hasWarmOverlay(on: webView)
+        config.rect = webView.bounds
         config.snapshotWidth = NSNumber(value: 430)
-        // Tab switching needs the last displayed frame without waiting for a
-        // new render commit from the page we are leaving.
         config.afterScreenUpdates = false
-        webView.takeSnapshot(with: config) { [weak self] image, _ in
+        // Request pixels synchronously, before switching detaches this WebView.
+        webView.takeSnapshot(with: config) { [weak self, weak webView] image, _ in
             Task { @MainActor in
-                if let image {
-                    self?.snapshot = image
-                    self?.persistSnapshot(image)
+                guard let self else { return }
+                guard let image, let webView, self.webView === webView,
+                      self.snapshotDocumentGeneration == documentGeneration,
+                      self.currentURL == pageURL, self.snapshotPersistenceID == persistenceID,
+                      self.errorMessage == nil else {
+                    self.finishSnapshotCapture(); return
                 }
-                completion?()
+                self.saveCapturedSnapshot(image, from: webView, generation: generation, error: nil, warm: warm)
             }
         }
+    }
+
+    private func saveCapturedSnapshot(_ image: UIImage, from webView: WKWebView?, generation: UUID, error: String?, warm: Bool) {
+        let document = snapshotDocumentGeneration
+        let url = currentURL
+        let id = snapshotPersistenceID
+        let canPersist = allowsSnapshotPersistence && (webView?.configuration.websiteDataStore.isPersistent ?? true)
+        Task { @MainActor [weak self, weak webView] in
+            let data = await withCheckedContinuation { continuation in
+                Self.snapshotWriteQueue.async {
+                    continuation.resume(returning: Self.previewData(image, warm: warm))
+                }
+            }
+            guard let self else { return }
+            guard let data, self.webView === webView, self.snapshotDocumentGeneration == document,
+                  self.currentURL == url, self.snapshotPersistenceID == id, self.errorMessage == error else {
+                self.finishSnapshotCapture(); return
+            }
+            if !canPersist { self.memorySnapshotData = data }
+            if self.snapshotGeneration == generation { self.snapshot = UIImage(data: data) }
+            if canPersist, let id { self.persistSnapshot(data, id: id) }
+            if self.snapshotGeneration != generation { self.snapshotRevision &+= 1 }
+            self.finishSnapshotCapture()
+        }
+    }
+
+    private func finishSnapshotCapture() {
+        isCapturingSnapshot = false
+        if snapshotNeedsRefresh {
+            snapshotNeedsRefresh = false
+            takeSnapshot()
+            return
+        }
+        let completions = snapshotCompletions
+        snapshotCompletions.removeAll()
+        completions.forEach { $0() }
     }
 
     func deletePersistedSnapshot() {
-        guard let snapshotPersistenceID else { return }
-        self.snapshotPersistenceID = nil
-        let url = Self.snapshotURL(id: snapshotPersistenceID)
-        Self.snapshotWriteQueue.async { try? FileManager.default.removeItem(at: url) }
+        snapshotGeneration = UUID()
+        memorySnapshotData = nil
+        snapshot = nil
+        guard let id = snapshotPersistenceID else { return }
+        snapshotPersistenceID = nil
+        Self.snapshotWriteQueue.async {
+            try? FileManager.default.removeItem(at: Self.snapshotURL(id: id))
+            try? FileManager.default.removeItem(at: Self.legacySnapshotURL(id: id))
+        }
     }
 
     static func deleteAllPersistedSnapshots() {
-        let directory = snapshotDirectory
-        snapshotWriteQueue.async { try? FileManager.default.removeItem(at: directory) }
+        snapshotWriteQueue.async {
+            try? FileManager.default.removeItem(at: snapshotDirectory)
+            try? FileManager.default.removeItem(at: legacySnapshotDirectory)
+        }
     }
 
-    private func persistSnapshot(_ image: UIImage) {
-        guard let snapshotPersistenceID else { return }
-        let directory = Self.snapshotDirectory
-        let url = Self.snapshotURL(id: snapshotPersistenceID)
+    private func persistSnapshot(_ data: Data, id: String) {
         Self.snapshotWriteQueue.async {
-            autoreleasepool {
-                guard let data = image.jpegData(compressionQuality: 0.82) else { return }
-                try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-                try? data.write(to: url, options: .atomic)
+            var directory = Self.snapshotDirectory
+            try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = true
+            try? directory.setResourceValues(values)
+            try? data.write(to: Self.snapshotURL(id: id), options: .atomic)
+        }
+    }
+
+    nonisolated private static func previewData(_ image: UIImage, warm: Bool) -> Data? {
+        autoreleasepool {
+            let width = image.size.width * image.scale
+            let height = image.size.height * image.scale
+            let scale = min(1, 640 / max(1, width), 1_600 / max(1, height))
+            let size = CGSize(width: width * scale, height: height * scale)
+            let format = UIGraphicsImageRendererFormat()
+            format.scale = 1
+            format.opaque = true
+            let preview = UIGraphicsImageRenderer(size: size, format: format).image { context in
+                UIColor.white.setFill(); context.fill(CGRect(origin: .zero, size: size))
+                image.draw(in: CGRect(origin: .zero, size: size))
+                if warm {
+                    UIColor(red: 1, green: 154.0 / 255, blue: 61.0 / 255, alpha: 0.055).setFill()
+                    context.fill(CGRect(origin: .zero, size: size))
+                }
             }
+            return preview.jpegData(compressionQuality: 0.82)
         }
     }
 
     private static let snapshotWriteQueue = DispatchQueue(label: "com.dkluge.Soulo.tab-snapshots", qos: .utility)
 
-    private static func loadSnapshot(id: String) -> UIImage? {
-        UIImage(contentsOfFile: snapshotURL(id: id).path)
+    nonisolated private static func loadSnapshot(id: String) -> UIImage? {
+        let url = snapshotURL(id: id)
+        if let image = UIImage(contentsOfFile: url.path) { return image }
+        let legacy = legacySnapshotURL(id: id)
+        guard let image = UIImage(contentsOfFile: legacy.path) else { return nil }
+        try? FileManager.default.createDirectory(at: snapshotDirectory, withIntermediateDirectories: true)
+        try? FileManager.default.moveItem(at: legacy, to: url)
+        return image
     }
 
-    private static var snapshotDirectory: URL {
+    nonisolated private static var snapshotDirectory: URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        return base.appendingPathComponent("SouloTabSnapshots", isDirectory: true)
+    }
+
+    nonisolated private static var legacySnapshotDirectory: URL {
         let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         return base.appendingPathComponent("SouloTabSnapshots", isDirectory: true)
     }
 
-    private static func snapshotURL(id: String) -> URL {
+    nonisolated private static func legacySnapshotURL(id: String) -> URL {
+        legacySnapshotDirectory.appendingPathComponent("\(id).jpg")
+    }
+
+    nonisolated private static func snapshotURL(id: String) -> URL {
         snapshotDirectory.appendingPathComponent("\(id).jpg")
     }
 }

@@ -596,7 +596,7 @@ final class AdBlockSubscriptionService: ObservableObject {
         String(userDefaults.double(forKey: versionKey))
     }
 
-    private static func defaultSubscriptions() -> [AdBlockSubscription] {
+    static func defaultSubscriptions() -> [AdBlockSubscription] {
         [
             AdBlockSubscription(
                 id: "easylist",

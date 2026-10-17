@@ -60,11 +60,13 @@ private struct SavedTab: Codable {
     let urlString: String?
     let keyword: String?
     let platformName: String?
+    let pageTitle: String?
 }
 
 private struct SavedState: Codable {
     let tabs: [SavedTab]
     let activeIndex: Int
+    let savedAt: Date?
 }
 
 // MARK: - TabManager
@@ -74,28 +76,29 @@ final class TabManager: ObservableObject {
 
     // MARK: - Published State
 
-    @Published var tabs: [BrowserTab] = []
+    @Published var tabs: [BrowserTab] = [] {
+        didSet { synchronizePersistenceObservers() }
+    }
     @Published var activeTabIndex: Int = 0
     @Published var showTabOverview: Bool = false
     @Published var recentlyClosed: [RecentlyClosedTab] = []
-    @Published var didReachTabLimit: Bool = false
 
-    // Find in Page
-    @Published var showFindInPage: Bool = false
-    @Published var findText: String = ""
-    @Published var findMatchCount: Int = 0
+    private weak var findWebView: WKWebView?
 
     // Desktop mode is a browser preference; individual sites may additionally require it.
     @Published var desktopModeTabs: Set<UUID> = []
     @Published private(set) var prefersDesktopMode = false
 
-    static let maxTabs = 20
     static let maxRecentlyClosed = 10
     /// Retain recent tabs, independent of their position in the tab bar.
     /// Older tabs keep their URL, snapshot and media checkpoint without WebKit.
     static let maxAliveTabs = ProcessInfo.processInfo.physicalMemory >= 4 * 1_024 * 1_024 * 1_024 ? 8 : 5
     private var memoryWarningObserver: AnyCancellable?
     private var desktopModeObserver: AnyCancellable?
+    private var recentTabIDs: [UUID] = []
+    private var saveTask: Task<Void, Never>?
+    private var backgroundObserver: AnyCancellable?
+    private var persistenceObservers: [UUID: AnyCancellable] = [:]
 
     private let storageKey: String
     private let desktopModeStorageKey: String
@@ -122,6 +125,13 @@ final class TabManager: ObservableObject {
         desktopModeObserver = NotificationCenter.default.publisher(for: .souloDesktopModeChanged)
             .sink { [weak self] _ in
                 Task { @MainActor in self?.synchronizeDesktopMode() }
+            }
+        backgroundObserver = NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)
+            .sink { [weak self] _ in
+                MainActor.assumeIsolated {
+                    self?.activeWebViewModel?.takeSnapshot()
+                    self?.saveToDisk()
+                }
             }
         restoreFromDisk()
         if tabs.isEmpty {
@@ -153,21 +163,37 @@ final class TabManager: ObservableObject {
         // Background pages retain their last snapshot; no simultaneous WebKit
         // captures across every warm tab when opening the switcher.
         activeWebViewModel?.takeSnapshot()
+        saveToDisk()
     }
 
     // MARK: - Tab Creation
 
-    @discardableResult
-    func createTab(url: URL? = nil, keyword: String? = nil, platform: SearchPlatform? = nil, switchTo: Bool = true) -> BrowserTab {
-        if tabs.count >= Self.maxTabs {
-            // Never discard a user's tab just because another page requested a new one.
-            didReachTabLimit = true
-            return activeTab ?? tabs[0]
+    /// Home begins a separate browsing task unless the active tab is still empty.
+    func prepareTabForHomeSearch() -> BrowserTab? {
+        if let tab = activeTab,
+           tab.webViewModel.currentURL == nil,
+           tab.suspendedURL == nil,
+           tab.keyword?.isEmpty != false {
+            return tab
         }
 
+        activeWebViewModel?.takeSnapshot()
+        dismissFindInPage()
+        return createTab()
+    }
+
+    @discardableResult
+    func createTab(url: URL? = nil, keyword: String? = nil, platform: SearchPlatform? = nil, switchTo: Bool = true) -> BrowserTab {
         var tab = BrowserTab(keyword: keyword, platform: platform)
+        if switchTo {
+            activeWebViewModel?.takeSnapshot()
+            dismissFindInPage()
+        }
         tab.webViewModel.setDesktopModeEnabled(prefersDesktopMode)
-        if !switchTo { tab.lastAccessedAt = .distantPast }
+        if !switchTo {
+            tab.lastAccessedAt = .distantPast
+            tab.isAlive = false
+        }
         tabs.append(tab)
 
         if switchTo {
@@ -179,14 +205,26 @@ final class TabManager: ObservableObject {
             tab.webViewModel.loadURL(url)
         }
 
-        saveToDisk()
+        scheduleSaveToDisk()
         return tab
+    }
+
+    /// Cancel the held navigation and open its address in a separate tab.
+    @discardableResult
+    func openDomainNavigationInNewTab(from source: WebViewModel, confirmationID: UUID) -> Bool {
+        guard let confirmation = source.domainNavigationConfirmation,
+              confirmation.id == confirmationID else { return false }
+        let request = confirmation.requestForNewTab
+        source.resolveDomainNavigationConfirmation(id: confirmationID, allowed: false)
+        createTab().webViewModel.loadRequest(request)
+        return true
     }
 
     // MARK: - Tab Closing
 
     func closeTab(at index: Int, animated: Bool = true) {
         guard tabs.indices.contains(index) else { return }
+        if index == activeTabIndex { dismissFindInPage() }
         let tab = tabs[index]
         unregisterWebExtensionTab(tab)
         tab.webViewModel.releaseWebViewRuntime()
@@ -206,6 +244,7 @@ final class TabManager: ObservableObject {
         }
 
         desktopModeTabs.remove(tab.id)
+        recentTabIDs.removeAll { $0 == tab.id }
         tabs.remove(at: index)
 
         if tabs.isEmpty {
@@ -217,7 +256,7 @@ final class TabManager: ObservableObject {
         }
 
         manageTabLifecycles()
-        saveToDisk()
+        scheduleSaveToDisk()
     }
 
     func closeTab(id: UUID) {
@@ -245,7 +284,7 @@ final class TabManager: ObservableObject {
         recentlyClosed.removeAll()
         WebViewModel.deleteAllPersistedSnapshots()
         UserDefaults.standard.removeObject(forKey: storageKey)
-        saveToDisk()
+        scheduleSaveToDisk()
     }
 
     private func closeAllTabs(addingToRecentlyClosed: Bool) {
@@ -269,6 +308,7 @@ final class TabManager: ObservableObject {
             recentlyClosed = Array(recentlyClosed.prefix(Self.maxRecentlyClosed))
         }
         desktopModeTabs.removeAll()
+        recentTabIDs.removeAll()
         tabs.removeAll()
         createTab()
     }
@@ -291,9 +331,10 @@ final class TabManager: ObservableObject {
             recentlyClosed = Array(recentlyClosed.prefix(Self.maxRecentlyClosed))
         }
         tabs = [current]
+        recentTabIDs = [current.id]
         activeTabIndex = 0
         manageTabLifecycles()
-        saveToDisk()
+        scheduleSaveToDisk()
     }
 
     // MARK: - Restore Closed Tab
@@ -322,7 +363,7 @@ final class TabManager: ObservableObject {
         activeTabIndex = index
         showTabOverview = false
         manageTabLifecycles()
-        saveToDisk()
+        scheduleSaveToDisk()
     }
 
     func focusTabInSwitcher(at index: Int) {
@@ -331,7 +372,7 @@ final class TabManager: ObservableObject {
         dismissFindInPage()
         activeTabIndex = index
         manageTabLifecycles()
-        saveToDisk()
+        scheduleSaveToDisk()
     }
 
     func switchToTab(id: UUID) {
@@ -357,7 +398,7 @@ final class TabManager: ObservableObject {
         if let newIndex = tabs.firstIndex(where: { $0.id == currentID }) {
             activeTabIndex = newIndex
         }
-        saveToDisk()
+        scheduleSaveToDisk()
     }
 
     // MARK: - Memory Management
@@ -365,9 +406,14 @@ final class TabManager: ObservableObject {
     private func manageTabLifecycles() {
         guard tabs.indices.contains(activeTabIndex) else { return }
         tabs[activeTabIndex].lastAccessedAt = Date()
-        let warmIDs = Set(tabs.sorted { $0.lastAccessedAt > $1.lastAccessedAt }
-            .prefix(Self.maxAliveTabs).map(\.id))
+        let activeID = tabs[activeTabIndex].id
+        recentTabIDs.removeAll { $0 == activeID }
+        recentTabIDs.insert(activeID, at: 0)
+        recentTabIDs = Array(recentTabIDs.prefix(Self.maxAliveTabs))
+        let warmIDs = Set(recentTabIDs)
+        let previewRange = max(0, activeTabIndex - 3)...min(tabs.count - 1, activeTabIndex + 3)
         for i in tabs.indices {
+            if !previewRange.contains(i) { tabs[i].webViewModel.releaseSnapshotMemory() }
             tabs[i].webViewModel.mediaSession.setActive(i == activeTabIndex)
             if i == activeTabIndex {
                 if !tabs[i].isAlive { restoreTabMemory(at: i) }
@@ -379,8 +425,11 @@ final class TabManager: ObservableObject {
     }
 
     func releaseInactiveTabsForMemoryPressure() {
-        for i in tabs.indices where i != activeTabIndex && tabs[i].isAlive {
-            guard !tabs[i].webViewModel.isDownloading, tabs[i].webViewModel.activeDownloadCount == 0 else { continue }
+        recentTabIDs = activeTab.map { [$0.id] } ?? []
+        for i in tabs.indices where i != activeTabIndex {
+            tabs[i].webViewModel.releaseSnapshotMemory()
+            guard tabs[i].isAlive, !tabs[i].webViewModel.isDownloading,
+                  tabs[i].webViewModel.activeDownloadCount == 0 else { continue }
             suspendTab(at: i)
         }
     }
@@ -394,6 +443,7 @@ final class TabManager: ObservableObject {
         tabs[index].isAlive = false
         Task { @MainActor [weak self, weak webViewModel] in
             guard let webViewModel else { return }
+            await webViewModel.captureSnapshot()
             await webViewModel.mediaSession.capture()
             guard let self, let currentIndex = self.tabs.firstIndex(where: { $0.id == tabID }),
                   !self.tabs[currentIndex].isAlive else { return }
@@ -415,7 +465,11 @@ final class TabManager: ObservableObject {
         // A quick switch back can beat asynchronous checkpoint capture. Reuse
         // the original runtime in that case, rather than reloading its page.
         if let url = tabs[index].suspendedURL, tabs[index].webViewModel.webView == nil {
-            tabs[index].webViewModel.loadCachedURL(url)
+            let model = tabs[index].webViewModel
+            model.loadCachedURL(url)
+            Task { @MainActor [weak model] in
+                await model?.loadSnapshotIfNeeded(forRestoration: true)
+            }
         }
         tabs[index].suspendedURL = nil
     }
@@ -423,64 +477,17 @@ final class TabManager: ObservableObject {
     // MARK: - Find in Page
 
     func startFindInPage() {
-        showFindInPage = true
-        findText = ""
-        findMatchCount = 0
+        dismissFindInPage()
+        guard let webView = activeWebViewModel?.webView, webView.window != nil else { return }
+        webView.isFindInteractionEnabled = true
+        findWebView = webView
+        webView.findInteraction?.searchText = ""
+        webView.findInteraction?.presentFindNavigator(showingReplace: false)
     }
 
     func dismissFindInPage() {
-        guard showFindInPage || !findText.isEmpty || findMatchCount != 0 else { return }
-        showFindInPage = false
-        findText = ""
-        findMatchCount = 0
-        activeWebViewModel?.webView?.evaluateJavaScript(
-            "window.getSelection().removeAllRanges();", completionHandler: nil
-        )
-    }
-
-    func findNext() {
-        guard !findText.isEmpty else { return }
-        activeWebViewModel?.webView?.evaluateJavaScript(
-            "window.find('\(findText.escapedForJS)', false, false, true)"
-        ) { [weak self] _, _ in
-            self?.updateFindCount()
-        }
-    }
-
-    func findPrevious() {
-        guard !findText.isEmpty else { return }
-        activeWebViewModel?.webView?.evaluateJavaScript(
-            "window.find('\(findText.escapedForJS)', false, true, true)"
-        ) { [weak self] _, _ in
-            self?.updateFindCount()
-        }
-    }
-
-    func performFind() {
-        guard !findText.isEmpty else {
-            findMatchCount = 0
-            return
-        }
-        updateFindCount()
-        findNext()
-    }
-
-    private func updateFindCount() {
-        guard !findText.isEmpty else { return }
-        let js = """
-        (function() {
-            var text = '\(findText.escapedForJS)';
-            var body = document.body.innerText || '';
-            var regex = new RegExp(text.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'), 'gi');
-            var matches = body.match(regex);
-            return matches ? matches.length : 0;
-        })()
-        """
-        activeWebViewModel?.webView?.evaluateJavaScript(js) { [weak self] result, _ in
-            Task { @MainActor in
-                self?.findMatchCount = (result as? Int) ?? 0
-            }
-        }
+        findWebView?.findInteraction?.dismissFindNavigator()
+        findWebView = nil
     }
 
     // MARK: - Desktop Mode
@@ -526,8 +533,37 @@ final class TabManager: ObservableObject {
 
     // MARK: - Persistence
 
-    /// Save current tab state to UserDefaults.
+    private func synchronizePersistenceObservers() {
+        let ids = Set(tabs.map(\.id))
+        persistenceObservers = persistenceObservers.filter { ids.contains($0.key) }
+        for tab in tabs where persistenceObservers[tab.id] == nil {
+            persistenceObservers[tab.id] = tab.webViewModel.$currentURL
+                .combineLatest(tab.webViewModel.$pageTitle)
+                .removeDuplicates { $0.0 == $1.0 && $0.1 == $1.1 }
+                .dropFirst()
+                .receive(on: RunLoop.main)
+                .sink { [weak self] _ in
+                    // Domain groups and home controls also depend on child
+                    // metadata, including redirects that finish offscreen.
+                    self?.objectWillChange.send()
+                    self?.scheduleSaveToDisk()
+                }
+        }
+    }
+
+    /// Coalesce bursts of tab creation, closing and switching into one write.
+    private func scheduleSaveToDisk() {
+        saveTask?.cancel()
+        saveTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(for: .milliseconds(250)) } catch { return }
+            self?.saveToDisk()
+        }
+    }
+
+    /// Flush immediately when the app backgrounds or a caller needs a checkpoint.
     func saveToDisk() {
+        saveTask?.cancel()
+        saveTask = nil
         guard !UserDefaults.standard.bool(forKey: "is_incognito") else {
             UserDefaults.standard.removeObject(forKey: storageKey)
             return
@@ -544,7 +580,8 @@ final class TabManager: ObservableObject {
                 id: tab.id.uuidString,
                 urlString: (tab.webViewModel.currentURL ?? tab.suspendedURL)?.absoluteString,
                 keyword: tab.keyword,
-                platformName: tab.platform?.name
+                platformName: tab.platform?.name,
+                pageTitle: tab.webViewModel.pageTitle
             )
         }
         let restoredActiveIndex: Int
@@ -557,10 +594,32 @@ final class TabManager: ObservableObject {
             }.count
             restoredActiveIndex = max(0, min(restorableBeforeActive, restorableTabs.count - 1))
         }
-        let state = SavedState(tabs: saved, activeIndex: restoredActiveIndex)
+        let state = SavedState(tabs: saved, activeIndex: restoredActiveIndex, savedAt: Date())
         if let data = try? JSONEncoder().encode(state) {
             UserDefaults.standard.set(data, forKey: storageKey)
         }
+    }
+
+    /// Recover the last normal window when older versions generated a new
+    /// default window identity on each cold launch. Other windows stay intact.
+    static func mostRecentSavedWindowID(userDefaults: UserDefaults = .standard) -> UUID? {
+        guard !userDefaults.bool(forKey: "is_incognito") else { return nil }
+        let prefix = "soulo_saved_tabs."
+        let candidates = userDefaults.dictionaryRepresentation().compactMap { key, value -> (UUID, Date, Int)? in
+            guard key.hasPrefix(prefix), let id = UUID(uuidString: String(key.dropFirst(prefix.count))),
+                  let data = value as? Data, let state = try? JSONDecoder().decode(SavedState.self, from: data) else { return nil }
+            let count = state.tabs.filter { tab in
+                guard let url = tab.urlString.flatMap(URL.init(string:)) else { return false }
+                return Self.isRestorableAcrossLaunches(url)
+            }.count
+            guard count > 0 else { return nil }
+            return (id, state.savedAt ?? .distantPast, count)
+        }
+        return candidates.sorted {
+            if $0.1 != $1.1 { return $0.1 > $1.1 }
+            if $0.2 != $1.2 { return $0.2 > $1.2 }
+            return $0.0.uuidString < $1.0.uuidString
+        }.first?.0
     }
 
     /// Restore tabs from UserDefaults. Called once at init.
@@ -575,23 +634,29 @@ final class TabManager: ObservableObject {
 
         let allPlatforms = PlatformDataStore.shared.allPlatforms()
 
+        var restoredTabs: [BrowserTab] = []
+        restoredTabs.reserveCapacity(state.tabs.count)
         for saved in state.tabs {
             let restoredURL = saved.urlString.flatMap(URL.init(string:))
             guard Self.isRestorableAcrossLaunches(restoredURL) else { continue }
             let platform = saved.platformName.flatMap { name in
                 allPlatforms.first { $0.name == name }
             }
-            let tab = BrowserTab(
+            var tab = BrowserTab(
                 id: UUID(uuidString: saved.id) ?? UUID(),
                 keyword: saved.keyword,
                 platform: platform
             )
             tab.webViewModel.setDesktopModeEnabled(prefersDesktopMode)
+            tab.webViewModel.updateTitle(saved.pageTitle)
             if let url = restoredURL {
                 tab.webViewModel.loadCachedURL(url)
             }
-            tabs.append(tab)
+            tab.isAlive = false
+            tab.suspendedURL = restoredURL
+            restoredTabs.append(tab)
         }
+        tabs = restoredTabs
 
         if state.activeIndex >= 0 && state.activeIndex < tabs.count {
             activeTabIndex = state.activeIndex

@@ -162,8 +162,6 @@
 "manual_ad_saved" = "已隐藏并保存";
 "manual_ad_continue" = "继续标记";
 "manual_ad_restore_site" = "恢复整站标记";
-"ad_allow_redirects" = "允许自动跳转";
-"ad_allow_redirects_hint" = "关闭时拦截网页未经点击发起的跳转和弹窗。若网站需要自动跳转，可在此开启。";
 "manual_ad_rules" = "已标记广告";
 "manual_ad_footer" = "规则保存在本机，遵循广告拦截开关和网站白名单。恢复一项即可移除对应规则。";
 "manual_ad_error" = "无法保存该区域，页面可能已变化，请重新标记。";
@@ -363,3 +361,43 @@
 
 "image_view_full" = "查看大图";
 "video_tools" = "视频工具";
+
+// Web episode picker
+"episodes" = "选集";
+"episodes_source" = "线路";
+"episodes_ascending" = "正序";
+"episodes_descending" = "倒序";
+"episodes_previous" = "上一集";
+"episodes_next" = "下一集";
+"episodes_search" = "搜索集数";
+"episodes_unavailable" = "未找到集数";
+
+// Built-in video helper
+"cross_domain_confirm" = "跨域跳转确认";
+"cross_domain_confirm_description" = "网页自动跳转到其他域名前先询问；主动输入地址或点击链接可直接打开。";
+"cross_domain_title" = "离开当前网站？";
+"cross_domain_message" = "页面将从 %@ 跳转到 %@，是否继续？";
+"cross_domain_continue" = "继续";
+
+// Episode batch downloads
+"episodes_select" = "多选";
+"episodes_download_selected" = "下载（%d）";
+"episodes_download_progress" = "已处理 %d / %d 集";
+"episodes_download_failed" = "失败（%d）";
+"episodes_download_stop_queue" = "停止排队";
+"episodes_download_hint" = "下载进度与文件可在下载管理中查看。";
+"episodes_download_unavailable" = "未找到可下载的视频，请打开该集后重试。";
+"episodes_download_ambiguous" = "发现多个视频，请打开该集，在资源面板中选择。";
+
+"video_tools_collapse" = "收起";
+
+"cross_domain_new_tab" = "新标签打开";
+
+"video_fullscreen" = "全屏";
+"video_speed" = "倍速";
+"cross_domain_allowlist" = "跳转白名单";
+"cross_domain_allowlist_hint" = "匹配目标域名时跳过确认。*.qq.com 包含 qq.com 及其子域名；qq.com 只匹配该域名。左滑可删除。此列表仅跳过跳转确认，广告过滤仍生效。";
+"cross_domain_add" = "添加";
+"cross_domain_invalid" = "请输入有效域名，如 *.qq.com";
+"cross_domain_reset" = "恢复默认白名单";
+"cross_domain_trust" = "信任 %@ 并继续";

@@ -134,6 +134,7 @@ final class PrivacyProtectionService: ObservableObject {
     }
 
     private func updateSummary(for host: String?, _ update: (inout SitePrivacySummary) -> Void) {
+        guard !userDefaults.bool(forKey: "is_incognito") else { return }
         let cleanHost = Self.normalizedHost(host)
         guard !cleanHost.isEmpty else { return }
         var summary = summariesByHost[cleanHost] ?? .empty(host: cleanHost)

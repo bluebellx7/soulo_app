@@ -67,4 +67,27 @@ final class PrivacyProtectionServiceTests: XCTestCase {
         second.setProtectionEnabled(true, for: "example.com")
         XCTAssertFalse(second.isProtectionDisabled(for: "example.com"))
     }
+
+    func testPrivateBrowsingDoesNotRecordDomainsOrResourceURLs() {
+        let service = PrivacyProtectionService(userDefaults: defaults)
+        service.recordHiddenElementCount(2, for: "public.example")
+        defaults.set(true, forKey: "is_incognito")
+        service.recordHiddenElementCount(3, for: "private.example")
+        service.recordTrackerHosts(["google-analytics.com"], for: "private.example")
+        service.recordResourceObservations([ResourceObservation(
+            urlString: "https://google-analytics.com/collect?private=1", resourceType: "script",
+            pageURLString: "https://private.example/secret", potentiallyBlocked: true
+        )], for: URL(string: "https://private.example/secret"))
+        service.recordHTTPSUpgrade(for: "private.example")
+        service.recordTrackingParametersStripped(1, for: "private.example")
+        service.recordCookieBannerActions(1, for: "private.example")
+        service.flushPendingStatistics()
+        XCTAssertNil(service.summariesByHost["private.example"])
+        let restored = PrivacyProtectionService(userDefaults: defaults)
+        XCTAssertNil(restored.summariesByHost["private.example"])
+        XCTAssertEqual(restored.summary(for: "public.example").hiddenElementCount, 2)
+        defaults.set(false, forKey: "is_incognito")
+        service.recordHiddenElementCount(1, for: "resumed.example")
+        XCTAssertEqual(service.summary(for: "resumed.example").hiddenElementCount, 1)
+    }
 }

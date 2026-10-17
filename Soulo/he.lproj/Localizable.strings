@@ -814,7 +814,7 @@
 "share_extension_title" = "חפש עם Soulo";
 "share_search_in_soulo" = "חפש ב-Soulo";
 "share_private_search" = "חפש באופן פרטי";
-"share_extension_unsupported" = "לא ניתן לחפש פריט זה.";
+"share_extension_unsupported" = "לא ניתן לקרוא את התוכן ששותף.";
 "image_extract_text" = "חלץ טקסט מתמונה";
 "image_text_unavailable" = "Live Text אינו זמין במכשיר זה.";
 "image_text_none" = "לא נמצא טקסט קריא בתמונה זו.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "הימנע מחפיפה";
 "keep_page_above_toolbar_desc" = "שמור את פקדי דפי האינטרנט מעל סרגל הכלים.";
 "downloads_play_while_downloading" = "ניגון בזמן ההורדה";
+
+// Default browser
+"settings_default_browser" = "דפדפן ברירת מחדל";
+"settings_default_browser_hint" = "בחרו ב-Soulo כדפדפן ברירת המחדל בהגדרות כדי לפתוח קישורים מאפליקציות אחרות.";
+"settings_backups" = "גיבויי הגדרות";
+"settings_backup_restore_message" = "השחזור יכבה את סנכרון iCloud ויגבה תחילה את ההגדרות הנוכחיות.";
+"settings_backup_error" = "לא ניתן להשלים את הפעולה. ההגדרות הנוכחיות נשמרו.";
+"share_saved_for_open" = "נשמר. יש לפתוח את Soulo כדי להמשיך.";
+"intent_open_webpage_title" = "פתיחת קישור ב-Soulo";
+"intent_webpage_url" = "כתובת אינטרנט";
+
+"external_navigation_prompt" = "אישור קישורים לאפליקציות";
+"external_navigation_prompt_desc" = "בקשת אישור לפני פתיחת אפליקציה אחרת. כיבוי יפתח קישורים לאפליקציות ישירות.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "קיבוץ לפי דומיין";
+"tab_view_carousel" = "תצוגת כרטיסים";

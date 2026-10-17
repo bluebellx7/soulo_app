@@ -814,7 +814,7 @@
 "share_extension_title" = "Soulo ile arayın";
 "share_search_in_soulo" = "Soulo içinde ara";
 "share_private_search" = "Özel Olarak Ara";
-"share_extension_unsupported" = "Bu öğe aranamaz.";
+"share_extension_unsupported" = "Paylaşılan içerik okunamadı.";
 "image_extract_text" = "Görüntüden Metni Çıkart";
 "image_text_unavailable" = "Live Text bu cihazda mevcut değil.";
 "image_text_none" = "Bu resimde okunabilir metin bulunamadı.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "Çakışmadan Kaçının";
 "keep_page_above_toolbar_desc" = "Web sayfası kontrollerini araç çubuğunun üstünde tutun.";
 "downloads_play_while_downloading" = "İndirirken oynat";
+
+// Default browser
+"settings_default_browser" = "Varsayılan Tarayıcı";
+"settings_default_browser_hint" = "Diğer uygulamalardaki bağlantıları açmak için Ayarlar’da Soulo’yu varsayılan tarayıcı olarak seçin.";
+"settings_backups" = "Ayar yedekleri";
+"settings_backup_restore_message" = "Geri yükleme, iCloud eşzamanlamasını kapatır ve önce mevcut ayarlarınızı yedekler.";
+"settings_backup_error" = "İşlem tamamlanamadı. Mevcut ayarlarınız korundu.";
+"share_saved_for_open" = "Kaydedildi. Devam etmek için Soulo’yu açın.";
+"intent_open_webpage_title" = "Bağlantıyı Soulo’da aç";
+"intent_webpage_url" = "Web adresi";
+
+"external_navigation_prompt" = "Uygulama Bağlantılarını Onayla";
+"external_navigation_prompt_desc" = "Başka bir uygulama açmadan önce sor. Bağlantıları doğrudan açmak için kapatın.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "Alan adına göre grupla";
+"tab_view_carousel" = "Kart görünümü";

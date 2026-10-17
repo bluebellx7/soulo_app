@@ -1,5 +1,6 @@
 import XCTest
 import Network
+import UIKit
 
 /// Actual screen taps catch chrome occlusion that model-only navigation tests miss.
 final class BrowserToolbarResponsivenessUITests: XCTestCase {
@@ -7,12 +8,25 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
     private var fixture: ToolbarHTTPFixture!
     private var root: URL!
 
+    func testClipboardHintDoesNotRequestPermissionOnActivation() throws {
+        let home = app.buttons["Home Screen"].firstMatch
+        if home.exists { home.tap() }
+        XCUIDevice.shared.press(.home)
+        UIPasteboard.general.string = "https://example.com/clipboard-performance-qa"
+        app.activate()
+        let preview = app.staticTexts["clipboard.preview"]
+        XCTAssertTrue(preview.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertFalse(preview.label.contains("clipboard-performance-qa"), "Automatic detection must not read the copied text")
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        XCTAssertFalse(springboard.alerts.matching(NSPredicate(format: "label CONTAINS %@ OR label CONTAINS[c] %@", "粘贴", "paste")).firstMatch.exists)
+    }
+
     override func setUpWithError() throws {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .portrait
         fixture = try ToolbarHTTPFixture()
         root = try fixture.start()
-        app.launchArguments = ["-app_language", "en-US", "-privacy_https_upgrade_enabled", "NO",
+        app.launchArguments = ["-app_language", "en-US", "-AppleLanguages", "(en)", "-AppleLocale", "en_US", "-is_incognito", "NO", "-privacy_https_upgrade_enabled", "NO",
             "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO"]
         app.launch()
     }
@@ -20,9 +34,13 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
     override func tearDownWithError() throws { fixture?.stop() }
 
     private func open(_ path: String) throws {
+        try open(url: root.appendingPathComponent(path))
+    }
+
+    private func open(url: URL) throws {
         var route = URLComponents()
         route.scheme = "soulo"; route.host = "open"
-        route.queryItems = [URLQueryItem(name: "url", value: root.appendingPathComponent(path).absoluteString)]
+        route.queryItems = [URLQueryItem(name: "url", value: url.absoluteString)]
         app.open(try XCTUnwrap(route.url))
     }
 
@@ -92,9 +110,290 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         }
         checkMoreAndTabs()
     }
+
+    func testMoreDropdownsStayOpenAndRunActions() throws {
+        app.terminate()
+        app.launchArguments += ["-builtin_reader_enabled", "YES"]
+        app.launch()
+        try open("second")
+        XCTAssertTrue(app.webViews.staticTexts["Second page"].firstMatch.waitForExistence(timeout: 20))
+
+        let outside = app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.2))
+        for iteration in 0..<2 {
+            for (page, item) in [("openPage", "Open in Default Browser"),
+                                  ("pageTools", "browser.ad-block-management"),
+                                  ("scriptCommands", "browser.reader-command")] {
+                tap(app.buttons["More"].firstMatch)
+                tap(app.buttons["browser.moreMenu.\(page)"])
+                let action = app.buttons[item].firstMatch
+                XCTAssertTrue(action.waitForExistence(timeout: 5), app.debugDescription)
+                // Keep the native dropdown open across a page-availability poll.
+                Thread.sleep(forTimeInterval: 1.2)
+                XCTAssertTrue(action.isHittable, app.debugDescription)
+                XCTAssertFalse(app.buttons["browser.moreMenu.back"].exists)
+                if iteration == 0 {
+                    let screenshot = XCTAttachment(screenshot: app.screenshot())
+                    screenshot.name = "more-dropdown-\(page)"
+                    screenshot.lifetime = .keepAlways
+                    add(screenshot)
+                }
+                outside.tap()
+                let panel = app.popovers.firstMatch
+                if !panel.waitForNonExistence(timeout: 2) { outside.tap() }
+                XCTAssertTrue(panel.waitForNonExistence(timeout: 5), app.debugDescription)
+            }
+        }
+
+        tap(app.buttons["More"].firstMatch)
+        tap(app.buttons["browser.moreMenu.pageTools"])
+        tap(app.buttons["Page Zoom"].firstMatch)
+        XCTAssertTrue(app.buttons["Zoom In"].firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "more-dropdown-zoom-action"; shot.lifetime = .keepAlways; add(shot)
+    }
+
+    func testFindInPageSearchesNavigatesAndDoesNotLeaveMenuBehind() throws {
+        try open("find")
+        XCTAssertTrue(app.webViews.staticTexts["needle first"].firstMatch.waitForExistence(timeout: 20))
+        func openFind() -> XCUIElement {
+            tap(app.buttons["More"].firstMatch)
+            tap(app.buttons["browser.moreMenu.pageTools"])
+            tap(app.buttons["Find in Page"].firstMatch)
+            let field = app.searchFields["find.searchField"]
+            XCTAssertTrue(field.waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertTrue(app.popovers.firstMatch.waitForNonExistence(timeout: 5), app.debugDescription)
+            return field
+        }
+        let field = openFind()
+        field.typeText("needle")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "system-find-native-panel"; shot.lifetime = .keepAlways; add(shot)
+        let count = app.staticTexts["find.resultLabel"]
+        XCTAssertTrue(count.waitForExistence(timeout: 5))
+        let matches = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "1 of 3"), object: count)
+        XCTAssertEqual(XCTWaiter.wait(for: [matches], timeout: 5), .completed, app.debugDescription)
+        let next = app.buttons["find.nextButton"]
+        let previous = app.buttons["find.previousButton"]
+        tap(next)
+        XCTAssertTrue(app.webViews.staticTexts["NEEDLE second"].firstMatch.isHittable, app.debugDescription)
+        tap(previous)
+        XCTAssertTrue(app.webViews.staticTexts["needle first"].firstMatch.isHittable, app.debugDescription)
+        tap(app.buttons["find.doneButton"])
+        XCTAssertTrue(field.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        let again = openFind()
+        again.typeText("second")
+        tap(app.buttons["find.doneButton"])
+        XCTAssertTrue(again.waitForNonExistence(timeout: 5))
+        tap(app.buttons["More"].firstMatch)
+        tap(app.buttons["browser.moreMenu.pageTools"])
+        tap(app.buttons["Page Zoom"].firstMatch)
+        XCTAssertTrue(app.buttons["Zoom In"].firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+    }
+
+    func testTabOverviewRecoversScreenshotAfterAppRestart() throws {
+        try open("refined")
+        XCTAssertTrue(app.webViews.staticTexts["Refined page"].firstMatch.waitForExistence(timeout: 20))
+        tap(app.buttons["browser.tabs"])
+        let preview = app.buttons.matching(identifier: "tabs.card.preview").matching(
+            NSPredicate(format: "label BEGINSWITH %@", "Refined fixture,")).firstMatch
+        XCTAssertTrue(preview.waitForExistence(timeout: 10), app.debugDescription)
+        let before = XCTAttachment(screenshot: app.screenshot())
+        before.name = "overview-saved-screenshot"; before.lifetime = .keepAlways; add(before)
+        app.terminate(); app.launch()
+        let homeTabs = app.buttons.matching(NSPredicate(format: "label MATCHES %@", "[0-9]+,? Tabs")).firstMatch
+        tap(homeTabs)
+        XCTAssertTrue(preview.waitForExistence(timeout: 10), app.debugDescription)
+        let after = XCTAttachment(screenshot: app.screenshot())
+        after.name = "overview-restored-screenshot"; after.lifetime = .keepAlways; add(after)
+        tap(preview)
+        XCTAssertTrue(app.webViews.staticTexts["Refined page"].firstMatch.waitForExistence(timeout: 15), app.debugDescription)
+    }
+
+    func testSlowPageCoverSurvivesOverviewAndRestartBeforeLoadFinishes() throws {
+        try open("cover-slow")
+        XCTAssertTrue(app.webViews.links["Next page"].firstMatch.waitForExistence(timeout: 20))
+        XCTAssertTrue(fixture.hasPendingSlowResource)
+        tap(app.buttons["browser.tabs"])
+        let preview = app.buttons.matching(identifier: "tabs.card.preview").matching(
+            NSPredicate(format: "label BEGINSWITH %@", fixture.coverTitle + ",")).firstMatch
+        XCTAssertTrue(preview.waitForExistence(timeout: 10), app.debugDescription)
+        app.terminate(); app.launch()
+        tap(app.buttons.matching(NSPredicate(format: "label MATCHES %@", "[0-9]+,? Tabs")).firstMatch)
+        XCTAssertTrue(preview.waitForExistence(timeout: 10), "A page that never finishes loading must retain its cover across restart")
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "slow-loading-tab-cover-after-restart"; screenshot.lifetime = .keepAlways; add(screenshot)
+    }
+
+    func testLiveDomainGroupsScrollBothWaysKeepDockFixedAndRememberView() throws {
+        guard ProcessInfo.processInfo.environment["SOULO_LIVE_TAB_QA"] == "1" else {
+            throw XCTSkip("Set SOULO_LIVE_TAB_QA=1 to verify tab groups with real websites")
+        }
+        let pages = [
+            ("https://www.apple.com.cn/", "iPhone"), ("https://www.apple.com.cn/iphone/", "iPhone"),
+            ("https://www.apple.com.cn/mac/", "Mac"), ("https://www.apple.com.cn/ipad/", "iPad"),
+            ("https://github.com/", "GitHub"), ("https://www.swift.org/", "Swift"),
+            ("https://www.baidu.com/", "百度"), ("https://www.wikipedia.org/", "Wikipedia")]
+        func loadPage(_ index: Int) throws {
+            try open(url: XCTUnwrap(URL(string: pages[index].0)))
+            let content = app.webViews.descendants(matching: .any).matching(
+                NSPredicate(format: "label CONTAINS[c] %@", pages[index].1)).firstMatch
+            XCTAssertTrue(content.waitForExistence(timeout: 45), app.debugDescription)
+            let screenshot = XCTAttachment(screenshot: app.screenshot())
+            screenshot.name = "live-tab-page-\(index)"; screenshot.lifetime = .keepAlways; add(screenshot)
+        }
+        try loadPage(0)
+        tap(app.buttons["browser.tabs"])
+        if app.scrollViews["tabs.groups"].exists { tap(app.buttons["tabs.view-mode"]) }
+        tap(app.buttons["tabs.options"])
+        if app.buttons["Close Other Tabs"].firstMatch.exists {
+            tap(app.buttons["Close Other Tabs"].firstMatch)
+        } else {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.2)).tap()
+        }
+        tap(app.buttons["tabs.done"])
+        for index in 1..<pages.count {
+            tap(app.buttons["browser.tabs"])
+            tap(app.buttons["tabs.tab_new_tab"])
+            try loadPage(index)
+        }
+        tap(app.buttons["browser.tabs"])
+        let toggle = app.buttons["tabs.view-mode"]
+        XCTAssertLessThan(toggle.frame.midX, app.buttons["tabs.tab_new_tab"].frame.midX)
+        tap(toggle)
+        let groups = app.scrollViews["tabs.groups"]
+        XCTAssertTrue(groups.waitForExistence(timeout: 5))
+        XCTAssertEqual(toggle.value as? String, "Group by Domain")
+        let dockFrame = app.buttons["tabs.done"].frame
+        for _ in 0..<3 { groups.swipeDown() }
+        let row = app.scrollViews["tabs.group-row.host:apple.com.cn"]
+        XCTAssertTrue(row.isHittable, app.debugDescription)
+        row.swipeLeft()
+        XCTAssertEqual(app.buttons["tabs.done"].frame.midY, dockFrame.midY, accuracy: 1)
+        let lastCard = row.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "iPad")).firstMatch
+        XCTAssertTrue(lastCard.isHittable, app.debugDescription)
+        XCTAssertEqual(lastCard.identifier, "tabs.card.preview", "The live iPad page must have its own saved cover")
+        lastCard.press(forDuration: 1)
+        tap(app.buttons["Close Tab"].firstMatch)
+        XCTAssertTrue(lastCard.waitForNonExistence(timeout: 5))
+        let before = XCTAttachment(screenshot: app.screenshot())
+        before.name = "live-domain-groups-fixed-dock"; before.lifetime = .keepAlways; add(before)
+
+        app.terminate(); app.launch()
+        tap(app.buttons.matching(NSPredicate(format: "label MATCHES %@", "[0-9]+,? Tabs")).firstMatch)
+        XCTAssertTrue(groups.waitForExistence(timeout: 5), "The chosen overview layout survives reopening the app")
+        for _ in 0..<3 { groups.swipeDown() }
+        let restored = XCTAttachment(screenshot: app.screenshot())
+        restored.name = "live-domain-groups-restored"; restored.lifetime = .keepAlways; add(restored)
+        let first = row.buttons.matching(identifier: "tabs.card.preview").firstMatch
+        XCTAssertTrue(first.waitForExistence(timeout: 10), "The Apple group must recover durable page covers")
+        tap(first)
+        XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 20))
+        tap(app.buttons["browser.tabs"])
+        tap(toggle)
+        XCTAssertTrue(groups.waitForNonExistence(timeout: 5))
+        let carousel = XCTAttachment(screenshot: app.screenshot())
+        carousel.name = "live-tabs-carousel-smaller-corners"; carousel.lifetime = .keepAlways; add(carousel)
+        tap(app.buttons["tabs.done"])
+    }
+
+    func testFailedPageShowsFullAddressCopiesAndRetries() throws {
+        let url = try XCTUnwrap(URL(string: "https://dkluge.shop/library/articles/reading-notes?query=%E4%B8%AD%E6%96%87&section=browser#full-address"))
+        try open(url: url)
+        let address = app.staticTexts["browser.error.url"]
+        XCTAssertTrue(address.waitForExistence(timeout: 45), app.debugDescription)
+        XCTAssertEqual(address.label, url.absoluteString, "Show the entire address, including its path, query and fragment")
+        let copy = app.buttons["browser.error.copy-url"]
+        if !copy.isHittable { app.scrollViews.firstMatch.swipeUp() }
+        tap(copy)
+        XCTAssertEqual(copy.label, "Link Copied")
+        let retry = app.buttons["browser.error.retry"]
+        if !retry.isHittable { app.scrollViews.firstMatch.swipeUp() }
+        tap(retry)
+        XCTAssertTrue(address.waitForExistence(timeout: 45), app.debugDescription)
+        if !copy.isHittable { app.scrollViews.firstMatch.swipeUp() }
+        tap(copy)
+        let image = XCTAttachment(screenshot: app.screenshot())
+        image.name = "live-load-failure-full-url-copied"; image.lifetime = .keepAlways; add(image)
+        XCTAssertTrue(app.buttons["browser.error.compatibility"].exists)
+        tap(app.buttons["browser.tabs"])
+        let failedCover = app.buttons.matching(identifier: "tabs.card.preview").matching(
+            NSPredicate(format: "value == %@", "Active tab")).firstMatch
+        XCTAssertTrue(failedCover.waitForExistence(timeout: 10), "A failed real URL needs a rendered error cover")
+        tap(failedCover)
+        let home = app.buttons["browser.error.home"]
+        if !home.isHittable { app.scrollViews.firstMatch.swipeUp() }
+        tap(home)
+        XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 10))
+    }
+
+    func testManyTabsUseBoundedPreviewsAndScrubberWithoutLoadingUntilSelection() throws {
+        try open("refined")
+        XCTAssertTrue(app.webViews.staticTexts["Refined page"].firstMatch.waitForExistence(timeout: 20))
+        tap(app.buttons["browser.tabs"])
+        tap(app.buttons["tabs.options"])
+        let closeOthers = app.buttons["Close Other Tabs"].firstMatch
+        if closeOthers.exists {
+            tap(closeOthers)
+        } else {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.2)).tap()
+        }
+        XCTAssertTrue(app.popovers.firstMatch.waitForNonExistence(timeout: 5))
+        tap(app.buttons["tabs.done"])
+        for _ in 0..<25 {
+            tap(app.buttons["browser.tabs"])
+            tap(app.buttons["tabs.tab_new_tab"])
+        }
+        XCTAssertTrue(app.buttons["browser.tabs"].label.hasPrefix("26 "), app.debugDescription)
+        tap(app.buttons["browser.tabs"])
+        let scrubber = app.sliders["tabs.position"]
+        XCTAssertTrue(scrubber.waitForExistence(timeout: 5), app.debugDescription)
+        scrubber.adjust(toNormalizedSliderPosition: 0)
+        let card = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Refined fixture,")).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertFalse(scrubber.frame.intersects(card.frame), "Position control must remain below the preview card")
+        XCTAssertFalse(app.webViews.staticTexts["Refined page"].firstMatch.exists,
+            "Scrubbing previews must not activate or load the background page")
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "many-tabs-bounded-previews-and-position"; screenshot.lifetime = .keepAlways; add(screenshot)
+        tap(card)
+        XCTAssertTrue(app.webViews.staticTexts["Refined page"].firstMatch.waitForExistence(timeout: 10))
+    }
+
+    func testHomeSearchCreatesTabAndAddressSearchKeepsIt() throws {
+        app.terminate()
+        app.launchArguments += ["-is_incognito", "YES", "-show_top_tab_bar", "YES"]
+        app.launch()
+
+        let homeField = app.textFields["Private search or enter URL"].firstMatch
+        tap(homeField)
+        homeField.typeText(root.appendingPathComponent("slow").absoluteString + "\n")
+        XCTAssertTrue(app.webViews.links["Next page"].firstMatch.waitForExistence(timeout: 20))
+        let tabs = app.buttons["browser.tabs"]
+        XCTAssertEqual(tabs.label, "1 Tabs", "The initial empty tab should be reused")
+
+        tap(app.buttons["Home Screen"].firstMatch)
+        tap(homeField)
+        homeField.typeText(root.appendingPathComponent("second").absoluteString + "\n")
+        XCTAssertTrue(app.webViews.staticTexts["Second page"].firstMatch.waitForExistence(timeout: 20))
+        XCTAssertEqual(tabs.label, "2 Tabs", "Searching from Home should preserve the original tab")
+
+        tap(app.buttons["Edit Address or Search"].firstMatch)
+        let address = app.textFields["addressEditor.query"].firstMatch
+        tap(app.buttons["addressEditor.clearQuery"])
+        tap(address)
+        address.typeText(root.appendingPathComponent("refined").absoluteString + "\n")
+        XCTAssertTrue(app.webViews.staticTexts["Refined page"].firstMatch.waitForExistence(timeout: 20))
+        XCTAssertEqual(tabs.label, "2 Tabs", "Address searches should stay in the active tab")
+
+        tap(app.buttons["Toolbar fixture, tab 1 of 2"])
+        XCTAssertTrue(app.webViews.links["Next page"].firstMatch.waitForExistence(timeout: 10))
+    }
 }
 
 private final class ToolbarHTTPFixture: @unchecked Sendable {
+    let coverTitle = "Slow cover fixture \(UUID().uuidString.prefix(8))"
     private let listener: NWListener
     private let queue = DispatchQueue(label: "soulo.toolbar.ui-fixture")
     private var connections: [NWConnection] = []
@@ -117,9 +416,25 @@ private final class ToolbarHTTPFixture: @unchecked Sendable {
                 let body: String
                 if path == "/slow.js" { body = "window.slowResourceFinished=true;" }
                 else if path == "/second" { body = "<html><body><p>Second page</p></body></html>" }
+                else if path == "/refined" { body = """
+                    <html><head><title>Refined fixture</title><meta name="viewport" content="width=device-width, initial-scale=1">
+                    <style>body{margin:0;background:#eee9fa;font:18px -apple-system;color:#312050}header{background:#6950a1;color:white;padding:48px 28px}h1{font-size:32px}article{margin:24px;padding:24px;border-radius:20px;background:white;line-height:1.6}</style></head>
+                    <body><header><h1>Refined page</h1><p>Saved tab preview</p></header><article>This page remains recognizable after WebKit is released and the app restarts.</article></body></html>
+                    """ }
+                else if path == "/find" {
+                    body = """
+                    <html><head><meta name="viewport" content="width=device-width, initial-scale=1"><title>Find fixture</title></head>
+                    <body style="font:24px system-ui">
+                    <p>needle first</p><div style="height:1000px"></div>
+                    <p>NEEDLE second</p><div style="height:1000px"></div><p>needle third</p>
+                    <p style="display:none">needle hidden</p><script>window.find = undefined;</script>
+                    </body></html>
+                    """
+                }
                 else {
                     let script = path == "/blocked" ? "<script src='/slow.js'></script>" : "<script async src='/slow.js'></script>"
-                    body = "<html><head><title>Toolbar fixture</title>\(script)</head><body style='font:20px system-ui'><p>Interactive page</p><a href='/second'>Next page</a></body></html>"
+                    let title = path == "/cover-slow" ? self.coverTitle : "Toolbar fixture"
+                    body = "<html><head><title>\(title)</title>\(script)</head><body style='font:20px system-ui'><p>Interactive page</p><a href='/second'>Next page</a></body></html>"
                 }
                 let bytes = Data(body.utf8)
                 let type = path == "/slow.js" ? "application/javascript" : "text/html; charset=utf-8"

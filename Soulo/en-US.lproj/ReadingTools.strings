@@ -162,8 +162,6 @@
 "manual_ad_saved" = "Hidden and saved";
 "manual_ad_continue" = "Mark another";
 "manual_ad_restore_site" = "Restore all for site";
-"ad_allow_redirects" = "Allow automatic redirects";
-"ad_allow_redirects_hint" = "When off, block page redirects and pop-ups without a click. Turn this on if a website needs automatic redirects.";
 "manual_ad_rules" = "Marked ads";
 "manual_ad_footer" = "Rules are saved on this device and follow Ad Block and the site allowlist. Restore an item here to remove its rule.";
 "manual_ad_error" = "The area could not be saved. It may have changed. Try marking it again.";
@@ -363,3 +361,43 @@
 
 "image_view_full" = "View Image";
 "video_tools" = "Video tools";
+
+// Web episode picker
+"episodes" = "Episodes";
+"episodes_source" = "Source";
+"episodes_ascending" = "Ascending";
+"episodes_descending" = "Descending";
+"episodes_previous" = "Previous episode";
+"episodes_next" = "Next episode";
+"episodes_search" = "Find an episode";
+"episodes_unavailable" = "No episodes found";
+
+// Built-in video helper
+"cross_domain_confirm" = "Confirm cross-domain navigation";
+"cross_domain_confirm_description" = "Ask before automatic cross-domain navigation. Addresses you enter and links you choose open directly.";
+"cross_domain_title" = "Leave this website?";
+"cross_domain_message" = "This page wants to go from %@ to %@. Continue?";
+"cross_domain_continue" = "Continue";
+
+// Episode batch downloads
+"episodes_select" = "Select";
+"episodes_download_selected" = "Download (%d)";
+"episodes_download_progress" = "Processed %d of %d";
+"episodes_download_failed" = "Failed (%d)";
+"episodes_download_stop_queue" = "Stop queue";
+"episodes_download_hint" = "Progress and saved files are available in Downloads.";
+"episodes_download_unavailable" = "No downloadable video found. Open this episode and try again.";
+"episodes_download_ambiguous" = "Multiple videos found. Open this episode and choose a video in Resources.";
+
+"video_tools_collapse" = "Close";
+
+"cross_domain_new_tab" = "New Tab";
+
+"video_fullscreen" = "Fullscreen";
+"video_speed" = "Speed";
+"cross_domain_allowlist" = "Trusted domains";
+"cross_domain_allowlist_hint" = "Skip confirmation for matching destinations. *.qq.com includes qq.com and its subdomains; qq.com matches that domain only. Swipe left to delete. Ad filtering stays active.";
+"cross_domain_add" = "Add";
+"cross_domain_invalid" = "Enter a valid domain, such as *.qq.com";
+"cross_domain_reset" = "Restore defaults";
+"cross_domain_trust" = "Trust %@ and continue";

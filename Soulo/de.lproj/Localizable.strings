@@ -608,3 +608,17 @@ Erzahlen Sie uns:
 "keep_page_above_toolbar" = "Überlappung vermeiden";
 "keep_page_above_toolbar_desc" = "Behalten Sie die Webseitensteuerelemente über der Symbolleiste bei.";
 "downloads_play_while_downloading" = "Beim Laden abspielen";
+"settings_backups" = "Einstellungssicherungen";
+"settings_backup_restore_message" = "Beim Wiederherstellen wird die iCloud-Synchronisierung deaktiviert und Ihre aktuellen Einstellungen werden zuerst gesichert.";
+"settings_backup_error" = "Der Vorgang konnte nicht abgeschlossen werden. Ihre aktuellen Einstellungen bleiben erhalten.";
+"share_saved_for_open" = "Gespeichert. Öffnen Sie Soulo, um fortzufahren.";
+"intent_open_webpage_title" = "Link in Soulo öffnen";
+"intent_webpage_url" = "Web-URL";
+"share_extension_unsupported" = "Der geteilte Inhalt konnte nicht gelesen werden.";
+
+"external_navigation_prompt" = "App-Links bestätigen";
+"external_navigation_prompt_desc" = "Vor dem Öffnen einer anderen App nachfragen. Deaktivieren, um App-Links direkt zu öffnen.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "Nach Domain gruppieren";
+"tab_view_carousel" = "Kartenansicht";

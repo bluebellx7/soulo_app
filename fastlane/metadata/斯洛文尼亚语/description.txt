@@ -1,6 +1,14 @@
 Soulo je brskalnik za iPhone in iPad za iskanje na več platformah. Vnesite poizvedbo enkrat in preklapljajte med iskalniki, družbenimi omrežji, videi, nakupi, znanjem in umetno inteligenco.
 
+V Nastavitvah izberite Soulo kot privzeti brskalnik za odpiranje povezav iz drugih aplikacij.
+
+Odpravljena je napaka, zaradi katere so bile ob vklopu sinhronizacije iCloud na novi napravi prepisane obstoječe nastavitve. Dodane so lokalne varnostne kopije nastavitev in poenostavljena obdelava deljenih povezav.
+
 Predvajajte podprte videe med prenosom. Boljši prenosi v ozadju in celozaslonski način ter zaščita pred skritimi oglasi in neželenim kopiranjem.
+
+Izbira epizod in obrnjen vrstni red na podprtih spletnih mestih, skupinski prenos izbranih epizod in ponovni poskus neuspelih prenosov. Pridržite za pospešitev in spustite za vrnitev hitrosti. Bolj tekoče videokontrole.
+
+Izbirna potrditev samodejnega prehoda na drugo domeno, zaupanja vredne domene in odpiranje v novem zavihku. Izboljšano odstranjevanje oglasnih prekrivanj in vračanje na prejšnjo stran.
 
 Poiščite informacije, berite članke, predvajajte vsebine in upravljajte prenose v enem brskalniku.
 

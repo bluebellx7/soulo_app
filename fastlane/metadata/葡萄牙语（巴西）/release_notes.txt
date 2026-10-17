@@ -1,4 +1,10 @@
-1.2.1
+1.2.2
 
+• Escolha episódios em sites compatíveis, inverta a ordem, baixe vários de uma vez e tente novamente os downloads com falha. Mantenha pressionado para acelerar e solte para restaurar a velocidade. Controles de vídeo mais fluidos.
+• Confirmação opcional para redirecionamentos automáticos a outro domínio, domínios confiáveis e abertura em nova aba. Melhorias na remoção de sobreposições de anúncios e na navegação de volta.
+
+• Corrigido um problema que sobrescrevia configurações ao ativar a sincronização do iCloud em um novo dispositivo. Adicionados backups locais das configurações e simplificado o tratamento de links compartilhados.
+
+• Escolha o Soulo como navegador padrão nos Ajustes para abrir links de outros apps.
 • Melhorias no carregamento de páginas, na filtragem de anúncios e na resposta da navegação.
 • Melhorias no layout, no recorte de papéis de parede e na leitura ao redimensionar a janela.

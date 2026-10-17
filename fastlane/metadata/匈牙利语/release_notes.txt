@@ -1,4 +1,10 @@
-1.2.1
+1.2.2
 
+• Epizódválasztás és fordított sorrend a támogatott oldalakon, több kijelölt epizód letöltése és a sikertelen letöltések újrapróbálása. Nyomva tartva gyorsíthat, felengedve visszaáll a sebesség. Simább videóvezérlés.
+• Választható megerősítés másik domainre történő automatikus átirányításkor, megbízható domainek és megnyitás új lapon. Javult a reklámrétegek eltávolítása és a visszalépés.
+
+• Javítottuk a meglévő beállítások felülírását az iCloud-szinkronizálás új eszközön történő bekapcsolásakor. Hozzáadtuk a beállítások helyi biztonsági mentését, és egyszerűsítettük a megosztott hivatkozások kezelését.
+
+• Válaszd a Soulót alapértelmezett böngészőnek a Beállításokban, hogy más appok hivatkozásait is megnyithasd.
 • Javult a weboldalak betöltése, a hirdetésszűrés és a navigáció válaszkészsége.
 • Javult az elrendezés, a háttérképek vágása és az olvasás az ablak méretének változásakor.

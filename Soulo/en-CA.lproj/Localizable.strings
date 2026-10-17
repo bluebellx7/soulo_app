@@ -814,7 +814,7 @@
 "share_extension_title" = "Search with Soulo";
 "share_search_in_soulo" = "Search in Soulo";
 "share_private_search" = "Search Privately";
-"share_extension_unsupported" = "This item cannot be searched.";
+"share_extension_unsupported" = "Couldn't read the shared content.";
 "image_extract_text" = "Extract Text from Image";
 "image_text_unavailable" = "Live Text is not available on this device.";
 "image_text_none" = "No readable text was found in this image.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "Avoid Overlap";
 "keep_page_above_toolbar_desc" = "Keep webpage controls above the toolbar.";
 "downloads_play_while_downloading" = "Play while downloading";
+
+// Default browser
+"settings_default_browser" = "Default Browser";
+"settings_default_browser_hint" = "Choose Soulo as your default browser in Settings to open links from other apps.";
+"settings_backups" = "Settings Backups";
+"settings_backup_restore_message" = "Restoring will turn off iCloud Sync and back up your current settings first.";
+"settings_backup_error" = "Couldn’t complete this operation. Your current settings have been kept.";
+"share_saved_for_open" = "Saved. Open Soulo to continue.";
+"intent_open_webpage_title" = "Open Link in Soulo";
+"intent_webpage_url" = "Web URL";
+
+"external_navigation_prompt" = "Confirm App Links";
+"external_navigation_prompt_desc" = "Ask before opening another app. Turn off to open app links directly.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "Group by Domain";
+"tab_view_carousel" = "Card View";

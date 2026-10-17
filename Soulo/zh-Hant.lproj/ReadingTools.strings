@@ -162,8 +162,6 @@
 "manual_ad_saved" = "已隱藏並儲存";
 "manual_ad_continue" = "繼續標記";
 "manual_ad_restore_site" = "還原整站標記";
-"ad_allow_redirects" = "允許自動跳轉";
-"ad_allow_redirects_hint" = "關閉時攔截網頁未經點擊發起的跳轉和彈出視窗。若網站需要自動跳轉，可在此開啟。";
 "manual_ad_rules" = "已標記廣告";
 "manual_ad_footer" = "規則儲存在本機，遵循廣告攔截開關和網站白名單。還原一項即可移除對應規則。";
 "manual_ad_error" = "無法儲存該區域，頁面可能已變更，請重新標記。";
@@ -363,3 +361,43 @@
 
 "image_view_full" = "查看大圖";
 "video_tools" = "影片工具";
+
+// Web episode picker
+"episodes" = "選集";
+"episodes_source" = "線路";
+"episodes_ascending" = "正序";
+"episodes_descending" = "倒序";
+"episodes_previous" = "上一集";
+"episodes_next" = "下一集";
+"episodes_search" = "搜尋集數";
+"episodes_unavailable" = "找不到集數";
+
+// Built-in video helper
+"cross_domain_confirm" = "跨網域跳轉確認";
+"cross_domain_confirm_description" = "網頁自動跳轉到其他網域前先詢問；主動輸入網址或點擊連結可直接開啟。";
+"cross_domain_title" = "離開目前網站？";
+"cross_domain_message" = "頁面將從 %@ 跳轉到 %@，是否繼續？";
+"cross_domain_continue" = "繼續";
+
+// Episode batch downloads
+"episodes_select" = "多選";
+"episodes_download_selected" = "下載（%d）";
+"episodes_download_progress" = "已處理 %d / %d 集";
+"episodes_download_failed" = "失敗（%d）";
+"episodes_download_stop_queue" = "停止排隊";
+"episodes_download_hint" = "下載進度與檔案可在下載管理中查看。";
+"episodes_download_unavailable" = "找不到可下載的影片，請開啟該集後重試。";
+"episodes_download_ambiguous" = "找到多個影片，請開啟該集，在資源面板中選擇。";
+
+"video_tools_collapse" = "收起";
+
+"cross_domain_new_tab" = "新分頁開啟";
+
+"video_fullscreen" = "全螢幕";
+"video_speed" = "倍速";
+"cross_domain_allowlist" = "跳轉白名單";
+"cross_domain_allowlist_hint" = "符合目標網域時略過確認。*.qq.com 包含 qq.com 及其子網域；qq.com 只符合該網域。向左滑動可刪除。此清單僅略過跳轉確認，廣告過濾仍有效。";
+"cross_domain_add" = "加入";
+"cross_domain_invalid" = "請輸入有效網域，例如 *.qq.com";
+"cross_domain_reset" = "還原預設白名單";
+"cross_domain_trust" = "信任 %@ 並繼續";

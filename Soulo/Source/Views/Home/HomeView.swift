@@ -54,12 +54,18 @@ struct HomeView: View {
         homeSubtitle.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private var showsTabOverview: Bool {
+        showTabOverviewFromHome || tabManager.showTabOverview
+    }
+
     var body: some View {
         NavigationStack {
             homeSurface
                 .toolbar(.hidden, for: .navigationBar)
                 .mediaPlayerNavigation()
         }
+        .tabOverviewScale(isActive: showsTabOverview)
+        .animation(.easeInOut(duration: 0.22), value: showsTabOverview)
         .id(navigationSession)
         .task(id: urlRouteID) {
             guard let route = pendingURLRoute else { return }
@@ -71,10 +77,6 @@ struct HomeView: View {
             // keeping the navigation controller and browser root mounted.
             guard let request = pendingSelectionSearch else { return }
             pendingSelectionSearch = nil
-            guard tabManager.tabs.count < TabManager.maxTabs else {
-                tabManager.didReachTabLimit = true
-                return
-            }
             let tab = tabManager.createTab(keyword: request.text, platform: request.platform)
             tabManager.setDesktopModeForCurrentNavigation(request.platform.requiresDesktopMode)
             tab.webViewModel.loadURL(request.url)
@@ -83,6 +85,27 @@ struct HomeView: View {
         .overlay(alignment: .top) {
             DownloadCompletionToast { librarySection = .downloads }
         }
+        // Present once above the entire navigation surface, including browser
+        // chrome and safe areas. A page-local overlay leaves hard backdrop edges.
+        .overlay {
+            if showsTabOverview {
+                TabSwitcherOverlay(
+                    tabManager: tabManager,
+                    onSelectTab: { index in
+                        tabManager.switchToTab(at: index)
+                        searchVM.isSearching = true
+                    },
+                    onNewTab: {
+                        tabManager.createTab()
+                        searchVM.isSearching = true
+                    },
+                    onDismiss: {
+                        showTabOverviewFromHome = false
+                        tabManager.showTabOverview = false
+                    }
+                )
+            }
+        }
     }
 
     private var homeSurface: some View {
@@ -90,7 +113,8 @@ struct HomeView: View {
             // Keep the wallpaper outside every content transition and tab-card
             // transform. Scaling the wallpaper with the page exposes the hosting
             // controller's default background around the safe-area edges.
-            WallpaperBackground()
+            WallpaperBackground(isAnimating: !searchVM.isSearching && !showsTabOverview
+                && !keyboardVisible && !showSettings && librarySection == nil)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea()
 
@@ -109,7 +133,7 @@ struct HomeView: View {
 
                 // Clipboard prompt
                 if searchVM.showClipboardPrompt {
-                    ClipboardPromptView()
+                    ClipboardPromptView(onSearch: { performSearch() })
                         .transition(.move(edge: .top).combined(with: .opacity))
                         .zIndex(100)
                 }
@@ -139,25 +163,6 @@ struct HomeView: View {
                         )
                     }
                 }
-            }
-            .tabOverviewScale(isActive: showTabOverviewFromHome)
-            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: showTabOverviewFromHome)
-
-            if showTabOverviewFromHome {
-                TabSwitcherOverlay(
-                    tabManager: tabManager,
-                    onSelectTab: { index in
-                        tabManager.switchToTab(at: index)
-                        searchVM.isSearching = true
-                    },
-                    onNewTab: {
-                        tabManager.createTab()
-                        searchVM.isSearching = true
-                    },
-                    onDismiss: {
-                        showTabOverviewFromHome = false
-                    }
-                )
             }
         }
         .background {
@@ -306,7 +311,6 @@ struct HomeView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .searchSelectionInSoulo)) { notification in
             guard let text = notification.object as? String, !text.isEmpty else { return }
-            guard tabManager.tabs.count < TabManager.maxTabs else { tabManager.didReachTabLimit = true; return }
             searchVM.searchText = text
             searchVM.performSearch(context: modelContext)
             searchVM.isSelectionSearch = true
@@ -332,6 +336,17 @@ struct HomeView: View {
             default: resetNavigationForExternalEntry()
             }
             pendingURLRoute = route
+            urlRouteID = UUID()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .prepareSouloExternalEntry)) { notification in
+            guard (notification.object as? SearchViewModel) === searchVM else { return }
+            resetNavigationForExternalEntry(recreateStack: false)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openSouloWebURL)) { notification in
+            guard (notification.userInfo?["owner"] as? SearchViewModel) === searchVM,
+                  let url = notification.object as? URL else { return }
+            resetNavigationForExternalEntry(recreateStack: false)
+            pendingURLRoute = .open(url)
             urlRouteID = UUID()
         }
         .onReceive(NotificationCenter.default.publisher(for: .openSouloFiles)) { _ in
@@ -817,16 +832,16 @@ struct HomeView: View {
     }
 
     private func performSearch() {
-        guard !searchVM.searchText.trimmingCharacters(in: .whitespaces).isEmpty else { return }
         let selectedGroup = lastGroupID.isEmpty
             ? nil
             : platformStore.customGroups.first { $0.id.uuidString == lastGroupID }
         let selectedRegion = PlatformRegion(rawValue: lastRegion)
-        searchVM.prepareForHomeSearch(
+        searchVM.performHomeSearch(
+            tabManager: tabManager,
             preferredRegion: selectedRegion,
-            customGroup: selectedGroup
+            customGroup: selectedGroup,
+            context: modelContext
         )
-        searchVM.performSearch(context: modelContext)
     }
 
     private func togglePrivateModeFromSearchBar() {

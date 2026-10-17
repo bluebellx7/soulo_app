@@ -78,7 +78,27 @@ import UIKit
 
     private final class RotationMessages: NSObject, WKScriptMessageHandler {
         var count = 0
-        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) { count += 1 }
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            if (message.body as? [String: Any])?["action"] as? String != "ready" { count += 1 }
+        }
+    }
+
+    func testToolbarHidesWhenPlayerAncestorsBecomeTransparent() async throws {
+        let web = try await page("<div id='player'><video id='v' style='width:300px;height:180px'></video></div>")
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = UIViewController()
+        window.rootViewController?.view.addSubview(web)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        _ = try await web.evaluateJavaScript(WebVideoOrientationRuntime.script(), in: nil, contentWorld: WebVideoOrientationRuntime.world)
+        for (opacity, expected) in [("1", "flex"), ("0", "none"), ("1", "flex")] {
+            _ = try await web.evaluateJavaScript("document.getElementById('player').style.opacity='\(opacity)';null")
+            try await Task.sleep(for: .milliseconds(300))
+            let display = try await web.evaluateJavaScript("getComputedStyle(document.querySelector('[data-soulo-video-rotate]')).display")
+            XCTAssertEqual(display as? String, expected)
+        }
     }
 
     private func page(_ html: String = "<video id='v' src='data:video/mp4;base64,'></video>") async throws -> WKWebView {

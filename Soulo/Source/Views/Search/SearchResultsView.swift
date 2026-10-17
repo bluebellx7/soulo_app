@@ -274,8 +274,6 @@ struct SearchResultsView: View {
         .ignoresSafeArea(isFullscreen ? .container : [], edges: .vertical)
         .statusBarHidden(isFullscreen)
         .persistentSystemOverlays(isFullscreen ? .hidden : .automatic)
-        .tabOverviewScale(isActive: tabManager.showTabOverview)
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: tabManager.showTabOverview)
         .overlay(alignment: .top) {
             if showLoginAlert {
                 HStack(spacing: 10) {
@@ -302,22 +300,6 @@ struct SearchResultsView: View {
                         withAnimation(.easeOut(duration: 0.3)) { showLoginAlert = false }
                     }
                 }
-            }
-        }
-        .overlay {
-            if tabManager.showTabOverview {
-                TabSwitcherOverlay(
-                    tabManager: tabManager,
-                    onSelectTab: { index in
-                        tabManager.switchToTab(at: index)
-                    },
-                    onNewTab: {
-                        tabManager.createTab()
-                    },
-                    onDismiss: {
-                        tabManager.showTabOverview = false
-                    }
-                )
             }
         }
         .onChange(of: tabManager.activeTab?.id) { _, _ in
@@ -355,14 +337,6 @@ struct SearchResultsView: View {
             guard let source = notification.object as? WebViewModel,
                   let index = tabManager.tabs.firstIndex(where: { $0.webViewModel === source }) else { return }
             tabManager.switchToTab(at: index)
-        }
-        .alert(
-            languageManager.localizedString("tab_limit_title"),
-            isPresented: $tabManager.didReachTabLimit
-        ) {
-            Button(languageManager.localizedString("confirm"), role: .cancel) {}
-        } message: {
-            Text(languageManager.localizedString("tab_limit_message"))
         }
         .sheet(isPresented: $showVoiceInput) {
             VoiceInputView(

@@ -814,7 +814,7 @@
 "share_extension_title" = "Αναζήτηση με Soulo";
 "share_search_in_soulo" = "Αναζήτηση σε Soulo";
 "share_private_search" = "Αναζήτηση ιδιωτικά";
-"share_extension_unsupported" = "Δεν είναι δυνατή η αναζήτηση αυτού του στοιχείου.";
+"share_extension_unsupported" = "Δεν ήταν δυνατή η ανάγνωση του κοινοποιημένου περιεχομένου.";
 "image_extract_text" = "Εξαγωγή κειμένου από εικόνα";
 "image_text_unavailable" = "Το Live Text δεν είναι διαθέσιμο σε αυτήν τη συσκευή.";
 "image_text_none" = "Δεν βρέθηκε αναγνώσιμο κείμενο σε αυτήν την εικόνα.";
@@ -870,3 +870,20 @@
 "keep_page_above_toolbar" = "Αποφύγετε την επικάλυψη";
 "keep_page_above_toolbar_desc" = "Διατηρήστε τα στοιχεία ελέγχου ιστοσελίδας πάνω από τη γραμμή εργαλείων.";
 "downloads_play_while_downloading" = "Αναπαραγωγή κατά τη λήψη";
+
+// Default browser
+"settings_default_browser" = "Προεπιλεγμένος περιηγητής";
+"settings_default_browser_hint" = "Επιλέξτε το Soulo ως προεπιλεγμένο πρόγραμμα περιήγησης στις Ρυθμίσεις για να ανοίγετε συνδέσμους από άλλες εφαρμογές.";
+"settings_backups" = "Αντίγραφα ρυθμίσεων";
+"settings_backup_restore_message" = "Η επαναφορά θα απενεργοποιήσει τον συγχρονισμό iCloud και θα δημιουργήσει πρώτα αντίγραφο των τρεχουσών ρυθμίσεων.";
+"settings_backup_error" = "Η ενέργεια δεν ολοκληρώθηκε. Οι τρέχουσες ρυθμίσεις διατηρήθηκαν.";
+"share_saved_for_open" = "Αποθηκεύτηκε. Ανοίξτε το Soulo για συνέχεια.";
+"intent_open_webpage_title" = "Άνοιγμα συνδέσμου στο Soulo";
+"intent_webpage_url" = "Διεύθυνση ιστού";
+
+"external_navigation_prompt" = "Επιβεβαίωση συνδέσμων εφαρμογών";
+"external_navigation_prompt_desc" = "Ερώτηση πριν ανοίξει άλλη εφαρμογή. Απενεργοποιήστε για άμεσο άνοιγμα των συνδέσμων εφαρμογών.";
+
+/* Tab overview layouts */
+"tab_view_grouped" = "Ομαδοποίηση ανά τομέα";
+"tab_view_carousel" = "Προβολή καρτών";
