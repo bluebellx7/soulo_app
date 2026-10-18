@@ -194,6 +194,10 @@ private struct BrowserNavigationConfirmationBar: View {
 }
 
 struct WebViewContainer: View {
+    private struct ResourceInspectorRequest: Identifiable {
+        let id = UUID()
+        var minimumImageWidth = WebResourceInspectorDefaults.minimumImageWidth
+    }
     @ObservedObject var webViewModel: WebViewModel
     @ObservedObject var bookmarkViewModel: BookmarkViewModel
     @Binding var isFullscreen: Bool
@@ -248,8 +252,9 @@ struct WebViewContainer: View {
     @State private var showFullscreenMenu = false
     @State private var fullscreenHintDismissTask: Task<Void, Never>?
     @State private var showCaptureOptions = false
-    @State private var showResourceInspector = false
+    @State private var resourceInspectorRequest: ResourceInspectorRequest?
     @State private var showArticleReader = false
+    @State private var localAICleanup: AnyView?
     @State private var showWiFiTransfer = false
     @State private var imageTextResult: ImageTextRecognitionResult?
     @State private var imageTextError: String?
@@ -376,6 +381,17 @@ struct WebViewContainer: View {
             }
 
             // Toast overlays
+            if isActiveTab, let rate = webViewModel.videoHoldSpeed {
+                VStack {
+                    VideoPlaybackSpeedToast(rate: rate)
+                        .padding(.top, 12)
+                        .accessibilityIdentifier("browser.video-hold-speed")
+                    Spacer(minLength: 0)
+                }
+                .allowsHitTesting(false)
+                .transition(.opacity)
+                .zIndex(80)
+            }
             if showBookmarkToast {
                 toastView(
                     icon: isBookmarked ? "bookmark.fill" : "bookmark.slash",
@@ -483,6 +499,12 @@ struct WebViewContainer: View {
                 }
             }
 
+            if isActiveTab, let localAICleanup {
+                localAICleanup
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, bottomOverlayClearance)
+                    .zIndex(60)
+            }
             downloadFeedback
         }
     }
@@ -496,6 +518,10 @@ struct WebViewContainer: View {
             }
         }
         .animation(.easeOut(duration: 0.18), value: webViewModel.showSnapshotWhileRestoring)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: webViewModel.videoHoldSpeed)
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+            webViewModel.clearVideoHoldSpeed()
+        }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if isActiveTab && (webViewModel.manualAdSelection != nil || webViewModel.manualAdSavedRuleID != nil) {
                 ManualAdPickerPanel(model: webViewModel)
@@ -511,6 +537,8 @@ struct WebViewContainer: View {
         .modifier(VideoOrientationErrorAlert(message: $webViewModel.videoOrientationError))
         .onChange(of: isActiveTab) { _, active in
             if !active {
+                webViewModel.clearVideoHoldSpeed()
+                localAICleanup = nil
                 webViewModel.cancelMarkingAdvertisement()
                 webViewModel.resolveDomainNavigationConfirmation(allowed: false)
                 showExternalConfirm = false
@@ -582,6 +610,7 @@ struct WebViewContainer: View {
             updateFullscreenPresentation(isFullscreen: isFullscreen)
         }
         .onDisappear {
+            webViewModel.clearVideoHoldSpeed()
             webViewModel.cancelMarkingAdvertisement()
             webViewModel.resolveDomainNavigationConfirmation(allowed: false)
             showExternalConfirm = false
@@ -592,6 +621,25 @@ struct WebViewContainer: View {
 
     private var browserNotifications: some View {
         browserLifecycle
+        .onReceive(NotificationCenter.default.publisher(for: .performLocalAIFeature)) { notification in
+            guard notification.object as? SearchViewModel === searchVM, isActiveTab,
+                  let action = notification.userInfo?["action"] as? String else { return }
+            switch action {
+            case "translate": showTranslationSheet = true
+            case "capture": showCaptureOptions = true
+            case "pdf": exportPagePDF()
+            case "share": shareCurrentPage()
+            case "bookmark": handleBookmarkToggle()
+            case "desktop": tabManager?.toggleDesktopMode()
+            case "resources": resourceInspectorRequest = ResourceInspectorRequest()
+            case "images": resourceInspectorRequest = ResourceInspectorRequest(minimumImageWidth: 0)
+            case "adblock": showAdBlockManager = true
+            case "privacy": showPrivacyPanel = true
+            case "fullscreen": isFullscreen.toggle()
+            case "wifi": showWiFiTransfer = true
+            default: break
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .searchSelectionInSoulo)) { _ in
             // Pop the library/reader through its presentation binding. Replacing
             // the entire NavigationStack during an edit-menu action can detach
@@ -611,6 +659,7 @@ struct WebViewContainer: View {
         .onChange(of: webViewModel.isLoading) { _, loading in
             if loading { onPageStarted?() } else { onPageLoaded?() }
         }
+        .onChange(of: webViewModel.currentURL) { _, _ in localAICleanup = nil }
         .onChange(of: webViewModel.hasVisibleContent) { _, visible in
             if visible { onPageLoaded?() }
         }
@@ -813,16 +862,16 @@ struct WebViewContainer: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
-        .fullScreenCover(isPresented: $showResourceInspector) {
+        .fullScreenCover(item: $resourceInspectorRequest) { request in
             NavigationStack {
-                WebResourceInspectorView(webViewModel: webViewModel)
+                WebResourceInspectorView(webViewModel: webViewModel, minimumImageWidth: request.minimumImageWidth)
             }
         }
         .fullScreenCover(item: $webViewModel.imagePreview) { request in
             WebImagePreview(request: request)
         }
         .onChange(of: webViewModel.showMediaDownloads) { _, show in
-            if show { showResourceInspector = true; webViewModel.showMediaDownloads = false }
+            if show { resourceInspectorRequest = ResourceInspectorRequest(); webViewModel.showMediaDownloads = false }
         }
         .modifier(ImageTextRecognitionPresentationModifier(
             webViewModel: webViewModel,
@@ -1152,8 +1201,16 @@ struct WebViewContainer: View {
             onOpenSafariCompatibility: { openSafariCompatibilityMode() },
             onOpenDefaultBrowser: { openCurrentPageInDefaultBrowser() },
             onCapturePage: { showCaptureOptions = true },
-            onInspectResources: { showResourceInspector = true },
+            onInspectResources: { resourceInspectorRequest = ResourceInspectorRequest() },
             onReadArticle: { showArticleReader = true },
+            onLocalAI: {
+                localAICleanup = nil
+                NotificationCenter.default.post(name: .askSouloLocalAI, object: "", userInfo: ["owner": searchVM])
+            },
+            onRemoveAds: {
+                guard localAICleanup == nil else { return }
+                localAICleanup = LocalAIIntegration.cleanupView(model: webViewModel) { localAICleanup = nil }
+            },
             onTranslatePage: { showTranslationSheet = true },
             onMoreMenuPresentationChange: { isPresented in
                 toolbarInteractionLocked = isPresented

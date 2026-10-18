@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BrowserToolbarSettingsView: View {
     @ObservedObject private var service = BrowserToolbarConfigurationService.shared
+    @ObservedObject private var localAIAvailability = LocalAIAvailability.shared
     @State private var draftActions = BrowserToolbarConfigurationService.defaultActions
     @State private var draftAddressAction = BrowserToolbarConfigurationService.defaultAddressAction
     @State private var selectedSlot = 0
@@ -81,6 +82,7 @@ struct BrowserToolbarSettingsView: View {
                 Label(LanguageManager.shared.localizedString("toolbar_restore_default"), systemImage: "arrow.counterclockwise")
             }
             .buttonStyle(CompactActionButtonStyle(fillsHeight: true))
+            .accessibilityIdentifier("toolbar.reset")
 
             Button {
                 service.save(actions: draftActions, addressAction: draftAddressAction)
@@ -90,6 +92,7 @@ struct BrowserToolbarSettingsView: View {
                 Label(LanguageManager.shared.localizedString("save"), systemImage: "checkmark")
             }
             .buttonStyle(CompactActionButtonStyle(prominent: true, fillsHeight: true))
+            .accessibilityIdentifier("toolbar.save")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -178,6 +181,7 @@ struct BrowserToolbarSettingsView: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("toolbar.slot.\(index)")
                 .accessibilityLabel(
                     index == 4
                         ? LanguageManager.shared.localizedString("browser_edit_address")
@@ -248,6 +252,7 @@ struct BrowserToolbarSettingsView: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("toolbar.action.\(action.rawValue)")
     }
 
     private var selectedAction: BrowserToolbarAction {
@@ -259,8 +264,11 @@ struct BrowserToolbarSettingsView: View {
     }
 
     private var availableActions: [BrowserToolbarAction] {
-        let visibleActions = BrowserToolbarAction.allCases.filter {
+        let prioritized: [BrowserToolbarAction] = [.none, .localAI, .removeAds]
+        let ordered = prioritized + BrowserToolbarAction.allCases.filter { !prioritized.contains($0) }
+        let visibleActions = ordered.filter {
             !BrowserToolbarConfigurationService.temporarilyUnavailableActions.contains($0)
+                && (localAIAvailability.isReady || ![.localAI, .removeAds].contains($0))
         }
         if selectedSlot == 4 {
             return visibleActions.filter { ![.more, .tabs].contains($0) }

@@ -1,0 +1,24 @@
+Test Case '-[SouloLocalAITests.LocalAIAgentModelTests testSemanticFunctionSelectionWithRealModel]' passed (173.906 seconds).
+	 Executed 1 test, with 0 failures (0 unexpected) in 173.906 (173.906) seconds
+	 Executed 1 test, with 0 failures (0 unexpected) in 173.906 (173.906) seconds
+	 Executed 1 test, with 0 failures (0 unexpected) in 173.906 (173.909) seconds
+SEMANTIC decision: {"actions":[{"tool":"page_count_text","text":"鸡蛋"}]}
+SEMANTIC plan: 这页中有几个鸡蛋文字 => [SouloLocalAI.LocalAIToolCall(tool: "page_count_text", value: Optional("鸡蛋"))]
+SEMANTIC decision: {"actions":[{"tool":"answer"}]}
+SEMANTIC plan: 这个页面中只有一个“鸡蛋”文字？ => []
+SEMANTIC decision: {"actions":[{"tool":"page_count_text","text":"海风"}]}
+SEMANTIC plan: 数一下文章里「海风」的出现次数 => [SouloLocalAI.LocalAIToolCall(tool: "page_count_text", value: Optional("海风"))]
+SEMANTIC decision: {"actions":[{"tool":"page_links","filter":"weibo.com"}]}
+SEMANTIC plan: 把这个页面中微博的链接提取给我 => [SouloLocalAI.LocalAIToolCall(tool: "page_links", value: Optional("weibo.com"))]
+SEMANTIC decision: {"actions":[{"tool":"page_images"}]}
+SEMANTIC plan: 提取网页中所有图片 => [SouloLocalAI.LocalAIToolCall(tool: "page_images", value: nil)]
+SEMANTIC decision: {"actions": [{"tool": "open_url", "url": "https://www.baidu.com"}]}
+SEMANTIC plan: 你好 打开百度 => [SouloLocalAI.LocalAIToolCall(tool: "open_url", value: Optional("https://www.baidu.com"))]
+SEMANTIC decision: {"actions":[{"tool":"open_url","url":"https://www.swift.org/documentation/"}]}
+SEMANTIC plan: Open https://www.swift.org/documentation/ => [SouloLocalAI.LocalAIToolCall(tool: "open_url", value: Optional("https://www.swift.org/documentation/"))]
+SEMANTIC decision: {"actions":[{"tool":"set:appearance","value":"dark"}]}
+SEMANTIC plan: 把应用外观改成深色 => [SouloLocalAI.LocalAIToolCall(tool: "set:appearance", value: Optional("dark"))]
+SEMANTIC decision: {"actions":[{"tool":"answer"}]}
+SEMANTIC plan: 不要打开百度，请解释浏览器是什么 => []
+SEMANTIC show decision: {"actions":[{"tool":"page_show"}]}
+SEMANTIC analysis decision: {"actions":[{"tool":"page_summarize"}]}

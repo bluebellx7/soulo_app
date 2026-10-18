@@ -1,0 +1,20 @@
+{
+  "followUp": {
+    "metrics": {
+      "firstTokenSeconds": 0.029308208,
+      "generatedTokens": 1,
+      "generationSeconds": 0.033190542,
+      "loadSeconds": 5.125e-06,
+      "promptTokens": 65
+    },
+    "output": "苹果"
+  },
+  "metrics": {
+    "firstTokenSeconds": 0.631607958,
+    "generatedTokens": 1,
+    "generationSeconds": 0.05069125,
+    "loadSeconds": 0.576549,
+    "promptTokens": 45
+  },
+  "output": "苹果"
+}

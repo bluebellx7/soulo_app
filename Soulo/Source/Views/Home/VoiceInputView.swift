@@ -17,6 +17,8 @@ struct VoiceInputView: View {
     @EnvironmentObject var searchVM: SearchViewModel
     var onConfirm: (String) -> Void
     var onDismiss: () -> Void
+    var onAskAI: ((String) -> Void)? = nil
+    @ObservedObject private var localAIAvailability = LocalAIAvailability.shared
 
     @State private var pulseScale: CGFloat = 1.0
     @State private var wavePhase: CGFloat = 0
@@ -105,7 +107,20 @@ struct VoiceInputView: View {
 
                 // Action buttons
                 actionButtons
-                    .padding(.bottom, 50)
+                    .padding(.bottom, localAIAvailability.isReady && onAskAI != nil ? 16 : 50)
+                if localAIAvailability.isReady, let onAskAI {
+                    Button {
+                        speechService.stopRecording()
+                        onAskAI(speechService.recognizedText)
+                    } label: {
+                        Label(LocalAIIntegration.voiceTitle, systemImage: "sparkles").font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    .buttonStyle(.borderedProminent).tint(Color.themePrimary)
+                    .disabled(speechService.recognizedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .padding(.horizontal, 40).padding(.bottom, 24)
+                    .accessibilityIdentifier("voice.askAI")
+                }
             }
         }
         .presentationDetents([.medium])

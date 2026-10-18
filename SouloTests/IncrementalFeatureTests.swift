@@ -100,13 +100,23 @@ final class IncrementalFeatureTests: XCTestCase {
         session.beginTemporaryRate()
         XCTAssertTrue(session.temporaryRate)
         XCTAssertEqual(session.player.rate, 2)
+        XCTAssertEqual(session.temporaryRateFeedback, 2)
         XCTAssertEqual(UserDefaults.standard.float(forKey: "media.rate"), savedRate)
         session.endTemporaryRate()
         XCTAssertEqual(session.player.rate, 1.5)
+        XCTAssertEqual(session.temporaryRateFeedback, 1.5)
+        // AVKit's own controls can change the current rate independently of
+        // the browser's saved preference; restore that actual prior rate.
+        session.player.rate = 0.75
         session.beginTemporaryRate()
-        await Task.detached {
-            NotificationCenter.default.post(name: UIApplication.willResignActiveNotification, object: nil)
-        }.value
+        XCTAssertEqual(session.player.rate, 2)
+        session.endTemporaryRate()
+        XCTAssertEqual(session.player.rate, 0.75)
+        session.setRate(1.5)
+        session.beginTemporaryRate()
+        // UIKit also observes this system notification and requires delivery
+        // on the main thread, just as during an actual app interruption.
+        NotificationCenter.default.post(name: UIApplication.willResignActiveNotification, object: nil)
         try await wait { !session.temporaryRate }
         XCTAssertEqual(session.player.rate, 1.5)
         let image = try await session.captureFrame()
@@ -123,6 +133,8 @@ final class IncrementalFeatureTests: XCTestCase {
         XCTAssertEqual(session.player.rate, 0)
         session.beginTemporaryRate()
         XCTAssertFalse(session.temporaryRate)
+        session.stop()
+        XCTAssertNil(session.temporaryRateFeedback)
     }
     @MainActor func testReaderChineseConversionIsReversibleInWebKit() async throws {
         let original = "汉语阅读 頭髮 😀 Original"

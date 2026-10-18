@@ -8,13 +8,30 @@ enum WebVideoHoldSpeedRuntime {
       const nativeRate = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'playbackRate');
       const rate = video => nativeRate.get.call(video);
       const setRate = (video, value) => { try { nativeRate.set.call(video, value); } catch (_) {} };
+      function report(holding, value) {
+        try {
+          window.webkit.messageHandlers.souloVideoOrientation.postMessage({
+            action:holding ? 'holdSpeed' : 'holdSpeedEnd', token:value.token,
+            rate:rate(value.video), pageURL:location.href
+          });
+        } catch (_) {}
+      }
+      function refresh() {
+        if (!active) return;
+        const value = rate(active.video);
+        if (!Number.isFinite(value) || value <= active.rate + 0.01) { end(); return; }
+        if (active.badge) active.badge.textContent = Number(value.toFixed(2))+'×';
+        report(true, active);
+      }
       function end() {
         if (pending) clearTimeout(pending.timer);
         pending = null;
         if (!active) return;
         const old = active; active = null;
+        clearInterval(old.heartbeat);
         setRate(old.video, old.rate);
-        old.badge.remove();
+        old.badge?.remove();
+        report(false, old);
         released = {video:old.video,target:old.target,until:performance.now()+450};
       }
       function videoAt(event, point) {
@@ -47,13 +64,19 @@ enum WebVideoHoldSpeedRuntime {
           if (pending !== press || !video.isConnected || video.paused || video.ended) { end(); return; }
           const oldRate = rate(video);
           if (oldRate >= 2) { end(); return; }
-          const badge = document.createElement('div'), r = video.getBoundingClientRect();
-          badge.setAttribute('data-soulo-hold-speed', ''); badge.textContent = '2×';
-          badge.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483647;color:white;background:rgba(28,28,30,.8);font:600 15px system-ui;padding:6px 14px;border-radius:14px;';
-          badge.style.left = Math.max(8,r.left+r.width/2-25)+'px'; badge.style.top = Math.max(8,r.top+14)+'px';
-          (document.fullscreenElement || document.documentElement).append(badge);
-          active = {video, target:press.target, rate:oldRate, badge};
+          // HTML fullscreen is above the native browser chrome; keep a local
+          // fallback there. Inline and embedded players use the native toast.
+          let badge = null;
+          if (document.fullscreenElement) {
+            badge = document.createElement('div'); badge.setAttribute('data-soulo-hold-speed', '');
+            badge.style.cssText = 'position:fixed;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);pointer-events:none;z-index:2147483647;color:white;background:rgba(28,28,30,.88);font:600 15px system-ui;padding:10px 20px;border-radius:24px;';
+            document.fullscreenElement.append(badge);
+          }
+          const token = globalThis.crypto?.randomUUID?.() || Date.now().toString(36)+Math.random().toString(36);
+          active = {video, target:press.target, rate:oldRate, badge, token};
           setRate(video, 2);
+          refresh();
+          if (active) active.heartbeat = setInterval(refresh, 750);
         }, 450);
       }
       function move(event) {
@@ -84,6 +107,7 @@ enum WebVideoHoldSpeedRuntime {
         document.addEventListener(name,event => { if (event.target === active?.video || event.target === pending?.video) end(); },true);
       }
       document.addEventListener('fullscreenchange',end);
+      document.addEventListener('ratechange',event => { if (event.target === active?.video) refresh(); },true);
       new MutationObserver(() => { if (active && !active.video.isConnected) end(); })
         .observe(document.documentElement,{childList:true,subtree:true});
       window.__souloVideoHoldSpeed = {end};

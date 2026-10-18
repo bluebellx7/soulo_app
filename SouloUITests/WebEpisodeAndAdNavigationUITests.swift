@@ -488,17 +488,27 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         document.addEventListener('pointerup',event=>{if(event.target===v)document.getElementById('other').click()});
         </script></body>
         """#
-        let server=try DownloadPlaybackHTTPFixture(files:["/hold.html":Data(html.utf8),"/clip.mp4":try Data(contentsOf:file)])
+        let embedded = "<meta name='viewport' content='width=device-width,initial-scale=1'><iframe id='player' style='width:100%;height:650px;border:0'></iframe><script>player.src=location.origin.replace('127.0.0.1','localhost')+'/hold.html'</script>"
+        let server=try DownloadPlaybackHTTPFixture(files:["/hold.html":Data(html.utf8),"/embedded.html":Data(embedded.utf8),"/clip.mp4":try Data(contentsOf:file)])
         let root=try await server.start();server.releaseDownloads();defer{server.stop()}
-        let app=launch();try open(root.appendingPathComponent("hold.html"),app:app)
+        let app=launch()
+        for path in ["hold.html", "embedded.html"] {
+        try open(root.appendingPathComponent(path),app:app)
         let play=app.webViews.buttons["Play fixture"].firstMatch
         XCTAssertTrue(play.waitForExistence(timeout:20));play.tap()
         XCTAssertTrue(app.webViews.staticTexts["Maximum 1.5; current 1.5"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
         let point=app.coordinate(withNormalizedOffset:CGVector(dx:0,dy:0)).withOffset(CGVector(dx:app.frame.midX,dy:play.frame.maxY+100))
         point.press(forDuration:0.9)
+        let toast = app.descendants(matching: .any).matching(identifier: "browser.video-hold-speed").firstMatch
+        XCTAssertTrue(toast.exists, app.debugDescription)
+        XCTAssertTrue(toast.label.contains("1.5×"), "After release the toast shows the restored rate")
+        XCTAssertLessThan(toast.frame.maxY, app.frame.midY, "The hold speed belongs at the top of the viewport")
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "video-hold-speed-" + path; shot.lifetime = .keepAlways; add(shot)
         XCTAssertTrue(app.webViews.staticTexts["Maximum 2; current 1.5"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
+        XCTAssertTrue(toast.waitForNonExistence(timeout: 3), "Releasing the video dismisses the temporary speed toast")
         XCTAssertTrue(app.webViews.staticTexts["Other control 1"].firstMatch.waitForExistence(timeout:5),app.debugDescription)
         app.webViews.buttons["Other control"].firstMatch.tap()
         XCTAssertTrue(app.webViews.staticTexts["Other control 2"].firstMatch.waitForExistence(timeout:5),app.debugDescription)
+        }
     }
 }

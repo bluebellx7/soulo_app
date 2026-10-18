@@ -1,0 +1,47 @@
+packages:
+  SouloLocalAI:
+    path: Modules/SouloLocalAI
+targets:
+  Soulo:
+    settings:
+      base:
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) SOULO_LOCAL_AI"
+        SOULO_ENTITLEMENTS_FILE: Modules/SouloLocalAI/SouloLocalAI.entitlements
+    dependencies:
+      - package: SouloLocalAI
+        product: SouloLocalAI
+  LocalAIValidation:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Modules/SouloLocalAI/ValidationApp
+        excludes: [Info.plist]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dkluge.Soulo.LocalAIValidation
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 7S2LBJA9VA
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_ENTITLEMENTS: Modules/SouloLocalAI/ValidationApp/Validation.entitlements
+        INFOPLIST_KEY_CFBundleDisplayName: "Soulo AI Check"
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: 1
+    dependencies:
+      - package: SouloLocalAI
+        product: SouloLocalAI
+  SouloTests:
+    settings:
+      base:
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) SOULO_LOCAL_AI"
+    dependencies:
+      - package: SouloLocalAI
+        product: SouloLocalAI
+schemes:
+  LocalAIValidation:
+    build:
+      targets:
+        LocalAIValidation: all
+    run:
+      config: Debug

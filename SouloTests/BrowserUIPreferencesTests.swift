@@ -48,7 +48,8 @@ final class BrowserUIPreferencesTests: XCTestCase {
         XCTAssertEqual(service.actions.map(\.rawValue), oldLayout)
         XCTAssertEqual(service.addressAction, .copyLink)
         XCTAssertEqual(defaults.stringArray(forKey: BrowserToolbarConfigurationService.actionsKey), oldLayout)
-        for action: BrowserToolbarAction in [.readerMode, .resources, .files, .books, .downloads, .wifiTransfer, .adBlock] {
+        let optionalActions: [BrowserToolbarAction] = LocalAIIntegration.available ? [.localAI, .removeAds] : []
+        for action: BrowserToolbarAction in [.readerMode, .resources, .files, .books, .downloads, .wifiTransfer, .adBlock] + optionalActions {
             service.save(actions: [action, .back, .tabs, .more], addressAction: action)
             let restored = BrowserToolbarConfigurationService(defaults: defaults)
             XCTAssertEqual(restored.actions.first, action == .books ? .files : action)

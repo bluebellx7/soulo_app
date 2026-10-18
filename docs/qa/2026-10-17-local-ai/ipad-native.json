@@ -1,0 +1,92 @@
+{
+  "device": "iPad / 26.6.1",
+  "status": "PASS",
+  "results": [
+    {
+      "passed": true,
+      "name": "Native Chinese question",
+      "answer": "小林一共读了二十四页书。",
+      "metrics": {
+        "promptTokens": 54,
+        "generatedTokens": 7,
+        "loadSeconds": 0.805601625,
+        "generationSeconds": 0.135898625,
+        "firstTokenSeconds": 0.882897375
+      },
+      "footprintBytes": 305120776,
+      "peakFootprintBytes": 305120776
+    },
+    {
+      "passed": true,
+      "name": "Conversation roles",
+      "answer": "苹果。",
+      "metrics": {
+        "promptTokens": 51,
+        "loadSeconds": 6.625e-06,
+        "firstTokenSeconds": 0.046171375,
+        "generationSeconds": 0.062861875,
+        "generatedTokens": 2
+      },
+      "footprintBytes": 306251392,
+      "peakFootprintBytes": 306235008
+    },
+    {
+      "passed": true,
+      "name": "Real Swift documentation page",
+      "answer": "该网页是 Swift 语言官方文档，主要用途是提供 Swift 编程语言的全面指南。主题围绕 Swift 语言的核心功能展开，包括：\n\n- 编写安全、高效、易读的代码\n- 使用 Swift 构建应用\n- 测试工具\n- 项目库与官方库\n- 工具链管理（Swiftly）\n- 扩展支持（如 VS Code）\n- Swift Package Manager\n- 文档生成（DocC）\n- 平台支持（Android、iOS、Linux 等）\n- WebAssembly 和 Windows 支持\n- 跨平台文档（Swift-Java）\n\n整体为 Swift 官方文档，用于开发者学习、构建和使用 Swift 语言。",
+      "metrics": {
+        "loadSeconds": 6.333e-06,
+        "firstTokenSeconds": 0.297006125,
+        "generationSeconds": 1.361874625,
+        "promptTokens": 412,
+        "generatedTokens": 149
+      },
+      "footprintBytes": 306169568,
+      "peakFootprintBytes": 310839008
+    },
+    {
+      "passed": true,
+      "name": "Cancel native generation",
+      "answer": "Cancellation returned in 0.07760500907897949 s",
+      "footprintBytes": 308184824,
+      "peakFootprintBytes": 310839008
+    },
+    {
+      "passed": true,
+      "name": "Native image OCR",
+      "answer": "42",
+      "metrics": {
+        "promptTokens": 504,
+        "loadSeconds": 9.334e-06,
+        "firstTokenSeconds": 3.076195334,
+        "generationSeconds": 0.043705833,
+        "generatedTokens": 2
+      },
+      "footprintBytes": 1475332768,
+      "peakFootprintBytes": 1667058456
+    },
+    {
+      "peakFootprintBytes": 1707199256,
+      "name": "Real webpage screenshot",
+      "answer": "网页截图的标题是“Documentation”，主要内容是 Swift Documentation 页面。",
+      "footprintBytes": 1485277904,
+      "passed": true,
+      "metrics": {
+        "generationSeconds": 0.16050875,
+        "loadSeconds": 6.792e-06,
+        "firstTokenSeconds": 3.097932834,
+        "promptTokens": 639,
+        "generatedTokens": 15
+      }
+    },
+    {
+      "peakFootprintBytes": 1707199256,
+      "name": "Unload",
+      "answer": "Model and context released",
+      "footprintBytes": 74548408,
+      "passed": true
+    }
+  ],
+  "hardware": "iPad Air 11-inch (M3)",
+  "memorySamplingIntervalMilliseconds": 100
+}

@@ -1,0 +1,6 @@
+{
+  "kind": "unsigned uncompressed Release app bundles; no model weights",
+  "withAIBytes": 56452744,
+  "withoutAIBytes": 46930238,
+  "deltaBytes": 9522506
+}

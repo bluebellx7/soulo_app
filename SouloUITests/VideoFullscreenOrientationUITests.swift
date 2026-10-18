@@ -17,7 +17,7 @@ final class VideoFullscreenOrientationUITests: XCTestCase {
         defer { server.stop() }
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
         app.launchArguments = ["-app_language", "en-US", "-privacy_https_upgrade_enabled", "NO",
-            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO"]
+            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-media.rate", "1.5"]
         app.launch()
         var route = URLComponents()
         route.scheme = "soulo"; route.host = "open"
@@ -65,6 +65,13 @@ final class VideoFullscreenOrientationUITests: XCTestCase {
                 }, object: nil)], timeout: 10)
                 let hidden = XCTAttachment(screenshot: app.screenshot())
                 hidden.name = "fullscreen-all-controls-hidden"; hidden.lifetime = .keepAlways; add(hidden)
+                player.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)).press(forDuration: 1.2)
+                let speed = app.descendants(matching: .any).matching(identifier: "media.video-hold-speed").firstMatch
+                XCTAssertTrue(speed.exists, app.debugDescription)
+                XCTAssertTrue(speed.label.contains("1.5×"), "Release shows the restored rate")
+                let restored = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                restored.name = "native-fullscreen-restored-speed"; restored.lifetime = .keepAlways; add(restored)
+                XCTAssertTrue(speed.waitForNonExistence(timeout: 3))
                 let revealedAgain = try await revealControls(player: player, close: close)
                 XCTAssertTrue(revealedAgain, app.debugDescription)
             }

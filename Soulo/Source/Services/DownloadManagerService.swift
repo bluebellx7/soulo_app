@@ -345,11 +345,18 @@ final class DownloadManagerService: ObservableObject {
     }
 
     func updateFileReference(from oldURL: URL, to newURL: URL) {
-        for index in downloads.indices where downloads[index].localURL.standardizedFileURL == oldURL.standardizedFileURL {
-            downloads[index].localPath = newURL.path
-            downloads[index].fileName = newURL.lastPathComponent
+        updateFileReferences([(oldURL, newURL)])
+    }
+    func updateFileReferences(_ changes: [(from: URL, to: URL)]) {
+        let targets = Dictionary(changes.map { ($0.from.standardizedFileURL, $0.to) }, uniquingKeysWith: { _, last in last })
+        var changed = false
+        for index in downloads.indices {
+            guard let target = targets[downloads[index].localURL.standardizedFileURL] else { continue }
+            downloads[index].localPath = target.path
+            downloads[index].fileName = target.lastPathComponent
+            changed = true
         }
-        save()
+        if changed { save() }
     }
 
     func finishedDownload(for sourceURL: URL) -> BrowserDownloadItem? {

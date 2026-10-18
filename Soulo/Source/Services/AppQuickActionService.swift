@@ -120,6 +120,7 @@ final class SouloAppDelegate: NSObject, UIApplicationDelegate {
         handleEventsForBackgroundURLSession identifier: String,
         completionHandler: @escaping () -> Void
     ) {
+        if LocalAIIntegration.handleBackgroundSession(identifier, completion: completionHandler) { return }
         if identifier == SeparatedMediaDownloadService.sessionIdentifier {
             SeparatedMediaDownloadService.shared.backgroundEventsCompletionHandler = completionHandler
             return

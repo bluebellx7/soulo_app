@@ -1,0 +1,56 @@
+{
+  "module": {
+    "tests": 38,
+    "status": "passed",
+    "log": "/tmp/soulo-ai-semantic-module-final.log",
+    "realModel": "MiniCPM-V 4.7 1B Q4_K_M",
+    "hostCatalogFunctions": 67,
+    "modelScenarios": 9
+  },
+  "webkitAndNativeTools": {
+    "tests": 16,
+    "status": "passed",
+    "bundle": "/tmp/soulo-ai-semantic-webkit-final.xcresult"
+  },
+  "ui": {
+    "distinctPassedCases": 9,
+    "fullPassingBundles": [
+      "/tmp/soulo-ai-semantic-agent-7.xcresult",
+      "/tmp/soulo-ai-semantic-ui-delivery.xcresult",
+      "/tmp/soulo-ai-semantic-entry-media.xcresult"
+    ],
+    "additionalPassedCasesFromMixedBundle": {
+      "bundle": "/tmp/soulo-ai-semantic-agent-6.xcresult",
+      "cases": [
+        "testChineseIntroductionAndRealModelBrowserAction",
+        "testHomeSearchKeepsOriginalLayoutAndAssistantCanVisitARealPage",
+        "testModelTreatsNegatedNavigationAsExplanation"
+      ]
+    },
+    "note": "Counts are a union of passed cases; intermediate bundles are not claimed to have all passed."
+  },
+  "releaseWithAI": {
+    "status": "passed",
+    "log": "/tmp/soulo-ai-semantic-release-delivery.log"
+  },
+  "releaseWithoutModule": {
+    "status": "passed",
+    "log": "/tmp/soulo-ai-semantic-removal-complete.log",
+    "matchedHostSwiftFiles": 193,
+    "hostSwiftSHA256": "a666661d6a2d368b3593bfffc5c5419e38ec7f0b833b75a235203d5f70c2f176"
+  },
+  "localization": {
+    "keys": 877,
+    "locales": 50,
+    "status": "passed"
+  },
+  "storeMetadata": {
+    "locales": 50,
+    "status": "passed"
+  },
+  "limits": [
+    "One native function per request; no autonomous cross-page loop.",
+    "A verified prior observation may answer a follow-up without another identical call.",
+    "1B model may still choose incorrect tools or arguments."
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "withoutAI": {
+    "app": 46931142,
+    "executable": 35444096
+  },
+  "withAI": {
+    "app": 62204319,
+    "executable": 38693968
+  },
+  "increaseBytes": 15273177,
+  "configuration": "Semantic tool selection delivery; Release / iOS arm64; unsigned, uncompressed; no models"
+}

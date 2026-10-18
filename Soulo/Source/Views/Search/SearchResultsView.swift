@@ -16,6 +16,7 @@ struct SearchResultsView: View {
     var searchBarNamespace: Namespace.ID
     var speechService: SpeechRecognitionService
     var onOpenSettings: (() -> Void)? = nil
+    var onOpenAI: ((String) -> Void)? = nil
 
     @EnvironmentObject var searchVM: SearchViewModel
     @EnvironmentObject var languageManager: LanguageManager
@@ -32,6 +33,7 @@ struct SearchResultsView: View {
     @State private var showBookmarkToast = false
     @State private var isFullscreen: Bool = false
     @State private var showVoiceInput = false
+    @State private var voiceAIRequest: String?
     @State private var showPlatformManagement = false
     @State private var showGroupPicker = false
     @State private var pageReady = false
@@ -338,7 +340,9 @@ struct SearchResultsView: View {
                   let index = tabManager.tabs.firstIndex(where: { $0.webViewModel === source }) else { return }
             tabManager.switchToTab(at: index)
         }
-        .sheet(isPresented: $showVoiceInput) {
+        .sheet(isPresented: $showVoiceInput, onDismiss: {
+            if let question = voiceAIRequest { voiceAIRequest = nil; onOpenAI?(question) }
+        }) {
             VoiceInputView(
                 speechService: speechService,
                 onConfirm: { text in
@@ -347,7 +351,8 @@ struct SearchResultsView: View {
                     searchVM.performSearch(context: modelContext)
                     loadCurrentPlatformURL()
                 },
-                onDismiss: { showVoiceInput = false }
+                onDismiss: { showVoiceInput = false },
+                onAskAI: { voiceAIRequest = $0; showVoiceInput = false }
             )
         }
         .sheet(isPresented: $showPlatformManagement) {

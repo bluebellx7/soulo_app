@@ -1,6 +1,40 @@
 import AVKit
 import SwiftUI
 
+struct VideoPlaybackSpeedToast: View {
+    let rate: Double
+    var body: some View {
+        Label(String(format: "%g×", rate), systemImage: "forward.fill")
+            .font(.system(.subheadline, design: .rounded).weight(.semibold)).monospacedDigit()
+            .foregroundStyle(.white)
+            .padding(.horizontal, 20).padding(.vertical, 11)
+            .background(.black.opacity(0.85), in: Capsule())
+            .overlay(Capsule().strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
+            .shadow(color: .black.opacity(0.16), radius: 10, y: 4)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(ToolText.text("web_media_speed") + " " + String(format: "%g×", rate))
+            .allowsHitTesting(false)
+    }
+}
+
+private struct NativeVideoHoldSpeedFeedback: View {
+    @ObservedObject private var session = MediaSession.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var body: some View {
+        VStack {
+            if let rate = session.temporaryRateFeedback, session.player.rate > 0 {
+                VideoPlaybackSpeedToast(rate: Double(rate))
+                    .accessibilityIdentifier("media.video-hold-speed")
+                    .padding(.top, 12).transition(.opacity)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: session.temporaryRateFeedback)
+        .allowsHitTesting(false)
+    }
+}
+
 struct VideoOrientationErrorAlert: ViewModifier {
     @Binding var message: String?
     func body(content: Content) -> some View {
@@ -330,6 +364,21 @@ private struct SessionPlayerController: UIViewControllerRepresentable {
             hold.minimumPressDuration = 0.4
             hold.delegate = delegate
             controller.view.addGestureRecognizer(hold)
+            if let overlay = controller.contentOverlayView {
+                let feedback = UIHostingController(rootView: NativeVideoHoldSpeedFeedback())
+                feedback.view.backgroundColor = .clear
+                feedback.view.isUserInteractionEnabled = false
+                controller.addChild(feedback)
+                overlay.addSubview(feedback.view)
+                feedback.view.translatesAutoresizingMaskIntoConstraints = false
+                NSLayoutConstraint.activate([
+                    feedback.view.leadingAnchor.constraint(equalTo: overlay.safeAreaLayoutGuide.leadingAnchor),
+                    feedback.view.trailingAnchor.constraint(equalTo: overlay.safeAreaLayoutGuide.trailingAnchor),
+                    feedback.view.topAnchor.constraint(equalTo: overlay.safeAreaLayoutGuide.topAnchor),
+                    feedback.view.bottomAnchor.constraint(equalTo: overlay.safeAreaLayoutGuide.bottomAnchor)
+                ])
+                feedback.didMove(toParent: controller)
+            }
             let observer = DismissalObserver()
             observer.view.isUserInteractionEnabled = false
             observer.view.frame = .zero
@@ -806,13 +855,7 @@ struct MediaPlaybackContent: View {
     }
 
     private var playbackPreview: some View {
-        MediaPlaybackSurface().overlay(alignment: .top) {
-            if session.temporaryRate {
-                Text("2×").font(.callout.monospacedDigit().weight(.semibold))
-                    .padding(.horizontal, 16).padding(.vertical, 8)
-                    .background(.regularMaterial, in: Capsule()).padding().allowsHitTesting(false)
-            }
-        }
+        MediaPlaybackSurface().overlay { NativeVideoHoldSpeedFeedback() }
     }
 
     var body: some View {

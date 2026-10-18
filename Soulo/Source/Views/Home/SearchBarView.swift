@@ -95,6 +95,7 @@ struct SearchBarView: View {
             .submitLabel(.search)
             .onSubmit(onSubmit)
             .autocorrectionDisabled()
+            .accessibilityIdentifier("search.input")
             .textInputAutocapitalization(.never)
             .accessibilityLabel(
                 LanguageManager.shared.localizedString(

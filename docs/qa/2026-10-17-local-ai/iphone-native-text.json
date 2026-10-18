@@ -1,0 +1,77 @@
+{
+  "textOnly": true,
+  "results": [
+    {
+      "peakFootprintBytes": 281757240,
+      "passed": true,
+      "metrics": {
+        "firstTokenSeconds": 1.001101291,
+        "generatedTokens": 7,
+        "generationSeconds": 0.138797417,
+        "promptTokens": 54,
+        "loadSeconds": 0.943927166
+      },
+      "footprintBytes": 281724472,
+      "answer": "小林一共读了二十四页书。",
+      "name": "Native Chinese question"
+    },
+    {
+      "peakFootprintBytes": 282969800,
+      "passed": true,
+      "metrics": {
+        "generatedTokens": 2,
+        "loadSeconds": 9.25e-06,
+        "firstTokenSeconds": 0.046512708,
+        "generationSeconds": 0.066452458,
+        "promptTokens": 51
+      },
+      "footprintBytes": 282969800,
+      "answer": "苹果。",
+      "name": "Conversation roles"
+    },
+    {
+      "peakFootprintBytes": 336037624,
+      "passed": true,
+      "metrics": {
+        "generationSeconds": 0.474276667,
+        "loadSeconds": 7.75e-06,
+        "generatedTokens": 19,
+        "firstTokenSeconds": 0.284160208,
+        "promptTokens": 214
+      },
+      "footprintBytes": 336037624,
+      "answer": "{\"actions\": [{\"tool\": \"set:appearance\", \"value\": \"dark\"}]}",
+      "name": "Constrained browser action plan"
+    },
+    {
+      "peakFootprintBytes": 339773296,
+      "passed": true,
+      "metrics": {
+        "promptTokens": 408,
+        "loadSeconds": 7.584e-06,
+        "generatedTokens": 153,
+        "firstTokenSeconds": 0.318222334,
+        "generationSeconds": 1.877019583
+      },
+      "footprintBytes": 282724208,
+      "answer": "该网页是 Swift 语言官方文档，主要用途是提供 Swift 编程语言的全面指南。主题围绕 Swift 语言及其相关功能，包括：\n\n- 编写安全、高效、易读的代码\n- 使用 Swift 构建应用\n- 测试工具\n- 项目库\n- 工具链管理\n- 扩展支持（如 VS Code）\n- Swift Package Manager\n- DocC 文档生成\n- 平台支持（Android、iOS、Linux、WebAssembly等）\n- 编译器诊断与设置\n- 升级到 Swift 6\n- 其他实用功能如插件、项目管理等\n\n整体用于开发者学习、构建和部署 Swift 项目，涵盖从构建、测试到平台支持的全面文档。",
+      "name": "Real Swift documentation page"
+    },
+    {
+      "peakFootprintBytes": 339773296,
+      "passed": true,
+      "footprintBytes": 284788592,
+      "answer": "Cancellation returned in 0.12429094314575195 s",
+      "name": "Cancel native generation"
+    },
+    {
+      "peakFootprintBytes": 339773296,
+      "passed": true,
+      "footprintBytes": 108365080,
+      "answer": "Model and context released",
+      "name": "Unload"
+    }
+  ],
+  "device": "iPhone / 26.6.1",
+  "status": "PASS"
+}

@@ -1,4 +1,8 @@
 name: Soulo
+include:
+  - path: Modules/SouloLocalAI/project.yml
+    enable: true
+    relativePaths: false
 options:
   bundleIdPrefix: com.dkluge
   deploymentTarget:
@@ -56,6 +60,9 @@ options:
     - vi
     - Base
 
+settings:
+  base:
+    SOULO_ENTITLEMENTS_FILE: Soulo/SouloBrowser.entitlements
 targets:
   Soulo:
     type: application
@@ -165,7 +172,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dkluge.Soulo
         CODE_SIGN_STYLE: Automatic
-        CODE_SIGN_ENTITLEMENTS: Soulo/SouloBrowser.entitlements
+        CODE_SIGN_ENTITLEMENTS: "$(SOULO_ENTITLEMENTS_FILE)"
         DEVELOPMENT_TEAM: 7S2LBJA9VA
         MARKETING_VERSION: "1.2.2"
         CURRENT_PROJECT_VERSION: 33

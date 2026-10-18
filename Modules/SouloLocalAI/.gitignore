@@ -1,0 +1,6 @@
+Vendor/
+.runtime-build/
+.build/
+.swiftpm/
+Package.resolved
+ValidationApp/Info.plist

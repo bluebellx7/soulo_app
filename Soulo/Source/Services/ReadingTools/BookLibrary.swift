@@ -96,16 +96,23 @@ struct LibraryBook: Codable, Identifiable, Hashable {
     }
     func remove(_ id: String) { books.removeAll { $0.id == id }; try? save() }
     func updateFileReference(bookIDs: Set<String>, to url: URL) throws {
-        guard !bookIDs.isEmpty else { return }
-        guard url.standardizedFileURL.path.hasPrefix(Self.directory.standardizedFileURL.path + "/") else {
-            throw ReadingToolError.unsafePath
-        }
+        try updateFileReferences([(bookIDs, url)])
+    }
+    func updateFileReferences(_ changes: [(bookIDs: Set<String>, url: URL)]) throws {
+        guard changes.contains(where: { !$0.bookIDs.isEmpty }) else { return }
         let original = books
-        for index in books.indices where bookIDs.contains(books[index].id) {
-            books[index].name = url.deletingPathExtension().lastPathComponent
-            books[index].fileName = String(url.standardizedFileURL.path.dropFirst(Self.directory.standardizedFileURL.path.count + 1))
-            books[index].fileBookmark = try? url.bookmarkData(options: .minimalBookmark)
+        var updated = books
+        for (bookIDs, url) in changes where !bookIDs.isEmpty {
+            guard url.standardizedFileURL.path.hasPrefix(Self.directory.standardizedFileURL.path + "/") else { throw ReadingToolError.unsafePath }
+            for index in updated.indices where bookIDs.contains(updated[index].id) {
+                if URL(fileURLWithPath: updated[index].fileName).lastPathComponent != url.lastPathComponent {
+                    updated[index].name = url.deletingPathExtension().lastPathComponent
+                }
+                updated[index].fileName = String(url.standardizedFileURL.path.dropFirst(Self.directory.standardizedFileURL.path.count + 1))
+                updated[index].fileBookmark = try? url.bookmarkData(options: .minimalBookmark)
+            }
         }
+        books = updated
         do { try save() } catch { books = original; throw error }
     }
     private func save() throws {

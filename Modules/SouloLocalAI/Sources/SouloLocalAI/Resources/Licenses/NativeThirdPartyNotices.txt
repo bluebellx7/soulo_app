@@ -1,0 +1,194 @@
+vendor/hash/xxhash/LICENSE
+
+xxHash Library
+Copyright (c) 2012-2021 Yann Collet
+All rights reserved.
+
+BSD 2-Clause License (https://www.opensource.org/licenses/bsd-license.php)
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice, this
+  list of conditions and the following disclaimer in the documentation and/or
+  other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+vendor/hash/sha256/LICENSE
+
+2010-06-11 : Igor Pavlov : Public domain
+
+
+vendor/hash/rotate-bits/LICENSE.md
+
+MIT License
+
+Copyright (c) 2021 William Casarin <jb55@jb55.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+llamafile sgemm
+
+// Copyright 2024 Mozilla Foundation
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+// BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+// ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+//
+//                   _   _          ___ _      _   ___
+//                  | |_(_)_ _ _  _| _ ) |    /_\ / __|
+//                  |  _| | ' \ || | _ \ |__ / _ \\__ \.
+//                   \__|_|_||_\_, |___/____/_/ \_\___/
+//                             |__/
+//
+//                    BASIC LINEAR ALGEBRA SUBPROGRAMS
+//
+//
+// This file implements multithreaded CPU matrix multiplication for the
+// common contiguous use case C = Aᵀ * B. These kernels are designed to
+// have excellent performance[1] for matrices that fit in the CPU cache
+// without imposing any overhead such as cache filling or malloc calls.
+//
+// This implementation does not guarantee any upper bound with rounding
+// errors, which grow along with k. Our goal's to maximally exploit the
+// hardware for performance, and then use whatever resources remain for
+// improving numerical accuracy.
+//
+// [1] J. Tunney, ‘LLaMA Now Goes Faster on CPUs’, Mar. 2024. [Online].
+//     Available: https://justine.lol/matmul/. [Accessed: 29-Mar-2024].
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic ignored "-Wignored-attributes"
+#endif
+
+#include "sgemm.h"
+#include "ggml-impl.h"
+#include "ggml-cpu-impl.h"
+#include "ggml-quants.h"
+#include "simd-mappings.h"
+
+#include <array>
+#include <type_traits>
+
+#ifdef _MSC_VER
+#define NOINLINE __declspec(noinline)
+#else
+#define NOINLINE __attribute__((__noinline__))
+#endif
+
+#if defined(__ARM_NEON) || defined(__AVX512F__) || defined(__VXE__) || defined(__VXE2__)
+#define VECTOR_REGISTERS 32
+#else
+#define VECTOR_REGISTERS 16
+#endif
+
+#if defined(__riscv_v_intrinsic)
+#define LMUL 4
+#endif
+
+#define MM256_SET_M128I(a, b) _mm256_insertf128_si256(_mm256_castsi128_si256(b), (a), 1)
+
+namespace {
+
+inline float unhalf(ggml_fp16_t d) {
+    return GGML_CPU_FP16_TO_FP32(d);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// VECTORIZED ARITHMETIC OPERATIONS
+
+#if defined(__SSE__) || defined(__AVX__) || defined(__AVX2__) || defined(__AVX512F__)
+inline __m128 add(__m128 x, __m128 y) { return _mm_add_ps(x, y); }
+inline __m128 sub(__m128 x, __m128 y) { return _mm_sub_ps(x, y); }
+inline __m128 mul(__m128 x, __m128 y) { return _mm_mul_ps(x, y); }
+#endif  // __SSE__
+
+#if defined(__AVX__) || defined(__AVX2__) || defined(__AVX512F__)
+inline __m256 add(__m256 x, __m256 y) { return _mm256_add_ps(x, y); }
+inline __m256 sub(__m256 x, __m256 y) { return _mm256_sub_ps(x, y); }
+inline __m256 mul(__m256 x, __m256 y) { return _mm256_mul_ps(x, y); }
+#endif // __AVX__
+
+#if defined(__AVX512F__)
+inline __m512 add(__m512 x, __m512 y) { return _mm512_add_ps(x, y); }
+inline __m512 sub(__m512 x, __m512 y) { return _mm512_sub_ps(x, y); }
+inline __m512 mul(__m512 x, __m512 y) { return _mm512_mul_ps(x, y); }
+#endif // __AVX512F__
+
+#if defined(__ARM_NEON)
+inline float32x4_t add(float32x4_t x, float32x4_t y) { return vaddq_f32(x, y); }
+inline float32x4_t sub(float32x4_t x, float32x4_t y) { return vsubq_f32(x, y); }
+inline float32x4_t mul(float32x4_t x, float32x4_t y) { return vmulq_f32(x, y); }
+#endif // __ARM_NEON
+
+#if defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC)
+inline float16x8_t add(float16x8_t x, float16x8_t y) { return vaddq_f16(x, y); }
+inline float16x8_t sub(float16x8_t x, float16x8_t y) { return vsubq_f16(x, y); }
+inline float16x8_t mul(float16x8_t x, float16x8_t y) { return vmulq_f16(x, y); }
+#endif // __ARM_FEATURE_FP16_VECTOR_ARITHMETIC
+
+#if defined(__VXE__) || defined(__VXE2__)
+inline float32x4_t add(float32x4_t x, float32x4_t y) { return vec_add(x, y); }
+inline float32x4_t sub(float32x4_t x, float32x4_t y) { return vec_sub(x, y); }
+inline float32x4_t mul(float32x4_t x, float32x4_t y) { return vec_mul(x, y); }
+#endif
+
+#if defined(__MMA__)
+typedef vector unsigned char vec_t;
+typedef __vector_quad acc_t;
+#endif
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// VECTORIZED FUSED MULTIPLY ADD
+
+/**
+ * Computes a * b + c.
+ */

@@ -1,0 +1,10 @@
+{
+  "configuration": "Release / iOS arm64",
+  "moduleDirectoryPresent": false,
+  "llamaFrameworkPresent": false,
+  "aiResourceBundlePresent": false,
+  "hostSourcesMatchDelivery": true,
+  "matchedSwiftFiles": 193,
+  "build": "SUCCEEDED",
+  "log": "/tmp/soulo-ai-semantic-removal-complete.log"
+}

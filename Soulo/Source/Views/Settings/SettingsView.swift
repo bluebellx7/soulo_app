@@ -4,6 +4,7 @@ import PhotosUI
 import StoreKit
 
 struct SettingsView: View {
+    var onOpenLocalAI: (@MainActor () -> Void)? = nil
     private let neutralIconColor = Color(uiColor: .secondaryLabel)
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
@@ -62,6 +63,18 @@ struct SettingsView: View {
                 List {
                     // MARK: - Platform Management
                     Section {
+                        if LocalAIIntegration.available {
+                            NavigationLink(destination: LocalAIIntegration.settingsView(openLink: { url in
+                                NotificationCenter.default.post(name: .openSouloWebURL, object: url, userInfo: ["owner": searchVM])
+                            }, openChat: onOpenLocalAI)) {
+                                Label {
+                                    Text(LocalAIIntegration.title)
+                                } icon: {
+                                    IconBadge(systemName: "cpu", color: neutralIconColor)
+                                }
+                            }
+                            .accessibilityIdentifier("settings.localAI")
+                        }
                         NavigationLink(destination: PlatformManagementView()) {
                             Label {
                                 Text(LanguageManager.shared.localizedString("settings_platforms"))
@@ -289,6 +302,7 @@ struct SettingsView: View {
                                 title: LanguageManager.shared.localizedString("toolbar_customize")
                             )
                         }
+                        .accessibilityIdentifier("settings.toolbar")
 
                         NavigationLink(destination: AdBlockManagementView(currentHost: nil)) {
                             SettingsNavigationLabel(

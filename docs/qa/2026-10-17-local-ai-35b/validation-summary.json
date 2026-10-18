@@ -1,0 +1,55 @@
+{
+  "module": {
+    "totalTests": 45,
+    "passed": 44,
+    "skippedOptionalRealModel": 1
+  },
+  "realModel": {
+    "profile": "MiniCPM-V 4.7 35B-A3B Q4_K_S split with pinned upstream tools",
+    "platform": "macOS Metal",
+    "scenarios": 11,
+    "passed": true,
+    "seconds": 173.906,
+    "catalog": "69 actual host tools + 4 page tasks + answer"
+  },
+  "host": {
+    "distinctTestsPassed": 19,
+    "latestResultBundle": "/tmp/soulo-35b-page-show.xcresult"
+  },
+  "UI": {
+    "distinctTestsPassed": 3,
+    "scope": "model picker and cellular confirmation; native count follow-up and links; full-page entry"
+  },
+  "phone": {
+    "model": "local split Q4_K_S; production download package is Q3",
+    "physicalMemoryBytes": 8044216320,
+    "observedPeakFootprintBytes": 1816989280,
+    "fullAcceptanceCompleted": false,
+    "status": "Device lock blocked completion; temporary validation process stopped",
+    "throughputVerified": false
+  },
+  "productionQ3": {
+    "manifestAssets": 43,
+    "languageAssets": 42,
+    "languageBytes": 15504009668,
+    "visionBytes": 1119575840,
+    "fullDownloadAcceptanceCompleted": false
+  },
+  "LFM": {
+    "model": "LFM2.5-24B-A2B",
+    "integrated": false,
+    "phoneValidated": false,
+    "blocker": "Current LES expert loader supports qwen35moe only; LFM requires reasoning/template/backend adaptation"
+  },
+  "releaseBuilds": {
+    "withAI": "passed",
+    "withoutModuleDirectory": "passed",
+    "modelWeightsBundled": false
+  },
+  "checks": {
+    "rootLocalization": "877 keys × 50 locales passed",
+    "moduleLocalization": "134 keys × 3 locales matched",
+    "appStoreMetadata": "50 locales verified; version unchanged",
+    "diffWhitespace": "passed"
+  }
+}

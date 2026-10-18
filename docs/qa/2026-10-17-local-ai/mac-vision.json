@@ -1,0 +1,10 @@
+{
+  "metrics": {
+    "firstTokenSeconds": 5.555870583,
+    "generatedTokens": 2,
+    "generationSeconds": 0.02676925,
+    "loadSeconds": 0.710760708,
+    "promptTokens": 508
+  },
+  "output": "42"
+}

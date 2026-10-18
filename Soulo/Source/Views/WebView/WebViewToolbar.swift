@@ -148,6 +148,7 @@ struct WebViewToolbar: View {
     @Binding var isBookmarked: Bool
     @ObservedObject private var webAppearance = WebAppearanceService.shared
     @ObservedObject private var toolbarConfiguration = BrowserToolbarConfigurationService.shared
+    @ObservedObject private var localAIAvailability = LocalAIAvailability.shared
     @ObservedObject private var extensionService = BrowserExtensionService.shared
     @AppStorage(AppConstants.StorageKeys.isIncognito) private var isIncognito = false
     @AppStorage(AppConstants.StorageKeys.selectedLanguage) private var appLanguage = AppConstants.preferredLanguageCode()
@@ -188,6 +189,8 @@ struct WebViewToolbar: View {
     var onCapturePage: (() -> Void)?
     var onInspectResources: (() -> Void)?
     var onReadArticle: (() -> Void)?
+    var onLocalAI: (() -> Void)?
+    var onRemoveAds: (() -> Void)?
     @State private var mediaRateMessage: String?
     @State private var pageAvailability = WebPageToolsAvailability()
     @State private var webMediaRate = 1.0
@@ -230,6 +233,11 @@ struct WebViewToolbar: View {
             }
         }
         .padding(.horizontal, 10)
+    }
+
+    private var effectiveAddressAction: BrowserToolbarAction {
+        let action = toolbarConfiguration.addressAction
+        return [.localAI, .removeAds].contains(action) && !localAIAvailability.isReady ? .none : action
     }
 
     private var addressControl: some View {
@@ -388,16 +396,16 @@ struct WebViewToolbar: View {
                 )
             )
 
-            if toolbarConfiguration.addressAction != .none {
+            if effectiveAddressAction != .none {
                 Rectangle()
                     .fill(Color.primary.opacity(0.12))
                     .frame(width: 0.5, height: 16)
                     .accessibilityHidden(true)
 
                 Button {
-                    performToolbarAction(toolbarConfiguration.addressAction)
+                    performToolbarAction(effectiveAddressAction)
                 } label: {
-                    Image(systemName: toolbarSymbol(for: toolbarConfiguration.addressAction))
+                    Image(systemName: toolbarSymbol(for: effectiveAddressAction))
                         .font(.system(size: 12, weight: .medium))
                         .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(Color.primary.opacity(0.68))
@@ -405,9 +413,9 @@ struct WebViewToolbar: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .disabled(!isToolbarActionEnabled(toolbarConfiguration.addressAction))
+                .disabled(!isToolbarActionEnabled(effectiveAddressAction))
                 .accessibilityLabel(
-                    toolbarConfiguration.addressAction.localizedTitle
+                    effectiveAddressAction.localizedTitle
                 )
             }
         }
@@ -649,6 +657,29 @@ struct WebViewToolbar: View {
             }
 
             pageToolsMenu
+
+            if LocalAIIntegration.available {
+                Button { performMoreMenuAction { onLocalAI?() } } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "cpu").font(.system(size: 18)).frame(width: 28, height: 28)
+                        Text(LocalAIIntegration.title).font(.system(size: 16))
+                        Spacer(minLength: 8)
+                    }.foregroundStyle(.primary).frame(minHeight: 44).padding(.horizontal, 12)
+                }
+                .buttonStyle(.plain).disabled(onLocalAI == nil)
+                .accessibilityIdentifier("browser.localAI")
+                if localAIAvailability.isReady {
+                Button { performMoreMenuAction { onRemoveAds?() } } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "sparkles.rectangle.stack").font(.system(size: 18)).frame(width: 28, height: 28)
+                        Text(LocalAIIntegration.cleanupTitle).font(.system(size: 16))
+                        Spacer(minLength: 8)
+                    }.foregroundStyle(.primary).frame(minHeight: 44).padding(.horizontal, 12)
+                }
+                .buttonStyle(.plain).disabled(!isToolbarActionEnabled(.removeAds))
+                .accessibilityIdentifier("browser.removeAds")
+                }
+            }
 
             if !webExtensionActionItems.isEmpty {
                 moreMenuDivider
@@ -1357,6 +1388,9 @@ struct WebViewToolbar: View {
 
     @ViewBuilder
     private func toolbarAction(_ action: BrowserToolbarAction) -> some View {
+        if [.localAI, .removeAds].contains(action) && !localAIAvailability.isReady {
+            EmptyView()
+        } else {
         switch action {
         case .none:
             EmptyView()
@@ -1384,6 +1418,8 @@ struct WebViewToolbar: View {
                 performToolbarAction(action)
             }
             .accessibilityLabel(action.localizedTitle)
+            .accessibilityIdentifier("browser.toolbar.action." + action.rawValue)
+        }
         }
     }
 
@@ -1428,6 +1464,8 @@ struct WebViewToolbar: View {
         case .files, .books, .downloads: onOpenLibrarySection != nil
         case .wifiTransfer: onWiFiTransfer != nil
         case .adBlock: onManageAdBlock != nil
+        case .localAI: LocalAIIntegration.available && onLocalAI != nil
+        case .removeAds: LocalAIIntegration.available && onRemoveAds != nil && ["http", "https"].contains(viewModel.currentURL?.scheme ?? "")
         default: true
         }
     }
@@ -1489,6 +1527,10 @@ struct WebViewToolbar: View {
             onWiFiTransfer?()
         case .adBlock:
             onManageAdBlock?()
+        case .localAI:
+            onLocalAI?()
+        case .removeAds:
+            onRemoveAds?()
         }
     }
 

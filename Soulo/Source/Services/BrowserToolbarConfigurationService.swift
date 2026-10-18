@@ -27,6 +27,8 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
     case downloads
     case wifiTransfer
     case adBlock
+    case localAI
+    case removeAds
 
     var id: String { rawValue }
 
@@ -58,6 +60,8 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .downloads: "downloads"
         case .wifiTransfer: "wifi_transfer"
         case .adBlock: "ad_block"
+        case .localAI: "localAI"
+        case .removeAds: "removeAds"
         }
     }
 
@@ -89,11 +93,15 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .downloads: "arrow.down.circle"
         case .wifiTransfer: "wifi"
         case .adBlock: "shield.lefthalf.filled"
+        case .localAI: "bubble.left.and.bubble.right"
+        case .removeAds: "sparkles.rectangle.stack"
         }
     }
 
     @MainActor var localizedTitle: String {
         switch self {
+        case .localAI: LocalAIIntegration.title
+        case .removeAds: LocalAIIntegration.cleanupTitle
         case .readerMode, .files, .books, .wifiTransfer: ToolText.text(titleKey)
         default: LanguageManager.shared.localizedString(titleKey)
         }
@@ -101,7 +109,7 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
 
     var requiresPage: Bool {
         switch self {
-        case .none, .home, .tabs, .more, .settings, .extensions, .library, .hideToolbar, .files, .books, .downloads, .wifiTransfer:
+        case .none, .home, .tabs, .more, .settings, .extensions, .library, .hideToolbar, .files, .books, .downloads, .wifiTransfer, .localAI:
             false
         default:
             true
@@ -119,7 +127,9 @@ final class BrowserToolbarConfigurationService: ObservableObject {
     static let unsupportedAddressActions: Set<BrowserToolbarAction> = [.tabs, .more]
     /// Keep this hook for actions that must temporarily disappear without
     /// invalidating a saved toolbar layout.
-    static let temporarilyUnavailableActions: Set<BrowserToolbarAction> = [.books]
+    static var temporarilyUnavailableActions: Set<BrowserToolbarAction> {
+        LocalAIIntegration.available ? [.books] : [.books, .localAI, .removeAds]
+    }
 
     @Published private(set) var actions: [BrowserToolbarAction]
     @Published private(set) var addressAction: BrowserToolbarAction

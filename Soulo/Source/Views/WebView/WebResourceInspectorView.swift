@@ -165,10 +165,11 @@ struct WebResourceInspectorView: View {
     @State private var selectedImageIDs = Set<String>()
     @State private var batchSaveMessage: String?
 
-    init(webViewModel: WebViewModel) {
+    init(webViewModel: WebViewModel, minimumImageWidth: Double = WebResourceInspectorDefaults.minimumImageWidth) {
         _viewModel = StateObject(
             wrappedValue: WebResourceInspectorViewModel(webViewModel: webViewModel)
         )
+        _minimumImageWidth = State(initialValue: max(0, minimumImageWidth))
     }
 
     var body: some View {

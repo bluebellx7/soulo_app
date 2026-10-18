@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import StoreKit
+import WebKit
 
 struct HomeView: View {
     @EnvironmentObject var searchVM: SearchViewModel
@@ -18,6 +19,14 @@ struct HomeView: View {
     @Namespace private var searchBarNamespace
 
     @State private var showSettings = false
+    @State private var showLocalAI = false
+    @State private var openLocalAIAfterSettings = false
+    @State private var localAIPage: AnyView?
+    @State private var preparingLocalAI = false
+    @State private var localAIPreparationID = UUID()
+    @State private var voiceAIRequest: String?
+    @State private var localAIReaderSource: WKWebView?
+    @State private var showLocalAIReader = false
     @State private var showExtensionCenter = false
     @State private var librarySection: LibrarySection?
     @State private var navigationSession = UUID()
@@ -82,6 +91,15 @@ struct HomeView: View {
             tab.webViewModel.loadURL(request.url)
         }
         .overlay { MediaMiniPlayer() }
+        .onReceive(NotificationCenter.default.publisher(for: .askSouloLocalAI)) { notification in
+            guard notification.userInfo?["owner"] as? SearchViewModel === searchVM else { return }
+            openLocalAI(notification.object as? String ?? "")
+        }
+        .overlay {
+            if !showLocalAI && !showsTabOverview && !showSettings && !keyboardVisible {
+                LocalAIIntegration.floatingButton { openLocalAI() }
+            }
+        }
         .overlay(alignment: .top) {
             DownloadCompletionToast { librarySection = .downloads }
         }
@@ -114,7 +132,7 @@ struct HomeView: View {
             // transform. Scaling the wallpaper with the page exposes the hosting
             // controller's default background around the safe-area edges.
             WallpaperBackground(isAnimating: !searchVM.isSearching && !showsTabOverview
-                && !keyboardVisible && !showSettings && librarySection == nil)
+                && !keyboardVisible && !showSettings && !showLocalAI && librarySection == nil)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea()
 
@@ -123,7 +141,8 @@ struct HomeView: View {
                     SearchResultsView(
                         searchBarNamespace: searchBarNamespace,
                         speechService: speechService,
-                        onOpenSettings: { showSettings = true }
+                        onOpenSettings: { showSettings = true },
+                        onOpenAI: { openLocalAI($0) }
                     )
                     .transition(.identity)
                 } else {
@@ -174,9 +193,24 @@ struct HomeView: View {
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
-        .sheet(isPresented: $showSettings) {
-            SettingsView()
+        .sheet(isPresented: $showSettings, onDismiss: {
+            if openLocalAIAfterSettings {
+                openLocalAIAfterSettings = false
+                openLocalAI()
+            }
+        }) {
+            SettingsView(onOpenLocalAI: {
+                openLocalAIAfterSettings = true
+                showSettings = false
+            })
         }
+        .navigationDestination(isPresented: $showLocalAI) {
+            localAIPage
+        }
+        .onChange(of: showLocalAI) { _, shown in
+            if !shown { localAIPage = nil; keyboardVisible = false }
+        }
+        .sheet(isPresented: $showLocalAIReader) { if let localAIReaderSource { ArticleReaderView(source: localAIReaderSource) } }
         .sheet(isPresented: $showPlatformManagement) {
             NavigationStack {
                 PlatformManagementView()
@@ -225,7 +259,9 @@ struct HomeView: View {
             QRCodeScannerView { value in pendingScan = value; showScanner = false }
         }
         .navigationDestination(item: $scannedContent) { content in LocalScanResultView(content: content) }
-        .sheet(isPresented: $showVoiceInput) {
+        .sheet(isPresented: $showVoiceInput, onDismiss: {
+            if let question = voiceAIRequest { voiceAIRequest = nil; openLocalAI(question) }
+        }) {
             VoiceInputView(
                 speechService: speechService,
                 onConfirm: { text in
@@ -233,7 +269,8 @@ struct HomeView: View {
                     showVoiceInput = false
                     performSearch()
                 },
-                onDismiss: { showVoiceInput = false }
+                onDismiss: { showVoiceInput = false },
+                onAskAI: { voiceAIRequest = $0; showVoiceInput = false }
             )
         }
         .sheet(isPresented: $showAppShareSheet) {
@@ -398,6 +435,9 @@ struct HomeView: View {
         pendingScan = nil
         showScanner = false
         showSettings = false
+        showLocalAI = false
+        localAIPreparationID = UUID(); preparingLocalAI = false
+        openLocalAIAfterSettings = false
         showExtensionCenter = false
         showVoiceInput = false
         showTabOverviewFromHome = false
@@ -406,6 +446,52 @@ struct HomeView: View {
     }
 
     // MARK: - Home Content
+
+    private func openLocalAI(_ question: String = "") {
+        guard !showLocalAI, !preparingLocalAI else { return }
+        preparingLocalAI = true
+        let preparationID = UUID(), expectedNavigation = navigationSession
+        localAIPreparationID = preparationID
+        var features: [String: () -> Void] = [
+            "设置 / Settings": { showSettings = true },
+            "文件 / Files": { librarySection = .files },
+            "下载 / Downloads": { librarySection = .downloads },
+            "收藏 / Bookmarks": { librarySection = .bookmarks },
+            "历史 / History": { librarySection = .history },
+            "扩展 / Extensions": { showExtensionCenter = true }
+        ]
+        if searchVM.isSearching {
+            for (title, action) in [
+                ("网页翻译 / Translate page", "translate"), ("网页截图 / Capture page", "capture"),
+                ("导出 PDF / Export PDF", "pdf"), ("分享网页 / Share page", "share"),
+                ("切换收藏状态 / Toggle bookmark", "bookmark"), ("桌面模式 / Desktop mode", "desktop"),
+                ("资源检查 / Page resources", "resources"), ("广告过滤设置 / Ad-block settings", "adblock"),
+                ("网页图片 / Page images", "images"),
+                ("站点隐私 / Site privacy", "privacy"), ("全屏 / Fullscreen", "fullscreen"), ("Wi-Fi 传文件 / Wi-Fi transfer", "wifi")
+            ] {
+                features[title] = { NotificationCenter.default.post(name: .performLocalAIFeature, object: searchVM, userInfo: ["action": action]) }
+            }
+        }
+        let openLink: @MainActor (URL) -> Void = { url in
+            NotificationCenter.default.post(name: .openSouloWebURL, object: url, userInfo: ["owner": searchVM])
+        }
+        Task { @MainActor in
+            defer { if localAIPreparationID == preparationID { preparingLocalAI = false } }
+            let page: AnyView
+            if searchVM.isSearching, let model = tabManager.activeWebViewModel {
+                page = await LocalAIIntegration.assistantView(model: model, search: searchVM, tabs: tabManager,
+                    initialQuestion: question, onReveal: { showLocalAI = false }, features: features, openLink: openLink) {
+                    localAIReaderSource = tabManager.activeWebViewModel?.webView; showLocalAI = false; showLocalAIReader = true
+                }
+            } else {
+                page = LocalAIIntegration.chatView(search: searchVM, tabs: tabManager, initialQuestion: question,
+                    onReveal: { showLocalAI = false }, features: features, openLink: openLink)
+            }
+            guard localAIPreparationID == preparationID, navigationSession == expectedNavigation, !Task.isCancelled else { return }
+            localAIPage = page
+            showLocalAI = true
+        }
+    }
 
     private var homeContent: some View {
         VStack(spacing: 0) {
@@ -733,6 +819,11 @@ struct HomeView: View {
 
     private var homeMenu: some View {
         Menu {
+            if LocalAIIntegration.available {
+                Button { openLocalAI() } label: { Label(LocalAIIntegration.title, systemImage: "cpu") }
+                    .accessibilityIdentifier("home.localAI")
+                Divider()
+            }
             Button {
                 librarySection = .bookmarks
             } label: {

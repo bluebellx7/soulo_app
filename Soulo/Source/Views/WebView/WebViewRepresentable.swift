@@ -1271,6 +1271,18 @@ struct WebViewRepresentable: UIViewRepresentable {
                       let action = body["action"] as? String,
                       let token = body["token"] as? String, token.count <= 80 else { return }
                 switch action {
+                case "holdSpeed", "holdSpeedEnd":
+                    guard let reported = body["pageURL"] as? String,
+                          var source = URLComponents(string: reported),
+                          let frameURL = message.frameInfo.request.url,
+                          var frame = URLComponents(url: frameURL, resolvingAgainstBaseURL: false) else { return }
+                    source.fragment = nil; frame.fragment = nil
+                    guard source.url == frame.url else { return }
+                    if action == "holdSpeed", let rate = body["rate"] as? Double {
+                        viewModel.updateVideoHoldSpeed(rate, token: token)
+                    } else if action == "holdSpeedEnd", let rate = body["rate"] as? Double {
+                        viewModel.endVideoHoldSpeed(token: token, restoredRate: rate)
+                    }
                 case "bottomControls":
                     guard message.frameInfo.isMainFrame, let needed = body["needed"] as? Bool else { return }
                     if viewModel.hasBottomVideoControls != needed {
