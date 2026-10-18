@@ -1,10 +1,4 @@
-1.2.2
+1.2.3
 
-• Choisissez les épisodes sur les sites compatibles, inversez leur ordre et téléchargez-en plusieurs à la fois, avec reprise des échecs. Maintenez le doigt pour accélérer, relâchez pour rétablir la vitesse. Commandes vidéo plus fluides.
-• Confirmation facultative des redirections automatiques vers un autre domaine, domaines de confiance et ouverture dans un nouvel onglet. Nettoyage des caches publicitaires, retour et sous-menus améliorés.
-
-• Correction de l’écrasement des réglages lors de l’activation de la synchronisation iCloud sur un nouvel appareil. Ajout de sauvegardes locales des réglages et simplification des liens partagés.
-
-• Choisissez Soulo comme navigateur par défaut dans Réglages pour ouvrir les liens des autres apps.
-• Amélioration du chargement des pages, du filtrage des publicités et de la réactivité de la navigation.
-• Amélioration de la mise en page, du recadrage des fonds et de la lecture lorsque la taille de la fenêtre change.
+• Les onglets et groupes de sites récents apparaissent en premier, et la vue s'ouvre en haut. L'ordre d'utilisation est conservé après un redémarrage.
+• Un appui prolongé sur une vidéo affiche sa vitesse temporaire ; relâchez pour rétablir la précédente. Compatibilité de la barre d'outils améliorée.

@@ -1,10 +1,4 @@
-1.2.2
+1.2.3
 
-• Alege episoade pe site-urile compatibile, inversează ordinea, descarcă mai multe simultan și reîncearcă descărcările eșuate. Ține apăsat pentru accelerare și eliberează pentru revenirea la viteză. Comenzi video mai fluide.
-• Confirmare opțională pentru redirecționarea automată spre alt domeniu, domenii de încredere și deschidere într-o filă nouă. Curățarea suprapunerilor publicitare și navigarea înapoi au fost îmbunătățite.
-
-• Am remediat suprascrierea setărilor existente la activarea sincronizării iCloud pe un dispozitiv nou. Am adăugat copii locale de siguranță ale setărilor și am simplificat gestionarea linkurilor partajate.
-
-• Alege Soulo ca browser implicit în Configurări pentru a deschide linkuri din alte aplicații.
-• Îmbunătățiri la încărcarea paginilor, filtrarea reclamelor și răspunsul navigării.
-• Îmbunătățiri ale aspectului, decupării imaginilor de fundal și lecturii când se schimbă dimensiunea ferestrei.
+• Filele și grupurile de site-uri folosite recent apar primele, iar lista se deschide de sus. Ordinea utilizării se păstrează după repornire.
+• Ține apăsat un videoclip pentru a vedea viteza temporară; eliberează pentru a reveni la cea anterioară. Compatibilitate îmbunătățită a barei de instrumente.

@@ -1,1 +1,1 @@
-Diğer uygulamalardaki bağlantıları açmak için Ayarlar’da Soulo’yu varsayılan tarayıcı olarak seçin. Video araçları ve bölüm seçimi.
+Son kullanılan sekmeler ve site grupları önce gösterilir, sekme görünümü en üstten açılır.

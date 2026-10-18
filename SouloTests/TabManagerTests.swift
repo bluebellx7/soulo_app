@@ -7,6 +7,70 @@ final class TabManagerTests: XCTestCase {
     private let storageKey = "soulo_saved_tabs"
 
     @MainActor
+    func testOverviewUsesRecentVisitsWithoutReorderingTheTabStripAndSurvivesRestart() throws {
+        let key = "recent-overview-\(UUID())"
+        UserDefaults.standard.set(Data(#"{"tabs":[],"activeIndex":0}"#.utf8), forKey: key)
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        let manager = TabManager(storageKey: key)
+        let first = manager.createTab(url: URL(string: "https://first.example/article"))
+        let second = manager.createTab(url: URL(string: "https://second.example/article"))
+        let third = manager.createTab(url: URL(string: "https://third.example/article"))
+        let stripOrder = manager.tabs.map(\.id)
+        manager.switchToTab(id: first.id)
+        XCTAssertEqual(Array(manager.tabsForOverview.prefix(3)).map(\.id), [first.id, third.id, second.id])
+        XCTAssertEqual(manager.tabs.map(\.id), stripOrder)
+        let lastVisit = try XCTUnwrap(manager.activeTab?.lastAccessedAt)
+        let background = manager.createTab(url: URL(string: "https://background.example/"), switchTo: false)
+        XCTAssertEqual(manager.activeTab?.lastAccessedAt, lastVisit, "A background operation is not a new visit")
+        manager.closeTab(id: background.id)
+        XCTAssertEqual(manager.activeTab?.lastAccessedAt, lastVisit)
+        manager.saveToDisk()
+        let restored = TabManager(storageKey: key)
+        XCTAssertEqual(restored.tabsForOverview.map(\.id), manager.tabsForOverview.map(\.id))
+        XCTAssertEqual(restored.tabs.map(\.id), stripOrder)
+        XCTAssertTrue(restored.tabs.allSatisfy { $0.webViewModel.webView == nil }, "Sorting and restoring must not load webpages")
+    }
+
+    @MainActor
+    func testClosingTheCurrentOverviewTabActivatesItsRecentSuccessorDirectly() throws {
+        let key = "recent-tab-close-\(UUID())"
+        UserDefaults.standard.set(Data(#"{"tabs":[],"activeIndex":0}"#.utf8), forKey: key)
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        let manager = TabManager(storageKey: key)
+        let first = manager.createTab(keyword: "first")
+        let middle = manager.createTab(keyword: "middle")
+        let newest = manager.createTab(keyword: "newest")
+        manager.switchToTab(id: first.id)
+        let middleVisit = try XCTUnwrap(manager.tabs.first { $0.id == middle.id }?.lastAccessedAt)
+        let next = try XCTUnwrap(manager.tabsForOverview.dropFirst().first)
+        XCTAssertEqual(next.id, newest.id)
+        manager.closeTab(at: try XCTUnwrap(manager.tabs.firstIndex { $0.id == first.id }), nextActiveTabID: next.id)
+        XCTAssertEqual(manager.activeTab?.id, newest.id)
+        XCTAssertEqual(manager.tabs.first { $0.id == middle.id }?.lastAccessedAt, middleVisit, "Do not activate an intermediate page")
+        XCTAssertEqual(manager.recentlyClosed.first?.id, first.id)
+        XCTAssertFalse(manager.tabs.contains { $0.id == first.id })
+    }
+
+    @MainActor
+    func testOldSessionKeepsActiveIdentityAndDeterministicOverviewOrder() throws {
+        let key = "legacy-tab-order-\(UUID())"
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        let ids = (0..<4).map { _ in UUID().uuidString }
+        let state: [String: Any] = ["tabs": [
+            ["id": ids[0], "urlString": "https://old.example/first"],
+            ["id": ids[1], "urlString": "webkit-extension://expired/page"],
+            ["id": ids[2].lowercased(), "urlString": "https://old.example/current"],
+            ["id": ids[3], "urlString": "https://other.example/"]
+        ], "activeIndex": 2, "savedAt": 100.0]
+        UserDefaults.standard.set(try JSONSerialization.data(withJSONObject: state), forKey: key)
+        let manager = TabManager(storageKey: key)
+        XCTAssertEqual(manager.activeTab?.id.uuidString, ids[2])
+        XCTAssertEqual(manager.tabsForOverview.map { $0.id.uuidString }, [ids[2], ids[0], ids[3]])
+        manager.saveToDisk()
+        XCTAssertEqual(TabManager(storageKey: key).tabsForOverview.map(\.id), manager.tabsForOverview.map(\.id))
+    }
+
+    @MainActor
     func testSystemFindCountsNavigatesAndDismissesWithoutPageScripts() async throws {
         let key = "native-find-\(UUID())"
         let manager = TabManager(storageKey: key)

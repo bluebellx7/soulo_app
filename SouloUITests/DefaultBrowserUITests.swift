@@ -43,6 +43,53 @@ final class DefaultBrowserUITests: XCTestCase {
         }
     }
 
+    func testRealDocumentationRendersWithWorkingBrowserControls() throws {
+        app.open(try XCTUnwrap(URL(string: "https://www.swift.org/documentation/")))
+        let content = app.webViews.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Swift")).firstMatch
+        XCTAssertTrue(content.waitForExistence(timeout: 45), app.debugDescription)
+        let more = app.buttons["More"].firstMatch
+        XCTAssertTrue(more.waitForExistence(timeout: 5), app.debugDescription)
+        more.tap()
+        XCTAssertTrue(app.popovers.firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "restored-browser-real-documentation"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.2)).tap()
+        XCTAssertTrue(app.popovers.firstMatch.waitForNonExistence(timeout: 5), app.debugDescription)
+        let tabs = app.buttons["browser.tabs"]
+        XCTAssertTrue(tabs.isHittable, app.debugDescription)
+    }
+
+    func testRecentGroupsUseRealWebpagesAndReopenAtTheTop() throws {
+        app.launchArguments += ["-tab_overview_grouped", "YES", "-show_top_tab_bar", "NO"]
+        app.open(try XCTUnwrap(URL(string: "https://www.swift.org/")))
+        XCTAssertTrue(app.webViews.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Swift")).firstMatch.waitForExistence(timeout: 45), app.debugDescription)
+        app.buttons["browser.tabs"].tap()
+        app.buttons["tabs.options"].tap()
+        let closeOthers = app.buttons["Close Other Tabs"].firstMatch
+        if closeOthers.exists { closeOthers.tap() }
+        else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.2)).tap() }
+        app.buttons["tabs.tab_new_tab"].tap()
+        app.open(try XCTUnwrap(URL(string: "https://www.swift.org/documentation/")))
+        XCTAssertTrue(app.webViews.staticTexts["Swift Documentation"].firstMatch.waitForExistence(timeout: 45), app.debugDescription)
+        app.buttons["browser.tabs"].tap()
+        let docs = app.descendants(matching: .any).matching(identifier: "tabs.group.host:docs.swift.org").firstMatch
+        let site = app.descendants(matching: .any).matching(identifier: "tabs.group.host:swift.org").firstMatch
+        XCTAssertTrue(docs.waitForExistence(timeout: 10) && site.exists, app.debugDescription)
+        XCTAssertLessThan(docs.frame.minY, site.frame.minY)
+        XCTAssertLessThan(docs.frame.minY, app.frame.height * 0.25)
+        let oldSite = app.scrollViews["tabs.group-row.host:swift.org"].buttons.firstMatch
+        XCTAssertTrue(oldSite.isHittable, app.debugDescription)
+        oldSite.tap()
+        XCTAssertTrue(app.webViews.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Swift")).firstMatch.waitForExistence(timeout: 30))
+        app.buttons["browser.tabs"].tap()
+        XCTAssertTrue(site.waitForExistence(timeout: 10))
+        XCTAssertLessThan(site.frame.minY, docs.frame.minY, "Returning to an older real page makes its group most recent")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "recent-groups-real-swift-webpages"; shot.lifetime = .keepAlways; add(shot)
+    }
+
     func testDefaultBrowserEntryOpensSystemSettings() throws {
         app.launch()
         let menu = app.buttons["home.menu"]

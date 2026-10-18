@@ -1,1 +1,1 @@
-U Postavkama odaberite Soulo kao zadani preglednik za otvaranje poveznica iz drugih aplikacija. Videoalati i odabir epizoda.
+Nedavno korištene kartice i grupe web-mjesta prikazuju se prve, a pregled se otvara na vrhu.

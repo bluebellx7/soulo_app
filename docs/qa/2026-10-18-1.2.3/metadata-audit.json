@@ -1,0 +1,707 @@
+{
+  "version": "1.2.3",
+  "locales": 50,
+  "validatedSourceFields": 300,
+  "sources": [
+    {
+      "locale": "ar-SA",
+      "language": "阿拉伯语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 24,
+        "subtitle": 26,
+        "promotionalText": 92,
+        "description": 2843,
+        "whatsNew": 271,
+        "keywords": 81
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "bn-BD",
+      "language": "孟加拉语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 28,
+        "subtitle": 26,
+        "promotionalText": 87,
+        "description": 3041,
+        "whatsNew": 268,
+        "keywords": 81
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "ca",
+      "language": "加泰罗尼亚语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 19,
+        "subtitle": 25,
+        "promotionalText": 100,
+        "description": 3389,
+        "whatsNew": 294,
+        "keywords": 100
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "zh-Hans",
+      "language": "简体中文",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 13,
+        "subtitle": 12,
+        "promotionalText": 41,
+        "description": 1409,
+        "whatsNew": 91,
+        "keywords": 86
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "zh-Hant",
+      "language": "繁体中文",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 13,
+        "subtitle": 12,
+        "promotionalText": 42,
+        "description": 1427,
+        "whatsNew": 93,
+        "keywords": 87
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "hr",
+      "language": "克罗地亚语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 21,
+        "subtitle": 26,
+        "promotionalText": 92,
+        "description": 3402,
+        "whatsNew": 306,
+        "keywords": 93
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "cs",
+      "language": "捷克语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 23,
+        "subtitle": 24,
+        "promotionalText": 84,
+        "description": 3171,
+        "whatsNew": 274,
+        "keywords": 91
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "da",
+      "language": "丹麦语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 27,
+        "subtitle": 30,
+        "promotionalText": 83,
+        "description": 3237,
+        "whatsNew": 276,
+        "keywords": 95
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "nl-NL",
+      "language": "荷兰语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 24,
+        "subtitle": 26,
+        "promotionalText": 91,
+        "description": 3472,
+        "whatsNew": 299,
+        "keywords": 87
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "en-AU",
+      "language": "英语（澳大利亚）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 27,
+        "subtitle": 23,
+        "promotionalText": 86,
+        "description": 3813,
+        "whatsNew": 266,
+        "keywords": 92
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "en-CA",
+      "language": "英语（加拿大）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 27,
+        "subtitle": 23,
+        "promotionalText": 86,
+        "description": 3813,
+        "whatsNew": 266,
+        "keywords": 96
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "en-GB",
+      "language": "英语（英国）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 27,
+        "subtitle": 23,
+        "promotionalText": 86,
+        "description": 3813,
+        "whatsNew": 266,
+        "keywords": 97
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "en-US",
+      "language": "英语（美国）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 27,
+        "subtitle": 23,
+        "promotionalText": 86,
+        "description": 3813,
+        "whatsNew": 266,
+        "keywords": 95
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "fi",
+      "language": "芬兰语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 21,
+        "subtitle": 23,
+        "promotionalText": 89,
+        "description": 3391,
+        "whatsNew": 304,
+        "keywords": 97
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "fr-FR",
+      "language": "法语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 26,
+        "subtitle": 26,
+        "promotionalText": 91,
+        "description": 3814,
+        "whatsNew": 307,
+        "keywords": 93
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "fr-CA",
+      "language": "法语（加拿大）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 26,
+        "subtitle": 26,
+        "promotionalText": 91,
+        "description": 3808,
+        "whatsNew": 307,
+        "keywords": 89
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "de-DE",
+      "language": "德语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 24,
+        "subtitle": 24,
+        "promotionalText": 94,
+        "description": 3668,
+        "whatsNew": 321,
+        "keywords": 91
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "el",
+      "language": "希腊语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 24,
+        "subtitle": 28,
+        "promotionalText": 100,
+        "description": 3628,
+        "whatsNew": 311,
+        "keywords": 91
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "gu-IN",
+      "language": "古吉拉特语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 25,
+        "subtitle": 23,
+        "promotionalText": 80,
+        "description": 2970,
+        "whatsNew": 247,
+        "keywords": 72
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "he",
+      "language": "希伯来语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 26,
+        "subtitle": 24,
+        "promotionalText": 82,
+        "description": 2556,
+        "whatsNew": 238,
+        "keywords": 74
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "hi",
+      "language": "北印度语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 26,
+        "subtitle": 21,
+        "promotionalText": 87,
+        "description": 3039,
+        "whatsNew": 264,
+        "keywords": 78
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "hu",
+      "language": "匈牙利语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 27,
+        "subtitle": 30,
+        "promotionalText": 93,
+        "description": 3424,
+        "whatsNew": 294,
+        "keywords": 89
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "id",
+      "language": "印度尼西亚语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 30,
+        "subtitle": 24,
+        "promotionalText": 92,
+        "description": 3291,
+        "whatsNew": 305,
+        "keywords": 88
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "it",
+      "language": "意大利语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 28,
+        "subtitle": 25,
+        "promotionalText": 94,
+        "description": 3580,
+        "whatsNew": 303,
+        "keywords": 96
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "ja",
+      "language": "日语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 16,
+        "subtitle": 16,
+        "promotionalText": 55,
+        "description": 1715,
+        "whatsNew": 121,
+        "keywords": 94
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "kn-IN",
+      "language": "坎纳达语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 26,
+        "subtitle": 26,
+        "promotionalText": 108,
+        "description": 3366,
+        "whatsNew": 283,
+        "keywords": 76
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "ko",
+      "language": "韩语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 17,
+        "subtitle": 13,
+        "promotionalText": 44,
+        "description": 1919,
+        "whatsNew": 146,
+        "keywords": 89
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "ms",
+      "language": "马来语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 30,
+        "subtitle": 21,
+        "promotionalText": 94,
+        "description": 3296,
+        "whatsNew": 295,
+        "keywords": 91
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "ml-IN",
+      "language": "马拉雅拉姆语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 28,
+        "subtitle": 22,
+        "promotionalText": 105,
+        "description": 3643,
+        "whatsNew": 297,
+        "keywords": 80
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "mr-IN",
+      "language": "马拉地语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 25,
+        "subtitle": 21,
+        "promotionalText": 70,
+        "description": 3014,
+        "whatsNew": 236,
+        "keywords": 80
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "no",
+      "language": "挪威语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 30,
+        "subtitle": 29,
+        "promotionalText": 79,
+        "description": 3205,
+        "whatsNew": 275,
+        "keywords": 99
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "or-IN",
+      "language": "奥里亚语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 25,
+        "subtitle": 26,
+        "promotionalText": 78,
+        "description": 3076,
+        "whatsNew": 235,
+        "keywords": 77
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "pl",
+      "language": "波兰语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 26,
+        "subtitle": 30,
+        "promotionalText": 98,
+        "description": 3308,
+        "whatsNew": 284,
+        "keywords": 89
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "pt-BR",
+      "language": "葡萄牙语（巴西）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 27,
+        "subtitle": 25,
+        "promotionalText": 94,
+        "description": 3414,
+        "whatsNew": 291,
+        "keywords": 97
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "pt-PT",
+      "language": "葡萄牙语（葡萄牙）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 30,
+        "subtitle": 27,
+        "promotionalText": 95,
+        "description": 3505,
+        "whatsNew": 291,
+        "keywords": 99
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "pa-IN",
+      "language": "旁遮普语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 24,
+        "subtitle": 23,
+        "promotionalText": 92,
+        "description": 3009,
+        "whatsNew": 277,
+        "keywords": 73
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "ro",
+      "language": "罗马尼亚语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 29,
+        "subtitle": 26,
+        "promotionalText": 91,
+        "description": 3520,
+        "whatsNew": 307,
+        "keywords": 98
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "ru",
+      "language": "俄语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 18,
+        "subtitle": 27,
+        "promotionalText": 78,
+        "description": 3327,
+        "whatsNew": 294,
+        "keywords": 85
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "sk",
+      "language": "斯洛伐克语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 24,
+        "subtitle": 25,
+        "promotionalText": 89,
+        "description": 3259,
+        "whatsNew": 280,
+        "keywords": 90
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "sl-SI",
+      "language": "斯洛文尼亚语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 30,
+        "subtitle": 29,
+        "promotionalText": 103,
+        "description": 3380,
+        "whatsNew": 293,
+        "keywords": 94
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "es-MX",
+      "language": "西班牙语（墨西哥）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 30,
+        "subtitle": 24,
+        "promotionalText": 85,
+        "description": 3578,
+        "whatsNew": 282,
+        "keywords": 93
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "es-ES",
+      "language": "西班牙语（西班牙）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 30,
+        "subtitle": 24,
+        "promotionalText": 85,
+        "description": 3565,
+        "whatsNew": 279,
+        "keywords": 97
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "sv",
+      "language": "瑞典语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 29,
+        "subtitle": 29,
+        "promotionalText": 87,
+        "description": 3210,
+        "whatsNew": 293,
+        "keywords": 100
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "ta-IN",
+      "language": "泰米尔语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 21,
+        "subtitle": 28,
+        "promotionalText": 110,
+        "description": 3664,
+        "whatsNew": 324,
+        "keywords": 82
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "te-IN",
+      "language": "泰卢固语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 24,
+        "subtitle": 27,
+        "promotionalText": 103,
+        "description": 3348,
+        "whatsNew": 298,
+        "keywords": 83
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "th",
+      "language": "泰语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 23,
+        "subtitle": 24,
+        "promotionalText": 108,
+        "description": 2735,
+        "whatsNew": 225,
+        "keywords": 80
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "tr",
+      "language": "土耳其语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 29,
+        "subtitle": 23,
+        "promotionalText": 90,
+        "description": 3331,
+        "whatsNew": 270,
+        "keywords": 92
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "uk",
+      "language": "乌克兰语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 18,
+        "subtitle": 23,
+        "promotionalText": 85,
+        "description": 3359,
+        "whatsNew": 293,
+        "keywords": 82
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "ur-PK",
+      "language": "乌尔都语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 22,
+        "subtitle": 25,
+        "promotionalText": 93,
+        "description": 3118,
+        "whatsNew": 285,
+        "keywords": 73
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    },
+    {
+      "locale": "vi",
+      "language": "越南语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 30,
+        "subtitle": 26,
+        "promotionalText": 84,
+        "description": 3025,
+        "whatsNew": 277,
+        "keywords": 99
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing tab keywords remain applicable"
+    }
+  ]
+}

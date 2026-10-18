@@ -1,10 +1,4 @@
-1.2.2
+1.2.3
 
-• Pilih episode di situs yang didukung, balik urutannya, unduh beberapa episode sekaligus dan coba lagi unduhan yang gagal. Tekan lama untuk mempercepat, lepaskan untuk memulihkan kecepatan. Kontrol video lebih lancar.
-• Konfirmasi opsional untuk pengalihan otomatis ke domain lain, domain tepercaya dan buka di tab baru. Pembersihan lapisan iklan dan navigasi kembali ditingkatkan.
-
-• Memperbaiki masalah pengaturan lama yang tertimpa saat mengaktifkan sinkronisasi iCloud pada perangkat baru. Menambahkan cadangan pengaturan lokal dan menyederhanakan penanganan tautan yang dibagikan.
-
-• Pilih Soulo sebagai browser default di Pengaturan untuk membuka tautan dari app lain.
-• Peningkatan pemuatan halaman web, penyaringan iklan, dan respons navigasi.
-• Peningkatan tata letak, pemotongan wallpaper, dan pengalaman membaca saat ukuran jendela berubah.
+• Tab dan grup situs yang baru digunakan tampil lebih dulu, dan tampilan tab dibuka dari atas. Urutan penggunaan tetap tersimpan setelah memulai ulang.
+• Tahan video untuk melihat kecepatan pemutaran sementara; lepaskan untuk kembali ke kecepatan sebelumnya. Kompatibilitas bilah alat ditingkatkan.

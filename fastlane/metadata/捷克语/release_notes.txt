@@ -1,10 +1,4 @@
-1.2.2
+1.2.3
 
-• Výběr a obrácené pořadí epizod na podporovaných webech, hromadné stahování vybraných epizod a opakování neúspěšných stažení. Podržením zrychlíte, uvolněním obnovíte rychlost. Plynulejší ovládání videa.
-• Volitelné potvrzení automatického přechodu na jinou doménu, důvěryhodné domény a otevření na nové kartě. Lepší odstraňování reklamních překryvů a návrat na předchozí stránku.
-
-• Opraveno přepisování stávajícího nastavení při zapnutí synchronizace iCloudu na novém zařízení. Přidány místní zálohy nastavení a zjednodušeno zpracování sdílených odkazů.
-
-• V Nastavení vyberte Soulo jako výchozí prohlížeč pro otevírání odkazů z jiných aplikací.
-• Vylepšeno načítání webových stránek, filtrování reklam a odezva při navigaci.
-• Vylepšeno rozvržení, ořez tapety a čtení při změně velikosti okna.
+• Nedávno použité karty a skupiny webů se zobrazují první a přehled se otevírá nahoře. Pořadí použití se zachová i po restartu.
+• Při podržení videa se zobrazí dočasná rychlost přehrávání; po uvolnění se obnoví předchozí rychlost. Lepší kompatibilita panelu nástrojů.

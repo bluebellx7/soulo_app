@@ -2,7 +2,7 @@ Soulo, iPhone ve iPad için çok platformlu bir arama tarayıcısıdır. Bir kez
 
 Diğer uygulamalardaki bağlantıları açmak için Ayarlar’da Soulo’yu varsayılan tarayıcı olarak seçin.
 
-Yeni bir aygıtta iCloud eşzamanlaması açıldığında mevcut ayarların üzerine yazılması sorunu düzeltildi. Yerel ayar yedekleri eklendi ve paylaşılan bağlantıların işlenmesi kolaylaştırıldı.
+Son kullanılan sekmeler ve site grupları önce gösterilir, sekme görünümü en üstten açılır. Kullanım sırası yeniden başlatınca korunur.
 
 Desteklenen videoları indirilirken oynatın. Arka plan indirmeleri ve tam ekran iyileştirildi; gizli reklamlara ve istenmeyen kopyalamaya karşı koruma.
 

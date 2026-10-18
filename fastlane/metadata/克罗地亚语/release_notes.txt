@@ -1,10 +1,4 @@
-1.2.2
+1.2.3
 
-• Odabir i obrnuti redoslijed epizoda na podržanim stranicama, skupno preuzimanje odabranih epizoda i ponovni pokušaj neuspjelih preuzimanja. Držite za ubrzavanje i pustite za povratak brzine. Fluidnije videokontrole.
-• Neobavezna potvrda automatskog prelaska na drugu domenu, pouzdane domene i otvaranje u novoj kartici. Poboljšano uklanjanje oglasnih prekrivača i povratak na prethodnu stranicu.
-
-• Ispravljeno je prepisivanje postojećih postavki pri uključivanju iCloud sinkronizacije na novom uređaju. Dodane su lokalne sigurnosne kopije postavki i pojednostavljena obrada dijeljenih poveznica.
-
-• U Postavkama odaberite Soulo kao zadani preglednik za otvaranje poveznica iz drugih aplikacija.
-• Poboljšano učitavanje web-stranica, filtriranje oglasa i odziv pri navigaciji.
-• Poboljšani raspored, obrezivanje pozadine i čitanje pri promjeni veličine prozora.
+• Nedavno korištene kartice i grupe web-mjesta prikazuju se prve, a pregled se otvara na vrhu. Redoslijed korištenja čuva se nakon ponovnog pokretanja.
+• Držite video pritisnutim za prikaz privremene brzine reprodukcije; otpuštanjem se vraća prethodna brzina. Poboljšana kompatibilnost alatne trake.

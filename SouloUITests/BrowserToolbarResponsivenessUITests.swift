@@ -328,6 +328,70 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 10))
     }
 
+    func testGroupedOverviewStartsAtTopUsesRecentTabsAndKeepsOrderAfterRestart() throws {
+        app.terminate()
+        app.launchArguments += ["-tab_overview_grouped", "YES"]
+        app.launch()
+        let hosts = ["127.0.0.1", "localhost", "127.0.0.1", "localhost", "localhost", "localhost"]
+        func load(_ number: Int) throws {
+            var url = try XCTUnwrap(URLComponents(url: root, resolvingAgainstBaseURL: false))
+            url.host = hosts[number - 1]; url.path = "/recent/\(number)"
+            try open(url: XCTUnwrap(url.url))
+            XCTAssertTrue(app.webViews.staticTexts["Recent page \(number)"].firstMatch.waitForExistence(timeout: 20), app.debugDescription)
+        }
+        try load(1)
+        tap(app.buttons["browser.tabs"])
+        tap(app.buttons["tabs.options"])
+        let closeOthers = app.buttons["Close Other Tabs"].firstMatch
+        if closeOthers.exists { tap(closeOthers) }
+        else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.2)).tap() }
+        tap(app.buttons["tabs.done"])
+        for number in 2...6 {
+            tap(app.buttons["browser.tabs"]); tap(app.buttons["tabs.tab_new_tab"])
+            try load(number)
+        }
+        func checkTop(_ first: Int, _ second: Int) {
+            let header = app.descendants(matching: .any).matching(identifier: "tabs.group.host:localhost").firstMatch
+            XCTAssertTrue(header.waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertLessThan(header.frame.minY, app.frame.height * 0.25, "The most recently used group starts at the top")
+            let row = app.scrollViews["tabs.group-row.host:localhost"]
+            let firstCard = row.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Recent page \(first),")).firstMatch
+            let secondCard = row.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Recent page \(second),")).firstMatch
+            XCTAssertTrue(firstCard.isHittable && secondCard.isHittable, app.debugDescription)
+            XCTAssertLessThan(firstCard.frame.minX, secondCard.frame.minX, "Tabs inside a group follow recent use")
+        }
+        tap(app.buttons["browser.tabs"])
+        checkTop(6, 5)
+        let dockY = app.buttons["tabs.done"].frame.midY
+        app.scrollViews["tabs.groups"].swipeUp()
+        XCTAssertEqual(app.buttons["tabs.done"].frame.midY, dockY, accuracy: 1)
+        tap(app.buttons["tabs.done"]); tap(app.buttons["browser.tabs"])
+        checkTop(6, 5)
+        let fifth = app.scrollViews["tabs.group-row.host:localhost"].buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Recent page 5,")).firstMatch
+        tap(fifth)
+        XCTAssertTrue(app.webViews.staticTexts["Recent page 5"].firstMatch.waitForExistence(timeout: 10), "Selecting a reordered card must open the correct tab")
+        app.terminate(); app.launch()
+        tap(app.buttons.matching(NSPredicate(format: "label MATCHES %@", "[0-9]+,? Tabs")).firstMatch)
+        checkTop(5, 6)
+        let firstPage = app.scrollViews["tabs.group-row.host:127.0.0.1"].buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Recent page 1,")).firstMatch
+        tap(firstPage)
+        XCTAssertTrue(app.webViews.staticTexts["Recent page 1"].firstMatch.waitForExistence(timeout: 10))
+        tap(app.buttons["browser.tabs"])
+        let currentCard = app.scrollViews["tabs.group-row.host:127.0.0.1"].buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Recent page 1,")).firstMatch
+        currentCard.press(forDuration: 1)
+        tap(app.buttons["Close Tab"].firstMatch)
+        let remainingGroup = app.descendants(matching: .any).matching(identifier: "tabs.group.host:127.0.0.1").firstMatch
+        let otherGroup = app.descendants(matching: .any).matching(identifier: "tabs.group.host:localhost").firstMatch
+        XCTAssertTrue(remainingGroup.exists && otherGroup.exists)
+        XCTAssertLessThan(remainingGroup.frame.minY, otherGroup.frame.minY, "Closing the newest card must not move the rest of its group")
+        tap(app.buttons["tabs.done"])
+        XCTAssertTrue(app.webViews.staticTexts["Recent page 5"].firstMatch.waitForExistence(timeout: 10), "Closing the current card returns to the most recently used remaining page")
+        tap(app.buttons["browser.tabs"])
+        checkTop(5, 6)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "recent-domain-groups-restored-at-top"; screenshot.lifetime = .keepAlways; add(screenshot)
+    }
+
     func testManyTabsUseBoundedPreviewsAndScrubberWithoutLoadingUntilSelection() throws {
         try open("refined")
         XCTAssertTrue(app.webViews.staticTexts["Refined page"].firstMatch.waitForExistence(timeout: 20))
@@ -347,12 +411,14 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         }
         XCTAssertTrue(app.buttons["browser.tabs"].label.hasPrefix("26 "), app.debugDescription)
         tap(app.buttons["browser.tabs"])
+        if app.scrollViews["tabs.groups"].exists { tap(app.buttons["tabs.view-mode"]) }
         let scrubber = app.sliders["tabs.position"]
         XCTAssertTrue(scrubber.waitForExistence(timeout: 5), app.debugDescription)
-        scrubber.adjust(toNormalizedSliderPosition: 0)
+        scrubber.adjust(toNormalizedSliderPosition: 1)
         let card = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Refined fixture,")).firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertFalse(scrubber.frame.intersects(card.frame), "Position control must remain below the preview card")
+        XCTAssertFalse(card.isSelected, "Browsing a preview must not mark the background page as the active tab")
         XCTAssertFalse(app.webViews.staticTexts["Refined page"].firstMatch.exists,
             "Scrubbing previews must not activate or load the background page")
         let screenshot = XCTAttachment(screenshot: app.screenshot())
@@ -416,6 +482,9 @@ private final class ToolbarHTTPFixture: @unchecked Sendable {
                 let body: String
                 if path == "/slow.js" { body = "window.slowResourceFinished=true;" }
                 else if path == "/second" { body = "<html><body><p>Second page</p></body></html>" }
+                else if path.hasPrefix("/recent/"), let number = Int(path.split(separator: "/").last ?? "") {
+                    body = "<html><head><title>Recent page \(number)</title><meta name='viewport' content='width=device-width,initial-scale=1'></head><body style='font:24px system-ui;background:#eee9fa'><h1>Recent page \(number)</h1><p>Saved page preview for recent tab ordering.</p></body></html>"
+                }
                 else if path == "/refined" { body = """
                     <html><head><title>Refined fixture</title><meta name="viewport" content="width=device-width, initial-scale=1">
                     <style>body{margin:0;background:#eee9fa;font:18px -apple-system;color:#312050}header{background:#6950a1;color:white;padding:48px 28px}h1{font-size:32px}article{margin:24px;padding:24px;border-radius:20px;background:white;line-height:1.6}</style></head>

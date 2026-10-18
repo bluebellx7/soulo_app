@@ -1,10 +1,4 @@
-1.2.2
+1.2.3
 
-• Välj avsnitt på webbplatser som stöds, vänd ordningen, hämta flera samtidigt och försök igen vid misslyckade hämtningar. Håll inne för att öka hastigheten, släpp för att återställa den. Smidigare videokontroller.
-• Valfri bekräftelse vid automatiska byten till andra domäner, betrodda domäner och öppning i en ny flik. Bättre borttagning av annonsöverlägg och bakåtnavigering.
-
-• Åtgärdat ett fel där befintliga inställningar skrevs över när iCloud-synkronisering aktiverades på en ny enhet. Lagt till lokala säkerhetskopior av inställningar och förenklat hanteringen av delade länkar.
-
-• Välj Soulo som förvald webbläsare i Inställningar för att öppna länkar från andra appar.
-• Förbättrad inläsning av webbsidor, annonsfiltrering och respons vid navigering.
-• Förbättrad layout, beskärning av bakgrunder och läsning när fönstrets storlek ändras.
+• Senast använda flikar och webbplatsgrupper visas först och översikten öppnas högst upp. Användningsordningen sparas efter omstart.
+• Håll inne en video för att se den tillfälliga uppspelningshastigheten och släpp för att återställa den förra. Bättre kompatibilitet för verktygsfältet.

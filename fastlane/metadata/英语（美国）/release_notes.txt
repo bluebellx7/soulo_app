@@ -1,10 +1,4 @@
-1.2.2
+1.2.3
 
-• Choose and reverse episodes on supported sites, download selected episodes in batches and retry failed downloads. Hold to speed up and release to restore the previous speed. Smoother video controls.
-• Optional confirmation for automatic navigation to another domain, with trusted domains and opening in a new tab. Improved ad overlay cleanup, back navigation and submenu taps.
-
-• Fixed settings being overwritten when enabling iCloud sync on a new device. Added local settings backups and simplified shared-link handling.
-
-• Choose Soulo as your default browser in Settings to open links from other apps.
-• Improved web page loading, ad filtering and navigation responsiveness.
-• Improved layouts, wallpaper cropping and reading when the window size changes.
+• Recently used tabs and website groups appear first, and the overview opens at the top. Recent-use order is preserved after restarting.
+• Hold a video to see its temporary playback speed; release to restore the previous speed. Improved toolbar compatibility.

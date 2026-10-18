@@ -2,7 +2,7 @@ Soulo adalah browser pencarian multiplatform untuk iPhone dan iPad. Ketik sekali
 
 Pilih Soulo sebagai browser default di Pengaturan untuk membuka tautan dari app lain.
 
-Memperbaiki masalah pengaturan lama yang tertimpa saat mengaktifkan sinkronisasi iCloud pada perangkat baru. Menambahkan cadangan pengaturan lokal dan menyederhanakan penanganan tautan yang dibagikan.
+Tab dan grup situs yang baru digunakan tampil lebih dulu, dan tampilan tab dibuka dari atas. Urutan penggunaan tetap tersimpan setelah memulai ulang.
 
 Putar video yang didukung sambil mengunduh. Unduhan latar belakang dan layar penuh lebih baik, dengan perlindungan dari iklan tersembunyi dan salinan tak diinginkan.
 

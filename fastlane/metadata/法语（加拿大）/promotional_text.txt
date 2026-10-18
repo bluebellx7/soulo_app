@@ -1,1 +1,1 @@
-Choisissez Soulo comme navigateur par défaut dans Réglages pour ouvrir les liens des autres apps. Outils vidéo et choix des épisodes.
+Les onglets et groupes de sites récents apparaissent en premier, et la vue s'ouvre en haut.

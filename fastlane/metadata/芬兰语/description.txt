@@ -2,7 +2,7 @@ Soulo on iPhonen ja iPadin selain, jolla haet useilta alustoilta. Kirjoita hakus
 
 Valitse asetuksissa Soulo oletusselaimeksi, jotta voit avata linkkejä muista apeista.
 
-Korjattu ongelma, jossa olemassa olevat asetukset korvautuivat, kun iCloud-synkronointi otettiin käyttöön uudessa laitteessa. Lisätty paikalliset asetusten varmuuskopiot ja helpotettu jaettujen linkkien käsittelyä.
+Äskettäin käytetyt välilehdet ja sivustoryhmät näkyvät ensin, ja näkymä avautuu ylhäältä. Käyttöjärjestys säilyy uudelleenkäynnistyksen jälkeen.
 
 Toista tuettuja videoita latauksen aikana. Paremmat taustalataukset ja koko näytön tila sekä suoja piilomainoksia ja ei-toivottua kopiointia vastaan.
 

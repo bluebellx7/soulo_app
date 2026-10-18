@@ -4,6 +4,27 @@ import UIKit
 @testable import Soulo
 
 @MainActor final class WebMediaPlaybackBridgeTests: XCTestCase {
+    func testHoldSpeedToastRejectsInvalidRatesAndStaleReleaseAndResetsForNavigation() async throws {
+        let model = WebViewModel()
+        model.updateVideoHoldSpeed(.nan, token: "invalid")
+        model.updateVideoHoldSpeed(100, token: "invalid")
+        XCTAssertNil(model.videoHoldSpeed)
+        model.updateVideoHoldSpeed(2, token: "first")
+        model.updateVideoHoldSpeed(1.75, token: "second")
+        model.endVideoHoldSpeed(token: "first", restoredRate: 1)
+        try await Task.sleep(for: .milliseconds(650))
+        XCTAssertEqual(model.videoHoldSpeed, 1.75, "A delayed release cannot dismiss a newer hold")
+        model.endVideoHoldSpeed(token: "second", restoredRate: 1.25)
+        XCTAssertEqual(model.videoHoldSpeed, 1.25, "The release receipt shows the actual restored rate")
+        try await Task.sleep(for: .milliseconds(1600))
+        XCTAssertNil(model.videoHoldSpeed)
+        model.updateVideoHoldSpeed(2, token: "third")
+        model.beginPageNavigation()
+        XCTAssertNil(model.videoHoldSpeed)
+        model.updateVideoHoldSpeed(2, token: "fourth")
+        model.releaseWebViewRuntime()
+        XCTAssertNil(model.videoHoldSpeed)
+    }
     func testBottomVideoClearanceFollowsPlayerLayoutAndResetsAfterDismissal() async throws {
         let web = try await page("""
         <meta name="viewport" content="width=device-width, initial-scale=1">

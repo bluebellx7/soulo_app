@@ -183,6 +183,7 @@ struct TabSwitcherOverlay: View {
     @AppStorage("tab_overview_grouped") private var showsDomainGroups = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showTabOptions = false
+    @State private var orderedTabIDs: [UUID] = []
     @ObservedObject var tabManager: TabManager
     let onSelectTab: (Int) -> Void
     let onNewTab: () -> Void
@@ -190,6 +191,13 @@ struct TabSwitcherOverlay: View {
 
     @State private var isExpanding: Bool = false
     @State private var expandingIndex: Int? = nil
+
+    private var orderedTabs: [BrowserTab] {
+        guard !orderedTabIDs.isEmpty else { return tabManager.tabsForOverview }
+        let byID = Dictionary(uniqueKeysWithValues: tabManager.tabs.map { ($0.id, $0) })
+        let known = Set(orderedTabIDs)
+        return tabManager.tabs.filter { !known.contains($0.id) } + orderedTabIDs.compactMap { byID[$0] }
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -209,7 +217,7 @@ struct TabSwitcherOverlay: View {
 
                 VStack(spacing: 0) {
                     if showsDomainGroups && !tabManager.tabs.isEmpty {
-                        TabSwitcherDomainGroups(tabManager: tabManager, onSelect: selectTab, onClose: closeTab)
+                        TabSwitcherDomainGroups(tabManager: tabManager, tabs: orderedTabs, onSelect: selectTab, onClose: closeTab)
                             .padding(.top, 12)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .transition(.opacity)
@@ -221,6 +229,7 @@ struct TabSwitcherOverlay: View {
                             } else {
                                 TabSwitcherCarousel(
                                     tabManager: tabManager,
+                                    tabs: orderedTabs,
                                     isExpanding: $isExpanding,
                                     expandingIndex: $expandingIndex,
                                     onSelect: selectTab,
@@ -242,6 +251,13 @@ struct TabSwitcherOverlay: View {
                         .padding(.bottom, 22)
                 }
             }
+        }
+        .onAppear { orderedTabIDs = tabManager.tabsForOverview.map(\.id) }
+        .onChange(of: tabManager.tabs.map(\.id)) { _, ids in
+            let liveIDs = Set(ids), knownIDs = Set(orderedTabIDs)
+            orderedTabIDs.removeAll { !liveIDs.contains($0) }
+            let added = tabManager.tabsForOverview.map(\.id).filter { !knownIDs.contains($0) }
+            orderedTabIDs.insert(contentsOf: added, at: 0)
         }
         .transition(.opacity)
         .zIndex(500)
@@ -317,9 +333,12 @@ struct TabSwitcherOverlay: View {
     }
 
     private func closeTab(_ index: Int) {
+        guard tabManager.tabs.indices.contains(index) else { return }
+        let closedID = tabManager.tabs[index].id
+        let nextID = closedID == tabManager.activeTab?.id ? orderedTabs.first(where: { $0.id != closedID })?.id : nil
         HapticsManager.light()
         withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.82)) {
-            tabManager.closeTab(at: index)
+            tabManager.closeTab(at: index, nextActiveTabID: nextID)
         }
     }
 
@@ -445,10 +464,10 @@ struct TabOverviewDomainGroup: Identifiable {
     let title: String
     var tabs: [BrowserTab]
 
-    /// Keep the user's tab order within each site and the first-seen order of
+    /// Keep the supplied overview order within each site and the first-seen order of
     /// sites. Only the conventional www alias is folded; unrelated subdomains,
     /// hosted sites and IP addresses must never be merged by a suffix guess.
-    static func make(from tabs: [BrowserTab]) -> [Self] {
+    static func make(from tabs: [BrowserTab], preservingGroupOrder order: [String] = []) -> [Self] {
         var groups: [Self] = []
         var positions: [String: Int] = [:]
         for tab in tabs {
@@ -476,50 +495,52 @@ struct TabOverviewDomainGroup: Identifiable {
                 groups.append(Self(id: key, title: title, tabs: [tab]))
             }
         }
-        return groups
+        guard !order.isEmpty else { return groups }
+        let byID = Dictionary(uniqueKeysWithValues: groups.map { ($0.id, $0) })
+        let known = Set(order)
+        return order.compactMap { byID[$0] } + groups.filter { !known.contains($0.id) }
     }
 }
 
 private struct TabSwitcherDomainGroups: View {
     @ObservedObject var tabManager: TabManager
+    let tabs: [BrowserTab]
     let onSelect: (Int) -> Void
     let onClose: (Int) -> Void
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @State private var orderedGroupIDs: [String] = []
 
     var body: some View {
         GeometryReader { geometry in
-            let groups = TabOverviewDomainGroup.make(from: tabManager.tabs)
+            let groups = TabOverviewDomainGroup.make(from: tabs, preservingGroupOrder: orderedGroupIDs)
+            let positions = Dictionary(uniqueKeysWithValues: tabs.enumerated().map { ($0.element.id, $0.offset + 1) })
             let columns: CGFloat = dynamicTypeSize.isAccessibilitySize ? 2 : 3
             let cardWidth = min(156, max(90, (geometry.size.width - 48 - (columns - 1) * 12) / columns))
             let previewHeight = min(132, max(96, geometry.size.height / 3.5 - 58))
-            ScrollViewReader { proxy in
-                ScrollView(.vertical, showsIndicators: false) {
-                    LazyVStack(alignment: .leading, spacing: 22) {
-                        ForEach(groups) { group in
-                            TabDomainGroupRow(
-                                group: group, tabManager: tabManager,
-                                cardWidth: cardWidth, previewHeight: previewHeight,
-                                onSelect: onSelect, onClose: onClose
-                            )
-                            .id(group.id)
-                        }
-                    }
-                    .padding(.vertical, 12)
-                }
-                .accessibilityIdentifier("tabs.groups")
-                .onAppear {
-                    if let activeID = tabManager.activeTab?.id,
-                       let group = groups.first(where: { $0.tabs.contains { $0.id == activeID } }),
-                       group.id != groups.first?.id {
-                        proxy.scrollTo(group.id, anchor: .top)
+            ScrollView(.vertical, showsIndicators: false) {
+                LazyVStack(alignment: .leading, spacing: 22) {
+                    ForEach(groups) { group in
+                        TabDomainGroupRow(
+                            group: group, tabManager: tabManager,
+                            positions: positions,
+                            cardWidth: cardWidth, previewHeight: previewHeight,
+                            onSelect: onSelect, onClose: onClose
+                        )
+                        .id(group.id)
                     }
                 }
-                .mask {
-                    VStack(spacing: 0) {
-                        LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: 8)
-                        Rectangle()
-                        LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 16)
-                    }
+                .padding(.vertical, 12)
+            }
+            .accessibilityIdentifier("tabs.groups")
+            .onAppear {
+                if orderedGroupIDs.isEmpty { orderedGroupIDs = groups.map(\.id) }
+            }
+            .defaultScrollAnchor(.top)
+            .mask {
+                VStack(spacing: 0) {
+                    LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: 8)
+                    Rectangle()
+                    LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 16)
                 }
             }
         }
@@ -529,6 +550,7 @@ private struct TabSwitcherDomainGroups: View {
 private struct TabDomainGroupRow: View {
     let group: TabOverviewDomainGroup
     @ObservedObject var tabManager: TabManager
+    let positions: [UUID: Int]
     let cardWidth: CGFloat
     let previewHeight: CGFloat
     let onSelect: (Int) -> Void
@@ -564,7 +586,7 @@ private struct TabDomainGroupRow: View {
                             keyword: tab.keyword,
                             isActive: tab.id == tabManager.activeTab?.id,
                             isExpanding: false,
-                            position: (tabManager.tabs.firstIndex { $0.id == tab.id } ?? 0) + 1,
+                            position: positions[tab.id] ?? 1,
                             total: tabManager.tabCount,
                             onTap: { select(tab.id, action: onSelect) },
                             onClose: { select(tab.id, action: onClose) },
@@ -579,14 +601,9 @@ private struct TabDomainGroupRow: View {
             }
             .contentMargins(.horizontal, 24, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
+            .defaultScrollAnchor(.leading)
             .scrollPosition(id: $focusedID, anchor: .leading)
             .frame(height: previewHeight + 7 + titleHeight + 4)
-            .onAppear {
-                if group.tabs.first?.id != tabManager.activeTab?.id,
-                   group.tabs.contains(where: { $0.id == tabManager.activeTab?.id }) {
-                    focusedID = tabManager.activeTab?.id
-                }
-            }
             .accessibilityIdentifier("tabs.group-row.\(group.id)")
         }
     }
@@ -600,6 +617,7 @@ private struct TabDomainGroupRow: View {
 
 private struct TabSwitcherCarousel: View {
     @ObservedObject var tabManager: TabManager
+    let tabs: [BrowserTab]
     @Binding var isExpanding: Bool
     @Binding var expandingIndex: Int?
     let onSelect: (Int) -> Void
@@ -611,15 +629,15 @@ private struct TabSwitcherCarousel: View {
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
 
     private var focusedIndex: Int {
-        focusedTabID.flatMap { id in tabManager.tabs.firstIndex { $0.id == id } }
-            ?? tabManager.activeTabIndex
+        focusedTabID.flatMap { id in tabs.firstIndex { $0.id == id } }
+            ?? 0
     }
 
     private func previewIndices(stepDistance: CGFloat) -> Range<Int> {
-        guard !tabManager.tabs.isEmpty else { return 0..<0 }
+        guard !tabs.isEmpty else { return 0..<0 }
         let offset = stepDistance > 0 ? Int((dragOffset / stepDistance).rounded()) : 0
-        let center = min(max(focusedIndex - offset, 0), tabManager.tabs.count - 1)
-        return max(0, center - 3)..<min(tabManager.tabs.count, center + 4)
+        let center = min(max(focusedIndex - offset, 0), tabs.count - 1)
+        return max(0, center - 3)..<min(tabs.count, center + 4)
     }
 
     var body: some View {
@@ -631,11 +649,11 @@ private struct TabSwitcherCarousel: View {
             ZStack {
                 // Only nearby cards participate in layout, image loading and
                 // gestures, regardless of the number of saved tabs.
-                ForEach(previewIndices(stepDistance: stepDistance).map { ($0, tabManager.tabs[$0]) }, id: \.1.id) { index, tab in
+                ForEach(previewIndices(stepDistance: stepDistance).map { ($0, tabs[$0]) }, id: \.1.id) { index, tab in
                     TabSwitcherCardItem(
                         index: index,
                         tab: tab,
-                        isActive: index == focusedIndex,
+                        isActive: tab.id == tabManager.activeTab?.id,
                         focusedIndex: focusedIndex,
                         isExpanding: isExpanding,
                         isAnyExpanding: isExpanding,
@@ -648,12 +666,12 @@ private struct TabSwitcherCarousel: View {
                             if let index = tabManager.tabs.firstIndex(where: { $0.id == tab.id }) { onSelect(index) }
                         },
                         onClose: { _ in
-                            guard let index = tabManager.tabs.firstIndex(where: { $0.id == tab.id }) else { return }
+                            guard let actualIndex = tabManager.tabs.firstIndex(where: { $0.id == tab.id }) else { return }
                             if index == focusedIndex {
-                                let neighbor = index + 1 < tabManager.tabs.count ? index + 1 : index - 1
-                                focusedTabID = tabManager.tabs.indices.contains(neighbor) ? tabManager.tabs[neighbor].id : nil
+                                let neighbor = index + 1 < tabs.count ? index + 1 : index - 1
+                                focusedTabID = tabs.indices.contains(neighbor) ? tabs[neighbor].id : nil
                             }
-                            onClose(index)
+                            onClose(actualIndex)
                         },
                         tabManager: tabManager
                     )
@@ -665,7 +683,7 @@ private struct TabSwitcherCarousel: View {
                     .onChanged { value in
                         guard !voiceOverEnabled,
                               !isExpanding,
-                              tabManager.tabs.count > 1 else { return }
+                              tabs.count > 1 else { return }
                         let isHorizontal = abs(value.translation.width) > abs(value.translation.height)
 
                         if !isHorizontalDragging && isHorizontal {
@@ -692,7 +710,7 @@ private struct TabSwitcherCarousel: View {
                         if targetIndex != focusedIndex {
                             HapticsManager.selection()
                             withAnimation(.spring(response: 0.36, dampingFraction: 0.84)) {
-                                focusedTabID = tabManager.tabs[targetIndex].id
+                                focusedTabID = tabs[targetIndex].id
                                 dragOffset = 0
                             }
                         } else {
@@ -701,30 +719,32 @@ private struct TabSwitcherCarousel: View {
                         isHorizontalDragging = false
                     }
             )
-            .onChange(of: tabManager.activeTab?.id) { _, _ in
-                focusedTabID = tabManager.activeTab?.id
+            .onAppear { focusedTabID = tabs.first?.id }
+            .onChange(of: tabs.map(\.id)) { _, ids in
+                if let focusedTabID, ids.contains(focusedTabID) { return }
+                focusedTabID = tabs.first?.id
                 resetDrag()
             }
             .accessibilityScrollAction { direction in
                 let delta = direction == .leading ? 1 : -1
-                let index = min(max(focusedIndex + delta, 0), tabManager.tabCount - 1)
-                if tabManager.tabs.indices.contains(index) { focusedTabID = tabManager.tabs[index].id }
+                let index = min(max(focusedIndex + delta, 0), tabs.count - 1)
+                if tabs.indices.contains(index) { focusedTabID = tabs[index].id }
             }
             .overlay(alignment: .bottom) {
-                if tabManager.tabCount > 20 {
+                if tabs.count > 20 {
                     VStack(spacing: 0) {
-                        Text("\(focusedIndex + 1) / \(tabManager.tabCount)")
+                        Text("\(focusedIndex + 1) / \(tabs.count)")
                             .font(.caption.monospacedDigit()).foregroundStyle(.white.opacity(0.8))
                         Slider(value: Binding(
                             get: { Double(focusedIndex) },
                             set: { value in
                                 let index = Int(value)
-                                if tabManager.tabs.indices.contains(index) { focusedTabID = tabManager.tabs[index].id }
+                                if tabs.indices.contains(index) { focusedTabID = tabs[index].id }
                             }
-                        ), in: 0...Double(tabManager.tabCount - 1), step: 1)
+                        ), in: 0...Double(tabs.count - 1), step: 1)
                         .tint(.white)
                         .accessibilityLabel(LanguageManager.shared.localizedString("tab_tabs"))
-                        .accessibilityValue("\(focusedIndex + 1) / \(tabManager.tabCount)")
+                        .accessibilityValue("\(focusedIndex + 1) / \(tabs.count)")
                         .accessibilityIdentifier("tabs.position")
                     }
                     .padding(.horizontal, 40)
@@ -744,7 +764,7 @@ private struct TabSwitcherCarousel: View {
     private func resistedOffset(_ proposed: CGFloat, stepDistance: CGFloat) -> CGFloat {
         let activeIndex = focusedIndex
         let rightLimit = CGFloat(activeIndex) * stepDistance
-        let leftLimit = CGFloat(max(tabManager.tabs.count - 1 - activeIndex, 0)) * stepDistance
+        let leftLimit = CGFloat(max(tabs.count - 1 - activeIndex, 0)) * stepDistance
 
         if proposed > rightLimit {
             return rightLimit + (proposed - rightLimit) * 0.24
@@ -765,7 +785,7 @@ private struct TabSwitcherCarousel: View {
         }
 
         let proposedIndex = focusedIndex + delta
-        return min(max(proposedIndex, 0), max(tabManager.tabs.count - 1, 0))
+        return min(max(proposedIndex, 0), max(tabs.count - 1, 0))
     }
 }
 

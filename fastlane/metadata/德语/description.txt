@@ -2,7 +2,7 @@ Soulo ist ein Browser für die Suche auf mehreren Plattformen auf iPhone und iPa
 
 Wähle Soulo in den Einstellungen als Standardbrowser, um Links aus anderen Apps zu öffnen.
 
-Ein Fehler wurde behoben, durch den beim Aktivieren der iCloud-Synchronisierung auf einem neuen Gerät vorhandene Einstellungen überschrieben wurden. Lokale Einstellungssicherungen und eine einfachere Verarbeitung geteilter Links wurden hinzugefügt.
+Zuletzt verwendete Tabs und Website-Gruppen stehen zuerst, und die Übersicht öffnet sich oben. Die Reihenfolge bleibt nach einem Neustart erhalten.
 
 Unterstützte Videos schon beim Laden abspielen. Bessere Hintergrunddownloads, Vollbildsteuerung und Schutz vor versteckter Werbung und unerwünschtem Kopieren.
 

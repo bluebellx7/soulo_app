@@ -2,7 +2,7 @@ Soulo er en nettleser for iPhone og iPad med søk på flere plattformer. Skriv �
 
 Velg Soulo som standardnettleser i Innstillinger for å åpne lenker fra andre apper.
 
-Rettet en feil der eksisterende innstillinger ble overskrevet når iCloud-synkronisering ble aktivert på en ny enhet. Lagt til lokale sikkerhetskopier av innstillinger og forenklet håndtering av delte lenker.
+Nylig brukte faner og nettstedsgrupper vises først, og oversikten åpnes øverst. Bruksrekkefølgen beholdes etter omstart.
 
 Spill av støttede videoer mens de lastes ned. Bedre bakgrunnsnedlasting og fullskjerm, med vern mot skjulte annonser og uønsket kopiering.
 

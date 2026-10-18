@@ -1,1 +1,1 @@
-Velg Soulo som standardnettleser i Innstillinger for å åpne lenker fra andre apper. Videoverktøy og episodevalg.
+Nylig brukte faner og nettstedsgrupper vises først, og oversikten åpnes øverst.

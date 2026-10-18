@@ -1,10 +1,4 @@
-1.2.2
+1.2.3
 
-• Pilih episod di laman yang disokong, songsangkan susunan, muat turun beberapa episod serentak dan cuba semula muat turun yang gagal. Tekan lama untuk mempercepat, lepaskan untuk memulihkan kelajuan. Kawalan video lebih lancar.
-• Pengesahan pilihan untuk pengalihan automatik ke domain lain, domain dipercayai dan buka dalam tab baharu. Pembersihan lapisan iklan dan navigasi kembali dipertingkat.
-
-• Membaiki masalah tetapan sedia ada ditulis ganti apabila penyegerakan iCloud diaktifkan pada peranti baharu. Menambah sandaran tetapan setempat dan memudahkan pengendalian pautan yang dikongsi.
-
-• Pilih Soulo sebagai pelayar lalai dalam Tetapan untuk membuka pautan daripada app lain.
-• Penambahbaikan pemuatan halaman web, penapisan iklan dan respons navigasi.
-• Penambahbaikan susun atur, pemangkasan kertas dinding dan pengalaman membaca apabila saiz tetingkap berubah.
+• Tab dan kumpulan laman yang baru digunakan dipaparkan dahulu dan paparan tab dibuka dari atas. Susunan penggunaan kekal selepas dimulakan semula.
+• Tekan lama video untuk melihat kelajuan sementara; lepaskan untuk kembali kepada kelajuan sebelumnya. Keserasian bar alat dipertingkatkan.

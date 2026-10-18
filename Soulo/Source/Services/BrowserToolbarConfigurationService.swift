@@ -177,6 +177,8 @@ final class BrowserToolbarConfigurationService: ObservableObject {
 
     private static func decodedActions(from defaults: UserDefaults) -> [BrowserToolbarAction]? {
         guard let values = defaults.stringArray(forKey: actionsKey), !values.isEmpty else { return nil }
-        return normalized(values.compactMap(BrowserToolbarAction.init(rawValue:)))
+        return normalized(values.prefix(defaultActions.count).enumerated().map { index, value in
+            BrowserToolbarAction(rawValue: value) ?? defaultActions[index]
+        })
     }
 }

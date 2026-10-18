@@ -51,6 +51,9 @@ final class WebViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var isScrollingUp: Bool = false
     @Published var hasBottomVideoControls = false
+    @Published private(set) var videoHoldSpeed: Double?
+    private var videoHoldSpeedToken: String?
+    private var videoHoldSpeedDismissal: Task<Void, Never>?
     @Published var episodeList: WebEpisodeList?
     @Published var showEpisodes = false
     @Published private(set) var domainNavigationConfirmation: WebDomainNavigationConfirmation?
@@ -318,6 +321,7 @@ final class WebViewModel: ObservableObject {
     /// Releases the expensive WebKit runtime while preserving the tab URL and snapshot.
     /// The view is recreated lazily the next time the tab becomes active.
     func releaseWebViewRuntime() {
+        clearVideoHoldSpeed()
         cancelScheduledSnapshot()
         historyTransition.cancel()
         resolveDomainNavigationConfirmation(allowed: false)
@@ -466,6 +470,7 @@ final class WebViewModel: ObservableObject {
     }
 
     func beginPageNavigation() {
+        clearVideoHoldSpeed()
         cancelScheduledSnapshot()
         snapshotDocumentGeneration = UUID()
         hasBottomVideoControls = false
@@ -478,6 +483,35 @@ final class WebViewModel: ObservableObject {
         guard !frame.isMainFrame else { return }
         if mediaFrameInfos.count >= 16 { mediaFrameInfos.removeFirst() }
         mediaFrameInfos.append(frame)
+    }
+
+    func updateVideoHoldSpeed(_ rate: Double, token: String) {
+        guard rate.isFinite, (0.25...16).contains(rate), !token.isEmpty, token.count <= 80 else { return }
+        videoHoldSpeedToken = token
+        if videoHoldSpeed != rate { videoHoldSpeed = rate }
+        scheduleVideoHoldSpeedDismissal(after: .seconds(2), token: token)
+    }
+
+    func endVideoHoldSpeed(token: String, restoredRate: Double) {
+        guard videoHoldSpeedToken == token else { return }
+        if restoredRate.isFinite, (0.25...16).contains(restoredRate) { videoHoldSpeed = restoredRate }
+        scheduleVideoHoldSpeedDismissal(after: .milliseconds(1500), token: token)
+    }
+
+    func clearVideoHoldSpeed() {
+        videoHoldSpeedDismissal?.cancel()
+        videoHoldSpeedDismissal = nil
+        videoHoldSpeedToken = nil
+        if videoHoldSpeed != nil { videoHoldSpeed = nil }
+    }
+
+    private func scheduleVideoHoldSpeedDismissal(after delay: Duration, token: String) {
+        videoHoldSpeedDismissal?.cancel()
+        videoHoldSpeedDismissal = Task { @MainActor [weak self] in
+            do { try await Task.sleep(for: delay) } catch { return }
+            guard let self, self.videoHoldSpeedToken == token else { return }
+            self.clearVideoHoldSpeed()
+        }
     }
 
     func markPageContentVisible() {

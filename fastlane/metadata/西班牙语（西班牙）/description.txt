@@ -2,7 +2,7 @@ Soulo es un navegador de búsqueda multiplataforma para iPhone y iPad. Escribe u
 
 Elige Soulo como navegador predeterminado en Ajustes para abrir enlaces de otras apps.
 
-Corregido un problema que sobrescribía los ajustes al activar la sincronización con iCloud en un dispositivo nuevo. Añadidas copias locales de los ajustes y un manejo más sencillo de los enlaces compartidos.
+Las pestañas y grupos de sitios recientes aparecen primero y la vista se abre arriba. El orden de uso se conserva al reiniciar.
 
 Reproduce vídeos compatibles mientras se descargan. Mejoras en segundo plano y pantalla completa, con protección contra anuncios ocultos y copias no deseadas.
 

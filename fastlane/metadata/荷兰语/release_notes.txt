@@ -1,10 +1,4 @@
-1.2.2
+1.2.3
 
-• Kies afleveringen op ondersteunde sites, keer de volgorde om en download meerdere tegelijk, met opnieuw proberen bij fouten. Houd ingedrukt voor extra snelheid en laat los om de snelheid te herstellen. Soepelere videobediening.
-• Optionele bevestiging bij automatisch doorsturen naar andere domeinen, met vertrouwde domeinen en openen in een nieuw tabblad. Betere verwijdering van advertentieoverlays en terugnavigatie.
-
-• Een probleem opgelost waarbij bestaande instellingen werden overschreven bij het inschakelen van iCloud-synchronisatie op een nieuw apparaat. Lokale back-ups van instellingen toegevoegd en het verwerken van gedeelde links vereenvoudigd.
-
-• Kies Soulo als standaardbrowser in Instellingen om links uit andere apps te openen.
-• Verbeterd laden van webpagina’s, advertentiefiltering en reacties tijdens het navigeren.
-• Verbeterde indeling, uitsnede van achtergronden en leeservaring bij het wijzigen van de venstergrootte.
+• Recent gebruikte tabbladen en websitegroepen staan vooraan en het overzicht opent bovenaan. De volgorde blijft na een herstart bewaard.
+• Houd een video ingedrukt om de tijdelijke afspeelsnelheid te zien; laat los om de vorige snelheid te herstellen. Betere compatibiliteit met de werkbalk.

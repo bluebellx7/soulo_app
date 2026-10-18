@@ -22,6 +22,18 @@ import Vision
         XCTAssertTrue(tabs.allSatisfy { $0.webViewModel.webView == nil }, "Grouping must only read metadata")
     }
 
+    func testClosingTheNewestCardDoesNotMoveItsRemainingDomainGroup() {
+        let tabs = ["https://first.example/new", "https://second.example/new", "https://first.example/old", "https://second.example/old"].map { address in
+            let tab = BrowserTab(); tab.webViewModel.loadCachedURL(URL(string: address)!); return tab
+        }
+        let initialOrder = TabOverviewDomainGroup.make(from: tabs).map(\.id)
+        let groups = TabOverviewDomainGroup.make(from: Array(tabs.dropFirst()), preservingGroupOrder: initialOrder)
+        XCTAssertEqual(groups.map(\.id), initialOrder)
+        XCTAssertEqual(groups.first?.tabs.map(\.id), [tabs[2].id])
+        let removed = TabOverviewDomainGroup.make(from: [tabs[1], tabs[3]], preservingGroupOrder: initialOrder)
+        XCTAssertEqual(removed.map(\.id), ["host:second.example"])
+    }
+
     func testGroupedOverviewRendersBoundedPreviewsAcrossScreenSizesAndLanguages() async throws {
         let defaults = UserDefaults.standard
         let savedMode = defaults.object(forKey: "tab_overview_grouped")
@@ -64,6 +76,8 @@ import Vision
                 return tab
             }
         }
+        manager.activeTabIndex = manager.tabs.count - 1
+        let firstPreview = try XCTUnwrap(manager.tabsForOverview.first?.webViewModel)
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
@@ -91,14 +105,21 @@ import Vision
             let view = try XCTUnwrap(window.rootViewController?.view)
             view.bounds = CGRect(origin: .zero, size: size); view.layoutIfNeeded()
             for _ in 0..<80 {
-                if manager.tabs.first?.webViewModel.snapshot != nil { break }
+                if firstPreview.snapshot != nil { break }
                 try await Task.sleep(for: .milliseconds(25))
             }
             let image = UIGraphicsImageRenderer(size: size).image { _ in view.drawHierarchy(in: view.bounds, afterScreenUpdates: true) }
+            let request = VNRecognizeTextRequest()
+            request.recognitionLevel = .accurate
+            request.recognitionLanguages = ["en-US"]
+            try VNImageRequestHandler(cgImage: XCTUnwrap(image.cgImage), options: [:]).perform([request])
+            let header = request.results?.first { $0.topCandidates(1).first?.string.lowercased().contains("developer.apple.com") == true }
+            XCTAssertNotNil(header, "The newest domain group must be visible on opening: \(code)")
+            if let header { XCTAssertGreaterThan(header.boundingBox.midY, 0.70, "The newest domain starts at the top, including short screens and RTL layouts") }
             let attachment = XCTAttachment(image: image)
             attachment.name = "grouped-tabs-\(code)-\(Int(size.width))"; attachment.lifetime = .keepAlways; add(attachment)
             XCTAssertTrue(manager.tabs.allSatisfy { $0.webViewModel.webView == nil }, "Previews cannot activate WebKit")
-            XCTAssertNotNil(manager.tabs.first?.webViewModel.snapshot, "A new preview view must recover the first screenshot after the previous view is removed: \(code)")
+            XCTAssertNotNil(firstPreview.snapshot, "A new preview view must recover the first screenshot after the previous view is removed: \(code)")
             XCTAssertLessThan(manager.tabs.filter { $0.webViewModel.snapshot != nil }.count, manager.tabs.count / 2,
                 "Offscreen groups and cards must not decode every screenshot")
         }
@@ -329,7 +350,7 @@ import Vision
         request.recognitionLevel = .accurate
         request.recognitionLanguages = ["en-US"]
         request.usesLanguageCorrection = false
-        try VNImageRequestHandler(cgImage: XCTUnwrap(image.cgImage)).perform([request])
+        try VNImageRequestHandler(cgImage: XCTUnwrap(image.cgImage), options: [:]).perform([request])
         let text = request.results?.compactMap { $0.topCandidates(1).first?.string }.joined(separator: " ") ?? ""
         XCTAssertTrue(text.lowercased().contains(host), "A cover must contain the rendered address, not an empty bitmap: \(text)")
     }

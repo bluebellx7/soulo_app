@@ -2,7 +2,7 @@ Soulo là trình duyệt tìm kiếm đa nền tảng dành cho iPhone và iPad.
 
 Chọn Soulo làm trình duyệt mặc định trong Cài đặt để mở liên kết từ các ứng dụng khác.
 
-Đã sửa lỗi ghi đè cài đặt hiện có khi bật đồng bộ iCloud trên thiết bị mới. Thêm bản sao lưu cài đặt trên thiết bị và đơn giản hóa việc xử lý liên kết được chia sẻ.
+Các tab và nhóm trang web dùng gần đây hiện trước, và danh sách tab mở từ trên cùng. Thứ tự sử dụng được giữ lại sau khi khởi động lại.
 
 Phát video được hỗ trợ trong khi tải. Cải thiện tải nền, toàn màn hình và bảo vệ khỏi quảng cáo ẩn cùng thao tác sao chép không mong muốn.
 

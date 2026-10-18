@@ -1,1 +1,1 @@
-V Nastavení vyberte Soulo jako výchozí prohlížeč pro otevírání odkazů z jiných aplikací. Video nástroje a výběr epizod.
+Nedávno použité karty a skupiny webů se zobrazují první a přehled se otevírá nahoře.

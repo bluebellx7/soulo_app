@@ -1,1 +1,1 @@
-Vælg Soulo som standardbrowser i Indstillinger for at åbne links fra andre apps. Videoværktøjer og episodevalg.
+Senest brugte faner og webstedsgrupper vises først, og faneoversigten åbner øverst.

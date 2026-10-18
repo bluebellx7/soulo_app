@@ -75,6 +75,9 @@ final class MediaSession: ObservableObject {
     @Published var mirrored = false
     @Published private(set) var rate: Float
     @Published private(set) var temporaryRate = false
+    @Published private(set) var temporaryRateFeedback: Float?
+    private var rateFeedbackDismissal: Task<Void, Never>?
+    private var rateBeforeTemporary: Float?
     private var interruptedGeneration: UUID?
     private var timer: Any?
     private var observations = Set<AnyCancellable>()
@@ -152,6 +155,7 @@ final class MediaSession: ObservableObject {
         configureIfNeeded()
         savePosition()
         endTemporaryRate()
+        clearTemporaryRateFeedback()
         interruptedGeneration = nil
         generation = UUID()
         player.pause()
@@ -281,16 +285,32 @@ final class MediaSession: ObservableObject {
         }
     }
     func beginTemporaryRate() {
-        guard !temporaryRate, hasVideo, wantsPlayback, player.rate > 0, rate < 2 else { return }
+        guard !temporaryRate, hasVideo, wantsPlayback, player.rate > 0, player.rate < 2 else { return }
+        rateBeforeTemporary = player.rate
         temporaryRate = true
         player.rate = 2
+        rateFeedbackDismissal?.cancel()
+        temporaryRateFeedback = player.rate
         updateNowPlaying()
     }
     func endTemporaryRate() {
         guard temporaryRate else { return }
         temporaryRate = false
-        if player.rate > 0 { player.rate = rate }
+        let restoredRate = rateBeforeTemporary ?? rate
+        rateBeforeTemporary = nil
+        if player.rate > 0 { player.rate = restoredRate }
+        temporaryRateFeedback = player.rate > 0 ? player.rate : nil
+        rateFeedbackDismissal?.cancel()
+        rateFeedbackDismissal = Task { @MainActor [weak self] in
+            do { try await Task.sleep(for: .milliseconds(1500)) } catch { return }
+            self?.temporaryRateFeedback = nil
+        }
         updateNowPlaying()
+    }
+    private func clearTemporaryRateFeedback() {
+        rateFeedbackDismissal?.cancel()
+        rateFeedbackDismissal = nil
+        temporaryRateFeedback = nil
     }
     func updateFileReference(from oldURL: URL, to newURL: URL) {
         let defaults = UserDefaults.standard
@@ -310,6 +330,7 @@ final class MediaSession: ObservableObject {
     func toggle() { playing ? pause() : play() }
     func stop() {
         pause(); generation = UUID(); preparation = UUID(); itemObservation = nil; presentationSizeObservation = nil
+        clearTemporaryRateFeedback()
         pictureInPicture.stop()
         retainedPiPController?.player = nil; retainedPiPController = nil; retainedPiPDelegate = nil
         player.replaceCurrentItem(with: nil); url = nil; expanded = false
@@ -329,6 +350,7 @@ final class MediaSession: ObservableObject {
         UserDefaults.standard.set(value, forKey: "media.rate")
         player.defaultRate = value
         if player.rate > 0 { player.rate = value }
+        clearTemporaryRateFeedback()
         updateNowPlaying(); return true
     }
     func captureFrame() async throws -> UIImage {

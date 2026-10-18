@@ -1,1 +1,1 @@
-Pilih Soulo sebagai browser default di Pengaturan untuk membuka tautan dari app lain. Alat video dan pilihan episode.
+Tab dan grup situs yang baru digunakan tampil lebih dulu, dan tampilan tab dibuka dari atas.

@@ -1,1 +1,1 @@
-Tria Soulo com a navegador per defecte a Configuració per obrir enllaços d’altres apps. Eines de vídeo i tria d’episodis.
+Les pestanyes i els grups de llocs utilitzats recentment apareixen primer, i la vista s'obre a dalt.

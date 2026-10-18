@@ -1,10 +1,4 @@
-1.2.2
+1.2.3
 
-• Escolha episódios em sites compatíveis, inverta a ordem, descarregue vários de uma vez e repita as descargas falhadas. Mantenha premido para acelerar e solte para repor a velocidade. Controlos de vídeo mais fluidos.
-• Confirmação opcional de redirecionamentos automáticos para outro domínio, domínios de confiança e abertura num novo separador. Melhorias na remoção de sobreposições publicitárias e na navegação para trás.
-
-• Corrigido um problema que substituía as definições ao ativar a sincronização do iCloud num novo dispositivo. Adicionadas cópias locais das definições e simplificado o tratamento de ligações partilhadas.
-
-• Escolha o Soulo como navegador predefinido nas Definições para abrir ligações de outras apps.
-• Melhorias no carregamento de páginas, na filtragem de anúncios e na resposta da navegação.
-• Melhorias na disposição, no recorte de imagens de fundo e na leitura ao redimensionar a janela.
+• Os separadores e grupos de sites usados recentemente aparecem primeiro, e a vista abre no topo. A ordem de utilização mantém-se após reiniciar.
+• Mantenha um vídeo premido para ver a velocidade temporária; solte para repor a anterior. Melhor compatibilidade da barra de ferramentas.

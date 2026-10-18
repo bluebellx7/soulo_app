@@ -1,10 +1,4 @@
-1.2.2
+1.2.3
 
-• Wybieraj odcinki na obsługiwanych stronach, odwracaj kolejność i pobieraj kilka naraz, z ponawianiem nieudanych pobrań. Przytrzymaj, aby przyspieszyć, i puść, aby przywrócić prędkość. Płynniejsze sterowanie wideo.
-• Opcjonalne potwierdzenie automatycznych przekierowań do innej domeny, zaufane domeny i otwieranie w nowej karcie. Ulepszono usuwanie nakładek reklamowych i nawigację wstecz.
-
-• Naprawiono nadpisywanie istniejących ustawień przy włączaniu synchronizacji iCloud na nowym urządzeniu. Dodano lokalne kopie ustawień i uproszczono obsługę udostępnianych linków.
-
-• Wybierz Soulo jako domyślną przeglądarkę w Ustawieniach, aby otwierać linki z innych aplikacji.
-• Usprawniono ładowanie stron, filtrowanie reklam i szybkość reakcji podczas nawigacji.
-• Ulepszono układ, kadrowanie tapet i czytanie przy zmianie rozmiaru okna.
+• Ostatnio używane karty i grupy witryn pojawiają się jako pierwsze, a przegląd otwiera się od góry. Kolejność użycia jest zachowana po restarcie.
+• Przytrzymaj film, aby zobaczyć tymczasową prędkość odtwarzania; puść, aby przywrócić poprzednią. Lepsza zgodność paska narzędzi.

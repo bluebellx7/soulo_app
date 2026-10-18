@@ -1,10 +1,4 @@
-1.2.2
+1.2.3
 
-• Tria episodis als llocs compatibles, inverteix-ne l’ordre i baixa’n diversos alhora, amb reintent de baixades fallides. Mantén premut per accelerar i deixa anar per recuperar la velocitat. Controls més fluids.
-• Confirmació opcional dels salts automàtics a altres dominis, amb dominis de confiança i obertura en una pestanya nova. Millores en la retirada de capes publicitàries i la navegació enrere.
-
-• Corregida la sobreescriptura dels ajustos existents en activar la sincronització amb iCloud en un dispositiu nou. Afegides còpies locals dels ajustos i simplificada la gestió dels enllaços compartits.
-
-• Tria Soulo com a navegador per defecte a Configuració per obrir enllaços d’altres apps.
-• Millores en la càrrega de pàgines, el filtratge d’anuncis i la resposta en navegar.
-• Millores en el disseny, el retall de fons i la lectura en canviar la mida de la finestra.
+• Les pestanyes i els grups de llocs utilitzats recentment apareixen primer, i la vista s'obre a dalt. L'ordre d'ús es conserva en reiniciar.
+• Mantén premut un vídeo per veure la velocitat temporal i deixa'l anar per tornar a l'anterior. Millorada la compatibilitat de la barra d'eines.

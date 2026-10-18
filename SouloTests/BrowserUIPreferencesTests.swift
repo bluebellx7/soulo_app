@@ -58,6 +58,23 @@ final class BrowserUIPreferencesTests: XCTestCase {
         }
     }
 
+    func testRemovedToolbarActionsRestoreTheirOwnDefaultSlots() throws {
+        let suite = "Soulo.ToolbarRemoval.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let saved = ["removed_action", "share", "removed_action", "more"]
+        defaults.set(saved, forKey: BrowserToolbarConfigurationService.actionsKey)
+        defaults.set("removed_action", forKey: BrowserToolbarConfigurationService.addressActionKey)
+        let service = BrowserToolbarConfigurationService(defaults: defaults)
+        XCTAssertEqual(service.actions, [.home, .share, .tabs, .more])
+        XCTAssertEqual(service.addressAction, .darkMode)
+        XCTAssertEqual(defaults.stringArray(forKey: BrowserToolbarConfigurationService.actionsKey), saved)
+        service.save(actions: service.actions, addressAction: service.addressAction)
+        let reloaded = BrowserToolbarConfigurationService(defaults: defaults)
+        XCTAssertEqual(reloaded.actions, service.actions)
+        XCTAssertEqual(reloaded.addressAction, .darkMode)
+    }
+
     func testPresentedKeywordSelectsAllOnceAndPreservesLaterEdits() async throws {
         struct Harness: View {
             @State var presented = false

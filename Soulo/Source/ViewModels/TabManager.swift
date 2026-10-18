@@ -61,6 +61,8 @@ private struct SavedTab: Codable {
     let keyword: String?
     let platformName: String?
     let pageTitle: String?
+    let createdAt: Date?
+    let lastAccessedAt: Date?
 }
 
 private struct SavedState: Codable {
@@ -137,7 +139,7 @@ final class TabManager: ObservableObject {
         if tabs.isEmpty {
             createTab()
         }
-        manageTabLifecycles()
+        manageTabLifecycles(recordAccess: true)
     }
 
     // MARK: - Computed
@@ -152,6 +154,20 @@ final class TabManager: ObservableObject {
     }
 
     var tabCount: Int { tabs.count }
+
+    /// Overview order is independent of the tab strip and never activates WebKit.
+    var tabsForOverview: [BrowserTab] {
+        let activeID = activeTab?.id
+        return tabs.enumerated().sorted { lhs, rhs in
+            if lhs.element.id == activeID { return rhs.element.id != activeID }
+            if rhs.element.id == activeID { return false }
+            if lhs.element.lastAccessedAt != rhs.element.lastAccessedAt {
+                return lhs.element.lastAccessedAt > rhs.element.lastAccessedAt
+            }
+            if lhs.element.createdAt != rhs.element.createdAt { return lhs.element.createdAt > rhs.element.createdAt }
+            return lhs.offset < rhs.offset
+        }.map(\.element)
+    }
 
     var isDesktopMode: Bool {
         activeWebViewModel?.isDesktopModeEnabled ?? prefersDesktopMode
@@ -199,7 +215,7 @@ final class TabManager: ObservableObject {
         if switchTo {
             activeTabIndex = tabs.count - 1
         }
-        manageTabLifecycles()
+        manageTabLifecycles(recordAccess: switchTo)
 
         if let url = url {
             tab.webViewModel.loadURL(url)
@@ -222,9 +238,10 @@ final class TabManager: ObservableObject {
 
     // MARK: - Tab Closing
 
-    func closeTab(at index: Int, animated: Bool = true) {
+    func closeTab(at index: Int, animated: Bool = true, nextActiveTabID: UUID? = nil) {
         guard tabs.indices.contains(index) else { return }
-        if index == activeTabIndex { dismissFindInPage() }
+        let wasActive = index == activeTabIndex
+        if wasActive { dismissFindInPage() }
         let tab = tabs[index]
         unregisterWebExtensionTab(tab)
         tab.webViewModel.releaseWebViewRuntime()
@@ -249,13 +266,16 @@ final class TabManager: ObservableObject {
 
         if tabs.isEmpty {
             createTab()
+        } else if wasActive, let nextActiveTabID,
+                  let nextIndex = tabs.firstIndex(where: { $0.id == nextActiveTabID }) {
+            activeTabIndex = nextIndex
         } else if activeTabIndex >= tabs.count {
             activeTabIndex = tabs.count - 1
         } else if activeTabIndex > index {
             activeTabIndex -= 1
         }
 
-        manageTabLifecycles()
+        manageTabLifecycles(recordAccess: wasActive)
         scheduleSaveToDisk()
     }
 
@@ -362,7 +382,7 @@ final class TabManager: ObservableObject {
         dismissFindInPage()
         activeTabIndex = index
         showTabOverview = false
-        manageTabLifecycles()
+        manageTabLifecycles(recordAccess: true)
         scheduleSaveToDisk()
     }
 
@@ -371,7 +391,7 @@ final class TabManager: ObservableObject {
         activeWebViewModel?.takeSnapshot()
         dismissFindInPage()
         activeTabIndex = index
-        manageTabLifecycles()
+        manageTabLifecycles(recordAccess: true)
         scheduleSaveToDisk()
     }
 
@@ -403,9 +423,9 @@ final class TabManager: ObservableObject {
 
     // MARK: - Memory Management
 
-    private func manageTabLifecycles() {
+    private func manageTabLifecycles(recordAccess: Bool = false) {
         guard tabs.indices.contains(activeTabIndex) else { return }
-        tabs[activeTabIndex].lastAccessedAt = Date()
+        if recordAccess { tabs[activeTabIndex].lastAccessedAt = Date() }
         let activeID = tabs[activeTabIndex].id
         recentTabIDs.removeAll { $0 == activeID }
         recentTabIDs.insert(activeID, at: 0)
@@ -581,7 +601,9 @@ final class TabManager: ObservableObject {
                 urlString: (tab.webViewModel.currentURL ?? tab.suspendedURL)?.absoluteString,
                 keyword: tab.keyword,
                 platformName: tab.platform?.name,
-                pageTitle: tab.webViewModel.pageTitle
+                pageTitle: tab.webViewModel.pageTitle,
+                createdAt: tab.createdAt,
+                lastAccessedAt: tab.lastAccessedAt
             )
         }
         let restoredActiveIndex: Int
@@ -647,6 +669,8 @@ final class TabManager: ObservableObject {
                 keyword: saved.keyword,
                 platform: platform
             )
+            tab.createdAt = saved.createdAt ?? state.savedAt ?? .distantPast
+            tab.lastAccessedAt = saved.lastAccessedAt ?? .distantPast
             tab.webViewModel.setDesktopModeEnabled(prefersDesktopMode)
             tab.webViewModel.updateTitle(saved.pageTitle)
             if let url = restoredURL {
@@ -658,8 +682,10 @@ final class TabManager: ObservableObject {
         }
         tabs = restoredTabs
 
-        if state.activeIndex >= 0 && state.activeIndex < tabs.count {
-            activeTabIndex = state.activeIndex
+        if state.tabs.indices.contains(state.activeIndex),
+           let savedActiveID = UUID(uuidString: state.tabs[state.activeIndex].id),
+           let index = tabs.firstIndex(where: { $0.id == savedActiveID }) {
+            activeTabIndex = index
         }
     }
 

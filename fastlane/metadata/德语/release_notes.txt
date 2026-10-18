@@ -1,10 +1,4 @@
-1.2.2
+1.2.3
 
-• Episoden auf unterstützten Websites auswählen, ihre Reihenfolge umkehren, mehrere zusammen laden und fehlgeschlagene Downloads erneut versuchen. Gedrückt halten zum Beschleunigen, loslassen für das vorherige Tempo. Flüssigere Videosteuerung.
-• Optionale Bestätigung automatischer Wechsel zu anderen Domains, vertrauenswürdige Domains und Öffnen in einem neuen Tab. Entfernen von Werbeüberlagerungen, Zurücknavigation und Untermenüs verbessert.
-
-• Ein Fehler wurde behoben, durch den beim Aktivieren der iCloud-Synchronisierung auf einem neuen Gerät vorhandene Einstellungen überschrieben wurden. Lokale Einstellungssicherungen und eine einfachere Verarbeitung geteilter Links wurden hinzugefügt.
-
-• Wähle Soulo in den Einstellungen als Standardbrowser, um Links aus anderen Apps zu öffnen.
-• Verbessertes Laden von Webseiten, Filtern von Werbung und Reaktionsverhalten bei der Navigation.
-• Verbesserte Layouts, Hintergrundzuschnitte und Leseansicht bei Änderungen der Fenstergröße.
+• Zuletzt verwendete Tabs und Website-Gruppen stehen zuerst, und die Übersicht öffnet sich oben. Die Reihenfolge bleibt nach einem Neustart erhalten.
+• Beim Gedrückthalten eines Videos wird die vorübergehende Geschwindigkeit angezeigt. Loslassen stellt die vorherige wieder her. Verbesserte Toolbar-Kompatibilität.

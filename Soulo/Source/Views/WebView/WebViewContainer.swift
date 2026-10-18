@@ -376,6 +376,17 @@ struct WebViewContainer: View {
             }
 
             // Toast overlays
+            if isActiveTab, let rate = webViewModel.videoHoldSpeed {
+                VStack {
+                    VideoPlaybackSpeedToast(rate: rate)
+                        .padding(.top, 12)
+                        .accessibilityIdentifier("browser.video-hold-speed")
+                    Spacer(minLength: 0)
+                }
+                .allowsHitTesting(false)
+                .transition(.opacity)
+                .zIndex(80)
+            }
             if showBookmarkToast {
                 toastView(
                     icon: isBookmarked ? "bookmark.fill" : "bookmark.slash",
@@ -496,6 +507,10 @@ struct WebViewContainer: View {
             }
         }
         .animation(.easeOut(duration: 0.18), value: webViewModel.showSnapshotWhileRestoring)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: webViewModel.videoHoldSpeed)
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+            webViewModel.clearVideoHoldSpeed()
+        }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if isActiveTab && (webViewModel.manualAdSelection != nil || webViewModel.manualAdSavedRuleID != nil) {
                 ManualAdPickerPanel(model: webViewModel)
@@ -511,6 +526,7 @@ struct WebViewContainer: View {
         .modifier(VideoOrientationErrorAlert(message: $webViewModel.videoOrientationError))
         .onChange(of: isActiveTab) { _, active in
             if !active {
+                webViewModel.clearVideoHoldSpeed()
                 webViewModel.cancelMarkingAdvertisement()
                 webViewModel.resolveDomainNavigationConfirmation(allowed: false)
                 showExternalConfirm = false
@@ -582,6 +598,7 @@ struct WebViewContainer: View {
             updateFullscreenPresentation(isFullscreen: isFullscreen)
         }
         .onDisappear {
+            webViewModel.clearVideoHoldSpeed()
             webViewModel.cancelMarkingAdvertisement()
             webViewModel.resolveDomainNavigationConfirmation(allowed: false)
             showExternalConfirm = false

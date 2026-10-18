@@ -1,1 +1,1 @@
-Válaszd a Soulót alapértelmezett böngészőnek a Beállításokban, hogy más appok hivatkozásait is megnyithasd. Videóeszközök és epizódválasztás.
+A legutóbb használt lapok és webhelycsoportok kerülnek előre, az áttekintés felül nyílik meg.

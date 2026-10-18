@@ -111,8 +111,13 @@ final class SouloAppDelegate: NSObject, UIApplicationDelegate {
         Task { @MainActor in
             AppQuickActionService.shared.configureShortcuts()
             _ = SeparatedMediaDownloadService.shared
+            RetiredStorageCleanup.schedule()
         }
         return true
+    }
+
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        Task { @MainActor in RetiredStorageCleanup.schedule() }
     }
 
     func application(
