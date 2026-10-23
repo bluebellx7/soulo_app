@@ -106,6 +106,64 @@ final class WebEpisodeTests: XCTestCase {
         XCTAssertNil(model.episodeList)
     }
 
+    func testRestoredDocumentRepublishesUnchangedEpisodes() async throws {
+        let (web, capture) = try await page("<ul class='episode-list'><li><a href='/watch/1'>EP1</a></li><li><a href='/watch/2'>EP2</a></li></ul>")
+        try await Task.sleep(for: .milliseconds(500))
+        capture.bodies.removeAll()
+        _ = try await web.evaluateJavaScript("window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));null")
+        for _ in 0..<100 where !capture.bodies.contains(where: { $0["sources"] != nil }) {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let body = try XCTUnwrap(capture.bodies.last { $0["sources"] != nil })
+        let list = try XCTUnwrap(WebEpisodeList.parse(body, pageURL: try XCTUnwrap(web.url)))
+        XCTAssertEqual(list.sources.flatMap(\.episodes).map(\.title), ["EP1", "EP2"])
+    }
+
+    func testNativeRefreshRepublishesAndReturnsTheCurrentSnapshot() async throws {
+        let (web, capture) = try await page("<ul class='episode-list'><li><a href='/watch/1'>EP1</a></li><li><a href='/watch/2'>EP2</a></li></ul>")
+        try await Task.sleep(for: .milliseconds(500))
+        capture.bodies.removeAll()
+        let value = try await web.evaluateJavaScript("window.__souloEpisodes.refresh()", in: nil, contentWorld: WebEpisodeRuntime.world)
+        let list = try XCTUnwrap(WebEpisodeList.parse(try XCTUnwrap(value as? [String: Any]), pageURL: try XCTUnwrap(web.url)))
+        XCTAssertEqual(list.sources.flatMap(\.episodes).map(\.title), ["EP1", "EP2"])
+        for _ in 0..<100 where !capture.bodies.contains(where: { $0["sources"] != nil }) {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertNotNil(capture.bodies.last { $0["sources"] != nil })
+    }
+
+    func testVideoEpisodeRequestRecoversMissingNativeState() async throws {
+        let model = WebViewModel()
+        let coordinator = WebViewRepresentable.Coordinator(viewModel: model)
+        let configuration = WKWebViewConfiguration()
+        let controller = configuration.userContentController
+        controller.add(coordinator, contentWorld: WebEpisodeRuntime.world, name: WebEpisodeRuntime.handler)
+        controller.add(coordinator, contentWorld: WebVideoOrientationRuntime.world, name: WebVideoOrientationRuntime.handler)
+        controller.addUserScript(WKUserScript(source: WebEpisodeRuntime.script,
+            injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: WebEpisodeRuntime.world))
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 800), configuration: configuration)
+        model.webView = web
+        defer {
+            controller.removeScriptMessageHandler(forName: WebEpisodeRuntime.handler, contentWorld: WebEpisodeRuntime.world)
+            controller.removeScriptMessageHandler(forName: WebVideoOrientationRuntime.handler, contentWorld: WebVideoOrientationRuntime.world)
+            model.releaseWebViewRuntime()
+        }
+        web.loadHTMLString("<ul class='episode-list'><li><a href='/watch/1'>EP1</a></li><li><a href='/watch/2'>EP2</a></li></ul>",
+            baseURL: URL(string: "https://example.com/series"))
+        for _ in 0..<100 where model.episodeList == nil { try await Task.sleep(for: .milliseconds(25)) }
+        XCTAssertNotNil(model.episodeList)
+        try await Task.sleep(for: .milliseconds(500))
+        model.beginPageNavigation()
+        XCTAssertNil(model.episodeList)
+        // Exercise the isolated video bridge after native state was cleared,
+        // while the restored document still knows about its episode list.
+        _ = try await web.evaluateJavaScript("window.webkit.messageHandlers.souloVideoOrientation.postMessage({action:'episodes',token:'restored-player'});null",
+            in: nil, contentWorld: WebVideoOrientationRuntime.world)
+        for _ in 0..<100 where !model.showEpisodes { try await Task.sleep(for: .milliseconds(25)) }
+        XCTAssertTrue(model.showEpisodes)
+        XCTAssertEqual(model.episodeList?.sources.flatMap(\.episodes).map(\.title), ["EP1", "EP2"])
+    }
+
     func testGenericEpisodeLinksDoNotDependOnSiteClassesOrURLTemplates() async throws {
         let cases: [(String, [String])] = [
             ("<video></video><div class='custom-buttons'><a href='/watch?show=7&ep=10'>Episode 10</a><a href='/watch?show=7&ep=2'>Episode 2</a></div>", ["Episode 2", "Episode 10"]),

@@ -1,4 +1,7 @@
-1.2.3
+1.2.4
 
-• As abas e grupos de sites usados recentemente aparecem primeiro, e a visão geral abre no topo. A ordem de uso é mantida após reiniciar.
+• Corrigidas a entrada de texto e a ativação do teclado nas páginas. Melhorias ao voltar e selecionar episódios em sites de vídeo, com menos páginas em branco e falsos erros de carregamento.
+• Abra Downloads pelo seletor de episódios ou mantenha um episódio pressionado para baixá-lo. Corrigidos os downloads em lote e os nomes dos arquivos de episódios.
+• As listas de downloads e arquivos mostram o tamanho dos arquivos. Os registros de download são mantidos após as atualizações do app.
+• As abas e grupos de sites usados recentemente aparecem primeiro, e a visão geral abre no topo. A ordem de uso é mantida após reiniciar. As abas agrupadas agora se distribuem em uma grade com várias linhas.
 • Mantenha um vídeo pressionado para ver a velocidade temporária; solte para restaurar a anterior. Melhor compatibilidade da barra de ferramentas.

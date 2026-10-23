@@ -366,6 +366,7 @@ struct LibraryFilesView: View {
             Text(file.url.lastPathComponent)
                 .font(.subheadline.weight(.medium)).foregroundStyle(.primary)
                 .lineLimit(1).truncationMode(.middle)
+            if !file.directory { fileMetadata(file) }
         }
         .contentShape(Rectangle())
         .accessibilityIdentifier("files.item.\(file.url.lastPathComponent)")
@@ -385,19 +386,24 @@ struct LibraryFilesView: View {
                     .lineLimit(1).truncationMode(.middle)
                     .fixedSize(horizontal: false, vertical: true)
                 if !file.directory {
-                    HStack(spacing: 8) {
-                        Text(file.info.badge)
-                            .font(.system(.caption2, design: .rounded).weight(.semibold))
-                        if !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased()) {
-                            Text(ByteCountFormatter.string(fromByteCount: file.info.size, countStyle: .file))
-                                .font(.caption)
-                        }
-                    }.foregroundStyle(.secondary)
+                    fileMetadata(file)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }.frame(minHeight: 48).contentShape(Rectangle())
         .accessibilityIdentifier("files.item.\(file.url.lastPathComponent)")
+    }
+
+    private func fileMetadata(_ file: LocalFile) -> some View {
+        HStack(spacing: 8) {
+            Text(file.info.badge)
+                .font(.system(.caption2, design: .rounded).weight(.semibold))
+            Text(ByteCountFormatter.string(fromByteCount: file.info.size, countStyle: .file))
+                .font(.caption.monospacedDigit())
+                .accessibilityIdentifier("files.size.\(file.url.lastPathComponent)")
+        }
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
     }
 
     private var selectionActions: some View {

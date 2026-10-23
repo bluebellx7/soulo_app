@@ -936,6 +936,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         coordinator.cancelDomainConfirmation()
         coordinator.removeManualAdTap()
         coordinator.removeImageLongPress()
+        coordinator.cancelBackwardTraversal()
         guard uiView.navigationDelegate === coordinator else { return }
         removeRuntimeMessageHandlers(from: uiView.configuration.userContentController)
         coordinator.dismissEmbeddedPopups(in: uiView)
@@ -989,6 +990,8 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
         private var navigationGesture: (webView: ObjectIdentifier, frameURL: URL, time: TimeInterval, destinations: [URL], isLink: Bool, isForm: Bool, isControl: Bool)?
         private var provisionalNavigation: WKNavigation?
+        private var latestNavigation: WKNavigation?
+        private var navigationFinished = false
         private var navigationOriginURL: URL?
         private var userInitiatedNavigationChain = false
         private var domainConfirmationID: UUID?
@@ -1025,6 +1028,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var blankPageRecoveryAttempts: [String: Int] = [:]
         private var terminatedProcessRecoveryURLs = Set<String>()
         private var navigationGeneration = UUID()
+        fileprivate func cancelBackwardTraversal() { viewModel.cancelBackwardTraversal() }
         init(viewModel: WebViewModel) {
             self.viewModel = viewModel
             super.init()
@@ -1202,9 +1206,18 @@ struct WebViewRepresentable: UIViewRepresentable {
 
             if message.name == "souloMediaFrame" {
                 guard message.webView === viewModel.webView,
-                      message.world == .defaultClient,
-                      !message.frameInfo.isMainFrame else { return }
-                viewModel.registerMediaFrame(message.frameInfo)
+                      message.world == .defaultClient else { return }
+                if message.frameInfo.isMainFrame {
+                    if body["history"] as? Bool == true { viewModel.cancelBackwardTraversal() }
+                    return
+                }
+                if body["shown"] as? Bool != true || body["restored"] as? Bool == true {
+                    viewModel.registerMediaFrame(message.frameInfo)
+                }
+                if body["shown"] as? Bool == true, let webView = message.webView {
+                    let url = (body["url"] as? String).flatMap(URL.init(string:))
+                    viewModel.historyFrameDidShow(in: webView, url: url, isHistoryTraversal: body["history"] as? Bool == true)
+                }
                 return
             }
 
@@ -1231,6 +1244,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                       let webView = message.webView, let parent = viewModel.webView,
                       webView === parent || webView.isDescendant(of: parent),
                       let url = message.frameInfo.request.url else { return }
+                viewModel.cancelBackwardTraversal()
                 let destinations = (body["destinations"] as? [String] ?? []).prefix(16).compactMap { raw -> URL? in
                     guard raw.count <= 8192, let target = URL(string: raw),
                           ["http", "https"].contains(target.scheme?.lowercased() ?? "") else { return nil }
@@ -1249,7 +1263,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                       WebEpisodeList.matches(reportedURL, currentURL) else { return }
                 if let action = body["action"] as? String {
                     if action == "refresh", let webView = message.webView { refreshSiteEpisodeData(on: webView) }
-                    if action == "open", viewModel.episodeList != nil { viewModel.showEpisodes = true }
+                    if action == "open", let webView = message.webView { presentEpisodePicker(on: webView) }
                     if action == "position", let edge = body["edge"] as? String, ["left", "right"].contains(edge),
                        let fraction = body["fraction"] as? Double, fraction.isFinite, (0...1).contains(fraction) {
                         UserDefaults.standard.set(edge, forKey: "web_episode_dock_edge")
@@ -1293,7 +1307,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                     let source = "window.__souloVideoOrientation?.setEpisodesAvailable(\(viewModel.episodeList != nil));"
                     webView.evaluateJavaScript(source, in: message.frameInfo, in: WebVideoOrientationRuntime.world, completionHandler: nil)
                 case "episodes":
-                    if viewModel.episodeList != nil { viewModel.showEpisodes = true }
+                    if let webView = message.webView { presentEpisodePicker(on: webView) }
                 case "speed":
                     guard let webView = message.webView, let host = topViewController(for: webView) else { return }
                     let currentRate = body["rate"] as? Double ?? 1
@@ -2176,8 +2190,11 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+            guard webView === viewModel.webView else { return }
             BrowserStartupTrace.mark("navigation_start")
             provisionalNavigation = navigation
+            latestNavigation = navigation
+            navigationFinished = false
             let allowlist = WebCompatibilityService.protectionBypassHosts(adding: AdBlockSettingsService.shared.allowlistedHosts)
             viewModel.nativeCosmeticDocumentReady = WebViewRepresentable.installedContentRuleSignatures[ObjectIdentifier(webView)]
                 == WebViewRepresentable.allowlistSignature(for: allowlist)
@@ -2191,16 +2208,17 @@ struct WebViewRepresentable: UIViewRepresentable {
             }
             navigationGeneration = UUID()
             resetScrollChromeState()
-            Task { @MainActor in
-                viewModel.errorMessage = nil
-                viewModel.clearUserScriptMenuCommands()
-                viewModel.resetPageTranslationState()
-            }
+            viewModel.errorMessage = nil
+            viewModel.clearUserScriptMenuCommands()
+            viewModel.resetPageTranslationState()
             lastManualAdSignature = ""
         }
 
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+            guard isCurrentNavigation(navigation, in: webView) else { return }
+            latestNavigation = navigation
             BrowserStartupTrace.mark("navigation_commit")
+            viewModel.errorMessage = nil
             provisionalNavigation = nil
             userInitiatedNavigationChain = false
             navigationGesture = nil
@@ -2213,8 +2231,10 @@ struct WebViewRepresentable: UIViewRepresentable {
                     && WebViewRepresentable.installedContentRuleSignatures[ObjectIdentifier(webView)] != nil)
             if viewModel.manualAdSelection != nil { viewModel.cancelMarkingAdvertisement() }
             synchronizeManualAdRules(on: webView)
+            let generation = navigationGeneration
             Task { @MainActor [weak self] in
-                guard let self else { return }
+                guard let self, self.navigationGeneration == generation,
+                      self.viewModel.webView === webView else { return }
                 self.viewModel.updateCurrentURL(webView.url)
                 self.viewModel.applyPageZoom(to: webView)
             }
@@ -2226,8 +2246,14 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            guard isCurrentNavigation(navigation, in: webView) else { return }
+            latestNavigation = navigation
+            navigationFinished = true
+            viewModel.errorMessage = nil
             BrowserStartupTrace.mark("navigation_finish")
             webView.scrollView.refreshControl?.endRefreshing()
+            webView.evaluateJavaScript("window.__souloEpisodes?.refresh();", in: nil,
+                in: WebEpisodeRuntime.world, completionHandler: nil)
             refreshSiteEpisodeData(on: webView)
             let episodeGeneration = navigationGeneration
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self, weak webView] in
@@ -2235,7 +2261,8 @@ struct WebViewRepresentable: UIViewRepresentable {
                 self.refreshSiteEpisodeData(on: webView)
             }
             Task { @MainActor [weak self] in
-                guard let self else { return }
+                guard let self, self.navigationGeneration == episodeGeneration,
+                      self.viewModel.webView === webView else { return }
                 self.viewModel.updateLoading(false)
                 self.viewModel.updateCurrentURL(webView.url)
                 self.viewModel.updateTitle(webView.title)
@@ -2249,6 +2276,26 @@ struct WebViewRepresentable: UIViewRepresentable {
                 self.focusAccessibilityOnLoadedPage(webView)
                 self.scheduleVideoViewportSynchronization(on: webView)
                 await self.viewModel.refreshPageTranslationState()
+            }
+        }
+
+        private func presentEpisodePicker(on webView: WKWebView) {
+            guard webView === viewModel.webView, let url = webView.url else { return }
+            if viewModel.episodeList != nil {
+                viewModel.showEpisodes = true
+                return
+            }
+            let generation = navigationGeneration
+            webView.evaluateJavaScript("window.__souloEpisodes?.refresh();", in: nil,
+                in: WebEpisodeRuntime.world) { [weak self, weak webView] result in
+                guard let self, let webView, webView === self.viewModel.webView,
+                      self.navigationGeneration == generation, webView.url == url else { return }
+                if case .success(let value) = result, let body = value as? [String: Any] {
+                    self.viewModel.episodeList = WebEpisodeList.parse(body, pageURL: url)
+                }
+                // A real tap always opens a panel, including its unavailable
+                // state if the site has removed its playlist in the meantime.
+                self.viewModel.showEpisodes = true
             }
         }
 
@@ -2313,6 +2360,9 @@ struct WebViewRepresentable: UIViewRepresentable {
             didFail navigation: WKNavigation!,
             withError error: Error
         ) {
+            guard isCurrentNavigation(navigation, in: webView) else { return }
+            latestNavigation = navigation
+            navigationFinished = true
             if provisionalNavigation === navigation { provisionalNavigation = nil }
             handleNavigationError(error)
         }
@@ -2322,6 +2372,9 @@ struct WebViewRepresentable: UIViewRepresentable {
             didFailProvisionalNavigation navigation: WKNavigation!,
             withError error: Error
         ) {
+            guard isCurrentNavigation(navigation, in: webView) else { return }
+            latestNavigation = navigation
+            navigationFinished = true
             if provisionalNavigation === navigation { provisionalNavigation = nil }
             if retryHTTPFallbackIfNeeded(on: webView, error: error) {
                 return
@@ -2330,6 +2383,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            guard webView === viewModel.webView else { return }
             provisionalNavigation = nil
             guard let url = webView.url, isRecoverableWebPageURL(url) else { return }
             let key = url.absoluteString
@@ -2349,26 +2403,33 @@ struct WebViewRepresentable: UIViewRepresentable {
             webView.reload()
         }
 
+        private func isCurrentNavigation(_ navigation: WKNavigation?, in webView: WKWebView) -> Bool {
+            guard webView === viewModel.webView, !navigationFinished else { return false }
+            // A retained WebView may be reattached during a load, before this
+            // coordinator observes didStart. Adopt that first callback, while
+            // rejecting superseded and already completed navigation objects.
+            return latestNavigation == nil || latestNavigation === navigation
+        }
+
         private func handleNavigationError(_ error: Error) {
             guard !WebNavigationErrorClassifier.isExpectedInterruption(error) else { return }
+            viewModel.cancelBackwardTraversal()
             viewModel.webView?.scrollView.refreshControl?.endRefreshing()
             let nsError = error as NSError
-            Task { @MainActor in
-                let message: String
-                switch nsError.code {
-                case NSURLErrorNotConnectedToInternet:
-                    message = LanguageManager.shared.localizedString("error_no_internet")
-                case NSURLErrorTimedOut:
-                    message = LanguageManager.shared.localizedString("error_timeout")
-                case NSURLErrorSecureConnectionFailed,
-                     NSURLErrorServerCertificateHasBadDate,
-                     NSURLErrorServerCertificateUntrusted:
-                    message = LanguageManager.shared.localizedString("error_ssl")
-                default:
-                    message = error.localizedDescription
-                }
-                viewModel.setError(message)
+            let message: String
+            switch nsError.code {
+            case NSURLErrorNotConnectedToInternet:
+                message = LanguageManager.shared.localizedString("error_no_internet")
+            case NSURLErrorTimedOut:
+                message = LanguageManager.shared.localizedString("error_timeout")
+            case NSURLErrorSecureConnectionFailed,
+                 NSURLErrorServerCertificateHasBadDate,
+                 NSURLErrorServerCertificateUntrusted:
+                message = LanguageManager.shared.localizedString("error_ssl")
+            default:
+                message = error.localizedDescription
             }
+            viewModel.setError(message)
         }
 
         private func scheduleBlankPageRecovery(on webView: WKWebView) {
@@ -2487,6 +2548,14 @@ struct WebViewRepresentable: UIViewRepresentable {
             guard allowsNavigation(navigationAction, in: webView, nativeRequest: nativeRequest) else {
                 decide(.cancel)
                 return
+            }
+
+            if navigationAction.navigationType == .backForward {
+                viewModel.willNavigateHistory(in: webView,
+                    isMainFrame: navigationAction.targetFrame?.isMainFrame != false,
+                    frameURL: navigationAction.request.url)
+            } else if navigationAction.targetFrame?.isMainFrame == true {
+                viewModel.cancelBackwardTraversal()
             }
 
             if navigationAction.targetFrame?.isMainFrame == true {

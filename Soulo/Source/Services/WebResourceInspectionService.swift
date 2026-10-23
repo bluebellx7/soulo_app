@@ -267,6 +267,7 @@ enum WebResourceInspectionService {
         });
 
         var videoMap = new Map();
+        var configuredVideoURLs = new Set();
         var audioMap = new Map();
 
         function deliveryForURL(value) {
@@ -709,6 +710,7 @@ enum WebResourceInspectionService {
                     config.encrypt
                 );
                 if (mediaURL) {
+                    configuredVideoURLs.add(mediaURL);
                     addMedia('video', mediaURL, cleanText(config.title || document.title),
                         config.pic || config.poster || '');
                 }
@@ -831,6 +833,7 @@ enum WebResourceInspectionService {
             pageURL: location.href,
             images: Array.from(imageMap.values()),
             videos: Array.from(videoMap.values()),
+            configuredVideoURLs: Array.from(configuredVideoURLs),
             audio: Array.from(audioMap.values()),
             links: Array.from(linkMap.values()),
             texts: texts,

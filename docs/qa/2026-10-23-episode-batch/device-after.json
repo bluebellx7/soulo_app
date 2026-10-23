@@ -1,0 +1,48 @@
+{
+  "build": "40",
+  "downloadRecordCount": 6,
+  "episodes": [
+    {
+      "episode": 10,
+      "fileName": "东大高武学院 - 第10集.soulohls",
+      "offline": true,
+      "sizeBytes": 327356475,
+      "sourceURL": "https://vv.jisuzyv.com/play/eXDM5xke/index.m3u8",
+      "status": "finished"
+    },
+    {
+      "episode": 11,
+      "fileName": "东大高武学院 - 第11集.soulohls",
+      "offline": true,
+      "sizeBytes": 361843464,
+      "sourceURL": "https://vv.jisuzyv.com/play/dwpkyLJe/index.m3u8",
+      "status": "finished"
+    },
+    {
+      "episode": 12,
+      "fileName": "东大高武学院 - 第12集.soulohls",
+      "offline": true,
+      "sizeBytes": 307438520,
+      "sourceURL": "https://vv.jisuzyv.com/play/eVONDX1a/index.m3u8",
+      "status": "finished"
+    },
+    {
+      "episode": 13,
+      "fileName": "东大高武学院 - 第13集.soulohls",
+      "offline": true,
+      "sizeBytes": 325093846,
+      "sourceURL": "https://vv.jisuzyv.com/play/eZ6WALJe/index.m3u8",
+      "status": "finished"
+    },
+    {
+      "episode": 14,
+      "fileName": "东大高武学院 - 第14集.soulohls",
+      "offline": true,
+      "sizeBytes": 373393007,
+      "sourceURL": "https://vv.jisuzyv.com/play/dyP69yEb/index.m3u8",
+      "status": "finished"
+    }
+  ],
+  "requestedCount": 5,
+  "totalSizeBytes": 1695125312
+}

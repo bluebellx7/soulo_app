@@ -93,7 +93,10 @@ struct WebEpisodeDownloadJob: Identifiable {
         do {
             let resource = try await resolver.resolve(timeout: resolutionTimeout)
             update(work.id, status: .downloading)
-            let title = [work.pageTitle, work.episode.title].filter { !$0.isEmpty }.joined(separator: " · ")
+            let resolvedTitle = resolver.webView.title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let pageTitle = resolvedTitle.isEmpty ? work.pageTitle : resolvedTitle
+            let title = pageTitle.localizedCaseInsensitiveContains(work.episode.title)
+                ? pageTitle : [pageTitle, work.episode.title].filter { !$0.isEmpty }.joined(separator: " · ")
             let filename = WebDownloadFilename.media(resource, requested: nil, pageTitle: title)
             _ = try await WebResourceDownloadService.shared.download(resource, preferredFilename: filename,
                 pageURL: resource.sourcePageURL ?? work.episode.url, webView: resolver.webView)
@@ -161,7 +164,16 @@ enum WebEpisodeDownloadError: LocalizedError, Equatable {
             try Task.checkCancellation()
             if let navigationError { throw navigationError }
             if committed, let snapshot = try? await WebResourceInspectionService.inspect(webView: webView, frames: frames) {
-                let candidates = snapshot.videos.filter { $0.delivery != .dash }
+                let configured = snapshot.configuredVideos.filter { $0.delivery != .dash }
+                let mainPlayer = configured.filter { resource in
+                    guard let source = resource.sourcePageURL, let page = snapshot.pageURL else { return false }
+                    return WebEpisodeList.matches(source, page)
+                }
+                // An explicit current URL in the page's player configuration
+                // identifies this episode. Keep next-episode preloads available
+                // in Resources without treating them as competing downloads.
+                let candidates = !mainPlayer.isEmpty ? mainPlayer
+                    : !configured.isEmpty ? configured : snapshot.videos.filter { $0.delivery != .dash }
                 ambiguous = candidates.count > 1
                 if candidates.count == 1, let candidate = candidates.first {
                     // Require two observations so a transient preload does not

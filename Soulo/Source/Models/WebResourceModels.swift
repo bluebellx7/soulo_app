@@ -127,6 +127,7 @@ struct WebResourceSnapshot {
     let pageURL: URL?
     let images: [WebImageResource]
     let videos: [WebMediaResource]
+    let configuredVideos: [WebMediaResource]
     let audio: [WebMediaResource]
     let links: [WebLinkResource]
     let textFragments: [WebTextResource]
@@ -164,12 +165,14 @@ struct WebResourceSnapshot {
         links: [WebLinkResource],
         textFragments: [WebTextResource],
         colors: [WebColorResource],
-        documents: [WebDocumentResource]
+        documents: [WebDocumentResource],
+        configuredVideos: [WebMediaResource] = []
     ) {
         self.pageTitle = pageTitle
         self.pageURL = pageURL
         self.images = images
         self.videos = videos
+        self.configuredVideos = configuredVideos
         self.audio = audio
         self.links = links
         self.textFragments = textFragments
@@ -194,6 +197,8 @@ struct WebResourceSnapshot {
         let mediaSourcePageURL = ["http", "https"].contains(pageURL?.scheme?.lowercased() ?? "")
             ? pageURL : nil
         videos = Self.mediaResources(dictionary["videos"], kind: .video, sourcePageURL: mediaSourcePageURL)
+        let configuredURLs = Set((dictionary["configuredVideoURLs"] as? [String] ?? []).compactMap(Self.webURL))
+        configuredVideos = videos.filter { configuredURLs.contains($0.url) }
         audio = Self.mediaResources(dictionary["audio"], kind: .audio, sourcePageURL: mediaSourcePageURL)
 
         links = Self.uniqueLinks((dictionary["links"] as? [[String: Any]] ?? []).compactMap { value in
@@ -244,7 +249,8 @@ struct WebResourceSnapshot {
             links: links,
             textFragments: textFragments,
             colors: colors,
-            documents: documents
+            documents: documents,
+            configuredVideos: Self.unique(configuredVideos + frame.configuredVideos, id: \.id)
         )
     }
 

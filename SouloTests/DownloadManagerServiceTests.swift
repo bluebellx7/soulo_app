@@ -5,6 +5,29 @@ import XCTest
 
 @MainActor
 final class DownloadManagerServiceTests: XCTestCase {
+    func testSavedDownloadsSurviveRelocatedAppContainerWithoutAdoptingUnrelatedFiles() throws {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let (item, url) = service.beginDownload(suggestedFilename: "episode.mp4", sourceURL: nil)
+        try Data("saved video".utf8).write(to: url)
+        service.markFinished(id: item.id)
+        var saved = try JSONDecoder().decode([BrowserDownloadItem].self, from: XCTUnwrap(defaults.data(forKey: "soulo_browser_downloads")))
+        saved[0].localPath = "/old-container/Documents/Downloads/episode.mp4"
+        var unrelated = saved[0]
+        unrelated.fileName = "unrelated.mp4"
+        unrelated.localPath = "/external/other/unrelated.mp4"
+        try Data("different file".utf8).write(to: directory.appendingPathComponent(unrelated.fileName))
+        defaults.set(try JSONEncoder().encode(saved + [unrelated]), forKey: "soulo_browser_downloads")
+
+        let restored = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        XCTAssertEqual(restored.downloads.count, 1)
+        XCTAssertEqual(restored.downloads.first?.id, item.id)
+        XCTAssertEqual(restored.downloads.first?.localURL, url)
+        XCTAssertEqual(restored.downloads.first?.status, .finished)
+        XCTAssertEqual(try Data(contentsOf: url), Data("saved video".utf8))
+        let persisted = try JSONDecoder().decode([BrowserDownloadItem].self, from: XCTUnwrap(defaults.data(forKey: "soulo_browser_downloads")))
+        XCTAssertEqual(persisted.first?.localURL, url)
+    }
+
     func testMediaDownloadsUsePageTitleAndKeepOutputExtension() {
         let hls = WebMediaResource(
             kind: .video,

@@ -514,7 +514,9 @@ private struct TabSwitcherDomainGroups: View {
         GeometryReader { geometry in
             let groups = TabOverviewDomainGroup.make(from: tabs, preservingGroupOrder: orderedGroupIDs)
             let positions = Dictionary(uniqueKeysWithValues: tabs.enumerated().map { ($0.element.id, $0.offset + 1) })
-            let columns: CGFloat = dynamicTypeSize.isAccessibilitySize ? 2 : 3
+            let preferredColumns = dynamicTypeSize.isAccessibilitySize ? 2 : 3
+            let fittingColumns = max(1, Int((geometry.size.width - 36) / 102))
+            let columns = CGFloat(min(preferredColumns, fittingColumns))
             let cardWidth = min(156, max(90, (geometry.size.width - 48 - (columns - 1) * 12) / columns))
             let previewHeight = min(132, max(96, geometry.size.height / 3.5 - 58))
             ScrollView(.vertical, showsIndicators: false) {
@@ -523,7 +525,7 @@ private struct TabSwitcherDomainGroups: View {
                         TabDomainGroupRow(
                             group: group, tabManager: tabManager,
                             positions: positions,
-                            cardWidth: cardWidth, previewHeight: previewHeight,
+                            cardWidth: cardWidth, columnCount: Int(columns), previewHeight: previewHeight,
                             onSelect: onSelect, onClose: onClose
                         )
                         .id(group.id)
@@ -552,11 +554,10 @@ private struct TabDomainGroupRow: View {
     @ObservedObject var tabManager: TabManager
     let positions: [UUID: Int]
     let cardWidth: CGFloat
+    let columnCount: Int
     let previewHeight: CGFloat
     let onSelect: (Int) -> Void
     let onClose: (Int) -> Void
-    @State private var focusedID: UUID?
-    @ScaledMetric(relativeTo: .caption) private var titleHeight: CGFloat = 30
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -578,8 +579,7 @@ private struct TabDomainGroupRow: View {
             .accessibilityAddTraits(.isHeader)
             .accessibilityIdentifier("tabs.group.\(group.id)")
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: 12) {
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(cardWidth), spacing: 12, alignment: .top), count: columnCount), alignment: .leading, spacing: 14) {
                     ForEach(group.tabs) { tab in
                         TabOverviewCard(
                             webViewModel: tab.webViewModel,
@@ -595,15 +595,10 @@ private struct TabDomainGroupRow: View {
                         .frame(width: cardWidth)
                         .id(tab.id)
                     }
-                }
-                .scrollTargetLayout()
-                .padding(.vertical, 2)
             }
-            .contentMargins(.horizontal, 24, for: .scrollContent)
-            .scrollTargetBehavior(.viewAligned)
-            .defaultScrollAnchor(.leading)
-            .scrollPosition(id: $focusedID, anchor: .leading)
-            .frame(height: previewHeight + 7 + titleHeight + 4)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 2)
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("tabs.group-row.\(group.id)")
         }
     }

@@ -4,6 +4,8 @@ Chọn Soulo làm trình duyệt mặc định trong Cài đặt để mở liê
 
 Các tab và nhóm trang web dùng gần đây hiện trước, và danh sách tab mở từ trên cùng. Thứ tự sử dụng được giữ lại sau khi khởi động lại.
 
+Nhóm thẻ dạng lưới, tải tập phim và xem kích thước tệp. Nhập văn bản, quay lại từ video và tải hàng loạt ổn định hơn.
+
 Phát video được hỗ trợ trong khi tải. Cải thiện tải nền, toàn màn hình và bảo vệ khỏi quảng cáo ẩn cùng thao tác sao chép không mong muốn.
 
 Chọn tập trên trang được hỗ trợ, đảo thứ tự, tải nhiều tập đã chọn cùng lúc và thử lại khi tải lỗi. Nhấn giữ để tăng tốc, thả ra để về tốc độ cũ. Điều khiển video mượt hơn.

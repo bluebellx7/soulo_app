@@ -4,6 +4,8 @@ Tria Soulo com a navegador per defecte a Configuració per obrir enllaços d’a
 
 Les pestanyes i els grups de llocs utilitzats recentment apareixen primer, i la vista s'obre a dalt. L'ordre d'ús es conserva en reiniciar.
 
+Pestanyes agrupades en graella, baixada d'episodis i mides de fitxer visibles. Millores en escriure, tornar dels vídeos i baixar en lot.
+
 Reprodueix vídeos compatibles mentre es baixen. Millores a les baixades en segon pla, la pantalla completa i la protecció contra anuncis i còpies no desitjades.
 
 Tria episodis als llocs compatibles, inverteix-ne l’ordre i baixa’n diversos alhora, amb reintent de baixades fallides. Mantén premut per accelerar i deixa anar per recuperar la velocitat. Controls més fluids.

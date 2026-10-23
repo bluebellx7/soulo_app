@@ -305,6 +305,34 @@ final class WebViewModelTests: XCTestCase {
         XCTAssertTrue(classifier.register(magnitude: 0.66, at: 2.11))
     }
 
+    func testShakeDetectorPreservesEditorsDuringRefreshAndShakeDelivery() async {
+        let root = UIViewController()
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = root
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        let detector = DeviceShakeDetector.ShakeViewController()
+        root.addChild(detector)
+        root.view.addSubview(detector.view)
+        detector.didMove(toParent: root)
+        detector.isEnabled = true
+        let field = UITextField(frame: CGRect(x: 20, y: 100, width: 300, height: 44))
+        let notes = UITextView(frame: CGRect(x: 20, y: 160, width: 300, height: 90))
+        root.view.addSubview(field)
+        root.view.addSubview(notes)
+        for editor in [field as UIView, notes] {
+            XCTAssertTrue(editor.becomeFirstResponder())
+            detector.viewDidAppear(false)
+            for _ in 0..<3 { detector.startMotionUpdatesIfNeeded() }
+            XCTAssertTrue(editor.isFirstResponder, "Motion refresh must retain the current editor")
+            detector.motionEnded(.motionShake, with: nil)
+            await Task.yield()
+            XCTAssertTrue(editor.isFirstResponder, "Shake delivery must not reclaim keyboard focus")
+        }
+        detector.isEnabled = false
+        XCTAssertFalse(detector.canBecomeFirstResponder)
+    }
+
     func testShakeIntensityProvidesFourIncreasingThresholds() {
         let intensities = BrowserShakeIntensity.allCases
 

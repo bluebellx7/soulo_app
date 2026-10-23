@@ -1,4 +1,7 @@
-1.2.3
+1.2.4
 
-• A legutóbb használt lapok és webhelycsoportok kerülnek előre, az áttekintés felül nyílik meg. A használati sorrend újraindítás után is megmarad.
+• Javítottuk a webes szövegbevitelt és a billentyűzet aktiválását. Jobb visszalépés és epizódválasztás a videóoldalakon, kevesebb üres oldallal és téves betöltési hibával.
+• Nyisd meg a Letöltéseket az epizódválasztóból, vagy nyomj hosszan egy epizódra a letöltéshez. Javítottuk a kötegelt letöltést és az epizódok fájlneveit.
+• A letöltési és fájllisták megjelenítik a fájlméreteket. A letöltési bejegyzések az alkalmazás frissítése után is megmaradnak.
+• A legutóbb használt lapok és webhelycsoportok kerülnek előre, az áttekintés felül nyílik meg. A használati sorrend újraindítás után is megmarad. A csoportosított lapok most több soros rácsba rendeződnek.
 • A videó nyomva tartásakor látható az ideiglenes lejátszási sebesség; elengedéskor visszaáll az előző. Javult az eszköztár kompatibilitása.

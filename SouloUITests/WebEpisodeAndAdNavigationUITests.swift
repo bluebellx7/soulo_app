@@ -207,14 +207,14 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
     }
 
     @MainActor
-    private func openEpisodes(_ app: XCUIApplication, video: Bool = false) {
+    private func openEpisodes(_ app: XCUIApplication, video: Bool = false, timeout: TimeInterval = 10) {
         if video {
             let tools = app.webViews.buttons["Video tools"].firstMatch
             XCTAssertTrue(tools.waitForExistence(timeout: 10), app.debugDescription)
             tools.tap()
         }
         let episodes = app.webViews.buttons["Episodes"].firstMatch
-        XCTAssertTrue(episodes.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(episodes.waitForExistence(timeout: timeout), app.debugDescription)
         episodes.tap()
         XCTAssertTrue(app.buttons["browser.episodes-order"].waitForExistence(timeout: 5), app.debugDescription)
     }
@@ -331,6 +331,108 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         let disappears=NSPredicate(format:"exists == false")
         let hidden=expectation(for:disappears,evaluatedWith:episodes)
         await fulfillment(of:[hidden],timeout:5)
+    }
+
+    @MainActor
+    func testEpisodeDockOpensAfterReturningFromPlayer() async throws {
+        let links = (1...3).map { "<li><a href='/player/7-1-\($0).html'>EP\($0)</a></li>" }.joined()
+        let detail = "<meta name='viewport' content='width=device-width,initial-scale=1'><h2>Series details</h2><ul class='episode-list'>" + links + "</ul>"
+        let player = "<meta name='viewport' content='width=device-width,initial-scale=1'><h2>Episode player</h2><a href='/detail.html'>Series details</a>"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/detail.html": Data(detail.utf8),
+            "/player/7-1-1.html": Data(player.utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let app = launch()
+        try open(root.appendingPathComponent("detail.html"), app: app)
+        openEpisodes(app)
+        app.buttons["EP1"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Episode player"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["Back"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Series details"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        openEpisodes(app)
+        app.buttons["Done"].firstMatch.tap()
+        openEpisodes(app)
+        let image = XCTAttachment(screenshot: app.screenshot())
+        image.name = "episode-picker-after-return"; image.lifetime = .keepAlways; add(image)
+    }
+
+    @MainActor
+    func testVideoEpisodeButtonOpensAfterBackAndForward() async throws {
+        let links = (1...3).map { "<li><a href='/player/7-1-\($0).html'>EP\($0)</a></li>" }.joined()
+        let head = "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+        let list = "<ul class='episode-list'>" + links + "</ul>"
+        let player = head + "<iframe src='/frame.html' style='width:100%;height:220px;border:0'></iframe><h2>Episode player</h2>" + list
+        let frame = head + "<video playsinline controls style='width:100%;height:200px'></video>"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/detail.html": Data((head + "<h2>Series details</h2>" + list).utf8),
+            "/player/7-1-1.html": Data(player.utf8), "/frame.html": Data(frame.utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let app = launch()
+        try open(root.appendingPathComponent("detail.html"), app: app)
+        openEpisodes(app)
+        app.buttons["EP1"].firstMatch.tap()
+        openEpisodes(app, video: true)
+        app.buttons["Done"].firstMatch.tap()
+        app.buttons["Back"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Series details"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        openEpisodes(app)
+        app.buttons["Done"].firstMatch.tap()
+        app.buttons["More"].firstMatch.tap()
+        app.buttons["Forward"].firstMatch.tap()
+        openEpisodes(app, video: true)
+    }
+
+    @MainActor
+    func testLiveEpisodeDockOpensAfterReturningFromPlayback() async throws {
+        guard ProcessInfo.processInfo.environment["SOULO_LIVE_EPISODES_QA"] == "1" else {
+            throw XCTSkip("Opt-in live website check")
+        }
+        let app = launch()
+        try open(try XCTUnwrap(URL(string: "https://www.pbpbw.com/html/228208.html")), app: app)
+        openEpisodes(app, timeout: 30)
+        let order = app.buttons["browser.episodes-order"]
+        if order.label.contains("Descending") { order.tap() }
+        let first = app.buttons["第01集"].firstMatch
+        guard first.waitForExistence(timeout: 5) else { XCTFail(app.debugDescription); return }
+        first.tap()
+        let next = app.webViews.links.matching(NSPredicate(format: "label CONTAINS %@", "下一集")).firstMatch
+        XCTAssertTrue(next.waitForExistence(timeout: 30), app.debugDescription)
+        app.buttons["Back"].firstMatch.tap()
+        openEpisodes(app, timeout: 30)
+        XCTAssertTrue(app.buttons["第01集"].firstMatch.exists, app.debugDescription)
+        let image = XCTAttachment(screenshot: app.screenshot())
+        image.name = "live-pbpbw-episodes-after-return"; image.lifetime = .keepAlways; add(image)
+    }
+
+    @MainActor
+    func testLongPressEpisodeDownloadsWithoutNavigatingAndShowsSizesInFiles() async throws {
+        let mediaURL = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
+        let data = try Data(contentsOf: mediaURL)
+        let detail = "<title>Episode download fixture</title><meta name='viewport' content='width=device-width,initial-scale=1'><h2>Series details</h2><ul class='episode-list'><li><a href='/ep1.html'>EP1</a></li><li><a href='/ep2.html'>EP2</a></li></ul>"
+        let player = "<script>window.player_aaaa={url:'/clip.mp4',encrypt:0}</script>"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/detail.html": Data(detail.utf8),
+            "/ep1.html": Data(player.utf8), "/ep2.html": Data(player.utf8), "/clip.mp4": data])
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        let app = launch()
+        try open(root.appendingPathComponent("detail.html"), app: app)
+        openEpisodes(app)
+        app.buttons["EP1"].firstMatch.press(forDuration: 1)
+        let download = app.buttons["browser.episode-download"].firstMatch
+        XCTAssertTrue(download.waitForExistence(timeout: 5), app.debugDescription)
+        download.tap()
+        XCTAssertTrue(app.buttons["browser.episodes-order"].exists, "Downloading must leave the selected webpage and picker in place")
+        app.buttons["browser.episodes-downloads"].tap()
+        let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "downloads.open.", "EP1")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 30), app.debugDescription)
+        let size = ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file)
+        XCTAssertTrue(NSPredicate(format: "label CONTAINS %@", size).evaluate(with: row), row.label)
+        let image = XCTAttachment(screenshot: app.screenshot())
+        image.name = "episode-download-with-file-size"; image.lifetime = .keepAlways; add(image)
+        app.buttons["downloads.files"].tap()
+        let file = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "files.item.", "EP1")).firstMatch
+        XCTAssertTrue(file.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(file.label.contains(size), file.label)
+        app.buttons["files.viewMode"].tap()
+        XCTAssertTrue(file.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(file.label.contains(size), file.label)
     }
 
     @MainActor

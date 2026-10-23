@@ -1,4 +1,7 @@
-1.2.3
+1.2.4
 
-• Les onglets et groupes de sites récents apparaissent en premier, et la vue s'ouvre en haut. L'ordre d'utilisation est conservé après un redémarrage.
+• Correction de la saisie et de l’activation du clavier sur les pages web. Retour et choix des épisodes améliorés, avec moins de pages vides et de fausses erreurs de chargement.
+• Ouvrez Téléchargements depuis le sélecteur d’épisodes ou appuyez longuement sur un épisode pour le télécharger. Correction des téléchargements par lot et des noms de fichiers.
+• Les listes de téléchargements et de fichiers affichent leur taille. Les données de téléchargement sont conservées après les mises à jour de l’app.
+• Les onglets et groupes de sites récents apparaissent en premier, et la vue s'ouvre en haut. L'ordre d'utilisation est conservé après un redémarrage. Les onglets groupés se répartissent désormais dans une grille sur plusieurs lignes.
 • Un appui prolongé sur une vidéo affiche sa vitesse temporaire ; relâchez pour rétablir la précédente. Compatibilité de la barre d'outils améliorée.

@@ -27,6 +27,7 @@ struct DownloadManagerView: View {
 
 struct DownloadManagerContentView: View {
     @ObservedObject private var downloadManager = DownloadManagerService.shared
+    @ObservedObject private var episodeDownloads = WebEpisodeDownloadService.shared
     let highlightedItemID: UUID?
     var embeddedInLibrary = false
     @State private var previewItem: BrowserDownloadItem?
@@ -38,6 +39,18 @@ struct DownloadManagerContentView: View {
     @State private var exportedHLSFolder: URL?
     @State private var hlsExportProgress: FileOperationProgress?
     @State private var fileError: String?
+    @State private var fileSizes: [UUID: Int64] = [:]
+
+    private struct SizeRequest: Equatable, Sendable {
+        let id: UUID
+        let url: URL
+    }
+    private var sizeRequests: [SizeRequest] {
+        downloadManager.downloads.filter { $0.status == .finished }.map { SizeRequest(id: $0.id, url: $0.localURL) }
+    }
+    private var preparingEpisodes: [WebEpisodeDownloadJob] {
+        episodeDownloads.jobs.filter { $0.status == .waiting || $0.status == .resolving }
+    }
 
     private var hasFinishedDownloads: Bool {
         downloadManager.downloads.contains { [.finished, .failed, .canceled].contains($0.status) }
@@ -51,9 +64,26 @@ struct DownloadManagerContentView: View {
     var body: some View {
         List {
             if !embeddedInLibrary {
-                Section { NavigationLink { LibraryFilesView() } label: { Label(ToolText.text("files_tools"), systemImage: "folder.badge.gearshape") } }
+                Section {
+                    NavigationLink { LibraryFilesView() } label: { Label(ToolText.text("files_tools"), systemImage: "folder.badge.gearshape") }
+                        .accessibilityIdentifier("downloads.files")
+                }
             }
-            if downloadManager.downloads.isEmpty {
+            if !preparingEpisodes.isEmpty {
+                Section {
+                    ForEach(preparingEpisodes) { job in
+                        HStack(spacing: 12) {
+                            ProgressView().frame(width: 44, height: 44)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(job.episode.title).font(.subheadline.weight(.medium)).lineLimit(1)
+                                Text(LanguageManager.shared.localizedString("loading"))
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+            if downloadManager.downloads.isEmpty && preparingEpisodes.isEmpty {
                 IllustratedToolEmptyState(
                     scene: .files,
                     title: LanguageManager.shared.localizedString("downloads_empty"),
@@ -141,6 +171,20 @@ struct DownloadManagerContentView: View {
         } message: { Text(fileError ?? "") }
         .onAppear {
             downloadManager.removeMissingFiles()
+        }
+        .task(id: sizeRequests) {
+            let requests = sizeRequests
+            let work = Task.detached(priority: .utility) {
+                var sizes: [UUID: Int64] = [:]
+                for request in requests {
+                    guard !Task.isCancelled else { break }
+                    if let size = FileStorageSize.bytes(at: request.url) { sizes[request.id] = size }
+                }
+                return sizes
+            }
+            let sizes = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+            guard !Task.isCancelled else { return }
+            fileSizes = sizes
         }
     }
 
@@ -287,6 +331,12 @@ struct DownloadManagerContentView: View {
                     .lineLimit(1)
                 HStack(spacing: 6) {
                     Text(statusText(for: item.status))
+                    if item.status != .inProgress && item.status != .paused {
+                        Text("·")
+                        Text(sizeText(item))
+                            .monospacedDigit()
+                            .accessibilityIdentifier("downloads.size.\(item.id)")
+                    }
                     if let completedAt = item.completedAt {
                         Text("-")
                         Text(completedAt, style: .time)
@@ -373,8 +423,16 @@ struct DownloadManagerContentView: View {
 
     private func progressText(_ item: BrowserDownloadItem) -> String {
         let percent = Int((item.progress * 100).rounded())
-        guard item.expectedBytes > 0 else { return "\(percent)%" }
+        guard item.expectedBytes > 0 else {
+            return "\(percent)% · \(ByteCountFormatter.string(fromByteCount: item.receivedBytes, countStyle: .file))"
+        }
         return "\(percent)% · \(ByteCountFormatter.string(fromByteCount: item.receivedBytes, countStyle: .file)) / \(ByteCountFormatter.string(fromByteCount: item.expectedBytes, countStyle: .file))"
+    }
+
+    private func sizeText(_ item: BrowserDownloadItem) -> String {
+        if let size = fileSizes[item.id] { return ByteCountFormatter.string(fromByteCount: size, countStyle: .file) }
+        let size = max(item.receivedBytes, item.expectedBytes)
+        return size > 0 ? ByteCountFormatter.string(fromByteCount: size, countStyle: .file) : "—"
     }
 }
 

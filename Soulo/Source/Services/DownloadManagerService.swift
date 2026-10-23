@@ -410,6 +410,18 @@ final class DownloadManagerService: ObservableObject {
            let decoded = try? JSONDecoder().decode([BrowserDownloadItem].self, from: data) {
             downloads = decoded
         }
+        // iOS can relocate the data container during an update. Resolve only
+        // files owned by this download directory before checking for missing
+        // files; a stale absolute path must not discard a saved download.
+        for index in downloads.indices {
+            let item = downloads[index]
+            guard !FileManager.default.fileExists(atPath: item.localPath),
+                  Array(item.localURL.pathComponents.suffix(3)) == ["Documents", "Downloads", item.fileName] else { continue }
+            let relocated = storageDirectory.appendingPathComponent(item.fileName)
+            if FileManager.default.fileExists(atPath: relocated.path) {
+                downloads[index].localPath = relocated.path
+            }
+        }
         var restoredInterruptedDownload = false
         // WebKit downloads are owned by the web view process and cannot continue after
         // relaunch. Background URLSession tasks are reattached and reconciled separately.

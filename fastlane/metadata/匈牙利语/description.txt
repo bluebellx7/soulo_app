@@ -4,6 +4,8 @@ Válaszd a Soulót alapértelmezett böngészőnek a Beállításokban, hogy má
 
 A legutóbb használt lapok és webhelycsoportok kerülnek előre, az áttekintés felül nyílik meg. A használati sorrend újraindítás után is megmarad.
 
+Csoportosított lapok rácsban, epizódletöltés és látható fájlméretek. Megbízhatóbb szövegbevitel, visszalépés és kötegelt letöltés.
+
 Támogatott videók lejátszása letöltés közben. Jobb háttérletöltés és teljes képernyő, védelem a rejtett hirdetések és kéretlen másolás ellen.
 
 Epizódválasztás és fordított sorrend a támogatott oldalakon, több kijelölt epizód letöltése és a sikertelen letöltések újrapróbálása. Nyomva tartva gyorsíthat, felengedve visszaáll a sebesség. Simább videóvezérlés.

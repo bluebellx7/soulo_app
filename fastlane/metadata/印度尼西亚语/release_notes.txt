@@ -1,4 +1,7 @@
-1.2.3
+1.2.4
 
-• Tab dan grup situs yang baru digunakan tampil lebih dulu, dan tampilan tab dibuka dari atas. Urutan penggunaan tetap tersimpan setelah memulai ulang.
+• Memperbaiki input teks dan aktivasi papan ketik di halaman web. Navigasi kembali dan pemilihan episode di situs video lebih baik, dengan lebih sedikit halaman kosong dan kesalahan pemuatan palsu.
+• Buka Unduhan dari pemilih episode atau tekan lama episode untuk mengunduhnya. Memperbaiki unduhan massal dan nama file episode.
+• Daftar unduhan dan file menampilkan ukuran file. Catatan unduhan tetap tersimpan setelah pembaruan aplikasi.
+• Tab dan grup situs yang baru digunakan tampil lebih dulu, dan tampilan tab dibuka dari atas. Urutan penggunaan tetap tersimpan setelah memulai ulang. Tab berkelompok kini tersusun dalam kisi dengan beberapa baris.
 • Tahan video untuk melihat kecepatan pemutaran sementara; lepaskan untuk kembali ke kecepatan sebelumnya. Kompatibilitas bilah alat ditingkatkan.

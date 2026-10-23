@@ -1,4 +1,7 @@
-1.2.3
+1.2.4
 
-• Naposledy použité karty a skupiny webov sa zobrazia ako prvé a prehľad sa otvorí navrchu. Poradie používania sa zachová aj po reštarte.
+• Opravené zadávanie textu a aktivácia klávesnice na webových stránkach. Lepší návrat a výber epizód na video weboch, menej prázdnych stránok a nesprávnych hlásení o načítaní.
+• Sťahovania otvorte z výberu epizód alebo epizódu stiahnite dlhým stlačením. Opravené hromadné sťahovanie a názvy súborov epizód.
+• Zoznamy sťahovaní a súborov zobrazujú veľkosti súborov. Záznamy o sťahovaní sa zachovajú aj po aktualizácii aplikácie.
+• Naposledy použité karty a skupiny webov sa zobrazia ako prvé a prehľad sa otvorí navrchu. Poradie používania sa zachová aj po reštarte. Zoskupené karty sa teraz zalamujú do mriežky s viacerými riadkami.
 • Podržaním videa sa zobrazí dočasná rýchlosť prehrávania; po uvoľnení sa obnoví predchádzajúca. Lepšia kompatibilita panela nástrojov.

@@ -315,7 +315,7 @@ enum WebVideoOrientationRuntime {
       }};
       document.addEventListener('fullscreenchange', fullscreenChanged);
       window.addEventListener('pagehide', () => { reportBottomControls(false); collapse(); finish(); });
-      window.addEventListener('pageshow', schedule);
+      window.addEventListener('pageshow', () => { schedule(); send('ready',''); });
       const collapseOutside = event => {
         if (expandedGroup && !event.composedPath().includes(expandedGroup)) collapse();
       };

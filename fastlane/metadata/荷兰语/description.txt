@@ -4,6 +4,8 @@ Kies Soulo als standaardbrowser in Instellingen om links uit andere apps te open
 
 Recent gebruikte tabbladen en websitegroepen staan vooraan en het overzicht opent bovenaan. De volgorde blijft na een herstart bewaard.
 
+Gegroepeerde tabs in een raster, afleveringen downloaden en zichtbare bestandsgroottes. Betere tekstinvoer, terugnavigatie en batchdownloads.
+
 Speel ondersteunde video’s af tijdens het downloaden. Betere achtergronddownloads en volledig scherm, met bescherming tegen verborgen advertenties en ongewenst kopiëren.
 
 Kies afleveringen op ondersteunde sites, keer de volgorde om en download meerdere tegelijk, met opnieuw proberen bij fouten. Houd ingedrukt voor extra snelheid en laat los om de snelheid te herstellen. Soepelere videobediening.

@@ -1,0 +1,27 @@
+{
+  "version": "1.2.3",
+  "build": 34,
+  "distinctNativeTestsPassed": 218,
+  "distinctUITestsPassed": 8,
+  "featureNativeTestsPassed": 50,
+  "featureUITestsPassed": 4,
+  "livePbkanHistoryPassed": true,
+  "livePbpbwEpisodesPassed": true,
+  "signedDebugBuildPassed": true,
+  "releaseBuildPassed": true,
+  "strictLocalizationPassed": true,
+  "localizationKeys": 877,
+  "locales": 50,
+  "gitDiffCheckPassed": true,
+  "iphoneInstallPerformed": false,
+  "iphoneConnection": "unavailable",
+  "resultBundles": [
+    "/tmp/soulo-back-failure-fixed.xcresult",
+    "/tmp/soulo-back-failure-interaction.xcresult",
+    "/tmp/soulo-back-failure-live.xcresult",
+    "/tmp/soulo-downloads-layout-native.xcresult",
+    "/tmp/soulo-downloads-layout-ui.xcresult",
+    "/tmp/soulo-final-episode-live.xcresult"
+  ],
+  "note": "Counts deduplicate repeated successful cases; initial failed runs are retained separately for diagnosis. The final successful pbpbw run is soulo-final-episode-live."
+}

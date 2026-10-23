@@ -1,4 +1,7 @@
-1.2.3
+1.2.4
 
-• Nedavno uporabljeni zavihki in skupine spletnih mest so prikazani najprej, pregled pa se odpre na vrhu. Vrstni red uporabe se ohrani po ponovnem zagonu.
+• Popravljena sta vnos besedila in odpiranje tipkovnice na spletnih straneh. Izboljšani so vračanje in izbira epizod na video straneh, z manj praznimi stranmi in napačnimi obvestili o nalaganju.
+• Odprite Prenose iz izbirnika epizod ali pridržite epizodo za prenos. Popravljeni so paketni prenosi in imena datotek epizod.
+• Seznami prenosov in datotek prikazujejo velikosti datotek. Zapisi prenosov se ohranijo po posodobitvi aplikacije.
+• Nedavno uporabljeni zavihki in skupine spletnih mest so prikazani najprej, pregled pa se odpre na vrhu. Vrstni red uporabe se ohrani po ponovnem zagonu. Združeni zavihki so zdaj razporejeni v mrežo z več vrsticami.
 • Pridržite video za prikaz začasne hitrosti predvajanja; ob sprostitvi se povrne prejšnja. Izboljšana združljivost orodne vrstice.

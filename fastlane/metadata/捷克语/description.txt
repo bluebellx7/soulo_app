@@ -4,6 +4,8 @@ V Nastavení vyberte Soulo jako výchozí prohlížeč pro otevírání odkazů 
 
 Nedávno použité karty a skupiny webů se zobrazují první a přehled se otevírá nahoře. Pořadí použití se zachová i po restartu.
 
+Skupiny panelů v mřížce, stahování epizod a přehledné velikosti souborů. Spolehlivější psaní, návrat z videí a hromadné stahování.
+
 Přehrávejte podporovaná videa při stahování. Lepší stahování na pozadí, celá obrazovka a ochrana před skrytými reklamami a nechtěným kopírováním.
 
 Výběr a obrácené pořadí epizod na podporovaných webech, hromadné stahování vybraných epizod a opakování neúspěšných stažení. Podržením zrychlíte, uvolněním obnovíte rychlost. Plynulejší ovládání videa.

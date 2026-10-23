@@ -277,14 +277,32 @@ final class WebViewModel: ObservableObject {
     func goBack() {
         guard canGoBack else { return }
         resolveDomainNavigationConfirmation(allowed: false)
-        if let webView { historyTransition.goBack(in: webView) }
+        guard let webView else { return }
+        errorMessage = nil
+        updateCurrentURL(webView.url)
+        historyTransition.goBack(in: webView)
+    }
+
+    func willNavigateHistory(in webView: WKWebView, isMainFrame: Bool, frameURL: URL?) {
+        historyTransition.willNavigateHistory(in: webView, isMainFrame: isMainFrame, frameURL: frameURL)
+    }
+
+    func historyFrameDidShow(in webView: WKWebView, url: URL?, isHistoryTraversal: Bool) {
+        historyTransition.frameDidShow(in: webView, url: url, isHistoryTraversal: isHistoryTraversal)
+    }
+
+    func cancelBackwardTraversal() {
+        historyTransition.cancelBackwardTraversal()
     }
 
     func goForward() {
         guard canGoForward else { return }
         resolveDomainNavigationConfirmation(allowed: false)
+        guard let webView else { return }
+        errorMessage = nil
+        updateCurrentURL(webView.url)
         historyTransition.cancel()
-        webView?.goForward()
+        webView.goForward()
     }
 
     func reload() {

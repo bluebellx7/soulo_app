@@ -1,1 +1,1 @@
-Les pestanyes i els grups de llocs utilitzats recentment apareixen primer, i la vista s'obre a dalt.
+Pestanyes agrupades en graella, baixada d'episodis i mides de fitxer visibles. Millores en escriure, tornar dels vídeos i baixar en lot.

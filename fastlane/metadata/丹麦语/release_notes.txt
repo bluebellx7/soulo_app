@@ -1,4 +1,7 @@
-1.2.3
+1.2.4
 
-• Senest brugte faner og webstedsgrupper vises først, og faneoversigten åbner øverst. Rækkefølgen bevares efter genstart.
+• Rettet tekstindtastning og aktivering af tastaturet på websider. Bedre tilbage-navigation og episodevalg på videosider med færre tomme sider og forkerte indlæsningsfejl.
+• Åbn Overførsler fra episodevælgeren, eller hold en episode nede for at hente den. Rettet batchoverførsler og filnavne på episoder.
+• Overførsels- og fillister viser filstørrelser. Overførselshistorikken bevares efter opdatering af appen.
+• Senest brugte faner og webstedsgrupper vises først, og faneoversigten åbner øverst. Rækkefølgen bevares efter genstart. Grupperede faner fordeles nu i et gitter med flere rækker.
 • Hold en video nede for at se den midlertidige afspilningshastighed, og slip for at gendanne den forrige. Bedre kompatibilitet med værktøjslinjen.

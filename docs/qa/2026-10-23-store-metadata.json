@@ -1,0 +1,729 @@
+{
+  "date": "2026-10-23",
+  "version": "1.2.4",
+  "locales": 50,
+  "validatedSourceFields": 300,
+  "updatedSourceFiles": 150,
+  "changes": [
+    "Web input and keyboard focus",
+    "Video back navigation and episode selection",
+    "Episode download access, batch downloads and filenames",
+    "File sizes and download record persistence",
+    "Grouped tab grid layout"
+  ],
+  "warningsRequiringManualHandling": [],
+  "sources": [
+    {
+      "locale": "ar-SA",
+      "language": "阿拉伯语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 24,
+        "subtitle": 26,
+        "promotionalText": 107,
+        "description": 2952,
+        "whatsNew": 665,
+        "keywords": 81
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "bn-BD",
+      "language": "孟加拉语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 28,
+        "subtitle": 26,
+        "promotionalText": 115,
+        "description": 3158,
+        "whatsNew": 702,
+        "keywords": 81
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "ca",
+      "language": "加泰罗尼亚语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 19,
+        "subtitle": 25,
+        "promotionalText": 136,
+        "description": 3527,
+        "whatsNew": 831,
+        "keywords": 100
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "zh-Hans",
+      "language": "简体中文",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 13,
+        "subtitle": 12,
+        "promotionalText": 47,
+        "description": 1458,
+        "whatsNew": 222,
+        "keywords": 86
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "zh-Hant",
+      "language": "繁体中文",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 13,
+        "subtitle": 12,
+        "promotionalText": 47,
+        "description": 1476,
+        "whatsNew": 231,
+        "keywords": 87
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "hr",
+      "language": "克罗地亚语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 21,
+        "subtitle": 26,
+        "promotionalText": 130,
+        "description": 3534,
+        "whatsNew": 818,
+        "keywords": 93
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "cs",
+      "language": "捷克语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 23,
+        "subtitle": 24,
+        "promotionalText": 130,
+        "description": 3303,
+        "whatsNew": 746,
+        "keywords": 91
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "da",
+      "language": "丹麦语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 27,
+        "subtitle": 30,
+        "promotionalText": 137,
+        "description": 3376,
+        "whatsNew": 747,
+        "keywords": 95
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "nl-NL",
+      "language": "荷兰语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 24,
+        "subtitle": 26,
+        "promotionalText": 141,
+        "description": 3615,
+        "whatsNew": 810,
+        "keywords": 87
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "en-AU",
+      "language": "英语（澳大利亚）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 27,
+        "subtitle": 23,
+        "promotionalText": 120,
+        "description": 3935,
+        "whatsNew": 668,
+        "keywords": 92
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "en-CA",
+      "language": "英语（加拿大）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 27,
+        "subtitle": 23,
+        "promotionalText": 120,
+        "description": 3935,
+        "whatsNew": 668,
+        "keywords": 96
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "en-GB",
+      "language": "英语（英国）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 27,
+        "subtitle": 23,
+        "promotionalText": 120,
+        "description": 3935,
+        "whatsNew": 668,
+        "keywords": 97
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "en-US",
+      "language": "英语（美国）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 27,
+        "subtitle": 23,
+        "promotionalText": 120,
+        "description": 3935,
+        "whatsNew": 668,
+        "keywords": 95
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "fi",
+      "language": "芬兰语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 21,
+        "subtitle": 23,
+        "promotionalText": 137,
+        "description": 3530,
+        "whatsNew": 776,
+        "keywords": 97
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "fr-FR",
+      "language": "法语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 26,
+        "subtitle": 26,
+        "promotionalText": 143,
+        "description": 3959,
+        "whatsNew": 896,
+        "keywords": 93
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "fr-CA",
+      "language": "法语（加拿大）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 26,
+        "subtitle": 26,
+        "promotionalText": 146,
+        "description": 3956,
+        "whatsNew": 894,
+        "keywords": 89
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "de-DE",
+      "language": "德语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 24,
+        "subtitle": 24,
+        "promotionalText": 135,
+        "description": 3805,
+        "whatsNew": 824,
+        "keywords": 91
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "el",
+      "language": "希腊语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 24,
+        "subtitle": 28,
+        "promotionalText": 136,
+        "description": 3766,
+        "whatsNew": 856,
+        "keywords": 91
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "gu-IN",
+      "language": "古吉拉特语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 25,
+        "subtitle": 23,
+        "promotionalText": 120,
+        "description": 3092,
+        "whatsNew": 689,
+        "keywords": 72
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "he",
+      "language": "希伯来语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 26,
+        "subtitle": 24,
+        "promotionalText": 102,
+        "description": 2660,
+        "whatsNew": 625,
+        "keywords": 74
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "hi",
+      "language": "北印度语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 26,
+        "subtitle": 21,
+        "promotionalText": 124,
+        "description": 3165,
+        "whatsNew": 715,
+        "keywords": 78
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "hu",
+      "language": "匈牙利语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 27,
+        "subtitle": 30,
+        "promotionalText": 130,
+        "description": 3556,
+        "whatsNew": 808,
+        "keywords": 89
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "id",
+      "language": "印度尼西亚语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 30,
+        "subtitle": 24,
+        "promotionalText": 133,
+        "description": 3426,
+        "whatsNew": 808,
+        "keywords": 88
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "it",
+      "language": "意大利语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 28,
+        "subtitle": 25,
+        "promotionalText": 150,
+        "description": 3732,
+        "whatsNew": 849,
+        "keywords": 96
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "ja",
+      "language": "日语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 16,
+        "subtitle": 16,
+        "promotionalText": 81,
+        "description": 1798,
+        "whatsNew": 349,
+        "keywords": 94
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "kn-IN",
+      "language": "坎纳达语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 26,
+        "subtitle": 26,
+        "promotionalText": 133,
+        "description": 3501,
+        "whatsNew": 803,
+        "keywords": 76
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "ko",
+      "language": "韩语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 17,
+        "subtitle": 13,
+        "promotionalText": 81,
+        "description": 2002,
+        "whatsNew": 405,
+        "keywords": 89
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "ms",
+      "language": "马来语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 30,
+        "subtitle": 21,
+        "promotionalText": 142,
+        "description": 3440,
+        "whatsNew": 793,
+        "keywords": 91
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "ml-IN",
+      "language": "马拉雅拉姆语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 28,
+        "subtitle": 22,
+        "promotionalText": 117,
+        "description": 3762,
+        "whatsNew": 795,
+        "keywords": 80
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "mr-IN",
+      "language": "马拉地语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 25,
+        "subtitle": 21,
+        "promotionalText": 119,
+        "description": 3135,
+        "whatsNew": 677,
+        "keywords": 80
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "no",
+      "language": "挪威语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 30,
+        "subtitle": 29,
+        "promotionalText": 131,
+        "description": 3338,
+        "whatsNew": 747,
+        "keywords": 99
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "or-IN",
+      "language": "奥里亚语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 25,
+        "subtitle": 26,
+        "promotionalText": 113,
+        "description": 3191,
+        "whatsNew": 657,
+        "keywords": 77
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "pl",
+      "language": "波兰语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 26,
+        "subtitle": 30,
+        "promotionalText": 133,
+        "description": 3443,
+        "whatsNew": 773,
+        "keywords": 89
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "pt-BR",
+      "language": "葡萄牙语（巴西）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 27,
+        "subtitle": 25,
+        "promotionalText": 145,
+        "description": 3561,
+        "whatsNew": 851,
+        "keywords": 97
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "pt-PT",
+      "language": "葡萄牙语（葡萄牙）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 30,
+        "subtitle": 27,
+        "promotionalText": 140,
+        "description": 3647,
+        "whatsNew": 868,
+        "keywords": 99
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "pa-IN",
+      "language": "旁遮普语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 24,
+        "subtitle": 23,
+        "promotionalText": 122,
+        "description": 3133,
+        "whatsNew": 766,
+        "keywords": 73
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "ro",
+      "language": "罗马尼亚语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 29,
+        "subtitle": 26,
+        "promotionalText": 139,
+        "description": 3661,
+        "whatsNew": 885,
+        "keywords": 98
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "ru",
+      "language": "俄语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 18,
+        "subtitle": 27,
+        "promotionalText": 124,
+        "description": 3453,
+        "whatsNew": 771,
+        "keywords": 85
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "sk",
+      "language": "斯洛伐克语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 24,
+        "subtitle": 25,
+        "promotionalText": 135,
+        "description": 3396,
+        "whatsNew": 775,
+        "keywords": 90
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "sl-SI",
+      "language": "斯洛文尼亚语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 30,
+        "subtitle": 29,
+        "promotionalText": 130,
+        "description": 3512,
+        "whatsNew": 793,
+        "keywords": 94
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "es-MX",
+      "language": "西班牙语（墨西哥）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 30,
+        "subtitle": 24,
+        "promotionalText": 147,
+        "description": 3727,
+        "whatsNew": 853,
+        "keywords": 93
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "es-ES",
+      "language": "西班牙语（西班牙）",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 30,
+        "subtitle": 24,
+        "promotionalText": 147,
+        "description": 3714,
+        "whatsNew": 848,
+        "keywords": 97
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "sv",
+      "language": "瑞典语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 29,
+        "subtitle": 29,
+        "promotionalText": 142,
+        "description": 3354,
+        "whatsNew": 766,
+        "keywords": 100
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "ta-IN",
+      "language": "泰米尔语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 21,
+        "subtitle": 28,
+        "promotionalText": 128,
+        "description": 3794,
+        "whatsNew": 917,
+        "keywords": 82
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "te-IN",
+      "language": "泰卢固语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 24,
+        "subtitle": 27,
+        "promotionalText": 116,
+        "description": 3466,
+        "whatsNew": 816,
+        "keywords": 83
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "th",
+      "language": "泰语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 23,
+        "subtitle": 24,
+        "promotionalText": 117,
+        "description": 2854,
+        "whatsNew": 599,
+        "keywords": 80
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "tr",
+      "language": "土耳其语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 29,
+        "subtitle": 23,
+        "promotionalText": 124,
+        "description": 3457,
+        "whatsNew": 769,
+        "keywords": 92
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "uk",
+      "language": "乌克兰语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 18,
+        "subtitle": 23,
+        "promotionalText": 130,
+        "description": 3491,
+        "whatsNew": 806,
+        "keywords": 82
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "ur-PK",
+      "language": "乌尔都语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 22,
+        "subtitle": 25,
+        "promotionalText": 118,
+        "description": 3238,
+        "whatsNew": 760,
+        "keywords": 73
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    },
+    {
+      "locale": "vi",
+      "language": "越南语",
+      "validatedFields": 6,
+      "lengths": {
+        "name": 30,
+        "subtitle": 26,
+        "promotionalText": 117,
+        "description": 3144,
+        "whatsNew": 712,
+        "keywords": 99
+      },
+      "nameSubtitleKeywords": "reviewed and retained; existing browser, tab and download terms remain applicable"
+    }
+  ],
+  "validation": {
+    "export_metadata_json": "passed",
+    "generated_json_check": "passed",
+    "strict_localization": "877 keys × 50 locales; passed",
+    "projectVersionMatchesJSON": true,
+    "invisibleCharacterWarnings": 0,
+    "xcodegen": "regenerated",
+    "effectiveReleaseTargetVersions": {
+      "Soulo": "1.2.4",
+      "SouloWidgetExtension": "1.2.4"
+    }
+  }
+}

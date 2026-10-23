@@ -900,6 +900,290 @@ import Network
         XCTAssertNil(model.errorMessage)
     }
 
+    func testBackButtonSkipsChildFrameHistoryAndKeepsForwardHistory() async throws {
+        let server = try frameHistoryFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("list"))
+        try await wait(model, for: "!!document.getElementById('list')")
+        model.loadURL(root.appendingPathComponent("player"))
+        try await addFrameHistory(to: model)
+        let web = try XCTUnwrap(model.webView)
+        XCTAssertEqual(web.backForwardList.backItem?.url, web.url, "Child loads add entries with the same page URL")
+        model.goBack()
+        try await wait(model, for: "!!document.getElementById('list')")
+        XCTAssertTrue(web.canGoForward, "Returning must retain WebKit's forward list")
+        model.goForward()
+        try await wait(model, for: "!!document.getElementById('player')")
+    }
+
+    func testBackButtonPreservesSameURLMainFrameStateBehindChildHistory() async throws {
+        try await checkSameURLMainFrameState(addingChildHistory: true)
+    }
+
+    func testBackButtonPreservesSameURLMainFrameState() async throws {
+        try await checkSameURLMainFrameState(addingChildHistory: false)
+    }
+
+    func testBackIgnoresLateFailureFromAbandonedNavigation() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("form"))
+        try await wait(model, for: "!!document.getElementById('form')")
+        let web = try XCTUnwrap(model.webView)
+        let coordinator = try XCTUnwrap(web.navigationDelegate as? WebViewRepresentable.Coordinator)
+        let abandoned = try XCTUnwrap(web.load(URLRequest(url: root.appendingPathComponent("visible-with-pending-resource"))))
+        try await wait(model, for: "document.body?.textContent.includes('Visible content') === true")
+        model.goBack()
+        try await wait(model, for: "!!document.getElementById('form')")
+        for _ in 0..<100 where model.isLoading { try await Task.sleep(for: .milliseconds(20)) }
+        coordinator.webView(web, didFail: abandoned, withError: NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut))
+        coordinator.webView(web, didFailProvisionalNavigation: abandoned,
+            withError: NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet))
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertNil(model.errorMessage, "An abandoned request must not replace the restored page with an error")
+        XCTAssertEqual(web.url?.path, "/form")
+    }
+
+    func testBackFromFailedNavigationClearsErrorForSameDocumentHistory() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("form"))
+        try await wait(model, for: "!!document.getElementById('form')")
+        let web = try XCTUnwrap(model.webView)
+        _ = try await web.evaluateJavaScript("history.pushState({panel:true}, '', location.href);window.returnedToDocument=false;addEventListener('popstate',()=>window.returnedToDocument=true)")
+        model.loadURL(root.appendingPathComponent("disconnect"))
+        for _ in 0..<160 where model.errorMessage == nil { try await Task.sleep(for: .milliseconds(25)) }
+        XCTAssertNotNil(model.errorMessage, "A genuine current request failure must still be shown")
+        model.goBack()
+        try await wait(model, for: "window.returnedToDocument === true")
+        XCTAssertNil(model.errorMessage, "Same-document Back has no new document load to clear the old error")
+        XCTAssertEqual(model.currentURL?.path, "/form", "The address must match the restored document rather than the failed request")
+    }
+
+    func testReattachedCoordinatorCanFinishAnExistingNavigation() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/page": Data("<h1 id='ready'>Pending page</h1><iframe src='/hold'></iframe>".utf8),
+            "/hold": Data("<p>Frame ready</p>".utf8)
+        ], heldPaths: ["/hold"])
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("page"))
+        try await wait(model, for: "!!document.getElementById('ready')")
+        let web = try XCTUnwrap(model.webView)
+        XCTAssertTrue(web.isLoading)
+        let revision = model.pageRevision
+        window.rootViewController = UIHostingController(rootView: Color.clear)
+        for _ in 0..<100 where model.isWebViewRuntimeInstalled { try await Task.sleep(for: .milliseconds(20)) }
+        XCTAssertFalse(model.isWebViewRuntimeInstalled)
+        window.rootViewController = UIHostingController(rootView: WebViewRepresentable(viewModel: model))
+        for _ in 0..<100 where !model.isWebViewRuntimeInstalled { try await Task.sleep(for: .milliseconds(20)) }
+        XCTAssertTrue(model.webView === web)
+        server.releaseDownloads()
+        for _ in 0..<160 where model.pageRevision == revision { try await Task.sleep(for: .milliseconds(25)) }
+        XCTAssertGreaterThan(model.pageRevision, revision, "A new coordinator must accept completion of the load it inherited")
+        XCTAssertNil(model.errorMessage)
+        XCTAssertFalse(model.isLoading)
+    }
+
+    func testBackButtonSkipsChildFrameSameDocumentHistory() async throws {
+        let server = try frameHistoryFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("list"))
+        try await wait(model, for: "!!document.getElementById('list')")
+        model.loadURL(root.appendingPathComponent("player"))
+        try await wait(model, for: "!!document.getElementById('frame')?.contentDocument?.getElementById('a')")
+        let web = try XCTUnwrap(model.webView)
+        _ = try await web.evaluateJavaScript("""
+            const child = document.getElementById('frame').contentWindow;
+            child.history.pushState({}, '', '#one'); child.history.pushState({}, '', '#two');
+            """)
+        model.goBack()
+        try await wait(model, for: "!!document.getElementById('list')")
+    }
+
+    func testBackContinuesWhenRestoredPlayerStartsANestedFrame() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/list": Data("<main id='list'>Video list</main>".utf8),
+            "/player": Data("<iframe id='frame' src='/a'></iframe>".utf8),
+            "/a": Data("<p id='a'>Initial player</p>".utf8),
+            "/b": Data("""
+                <div id='b'></div><script>
+                addEventListener('pageshow',()=>{
+                  const frame=document.createElement('iframe');frame.src='/warm';document.body.append(frame);
+                });
+                </script>
+                """.utf8),
+            "/c": Data("<p id='c'>Ready player</p>".utf8),
+            "/warm": Data("<body></body>".utf8)
+        ])
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("list"))
+        try await wait(model, for: "!!document.getElementById('list')")
+        model.loadURL(root.appendingPathComponent("player"))
+        try await addFrameHistory(to: model)
+        model.goBack()
+        try await wait(model, for: "!!document.getElementById('list')")
+        XCTAssertNil(model.errorMessage)
+    }
+
+    func testBackContinuesWhenPendingMainLoadFinishesDuringFrameHistory() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/list": Data("<main id='list'>Video list</main>".utf8),
+            "/player": Data("<iframe id='frame' src='/a'></iframe><iframe src='/hold'></iframe>".utf8),
+            "/a": Data("<p id='a'>Initial player</p>".utf8),
+            "/b": Data("<p id='b'>Player initialization</p>".utf8),
+            "/c": Data("<p id='c'>Ready player</p>".utf8),
+            "/hold": Data("<body>Late resource</body>".utf8)
+        ], heldPaths: ["/hold"])
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("list"))
+        try await wait(model, for: "!!document.getElementById('list')")
+        let web = try XCTUnwrap(model.webView)
+        let navigation = try XCTUnwrap(web.load(URLRequest(url: root.appendingPathComponent("player"))))
+        try await addFrameHistory(to: model)
+        XCTAssertTrue(web.isLoading)
+        let coordinator = try XCTUnwrap(web.navigationDelegate as? WebViewRepresentable.Coordinator)
+        model.goBack()
+        // Deliver the previous main load's completion before the child history
+        // callback, as can happen while a video starts before its ads finish.
+        coordinator.webView(web, didFinish: navigation)
+        server.releaseDownloads()
+        try await wait(model, for: "!!document.getElementById('list')")
+        XCTAssertNil(model.errorMessage)
+    }
+
+    private func checkSameURLMainFrameState(addingChildHistory: Bool) async throws {
+        let server = try frameHistoryFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("list"))
+        try await wait(model, for: "!!document.getElementById('list')")
+        model.loadURL(root.appendingPathComponent("player"))
+        try await wait(model, for: "!!document.getElementById('player')")
+        let web = try XCTUnwrap(model.webView)
+        _ = try await web.evaluateJavaScript("""
+            history.pushState({panel:true}, '', location.href);
+            document.getElementById('mode').textContent='opened';
+            addEventListener('popstate',()=>document.getElementById('mode').textContent=history.state?.panel?'opened':'closed');
+            """)
+        if addingChildHistory { try await addFrameHistory(to: model) }
+        model.goBack()
+        try await wait(model, for: "document.getElementById('mode')?.textContent === 'closed'")
+        XCTAssertEqual(web.url?.path, "/player", "A meaningful main-frame state must not be skipped based on its URL")
+        model.goBack()
+        try await wait(model, for: "!!document.getElementById('list')")
+    }
+
+    private func frameHistoryFixture() throws -> DownloadPlaybackHTTPFixture {
+        try DownloadPlaybackHTTPFixture(files: [
+            "/list": Data("<main id='list'>Video list</main>".utf8),
+            "/player": Data("<main id='player'>Video page</main><p id='mode'>closed</p><iframe id='frame' src='/a'></iframe>".utf8),
+            "/a": Data("<p id='a'>Initial player</p>".utf8),
+            "/b": Data("<p id='b'>Player redirect</p>".utf8),
+            "/c": Data("<p id='c'>Player ready</p>".utf8)
+        ])
+    }
+
+    private func addFrameHistory(to model: WebViewModel) async throws {
+        try await wait(model, for: "!!document.getElementById('frame')?.contentDocument?.getElementById('a')")
+        let web = try XCTUnwrap(model.webView)
+        for step in ["b", "c"] {
+            _ = try await web.evaluateJavaScript("document.getElementById('frame').contentWindow.location.href='/\(step)'")
+            try await wait(model, for: "!!document.getElementById('frame')?.contentDocument?.getElementById('\(step)')")
+        }
+    }
+
+    func testLiveVideoFrameHistoryReturnsWithOneBack() async throws {
+        guard ProcessInfo.processInfo.environment["SOULO_LIVE_HISTORY_QA"] == "1" else {
+            throw XCTSkip("Set SOULO_LIVE_HISTORY_QA=1 to check the live pbkan.com player")
+        }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        let environment = ProcessInfo.processInfo.environment
+        func configuredURL(_ key: String) -> URL? {
+            let decoded = environment[key + "_BASE64"].flatMap { Data(base64Encoded: $0) }
+                .flatMap { String(data: $0, encoding: .utf8) }
+            return (decoded ?? environment[key]).flatMap(URL.init(string:))
+        }
+        let detailURL = try XCTUnwrap(configuredURL("SOULO_LIVE_HISTORY_DETAIL_URL") ?? URL(string: "https://www.pbkan.com/html/242237.html"))
+        _ = try XCTUnwrap(detailURL.host, "The test runner must preserve the configured URL authority")
+        let configuredPlayerURL = configuredURL("SOULO_LIVE_HISTORY_PLAYER_URL")
+        if let configuredPlayerURL { _ = try XCTUnwrap(configuredPlayerURL.host) }
+        model.loadURL(detailURL)
+        var playURL: URL?
+        for _ in 0..<600 {
+            if let web = model.webView,
+               let value = try? await web.evaluateJavaScript("document.querySelector('a[href*=\"/yun/\"],a[href*=\"/player/\"]')?.href"),
+               let value = value as? String, let url = URL(string: value) { playURL = configuredPlayerURL ?? url; break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let web = try XCTUnwrap(model.webView)
+        model.loadURL(try XCTUnwrap(playURL))
+        for _ in 0..<600 {
+            if web.url == playURL, !web.isLoading { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        try await Task.sleep(for: .seconds(4))
+        func history() -> String {
+            let entries = web.backForwardList.backList.map { ["url": $0.url.absoluteString, "initial": $0.initialURL.absoluteString] }
+            return "current=\(String(describing: web.url)) back=\(entries)"
+        }
+        var log = [history()]
+        log.append(String(describing: try? await web.evaluateJavaScript("[...document.querySelectorAll('iframe')].map(f=>f.src)")))
+        for attempt in 1...3 {
+            if attempt > 1 {
+                model.goForward()
+                for _ in 0..<600 {
+                    if web.url == playURL, !web.isLoading { break }
+                    try await Task.sleep(for: .milliseconds(50))
+                }
+                XCTAssertEqual(web.url, playURL)
+                try await Task.sleep(for: .seconds(2))
+            }
+            model.goBack()
+            for _ in 0..<400 {
+                if web.url == detailURL, !web.isLoading { break }
+                try await Task.sleep(for: .milliseconds(50))
+            }
+            log.append("Back \(attempt): " + history())
+            XCTAssertEqual(web.url, detailURL, "One app Back action must leave the live player page")
+            XCTAssertNil(model.errorMessage, "Returning to the real detail page must not show a stale navigation failure")
+        }
+        let attachment = XCTAttachment(string: log.joined(separator: "\n"))
+        attachment.name = "live-video-history-probe"; attachment.lifetime = .keepAlways; add(attachment)
+    }
+
     func testAdRuleChangesKeepOtherScriptsAndFollowSPARoutes() async throws {
         let server = try BrowsingHTTPFixture()
         let root = try await server.start()

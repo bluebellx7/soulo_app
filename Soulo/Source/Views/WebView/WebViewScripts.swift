@@ -1027,8 +1027,14 @@ enum WebViewScripts {
 
     static let mediaFrameRegistration = #"""
     (function() {
+        function shown(event) {
+            try { window.webkit.messageHandlers.souloMediaFrame.postMessage({ ready: true, shown: true,
+                history: event.type === 'popstate', restored: event.persisted === true, url: location.href }); } catch (_) {}
+        }
+        window.addEventListener('popstate', shown);
         if (window === window.top) return;
         try { window.webkit.messageHandlers.souloMediaFrame.postMessage({ ready: true }); } catch (_) {}
+        window.addEventListener('pageshow', shown);
     })();
     """#
 

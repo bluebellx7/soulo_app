@@ -4,6 +4,8 @@ Escolha o Soulo como navegador padrão nos Ajustes para abrir links de outros ap
 
 As abas e grupos de sites usados recentemente aparecem primeiro, e a visão geral abre no topo. A ordem de uso é mantida após reiniciar.
 
+Abas agrupadas em grade, download de episódios e tamanhos de arquivo visíveis. Digitação, retorno dos vídeos e downloads em lote mais confiáveis.
+
 Reproduza vídeos compatíveis durante o download. Downloads em segundo plano e tela cheia melhorados, com proteção contra anúncios ocultos e cópias indesejadas.
 
 Escolha episódios em sites compatíveis, inverta a ordem, baixe vários de uma vez e tente novamente os downloads com falha. Mantenha pressionado para acelerar e solte para restaurar a velocidade. Controles de vídeo mais fluidos.

@@ -29,10 +29,10 @@ struct FilePresentation: Sendable, Hashable {
     static func inspect(_ url: URL) -> FilePresentation {
         let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey])
         if url.pathExtension.lowercased() == "movpkg" {
-            return FilePresentation(kind: .video, fileExtension: "movpkg", size: 0)
+            return FilePresentation(kind: .video, fileExtension: "movpkg", size: FileStorageSize.bytes(at: url) ?? 0)
         }
         if url.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
-            return FilePresentation(kind: .video, fileExtension: OfflineHLSReference.fileExtension, size: 0)
+            return FilePresentation(kind: .video, fileExtension: OfflineHLSReference.fileExtension, size: FileStorageSize.bytes(at: url) ?? 0)
         }
         if values?.isDirectory == true { return FilePresentation(kind: .folder, fileExtension: "", size: 0) }
         var ext = url.pathExtension.lowercased()
@@ -58,6 +58,37 @@ struct FilePresentation: Sendable, Hashable {
         else if Self.textExtensions.contains(ext) || type?.conforms(to: .text) == true { kind = .text }
         else { kind = .other }
         return FilePresentation(kind: kind, fileExtension: ext, size: Int64(values?.fileSize ?? 0))
+    }
+}
+
+/// Logical file bytes, including the media behind an offline HLS reference.
+/// Call off the main thread: packages can contain thousands of fragments.
+enum FileStorageSize {
+    static func bytes(at url: URL) -> Int64? {
+        guard url.isFileURL else { return nil }
+        let target: URL
+        if url.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
+            guard let package = try? OfflineHLSReference.packageURL(for: url) else { return nil }
+            target = package
+        } else { target = url }
+        let keys: Set<URLResourceKey> = [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey]
+        guard let values = try? target.resourceValues(forKeys: keys), values.isSymbolicLink != true else { return nil }
+        if values.isRegularFile == true { return values.fileSize.map(Int64.init) }
+        guard values.isDirectory == true, target.pathExtension.lowercased() == "movpkg",
+              let files = FileManager.default.enumerator(at: target, includingPropertiesForKeys: Array(keys)) else { return nil }
+        var total: Int64 = 0
+        for case let file as URL in files {
+            guard !Task.isCancelled else { return nil }
+            guard let info = try? file.resourceValues(forKeys: keys) else { return nil }
+            if info.isSymbolicLink == true { files.skipDescendants(); continue }
+            if info.isRegularFile == true {
+                guard let size = info.fileSize else { return nil }
+                let sum = total.addingReportingOverflow(Int64(size))
+                guard !sum.overflow else { return nil }
+                total = sum.partialValue
+            }
+        }
+        return total
     }
 }
 

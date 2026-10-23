@@ -152,7 +152,6 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
         uiViewController.intensity = intensity
         uiViewController.isEnabled = isEnabled
         if isEnabled {
-            uiViewController.becomeFirstResponder()
             uiViewController.startMotionUpdatesIfNeeded()
         }
     }
@@ -180,12 +179,13 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
         private var motionClassifier = ShakeMotionClassifier()
         private var lastDeliveryTime: TimeInterval = -.infinity
 
-        override var canBecomeFirstResponder: Bool { true }
+        override var canBecomeFirstResponder: Bool {
+            isEnabled && !motionManager.isDeviceMotionAvailable
+        }
 
         override func viewDidAppear(_ animated: Bool) {
             super.viewDidAppear(animated)
             guard isEnabled else { return }
-            becomeFirstResponder()
             startMotionUpdatesIfNeeded()
         }
 
@@ -204,9 +204,14 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
 
         func startMotionUpdatesIfNeeded() {
             guard isEnabled,
-                  viewIfLoaded?.window != nil,
-                  motionManager.isDeviceMotionAvailable,
-                  !motionManager.isDeviceMotionActive else { return }
+                  let window = viewIfLoaded?.window else { return }
+            // Core Motion does not need keyboard focus. The UIKit fallback may
+            // claim an idle window, but must never replace a page or text field.
+            guard motionManager.isDeviceMotionAvailable else {
+                if !containsFirstResponder(in: window) { becomeFirstResponder() }
+                return
+            }
+            guard !motionManager.isDeviceMotionActive else { return }
 
             motionManager.deviceMotionUpdateInterval = 1.0 / 40.0
             motionClassifier = ShakeMotionClassifier(intensity: intensity)
@@ -229,16 +234,19 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
             motionClassifier.resetCandidate()
         }
 
+        private func containsFirstResponder(in view: UIView) -> Bool {
+            view.isFirstResponder || view.subviews.contains { containsFirstResponder(in: $0) }
+        }
+
         private func deliverShake(at timestamp: TimeInterval) {
             guard timestamp - lastDeliveryTime >= ShakeMotionClassifier.cooldown else { return }
             lastDeliveryTime = timestamp
             onShake?()
 
-            // Web content may become first responder after navigation or a full-screen change.
-            // Reclaim it for the UIKit fallback while Core Motion keeps listening independently.
+            // An action can change the presentation. Resume detection without
+            // taking focus from an editor that became active in the meantime.
             DispatchQueue.main.async { [weak self] in
-                guard self?.isEnabled == true else { return }
-                self?.becomeFirstResponder()
+                self?.startMotionUpdatesIfNeeded()
             }
         }
     }

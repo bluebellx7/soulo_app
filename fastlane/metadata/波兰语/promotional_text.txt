@@ -1,1 +1,1 @@
-Ostatnio używane karty i grupy witryn pojawiają się jako pierwsze, a przegląd otwiera się od góry.
+Grupy kart w siatce, pobieranie odcinków i widoczne rozmiary plików. Pewniejsze pisanie, powrót z filmów i pobieranie wielu odcinków.

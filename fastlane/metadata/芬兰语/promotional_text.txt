@@ -1,1 +1,1 @@
-Äskettäin käytetyt välilehdet ja sivustoryhmät näkyvät ensin, ja näkymä avautuu ylhäältä.
+Ryhmitellyt välilehdet ruudukkona, jaksojen lataus ja tiedostokoot näkyviin. Sujuvampi kirjoittaminen, videoista palaaminen ja erälataus.

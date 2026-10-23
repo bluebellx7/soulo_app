@@ -178,10 +178,11 @@
     const result = enabled ? extract() : {pageURL:location.href,sources:[]};
     available=result.sources.length>0;updateDock();
     const signature = JSON.stringify(result);
-    if (signature === previous) { if(checkPageState&&enabled)refreshPageState();return; }
+    if (signature === previous) { if(checkPageState&&enabled)refreshPageState();return result; }
     previous = signature;
     lastStateRefresh=performance.now();
     try { window.webkit.messageHandlers.souloEpisodes.postMessage(result); } catch (_) {}
+    return result;
   }
   function refreshPageState(){
     if(stateTimer)return;
@@ -189,7 +190,11 @@
     stateTimer=setTimeout(()=>{stateTimer=0;lastStateRefresh=performance.now();send('refresh')},wait);
   }
   function schedule() { if (!timer) timer = setTimeout(()=>refresh(true),300); }
-  window.__souloEpisodes = {extract,refresh,configure(value) {
+  window.__souloEpisodes = {extract,refresh() {
+    // Native state is reset when navigation starts, even when WebKit restores
+    // this document and its unchanged DOM from the back-forward cache.
+    previous='';return refresh(true);
+  },configure(value) {
     enabled = value.enabled !== false;
     if(typeof value.label==='string')label=value.label;
     if(['left','right'].includes(value.edge))edge=value.edge;
@@ -221,5 +226,5 @@
   }
   if(document.documentElement)observe();else document.addEventListener('DOMContentLoaded',observe,{once:true});
   document.addEventListener('DOMContentLoaded',schedule,{once:true});
-  for(const event of ['popstate','hashchange','pageshow'])window.addEventListener(event,() => {pageSources=[];pageSignature='';schedule()});
+  for(const event of ['popstate','hashchange','pageshow'])window.addEventListener(event,() => {previous='';pageSources=[];pageSignature='';schedule()});
 })();

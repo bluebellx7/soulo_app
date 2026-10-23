@@ -1,0 +1,31 @@
+{
+  "regularDistinctNativeTestsPassed": 180,
+  "liveNativeTestsPassed": 1,
+  "distinctNativeTestsPassed": 181,
+  "uiTestsPassed": 3,
+  "liveRoundTrips": 3,
+  "liveDetailURL": "https://www.pbpbw.com/html/234580.html",
+  "livePlayerURL": "https://www.pbpbw.com/player/234580-2-9.html",
+  "signedDebugBuildPassed": true,
+  "releaseBuildPassed": true,
+  "sourceMarketingVersion": "1.2.3",
+  "sourceBuild": 34,
+  "deviceTestBuild": 38,
+  "testBuildOverrideOnly": true,
+  "iphoneUIAutomationPerformed": false,
+  "iphoneInstallPassed": true,
+  "iphoneLaunchPassed": true,
+  "initialFullSuite": {
+    "run": 181,
+    "skipped": 1,
+    "failedTestCases": 1,
+    "assertionFailures": 4
+  },
+  "domainSuiteAfterFixPassed": 11,
+  "gitDiffCheckPassed": true,
+  "results": [
+    "/tmp/soulo-back-oct23-verified.xcresult",
+    "/tmp/soulo-back-oct23-interaction.xcresult",
+    "/tmp/soulo-back-oct23-real-final.xcresult"
+  ]
+}

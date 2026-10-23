@@ -129,6 +129,17 @@ struct WebEpisodePickerView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(ToolText.text("done")) { dismiss() }
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        DownloadManagerContentView()
+                            .navigationTitle(LanguageManager.shared.localizedString("downloads"))
+                            .navigationBarTitleDisplayMode(.inline)
+                    } label: {
+                        Image(systemName: "arrow.down.circle")
+                    }
+                    .accessibilityLabel(LanguageManager.shared.localizedString("downloads"))
+                    .accessibilityIdentifier("browser.episodes-downloads")
+                }
             }
             .onChange(of: source?.id) { _, _ in selectedIDs.removeAll() }
             .onChange(of: source?.episodes.map(\.id)) { _, ids in selectedIDs.formIntersection(Set(ids ?? [])) }
@@ -200,6 +211,17 @@ struct WebEpisodePickerView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(episode.title)
         .accessibilityAddTraits(selected ? .isSelected : [])
+        .contextMenu {
+            if !isSelecting {
+                Button {
+                    downloads.enqueue([episode], pageTitle: viewModel.pageTitle, viewModel: viewModel)
+                } label: {
+                    Label(LanguageManager.shared.localizedString("download"), systemImage: "arrow.down.circle")
+                }
+                .disabled(job?.isActive == true || viewModel.webView == nil)
+                .accessibilityIdentifier("browser.episode-download")
+            }
+        }
         .id(episode.id)
     }
 

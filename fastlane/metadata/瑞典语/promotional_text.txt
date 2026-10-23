@@ -1,1 +1,1 @@
-Senast använda flikar och webbplatsgrupper visas först och översikten öppnas högst upp.
+Grupperade flikar i rutnät, avsnittsnedladdning och synliga filstorlekar. Stabilare textinmatning, tillbaka från video och gruppnedladdningar.

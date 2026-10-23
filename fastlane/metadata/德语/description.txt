@@ -4,6 +4,8 @@ Wähle Soulo in den Einstellungen als Standardbrowser, um Links aus anderen Apps
 
 Zuletzt verwendete Tabs und Website-Gruppen stehen zuerst, und die Übersicht öffnet sich oben. Die Reihenfolge bleibt nach einem Neustart erhalten.
 
+Tabgruppen als Raster, Episoden-Downloads und sichtbare Dateigrößen. Zuverlässigere Texteingabe, Zurücknavigation und Stapel-Downloads.
+
 Unterstützte Videos schon beim Laden abspielen. Bessere Hintergrunddownloads, Vollbildsteuerung und Schutz vor versteckter Werbung und unerwünschtem Kopieren.
 
 Episoden auf unterstützten Websites auswählen, ihre Reihenfolge umkehren, mehrere zusammen laden und fehlgeschlagene Downloads erneut versuchen. Gedrückt halten zum Beschleunigen, loslassen für das vorherige Tempo. Flüssigere Videosteuerung.

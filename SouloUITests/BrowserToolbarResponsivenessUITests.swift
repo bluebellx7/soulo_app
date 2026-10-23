@@ -88,6 +88,42 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         shot.name = "toolbar-responsive-returned-home"; shot.lifetime = .keepAlways; add(shot)
     }
 
+    func testOneBackLeavesPlayerAfterTwoTrustedFrameNavigations() throws {
+        try open("history-list")
+        tap(app.webViews.links["Watch video"].firstMatch)
+        tap(app.webViews.links["Load player"].firstMatch)
+        tap(app.webViews.links["Start video"].firstMatch)
+        XCTAssertTrue(app.webViews.staticTexts["Player ready"].firstMatch.waitForExistence(timeout: 10))
+        let before = XCTAttachment(screenshot: app.screenshot())
+        before.name = "player-with-nested-history"; before.lifetime = .keepAlways; add(before)
+        tap(app.buttons["Back"].firstMatch)
+        XCTAssertTrue(app.webViews.links["Watch video"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        let after = XCTAttachment(screenshot: app.screenshot())
+        after.name = "one-back-returned-to-list"; after.lifetime = .keepAlways; add(after)
+        tap(app.buttons["More"].firstMatch)
+        tap(app.buttons["Forward"].firstMatch)
+        XCTAssertTrue(app.webViews.staticTexts["Video player"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+    }
+
+    func testBackDismissesFailureWhenRestoringSameDocumentHistory() throws {
+        try open("history-error-state")
+        XCTAssertTrue(app.webViews.staticTexts["History page"].firstMatch.waitForExistence(timeout: 30), app.debugDescription)
+        tap(app.webViews.buttons["Open panel"].firstMatch)
+        XCTAssertTrue(app.webViews.staticTexts["Panel opened"].firstMatch.waitForExistence(timeout: 5))
+        tap(app.webViews.links["Unavailable page"].firstMatch)
+        let error = app.staticTexts["browser.error.message"]
+        XCTAssertTrue(error.waitForExistence(timeout: 20), app.debugDescription)
+        tap(app.buttons["Back"].firstMatch)
+        XCTAssertTrue(error.waitForNonExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.webViews.staticTexts["Panel closed"].firstMatch.waitForExistence(timeout: 5))
+        let image = XCTAttachment(screenshot: app.screenshot())
+        image.name = "back-restores-page-without-stale-error"; image.lifetime = .keepAlways; add(image)
+        tap(app.buttons["More"].firstMatch)
+        tap(app.buttons["Forward"].firstMatch)
+        XCTAssertTrue(app.webViews.staticTexts["Panel opened"].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertFalse(error.exists)
+    }
+
     func testBottomToolbarRespondsBeforeBlockedDocumentFinishes() throws {
         try open("blocked")
         XCTAssertTrue(app.buttons["browser.tabs"].waitForExistence(timeout: 20))
@@ -109,6 +145,53 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
             XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
         }
         checkMoreAndTabs()
+    }
+
+    func testWebPageTextFieldsKeepFocusAndAcceptTyping() throws {
+        try checkWebPageTyping(shakeAction: "none")
+    }
+
+    func testWebPageTextFieldsKeepFocusWithShakeActionEnabled() throws {
+        try checkWebPageTyping(shakeAction: "darkMode")
+    }
+
+    private func checkWebPageTyping(shakeAction: String) throws {
+        app.terminate()
+        app.launchArguments += ["-browser_shake_action", shakeAction, "-is_incognito", "YES"]
+        app.launch()
+        try open("forms")
+        let field = app.webViews.textFields["Page text input"].firstMatch
+        tap(field)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+        field.typeText("hello")
+        XCTAssertEqual(field.value as? String, "hello", app.debugDescription)
+        XCTAssertTrue(app.webViews.staticTexts["Focused: text"].exists, app.debugDescription)
+
+        let notes = app.webViews.textViews["Page notes"].firstMatch
+        tap(notes)
+        notes.typeText("message")
+        XCTAssertEqual(notes.value as? String, "message", app.debugDescription)
+        XCTAssertTrue(app.keyboards.firstMatch.exists, app.debugDescription)
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "webpage-input-keyboard"; shot.lifetime = .keepAlways; add(shot)
+    }
+
+    func testAddressKeywordKeepsKeyboardWithShakeActionEnabled() throws {
+        app.terminate()
+        app.launchArguments += ["-browser_shake_action", "fullscreen", "-is_incognito", "YES"]
+        app.launch()
+        try open("forms")
+        XCTAssertTrue(app.webViews.staticTexts["Web page inputs"].firstMatch.waitForExistence(timeout: 15))
+        tap(app.buttons["Edit Address or Search"].firstMatch)
+        let field = app.textFields["addressEditor.query"].firstMatch
+        tap(app.buttons["addressEditor.clearQuery"])
+        tap(field)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+        field.typeText("eggs")
+        XCTAssertEqual(field.value as? String, "eggs", app.debugDescription)
+        XCTAssertTrue(app.keyboards.firstMatch.exists, app.debugDescription)
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "address-keyword-keyboard-with-shake"; shot.lifetime = .keepAlways; add(shot)
     }
 
     func testMoreDropdownsStayOpenAndRunActions() throws {
@@ -267,9 +350,8 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         XCTAssertEqual(toggle.value as? String, "Group by Domain")
         let dockFrame = app.buttons["tabs.done"].frame
         for _ in 0..<3 { groups.swipeDown() }
-        let row = app.scrollViews["tabs.group-row.host:apple.com.cn"]
+        let row = app.descendants(matching: .any).matching(identifier: "tabs.group-row.host:apple.com.cn").firstMatch
         XCTAssertTrue(row.isHittable, app.debugDescription)
-        row.swipeLeft()
         XCTAssertEqual(app.buttons["tabs.done"].frame.midY, dockFrame.midY, accuracy: 1)
         let lastCard = row.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "iPad")).firstMatch
         XCTAssertTrue(lastCard.isHittable, app.debugDescription)
@@ -354,11 +436,15 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
             let header = app.descendants(matching: .any).matching(identifier: "tabs.group.host:localhost").firstMatch
             XCTAssertTrue(header.waitForExistence(timeout: 5), app.debugDescription)
             XCTAssertLessThan(header.frame.minY, app.frame.height * 0.25, "The most recently used group starts at the top")
-            let row = app.scrollViews["tabs.group-row.host:localhost"]
+            let row = app.descendants(matching: .any).matching(identifier: "tabs.group-row.host:localhost").firstMatch
             let firstCard = row.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Recent page \(first),")).firstMatch
             let secondCard = row.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Recent page \(second),")).firstMatch
             XCTAssertTrue(firstCard.isHittable && secondCard.isHittable, app.debugDescription)
             XCTAssertLessThan(firstCard.frame.minX, secondCard.frame.minX, "Tabs inside a group follow recent use")
+            let wrapped = row.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Recent page 2,")).firstMatch
+            XCTAssertTrue(wrapped.isHittable, app.debugDescription)
+            XCTAssertGreaterThan(wrapped.frame.minY, firstCard.frame.maxY, "The fourth tab wraps onto the next row")
+            XCTAssertEqual(wrapped.frame.minX, firstCard.frame.minX, accuracy: 2)
         }
         tap(app.buttons["browser.tabs"])
         checkTop(6, 5)
@@ -367,17 +453,17 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         XCTAssertEqual(app.buttons["tabs.done"].frame.midY, dockY, accuracy: 1)
         tap(app.buttons["tabs.done"]); tap(app.buttons["browser.tabs"])
         checkTop(6, 5)
-        let fifth = app.scrollViews["tabs.group-row.host:localhost"].buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Recent page 5,")).firstMatch
+        let fifth = app.descendants(matching: .any).matching(identifier: "tabs.group-row.host:localhost").firstMatch.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Recent page 5,")).firstMatch
         tap(fifth)
         XCTAssertTrue(app.webViews.staticTexts["Recent page 5"].firstMatch.waitForExistence(timeout: 10), "Selecting a reordered card must open the correct tab")
         app.terminate(); app.launch()
         tap(app.buttons.matching(NSPredicate(format: "label MATCHES %@", "[0-9]+,? Tabs")).firstMatch)
         checkTop(5, 6)
-        let firstPage = app.scrollViews["tabs.group-row.host:127.0.0.1"].buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Recent page 1,")).firstMatch
+        let firstPage = app.descendants(matching: .any).matching(identifier: "tabs.group-row.host:127.0.0.1").firstMatch.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Recent page 1,")).firstMatch
         tap(firstPage)
         XCTAssertTrue(app.webViews.staticTexts["Recent page 1"].firstMatch.waitForExistence(timeout: 10))
         tap(app.buttons["browser.tabs"])
-        let currentCard = app.scrollViews["tabs.group-row.host:127.0.0.1"].buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Recent page 1,")).firstMatch
+        let currentCard = app.descendants(matching: .any).matching(identifier: "tabs.group-row.host:127.0.0.1").firstMatch.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Recent page 1,")).firstMatch
         currentCard.press(forDuration: 1)
         tap(app.buttons["Close Tab"].firstMatch)
         let remainingGroup = app.descendants(matching: .any).matching(identifier: "tabs.group.host:127.0.0.1").firstMatch
@@ -479,9 +565,35 @@ private final class ToolbarHTTPFixture: @unchecked Sendable {
             connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, _, _ in
                 guard let self, let data else { connection.cancel(); return }
                 let path = String(decoding: data, as: UTF8.self).split(separator: " ").dropFirst().first.map(String.init) ?? "/"
+                if path == "/disconnect" { connection.cancel(); return }
                 let body: String
                 if path == "/slow.js" { body = "window.slowResourceFinished=true;" }
                 else if path == "/second" { body = "<html><body><p>Second page</p></body></html>" }
+                else if path == "/history-list" { body = "<meta name='viewport' content='width=device-width,initial-scale=1'><h1>Video list</h1><a href='/history-player' style='font:24px system-ui'>Watch video</a>" }
+                else if path == "/history-player" { body = "<meta name='viewport' content='width=device-width,initial-scale=1'><h1>Video player</h1><iframe src='/history-frame-one' style='width:90%;height:200px'></iframe>" }
+                else if path == "/history-frame-one" { body = "<a href='/history-frame-two' style='font:24px system-ui'>Load player</a>" }
+                else if path == "/history-frame-two" { body = """
+                    <a href='/history-frame-three' style='font:24px system-ui'>Start video</a>
+                    <script>addEventListener('pageshow',()=>{
+                      const frame=document.createElement('iframe');frame.src='/history-frame-warmup';document.body.append(frame);
+                    });</script>
+                    """ }
+                else if path == "/history-frame-three" { body = "<h2>Player ready</h2>" }
+                else if path == "/history-frame-warmup" { body = "<body></body>" }
+                else if path == "/history-error-state" { body = """
+                    <meta name='viewport' content='width=device-width,initial-scale=1'><h1>History page</h1>
+                    <button onclick="history.pushState({panel:true},'',location.href);statusText.textContent='Panel opened'" style='font:24px system-ui'>Open panel</button>
+                    <p id='statusText'>Panel closed</p><a href='/disconnect' style='font:24px system-ui'>Unavailable page</a>
+                    <script>addEventListener('popstate',()=>statusText.textContent=history.state?.panel?'Panel opened':'Panel closed')</script>
+                    """ }
+                else if path == "/forms" { body = """
+                    <!doctype html><html><head><title>Input focus fixture</title><meta name="viewport" content="width=device-width,initial-scale=1">
+                    <style>body{font:18px system-ui;margin:24px}label{display:block;margin:16px 0}input,textarea{display:block;box-sizing:border-box;width:100%;padding:12px;font:18px system-ui}textarea{height:90px}</style></head>
+                    <body><h1>Web page inputs</h1><label>Page text input<input id="text" aria-label="Page text input"></label>
+                    <label>Page notes<textarea id="notes" aria-label="Page notes"></textarea></label><p id="focus">No field focused</p>
+                    <script>document.addEventListener('focusin',e=>document.getElementById('focus').textContent='Focused: '+e.target.id);
+                    document.addEventListener('focusout',()=>document.getElementById('focus').textContent='No field focused');</script></body></html>
+                    """ }
                 else if path.hasPrefix("/recent/"), let number = Int(path.split(separator: "/").last ?? "") {
                     body = "<html><head><title>Recent page \(number)</title><meta name='viewport' content='width=device-width,initial-scale=1'></head><body style='font:24px system-ui;background:#eee9fa'><h1>Recent page \(number)</h1><p>Saved page preview for recent tab ordering.</p></body></html>"
                 }

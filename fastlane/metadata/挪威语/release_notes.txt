@@ -1,4 +1,7 @@
-1.2.3
+1.2.4
 
-• Nylig brukte faner og nettstedsgrupper vises først, og oversikten åpnes øverst. Bruksrekkefølgen beholdes etter omstart.
+• Rettet tekstinntasting og aktivering av tastaturet på nettsider. Bedre tilbake-navigasjon og episodevalg på videosider, med færre tomme sider og uriktige innlastingsfeil.
+• Åpne Nedlastinger fra episodevelgeren, eller hold inne en episode for å laste den ned. Rettet gruppenedlasting og filnavn for episoder.
+• Nedlastings- og fillister viser filstørrelser. Nedlastingsoppføringer beholdes etter appoppdateringer.
+• Nylig brukte faner og nettstedsgrupper vises først, og oversikten åpnes øverst. Bruksrekkefølgen beholdes etter omstart. Grupperte faner vises nå i et rutenett med flere rader.
 • Hold en video inne for å se den midlertidige avspillingshastigheten, og slipp for å gjenopprette den forrige. Bedre verktøylinjekompatibilitet.

@@ -1,4 +1,7 @@
-1.2.3
+1.2.4
 
-• Las pestañas y grupos de sitios recientes aparecen primero y la vista se abre arriba. El orden de uso se conserva al reiniciar.
+• Se corrigieron la entrada de texto y la activación del teclado en páginas web. Mejoras al volver y elegir episodios en sitios de video, con menos páginas vacías y falsos errores de carga.
+• Abre Descargas desde el selector de episodios o mantén presionado un episodio para descargarlo. Se corrigieron las descargas por lotes y los nombres de archivos de episodios.
+• Las listas de descargas y archivos muestran sus tamaños. Los registros de descarga se conservan después de actualizar la app.
+• Las pestañas y grupos de sitios recientes aparecen primero y la vista se abre arriba. El orden de uso se conserva al reiniciar. Las pestañas agrupadas ahora se acomodan en una cuadrícula de varias filas.
 • Mantén presionado un video para ver la velocidad temporal; suelta para recuperar la anterior. Mejor compatibilidad de la barra de herramientas.

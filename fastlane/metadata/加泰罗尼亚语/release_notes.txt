@@ -1,4 +1,7 @@
-1.2.3
+1.2.4
 
-• Les pestanyes i els grups de llocs utilitzats recentment apareixen primer, i la vista s'obre a dalt. L'ordre d'ús es conserva en reiniciar.
+• S'han corregit l'entrada de text i el focus del teclat a les pàgines web. Millores en tornar enrere i triar episodis, amb menys pàgines buides i errors de càrrega incorrectes.
+• Obriu les baixades des del selector d'episodis o manteniu premut un episodi per baixar-lo. S'han corregit les baixades en lot i els noms dels fitxers d'episodis.
+• Les llistes de baixades i fitxers mostren la mida dels fitxers. Els registres de baixades es conserven després d'actualitzar l'app.
+• Les pestanyes i els grups de llocs utilitzats recentment apareixen primer, i la vista s'obre a dalt. L'ordre d'ús es conserva en reiniciar. Les pestanyes agrupades ara es distribueixen en una graella.
 • Mantén premut un vídeo per veure la velocitat temporal i deixa'l anar per tornar a l'anterior. Millorada la compatibilitat de la barra d'eines.

@@ -1,1 +1,1 @@
-Nedavno korištene kartice i grupe web-mjesta prikazuju se prve, a pregled se otvara na vrhu.
+Grupirane kartice u mreži, preuzimanje epizoda i prikaz veličina datoteka. Pouzdaniji unos, povratak s videa i skupna preuzimanja.

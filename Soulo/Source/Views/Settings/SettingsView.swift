@@ -560,22 +560,15 @@ struct SettingsActionLabel: View {
     let title: String
 
     var body: some View {
-        HStack {
-            Label {
-                Text(title)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-            } icon: {
-                IconBadge(systemName: icon, color: color)
-            }
-            Spacer(minLength: 12)
+        HStack(spacing: 12) {
+            SettingsNavigationLabel(icon: icon, color: color, title: title)
+                .foregroundStyle(.primary)
             Image(systemName: "chevron.right")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.tertiary)
                 .accessibilityHidden(true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 1)
         .contentShape(Rectangle())
     }
 }

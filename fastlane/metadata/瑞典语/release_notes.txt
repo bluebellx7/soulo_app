@@ -1,4 +1,7 @@
-1.2.3
+1.2.4
 
-• Senast använda flikar och webbplatsgrupper visas först och översikten öppnas högst upp. Användningsordningen sparas efter omstart.
+• Åtgärdat textinmatning och aktivering av tangentbordet på webbsidor. Förbättrad tillbakanavigering och avsnittsval på videosidor, med färre tomma sidor och felaktiga laddningsfel.
+• Öppna Hämtningar från avsnittsväljaren eller håll ned ett avsnitt för att hämta det. Åtgärdat gruppnedladdningar och avsnittens filnamn.
+• Hämtnings- och fillistor visar filstorlekar. Hämtningsposter bevaras efter appuppdateringar.
+• Senast använda flikar och webbplatsgrupper visas först och översikten öppnas högst upp. Användningsordningen sparas efter omstart. Grupperade flikar visas nu i ett rutnät med flera rader.
 • Håll inne en video för att se den tillfälliga uppspelningshastigheten och släpp för att återställa den förra. Bättre kompatibilitet för verktygsfältet.

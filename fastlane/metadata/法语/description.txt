@@ -4,6 +4,8 @@ Choisissez Soulo comme navigateur par défaut dans Réglages pour ouvrir les lie
 
 Les onglets et groupes de sites récents apparaissent en premier, et la vue s'ouvre en haut. L'ordre d'utilisation est conservé après un redémarrage.
 
+Onglets groupés en grille, épisodes à télécharger et taille des fichiers visible. Saisie, retour vidéo et téléchargements par lot plus fiables.
+
 Lisez les vidéos compatibles pendant le téléchargement. Téléchargements en arrière-plan et plein écran améliorés, avec protection contre les copies indésirables.
 
 Choisissez les épisodes sur les sites compatibles, inversez leur ordre et téléchargez-en plusieurs à la fois, avec reprise des échecs. Maintenez le doigt pour accélérer, relâchez pour rétablir la vitesse. Commandes vidéo plus fluides.

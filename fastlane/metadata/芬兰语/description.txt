@@ -4,6 +4,8 @@ Valitse asetuksissa Soulo oletusselaimeksi, jotta voit avata linkkejä muista ap
 
 Äskettäin käytetyt välilehdet ja sivustoryhmät näkyvät ensin, ja näkymä avautuu ylhäältä. Käyttöjärjestys säilyy uudelleenkäynnistyksen jälkeen.
 
+Ryhmitellyt välilehdet ruudukkona, jaksojen lataus ja tiedostokoot näkyviin. Sujuvampi kirjoittaminen, videoista palaaminen ja erälataus.
+
 Toista tuettuja videoita latauksen aikana. Paremmat taustalataukset ja koko näytön tila sekä suoja piilomainoksia ja ei-toivottua kopiointia vastaan.
 
 Valitse jaksoja tuetuilla sivustoilla, käännä järjestys, lataa useita kerralla ja yritä epäonnistuneita latauksia uudelleen. Paina pitkään nopeuttaaksesi ja vapauta palauttaaksesi nopeuden. Sujuvammat videosäätimet.

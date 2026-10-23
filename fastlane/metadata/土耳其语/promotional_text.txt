@@ -1,1 +1,1 @@
-Son kullanılan sekmeler ve site grupları önce gösterilir, sekme görünümü en üstten açılır.
+Gruplu sekme ızgarası, bölüm indirme ve görünür dosya boyutları. Daha güvenilir yazma, videodan geri dönme ve toplu indirme.

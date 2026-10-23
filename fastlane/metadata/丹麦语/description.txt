@@ -4,6 +4,8 @@ Vælg Soulo som standardbrowser i Indstillinger for at åbne links fra andre app
 
 Senest brugte faner og webstedsgrupper vises først, og faneoversigten åbner øverst. Rækkefølgen bevares efter genstart.
 
+Grupperede faner i gitter, episodeoverførsler og synlige filstørrelser. Mere stabil indtastning, tilbage fra videoer og batchoverførsler.
+
 Afspil understøttede videoer under download. Bedre baggrundsdownload, fuldskærm og beskyttelse mod skjulte annoncer og uønsket kopiering.
 
 Vælg episoder på understøttede websteder, vend rækkefølgen, hent flere på én gang og prøv mislykkede downloads igen. Hold nede for at øge hastigheden, og slip for at gendanne den. Mere flydende videobetjening.

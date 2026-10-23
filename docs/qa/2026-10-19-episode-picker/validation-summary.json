@@ -1,0 +1,22 @@
+{
+  "version": "1.2.3",
+  "build": 34,
+  "nativeTestsPassed": 33,
+  "uiTestsPassed": 5,
+  "liveWebsiteUITestPassed": true,
+  "liveWebsiteURL": "https://www.pbpbw.com/html/228208.html",
+  "baselineUIRegressionReproduced": true,
+  "signedDebugBuildPassed": true,
+  "releaseBuildPassed": true,
+  "javascriptSyntaxCheckPassed": true,
+  "gitDiffCheckPassed": true,
+  "iphoneInstallPassed": true,
+  "iphoneLaunchPassed": true,
+  "iphoneUIAutomationPerformed": false,
+  "resultBundles": [
+    "/tmp/soulo-episode-sync-native.xcresult",
+    "/tmp/soulo-episode-sync-history.xcresult",
+    "/tmp/soulo-episode-sync-ui.xcresult",
+    "/tmp/soulo-episode-sync-live-final.xcresult"
+  ]
+}

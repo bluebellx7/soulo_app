@@ -1,0 +1,8 @@
+current=Optional(https://www.pbkan.com/yun/242237-1-1.html) back=[["url": "https://www.pbkan.com/html/242237.html", "initial": "https://www.pbkan.com/html/242237.html"], ["url": "https://www.pbkan.com/yun/242237-1-1.html", "initial": "https://www.pbkan.com/yun/242237-1-1.html"]]
+Optional(<__NSArrayM 0x600000d5f090>(
+https://www.pbkan.com/yun/242237-1-1.html,
+https://www.pbkan.com/yun/242237-1-1.html,
+https://www.pbkan.com/static/player/dplayer.html
+)
+)
+current=Optional(https://www.pbkan.com/html/242237.html) back=[]

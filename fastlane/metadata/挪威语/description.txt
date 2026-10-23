@@ -4,6 +4,8 @@ Velg Soulo som standardnettleser i Innstillinger for å åpne lenker fra andre a
 
 Nylig brukte faner og nettstedsgrupper vises først, og oversikten åpnes øverst. Bruksrekkefølgen beholdes etter omstart.
 
+Grupperte faner i rutenett, episodenedlasting og synlige filstørrelser. Mer stabil skriving, tilbake fra video og gruppenedlasting.
+
 Spill av støttede videoer mens de lastes ned. Bedre bakgrunnsnedlasting og fullskjerm, med vern mot skjulte annonser og uønsket kopiering.
 
 Velg episoder på støttede nettsteder, snu rekkefølgen, last ned flere samtidig og prøv mislykkede nedlastinger igjen. Hold inne for å øke farten, og slipp for å gjenopprette den. Jevnere videokontroller.

@@ -1,0 +1,11 @@
+current=Optional(https://www.pbpbw.com/player/234580-2-9.html) back=[["url": "https://www.pbpbw.com/html/234580.html", "initial": "https://www.pbpbw.com/html/234580.html"], ["url": "https://www.pbpbw.com/player/234580-2-9.html", "initial": "https://www.pbpbw.com/player/234580-2-9.html"]]
+Optional(<__NSArrayM 0x600000dd1680>(
+https://www.pbpbw.com/player/234580-2-9.html,
+https://www.pbpbw.com/player/234580-2-9.html,
+https://www.pbpbw.com/static/player/artplayer.html?url=https%3A%2F%2Fvv.jisuzyv.com%2Fplay%2FeVOQ8zBa%2Findex.m3u8,
+
+)
+)
+Back 1: current=Optional(https://www.pbpbw.com/html/234580.html) back=[]
+Back 2: current=Optional(https://www.pbpbw.com/html/234580.html) back=[]
+Back 3: current=Optional(https://www.pbpbw.com/html/234580.html) back=[]

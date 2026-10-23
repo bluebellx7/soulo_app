@@ -1,1 +1,1 @@
-Las pestañas y grupos de sitios recientes aparecen primero y la vista se abre arriba.
+Pestañas agrupadas en cuadrícula, descarga de episodios y tamaños de archivo visibles. Mejoras al escribir, volver de videos y descargar por lotes.

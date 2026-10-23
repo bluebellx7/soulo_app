@@ -4,6 +4,8 @@ Escolha o Soulo como navegador predefinido nas Definições para abrir ligaçõe
 
 Os separadores e grupos de sites usados recentemente aparecem primeiro, e a vista abre no topo. A ordem de utilização mantém-se após reiniciar.
 
+Separadores em grelha, descarga de episódios e tamanhos de ficheiro visíveis. Escrita, regresso dos vídeos e descargas em lote mais fiáveis.
+
 Reproduza vídeos compatíveis durante a transferência. Melhorias em segundo plano e no ecrã inteiro, com proteção contra anúncios ocultos e cópias indesejadas.
 
 Escolha episódios em sites compatíveis, inverta a ordem, descarregue vários de uma vez e repita as descargas falhadas. Mantenha premido para acelerar e solte para repor a velocidade. Controlos de vídeo mais fluidos.

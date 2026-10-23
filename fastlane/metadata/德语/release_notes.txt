@@ -1,4 +1,7 @@
-1.2.3
+1.2.4
 
-• Zuletzt verwendete Tabs und Website-Gruppen stehen zuerst, und die Übersicht öffnet sich oben. Die Reihenfolge bleibt nach einem Neustart erhalten.
+• Texteingabe und Tastaturfokus auf Webseiten wurden korrigiert. Bessere Zurücknavigation und Episodenauswahl auf Videoseiten, weniger leere Seiten und falsche Ladefehler.
+• Öffne Downloads über die Episodenauswahl oder halte eine Episode gedrückt, um sie herunterzuladen. Stapel-Downloads und Episoden-Dateinamen wurden korrigiert.
+• Download- und Dateilisten zeigen Dateigrößen. Download-Einträge bleiben nach App-Updates erhalten.
+• Zuletzt verwendete Tabs und Website-Gruppen stehen zuerst, und die Übersicht öffnet sich oben. Die Reihenfolge bleibt nach einem Neustart erhalten. Gruppierte Tabs werden jetzt in einem mehrzeiligen Raster angezeigt.
 • Beim Gedrückthalten eines Videos wird die vorübergehende Geschwindigkeit angezeigt. Loslassen stellt die vorherige wieder her. Verbesserte Toolbar-Kompatibilität.

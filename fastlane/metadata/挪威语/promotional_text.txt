@@ -1,1 +1,1 @@
-Nylig brukte faner og nettstedsgrupper vises først, og oversikten åpnes øverst.
+Grupperte faner i rutenett, episodenedlasting og synlige filstørrelser. Mer stabil skriving, tilbake fra video og gruppenedlasting.

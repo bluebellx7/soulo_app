@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-23",
+  "device": "iPhone 17 / iOS 26.6.1",
+  "debugBuild": "1.2.3 (40), CLI override only",
+  "requestedEpisodes": [
+    10,
+    11,
+    12,
+    13,
+    14
+  ],
+  "resourceAndEpisodeTests": {
+    "executed": 99,
+    "skipped": 4,
+    "failures": 0,
+    "resultBundle": "/tmp/soulo-batch-resource-regression.xcresult",
+    "passed": 95
+  },
+  "releaseBuild": "passed (final sources)",
+  "phoneBatchResult": {
+    "finishedCount": 5,
+    "offlineVerifiedCount": 5,
+    "totalSizeBytes": 1695125312,
+    "build": "40",
+    "evidence": "device-after.json"
+  },
+  "nativeBatchAndPersistenceTests": {
+    "executed": 42,
+    "failures": 0,
+    "resultBundle": "/tmp/soulo-batch-final-native.xcresult"
+  },
+  "afterReinstall": {
+    "build": "40",
+    "downloadRecordCount": 6,
+    "requestedEpisodesFinished": [
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "existingEpisode15Preserved": true,
+    "dataContainerChanged": true,
+    "allSixPathsRebased": true
+  }
+}

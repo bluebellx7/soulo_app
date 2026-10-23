@@ -1,1 +1,1 @@
-Les onglets et groupes de sites récents apparaissent en premier, et la vue s'ouvre en haut.
+Onglets groupés en grille, téléchargement d’épisodes et taille des fichiers visible. Saisie, retour vidéo et téléchargements par lot plus fiables.

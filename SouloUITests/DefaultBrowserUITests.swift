@@ -61,6 +61,26 @@ final class DefaultBrowserUITests: XCTestCase {
         XCTAssertTrue(tabs.isHittable, app.debugDescription)
     }
 
+    func testBaiduSearchInputKeepsKeyboardWithShakeActionEnabled() throws {
+        app.launchArguments += ["-browser_shake_action", "fullscreen", "-is_incognito", "YES"]
+        var url = URLComponents(string: "https://www.baidu.com/s")!
+        url.queryItems = [URLQueryItem(name: "wd", value: "鸡蛋")]
+        app.open(try XCTUnwrap(url.url))
+        let field = app.webViews.descendants(matching: .any).matching(NSPredicate(
+            format: "elementType IN %@", [XCUIElement.ElementType.textField.rawValue,
+                XCUIElement.ElementType.searchField.rawValue, XCUIElement.ElementType.textView.rawValue]
+        )).firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 45), app.debugDescription)
+        XCTAssertTrue(field.isHittable, app.debugDescription)
+        field.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+        field.typeText("test")
+        XCTAssertTrue((field.value as? String)?.contains("test") == true, app.debugDescription)
+        XCTAssertTrue(app.keyboards.firstMatch.exists, app.debugDescription)
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "baidu-input-keyboard-with-shake"; shot.lifetime = .keepAlways; add(shot)
+    }
+
     func testRecentGroupsUseRealWebpagesAndReopenAtTheTop() throws {
         app.launchArguments += ["-tab_overview_grouped", "YES", "-show_top_tab_bar", "NO"]
         app.open(try XCTUnwrap(URL(string: "https://www.swift.org/")))

@@ -4,6 +4,95 @@ import Combine
 @testable import Soulo
 
 @MainActor final class WebEpisodeDownloadTests: XCTestCase {
+    func testEpisodeResolverChoosesCurrentStreamWhenNextEpisodeIsPreloaded() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: ["/episode.html": Data("""
+            <script>window.player_aaaa={url:location.origin+'/current.mp4',url_next:location.origin+'/next.mp4',encrypt:0}</script>
+            """.utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let configuration = WKWebViewConfiguration(); configuration.websiteDataStore = .nonPersistent()
+        let source = WKWebView(frame: .zero, configuration: configuration)
+        let resolver = WebEpisodeMediaResolver(episode: WebEpisode(title: "Episode 10", url: root.appendingPathComponent("episode.html")), sourceView: source)
+        defer { resolver.invalidate() }
+        let resource = try await resolver.resolve(timeout: 8)
+        XCTAssertEqual(resource.url, root.appendingPathComponent("current.mp4"))
+        XCTAssertEqual(resource.sourcePageURL, root.appendingPathComponent("episode.html"))
+        let snapshot = try await WebResourceInspectionService.inspect(webView: resolver.webView)
+        XCTAssertEqual(Set(snapshot.videos.map(\.url)), Set(["current.mp4", "next.mp4"].map(root.appendingPathComponent)))
+        XCTAssertEqual(snapshot.configuredVideos.map(\.url), [resource.url])
+    }
+
+    func testBatchDownloadsEpisodes10Through14WithoutSelectingTheirPreloads() async throws {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let bytes = try Data(contentsOf: fixture)
+        var files: [String: Data] = [:]
+        for index in 10...15 { files["/clip\(index).mp4"] = bytes }
+        for index in 10...14 {
+            files["/ep\(index).html"] = Data("""
+                <title>Episode \(index)</title><body><script>window.player_aaaa={
+                url:location.origin+'/clip\(index).mp4',
+                url_next:location.origin+'/clip\(index + 1).mp4',encrypt:0}</script></body>
+                """.utf8)
+        }
+        let server = try DownloadPlaybackHTTPFixture(files: files)
+        let root = try await server.start(); defer { server.stop() }
+        server.releaseDownloads()
+        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+        let web = WKWebView(frame: .zero, configuration: config)
+        let model = WebViewModel(); model.webView = web
+        let service = WebEpisodeDownloadService(resolutionTimeout: 8)
+        let oldIDs = Set(DownloadManagerService.shared.downloads.map(\.id))
+        defer {
+            for item in DownloadManagerService.shared.downloads where !oldIDs.contains(item.id) {
+                DownloadManagerService.shared.delete(item)
+                try? FileManager.default.removeItem(at: item.localURL)
+            }
+            model.webView = nil
+        }
+        let episodes = (10...14).map { WebEpisode(title: "第\($0)集", url: root.appendingPathComponent("ep\($0).html")) }
+        XCTAssertEqual(service.enqueue(episodes, pageTitle: "Episode 9", viewModel: model), 5)
+        for _ in 0..<500 {
+            if service.jobs.allSatisfy({ !$0.isActive }) { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertEqual(service.jobs.map(\.status), Array(repeating: .finished, count: 5), service.jobs.map(\.errorMessage).joined(separator: "\n"))
+        let saved = DownloadManagerService.shared.downloads.filter { !oldIDs.contains($0.id) }
+        XCTAssertEqual(Set(saved.map(\.sourceURLString)), Set((10...14).map { root.appendingPathComponent("clip\($0).mp4").absoluteString }))
+        XCTAssertEqual(saved.count, 5)
+        for item in saved {
+            XCTAssertEqual(try Data(contentsOf: item.localURL), bytes)
+            let index = URL(string: item.sourceURLString)!.deletingPathExtension().lastPathComponent.dropFirst(4)
+            XCTAssertTrue(item.fileName.contains("Episode \(index)"), item.fileName)
+            XCTAssertFalse(item.fileName.contains("Episode 9"), item.fileName)
+        }
+        XCTAssertEqual(model.activeDownloadCount, 0)
+    }
+
+    func testEmbeddedPlayerRetainsCurrentStreamAndItsReferer() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/episode.html": Data("<body><iframe src='/embedded.html'></iframe></body>".utf8),
+            "/embedded.html": Data("<script>window.player_aaaa={url:'/current.mp4',url_next:'/next.mp4',encrypt:0}</script>".utf8)
+        ])
+        let root = try await server.start(); defer { server.stop() }
+        let source = WKWebView()
+        let resolver = WebEpisodeMediaResolver(episode: WebEpisode(title: "Episode", url: root.appendingPathComponent("episode.html")), sourceView: source)
+        defer { resolver.invalidate() }
+        let resource = try await resolver.resolve(timeout: 8)
+        XCTAssertEqual(resource.url, root.appendingPathComponent("current.mp4"))
+        XCTAssertEqual(resource.sourcePageURL, root.appendingPathComponent("embedded.html"))
+    }
+
+    func testMultipleConfiguredPlayersRemainAmbiguous() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: ["/episode.html": Data("""
+            <script>window.player_aaaa={url:'/first.mp4'};window.player_bbbb={url:'/second.mp4'}</script>
+            """.utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let source = WKWebView()
+        let resolver = WebEpisodeMediaResolver(episode: WebEpisode(title: "Episode", url: root.appendingPathComponent("episode.html")), sourceView: source)
+        defer { resolver.invalidate() }
+        do { _ = try await resolver.resolve(timeout: 4); XCTFail("Must not choose an arbitrary configured player") }
+        catch { XCTAssertEqual(error as? WebEpisodeDownloadError, .ambiguous) }
+    }
+
     func testHistoryPruningKeepsActiveRetriesNewerThanOldResults() {
         var jobs=(1...501).map { index in
             var job=WebEpisodeDownloadJob(episode:WebEpisode(title:"EP\(index)",url:URL(string:"https://video.example/ep/\(index)")!))
