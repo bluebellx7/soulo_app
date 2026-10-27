@@ -81,6 +81,29 @@ final class DefaultBrowserUITests: XCTestCase {
         shot.name = "baidu-input-keyboard-with-shake"; shot.lifetime = .keepAlways; add(shot)
     }
 
+    func testBaiduResultReturnsToSearchWithOneToolbarBack() throws {
+        app.launchArguments += ["-is_incognito", "YES"]
+        var url = URLComponents(string: "https://www.baidu.com/s")!
+        url.queryItems = [URLQueryItem(name: "wd", value: "鸡蛋")]
+        app.open(try XCTUnwrap(url.url))
+        let result = app.webViews.links.matching(NSPredicate(format: "label CONTAINS %@ AND label CONTAINS %@", "鸡蛋", "百科")).firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 40), app.debugDescription)
+        result.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        let address = app.buttons["Edit Address or Search"].firstMatch
+        for _ in 0..<30 {
+            let confirm = app.buttons["browser.domain-confirmation.confirm"]
+            if confirm.exists { confirm.tap() }
+            if (address.value as? String)?.contains("baike.baidu.com") == true { break }
+            Thread.sleep(forTimeInterval: 0.25)
+        }
+        XCTAssertTrue((address.value as? String)?.contains("baike.baidu.com") == true, app.debugDescription)
+        app.buttons["Back"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        XCTAssertTrue(result.waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertFalse(app.staticTexts["browser.error.message"].exists, app.debugDescription)
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "baidu-result-one-back-search-restored"; shot.lifetime = .keepAlways; add(shot)
+    }
+
     func testRecentGroupsUseRealWebpagesAndReopenAtTheTop() throws {
         app.launchArguments += ["-tab_overview_grouped", "YES", "-show_top_tab_bar", "NO"]
         app.open(try XCTUnwrap(URL(string: "https://www.swift.org/")))
@@ -136,6 +159,27 @@ final class DefaultBrowserUITests: XCTestCase {
         let settings = XCUIApplication(bundleIdentifier: "com.apple.Preferences")
         XCTAssertTrue(settings.navigationBars.firstMatch.waitForExistence(timeout: 30), settings.debugDescription)
         app.activate()
+    }
+
+    @MainActor
+    func testOpenInDefaultBrowserLeavesSouloAndPreservesItsTab() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/external-browser": Data("<meta name='viewport' content='width=device-width,initial-scale=1'><h1>External browser fixture</h1>".utf8)
+        ])
+        fixture = server
+        let root = try await server.start()
+        app.open(root.appendingPathComponent("external-browser"))
+        XCTAssertTrue(app.webViews.staticTexts["External browser fixture"].firstMatch.waitForExistence(timeout: 20), app.debugDescription)
+        let tabCount = app.buttons["browser.tabs"].label
+        app.buttons["More"].firstMatch.tap()
+        app.buttons["browser.moreMenu.openPage"].tap()
+        app.buttons["Open in Default Browser"].tap()
+        let safari = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
+        XCTAssertTrue(safari.wait(for: .runningForeground, timeout: 15), "The QA simulator uses Safari as its system browser")
+        XCTAssertTrue(safari.webViews.staticTexts["External browser fixture"].firstMatch.waitForExistence(timeout: 20), safari.debugDescription)
+        app.activate()
+        XCTAssertTrue(app.webViews.staticTexts["External browser fixture"].firstMatch.waitForExistence(timeout: 10))
+        XCTAssertEqual(app.buttons["browser.tabs"].label, tabCount, "External opening must not create an extra Soulo tab")
     }
 
     @MainActor

@@ -5,6 +5,20 @@ import XCTest
 
 @MainActor
 final class BrowserWebViewPoolTests: XCTestCase {
+    func testSpeculativeWarmupWaitsForKeyboardDismissal() async throws {
+        let pool = BrowserWebViewPool(warmupDelay: .milliseconds(10), refillDelay: .seconds(60))
+        defer {
+            NotificationCenter.default.post(name: UIResponder.keyboardDidHideNotification, object: nil)
+            pool.suspend()
+        }
+        NotificationCenter.default.post(name: UIResponder.keyboardWillShowNotification, object: nil)
+        pool.activate(isIncognito: false)
+        try await Task.sleep(for: .milliseconds(350))
+        XCTAssertNil(pool.preparedWebView, "Creating an unused WebView must not compete with keyboard input")
+        NotificationCenter.default.post(name: UIResponder.keyboardDidHideNotification, object: nil)
+        try await waitUntil { pool.isPreparedWebViewReady }
+    }
+
     private func waitUntil(_ condition: () -> Bool) async throws {
         for _ in 0..<200 {
             if condition() { return }

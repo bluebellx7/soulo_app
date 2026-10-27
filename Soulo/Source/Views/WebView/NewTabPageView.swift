@@ -6,7 +6,8 @@ struct NewTabPageView: View {
     var tabManager: TabManager?
     var onNavigate: (URL) -> Void
 
-    @State private var urlText: String = ""
+    // Keep ownership without subscribing the entire quick-link page to typing.
+    @State private var input = SearchInputState()
     @State private var selectedSearchRegion: PlatformRegion?
     @State private var selectedSearchGroupID: UUID?
     @Environment(\.colorScheme) private var colorScheme
@@ -124,7 +125,7 @@ struct NewTabPageView: View {
 
     private var searchBar: some View {
         SearchBarView(
-            text: $urlText,
+            input: input,
             respondsToHomeFocus: false,
             onSubmit: navigateToInput,
             selectedRegion: selectedSearchRegion ?? detectedRegion,
@@ -254,7 +255,7 @@ struct NewTabPageView: View {
 
     private func navigateToInput() {
         guard let url = BrowserNavigationResolver.resolve(
-            urlText,
+            input.text,
             preferredSearchPlatform: searchPlatforms.first
         ) else { return }
         onNavigate(url)

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SearchBarView: View {
-    @Binding var text: String
+    @ObservedObject var input: SearchInputState
     var isCompact: Bool = false
     var isIncognito: Bool = false
     var isRecording: Bool = false
@@ -20,7 +20,8 @@ struct SearchBarView: View {
     @ObservedObject var wallpaperManager = WallpaperManager.shared
     @ObservedObject private var platformStore = PlatformDataStore.shared
 
-    @FocusState private var isFocused: Bool
+    @State private var isFocused = false
+    @State private var focusRequest = 0
     @State private var animateGlow = false
     @State private var showSearchActions = false
 
@@ -83,19 +84,18 @@ struct SearchBarView: View {
                     .accessibilityHidden(true)
             }
 
-            TextField(
-                "",
-                text: $text,
-                prompt: Text(LanguageManager.shared.localizedString("search_placeholder"))
-                    .foregroundStyle(placeholderColor)
+            SearchInputField(
+                input: input,
+                placeholder: LanguageManager.shared.localizedString("search_placeholder"),
+                fontSize: isCompact ? 14 : 15,
+                textColor: UIColor(textColor),
+                placeholderColor: UIColor(placeholderColor),
+                focusRequest: focusRequest,
+                wantsFocus: isFocused,
+                onFocusChanged: { isFocused = $0 },
+                onSubmit: onSubmit
             )
-            .font(.system(size: isCompact ? 14 : 15))
-            .foregroundStyle(textColor)
-            .focused($isFocused)
-            .submitLabel(.search)
-            .onSubmit(onSubmit)
-            .autocorrectionDisabled()
-            .textInputAutocapitalization(.never)
+            .accessibilityIdentifier("search.query")
             .accessibilityLabel(
                 LanguageManager.shared.localizedString(
                     isIncognito ? "privacy_search_placeholder" : "search_placeholder"
@@ -104,11 +104,12 @@ struct SearchBarView: View {
             .onReceive(NotificationCenter.default.publisher(for: .focusHomeSearch)) { _ in
                 guard respondsToHomeFocus && !isCompact else { return }
                 isFocused = true
+                focusRequest &+= 1
             }
 
-            if !text.isEmpty {
+            if !input.text.isEmpty {
                 Button {
-                    withAnimation(.easeInOut(duration: 0.15)) { text = "" }
+                    withAnimation(.easeInOut(duration: 0.15)) { input.text = "" }
                     onClear?()
                 } label: {
                     Image(systemName: "xmark")
@@ -116,6 +117,7 @@ struct SearchBarView: View {
                         .foregroundStyle(clearColor)
                 }
                 .transition(.scale.combined(with: .opacity))
+                .accessibilityIdentifier("search.clear")
                 .accessibilityLabel(LanguageManager.shared.localizedString("accessibility_clear_search"))
             }
 
@@ -196,6 +198,7 @@ struct SearchBarView: View {
                 Button {
                     showSearchActions = false
                     isFocused = false
+                    focusRequest &+= 1
                     onIncognitoTap()
                 } label: {
                     Label(LanguageManager.shared.localizedString(isIncognito ? "privacy_exit_incognito" : "privacy_enter_incognito"), systemImage: isIncognito ? "eye" : "eye.slash")
@@ -210,6 +213,7 @@ struct SearchBarView: View {
                 Button {
                     showSearchActions = false
                     isFocused = false
+                    focusRequest &+= 1
                     onScanTap()
                 } label: {
                     Label(ToolText.text("scan_qr"), systemImage: "qrcode.viewfinder")

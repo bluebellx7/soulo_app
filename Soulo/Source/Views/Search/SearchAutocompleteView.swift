@@ -1,5 +1,33 @@
 import SwiftUI
 
+/// Suggestion updates are local to the overlay rather than the entire browser.
+struct SearchAutocompleteOverlay: View {
+    @ObservedObject var input: SearchInputState
+    let darkVariant: Bool
+    var maximumWidth: CGFloat? = nil
+    let horizontalPadding: CGFloat
+    let topPadding: CGFloat
+    let onSelect: (String) -> Void
+    let onFill: (String) -> Void
+
+    var body: some View {
+        Color.clear.frame(height: 0)
+            .overlay(alignment: .top) {
+                if !input.suggestions.isEmpty && !input.edit.isComposing {
+                    SearchAutocompleteView(suggestions: input.suggestions, query: input.text,
+                        darkVariant: darkVariant, onSelect: onSelect, onFill: onFill)
+                        .frame(maxWidth: maximumWidth)
+                        .padding(.horizontal, horizontalPadding)
+                        .padding(.top, topPadding)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+            .zIndex(100)
+            .allowsHitTesting(!input.suggestions.isEmpty && !input.edit.isComposing)
+    }
+}
+
 /// Beautiful frosted-glass dropdown showing live search suggestions.
 /// Designed to match the app's dark wallpaper background.
 struct SearchAutocompleteView: View {

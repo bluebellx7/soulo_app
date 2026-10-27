@@ -1,10 +1,81 @@
 import SwiftData
 import SwiftUI
 import XCTest
+import Combine
 @testable import Soulo
 
 @MainActor
 final class AdaptiveWindowTests: XCTestCase {
+    func testHomePinyinCompositionSurvivesSuggestionAndLayoutUpdates() async throws {
+        try await withHomeSearch { search, window in
+            let field = try XCTUnwrap(self.findField(in: window))
+            XCTAssertLessThan(field.bounds.height, 40, "The native field must not stretch the search capsule")
+            XCTAssertTrue(field.becomeFirstResponder())
+            for syllable in ["n", "ni", "ni'h", "ni'hao"] {
+                field.setMarkedText(syllable, selectedRange: NSRange(location: syllable.utf16.count, length: 0))
+                field.sendActions(for: .editingChanged)
+                search.suggestions = ["你好", "你好世界"]
+                window.setNeedsLayout()
+                window.layoutIfNeeded()
+                try await Task.sleep(for: .milliseconds(100))
+                XCTAssertTrue(self.findField(in: window) === field)
+                XCTAssertTrue(field.isFirstResponder)
+                let marked = try XCTUnwrap(field.markedTextRange, "A parent update must not commit a pinyin letter")
+                XCTAssertEqual(field.text(in: marked), syllable)
+            }
+            field.insertText("你好")
+            field.unmarkText()
+            field.sendActions(for: .editingChanged)
+            try await Task.sleep(for: .milliseconds(100))
+            XCTAssertEqual(field.text, "你好")
+            XCTAssertEqual(search.searchText, "你好")
+        }
+    }
+
+    func testHomeTypingDoesNotPublishWholeBrowserStatePerKeystroke() async throws {
+        try await withHomeSearch { search, window in
+            let field = try XCTUnwrap(self.findField(in: window))
+            XCTAssertTrue(field.becomeFirstResponder())
+            try await Task.sleep(for: .milliseconds(200))
+            var publications = 0
+            let subscription = search.objectWillChange.sink { publications += 1 }
+            defer { subscription.cancel() }
+            for letter in "typinglatency" {
+                field.insertText(String(letter))
+                field.sendActions(for: .editingChanged)
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            print("PERF home typing: browser_publications=\(publications), characters=13")
+            XCTAssertEqual(field.text, "typinglatency")
+            XCTAssertEqual(search.searchText, "typinglatency")
+            XCTAssertEqual(publications, 0, "Typing should update the search controls, not invalidate the whole browser root")
+        }
+    }
+
+    private func withHomeSearch(_ action: (SearchViewModel, UIWindow) async throws -> Void) async throws {
+        let scene = try activeScene()
+        let previous = scene.keyWindow
+        let search = SearchViewModel()
+        let key = "input-regression-\(UUID())"
+        UserDefaults.standard.set(Data(), forKey: key)
+        let tabs = TabManager(storageKey: key)
+        let host = UIHostingController(rootView: AnyView(HomeView()
+            .environmentObject(search).environmentObject(tabs)
+            .environmentObject(LanguageManager.shared).environmentObject(ThemeManager.shared)
+            .environmentObject(WallpaperManager.shared).modelContainer(try makeLayoutContainer())))
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer {
+            host.rootView = AnyView(EmptyView())
+            window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
+            search.clearSuggestions()
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+        try await Task.sleep(for: .milliseconds(300))
+        try await action(search, window)
+    }
+
     // Mirror the App's WindowGroup-owned container lifetime. SwiftUI can retain
     // a Query's context after unmounting a hosting controller; its mainContext
     // has a weak container reference and still receives save notifications.

@@ -11,16 +11,55 @@ import WebKit
     private var backwardDepth = 0
     private var backwardFrameURL: URL?
     private var backwardRequestID = UUID()
+    private let automaticRedirectEntries = NSHashTable<WKBackForwardListItem>.weakObjects()
+
+    func recordAutomaticRedirect(in webView: WKWebView) {
+        // Keep an initial entry when there is no earlier page to return to.
+        guard webView.canGoBack, let entry = webView.backForwardList.currentItem else { return }
+        automaticRedirectEntries.add(entry)
+    }
+
+    func recordInteraction(in webView: WKWebView) {
+        if let entry = webView.backForwardList.currentItem { automaticRedirectEntries.remove(entry) }
+    }
+
+    private func pageTarget(in entries: [WKBackForwardListItem]) -> WKBackForwardListItem? {
+        entries.first { !automaticRedirectEntries.contains($0) }
+    }
+
+    /// Also handles WebKit's own Back/Forward gestures. Identify the exact
+    /// recorded entry conservatively; equal-URL SPA states remain untouched.
+    func targetSkippingAutomaticRedirects(to url: URL, from source: URL?, in webView: WKWebView) -> WKBackForwardListItem? {
+        guard let current = webView.backForwardList.currentItem, let source else { return nil }
+        let entries = webView.backForwardList.backList + [current] + webView.backForwardList.forwardList
+        let sources = entries.indices.filter { entries[$0].url == source }
+        let targets = entries.indices.filter { entries[$0].url == url && automaticRedirectEntries.contains(entries[$0]) }
+        guard sources.count == 1, targets.count == 1, let origin = sources.first, let target = targets.first else { return nil }
+        if target < origin { return pageTarget(in: Array(entries[...target].reversed())) }
+        if target > origin { return pageTarget(in: Array(entries[target...])) }
+        return nil
+    }
+
+    func goForward(in webView: WKWebView) {
+        cancel()
+        if let target = pageTarget(in: webView.backForwardList.forwardList), target !== webView.backForwardList.forwardItem { webView.go(to: target) }
+        else { webView.goForward() }
+    }
 
     func goBack(in webView: WKWebView) {
         cancel()
         guard webView.canGoBack else { return }
         backwardWebView = webView
         backwardDepth = webView.backForwardList.backList.count
+        let target = pageTarget(in: Array(webView.backForwardList.backList.reversed()))
+        let navigate = {
+            if let target, target !== webView.backForwardList.backItem { webView.go(to: target) }
+            else { webView.goBack() }
+        }
         guard !UIAccessibility.isReduceMotionEnabled, !UIAccessibility.isVoiceOverRunning,
               webView.window != nil, let parent = webView.superview,
               let image = webView.snapshotView(afterScreenUpdates: false) else {
-            webView.goBack()
+            navigate()
             return
         }
         image.frame = webView.convert(webView.bounds, to: parent)
@@ -28,7 +67,7 @@ import WebKit
         image.accessibilityElementsHidden = true
         parent.addSubview(image)
         snapshot = image
-        webView.goBack()
+        navigate()
         let distance = webView.bounds.width * (webView.effectiveUserInterfaceLayoutDirection == .rightToLeft ? -1 : 1)
         let work = DispatchWorkItem { [weak self, weak image] in
             guard let self, let image, self.snapshot === image else { return }

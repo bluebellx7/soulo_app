@@ -13,6 +13,7 @@ final class BrowserWebViewPool: NSObject, WKNavigationDelegate {
     private var isIncognito = false
     private var isActive = false
     private var isSuppressedForMemoryPressure = false
+    private var isKeyboardVisible = false
     private var warmupTask: Task<Void, Never>?
     private weak var lastAcquiredWebView: WKWebView?
     private var observers: Set<AnyCancellable> = []
@@ -30,6 +31,12 @@ final class BrowserWebViewPool: NSObject, WKNavigationDelegate {
         // spare when only one of several scenes moves to the background.
         NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)
             .sink { [weak self] _ in self?.suspend() }
+            .store(in: &observers)
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
+            .sink { [weak self] _ in self?.isKeyboardVisible = true }
+            .store(in: &observers)
+        NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)
+            .sink { [weak self] _ in self?.isKeyboardVisible = false }
             .store(in: &observers)
     }
 
@@ -90,7 +97,7 @@ final class BrowserWebViewPool: NSObject, WKNavigationDelegate {
                 try await Task.sleep(for: delay)
                 // Avoid competing with the page that just claimed the spare.
                 // Keep self weak across sleeps so local/test pools can deinit.
-                while self?.lastAcquiredWebView?.isLoading == true {
+                while self?.lastAcquiredWebView?.isLoading == true || self?.isKeyboardVisible == true {
                     try await Task.sleep(for: .milliseconds(250))
                 }
                 try Task.checkCancellation()

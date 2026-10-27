@@ -48,6 +48,8 @@ struct WebViewProgressBar: View {
         }
         .frame(height: barHeight)
         .opacity(opacity)
+        .accessibilityIdentifier("browser.load-progress")
+        .onAppear { opacity = isLoading ? 1 : 0 }
         .onChange(of: isLoading) { _, loading in
             if loading {
                 // Appear instantly

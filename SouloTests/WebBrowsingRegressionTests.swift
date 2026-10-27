@@ -546,6 +546,34 @@ import Network
         XCTAssertTrue(model.hasVisibleContent)
         XCTAssertTrue(model.isLoading, "The request is still pending, but the visible page is usable")
         XCTAssertFalse(model.showSnapshotWhileRestoring)
+        let web = try XCTUnwrap(model.webView)
+        for _ in 0..<30 {
+            if web.layer.mask == nil { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertNil(web.layer.mask, "The reveal must finish and release its compositing mask while resources are still loading")
+        XCTAssertTrue(model.isLoading)
+    }
+
+    func testCompletedDocumentRevealsWithoutFirstPaintBridge() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        try await wait(model, for: "true")
+        let web = try XCTUnwrap(model.webView)
+        web.configuration.userContentController.removeScriptMessageHandler(forName: "souloPageReady", contentWorld: .defaultClient)
+        model.loadURL(root.appendingPathComponent("form"))
+        try await wait(model, for: "!!document.getElementById('form') && document.readyState === 'complete'")
+        for _ in 0..<50 {
+            if model.hasPresentedContent && web.layer.mask == nil { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertTrue(model.hasVisibleContent, "Native completion must reveal documents without the HTML first-paint callback")
+        XCTAssertTrue(model.hasPresentedContent)
+        XCTAssertNil(web.layer.mask, "A completed document must not remain hidden behind its initial reveal mask")
     }
 
     func testParserBlockedPageDoesNotClaimToHavePaintedContent() async throws {
@@ -1121,6 +1149,115 @@ import Network
             _ = try await web.evaluateJavaScript("document.getElementById('frame').contentWindow.location.href='/\(step)'")
             try await wait(model, for: "!!document.getElementById('frame')?.contentDocument?.getElementById('\(step)')")
         }
+    }
+
+    func testBackSkipsAutomaticIntermediateDocumentThatFailsWhenRevisited() async throws {
+        try await checkAutomaticRedirectHistory(usingNativeBack: false)
+    }
+
+    func testNativeWebKitBackSkipsAutomaticIntermediateDocument() async throws {
+        try await checkAutomaticRedirectHistory(usingNativeBack: true)
+    }
+
+    func testBackPreservesLinkActivatedHistoryWithoutGestureBridge() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("form"))
+        try await wait(model, for: "!!document.getElementById('form')")
+        model.loadURL(root.appendingPathComponent("destination"))
+        try await wait(model, for: "!!document.getElementById('destination')")
+        let web = try XCTUnwrap(model.webView)
+        _ = try await web.evaluateJavaScript("document.body.insertAdjacentHTML('beforeend','<a id=next href=/receipt>Next</a>');document.getElementById('next').click()")
+        try await wait(model, for: "!!document.getElementById('receipt')")
+        model.goBack()
+        try await wait(model, for: "!!document.getElementById('destination')")
+        XCTAssertNil(model.errorMessage, "A missing or delayed gesture bridge must not erase a normal link visit")
+    }
+
+    private func checkAutomaticRedirectHistory(usingNativeBack: Bool) async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("form"))
+        try await wait(model, for: "!!document.getElementById('form')")
+        model.loadURL(root.appendingPathComponent("redirect-hop"))
+        try await wait(model, for: "!!document.getElementById('destination')")
+        let web = try XCTUnwrap(model.webView)
+        XCTAssertTrue(web.backForwardList.backList.contains { $0.url.path == "/redirect-hop" })
+        if usingNativeBack { web.goBack() } else { model.goBack() }
+        try await wait(model, for: "!!document.getElementById('form')")
+        XCTAssertNil(model.errorMessage)
+        XCTAssertEqual(server.requests.filter { $0.path == "/redirect-hop" }.count, 1,
+            "Back must not reload the intermediate URL, even if it is now unavailable")
+        model.goForward()
+        try await wait(model, for: "!!document.getElementById('destination')")
+        XCTAssertNil(model.errorMessage)
+    }
+
+    func testLiveBaiduResultReturnsWithOneBack() async throws {
+        guard ProcessInfo.processInfo.environment["SOULO_LIVE_SEARCH_QA"] == "1" else {
+            throw XCTSkip("Set SOULO_LIVE_SEARCH_QA=1 to check live search-result history")
+        }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        var search = URLComponents(string: "https://www.baidu.com/s")!
+        search.queryItems = [URLQueryItem(name: "wd", value: "鸡蛋")]
+        model.loadURL(try XCTUnwrap(search.url))
+        for _ in 0..<100 where model.webView == nil { try await Task.sleep(for: .milliseconds(20)) }
+        let web = try XCTUnwrap(model.webView)
+        let chooseResult = #"""
+        (() => {
+          const links = [...document.querySelectorAll('.c-container a[href], #results a[href], #content_left a[href]')];
+          const link = links.find(a => a.getClientRects().length && a.innerText.trim().length > 3 &&
+            /^https?:/.test(a.href) && !new URL(a.href).pathname.startsWith('/s') &&
+            !/\.(pdf|zip|apk)(?:\?|$)/i.test(a.href));
+          if (!link) return null;
+          window.__qaSearchResult = link;
+          return {title:link.innerText.trim(),url:link.href,search:location.href};
+        })()
+        """#
+        var result: [String: Any]?
+        for _ in 0..<600 {
+            result = (try? await web.evaluateJavaScript(chooseResult)) as? [String: Any]
+            if result != nil || model.errorMessage != nil { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let selected = try XCTUnwrap(result, "Search page: \(String(describing: model.errorMessage))")
+        print("SOULO_SEARCH_BACK|result|\(selected)")
+        let originalSearchURL = web.url
+        _ = try await web.evaluateJavaScript("window.location.assign(window.__qaSearchResult.href)")
+        for _ in 0..<600 {
+            if let confirmation = model.domainNavigationConfirmation {
+                model.resolveDomainNavigationConfirmation(id: confirmation.id, allowed: true)
+            }
+            if web.url != originalSearchURL && !web.isLoading { break }
+            if model.errorMessage != nil { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        print("SOULO_SEARCH_BACK|before|\(String(describing: web.url))|\(web.backForwardList.backList.map(\.url))|\(String(describing: model.errorMessage))")
+        XCTAssertTrue(web.canGoBack)
+        model.goBack()
+        for _ in 0..<600 {
+            if let confirmation = model.domainNavigationConfirmation {
+                model.resolveDomainNavigationConfirmation(id: confirmation.id, allowed: true)
+            }
+            if !web.isLoading && (web.url == originalSearchURL || model.errorMessage != nil) { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        try await Task.sleep(for: .milliseconds(300))
+        print("SOULO_SEARCH_BACK|after|\(String(describing: web.url))|\(String(describing: model.errorMessage))")
+        XCTAssertNil(model.errorMessage)
+        XCTAssertEqual(web.url, originalSearchURL)
+        let shot = XCTAttachment(image: try await web.takeSnapshot(configuration: nil))
+        shot.name = "live-baidu-after-one-back"; shot.lifetime = .keepAlways; add(shot)
     }
 
     func testLiveVideoFrameHistoryReturnsWithOneBack() async throws {
@@ -1701,6 +1838,9 @@ private final class BrowsingHTTPFixture: @unchecked Sendable {
         case "/auth-parent": body = "<button id='open-login' onclick=\"window.open('/login-popup','fixture-auth')\">Sign in</button><script>addEventListener('message', e => { if (e.origin === location.origin) window.authResult = e.data; });</script>"
         case "/login-popup": body = "<script>const shared = document.cookie.includes('fixture_session=parent'); document.cookie='fixture_login=complete; path=/'; window.opener.postMessage(shared ? 'session-shared' : 'missing-session', location.origin); window.close();</script>"
         case "/disconnect": connection.cancel(); return
+        case "/redirect-hop":
+            if recorded.filter({ $0.path == request.path }).count > 1 { connection.cancel(); return }
+            body = "<p>Continuing</p><script>setTimeout(()=>location.assign('/destination'),200)</script>"
         case "/runtime-reuse", "/runtime-reuse-next": body = "<main>Article content</main><aside class='qa-performance-ad'>Advertisement</aside>"
         case "/dynamic", "/dynamic-next": body = "<main>Article content</main><aside id='user-chosen-panel'>Selected panel</aside>"
         case "/privacy-early": body = """

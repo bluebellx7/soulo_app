@@ -68,15 +68,27 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
     }
 
     func testPageLinksAndBottomToolbarRespondDuringSlowLoading() throws {
-        try open("slow")
+        // Enter through the real search field; reopening an already running
+        // app through XCUIApplication.open can stall the simulator launcher.
+        let home = app.buttons["Home Screen"].firstMatch
+        if home.exists { tap(home) }
+        let field = app.textFields["search.query"].firstMatch
+        tap(field)
+        let clear = app.buttons["search.clear"].firstMatch
+        if clear.exists { tap(clear); tap(field) }
+        field.typeText(root.appendingPathComponent("slow").absoluteString + "\n")
         let link = app.webViews.links["Next page"].firstMatch
         XCTAssertTrue(link.waitForExistence(timeout: 20), app.debugDescription)
         XCTAssertTrue(fixture.hasPendingSlowResource)
+        let loading = app.descendants(matching: .any).matching(identifier: "browser.initial-loading").firstMatch
+        XCTAssertTrue(loading.waitForNonExistence(timeout: 5), "First content must appear before hanging subresources finish")
+        let ready = XCTAttachment(screenshot: app.screenshot())
+        ready.name = "visible-page-before-slow-resources-finish"; ready.lifetime = .keepAlways; add(ready)
         checkMoreAndTabs()
         XCTAssertTrue(fixture.hasPendingSlowResource)
         // Return through the real overview to exercise retained WebView remounting.
         tap(app.buttons["browser.tabs"])
-        let card = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Toolbar fixture,")).firstMatch
+        let card = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label BEGINSWITH %@", "tabs.card.", fixture.pageTitle + ",")).firstMatch
         tap(card)
         tap(link)
         XCTAssertTrue(app.webViews.staticTexts["Second page"].firstMatch.waitForExistence(timeout: 10))
@@ -130,6 +142,42 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         XCTAssertFalse(app.webViews.staticTexts["Interactive page"].firstMatch.exists)
         XCTAssertTrue(fixture.hasPendingSlowResource)
         checkMoreAndTabs()
+    }
+
+    func testFirstLoadMatchesDarkThemeAndLaterNavigationKeepsPreviousPage() throws {
+        try checkInitialLoading(appearance: "dark")
+    }
+
+    func testFirstLoadMatchesLightThemeAndLaterNavigationKeepsPreviousPage() throws {
+        try checkInitialLoading(appearance: "light")
+    }
+
+    private func checkInitialLoading(appearance: String) throws {
+        app.terminate()
+        app.launchArguments += ["-wallpaper_source", "bing", "-appearance", appearance]
+        app.launch()
+        let initialLoading = app.descendants(matching: .any).matching(identifier: "browser.initial-loading").firstMatch
+        let navigationPreview = app.descendants(matching: .any).matching(identifier: "browser.navigation-preview").firstMatch
+        try open("blocked")
+        XCTAssertTrue(initialLoading.waitForExistence(timeout: 20), app.debugDescription)
+        let first = XCTAttachment(screenshot: app.screenshot())
+        first.name = "first-load-\(appearance)-canvas"; first.lifetime = .keepAlways; add(first)
+        // Keep a second frame for visual review of the native loading indicator.
+        Thread.sleep(forTimeInterval: 0.4)
+        let orbit = XCTAttachment(screenshot: app.screenshot())
+        orbit.name = "first-load-\(appearance)-animation-next-frame"; orbit.lifetime = .keepAlways; add(orbit)
+        try open("preview-first")
+        let heading = app.webViews.staticTexts["Keep this page visible"].firstMatch
+        XCTAssertTrue(heading.waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(initialLoading.waitForNonExistence(timeout: 5))
+        tap(app.webViews.links["Open slow page"].firstMatch)
+        XCTAssertTrue(navigationPreview.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertFalse(initialLoading.exists)
+        let next = XCTAttachment(screenshot: app.screenshot())
+        next.name = "navigation-keeps-previous-content"; next.lifetime = .keepAlways; add(next)
+        tap(app.buttons["Back"].firstMatch)
+        XCTAssertTrue(heading.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(navigationPreview.waitForNonExistence(timeout: 5))
     }
 
     func testToolbarRespondsAfterAddressKeyboardDismissal() throws {
@@ -428,6 +476,11 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         if closeOthers.exists { tap(closeOthers) }
         else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.2)).tap() }
         tap(app.buttons["tabs.done"])
+        // Older blank tabs provide real vertical overflow in portrait without
+        // depending on rotation support or extra loopback aliases.
+        for _ in 0..<6 {
+            tap(app.buttons["browser.tabs"]); tap(app.buttons["tabs.tab_new_tab"])
+        }
         for number in 2...6 {
             tap(app.buttons["browser.tabs"]); tap(app.buttons["tabs.tab_new_tab"])
             try load(number)
@@ -448,10 +501,67 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         }
         tap(app.buttons["browser.tabs"])
         checkTop(6, 5)
+        let topGroup = app.descendants(matching: .any).matching(identifier: "tabs.group.host:localhost").firstMatch
         let dockY = app.buttons["tabs.done"].frame.midY
-        app.scrollViews["tabs.groups"].swipeUp()
-        XCTAssertEqual(app.buttons["tabs.done"].frame.midY, dockY, accuracy: 1)
-        tap(app.buttons["tabs.done"]); tap(app.buttons["browser.tabs"])
+        let groups = app.scrollViews["tabs.groups"]
+        @discardableResult
+        func dragInsideCard(verticalDistance: CGFloat, horizontalDrift: CGFloat,
+            velocity: XCUIGestureVelocity = .slow, hold: TimeInterval = 0.2) -> (card: XCUIElement, y: CGFloat)? {
+            let viewport = groups.frame.intersection(CGRect(x: app.frame.minX, y: groups.frame.minY + 8,
+                width: app.frame.width, height: max(0, dockY - 44 - groups.frame.minY - 8)))
+            let cards = groups.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "tabs.card.")).allElementsBoundByIndex
+            var target: CGRect?
+            var targetCard: XCUIElement?
+            var largestArea: CGFloat = 0
+            for card in cards {
+                let visibleFrame = card.frame.intersection(viewport)
+                guard !visibleFrame.isNull, visibleFrame.width > 40, visibleFrame.height > 35 else { continue }
+                let area = visibleFrame.width * visibleFrame.height
+                if area > largestArea { target = visibleFrame; targetCard = card; largestArea = area }
+            }
+            guard let target, let targetCard else { XCTFail("A visible card is required for the scroll gesture"); return nil }
+            let originalY = targetCard.frame.minY
+            // Visible element indices change when LazyVStack recycles rows.
+            // Keep the same card identity for the post-scroll assertion.
+            let stableCard = groups.buttons.matching(NSPredicate(format: "label == %@", targetCard.label)).firstMatch
+            let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
+                dx: target.midX - app.frame.minX, dy: target.midY - app.frame.minY))
+            start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: horizontalDrift, dy: verticalDistance)),
+                withVelocity: velocity, thenHoldForDuration: hold)
+            return (stableCard, originalY)
+        }
+        // Begin on card content, including a small diagonal drift, rather than
+        // on empty list spacing where the card recognizer never participates.
+        for drift in [CGFloat(-14), 12, -6] {
+            let topY = topGroup.frame.minY
+            dragInsideCard(verticalDistance: -115, horizontalDrift: drift)
+            XCTAssertTrue(groups.exists)
+            XCTAssertTrue(!topGroup.isHittable || topGroup.frame.minY < topY - 20,
+                "Upward drags starting on cards must scroll even with horizontal drift")
+            XCTAssertEqual(app.buttons["tabs.done"].frame.midY, dockY, accuracy: 1)
+            if let moved = dragInsideCard(verticalDistance: 150, horizontalDrift: -drift) {
+                XCTAssertTrue(groups.exists)
+                XCTAssertTrue(!moved.card.exists || !moved.card.isHittable || moved.card.frame.minY > moved.y + 20,
+                    "Downward card drags must move the list toward its top")
+            }
+            tap(app.buttons["tabs.done"])
+            XCTAssertEqual(app.buttons["browser.tabs"].label, "12 Tabs", "Vertical drags must not delete tabs")
+            tap(app.buttons["browser.tabs"])
+            checkTop(6, 5)
+        }
+        // Fast flicks may coast much farther than the finger. Check direction,
+        // then reopen to verify the top position separately from deceleration.
+        if let moved = dragInsideCard(verticalDistance: -115, horizontalDrift: 10, velocity: .fast, hold: 0) {
+            XCTAssertTrue(groups.exists)
+            XCTAssertTrue(!moved.card.exists || !moved.card.isHittable || moved.card.frame.minY < moved.y - 20)
+        }
+        if let moved = dragInsideCard(verticalDistance: 150, horizontalDrift: -10, velocity: .fast, hold: 0) {
+            XCTAssertTrue(groups.exists)
+            XCTAssertTrue(!moved.card.exists || !moved.card.isHittable || moved.card.frame.minY > moved.y + 20)
+        }
+        tap(app.buttons["tabs.done"])
+        XCTAssertEqual(app.buttons["browser.tabs"].label, "12 Tabs", "Fast flicks must not delete tabs")
+        tap(app.buttons["browser.tabs"])
         checkTop(6, 5)
         let fifth = app.descendants(matching: .any).matching(identifier: "tabs.group-row.host:localhost").firstMatch.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Recent page 5,")).firstMatch
         tap(fifth)
@@ -464,13 +574,14 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         XCTAssertTrue(app.webViews.staticTexts["Recent page 1"].firstMatch.waitForExistence(timeout: 10))
         tap(app.buttons["browser.tabs"])
         let currentCard = app.descendants(matching: .any).matching(identifier: "tabs.group-row.host:127.0.0.1").firstMatch.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Recent page 1,")).firstMatch
-        currentCard.press(forDuration: 1)
-        tap(app.buttons["Close Tab"].firstMatch)
+        currentCard.swipeLeft()
+        XCTAssertTrue(currentCard.waitForNonExistence(timeout: 5), "Left swipe closes only this grouped card")
         let remainingGroup = app.descendants(matching: .any).matching(identifier: "tabs.group.host:127.0.0.1").firstMatch
         let otherGroup = app.descendants(matching: .any).matching(identifier: "tabs.group.host:localhost").firstMatch
         XCTAssertTrue(remainingGroup.exists && otherGroup.exists)
         XCTAssertLessThan(remainingGroup.frame.minY, otherGroup.frame.minY, "Closing the newest card must not move the rest of its group")
         tap(app.buttons["tabs.done"])
+        XCTAssertEqual(app.buttons["browser.tabs"].label, "11 Tabs", "Left swipe closes exactly one card")
         XCTAssertTrue(app.webViews.staticTexts["Recent page 5"].firstMatch.waitForExistence(timeout: 10), "Closing the current card returns to the most recently used remaining page")
         tap(app.buttons["browser.tabs"])
         checkTop(5, 6)
@@ -539,12 +650,13 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         XCTAssertTrue(app.webViews.staticTexts["Refined page"].firstMatch.waitForExistence(timeout: 20))
         XCTAssertEqual(tabs.label, "2 Tabs", "Address searches should stay in the active tab")
 
-        tap(app.buttons["Toolbar fixture, tab 1 of 2"])
+        tap(app.buttons[fixture.pageTitle + ", tab 1 of 2"])
         XCTAssertTrue(app.webViews.links["Next page"].firstMatch.waitForExistence(timeout: 10))
     }
 }
 
 private final class ToolbarHTTPFixture: @unchecked Sendable {
+    let pageTitle = "Toolbar fixture \(UUID().uuidString.prefix(8))"
     let coverTitle = "Slow cover fixture \(UUID().uuidString.prefix(8))"
     private let listener: NWListener
     private let queue = DispatchQueue(label: "soulo.toolbar.ui-fixture")
@@ -569,6 +681,7 @@ private final class ToolbarHTTPFixture: @unchecked Sendable {
                 let body: String
                 if path == "/slow.js" { body = "window.slowResourceFinished=true;" }
                 else if path == "/second" { body = "<html><body><p>Second page</p></body></html>" }
+                else if path == "/preview-first" { body = "<html><head><meta name='viewport' content='width=device-width,initial-scale=1'></head><body style='background:#edf5ff;color:#163050;font:24px system-ui;padding:28px'><h1>Keep this page visible</h1><a href='/blocked'>Open slow page</a></body></html>" }
                 else if path == "/history-list" { body = "<meta name='viewport' content='width=device-width,initial-scale=1'><h1>Video list</h1><a href='/history-player' style='font:24px system-ui'>Watch video</a>" }
                 else if path == "/history-player" { body = "<meta name='viewport' content='width=device-width,initial-scale=1'><h1>Video player</h1><iframe src='/history-frame-one' style='width:90%;height:200px'></iframe>" }
                 else if path == "/history-frame-one" { body = "<a href='/history-frame-two' style='font:24px system-ui'>Load player</a>" }
@@ -614,7 +727,7 @@ private final class ToolbarHTTPFixture: @unchecked Sendable {
                 }
                 else {
                     let script = path == "/blocked" ? "<script src='/slow.js'></script>" : "<script async src='/slow.js'></script>"
-                    let title = path == "/cover-slow" ? self.coverTitle : "Toolbar fixture"
+                    let title = path == "/cover-slow" ? self.coverTitle : self.pageTitle
                     body = "<html><head><title>\(title)</title>\(script)</head><body style='font:20px system-ui'><p>Interactive page</p><a href='/second'>Next page</a></body></html>"
                 }
                 let bytes = Data(body.utf8)

@@ -201,6 +201,7 @@ struct WebViewContainer: View {
     var toolbarManuallyHiddenBinding: Binding<Bool>? = nil
     var isActiveTab: Bool = true
     var addressEditorText: String? = nil
+    var addressEditorInput: SearchInputState? = nil
     var onGoHome: (() -> Void)? = nil
     var onAddressSearch: ((String) -> Void)? = nil
     var onRequestVoiceSearch: (() -> Void)? = nil
@@ -278,6 +279,11 @@ struct WebViewContainer: View {
         browserContent.modifier(SafariCompatibilityFeedback(presenter: safariCompatibilityPresenter))
     }
 
+    private var showsInitialLoading: Bool {
+        webViewModel.isLoading && !webViewModel.hasPresentedContent
+            && !webViewModel.showSnapshotWhileRestoring && webViewModel.currentURL != nil
+    }
+
     private var browserPageLayers: some View {
         ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
@@ -303,11 +309,28 @@ struct WebViewContainer: View {
                         .opacity(isShowingNewTabPage ? 0 : 1)
                         .allowsHitTesting(!isShowingNewTabPage)
                         .overlay {
-                            if webViewModel.showSnapshotWhileRestoring,
-                               let snapshot = webViewModel.snapshot,
-                               webViewModel.currentURL != nil {
-                                RestoringPageSnapshot(image: snapshot)
+                            ZStack {
+                                if webViewModel.showSnapshotWhileRestoring,
+                                   let snapshot = webViewModel.snapshot,
+                                   webViewModel.currentURL != nil {
+                                    RestoringPageSnapshot(image: snapshot)
+                                        .transition(.asymmetric(insertion: .identity, removal: .opacity))
+                                }
                             }
+                            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: webViewModel.showSnapshotWhileRestoring)
+                            .allowsHitTesting(false)
+                        }
+                        .overlay {
+                            ZStack {
+                                if showsInitialLoading, let url = webViewModel.currentURL {
+                                    BrowserInitialLoadingView(url: url,
+                                        contentBottomInset: showsBottomToolbar ? max(0, pageBottomClearance - pageViewportBottomInset) : 0)
+                                        .transition(.asymmetric(insertion: .identity, removal: .opacity))
+                                }
+                            }
+                            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: showsInitialLoading)
+                            .allowsHitTesting(showsInitialLoading)
+                            .accessibilityHidden(!showsInitialLoading)
                         }
 
                     // New Tab Page overlay
@@ -500,6 +523,12 @@ struct WebViewContainer: View {
 
     private var browserLifecycle: some View {
         browserPageLayers
+        .overlay(alignment: .top) {
+            if isFullscreen {
+                WebViewProgressBar(progress: webViewModel.estimatedProgress, isLoading: webViewModel.isLoading)
+                    .allowsHitTesting(false)
+            }
+        }
         .background {
             if #available(iOS 18.0, *) {
                 FollowLinkTranslationRuntime(viewModel: webViewModel)
@@ -720,7 +749,8 @@ struct WebViewContainer: View {
             onDismiss: handleAddressEditorDismissal
         ) {
             BrowserAddressEditorSheet(
-                initialText: addressEditorText ?? webViewModel.currentURL?.absoluteString ?? "",
+                initialText: addressEditorInput.flatMap { $0.text.isEmpty ? nil : $0.text }
+                    ?? addressEditorText ?? webViewModel.currentURL?.absoluteString ?? "",
                 initialURL: webViewModel.currentURL?.absoluteString ?? "",
                 onOpen: { value in
                     showAddressEditor = false
@@ -985,18 +1015,17 @@ struct WebViewContainer: View {
               WebNavigationPolicyService.shared.canUseSafariCompatibilityMode(for: url) else {
             return
         }
-        UIApplication.shared.open(url) { success in
-            guard !success else { return }
-            DispatchQueue.main.async {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    showExternalOpenFailed = true
-                }
-                UINotificationFeedbackGenerator().notificationOccurred(.error)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    withAnimation { showExternalOpenFailed = false }
-                }
+        ExternalBrowserService.shared.open(url, safariFallback: {
+            safariCompatibilityPresenter.present(url: url, sourceView: webViewModel.webView)
+        }, onFailure: {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                showExternalOpenFailed = true
             }
-        }
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation { showExternalOpenFailed = false }
+            }
+        })
     }
 
     private func toastView(icon: String, text: String, iconColor: Color = .white) -> some View {

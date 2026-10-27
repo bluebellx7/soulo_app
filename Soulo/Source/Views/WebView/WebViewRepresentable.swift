@@ -297,6 +297,53 @@ private final class UserScriptTabStore {
 /// custom browser gesture does not respond to VoiceOver's three-finger swipe.
 final class AccessibleWebView: WKWebView {
     private var nativeNavigationRequests: [URL: TimeInterval] = [:]
+    private var initialRevealMask: CALayer?
+    private var isRevealingInitialContent = false
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard let initialRevealMask else { return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        initialRevealMask.frame = bounds
+        CATransaction.commit()
+    }
+
+    func prepareInitialContentReveal() {
+        guard initialRevealMask == nil else { return }
+        let mask = CALayer()
+        mask.backgroundColor = UIColor.black.cgColor
+        mask.frame = bounds
+        mask.opacity = 0
+        initialRevealMask = mask
+        layer.mask = mask
+    }
+
+    func revealInitialContent() {
+        guard let mask = initialRevealMask, !isRevealingInitialContent else { return }
+        let finish = { [weak self, weak mask] in
+            guard let self, let mask, self.initialRevealMask === mask else { return }
+            if self.layer.mask === mask { self.layer.mask = nil }
+            self.initialRevealMask = nil
+            self.isRevealingInitialContent = false
+        }
+        guard !UIAccessibility.isReduceMotionEnabled, window != nil else { finish(); return }
+        isRevealingInitialContent = true
+        // A layer mask keeps the WKWebView attached, visible to WebKit and
+        // rendering its first frame. Remove it after this single short fade so
+        // normal browsing/video has no permanent compositing mask.
+        CATransaction.begin()
+        CATransaction.setCompletionBlock(finish)
+        CATransaction.setDisableActions(true)
+        mask.opacity = 1
+        let fade = CABasicAnimation(keyPath: "opacity")
+        fade.fromValue = 0
+        fade.toValue = 1
+        fade.duration = 0.18
+        fade.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        mask.add(fade, forKey: "soulo.initial-content")
+        CATransaction.commit()
+    }
 
     private func recordNativeNavigation(to url: URL?) {
         let now = ProcessInfo.processInfo.systemUptime
@@ -736,9 +783,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         webView.isFindInteractionEnabled = true
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         updateObscuredInsets(on: webView)
-        webView.backgroundColor = UIColor.systemBackground
-        webView.scrollView.backgroundColor = UIColor.systemBackground
-        webView.isOpaque = true
+        synchronizePageBackground(on: webView)
         webView.isAccessibilityElement = false
         webView.accessibilityElementsHidden = false
         webView.scrollView.isAccessibilityElement = false
@@ -756,10 +801,21 @@ struct WebViewRepresentable: UIViewRepresentable {
         context.coordinator.applyPrivacyProtectionIfNeeded(on: webView, forceCurrentDocument: true)
 
         if webView.url != nil, !viewModel.hasVisibleContent {
-            webView.evaluateJavaScript("window.__souloPageHasVisibleContent === true", in: nil, in: .defaultClient) { [weak webView, weak model = viewModel] result in
-                guard let webView, let model, model.webView === webView,
-                      case .success(let value) = result, value as? Bool == true else { return }
-                model.markPageContentVisible()
+            if !webView.isLoading, webView.url == viewModel.currentURL, viewModel.errorMessage == nil {
+                // A completed PDF or an offscreen load may have no first-paint
+                // bridge message. Never leave the initial reveal mask in place.
+                Task { @MainActor [weak webView, weak model = viewModel] in
+                    guard let webView, let model, model.webView === webView,
+                          !webView.isLoading, webView.url == model.currentURL,
+                          model.errorMessage == nil else { return }
+                    model.markPageContentVisible()
+                }
+            } else {
+                webView.evaluateJavaScript("window.__souloPageHasVisibleContent === true", in: nil, in: .defaultClient) { [weak webView, weak model = viewModel] result in
+                    guard let webView, let model, model.webView === webView,
+                          case .success(let value) = result, value as? Bool == true else { return }
+                    model.markPageContentVisible()
+                }
             }
         }
 
@@ -779,6 +835,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
+        synchronizePageBackground(on: uiView)
         updateObscuredInsets(on: uiView)
         context.coordinator.updateManualAdTap(on: uiView)
         context.coordinator.synchronizeManualAdRules(on: uiView)
@@ -796,6 +853,27 @@ struct WebViewRepresentable: UIViewRepresentable {
             adding: adBlockSettings.allowlistedHosts
         )
         Self.synchronizeAdProtection(on: uiView, model: viewModel, enabled: adBlockEnabled, allowlist: adBlockAllowlist)
+    }
+
+    private func synchronizePageBackground(on webView: WKWebView) {
+        // Keep WebKit attached and rendering while the initial translucent
+        // loading layer reveals the app behind its still-empty canvas.
+        let isOpaque = viewModel.hasPresentedContent
+        if let accessible = webView as? AccessibleWebView {
+            if isOpaque { accessible.revealInitialContent() }
+            else { accessible.prepareInitialContentReveal() }
+        }
+        let wasTransparent = !webView.isOpaque
+        let color: UIColor = isOpaque ? .systemBackground : .clear
+        if webView.isOpaque != isOpaque { webView.isOpaque = isOpaque }
+        if webView.backgroundColor != color { webView.backgroundColor = color }
+        if webView.scrollView.backgroundColor != color { webView.scrollView.backgroundColor = color }
+        if !isOpaque {
+            if webView.underPageBackgroundColor != .clear { webView.underPageBackgroundColor = .clear }
+        } else if wasTransparent {
+            // Return overscroll coloring to WebKit's automatic page color.
+            webView.underPageBackgroundColor = nil
+        }
     }
 
     static func synchronizeAdProtection(on webView: WKWebView, model: WebViewModel, enabled: Bool, allowlist: [String]) {
@@ -992,6 +1070,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var provisionalNavigation: WKNavigation?
         private var latestNavigation: WKNavigation?
         private var navigationFinished = false
+        private var navigationPreview: UIView?
         private var navigationOriginURL: URL?
         private var userInitiatedNavigationChain = false
         private var domainConfirmationID: UUID?
@@ -1028,7 +1107,38 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var blankPageRecoveryAttempts: [String: Int] = [:]
         private var terminatedProcessRecoveryURLs = Set<String>()
         private var navigationGeneration = UUID()
-        fileprivate func cancelBackwardTraversal() { viewModel.cancelBackwardTraversal() }
+        fileprivate func cancelBackwardTraversal() {
+            viewModel.cancelBackwardTraversal()
+            removeNavigationPreview()
+        }
+
+        private func retainNavigationPreview(in webView: WKWebView) {
+            guard navigationPreview == nil, viewModel.hasPresentedContent,
+                  !viewModel.showSnapshotWhileRestoring, webView.window != nil,
+                  let preview = webView.snapshotView(afterScreenUpdates: false) else { return }
+            preview.frame = webView.bounds
+            preview.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            // The previous frame is visual continuity, never an interactive
+            // copy of the new document underneath it.
+            preview.isUserInteractionEnabled = true
+            preview.isAccessibilityElement = true
+            preview.accessibilityLabel = LanguageManager.shared.localizedString("loading")
+            preview.accessibilityIdentifier = "browser.navigation-preview"
+            webView.addSubview(preview)
+            navigationPreview = preview
+        }
+
+        private func removeNavigationPreview(animated: Bool = false) {
+            guard let preview = navigationPreview else { return }
+            navigationPreview = nil
+            guard animated, !UIAccessibility.isReduceMotionEnabled, preview.window != nil else {
+                preview.removeFromSuperview()
+                return
+            }
+            UIView.animate(withDuration: 0.18, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
+                preview.alpha = 0
+            } completion: { _ in preview.removeFromSuperview() }
+        }
         init(viewModel: WebViewModel) {
             self.viewModel = viewModel
             super.init()
@@ -1199,7 +1309,11 @@ struct WebViewRepresentable: UIViewRepresentable {
 
             if message.name == "souloPageReady" {
                 guard message.webView === viewModel.webView, message.frameInfo.isMainFrame,
-                      message.world == .defaultClient, body["visible"] as? Bool == true else { return }
+                      message.world == .defaultClient, body["visible"] as? Bool == true,
+                      provisionalNavigation == nil else { return }
+                if let source = message.frameInfo.request.url, let current = message.webView?.url,
+                   !WebEpisodeList.matches(source, current) { return }
+                removeNavigationPreview(animated: true)
                 viewModel.markPageContentVisible()
                 return
             }
@@ -1244,6 +1358,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                       let webView = message.webView, let parent = viewModel.webView,
                       webView === parent || webView.isDescendant(of: parent),
                       let url = message.frameInfo.request.url else { return }
+                viewModel.recordDocumentInteraction(in: parent)
                 viewModel.cancelBackwardTraversal()
                 let destinations = (body["destinations"] as? [String] ?? []).prefix(16).compactMap { raw -> URL? in
                     guard raw.count <= 8192, let target = URL(string: raw),
@@ -1989,6 +2104,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                         guard wv.navigationDelegate === self,
                               self?.viewModel.webView === wv else { return }
                         self?.viewModel.updateLoading(wv.isLoading)
+                        if !wv.isLoading { self?.removeNavigationPreview(animated: true) }
                     }
                 },
                 webView.observe(\.canGoBack, options: [.initial, .new]) { [weak self] wv, _ in
@@ -2191,6 +2307,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
             guard webView === viewModel.webView else { return }
+            retainNavigationPreview(in: webView)
             BrowserStartupTrace.mark("navigation_start")
             provisionalNavigation = navigation
             latestNavigation = navigation
@@ -2220,6 +2337,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             BrowserStartupTrace.mark("navigation_commit")
             viewModel.errorMessage = nil
             provisionalNavigation = nil
+            viewModel.currentDocumentHasUserInteraction = false
             userInitiatedNavigationChain = false
             navigationGesture = nil
             navigationOriginURL = webView.url
@@ -2247,6 +2365,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             guard isCurrentNavigation(navigation, in: webView) else { return }
+            removeNavigationPreview(animated: true)
             latestNavigation = navigation
             navigationFinished = true
             viewModel.errorMessage = nil
@@ -2263,6 +2382,9 @@ struct WebViewRepresentable: UIViewRepresentable {
             Task { @MainActor [weak self] in
                 guard let self, self.navigationGeneration == episodeGeneration,
                       self.viewModel.webView === webView else { return }
+                // Native documents (for example PDFs) need not run the HTML
+                // first-paint bridge, but must still reveal when loading ends.
+                self.viewModel.markPageContentVisible()
                 self.viewModel.updateLoading(false)
                 self.viewModel.updateCurrentURL(webView.url)
                 self.viewModel.updateTitle(webView.title)
@@ -2361,6 +2483,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             withError error: Error
         ) {
             guard isCurrentNavigation(navigation, in: webView) else { return }
+            removeNavigationPreview()
             latestNavigation = navigation
             navigationFinished = true
             if provisionalNavigation === navigation { provisionalNavigation = nil }
@@ -2373,6 +2496,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             withError error: Error
         ) {
             guard isCurrentNavigation(navigation, in: webView) else { return }
+            removeNavigationPreview()
             latestNavigation = navigation
             navigationFinished = true
             if provisionalNavigation === navigation { provisionalNavigation = nil }
@@ -2551,6 +2675,13 @@ struct WebViewRepresentable: UIViewRepresentable {
             }
 
             if navigationAction.navigationType == .backForward {
+                if navigationAction.targetFrame?.isMainFrame == true,
+                   let target = viewModel.historyTargetSkippingAutomaticRedirects(to: url,
+                        from: navigationAction.sourceFrame.request.url, in: webView) {
+                    decide(.cancel)
+                    DispatchQueue.main.async { [weak webView] in webView?.go(to: target) }
+                    return
+                }
                 viewModel.willNavigateHistory(in: webView,
                     isMainFrame: navigationAction.targetFrame?.isMainFrame != false,
                     frameURL: navigationAction.request.url)
@@ -2582,6 +2713,16 @@ struct WebViewRepresentable: UIViewRepresentable {
                 case .allow:
                     let method = navigationAction.request.httpMethod?.uppercased() ?? "GET"
                     let isMainFrame = navigationAction.targetFrame?.isMainFrame == true
+                    if isMainFrame, method == "GET", navigationAction.sourceFrame.isMainFrame,
+                       navigationAction.navigationType == .other,
+                       !nativeRequest, !viewModel.currentDocumentHasUserInteraction,
+                       !isExplicitNavigation(navigationAction, in: webView),
+                       let source = navigationAction.sourceFrame.request.url, source == webView.url {
+                        var from = URLComponents(url: source, resolvingAgainstBaseURL: false)
+                        var to = URLComponents(url: url, resolvingAgainstBaseURL: false)
+                        from?.fragment = nil; to?.fragment = nil
+                        if from?.url != to?.url { viewModel.recordAutomaticRedirect(in: webView) }
+                    }
                     let shouldSkipPrivacyTransform = oneShotHTTPFallbacks.remove(url.absoluteString) != nil
 
                     if isMainFrame, method == "GET",

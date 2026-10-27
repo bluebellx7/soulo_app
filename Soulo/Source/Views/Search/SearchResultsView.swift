@@ -73,31 +73,13 @@ struct SearchResultsView: View {
                                 .padding(.bottom, 2)
 
                             // Floating autocomplete — zero-height container with overlay extending below
-                            Color.clear
-                                .frame(height: 0)
-                                .overlay(alignment: .top) {
-                                    if !searchVM.suggestions.isEmpty {
-                                        SearchAutocompleteView(
-                                            suggestions: searchVM.suggestions,
-                                            query: searchVM.searchText,
-                                            darkVariant: false,
-                                            onSelect: { suggestion in
-                                                searchVM.searchText = suggestion
-                                                searchVM.performSearch(context: modelContext)
-                                                loadCurrentPlatformURL()
-                                            },
-                                            onFill: { suggestion in
-                                                searchVM.searchText = suggestion
-                                            }
-                                        )
-                                        .padding(.horizontal, 10)
-                                        .padding(.top, 4)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                        .transition(.opacity.combined(with: .move(edge: .top)))
-                                    }
-                                }
-                                .zIndex(100)
-                                .allowsHitTesting(!searchVM.suggestions.isEmpty)
+                            SearchAutocompleteOverlay(input: searchVM.input, darkVariant: false,
+                                horizontalPadding: 10, topPadding: 4,
+                                onSelect: { suggestion in
+                                    searchVM.searchText = suggestion
+                                    searchVM.performSearch(context: modelContext)
+                                    loadCurrentPlatformURL()
+                                }, onFill: { searchVM.searchText = $0 })
                         }
 
                         // Tab bar — show when multiple tabs
@@ -135,15 +117,6 @@ struct SearchResultsView: View {
 
                 // WebView — mount only the active tab; WebViewModel keeps the WKWebView alive for instant restores.
                 ZStack {
-                    let activeWebViewModel = tabManager.activeWebViewModel
-                    let activeProgress = activeWebViewModel?.estimatedProgress ?? 0
-                    let activePageIsLoading = activeWebViewModel?.isLoading == true
-                        && activeWebViewModel?.currentURL != nil
-                        && activeProgress < 0.98
-                    let activePageIsRendered = activeWebViewModel?.hasVisibleContent == true || pageReady || activeProgress >= 0.98
-                    let shouldShowLoadingOverlay = activeWebViewModel?.currentURL != nil
-                        && activePageIsLoading && !activePageIsRendered
-
                     if let activeTab = tabManager.activeTab {
                         WebViewContainer(
                             webViewModel: activeTab.webViewModel,
@@ -152,9 +125,8 @@ struct SearchResultsView: View {
                             tabManager: tabManager,
                             toolbarManuallyHiddenBinding: $toolbarManuallyHidden,
                             isActiveTab: true,
-                            addressEditorText: searchVM.searchText.isEmpty
-                                ? searchVM.currentKeyword
-                                : searchVM.searchText,
+                            addressEditorText: searchVM.currentKeyword,
+                            addressEditorInput: searchVM.input,
                             onGoHome: {
                                 withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
                                     isFullscreen = false
@@ -185,11 +157,6 @@ struct SearchResultsView: View {
                         )
                         .id(activeTab.id)
                         .transition(.opacity)
-                    }
-
-                    // Loading — thin overlay spinner at top, WebView visible underneath
-                    if shouldShowLoadingOverlay {
-                        loadingOverlay
                     }
 
                     // AI loading overlay
@@ -230,9 +197,11 @@ struct SearchResultsView: View {
         .background(
             Group {
                 if isShowingNewTabPage {
-                    // Keep the new-tab wallpaper continuous behind the top
-                    // platform controls instead of starting below them.
                     Color.clear
+                } else if showsInitialLoading {
+                    // Match the loading canvas through the chrome and safe
+                    // areas, independently of webpage dark-mode preferences.
+                    appColorScheme == .dark ? Color.black : Color.white
                 } else if verticalSizeClass == .compact {
                     usesDarkBrowserChrome ? Color(hex: "111111") : Color(UIColor.systemBackground)
                 } else {
@@ -448,34 +417,16 @@ struct SearchResultsView: View {
     }
 
     private var usesDarkBrowserChrome: Bool {
-        webAppearance.forceDarkPages && !isShowingNewTabPage
+        webAppearance.forceDarkPages && !isShowingNewTabPage && !showsInitialLoading
+    }
+
+    private var showsInitialLoading: Bool {
+        tabManager.activeWebViewModel.map {
+            $0.isLoading && !$0.hasPresentedContent && !$0.showSnapshotWhileRestoring
+        } == true
     }
 
     // MARK: - Top Search Bar
-
-    private var loadingOverlay: some View {
-        VStack {
-            HStack(spacing: 8) {
-                ProgressView()
-                    .controlSize(.small)
-                    .tint(Color.primary.opacity(0.62))
-                Text(languageManager.localizedString("loading"))
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 16)
-            .background(.ultraThinMaterial, in: Capsule())
-            .padding(.top, 12)
-            Spacer()
-        }
-        .transition(.opacity)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-        .onAppear {
-            AppAccessibility.announce(languageManager.localizedString("loading"))
-        }
-    }
 
     private var aiLoadingOverlay: some View {
         ZStack {
@@ -517,7 +468,7 @@ struct SearchResultsView: View {
 
     private var topSearchBar: some View {
         SearchBarView(
-            text: $searchVM.searchText,
+            input: searchVM.input,
             isCompact: true,
             isIncognito: searchVM.isIncognito,
             isRecording: speechService.isRecording,

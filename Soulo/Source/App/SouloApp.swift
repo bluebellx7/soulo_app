@@ -191,6 +191,12 @@ private struct SouloWindowRoot: View {
         activationTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 350_000_000)
             guard !Task.isCancelled else { return }
+            // A new user may already be composing the first query. Defer
+            // speculative rule preparation until the editor releases focus.
+            while searchVM.input.isEditing {
+                try? await Task.sleep(for: .milliseconds(250))
+                guard !Task.isCancelled, scenePhase == .active else { return }
+            }
             WebViewRepresentable.preWarm()
             searchVM.detectClipboard()
             try? await Task.sleep(nanoseconds: 450_000_000)

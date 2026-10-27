@@ -9,7 +9,11 @@ class SearchViewModel: ObservableObject {
 
     // MARK: - Core Published Properties
 
-    @Published var searchText: String = ""
+    let input = SearchInputState()
+    var searchText: String {
+        get { input.text }
+        set { input.text = newValue }
+    }
     @Published var isSearching: Bool = false
     /// Unique ID that changes each time a new search is performed. Used to detect new vs. returning.
     @Published var searchID: UUID = UUID()
@@ -32,14 +36,26 @@ class SearchViewModel: ObservableObject {
     @Published var recentSearches: [String] = []
 
     // Live autocomplete suggestions
-    @Published var suggestions: [String] = []
-    @Published var isLoadingSuggestions: Bool = false
+    var suggestions: [String] {
+        get { input.suggestions }
+        set { if input.suggestions != newValue { input.suggestions = newValue } }
+    }
+    var isLoadingSuggestions: Bool {
+        get { input.isLoadingSuggestions }
+        set { if input.isLoadingSuggestions != newValue { input.isLoadingSuggestions = newValue } }
+    }
     private var suggestionTask: Task<Void, Never>?
+    private var suggestionRequestID = UUID()
+    private let suggestionProvider: @Sendable (String, PlatformRegion) async -> [String]
     private var suggestCancellables = Set<AnyCancellable>()
     private let clipboardReader: any ClipboardReading
 
-    init(clipboardReader: (any ClipboardReading)? = nil) {
+    init(clipboardReader: (any ClipboardReading)? = nil,
+         suggestionProvider: @escaping @Sendable (String, PlatformRegion) async -> [String] = { query, region in
+             await SearchSuggestionService.fetch(query: query, region: region)
+         }) {
         self.clipboardReader = clipboardReader ?? SystemClipboardReader()
+        self.suggestionProvider = suggestionProvider
         selectedRegion = Self.detectDefaultRegion()
         selectedPlatform = PlatformDataStore.shared.firstVisiblePlatform(for: selectedRegion)
         setupSuggestionDebouncer()
@@ -48,26 +64,27 @@ class SearchViewModel: ObservableObject {
     // MARK: - Autocomplete Suggestions
 
     private func setupSuggestionDebouncer() {
-        $searchText
-            .removeDuplicates()
-            .debounce(for: .milliseconds(250), scheduler: DispatchQueue.main)
-            .sink { [weak self] text in
-                self?.fetchSuggestions(for: text)
+        input.$edit
+            .combineLatest($selectedRegion)
+            .removeDuplicates { $0.0 == $1.0 && $0.1 == $1.1 }
+            .sink { [weak self] edit, region in
+                self?.fetchSuggestions(for: edit, region: region)
             }
             .store(in: &suggestCancellables)
     }
 
-    private func fetchSuggestions(for query: String) {
+    private func fetchSuggestions(for edit: SearchInputState.Edit, region: PlatformRegion) {
         // Cancel any in-flight request
         suggestionTask?.cancel()
-
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        suggestionRequestID = UUID()
+        let requestID = suggestionRequestID
+        let trimmed = edit.text.trimmingCharacters(in: .whitespacesAndNewlines)
 
         // Don't fetch if:
         // - empty
         // - URL (user is pasting a link)
         // - text matches the last submitted search (user just arrived at results page)
-        guard !trimmed.isEmpty,
+        guard !edit.isComposing, !trimmed.isEmpty,
               !trimmed.isValidURL,
               trimmed != currentKeyword
         else {
@@ -76,19 +93,20 @@ class SearchViewModel: ObservableObject {
             return
         }
 
-        isLoadingSuggestions = true
-        let region = selectedRegion
+        suggestions = []
+        isLoadingSuggestions = false
+        let provider = suggestionProvider
         suggestionTask = Task { @MainActor [weak self] in
-            let results = await SearchSuggestionService.fetch(query: trimmed, region: region)
-            guard !Task.isCancelled else { return }
-            guard let self else { return }
+            do { try await Task.sleep(for: .milliseconds(250)) }
+            catch { return }
+            guard self?.suggestionRequestID == requestID else { return }
+            self?.isLoadingSuggestions = true
+            let results = await provider(trimmed, region)
+            guard !Task.isCancelled, let self else { return }
             // Re-check conditions on completion (user may have submitted in flight)
             let current = self.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard current == trimmed, current != self.currentKeyword else {
-                self.suggestions = []
-                self.isLoadingSuggestions = false
-                return
-            }
+            guard self.suggestionRequestID == requestID, !self.input.edit.isComposing,
+                  self.selectedRegion == region, current == trimmed, current != self.currentKeyword else { return }
             self.suggestions = results
             self.isLoadingSuggestions = false
         }
@@ -96,9 +114,12 @@ class SearchViewModel: ObservableObject {
 
     func clearSuggestions() {
         suggestionTask?.cancel()
+        suggestionRequestID = UUID()
         suggestions = []
         isLoadingSuggestions = false
     }
+
+    deinit { suggestionTask?.cancel() }
 
     /// Detect if user is likely in China based on locale/timezone
     private static func detectDefaultRegion() -> PlatformRegion {

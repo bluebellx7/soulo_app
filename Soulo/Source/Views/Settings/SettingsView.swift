@@ -62,7 +62,7 @@ struct SettingsView: View {
                 List {
                     // MARK: - Platform Management
                     Section {
-                        NavigationLink(destination: PlatformManagementView()) {
+                        NavigationLink(value: Destination.platforms) {
                             Label {
                                 Text(LanguageManager.shared.localizedString("settings_platforms"))
                             } icon: {
@@ -104,7 +104,7 @@ struct SettingsView: View {
                         }
                         .padding(.vertical, 4)
 
-                        NavigationLink(destination: LanguageSettingsView()) {
+                        NavigationLink(value: Destination.language) {
                             Label {
                                 HStack {
                                     Text(LanguageManager.shared.localizedString("settings_language"))
@@ -118,7 +118,7 @@ struct SettingsView: View {
                             }
                         }
 
-                        NavigationLink(destination: WallpaperSettingsView()) {
+                        NavigationLink(value: Destination.wallpaper) {
                             Label {
                                 Text(LanguageManager.shared.localizedString("settings_wallpaper"))
                             } icon: {
@@ -256,7 +256,7 @@ struct SettingsView: View {
                         }
                         .tint(Color.themePrimary)
 
-                        NavigationLink(destination: WebAppearanceSettingsView()) {
+                        NavigationLink(value: Destination.webAppearance) {
                             SettingsNavigationLabel(
                                 icon: "circle.lefthalf.filled",
                                 color: neutralIconColor,
@@ -264,7 +264,7 @@ struct SettingsView: View {
                             )
                         }
 
-                        NavigationLink(destination: ShakeActionSettingsView()) {
+                        NavigationLink(value: Destination.shake) {
                             HStack(alignment: .top, spacing: 12) {
                                 IconBadge(systemName: "iphone.radiowaves.left.and.right", color: neutralIconColor)
                                 VStack(alignment: .leading, spacing: 2) {
@@ -282,7 +282,7 @@ struct SettingsView: View {
                             }
                         }
 
-                        NavigationLink(destination: BrowserToolbarSettingsView()) {
+                        NavigationLink(value: Destination.toolbar) {
                             SettingsNavigationLabel(
                                 icon: "slider.horizontal.3",
                                 color: neutralIconColor,
@@ -290,7 +290,7 @@ struct SettingsView: View {
                             )
                         }
 
-                        NavigationLink(destination: AdBlockManagementView(currentHost: nil)) {
+                        NavigationLink(value: Destination.adBlock) {
                             SettingsNavigationLabel(
                                 icon: "shield.lefthalf.filled",
                                 color: neutralIconColor,
@@ -298,7 +298,7 @@ struct SettingsView: View {
                             )
                         }
 
-                        NavigationLink(destination: PrivacySettingsView()) {
+                        NavigationLink(value: Destination.privacy) {
                             SettingsNavigationLabel(
                                 icon: "hand.raised.fill",
                                 color: neutralIconColor,
@@ -306,11 +306,7 @@ struct SettingsView: View {
                             )
                         }
 
-                        NavigationLink(destination: ExtensionCenterView(onOpenInBrowser: { url in
-                            tabManager.activeWebViewModel?.loadURL(url)
-                            searchVM.isSearching = true
-                            dismiss()
-                        })) {
+                        NavigationLink(value: Destination.extensions) {
                             SettingsNavigationLabel(
                                 icon: "puzzlepiece.extension",
                                 color: neutralIconColor,
@@ -328,6 +324,7 @@ struct SettingsView: View {
                         ) {
                             showClearCacheAlert = true
                         }
+                        .task { await refreshCacheSize() }
                         .alert(
                             LanguageManager.shared.localizedString("privacy_clear_cache_confirm_title"),
                             isPresented: $showClearCacheAlert
@@ -369,7 +366,7 @@ struct SettingsView: View {
                                 Button(LanguageManager.shared.localizedString("retry")) { cloudSync.refresh() }
                             }
                         }
-                        NavigationLink(destination: SettingsBackupsView()) {
+                        NavigationLink(value: Destination.backups) {
                             Label {
                                 Text(LanguageManager.shared.localizedString("settings_backups"))
                             } icon: {
@@ -377,7 +374,7 @@ struct SettingsView: View {
                             }
                         }
                         .accessibilityIdentifier("settings.backups")
-                        NavigationLink(destination: AppQuickActionSettingsView()) {
+                        NavigationLink(value: Destination.quickActions) {
                             Label {
                                 Text(ToolText.text("quick_actions_title"))
                             } icon: {
@@ -408,7 +405,7 @@ struct SettingsView: View {
                         }
                         .buttonStyle(.plain)
 
-                        NavigationLink(destination: URLSchemeGuideView()) {
+                        NavigationLink(value: Destination.urlSchemes) {
                             Label {
                                 Text(verbatim: "URL Scheme")
                             } icon: {
@@ -417,7 +414,7 @@ struct SettingsView: View {
                         }
                         .accessibilityIdentifier("settings.url-schemes")
 
-                        NavigationLink(destination: AppVersionView(version: appVersion)) {
+                        NavigationLink(value: Destination.version) {
                             HStack {
                                 Label {
                                     Text(LanguageManager.shared.localizedString("settings_version"))
@@ -456,6 +453,9 @@ struct SettingsView: View {
             }
             .navigationTitle(LanguageManager.shared.localizedString("settings_title"))
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: Destination.self) { destination in
+                destinationView(destination)
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(LanguageManager.shared.localizedString("done")) {
@@ -485,10 +485,38 @@ struct SettingsView: View {
             .sheet(isPresented: $showFeedback) {
                 FeedbackView()
             }
-            .task {
-                await refreshCacheSize()
-            }
             // Appearance controlled by UIKit via ThemeManager.applyAppearance()
+        }
+    }
+
+    // Value-based links defer service/archive initialization until a subpage
+    // is actually opened, instead of constructing every destination at once.
+    private enum Destination: Hashable {
+        case platforms, language, wallpaper, webAppearance, shake, toolbar
+        case adBlock, privacy, extensions, backups, quickActions, urlSchemes, version
+    }
+
+    @ViewBuilder
+    private func destinationView(_ destination: Destination) -> some View {
+        switch destination {
+        case .platforms: PlatformManagementView()
+        case .language: LanguageSettingsView()
+        case .wallpaper: WallpaperSettingsView()
+        case .webAppearance: WebAppearanceSettingsView()
+        case .shake: ShakeActionSettingsView()
+        case .toolbar: BrowserToolbarSettingsView()
+        case .adBlock: AdBlockManagementView(currentHost: nil)
+        case .privacy: PrivacySettingsView()
+        case .extensions:
+            ExtensionCenterView(onOpenInBrowser: { url in
+                tabManager.activeWebViewModel?.loadURL(url)
+                searchVM.isSearching = true
+                dismiss()
+            })
+        case .backups: SettingsBackupsView()
+        case .quickActions: AppQuickActionSettingsView()
+        case .urlSchemes: URLSchemeGuideView()
+        case .version: AppVersionView(version: appVersion)
         }
     }
 
@@ -508,7 +536,9 @@ struct SettingsView: View {
     }
 
     private func refreshCacheSize() async {
+        guard cacheSizeText == nil else { return }
         let byteCount = await BrowserCacheService.currentSizeInBytes()
+        guard !Task.isCancelled else { return }
         cacheSizeText = BrowserCacheService.formattedSize(byteCount)
     }
 }

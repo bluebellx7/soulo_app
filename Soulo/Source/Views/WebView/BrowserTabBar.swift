@@ -593,6 +593,9 @@ private struct TabDomainGroupRow: View {
                             compactPreviewHeight: previewHeight
                         )
                         .frame(width: cardWidth)
+                        .modifier(GroupedTabSwipeToClose(width: cardWidth) {
+                            select(tab.id, action: onClose)
+                        })
                         .id(tab.id)
                     }
             }
@@ -605,6 +608,165 @@ private struct TabDomainGroupRow: View {
 
     private func select(_ id: UUID, action: (Int) -> Void) {
         if let index = tabManager.tabs.firstIndex(where: { $0.id == id }) { action(index) }
+    }
+}
+
+private struct GroupedTabSwipeToClose: ViewModifier {
+    let width: CGFloat
+    let onClose: () -> Void
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var offset: CGFloat = 0
+    @State private var isClosing = false
+
+    private var threshold: CGFloat { min(48, max(28, width * 0.34)) }
+
+    func body(content: Content) -> some View {
+        content
+            .offset(x: offset)
+            .opacity(isClosing ? 0 : 1)
+            .background(alignment: .trailing) {
+                Image(systemName: "trash")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(.red)
+                    .frame(width: 44, height: 44)
+                    .background(.red.opacity(0.12), in: Circle())
+                    .padding(.trailing, 5)
+                    .opacity(min(1, -offset / threshold))
+                    .accessibilityHidden(true)
+            }
+            .clipped()
+            .allowsHitTesting(!isClosing)
+            .background {
+                GroupedTabLeftSwipeGesture(enabled: !voiceOverEnabled && !isClosing,
+                    onChanged: { translation in
+                        let next = min(0, max(-width, translation))
+                        if next < -threshold, offset >= -threshold { HapticsManager.light() }
+                        offset = next
+                    }, onEnded: { translation, velocity, cancelled in
+                        guard !isClosing else { return }
+                        let projected = translation + min(0, velocity) * 0.15
+                        let shouldClose = !cancelled && !voiceOverEnabled && (translation < -threshold
+                            || (translation < -20 && projected < -width * 0.7))
+                        if shouldClose {
+                            if reduceMotion { isClosing = true; onClose(); return }
+                            withAnimation(.easeOut(duration: 0.18)) { isClosing = true; offset = -width }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) { onClose() }
+                        } else {
+                            withAnimation(reduceMotion ? nil : .spring(response: 0.25, dampingFraction: 0.82)) { offset = 0 }
+                        }
+                    })
+            }
+            .onDisappear { if !isClosing { offset = 0 } }
+    }
+}
+
+/// Reject non-leftward drags before recognition, so the enclosing ScrollView
+/// can begin its own pan on the same touch sequence. A SwiftUI onChanged guard
+/// runs after recognition and cannot reliably hand that gesture back.
+private struct GroupedTabLeftSwipeGesture: UIViewRepresentable {
+    var enabled: Bool
+    var onChanged: (CGFloat) -> Void
+    var onEnded: (CGFloat, CGFloat, Bool) -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
+
+    func makeUIView(context: Context) -> MarkerView {
+        let view = MarkerView()
+        view.isUserInteractionEnabled = false
+        view.accessibilityElementsHidden = true
+        view.onHierarchyChange = { [weak coordinator = context.coordinator] view in
+            coordinator?.attach(to: view)
+        }
+        return view
+    }
+
+    func updateUIView(_ view: MarkerView, context: Context) {
+        context.coordinator.parent = self
+        context.coordinator.attach(to: view)
+    }
+
+    static func dismantleUIView(_ view: MarkerView, coordinator: Coordinator) {
+        view.onHierarchyChange = nil
+        coordinator.detach()
+    }
+
+    final class MarkerView: UIView {
+        var onHierarchyChange: ((MarkerView) -> Void)?
+        override func didMoveToSuperview() { super.didMoveToSuperview(); onHierarchyChange?(self) }
+        override func didMoveToWindow() { super.didMoveToWindow(); onHierarchyChange?(self) }
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        var parent: GroupedTabLeftSwipeGesture
+        private weak var marker: MarkerView?
+        private weak var scrollView: UIScrollView?
+        private var isDetaching = false
+        private lazy var pan: UIPanGestureRecognizer = {
+            let recognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+            recognizer.name = "SouloGroupedTabLeftSwipe"
+            recognizer.maximumNumberOfTouches = 1
+            recognizer.cancelsTouchesInView = true
+            recognizer.delaysTouchesBegan = false
+            recognizer.delaysTouchesEnded = false
+            recognizer.delegate = self
+            return recognizer
+        }()
+
+        init(parent: GroupedTabLeftSwipeGesture) { self.parent = parent }
+
+        func attach(to marker: MarkerView) {
+            var ancestor = marker.superview
+            while let view = ancestor, !(view is UIScrollView) { ancestor = view.superview }
+            guard marker.window != nil, let scroll = ancestor as? UIScrollView else { detach(); return }
+            if scrollView === scroll { self.marker = marker; return }
+            detach()
+            self.marker = marker
+            scrollView = scroll
+            scroll.addGestureRecognizer(pan)
+        }
+
+        func detach() {
+            isDetaching = true
+            scrollView?.removeGestureRecognizer(pan)
+            marker = nil
+            scrollView = nil
+            isDetaching = false
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            guard parent.enabled, let marker, marker.window != nil else { return false }
+            return marker.bounds.contains(touch.location(in: marker))
+        }
+
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard parent.enabled, let scrollView else { return false }
+            let velocity = pan.velocity(in: scrollView)
+            let translation = pan.translation(in: scrollView)
+            let direction = abs(velocity.x) + abs(velocity.y) > 0.01 ? velocity : translation
+            return direction.x < 0 && abs(direction.x) > abs(direction.y) * 1.35
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+            shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+            // This is per attempt, not a permanent dependency for every card
+            // ever visited. Vertical pans fail here before the list starts.
+            parent.enabled && otherGestureRecognizer === scrollView?.panGestureRecognizer
+        }
+
+        @objc private func handlePan(_ pan: UIPanGestureRecognizer) {
+            guard !isDetaching, let scrollView else { return }
+            let translation = pan.translation(in: scrollView).x
+            switch pan.state {
+            case .began, .changed:
+                if parent.enabled { parent.onChanged(translation) }
+            case .ended:
+                parent.onEnded(translation, pan.velocity(in: scrollView).x, !parent.enabled)
+            case .cancelled, .failed:
+                parent.onEnded(translation, 0, true)
+            default: break
+            }
+        }
     }
 }
 

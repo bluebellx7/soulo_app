@@ -265,6 +265,10 @@ struct HomeView: View {
             wallpaperLoadTask = Task { @MainActor in
                 try? await Task.sleep(nanoseconds: 600_000_000)
                 guard !Task.isCancelled else { return }
+                while searchVM.input.isEditing {
+                    try? await Task.sleep(for: .milliseconds(250))
+                    guard !Task.isCancelled else { return }
+                }
                 wallpaperManager.ensureLoaded()
             }
             if let action = AppQuickActionService.shared.consumePendingAction() {
@@ -327,6 +331,7 @@ struct HomeView: View {
             urlRouteID = UUID()
         }
         .onOpenURL { url in
+            guard !ExternalBrowserService.shared.consumeReturnedURL(url) else { return }
             guard let route = SouloURLRoute.parse(url) else { return }
             // Reusing the browser's live navigation items in a replacement stack
             // can make UIKit attach the same item to two navigation bars.
@@ -483,7 +488,7 @@ struct HomeView: View {
 
             // Search bar
             SearchBarView(
-                text: $searchVM.searchText,
+                input: searchVM.input,
                 isIncognito: searchVM.isIncognito,
                 isRecording: speechService.isRecording,
                 onSubmit: { performSearch() },
@@ -509,31 +514,12 @@ struct HomeView: View {
             .padding(.horizontal, 28)
 
             // Floating autocomplete — zero-height anchor, overlay extends downward
-            Color.clear
-                .frame(height: 0)
-                .overlay(alignment: .top) {
-                    if !searchVM.suggestions.isEmpty {
-                        SearchAutocompleteView(
-                            suggestions: searchVM.suggestions,
-                            query: searchVM.searchText,
-                            darkVariant: true,
-                            onSelect: { suggestion in
-                                searchVM.searchText = suggestion
-                                performSearch()
-                            },
-                            onFill: { suggestion in
-                                searchVM.searchText = suggestion
-                            }
-                        )
-                        .frame(maxWidth: 600)
-                        .padding(.horizontal, 28)
-                        .padding(.top, 8)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                    }
-                }
-                .zIndex(100)
-                .allowsHitTesting(!searchVM.suggestions.isEmpty)
+            SearchAutocompleteOverlay(input: searchVM.input, darkVariant: true,
+                maximumWidth: 600, horizontalPadding: 28, topPadding: 8,
+                onSelect: { suggestion in
+                    searchVM.searchText = suggestion
+                    performSearch()
+                }, onFill: { searchVM.searchText = $0 })
 
             // Group picker
             if showGroupPickerOnHome {
@@ -549,9 +535,9 @@ struct HomeView: View {
 
             // Recent searches (hidden while typing, shown when empty)
             if showRecentSearchesOnHome
-                && !searchVM.recentSearches.isEmpty
-                && searchVM.searchText.isEmpty {
-                SearchSuggestionsView(
+                && !searchVM.recentSearches.isEmpty {
+                HomeRecentSearches(
+                    input: searchVM.input,
                     recentSearches: searchVM.recentSearches,
                     onTap: { keyword in
                         searchVM.searchText = keyword
@@ -894,6 +880,22 @@ struct HomeView: View {
         case .shareApp:
             showAppShareSheet = true
         }
+    }
+}
+
+/// Keep the search field's position stable when the first marked letter arrives.
+/// Only this small section observes the draft; typing never rebuilds HomeView.
+private struct HomeRecentSearches: View {
+    @ObservedObject var input: SearchInputState
+    let recentSearches: [String]
+    let onTap: (String) -> Void
+    let onDelete: (String) -> Void
+
+    var body: some View {
+        SearchSuggestionsView(recentSearches: recentSearches, onTap: onTap, onDelete: onDelete)
+            .opacity(input.text.isEmpty ? 1 : 0)
+            .allowsHitTesting(input.text.isEmpty)
+            .accessibilityHidden(!input.text.isEmpty)
     }
 }
 

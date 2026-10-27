@@ -35,7 +35,9 @@ struct PresentationSearchField: UIViewRepresentable {
     func updateUIView(_ field: Field, context: Context) {
         let shouldFocus = context.coordinator.parent.focusRequest != focusRequest
         context.coordinator.parent = self
-        if field.text != text { field.text = text }
+        if field.text != text, field.markedTextRange == nil || shouldFocus {
+            field.text = text
+        }
         if shouldFocus {
             DispatchQueue.main.async { [weak field] in
                 guard let field, field.window != nil else { return }
@@ -74,6 +76,7 @@ struct PresentationSearchField: UIViewRepresentable {
             parent.onFocusChanged(false)
         }
         func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+            guard textField.markedTextRange == nil else { return false }
             parent.onSubmit()
             return true
         }

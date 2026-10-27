@@ -45,6 +45,8 @@ final class WebViewModel: ObservableObject {
     var lastURLString: String = ""
     @Published var isLoading: Bool = false
     @Published private(set) var hasVisibleContent = false
+    @Published private(set) var hasPresentedContent = false
+    var currentDocumentHasUserInteraction = false
     @Published var estimatedProgress: Double = 0.0
     @Published var canGoBack: Bool = false
     @Published var canGoForward: Bool = false
@@ -295,14 +297,26 @@ final class WebViewModel: ObservableObject {
         historyTransition.cancelBackwardTraversal()
     }
 
+    func recordDocumentInteraction(in webView: WKWebView) {
+        currentDocumentHasUserInteraction = true
+        historyTransition.recordInteraction(in: webView)
+    }
+
+    func recordAutomaticRedirect(in webView: WKWebView) {
+        historyTransition.recordAutomaticRedirect(in: webView)
+    }
+
+    func historyTargetSkippingAutomaticRedirects(to url: URL, from source: URL?, in webView: WKWebView) -> WKBackForwardListItem? {
+        historyTransition.targetSkippingAutomaticRedirects(to: url, from: source, in: webView)
+    }
+
     func goForward() {
         guard canGoForward else { return }
         resolveDomainNavigationConfirmation(allowed: false)
         guard let webView else { return }
         errorMessage = nil
         updateCurrentURL(webView.url)
-        historyTransition.cancel()
-        webView.goForward()
+        historyTransition.goForward(in: webView)
     }
 
     func reload() {
@@ -339,6 +353,7 @@ final class WebViewModel: ObservableObject {
     /// Releases the expensive WebKit runtime while preserving the tab URL and snapshot.
     /// The view is recreated lazily the next time the tab becomes active.
     func releaseWebViewRuntime() {
+        hasPresentedContent = false
         clearVideoHoldSpeed()
         cancelScheduledSnapshot()
         historyTransition.cancel()
@@ -368,6 +383,7 @@ final class WebViewModel: ObservableObject {
     /// Recreates WebKit so document-start UserScripts and their permissions are
     /// rebuilt before the next navigation, while preserving the current page.
     func rebuildWebViewRuntime() {
+        hasPresentedContent = false
         cancelScheduledSnapshot()
         historyTransition.cancel()
         resolveDomainNavigationConfirmation(allowed: false)
@@ -535,6 +551,7 @@ final class WebViewModel: ObservableObject {
     func markPageContentVisible() {
         showSnapshotWhileRestoring = false
         guard !hasVisibleContent else { return }
+        hasPresentedContent = true
         BrowserStartupTrace.mark("content_visible")
         hasVisibleContent = true
         // A visible page can keep loading ads/images indefinitely. Save its
