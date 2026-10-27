@@ -68,6 +68,36 @@ final class PrivacyProtectionServiceTests: XCTestCase {
         XCTAssertFalse(second.isProtectionDisabled(for: "example.com"))
     }
 
+    func testInvalidPageCountsCannotCreateOrPollutePrivacySummaries() {
+        let service = PrivacyProtectionService(userDefaults: defaults)
+        for count in [Int.max, Int.max / 2 + 1, SafeNumericValue.maximumEventCount + 1, -1, 0] {
+            service.recordHiddenElementCount(count, for: "example.com")
+            service.recordCookieBannerActions(count, for: "example.com")
+            service.recordTrackingParametersStripped(count, for: "example.com")
+        }
+        XCTAssertTrue(service.summariesByHost.isEmpty)
+        service.recordHiddenElementCount(3, for: "example.com")
+        service.recordCookieBannerActions(1, for: "example.com")
+        XCTAssertEqual(service.summary(for: "example.com").protectionCount, 4)
+    }
+
+    func testExistingLargeCountersCanIncrementAndPersistWithoutOverflow() throws {
+        var summary = SitePrivacySummary(host: "example.com")
+        summary.hiddenElementCount = .max
+        summary.httpsUpgradeCount = .max
+        summary.strippedTrackingParameterCount = .max
+        summary.cookieBannerActionCount = .max
+        defaults.set(try JSONEncoder().encode([summary.host: summary]), forKey: "summaries")
+        let service = PrivacyProtectionService(userDefaults: defaults, summariesKey: "summaries")
+        service.recordHiddenElementCount(2, for: summary.host)
+        service.recordHTTPSUpgrade(for: summary.host)
+        service.recordTrackingParametersStripped(2, for: summary.host)
+        service.recordCookieBannerActions(2, for: summary.host)
+        XCTAssertEqual(service.summary(for: summary.host).protectionCount, .max)
+        service.flushPendingStatistics()
+        XCTAssertEqual(PrivacyProtectionService(userDefaults: defaults, summariesKey: "summaries").summary(for: summary.host), summary)
+    }
+
     func testPrivateBrowsingDoesNotRecordDomainsOrResourceURLs() {
         let service = PrivacyProtectionService(userDefaults: defaults)
         service.recordHiddenElementCount(2, for: "public.example")

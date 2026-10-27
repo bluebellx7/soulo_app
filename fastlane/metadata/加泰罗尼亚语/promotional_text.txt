@@ -1,1 +1,1 @@
-Pestanyes agrupades en graella, baixada d'episodis i mides de fitxer visibles. Millores en escriure, tornar dels vídeos i baixar en lot.
+Tanca totes les pestanyes d'un grup de lloc web després de confirmar. Millores en l'entrada de text, els indicadors de càrrega i l'estabilitat.

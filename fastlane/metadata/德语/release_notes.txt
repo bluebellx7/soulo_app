@@ -1,7 +1,6 @@
-1.2.4
+1.2.5
 
-• Texteingabe und Tastaturfokus auf Webseiten wurden korrigiert. Bessere Zurücknavigation und Episodenauswahl auf Videoseiten, weniger leere Seiten und falsche Ladefehler.
-• Öffne Downloads über die Episodenauswahl oder halte eine Episode gedrückt, um sie herunterzuladen. Stapel-Downloads und Episoden-Dateinamen wurden korrigiert.
-• Download- und Dateilisten zeigen Dateigrößen. Download-Einträge bleiben nach App-Updates erhalten.
-• Zuletzt verwendete Tabs und Website-Gruppen stehen zuerst, und die Übersicht öffnet sich oben. Die Reihenfolge bleibt nach einem Neustart erhalten. Gruppierte Tabs werden jetzt in einem mehrzeiligen Raster angezeigt.
-• Beim Gedrückthalten eines Videos wird die vorübergehende Geschwindigkeit angezeigt. Loslassen stellt die vorherige wieder her. Verbesserte Toolbar-Kompatibilität.
+• Ein Absturz auf einigen Geräten mit iOS 17 bei der Suche nach Eingabe einer Webadresse wurde behoben.
+• In der Gruppenansicht lassen sich nach Bestätigung alle Tabs einer Website-Gruppe schließen.
+• Pinyin- und Texteingabe, die Ladeanzeige beim ersten Seitenaufruf, die Zurück-Navigation und das Wischen auf Gruppenkarten wurden verbessert.
+• Der Umgang mit ungewöhnlichen Zahlenwerten von Webseiten, Datenschutz- und Werbeblocker-Statistiken sowie dem Downloadfortschritt wurde verbessert.

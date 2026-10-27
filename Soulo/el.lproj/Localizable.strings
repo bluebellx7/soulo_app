@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Ομαδοποίηση ανά τομέα";
 "tab_view_carousel" = "Προβολή καρτών";
+"tab_close_group" = "Κλείσιμο ομάδας";
+"tab_close_group_confirm" = "Κλείσιμο όλων των καρτελών στην ομάδα «%@» (%d);";

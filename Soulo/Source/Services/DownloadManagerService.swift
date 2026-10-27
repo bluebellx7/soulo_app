@@ -203,12 +203,11 @@ final class DownloadManagerService: ObservableObject {
               downloads[index].status == .inProgress else { return }
         var item = downloads[index]
         let received = max(0, completed), expected = max(0, total)
-        guard item.receivedBytes != received || item.expectedBytes != expected else { return }
+        let progress = expected > 0 ? min(max(Double(received) / Double(expected), 0), 1) : 0
+        guard item.receivedBytes != received || item.expectedBytes != expected || item.progress != progress else { return }
         item.receivedBytes = received
         item.expectedBytes = expected
-        if total > 0 {
-            item.progress = min(max(Double(completed) / Double(total), 0), 1)
-        }
+        item.progress = progress
         downloads[index] = item
         progressPersistence.schedule { [weak self] in self?.save() }
     }

@@ -1,1 +1,1 @@
-File grupate în grilă, descărcarea episoadelor și dimensiuni vizibile. Scriere, revenire din videoclipuri și descărcări în lot mai fiabile.
+Închide toate filele unui grup de site după confirmare. Îmbunătățiri la introducerea textului, indicatorii de încărcare și stabilitate.

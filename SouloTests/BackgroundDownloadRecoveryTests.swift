@@ -59,6 +59,37 @@ final class BackgroundDownloadRecoveryTests: XCTestCase {
         XCTAssertEqual(restored.downloads.first { $0.id == paused.id }?.status, .paused)
     }
 
+    func testOversizedTrackLengthsBecomeUnknownAndNormalProgressRecovers() throws {
+        let context = try Context()
+        defer { context.clean() }
+        let item = context.manager.beginDownload(suggestedFilename: "progress.mp4", sourceURL: nil, transport: .separated).0
+        let service = context.service()
+        defer { service.invalidate() }
+        let session = URLSession(configuration: .ephemeral)
+        defer { session.invalidateAndCancel() }
+        for track in SeparatedMediaDownloadService.Track.allCases {
+            let task = session.downloadTask(with: URL(string: "https://example.com/not-requested")!)
+            task.taskDescription = SeparatedMediaDownloadService.taskKey(id: item.id, track: track)
+            service.urlSession(session, downloadTask: task, didWriteData: 1, totalBytesWritten: 1,
+                totalBytesExpectedToWrite: 1 << 62)
+        }
+        var progress = try XCTUnwrap(context.manager.downloads.first { $0.id == item.id })
+        XCTAssertEqual(progress.status, .inProgress)
+        XCTAssertEqual(progress.receivedBytes, 2)
+        XCTAssertEqual(progress.expectedBytes, 0)
+        XCTAssertEqual(progress.progress, 0)
+        for track in SeparatedMediaDownloadService.Track.allCases {
+            let task = session.downloadTask(with: URL(string: "https://example.com/not-requested")!)
+            task.taskDescription = SeparatedMediaDownloadService.taskKey(id: item.id, track: track)
+            service.urlSession(session, downloadTask: task, didWriteData: 1, totalBytesWritten: 10,
+                totalBytesExpectedToWrite: 20)
+        }
+        progress = try XCTUnwrap(context.manager.downloads.first { $0.id == item.id })
+        XCTAssertEqual(progress.receivedBytes, 20)
+        XCTAssertEqual(progress.expectedBytes, 40)
+        XCTAssertEqual(progress.progress, 0.5)
+    }
+
     func testCompletedTracksResumeMergeWithoutNetworkAfterRelaunch() async throws {
         let context = try Context()
         defer { context.clean() }

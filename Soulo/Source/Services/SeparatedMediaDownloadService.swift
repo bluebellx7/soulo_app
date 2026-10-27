@@ -233,8 +233,9 @@ final class SeparatedMediaDownloadService: NSObject, @preconcurrency URLSessionD
             let size = (try? Self.trackURL(id: id, track: track, directory: rootDirectory).resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
             return (Int64(size), size > 0 ? Int64(size) : -1)
         }
-        let expected = parts.allSatisfy { $0.expected > 0 } ? parts.reduce(Int64(0)) { $0 + $1.expected } : -1
-        manager.updateProgress(id: id, completed: parts.reduce(Int64(0)) { $0 + $1.received }, total: expected)
+        let expected = SafeNumericValue.byteCountTotal(parts.map(\.expected), requirePositive: true) ?? -1
+        let received = SafeNumericValue.byteCountTotal(parts.map(\.received)) ?? .max
+        manager.updateProgress(id: id, completed: received, total: expected)
     }
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {

@@ -1,1 +1,1 @@
-Gruplu sekme ızgarası, bölüm indirme ve görünür dosya boyutları. Daha güvenilir yazma, videodan geri dönme ve toplu indirme.
+Onay verdikten sonra bir site grubundaki tüm sekmeleri kapatın. Metin girişi, yükleme göstergeleri ve gezinme kararlılığı iyileştirildi.

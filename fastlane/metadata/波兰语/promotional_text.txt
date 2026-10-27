@@ -1,1 +1,1 @@
-Grupy kart w siatce, pobieranie odcinków i widoczne rozmiary plików. Pewniejsze pisanie, powrót z filmów i pobieranie wielu odcinków.
+Zamknij wszystkie karty grupy witryny po potwierdzeniu. Ulepszono wprowadzanie tekstu, wskaźniki ładowania i stabilność przeglądania.

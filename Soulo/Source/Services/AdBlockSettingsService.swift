@@ -142,10 +142,11 @@ final class AdBlockSettingsService: ObservableObject {
     }
 
     func recordHiddenElementCount(_ count: Int, for host: String?) {
-        guard !userDefaults.bool(forKey: "is_incognito"), count > 0, let host else { return }
+        guard !userDefaults.bool(forKey: "is_incognito"),
+              (1...SafeNumericValue.maximumEventCount).contains(count), let host else { return }
         let cleanHost = normalizedHost(host)
         guard !cleanHost.isEmpty else { return }
-        hiddenElementCountByHost[cleanHost, default: 0] += count
+        hiddenElementCountByHost[cleanHost] = SafeNumericValue.addingCounts(hiddenElementCountByHost[cleanHost, default: 0], count)
         statisticsPersistence.schedule { [weak self] in self?.saveStats() }
     }
 

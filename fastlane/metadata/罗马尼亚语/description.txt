@@ -4,7 +4,7 @@ Alege Soulo ca browser implicit în Configurări pentru a deschide linkuri din a
 
 Filele și grupurile de site-uri folosite recent apar primele, iar lista se deschide de sus. Ordinea utilizării se păstrează după repornire.
 
-File grupate în grilă, descărcarea episoadelor și dimensiuni vizibile. Scriere, revenire din videoclipuri și descărcări în lot mai fiabile.
+Închide toate filele unui grup de site după confirmare. Îmbunătățiri la introducerea textului, indicatorii de încărcare și stabilitate.
 
 Redă videoclipurile compatibile în timpul descărcării. Descărcări în fundal și ecran complet îmbunătățite, cu protecție contra reclamelor ascunse și copierii nedorite.
 

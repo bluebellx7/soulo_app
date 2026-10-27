@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Grupuj według domeny";
 "tab_view_carousel" = "Widok kart";
+"tab_close_group" = "Zamknij grupę";
+"tab_close_group_confirm" = "Zamknąć wszystkie karty w grupie „%@” (%d)?";

@@ -515,6 +515,18 @@ final class DownloadManagerServiceTests: XCTestCase {
         XCTAssertNil(restored.resumeData(id: item.id))
     }
 
+    func testUnknownProgressDropsAnOldPercentageAndCanRecover() throws {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let item = service.beginDownload(suggestedFilename: "Progress.mp4", sourceURL: nil, transport: .streaming).0
+        service.updateProgress(id: item.id, completed: 10, total: 20)
+        XCTAssertEqual(service.downloads.first { $0.id == item.id }?.progress, 0.5)
+        service.updateProgress(id: item.id, completed: 11, total: -1)
+        XCTAssertEqual(service.downloads.first { $0.id == item.id }?.expectedBytes, 0)
+        XCTAssertEqual(service.downloads.first { $0.id == item.id }?.progress, 0)
+        service.updateProgress(id: item.id, completed: 12, total: 20)
+        XCTAssertEqual(service.downloads.first { $0.id == item.id }?.progress, 0.6)
+    }
+
     func testMissingResumeDataDoesNotCreateAnUnresumablePausedDownload() throws {
         let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
         let (item, _) = service.beginDownload(

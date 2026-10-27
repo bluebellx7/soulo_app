@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "ಡೊಮೇನ್ ಪ್ರಕಾರ ಗುಂಪು ಮಾಡಿ";
 "tab_view_carousel" = "ಕಾರ್ಡ್ ನೋಟ";
+"tab_close_group" = "ಗುಂಪು ಮುಚ್ಚಿ";
+"tab_close_group_confirm" = "“%@” ಗುಂಪಿನ ಎಲ್ಲ ಟ್ಯಾಬ್‌ಗಳನ್ನು ಮುಚ್ಚಬೇಕೇ (%d)?";

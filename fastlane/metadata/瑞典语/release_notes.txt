@@ -1,7 +1,6 @@
-1.2.4
+1.2.5
 
-• Åtgärdat textinmatning och aktivering av tangentbordet på webbsidor. Förbättrad tillbakanavigering och avsnittsval på videosidor, med färre tomma sidor och felaktiga laddningsfel.
-• Öppna Hämtningar från avsnittsväljaren eller håll ned ett avsnitt för att hämta det. Åtgärdat gruppnedladdningar och avsnittens filnamn.
-• Hämtnings- och fillistor visar filstorlekar. Hämtningsposter bevaras efter appuppdateringar.
-• Senast använda flikar och webbplatsgrupper visas först och översikten öppnas högst upp. Användningsordningen sparas efter omstart. Grupperade flikar visas nu i ett rutnät med flera rader.
-• Håll inne en video för att se den tillfälliga uppspelningshastigheten och släpp för att återställa den förra. Bättre kompatibilitet för verktygsfältet.
+• Åtgärdat en krasch på vissa iOS 17-enheter vid sökning efter att en webbadress angetts.
+• I gruppvyn kan du stänga alla flikar i en webbplatsgrupp efter bekräftelse.
+• Förbättrad pinyin- och textinmatning, visning av den första sidinläsningen, bakåtnavigering och svepning på gruppkort.
+• Förbättrad hantering av ovanliga numeriska värden från webbsidor, statistik för integritet och annonsblockering samt nedladdningsförlopp.

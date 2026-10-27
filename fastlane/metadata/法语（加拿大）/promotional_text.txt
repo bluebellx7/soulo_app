@@ -1,1 +1,1 @@
-Onglets groupés en grille, téléchargement d’épisodes et taille des fichiers visible. Saisie, retour vidéo et téléchargements par lot plus fiables.
+Fermez tous les onglets d'un groupe de site après confirmation. Saisie de texte, indicateurs de chargement et stabilité améliorés.

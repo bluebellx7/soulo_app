@@ -1517,7 +1517,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             if message.name == "souloAdBlocker" {
                 guard message.webView === viewModel.webView, message.world == .page,
                       message.webView?.configuration.websiteDataStore.isPersistent == true else { return }
-                let count = body["hiddenCount"] as? Int ?? 0
+                let count = SafeNumericValue.eventCount(body["hiddenCount"]) ?? 0
                 let host = (body["host"] as? String) ?? viewModel.currentURL?.host
                 let trackerHosts = body["trackerHosts"] as? [String] ?? []
                 Task { @MainActor in
@@ -1540,7 +1540,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                     PrivacyProtectionService.shared.recordResourceObservations(observations, for: viewModel.currentURL)
                     PrivacyProtectionService.shared.recordTrackerHosts(body["trackerHosts"] as? [String] ?? [], for: host)
                 case "cookieBanner":
-                    PrivacyProtectionService.shared.recordCookieBannerActions(body["actionCount"] as? Int ?? 0, for: host)
+                    PrivacyProtectionService.shared.recordCookieBannerActions(SafeNumericValue.eventCount(body["actionCount"]) ?? 0, for: host)
                 default:
                     break
                 }
@@ -2619,11 +2619,11 @@ struct WebViewRepresentable: UIViewRepresentable {
                 return false
             }
 
-            let titleLength = numericProbeValue(probe["titleLength"])
-            let textLength = numericProbeValue(probe["textLength"])
-            let bodyChildCount = numericProbeValue(probe["bodyChildCount"])
-            let bodyHTMLLength = numericProbeValue(probe["bodyHTMLLength"])
-            let visibleElementCount = numericProbeValue(probe["visibleElementCount"])
+            guard let titleLength = SafeNumericValue.nonnegativeInt(probe["titleLength"]),
+                  let textLength = SafeNumericValue.nonnegativeInt(probe["textLength"]),
+                  let bodyChildCount = SafeNumericValue.nonnegativeInt(probe["bodyChildCount"]),
+                  let bodyHTMLLength = SafeNumericValue.nonnegativeInt(probe["bodyHTMLLength"]),
+                  let visibleElementCount = SafeNumericValue.nonnegativeInt(probe["visibleElementCount"]) else { return false }
 
             guard titleLength == 0,
                   textLength == 0,
@@ -2632,14 +2632,6 @@ struct WebViewRepresentable: UIViewRepresentable {
             }
 
             return bodyChildCount == 0 || bodyHTMLLength < 240
-        }
-
-        private func numericProbeValue(_ value: Any?) -> Int {
-            if let intValue = value as? Int { return intValue }
-            if let doubleValue = value as? Double { return Int(doubleValue) }
-            if let numberValue = value as? NSNumber { return numberValue.intValue }
-            if let stringValue = value as? String { return Int(stringValue) ?? 0 }
-            return 0
         }
 
         private func isRecoverableWebPageURL(_ url: URL) -> Bool {
@@ -3240,7 +3232,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         func webView(_ webView: WKWebView, runJavaScriptTextInputPanelWithPrompt prompt: String, defaultText: String?, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (String?) -> Void) {
             let alert = UIAlertController(title: nil, message: prompt, preferredStyle: .alert)
             alert.addTextField { $0.text = defaultText }
-            alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in completionHandler(alert.textFields?.first?.text) })
+            alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak alert] _ in completionHandler(alert?.textFields?.first?.text) })
             alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in completionHandler(nil) })
             topViewController(for: webView)?.present(alert, animated: true) ?? completionHandler(nil)
         }

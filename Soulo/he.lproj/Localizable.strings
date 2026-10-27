@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "קיבוץ לפי דומיין";
 "tab_view_carousel" = "תצוגת כרטיסים";
+"tab_close_group" = "סגירת קבוצה";
+"tab_close_group_confirm" = "לסגור את כל הכרטיסיות בקבוצה ״%@״ (%d)?";

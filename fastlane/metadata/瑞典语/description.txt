@@ -4,7 +4,7 @@ Välj Soulo som förvald webbläsare i Inställningar för att öppna länkar fr
 
 Senast använda flikar och webbplatsgrupper visas först och översikten öppnas högst upp. Användningsordningen sparas efter omstart.
 
-Grupperade flikar i rutnät, avsnittsnedladdning och synliga filstorlekar. Stabilare textinmatning, tillbaka från video och gruppnedladdningar.
+Stäng alla flikar i en webbplatsgrupp efter bekräftelse. Förbättrad textinmatning, visning av inläsning och stabilitet vid surfning.
 
 Spela upp videor som stöds under nedladdning. Bättre bakgrundsnedladdningar och helskärm, med skydd mot dolda annonser och oönskad kopiering.
 

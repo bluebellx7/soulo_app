@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Kelompokkan menurut domain";
 "tab_view_carousel" = "Tampilan kartu";
+"tab_close_group" = "Tutup Grup";
+"tab_close_group_confirm" = "Tutup semua tab di “%@” (%d)?";

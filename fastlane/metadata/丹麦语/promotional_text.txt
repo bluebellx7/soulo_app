@@ -1,1 +1,1 @@
-Grupperede faner i gitter, episodeoverførsler og synlige filstørrelser. Mere stabil indtastning, tilbage fra videoer og batchoverførsler.
+Luk alle faner i en webstedsgruppe efter bekræftelse. Forbedret tekstindtastning, visning af indlæsning og stabilitet under browsing.

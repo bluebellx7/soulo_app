@@ -1,1 +1,1 @@
-Pestañas agrupadas en cuadrícula, descarga de episodios y tamaños de archivo visibles. Mejoras al escribir, volver de vídeos y descargar por lotes.
+Cierra todas las pestañas de un grupo de sitio tras confirmar. Mejoras en la entrada de texto, los indicadores de carga y la estabilidad.

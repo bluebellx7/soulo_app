@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Alan adına göre grupla";
 "tab_view_carousel" = "Kart görünümü";
+"tab_close_group" = "Grubu Kapat";
+"tab_close_group_confirm" = "“%@” grubundaki tüm sekmeler kapatılsın mı (%d)?";

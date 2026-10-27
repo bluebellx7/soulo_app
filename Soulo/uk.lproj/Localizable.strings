@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Групувати за доменом";
 "tab_view_carousel" = "Вигляд карток";
+"tab_close_group" = "Закрити групу";
+"tab_close_group_confirm" = "Закрити всі вкладки в групі «%@» (%d)?";

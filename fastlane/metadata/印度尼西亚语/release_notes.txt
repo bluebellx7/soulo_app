@@ -1,7 +1,6 @@
-1.2.4
+1.2.5
 
-• Memperbaiki input teks dan aktivasi papan ketik di halaman web. Navigasi kembali dan pemilihan episode di situs video lebih baik, dengan lebih sedikit halaman kosong dan kesalahan pemuatan palsu.
-• Buka Unduhan dari pemilih episode atau tekan lama episode untuk mengunduhnya. Memperbaiki unduhan massal dan nama file episode.
-• Daftar unduhan dan file menampilkan ukuran file. Catatan unduhan tetap tersimpan setelah pembaruan aplikasi.
-• Tab dan grup situs yang baru digunakan tampil lebih dulu, dan tampilan tab dibuka dari atas. Urutan penggunaan tetap tersimpan setelah memulai ulang. Tab berkelompok kini tersusun dalam kisi dengan beberapa baris.
-• Tahan video untuk melihat kecepatan pemutaran sementara; lepaskan untuk kembali ke kecepatan sebelumnya. Kompatibilitas bilah alat ditingkatkan.
+• Memperbaiki crash pada sebagian perangkat iOS 17 saat mencari setelah memasukkan alamat web.
+• Pada tampilan grup, Anda dapat menutup semua tab dalam satu grup situs setelah konfirmasi.
+• Meningkatkan input Pinyin dan teks, indikator pemuatan halaman awal, navigasi kembali, serta geseran kartu grup.
+• Meningkatkan penanganan nilai halaman web yang tidak biasa, statistik privasi dan pemblokiran iklan, serta progres unduhan.

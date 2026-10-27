@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Ryhmittele verkkotunnuksittain";
 "tab_view_carousel" = "Korttinäkymä";
+"tab_close_group" = "Sulje ryhmä";
+"tab_close_group_confirm" = "Suljetaanko kaikki ryhmän ”%@” välilehdet (%d)?";

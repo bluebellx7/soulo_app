@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "डोमेननुसार गट करा";
 "tab_view_carousel" = "कार्ड दृश्य";
+"tab_close_group" = "गट बंद करा";
+"tab_close_group_confirm" = "“%@” गटातील सर्व टॅब बंद करायचे (%d)?";

@@ -1,1 +1,1 @@
-Grupperade flikar i rutnät, avsnittsnedladdning och synliga filstorlekar. Stabilare textinmatning, tillbaka från video och gruppnedladdningar.
+Stäng alla flikar i en webbplatsgrupp efter bekräftelse. Förbättrad textinmatning, visning av inläsning och stabilitet vid surfning.

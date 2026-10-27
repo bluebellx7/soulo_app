@@ -1,7 +1,6 @@
-1.2.4
+1.2.5
 
-• Fixed webpage text input and keyboard focus. Improved back navigation and episode selection on video sites, reducing blank pages and incorrect load errors.
-• Open Downloads from the episode picker or hold an episode to download it. Fixed batch downloads and episode filenames.
-• Download and file lists show file sizes. Download records are kept after app updates.
-• Recently used tabs and website groups appear first, and the overview opens at the top. Recent-use order is preserved after restarting. Grouped tabs now wrap into a grid.
-• Hold a video to see its temporary playback speed; release to restore the previous speed. Improved toolbar compatibility.
+• Fixed a crash that could occur on some iOS 17 devices when searching after entering a web address.
+• In the grouped view, close all tabs in a website group after confirmation.
+• Improved Pinyin and text input, initial page loading indicators, back navigation, and swiping group cards.
+• Improved handling of unusual webpage values, privacy and ad-blocking statistics, and download progress.

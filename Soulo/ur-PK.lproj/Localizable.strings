@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "ڈومین کے لحاظ سے گروپ";
 "tab_view_carousel" = "کارڈ منظر";
+"tab_close_group" = "گروپ بند کریں";
+"tab_close_group_confirm" = "“%@” گروپ کے تمام ٹیب بند کریں (%d)؟";

@@ -1,7 +1,6 @@
-1.2.4
+1.2.5
 
-• Korjattu verkkosivujen tekstinsyöttö ja näppäimistön aktivointi. Parannettu videosivujen paluutoimintoa ja jaksojen valintaa sekä vähennetty tyhjiä sivuja ja virheellisiä latausvirheitä.
-• Avaa lataukset jaksonvalitsimesta tai lataa jakso painamalla sitä pitkään. Korjattu erälataukset ja jaksojen tiedostonimet.
-• Lataus- ja tiedostoluetteloissa näkyvät tiedostokoot. Lataustiedot säilyvät sovelluspäivitysten jälkeen.
-• Äskettäin käytetyt välilehdet ja sivustoryhmät näkyvät ensin, ja näkymä avautuu ylhäältä. Käyttöjärjestys säilyy uudelleenkäynnistyksen jälkeen. Ryhmitellyt välilehdet rivittyvät nyt ruudukoksi.
-• Pidä videota painettuna nähdäksesi tilapäisen toistonopeuden. Vapauttaminen palauttaa edellisen nopeuden. Parannettu työkalupalkin yhteensopivuutta.
+• Korjattu kaatuminen, joka saattoi ilmetä joillakin iOS 17 -laitteilla haettaessa verkko-osoitteen kirjoittamisen jälkeen.
+• Ryhmitellyssä näkymässä voit sulkea sivustoryhmän kaikki välilehdet vahvistuksen jälkeen.
+• Parannettu pinyin- ja tekstinsyöttöä, ensimmäisen sivulatauksen ilmaisimia, paluuta edelliselle sivulle ja ryhmäkorttien pyyhkäisyä.
+• Parannettu verkkosivujen poikkeavien lukuarvojen, yksityisyys- ja mainoseston tilastojen sekä latauksen edistymisen käsittelyä.

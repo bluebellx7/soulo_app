@@ -1,1 +1,1 @@
-Csoportosított lapok rácsban, epizódletöltés és látható fájlméretek. Megbízhatóbb szövegbevitel, visszalépés és kötegelt letöltés.
+Megerősítés után bezárhatja egy webhelycsoport összes lapját. Javított szövegbevitel, betöltésjelzés és böngészési stabilitás.

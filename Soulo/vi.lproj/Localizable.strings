@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Nhóm theo tên miền";
 "tab_view_carousel" = "Dạng thẻ";
+"tab_close_group" = "Đóng nhóm";
+"tab_close_group_confirm" = "Đóng tất cả các thẻ trong “%@” (%d)?";

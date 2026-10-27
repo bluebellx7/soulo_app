@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Seskupit podle domény";
 "tab_view_carousel" = "Zobrazení karet";
+"tab_close_group" = "Zavřít skupinu";
+"tab_close_group_confirm" = "Zavřít všechny panely ve skupině „%@“ (%d)?";

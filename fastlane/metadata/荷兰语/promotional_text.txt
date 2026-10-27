@@ -1,1 +1,1 @@
-Gegroepeerde tabs in een raster, afleveringen downloaden en zichtbare bestandsgroottes. Betere tekstinvoer, terugnavigatie en batchdownloads.
+Sluit alle tabbladen in een websitegroep na bevestiging. Verbeterde tekstinvoer, laadindicatoren en stabiliteit tijdens het browsen.

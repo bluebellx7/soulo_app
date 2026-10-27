@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "ਡੋਮੇਨ ਅਨੁਸਾਰ ਗਰੁੱਪ ਬਣਾਓ";
 "tab_view_carousel" = "ਕਾਰਡ ਦ੍ਰਿਸ਼";
+"tab_close_group" = "ਗਰੁੱਪ ਬੰਦ ਕਰੋ";
+"tab_close_group_confirm" = "“%@” ਗਰੁੱਪ ਦੀਆਂ ਸਾਰੀਆਂ ਟੈਬਾਂ ਬੰਦ ਕਰਨੀਆਂ ਹਨ (%d)?";

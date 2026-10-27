@@ -885,3 +885,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "依網域分組";
 "tab_view_carousel" = "卡片檢視";
+"tab_close_group" = "關閉整組";
+"tab_close_group_confirm" = "關閉「%@」中的所有分頁（%d 個）？";

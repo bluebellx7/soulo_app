@@ -4,7 +4,7 @@ U Postavkama odaberite Soulo kao zadani preglednik za otvaranje poveznica iz dru
 
 Nedavno korištene kartice i grupe web-mjesta prikazuju se prve, a pregled se otvara na vrhu. Redoslijed korištenja čuva se nakon ponovnog pokretanja.
 
-Grupirane kartice u mreži, preuzimanje epizoda i prikaz veličina datoteka. Pouzdaniji unos, povratak s videa i skupna preuzimanja.
+Zatvorite sve kartice u grupi web-mjesta nakon potvrde. Poboljšani unos teksta, prikaz učitavanja i stabilnost pregledavanja.
 
 Gledajte podržane videozapise tijekom preuzimanja. Poboljšani rad u pozadini i cijeli zaslon te zaštita od skrivenih oglasa i neželjenog kopiranja.
 

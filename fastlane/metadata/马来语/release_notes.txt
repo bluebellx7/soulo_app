@@ -1,7 +1,6 @@
-1.2.4
+1.2.5
 
-• Membaiki input teks dan pengaktifan papan kekunci pada halaman web. Menambah baik navigasi kembali dan pemilihan episod di laman video, dengan kurang halaman kosong dan ralat pemuatan palsu.
-• Buka Muat Turun daripada pemilih episod atau tekan lama episod untuk memuat turunnya. Membaiki muat turun kelompok dan nama fail episod.
-• Senarai muat turun dan fail memaparkan saiz fail. Rekod muat turun dikekalkan selepas kemas kini aplikasi.
-• Tab dan kumpulan laman yang baru digunakan dipaparkan dahulu dan paparan tab dibuka dari atas. Susunan penggunaan kekal selepas dimulakan semula. Tab berkumpulan kini disusun dalam grid berbilang baris.
-• Tekan lama video untuk melihat kelajuan sementara; lepaskan untuk kembali kepada kelajuan sebelumnya. Keserasian bar alat dipertingkatkan.
+• Membaiki ranap pada sesetengah peranti iOS 17 semasa mencari selepas memasukkan alamat web.
+• Dalam paparan berkumpulan, tutup semua tab dalam kumpulan laman yang sama selepas pengesahan.
+• Memperbaik input Pinyin dan teks, penunjuk pemuatan halaman awal, navigasi kembali serta leretan kad kumpulan.
+• Memperbaik pengendalian nilai angka luar biasa daripada halaman web, statistik privasi dan penyekatan iklan serta kemajuan muat turun.

@@ -113,9 +113,13 @@ import Vision
             request.recognitionLevel = .accurate
             request.recognitionLanguages = ["en-US"]
             try VNImageRequestHandler(cgImage: XCTUnwrap(image.cgImage), options: [:]).perform([request])
-            let header = request.results?.first { $0.topCandidates(1).first?.string.lowercased().contains("developer.apple.com") == true }
+            // The same domain is also printed inside every preview. Vision's
+            // reading order can put a thumbnail before the actual section header.
+            let header = request.results?.filter {
+                $0.topCandidates(1).first?.string.lowercased().contains("developer.apple.com") == true
+            }.max { $0.boundingBox.midY < $1.boundingBox.midY }
             XCTAssertNotNil(header, "The newest domain group must be visible on opening: \(code)")
-            if let header { XCTAssertGreaterThan(header.boundingBox.midY, 0.70, "The newest domain starts at the top, including short screens and RTL layouts") }
+            if let header { XCTAssertGreaterThan(header.boundingBox.midY, 0.70, "The newest domain starts at the top: \(code), \(size)") }
             let attachment = XCTAttachment(image: image)
             attachment.name = "grouped-tabs-\(code)-\(Int(size.width))"; attachment.lifetime = .keepAlways; add(attachment)
             XCTAssertTrue(manager.tabs.allSatisfy { $0.webViewModel.webView == nil }, "Previews cannot activate WebKit")

@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Grupează după domeniu";
 "tab_view_carousel" = "Vizualizare carduri";
+"tab_close_group" = "Închide grupul";
+"tab_close_group_confirm" = "Închizi toate filele din „%@” (%d)?";

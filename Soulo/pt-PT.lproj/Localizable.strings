@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Agrupar por domínio";
 "tab_view_carousel" = "Vista de cartões";
+"tab_close_group" = "Fechar grupo";
+"tab_close_group_confirm" = "Fechar todos os separadores de “%@” (%d)?";

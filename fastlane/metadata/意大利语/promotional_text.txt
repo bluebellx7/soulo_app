@@ -1,1 +1,1 @@
-Schede raggruppate in griglia, download degli episodi e dimensioni dei file visibili. Scrittura, ritorno dai video e download multipli più affidabili.
+Chiudi tutte le schede di un gruppo dello stesso sito dopo la conferma. Migliorati inserimento del testo, indicatori di caricamento e stabilità.

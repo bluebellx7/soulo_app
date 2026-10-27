@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Gruppera efter domän";
 "tab_view_carousel" = "Kortvy";
+"tab_close_group" = "Stäng grupp";
+"tab_close_group_confirm" = "Stäng alla flikar i ”%@” (%d)?";

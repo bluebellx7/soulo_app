@@ -133,7 +133,7 @@ struct AdBlockManagementView: View {
                     if currentHost != nil {
                         AdBlockMetricRow(title: LanguageManager.shared.localizedString("ad_block_current_site_hidden"), systemImage: "eye.slash", value: service.hiddenElementCount(for: currentHost), isHighlighted: false)
                     }
-                    AdBlockMetricRow(title: LanguageManager.shared.localizedString("ad_block_total_hidden"), systemImage: "sum", value: service.hiddenElementCountByHost.values.reduce(0, +), isHighlighted: false)
+                    AdBlockMetricRow(title: LanguageManager.shared.localizedString("ad_block_total_hidden"), systemImage: "sum", value: SafeNumericValue.totalCount(service.hiddenElementCountByHost.values), isHighlighted: false)
                 } label: {
                     Label(ToolText.text("ad_filter_statistics"), systemImage: "chart.bar")
                 }

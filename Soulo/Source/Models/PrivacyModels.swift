@@ -117,7 +117,8 @@ struct SitePrivacySummary: Codable, Equatable {
     }
 
     var protectionCount: Int {
-        trackerHostCount + hiddenElementCount + httpsUpgradeCount + strippedTrackingParameterCount + cookieBannerActionCount
+        SafeNumericValue.totalCount([trackerHostCount, hiddenElementCount, httpsUpgradeCount,
+            strippedTrackingParameterCount, cookieBannerActionCount])
     }
 
     static func empty(host: String) -> SitePrivacySummary {

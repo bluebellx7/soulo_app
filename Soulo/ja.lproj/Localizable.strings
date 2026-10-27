@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "ドメインでグループ化";
 "tab_view_carousel" = "カード表示";
+"tab_close_group" = "グループを閉じる";
+"tab_close_group_confirm" = "「%@」のタブをすべて閉じますか（%d 個）？";

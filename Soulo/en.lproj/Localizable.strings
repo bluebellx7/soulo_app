@@ -976,3 +976,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Group by Domain";
 "tab_view_carousel" = "Card View";
+"tab_close_group" = "Close Group";
+"tab_close_group_confirm" = "Close all tabs in “%@” (%d)?";

@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "도메인별 그룹화";
 "tab_view_carousel" = "카드 보기";
+"tab_close_group" = "그룹 닫기";
+"tab_close_group_confirm" = "‘%@’ 그룹의 모든 탭을 닫을까요(%d개)?";

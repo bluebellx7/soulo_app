@@ -1,7 +1,6 @@
-1.2.4
+1.2.5
 
-• Am corectat introducerea textului și activarea tastaturii pe paginile web. Revenirea și selecția episoadelor pe site-urile video sunt îmbunătățite, cu mai puține pagini goale și erori false de încărcare.
-• Deschide Descărcări din selectorul de episoade sau ține apăsat un episod pentru a-l descărca. Am corectat descărcările în lot și numele fișierelor episoadelor.
-• Listele de descărcări și fișiere afișează dimensiunile fișierelor. Înregistrările descărcărilor se păstrează după actualizarea aplicației.
-• Filele și grupurile de site-uri folosite recent apar primele, iar lista se deschide de sus. Ordinea utilizării se păstrează după repornire. Filele grupate sunt acum aranjate într-o grilă pe mai multe rânduri.
-• Ține apăsat un videoclip pentru a vedea viteza temporară; eliberează pentru a reveni la cea anterioară. Compatibilitate îmbunătățită a barei de instrumente.
+• S-a remediat o închidere neașteptată pe unele dispozitive cu iOS 17 la căutarea după introducerea unei adrese web.
+• În vizualizarea grupată poți închide toate filele unui grup de site după confirmare.
+• S-au îmbunătățit introducerea pinyin și a textului, indicatorii încărcării inițiale, navigarea înapoi și glisarea cardurilor de grup.
+• S-a îmbunătățit gestionarea valorilor numerice neobișnuite din pagini web, a statisticilor de confidențialitate și blocare a reclamelor și a progresului descărcărilor.

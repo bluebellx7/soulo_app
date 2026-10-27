@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Kumpulkan mengikut domain";
 "tab_view_carousel" = "Paparan kad";
+"tab_close_group" = "Tutup Kumpulan";
+"tab_close_group_confirm" = "Tutup semua tab dalam “%@” (%d)?";

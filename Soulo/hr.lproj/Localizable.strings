@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Grupiraj po domeni";
 "tab_view_carousel" = "Prikaz kartica";
+"tab_close_group" = "Zatvori grupu";
+"tab_close_group_confirm" = "Zatvoriti sve kartice u grupi „%@” (%d)?";

@@ -621,3 +621,5 @@ Dites-nous :
 /* Tab overview layouts */
 "tab_view_grouped" = "Grouper par domaine";
 "tab_view_carousel" = "Vue en cartes";
+"tab_close_group" = "Fermer le groupe";
+"tab_close_group_confirm" = "Fermer tous les onglets de « %@ » (%d) ?";

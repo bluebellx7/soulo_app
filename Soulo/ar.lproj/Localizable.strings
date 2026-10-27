@@ -634,3 +634,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "تجميع حسب النطاق";
 "tab_view_carousel" = "عرض البطاقات";
+"tab_close_group" = "إغلاق المجموعة";
+"tab_close_group_confirm" = "إغلاق كل علامات التبويب في «%@» (%d)؟";

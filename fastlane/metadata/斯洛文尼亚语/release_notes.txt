@@ -1,7 +1,6 @@
-1.2.4
+1.2.5
 
-• Popravljena sta vnos besedila in odpiranje tipkovnice na spletnih straneh. Izboljšani so vračanje in izbira epizod na video straneh, z manj praznimi stranmi in napačnimi obvestili o nalaganju.
-• Odprite Prenose iz izbirnika epizod ali pridržite epizodo za prenos. Popravljeni so paketni prenosi in imena datotek epizod.
-• Seznami prenosov in datotek prikazujejo velikosti datotek. Zapisi prenosov se ohranijo po posodobitvi aplikacije.
-• Nedavno uporabljeni zavihki in skupine spletnih mest so prikazani najprej, pregled pa se odpre na vrhu. Vrstni red uporabe se ohrani po ponovnem zagonu. Združeni zavihki so zdaj razporejeni v mrežo z več vrsticami.
-• Pridržite video za prikaz začasne hitrosti predvajanja; ob sprostitvi se povrne prejšnja. Izboljšana združljivost orodne vrstice.
+• Odpravljeno sesutje na nekaterih napravah z iOS 17 med iskanjem po vnosu spletnega naslova.
+• V skupinskem pogledu lahko po potrditvi zaprete vse zavihke skupine spletnega mesta.
+• Izboljšani vnos pinjina in besedila, prikaz začetnega nalaganja strani, vračanje na prejšnjo stran in drsenje po karticah skupin.
+• Izboljšana obravnava neobičajnih številskih vrednosti spletnih strani, statistike zasebnosti in blokiranja oglasov ter napredka prenosov.

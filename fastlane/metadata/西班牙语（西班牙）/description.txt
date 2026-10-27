@@ -4,7 +4,7 @@ Elige Soulo como navegador predeterminado en Ajustes para abrir enlaces de otras
 
 Las pestañas y grupos de sitios recientes aparecen primero y la vista se abre arriba. El orden de uso se conserva al reiniciar.
 
-Pestañas agrupadas en cuadrícula, descarga de episodios y tamaños de archivo visibles. Mejoras al escribir, volver de vídeos y descargar por lotes.
+Cierra todas las pestañas de un grupo de sitio tras confirmar. Mejoras en la entrada de texto, los indicadores de carga y la estabilidad.
 
 Reproduce vídeos compatibles mientras se descargan. Mejoras en segundo plano y pantalla completa, con protección contra anuncios ocultos y copias no deseadas.
 

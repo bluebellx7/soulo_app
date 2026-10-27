@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Združi po domeni";
 "tab_view_carousel" = "Prikaz kartic";
+"tab_close_group" = "Zapri skupino";
+"tab_close_group_confirm" = "Zaprem vse zavihke v skupini »%@« (%d)?";

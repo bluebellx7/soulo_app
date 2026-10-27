@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Raggruppa per dominio";
 "tab_view_carousel" = "Vista schede";
+"tab_close_group" = "Chiudi gruppo";
+"tab_close_group_confirm" = "Chiudere tutte le schede in «%@» (%d)?";

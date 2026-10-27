@@ -1,7 +1,6 @@
-1.2.4
+1.2.5
 
-• Sửa lỗi nhập văn bản và mở bàn phím trên trang web. Cải thiện thao tác quay lại và chọn tập trên trang video, giảm trang trống và thông báo lỗi tải không chính xác.
-• Mở mục tải xuống từ danh sách tập hoặc nhấn giữ một tập để tải. Sửa lỗi tải hàng loạt và tên tệp của các tập.
-• Danh sách tải xuống và tệp hiển thị kích thước tệp. Lưu giữ bản ghi tải xuống sau khi cập nhật ứng dụng.
-• Các tab và nhóm trang web dùng gần đây hiện trước, và danh sách tab mở từ trên cùng. Thứ tự sử dụng được giữ lại sau khi khởi động lại. Các thẻ trong nhóm nay tự xuống hàng trong lưới.
-• Nhấn giữ video để xem tốc độ phát tạm thời; thả ra để khôi phục tốc độ trước đó. Cải thiện khả năng tương thích của thanh công cụ.
+• Sửa lỗi ứng dụng bị thoát trên một số thiết bị iOS 17 khi tìm kiếm sau khi nhập địa chỉ web.
+• Trong chế độ xem nhóm, bạn có thể đóng mọi tab của một nhóm trang web sau khi xác nhận.
+• Cải thiện nhập Pinyin và văn bản, chỉ báo tải trang ban đầu, điều hướng quay lại và thao tác vuốt thẻ nhóm.
+• Cải thiện cách xử lý giá trị số bất thường từ trang web, thống kê quyền riêng tư và chặn quảng cáo, cùng tiến trình tải xuống.

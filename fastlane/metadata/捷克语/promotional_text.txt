@@ -1,1 +1,1 @@
-Skupiny panelů v mřížce, stahování epizod a přehledné velikosti souborů. Spolehlivější psaní, návrat z videí a hromadné stahování.
+Po potvrzení zavřete všechny panely ve skupině webu. Vylepšeno zadávání textu, ukazatele načítání a stabilita prohlížení.

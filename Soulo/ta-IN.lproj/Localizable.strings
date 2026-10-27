@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "டொமைன் வாரியாகக் குழுவாக்கு";
 "tab_view_carousel" = "அட்டை காட்சி";
+"tab_close_group" = "குழுவை மூடு";
+"tab_close_group_confirm" = "“%@” குழுவில் உள்ள எல்லா தாவல்களையும் மூடவா (%d)?";

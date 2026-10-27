@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "จัดกลุ่มตามโดเมน";
 "tab_view_carousel" = "มุมมองการ์ด";
+"tab_close_group" = "ปิดกลุ่ม";
+"tab_close_group_confirm" = "ปิดแท็บทั้งหมดใน “%@” (%d แท็บ) หรือไม่?";

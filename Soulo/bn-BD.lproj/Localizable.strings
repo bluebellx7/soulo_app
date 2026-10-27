@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "ডোমেন অনুযায়ী গোষ্ঠী";
 "tab_view_carousel" = "কার্ড ভিউ";
+"tab_close_group" = "গ্রুপ বন্ধ করুন";
+"tab_close_group_confirm" = "“%@” গ্রুপের সব ট্যাব বন্ধ করবেন (%d)?";

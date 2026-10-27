@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Zoskupiť podľa domény";
 "tab_view_carousel" = "Zobrazenie kariet";
+"tab_close_group" = "Zavrieť skupinu";
+"tab_close_group_confirm" = "Zavrieť všetky karty v skupine „%@“ (%d)?";

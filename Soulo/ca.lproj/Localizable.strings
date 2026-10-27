@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Agrupa per domini";
 "tab_view_carousel" = "Vista de targetes";
+"tab_close_group" = "Tanca el grup";
+"tab_close_group_confirm" = "Vols tancar totes les pestanyes de «%@» (%d)?";

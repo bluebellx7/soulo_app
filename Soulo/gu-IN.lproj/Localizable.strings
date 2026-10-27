@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "ડોમેન મુજબ જૂથ બનાવો";
 "tab_view_carousel" = "કાર્ડ દૃશ્ય";
+"tab_close_group" = "જૂથ બંધ કરો";
+"tab_close_group_confirm" = "“%@” જૂથની બધી ટૅબ બંધ કરવી (%d)?";

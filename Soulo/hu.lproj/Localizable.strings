@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Csoportosítás domain szerint";
 "tab_view_carousel" = "Kártyanézet";
+"tab_close_group" = "Csoport bezárása";
+"tab_close_group_confirm" = "Bezárja a(z) „%@” csoport összes lapját (%d)?";

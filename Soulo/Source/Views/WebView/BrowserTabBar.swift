@@ -464,6 +464,13 @@ struct TabOverviewDomainGroup: Identifiable {
     let title: String
     var tabs: [BrowserTab]
 
+    /// A confirmation only applies to tabs that still belong to its original snapshot.
+    func tabIDsStillInGroup(_ currentTabs: [BrowserTab]) -> Set<UUID> {
+        let originalIDs = Set(tabs.map(\.id))
+        let currentGroup = Self.make(from: currentTabs).first { $0.id == id }
+        return Set((currentGroup?.tabs ?? []).map(\.id)).intersection(originalIDs)
+    }
+
     /// Keep the supplied overview order within each site and the first-seen order of
     /// sites. Only the conventional www alias is folded; unrelated subdomains,
     /// hosted sites and IP addresses must never be merged by a suffix guess.
@@ -508,6 +515,7 @@ private struct TabSwitcherDomainGroups: View {
     let onSelect: (Int) -> Void
     let onClose: (Int) -> Void
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var orderedGroupIDs: [String] = []
 
     var body: some View {
@@ -526,7 +534,8 @@ private struct TabSwitcherDomainGroups: View {
                             group: group, tabManager: tabManager,
                             positions: positions,
                             cardWidth: cardWidth, columnCount: Int(columns), previewHeight: previewHeight,
-                            onSelect: onSelect, onClose: onClose
+                            onSelect: onSelect, onClose: onClose,
+                            onCloseGroup: closeGroup
                         )
                         .id(group.id)
                     }
@@ -547,6 +556,15 @@ private struct TabSwitcherDomainGroups: View {
             }
         }
     }
+
+    private func closeGroup(_ group: TabOverviewDomainGroup) {
+        let ids = group.tabIDsStillInGroup(tabManager.tabs)
+        guard !ids.isEmpty else { return }
+        HapticsManager.light()
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+            tabManager.closeTabs(ids: ids)
+        }
+    }
 }
 
 private struct TabDomainGroupRow: View {
@@ -558,26 +576,54 @@ private struct TabDomainGroupRow: View {
     let previewHeight: CGFloat
     let onSelect: (Int) -> Void
     let onClose: (Int) -> Void
+    let onCloseGroup: (TabOverviewDomainGroup) -> Void
+    @State private var pendingClose: TabOverviewDomainGroup?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                Text(group.title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.94))
-                    .lineLimit(1)
-                Text("\(group.tabs.count)")
-                    .font(.caption2.monospacedDigit().weight(.medium))
-                    .foregroundStyle(.white.opacity(0.65))
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 3)
-                    .background(.white.opacity(0.08), in: Capsule())
+                HStack(spacing: 8) {
+                    Text(group.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.94))
+                        .lineLimit(1)
+                    Text("\(group.tabs.count)")
+                        .font(.caption2.monospacedDigit().weight(.medium))
+                        .foregroundStyle(.white.opacity(0.65))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(.white.opacity(0.08), in: Capsule())
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("tabs.group.\(group.id)")
                 Spacer(minLength: 0)
+                Button(role: .destructive) { pendingClose = group } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(LanguageManager.shared.localizedString("tab_close_group"))
+                .accessibilityValue("\(group.title), \(group.tabs.count)")
+                .accessibilityIdentifier("tabs.group.close.\(group.id)")
+                .confirmationDialog(LanguageManager.shared.localizedString("tab_close_group"), isPresented: Binding(
+                    get: { pendingClose != nil },
+                    set: { if !$0 { pendingClose = nil } }
+                ), titleVisibility: .visible, presenting: pendingClose) { requested in
+                    Button(LanguageManager.shared.localizedString("tab_close_group"), role: .destructive) {
+                        onCloseGroup(requested)
+                        pendingClose = nil
+                    }
+                    Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) { pendingClose = nil }
+                } message: { requested in
+                    Text(String(format: LanguageManager.shared.localizedString("tab_close_group_confirm"),
+                        requested.title, requested.tabs.count))
+                }
             }
             .padding(.horizontal, 24)
-            .accessibilityElement(children: .combine)
-            .accessibilityAddTraits(.isHeader)
-            .accessibilityIdentifier("tabs.group.\(group.id)")
 
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(cardWidth), spacing: 12, alignment: .top), count: columnCount), alignment: .leading, spacing: 14) {
                     ForEach(group.tabs) { tab in

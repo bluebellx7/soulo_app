@@ -1,7 +1,6 @@
-1.2.4
+1.2.5
 
-• Corrigidas a introdução de texto e a ativação do teclado nas páginas. Melhorias ao voltar e selecionar episódios em sites de vídeo, com menos páginas em branco e falsos erros de carregamento.
-• Abra as Descargas no seletor de episódios ou prima continuamente um episódio para o descarregar. Corrigidas as descargas em lote e os nomes dos ficheiros dos episódios.
-• As listas de descargas e ficheiros mostram o tamanho dos ficheiros. Os registos de descarga são mantidos após as atualizações da app.
-• Os separadores e grupos de sites usados recentemente aparecem primeiro, e a vista abre no topo. A ordem de utilização mantém-se após reiniciar. Os separadores agrupados distribuem-se agora numa grelha com várias linhas.
-• Mantenha um vídeo premido para ver a velocidade temporária; solte para repor a anterior. Melhor compatibilidade da barra de ferramentas.
+• Corrigida uma falha em alguns dispositivos com iOS 17 ao pesquisar depois de introduzir um endereço web.
+• Na vista agrupada, feche todos os separadores de um grupo do mesmo site após confirmar.
+• Melhorias na introdução de pinyin e texto, nos indicadores de carregamento inicial, na navegação para trás e no deslizar dos cartões de grupos.
+• Melhor tratamento de valores numéricos invulgares das páginas, estatísticas de privacidade e bloqueio de anúncios e progresso das descargas.

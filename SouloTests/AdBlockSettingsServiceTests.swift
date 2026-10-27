@@ -39,6 +39,28 @@ final class AdBlockSettingsServiceTests: XCTestCase {
         XCTAssertEqual(second.hiddenElementCount(for: "example.com"), 5)
     }
 
+    func testInvalidPageCountsDoNotChangeOrPersistStatistics() {
+        let service = AdBlockSettingsService(userDefaults: defaults)
+        for count in [Int.max, Int.max / 2 + 1, SafeNumericValue.maximumEventCount + 1, -1, 0] {
+            service.recordHiddenElementCount(count, for: "example.com")
+        }
+        XCTAssertTrue(service.hiddenElementCountByHost.isEmpty)
+        service.recordHiddenElementCount(3, for: "example.com")
+        service.recordHiddenElementCount(2, for: "example.com")
+        service.flushPendingStatistics()
+        XCTAssertEqual(AdBlockSettingsService(userDefaults: defaults).hiddenElementCount(for: "example.com"), 5)
+    }
+
+    func testPreviouslyPersistedLargeCountsDoNotOverflowOnUpdateOrTotal() throws {
+        defaults.set(try JSONEncoder().encode(["example.com": Int.max - 1, "other.example": Int.max]), forKey: "counts")
+        let service = AdBlockSettingsService(statsKey: "counts", userDefaults: defaults)
+        service.recordHiddenElementCount(2, for: "example.com")
+        XCTAssertEqual(service.hiddenElementCount(for: "example.com"), .max)
+        XCTAssertEqual(SafeNumericValue.totalCount(service.hiddenElementCountByHost.values), .max)
+        service.flushPendingStatistics()
+        XCTAssertEqual(AdBlockSettingsService(statsKey: "counts", userDefaults: defaults).hiddenElementCount(for: "example.com"), .max)
+    }
+
     func testPrivateFilteringDoesNotRecordVisitedDomains() {
         let service = AdBlockSettingsService(userDefaults: defaults)
         service.recordHiddenElementCount(2, for: "public.example")

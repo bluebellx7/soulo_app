@@ -1,1 +1,1 @@
-Grupperte faner i rutenett, episodenedlasting og synlige filstørrelser. Mer stabil skriving, tilbake fra video og gruppenedlasting.
+Lukk alle faner i en nettstedsgruppe etter bekreftelse. Forbedret tekstinntasting, visning av innlasting og stabilitet under surfing.

@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Groeperen op domein";
 "tab_view_carousel" = "Kaartweergave";
+"tab_close_group" = "Groep sluiten";
+"tab_close_group_confirm" = "Alle tabbladen in ‘%@’ sluiten (%d)?";

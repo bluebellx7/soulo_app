@@ -194,6 +194,65 @@ import Network
         return (window, previous)
     }
 
+    func testOversizedPageStatisticsAreIgnoredWhileNormalMessagesStillWork() async throws {
+        UserDefaults.standard.set(false, forKey: "is_incognito")
+        let host = "numeric-\(UUID().uuidString.lowercased()).example"
+        let html = """
+        <h1>Statistics fixture</h1><script>
+        for (let i = 0; i < 2; i++) {
+          window.webkit.messageHandlers.souloAdBlocker.postMessage({host:'\(host)',hiddenCount:2**62});
+          window.webkit.messageHandlers.souloPrivacy.postMessage({host:'\(host)',type:'cookieBanner',actionCount:2**62});
+        }
+        window.webkit.messageHandlers.souloAdBlocker.postMessage({host:'\(host)',hiddenCount:3});
+        window.webkit.messageHandlers.souloPrivacy.postMessage({host:'\(host)',type:'cookieBanner',actionCount:1});
+        window.statisticsSent = true;
+        </script>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: ["/statistics": Data(html.utf8)])
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try self.host(model)
+        defer {
+            close(model, window, previous)
+            AdBlockSettingsService.shared.resetStats(for: host)
+            PrivacyProtectionService.shared.resetSummary(for: host)
+        }
+        model.loadURL(root.appendingPathComponent("statistics"))
+        try await wait(model, for: "window.statisticsSent === true")
+        for _ in 0..<50 {
+            if PrivacyProtectionService.shared.summary(for: host).cookieBannerActionCount == 1 { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertEqual(AdBlockSettingsService.shared.hiddenElementCount(for: host), 3)
+        XCTAssertEqual(PrivacyProtectionService.shared.summary(for: host).hiddenElementCount, 3)
+        XCTAssertEqual(PrivacyProtectionService.shared.summary(for: host).cookieBannerActionCount, 1)
+    }
+
+    func testInvalidBlankPageProbeCannotCrashOrReloadTheDocument() async throws {
+        let html = """
+        <h1 id="ready">Probe fixture</h1><script>
+        window.loadInstance = Math.random().toString();
+        Object.defineProperty(document.body, 'children', {get: () => ({length: 1e100})});
+        </script>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: ["/probe": Data(html.utf8)])
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("probe"))
+        try await wait(model, for: "typeof window.loadInstance === 'string' && document.readyState === 'complete'")
+        let web = try XCTUnwrap(model.webView)
+        let instance = try await web.evaluateJavaScript("window.loadInstance") as? String
+        try await Task.sleep(for: .milliseconds(2200))
+        let after = try await web.evaluateJavaScript("window.loadInstance") as? String
+        XCTAssertNotNil(instance)
+        XCTAssertEqual(after, instance)
+        XCTAssertNil(model.errorMessage)
+    }
+
     func testNewWindowWebLinkIsCancelledBeforeWebKitCanLaunchAnApp() async throws {
         // This test drives a synthetic click. Exercise the external-app policy
         // independently of ad blocking, which correctly rejects untrusted popups.

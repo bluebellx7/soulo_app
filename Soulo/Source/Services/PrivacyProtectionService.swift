@@ -46,9 +46,9 @@ final class PrivacyProtectionService: ObservableObject {
     }
 
     func recordHiddenElementCount(_ count: Int, for host: String?) {
-        guard count > 0 else { return }
+        guard (1...SafeNumericValue.maximumEventCount).contains(count) else { return }
         updateSummary(for: host) { summary in
-            summary.hiddenElementCount += count
+            summary.hiddenElementCount = SafeNumericValue.addingCounts(summary.hiddenElementCount, count)
         }
     }
 
@@ -103,21 +103,21 @@ final class PrivacyProtectionService: ObservableObject {
 
     func recordHTTPSUpgrade(for host: String?) {
         updateSummary(for: host) { summary in
-            summary.httpsUpgradeCount += 1
+            summary.httpsUpgradeCount = SafeNumericValue.addingCounts(summary.httpsUpgradeCount, 1)
         }
     }
 
     func recordTrackingParametersStripped(_ count: Int, for host: String?) {
-        guard count > 0 else { return }
+        guard (1...SafeNumericValue.maximumEventCount).contains(count) else { return }
         updateSummary(for: host) { summary in
-            summary.strippedTrackingParameterCount += count
+            summary.strippedTrackingParameterCount = SafeNumericValue.addingCounts(summary.strippedTrackingParameterCount, count)
         }
     }
 
     func recordCookieBannerActions(_ count: Int, for host: String?) {
-        guard count > 0 else { return }
+        guard (1...SafeNumericValue.maximumEventCount).contains(count) else { return }
         updateSummary(for: host) { summary in
-            summary.cookieBannerActionCount += count
+            summary.cookieBannerActionCount = SafeNumericValue.addingCounts(summary.cookieBannerActionCount, count)
         }
     }
 

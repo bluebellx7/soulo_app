@@ -1,7 +1,6 @@
-1.2.4
+1.2.5
 
-• Naprawiono wpisywanie tekstu i wywoływanie klawiatury na stronach. Poprawiono powrót i wybór odcinków w serwisach wideo, ograniczając puste strony i błędne komunikaty o ładowaniu.
-• Otwórz Pobrane z listy odcinków lub przytrzymaj odcinek, aby go pobrać. Naprawiono pobieranie wielu odcinków i nazwy ich plików.
-• Listy pobierania i plików pokazują ich rozmiary. Wpisy pobierania są zachowywane po aktualizacji aplikacji.
-• Ostatnio używane karty i grupy witryn pojawiają się jako pierwsze, a przegląd otwiera się od góry. Kolejność użycia jest zachowana po restarcie. Zgrupowane karty układają się teraz w siatkę z wieloma wierszami.
-• Przytrzymaj film, aby zobaczyć tymczasową prędkość odtwarzania; puść, aby przywrócić poprzednią. Lepsza zgodność paska narzędzi.
+• Naprawiono awarię na niektórych urządzeniach z iOS 17 podczas wyszukiwania po wpisaniu adresu internetowego.
+• W widoku grup można zamknąć wszystkie karty grupy witryny po potwierdzeniu.
+• Ulepszono wprowadzanie pinyin i tekstu, wskaźniki pierwszego ładowania strony, powrót do poprzedniej strony i przesuwanie kart grup.
+• Ulepszono obsługę nietypowych wartości liczbowych ze stron, statystyk prywatności i blokowania reklam oraz postępu pobierania.

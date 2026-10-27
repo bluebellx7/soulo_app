@@ -885,3 +885,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "按域名分组";
 "tab_view_carousel" = "卡片视图";
+"tab_close_group" = "关闭整组";
+"tab_close_group_confirm" = "关闭“%@”中的全部标签页（%d 个）？";

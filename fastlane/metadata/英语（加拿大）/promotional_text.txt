@@ -1,1 +1,1 @@
-Grouped tab grids, episode downloads and visible file sizes. More reliable typing, video navigation and batch downloads.
+Close every tab in a website group after confirmation. Improved text input, loading indicators and browsing stability.

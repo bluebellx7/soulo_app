@@ -460,6 +460,53 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 10))
     }
 
+    func testWholeGroupCloseRequiresConfirmationAndKeepsOtherGroups() throws {
+        app.terminate()
+        app.launchArguments += ["-tab_overview_grouped", "YES"]
+        app.launch()
+        try open("recent/1")
+        XCTAssertTrue(app.webViews.staticTexts["Recent page 1"].firstMatch.waitForExistence(timeout: 20))
+        tap(app.buttons["browser.tabs"])
+        tap(app.buttons["tabs.options"])
+        let closeOthers = app.buttons["Close Other Tabs"].firstMatch
+        if closeOthers.exists { tap(closeOthers) }
+        else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.2)).tap() }
+        tap(app.buttons["tabs.done"])
+        for number in 2...3 {
+            tap(app.buttons["browser.tabs"])
+            tap(app.buttons["tabs.tab_new_tab"])
+            var url = try XCTUnwrap(URLComponents(url: root, resolvingAgainstBaseURL: false))
+            url.host = "localhost"; url.path = "/recent/\(number)"
+            try open(url: XCTUnwrap(url.url))
+            XCTAssertTrue(app.webViews.staticTexts["Recent page \(number)"].firstMatch.waitForExistence(timeout: 20))
+        }
+        tap(app.buttons["browser.tabs"])
+        let closeGroup = app.buttons["tabs.group.close.host:localhost"].firstMatch
+        tap(closeGroup)
+        let dialog = app.sheets.firstMatch
+        XCTAssertTrue(dialog.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(dialog.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "localhost")).firstMatch.exists)
+        let confirmation = XCTAttachment(screenshot: app.screenshot())
+        confirmation.name = "whole-group-close-confirmation"; confirmation.lifetime = .keepAlways; add(confirmation)
+        let cancel = dialog.buttons["Cancel"].firstMatch
+        if cancel.exists { tap(cancel) }
+        else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.7)).tap() }
+        XCTAssertTrue(dialog.waitForNonExistence(timeout: 5))
+        let target = app.descendants(matching: .any).matching(identifier: "tabs.group.host:localhost").firstMatch
+        let other = app.descendants(matching: .any).matching(identifier: "tabs.group.host:127.0.0.1").firstMatch
+        XCTAssertTrue(target.exists && other.exists, "Cancel must keep both groups")
+        tap(closeGroup)
+        XCTAssertTrue(dialog.waitForExistence(timeout: 5))
+        tap(dialog.buttons["Close Group"].firstMatch)
+        XCTAssertTrue(target.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(other.exists, "Closing a group must preserve the other website")
+        let remaining = XCTAttachment(screenshot: app.screenshot())
+        remaining.name = "whole-group-close-preserves-other-site"; remaining.lifetime = .keepAlways; add(remaining)
+        tap(app.buttons["tabs.done"])
+        XCTAssertTrue(app.webViews.staticTexts["Recent page 1"].firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(["1 Tab", "1 Tabs"].contains(app.buttons["browser.tabs"].label))
+    }
+
     func testGroupedOverviewStartsAtTopUsesRecentTabsAndKeepsOrderAfterRestart() throws {
         app.terminate()
         app.launchArguments += ["-tab_overview_grouped", "YES"]

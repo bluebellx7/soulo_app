@@ -383,11 +383,10 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                 throw StreamingMediaDownloadError.missingTrack
             }
 
-            manager.updateProgress(
-                id: item.id,
-                completed: byteCounts.video + byteCounts.audio,
-                total: max(byteCounts.video + byteCounts.audio, transfer.expectedVideoBytes + transfer.expectedAudioBytes)
-            )
+            let completed = SafeNumericValue.byteCountTotal([byteCounts.video, byteCounts.audio]) ?? .max
+            let expected = SafeNumericValue.byteCountTotal(
+                [transfer.expectedVideoBytes, transfer.expectedAudioBytes], requirePositive: true) ?? -1
+            manager.updateProgress(id: item.id, completed: completed, total: max(completed, expected))
             try await mux(
                 videoURL: videoURL,
                 audioURL: audioURL,
@@ -732,8 +731,8 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
 
         switch body["type"] as? String {
         case "started":
-            transfer.expectedVideoBytes = Self.int64(body["videoExpectedBytes"])
-            transfer.expectedAudioBytes = Self.int64(body["audioExpectedBytes"])
+            transfer.expectedVideoBytes = SafeNumericValue.nonnegativeInt64(body["videoExpectedBytes"]) ?? 0
+            transfer.expectedAudioBytes = SafeNumericValue.nonnegativeInt64(body["audioExpectedBytes"]) ?? 0
             replyHandler(["accepted": true], nil)
 
         case "chunk":
@@ -747,8 +746,9 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             }
             do {
                 let byteCounts = try await transfer.writer.append(data, to: track, index: index)
-                let completed = byteCounts.video + byteCounts.audio
-                let expected = transfer.expectedVideoBytes + transfer.expectedAudioBytes
+                let completed = SafeNumericValue.byteCountTotal([byteCounts.video, byteCounts.audio]) ?? .max
+                let expected = SafeNumericValue.byteCountTotal(
+                    [transfer.expectedVideoBytes, transfer.expectedAudioBytes], requirePositive: true) ?? -1
                 DownloadManagerService.shared.updateProgress(
                     id: transfer.itemID,
                     completed: completed,
@@ -1211,18 +1211,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
     }
 
     private static func integer(_ value: Any?) -> Int? {
-        if let value = value as? Int { return value }
-        if let value = value as? NSNumber { return value.intValue }
-        if let value = value as? String { return Int(value) }
-        return nil
-    }
-
-    private static func int64(_ value: Any?) -> Int64 {
-        if let value = value as? Int64 { return value }
-        if let value = value as? Int { return Int64(value) }
-        if let value = value as? NSNumber { return value.int64Value }
-        if let value = value as? String { return Int64(value) ?? 0 }
-        return 0
+        SafeNumericValue.nonnegativeInt(value)
     }
 
     private static func javascriptString(_ value: String) -> String {

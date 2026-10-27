@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "డొమైన్ ప్రకారం సమూహపరచు";
 "tab_view_carousel" = "కార్డ్ వీక్షణ";
+"tab_close_group" = "సమూహాన్ని మూసివేయి";
+"tab_close_group_confirm" = "“%@” సమూహంలోని అన్ని ట్యాబ్‌లను మూసివేయాలా (%d)?";

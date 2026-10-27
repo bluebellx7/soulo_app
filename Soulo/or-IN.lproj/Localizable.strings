@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "ଡୋମେନ୍ ଅନୁସାରେ ଗୋଷ୍ଠୀ କରନ୍ତୁ";
 "tab_view_carousel" = "କାର୍ଡ ଦୃଶ୍ୟ";
+"tab_close_group" = "ଗୋଷ୍ଠୀ ବନ୍ଦ କରନ୍ତୁ";
+"tab_close_group_confirm" = "“%@” ଗୋଷ୍ଠୀର ସମସ୍ତ ଟ୍ୟାବ୍ ବନ୍ଦ କରିବେ (%d)?";

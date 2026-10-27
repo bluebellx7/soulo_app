@@ -1,7 +1,6 @@
-1.2.4
+1.2.5
 
-• Corretti l'inserimento del testo e l'attivazione della tastiera nelle pagine web. Migliorati il ritorno e la selezione degli episodi, con meno pagine vuote e falsi errori di caricamento.
-• Apri Download dal selettore degli episodi o tieni premuto un episodio per scaricarlo. Corretti i download multipli e i nomi dei file degli episodi.
-• Gli elenchi di download e file mostrano le dimensioni dei file. I dati dei download vengono conservati dopo gli aggiornamenti dell'app.
-• Le schede e i gruppi di siti usati di recente appaiono per primi e la vista si apre dall'alto. L'ordine d'uso si conserva dopo il riavvio. Le schede raggruppate ora si dispongono in una griglia su più righe.
-• Tieni premuto un video per vedere la velocità temporanea; rilascia per ripristinare quella precedente. Migliorata la compatibilità della barra strumenti.
+• Risolto un arresto anomalo su alcuni dispositivi iOS 17 durante la ricerca dopo l'inserimento di un indirizzo web.
+• Nella vista raggruppata puoi chiudere tutte le schede di un gruppo dello stesso sito dopo la conferma.
+• Migliorati inserimento Pinyin e testo, indicatori del caricamento iniziale, navigazione indietro e scorrimento delle schede dei gruppi.
+• Migliorata la gestione di valori numerici insoliti delle pagine web, statistiche di privacy e blocco degli annunci e avanzamento dei download.

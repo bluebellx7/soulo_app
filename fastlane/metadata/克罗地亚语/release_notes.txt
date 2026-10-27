@@ -1,7 +1,6 @@
-1.2.4
+1.2.5
 
-• Ispravljeni su unos teksta i aktiviranje tipkovnice na web-stranicama. Poboljšani su povratak i odabir epizoda, uz manje praznih stranica i pogrešnih dojava o učitavanju.
-• Otvorite Preuzimanja iz odabira epizoda ili dugo pritisnite epizodu da biste je preuzeli. Ispravljeni su skupno preuzimanje i nazivi datoteka epizoda.
-• Popisi preuzimanja i datoteka prikazuju veličine datoteka. Zapisi preuzimanja ostaju sačuvani nakon ažuriranja aplikacije.
-• Nedavno korištene kartice i grupe web-mjesta prikazuju se prve, a pregled se otvara na vrhu. Redoslijed korištenja čuva se nakon ponovnog pokretanja. Grupirane kartice sada se raspoređuju u mrežu s više redaka.
-• Držite video pritisnutim za prikaz privremene brzine reprodukcije; otpuštanjem se vraća prethodna brzina. Poboljšana kompatibilnost alatne trake.
+• Ispravljeno rušenje na nekim uređajima s iOS-om 17 pri pretraživanju nakon unosa web-adrese.
+• U grupiranom prikazu možete zatvoriti sve kartice grupe web-mjesta nakon potvrde.
+• Poboljšani unos pinyina i teksta, prikaz početnog učitavanja stranice, povratak na prethodnu stranicu i povlačenje kartica grupa.
+• Poboljšana obrada neobičnih brojčanih podataka web-stranica, statistike privatnosti i blokiranja oglasa te napretka preuzimanja.

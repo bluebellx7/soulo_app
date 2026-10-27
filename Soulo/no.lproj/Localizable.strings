@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "Grupper etter domene";
 "tab_view_carousel" = "Kortvisning";
+"tab_close_group" = "Lukk gruppe";
+"tab_close_group_confirm" = "Lukk alle fanene i «%@» (%d)?";

@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "ഡൊമെയ്ൻ അനുസരിച്ച് കൂട്ടുക";
 "tab_view_carousel" = "കാർഡ് കാഴ്ച";
+"tab_close_group" = "ഗ്രൂപ്പ് അടയ്ക്കുക";
+"tab_close_group_confirm" = "“%@” ഗ്രൂപ്പിലെ എല്ലാ ടാബുകളും അടയ്ക്കണോ (%d)?";

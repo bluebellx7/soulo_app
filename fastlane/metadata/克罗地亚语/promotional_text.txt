@@ -1,1 +1,1 @@
-Grupirane kartice u mreži, preuzimanje epizoda i prikaz veličina datoteka. Pouzdaniji unos, povratak s videa i skupna preuzimanja.
+Zatvorite sve kartice u grupi web-mjesta nakon potvrde. Poboljšani unos teksta, prikaz učitavanja i stabilnost pregledavanja.

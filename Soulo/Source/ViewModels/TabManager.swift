@@ -284,6 +284,43 @@ final class TabManager: ObservableObject {
         closeTab(at: index)
     }
 
+    /// Close an identity snapshot in one pass without activating intermediate tabs.
+    func closeTabs(ids: Set<UUID>) {
+        let closing = tabs.filter { ids.contains($0.id) }
+        guard !closing.isEmpty else { return }
+        let closingIDs = Set(closing.map(\.id))
+        let currentID = activeTab?.id
+        let closesCurrent = currentID.map(closingIDs.contains) ?? false
+        let nextID = closesCurrent
+            ? tabsForOverview.first(where: { !closingIDs.contains($0.id) })?.id
+            : currentID
+        if closesCurrent { dismissFindInPage() }
+
+        if !isPrivateSession, !UserDefaults.standard.bool(forKey: "is_incognito") {
+            let closed = tabsForOverview.filter { closingIDs.contains($0.id) }.map { tab in
+                RecentlyClosedTab(id: tab.id, title: tab.displayTitle, url: tab.webViewModel.currentURL ?? tab.suspendedURL,
+                    keyword: tab.keyword, platform: tab.platform, closedAt: Date())
+            }
+            recentlyClosed = Array((closed + recentlyClosed).prefix(Self.maxRecentlyClosed))
+        }
+        for tab in closing {
+            unregisterWebExtensionTab(tab)
+            tab.webViewModel.releaseWebViewRuntime()
+            tab.webViewModel.deletePersistedSnapshot()
+        }
+        desktopModeTabs.subtract(closingIDs)
+        recentTabIDs.removeAll { closingIDs.contains($0) }
+        tabs.removeAll { closingIDs.contains($0.id) }
+        if tabs.isEmpty {
+            createTab()
+            return
+        }
+        activeTabIndex = nextID.flatMap { id in tabs.firstIndex { $0.id == id } }
+            ?? max(0, min(activeTabIndex, tabs.count - 1))
+        manageTabLifecycles(recordAccess: closesCurrent)
+        scheduleSaveToDisk()
+    }
+
     func closeAllTabs() {
         closeAllTabs(addingToRecentlyClosed: true)
     }

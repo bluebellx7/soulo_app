@@ -1,1 +1,1 @@
-Abas agrupadas em grade, download de episódios e tamanhos de arquivo visíveis. Digitação, retorno dos vídeos e downloads em lote mais confiáveis.
+Feche todas as abas de um grupo de site após confirmar. Melhorias na entrada de texto, nos indicadores de carregamento e na estabilidade.

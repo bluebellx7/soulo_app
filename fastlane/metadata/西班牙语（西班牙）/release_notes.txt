@@ -1,7 +1,6 @@
-1.2.4
+1.2.5
 
-• Se han corregido la entrada de texto y la activación del teclado en páginas web. Mejoras al volver y elegir episodios en sitios de vídeo, con menos páginas vacías y falsos errores de carga.
-• Abre Descargas desde el selector de episodios o mantén pulsado un episodio para descargarlo. Se han corregido las descargas por lotes y los nombres de archivos de episodios.
-• Las listas de descargas y archivos muestran sus tamaños. Los registros de descarga se conservan tras actualizar la app.
-• Las pestañas y grupos de sitios recientes aparecen primero y la vista se abre arriba. El orden de uso se conserva al reiniciar. Las pestañas agrupadas ahora se distribuyen en una cuadrícula de varias filas.
-• Mantén pulsado un vídeo para ver la velocidad temporal; suelta para recuperar la anterior. Mejor compatibilidad de la barra de herramientas.
+• Se ha corregido un cierre inesperado en algunos dispositivos con iOS 17 al buscar después de introducir una dirección web.
+• En la vista agrupada puedes cerrar todas las pestañas de un grupo del mismo sitio tras confirmar.
+• Mejoras en la entrada de pinyin y texto, los indicadores de carga inicial, la navegación hacia atrás y el deslizamiento de las tarjetas de grupos.
+• Mejor gestión de valores numéricos inusuales de páginas web, estadísticas de privacidad y bloqueo de anuncios y progreso de las descargas.

@@ -622,3 +622,5 @@ Erzahlen Sie uns:
 /* Tab overview layouts */
 "tab_view_grouped" = "Nach Domain gruppieren";
 "tab_view_carousel" = "Kartenansicht";
+"tab_close_group" = "Gruppe schließen";
+"tab_close_group_confirm" = "Alle Tabs in „%@“ schließen (%d)?";

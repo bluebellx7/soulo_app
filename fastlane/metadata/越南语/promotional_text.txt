@@ -1,1 +1,1 @@
-Nhóm thẻ dạng lưới, tải tập phim và xem kích thước tệp. Nhập văn bản, quay lại từ video và tải hàng loạt ổn định hơn.
+Đóng mọi tab trong nhóm trang web sau khi xác nhận. Cải thiện nhập văn bản, chỉ báo tải và độ ổn định khi duyệt web.

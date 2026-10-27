@@ -1,7 +1,6 @@
-1.2.4
+1.2.5
 
-• Web sayfalarında metin girişi ve klavye odağı düzeltildi. Video sitelerinde geri gezinme ve bölüm seçimi iyileştirildi; boş sayfalar ve hatalı yükleme uyarıları azaltıldı.
-• Bölüm seçicisinden İndirilenler'i açın veya indirmek için bir bölüme uzun basın. Toplu indirme ve bölüm dosyalarının adları düzeltildi.
-• İndirme ve dosya listeleri dosya boyutlarını gösteriyor. İndirme kayıtları uygulama güncellemelerinden sonra korunuyor.
-• Son kullanılan sekmeler ve site grupları önce gösterilir, sekme görünümü en üstten açılır. Kullanım sırası yeniden başlatınca korunur. Gruplanmış sekmeler artık çok satırlı bir ızgarada gösteriliyor.
-• Videoyu basılı tutarken geçici oynatma hızı gösterilir; bırakınca önceki hıza dönülür. Araç çubuğu uyumluluğu iyileştirildi.
+• Bazı iOS 17 aygıtlarında web adresi girildikten sonra arama yaparken oluşabilen çökme düzeltildi.
+• Gruplu görünümde, onay verdikten sonra bir site grubundaki tüm sekmeleri kapatabilirsiniz.
+• Pinyin ve metin girişi, ilk sayfa yükleme göstergeleri, geri gezinme ve grup kartlarını kaydırma iyileştirildi.
+• Web sayfalarındaki olağandışı sayısal değerlerin, gizlilik ve reklam engelleme istatistiklerinin ve indirme ilerlemesinin işlenmesi iyileştirildi.

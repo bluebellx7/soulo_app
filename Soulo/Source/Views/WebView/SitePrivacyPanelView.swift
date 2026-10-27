@@ -432,9 +432,8 @@ struct SitePrivacyPanelView: View {
     }
 
     private var handledActionCount: Int {
-        summary.httpsUpgradeCount
-            + summary.strippedTrackingParameterCount
-            + summary.cookieBannerActionCount
+        SafeNumericValue.totalCount([summary.httpsUpgradeCount,
+            summary.strippedTrackingParameterCount, summary.cookieBannerActionCount])
     }
 
     var body: some View {

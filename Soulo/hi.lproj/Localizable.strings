@@ -887,3 +887,5 @@
 /* Tab overview layouts */
 "tab_view_grouped" = "डोमेन के अनुसार समूह";
 "tab_view_carousel" = "कार्ड दृश्य";
+"tab_close_group" = "समूह बंद करें";
+"tab_close_group_confirm" = "“%@” समूह के सभी टैब बंद करें (%d)?";

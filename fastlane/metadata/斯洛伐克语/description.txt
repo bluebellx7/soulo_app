@@ -4,7 +4,7 @@ V Nastaveniach vyberte Soulo ako predvolený prehliadač na otváranie odkazov z
 
 Naposledy použité karty a skupiny webov sa zobrazia ako prvé a prehľad sa otvorí navrchu. Poradie používania sa zachová aj po reštarte.
 
-Skupiny kariet v mriežke, sťahovanie epizód a prehľadné veľkosti súborov. Spoľahlivejšie písanie, návrat z videí a hromadné sťahovanie.
+Po potvrdení zatvorte všetky karty v skupine webu. Vylepšené zadávanie textu, ukazovatele načítania a stabilita prehliadania.
 
 Prehrávajte podporované videá počas sťahovania. Lepšie sťahovanie na pozadí, celá obrazovka a ochrana pred skrytými reklamami a nechceným kopírovaním.
 
