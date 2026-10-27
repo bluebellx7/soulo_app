@@ -1240,7 +1240,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             if ["http", "https"].contains(resource.url.scheme ?? "") {
                 menu.addAction(UIAlertAction(title: LanguageManager.shared.localizedString("save_to_photos"), style: .default) { [weak self, weak webView] _ in
                     guard let self, let webView else { return }
-                    self.downloadContextResource(resource, webView: webView, saveToPhotos: true, pageURL: contextResource.frame.request.url)
+                    self.downloadContextResource(resource, webView: webView, saveToPhotos: true, pageURL: contextResource.frame.requestURL)
                 })
             }
             if let linkURL = contextResource.linkURL {
@@ -1251,7 +1251,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             if ["http", "https"].contains(resource.url.scheme ?? "") {
                 menu.addAction(UIAlertAction(title: LanguageManager.shared.localizedString("download"), style: .default) { [weak self, weak webView] _ in
                     guard let self, let webView else { return }
-                    self.downloadContextResource(resource, webView: webView, saveToPhotos: false, pageURL: contextResource.frame.request.url)
+                    self.downloadContextResource(resource, webView: webView, saveToPhotos: false, pageURL: contextResource.frame.requestURL)
                 })
             }
             menu.addAction(UIAlertAction(title: LanguageManager.shared.localizedString("resource_copy_url"), style: .default) { _ in UIPasteboard.general.url = resource.url })
@@ -1311,7 +1311,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 guard message.webView === viewModel.webView, message.frameInfo.isMainFrame,
                       message.world == .defaultClient, body["visible"] as? Bool == true,
                       provisionalNavigation == nil else { return }
-                if let source = message.frameInfo.request.url, let current = message.webView?.url,
+                if let source = message.frameInfo.requestURL, let current = message.webView?.url,
                    !WebEpisodeList.matches(source, current) { return }
                 removeNavigationPreview(animated: true)
                 viewModel.markPageContentVisible()
@@ -1357,7 +1357,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 guard message.world.name == BrowserNavigationGesture.world.name,
                       let webView = message.webView, let parent = viewModel.webView,
                       webView === parent || webView.isDescendant(of: parent),
-                      let url = message.frameInfo.request.url else { return }
+                      let url = message.frameInfo.requestURL else { return }
                 viewModel.recordDocumentInteraction(in: parent)
                 viewModel.cancelBackwardTraversal()
                 let destinations = (body["destinations"] as? [String] ?? []).prefix(16).compactMap { raw -> URL? in
@@ -1403,7 +1403,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 case "holdSpeed", "holdSpeedEnd":
                     guard let reported = body["pageURL"] as? String,
                           var source = URLComponents(string: reported),
-                          let frameURL = message.frameInfo.request.url,
+                          let frameURL = message.frameInfo.requestURL,
                           var frame = URLComponents(url: frameURL, resolvingAgainstBaseURL: false) else { return }
                     source.fragment = nil; frame.fragment = nil
                     guard source.url == frame.url else { return }
@@ -1455,7 +1455,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                             resource = current
                         } else if let source, ["http", "https"].contains(source.scheme?.lowercased() ?? "") {
                             let delivery = WebResourceInspectionService.delivery(for: source)
-                            let frameURL = frame.request.url
+                            let frameURL = frame.requestURL
                             let sourcePageURL = ["http", "https"].contains(frameURL?.scheme?.lowercased() ?? "")
                                 ? frameURL : webView.url
                             resource = WebMediaResource(kind: .video, url: source, title: viewModel.pageTitle,
@@ -1474,7 +1474,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                         guard viewModel.beginMediaDownload(url: url, name: viewModel.pageTitle) else { return }
                         do {
                             let file = try await WebResourceDownloadService.shared.download(resource,
-                                pageURL: resource.sourcePageURL ?? frame.request.url ?? webView.url, webView: webView)
+                                pageURL: resource.sourcePageURL ?? frame.requestURL ?? webView.url, webView: webView)
                             self.viewModel.finishMediaDownload(url: url)
                             self.presentDownloadedFile(file, sourceURL: url)
                         } catch {
@@ -2677,7 +2677,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             if navigationAction.navigationType == .backForward {
                 if navigationAction.targetFrame?.isMainFrame == true,
                    let target = viewModel.historyTargetSkippingAutomaticRedirects(to: url,
-                        from: navigationAction.sourceFrame.request.url, in: webView) {
+                        from: navigationAction.sourceFrame.requestURL, in: webView) {
                     decide(.cancel)
                     DispatchQueue.main.async { [weak webView] in webView?.go(to: target) }
                     return
@@ -2717,7 +2717,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                        navigationAction.navigationType == .other,
                        !nativeRequest, !viewModel.currentDocumentHasUserInteraction,
                        !isExplicitNavigation(navigationAction, in: webView),
-                       let source = navigationAction.sourceFrame.request.url, source == webView.url {
+                       let source = navigationAction.sourceFrame.requestURL, source == webView.url {
                         var from = URLComponents(url: source, resolvingAgainstBaseURL: false)
                         var to = URLComponents(url: url, resolvingAgainstBaseURL: false)
                         from?.fragment = nil; to?.fragment = nil
@@ -2775,7 +2775,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                     }
 
                     if BrowserWebLinkPolicy.shouldLoadInBrowser(
-                        url: url, sourceURL: navigationAction.sourceFrame.request.url,
+                        url: url, sourceURL: navigationAction.sourceFrame.requestURL,
                         navigationType: navigationAction.navigationType,
                         targetsMainFrame: navigationAction.targetFrame?.isMainFrame,
                         method: method, nativeRequest: nativeRequest
@@ -2820,7 +2820,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             if nativeRequest { return true }
             guard let gesture = navigationGesture,
                   gesture.webView == ObjectIdentifier(webView),
-                  gesture.frameURL == action.sourceFrame.request.url,
+                  gesture.frameURL == action.sourceFrame.requestURL,
                   ProcessInfo.processInfo.systemUptime - gesture.time <= 3 else { return false }
             if gesture.destinations.contains(where: {
                 BrowserDomainNavigationPolicy.isExplicitNavigation(nativeRequest: false,
@@ -2842,7 +2842,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             // heuristics must not swallow SDK handoffs through buttons or iframes.
             if case .external = WebNavigationPolicyService.shared.decision(for: url) { return true }
             let targetsTopLevel = action.targetFrame == nil || action.targetFrame?.isMainFrame == true
-            let sourceURL = action.sourceFrame.request.url
+            let sourceURL = action.sourceFrame.requestURL
             let recentGesture = navigationGesture.map {
                 $0.webView == ObjectIdentifier(webView) && $0.frameURL == sourceURL
                     && ProcessInfo.processInfo.systemUptime - $0.time <= 3
@@ -3514,7 +3514,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                                 title: LanguageManager.shared.localizedString("save_to_photos"),
                                 image: UIImage(systemName: "photo.badge.arrow.down")
                             ) { _ in
-                                self.downloadContextResource(resource, webView: webView, saveToPhotos: true, pageURL: frame?.request.url)
+                                self.downloadContextResource(resource, webView: webView, saveToPhotos: true, pageURL: frame?.requestURL)
                             })
                         }
                     }
@@ -3524,7 +3524,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                             title: LanguageManager.shared.localizedString("download"),
                             image: UIImage(systemName: "arrow.down.circle")
                         ) { _ in
-                            self.downloadContextResource(resource, webView: webView, saveToPhotos: false, pageURL: frame?.request.url)
+                            self.downloadContextResource(resource, webView: webView, saveToPhotos: false, pageURL: frame?.requestURL)
                         })
                     }
 
@@ -3550,7 +3550,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 do {
                     let image = try await WebResourceDownloadService.shared.loadImage(
                         resource.url,
-                        pageURL: frame?.request.url ?? webView.url,
+                        pageURL: frame?.requestURL ?? webView.url,
                         webView: webView, frame: frame
                     )
                     let result = try await ImageTextRecognitionService.recognize(image, sourceURL: resource.url)

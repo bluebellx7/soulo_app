@@ -41,7 +41,7 @@ enum WebResourceInspectionService {
               let url = URL(string: raw),
               ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return nil }
         let delivery = WebMediaResource.Delivery(rawValue: result["delivery"] ?? "") ?? .direct
-        let frameURL = frame.request.url
+        let frameURL = frame.requestURL
         let sourcePageURL = ["http", "https"].contains(frameURL?.scheme?.lowercased() ?? "")
             ? frameURL : webView.url
         return WebMediaResource(

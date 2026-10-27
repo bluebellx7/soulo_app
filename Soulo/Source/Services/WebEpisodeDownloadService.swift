@@ -201,8 +201,8 @@ enum WebEpisodeDownloadError: LocalizedError, Equatable {
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         guard message.webView === webView, !message.frameInfo.isMainFrame, frames.count < 16,
-              let url = message.frameInfo.request.url, ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return }
-        frames.removeAll { $0.request.url == url }
+              let url = message.frameInfo.requestURL, ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return }
+        frames.removeAll { $0.requestURL == url }
         frames.append(message.frameInfo)
     }
 

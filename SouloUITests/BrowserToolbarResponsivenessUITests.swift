@@ -76,7 +76,9 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         tap(field)
         let clear = app.buttons["search.clear"].firstMatch
         if clear.exists { tap(clear); tap(field) }
-        field.typeText(root.appendingPathComponent("slow").absoluteString + "\n")
+        field.typeText(root.appendingPathComponent("slow").absoluteString)
+        let submit = app.keyboards.buttons.matching(NSPredicate(format: "label IN %@", ["Search", "search", "搜索"])).firstMatch
+        tap(submit)
         let link = app.webViews.links["Next page"].firstMatch
         XCTAssertTrue(link.waitForExistence(timeout: 20), app.debugDescription)
         XCTAssertTrue(fixture.hasPendingSlowResource)

@@ -55,7 +55,7 @@ struct LocalImagePreview: View {
     weak var webView: WKWebView?
     let frame: WKFrameInfo?
     init(url: URL, webView: WKWebView, frame: WKFrameInfo?) {
-        self.url = url; self.pageURL = frame?.request.url ?? webView.url; self.webView = webView; self.frame = frame
+        self.url = url; self.pageURL = frame?.requestURL ?? webView.url; self.webView = webView; self.frame = frame
     }
 }
 
