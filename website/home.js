@@ -2,7 +2,8 @@
   'use strict';
   const messages = {
     zh: {
-      skip: '跳到主要内容', navigation: '主导航', features: '功能', sources: '搜索源', browser: '浏览器',
+      skip: '跳到主要内容', navigation: '主导航', sources: '搜索源', movies: '影视导航', browser: '浏览器',
+      moviesTitle: '下一部心头好，从这里找。', moviesIntro: '电影、追剧、动漫、字幕和片单，按用途整理的影视网站收藏夹。', exploreMovies: '探索影视导航',
       eyebrow: '为 iPhone 打造的多平台搜索浏览器', tagline: '一次输入，搜索更多。',
       intro: '在 40+ 搜索、视频、社区和 AI 平台间快速切换。\n广告拦截、下载管理、网页翻译，常用功能一步即达。',
       downloadOn: '下载于', availability: 'iOS 17.0 及以上 · 无需注册 Soulo 账号', scan: '用 iPhone 扫码下载', scanHint: '或直接在 App Store 搜索 Soulo',
@@ -21,12 +22,13 @@
       metaDescription: 'Soulo 是一款 iPhone 多平台搜索浏览器。一次输入，切换 40+ 搜索与 AI 平台，支持广告拦截、下载管理、网页翻译和自定义扩展。'
     },
     en: {
-      skip: 'Skip to content', navigation: 'Main navigation', features: 'Features', sources: 'Sources', browser: 'Browser',
-      eyebrow: 'MULTI-PLATFORM SEARCH, MADE FOR IPHONE', tagline: 'One query. More places to search.',
+      skip: 'Skip to content', navigation: 'Main navigation', sources: 'Sources', movies: 'Movies', browser: 'Browser',
+      moviesTitle: 'Find your next favorite story.', moviesIntro: 'Explore a Chinese-language directory of film, series, anime, subtitle, and watchlist websites.', exploreMovies: 'Explore the watch guide',
+      eyebrow: 'Multi-platform search, made for iPhone', tagline: 'One query. More places to search.',
       intro: 'Switch between 40+ search, video, community, and AI platforms.\nAd blocking, downloads, and page translation, all within reach.',
       downloadOn: 'Download on the', availability: 'iOS 17.0 or later · No Soulo account needed', scan: 'Scan with your iPhone', scanHint: 'Or search for Soulo on the App Store',
       qrLink: 'Download Soulo on the App Store', qrAlt: 'QR code to download Soulo on the App Store',
-      darkScreenshot: 'Soulo Home screen with a mountain wallpaper and search bar', lightScreenshot: 'Soulo Home screen with a light wallpaper and platform groups', screenshots: 'ACTUAL SOULO APP SCREENS',
+      darkScreenshot: 'Soulo Home screen with a mountain wallpaper and search bar', lightScreenshot: 'Soulo Home screen with a light wallpaper and platform groups', screenshots: 'Actual Soulo app screens',
       featuresTitle: 'Your everyday browsing essentials.', featuresIntro: 'From searching to reading, keep useful tools close at hand.',
       searchTitle: 'Multi-platform search', searchBody: 'Enter a query once, then switch between search engines, video, communities, and AI. Add your own search sources, too.',
       blockTitle: 'Ad blocking', blockBody: 'Block ad requests and hide empty ad spaces. Customize subscriptions and site exceptions for cleaner browsing.',
@@ -56,7 +58,8 @@
     themeButton.setAttribute('aria-label', label);
     themeButton.title = label;
     themeButton.setAttribute('aria-pressed', String(resolved === 'dark'));
-    document.querySelectorAll('meta[name="theme-color"]').forEach(meta => { meta.content = resolved === 'dark' ? '#22271f' : '#f4f1e9'; });
+    themeButton.innerHTML = resolved === 'dark' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="19" height="19" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="19" height="19" aria-hidden="true"><path d="M20.4 14.3A8.7 8.7 0 0 1 9.7 3.6a8.7 8.7 0 1 0 10.7 10.7Z"/></svg>';
+    document.querySelectorAll('meta[name="theme-color"]').forEach(meta => { meta.content = resolved === 'dark' ? '#191a23' : '#f6f7fb'; });
   }
   function applyLanguage() {
     const t = messages[language];

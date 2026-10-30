@@ -22,6 +22,12 @@ Allow: /
 User-agent: Googlebot
 Allow: /
 
+User-agent: Bingbot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
 User-agent: Google-Extended
 Allow: /
 

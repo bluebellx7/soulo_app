@@ -26,7 +26,8 @@ trap cleanup EXIT INT TERM
 
 echo "========== 上传 Soulo 静态网站 =========="
 
-for file in index.html home.css home.js site.css sources.html privacy.html \
+for file in index.html home.css home.js site.css site-ui.js sources.html privacy.html \
+    movies.html movies.css movies.js movies.json favicon.svg robots.txt sitemap.xml llms.txt llms-full.txt \
     images/soulo-home-zh.webp images/soulo-home-en.webp \
     images/soulo-home-light-zh.webp images/soulo-home-light-en.webp images/app-store-qr.svg; do
     if [[ ! -f "$LOCAL_DIR/$file" ]]; then
@@ -90,6 +91,13 @@ check_content_type "site.css" "text/css"
 check_content_type "home.css" "text/css"
 check_content_type "home.js" "text/javascript" "application/javascript"
 check_content_type "app-icon.png" "image/png"
+check_content_type "movies.html" "text/html"
+check_content_type "movies.css" "text/css"
+check_content_type "movies.js" "text/javascript" "application/javascript"
+check_content_type "site-ui.js" "text/javascript" "application/javascript"
+check_content_type "favicon.svg" "image/svg+xml"
+check_content_type "sitemap.xml" "application/xml" "text/xml"
+check_content_type "llms.txt" "text/plain"
 
 echo "✅ 部署完成"
 echo "请访问 $SITE_URL 验证"

@@ -1,26 +1,29 @@
 # Soulo
 
-> Soulo is a privacy-first iOS multi-search browser and public product website.
+> Soulo 是 iPhone 多平台搜索浏览器。官网提供产品介绍、可导入的搜索源目录，以及按用途分类的影视网站导航。
 
-Soulo lets users enter one query and quickly switch between 40+ global platforms, including web search, video, shopping, developer communities, and third-party AI platforms. Soulo does not generate or merge those platforms' answers. The public website is available without authentication and may be indexed or summarized according to `robots.txt`.
+Updated: 2026-10-30
 
-## Primary Pages
+## Primary pages
 
-- [Home](https://soulo.dkluge.com/): Product overview, supported platform categories, core features, App Store download, and batch import examples for movie and book search sources.
-- [Privacy Policy](https://soulo.dkluge.com/privacy.html): Privacy and on-device data handling policy for the app.
-- [Full LLM Context](https://soulo.dkluge.com/llms-full.txt): Expanded summary of product facts and privacy commitments.
+- [首页 / Home](https://soulo.dkluge.com/): Soulo iOS 浏览器介绍、广告拦截、下载管理、翻译、自定义扩展及 App Store 下载；支持中文和英文显示。
+- [搜索源目录 / Search sources](https://soulo.dkluge.com/sources.html): AI、通用、学术、社交、开发、购物、漫画、影视和图书搜索模板；配置中的 `%@` 由 Soulo 替换为编码后的关键词。
+- [影视导航 / Watch guide](https://soulo.dkluge.com/movies.html): 中文影视网站目录，10 个分类涵盖综合影视、电影下载、追剧、动漫、找片、网盘、字幕、片单、纪录直播及工具；包含 80s、6V、片吧和 HHZY 等入口。
+- [隐私政策 / App privacy policy](https://soulo.dkluge.com/privacy.html): Soulo App 的数据处理、本地存储、可选 iCloud 同步及第三方服务说明。
+- [Expanded context](https://soulo.dkluge.com/llms-full.txt): More detailed, attributable product and directory information.
 
-## Product Facts
+## Facts and scope
 
-- Product name: Soulo
-- Platform: iOS app
-- Category: Multi-platform search browser
-- Website languages: Chinese and English
-- Core features: quick switching between 40+ search and AI platforms, voice search, ad blocking, custom platforms, privacy-first local storage
+- Soulo runs on iOS 17.0 or later. [App Store](https://apps.apple.com/app/id6761165330)
+- One query can be opened across 40+ search, video, community and third-party AI platforms. Soulo does not generate or merge those services' answers.
+- Directory names, descriptions and links are present in the HTML without JavaScript. The watch guide supports client-side filtering and favorites saved in the visitor's browser.
+- External media websites operate independently. Directory inclusion is not a claim about uptime, licensing, price or availability in every region.
+- The public website loads Baidu Analytics. Statements about the iOS app's privacy must be attributed to the app privacy policy, not generalized to the website.
 
-## Crawling Notes
+## Discovery
 
-- The website is public and does not require login.
-- Main content is rendered directly in HTML.
-- Crawlers should follow [robots.txt](https://soulo.dkluge.com/robots.txt).
-- Sitemap is available at [sitemap.xml](https://soulo.dkluge.com/sitemap.xml).
+- [Sitemap](https://soulo.dkluge.com/sitemap.xml)
+- [Crawler rules](https://soulo.dkluge.com/robots.txt)
+- [Watch guide directory data](https://soulo.dkluge.com/movies.json)
+
+Follow robots.txt. This file is a convenience summary; the linked pages are the primary content.

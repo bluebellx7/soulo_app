@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#101112" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#111217" media="(prefers-color-scheme: dark)">
     <meta name="apple-mobile-web-app-title" content="Soulo">
     <meta
         name="description"
@@ -41,7 +41,7 @@
     <meta name="twitter:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.4">
     <meta name="twitter:image:alt" content="Soulo App icon">
     <title>Privacy Policy - Soulo</title>
-    <link rel="icon" type="image/png" href="app-icon.png?v=1.1.4">
+    <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg?v=20261030">
     <link rel="apple-touch-icon" href="app-icon.png?v=1.1.4">
     <script>
         (function () {
@@ -62,19 +62,7 @@
         })();
     </script>
     <script type="application/ld+json">
-        {
-            "@context": "https://schema.org",
-            "@type": "WebPage",
-            "name": "Soulo Privacy Policy",
-            "description": "Privacy policy for Soulo, a privacy-first multi-search browser that keeps search history, bookmarks, and preferences on-device.",
-            "url": "https://soulo.dkluge.com/privacy.html",
-            "isPartOf": {
-                "@type": "WebSite",
-                "name": "Soulo",
-                "url": "https://soulo.dkluge.com/"
-            },
-            "inLanguage": "en"
-        }
+        {"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://soulo.dkluge.com/privacy.html#webpage","name":"Privacy Policy - Soulo","description":"Privacy policy for the Soulo iOS app, including on-device data, optional iCloud sync and third-party services.","url":"https://soulo.dkluge.com/privacy.html","inLanguage":"en","isPartOf":{"@id":"https://soulo.dkluge.com/#website"},"breadcrumb":{"@id":"https://soulo.dkluge.com/privacy.html#breadcrumb"}},{"@type":"BreadcrumbList","@id":"https://soulo.dkluge.com/privacy.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Soulo","item":"https://soulo.dkluge.com/"},{"@type":"ListItem","position":2,"name":"Privacy policy","item":"https://soulo.dkluge.com/privacy.html"}]}]}
     </script>
     <style>
         :root {
@@ -127,7 +115,18 @@
             h1 { font-size: 24px; }
         }
     </style>
-    <link rel="stylesheet" href="site.css?v=20260905">
+    <link rel="stylesheet" href="site.css?v=20261030">
+    <link rel="alternate" type="text/plain" href="llms.txt" title="Soulo website summary">
+    <script src="site-ui.js?v=20261030" defer></script>
+    <script>
+        var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?bdc8ea6c501e6ff0d7b16dc13b09b991";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
 </head>
 <body class="privacy-page">
     <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -141,6 +140,7 @@
             <span>Back to Soulo</span>
         </a>
     </div>
+    <nav class="privacy-directory-links" aria-label="Website directories"><a href="sources.html">Search sources</a><a href="movies.html">影视导航</a></nav>
     <main class="container" id="main-content">
         <header>
             <h1>Privacy Policy</h1>

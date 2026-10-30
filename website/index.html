@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f4f1e9" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#22271f" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#191a23" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-title" content="Soulo" />
     <title>Soulo 浏览器 — 多平台搜索、广告拦截与下载管理</title>
     <meta
@@ -53,10 +53,11 @@
       content="https://soulo.dkluge.com/app-icon.png?v=1.1.4"
     />
     <meta name="twitter:image:alt" content="Soulo App icon" />
-    <link rel="icon" type="image/png" href="app-icon.png?v=1.1.4" />
+    <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg?v=20261030" />
     <link rel="apple-touch-icon" href="app-icon.png?v=1.1.4" />
+    <link rel="alternate" type="text/plain" href="llms.txt" title="Soulo 网站摘要" />
     <link rel="preload" as="image" href="images/search-home.png" />
-    <link rel="stylesheet" href="home.css?v=20260905b" />
+    <link rel="stylesheet" href="home.css?v=20261030" />
     <script>
       (() => {
         let theme = 'system';
@@ -66,16 +67,25 @@
       })();
     </script>
     <script type="application/ld+json">
-      {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Soulo","applicationCategory":"UtilitiesApplication","operatingSystem":"iOS","url":"https://soulo.dkluge.com/","description":"A multi-platform search browser. Enter a query once and switch between search, video, community and AI platforms.","inLanguage":["zh-CN","en"]}
+      {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://soulo.dkluge.com/#publisher","name":"DKluge","url":"https://www.dkluge.com/"},{"@type":"WebSite","@id":"https://soulo.dkluge.com/#website","name":"Soulo","alternateName":["Soulo 浏览器","Soulo Browser"],"url":"https://soulo.dkluge.com/","inLanguage":["zh-CN","en"],"publisher":{"@id":"https://soulo.dkluge.com/#publisher"}},{"@type":"WebPage","@id":"https://soulo.dkluge.com/#webpage","url":"https://soulo.dkluge.com/","name":"Soulo 浏览器 — 多平台搜索、广告拦截与下载管理","description":"Soulo 是一款 iPhone 多平台搜索浏览器，支持广告拦截、下载管理、网页翻译和自定义扩展。","inLanguage":["zh-CN","en"],"isPartOf":{"@id":"https://soulo.dkluge.com/#website"},"mainEntity":{"@id":"https://soulo.dkluge.com/#app"},"hasPart":[{"@id":"https://soulo.dkluge.com/sources.html#webpage"},{"@id":"https://soulo.dkluge.com/movies.html#webpage"}]},{"@type":"SoftwareApplication","@id":"https://soulo.dkluge.com/#app","name":"Soulo","applicationCategory":"UtilitiesApplication","operatingSystem":"iOS 17.0 or later","url":"https://soulo.dkluge.com/","downloadUrl":"https://apps.apple.com/app/id6761165330","sameAs":["https://apps.apple.com/app/id6761165330"],"image":"https://soulo.dkluge.com/app-icon.png","description":"Enter a query once and switch between search, video, community and AI platforms. Includes ad blocking, downloads, translation, and custom extensions.","inLanguage":["zh-CN","en"],"featureList":["多平台搜索","广告拦截","下载管理","网页翻译","扩展与自定义","本地记录与无痕浏览"]}]}
     </script>
-    <script src="home.js?v=20260905c" defer></script>
+    <script src="home.js?v=20261030" defer></script>
+    <script>
+      var _hmt = _hmt || [];
+      (function() {
+        var hm = document.createElement("script");
+        hm.src = "https://hm.baidu.com/hm.js?bdc8ea6c501e6ff0d7b16dc13b09b991";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+      })();
+    </script>
   </head>
   <body>
     <a class="skip-link" href="#main-content" data-i18n="skip">跳到主要内容</a>
     <header class="site-header">
       <nav class="nav wrap" aria-label="主导航" data-label="navigation">
         <a class="brand" href="./" aria-label="Soulo 首页"><img src="app-icon.png?v=1.1.4" width="36" height="36" alt="" /><span>Soulo</span></a>
-        <div class="nav-links"><a href="#features" data-i18n="features">功能</a><a href="sources.html" data-i18n="sources">搜索源</a></div>
+        <div class="nav-links"><a href="sources.html" data-i18n="sources">搜索源</a><a href="movies.html" data-i18n="movies">影视导航</a></div>
         <div class="nav-tools">
           <button id="language-toggle" type="button" aria-label="Switch to English">EN</button>
           <button id="theme-toggle" type="button" aria-label="切换至深色外观" title="切换至深色外观"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20.4 14.3A8.7 8.7 0 0 1 9.7 3.6a8.7 8.7 0 1 0 10.7 10.7Z"/></svg></button>
@@ -115,7 +125,8 @@
         </div>
         <div class="sources-link"><span data-i18n="sourceNote">把常用网站加入你的搜索列表。</span><a href="sources.html"><span data-i18n="exploreSources">浏览搜索源目录</span><span aria-hidden="true">↗</span></a></div>
       </section>
+      <section class="directory-promo wrap" aria-labelledby="directory-promo-title"><div><h2 id="directory-promo-title" data-i18n="moviesTitle">下一部心头好，从这里找。</h2><p data-i18n="moviesIntro">电影、追剧、动漫、字幕和片单，按用途整理的影视网站收藏夹。</p></div><a href="movies.html"><span data-i18n="exploreMovies">探索影视导航</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a></section>
     </main>
-    <footer class="site-footer wrap"><div><a class="footer-brand" href="./">Soulo</a><span>© 2026 DKluge</span></div><div class="footer-links"><a href="sources.html" data-i18n="sources">搜索源</a><a href="privacy.html" data-i18n="privacy">隐私政策</a><a href="https://www.dkluge.com/contact-us" data-i18n="support">技术支持</a></div></footer>
+    <footer class="site-footer wrap"><div><a class="footer-brand" href="./">Soulo</a><span>© 2026 DKluge</span></div><div class="footer-links"><a href="sources.html" data-i18n="sources">搜索源</a><a href="movies.html" data-i18n="movies">影视导航</a><a href="privacy.html" data-i18n="privacy">隐私政策</a><a href="https://www.dkluge.com/contact-us" data-i18n="support">技术支持</a></div></footer>
   </body>
 </html>
