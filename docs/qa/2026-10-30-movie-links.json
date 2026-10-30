@@ -1,0 +1,2086 @@
+{
+  "checked_at": "2026-10-30T12:36:09.865314+00:00",
+  "policy": "只保留本轮普通浏览器检查已进入实际内容页的入口；持续人机验证或访问受限的条目暂时移出，不认定为永久失效。",
+  "original_count": 58,
+  "retained_count": 37,
+  "removed_count": 21,
+  "results": [
+    {
+      "id": "pbpbw",
+      "name": "片吧影院",
+      "url": "https://www.pbpbw.com/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www.pbpbw.com/",
+        "title": "片吧影院-最新电影电视剧免费影视网",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.pbpbw.com/",
+        "title": "片吧影院-最新电影电视剧免费影视网",
+        "text_length": 1258,
+        "links": 209,
+        "inputs": 1,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "pbpbw",
+        "status": 200,
+        "final_url": "https://www.pbpbw.com/",
+        "exit": 0,
+        "title": "片吧影院-最新电影电视剧免费影视网",
+        "error": "",
+        "bytes": 38955
+      }
+    },
+    {
+      "id": "pbkan",
+      "name": "片吧影视",
+      "url": "https://www.pbkan.com/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www.pbkan.com/",
+        "title": "2026最新电影电视剧排行榜 - 片吧影视",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.pbkan.com/",
+        "title": "2026最新电影电视剧排行榜 - 片吧影视",
+        "text_length": 1156,
+        "links": 207,
+        "inputs": 1,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "pbkan",
+        "status": 0,
+        "final_url": "https://www.pbkan.com/",
+        "exit": 35,
+        "title": "",
+        "error": "curl: (35) OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to www.pbkan.com:443",
+        "bytes": 0
+      }
+    },
+    {
+      "id": "ddys",
+      "name": "低端影视",
+      "url": "https://ddys.io/",
+      "decision": "remove",
+      "reason_type": "verification",
+      "reason": "浏览器持续停在人机验证页，未进入影视正文",
+      "http": {
+        "status": 403,
+        "exit": 0,
+        "final_url": "https://ddys.io/",
+        "title": "Just a moment...",
+        "error": ""
+      },
+      "browser": {
+        "status": 403,
+        "final_url": "https://ddys.io/",
+        "title": "请稍候…",
+        "text_length": 109,
+        "links": 2,
+        "inputs": 0,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "ddys",
+        "status": 403,
+        "final_url": "https://ddys.io/",
+        "exit": 0,
+        "title": "Just a moment...",
+        "error": "",
+        "bytes": 5302
+      }
+    },
+    {
+      "id": "gaze",
+      "name": "注视影视",
+      "url": "https://gaze.run/",
+      "decision": "remove",
+      "reason_type": "restricted",
+      "reason": "HTTP 返回访问限制，两轮浏览器均未加载正文",
+      "http": {
+        "status": 403,
+        "exit": 0,
+        "final_url": "https://gaze.run/",
+        "title": "Attention Required! | Cloudflare",
+        "error": ""
+      },
+      "browser": {
+        "status": 0,
+        "final_url": "about:blank",
+        "title": null,
+        "text_length": null,
+        "links": null,
+        "inputs": null,
+        "error": "page.goto: Timeout 20000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+      },
+      "browser_recheck": {
+        "status": 0,
+        "final_url": "about:blank",
+        "title": null,
+        "text_length": null,
+        "links": null,
+        "error": "page.goto: Timeout 16000ms exceeded. DOM read timeout DOM read timeout DOM read timeout"
+      },
+      "server_http": {
+        "id": "gaze",
+        "status": 0,
+        "final_url": "https://gaze.run/",
+        "exit": 28,
+        "title": "",
+        "error": "curl: (28) Connection timed out after 6002 milliseconds",
+        "bytes": 0
+      }
+    },
+    {
+      "id": "iyf",
+      "name": "爱壹帆",
+      "url": "https://www.iyf.tv/",
+      "decision": "remove",
+      "reason_type": "error_page",
+      "reason": "返回“找不到文件或目录”的错误页",
+      "http": {
+        "status": 403,
+        "exit": 0,
+        "final_url": "https://www.iyf.tv/",
+        "title": "Just a moment...",
+        "error": ""
+      },
+      "browser": {
+        "status": 403,
+        "final_url": "https://www.iyf.tv/",
+        "title": "404 - 找不到文件或目录。",
+        "text_length": 49,
+        "links": 0,
+        "inputs": 0,
+        "error": ""
+      },
+      "browser_recheck": {
+        "status": 403,
+        "final_url": "https://www.iyf.tv/",
+        "title": "404 - 找不到文件或目录。",
+        "text_length": 49,
+        "links": 0,
+        "error": ""
+      },
+      "server_http": {
+        "id": "iyf",
+        "status": 403,
+        "final_url": "https://www.iyf.tv/",
+        "exit": 0,
+        "title": "404 - 找不到文件或目录。",
+        "error": "",
+        "bytes": 976
+      }
+    },
+    {
+      "id": "freeok",
+      "name": "FreeOK",
+      "url": "https://www.freeok.mobi/",
+      "decision": "remove",
+      "reason_type": "tls",
+      "reason": "浏览器证书错误，curl 也无法验证证书",
+      "http": {
+        "status": 0,
+        "exit": 60,
+        "final_url": "https://www.freeok.mobi/",
+        "title": "",
+        "error": "curl: (60) SSL certificate problem: unable to get local issuer certificate\nMore details here: https://curl.se/docs/sslcerts.html\n\ncurl failed to verify the legitimacy of the server and therefore could not\nestablish a secure connection to it. To learn more about this situation and\nhow to fix it, please visit the web page mentioned above."
+      },
+      "browser": {
+        "status": 0,
+        "final_url": "about:blank",
+        "title": null,
+        "text_length": null,
+        "links": null,
+        "inputs": null,
+        "error": "page.goto: net::ERR_CERT_AUTHORITY_INVALID at https://www.freeok.mobi/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+      },
+      "browser_recheck": {
+        "status": 0,
+        "final_url": "chrome-error://chromewebdata/",
+        "title": "隐私设置错误",
+        "text_length": 111,
+        "links": 5,
+        "error": "page.goto: net::ERR_CERT_AUTHORITY_INVALID at https://www.freeok.mobi/"
+      },
+      "server_http": {
+        "id": "freeok",
+        "status": 0,
+        "final_url": "https://www.freeok.mobi/",
+        "exit": 28,
+        "title": "",
+        "error": "curl: (28) Connection timed out after 6000 milliseconds",
+        "bytes": 0
+      }
+    },
+    {
+      "id": "kkys",
+      "name": "可可影视",
+      "url": "https://www.kkys02.com/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 850,
+        "exit": 0,
+        "final_url": "https://www.kkys02.com/",
+        "title": "Protected by cdndefend, verifying your browser...",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.kkys02.com/",
+        "title": "可可影视_最新Netflix新剧_韩国电影免费在线观看",
+        "text_length": 2446,
+        "links": 167,
+        "inputs": 6,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "kkys",
+        "status": 850,
+        "final_url": "https://www.kkys02.com/",
+        "exit": 0,
+        "title": "Protected by cdndefend, verifying your browser...",
+        "error": "",
+        "bytes": 6498
+      }
+    },
+    {
+      "id": "feikuai",
+      "name": "飞快 TV",
+      "url": "https://feikuai.tv/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "通过原地址正常跳转至 feikuai.in，已读取影视内容",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://feikuai.in/",
+        "title": "飞快TV - 免费高清影视在线播放网盘下载",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://feikuai.in/",
+        "title": "飞快TV - 免费高清影视在线播放网盘下载",
+        "text_length": 145,
+        "links": 37,
+        "inputs": 4,
+        "error": "page.goto: Timeout 20000ms exceeded."
+      },
+      "browser_recheck": {
+        "status": 200,
+        "final_url": "https://feikuai.in/",
+        "title": "",
+        "text_length": 0,
+        "links": 0,
+        "error": ""
+      },
+      "server_http": {
+        "id": "feikuai",
+        "status": 200,
+        "final_url": "https://feikuai.in/",
+        "exit": 0,
+        "title": "飞快TV - 免费高清影视在线播放网盘下载",
+        "error": "",
+        "bytes": 521995
+      }
+    },
+    {
+      "id": "netflix",
+      "name": "Netflix",
+      "url": "https://www.netflix.com/hk/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www.netflix.com/jp/",
+        "title": "Netflix (ネットフリックス) 日本 - 大好きな映画やドラマを楽しもう!",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.netflix.com/hk/",
+        "title": "Netflix中國香港特別行政區讓您在線上觀賞節目與電影",
+        "text_length": 761,
+        "links": 19,
+        "inputs": 2,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "netflix",
+        "status": 403,
+        "final_url": "https://www.netflix.com/hk/",
+        "exit": 0,
+        "title": "",
+        "error": "",
+        "bytes": 13
+      }
+    },
+    {
+      "id": "disney",
+      "name": "Disney+",
+      "url": "https://www.disneyplus.com/zh-hk",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "初次页面未完成加载，延长等待后正常呈现",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www.disneyplus.com/zh-hk",
+        "title": "迪士尼、Marvel、彼思、星球大戰、國家地理和 Hulu | Disney+ 香港",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.disneyplus.com/en-jp",
+        "title": "Unlimited streaming of movies, TV shows and anime | Disney+ Japan",
+        "text_length": 0,
+        "links": 68,
+        "inputs": 0,
+        "error": ""
+      },
+      "browser_recheck": {
+        "status": 200,
+        "final_url": "https://www.disneyplus.com/en-jp",
+        "title": "Unlimited streaming of movies, TV shows and anime | Disney+ Japan",
+        "text_length": 3310,
+        "links": 68,
+        "error": ""
+      },
+      "server_http": {
+        "id": "disney",
+        "status": 200,
+        "final_url": "https://www.disneyplus.com/welcome/unavailable",
+        "exit": 0,
+        "title": "Sorry, Disney+ is not available in your region.",
+        "error": "",
+        "bytes": 446647
+      }
+    },
+    {
+      "id": "6v",
+      "name": "6V 电影",
+      "url": "https://www.6vdyy.com/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www.6vdyy.com/",
+        "title": "6v��Ӱ�������µ�Ӱ�����µ��Ӿ磬��ѵ�Ӱ���أ����Ӿ����أ�Ѹ������",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.6vdyy.com/",
+        "title": "6v电影网，最新电影，最新电视剧，免费电影下载，电视剧下载，迅雷下载",
+        "text_length": 3650,
+        "links": 419,
+        "inputs": 5,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "6v",
+        "status": 200,
+        "final_url": "https://www.6vdyy.com/",
+        "exit": 0,
+        "title": "6v��Ӱ�������µ�Ӱ�����µ��Ӿ磬��ѵ�Ӱ���أ����Ӿ����أ�Ѹ������",
+        "error": "",
+        "bytes": 51639
+      }
+    },
+    {
+      "id": "seedhub",
+      "name": "SeedHub",
+      "url": "https://www.seedhub.cc/",
+      "decision": "remove",
+      "reason_type": "verification",
+      "reason": "浏览器持续停在人机验证页，未进入影视正文",
+      "http": {
+        "status": 403,
+        "exit": 0,
+        "final_url": "https://www.seedhub.cc/",
+        "title": "Just a moment...",
+        "error": ""
+      },
+      "browser": {
+        "status": 403,
+        "final_url": "https://www.seedhub.cc/",
+        "title": "请稍候…",
+        "text_length": 116,
+        "links": 2,
+        "inputs": 0,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "seedhub",
+        "status": 403,
+        "final_url": "https://www.seedhub.cc/",
+        "exit": 0,
+        "title": "Just a moment...",
+        "error": "",
+        "bytes": 5330
+      }
+    },
+    {
+      "id": "yinfans",
+      "name": "音范丝",
+      "url": "https://www.yinfans.me/",
+      "decision": "remove",
+      "reason_type": "changed_content",
+      "reason": "跳转至 huida.one 的 AI 问答页，原影视资源入口已变更",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www.yinfans.me/",
+        "title": "Loading...",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.yinfans.me/",
+        "title": null,
+        "text_length": null,
+        "links": null,
+        "inputs": null,
+        "error": " page.evaluate: Execution context was destroyed, most likely because of a navigation"
+      },
+      "browser_recheck": {
+        "status": 200,
+        "final_url": "https://huida.one/",
+        "title": "慧答",
+        "text_length": 49,
+        "links": 0,
+        "error": ""
+      },
+      "server_http": {
+        "id": "yinfans",
+        "status": 200,
+        "final_url": "https://www.yinfans.me/",
+        "exit": 0,
+        "title": "Loading...",
+        "error": "",
+        "bytes": 2935
+      }
+    },
+    {
+      "id": "cilixiong",
+      "name": "磁力熊",
+      "url": "https://www.cilixiong.org/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www.cilixiong.org/",
+        "title": "磁力熊 - 豆瓣高分电影1080P磁力下载",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.cilixiong.org/",
+        "title": "磁力熊 - 豆瓣高分电影1080P磁力下载",
+        "text_length": 593,
+        "links": 49,
+        "inputs": 4,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "cilixiong",
+        "status": 200,
+        "final_url": "https://www.cilixiong.org/",
+        "exit": 0,
+        "title": "磁力熊 - 豆瓣高分电影1080P磁力下载",
+        "error": "",
+        "bytes": 18798
+      }
+    },
+    {
+      "id": "yikedy",
+      "name": "一刻电影",
+      "url": "https://www.yikedy.co/",
+      "decision": "remove",
+      "reason_type": "parking",
+      "reason": "进入 ParkLogic 域名停放页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www.yikedy.co/",
+        "title": "Redirecting...",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.yikedy.co/",
+        "title": "Redirecting...",
+        "text_length": 10,
+        "links": 0,
+        "inputs": 0,
+        "error": ""
+      },
+      "browser_recheck": {
+        "status": 200,
+        "final_url": "https://www.yikedy.co/",
+        "title": "Redirecting...",
+        "text_length": 163,
+        "links": 13,
+        "error": ""
+      },
+      "server_http": {
+        "id": "yikedy",
+        "status": 0,
+        "final_url": "https://www.yikedy.co/",
+        "exit": 60,
+        "title": "",
+        "error": "curl: (60) SSL certificate problem: unable to get local issuer certificate\nMore details here: https://curl.haxx.se/docs/sslcerts.html\n\ncurl failed to verify the legitimacy of the server and therefore could not\nestablish a secure connection to it. To ",
+        "bytes": 0
+      }
+    },
+    {
+      "id": "xly",
+      "name": "修罗影视",
+      "url": "https://xl01.com.de/",
+      "decision": "remove",
+      "reason_type": "unrelated_redirect",
+      "reason": "跳转至 deharina.com.mx 的 UY88 页面，与原影视站无关",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://deharina.com.mx/",
+        "title": "UY88 ©️ TRANG CHỦ CHÍNH THỨC UY88.COM | Link UY88 Dobber 2026",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://deharina.com.mx/",
+        "title": "UY88 ©️ TRANG CHỦ CHÍNH THỨC UY88.COM | Link UY88 Dobber 2026",
+        "text_length": 3168,
+        "links": 35,
+        "inputs": 1,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "xly",
+        "status": 0,
+        "final_url": "https://xl01.com.de/",
+        "exit": 35,
+        "title": "",
+        "error": "curl: (35) OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to xl01.com.de:443",
+        "bytes": 0
+      }
+    },
+    {
+      "id": "fanxinzhui",
+      "name": "追新番",
+      "url": "https://www.fanxinzhui.com/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www.fanxinzhui.com/",
+        "title": "追新番",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.fanxinzhui.com/",
+        "title": "追新番",
+        "text_length": 1595,
+        "links": 53,
+        "inputs": 2,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "fanxinzhui",
+        "status": 200,
+        "final_url": "https://www.fanxinzhui.com/",
+        "exit": 0,
+        "title": "追新番",
+        "error": "",
+        "bytes": 12844
+      }
+    },
+    {
+      "id": "rijupao",
+      "name": "日剧跑",
+      "url": "https://www.rijupao.com/",
+      "decision": "remove",
+      "reason_type": "browser_timeout",
+      "reason": "HTTP 可获取页面，但两轮浏览器均连接超时，暂时移出",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www.rijupao.vip/",
+        "title": "首页 - 日剧跑",
+        "error": ""
+      },
+      "browser": {
+        "status": 0,
+        "final_url": "about:blank",
+        "title": null,
+        "text_length": null,
+        "links": null,
+        "inputs": null,
+        "error": "page.goto: Timeout 20000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+      },
+      "browser_recheck": {
+        "status": 0,
+        "final_url": "about:blank",
+        "title": null,
+        "text_length": null,
+        "links": null,
+        "error": "page.goto: Timeout 16000ms exceeded. DOM read timeout DOM read timeout DOM read timeout"
+      },
+      "server_http": {
+        "id": "rijupao",
+        "status": 0,
+        "final_url": "https://www.rijupao.com/",
+        "exit": 28,
+        "title": "",
+        "error": "curl: (28) Connection timed out after 6001 milliseconds",
+        "bytes": 0
+      }
+    },
+    {
+      "id": "koreayule",
+      "name": "韩娱网",
+      "url": "https://koreayule.com/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://koreayule.com/",
+        "title": "最新热门韩剧、韩国电影、综艺、动漫大全、最新韩国娱乐资讯｜韩娱网",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://koreayule.com/",
+        "title": "最新热门韩剧、韩国电影、综艺、动漫大全、最新韩国娱乐资讯｜韩娱网",
+        "text_length": 4037,
+        "links": 128,
+        "inputs": 1,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "koreayule",
+        "status": 200,
+        "final_url": "https://koreayule.com/",
+        "exit": 0,
+        "title": "最新热门韩剧、韩国电影、综艺、动漫大全、最新韩国娱乐资讯｜韩娱网",
+        "error": "",
+        "bytes": 152383
+      }
+    },
+    {
+      "id": "txquu",
+      "name": "泰小圈",
+      "url": "https://txquu.com/",
+      "decision": "remove",
+      "reason_type": "error_page",
+      "reason": "本地与服务器 HTTP 返回 404，浏览器复查返回 502",
+      "http": {
+        "status": 404,
+        "exit": 0,
+        "final_url": "https://www.txquu.com/",
+        "title": "",
+        "error": ""
+      },
+      "browser": {
+        "status": 502,
+        "final_url": "about:blank",
+        "title": null,
+        "text_length": null,
+        "links": null,
+        "inputs": null,
+        "error": "page.goto: net::ERR_HTTP_RESPONSE_CODE_FAILURE at https://txquu.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+      },
+      "browser_recheck": {
+        "status": 502,
+        "final_url": "chrome-error://chromewebdata/",
+        "title": "txquu.com",
+        "text_length": 52,
+        "links": 0,
+        "error": "page.goto: net::ERR_HTTP_RESPONSE_CODE_FAILURE at https://txquu.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+      },
+      "server_http": {
+        "id": "txquu",
+        "status": 404,
+        "final_url": "https://www.txquu.com/",
+        "exit": 0,
+        "title": "",
+        "error": "",
+        "bytes": 13
+      }
+    },
+    {
+      "id": "ribenyule",
+      "name": "日娱观察所",
+      "url": "https://ribenyule.com/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://ribenyule.com/",
+        "title": "日娱观察所_日本娱乐新闻、日剧电影动漫综艺资讯",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://ribenyule.com/",
+        "title": "日娱观察所_日本娱乐新闻、日剧电影动漫综艺资讯",
+        "text_length": 5226,
+        "links": 177,
+        "inputs": 1,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "ribenyule",
+        "status": 200,
+        "final_url": "https://ribenyule.com/",
+        "exit": 0,
+        "title": "日娱观察所_日本娱乐新闻、日剧电影动漫综艺资讯",
+        "error": "",
+        "bytes": 59307
+      }
+    },
+    {
+      "id": "kvariety",
+      "name": "星颜社",
+      "url": "https://kvariety.news/",
+      "decision": "remove",
+      "reason_type": "changed_content",
+      "reason": "已变为明星写真图库，与原韩剧韩综导航用途不符",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://kvariety.news/",
+        "title": "星颜社官网 | 全球明星高清写真图库_爱豆机场私服与4K壁纸下载",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://kvariety.news/",
+        "title": "星颜社官网 | 全球明星高清写真图库_爱豆机场私服与4K壁纸下载",
+        "text_length": 46315,
+        "links": 580,
+        "inputs": 1,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "kvariety",
+        "status": 200,
+        "final_url": "https://kvariety.news/",
+        "exit": 0,
+        "title": "星颜社官网 | 全球明星高清写真图库_爱豆机场私服与4K壁纸下载",
+        "error": "",
+        "bytes": 1524260
+      }
+    },
+    {
+      "id": "bilibili",
+      "name": "哔哩哔哩",
+      "url": "https://www.bilibili.com/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www.bilibili.com/zh-Hans",
+        "title": "bilibili",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.bilibili.com/",
+        "title": "哔哩哔哩 (゜-゜)つロ 干杯~-bilibili",
+        "text_length": 608,
+        "links": 152,
+        "inputs": 1,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "bilibili",
+        "status": 200,
+        "final_url": "https://www.bilibili.com/",
+        "exit": 0,
+        "title": "验证码_哔哩哔哩",
+        "error": "",
+        "bytes": 1360
+      }
+    },
+    {
+      "id": "xfani",
+      "name": "稀饭动漫",
+      "url": "https://dick.xfani.com/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://xifan.moe/",
+        "title": "稀饭ACG - 连接动漫、漫画、游戏与二次元世界",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://xifan.moe/",
+        "title": "稀饭ACG - 连接动漫、漫画、游戏与二次元世界",
+        "text_length": 259,
+        "links": 4,
+        "inputs": 0,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "xfani",
+        "status": 200,
+        "final_url": "https://xifan.moe/",
+        "exit": 0,
+        "title": "稀饭ACG - 连接动漫、漫画、游戏与二次元世界",
+        "error": "",
+        "bytes": 18136
+      }
+    },
+    {
+      "id": "ntdm",
+      "name": "NT 动漫",
+      "url": "https://www.ntdm9.com/",
+      "decision": "remove",
+      "reason_type": "tls",
+      "reason": "curl 和浏览器均报告 TLS 协议错误",
+      "http": {
+        "status": 0,
+        "exit": 35,
+        "final_url": "https://www.ntdm9.com/",
+        "title": "",
+        "error": "curl: (35) LibreSSL/3.3.6: error:1404B42E:SSL routines:ST_CONNECT:tlsv1 alert protocol version"
+      },
+      "browser": {
+        "status": 0,
+        "final_url": "about:blank",
+        "title": null,
+        "text_length": null,
+        "links": null,
+        "inputs": null,
+        "error": "page.goto: net::ERR_SSL_PROTOCOL_ERROR at https://www.ntdm9.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+      },
+      "browser_recheck": {
+        "status": 0,
+        "final_url": "chrome-error://chromewebdata/",
+        "title": "www.ntdm9.com",
+        "text_length": 64,
+        "links": 0,
+        "error": "page.goto: net::ERR_SSL_PROTOCOL_ERROR at https://www.ntdm9.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+      },
+      "server_http": {
+        "id": "ntdm",
+        "status": 0,
+        "final_url": "https://www.ntdm9.com/",
+        "exit": 35,
+        "title": "",
+        "error": "curl: (35) error:1408F10B:SSL routines:ssl3_get_record:wrong version number",
+        "bytes": 0
+      }
+    },
+    {
+      "id": "anime1",
+      "name": "Anime1",
+      "url": "https://anime1.in/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://anime1.in/",
+        "title": "Anime1.in 動畫線上看 &#8211; 上千部動漫免費線上看！",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://anime1.in/",
+        "title": "Anime1.in 動畫線上看 – 上千部動漫免費線上看！",
+        "text_length": 1093,
+        "links": 44,
+        "inputs": 3,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "anime1",
+        "status": 200,
+        "final_url": "https://anime1.in/",
+        "exit": 0,
+        "title": "Anime1.in 動畫線上看 &#8211; 上千部動漫免費線上看！",
+        "error": "",
+        "bytes": 206425
+      }
+    },
+    {
+      "id": "cycani",
+      "name": "次元城动画",
+      "url": "https://www.cycani.org/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 403,
+        "exit": 0,
+        "final_url": "https://www.cycani.org/",
+        "title": "不提供服务",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.cycani.org/",
+        "title": "次元城动画 - 在这里，探索全新追番体验",
+        "text_length": 1718,
+        "links": 76,
+        "inputs": 1,
+        "error": ""
+      },
+      "browser_recheck": {
+        "status": 200,
+        "final_url": "https://www.cycani.org/",
+        "title": "次元城动画 - 在这里，探索全新追番体验",
+        "text_length": 1744,
+        "links": 76,
+        "error": ""
+      },
+      "server_http": {
+        "id": "cycani",
+        "status": 200,
+        "final_url": "https://www.cycani.org/",
+        "exit": 0,
+        "title": "次元城动画 - 在这里，探索全新追番体验",
+        "error": "",
+        "bytes": 1729
+      }
+    },
+    {
+      "id": "schedule",
+      "name": "动漫新番表",
+      "url": "https://xf.hmacg.cn/",
+      "decision": "remove",
+      "reason_type": "service_error",
+      "reason": "重复返回 503 / no route to host",
+      "http": {
+        "status": 503,
+        "exit": 0,
+        "final_url": "https://xf.hmacg.cn/",
+        "title": "",
+        "error": ""
+      },
+      "browser": {
+        "status": 503,
+        "final_url": "https://xf.hmacg.cn/",
+        "title": "",
+        "text_length": 84,
+        "links": 0,
+        "inputs": 0,
+        "error": ""
+      },
+      "browser_recheck": {
+        "status": 503,
+        "final_url": "https://xf.hmacg.cn/",
+        "title": "",
+        "text_length": 84,
+        "links": 0,
+        "error": ""
+      },
+      "server_http": {
+        "id": "schedule",
+        "status": 503,
+        "final_url": "https://xf.hmacg.cn/",
+        "exit": 0,
+        "title": "",
+        "error": "",
+        "bytes": 84
+      }
+    },
+    {
+      "id": "trace",
+      "name": "trace.moe",
+      "url": "https://trace.moe/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://trace.moe/",
+        "title": "Anime Scene Search Engine - trace.moe",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://trace.moe/",
+        "title": "Anime Scene Search Engine - trace.moe",
+        "text_length": 90,
+        "links": 2,
+        "inputs": 4,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "trace",
+        "status": 0,
+        "final_url": "https://trace.moe/",
+        "exit": 28,
+        "title": "",
+        "error": "curl: (28) Operation timed out after 6000 milliseconds with 0 out of 0 bytes received",
+        "bytes": 0
+      }
+    },
+    {
+      "id": "y80s",
+      "name": "80s 电影",
+      "url": "https://y80s.tv/movie/search/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://y80s.tv/movie/search/",
+        "title": "",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://y80s.tv/movie/search/",
+        "title": "",
+        "text_length": 1422,
+        "links": 154,
+        "inputs": 2,
+        "error": ""
+      },
+      "browser_recheck": {
+        "status": 200,
+        "final_url": "https://y80s.tv/movie/search/",
+        "title": "",
+        "text_length": 1422,
+        "links": 154,
+        "error": ""
+      },
+      "server_http": {
+        "id": "y80s",
+        "status": 200,
+        "final_url": "https://y80s.tv/movie/search/",
+        "exit": 0,
+        "title": "",
+        "error": "",
+        "bytes": 277
+      }
+    },
+    {
+      "id": "cupfox",
+      "name": "茶杯狐",
+      "url": "https://cupfox.app/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://cupfox.app/",
+        "title": "茶杯狐 - 片荒剧荒就来茶杯狐",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://cupfox.app/",
+        "title": "茶杯狐 - 片荒剧荒就来茶杯狐",
+        "text_length": 876,
+        "links": 89,
+        "inputs": 2,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "cupfox",
+        "status": 200,
+        "final_url": "https://cupfox.app/",
+        "exit": 0,
+        "title": "茶杯狐 - 片荒剧荒就来茶杯狐",
+        "error": "",
+        "bytes": 284034
+      }
+    },
+    {
+      "id": "soupian",
+      "name": "搜片",
+      "url": "https://soupian.one/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://soupian.one/",
+        "title": "搜片.com - 搜你想看的影片",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://soupian.one/",
+        "title": "搜片.com - 搜你想看的影片",
+        "text_length": 1196,
+        "links": 135,
+        "inputs": 1,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "soupian",
+        "status": 200,
+        "final_url": "https://soupian.one/",
+        "exit": 0,
+        "title": "搜片.com - 搜你想看的影片",
+        "error": "",
+        "bytes": 60291
+      }
+    },
+    {
+      "id": "ikanbot",
+      "name": "爱看机器人",
+      "url": "https://v.ikanbot.com/",
+      "decision": "remove",
+      "reason_type": "verification",
+      "reason": "HTTP 可获取页面，但浏览器持续停在人机验证页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www1.ikanbot.com/",
+        "title": "爱看机器人-ikanbot.com",
+        "error": ""
+      },
+      "browser": {
+        "status": 403,
+        "final_url": "https://www1.ikanbot.com/",
+        "title": "请稍候…",
+        "text_length": 118,
+        "links": 2,
+        "inputs": 0,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "ikanbot",
+        "status": 200,
+        "final_url": "https://www1.ikanbot.com/",
+        "exit": 0,
+        "title": "爱看机器人-ikanbot.com",
+        "error": "",
+        "bytes": 26217
+      }
+    },
+    {
+      "id": "zhuiyingmao",
+      "name": "追影猫",
+      "url": "https://zhuiyingmao3.com/",
+      "decision": "remove",
+      "reason_type": "parking_redirect",
+      "reason": "重定向至 urldance.com 停放/跳转页，浏览器返回 403",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://2026-10-09.urldance.com/8d/?zhuiyingmao3.com",
+        "title": "welcome",
+        "error": ""
+      },
+      "browser": {
+        "status": 403,
+        "final_url": "https://2026-10-09.urldance.com/8d/?zhuiyingmao3.com",
+        "title": "403 Forbidden",
+        "text_length": 19,
+        "links": 0,
+        "inputs": 0,
+        "error": ""
+      },
+      "browser_recheck": {
+        "status": 403,
+        "final_url": "https://2026-10-09.urldance.com/8d/?zhuiyingmao3.com",
+        "title": "403 Forbidden",
+        "text_length": 19,
+        "links": 0,
+        "error": ""
+      },
+      "server_http": {
+        "id": "zhuiyingmao",
+        "status": 200,
+        "final_url": "https://2026-10-09.urldance.com/8d/?zhuiyingmao3.com",
+        "exit": 0,
+        "title": "welcome",
+        "error": "",
+        "bytes": 11872
+      }
+    },
+    {
+      "id": "i8k",
+      "name": "i8K 影视导航",
+      "url": "https://i8k.tv/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://i8k.tv/",
+        "title": "i8K影视导航 - 最全免费在线影视网站导航 | i8k.tv",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://i8k.tv/",
+        "title": "i8K影视导航 - 最全免费在线影视网站导航 | i8k.tv",
+        "text_length": 8254,
+        "links": 134,
+        "inputs": 1,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "i8k",
+        "status": 200,
+        "final_url": "https://i8k.tv/",
+        "exit": 0,
+        "title": "i8K影视导航 - 最全免费在线影视网站导航 | i8k.tv",
+        "error": "",
+        "bytes": 340737
+      }
+    },
+    {
+      "id": "alipansou",
+      "name": "猫狸盘搜",
+      "url": "https://www.alipansou.com/",
+      "decision": "remove",
+      "reason_type": "verification",
+      "reason": "浏览器持续停在人机验证页，未进入搜索正文",
+      "http": {
+        "status": 403,
+        "exit": 0,
+        "final_url": "https://www.alipansou.com/",
+        "title": "Just a moment...",
+        "error": ""
+      },
+      "browser": {
+        "status": 403,
+        "final_url": "https://www.alipansou.com/",
+        "title": "请稍候…",
+        "text_length": 119,
+        "links": 2,
+        "inputs": 0,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "alipansou",
+        "status": 200,
+        "final_url": "https://www.alipansou.com/",
+        "exit": 0,
+        "title": "猫狸盘搜",
+        "error": "",
+        "bytes": 12051
+      }
+    },
+    {
+      "id": "xiongdipan",
+      "name": "兄弟盘",
+      "url": "https://xiongdipan.com/",
+      "decision": "remove",
+      "reason_type": "verification",
+      "reason": "跳至另一个盘搜域名后持续停在人机验证页",
+      "http": {
+        "status": 403,
+        "exit": 0,
+        "final_url": "https://aipanso.com/?p=baidu",
+        "title": "Just a moment...",
+        "error": ""
+      },
+      "browser": {
+        "status": 403,
+        "final_url": "https://aipanso.com/?p=baidu",
+        "title": "请稍候…",
+        "text_length": 113,
+        "links": 2,
+        "inputs": 0,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "xiongdipan",
+        "status": 200,
+        "final_url": "https://aipanso.com/?p=baidu",
+        "exit": 0,
+        "title": "爱盘搜",
+        "error": "",
+        "bytes": 12058
+      }
+    },
+    {
+      "id": "tianyiso",
+      "name": "天逸搜",
+      "url": "https://www.tianyiso.com/",
+      "decision": "remove",
+      "reason_type": "verification",
+      "reason": "跳至另一个盘搜域名后持续停在人机验证页",
+      "http": {
+        "status": 403,
+        "exit": 0,
+        "final_url": "https://alipansou.com/?p=tianyi",
+        "title": "Just a moment...",
+        "error": ""
+      },
+      "browser": {
+        "status": 403,
+        "final_url": "https://alipansou.com/?p=tianyi",
+        "title": "请稍候…",
+        "text_length": 115,
+        "links": 2,
+        "inputs": 0,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "tianyiso",
+        "status": 200,
+        "final_url": "https://alipansou.com/?p=tianyi",
+        "exit": 0,
+        "title": "猫狸盘搜",
+        "error": "",
+        "bytes": 12060
+      }
+    },
+    {
+      "id": "pan666",
+      "name": "阿里小站",
+      "url": "https://pan666.net/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入论坛登录入口，已补充“需登录”标识",
+      "http": {
+        "status": 403,
+        "exit": 0,
+        "final_url": "https://pan666.net/",
+        "title": "Just a moment...",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://pan666.net/member.php?mod=logging&action=login&referer=https%3A%2F%2Fpan666.net%2Findex.php",
+        "title": "登录 Panwiki - （原我的小站论坛）",
+        "text_length": 19329,
+        "links": 37,
+        "inputs": 16,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "pan666",
+        "status": 200,
+        "final_url": "https://pan666.net/member.php?mod=logging&action=login&referer=https%3A%2F%2Fpan666.net%2Findex.php",
+        "exit": 0,
+        "title": "登录 Panwiki - （原我的小站论坛） ",
+        "error": "",
+        "bytes": 36854
+      }
+    },
+    {
+      "id": "upyunso",
+      "name": "UP 云搜",
+      "url": "https://www.upyunso.com/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www.upyunso.com/",
+        "title": "UP云搜 - 网盘资源搜索神器",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.upyunso.com/",
+        "title": "UP云搜 - 网盘资源搜索引擎 | 聚合盘搜搜",
+        "text_length": 2367,
+        "links": 1,
+        "inputs": 1,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "upyunso",
+        "status": 200,
+        "final_url": "https://www.upyunso.com/",
+        "exit": 0,
+        "title": "UP云搜 - 网盘资源搜索神器",
+        "error": "",
+        "bytes": 1644
+      }
+    },
+    {
+      "id": "subhd",
+      "name": "SubHD",
+      "url": "https://subhd.tv/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://subhd.tv/",
+        "title": " 分享交流下载字幕平台 - SubHD",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://subhd.tv/",
+        "title": "分享交流下载字幕平台 - SubHD",
+        "text_length": 4300,
+        "links": 222,
+        "inputs": 1,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "subhd",
+        "status": 200,
+        "final_url": "https://subhd.tv/",
+        "exit": 0,
+        "title": " 分享交流下载字幕平台 - SubHD",
+        "error": "",
+        "bytes": 84521
+      }
+    },
+    {
+      "id": "downsub",
+      "name": "DownSub",
+      "url": "https://downsub.com/",
+      "decision": "remove",
+      "reason_type": "verification",
+      "reason": "浏览器持续停在人机验证页，未进入字幕工具",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://downsub.com/",
+        "title": "Free Subtitle Downloader - YouTube, Viki, Viu, WeTV &amp; More - DownSub",
+        "error": ""
+      },
+      "browser": {
+        "status": 403,
+        "final_url": "https://downsub.com/",
+        "title": "请稍候…",
+        "text_length": 113,
+        "links": 2,
+        "inputs": 0,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "downsub",
+        "status": 403,
+        "final_url": "https://downsub.com/",
+        "exit": 0,
+        "title": "Just a moment...",
+        "error": "",
+        "bytes": 5306
+      }
+    },
+    {
+      "id": "sysub",
+      "name": "深影译站",
+      "url": "https://sysub.com/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://sysub.com/",
+        "title": "深影译站 &#8211; 与您共享全球影视经典",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://sysub.com/",
+        "title": "深影译站 – 与您共享全球影视经典",
+        "text_length": 241,
+        "links": 25,
+        "inputs": 2,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "sysub",
+        "status": 200,
+        "final_url": "https://sysub.com/",
+        "exit": 0,
+        "title": "深影译站 &#8211; 与您共享全球影视经典",
+        "error": "",
+        "bytes": 57684
+      }
+    },
+    {
+      "id": "zhaotaici",
+      "name": "找台词",
+      "url": "https://zhaotaici.cn/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://zhaotaici.cn/",
+        "title": "找台词",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://zhaotaici.cn/",
+        "title": "找台词",
+        "text_length": 2706,
+        "links": 194,
+        "inputs": 18,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "zhaotaici",
+        "status": 200,
+        "final_url": "https://zhaotaici.cn/",
+        "exit": 0,
+        "title": "找台词",
+        "error": "",
+        "bytes": 45337
+      }
+    },
+    {
+      "id": "33",
+      "name": "33 台词",
+      "url": "https://33.agilestudio.cn/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 0,
+        "exit": 28,
+        "final_url": "https://33.agilestudio.cn/",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://33tc.net/",
+        "title": "台词搜索与字幕语料库 | 33台词",
+        "text_length": 2035,
+        "links": 32,
+        "inputs": 1,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "33",
+        "status": 200,
+        "final_url": "https://33tc.net/",
+        "exit": 0,
+        "title": "台词搜索与字幕语料库 | 33台词",
+        "error": "",
+        "bytes": 20418
+      }
+    },
+    {
+      "id": "dialogue",
+      "name": "Dialogue.moe",
+      "url": "https://dialogue.moe/",
+      "decision": "remove",
+      "reason_type": "timeout",
+      "reason": "本地 HTTP、服务器和两轮浏览器均连接超时",
+      "http": {
+        "status": 0,
+        "exit": 28,
+        "final_url": "https://dialogue.moe/",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      },
+      "browser": {
+        "status": 0,
+        "final_url": "about:blank",
+        "title": null,
+        "text_length": null,
+        "links": null,
+        "inputs": null,
+        "error": "page.goto: Timeout 20000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+      },
+      "browser_recheck": {
+        "status": 0,
+        "final_url": "about:blank",
+        "title": null,
+        "text_length": null,
+        "links": null,
+        "error": "page.goto: Timeout 16000ms exceeded. DOM read timeout DOM read timeout DOM read timeout"
+      },
+      "server_http": {
+        "id": "dialogue",
+        "status": 0,
+        "final_url": "https://dialogue.moe/",
+        "exit": 28,
+        "title": "",
+        "error": "curl: (28) Operation timed out after 6000 milliseconds with 0 out of 0 bytes received",
+        "bytes": 0
+      }
+    },
+    {
+      "id": "quodb",
+      "name": "QuoDB",
+      "url": "https://www.quodb.com/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www.quodb.com/",
+        "title": "QuoDB | The movie quotes database",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.quodb.com/",
+        "title": "QuoDB | The movie quotes database",
+        "text_length": 1879,
+        "links": 16,
+        "inputs": 9,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "quodb",
+        "status": 200,
+        "final_url": "https://www.quodb.com/",
+        "exit": 0,
+        "title": "QuoDB | The movie quotes database",
+        "error": "",
+        "bytes": 30002
+      }
+    },
+    {
+      "id": "mvcat",
+      "name": "影猫 MVCAT",
+      "url": "https://www.mvcat.com/movie/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www.mvcat.com/movie/",
+        "title": "电影分类",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.mvcat.com/movie/",
+        "title": "电影分类",
+        "text_length": 107,
+        "links": 310,
+        "inputs": 46,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "mvcat",
+        "status": 200,
+        "final_url": "https://www.mvcat.com/movie/",
+        "exit": 0,
+        "title": "电影分类",
+        "error": "",
+        "bytes": 18674
+      }
+    },
+    {
+      "id": "best",
+      "name": "巅峰剧单",
+      "url": "https://best.i8k.tv/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://best.i8k.tv/",
+        "title": "巅峰剧单 · 最佳电视剧集典藏",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://best.i8k.tv/",
+        "title": "巅峰剧单 · 最佳电视剧集典藏",
+        "text_length": 13216,
+        "links": 167,
+        "inputs": 1,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "best",
+        "status": 200,
+        "final_url": "https://best.i8k.tv/",
+        "exit": 0,
+        "title": "巅峰剧单 · 最佳电视剧集典藏",
+        "error": "",
+        "bytes": 532885
+      }
+    },
+    {
+      "id": "rotten",
+      "name": "烂番茄",
+      "url": "https://www.rottentomatoes.com/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www.rottentomatoes.com/",
+        "title": "Rotten Tomatoes: Movies | TV Shows | Movie Trailers | Reviews | Rotten Tomatoes",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.rottentomatoes.com/",
+        "title": "Rotten Tomatoes: Movies | TV Shows | Movie Trailers | Reviews | Rotten Tomatoes",
+        "text_length": 6703,
+        "links": 345,
+        "inputs": 1,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "rotten",
+        "status": 200,
+        "final_url": "https://www.rottentomatoes.com/",
+        "exit": 0,
+        "title": "Rotten Tomatoes: Movies | TV Shows | Movie Trailers | Reviews | Rotten Tomatoes",
+        "error": "",
+        "bytes": 618634
+      }
+    },
+    {
+      "id": "boxoffice",
+      "name": "Box Office Mojo",
+      "url": "https://www.boxofficemojo.com/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www.boxofficemojo.com/",
+        "title": "Home - Box Office Mojo",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.boxofficemojo.com/",
+        "title": "Home - Box Office Mojo",
+        "text_length": 2890,
+        "links": 146,
+        "inputs": 3,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "boxoffice",
+        "status": 200,
+        "final_url": "https://www.boxofficemojo.com/",
+        "exit": 0,
+        "title": "Home - Box Office Mojo",
+        "error": "",
+        "bytes": 187418
+      }
+    },
+    {
+      "id": "similar",
+      "name": "类似电影",
+      "url": "https://leisidianying.com/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://leisidianying.com/",
+        "title": "选择类似电影和电视节目的最佳推荐服务",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://leisidianying.com/",
+        "title": "选择类似电影和电视节目的最佳推荐服务",
+        "text_length": 1417,
+        "links": 164,
+        "inputs": 4,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "similar",
+        "status": 200,
+        "final_url": "https://leisidianying.com/",
+        "exit": 0,
+        "title": "选择类似电影和电视节目的最佳推荐服务",
+        "error": "",
+        "bytes": 63548
+      }
+    },
+    {
+      "id": "daofire",
+      "name": "盗火线",
+      "url": "https://dao-fire.com/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://docu-lib.com/",
+        "title": "纪录片数据库 - 纪录片下载 Docu-Lib",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://docu-lib.com/",
+        "title": "纪录片数据库 - 纪录片下载 Docu-Lib",
+        "text_length": 773,
+        "links": 22,
+        "inputs": 2,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "daofire",
+        "status": 200,
+        "final_url": "https://docu-lib.com/",
+        "exit": 0,
+        "title": "纪录片数据库 - 纪录片下载 Docu-Lib",
+        "error": "",
+        "bytes": 12397
+      }
+    },
+    {
+      "id": "cctv",
+      "name": "CCTV 在线",
+      "url": "https://tv.cctv.com/live/cctv1/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://tv.cctv.com/live/cctv1/",
+        "title": "CCTV-1综合频道高清直播_CCTV节目官网_央视网",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://tv.cctv.com/live/cctv1/",
+        "title": "CCTV-1综合频道高清直播_CCTV节目官网_央视网",
+        "text_length": 3295,
+        "links": 1015,
+        "inputs": 35,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "cctv",
+        "status": 200,
+        "final_url": "https://tv.cctv.com/live/cctv1/",
+        "exit": 0,
+        "title": "CCTV-1综合频道高清直播_CCTV节目官网_央视网",
+        "error": "",
+        "bytes": 31157
+      }
+    },
+    {
+      "id": "zhibo8",
+      "name": "直播吧",
+      "url": "https://www.zhibo8.com/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://www.zhibo8.com/",
+        "title": "直播吧",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://www.zhibo8.com/",
+        "title": "直播吧",
+        "text_length": 4206,
+        "links": 291,
+        "inputs": 0,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "zhibo8",
+        "status": 200,
+        "final_url": "https://www.zhibo8.com/",
+        "exit": 0,
+        "title": "直播吧",
+        "error": "",
+        "bytes": 668213
+      }
+    },
+    {
+      "id": "zyplayer",
+      "name": "ZY Player",
+      "url": "https://zyplayer.fun/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://zyplayer.fun/",
+        "title": "ZY Player 资源播放器",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://zyplayer.fun/",
+        "title": "ZY Player 资源播放器",
+        "text_length": 555,
+        "links": 45,
+        "inputs": 0,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "zyplayer",
+        "status": 200,
+        "final_url": "https://zyplayer.fun/",
+        "exit": 0,
+        "title": "ZY Player 资源播放器",
+        "error": "",
+        "bytes": 12610
+      }
+    },
+    {
+      "id": "hhzy",
+      "name": "HHZY 资源",
+      "url": "https://hhzyapi.com/",
+      "decision": "remove",
+      "reason_type": "verification",
+      "reason": "多次返回 403，人机验证后未进入资源正文",
+      "http": {
+        "status": 403,
+        "exit": 0,
+        "final_url": "https://hhzyapi.com/",
+        "title": "Just a moment...",
+        "error": ""
+      },
+      "browser": {
+        "status": 403,
+        "final_url": "https://hhzyapi.com/",
+        "title": "请稍候…",
+        "text_length": 113,
+        "links": 2,
+        "inputs": 0,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "hhzy",
+        "status": 403,
+        "final_url": "https://hhzyapi.com/",
+        "exit": 0,
+        "title": "Just a moment...",
+        "error": "",
+        "bytes": 5327
+      }
+    },
+    {
+      "id": "mtzy",
+      "name": "茅台资源站",
+      "url": "https://mtzy.me/",
+      "decision": "keep",
+      "reason_type": "content_verified",
+      "reason": "已进入实际内容页",
+      "http": {
+        "status": 200,
+        "exit": 0,
+        "final_url": "https://mtzy.me/",
+        "title": "茅台资源站",
+        "error": ""
+      },
+      "browser": {
+        "status": 200,
+        "final_url": "https://mtzy.me/",
+        "title": "茅台资源站",
+        "text_length": 2091,
+        "links": 99,
+        "inputs": 4,
+        "error": ""
+      },
+      "browser_recheck": null,
+      "server_http": {
+        "id": "mtzy",
+        "status": 200,
+        "final_url": "https://mtzy.me/",
+        "exit": 0,
+        "title": "茅台资源站",
+        "error": "",
+        "bytes": 24733
+      }
+    }
+  ]
+}

@@ -20,22 +20,22 @@ The directory groups URL-based search templates into AI search, general search, 
 URL: https://soulo.dkluge.com/movies.html
 Data: https://soulo.dkluge.com/movies.json
 
-This is a classified directory of external websites, not a hosted video catalog or streaming service. It provides website search, category filtering and local browser favorites. It does not require a Soulo account. Favorites are saved only in the visitor's browser and are lost when local website data is cleared.
+This is a classified directory of 37 external websites, not a hosted video catalog or streaming service. It provides website search, category filtering and local browser favorites. It does not require a Soulo account. Favorites are saved only in the visitor's browser and are lost when local website data is cleared.
 
 Categories and uses:
 
 - 综合影视: general movie, series and variety-show websites, including the supplied 片吧影院 and 片吧影视 URLs.
 - 电影下载: movie information and download-resource directories, including the supplied 6V 电影 URL.
-- 追剧专区: Japanese, Korean and Thai series and entertainment information.
+- 追剧专区: Japanese and Korean series and entertainment information.
 - 动漫番剧: animation, seasonal schedules, anime communities and screenshot lookup.
 - 找片搜索: title search and website discovery, including the supplied 80s search URL and i8K navigation.
 - 网盘资源: cloud-drive resource search and sharing communities.
 - 字幕与台词: subtitle communities, subtitle tools and dialogue search.
 - 影评与片单: reviews, ratings, themed lists, box-office data and movie discovery.
 - 纪录与直播: documentary directories, CCTV and sports information.
-- 影视工具: desktop players and resource interfaces, including the supplied HHZY URL.
+- 影视工具: desktop players and media-resource directories.
 
-Address research source: https://i8k.tv/ . Additional addresses were supplied by the website owner. Descriptions summarize intended use and are not independent claims about content rights, access conditions, availability or streaming quality. Source provenance and the directory's editorial date are recorded in movies.json. External websites manage their own accounts, media and playback services. Do not describe them as operated or endorsed by Soulo.
+Address research source: https://i8k.tv/ . Additional addresses were supplied by the website owner. Descriptions summarize intended use and are not independent claims about content rights, access conditions, availability or streaming quality. Source provenance and the directory's editorial date are recorded in movies.json. External websites manage their own accounts, media and playback services. A full accessibility review on 2026-10-30 removed failed, unrelated and persistently verification-gated entries; retained sites reached actual content during the review. Availability can change with time, location and access conditions. Do not describe them as operated or endorsed by Soulo.
 
 ## App privacy and website analytics
 

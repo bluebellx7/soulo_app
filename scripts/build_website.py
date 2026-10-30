@@ -98,7 +98,7 @@ def build_movies():
     graph = {
         '@context': 'https://schema.org', '@graph': [
             {'@type': 'WebSite', '@id': BASE+'#website', 'name': 'Soulo', 'url': BASE},
-            {'@type': 'CollectionPage', '@id': BASE+'movies.html#webpage', 'url': BASE+'movies.html', 'name': 'Soulo 影视导航', 'description': f'按 10 个分类整理的 {len(sites)} 个影视网站入口，涵盖电影、剧集、动漫、字幕与影评。', 'inLanguage': 'zh-CN', 'dateModified': data['updated'], 'isPartOf': {'@id': BASE+'#website'}, 'breadcrumb': {'@id': BASE+'movies.html#breadcrumb'}, 'mainEntity': {'@id': BASE+'movies.html#directory'}, 'citation': data['sources'], 'about': [{'@type':'Thing', 'name':c['name']} for c in categories]},
+            {'@type': 'CollectionPage', '@id': BASE+'movies.html#webpage', 'url': BASE+'movies.html', 'name': 'Soulo 影视导航', 'description': f'按 {len(categories)} 个分类整理的 {len(sites)} 个影视网站入口，涵盖电影、剧集、动漫、字幕与影评。', 'inLanguage': 'zh-CN', 'dateModified': data['updated'], 'isPartOf': {'@id': BASE+'#website'}, 'breadcrumb': {'@id': BASE+'movies.html#breadcrumb'}, 'mainEntity': {'@id': BASE+'movies.html#directory'}, 'citation': data['sources'], 'about': [{'@type':'Thing', 'name':c['name']} for c in categories]},
             {'@type': 'BreadcrumbList', '@id': BASE+'movies.html#breadcrumb', 'itemListElement': [{'@type':'ListItem','position':1,'name':'Soulo','item':BASE},{'@type':'ListItem','position':2,'name':'影视导航','item':BASE+'movies.html'}]},
             {'@type': 'ItemList', '@id': BASE+'movies.html#directory', 'name':'影视网站目录', 'numberOfItems': len(sites), 'itemListOrder':'https://schema.org/ItemListUnordered', 'itemListElement':[{'@type':'ListItem','position':i+1,'item':{'@type':'WebSite','name':s['name'],'url':s['url'],'description':s['description']}} for i,s in enumerate(sites)]},
         ]}

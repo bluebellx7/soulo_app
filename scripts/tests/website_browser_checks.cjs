@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const {chromium} = require(process.env.SOULO_PLAYWRIGHT_MODULE || 'playwright');
 const base = process.env.SOULO_WEBSITE_URL || 'http://127.0.0.1:8765';
 const errors = [];
+const movieData = require('../../website/movies.json');
 
 async function main() {
   const options = {headless: true};
@@ -16,7 +17,7 @@ async function main() {
     const page = await context.newPage();
     await page.goto(base+'/movies.html');
     const total = await page.locator('.movie-card').count();
-    assert.equal(total, 58);
+    assert.equal(total, movieData.sites.length);
     const visible = () => page.locator('.movie-card:visible').count();
     await page.locator('#movie-search').fill('PBKAN.COM');
     assert.equal(await visible(), 1);
@@ -29,7 +30,7 @@ async function main() {
     await page.locator('#reset-filters').click();
     assert.equal(await visible(), total);
     await page.locator('[data-category="anime"]').click();
-    assert.equal(await visible(), 7);
+    assert.equal(await visible(), movieData.sites.filter(site => site.category === 'anime').length);
     assert.equal(await page.locator('[data-section]:visible').count(), 1);
     await page.locator('[data-category="all"]').click();
     await page.locator('[data-favorite="pbpbw"]').click();
@@ -117,7 +118,7 @@ async function main() {
     const plain = await nojs.newPage();
     await plain.goto(base+'/movies.html');
     assert.equal(await plain.locator('.movie-card:visible').count(), total);
-    assert.equal(await plain.locator('.movie-category:visible').count(), 10);
+    assert.equal(await plain.locator('.movie-category:visible').count(), movieData.categories.length);
     assert.equal(await plain.locator('.favorite-button:visible').count(), 0);
     await plain.goto(base+'/sources.html');
     assert.equal(await plain.locator('.source-card:visible').count(), sourceCount);

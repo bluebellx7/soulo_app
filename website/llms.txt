@@ -8,7 +8,7 @@ Updated: 2026-10-30
 
 - [首页 / Home](https://soulo.dkluge.com/): Soulo iOS 浏览器介绍、广告拦截、下载管理、翻译、自定义扩展及 App Store 下载；支持中文和英文显示。
 - [搜索源目录 / Search sources](https://soulo.dkluge.com/sources.html): AI、通用、学术、社交、开发、购物、漫画、影视和图书搜索模板；配置中的 `%@` 由 Soulo 替换为编码后的关键词。
-- [影视导航 / Watch guide](https://soulo.dkluge.com/movies.html): 中文影视网站目录，10 个分类涵盖综合影视、电影下载、追剧、动漫、找片、网盘、字幕、片单、纪录直播及工具；包含 80s、6V、片吧和 HHZY 等入口。
+- [影视导航 / Watch guide](https://soulo.dkluge.com/movies.html): 中文影视网站目录，10 个分类涵盖综合影视、电影下载、追剧、动漫、找片、网盘、字幕、片单、纪录直播及工具；包含 80s、6V、片吧等入口。
 - [隐私政策 / App privacy policy](https://soulo.dkluge.com/privacy.html): Soulo App 的数据处理、本地存储、可选 iCloud 同步及第三方服务说明。
 - [Expanded context](https://soulo.dkluge.com/llms-full.txt): More detailed, attributable product and directory information.
 

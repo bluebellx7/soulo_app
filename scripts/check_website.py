@@ -86,8 +86,8 @@ def check():
     assert {a['data-site'] for a in cards} == {s['id'] for s in data['sites']}
     links = {a.get('href') for t,a in movies.tags if t == 'a'}
     assert {s['url'] for s in data['sites']} <= links
-    user_urls = {'https://i8k.tv/','https://y80s.tv/movie/search/','https://www.6vdyy.com/','https://hhzyapi.com/','https://www.pbpbw.com/','https://www.pbkan.com/'}
-    assert user_urls <= links, 'Missing user-provided website'
+    card_urls = {a['href'] for t,a in movies.tags if t == 'a' and 'movie-card-link' in a.get('class','').split()}
+    assert card_urls == {s['url'] for s in data['sites']}, 'Directory must match the current curated inventory'
     graph = movies.schema[0]['@graph']
     directory = next(n for n in graph if n['@type'] == 'ItemList')
     assert directory['numberOfItems'] == len(data['sites'])
