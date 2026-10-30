@@ -82,6 +82,7 @@ h1 span { font-size: .64em; font-weight: 500; letter-spacing: -.04em; }
 .sources-link { display: flex; justify-content: space-between; gap: 20px; padding-block: 27px; margin-top: 57px; border-block: 1px solid var(--line); font-size: 13px; }
 .sources-link > span { color: var(--muted); }
 .sources-link a { display: flex; gap: 14px; align-items: center; }
+.sources-link a > svg { width: 18px; height: 18px; flex-shrink: 0; }
 .sources-link a:hover { color: var(--accent); }
 .site-footer { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding-block: 29px; color: var(--muted); font-size: 11px; }
 .site-footer > div { display: flex; align-items: center; gap: 24px; }
