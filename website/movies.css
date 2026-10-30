@@ -24,7 +24,6 @@ html[data-resolved-theme="dark"] .movies-page {
   --hero-panel: #232231;
   --tag: #262732;
 }
-.movies-page .wrap { width: min(1200px, calc(100% - 80px)); }
 .movies-page .site-header { background: var(--page); }
 .movies-page .nav { border-color: var(--stroke); }
 .movies-page .nav-links a[aria-current="page"] { color: var(--violet); background: var(--violet-soft); }
@@ -127,13 +126,11 @@ html[data-resolved-theme="dark"] .site-mark, html[data-resolved-theme="dark"] .q
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 [hidden] { display: none !important; }
 @media (max-width: 1100px) {
-  .movies-page .wrap { width: calc(100% - 56px); }
   .directory-layout { grid-template-columns: 157px minmax(0,1fr); gap: 22px; }
   .movie-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cinema-hero { padding-inline: 40px; }
 }
 @media (max-width: 740px) {
-  .movies-page .wrap { width: calc(100% - 36px); }
   .breadcrumbs { margin: 19px 2px; font-size: 11px; }
   .cinema-hero { position: relative; min-height: 240px; padding: 23px 25px; border-radius: 22px; grid-template-columns: 1fr; }
   .cinema-copy h1 { font-size: 38px; }
@@ -154,8 +151,8 @@ html[data-resolved-theme="dark"] .site-mark, html[data-resolved-theme="dark"] .q
   .movie-search kbd { display: none; }
   .directory-tabs { margin-left: 0; }
   .directory-layout { display: block; }
-  .category-sidebar { z-index: 4; top: 0; margin: 0 -18px 20px; padding: 10px 0; border-block: 1px solid var(--stroke); background: var(--page); }
-  .category-sidebar nav { display: flex; gap: 5px; padding-inline: 18px; overflow-x: auto; scrollbar-width: none; }
+  .category-sidebar { z-index: 4; top: 0; margin: 0 -20px 20px; padding: 10px 0; border-block: 1px solid var(--stroke); background: var(--page); }
+  .category-sidebar nav { display: flex; gap: 5px; padding-inline: 20px; overflow-x: auto; scrollbar-width: none; }
   .category-sidebar nav::-webkit-scrollbar { display: none; }
   .category-link { min-height: 36px; padding: 8px 11px; gap: 7px; font-size: 11px; }
   .category-link > svg { width: 14px; height: 14px; }
@@ -182,9 +179,6 @@ html[data-resolved-theme="dark"] .site-mark, html[data-resolved-theme="dark"] .q
   .directory-about h2 { font-size: 18px; }
 }
 @media (max-width: 360px) {
-  .movies-page .wrap { width: calc(100% - 28px); }
-  .category-sidebar { margin-inline: -14px; }
-  .category-sidebar nav { padding-inline: 14px; }
   .cinema-hero { padding-inline: 22px; }
   .cinema-copy h1 { font-size: 39px; }
   .quick-pick { gap: 6px; padding-inline: 7px; }
