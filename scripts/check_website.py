@@ -92,8 +92,16 @@ def check():
     directory = next(n for n in graph if n['@type'] == 'ItemList')
     assert directory['numberOfItems'] == len(data['sites'])
     assert {x['item']['url'] for x in directory['itemListElement']} == {s['url'] for s in data['sites']}
-    source_text = (SITE/'sources.html').read_text()
-    assert source_text.count('class="source-card"') == len(re.findall(r"\{ c: '[^']+', n: '[^']+', u: '[^']+' \}", source_text))
+    source_data = json.loads((SITE/'sources.json').read_text())
+    source_cards = [a for t,a in pages['sources.html'].tags if 'source-card' in a.get('class','').split()]
+    assert len(source_cards) == len(source_data['sources'])
+    assert {int(card['data-index']) for card in source_cards} == set(range(len(source_data['sources'])))
+    assert all('%@' in entry['url'] for entry in source_data['sources'])
+    for file, page in pages.items():
+        assert sum(t == 'header' and 'data-shared-nav' in a for t,a in page.tags) == 1, (file, 'shared navigation')
+        assert sum(a.get('id') == 'language-toggle' for t,a in page.tags) == 1
+        assert sum(a.get('id') == 'theme-toggle' for t,a in page.tags) == 1
+        assert any(t == 'link' and a.get('href','').startswith('navigation.css?') for t,a in page.tags)
     assert not any(t == 'a' and a.get('href') == '#features' for t,a in pages['index.html'].tags)
     sitemap = ET.parse(SITE/'sitemap.xml')
     ns = {'s':'http://www.sitemaps.org/schemas/sitemap/0.9'}

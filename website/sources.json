@@ -1,0 +1,485 @@
+{
+  "categories": [
+    {
+      "id": "ai",
+      "name": "AI 搜索",
+      "icon": "spark",
+      "description": "可通过 URL 直接携带问题的 AI 搜索服务。"
+    },
+    {
+      "id": "general",
+      "name": "通用搜索",
+      "icon": "search",
+      "description": "覆盖中文、英文、日文和韩文的网页搜索。"
+    },
+    {
+      "id": "academic",
+      "name": "学术搜索",
+      "icon": "academic",
+      "description": "论文、期刊、预印本和机构知识库。"
+    },
+    {
+      "id": "social",
+      "name": "社交与内容",
+      "icon": "social",
+      "description": "站内内容搜索，部分平台需要登录。"
+    },
+    {
+      "id": "developer",
+      "name": "开发者",
+      "icon": "code",
+      "description": "代码仓库、技术问答和中文开发社区。"
+    },
+    {
+      "id": "shopping",
+      "name": "购物",
+      "icon": "shopping",
+      "description": "商品与二手交易平台搜索。"
+    },
+    {
+      "id": "comic",
+      "name": "漫画与插画",
+      "icon": "image",
+      "description": "视频、漫画与插画站内搜索。"
+    },
+    {
+      "id": "video",
+      "name": "影视",
+      "icon": "film",
+      "description": "官方视频平台及已验证的影视资源搜索。"
+    },
+    {
+      "id": "book",
+      "name": "图书",
+      "icon": "book",
+      "description": "电子书与图书资源搜索。"
+    }
+  ],
+  "sources": [
+    {
+      "category": "ai",
+      "name": "ChatGPT Search",
+      "url": "https://chatgpt.com/?hints=search&q=%@"
+    },
+    {
+      "category": "ai",
+      "name": "Perplexity",
+      "url": "https://www.perplexity.ai/search?q=%@"
+    },
+    {
+      "category": "ai",
+      "name": "Andi",
+      "url": "https://andisearch.com/?q=%@"
+    },
+    {
+      "category": "ai",
+      "name": "Felo Search",
+      "url": "https://felo.ai/search?q=%@"
+    },
+    {
+      "category": "ai",
+      "name": "Consensus",
+      "url": "https://consensus.app/results/?q=%@"
+    },
+    {
+      "category": "ai",
+      "name": "You.com",
+      "url": "https://you.com/search?q=%@"
+    },
+    {
+      "category": "ai",
+      "name": "iAsk.AI",
+      "url": "https://iask.ai/?q=%@"
+    },
+    {
+      "category": "ai",
+      "name": "Semantic Scholar",
+      "url": "https://www.semanticscholar.org/search?q=%@"
+    },
+    {
+      "category": "general",
+      "name": "百度",
+      "url": "https://www.baidu.com/s?wd=%@"
+    },
+    {
+      "category": "general",
+      "name": "搜狗",
+      "url": "https://www.sogou.com/web?query=%@"
+    },
+    {
+      "category": "general",
+      "name": "Google",
+      "url": "https://www.google.com/search?q=%@"
+    },
+    {
+      "category": "general",
+      "name": "Bing",
+      "url": "https://www.bing.com/search?q=%@"
+    },
+    {
+      "category": "general",
+      "name": "DuckDuckGo",
+      "url": "https://duckduckgo.com/?q=%@"
+    },
+    {
+      "category": "general",
+      "name": "360 搜索",
+      "url": "https://www.so.com/s?q=%@"
+    },
+    {
+      "category": "general",
+      "name": "Yandex",
+      "url": "https://yandex.com/search/?text=%@"
+    },
+    {
+      "category": "general",
+      "name": "Startpage",
+      "url": "https://www.startpage.com/sp/search?query=%@"
+    },
+    {
+      "category": "general",
+      "name": "Yahoo!",
+      "url": "https://search.yahoo.com/search?p=%@"
+    },
+    {
+      "category": "general",
+      "name": "Mojeek",
+      "url": "https://www.mojeek.com/search?q=%@"
+    },
+    {
+      "category": "general",
+      "name": "Brave Search",
+      "url": "https://search.brave.com/search?q=%@"
+    },
+    {
+      "category": "general",
+      "name": "Ecosia",
+      "url": "https://www.ecosia.org/search?q=%@"
+    },
+    {
+      "category": "general",
+      "name": "Qwant",
+      "url": "https://www.qwant.com/?q=%@&t=web"
+    },
+    {
+      "category": "general",
+      "name": "Naver",
+      "url": "https://search.naver.com/search.naver?query=%@"
+    },
+    {
+      "category": "general",
+      "name": "Daum",
+      "url": "https://search.daum.net/search?w=tot&q=%@"
+    },
+    {
+      "category": "general",
+      "name": "Google 日本",
+      "url": "https://www.google.co.jp/search?q=%@"
+    },
+    {
+      "category": "general",
+      "name": "Yahoo! 日本",
+      "url": "https://search.yahoo.co.jp/search?p=%@"
+    },
+    {
+      "category": "general",
+      "name": "中文维基百科",
+      "url": "https://zh.wikipedia.org/w/index.php?search=%@"
+    },
+    {
+      "category": "general",
+      "name": "Wikipedia",
+      "url": "https://en.wikipedia.org/w/index.php?search=%@"
+    },
+    {
+      "category": "academic",
+      "name": "百度学术",
+      "url": "https://xueshu.baidu.com/s?wd=%@"
+    },
+    {
+      "category": "academic",
+      "name": "Google Scholar",
+      "url": "https://scholar.google.com/scholar?q=%@"
+    },
+    {
+      "category": "academic",
+      "name": "PubMed",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/?term=%@"
+    },
+    {
+      "category": "academic",
+      "name": "PubMed Central",
+      "url": "https://pmc.ncbi.nlm.nih.gov/search/?term=%@"
+    },
+    {
+      "category": "academic",
+      "name": "DOAJ",
+      "url": "https://doaj.org/search/articles/%@"
+    },
+    {
+      "category": "academic",
+      "name": "arXiv",
+      "url": "https://arxiv.org/search/?query=%@&searchtype=all"
+    },
+    {
+      "category": "academic",
+      "name": "BASE",
+      "url": "https://www.base-search.net/Search/Results?lookfor=%@&type=all"
+    },
+    {
+      "category": "academic",
+      "name": "OALib",
+      "url": "https://www.oalib.com/search?kw=%@"
+    },
+    {
+      "category": "academic",
+      "name": "PLOS ONE",
+      "url": "https://journals.plos.org/plosone/search?q=%@"
+    },
+    {
+      "category": "academic",
+      "name": "Nature",
+      "url": "https://www.nature.com/search?q=%@"
+    },
+    {
+      "category": "academic",
+      "name": "ResearchGate",
+      "url": "https://www.researchgate.net/search/publication?q=%@"
+    },
+    {
+      "category": "academic",
+      "name": "JSTOR",
+      "url": "https://www.jstor.org/action/doBasicSearch?Query=%@"
+    },
+    {
+      "category": "academic",
+      "name": "SpringerLink",
+      "url": "https://link.springer.com/search?query=%@"
+    },
+    {
+      "category": "academic",
+      "name": "Wiley Online Library",
+      "url": "https://onlinelibrary.wiley.com/action/doSearch?AllField=%@"
+    },
+    {
+      "category": "academic",
+      "name": "MIT DSpace",
+      "url": "https://dspace.mit.edu/search?query=%@"
+    },
+    {
+      "category": "academic",
+      "name": "ScienceDirect",
+      "url": "https://www.sciencedirect.com/search?qs=%@"
+    },
+    {
+      "category": "academic",
+      "name": "AMiner",
+      "url": "https://www.aminer.cn/search/pub?q=%@"
+    },
+    {
+      "category": "academic",
+      "name": "Thèses.fr",
+      "url": "https://theses.fr/?q=%@"
+    },
+    {
+      "category": "social",
+      "name": "小红书",
+      "url": "https://www.xiaohongshu.com/search_result?keyword=%@&source=web_explore_feed&type=51"
+    },
+    {
+      "category": "social",
+      "name": "抖音",
+      "url": "https://www.douyin.com/search/%@"
+    },
+    {
+      "category": "social",
+      "name": "X",
+      "url": "https://x.com/search?q=%@"
+    },
+    {
+      "category": "social",
+      "name": "YouTube",
+      "url": "https://www.youtube.com/results?search_query=%@"
+    },
+    {
+      "category": "social",
+      "name": "Product Hunt",
+      "url": "https://www.producthunt.com/search?q=%@"
+    },
+    {
+      "category": "social",
+      "name": "Facebook",
+      "url": "https://www.facebook.com/search/top?q=%@"
+    },
+    {
+      "category": "social",
+      "name": "Instagram",
+      "url": "https://www.instagram.com/explore/tags/%@/"
+    },
+    {
+      "category": "social",
+      "name": "Bilibili",
+      "url": "https://search.bilibili.com/all?keyword=%@"
+    },
+    {
+      "category": "social",
+      "name": "知乎",
+      "url": "https://www.zhihu.com/search?type=content&q=%@"
+    },
+    {
+      "category": "social",
+      "name": "微博",
+      "url": "https://s.weibo.com/weibo?q=%@"
+    },
+    {
+      "category": "social",
+      "name": "今日头条",
+      "url": "https://so.toutiao.com/search?keyword=%@"
+    },
+    {
+      "category": "social",
+      "name": "Threads",
+      "url": "https://www.threads.com/search?q=%@"
+    },
+    {
+      "category": "social",
+      "name": "Reddit",
+      "url": "https://www.reddit.com/search/?q=%@&type=link"
+    },
+    {
+      "category": "social",
+      "name": "Pinterest",
+      "url": "https://www.pinterest.com/search/pins/?q=%@"
+    },
+    {
+      "category": "social",
+      "name": "LinkedIn",
+      "url": "https://www.linkedin.com/search/results/all/?keywords=%@"
+    },
+    {
+      "category": "social",
+      "name": "微信文章",
+      "url": "https://weixin.sogou.com/weixinwap?type=2&ie=utf8&s_from=input&query=%@"
+    },
+    {
+      "category": "developer",
+      "name": "GitHub",
+      "url": "https://github.com/search?q=%@&type=repositories"
+    },
+    {
+      "category": "developer",
+      "name": "Stack Overflow",
+      "url": "https://stackoverflow.com/search?q=%@"
+    },
+    {
+      "category": "developer",
+      "name": "CSDN",
+      "url": "https://so.csdn.net/so/search?q=%@"
+    },
+    {
+      "category": "developer",
+      "name": "掘金",
+      "url": "https://juejin.cn/search?query=%@"
+    },
+    {
+      "category": "shopping",
+      "name": "淘宝",
+      "url": "https://s.m.taobao.com/h5?q=%@"
+    },
+    {
+      "category": "shopping",
+      "name": "京东",
+      "url": "https://so.m.jd.com/ware/search.action?keyword=%@"
+    },
+    {
+      "category": "shopping",
+      "name": "Amazon",
+      "url": "https://www.amazon.com/s?k=%@&i=mobile"
+    },
+    {
+      "category": "shopping",
+      "name": "eBay",
+      "url": "https://www.ebay.com/sch/i.html?_nkw=%@"
+    },
+    {
+      "category": "comic",
+      "name": "AcFun",
+      "url": "https://www.acfun.cn/search?keyword=%@"
+    },
+    {
+      "category": "comic",
+      "name": "pixiv",
+      "url": "https://www.pixiv.net/tags/%@/artworks"
+    },
+    {
+      "category": "comic",
+      "name": "哔哩哔哩漫画",
+      "url": "https://manga.bilibili.com/search?from=manga_homepage&keyword=%@"
+    },
+    {
+      "category": "video",
+      "name": "优酷",
+      "url": "https://search.youku.com/search_video?keyword=%@"
+    },
+    {
+      "category": "video",
+      "name": "爱奇艺",
+      "url": "https://m.iqiyi.com/search.html?source=input&key=%@"
+    },
+    {
+      "category": "video",
+      "name": "腾讯视频",
+      "url": "https://v.qq.com/x/search/?q=%@"
+    },
+    {
+      "category": "video",
+      "name": "芒果 TV",
+      "url": "https://so.mgtv.com/so?k=%@"
+    },
+    {
+      "category": "video",
+      "name": "片吧搜索",
+      "url": "https://www.pianbs.com/sou/-------------.html?wd=%@&submit="
+    },
+    {
+      "category": "video",
+      "name": "最大资源",
+      "url": "https://www.zuidazy.co/vodsearch/-------------.html?wd=%@&submit=search"
+    },
+    {
+      "category": "video",
+      "name": "优酷资源",
+      "url": "https://ukuzy0.com/index.php/vod/search.html?wd=%@&submit=search"
+    },
+    {
+      "category": "video",
+      "name": "光速资源",
+      "url": "https://guangsuzy.com/index.php/vod/search.html?wd=%@"
+    },
+    {
+      "category": "video",
+      "name": "金鹰资源",
+      "url": "https://jinyingzy.com/index.php/vod/search.html?wd=%@&submit=search"
+    },
+    {
+      "category": "video",
+      "name": "木头资源",
+      "url": "https://mtzy.me/vod/mysearch.html?wd=%@&submit=search"
+    },
+    {
+      "category": "video",
+      "name": "极速资源",
+      "url": "https://jszy333.com/index.php/vod/search.html?wd=%@"
+    },
+    {
+      "category": "book",
+      "name": "Z-Library",
+      "url": "https://zh.z-library.sk/s/%@?"
+    },
+    {
+      "category": "book",
+      "name": "iBooks",
+      "url": "https://ibooks.org.cn/?s=%@"
+    }
+  ]
+}

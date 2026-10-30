@@ -13,7 +13,7 @@ The app includes ad blocking, download management, page translation, webpage scr
 
 URL: https://soulo.dkluge.com/sources.html
 
-The directory groups URL-based search templates into AI search, general search, academic research, social content, developer tools, shopping, comics and illustration, video, and books. Every template includes a `%@` placeholder for the URL-encoded query. Visitors can preview a platform, filter entries, and copy one category or all visible entries as JSON for import into Soulo. Templates may require a login or be affected by the destination's regional policies. Website entry links are included in static HTML.
+The directory groups URL-based search templates into AI search, general search, academic research, social content, developer tools, shopping, comics and illustration, video, and books. Every template includes a `%@` placeholder for the URL-encoded query. Visitors can preview a platform, filter entries, and copy one platform, one category or all visible entries as JSON for import into Soulo. Templates may require a login or be affected by the destination's regional policies. Website entry links are included in static HTML.
 
 ## Soulo 影视导航 / watch guide
 

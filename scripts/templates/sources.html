@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Soulo 搜索源目录 - 可直接导入的搜索模板</title>
+    <meta name="description" content="浏览 Soulo 的 {{source_count}} 个搜索源与 {{category_count}} 个分类，涵盖 AI、通用、学术、社交、开发与影视搜索。复制单个平台、当前分类或筛选结果，导入自己的搜索列表。" />
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+    <meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111217" media="(prefers-color-scheme: dark)" />
+    <link rel="canonical" href="https://soulo.dkluge.com/sources.html" />
+    <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg?v=20261030" />
+    <link rel="apple-touch-icon" href="app-icon.png?v=1.1.4" />
+    <link rel="alternate" type="text/plain" href="llms.txt" title="Soulo 网站摘要" />
+    <meta property="og:site_name" content="Soulo" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:title" content="Soulo 搜索源目录 · 把好用的搜索收在一起" />
+    <meta property="og:description" content="{{source_count}} 个搜索源，{{category_count}} 个分类。找到常用平台，复制配置，导入 Soulo。" />
+    <meta property="og:url" content="https://soulo.dkluge.com/sources.html" />
+    <meta property="og:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.4" />
+    <meta property="og:image:width" content="1024" />
+    <meta property="og:image:height" content="1024" />
+    <meta property="og:image:alt" content="Soulo 图标" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Soulo 搜索源目录 · 把好用的搜索收在一起" />
+    <meta name="twitter:description" content="按用途发现搜索平台，复制配置，建立自己的搜索列表。" />
+    <meta name="twitter:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.4" />
+    <meta name="twitter:image:alt" content="Soulo 图标" />
+    <script>
+      (() => {
+        let theme = 'system';
+        try { theme = localStorage.getItem('soulo-theme') || 'system'; } catch {}
+        const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.resolvedTheme = theme === 'dark' || (theme !== 'light' && dark) ? 'dark' : 'light';
+      })();
+    </script>
+    <link rel="stylesheet" href="home.css?v=20261030b" />
+    <link rel="stylesheet" href="sources.css?v=20261030b" />
+    <link rel="stylesheet" href="navigation.css?v=20261030b" />
+    <script type="application/ld+json">{{structured_data}}</script>
+    <script id="source-data" type="application/json">{{source_data}}</script>
+    <script src="site-ui.js?v=20261030b" defer></script>
+    <script src="sources.js?v=20261030b" defer></script>
+    <noscript><style>.catalog-toolbar,.source-copy,.category-copy,.config-panel{display:none!important}</style></noscript>
+    <script>
+      var _hmt = _hmt || [];
+      (function() {
+        var hm = document.createElement("script");
+        hm.src = "https://hm.baidu.com/hm.js?bdc8ea6c501e6ff0d7b16dc13b09b991";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+      })();
+    </script>
+  </head>
+  <body class="sources-page">
+    <a class="skip-link" href="#source-tools">跳到搜索源目录</a>
+    {{navigation}}
+    <main class="source-wrap">
+      <nav class="source-breadcrumbs" aria-label="面包屑"><a href="./">首页</a><span aria-hidden="true">/</span><span aria-current="page">搜索源</span></nav>
+      <section class="source-hero" aria-labelledby="source-title">
+        <div class="source-hero-copy"><h1 id="source-title">把好用的搜索，<br />放在顺手的地方。</h1><p>从 AI 问答到学术资料，找到适合你的入口。<br />挑选、复制、导入，建立自己的搜索列表。</p><div class="source-summary"><span>{{grid_icon}}{{source_count}} 个搜索源</span><span>{{category_count}} 个分类</span><a href="#source-guide">导入方法 {{arrow_icon}}</a></div></div>
+        <div class="source-hero-visual" aria-hidden="true"><div class="preview-query">{{search_icon}}<span>今天想了解的事</span><span class="query-cursor"></span></div><div class="query-branch"><span></span><span></span><span></span></div><div class="preview-platforms"><div><img src="favicons/google.com.png" width="25" height="25" alt="" /><span>Google</span></div><div><img src="favicons/perplexity.ai.png" width="25" height="25" alt="" /><span>Perplexity</span></div><div><img src="favicons/bilibili.com.png" width="25" height="25" alt="" /><span>哔哩哔哩</span></div></div><div class="preview-caption"><span></span>一个问题，多种视角。</div></div>
+      </section>
+      <section class="catalog-toolbar" id="source-tools" aria-label="搜索与复制">
+        <label class="filter-wrap">{{search_icon}}<span class="visually-hidden">搜索平台、域名或分类</span><input id="filterInput" type="search" placeholder="搜索平台、域名或分类" autocomplete="off" /><kbd aria-hidden="true">/</kbd></label>
+        <button class="bulk-copy" id="copyVisibleButton" type="button">{{copy_icon}}<span>复制全部</span></button>
+      </section>
+      <div class="source-workspace">
+        <aside class="source-sidebar"><nav aria-label="搜索源分类"><a class="source-category-link is-active" href="#source-tools" data-source-category="all" aria-current="true">{{grid_icon}}<span>全部分类</span><span class="source-nav-count">{{source_count}}</span></a>{{category_links}}</nav><a class="source-sidebar-note" href="movies.html">想找影视网站？<span>逛逛影视导航 {{arrow_icon}}</span></a></aside>
+        <div class="source-results">
+          <div class="catalog-meta"><p id="filterMeta" role="status" aria-live="polite">共 {{source_count}} 个可导入的搜索源</p><span>点击平台预览搜索</span></div>
+          <details class="config-panel" id="jsonPanel"><summary>{{code_icon}}查看配置 {{chevron_icon}}</summary><div><p>将这份 JSON 粘贴到 Soulo 的批量导入页面。</p><pre id="jsonPreview" tabindex="0" aria-label="可复制的搜索源 JSON 配置"></pre></div></details>
+          <div id="catalog">{{catalog}}</div>
+          <div class="source-empty" id="emptyState" hidden><div>{{search_icon}}</div><h2>没有找到匹配的平台</h2><p>试试平台名称、域名，或“AI”“影视”等分类。</p><button type="button" id="source-reset">查看全部</button></div>
+        </div>
+      </div>
+      <section class="source-guide" id="source-guide" aria-labelledby="source-guide-title"><div class="guide-intro"><h2 id="source-guide-title">三步，收进 Soulo。</h2><p>支持单个平台、整个分类，<br />也支持只复制当前筛选结果。</p></div><ol><li><span>1</span><div><h3>挑选并复制</h3><p>点击平台旁的复制图标，或复制整个分类与筛选结果。</p></div></li><li><span>2</span><div><h3>打开批量导入</h3><p>在 Soulo 的搜索平台管理页面，打开“批量导入”。</p></div></li><li><span>3</span><div><h3>粘贴并保存</h3><p>粘贴配置，选择分组，导入自己的常用平台。</p></div></li></ol></section>
+      <p class="source-footnote">模板中的 <code>%@</code> 会由 Soulo 替换为经过编码的关键词。部分平台可能需要登录，或根据地区调整搜索页面。</p>
+    </main>
+    <footer class="site-footer source-wrap"><div><a class="footer-brand" href="./">Soulo</a><span>© 2026 DKluge</span></div><div class="footer-links"><a href="sources.html" aria-current="page">搜索源</a><a href="movies.html">影视导航</a><a href="privacy.html">隐私政策</a><a href="https://www.dkluge.com/contact-us">技术支持</a></div></footer>
+    <div class="source-toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

@@ -1,0 +1,56 @@
+/* Shared navigation: the same geometry, typography and controls on every page. */
+.site-header[data-shared-nav], .site-header[data-shared-nav] * { box-sizing: border-box; }
+.site-header[data-shared-nav] {
+  --nav-surface: #f6f7fb;
+  --nav-ink: #242532;
+  --nav-muted: #656a78;
+  --nav-line: #e6e7ee;
+  --nav-accent: #6957bc;
+  --nav-active: #efecfb;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--nav-surface);
+  color: var(--nav-ink);
+  font-family: "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.7;
+}
+html[data-resolved-theme="dark"] .site-header[data-shared-nav] {
+  --nav-surface: #191a23;
+  --nav-ink: #f0eff8;
+  --nav-muted: #a3a3b5;
+  --nav-line: #30313e;
+  --nav-accent: #bdb0ff;
+  --nav-active: #302a47;
+}
+.site-header[data-shared-nav] .nav.wrap { display: flex; align-items: center; width: min(1100px, calc(100% - 80px)); height: 82px; margin-inline: auto; gap: 35px; border-bottom: 1px solid var(--nav-line); }
+.site-header[data-shared-nav] .brand { display: flex; align-items: center; flex-shrink: 0; gap: 9px; color: var(--nav-ink); font-size: 24px; font-weight: 650; letter-spacing: -.8px; text-decoration: none; }
+.site-header[data-shared-nav] .brand img { display: block; width: 36px; height: 36px; border-radius: 9px; }
+.site-header[data-shared-nav] .nav-links { display: flex; align-items: center; flex-shrink: 0; gap: 6px; margin-left: auto; font-size: 13px; white-space: nowrap; }
+.site-header[data-shared-nav] .nav-links a { display: block; padding: 8px 14px; border-radius: 9px; color: var(--nav-ink); text-decoration: none; transition: color .18s, background .18s; }
+.site-header[data-shared-nav] .nav-links a:hover { color: var(--nav-accent); background: color-mix(in srgb, var(--nav-accent) 7%, transparent); }
+.site-header[data-shared-nav] .nav-links a[aria-current="page"] { color: var(--nav-accent); background: var(--nav-active); }
+.site-header[data-shared-nav] .nav-tools { display: flex; flex-shrink: 0; gap: 4px; padding-left: 20px; border-left: 1px solid var(--nav-line); }
+.site-header[data-shared-nav] .nav-tools button { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 10px; color: var(--nav-muted); background: transparent; font: 550 12px/1.7 "Avenir Next", "PingFang SC", sans-serif; cursor: pointer; }
+.site-header[data-shared-nav] .nav-tools button:hover { color: var(--nav-accent); background: color-mix(in srgb, var(--nav-accent) 7%, transparent); }
+.site-header[data-shared-nav] .nav-tools svg { display: block; width: 19px; height: 19px; }
+.site-header[data-shared-nav] a:focus-visible, .site-header[data-shared-nav] button:focus-visible { outline: 2px solid var(--nav-accent); outline-offset: 5px; }
+@media (max-width: 1000px) { .site-header[data-shared-nav] .nav.wrap { width: calc(100% - 64px); } }
+@media (max-width: 740px) {
+  .site-header[data-shared-nav] .nav.wrap { width: calc(100% - 40px); height: 70px; gap: 20px; }
+  .site-header[data-shared-nav] .nav-links { gap: 2px; font-size: 12px; }
+  .site-header[data-shared-nav] .nav-links a { padding-inline: 9px; }
+  .site-header[data-shared-nav] .nav-tools { gap: 0; padding-left: 12px; }
+}
+@media (max-width: 390px) {
+  .site-header[data-shared-nav] .nav.wrap { gap: 7px; }
+  .site-header[data-shared-nav] .brand { font-size: 21px; gap: 6px; }
+  .site-header[data-shared-nav] .brand img { width: 30px; height: 30px; }
+  .site-header[data-shared-nav] .nav-links { gap: 0; }
+  .site-header[data-shared-nav] .nav-links a { padding-inline: 7px; }
+  .site-header[data-shared-nav] .nav-tools { padding-left: 7px; }
+  .site-header[data-shared-nav] .nav-tools button { width: 31px; }
+}
+@media (prefers-reduced-motion: reduce) { [data-shared-nav] * { transition: none !important; } }

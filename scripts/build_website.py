@@ -24,6 +24,14 @@ ICONS = {
     'grid': '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
     'arrow': '<path d="M5 12h14m-6-6 6 6-6 6"/>',
     'external': '<path d="M8 5h11v11M19 5 5 19"/>',
+    'copy': '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M15 8V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h4"/>',
+    'code': '<path d="m8 6-6 6 6 6m8-12 6 6-6 6m-3-14-2 16"/>',
+    'academic': '<path d="m2 9 10-5 10 5-10 5L2 9Zm4 2v6c4 3 8 3 12 0v-6m4-2v7"/>',
+    'social': '<path d="M4 4h16v12H9l-5 4V4Z"/><path d="M8 8h8M8 12h5"/>',
+    'shopping': '<path d="M5 7h14l2 14H3L5 7Z"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/>',
+    'image': '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1"/><path d="m3 17 6-6 4 4 3-3 5 5"/>',
+    'book': '<path d="M12 5c-3-2-6-2-10-1v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-4-1-7-1-10 1Zm0 0v15"/>',
+    'chevron': '<path d="m6 9 6 6 6-6"/>',
 }
 
 
@@ -37,6 +45,28 @@ def esc(value):
 
 def jsonld(value):
     return json.dumps(value, ensure_ascii=False, separators=(',', ':')).replace('<', '\\u003c')
+
+
+def navigation(page):
+    template = (ROOT/'scripts/templates/navigation.html').read_text().strip()
+    for key, file in [('home', 'index.html'), ('sources', 'sources.html'), ('movies', 'movies.html')]:
+        template = template.replace('{{'+key+'_current}}', ' aria-current="page"' if page == file else '')
+    return template
+
+
+def build_existing_page(file):
+    source = (SITE/file).read_text()
+    replacement = navigation(file)
+    if '<!-- site-nav:start -->' in source:
+        source = re.sub(r'<!-- site-nav:start -->.*?<!-- site-nav:end -->', lambda _:replacement, source, count=1, flags=re.S)
+    elif file == 'index.html':
+        source = re.sub(r'<header class="site-header">.*?</header>', lambda _:replacement, source, count=1, flags=re.S)
+    else:
+        source = re.sub(r'<div class="privacy-topbar">.*?</div>\s*<nav class="privacy-directory-links".*?</nav>', lambda _:replacement, source, count=1, flags=re.S)
+    if 'href="navigation.css?' not in source:
+        source = source.replace('</head>', '    <link rel="stylesheet" href="navigation.css?v=20261030b" />\n</head>')
+    source = source.replace('site-ui.js?v=20261030', 'site-ui.js?v=20261030b') if 'site-ui.js?v=20261030b' not in source else source
+    return source
 
 
 def build_movies():
@@ -72,7 +102,7 @@ def build_movies():
             {'@type': 'BreadcrumbList', '@id': BASE+'movies.html#breadcrumb', 'itemListElement': [{'@type':'ListItem','position':1,'name':'Soulo','item':BASE},{'@type':'ListItem','position':2,'name':'影视导航','item':BASE+'movies.html'}]},
             {'@type': 'ItemList', '@id': BASE+'movies.html#directory', 'name':'影视网站目录', 'numberOfItems': len(sites), 'itemListOrder':'https://schema.org/ItemListUnordered', 'itemListElement':[{'@type':'ListItem','position':i+1,'item':{'@type':'WebSite','name':s['name'],'url':s['url'],'description':s['description']}} for i,s in enumerate(sites)]},
         ]}
-    tokens = {'site_count':str(len(sites)), 'category_count':str(len(categories)), 'updated':data['updated'], 'structured_data':jsonld(graph), 'featured_sites':featured, 'category_links':''.join(links), 'catalog':'\n'.join(sections)}
+    tokens = {'site_count':str(len(sites)), 'category_count':str(len(categories)), 'updated':data['updated'], 'structured_data':jsonld(graph), 'featured_sites':featured, 'category_links':''.join(links), 'catalog':'\n'.join(sections), 'navigation':navigation('movies.html')}
     tokens.update({f'{key}_icon': icon(key) for key in ICONS})
     tokens['arrow'] = icon('arrow')
     template = (ROOT/'scripts/templates/movies.html').read_text()
@@ -83,34 +113,38 @@ def build_movies():
 
 
 def build_sources():
-    source = (SITE/'sources.html').read_text()
-    entries = re.findall(r"\{ c: '([^']+)', n: '([^']+)', u: '([^']+)' \}", source)
-    categories = re.findall(r"(\w+): \{ title: '([^']+)', icon: '([^']+)', desc: '([^']+)' \}", source)
-    assert len(entries) > 50 and len(categories) == 9
-    stats = f'<div class="stat-row" id="statRow" aria-live="polite"><span class="stat"><strong>{len(entries)}</strong> 个搜索源</span><span class="stat"><strong>{len(categories)}</strong> 个分类</span><span class="stat"><strong>100%</strong> 含 %@</span></div>'
-    source = re.sub(r'<div class="stat-row" id="statRow" aria-live="polite">.*?</div>', lambda _:stats, source, count=1, flags=re.S)
-    sections = []
-    for cid, name, ico, description in categories:
-        items = [(i,n,u) for i,(c,n,u) in enumerate(entries) if c == cid]
+    data = json.loads((SITE/'sources.json').read_text())
+    entries, categories = data['sources'], data['categories']
+    category_ids = {c['id'] for c in categories}
+    assert len(entries) == len({s['url'] for s in entries}), 'Duplicate source URL'
+    assert all(s['category'] in category_ids and '%@' in s['url'] for s in entries)
+    sections, links = [], []
+    for category in categories:
+        cid, name = category['id'], category['name']
+        items = [(i, source) for i, source in enumerate(entries) if source['category'] == cid]
+        links.append(f'<a class="source-category-link" href="#category-{cid}" data-source-category="{cid}">{icon(category["icon"])}<span>{esc(name)}</span><span class="source-nav-count">{len(items)}</span></a>')
         cards = []
-        for index,n,u in items:
+        for index, source in items:
+            n, u = source['name'], source['url']
             domain = urlparse(u).netloc.removeprefix('www.')
-            local_icon = next((f'favicons/{domain}.{ext}' for ext in ['png','ico'] if (SITE/f'favicons/{domain}.{ext}').exists()), 'favicons/default-site.svg')
-            cards.append(f'<a class="source-card" href="{esc(u.replace("%@",quote("Soulo")))}" target="_blank" rel="noopener noreferrer" data-index="{index}" data-search="{esc(f"{n} {domain} {name}".lower())}" aria-label="{esc(n)}，使用示例关键词打开搜索"><img class="favicon" src="{local_icon}" width="32" height="32" alt="" loading="lazy" /><span class="source-info"><span class="source-name">{esc(n)}</span><code class="source-template">{esc(u)}</code></span><i class="fa-solid fa-arrow-up-right-from-square external" aria-hidden="true"></i></a>')
-        sections.append(f'<section class="category" id="category-{cid}" data-category="{cid}"><div class="category-head"><div><h2 class="category-title"><i class="fa-solid {ico}" aria-hidden="true"></i>{esc(name)}</h2><p class="category-desc">{esc(description)}</p></div><div class="category-actions"><span class="category-count">{len(items)}</span><button class="category-copy" type="button"><i class="fa-solid fa-copy" aria-hidden="true"></i>复制本分类</button></div></div><div class="source-grid">{"".join(cards)}</div></section>')
-    catalog = '<div id="catalog">\n<!-- sources:start -->\n'+'\n'.join(sections)+'\n<!-- sources:end -->\n      </div>'
-    source = re.sub(r'<div id="catalog">.*?<!-- sources:end -->\s*</div>|<div id="catalog"></div>', lambda _:catalog, source, count=1, flags=re.S)
+            local_icon = next((f'favicons/{domain}.{ext}' for ext in ['png','ico'] if (SITE/f'favicons/{domain}.{ext}').exists()), None)
+            words = re.findall(r'[A-Za-z]+', n)
+            mark = ''.join(word[0] for word in words[:2]).upper() if words else n[0]
+            avatar = f'<img src="{local_icon}" width="25" height="25" alt="" loading="lazy" />' if local_icon else esc(mark)
+            cards.append(f'''<article class="source-card" data-index="{index}" data-search="{esc(f'{n} {domain} {name}'.lower())}"><a class="source-card-link" href="{esc(u.replace('%@',quote('Soulo')))}" target="_blank" rel="noopener noreferrer" aria-label="预览{esc(n)}的搜索（新标签页）"><span class="source-avatar" aria-hidden="true">{avatar}</span><div class="source-info"><h3 class="source-name">{esc(n)}</h3><span class="source-domain">{esc(domain)}</span></div>{icon('external')}</a><button class="source-copy" type="button" aria-label="复制{esc(n)}的配置" title="复制{esc(n)}">{icon('copy')}</button></article>''')
+        sections.append(f'''<section class="source-category" id="category-{cid}" data-category="{cid}" aria-labelledby="heading-{cid}"><div class="category-head"><div><h2 id="heading-{cid}">{icon(category['icon'])}{esc(name)}<span class="category-count">{len(items)}</span></h2><p class="category-desc">{esc(category['description'])}</p></div><button class="category-copy" type="button" aria-label="复制{esc(name)}分类的可见搜索源">{icon('copy')}复制</button></div><div class="source-grid">{''.join(cards)}</div></section>''')
     graph = {'@context':'https://schema.org','@graph':[
         {'@type':'CollectionPage','@id':BASE+'sources.html#webpage','url':BASE+'sources.html','name':'Soulo 搜索源目录','inLanguage':'zh-CN','isPartOf':{'@id':BASE+'#website'},'mainEntity':{'@id':BASE+'sources.html#catalog'},'breadcrumb':{'@id':BASE+'sources.html#breadcrumb'}},
         {'@type':'BreadcrumbList','@id':BASE+'sources.html#breadcrumb','itemListElement':[{'@type':'ListItem','position':1,'name':'Soulo','item':BASE},{'@type':'ListItem','position':2,'name':'搜索源','item':BASE+'sources.html'}]},
-        {'@type':'ItemList','@id':BASE+'sources.html#catalog','name':'可导入的搜索源','numberOfItems':len(entries),'itemListElement':[{'@type':'ListItem','position':i+1,'name':n,'url':u.replace('%@','Soulo')} for i,(_,n,u) in enumerate(entries)]}
+        {'@type':'ItemList','@id':BASE+'sources.html#catalog','name':'可导入的搜索源','numberOfItems':len(entries),'itemListElement':[{'@type':'ListItem','position':i+1,'name':s['name'],'url':s['url'].replace('%@','Soulo')} for i,s in enumerate(entries)]}
     ]}
-    block = '<!-- sources-schema:start -->\n    <script type="application/ld+json">'+jsonld(graph)+'</script>\n    <!-- sources-schema:end -->'
-    if '<!-- sources-schema:start -->' in source:
-        source = re.sub(r'<!-- sources-schema:start -->.*?<!-- sources-schema:end -->', lambda _:block, source, flags=re.S)
-    else:
-        source = source.replace('  </head>', '    '+block+'\n  </head>')
-    return source
+    tokens = {'source_count':str(len(entries)), 'category_count':str(len(categories)), 'structured_data':jsonld(graph), 'source_data':jsonld(data), 'category_links':''.join(links), 'catalog':'\n'.join(sections), 'navigation':navigation('sources.html')}
+    tokens.update({f'{key}_icon':icon(key) for key in ICONS})
+    template = (ROOT/'scripts/templates/sources.html').read_text()
+    for key, value in tokens.items():
+        template = template.replace('{{'+key+'}}', value)
+    assert not re.search(r'\{\{\w+\}\}', template), 'Unresolved source template token'
+    return template
 
 
 def main():
@@ -118,7 +152,7 @@ def main():
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     changed = []
-    for file, content in [('movies.html', build_movies()), ('sources.html', build_sources())]:
+    for file, content in [('movies.html', build_movies()), ('sources.html', build_sources()), ('index.html', build_existing_page('index.html')), ('privacy.html', build_existing_page('privacy.html'))]:
         target = SITE/file
         if not target.exists() or target.read_text() != content:
             changed.append(file)
@@ -126,7 +160,7 @@ def main():
                 target.write_text(content)
     if args.check and changed:
         parser.exit(1, 'Out of date: '+', '.join(changed)+'. Run python3 scripts/build_website.py\n')
-    print('Website directories are up to date.' if args.check else 'Built movies.html and crawlable sources.html.')
+    print('Website directories are up to date.' if args.check else 'Built crawlable directories and shared navigation on all four pages.')
 
 
 if __name__ == '__main__':

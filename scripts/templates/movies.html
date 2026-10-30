@@ -35,10 +35,11 @@
         document.documentElement.dataset.resolvedTheme = theme === 'dark' || (theme !== 'light' && dark) ? 'dark' : 'light';
       })();
     </script>
-    <link rel="stylesheet" href="home.css?v=20261030" />
-    <link rel="stylesheet" href="movies.css?v=20261030" />
+    <link rel="stylesheet" href="home.css?v=20261030b" />
+    <link rel="stylesheet" href="movies.css?v=20261030b" />
+    <link rel="stylesheet" href="navigation.css?v=20261030b" />
     <script type="application/ld+json">{{structured_data}}</script>
-    <script src="site-ui.js?v=20261030" defer></script>
+    <script src="site-ui.js?v=20261030b" defer></script>
     <script src="movies.js?v=20261030" defer></script>
     <noscript><style>.favorite-button,.directory-toolbar{display:none!important}</style></noscript>
     <script>
@@ -53,13 +54,7 @@
   </head>
   <body class="movies-page">
     <a class="skip-link" href="#directory">跳到影视网站目录</a>
-    <header class="site-header">
-      <nav class="nav wrap" aria-label="主导航">
-        <a class="brand" href="./" aria-label="Soulo 首页"><img src="app-icon.png?v=1.1.4" width="36" height="36" alt="" /><span>Soulo</span></a>
-        <div class="nav-links"><a href="sources.html">搜索源</a><a href="movies.html" aria-current="page">影视导航</a></div>
-        <div class="nav-tools"><button id="theme-toggle" type="button" aria-label="切换至深色外观" title="切换至深色外观"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20.4 14.3A8.7 8.7 0 0 1 9.7 3.6a8.7 8.7 0 1 0 10.7 10.7Z"/></svg></button></div>
-      </nav>
-    </header>
+    {{navigation}}
     <main class="wrap">
       <nav class="breadcrumbs" aria-label="面包屑"><a href="./">首页</a><span aria-hidden="true">/</span><span aria-current="page">影视导航</span></nav>
       <section class="cinema-hero" aria-labelledby="cinema-title">

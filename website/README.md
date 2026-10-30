@@ -5,7 +5,7 @@
 ## 页面与设计
 
 - `index.html`：产品首页，导航包含搜索源和影视导航；保留中英文切换。
-- `sources.html`：85 个搜索模板、9 个分类，支持筛选和 JSON 复制。
+- `sources.html`：85 个搜索模板、9 个分类，支持分类筛选、搜索及单项 / 分类 / 当前结果复制。
 - `movies.html`：58 个影视网站、10 个分类，支持筛选、搜索和浏览器本地收藏。
 - `privacy.html`：App 隐私政策。
 
@@ -17,7 +17,9 @@
 
 影视目录源数据在 `website/movies.json`，页面模板在 `scripts/templates/movies.html`。新增网站时维护唯一 ID、名称、HTTPS 地址、分类、用途简介、标签与图标文字；`source: "user"` 表示用户补充的地址，其余来自顶层列出的来源。`updated` 是整理日期，不能解释为全部站点的可用性保证。
 
-搜索源数据仍在 `sources.html` 的 `SOURCES` 与 `CATEGORIES` 中。生成器同时生成可直接抓取的静态目录；页面 JavaScript 只负责筛选和复制，不再重复生成目录。
+搜索源数据在 `website/sources.json`，页面模板在 `scripts/templates/sources.html`，样式和交互分别在 `sources.css` 与 `sources.js`。生成器将目录及客户端数据直接写入 HTML；页面 JavaScript 只负责筛选和复制，不发起数据或图标字体请求。复制成功后保留浏览位置，配置预览按需展开；剪贴板不可用时展开预览供手动复制。
+
+所有页面的顶部导航统一使用 `scripts/templates/navigation.html` 和 `website/navigation.css`。由生成器填入当前页面状态，品牌、菜单、语言与主题控件以及响应式尺寸与首页一致。首页保留完整中英文切换；目录和隐私页的语言按钮切换导航语言，并保留正文自身语言。修改公共导航后运行生成器，将四个页面一并提交。
 
 ```sh
 python3 scripts/build_website.py

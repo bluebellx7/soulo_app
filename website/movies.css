@@ -87,7 +87,7 @@ html[data-resolved-theme="dark"] .movies-page {
 .movie-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
 .movie-card { position: relative; min-width: 0; border: 1px solid var(--stroke); border-radius: 15px; background: var(--surface); transition: background .18s, border-color .18s, box-shadow .18s; }
 .movie-card:hover { background: var(--surface-hover); border-color: color-mix(in srgb, var(--violet) 55%, var(--stroke)); box-shadow: 0 6px 20px #34304906; }
-.movie-card-link { display: block; padding: 19px 17px 16px; }
+.movie-card-link { display: block; padding: 15px 16px 12px; }
 .movie-card-heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .site-mark { display: grid; place-items: center; width: 38px; height: 38px; flex-shrink: 0; color: #7464b0; background: #efecf8; border: 1px solid #7464b00a; border-radius: 11px; font-size: 14px; font-weight: 600; letter-spacing: -.5px; }
 .category-movies .site-mark, .category-cloud .site-mark { background: #ebeffb; color: #607ab1; }
@@ -99,8 +99,8 @@ html[data-resolved-theme="dark"] .site-mark, html[data-resolved-theme="dark"] .q
 .movie-card h3 { overflow-wrap: anywhere; font-size: 14px; font-weight: 600; line-height: 1.5; }
 .site-domain { display: block; overflow: hidden; text-overflow: ellipsis; color: var(--soft-ink); font-size: 10px; line-height: 1.7; }
 .movie-card-heading > svg { width: 14px; height: 14px; flex-shrink: 0; margin: 0 0 auto auto; color: var(--soft-ink); opacity: .65; }
-.movie-card-link > p { margin-top: 14px; min-height: 41px; color: var(--soft-ink); font-size: 12px; line-height: 1.7; }
-.site-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; padding-right: 22px; }
+.movie-card-link > p { margin-top: 9px; color: var(--soft-ink); font-size: 12px; line-height: 1.7; }
+.site-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; padding-right: 22px; }
 .site-tags span { padding: 2px 7px; border-radius: 5px; background: var(--tag); color: var(--soft-ink); font-size: 10px; line-height: 1.7; }
 .favorite-button { display: grid; place-items: center; position: absolute; right: 6px; bottom: 5px; width: 36px; height: 36px; border: 0; border-radius: 10px; color: var(--soft-ink); background: transparent; }
 .favorite-button svg { width: 16px; height: 16px; }
@@ -167,13 +167,13 @@ html[data-resolved-theme="dark"] .site-mark, html[data-resolved-theme="dark"] .q
   .movie-section-heading p { font-size: 11px; }
   .movie-grid { gap: 10px; }
   .movie-card { border-radius: 13px; }
-  .movie-card-link { padding: 15px 12px 14px; }
+  .movie-card-link { padding: 12px 12px 10px; }
   .movie-card-heading { align-items: flex-start; gap: 8px; }
   .site-mark { width: 31px; height: 33px; border-radius: 9px; font-size: 12px; }
   .movie-card h3 { font-size: 12px; }
   .site-domain { font-size: 9px; max-width: 95px; }
   .movie-card-heading > svg { display: none; }
-  .movie-card-link > p { font-size: 11px; min-height: 38px; margin-top: 12px; }
+  .movie-card-link > p { font-size: 11px; margin-top: 8px; }
   .site-tags { gap: 4px; }
   .site-tags span { font-size: 9px; padding-inline: 5px; }
   .favorite-button { right: 2px; bottom: 3px; width: 32px; height: 32px; }

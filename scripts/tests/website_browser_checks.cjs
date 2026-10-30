@@ -62,7 +62,7 @@ async function main() {
     assert.equal(await page.locator('.nav-links a[href="movies.html"]').innerText(), 'Movies');
     await page.goto(base+'/sources.html');
     const sourceCount = await page.locator('.source-card').count();
-    assert.ok(sourceCount > 50);
+    assert.equal(sourceCount, 85);
     await page.locator('#filterInput').fill('GitHub');
     assert.equal(await page.locator('.source-card:visible').count(), 1);
     await page.locator('#copyVisibleButton').click();
@@ -70,12 +70,47 @@ async function main() {
     assert.equal(copied.length, 1);
     assert.equal(copied[0].name, 'GitHub');
     assert.ok(copied[0].url.includes('%@'));
+    assert.equal(await page.locator('#jsonPanel').getAttribute('open'), null);
+    await page.locator('[data-source-category="academic"]').click();
+    assert.equal(await page.locator('.source-card:visible').count(), 18);
+    await page.locator('[data-category="academic"] .category-copy').click();
+    assert.equal(JSON.parse(await page.evaluate(() => navigator.clipboard.readText())).length, 18);
+    await page.locator('#filterInput').fill('PubMed');
+    assert.equal(await page.locator('.source-card:visible').count(), 2);
+    await page.locator('[data-category="academic"] .category-copy').click();
+    assert.equal(JSON.parse(await page.evaluate(() => navigator.clipboard.readText())).length, 2);
+    await page.locator('.source-card:visible .source-copy').first().click();
+    const single = JSON.parse(await page.evaluate(() => navigator.clipboard.readText()));
+    assert.equal(single.length, 1);
+    assert.equal(single[0].name, 'PubMed');
+    await page.locator('#filterInput').fill('google 通用');
+    assert.equal(await page.locator('.source-card:visible').count(), 2);
+    await page.locator('#filterInput').fill('missing-search-platform');
+    assert.equal(await page.locator('.source-card:visible').count(), 0);
+    assert.ok(await page.locator('#emptyState').isVisible());
+    assert.ok(await page.locator('#copyVisibleButton').isDisabled());
+    await page.locator('#source-reset').click();
+    assert.equal(await page.locator('.source-card:visible').count(), sourceCount);
     for (const width of [320, 360, 390, 768, 1280]) {
       await page.setViewportSize({width, height: 900});
+      let homeNavigation;
       for (const file of ['', 'movies.html', 'sources.html', 'privacy.html']) {
         await page.goto(base+'/'+file);
         const dimensions = await page.evaluate(() => ({viewport:innerWidth, content:document.documentElement.scrollWidth}));
         assert.ok(dimensions.content <= dimensions.viewport, `${file || 'index.html'} overflows at ${width}px: ${dimensions.content}`);
+        const navigation = await page.locator('[data-shared-nav]').evaluate(header => {
+          const box = selector => {
+            const element = header.querySelector(selector);
+            const rect = element.getBoundingClientRect();
+            const style = getComputedStyle(element);
+            return {x:rect.x, y:rect.y, width:rect.width, height:rect.height, font:style.fontSize, weight:style.fontWeight};
+          };
+          return {nav:box('.nav'), brand:box('.brand'), links:box('.nav-links'), tools:box('.nav-tools')};
+        });
+        if (!file) homeNavigation = navigation;
+        else assert.deepEqual(navigation, homeNavigation, `Navigation differs on ${file} at ${width}px`);
+        assert.deepEqual(await page.locator('[data-shared-nav] .nav-links a').allTextContents(), ['Sources','Movies']);
+        assert.equal(await page.locator('#language-toggle').innerText(), '中文');
       }
     }
     const nojs = await browser.newContext({javaScriptEnabled: false, viewport: {width: 1280, height: 900}});
@@ -86,6 +121,20 @@ async function main() {
     assert.equal(await plain.locator('.favorite-button:visible').count(), 0);
     await plain.goto(base+'/sources.html');
     assert.equal(await plain.locator('.source-card:visible').count(), sourceCount);
+    assert.equal(await plain.locator('.source-copy:visible').count(), 0);
+    const unavailableClipboard = await browser.newContext();
+    await unavailableClipboard.route('https://hm.baidu.com/**', route => route.abort());
+    await unavailableClipboard.addInitScript(() => {
+      Object.defineProperty(navigator, 'clipboard', {value: {writeText:async () => {throw new Error('Blocked');}}});
+      document.execCommand = () => false;
+    });
+    const fallback = await unavailableClipboard.newPage();
+    fallback.on('pageerror', error => errors.push(error.message));
+    await fallback.goto(base+'/sources.html');
+    await fallback.locator('#filterInput').fill('GitHub');
+    await fallback.locator('#copyVisibleButton').click();
+    assert.ok(await fallback.locator('#jsonPanel').evaluate(element => element.open));
+    assert.equal(JSON.parse(await fallback.locator('#jsonPreview').innerText())[0].name, 'GitHub');
     // Corrupt or unavailable local storage must not prevent browsing.
     const restricted = await browser.newContext();
     await restricted.route('https://hm.baidu.com/**', route => route.abort());
@@ -101,7 +150,7 @@ async function main() {
     await privatePage.locator('#show-favorites').click();
     assert.equal(await privatePage.locator('.movie-card:visible').count(), 1);
     assert.deepEqual(errors, []);
-    console.log(`PASS: ${total} movie sites; search, categories, favorites, themes, language, clipboard, 5 viewport widths, no-JS and blocked storage.`);
+    console.log(`PASS: ${total} movie sites and ${sourceCount} sources; search, categories, favorites, clipboard and fallback, identical navigation at 5 widths, no-JS and blocked storage.`);
   } finally {
     await browser.close();
   }
