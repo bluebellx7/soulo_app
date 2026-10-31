@@ -3,7 +3,21 @@ import WebKit
 struct WebEpisode: Codable, Identifiable, Equatable {
     let title: String
     let url: URL
+    var resourcePageURL: URL? = nil
     var id: String { url.absoluteString }
+
+    var directMediaResource: WebMediaResource? {
+        guard ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
+              url.host != nil, url.user == nil, url.password == nil,
+              ["m3u8", "mp4", "m4v", "mov", "webm"].contains(url.pathExtension.lowercased()) else { return nil }
+        return WebMediaResource(kind: .video, url: url, title: title, posterURL: nil,
+            delivery: WebResourceInspectionService.delivery(for: url), sourcePageURL: resourcePageURL)
+    }
+
+    var isResourcePlaybackURL: Bool {
+        directMediaResource != nil || url.path.range(
+            of: #"/(?:play(?:er)?|vodplay|watch|episodes?|vplay)/"#, options: [.regularExpression, .caseInsensitive]) != nil
+    }
 }
 
 struct WebEpisodeSource: Codable, Identifiable, Equatable {
@@ -49,7 +63,11 @@ struct WebEpisodeList: Codable, Equatable {
             let episodes = source.episodes.filter {
                 !$0.title.isEmpty && $0.title.count <= 160
                     && ["http", "https"].contains($0.url.scheme?.lowercased() ?? "")
-                    && Self.belongsToEpisodeSite($0.url, pageURL: pageURL)
+                    && $0.url.host != nil
+                    && $0.url.user == nil && $0.url.password == nil
+                    && ($0.resourcePageURL.map { matches($0, pageURL) } ?? true)
+                    && (Self.belongsToEpisodeSite($0.url, pageURL: pageURL)
+                        || ($0.resourcePageURL != nil && $0.isResourcePlaybackURL))
                     && seen.insert($0.url).inserted
             }
             return episodes.isEmpty ? nil : WebEpisodeSource(title: String(source.title.prefix(100)), episodes: episodes)

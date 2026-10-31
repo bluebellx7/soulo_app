@@ -4,6 +4,50 @@ import Combine
 @testable import Soulo
 
 @MainActor final class WebEpisodeDownloadTests: XCTestCase {
+    func testDirectCatalogStreamsResolveWithoutLoadingAnHTMLPage() async throws {
+        let pageURL = try XCTUnwrap(URL(string: "https://catalog.example/detail/1"))
+        let streamURL = try XCTUnwrap(URL(string: "https://cdn.example/play/first/index.m3u8?token=abc"))
+        let episode = WebEpisode(title: "第01集", url: streamURL, resourcePageURL: pageURL)
+        let resolver = WebEpisodeMediaResolver(episode: episode, sourceView: WKWebView())
+        defer { resolver.invalidate() }
+        let resource = try await resolver.resolve(timeout: 1)
+        XCTAssertEqual(resource.url, streamURL)
+        XCTAssertEqual(resource.title, "第01集")
+        XCTAssertEqual(resource.delivery, .hls)
+        XCTAssertEqual(resource.sourcePageURL, pageURL)
+        XCTAssertNil(resolver.webView.url)
+    }
+
+    func testDirectCatalogEpisodesDownloadRealMediaWithSharedCookies() async throws {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let bytes = try Data(contentsOf: fixture)
+        let server = try DownloadPlaybackHTTPFixture(files: ["/first.mp4": bytes, "/second.mp4": bytes], requiredCookie: "catalogAuth=allowed")
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        let configuration = WKWebViewConfiguration(); configuration.websiteDataStore = .nonPersistent()
+        let model = WebViewModel(); model.webView = WKWebView(frame: .zero, configuration: configuration)
+        defer { model.releaseWebViewRuntime() }
+        let previousIDs = Set(DownloadManagerService.shared.downloads.map(\.id))
+        defer {
+            for item in DownloadManagerService.shared.downloads where !previousIDs.contains(item.id) {
+                DownloadManagerService.shared.delete(item)
+                try? FileManager.default.removeItem(at: item.localURL)
+            }
+        }
+        let cookie = try XCTUnwrap(HTTPCookie(properties: [.domain: "127.0.0.1", .path: "/", .name: "catalogAuth", .value: "allowed"]))
+        await configuration.websiteDataStore.httpCookieStore.setCookie(cookie)
+        let episodes = ["first", "second"].enumerated().map { index, name in
+            WebEpisode(title: "Episode \(index + 1)", url: root.appendingPathComponent("\(name).mp4"), resourcePageURL: root.appendingPathComponent("detail.html"))
+        }
+        let service = WebEpisodeDownloadService(resolutionTimeout: 2)
+        XCTAssertEqual(service.enqueue(episodes, pageTitle: "Catalog", viewModel: model), 2)
+        for _ in 0..<240 where service.jobs.contains(where: \.isActive) { try await Task.sleep(for: .milliseconds(100)) }
+        XCTAssertEqual(service.jobs.map(\.status), [.finished, .finished], service.jobs.map(\.errorMessage).joined(separator: "; "))
+        for episode in episodes {
+            let item = try XCTUnwrap(DownloadManagerService.shared.finishedDownload(for: episode.url))
+            XCTAssertEqual(try Data(contentsOf: item.localURL), bytes)
+        }
+    }
+
     func testEpisodeResolverChoosesCurrentStreamWhenNextEpisodeIsPreloaded() async throws {
         let server = try DownloadPlaybackHTTPFixture(files: ["/episode.html": Data("""
             <script>window.player_aaaa={url:location.origin+'/current.mp4',url_next:location.origin+'/next.mp4',encrypt:0}</script>

@@ -9,13 +9,16 @@ struct WebEpisodePickerView: View {
     @State private var isSelecting = false
     @State private var selectedIDs = Set<String>()
     @State private var showsFailures = false
+    @State private var selectedMedia: WebMediaResource?
+    @State private var selectedEpisodeURL: URL?
+    @State private var mediaDownloadError = ""
 
     private var source: WebEpisodeSource? {
         viewModel.episodeList?.sources.first { $0.id == selectedSourceID }
             ?? viewModel.episodeList?.currentSource
     }
     private var currentIndex: Int? {
-        guard let url = viewModel.currentURL else { return nil }
+        guard let url = selectedEpisodeURL ?? viewModel.currentURL else { return nil }
         return source?.episodes.firstIndex { WebEpisodeList.matches($0.url, url) }
     }
     private var episodes: [WebEpisode] {
@@ -143,6 +146,21 @@ struct WebEpisodePickerView: View {
             }
             .onChange(of: source?.id) { _, _ in selectedIDs.removeAll() }
             .onChange(of: source?.episodes.map(\.id)) { _, ids in selectedIDs.formIntersection(Set(ids ?? [])) }
+            .sheet(item: $selectedMedia) { media in
+                WebResourceMediaPlayerView(resource: media, pageURL: media.sourcePageURL ?? viewModel.currentURL,
+                    sourceWebView: viewModel.webView,
+                    assetProvider: { await WebResourceMediaService.asset(for: media, webView: viewModel.webView) },
+                    downloadAction: {
+                        do {
+                            return try await WebResourceDownloadService.shared.download(media,
+                                preferredFilename: WebDownloadFilename.media(media, requested: nil, pageTitle: media.title),
+                                pageURL: media.sourcePageURL ?? viewModel.currentURL, webView: viewModel.webView)
+                        } catch { mediaDownloadError = error.localizedDescription; return nil }
+                    })
+                    .alert(ToolText.text("error"), isPresented: Binding(
+                        get: { !mediaDownloadError.isEmpty }, set: { if !$0 { mediaDownloadError = "" } }
+                    )) { Button(ToolText.text("done"), role: .cancel) {} } message: { Text(mediaDownloadError) }
+            }
             .alert(ToolText.text("error"), isPresented: $showsFailures) {
                 Button(ToolText.text("retry")) {
                     downloads.enqueue(failures.map(\.episode), pageTitle: viewModel.pageTitle, viewModel: viewModel)
@@ -182,7 +200,7 @@ struct WebEpisodePickerView: View {
     }
 
     private func episodeButton(_ episode: WebEpisode, job: WebEpisodeDownloadJob?) -> some View {
-        let current = viewModel.currentURL.map { WebEpisodeList.matches(episode.url, $0) } ?? false
+        let current = (selectedEpisodeURL ?? viewModel.currentURL).map { WebEpisodeList.matches(episode.url, $0) } ?? false
         let selected = isSelecting ? selectedIDs.contains(episode.id) : current
         return Button {
             if isSelecting {
@@ -240,5 +258,15 @@ struct WebEpisodePickerView: View {
         .accessibilityLabel(ToolText.text(key))
         .accessibilityIdentifier(offset < 0 ? "browser.episodes-previous" : "browser.episodes-next")
     }
-    private func open(_ episode: WebEpisode) { viewModel.loadURL(episode.url); dismiss() }
+    private func open(_ episode: WebEpisode) {
+        if let media = episode.directMediaResource {
+            selectedEpisodeURL = episode.url
+            selectedMedia = media
+            return
+        }
+        var request = URLRequest(url: episode.url)
+        if let origin = episode.resourcePageURL { request.setValue(origin.absoluteString, forHTTPHeaderField: "Referer") }
+        viewModel.loadRequest(request)
+        dismiss()
+    }
 }

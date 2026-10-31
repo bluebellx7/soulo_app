@@ -2,7 +2,8 @@
   if (window.__souloEpisodes) return;
   let timer = 0, previous = '', enabled = true, dockFrame = 0, stateTimer = 0, lastStateRefresh = 0;
   let pageSources = [], pageSignature = '', pageURL=location.href;
-  const listSelector = '.stui-content__playlist,.stui-play__list,.myui-content__list,.module-play-list,.module-play-list-content,.anthology-list-play,.playlist,.play-list,.episode-list,.episodes,[data-episode-list]';
+  const resourceListSelector = '.dy-collect-list';
+  const listSelector = '.stui-content__playlist,.stui-play__list,.myui-content__list,.module-play-list,.module-play-list-content,.anthology-list-play,.playlist,.play-list,.episode-list,.episodes,[data-episode-list],' + resourceListSelector;
   const linkSelector = 'a[href],button[data-url],button[data-href],[role="link"][data-url]';
   const stateSelector = 'script[type="application/ld+json"],script#__NEXT_DATA__,script#RENDER_DATA';
   const playerSelector = 'video,iframe[allowfullscreen],iframe[src*="player"],iframe[src*="play/"]';
@@ -34,12 +35,17 @@
       || /^第\s*[\d〇零一二三四五六七八九十百千两兩]+\s*[集期话話回]/.test(text)
       || /^(?:S\d+\s*E\d+|ep(?:isode)?\.?\s*\d+|e\s*\d+|epis[oó]dio\s*\d+|épisode\s*\d+|folge\s*\d+|bölüm\s*\d+|серия\s*\d+|(?:الحلقة|حلقة)\s*\d+|ตอนที่\s*\d+|\d+\s*(?:[集期话話回화]|bölüm|серия))/i.test(text);
   }
-  function destination(link) {
+  function resourcePlaybackURL(url) {
+    return /\.(?:m3u8|mp4|m4v|mov|webm)$/i.test(url.pathname)
+      || /\/(?:play(?:er)?|vodplay|watch|episodes?|vplay)\//i.test(url.pathname);
+  }
+  function destination(link, resource = false) {
     const raw = link.getAttribute('href') || link.getAttribute('data-url') || link.getAttribute('data-href');
     if (!raw) return null;
     try {
       const url = new URL(raw,document.baseURI);
-      if (!/^https?:$/.test(url.protocol) || url.host !== location.host) return null;
+      if (!/^https?:$/.test(url.protocol) || url.username || url.password
+          || (url.host !== location.host && !(resource && resourcePlaybackURL(url)))) return null;
       url.hash = ''; return url;
     } catch (_) { return null; }
   }
@@ -52,6 +58,7 @@
   function headingText(group) {
     const heading = group.previousElementSibling;
     return clean(group.getAttribute('data-title') || group.getAttribute('aria-label')
+      || (group.matches(resourceListSelector) ? group.closest('.dy-collect-video')?.querySelector('.dy-collect-video-name')?.textContent : '')
       || heading?.querySelector('h2,h3,h4')?.textContent
       || (heading?.matches('h2,h3,h4') ? heading.textContent : ''));
   }
@@ -91,18 +98,25 @@
     for (const group of groups) {
       if (sources.length >= 20 || total >= 5000) break;
       if (excludedGroup(group) || [...groups].some(other => other !== group && group.contains(other))) continue;
-      const episodes = [], seen = new Set(), known = group.matches(listSelector);
+      const episodes = [], seen = new Set(), known = group.matches(listSelector), resource = group.matches(resourceListSelector);
       for (const link of group.querySelectorAll(linkSelector)) {
         if (total >= 5000) break;
         if (link.closest('.pagination,.pager,.related,.recommend,.recommendations,[data-recommendations]')) continue;
-        const url = destination(link);
+        // Resource catalogs put the episode label beside an external player or
+        // stream URL. Only pair the labelled row's first playback link; report
+        // links, copy buttons and unrelated external links must stay out.
+        const row = resource ? link.closest('li') : null;
+        const name = row?.querySelector('.c-name');
+        if (resource && (!name || row.querySelector(linkSelector) !== link)) continue;
+        const url = destination(link, resource);
         if (!url) continue;
-        const title = clean(link.textContent || link.getAttribute('title') || link.getAttribute('aria-label'));
+        if (resource && !resourcePlaybackURL(url)) continue;
+        const title = clean(name?.textContent || link.textContent || link.getAttribute('title') || link.getAttribute('aria-label'));
         const match = url.pathname.match(playPath);
-        if (!title || !(match || episodeLabel(title) || (known && /^(?:HD|BD|正片|全集)/i.test(title)))) continue;
+        if (!title || !(resource || match || episodeLabel(title) || (known && /^(?:HD|BD|正片|全集)/i.test(title)))) continue;
         if (current && match && match[1] !== current[1]) continue;
         if (seen.has(url.href) || used.has(url.href)) continue;
-        seen.add(url.href); episodes.push({title,url:url.href}); total++;
+        seen.add(url.href); episodes.push({title,url:url.href,...(resource ? {resourcePageURL:location.href} : {})}); total++;
       }
       if (!episodes.length) continue;
       if (episodes.every(item => episodeNumber(item.title) !== undefined)) episodes.sort((a,b) => episodeNumber(a.title)-episodeNumber(b.title));

@@ -381,6 +381,53 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
     }
 
     @MainActor
+    func testResourceCatalogStreamsKeepThePickerAndAdjacentEpisodes() async throws {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
+        let data = try Data(contentsOf: fixture)
+        let html = #"""
+        <meta name="viewport" content="width=device-width,initial-scale=1"><title>Catalog fixture</title>
+        <div class="dy-collect-video"><div class="dy-collect-video-name">光速云</div>
+        <ul class="dy-collect-list"><li><span class="c-name">第01集</span><a href="/play/first">Player</a></li></ul></div>
+        <div class="dy-collect-video"><div class="dy-collect-video-name">光速M3U8</div>
+        <ul class="dy-collect-list"><li><span class="c-name">第01集</span><a href="/first.mp4">Stream</a></li>
+        <li><span class="c-name">第02集</span><a href="/second.mp4">Stream</a></li></ul></div>
+        <script>document.querySelector('.dy-collect-list a').href=location.origin.replace('127.0.0.1','localhost')+'/play/first';</script>
+        """#
+        let server = try DownloadPlaybackHTTPFixture(files: ["/detail.html": Data(html.utf8), "/first.mp4": data, "/second.mp4": data,
+            "/play/first": Data("<h1>Cloud episode</h1>".utf8)])
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        let app = launch()
+        try open(root.appendingPathComponent("detail.html"), app: app)
+        openEpisodes(app)
+        app.buttons["browser.episodes-source"].tap()
+        app.buttons["光速M3U8"].firstMatch.tap()
+        XCTAssertFalse(app.buttons["browser.episodes-next"].isEnabled)
+        app.scrollViews.buttons["第01集"].firstMatch.tap()
+        let player = app.navigationBars["Video Player"]
+        XCTAssertTrue(player.waitForExistence(timeout: 10), app.debugDescription)
+        player.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["browser.episodes-order"].waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.scrollViews.buttons["第01集"].firstMatch.isSelected)
+        XCTAssertTrue(app.buttons["browser.episodes-next"].isEnabled)
+        app.buttons["browser.episodes-next"].tap()
+        XCTAssertTrue(player.waitForExistence(timeout: 10), app.debugDescription)
+        player.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["browser.episodes-previous"].waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.scrollViews.buttons["第02集"].firstMatch.isSelected)
+        XCTAssertTrue(app.buttons["browser.episodes-previous"].isEnabled)
+        XCTAssertFalse(app.buttons["browser.episodes-next"].isEnabled)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "resource-catalog-episodes-after-playback"; screenshot.lifetime = .keepAlways; add(screenshot)
+        app.buttons["browser.episodes-source"].tap()
+        app.buttons["光速云"].firstMatch.tap()
+        app.scrollViews.buttons["第01集"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Cloud episode"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["Back"].firstMatch.tap()
+        openEpisodes(app)
+        XCTAssertTrue(app.scrollViews.buttons["第01集"].firstMatch.exists, app.debugDescription)
+    }
+
+    @MainActor
     func testLiveEpisodeDockOpensAfterReturningFromPlayback() async throws {
         guard ProcessInfo.processInfo.environment["SOULO_LIVE_EPISODES_QA"] == "1" else {
             throw XCTSkip("Opt-in live website check")

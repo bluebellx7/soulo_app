@@ -1394,7 +1394,7 @@ private struct WebResourceFullSizeImage: View {
     }
 }
 
-private struct WebResourceMediaPlayerView: View {
+struct WebResourceMediaPlayerView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var downloadManager = DownloadManagerService.shared
     let resource: WebMediaResource

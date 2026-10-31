@@ -48,6 +48,63 @@ final class WebEpisodeTests: XCTestCase {
         XCTAssertEqual(exposed as? String, "undefined")
     }
 
+    func testResourceCatalogKeepsExternalPlayersStreamsAndSpecials() async throws {
+        let (web, capture) = try await page("""
+        <div class='dy-collect-video'><div class='dy-collect-video-name'><p>光速云</p></div>
+        <ul class='dy-collect-list'>
+        <li><input type='checkbox'><span class='c-name'>第01集</span><a href='https://cdn.example/play/first'>https://cdn.example/play/first</a><a class='report' href='https://report.example/play/report'>我要报错</a></li>
+        <li><input type='checkbox'><span class='c-name'>虚天战纪上</span><a href='https://cdn.example/play/special'>https://cdn.example/play/special</a></li>
+        <li><span class='c-name'>第02集</span><a href='https://cdn.example/play/second'>https://cdn.example/play/second</a></li>
+        </ul><button class='copy'>复制链接</button></div>
+        <div class='dy-collect-video'><div class='dy-collect-video-name'><p>光速M3U8</p></div>
+        <ul class='dy-collect-list' style='display:none'>
+        <li><span class='c-name'>第10集</span><a href='https://cdn.example/play/tenth/index.m3u8?token=abc'>URL</a></li>
+        <li><span class='c-name'>第02集</span><a href='https://cdn.example/play/second/index.m3u8'>URL</a></li>
+        <li><span class='c-name'>第02集</span><a href='https://cdn.example/play/second/index.m3u8#duplicate'>URL</a></li>
+        <li><span class='c-name'>Unsafe</span><a href='javascript:alert(1)'>URL</a></li>
+        <li><span class='c-name'>Unrelated</span><a href='https://ads.example/signup'>URL</a></li>
+        <li><span class='c-name'>Credential</span><a href='https://user:password@cdn.example/play/hidden'>URL</a></li>
+        </ul></div>
+        <div class='recommendations'><ul class='dy-collect-list'><li><span class='c-name'>EP99</span><a href='https://cdn.example/play/ad'>URL</a></li></ul></div>
+        <ul class='episode-list'><li><a href='https://other.example/play/foreign'>EP1</a></li></ul>
+        """, url: "https://guangsuzy.com/index.php/vod/detail/id/172063.html")
+        let pageURL = try XCTUnwrap(web.url)
+        let list = try XCTUnwrap(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last), pageURL: pageURL))
+        XCTAssertEqual(list.sources.map(\.title), ["光速云", "光速M3U8"])
+        XCTAssertEqual(list.sources[0].episodes.map(\.title), ["第01集", "虚天战纪上", "第02集"])
+        XCTAssertEqual(list.sources[1].episodes.map(\.title), ["第02集", "第10集"])
+        XCTAssertEqual(list.sources[1].episodes.last?.url.query, "token=abc")
+        XCTAssertTrue(list.sources.flatMap(\.episodes).allSatisfy { $0.resourcePageURL == pageURL })
+        XCTAssertNil(list.sources[0].episodes[0].directMediaResource)
+        XCTAssertEqual(list.sources[1].episodes[0].directMediaResource?.delivery, .hls)
+        XCTAssertEqual(list.sources[1].episodes[0].directMediaResource?.sourcePageURL, pageURL)
+        let dock = try await web.evaluateJavaScript("!!document.getElementById('soulo-episode-dock')")
+        XCTAssertEqual(dock as? Bool, true)
+        _ = try await web.evaluateJavaScript("document.querySelectorAll('.dy-collect-video').forEach(node=>node.remove());null")
+        for _ in 0..<100 where (capture.bodies.last?["sources"] as? [Any])?.isEmpty != true {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertNil(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last), pageURL: pageURL))
+    }
+
+    func testExternalCatalogEpisodesRequireMatchingProvenanceAndPlaybackURLs() throws {
+        let pageURL = try XCTUnwrap(URL(string: "https://catalog.example/detail/1"))
+        let entries: [[String: Any]] = [
+            ["title": "Valid", "url": "https://cdn.example/play/first", "resourcePageURL": pageURL.absoluteString],
+            ["title": "Stream", "url": "https://media.example/show.m3u8?key=value", "resourcePageURL": pageURL.absoluteString],
+            ["title": "Missing origin", "url": "https://cdn.example/play/second"],
+            ["title": "Stale", "url": "https://cdn.example/play/stale", "resourcePageURL": "https://catalog.example/detail/2"],
+            ["title": "Unrelated", "url": "https://ads.example/signup", "resourcePageURL": pageURL.absoluteString],
+            ["title": "Unsafe", "url": "javascript:alert(1)", "resourcePageURL": pageURL.absoluteString],
+            ["title": "Missing host", "url": "https:/play/invalid", "resourcePageURL": pageURL.absoluteString],
+            ["title": "Credentials", "url": "https://user:password@cdn.example/play/private", "resourcePageURL": pageURL.absoluteString]
+        ]
+        let body: [String: Any] = ["pageURL": pageURL.absoluteString, "sources": [["title": "Catalog", "episodes": entries]]]
+        let list = try XCTUnwrap(WebEpisodeList.parse(body, pageURL: pageURL))
+        XCTAssertEqual(list.sources[0].episodes.map(\.title), ["Valid", "Stream"])
+        XCTAssertNil(WebEpisode(title: "Not a stream", url: URL(string: "https://cdn.example/play/page.html?url=movie.m3u8")!).directMediaResource)
+    }
+
     func testDynamicPlaylistsNormalizeOrderAndRejectUnrelatedOrUnsafeLinks() async throws {
         let (web, capture) = try await page("<div id='root'></div>")
         _ = try await web.evaluateJavaScript(#"""
