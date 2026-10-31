@@ -1438,9 +1438,7 @@ enum WebViewScripts {
                 return (privacyConfig().disabledHosts || []).some(function(domain) { return domainMatches(domain, host); });
             }
 
-            function isSensitiveChallengePage() {
-                return /(^|[\\/?&#_=.-])(captcha|wappoc|verify|verification|challenge|security|passport|login|auth)([\\/?&#_=.-]|$)/.test(String(location.href || '').toLowerCase());
-            }
+            \(WebCompatibilityService.sensitiveChallengeDetectionScript)
 
             var bypassProtection = siteProtectionDisabled() || isSensitiveChallengePage();
             if (privacyConfig().gpcEnabled && !bypassProtection) {

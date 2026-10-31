@@ -24,6 +24,55 @@ final class AdBlockServiceTests: XCTestCase {
         super.tearDown()
     }
 
+    func testEveryNativeBatchKeepsCloudflareVerificationExceptions() throws {
+        for json in AdBlockService.encodedContentRuleLists(batchSize: 2) {
+            let data = try XCTUnwrap(json.data(using: .utf8))
+            let rules = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [[String: Any]])
+            for filter in WebCompatibilityService.cloudflareChallengeURLFilters {
+                XCTAssertTrue(rules.contains { rule in
+                    (rule["trigger"] as? [String: Any])?["url-filter"] as? String == filter
+                        && (rule["action"] as? [String: Any])?["type"] as? String == "ignore-previous-rules"
+                })
+            }
+        }
+    }
+
+    @MainActor func testNativeFilteringAllowsChallengeResourcesAndFramesButKeepsBlockingAds() async throws {
+        let parsed = ParsedAdBlockRules(networkURLFilters: [], cosmeticSelectors: [".qa-ad"],
+            networkRules: [AdBlockNetworkRule(urlFilter: ".*", resourceTypes: ["script"])])
+        UserDefaults.standard.set(try JSONEncoder().encode(parsed), forKey: "soulo_ad_block_subscription_rules")
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/page": Data("""
+            <script src='/cdn-cgi/challenge-platform/h/g/probe.js'></script><script src='/advert.js'></script>
+            <div id='advert' class='qa-ad'>Advertisement</div><iframe src='/cdn-cgi/challenge-platform/h/g/widget'></iframe>
+            """.utf8),
+            "/cdn-cgi/challenge-platform/h/g/probe.js": Data("window.challengeLoaded=true;".utf8),
+            "/advert.js": Data("window.advertLoaded=true;".utf8),
+            "/cdn-cgi/challenge-platform/h/g/widget": Data("<div id='verification' class='qa-ad'>Verification</div>".utf8)
+        ])
+        let root = try await server.start(); defer { server.stop() }
+        let compiled = await AdBlockService.compileRuleLists()
+        let rules = try XCTUnwrap(compiled)
+        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+        rules.forEach(config.userContentController.add)
+        let web = WKWebView(frame: .zero, configuration: config)
+        web.load(URLRequest(url: root.appendingPathComponent("page")))
+        for _ in 0..<160 {
+            let ready = try? await web.evaluateJavaScript("window.challengeLoaded===true && !!document.querySelector('iframe')?.contentDocument?.getElementById('verification')")
+            if ready as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        let result = try await web.evaluateJavaScript("""
+        ({challenge:window.challengeLoaded===true,advert:window.advertLoaded===true,
+        advertDisplay:getComputedStyle(document.getElementById('advert')).display,
+        widgetDisplay:getComputedStyle(document.querySelector('iframe').contentDocument.getElementById('verification')).display})
+        """) as? [String: Any]
+        XCTAssertEqual(result?["challenge"] as? Bool, true)
+        XCTAssertEqual(result?["advert"] as? Bool, false)
+        XCTAssertEqual(result?["advertDisplay"] as? String, "none")
+        XCTAssertNotEqual(result?["widgetDisplay"] as? String, "none")
+    }
+
     func testNativeCosmeticFilteringOnlyRemovesSafeDuplicateWork() {
         let plain = AdBlockCosmeticRule(selector: ".advert-slot")
         let domain = AdBlockCosmeticRule(selector: ".sponsor", ifDomains: ["*example.com"])

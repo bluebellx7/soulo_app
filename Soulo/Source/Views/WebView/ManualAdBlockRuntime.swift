@@ -188,11 +188,12 @@ enum ManualAdBlockRuntime {
       }
       const protectedSelector = 'html,body,main,article,form,[role="main"],#app,#root,#__next,#__nuxt';
       const normalize = host => String(host || '').toLowerCase().replace(/^www\./, '');
+      \#(WebCompatibilityService.sensitiveChallengeDetectionScript)
       function allowed() {
         const host = normalize(location.hostname);
         return config.enabled && /^https?:$/.test(location.protocol)
           && !(config.allowlist || []).some(h => host === normalize(h) || host.endsWith('.' + normalize(h)))
-          && !/(^|[\/?&#_=.-])(captcha|wappoc|verify|verification|challenge|security|passport|login|auth)([\/?&#_=.-]|$)/i.test(location.href);
+          && !isSensitiveChallengePage();
       }
       function safe(el) {
         if (!(el instanceof Element) || !el.isConnected || el.matches(protectedSelector)) return false;

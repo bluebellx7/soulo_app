@@ -251,7 +251,11 @@ struct AdBlockService {
                 if action(batch[0]) == "block" {
                     batch += exceptions.filter { ($0["trigger"] as? [String: Any])?["resource-type"] as? [String] != ["document"] }
                 } else {
-                    batch += exceptions.filter { ($0["trigger"] as? [String: Any])?["if-top-url"] != nil }
+                    batch += exceptions.filter {
+                        let trigger = $0["trigger"] as? [String: Any]
+                        return trigger?["if-top-url"] != nil
+                            || WebCompatibilityService.cloudflareChallengeURLFilters.contains(trigger?["url-filter"] as? String ?? "")
+                    }
                 }
                 batches.append(batch)
             }
@@ -472,6 +476,12 @@ struct AdBlockService {
         }
 
         rulesArray += exceptions
+        for filter in WebCompatibilityService.cloudflareChallengeURLFilters {
+            rulesArray.append([
+                "trigger": ["url-filter": filter],
+                "action": ["type": "ignore-previous-rules"]
+            ])
+        }
         return rulesArray
     }
 
@@ -584,7 +594,7 @@ struct AdBlockService {
             .appendingPathComponent("AdBlock/merged-rules.json")
         let attributes = archive.flatMap { try? $0.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]) }
         let fields = [
-            "startup-cache-v4", startupBuildIdentity, String(nativeCosmeticFiltering),
+            "startup-cache-v5", startupBuildIdentity, String(nativeCosmeticFiltering),
             normalizedAllowlist(allowlistedHosts).joined(separator: ","),
             cosmetic.map(String.init) ?? "native", AdBlockSubscriptionService.rulesSignature(),
             BuiltInAdRuleStore.signature(),
@@ -687,9 +697,7 @@ struct AdBlockService {
                 };
             }
 
-            function isSensitiveChallengePage() {
-                return /(^|[\\/?&#_=.-])(captcha|wappoc|verify|verification|challenge|security|passport|login|auth)([\\/?&#_=.-]|$)/.test(String(location.href || '').toLowerCase());
-            }
+            \(WebCompatibilityService.sensitiveChallengeDetectionScript)
 
             function isSouloAllowlisted() {
                 var host = normalizedHost(location.hostname);
@@ -710,6 +718,7 @@ struct AdBlockService {
             // Allowlisted and challenge documents must not allocate/scan the
             // subscription payload. A live bypass still clears existing styles.
             if (!souloCosmeticEnabled || shouldDisableAdBlock()) {
+                document.documentElement?.setAttribute('data-soulo-native-ads-disabled', '');
                 if (typeof window.__souloAdBlockRemoveAds === 'function') window.__souloAdBlockRemoveAds();
                 return;
             }

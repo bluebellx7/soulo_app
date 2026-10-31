@@ -1070,6 +1070,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var provisionalNavigation: WKNavigation?
         private var latestNavigation: WKNavigation?
         private var navigationFinished = false
+        private var cloudflareChallengeResponse = false
         private var navigationPreview: UIView?
         private var navigationOriginURL: URL?
         private var userInitiatedNavigationChain = false
@@ -2309,6 +2310,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             guard webView === viewModel.webView else { return }
             retainNavigationPreview(in: webView)
             BrowserStartupTrace.mark("navigation_start")
+            cloudflareChallengeResponse = false
             provisionalNavigation = navigation
             latestNavigation = navigation
             navigationFinished = false
@@ -2333,6 +2335,13 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
             guard isCurrentNavigation(navigation, in: webView) else { return }
+            if cloudflareChallengeResponse {
+                webView.evaluateJavaScript("""
+                document.documentElement?.setAttribute('data-soulo-cloudflare-challenge', '');
+                document.documentElement?.setAttribute('data-soulo-native-ads-disabled', '');
+                window.__souloAdBlockRemoveAds?.();
+                """, completionHandler: nil)
+            }
             latestNavigation = navigation
             BrowserStartupTrace.mark("navigation_commit")
             viewModel.errorMessage = nil
@@ -2851,7 +2860,8 @@ struct WebViewRepresentable: UIViewRepresentable {
                     BrowserDomainNavigationPolicy.isExplicitNavigation(nativeRequest: false,
                         destination: url, recentGestureDestination: $0)
                 }), gestureIsControl: navigationGesture?.isControl ?? false,
-                gestureIsLink: navigationGesture?.isLink ?? false, gestureIsForm: navigationGesture?.isForm ?? false) {
+                gestureIsLink: navigationGesture?.isLink ?? false, gestureIsForm: navigationGesture?.isForm ?? false,
+                mainDocumentURL: webView.url) {
                 return false
             }
             return true
@@ -2973,6 +2983,9 @@ struct WebViewRepresentable: UIViewRepresentable {
             decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void
         ) {
             let response = navigationResponse.response
+            if webView === viewModel.webView, navigationResponse.isForMainFrame {
+                cloudflareChallengeResponse = WebCompatibilityService.isCloudflareChallengeResponse(response)
+            }
             let contentDisposition = (response as? HTTPURLResponse)?
                 .value(forHTTPHeaderField: "Content-Disposition")
             if BrowserDownloadPolicy.shouldDownload(

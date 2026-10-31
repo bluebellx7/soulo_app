@@ -6,6 +6,27 @@ final class BrowserAdNavigationTests: XCTestCase {
     private let page = URL(string: "https://www.pbpbw.com/player/1-1-1.html")!
     private let ad = URL(string: "https://ad.example/landing")!
 
+    func testCloudflareFramesCanReturnOnlyToTheCurrentMainDocument() throws {
+        let main = try XCTUnwrap(URL(string: "https://www.diyihuisuo.com/"))
+        let cloudflare = try XCTUnwrap(URL(string: "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/widget"))
+        let firstParty = try XCTUnwrap(URL(string: "https://www.diyihuisuo.com/cdn-cgi/challenge-platform/h/g/flow"))
+        func blocked(_ source: URL, _ destination: URL, newWindow: Bool = false, knowsMain: Bool = true) -> Bool {
+            BrowserAdNavigationPolicy.shouldBlock(url: destination, sourceURL: source, navigationType: .other,
+                isNewWindow: newWindow, sourceIsMainFrame: false, hasRecentGesture: false,
+                gestureDestination: nil, gestureIsControl: false, mainDocumentURL: knowsMain ? main : nil)
+        }
+        for source in [cloudflare, firstParty] {
+            XCTAssertFalse(blocked(source, main))
+            XCTAssertFalse(blocked(source, URL(string: "https://www.diyihuisuo.com/?__cf_chl_rt_tk=token")!))
+            XCTAssertTrue(blocked(source, ad))
+            XCTAssertTrue(blocked(source, main, newWindow: true))
+            XCTAssertTrue(blocked(source, main, knowsMain: false))
+            XCTAssertTrue(blocked(source, URL(string: "https://www.diyihuisuo.com/advert")!))
+        }
+        XCTAssertTrue(blocked(URL(string: "https://ad.example/cdn-cgi/challenge-platform/flow")!, main))
+        XCTAssertTrue(blocked(URL(string: "https://challenges.cloudflare.com.evil.test/turnstile/")!, main))
+    }
+
     func testBackgroundTapCannotAuthorizePopupOrCrossSiteReplacement() {
         for newWindow in [true, false] {
             XCTAssertTrue(BrowserAdNavigationPolicy.shouldBlock(url: ad, sourceURL: page, navigationType: .other,

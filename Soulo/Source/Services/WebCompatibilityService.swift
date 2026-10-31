@@ -1,6 +1,38 @@
 import Foundation
 
 enum WebCompatibilityService {
+    // Challenge resources are functional authentication dependencies. Keep this
+    // exception narrower than Cloudflare's CDN and analytics domains.
+    static let cloudflareChallengeURLFilters = [
+        #"^https?://([a-z0-9-]+\.)*challenges\.cloudflare\.com(:[0-9]+)?/"#,
+        #"^https?://[^/]+/cdn-cgi/challenge-platform/"#
+    ]
+
+    static func isCloudflareChallengeURL(_ url: URL?) -> Bool {
+        guard let url, ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
+              let host = url.host?.lowercased() else { return false }
+        return host == "challenges.cloudflare.com" || host.hasSuffix(".challenges.cloudflare.com")
+            || url.path.lowercased().hasPrefix("/cdn-cgi/challenge-platform/")
+    }
+
+    static func isCloudflareChallengeResponse(_ response: URLResponse) -> Bool {
+        (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "cf-mitigated")?
+            .trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "challenge"
+    }
+
+    /// Challenge interstitials retain the requested URL. Recognize their DOM,
+    /// too, without treating ordinary Cloudflare analytics/JSD as a bypass.
+    static let sensitiveChallengeDetectionScript = #"""
+    function isSensitiveChallengePage() {
+      const host=location.hostname.toLowerCase();
+      return host==='challenges.cloudflare.com'||host.endsWith('.challenges.cloudflare.com')
+        || location.pathname.toLowerCase().startsWith('/cdn-cgi/challenge-platform/')
+        || /(^|[\/?&#_=.-])(captcha|wappoc|verify|verification|challenge|security|passport|login|auth)([\/?&#_=.-]|$)/i.test(location.href)
+        || /[?&]__cf_chl_(?:rt_)?tk=/i.test(location.search)
+        || !!document.documentElement?.hasAttribute('data-soulo-cloudflare-challenge')
+        || !!document.querySelector('#challenge-form,#challenge-stage,#cf-challenge-running,script[src*="/cdn-cgi/challenge-platform/"][src*="/orchestrate/chl_page/"]');
+    }
+    """#
     private static let desktopModeHosts = ["xiaohongshu.com"]
     private static let xiaohongshuAuthenticationCookieNames: Set<String> = [
         "web_session",
@@ -63,7 +95,9 @@ enum WebCompatibilityService {
     }
 
     static func isSensitiveChallengeURL(_ url: URL?) -> Bool {
+        if isCloudflareChallengeURL(url) { return true }
         guard let value = url?.absoluteString.lowercased(), !value.isEmpty else { return false }
+        if value.range(of: #"[?&]__cf_chl_(?:rt_)?tk="#, options: .regularExpression) != nil { return true }
         return value.range(
             of: #"(^|[\/?&#_=.\-])(captcha|wappoc|verify|verification|challenge|security|passport|login|auth)([\/?&#_=.\-]|$)"#,
             options: .regularExpression
