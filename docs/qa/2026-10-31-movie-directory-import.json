@@ -1,0 +1,6277 @@
+{
+  "checked_on": "2026-10-31",
+  "sources": [
+    "https://i8k.tv/",
+    "https://www.weidus.com/favorites/mfys",
+    "https://tv.baozangdh.com/",
+    "https://ailongmiao.com/movie/",
+    "https://cn1.xgcartoon.com/"
+  ],
+  "candidate_count": 221,
+  "retained_count": 90,
+  "new_count": 54,
+  "removed_existing": [
+    "subhd"
+  ],
+  "icon_count": 86,
+  "scope": "Chrome document navigation, rendered text, redirect purpose, and local icon decoding. Does not certify every media file or future/regional availability. Browser image, media and font requests were blocked during external link checks. Direct-network rechecks used --no-proxy-server; TLS verification remained enabled. The final jlptd browser read was interrupted after remaining incomplete through the full audit; its separate HTTP request also timed out.",
+  "results": [
+    {
+      "id": "pbpbw",
+      "name": "片吧影院",
+      "url": "https://www.pbpbw.com/",
+      "source": "user",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.pbpbw.com/",
+          "title": "片吧影院-最新电影电视剧免费影视网",
+          "text_length": 1248,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.pbpbw.com/",
+        "title": "片吧影院-最新电影电视剧免费影视网",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/pbpbw.png",
+        "source": "https://www.pbpbw.com/statics/img/favicon.ico"
+      }
+    },
+    {
+      "id": "pbkan",
+      "name": "片吧影视",
+      "url": "https://www.pbkan.com/",
+      "source": "user",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.pbkan.com/",
+          "title": "2026最新电影电视剧排行榜 - 片吧影视",
+          "text_length": 1142,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.pbkan.com/",
+        "title": "2026最新电影电视剧排行榜 - 片吧影视",
+        "error": ""
+      }
+    },
+    {
+      "id": "kkys",
+      "name": "可可影视",
+      "url": "https://www.kkys02.com/",
+      "source": [],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.kkys02.com/",
+          "title": "可可影视_最新Netflix新剧_韩国电影免费在线观看",
+          "text_length": 2552,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 850,
+        "final_url": "https://www.kkys02.com/",
+        "title": "Protected by cdndefend, verifying your browser...",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/kkys.png",
+        "source": "https://vf.wkcyvs.cn/vod_pc_static_kkdy/images/favicon.ico?ver=123456666"
+      }
+    },
+    {
+      "id": "feikuai",
+      "name": "飞快 TV",
+      "url": "https://feikuai.tv/",
+      "source": [],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://feikuai.in/",
+          "title": "飞快TV - 免费高清影视在线播放网盘下载",
+          "text_length": 145,
+          "error": "page.goto: Timeout 15000ms exceeded."
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://feikuai.in/",
+        "title": "飞快TV - 免费高清影视在线播放网盘下载",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/feikuai.png",
+        "source": "https://feikuai.in/upload/mxprocms/20240415-1/4c6ddace7d0fc43ec678c070a6255c68.png"
+      }
+    },
+    {
+      "id": "netflix",
+      "name": "Netflix",
+      "url": "https://www.netflix.com/hk/",
+      "source": [
+        "https://tv.baozangdh.com/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.netflix.com/hk/",
+          "title": "Netflix中國香港特別行政區讓您在線上觀賞節目與電影",
+          "text_length": 811,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.netflix.com/jp/",
+        "title": "Netflix (ネットフリックス) 日本 - 大好きな映画やドラマを楽しもう!",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/netflix.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/1b04b-www.netflix.com.png"
+      }
+    },
+    {
+      "id": "disney",
+      "name": "Disney+",
+      "url": "https://www.disneyplus.com/zh-hk",
+      "source": [
+        "https://tv.baozangdh.com/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.disneyplus.com/en-jp",
+          "title": "Unlimited streaming of movies, TV shows and anime | Disney+ Japan",
+          "text_length": 0,
+          "error": ""
+        },
+        {
+          "network": "browser-retry",
+          "status": 200,
+          "final_url": "https://www.disneyplus.com/en-jp",
+          "title": "Unlimited streaming of movies, TV shows and anime | Disney+ Japan",
+          "text_length": 3310,
+          "error": ""
+        },
+        {
+          "network": "browser-direct",
+          "status": 200,
+          "final_url": "https://www.disneyplus.com/welcome/unavailable",
+          "title": "Sorry, Disney+ is not available in your region.",
+          "text_length": 412,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.disneyplus.com/zh-hk",
+        "title": "迪士尼、Marvel、彼思、星球大戰、國家地理和 Hulu | Disney+ 香港",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/disney.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/49218-www.disneyplus.com.png"
+      }
+    },
+    {
+      "id": "6v",
+      "name": "6V 电影",
+      "url": "https://www.6vdyy.com/",
+      "source": "user",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.6vdyy.com/",
+          "title": "6v电影网，最新电影，最新电视剧，免费电影下载，电视剧下载，迅雷下载",
+          "text_length": 3696,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.6vdyy.com/",
+        "title": "6v��Ӱ�������µ�Ӱ�����µ��Ӿ磬��ѵ�Ӱ���أ����Ӿ����أ�Ѹ������",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/6v.png",
+        "source": "https://www.6vdyy.com/favicon.ico"
+      }
+    },
+    {
+      "id": "cilixiong",
+      "name": "磁力熊",
+      "url": "https://www.cilixiong.org/",
+      "source": [
+        "https://ailongmiao.com/movie/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.cilixiong.org/",
+          "title": "磁力熊 - 豆瓣高分电影1080P磁力下载",
+          "text_length": 593,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.cilixiong.org/",
+        "title": "磁力熊 - 豆瓣高分电影1080P磁力下载",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/cilixiong.png",
+        "source": "https://www.cilixiong.org/apple-touch-icon.png"
+      }
+    },
+    {
+      "id": "fanxinzhui",
+      "name": "追新番",
+      "url": "https://www.fanxinzhui.com/",
+      "source": [
+        "https://tv.baozangdh.com/",
+        "https://ailongmiao.com/movie/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.fanxinzhui.com/",
+          "title": "追新番",
+          "text_length": 1595,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.fanxinzhui.com/",
+        "title": "追新番",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/fanxinzhui.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/2dd6c-www.fanxinzhui.com.png"
+      }
+    },
+    {
+      "id": "koreayule",
+      "name": "韩娱网",
+      "url": "https://koreayule.com/",
+      "source": [],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://koreayule.com/",
+          "title": "最新热门韩剧、韩国电影、综艺、动漫大全、最新韩国娱乐资讯｜韩娱网",
+          "text_length": 4065,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://koreayule.com/",
+        "title": "最新热门韩剧、韩国电影、综艺、动漫大全、最新韩国娱乐资讯｜韩娱网",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/koreayule.png",
+        "source": "https://koreayule.com/template/hanju2/statics/uploads/favicon-20260624105637-13bd44.png"
+      }
+    },
+    {
+      "id": "ribenyule",
+      "name": "日娱观察所",
+      "url": "https://ribenyule.com/",
+      "source": [],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://ribenyule.com/",
+          "title": "日娱观察所_日本娱乐新闻、日剧电影动漫综艺资讯",
+          "text_length": 5852,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://ribenyule.com/",
+        "title": "日娱观察所_日本娱乐新闻、日剧电影动漫综艺资讯",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/ribenyule.png",
+        "source": "https://ribenyule.com/template/riju03/statics/images/riju-favicon-32.png"
+      }
+    },
+    {
+      "id": "bilibili",
+      "name": "哔哩哔哩",
+      "url": "https://www.bilibili.com/",
+      "source": [
+        "https://tv.baozangdh.com/",
+        "https://ailongmiao.com/movie/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.bilibili.com/",
+          "title": "哔哩哔哩 (゜-゜)つロ 干杯~-bilibili",
+          "text_length": 670,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.bilibili.com/zh-Hans",
+        "title": "bilibili",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/bilibili.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/59a91-www.bilibili.com.png"
+      }
+    },
+    {
+      "id": "xfani",
+      "name": "稀饭动漫",
+      "url": "https://dick.xfani.com/",
+      "source": [],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://xifan.moe/",
+          "title": "稀饭ACG - 连接动漫、漫画、游戏与二次元世界",
+          "text_length": 257,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://xifan.moe/",
+        "title": "稀饭ACG - 连接动漫、漫画、游戏与二次元世界",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/xfani.png",
+        "source": "https://xifan.moe/favicon.ico"
+      }
+    },
+    {
+      "id": "anime1",
+      "name": "Anime1",
+      "url": "https://anime1.in/",
+      "source": [],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://anime1.in/",
+          "title": "Anime1.in 動畫線上看 – 上千部動漫免費線上看！",
+          "text_length": 1034,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://anime1.in/",
+        "title": "Anime1.in 動畫線上看 &#8211; 上千部動漫免費線上看！",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/anime1.png",
+        "source": "https://anime1.in/apple-touch-icon.png"
+      }
+    },
+    {
+      "id": "cycani",
+      "name": "次元城动画",
+      "url": "https://www.cycani.org/",
+      "source": [],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.cycani.org/",
+          "title": "次元城动画 - 在这里，探索全新追番体验",
+          "text_length": 1655,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://www.cycani.org/",
+        "title": "不提供服务",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/cycani.png",
+        "source": "https://www.cycani.org/favicon.ico"
+      }
+    },
+    {
+      "id": "trace",
+      "name": "trace.moe",
+      "url": "https://trace.moe/",
+      "source": [
+        "https://tv.baozangdh.com/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://trace.moe/",
+          "title": "Anime Scene Search Engine - trace.moe",
+          "text_length": 90,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://trace.moe/",
+        "title": "Anime Scene Search Engine - trace.moe",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/trace.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/a325e-trace.moe.png"
+      }
+    },
+    {
+      "id": "y80s",
+      "name": "80s 电影",
+      "url": "https://y80s.tv/movie/search/",
+      "source": "user",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://y80s.tv/movie/search/",
+          "title": "",
+          "text_length": 1391,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://y80s.tv/movie/search/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "cupfox",
+      "name": "茶杯狐",
+      "url": "https://cupfox.app/",
+      "source": [
+        "https://tv.baozangdh.com/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://cupfox.app/",
+          "title": "茶杯狐 - 片荒剧荒就来茶杯狐",
+          "text_length": 876,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://cupfox.app/",
+        "title": "茶杯狐 - 片荒剧荒就来茶杯狐",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/cupfox.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/259bb-cupfox.app.png"
+      }
+    },
+    {
+      "id": "soupian",
+      "name": "搜片",
+      "url": "https://soupian.one/",
+      "source": [
+        "https://tv.baozangdh.com/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://soupian.one/",
+          "title": "搜片.com - 搜你想看的影片",
+          "text_length": 1196,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://soupian.one/",
+        "title": "搜片.com - 搜你想看的影片",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/soupian.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/bd839-soupian.one.png"
+      }
+    },
+    {
+      "id": "i8k",
+      "name": "i8K 影视导航",
+      "url": "https://i8k.tv/",
+      "source": "user",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://i8k.tv/",
+          "title": "i8K影视导航 - 最全免费在线影视网站导航 | i8k.tv",
+          "text_length": 8344,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://i8k.tv/",
+        "title": "i8K影视导航 - 最全免费在线影视网站导航 | i8k.tv",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/i8k.png",
+        "source": "https://i8k.tv/icon.png?icon.646bb930.png"
+      }
+    },
+    {
+      "id": "pan666",
+      "name": "阿里小站",
+      "url": "https://pan666.net/",
+      "source": [
+        "https://tv.baozangdh.com/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://pan666.net/member.php",
+          "title": "登录 Panwiki - （原我的小站论坛）",
+          "text_length": 19329,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://pan666.net/",
+        "title": "Just a moment...",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/pan666.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/4b49e-pan666.net.png"
+      }
+    },
+    {
+      "id": "upyunso",
+      "name": "UP 云搜",
+      "url": "https://www.upyunso.com/",
+      "source": [
+        "https://tv.baozangdh.com/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.upyunso.com/",
+          "title": "UP云搜 - 网盘资源搜索引擎 | 聚合盘搜搜",
+          "text_length": 1097,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.upyunso.com/",
+        "title": "UP云搜 - 网盘资源搜索神器",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/upyunso.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/c154d-www.upyunso.com.png"
+      }
+    },
+    {
+      "id": "subhd",
+      "name": "SubHD",
+      "url": "https://subhd.tv/",
+      "source": [
+        "https://tv.baozangdh.com/"
+      ],
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 522,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-retry",
+          "status": 522,
+          "final_url": "https://subhd.tv/",
+          "title": "subhd.tv | 522: Connection timed out",
+          "text_length": 877,
+          "error": ""
+        },
+        {
+          "network": "browser-direct",
+          "status": 522,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 12000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://subhd.tv/",
+        "title": "",
+        "error": "curl: (28) Operation timed out after 20005 milliseconds with 0 bytes received"
+      }
+    },
+    {
+      "id": "sysub",
+      "name": "深影译站",
+      "url": "https://sysub.com/",
+      "source": [],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://sysub.com/",
+          "title": "深影译站 – 与您共享全球影视经典",
+          "text_length": 241,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://sysub.com/",
+        "title": "深影译站 &#8211; 与您共享全球影视经典",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/sysub.png",
+        "source": "https://sysub.com/wp-content/uploads/2019/11/cropped-TIM%E5%9B%BE%E7%89%8720191109171416-copy-1-32x32.png"
+      }
+    },
+    {
+      "id": "zhaotaici",
+      "name": "找台词",
+      "url": "https://zhaotaici.cn/",
+      "source": [
+        "https://tv.baozangdh.com/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://zhaotaici.cn/",
+          "title": "找台词",
+          "text_length": 2706,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://zhaotaici.cn/",
+        "title": "找台词",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/zhaotaici.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/4973b-zhaotaici.cn.png"
+      }
+    },
+    {
+      "id": "33",
+      "name": "33 台词",
+      "url": "https://33.agilestudio.cn/",
+      "source": [
+        "https://tv.baozangdh.com/",
+        "https://ailongmiao.com/movie/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://33tc.net/",
+          "title": "台词搜索与字幕语料库 | 33台词",
+          "text_length": 2035,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://33.agilestudio.cn/",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      },
+      "icon": {
+        "path": "images/movie-icons/33.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/60725-33.agilestudio.cn.png"
+      }
+    },
+    {
+      "id": "quodb",
+      "name": "QuoDB",
+      "url": "https://www.quodb.com/",
+      "source": [
+        "https://tv.baozangdh.com/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.quodb.com/",
+          "title": "QuoDB | The movie quotes database",
+          "text_length": 2681,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.quodb.com/",
+        "title": "QuoDB | The movie quotes database",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/quodb.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/b8184-www.quodb.com.png"
+      }
+    },
+    {
+      "id": "mvcat",
+      "name": "影猫 MVCAT",
+      "url": "https://www.mvcat.com/movie/",
+      "source": [
+        "https://tv.baozangdh.com/",
+        "https://ailongmiao.com/movie/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.mvcat.com/movie/",
+          "title": "电影分类",
+          "text_length": 109,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.mvcat.com/movie/",
+        "title": "电影分类",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/mvcat.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/c19f6-www.mvcat.com.png"
+      }
+    },
+    {
+      "id": "best",
+      "name": "巅峰剧单",
+      "url": "https://best.i8k.tv/",
+      "source": [],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://best.i8k.tv/",
+          "title": "巅峰剧单 · 最佳电视剧集典藏",
+          "text_length": 13216,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://best.i8k.tv/",
+        "title": "巅峰剧单 · 最佳电视剧集典藏",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/best.png",
+        "source": "https://best.i8k.tv/icon1.png?icon1.2qc90eujphpcy.png"
+      }
+    },
+    {
+      "id": "rotten",
+      "name": "烂番茄",
+      "url": "https://www.rottentomatoes.com/",
+      "source": [
+        "https://tv.baozangdh.com/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.rottentomatoes.com/",
+          "title": "Rotten Tomatoes: Movies | TV Shows | Movie Trailers | Reviews | Rotten Tomatoes",
+          "text_length": 7245,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.rottentomatoes.com/",
+        "title": "Rotten Tomatoes: Movies | TV Shows | Movie Trailers | Reviews | Rotten Tomatoes",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/rotten.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/b416e-www.rottentomatoes.com.png"
+      }
+    },
+    {
+      "id": "boxoffice",
+      "name": "Box Office Mojo",
+      "url": "https://www.boxofficemojo.com/",
+      "source": [
+        "https://tv.baozangdh.com/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.boxofficemojo.com/",
+          "title": "Home - Box Office Mojo",
+          "text_length": 2906,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.boxofficemojo.com/",
+        "title": "Home - Box Office Mojo",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/boxoffice.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/3a5de-www.boxofficemojo.com.png"
+      }
+    },
+    {
+      "id": "similar",
+      "name": "类似电影",
+      "url": "https://leisidianying.com/",
+      "source": [],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://leisidianying.com/",
+          "title": "选择类似电影和电视节目的最佳推荐服务",
+          "text_length": 1420,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://leisidianying.com/",
+        "title": "选择类似电影和电视节目的最佳推荐服务",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/similar.png",
+        "source": "https://leisidianying.com/img_zh/favicon/favicon-96x96.png"
+      }
+    },
+    {
+      "id": "daofire",
+      "name": "盗火线",
+      "url": "https://dao-fire.com/",
+      "source": [
+        "https://tv.baozangdh.com/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://docu-lib.com/",
+          "title": "纪录片数据库 - 纪录片下载 Docu-Lib",
+          "text_length": 751,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://docu-lib.com/",
+        "title": "纪录片数据库 - 纪录片下载 Docu-Lib",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/daofire.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/a8f70-dao-fire.com.png"
+      }
+    },
+    {
+      "id": "cctv",
+      "name": "CCTV 在线",
+      "url": "https://tv.cctv.com/live/cctv1/",
+      "source": [
+        "https://tv.baozangdh.com/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://tv.cctv.com/live/cctv1/",
+          "title": "CCTV-1综合频道高清直播_CCTV节目官网_央视网",
+          "text_length": 3202,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://tv.cctv.com/live/cctv1/",
+        "title": "CCTV-1综合频道高清直播_CCTV节目官网_央视网",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/cctv.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2024/05/cctv.png"
+      }
+    },
+    {
+      "id": "zhibo8",
+      "name": "直播吧",
+      "url": "https://www.zhibo8.com/",
+      "source": [
+        "https://tv.baozangdh.com/"
+      ],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.zhibo8.com/",
+          "title": "直播吧",
+          "text_length": 4140,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.zhibo8.com/",
+        "title": "直播吧",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/zhibo8.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/8533f-www.zhibo8.com.png"
+      }
+    },
+    {
+      "id": "zyplayer",
+      "name": "ZY Player",
+      "url": "https://zyplayer.fun/",
+      "source": [],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://zyplayer.fun/",
+          "title": "ZY Player 资源播放器",
+          "text_length": 555,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://zyplayer.fun/",
+        "title": "ZY Player 资源播放器",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/zyplayer.png",
+        "source": "https://zyplayer.fun/assets/img/favicon.png"
+      }
+    },
+    {
+      "id": "mtzy",
+      "name": "茅台资源站",
+      "url": "https://mtzy.me/",
+      "source": [],
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://mtzy.me/",
+          "title": "茅台资源站",
+          "text_length": 2121,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://mtzy.me/",
+        "title": "茅台资源站",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-bbibb-top",
+      "name": "4K在线",
+      "url": "https://www.bbibb.top/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.bbibb.top/",
+          "title": "4K在线",
+          "text_length": 2017,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.bbibb.top/",
+        "title": "4K在线",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-bbibb-top.png",
+        "source": "https://www.weidus.com/wp-content/uploads/2026/06/g22tc99dx_logo_s.png"
+      }
+    },
+    {
+      "id": "site-mtyy5-com",
+      "name": "麦田影院",
+      "url": "https://www.mtyy5.com/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.mtyy5.com/",
+          "title": "麦田影院-好看的电影电视剧,海量高清影视免费在线观看",
+          "text_length": 436,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.mtyy5.com/",
+        "title": "麦田影院-好看的电影电视剧,海量高清影视免费在线观看",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-mtyy5-com.png",
+        "source": "https://www.weidus.com/wp-content/uploads/2026/04/20260420152832-e564d.jpeg"
+      }
+    },
+    {
+      "id": "site-ddys-autos",
+      "name": "低端影视",
+      "url": "https://ddys.autos/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": false,
+      "decision": "不收录：入口公告、轮换通知或暂停服务，未进入内容目录",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://ddys.autos/",
+          "title": "备用域名轮换通知 - 低端影视",
+          "text_length": 232,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://ddys.autos/",
+        "title": "备用域名轮换通知 - 低端影视",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-dm154-top",
+      "name": "大米星球",
+      "url": "https://www.dm154.top/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.dm154.top/",
+          "title": "大米星球_最新Netflix新剧_韩国电影免费在线观看",
+          "text_length": 3721,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.dm154.top/",
+        "title": "大米星球_最新Netflix新剧_韩国电影免费在线观看",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-dm154-top.png",
+        "source": "https://www.weidus.com/wp-content/uploads/2026/01/1767331796-112429678912224247.png"
+      }
+    },
+    {
+      "id": "site-yqs11-app",
+      "name": "一起刷影视",
+      "url": "https://yqs11.app/pc",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://yqs11.app/pc/",
+          "title": "一起刷影视",
+          "text_length": 2591,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://yqs11.app/pc/",
+        "title": "",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-yqs11-app.png",
+        "source": "https://www.weidus.com/wp-content/uploads/2025/12/20251228234240-688f3.png"
+      }
+    },
+    {
+      "id": "site-miaokan-cc",
+      "name": "秒看电影",
+      "url": "https://miaokan.cc/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://miaokan.cc/",
+          "title": "秒看电影_最新高清影视在线观看_免费电影资源网",
+          "text_length": 3019,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://miaokan.cc/",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      },
+      "icon": {
+        "path": "images/movie-icons/site-miaokan-cc.png",
+        "source": "https://www.weidus.com/wp-content/uploads/2025/12/1766472145-新建-空白-画面.png"
+      }
+    },
+    {
+      "id": "site-yingshi-co",
+      "name": "影视工厂",
+      "url": "https://yingshi.co/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": false,
+      "decision": "不收录：入口公告、轮换通知或暂停服务，未进入内容目录",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://yingshi.co/",
+          "title": "影视搜 - 新站访问引导",
+          "text_length": 152,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 92,
+        "status": 0,
+        "final_url": "https://yingshi.co/",
+        "title": "",
+        "error": "curl: (92) HTTP/2 stream 1 was not closed cleanly: PROTOCOL_ERROR (err 1)"
+      }
+    },
+    {
+      "id": "site-4kzaixian-top",
+      "name": "光速影视",
+      "url": "https://4kzaixian.top/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://4kzaixian.top/",
+          "title": "光速影视",
+          "text_length": 2233,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://4kzaixian.top/",
+        "title": "光速影视",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-4kzaixian-top.png",
+        "source": "https://www.weidus.com/wp-content/uploads/2025/12/20251216112244-7cef9.png"
+      }
+    },
+    {
+      "id": "site-cupfox-lol",
+      "name": "茶杯狐",
+      "url": "https://www.cupfox.lol/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.cupfox.lol/",
+          "title": "茶杯狐 Cupfox - 努力让找电影变得简单",
+          "text_length": 577,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://www.cupfox.lol/",
+        "title": "Just a moment...",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-cupfox-lol.png",
+        "source": "https://www.weidus.com/wp-content/uploads/2025/12/20251216111853-aab92.png"
+      }
+    },
+    {
+      "id": "site-dushe05-com",
+      "name": "毒舌电影",
+      "url": "https://www.dushe05.com/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.dushe05.com/",
+          "title": "毒舌电影_最新Netflix新剧_韩国电影免费在线观看",
+          "text_length": 2756,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 850,
+        "final_url": "https://www.dushe05.com/",
+        "title": "Protected by cdndefend, verifying your browser...",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-dushe05-com.png",
+        "source": "https://www.weidus.com/wp-content/uploads/2025/12/1765854783-logo.png"
+      }
+    },
+    {
+      "id": "site-knvod-com",
+      "name": "柯南影视",
+      "url": "https://www.knvod.com/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.knvod.com/",
+          "title": "柯南影视-追热播电视剧-看最新电影",
+          "text_length": 984,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 520,
+        "final_url": "https://www.knvod.com/",
+        "title": "250535.xyz | 520: Web server is returning an unknown error",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-knvod-com.png",
+        "source": "https://www.weidus.com/wp-content/uploads/2025/12/1765854352-20250408174854452443.jpg"
+      }
+    },
+    {
+      "id": "site-freeokk-pro",
+      "name": "FreeOK",
+      "url": "https://www.freeokk.pro/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.freeokk.pro/",
+          "title": "FreeOK - 追剧也很卷 - 在线观看最新影视",
+          "text_length": 2676,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://www.freeokk.pro/",
+        "title": "Just a moment...",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-freeokk-pro.png",
+        "source": "https://www.weidus.com/wp-content/uploads/2025/12/20251216105956-df95b.png"
+      }
+    },
+    {
+      "id": "site-kpkuang-fun",
+      "name": "看片狂人",
+      "url": "https://www.kpkuang.fun/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.kpkuang.fun/",
+          "title": "看片狂人",
+          "text_length": 3887,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.kpkuang.fun/",
+        "title": "看片狂人",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-kpkuang-fun.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/c9fae-www.kpkuang.fun.png"
+      }
+    },
+    {
+      "id": "site-freeokk-me",
+      "name": "FreeOK",
+      "url": "https://www.freeokk.me/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 12000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://www.freeokk.me/",
+        "title": "",
+        "error": "curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to www.freeokk.me:443"
+      }
+    },
+    {
+      "id": "site-taozi008-com",
+      "name": "桃子影视",
+      "url": "https://taozi008.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "https://2026-10-31.72.chat/8d/",
+          "title": "403 Forbidden",
+          "text_length": 19,
+          "error": ""
+        },
+        {
+          "network": "browser-direct",
+          "status": 403,
+          "final_url": "https://2026-10-31.72.chat/8d/",
+          "title": "403 Forbidden",
+          "text_length": 19,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://2026-10-31.urldance.com/en",
+        "title": "Latest @ Sites",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-cupfoxys-cc",
+      "name": "茶杯狐Cupfox",
+      "url": "https://cupfoxys.cc/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CERT_AUTHORITY_INVALID at https://cupfoxys.cc/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "chrome-error://chromewebdata/",
+          "title": "隐私设置错误",
+          "text_length": 107,
+          "error": "page.goto: net::ERR_CERT_AUTHORITY_INVALID at https://cupfoxys.cc/"
+        }
+      ],
+      "http": {
+        "exit": 60,
+        "status": 0,
+        "final_url": "https://cupfoxys.cc/",
+        "title": "",
+        "error": "curl: (60) SSL certificate problem: self signed certificate\nMore details here: https://curl.se/docs/sslcerts.html\n\ncurl failed to verify the legitimacy of the server and therefore could not\nestablish a secure connection to it. To learn more about this situation and\nhow to fix it, please visit the web page mentioned above."
+      }
+    },
+    {
+      "id": "site-2yjw-com",
+      "name": "爱影剧网",
+      "url": "https://www.2yjw.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "https://www.2yjw.com/",
+          "title": "请稍候…",
+          "text_length": 114,
+          "error": ""
+        },
+        {
+          "network": "browser-direct",
+          "status": 403,
+          "final_url": "https://www.2yjw.com/",
+          "title": "请稍候…",
+          "text_length": 114,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://www.2yjw.com/",
+        "title": "Just a moment...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-zxzjhd-com",
+      "name": "在线之家",
+      "url": "https://www.zxzjhd.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.zxzj.run/",
+          "title": "在线之家 - 在线观看最新美剧|最新韩剧|天天美剧|人人美剧",
+          "text_length": 1203,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.zxzj.run/",
+        "title": "在线之家 - 在线观看最新美剧|最新韩剧|天天美剧|人人美剧",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-zxzjhd-com.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/f282f-www.zxzjhd.com.png"
+      }
+    },
+    {
+      "id": "site-yikaocq-com",
+      "name": "星空影院",
+      "url": "https://www.yikaocq.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 12000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://www.yikaocq.com/",
+        "title": "",
+        "error": "curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to www.yikaocq.com:443"
+      }
+    },
+    {
+      "id": "site-jagcys-com",
+      "name": "Gimy TV 剧迷影院",
+      "url": "https://www.jagcys.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：域名停放或用途已变更",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.jagcys.com/",
+          "title": "jagcys.com",
+          "text_length": 181,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://ww17.jagcys.com/",
+        "title": "",
+        "error": "curl: (35) LibreSSL/3.3.6: error:1404B438:SSL routines:ST_CONNECT:tlsv1 alert internal error"
+      }
+    },
+    {
+      "id": "site-dcjyb-com",
+      "name": "樱花视频",
+      "url": "https://www.dcjyb.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.dcjyb.com/",
+          "title": "樱花影院－最新免费电影电视剧在线观看",
+          "text_length": 4560,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.dcjyb.com/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-hskjjglo-com",
+      "name": "金牌影院",
+      "url": "https://www.hskjjglo.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.hskjjglo.com/",
+          "title": "Redirecting...",
+          "text_length": 10,
+          "error": ""
+        },
+        {
+          "network": "browser-direct",
+          "status": 200,
+          "final_url": "https://www.hskjjglo.com/",
+          "title": "Redirecting...",
+          "text_length": 172,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.hskjjglo.com/",
+        "title": "Redirecting...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-shenqizhe-com",
+      "name": "碟调网",
+      "url": "https://www.shenqizhe.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 12000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.shenqizhe.com/",
+        "title": "碟调网 - 短剧推荐_手机影视_热门电影电视剧在线观看",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-xl01-com-de",
+      "name": "修罗影视",
+      "url": "https://xl01.com.de/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_RESET at https://xl01.com.de/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_RESET at https://xl01.com.de/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://deharina.com.mx/",
+        "title": "UY88 ©️ TRANG CHỦ CHÍNH THỨC UY88.COM | Link UY88 Dobber 2026",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-auete-cc",
+      "name": "auete影视",
+      "url": "https://auete.cc/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：域名停放或用途已变更",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://auete.cc/",
+          "title": "Redirecting...",
+          "text_length": 290,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://auete.cc/",
+        "title": "Redirecting...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-gaze-run",
+      "name": "GAZE",
+      "url": "https://gaze.run/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 12000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://gaze.run/",
+        "title": "Attention Required! | Cloudflare",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-v-aikanbot-com",
+      "name": "iKanBot",
+      "url": "https://v.aikanbot.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 12000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.aikanbot.vip/",
+        "title": "爱看机器人-ikanbot.com",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-txquu-com",
+      "name": "泰小圈",
+      "url": "https://txquu.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 502,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_HTTP_RESPONSE_CODE_FAILURE at https://txquu.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 502,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_HTTP_RESPONSE_CODE_FAILURE at https://txquu.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 404,
+        "final_url": "https://www.txquu.com/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-kanju1-com",
+      "name": "看剧ai",
+      "url": "https://kanju1.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://kanju1.com/",
+          "title": "看剧AI - KANJU.AI",
+          "text_length": 1947,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://kanju1.com/",
+        "title": "看剧AI - KANJU.AI",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-kanju1-com.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2026/09/46340-kanju.ai.png"
+      }
+    },
+    {
+      "id": "site-agedm-org",
+      "name": "AGE动漫",
+      "url": "https://www.agedm.org/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_REFUSED at https://www.agedm.org/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_REFUSED at https://www.agedm.org/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://www.agedm.org/",
+        "title": "",
+        "error": "curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to www.agedm.org:443"
+      }
+    },
+    {
+      "id": "site-dmand5-com",
+      "name": "动漫岛",
+      "url": "https://www.dmand5.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.dmand5.com/",
+          "title": "Redirecting...",
+          "text_length": 163,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.dmand5.com/",
+        "title": "Redirecting...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-ntdm9-com",
+      "name": "NT动漫",
+      "url": "https://www.ntdm9.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_RESET at https://www.ntdm9.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_RESET at https://www.ntdm9.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://www.ntdm9.com/",
+        "title": "",
+        "error": "curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to www.ntdm9.com:443"
+      }
+    },
+    {
+      "id": "site-gxdm01-org",
+      "name": "宫下动漫",
+      "url": "https://gxdm01.org/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：域名停放或用途已变更",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "http://ww80.gxdm01.org/",
+          "title": "",
+          "text_length": 0,
+          "error": " page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 200,
+          "final_url": "http://ww80.gxdm01.org/",
+          "title": "",
+          "text_length": 0,
+          "error": " page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "http://ww80.gxdm01.org/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-cycdm01-top",
+      "name": "次元城动漫",
+      "url": "https://www.cycdm01.top/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_RESET at https://www.cycdm01.top/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_RESET at https://www.cycdm01.top/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://www.cycani.org/",
+        "title": "不提供服务",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-anime1-me",
+      "name": "Anime1.me",
+      "url": "https://anime1.me/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不重复收录：已有同一服务或镜像入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://anime1.me/",
+          "title": "Anime1.me 動畫線上看 – 上百部動漫免費線上看！",
+          "text_length": 1021,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://anime1.me/",
+        "title": "注意！ | Anime1.me",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-mengfan-tv",
+      "name": "萌番",
+      "url": "https://www.mengfan.tv/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：域名停放或用途已变更",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "http://ww80.mengfan.tv/",
+          "title": "",
+          "text_length": 0,
+          "error": " page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 200,
+          "final_url": "http://ww80.mengfan.tv/",
+          "title": "",
+          "text_length": 0,
+          "error": " page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "http://ww80.mengfan.tv/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-huolang8-com",
+      "name": "火狼动漫网",
+      "url": "https://www.huolang8.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：域名停放或用途已变更",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.huolang8.com/",
+          "title": "huolang8.com",
+          "text_length": 187,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://ww17.huolang8.com/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-anfuns-cc",
+      "name": "AnFuns",
+      "url": "https://www.anfuns.cc/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 502,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_HTTP_RESPONSE_CODE_FAILURE at https://www.anfuns.cc/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 502,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_HTTP_RESPONSE_CODE_FAILURE at https://www.anfuns.cc/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 404,
+        "final_url": "https://www.anfuns.cc/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-catw-moe",
+      "name": "喵物次元",
+      "url": "https://catw.moe/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 522,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 522,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 12000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 520,
+        "final_url": "https://catw.moe/",
+        "title": "catw.moe | 520: Web server is returning an unknown error",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-heitaifun-com",
+      "name": "好耶追番",
+      "url": "https://www.heitaifun.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_REFUSED at https://www.heitaifun.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_REFUSED at https://www.heitaifun.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://www.heitaifun.com/",
+        "title": "",
+        "error": "curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to www.heitaifun.com:443"
+      }
+    },
+    {
+      "id": "site-fanshudm-com",
+      "name": "番薯动漫",
+      "url": "https://www.fanshudm.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：入口公告、轮换通知或暂停服务，未进入内容目录",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://fsdm.top/",
+          "title": "番薯动漫官网永久发布页",
+          "text_length": 487,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "http://fsdm.top/",
+        "title": "番薯动漫官网永久发布页",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-gugufan-com",
+      "name": "咕咕番",
+      "url": "https://www.gugufan.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 502,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_HTTP_RESPONSE_CODE_FAILURE at https://www.gugufan.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 502,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_HTTP_RESPONSE_CODE_FAILURE at https://www.gugufan.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 404,
+        "final_url": "https://www.gugufan.com/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-lmfun-vip",
+      "name": "LMTV",
+      "url": "https://lmfun.vip/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://lmfun.vip/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://lmfun.vip/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://lmfun.vip/",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      }
+    },
+    {
+      "id": "site-bangumi-online",
+      "name": "新番组",
+      "url": "https://bangumi.online/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://bangumi.online/login",
+          "title": "登入 - アニメ新番組",
+          "text_length": 35,
+          "error": ""
+        },
+        {
+          "network": "browser-direct",
+          "status": 200,
+          "final_url": "https://bangumi.online/login",
+          "title": "登入 - アニメ新番組",
+          "text_length": 35,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://bangumi.online/login",
+        "title": "ログイン - アニメ新番組",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-kumi-cn",
+      "name": "酷米动漫",
+      "url": "https://www.kumi.cn/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "https://www.kumi.cn/",
+          "title": "403 Forbidden",
+          "text_length": 19,
+          "error": ""
+        },
+        {
+          "network": "browser-direct",
+          "status": 403,
+          "final_url": "https://www.kumi.cn/",
+          "title": "403 Forbidden",
+          "text_length": 19,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.kumi.cn/",
+        "title": "酷米-最新最好看的动画片大全",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-v-qq-com",
+      "name": "腾讯视频",
+      "url": "https://v.qq.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://v.qq.com/",
+          "title": "腾讯视频-中国领先的在线视频媒体平台，海量高清视频在线观看",
+          "text_length": 1188,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://v.qq.com/",
+        "title": "腾讯视频-中国领先的在线视频媒体平台，海量高清视频在线观看",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-v-qq-com.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/d4f61-v.qq.com.png"
+      }
+    },
+    {
+      "id": "site-imdb-com",
+      "name": "IMDb",
+      "url": "https://www.imdb.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "https://www.imdb.com/",
+          "title": "403 Forbidden",
+          "text_length": 13,
+          "error": ""
+        },
+        {
+          "network": "browser-direct",
+          "status": 403,
+          "final_url": "https://www.imdb.com/",
+          "title": "403 Forbidden",
+          "text_length": 13,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 202,
+        "final_url": "https://www.imdb.com/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-iqiyi-com",
+      "name": "爱奇艺",
+      "url": "https://www.iqiyi.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.iqiyi.com/",
+          "title": "爱奇艺 iQIYI-热门独播剧集在线观看",
+          "text_length": 2106,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.iqiyi.com/",
+        "title": "爱奇艺 iQIYI-热门独播剧集在线观看",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-iqiyi-com.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/40367-www.iqiyi.com.png"
+      }
+    },
+    {
+      "id": "site-apple-com",
+      "name": "AppleTV+",
+      "url": "https://www.apple.com/apple-tv-plus",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.apple.com/apple-tv/",
+          "title": "Apple TV - Apple",
+          "text_length": 8654,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.apple.com/apple-tv/",
+        "title": " Apple TV - Apple ",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-apple-com.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/197bc-www.apple.com.png"
+      }
+    },
+    {
+      "id": "site-ani-gamer-com-tw",
+      "name": "巴哈姆特动画疯",
+      "url": "https://ani.gamer.com.tw/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "https://ani.gamer.com.tw/",
+          "title": "请稍候…",
+          "text_length": 22,
+          "error": ""
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_REFUSED at https://ani.gamer.com.tw/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://ani.gamer.com.tw/",
+        "title": "巴哈姆特電玩資訊站 - 系統異常回報",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-xf-hmacg-cn",
+      "name": "动漫新番表",
+      "url": "https://xf.hmacg.cn/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 405,
+          "final_url": "https://xf.hmacg.cn/",
+          "title": "",
+          "text_length": 44,
+          "error": ""
+        },
+        {
+          "network": "browser-direct",
+          "status": 405,
+          "final_url": "https://xf.hmacg.cn/",
+          "title": "",
+          "text_length": 44,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 405,
+        "final_url": "https://xf.hmacg.cn/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-movie-douban-com",
+      "name": "豆瓣电影",
+      "url": "https://movie.douban.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://movie.douban.com/",
+          "title": "豆瓣电影",
+          "text_length": 1874,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://movie.douban.com/",
+        "title": " 豆瓣电影 ",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-movie-douban-com.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/d1fde-www.douban.com.png"
+      }
+    },
+    {
+      "id": "site-mgtv-com",
+      "name": "芒果TV",
+      "url": "https://www.mgtv.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.mgtv.com/",
+          "title": "芒果TV-天生青春",
+          "text_length": 2744,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.mgtv.com/",
+        "title": "芒果TV-天生青春",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-mgtv-com.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/71b4b-www.mgtv.com.png"
+      }
+    },
+    {
+      "id": "site-youku-com",
+      "name": "优酷",
+      "url": "https://www.youku.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.youku.com///_____tmd_____/punish",
+          "title": "请验证后继续",
+          "text_length": 83,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.youku.com/ku/webhome",
+        "title": "优酷-热门独播剧集综艺电影在线观看-为好内容全力以赴",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-wogg-xyz",
+      "name": "玩偶哥哥",
+      "url": "https://www.wogg.xyz/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 502,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_HTTP_RESPONSE_CODE_FAILURE at https://www.wogg.xyz/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 502,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_HTTP_RESPONSE_CODE_FAILURE at https://www.wogg.xyz/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 404,
+        "final_url": "https://www.wogg.xyz/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-xiongdipan-com",
+      "name": "兄弟盘",
+      "url": "https://xiongdipan.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "https://aipanso.com/",
+          "title": "请稍候…",
+          "text_length": 113,
+          "error": ""
+        },
+        {
+          "network": "browser-direct",
+          "status": 403,
+          "final_url": "https://aipanso.com/",
+          "title": "请稍候…",
+          "text_length": 113,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://aipanso.com/",
+        "title": "Just a moment...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-aipanso-com",
+      "name": "爱盘搜",
+      "url": "https://aipanso.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "https://aipanso.com/",
+          "title": "请稍候…",
+          "text_length": 113,
+          "error": ""
+        },
+        {
+          "network": "browser-direct",
+          "status": 403,
+          "final_url": "https://aipanso.com/",
+          "title": "请稍候…",
+          "text_length": 113,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://aipanso.com/",
+        "title": "Just a moment...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-alipansou-com",
+      "name": "猫狸盘搜",
+      "url": "https://www.alipansou.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "https://www.alipansou.com/",
+          "title": "请稍候…",
+          "text_length": 119,
+          "error": ""
+        },
+        {
+          "network": "browser-direct",
+          "status": 403,
+          "final_url": "https://www.alipansou.com/",
+          "title": "请稍候…",
+          "text_length": 119,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://www.alipansou.com/",
+        "title": "Just a moment...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-repanso-com",
+      "name": "热盘搜",
+      "url": "https://www.repanso.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_REFUSED at https://www.repanso.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_REFUSED at https://www.repanso.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://www.repanso.com/",
+        "title": "",
+        "error": "curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to www.repanso.com:443"
+      }
+    },
+    {
+      "id": "site-niceso-net",
+      "name": "奈斯搜索",
+      "url": "https://www.niceso.net/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CERT_COMMON_NAME_INVALID at https://www.niceso.net/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CERT_COMMON_NAME_INVALID at https://www.niceso.net/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 60,
+        "status": 0,
+        "final_url": "https://www.niceso.net/",
+        "title": "",
+        "error": "curl: (60) SSL: no alternative certificate subject name matches target host name 'www.niceso.net'\nMore details here: https://curl.se/docs/sslcerts.html\n\ncurl failed to verify the legitimacy of the server and therefore could not\nestablish a secure connection to it. To learn more about this situation and\nhow to fix it, please visit the web page mentioned above."
+      }
+    },
+    {
+      "id": "site-panmeme-com",
+      "name": "盘么么",
+      "url": "https://www.panmeme.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_REFUSED at https://www.panmeme.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_REFUSED at https://www.panmeme.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://www.panmeme.com/",
+        "title": "",
+        "error": "curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to www.panmeme.com:443"
+      }
+    },
+    {
+      "id": "site-jujuso-com",
+      "name": "优聚搜",
+      "url": "https://jujuso.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://jujuso.com/",
+          "title": "优聚搜v4 - 夸克网盘、百度网盘搜索",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded."
+        },
+        {
+          "network": "browser-direct",
+          "status": 200,
+          "final_url": "https://jujuso.com/",
+          "title": "优聚搜v4 - 夸克网盘、百度网盘搜索",
+          "text_length": 0,
+          "error": "page.goto: Timeout 12000ms exceeded."
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://jujuso.com/",
+        "title": "优聚搜v4 - 夸克网盘、百度网盘搜索",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-xiaomapan-com",
+      "name": "小马盘",
+      "url": "https://www.xiaomapan.com/#/main/search?restype=1",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.xiaomapan.com/",
+          "title": "小马盘 - 网盘搜索引擎",
+          "text_length": 722,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.xiaomapan.com/",
+        "title": "小马盘 - 网盘搜索引擎",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-xiaomapan-com.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/83102-www.xiaomapan.com.png"
+      }
+    },
+    {
+      "id": "site-tianyiso-com",
+      "name": "天逸搜",
+      "url": "https://www.tianyiso.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "https://alipansou.com/",
+          "title": "请稍候…",
+          "text_length": 115,
+          "error": ""
+        },
+        {
+          "network": "browser-direct",
+          "status": 403,
+          "final_url": "https://alipansou.com/",
+          "title": "请稍候…",
+          "text_length": 115,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://alipansou.com/",
+        "title": "Just a moment...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-nmme-cc",
+      "name": "橘子盘搜",
+      "url": "https://www.nmme.cc/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.nmme.cc/",
+        "title": "Loading...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-bt-tt-com",
+      "name": "BT天堂",
+      "url": "https://www.bt-tt.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.bttt11.com/",
+          "title": "Redirecting...",
+          "text_length": 164,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.bttt11.com/",
+        "title": "Redirecting...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-pianyuanw-com",
+      "name": "片源网",
+      "url": "https://pianyuanw.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_REFUSED at https://pianyuanw.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_REFUSED at https://pianyuanw.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://pianyuanw.com/",
+        "title": "",
+        "error": "curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to pianyuanw.com:443"
+      }
+    },
+    {
+      "id": "site-dytt8-net",
+      "name": "电影天堂",
+      "url": "https://dytt8.net/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://dytt8.net/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://dytt8.net/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://dytt8.net/",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      }
+    },
+    {
+      "id": "site-aibtba-com",
+      "name": "BT吧",
+      "url": "https://www.aibtba.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.aibtba.com/",
+        "title": "Redirecting...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-yyds-fans",
+      "name": "神鸡电影",
+      "url": "https://yyds.fans/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://yyds.fans/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://yyds.fans/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://yyds.fans/",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      }
+    },
+    {
+      "id": "site-btbtt12-com",
+      "name": "Btbbt",
+      "url": "https://www.btbtt12.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.btbtt12.com/",
+          "title": "",
+          "text_length": 0,
+          "error": " page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 200,
+          "final_url": "chrome-error://chromewebdata/",
+          "title": "null",
+          "text_length": 60,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.btbtt12.com/",
+        "title": "Redirecting...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-yyets-click",
+      "name": "人人影视下载分享",
+      "url": "https://yyets.click/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://yyets.click/home",
+          "title": "首页 - 人人影视下载分享站",
+          "text_length": 914,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://yyets.click/",
+        "title": "人人影视分享下载站",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-yyets-click.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/29b13-yyets.click.png"
+      }
+    },
+    {
+      "id": "site-mp4us-com",
+      "name": "mp4电影",
+      "url": "https://www.mp4us.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://www.mp4us.com/",
+        "title": "",
+        "error": "curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to www.mp4us.com:443"
+      }
+    },
+    {
+      "id": "site-6v520-com",
+      "name": "6V电影",
+      "url": "https://www.6v520.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不重复收录：已有同一服务或镜像入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.6v520.com/",
+          "title": "6v电影_免费电影_高清电影__最新电视剧下载（旧版66影视）",
+          "text_length": 4799,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.6v520.com/",
+        "title": "6v��Ӱ_��ѵ�Ӱ_�����Ӱ__���µ��Ӿ����أ��ɰ�66Ӱ�ӣ�",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-btnull-re",
+      "name": "片库",
+      "url": "https://www.btnull.re/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：域名停放或用途已变更",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.btnull.re/",
+          "title": "btnull.re",
+          "text_length": 90,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://www.btnull.re/",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      }
+    },
+    {
+      "id": "site-gagays-com",
+      "name": "嘎嘎影视",
+      "url": "https://www.gagays.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.gagays.com/",
+          "title": "嘎嘎影视",
+          "text_length": 738,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.gagays.com/",
+        "title": "嘎嘎影视",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-gagays-com.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/b0504-www.gagays.com.png"
+      }
+    },
+    {
+      "id": "site-gaoqing-fm",
+      "name": "高清电台",
+      "url": "https://gaoqing.fm/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：域名停放或用途已变更",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://gaoqing.fm/",
+          "title": "",
+          "text_length": 74,
+          "error": ""
+        },
+        {
+          "network": "browser-direct",
+          "status": 200,
+          "final_url": "https://gaoqing.fm/",
+          "title": "",
+          "text_length": 74,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://gaoqing.fm/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-acg-rip",
+      "name": "ACG动漫",
+      "url": "https://acg.rip/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://acg.rip/",
+          "title": "ACG.RIP",
+          "text_length": 3404,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://acg.rip/",
+        "title": "ACG.RIP",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-acg-rip.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/74b40-acg.rip.png"
+      }
+    },
+    {
+      "id": "site-yunpan1-cc",
+      "name": "Btbbt",
+      "url": "https://yunpan1.cc/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://yunpan1.cc/",
+          "title": "yunpan1 - 云盘资源分享社区-yunpan1",
+          "text_length": 47338,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://yunpan1.cc/",
+        "title": "yunpan1 - 云盘资源分享社区-yunpan1",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-yunpan1-cc.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/9b9b9-yunpan1.cc.png"
+      }
+    },
+    {
+      "id": "site-btdx8-vip",
+      "name": "比特大雄",
+      "url": "https://www.btdx8.vip/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.btdx8.vip/",
+          "title": "Redirecting...",
+          "text_length": 166,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.btdx8.vip/",
+        "title": "Redirecting...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-piaohua-com",
+      "name": "飘花电影站",
+      "url": "https://www.piaohua.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.piaohua.com/",
+          "title": "飘花电影网_飘花迅雷电影下载网_最新电影_迅雷免费电影下载",
+          "text_length": 1178,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.piaohua.com/",
+        "title": "飘花电影网_飘花迅雷电影下载网_最新电影_迅雷免费电影下载",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-piaohua-com.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/6ff4f-www.piaohua.com.png"
+      }
+    },
+    {
+      "id": "site-yikedy-co",
+      "name": "一刻电影",
+      "url": "https://www.yikedy.co/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.yikedy.co/",
+          "title": "Redirecting...",
+          "text_length": 159,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.yikedy.co/",
+        "title": "Redirecting...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-ygdy8-com",
+      "name": "阳光电影",
+      "url": "https://www.ygdy8.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://www.ygdy8.com/",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      }
+    },
+    {
+      "id": "site-xiazai001-org",
+      "name": "下载001论坛",
+      "url": "https://xiazai001.org/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://xiazai001.org/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://xiazai001.org/",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      }
+    },
+    {
+      "id": "site-meijutt-tv",
+      "name": "美剧天堂",
+      "url": "https://www.meijutt.tv/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://www.meijutt.tv/",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      }
+    },
+    {
+      "id": "site-comicat-org",
+      "name": "漫猫动漫BT下载",
+      "url": "https://www.comicat.org/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.comicat.org/public/html/start/",
+          "title": "",
+          "text_length": 27,
+          "error": ""
+        },
+        {
+          "network": "browser-direct",
+          "status": 200,
+          "final_url": "https://www.comicat.org/public/html/start/",
+          "title": "",
+          "text_length": 27,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.comicat.org/public/html/start/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-yinfans-me",
+      "name": "音范丝",
+      "url": "https://www.yinfans.me/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.yinfans.me/",
+          "title": "",
+          "text_length": 0,
+          "error": " page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.yinfans.me/",
+        "title": "Loading...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-xinjuc-com",
+      "name": "新剧场",
+      "url": "https://www.xinjuc.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：域名停放或用途已变更",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.xinjuc.com/lander",
+          "title": "",
+          "text_length": 0,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.xinjuc.com/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-video-ainunu-net",
+      "name": "爱努努",
+      "url": "https://video.ainunu.net/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://video.ainunu.net/",
+          "title": "Redirecting...",
+          "text_length": 160,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://video.ainunu.net/",
+        "title": "Redirecting...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-uump4-net",
+      "name": "悠悠MP4",
+      "url": "https://www.uump4.net/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 522,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://www.uump4.net/",
+        "title": "",
+        "error": "curl: (28) Operation timed out after 20004 milliseconds with 0 bytes received"
+      }
+    },
+    {
+      "id": "site-yun-hei521-cn",
+      "name": "天翼小站",
+      "url": "https://yun.hei521.cn/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：域名停放或用途已变更",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://yun.hei521.cn/",
+          "title": "",
+          "text_length": 74,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://yun.hei521.cn/",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      }
+    },
+    {
+      "id": "site-hanfan-cc",
+      "name": "韩饭网",
+      "url": "https://www.hanfan.cc/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.hanfan.cc/",
+        "title": "韩饭网 - 韩国娱乐新闻、综艺、电影、韩剧",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-chaospace-xyz",
+      "name": "CHAOSPACE",
+      "url": "https://www.chaospace.xyz/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.chaospace.xyz/",
+          "title": "CHAOSPACE – 蓝光影视 热门美剧 字幕分享 最好用的影视资源站",
+          "text_length": 7008,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.chaospace.xyz/",
+        "title": "CHAOSPACE &#8211; 蓝光影视 热门美剧 字幕分享 最好用的影视资源站",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-chaospace-xyz.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/74167-www.chaospace.xyz.png"
+      }
+    },
+    {
+      "id": "site-mikanani-me",
+      "name": "Mikan",
+      "url": "https://mikanani.me/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://mikanani.me/",
+          "title": "蜜柑计划 - Mikan Project",
+          "text_length": 2598,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://mikanani.me/",
+        "title": "&#x871C;&#x67D1;&#x8BA1;&#x5212; - Mikan Project",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-mikanani-me.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/277bc-mikanani.me.png"
+      }
+    },
+    {
+      "id": "site-36dm-club",
+      "name": "简单动漫",
+      "url": "https://www.36dm.club/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.36dm.club/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://www.36dm.club/",
+        "title": "",
+        "error": "curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to www.36dm.club:443"
+      }
+    },
+    {
+      "id": "site-rijupao-com",
+      "name": "日剧跑",
+      "url": "https://www.rijupao.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.rijupao.vip/",
+        "title": "首页 - 日剧跑",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-cinefox-com",
+      "name": "CINEFOX",
+      "url": "https://www.cinefox.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.cinefox.com/",
+          "title": "씨네폭스",
+          "text_length": 2654,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.cinefox.com/",
+        "title": "씨네폭스",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-cinefox-com.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/d5a7e-www.cinefox.com.png"
+      }
+    },
+    {
+      "id": "site-hideystudio-xyz",
+      "name": "隐社",
+      "url": "https://www.hideystudio.xyz/drama",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：域名停放或用途已变更",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.hideystudio.xyz/drama",
+          "title": "hideystudio.xyz",
+          "text_length": 196,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://ww38.hideystudio.xyz/drama",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      }
+    },
+    {
+      "id": "site-t-rex-tzfile-com",
+      "name": "霸王龙压制组",
+      "url": "https://t-rex.tzfile.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://t-rex.tzfile.com/",
+          "title": "团长资源 - 影视聚集地",
+          "text_length": 2115,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://t-rex.tzfile.com/",
+        "title": "团长资源 - 影视聚集地",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-t-rex-tzfile-com.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/47729-t-rex.tzfile.com.png"
+      }
+    },
+    {
+      "id": "site-yingju-org",
+      "name": "英剧迷",
+      "url": "https://www.yingju.org/forum.php",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 404,
+          "final_url": "https://www.yingju.org/forum.php",
+          "title": "审核中 | Reviewing",
+          "text_length": 247,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 92,
+        "status": 0,
+        "final_url": "https://www.yingju.org/forum.php",
+        "title": "",
+        "error": "curl: (92) HTTP/2 stream 1 was not closed cleanly: PROTOCOL_ERROR (err 1)"
+      }
+    },
+    {
+      "id": "site-taijuzlg-com",
+      "name": "泰剧资料馆",
+      "url": "https://www.taijuzlg.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.taijuzlg.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://www.taijuzlg.com/",
+        "title": "",
+        "error": "curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to www.taijuzlg.com:443"
+      }
+    },
+    {
+      "id": "site-doki8-com",
+      "name": "心动日剧",
+      "url": "https://www.doki8.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_REFUSED at https://www.doki8.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://www.doki8.com/",
+        "title": "",
+        "error": "curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to www.doki8.com:443"
+      }
+    },
+    {
+      "id": "site-oiabc-net",
+      "name": "我爱ABC",
+      "url": "https://www.oiabc.net/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：内容与本次影视目录范围不符，或只进入 APP 下载页",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.oiabc.net/",
+          "title": "我爱ABC早教资源站 - 幼儿动画_启蒙教材_儿歌绘本免费分享平台",
+          "text_length": 3368,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.oiabc.net/",
+        "title": "我爱ABC早教资源站 - 幼儿动画_启蒙教材_儿歌绘本免费分享平台",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-yysub-net",
+      "name": "人人影视字幕组",
+      "url": "https://www.yysub.net/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.yysub.net/",
+          "title": "YYeTs 人人影视|字幕组官方站",
+          "text_length": 4538,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.yysub.net/",
+        "title": "YYeTs 人人影视|字幕组官方站",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-yysub-net.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/1d89a-www.yysub.net.png"
+      }
+    },
+    {
+      "id": "site-hanmi520-com",
+      "name": "韩迷字幕组",
+      "url": "https://www.hanmi520.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.hanmi520.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://www.hanmi520.com/",
+        "title": "",
+        "error": "curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to www.hanmi520.com:443"
+      }
+    },
+    {
+      "id": "site-ddzimu-com",
+      "name": "点点字幕",
+      "url": "https://www.ddzimu.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CERT_COMMON_NAME_INVALID at https://www.ddzimu.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 60,
+        "status": 0,
+        "final_url": "https://www.ddzimu.com/",
+        "title": "",
+        "error": "curl: (60) SSL: no alternative certificate subject name matches target host name 'www.ddzimu.com'\nMore details here: https://curl.se/docs/sslcerts.html\n\ncurl failed to verify the legitimacy of the server and therefore could not\nestablish a secure connection to it. To learn more about this situation and\nhow to fix it, please visit the web page mentioned above."
+      }
+    },
+    {
+      "id": "site-mdsub-tk",
+      "name": "漫迪字幕组",
+      "url": "https://mdsub.tk/mdunofficial/feaa315d17a640108aed34bf3c6dac4e",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://mdsub.tk/mdunofficial/feaa315d17a640108aed34bf3c6dac4e page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://mdsub.tk/mdunofficial/feaa315d17a640108aed34bf3c6dac4e",
+        "title": "",
+        "error": "curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to mdsub.tk:443"
+      }
+    },
+    {
+      "id": "site-zmk-pw",
+      "name": "字幕库",
+      "url": "https://zmk.pw/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_HTTP_RESPONSE_CODE_FAILURE at https://zmk.pw/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 404,
+        "final_url": "https://zmk.pw/",
+        "title": "&#x7F51;&#x7AD9;&#x9632;&#x706B;&#x5899;",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-sybbs-vip",
+      "name": "深影字幕组",
+      "url": "https://sybbs.vip/member.php",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 404,
+          "final_url": "https://sybbs.vip/member.php",
+          "title": "404 Not Found",
+          "text_length": 23,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 404,
+        "final_url": "https://sybbs.vip/member.php",
+        "title": "404 Not Found",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-mytvbt-net",
+      "name": "日菁字幕组",
+      "url": "https://www.mytvbt.net/forumdisplay.php?fid=6",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.mytvbt.net/forumdisplay.php",
+          "title": "Redirecting...",
+          "text_length": 225,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.mytvbt.net/forumdisplay.php",
+        "title": "Redirecting...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-zzrbl-com",
+      "name": "猪猪日部落",
+      "url": "https://www.zzrbl.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "https://www.zzrbl.com/",
+          "title": "请稍候…",
+          "text_length": 115,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://www.zzrbl.com/",
+        "title": "Just a moment...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-treehousesub-com",
+      "name": "树屋字幕组",
+      "url": "https://treehousesub.com/forum.php",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://treehousesub.com/forum.php",
+          "title": "树屋经典影视论坛-留住经典,不忘怀旧 - Powered by Discuz!",
+          "text_length": 15596,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://treehousesub.com/forum.php",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      },
+      "icon": {
+        "path": "images/movie-icons/site-treehousesub-com.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/8aba6-treehousesub.com.png"
+      }
+    },
+    {
+      "id": "site-deefun-com",
+      "name": "Deefun迪幻字幕组",
+      "url": "https://deefun.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://deefun.com/",
+        "title": "迪幻 Deefun | 青春影视 | 海外青少年电视剧 | 迪士尼爱好者社群",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-wanwansub-com",
+      "name": "弯弯字幕组",
+      "url": "https://wanwansub.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://wanwansub.com/",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      }
+    },
+    {
+      "id": "site-newzmz-com",
+      "name": "NEW字幕组",
+      "url": "https://www.newzmz.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.newzmz.com/",
+        "title": "Redirecting...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-tskscn-com",
+      "name": "凤凰天使",
+      "url": "https://www.tskscn.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.tskscn.com/",
+          "title": "栖月阁影视网 - 2026全网最新VIP电影天堂手机免费在线观看",
+          "text_length": 0,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 702,
+        "final_url": "https://www.tskscn.com/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-dbfansub-com",
+      "name": "电波字幕组",
+      "url": "https://dbfansub.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://dbfansub.com/",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      }
+    },
+    {
+      "id": "site-icezmz-com",
+      "name": "冰冰字幕组",
+      "url": "https://www.icezmz.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.icezmz.com/",
+          "title": "Redirecting...",
+          "text_length": 219,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.icezmz.com/",
+        "title": "Redirecting...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-djzmz-org",
+      "name": "大家字幕组",
+      "url": "https://www.djzmz.org/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.djzmz.org/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://www.djzmz.org/",
+        "title": "",
+        "error": "curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to www.djzmz.org:443"
+      }
+    },
+    {
+      "id": "site-shenbibi-com",
+      "name": "神叨字幕组",
+      "url": "https://www.shenbibi.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.shenbibi.com/",
+          "title": "神叨字幕组",
+          "text_length": 28,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.shenbibi.com/",
+        "title": "神叨字幕组",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-zimuxia-cn",
+      "name": "FIX字幕侠",
+      "url": "https://www.zimuxia.cn/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.zimuxia.cn/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://www.zimuxia.cn/",
+        "title": "",
+        "error": "curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to www.zimuxia.cn:443"
+      }
+    },
+    {
+      "id": "site-hxly9-com",
+      "name": "幻想乐园字幕组",
+      "url": "https://www.hxly9.com/forum.php",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CERT_COMMON_NAME_INVALID at https://www.hxly9.com/forum.php page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 60,
+        "status": 0,
+        "final_url": "https://www.hxly9.com/forum.php",
+        "title": "",
+        "error": "curl: (60) SSL: no alternative certificate subject name matches target host name 'www.hxly9.com'\nMore details here: https://curl.se/docs/sslcerts.html\n\ncurl failed to verify the legitimacy of the server and therefore could not\nestablish a secure connection to it. To learn more about this situation and\nhow to fix it, please visit the web page mentioned above."
+      }
+    },
+    {
+      "id": "site-weibo-com",
+      "name": "天府泰剧",
+      "url": "https://weibo.com/tfthaimovie",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://weibo.com/tfthaimovie",
+          "title": "@天府泰剧 的个人主页",
+          "text_length": 502,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://passport.weibo.com/visitor/visitor",
+        "title": "Sina Visitor System",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-weibo-com.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/dd132-weibo.com.png"
+      }
+    },
+    {
+      "id": "site-mcar-vip",
+      "name": "耐卡字幕组",
+      "url": "https://mcar.vip/forum.php?mod=forumdisplay&fid=129",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://mcar.vip/forum.php",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      }
+    },
+    {
+      "id": "site-subscene-com",
+      "name": "Subscene",
+      "url": "https://subscene.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "https://subscene.com/",
+          "title": "请稍候…",
+          "text_length": 114,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://subscene.com/",
+        "title": "Just a moment...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-dialogue-moe",
+      "name": "Dialogue.moe",
+      "url": "https://dialogue.moe/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://dialogue.moe/",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      }
+    },
+    {
+      "id": "site-840f-com",
+      "name": "恐怖世界",
+      "url": "https://www.840f.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：域名停放或用途已变更",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.840f.com/",
+          "title": "八肆零F_知干货聊生活，问答共享成长",
+          "text_length": 2635,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.840f.com/",
+        "title": "八肆零F_知干货聊生活，问答共享成长",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-jlpzj-net",
+      "name": "纪录片之家",
+      "url": "https://www.jlpzj.net/forum.php",
+      "source": "https://tv.baozangdh.com/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.jlpzj.net/forum.php",
+          "title": "纪录片之家 - Powered by Discuz!",
+          "text_length": 1061,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.jlpzj.net/forum.php",
+        "title": "��¼Ƭ֮�� - Powered by Discuz!",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-jlpzj-net.png",
+        "source": "https://tv.baozangdh.com/wp-content/uploads/2023/11/3412b-www.jlpzj.net.png"
+      }
+    },
+    {
+      "id": "site-zhys-66rt-com",
+      "name": "战火影视",
+      "url": "https://www.zhys.66rt.com/index.php",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://www.zhys.66rt.com/index.php",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      }
+    },
+    {
+      "id": "site-nmandy-com",
+      "name": "诺曼底影视",
+      "url": "https://www.nmandy.com/forum.php",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：域名停放或用途已变更",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.nmandy.com/forum.php",
+          "title": "",
+          "text_length": 74,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://www.nmandy.com/forum.php",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      }
+    },
+    {
+      "id": "site-zhuiyingmao3-com",
+      "name": "追影猫",
+      "url": "https://zhuiyingmao3.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "https://2026-10-10.urldance.com/8d/",
+          "title": "403 Forbidden",
+          "text_length": 19,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://gotowww.aipages.dev/8d/",
+        "title": "welcome",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-7080-wang",
+      "name": "7080网",
+      "url": "https://7080.wang/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：内容与本次影视目录范围不符，或只进入 APP 下载页",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://7080.wang/",
+          "title": "7080网-一个简单的娱乐办公导航",
+          "text_length": 4935,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://7080.wang/",
+        "title": "7080网-一个简单的娱乐办公导航",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-wandou-la",
+      "name": "豌豆免费影视",
+      "url": "https://www.wandou.la/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.wandou.la/",
+          "title": "Redirecting...",
+          "text_length": 227,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.wandou.la/",
+        "title": "Redirecting...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-xn-p3tv7h-com",
+      "name": "影搜",
+      "url": "https://xn--p3tv7h.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://xn--p3tv7h.com/",
+          "title": "影搜",
+          "text_length": 122,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://xn--p3tv7h.com/",
+        "title": "盘搜 - 网盘资源搜索",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-qmtv-pro",
+      "name": "青麦",
+      "url": "https://www.qmtv.pro/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：域名停放或用途已变更",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "http://ww80.qmtv.pro/",
+          "title": "",
+          "text_length": 0,
+          "error": " page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.qmtv.pro/",
+        "title": "Loading...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-51souju1-com",
+      "name": "51搜剧",
+      "url": "https://51souju1.com/",
+      "source": "https://tv.baozangdh.com/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_RESET at https://51souju1.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 35,
+        "status": 0,
+        "final_url": "https://51souju1.com/",
+        "title": "",
+        "error": "curl: (35) LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to 51souju1.com:443"
+      }
+    },
+    {
+      "id": "site-ymck-pro",
+      "name": "影猫の仓库",
+      "url": "https://ymck.pro/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.ymck.pro/",
+          "title": "影猫の仓库 - 免费观影第一站 !",
+          "text_length": 715,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.ymck.pro/",
+        "title": "影猫の仓库 - 免费观影第一站 !",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-ymck-pro.png",
+        "source": "https://www.ymck.pro/upload/site/20230825-1/5c00fbcfb4ff0737d3c8320d30b2d1de.png"
+      }
+    },
+    {
+      "id": "site-soupian-app",
+      "name": "搜片",
+      "url": "https://soupian.app/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://soupian.app/",
+        "title": "搜片.com - 搜你想看的影片",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-duse0-com",
+      "name": "91毒舌电影",
+      "url": "https://www.duse0.com/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不收录：域名停放或用途已变更",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.baidu.com/",
+          "title": "百度一下，你就知道",
+          "text_length": 232,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 850,
+        "final_url": "https://www.duse0.com/",
+        "title": "Protected by cdndefend, verifying your browser...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-x8kb9k8-com",
+      "name": "金牌影院",
+      "url": "https://www.x8kb9k8.com/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.x8kb9k8.com/",
+          "title": "金牌影院_免费在线播放_高清全集_电影网站_在线视频",
+          "text_length": 9854,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.x8kb9k8.com/",
+        "title": "金牌影院_免费在线播放_高清全集_电影网站_在线视频",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-x8kb9k8-com.png",
+        "source": "https://obs.3688baihuo.com/upload/site_ico/20260531-1/92da5ddc802c076de628be1b70e6fb90_180x180.png"
+      }
+    },
+    {
+      "id": "site-cupfox-love",
+      "name": "茶杯狐",
+      "url": "https://cupfox.love/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不重复收录：已有同一服务或镜像入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://cupfox.love/",
+          "title": "茶杯狐 - 片荒剧荒就来茶杯狐",
+          "text_length": 928,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://cupfox.love/",
+        "title": "茶杯狐 - 片荒剧荒就来茶杯狐",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-novipnoad-net",
+      "name": "NO视频",
+      "url": "https://www.novipnoad.net/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.novipnoad.net/",
+          "title": "NO视频 – 不负追剧好时光 (￣▽￣)\"",
+          "text_length": 3074,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://www.novipnoad.net/",
+        "title": "Just a moment...",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-novipnoad-net.png",
+        "source": "https://img.novipnoad.net/apple-touch-icon.png"
+      }
+    },
+    {
+      "id": "site-tvfans-top",
+      "name": "Cloud 影视",
+      "url": "https://www.tvfans.top/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 521,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_HTTP_RESPONSE_CODE_FAILURE at https://www.tvfans.top/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 521,
+        "final_url": "https://www.tvfans.top/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-weishitv-xyz",
+      "name": "Vision TV+",
+      "url": "https://weishitv.xyz/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://weishitv.xyz/",
+          "title": "威视TV-海量高清在线影视库",
+          "text_length": 2154,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://weishitv.xyz/",
+        "title": "威视TV-海量高清在线影视库",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-weishitv-xyz.png",
+        "source": "https://weishitv.xyz/upload/site/20250918-1/e9f71ee646f6b31fd32bbc72a8665d57.png"
+      }
+    },
+    {
+      "id": "site-ixigua-com",
+      "name": "西瓜视频",
+      "url": "https://www.ixigua.com/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不收录：内容与本次影视目录范围不符，或只进入 APP 下载页",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.ixigua.com/app/",
+          "title": "西瓜视频APP官方下载_安卓版_iOS版",
+          "text_length": 347,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.ixigua.com/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-doki8-net",
+      "name": "心动日剧",
+      "url": "https://www.doki8.net/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://www.doki8.net/",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      }
+    },
+    {
+      "id": "site-kortw-com",
+      "name": "韓劇網",
+      "url": "https://kortw.com/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "https://kortw.com/",
+          "title": "403 Forbidden",
+          "text_length": 19,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://2kor.com/",
+        "title": "恭喜，站点创建成功！",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-rrdynb-com",
+      "name": "人人电影网",
+      "url": "https://www.rrdynb.com/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.rrdynb.com/index.html",
+          "title": "人人电影网,百度云盘,阿里网盘夸克下载",
+          "text_length": 12262,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.rrdynb.com/index.html",
+        "title": " 人人电影网,百度云盘,阿里网盘夸克下载 ",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-rrdynb-com.png",
+        "source": "https://www.rrdynb.com/favicon.ico"
+      }
+    },
+    {
+      "id": "site-dianying4k-com",
+      "name": "Ultra4K",
+      "url": "https://dianying4k.com/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://dianying4k.com/auth/login",
+          "title": "账号登录 | Ultra4K影库 | Ultra4K",
+          "text_length": 178,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://dianying4k.com/",
+        "title": "Ultra4K - 顶级 4K UHD 极清电影资源库 | Ultra4K",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-dianying4k-com.png",
+        "source": "https://dianying4k.com/favicon.ico"
+      }
+    },
+    {
+      "id": "site-ddys-io",
+      "name": "低端影视",
+      "url": "https://ddys.io/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "https://ddys.io/",
+          "title": "请稍候…",
+          "text_length": 109,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://ddys.io/",
+        "title": "Just a moment...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-xuexizhinan-com",
+      "name": "4K指南",
+      "url": "https://xuexizhinan.com/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CERT_AUTHORITY_INVALID at https://xuexizhinan.com/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 60,
+        "status": 0,
+        "final_url": "https://xuexizhinan.com/",
+        "title": "",
+        "error": "curl: (60) SSL certificate problem: self signed certificate\nMore details here: https://curl.se/docs/sslcerts.html\n\ncurl failed to verify the legitimacy of the server and therefore could not\nestablish a secure connection to it. To learn more about this situation and\nhow to fix it, please visit the web page mentioned above."
+      }
+    },
+    {
+      "id": "site-btdx8-net",
+      "name": "比特大雄",
+      "url": "https://www.btdx8.net/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.btdx8.net/",
+          "title": "比特大雄_BT电影天堂_最新720P、1080P高清电影BT种子免注册下载网站",
+          "text_length": 2080,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.btdx8.net/",
+        "title": "比特大雄_BT电影天堂_最新720P、1080P高清电影BT种子免注册下载网站",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-btdx8-net.png",
+        "source": "https://www.btdx8.net/favicon.ico"
+      }
+    },
+    {
+      "id": "site-dyjie-net",
+      "name": "电影街",
+      "url": "https://dyjie.net/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://dyjie.net/user/login/",
+          "title": "用户登录",
+          "text_length": 182,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://dyjie.net/user/login/",
+        "title": "用户登录",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-dyjie-net.png",
+        "source": "https://dyjie.net/resource/images/favicon.png"
+      }
+    },
+    {
+      "id": "site-skr2-cc",
+      "name": "樱之空动漫",
+      "url": "https://www.skr2.cc/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "https://skr.skr2.cc:666/",
+          "title": "人机验证",
+          "text_length": 41,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://www.skr2.cc/",
+        "title": "人机验证",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-bangumi-tv",
+      "name": "Bangumi 番组计划",
+      "url": "https://bangumi.tv/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_RESET at https://bangumi.tv/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://bangumi.tv/",
+        "title": "Bangumi 番组计划",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-agefans-la",
+      "name": "AGE动漫",
+      "url": "https://www.agefans.la/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_RESET at https://www.agefans.la/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 60,
+        "status": 0,
+        "final_url": "https://www.agefans.la/",
+        "title": "",
+        "error": "curl: (60) SSL certificate problem: certificate has expired\nMore details here: https://curl.se/docs/sslcerts.html\n\ncurl failed to verify the legitimacy of the server and therefore could not\nestablish a secure connection to it. To learn more about this situation and\nhow to fix it, please visit the web page mentioned above."
+      }
+    },
+    {
+      "id": "site-bangumi-moe",
+      "name": "萌番组",
+      "url": "https://bangumi.moe/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://bangumi.moe/",
+          "title": "萌番组",
+          "text_length": 81,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://bangumi.moe/",
+        "title": "番組、萌え",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-bgmlist-com",
+      "name": "番组放送",
+      "url": "https://bgmlist.com/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://bgmlist.com/",
+          "title": "每日放送 | 番组放送",
+          "text_length": 4457,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://bgmlist.com/",
+        "title": "每日放送 | 番组放送",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-bgmlist-com.png",
+        "source": "https://bgmlist.com/apple-touch-icon.png"
+      }
+    },
+    {
+      "id": "site-mikanime-tv",
+      "name": "蜜柑计划",
+      "url": "https://mikanime.tv/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不重复收录：已有同一服务或镜像入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://mikanime.tv/",
+          "title": "蜜柑计划 - Mikan Project",
+          "text_length": 2598,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://mikanani.me/",
+        "title": "&#x871C;&#x67D1;&#x8BA1;&#x5212; - Mikan Project",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-animetox-com",
+      "name": "Animex动漫社",
+      "url": "https://www.animetox.com/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.animetox.com/",
+          "title": "Animex动漫社 - 二次元及日本文化最速报",
+          "text_length": 3614,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.animetox.com/",
+        "title": "Animex动漫社 - 二次元及日本文化最速报",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-animetox-com.png",
+        "source": "https://www.animetox.com/wp-content/uploads/2024/09/cropped-1725797950-Animex-Logo-32x32.webp"
+      }
+    },
+    {
+      "id": "site-kisssub-org",
+      "name": "爱恋动漫",
+      "url": "https://www.kisssub.org/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.kisssub.org/public/html/start/",
+          "title": "",
+          "text_length": 27,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.kisssub.org/public/html/start/",
+        "title": "",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-animes-garden",
+      "name": "Anime Garden",
+      "url": "https://animes.garden/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://animes.garden/",
+          "title": "Anime Garden 動漫花園第三方镜像站以及动画 BT 资源聚合站",
+          "text_length": 4494,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://animes.garden/",
+        "title": "Anime Garden 動漫花園第三方镜像站以及动画 BT 资源聚合站",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-animes-garden.png",
+        "source": "https://animes.garden/pwa-64x64.png"
+      }
+    },
+    {
+      "id": "site-list-mtime-com",
+      "name": "时光电影榜",
+      "url": "https://list.mtime.com/listIndex",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://list.mtime.com/",
+          "title": "Mtime时光网 —— 榜单/片单",
+          "text_length": 359,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://list.mtime.com/listIndex",
+        "title": "Mtime时光网 —— 榜单/片单",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-list-mtime-com.png",
+        "source": "https://s0.mtime.cn/dist/list/1775628609149/favicon.ico"
+      }
+    },
+    {
+      "id": "site-impawards-com",
+      "name": "IMP Awards",
+      "url": "https://www.impawards.com/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "http://www.impawards.com/",
+          "title": "IMP Awards - All the Latest Movie Posters",
+          "text_length": 3187,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "http://www.impawards.com/",
+        "title": "IMP Awards - All the Latest Movie Posters",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-impawards-com.png",
+        "source": "http://www.impawards.com/favicon.ico"
+      }
+    },
+    {
+      "id": "site-6huo-com",
+      "name": "预告片世界",
+      "url": "https://www.6huo.com/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.6huo.com/",
+          "title": "预告片世界-最新电影预告片播放-高清在线观看",
+          "text_length": 1522,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.6huo.com/",
+        "title": "预告片世界-最新电影预告片播放-高清在线观看",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-6huo-com.png",
+        "source": "https://www.6huo.com/static/images/apple-touch-icon-57x57.png"
+      }
+    },
+    {
+      "id": "site-taicishe-com",
+      "name": "英语台词社",
+      "url": "https://www.taicishe.com/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "https://www.taicishe.com/",
+          "title": "Just a moment...",
+          "text_length": 0,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://www.taicishe.com/",
+        "title": "Just a moment...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-playphrase-me",
+      "name": "PlayPhrase.me",
+      "url": "https://www.playphrase.me/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.playphrase.me/",
+          "title": "PlayPhrase.me: Site for cinema archaeologists.",
+          "text_length": 129,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.playphrase.me/",
+        "title": "PlayPhrase.me: Site for cinema archaeologists.",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-playphrase-me.png",
+        "source": "https://www.playphrase.me/img/app-icons/ios/120.png"
+      }
+    },
+    {
+      "id": "site-r3sub-com",
+      "name": "R3字幕網",
+      "url": "https://r3sub.com/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 403,
+        "final_url": "https://r3sub.com/",
+        "title": "Just a moment...",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-opensubtitles-org",
+      "name": "OpenSubtitles",
+      "url": "https://www.opensubtitles.org/zh",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 403,
+          "final_url": "https://www.opensubtitles.org/zh",
+          "title": "",
+          "text_length": 56,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 401,
+        "final_url": "https://www.opensubtitles.org/.within.website/",
+        "title": "Making sure you&#39;re not a bot!",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-assrt-net",
+      "name": "射手网(伪)",
+      "url": "https://assrt.net/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://assrt.net/",
+          "title": "首页 - 射手网(伪) - assrt.net - 字幕下载，字幕组，中文字幕，美剧字幕，英剧字幕，双语字幕，新番字幕",
+          "text_length": 1011,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://assrt.net/",
+        "title": "首页 - 射手网(伪) - assrt.net - 字幕下载，字幕组，中文字幕，美剧字幕，英剧字幕，双语字幕，新番字幕",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-assrt-net.png",
+        "source": "https://assrt.net/favicon.ico"
+      }
+    },
+    {
+      "id": "site-yysub-cc",
+      "name": "人人影视",
+      "url": "https://www.yysub.cc/subtitle",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不重复收录：已有同一服务或镜像入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.yysub.cc/subtitle",
+          "title": "字幕组,ZiMuZu.tv,字幕组网站,人人影视",
+          "text_length": 4780,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.yysub.cc/subtitle",
+        "title": "字幕组,ZiMuZu.tv,字幕组网站,人人影视",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-05jl-com",
+      "name": "纪录片之家",
+      "url": "https://www.05jl.com/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://www.05jl.com/",
+          "title": "BBC纪录片大全_最新美剧下载 | 纪录片之家",
+          "text_length": 5061,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://www.05jl.com/",
+        "title": "BBC纪录片大全_最新美剧下载 | 纪录片之家",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-05jl-com.png",
+        "source": "https://www.05jl.com/favicon.ico"
+      }
+    },
+    {
+      "id": "site-docu-lib-com",
+      "name": "纪录片数据库",
+      "url": "https://docu-lib.com/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不重复收录：已有同一服务或镜像入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://docu-lib.com/",
+          "title": "纪录片数据库 - 纪录片下载 Docu-Lib",
+          "text_length": 751,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://docu-lib.com/",
+        "title": "纪录片数据库 - 纪录片下载 Docu-Lib",
+        "error": ""
+      }
+    },
+    {
+      "id": "site-jlptd-com",
+      "name": "纪录片天地",
+      "url": "https://www.jlptd.com/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Target page, context or browser has been closed"
+        }
+      ],
+      "http": {
+        "exit": 28,
+        "status": 0,
+        "final_url": "https://www.jlptd.com/",
+        "title": "",
+        "error": "curl: (28) SSL connection timeout"
+      }
+    },
+    {
+      "id": "site-jishi-cctv-com",
+      "name": "纪实|央视网",
+      "url": "https://jishi.cctv.com/",
+      "source": "https://ailongmiao.com/movie/",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://tv.cctv.com/yxg/index.shtml",
+          "title": "央视片库_CCTV节目官网_央视网",
+          "text_length": 1033,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 200,
+        "final_url": "https://jishi.cctv.com/",
+        "title": "纪实-中国纪录片第一频道,最新、高清正版海量纪录片_央视网",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-jishi-cctv-com.png",
+        "source": "https://tv.cctv.com/favicon.ico"
+      }
+    },
+    {
+      "id": "site-cn1-xgcartoon-com",
+      "name": "西瓜卡通",
+      "url": "https://cn1.xgcartoon.com/",
+      "source": "user",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser",
+          "status": 200,
+          "final_url": "https://cn1.xgcartoon.com/",
+          "title": "🍉西瓜卡通",
+          "text_length": 7103,
+          "error": ""
+        },
+        {
+          "network": "browser-retry",
+          "status": 200,
+          "final_url": "https://cn1.xgcartoon.com/",
+          "title": "🍉西瓜卡通",
+          "text_length": 7103,
+          "error": ""
+        },
+        {
+          "network": "browser-direct",
+          "status": 200,
+          "final_url": "https://cn1.xgcartoon.com/",
+          "title": "🍉西瓜卡通",
+          "text_length": 7103,
+          "error": ""
+        }
+      ],
+      "http": {
+        "exit": 0,
+        "status": 502,
+        "final_url": "https://cn1.xgcartoon.com/",
+        "title": "502 Bad Gateway",
+        "error": ""
+      },
+      "icon": {
+        "path": "images/movie-icons/site-cn1-xgcartoon-com.png",
+        "source": "https://cn1.xgcartoon.com/xgct/icon/apple-touch-icon.png"
+      }
+    },
+    {
+      "id": "wooyun",
+      "name": "乌云影视",
+      "url": "https://wooyun.tv/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser-top",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: net::ERR_CONNECTION_RESET at https://wooyun.tv/ page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 0,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 12000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ]
+    },
+    {
+      "id": "czzy",
+      "name": "厂长资源",
+      "url": "https://www.cz01.org/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser-top",
+          "status": 200,
+          "final_url": "https://www.4kcz.com/",
+          "title": "厂长资源 – 厂长影视官网 | 超清视频站",
+          "text_length": 4990,
+          "error": ""
+        }
+      ],
+      "icon": {
+        "path": "images/movie-icons/czzy.png",
+        "source": "https://gimg1.baidu.com/gimg/app=2001&n=0&g=0n&fmt=jpeg&src=img.czzy66.com/2020/05/cropped-90b07fe57d6142-32x32.png"
+      }
+    },
+    {
+      "id": "xiuluo",
+      "name": "修罗影视",
+      "url": "https://v.xl01.eu.cc/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": false,
+      "decision": "不收录：连接、证书、验证限制或内容未完整呈现；不认定永久失效",
+      "browser": [
+        {
+          "network": "browser-top",
+          "status": 522,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 15000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        },
+        {
+          "network": "browser-direct",
+          "status": 522,
+          "final_url": "about:blank",
+          "title": "",
+          "text_length": 0,
+          "error": "page.goto: Timeout 12000ms exceeded. page.evaluate: Execution context was destroyed, most likely because of a navigation"
+        }
+      ]
+    },
+    {
+      "id": "libvio",
+      "name": "LIBVIO",
+      "url": "https://www.libvio.mov/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": false,
+      "decision": "不收录：入口公告、轮换通知或暂停服务，未进入内容目录",
+      "browser": [
+        {
+          "network": "browser-top",
+          "status": 200,
+          "final_url": "https://www.libvio.mov/",
+          "title": "libvio — 域名暂时停止使用通知 / Domain Suspended",
+          "text_length": 250,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "ddys-rest",
+      "name": "低端影视",
+      "url": "https://ddys.rest/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": false,
+      "decision": "不收录：入口公告、轮换通知或暂停服务，未进入内容目录",
+      "browser": [
+        {
+          "network": "browser-gateway",
+          "status": 200,
+          "final_url": "https://ddys.rest/",
+          "title": "低端影视 · 最新访问地址",
+          "text_length": 194,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "ddys-baby",
+      "name": "低端影视",
+      "url": "https://ddys.baby/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": false,
+      "decision": "不收录：入口公告、轮换通知或暂停服务，未进入内容目录",
+      "browser": [
+        {
+          "network": "browser-gateway",
+          "status": 200,
+          "final_url": "https://ddys.baby/",
+          "title": "低端影视 · 最新访问地址",
+          "text_length": 194,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "ddys-monster",
+      "name": "低端影视",
+      "url": "https://ddys.monster/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": false,
+      "decision": "不收录：入口公告、轮换通知或暂停服务，未进入内容目录",
+      "browser": [
+        {
+          "network": "browser-gateway",
+          "status": 200,
+          "final_url": "https://ddys.monster/",
+          "title": "低端影视 · 最新访问地址",
+          "text_length": 194,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "id": "yingshisou",
+      "name": "影视搜",
+      "url": "https://yingshi.xyz/",
+      "source": "https://www.weidus.com/favorites/mfys",
+      "retained": true,
+      "decision": "保留：浏览器已进入内容页或明确的服务入口",
+      "browser": [
+        {
+          "network": "browser-gateway",
+          "status": 200,
+          "final_url": "https://yingshi.xyz/",
+          "title": "影视搜 - 最新影视资源搜索引擎-网盘影视资源搜索-yingshi.xyz",
+          "text_length": 341,
+          "error": ""
+        }
+      ],
+      "icon": {
+        "path": "images/movie-icons/yingshisou.png",
+        "source": "https://yingshi.xyz/uploads/banner_pdYzDcaIx3YcfuCI.webp"
+      }
+    }
+  ]
+}

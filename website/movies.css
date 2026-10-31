@@ -94,12 +94,15 @@ html[data-resolved-theme="dark"] .movies-page {
 .category-anime .site-mark, .category-subtitles .site-mark { background: #eeebfa; color: #8668bf; }
 .category-documentary .site-mark, .category-tools .site-mark { background: #e8f1f7; color: #57849e; }
 html[data-resolved-theme="dark"] .site-mark, html[data-resolved-theme="dark"] .quick-mark { background: #333044; border-color: #ffffff06; color: #c4b8f6; }
+.movies-page .site-mark.has-icon, .movies-page .quick-mark.has-icon { background: #fff; border: 1px solid #2425320d; }
+.site-mark img, .quick-mark img { display: block; width: 28px; height: 28px; object-fit: contain; border-radius: 6px; }
+.quick-mark img { width: 32px; height: 32px; }
 .movie-card-heading > div { min-width: 0; }
-.movie-card h3 { overflow-wrap: anywhere; font-size: 14px; font-weight: 600; line-height: 1.5; }
+.movie-card h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 600; line-height: 1.5; }
 .site-domain { display: block; overflow: hidden; text-overflow: ellipsis; color: var(--soft-ink); font-size: 10px; line-height: 1.7; }
 .movie-card-heading > svg { width: 14px; height: 14px; flex-shrink: 0; margin: 0 0 auto auto; color: var(--soft-ink); opacity: .65; }
-.movie-card-link > p { margin-top: 9px; color: var(--soft-ink); font-size: 12px; line-height: 1.7; }
-.site-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; padding-right: 22px; }
+.movie-card-link > p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 9px; color: var(--soft-ink); font-size: 12px; line-height: 1.7; }
+.site-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; padding-top: 8px; padding-right: 22px; border-top: 1px solid var(--stroke); }
 .site-tags span { padding: 2px 7px; border-radius: 5px; background: var(--tag); color: var(--soft-ink); font-size: 10px; line-height: 1.7; }
 .favorite-button { display: grid; place-items: center; position: absolute; right: 6px; bottom: 5px; width: 36px; height: 36px; border: 0; border-radius: 10px; color: var(--soft-ink); background: transparent; }
 .favorite-button svg { width: 16px; height: 16px; }
@@ -167,6 +170,7 @@ html[data-resolved-theme="dark"] .site-mark, html[data-resolved-theme="dark"] .q
   .movie-card-link { padding: 12px 12px 10px; }
   .movie-card-heading { align-items: flex-start; gap: 8px; }
   .site-mark { width: 31px; height: 33px; border-radius: 9px; font-size: 12px; }
+  .site-mark img, .quick-mark img { width: 23px; height: 23px; border-radius: 5px; }
   .movie-card h3 { font-size: 12px; }
   .site-domain { font-size: 9px; max-width: 95px; }
   .movie-card-heading > svg { display: none; }

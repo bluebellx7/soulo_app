@@ -2,7 +2,7 @@
 
 > Soulo 是 iPhone 多平台搜索浏览器。官网提供产品介绍、可导入的搜索源目录，以及按用途分类的影视网站导航。
 
-Updated: 2026-10-30
+Updated: 2026-10-31
 
 ## Primary pages
 

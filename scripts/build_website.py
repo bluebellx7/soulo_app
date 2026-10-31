@@ -54,6 +54,17 @@ def navigation(page):
     return template
 
 
+def movie_mark(site, css_class):
+    if path := site.get('icon'):
+        assert re.fullmatch(r'images/movie-icons/[a-z0-9-]+\.png', path), path
+        assert (SITE/path).is_file(), f'Missing movie icon: {path}'
+        content = f'<img src="{esc(path)}" width="32" height="32" alt="" loading="lazy" decoding="async" />'
+        css_class += ' has-icon'
+    else:
+        content = esc(site['mark'])
+    return f'<span class="{css_class}" aria-hidden="true">{content}</span>'
+
+
 def build_existing_page(file):
     source = (SITE/file).read_text()
     replacement = navigation(file)
@@ -90,11 +101,13 @@ def build_movies():
             search = ' '.join([site['name'], domain, name, site['description'], *site['tags']]).lower()
             tags = ''.join(f'<span>{esc(tag)}</span>' for tag in site['tags'])
             cards.append(f'''<article class="movie-card" data-site="{site['id']}" data-search="{esc(search)}">
-              <a class="movie-card-link" href="{esc(site['url'])}" target="_blank" rel="noopener noreferrer" aria-label="打开{esc(site['name'])}（新标签页）"><div class="movie-card-heading"><span class="site-mark" aria-hidden="true">{esc(site['mark'])}</span><div><h3>{esc(site['name'])}</h3><span class="site-domain">{esc(domain)}</span></div>{icon('external')}</div><p>{esc(site['description'])}</p><div class="site-tags">{tags}</div></a>
+              <a class="movie-card-link" href="{esc(site['url'])}" target="_blank" rel="noopener noreferrer" aria-label="打开{esc(site['name'])}（新标签页）"><div class="movie-card-heading">{movie_mark(site, 'site-mark')}<div><h3>{esc(site['name'])}</h3><span class="site-domain">{esc(domain)}</span></div>{icon('external')}</div><p title="{esc(site['description'])}">{esc(site['description'])}</p><div class="site-tags">{tags}</div></a>
               <button class="favorite-button" type="button" data-favorite="{site['id']}" aria-label="收藏{esc(site['name'])}" aria-pressed="false" title="收藏{esc(site['name'])}">{icon('heart')}</button>
             </article>''')
         sections.append(f'''<section class="movie-category category-{cid}" id="{cid}" data-section="{cid}" aria-labelledby="heading-{cid}"><div class="movie-section-heading"><div>{icon(category['icon'])}<h2 id="heading-{cid}">{esc(name)}</h2><span class="section-count">{len(items)}</span></div><p>{esc(category['description'])}</p></div><div class="movie-grid">{''.join(cards)}</div></section>''')
-    featured = ''.join(f'<a class="quick-pick" href="{esc(s["url"])}" target="_blank" rel="noopener noreferrer"><span class="quick-mark" aria-hidden="true">{esc(s["mark"])}</span><span><strong>{esc(s["name"])}</strong><span>{esc(s["tags"][0])}入口</span></span>{icon("external")}</a>' for s in sites if s.get('featured'))
+    featured = ''.join(f'<a class="quick-pick" href="{esc(s["url"])}" target="_blank" rel="noopener noreferrer">{movie_mark(s, "quick-mark")}<span><strong>{esc(s["name"])}</strong><span>{esc(s["tags"][0])}入口</span></span>{icon("external")}</a>' for s in sites if s.get('featured'))
+    source_names = {'https://i8k.tv/': 'i8K 影视导航', 'https://www.weidus.com/favorites/mfys': '微度导航', 'https://tv.baozangdh.com/': '影视宝藏导航', 'https://ailongmiao.com/movie/': '龙喵影视导航', 'https://cn1.xgcartoon.com/': '西瓜卡通'}
+    source_links = '、'.join(f'<a href="{esc(url)}" target="_blank" rel="noopener noreferrer">{esc(source_names.get(url, urlparse(url).netloc))}</a>' for url in data['sources'])
     graph = {
         '@context': 'https://schema.org', '@graph': [
             {'@type': 'WebSite', '@id': BASE+'#website', 'name': 'Soulo', 'url': BASE},
@@ -102,7 +115,7 @@ def build_movies():
             {'@type': 'BreadcrumbList', '@id': BASE+'movies.html#breadcrumb', 'itemListElement': [{'@type':'ListItem','position':1,'name':'Soulo','item':BASE},{'@type':'ListItem','position':2,'name':'影视导航','item':BASE+'movies.html'}]},
             {'@type': 'ItemList', '@id': BASE+'movies.html#directory', 'name':'影视网站目录', 'numberOfItems': len(sites), 'itemListOrder':'https://schema.org/ItemListUnordered', 'itemListElement':[{'@type':'ListItem','position':i+1,'item':{'@type':'WebSite','name':s['name'],'url':s['url'],'description':s['description']}} for i,s in enumerate(sites)]},
         ]}
-    tokens = {'site_count':str(len(sites)), 'category_count':str(len(categories)), 'updated':data['updated'], 'structured_data':jsonld(graph), 'featured_sites':featured, 'category_links':''.join(links), 'catalog':'\n'.join(sections), 'navigation':navigation('movies.html')}
+    tokens = {'site_count':str(len(sites)), 'category_count':str(len(categories)), 'updated':data['updated'], 'structured_data':jsonld(graph), 'featured_sites':featured, 'source_links':source_links, 'category_links':''.join(links), 'catalog':'\n'.join(sections), 'navigation':navigation('movies.html')}
     tokens.update({f'{key}_icon': icon(key) for key in ICONS})
     tokens['arrow'] = icon('arrow')
     template = (ROOT/'scripts/templates/movies.html').read_text()

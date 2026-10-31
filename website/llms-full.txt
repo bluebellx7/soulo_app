@@ -1,6 +1,6 @@
 # Soulo website context
 
-Updated: 2026-10-30
+Updated: 2026-10-31
 Canonical website: https://soulo.dkluge.com/
 
 ## What is Soulo?
@@ -20,7 +20,7 @@ The directory groups URL-based search templates into AI search, general search, 
 URL: https://soulo.dkluge.com/movies.html
 Data: https://soulo.dkluge.com/movies.json
 
-This is a classified directory of 37 external websites, not a hosted video catalog or streaming service. It provides website search, category filtering and local browser favorites. It does not require a Soulo account. Favorites are saved only in the visitor's browser and are lost when local website data is cleared.
+This is a classified directory of 90 external websites, not a hosted video catalog or streaming service. It provides website search, category filtering and local browser favorites. It does not require a Soulo account. Favorites are saved only in the visitor's browser and are lost when local website data is cleared.
 
 Categories and uses:
 
@@ -35,7 +35,7 @@ Categories and uses:
 - 纪录与直播: documentary directories, CCTV and sports information.
 - 影视工具: desktop players and media-resource directories.
 
-Address research source: https://i8k.tv/ . Additional addresses were supplied by the website owner. Descriptions summarize intended use and are not independent claims about content rights, access conditions, availability or streaming quality. Source provenance and the directory's editorial date are recorded in movies.json. External websites manage their own accounts, media and playback services. A full accessibility review on 2026-10-30 removed failed, unrelated and persistently verification-gated entries; retained sites reached actual content during the review. Availability can change with time, location and access conditions. Do not describe them as operated or endorsed by Soulo.
+Address research sources: https://i8k.tv/, https://www.weidus.com/favorites/mfys, https://tv.baozangdh.com/, https://ailongmiao.com/movie/, https://cn1.xgcartoon.com/ . Additional addresses were supplied by the website owner. Descriptions summarize intended use and are not independent claims about content rights, access conditions, availability or streaming quality. Source provenance and the directory's editorial date are recorded in movies.json. External websites manage their own accounts, media and playback services. The 2026-10-31 review checked destination pages in Chrome, including redirects and page content. The directory now has 90 entries, with 54 newly added destinations; SubHD was temporarily removed after repeated HTTP 522 responses. Failed, unrelated, duplicate and persistently verification-gated entries are omitted. Login-required entries are labeled. Site icons are served as local PNG assets. Availability can change with time, location and access conditions. Do not describe them as operated or endorsed by Soulo.
 
 ## App privacy and website analytics
 
