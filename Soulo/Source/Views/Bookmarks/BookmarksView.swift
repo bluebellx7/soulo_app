@@ -20,6 +20,7 @@ struct BookmarksView: View {
 }
 
 struct BookmarksContentView: View {
+    @Environment(\.libraryPageIsActive) private var libraryPageIsActive
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \BookmarkItem.dateAdded, order: .reverse) private var bookmarks: [BookmarkItem]
@@ -81,22 +82,24 @@ struct BookmarksContentView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button { editingFolder = nil; folderName = ""; folderPrompt = true } label: {
-                        Label(ToolText.text("favorites_new_folder"), systemImage: "folder.badge.plus")
-                    }
-                    Divider()
-                    Button { importing = true } label: {
-                        Label(ToolText.text("favorites_import"), systemImage: "square.and.arrow.down")
-                    }
-                    Button { exportBookmarks() } label: {
-                        Label(ToolText.text("favorites_export"), systemImage: "square.and.arrow.up")
-                    }.disabled(bookmarks.isEmpty && folders.isEmpty)
-                } label: { Image(systemName: "ellipsis").frame(minWidth: 44, minHeight: 44) }
-                .tint(.primary).disabled(busy)
-                .accessibilityLabel(ToolText.text("favorites_manage"))
-                .accessibilityIdentifier("favorites.manage")
+            if libraryPageIsActive {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button { editingFolder = nil; folderName = ""; folderPrompt = true } label: {
+                            Label(ToolText.text("favorites_new_folder"), systemImage: "folder.badge.plus")
+                        }
+                        Divider()
+                        Button { importing = true } label: {
+                            Label(ToolText.text("favorites_import"), systemImage: "square.and.arrow.down")
+                        }
+                        Button { exportBookmarks() } label: {
+                            Label(ToolText.text("favorites_export"), systemImage: "square.and.arrow.up")
+                        }.disabled(bookmarks.isEmpty && folders.isEmpty)
+                    } label: { Image(systemName: "ellipsis").frame(minWidth: 44, minHeight: 44) }
+                    .tint(.primary).disabled(busy)
+                    .accessibilityLabel(ToolText.text("favorites_manage"))
+                    .accessibilityIdentifier("favorites.manage")
+                }
             }
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.html], allowsMultipleSelection: false) { result in
@@ -180,6 +183,7 @@ struct BookmarksContentView: View {
                 Label(ToolText.text("favorites_rename"), systemImage: "pencil")
             }.tint(.gray)
         }
+        .background(LibrarySwipeActionsRegion())
     }
 
     private func bookmarkRow(_ item: BookmarkItem) -> some View {
@@ -221,6 +225,7 @@ struct BookmarksContentView: View {
             Button { moving = .bookmark(item) } label: { Label(ToolText.text("favorites_move"), systemImage: "folder") }
                 .tint(.gray)
         }
+        .background(LibrarySwipeActionsRegion())
     }
 
     private func saveFolder() {

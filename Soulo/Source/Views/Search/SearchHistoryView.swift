@@ -21,6 +21,7 @@ struct SearchHistoryView: View {
 }
 
 struct SearchHistoryContentView: View {
+    @Environment(\.libraryPageIsActive) private var libraryPageIsActive
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \SearchHistoryItem.timestamp, order: .reverse) private var allHistory: [SearchHistoryItem]
@@ -133,12 +134,14 @@ struct SearchHistoryContentView: View {
             )
         }
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button(role: .destructive) { showClearAlert = true } label: {
-                    Image(systemName: "trash").font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
+            if libraryPageIsActive {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(role: .destructive) { showClearAlert = true } label: {
+                        Image(systemName: "trash").font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
+                    }
+                    .disabled(visibleHistory.isEmpty)
+                    .accessibilityLabel(LanguageManager.shared.localizedString("clear_all"))
                 }
-                .disabled(visibleHistory.isEmpty)
-                .accessibilityLabel(LanguageManager.shared.localizedString("clear_all"))
             }
         }
         .alert(LanguageManager.shared.localizedString("confirm_clear_history"), isPresented: $showClearAlert) {
@@ -149,7 +152,10 @@ struct SearchHistoryContentView: View {
             Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
         }
         .onAppear {
-            SearchHistoryService.purgeExpiredBrowsingHistory(context: modelContext)
+            if libraryPageIsActive { SearchHistoryService.purgeExpiredBrowsingHistory(context: modelContext) }
+        }
+        .onChange(of: libraryPageIsActive) { _, active in
+            if active { SearchHistoryService.purgeExpiredBrowsingHistory(context: modelContext) }
         }
     }
 
@@ -232,6 +238,7 @@ struct SearchHistoryContentView: View {
                 Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
             }.tint(.red)
         }
+        .background(LibrarySwipeActionsRegion())
     }
 
     private func matchingHistoryEntries(for item: SearchHistoryItem) -> [SearchHistoryItem] {

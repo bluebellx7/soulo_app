@@ -11,6 +11,7 @@ struct LocalFile: Identifiable, Hashable {
     var coverURL: URL?
 }
 struct LibraryFilesView: View {
+    @Environment(\.libraryPageIsActive) private var libraryPageIsActive
     var directory: URL = BookLibrary.directory
     var embeddedInLibrary = false
     @AppStorage("files.gridView") private var showsGrid = false
@@ -60,35 +61,40 @@ struct LibraryFilesView: View {
         .navigationBarTitleDisplayMode(.inline)
         .mediaPlayerNavigation()
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                if !isSelecting {
-                    Menu {
-                        Button { importing = true } label: { ToolMenuLabel(key: "import_files", symbol: "folder") }
-                        Button { importingPhotos = true } label: { ToolMenuLabel(key: "import_photos", symbol: "photo") }
-                    } label: { Image(systemName: "folder.badge.plus") }
-                        .accessibilityLabel(ToolText.text("import_files"))
-                        .accessibilityIdentifier("files.import")
-                    Button { showTransfer = true } label: { Image(systemName: "wifi") }
-                        .accessibilityLabel(ToolText.text("wifi_transfer"))
-                        .accessibilityIdentifier("files.wifi")
+            if libraryPageIsActive {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    if !isSelecting {
+                        Menu {
+                            Button { importing = true } label: { ToolMenuLabel(key: "import_files", symbol: "folder") }
+                            Button { importingPhotos = true } label: { ToolMenuLabel(key: "import_photos", symbol: "photo") }
+                        } label: { Image(systemName: "folder.badge.plus") }
+                            .accessibilityLabel(ToolText.text("import_files"))
+                            .accessibilityIdentifier("files.import")
+                        Button { showTransfer = true } label: { Image(systemName: "wifi") }
+                            .accessibilityLabel(ToolText.text("wifi_transfer"))
+                            .accessibilityIdentifier("files.wifi")
+                    }
+                    Button { showsGrid.toggle() } label: {
+                        Image(systemName: showsGrid ? "list.bullet" : "square.grid.2x2")
+                    }
+                    .accessibilityLabel(LanguageManager.shared.localizedString(showsGrid ? "platform_list_view" : "platform_grid_view"))
+                    .accessibilityIdentifier("files.viewMode")
+                    Button {
+                        if isSelecting { endSelection() } else { isSelecting = true }
+                    } label: {
+                        Image(systemName: isSelecting ? "checkmark.circle.fill" : "checkmark.circle")
+                    }
+                    .accessibilityLabel(ToolText.text(isSelecting ? "done" : "select"))
+                    .accessibilityIdentifier("files.selectionMode")
+                    .accessibilityAddTraits(isSelecting ? .isSelected : [])
+                    .disabled(busy || (!isSelecting && !files.contains(where: { !$0.directory })))
                 }
-                Button { showsGrid.toggle() } label: {
-                    Image(systemName: showsGrid ? "list.bullet" : "square.grid.2x2")
-                }
-                .accessibilityLabel(LanguageManager.shared.localizedString(showsGrid ? "platform_list_view" : "platform_grid_view"))
-                .accessibilityIdentifier("files.viewMode")
-                Button {
-                    if isSelecting { endSelection() } else { isSelecting = true }
-                } label: {
-                    Image(systemName: isSelecting ? "checkmark.circle.fill" : "checkmark.circle")
-                }
-                .accessibilityLabel(ToolText.text(isSelecting ? "done" : "select"))
-                .accessibilityIdentifier("files.selectionMode")
-                .accessibilityAddTraits(isSelecting ? .isSelected : [])
-                .disabled(busy || (!isSelecting && !files.contains(where: { !$0.directory })))
             }
         }
-        .onAppear { reload() }
+        .onAppear { if libraryPageIsActive { reload() } }
+        .onChange(of: libraryPageIsActive) { _, active in
+            if active { reload() } else { reloadTask?.cancel() }
+        }
         .onDisappear { reloadTask?.cancel() }
         .alert(ToolText.text("rename_file"), isPresented: Binding(
             get: { renamingFile != nil }, set: { if !$0 { renamingFile = nil } }
@@ -277,6 +283,7 @@ struct LibraryFilesView: View {
                         .tint(.red)
                     }
                 }
+                .background(LibrarySwipeActionsRegion())
                 .fileDeletionConfirmation(isPresented: deletionBinding(file.id), count: pendingDeletion.count, confirm: deleteSelectedFiles)
             }
         }

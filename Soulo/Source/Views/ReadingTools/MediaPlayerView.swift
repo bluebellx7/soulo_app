@@ -759,6 +759,7 @@ struct AirPlayRoutePicker: UIViewRepresentable {
 // Present from the visible page so expanding the floating player preserves
 // the user's directory and the existing back stack.
 private struct MediaPlayerNavigation: ViewModifier {
+    @Environment(\.libraryPageIsActive) private var libraryPageIsActive
     @ObservedObject private var session = MediaSession.shared
     @State private var visible = false
     @State private var showingPlayer = false
@@ -767,7 +768,7 @@ private struct MediaPlayerNavigation: ViewModifier {
             .onAppear { visible = true }
             .onDisappear { visible = false }
             .onChange(of: session.expanded) { _, requested in
-                guard requested, visible, !showingPlayer else { return }
+                guard requested, visible, libraryPageIsActive, !showingPlayer else { return }
                 session.expanded = false
                 showingPlayer = true
             }

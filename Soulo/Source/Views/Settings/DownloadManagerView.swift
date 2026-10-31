@@ -26,6 +26,7 @@ struct DownloadManagerView: View {
 }
 
 struct DownloadManagerContentView: View {
+    @Environment(\.libraryPageIsActive) private var libraryPageIsActive
     @ObservedObject private var downloadManager = DownloadManagerService.shared
     @ObservedObject private var episodeDownloads = WebEpisodeDownloadService.shared
     let highlightedItemID: UUID?
@@ -46,7 +47,8 @@ struct DownloadManagerContentView: View {
         let url: URL
     }
     private var sizeRequests: [SizeRequest] {
-        downloadManager.downloads.filter { $0.status == .finished }.map { SizeRequest(id: $0.id, url: $0.localURL) }
+        guard libraryPageIsActive else { return [] }
+        return downloadManager.downloads.filter { $0.status == .finished }.map { SizeRequest(id: $0.id, url: $0.localURL) }
     }
     private var preparingEpisodes: [WebEpisodeDownloadJob] {
         episodeDownloads.jobs.filter { $0.status == .waiting || $0.status == .resolving }
@@ -125,16 +127,18 @@ struct DownloadManagerContentView: View {
         }
         .listStyle(.insetGrouped)
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showDownloadsFolder = true
-                } label: {
-                    Image(systemName: "folder.fill")
-                        .font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
+            if libraryPageIsActive {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showDownloadsFolder = true
+                    } label: {
+                        Image(systemName: "folder.fill")
+                            .font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
+                    }
+                    .accessibilityLabel(
+                        ToolText.text("system_files")
+                    )
                 }
-                .accessibilityLabel(
-                    ToolText.text("system_files")
-                )
             }
         }
         .sheet(item: $shareItem) { item in
@@ -170,7 +174,10 @@ struct DownloadManagerContentView: View {
             Button(ToolText.text("done")) { fileError = nil }
         } message: { Text(fileError ?? "") }
         .onAppear {
-            downloadManager.removeMissingFiles()
+            if libraryPageIsActive { downloadManager.removeMissingFiles() }
+        }
+        .onChange(of: libraryPageIsActive) { _, active in
+            if active { downloadManager.removeMissingFiles() }
         }
         .task(id: sizeRequests) {
             let requests = sizeRequests
@@ -272,6 +279,7 @@ struct DownloadManagerContentView: View {
                 )
             }.tint(.red)
         }
+        .background(LibrarySwipeActionsRegion())
         .contextMenu {
             if item.status == .finished,
                item.localURL.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
