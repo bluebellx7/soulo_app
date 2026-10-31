@@ -1,6 +1,6 @@
-1.2.5
+1.2.7
 
-• S'ha corregit un tancament inesperat en alguns dispositius amb iOS 17 en cercar després d'introduir una adreça web.
-• A la vista agrupada pots tancar totes les pestanyes d'un grup de lloc web després de confirmar.
-• Millores en l'entrada de pinyin i text, els indicadors de càrrega inicial, la navegació enrere i el lliscament de les targetes dels grups.
-• Millor gestió de valors numèrics inusuals de pàgines web, de les estadístiques de privadesa i bloqueig d'anuncis i del progrés de les baixades.
+• Millorada la compatibilitat amb scripts d'usuari i dependències externes amb @require.
+• Corregits casos de so en vídeos silenciats o reproducció duplicada en algunes pàgines.
+• Millorada la navegació enrere i la restauració de pàgines per mostrar abans el contingut disponible.
+• Barra de progrés de càrrega més visible amb el blau del tema de l'app.

@@ -1,6 +1,6 @@
-1.2.5
+1.2.7
 
-• Bazı iOS 17 aygıtlarında web adresi girildikten sonra arama yaparken oluşabilen çökme düzeltildi.
-• Gruplu görünümde, onay verdikten sonra bir site grubundaki tüm sekmeleri kapatabilirsiniz.
-• Pinyin ve metin girişi, ilk sayfa yükleme göstergeleri, geri gezinme ve grup kartlarını kaydırma iyileştirildi.
-• Web sayfalarındaki olağandışı sayısal değerlerin, gizlilik ve reklam engelleme istatistiklerinin ve indirme ilerlemesinin işlenmesi iyileştirildi.
+• @require üzerinden harici bağımlılıklar dahil kullanıcı betiği uyumluluğu iyileştirildi.
+• Bazı web sayfalarında sessize alınan videolardan ses gelmesi veya yinelenen oynatma sorunları giderildi.
+• Hazır içeriği daha erken göstermek için geri gezinme ve sayfa geri yükleme iyileştirildi.
+• Yükleme ilerleme çubuğu, uygulamanın tema mavisiyle daha belirgin hale getirildi.

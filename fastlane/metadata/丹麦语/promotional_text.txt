@@ -1,1 +1,1 @@
-Luk alle faner i en webstedsgruppe efter bekræftelse. Forbedret tekstindtastning, visning af indlæsning og stabilitet under browsing.
+Bedre understøttelse af brugerscripts og @require. Rettelser til videolyd, bedre tilbage-navigation og tydeligere indlæsning.

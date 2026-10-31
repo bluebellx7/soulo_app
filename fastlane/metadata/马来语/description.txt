@@ -4,7 +4,7 @@ Pilih Soulo sebagai pelayar lalai dalam Tetapan untuk membuka pautan daripada ap
 
 Tab dan kumpulan laman yang baru digunakan dipaparkan dahulu dan paparan tab dibuka dari atas. Susunan penggunaan kekal selepas dimulakan semula.
 
-Tutup semua tab dalam kumpulan laman selepas pengesahan. Input teks, penunjuk pemuatan dan kestabilan pelayaran dipertingkat.
+Keserasian skrip pengguna dan sokongan @require dipertingkat. Pembetulan audio video, navigasi kembali dan penunjuk pemuatan yang lebih jelas.
 
 Mainkan video yang disokong semasa dimuat turun. Muat turun latar dan skrin penuh ditambah baik, dengan perlindungan daripada iklan tersembunyi dan salinan tidak diminta.
 

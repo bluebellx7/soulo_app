@@ -4,7 +4,7 @@ V Nastavení vyberte Soulo jako výchozí prohlížeč pro otevírání odkazů 
 
 Nedávno použité karty a skupiny webů se zobrazují první a přehled se otevírá nahoře. Pořadí použití se zachová i po restartu.
 
-Po potvrzení zavřete všechny panely ve skupině webu. Vylepšeno zadávání textu, ukazatele načítání a stabilita prohlížení.
+Lepší podpora uživatelských skriptů a @require. Opravy zvuku videí, lepší návrat na stránky a výraznější průběh načítání.
 
 Přehrávejte podporovaná videa při stahování. Lepší stahování na pozadí, celá obrazovka a ochrana před skrytými reklamami a nechtěným kopírováním.
 

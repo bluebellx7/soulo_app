@@ -1,1 +1,1 @@
-Tutup semua tab dalam kumpulan laman selepas pengesahan. Input teks, penunjuk pemuatan dan kestabilan pelayaran dipertingkat.
+Keserasian skrip pengguna dan sokongan @require dipertingkat. Pembetulan audio video, navigasi kembali dan penunjuk pemuatan yang lebih jelas.

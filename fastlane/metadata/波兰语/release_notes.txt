@@ -1,6 +1,6 @@
-1.2.5
+1.2.7
 
-• Naprawiono awarię na niektórych urządzeniach z iOS 17 podczas wyszukiwania po wpisaniu adresu internetowego.
-• W widoku grup można zamknąć wszystkie karty grupy witryny po potwierdzeniu.
-• Ulepszono wprowadzanie pinyin i tekstu, wskaźniki pierwszego ładowania strony, powrót do poprzedniej strony i przesuwanie kart grup.
-• Ulepszono obsługę nietypowych wartości liczbowych ze stron, statystyk prywatności i blokowania reklam oraz postępu pobierania.
+• Poprawiono zgodność skryptów użytkownika, w tym zewnętrznych zależności przez @require.
+• Naprawiono dźwięk mimo wyciszenia filmów i powielone odtwarzanie na niektórych stronach.
+• Usprawniono cofanie i przywracanie stron, aby gotowa treść pojawiała się wcześniej.
+• Pasek postępu ładowania jest lepiej widoczny dzięki niebieskiemu kolorowi motywu aplikacji.

@@ -1,1 +1,1 @@
-Tanca totes les pestanyes d'un grup de lloc web després de confirmar. Millores en l'entrada de text, els indicadors de càrrega i l'estabilitat.
+Millor compatibilitat amb scripts i @require. Correccions del so dels vídeos, millor navegació enrere i càrrega més visible.

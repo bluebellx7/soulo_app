@@ -1,1 +1,1 @@
-Sluit alle tabbladen in een websitegroep na bevestiging. Verbeterde tekstinvoer, laadindicatoren en stabiliteit tijdens het browsen.
+Betere ondersteuning voor userscripts en @require. Oplossingen voor videogeluid, betere terugnavigatie en een duidelijkere laadindicator.

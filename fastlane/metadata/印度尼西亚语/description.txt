@@ -4,7 +4,7 @@ Pilih Soulo sebagai browser default di Pengaturan untuk membuka tautan dari app 
 
 Tab dan grup situs yang baru digunakan tampil lebih dulu, dan tampilan tab dibuka dari atas. Urutan penggunaan tetap tersimpan setelah memulai ulang.
 
-Tutup semua tab dalam grup situs setelah konfirmasi. Peningkatan input teks, indikator pemuatan, dan kestabilan penjelajahan.
+Kompatibilitas skrip pengguna dan dukungan @require ditingkatkan. Perbaikan audio video, navigasi kembali, dan indikator pemuatan.
 
 Putar video yang didukung sambil mengunduh. Unduhan latar belakang dan layar penuh lebih baik, dengan perlindungan dari iklan tersembunyi dan salinan tak diinginkan.
 

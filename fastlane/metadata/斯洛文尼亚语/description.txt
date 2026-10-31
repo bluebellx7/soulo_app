@@ -4,7 +4,7 @@ V Nastavitvah izberite Soulo kot privzeti brskalnik za odpiranje povezav iz drug
 
 Nedavno uporabljeni zavihki in skupine spletnih mest so prikazani najprej, pregled pa se odpre na vrhu. Vrstni red uporabe se ohrani po ponovnem zagonu.
 
-Po potrditvi zaprite vse zavihke v skupini spletnega mesta. Izboljšani vnos besedila, prikaz nalaganja in stabilnost brskanja.
+Boljša podpora za uporabniške skripte in @require. Popravki zvoka videov, vračanja na strani in vidnejši prikaz nalaganja.
 
 Predvajajte podprte videe med prenosom. Boljši prenosi v ozadju in celozaslonski način ter zaščita pred skritimi oglasi in neželenim kopiranjem.
 

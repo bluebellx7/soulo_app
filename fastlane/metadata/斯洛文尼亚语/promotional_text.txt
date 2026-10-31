@@ -1,1 +1,1 @@
-Po potrditvi zaprite vse zavihke v skupini spletnega mesta. Izboljšani vnos besedila, prikaz nalaganja in stabilnost brskanja.
+Boljša podpora za uporabniške skripte in @require. Popravki zvoka videov, vračanja na strani in vidnejši prikaz nalaganja.

@@ -1,1 +1,1 @@
-Po potvrzení zavřete všechny panely ve skupině webu. Vylepšeno zadávání textu, ukazatele načítání a stabilita prohlížení.
+Lepší podpora uživatelských skriptů a @require. Opravy zvuku videí, lepší návrat na stránky a výraznější průběh načítání.

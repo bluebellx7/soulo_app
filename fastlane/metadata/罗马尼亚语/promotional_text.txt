@@ -1,1 +1,1 @@
-Închide toate filele unui grup de site după confirmare. Îmbunătățiri la introducerea textului, indicatorii de încărcare și stabilitate.
+Compatibilitate mai bună a scripturilor cu @require. Corecții audio pentru videoclipuri, revenire îmbunătățită și încărcare mai vizibilă.

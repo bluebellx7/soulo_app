@@ -1,1 +1,1 @@
-Stäng alla flikar i en webbplatsgrupp efter bekräftelse. Förbättrad textinmatning, visning av inläsning och stabilitet vid surfning.
+Bättre stöd för användarskript och @require. Rättningar för videoljud, förbättrad bakåtnavigering och tydligare visning av inläsning.

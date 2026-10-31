@@ -4,7 +4,7 @@ Escolha o Soulo como navegador padrão nos Ajustes para abrir links de outros ap
 
 As abas e grupos de sites usados recentemente aparecem primeiro, e a visão geral abre no topo. A ordem de uso é mantida após reiniciar.
 
-Feche todas as abas de um grupo de site após confirmar. Melhorias na entrada de texto, nos indicadores de carregamento e na estabilidade.
+Melhor compatibilidade de scripts com @require. Correções no áudio de vídeos, navegação de volta e progresso de carregamento mais visível.
 
 Reproduza vídeos compatíveis durante o download. Downloads em segundo plano e tela cheia melhorados, com proteção contra anúncios ocultos e cópias indesejadas.
 

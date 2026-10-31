@@ -4,7 +4,7 @@ Vælg Soulo som standardbrowser i Indstillinger for at åbne links fra andre app
 
 Senest brugte faner og webstedsgrupper vises først, og faneoversigten åbner øverst. Rækkefølgen bevares efter genstart.
 
-Luk alle faner i en webstedsgruppe efter bekræftelse. Forbedret tekstindtastning, visning af indlæsning og stabilitet under browsing.
+Bedre understøttelse af brugerscripts og @require. Rettelser til videolyd, bedre tilbage-navigation og tydeligere indlæsning.
 
 Afspil understøttede videoer under download. Bedre baggrundsdownload, fuldskærm og beskyttelse mod skjulte annoncer og uønsket kopiering.
 

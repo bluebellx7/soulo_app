@@ -4,7 +4,7 @@ Scegli Soulo come browser predefinito in Impostazioni per aprire i link da altre
 
 Le schede e i gruppi di siti usati di recente appaiono per primi e la vista si apre dall'alto. L'ordine d'uso si conserva dopo il riavvio.
 
-Chiudi tutte le schede di un gruppo dello stesso sito dopo la conferma. Migliorati inserimento del testo, indicatori di caricamento e stabilità.
+Migliore compatibilità degli script con @require. Correzioni all'audio video, navigazione indietro e avanzamento del caricamento più chiari.
 
 Riproduci i video compatibili durante il download. Download in background e schermo intero migliorati, con protezione da annunci nascosti e copie indesiderate.
 

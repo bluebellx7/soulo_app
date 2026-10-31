@@ -1,6 +1,6 @@
-1.2.5
+1.2.7
 
-• Een crash op sommige iOS 17-apparaten bij het zoeken na het invoeren van een webadres is verholpen.
-• In de groepsweergave kun je alle tabbladen van een websitegroep na bevestiging sluiten.
-• Pinyin- en tekstinvoer, de laadindicatoren bij het eerste paginabezoek, terugnavigatie en het vegen over groepskaarten zijn verbeterd.
-• De verwerking van ongebruikelijke numerieke waarden van webpagina's, privacy- en advertentieblokkeerstatistieken en downloadvoortgang is verbeterd.
+• Verbeterde compatibiliteit met userscripts, inclusief externe afhankelijkheden via @require.
+• Problemen opgelost met geluid na het dempen van video's en dubbele weergave op sommige webpagina's.
+• Terugnavigatie en paginaherstel verbeterd, zodat beschikbare inhoud eerder verschijnt.
+• De voortgangsbalk voor het laden is duidelijker in de blauwe themakleur van de app.

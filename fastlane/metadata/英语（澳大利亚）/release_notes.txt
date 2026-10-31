@@ -1,6 +1,6 @@
-1.2.5
+1.2.7
 
-• Fixed a crash that could occur on some iOS 17 devices when searching after entering a web address.
-• In the grouped view, close all tabs in a website group after confirmation.
-• Improved Pinyin and text input, initial page loading indicators, back navigation and swiping group cards.
-• Improved handling of unusual webpage values, privacy and ad-blocking statistics, and download progress.
+• Improved userscript compatibility, including external dependencies through @require.
+• Fixed cases where muted web videos still produced audio or playback was duplicated.
+• Improved back navigation and page restoration so ready content appears sooner.
+• Made the loading progress bar more visible with the app's theme blue.

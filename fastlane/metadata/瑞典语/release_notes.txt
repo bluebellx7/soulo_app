@@ -1,6 +1,6 @@
-1.2.5
+1.2.7
 
-• Åtgärdat en krasch på vissa iOS 17-enheter vid sökning efter att en webbadress angetts.
-• I gruppvyn kan du stänga alla flikar i en webbplatsgrupp efter bekräftelse.
-• Förbättrad pinyin- och textinmatning, visning av den första sidinläsningen, bakåtnavigering och svepning på gruppkort.
-• Förbättrad hantering av ovanliga numeriska värden från webbsidor, statistik för integritet och annonsblockering samt nedladdningsförlopp.
+• Förbättrad kompatibilitet med användarskript, inklusive externa beroenden via @require.
+• Åtgärdat fall med ljud efter att videor tystats eller dubbel uppspelning på vissa webbsidor.
+• Förbättrad bakåtnavigering och återställning av sidor så att färdigt innehåll visas tidigare.
+• Förloppsindikatorn för inläsning är tydligare i appens blå temafärg.

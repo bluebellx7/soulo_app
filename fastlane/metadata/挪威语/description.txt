@@ -4,7 +4,7 @@ Velg Soulo som standardnettleser i Innstillinger for å åpne lenker fra andre a
 
 Nylig brukte faner og nettstedsgrupper vises først, og oversikten åpnes øverst. Bruksrekkefølgen beholdes etter omstart.
 
-Lukk alle faner i en nettstedsgruppe etter bekreftelse. Forbedret tekstinntasting, visning av innlasting og stabilitet under surfing.
+Bedre støtte for brukerskript og @require. Rettelser for videolyd, forbedret tilbakenavigering og tydeligere visning av innlasting.
 
 Spill av støttede videoer mens de lastes ned. Bedre bakgrunnsnedlasting og fullskjerm, med vern mot skjulte annonser og uønsket kopiering.
 

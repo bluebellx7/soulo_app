@@ -1,6 +1,6 @@
-1.2.5
+1.2.7
 
-• Rettet et nedbrud, der kunne opstå på visse iOS 17-enheder ved søgning efter indtastning af en webadresse.
-• I gruppevisningen kan du lukke alle faner i en webstedsgruppe efter bekræftelse.
-• Forbedret pinyin- og tekstindtastning, den første sides indlæsningsvisning, tilbage-navigation og strygning på gruppekort.
-• Forbedret håndtering af usædvanlige værdier fra websider, privatlivs- og annonceblokeringsstatistik samt downloadstatus.
+• Forbedret kompatibilitet med brugerscripts, herunder eksterne afhængigheder via @require.
+• Rettet tilfælde, hvor lyden fortsatte efter at en video var slået på lydløs, eller afspilningen blev fordoblet på visse websider.
+• Forbedret navigation tilbage og gendannelse af sider, så klart indhold vises tidligere.
+• Indlæsningsbjælken er tydeligere med appens blå temafarve.

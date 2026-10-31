@@ -4,7 +4,7 @@ Choose Soulo as your default browser in Settings to open links from other apps.
 
 Recently used tabs and website groups appear first, and the overview opens at the top. Recent-use order is preserved after restarting.
 
-Close every tab in a website group after confirmation. Improved text input, loading indicators, and browsing stability.
+Improved userscript compatibility with @require support. Fixed unwanted video audio and improved back navigation and loading indicators.
 
 Play supported videos while downloading. Improved background downloads, fullscreen controls and protection against hidden ads and unwanted clipboard writes.
 

@@ -1,6 +1,6 @@
-1.2.5
+1.2.7
 
-• Javítottunk egy összeomlást, amely egyes iOS 17-es eszközökön webcím beírása utáni kereséskor jelentkezhetett.
-• A csoportosított nézetben megerősítés után bezárhatja egy webhelycsoport összes lapját.
-• Javult a pinjin- és szövegbevitel, a kezdeti oldalbetöltés jelzése, a visszalépés és a csoportkártyák lapozása.
-• Javult a szokatlan weboldali számértékek, az adatvédelmi és reklámblokkolási statisztikák, valamint a letöltési folyamat kezelése.
+• Javított felhasználói szkript-kompatibilitás, beleértve a @require külső függőségeit.
+• Javítva a némított videók hangja és a párhuzamos lejátszás bizonyos weboldalakon.
+• Jobb visszalépés és oldal-visszaállítás, hogy az elkészült tartalom hamarabb megjelenjen.
+• A betöltési folyamatjelző jobban látható az alkalmazás kék témaszínével.

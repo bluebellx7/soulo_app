@@ -1,1 +1,1 @@
-Zamknij wszystkie karty grupy witryny po potwierdzeniu. Ulepszono wprowadzanie tekstu, wskaźniki ładowania i stabilność przeglądania.
+Lepsza zgodność skryptów i obsługa @require. Poprawki dźwięku filmów, powrotu do stron oraz czytelniejszy wskaźnik ładowania.

@@ -1,1 +1,1 @@
-Chiudi tutte le schede di un gruppo dello stesso sito dopo la conferma. Migliorati inserimento del testo, indicatori di caricamento e stabilità.
+Migliore compatibilità degli script con @require. Correzioni all'audio video, navigazione indietro e avanzamento del caricamento più chiari.

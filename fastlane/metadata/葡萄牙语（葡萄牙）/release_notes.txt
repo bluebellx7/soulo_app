@@ -1,6 +1,6 @@
-1.2.5
+1.2.7
 
-• Corrigida uma falha em alguns dispositivos com iOS 17 ao pesquisar depois de introduzir um endereço web.
-• Na vista agrupada, feche todos os separadores de um grupo do mesmo site após confirmar.
-• Melhorias na introdução de pinyin e texto, nos indicadores de carregamento inicial, na navegação para trás e no deslizar dos cartões de grupos.
-• Melhor tratamento de valores numéricos invulgares das páginas, estatísticas de privacidade e bloqueio de anúncios e progresso das descargas.
+• Melhorámos a compatibilidade de scripts de utilizador, incluindo dependências externas através de @require.
+• Corrigimos casos de áudio em vídeos silenciados ou reprodução duplicada em algumas páginas.
+• Melhorámos a navegação para trás e o restauro de páginas para apresentar o conteúdo pronto mais cedo.
+• A barra de progresso do carregamento ficou mais visível com o azul do tema da aplicação.

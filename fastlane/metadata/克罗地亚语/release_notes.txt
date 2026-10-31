@@ -1,6 +1,6 @@
-1.2.5
+1.2.7
 
-• Ispravljeno rušenje na nekim uređajima s iOS-om 17 pri pretraživanju nakon unosa web-adrese.
-• U grupiranom prikazu možete zatvoriti sve kartice grupe web-mjesta nakon potvrde.
-• Poboljšani unos pinyina i teksta, prikaz početnog učitavanja stranice, povratak na prethodnu stranicu i povlačenje kartica grupa.
-• Poboljšana obrada neobičnih brojčanih podataka web-stranica, statistike privatnosti i blokiranja oglasa te napretka preuzimanja.
+• Poboljšana kompatibilnost korisničkih skripti, uključujući vanjske ovisnosti putem @require.
+• Ispravljeni slučajevi zvuka nakon utišavanja videa ili dvostruke reprodukcije na nekim stranicama.
+• Poboljšani povratak i obnova stranica kako bi se spreman sadržaj prikazao ranije.
+• Traka napretka učitavanja vidljivija je u plavoj boji teme aplikacije.

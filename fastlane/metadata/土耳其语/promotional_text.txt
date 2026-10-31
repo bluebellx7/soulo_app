@@ -1,1 +1,1 @@
-Onay verdikten sonra bir site grubundaki tüm sekmeleri kapatın. Metin girişi, yükleme göstergeleri ve gezinme kararlılığı iyileştirildi.
+@require ile daha iyi kullanıcı betiği uyumluluğu. Video sesi düzeltildi, geri gezinme ve yükleme ilerleme göstergesi iyileştirildi.

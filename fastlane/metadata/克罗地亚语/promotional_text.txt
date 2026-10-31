@@ -1,1 +1,1 @@
-Zatvorite sve kartice u grupi web-mjesta nakon potvrde. Poboljšani unos teksta, prikaz učitavanja i stabilnost pregledavanja.
+Bolja podrška za korisničke skripte i @require. Ispravci zvuka videa, bolji povratak na stranice i vidljiviji napredak učitavanja.

@@ -1,1 +1,1 @@
-Tutup semua tab dalam grup situs setelah konfirmasi. Peningkatan input teks, indikator pemuatan, dan kestabilan penjelajahan.
+Kompatibilitas skrip pengguna dan dukungan @require ditingkatkan. Perbaikan audio video, navigasi kembali, dan indikator pemuatan.

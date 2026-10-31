@@ -1,1 +1,1 @@
-Alle Tabs einer Website-Gruppe nach Bestätigung schließen. Verbesserte Texteingabe, Ladeanzeigen und Stabilität beim Surfen.
+Bessere Userscript-Kompatibilität mit @require. Videoton korrigiert, Zurück-Navigation verbessert und Ladefortschritt deutlicher angezeigt.

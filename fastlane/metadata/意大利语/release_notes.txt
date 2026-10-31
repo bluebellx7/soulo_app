@@ -1,6 +1,6 @@
-1.2.5
+1.2.7
 
-• Risolto un arresto anomalo su alcuni dispositivi iOS 17 durante la ricerca dopo l'inserimento di un indirizzo web.
-• Nella vista raggruppata puoi chiudere tutte le schede di un gruppo dello stesso sito dopo la conferma.
-• Migliorati inserimento Pinyin e testo, indicatori del caricamento iniziale, navigazione indietro e scorrimento delle schede dei gruppi.
-• Migliorata la gestione di valori numerici insoliti delle pagine web, statistiche di privacy e blocco degli annunci e avanzamento dei download.
+• Migliorata la compatibilità degli script utente, incluse le dipendenze esterne tramite @require.
+• Corretti casi di audio nei video silenziati o riproduzione duplicata su alcune pagine web.
+• Migliorati navigazione indietro e ripristino delle pagine per mostrare prima i contenuti pronti.
+• Barra di avanzamento del caricamento più visibile con il blu del tema dell'app.

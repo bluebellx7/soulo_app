@@ -1,6 +1,6 @@
-1.2.5
+1.2.7
 
-• Opravený pád na niektorých zariadeniach s iOS 17 pri vyhľadávaní po zadaní webovej adresy.
-• V skupinovom zobrazení možno po potvrdení zatvoriť všetky karty skupiny webu.
-• Vylepšené zadávanie pinyinu a textu, ukazovatele prvého načítania stránky, návrat na predchádzajúcu stránku a posúvanie kariet skupín.
-• Vylepšené spracovanie neobvyklých číselných hodnôt webových stránok, štatistík súkromia a blokovania reklám aj priebehu sťahovania.
+• Vylepšená kompatibilita používateľských skriptov vrátane externých závislostí cez @require.
+• Opravené prípady zvuku po stíšení videa alebo duplicitného prehrávania na niektorých stránkach.
+• Vylepšená navigácia späť a obnova stránok, aby sa pripravený obsah zobrazil skôr.
+• Ukazovateľ priebehu načítania je výraznejší v modrej farbe motívu aplikácie.

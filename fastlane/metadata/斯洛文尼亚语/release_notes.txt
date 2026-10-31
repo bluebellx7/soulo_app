@@ -1,6 +1,6 @@
-1.2.5
+1.2.7
 
-• Odpravljeno sesutje na nekaterih napravah z iOS 17 med iskanjem po vnosu spletnega naslova.
-• V skupinskem pogledu lahko po potrditvi zaprete vse zavihke skupine spletnega mesta.
-• Izboljšani vnos pinjina in besedila, prikaz začetnega nalaganja strani, vračanje na prejšnjo stran in drsenje po karticah skupin.
-• Izboljšana obravnava neobičajnih številskih vrednosti spletnih strani, statistike zasebnosti in blokiranja oglasov ter napredka prenosov.
+• Izboljšana združljivost uporabniških skript, vključno z zunanjimi odvisnostmi prek @require.
+• Odpravljeni primeri zvoka po utišanju videa ali podvojenega predvajanja na nekaterih straneh.
+• Izboljšana navigacija nazaj in obnova strani, da je pripravljena vsebina prikazana prej.
+• Vrstica napredka nalaganja je vidnejša v modri barvi teme aplikacije.

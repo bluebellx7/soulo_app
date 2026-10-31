@@ -1,6 +1,6 @@
-1.2.5
+1.2.7
 
-• Se ha corregido un cierre inesperado en algunos dispositivos con iOS 17 al buscar después de introducir una dirección web.
-• En la vista agrupada puedes cerrar todas las pestañas de un grupo del mismo sitio tras confirmar.
-• Mejoras en la entrada de pinyin y texto, los indicadores de carga inicial, la navegación hacia atrás y el deslizamiento de las tarjetas de grupos.
-• Mejor gestión de valores numéricos inusuales de páginas web, estadísticas de privacidad y bloqueo de anuncios y progreso de las descargas.
+• Mejoramos la compatibilidad de los scripts de usuario, incluidas las dependencias externas mediante @require.
+• Corregimos casos de audio en vídeos silenciados o reproducción duplicada en algunas páginas web.
+• Mejoramos la navegación hacia atrás y la restauración de páginas para mostrar antes el contenido listo.
+• La barra de progreso de carga es más visible con el azul del tema de la app.

@@ -1,1 +1,1 @@
-Cierra todas las pestañas de un grupo de sitio tras confirmar. Mejoras en la entrada de texto, los indicadores de carga y la estabilidad.
+Mejor compatibilidad de scripts con @require. Correcciones de audio en videos, navegación hacia atrás e indicador de carga más visible.

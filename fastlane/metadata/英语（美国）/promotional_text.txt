@@ -1,1 +1,1 @@
-Close every tab in a website group after confirmation. Improved text input, loading indicators, and browsing stability.
+Improved userscript compatibility with @require support. Fixed unwanted video audio and improved back navigation and loading indicators.

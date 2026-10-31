@@ -1,1 +1,1 @@
-Megerősítés után bezárhatja egy webhelycsoport összes lapját. Javított szövegbevitel, betöltésjelzés és böngészési stabilitás.
+Jobb felhasználói szkript- és @require-támogatás. Javított videóhang, visszalépés és jobban látható betöltési folyamat.

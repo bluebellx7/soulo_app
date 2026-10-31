@@ -4,7 +4,7 @@ Kies Soulo als standaardbrowser in Instellingen om links uit andere apps te open
 
 Recent gebruikte tabbladen en websitegroepen staan vooraan en het overzicht opent bovenaan. De volgorde blijft na een herstart bewaard.
 
-Sluit alle tabbladen in een websitegroep na bevestiging. Verbeterde tekstinvoer, laadindicatoren en stabiliteit tijdens het browsen.
+Betere ondersteuning voor userscripts en @require. Oplossingen voor videogeluid, betere terugnavigatie en een duidelijkere laadindicator.
 
 Speel ondersteunde video’s af tijdens het downloaden. Betere achtergronddownloads en volledig scherm, met bescherming tegen verborgen advertenties en ongewenst kopiëren.
 

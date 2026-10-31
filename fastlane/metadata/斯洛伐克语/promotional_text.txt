@@ -1,1 +1,1 @@
-Po potvrdení zatvorte všetky karty v skupine webu. Vylepšené zadávanie textu, ukazovatele načítania a stabilita prehliadania.
+Lepšia podpora používateľských skriptov a @require. Opravy zvuku videí, lepší návrat na stránky a výraznejší priebeh načítania.

@@ -1,6 +1,6 @@
-1.2.5
+1.2.7
 
-• Correction d'un plantage sur certains appareils sous iOS 17 lors d'une recherche après la saisie d'une adresse Web.
-• Dans la vue groupée, fermez tous les onglets d'un groupe de site après confirmation.
-• Amélioration de la saisie en pinyin et du texte, des indicateurs de chargement initial, du retour à la page précédente et du balayage des cartes de groupes.
-• Meilleure gestion des valeurs numériques inhabituelles des pages Web, des statistiques de confidentialité et de blocage publicitaire et de la progression des téléchargements.
+• Compatibilité des scripts utilisateur améliorée, y compris les dépendances externes via @require.
+• Correction de cas de son persistant après la mise en sourdine ou de lecture en double sur certaines pages.
+• Navigation retour et restauration des pages améliorées pour afficher plus tôt le contenu prêt.
+• Barre de progression du chargement plus visible dans le bleu du thème de l’application.

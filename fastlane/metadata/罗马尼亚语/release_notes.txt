@@ -1,6 +1,6 @@
-1.2.5
+1.2.7
 
-• S-a remediat o închidere neașteptată pe unele dispozitive cu iOS 17 la căutarea după introducerea unei adrese web.
-• În vizualizarea grupată poți închide toate filele unui grup de site după confirmare.
-• S-au îmbunătățit introducerea pinyin și a textului, indicatorii încărcării inițiale, navigarea înapoi și glisarea cardurilor de grup.
-• S-a îmbunătățit gestionarea valorilor numerice neobișnuite din pagini web, a statisticilor de confidențialitate și blocare a reclamelor și a progresului descărcărilor.
+• Compatibilitate îmbunătățită a scripturilor de utilizator, inclusiv dependențe externe prin @require.
+• S-au corectat cazuri de sunet după dezactivarea lui în videoclipuri sau redare duplicată pe unele pagini.
+• Revenirea și restaurarea paginilor au fost îmbunătățite pentru a afișa mai devreme conținutul pregătit.
+• Bara de progres a încărcării este mai vizibilă în albastrul temei aplicației.
