@@ -31,6 +31,7 @@ struct DownloadManagerContentView: View {
     @ObservedObject private var episodeDownloads = WebEpisodeDownloadService.shared
     let highlightedItemID: UUID?
     var embeddedInLibrary = false
+    @State private var newTask = false
     @State private var previewItem: BrowserDownloadItem?
     @State private var playingDownload: BrowserDownloadItem?
     @State private var shareItem: BrowserDownloadItem?
@@ -94,7 +95,8 @@ struct DownloadManagerContentView: View {
             } else {
                 Section {
                     ForEach(downloadManager.downloads) { item in
-                        downloadRow(item)
+                        if item.transport == .torrent { TorrentDownloadRow(item: item) }
+                        else { downloadRow(item) }
                     }
                     .onDelete(perform: deleteDownloads)
                 }
@@ -129,6 +131,11 @@ struct DownloadManagerContentView: View {
         .toolbar {
             if libraryPageIsActive {
                 ToolbarItem(placement: .primaryAction) {
+                    Button { newTask = true } label: { Image(systemName: "plus") }
+                        .accessibilityLabel(ToolText.text("new_download"))
+                        .accessibilityIdentifier("downloads.new")
+                }
+                ToolbarItem(placement: .primaryAction) {
                     Button {
                         showDownloadsFolder = true
                     } label: {
@@ -141,6 +148,7 @@ struct DownloadManagerContentView: View {
                 }
             }
         }
+        .sheet(isPresented: $newTask) { NewDownloadTaskView() }
         .sheet(item: $shareItem) { item in
             DownloadShareSheet(items: [item.localURL])
         }
@@ -232,6 +240,8 @@ struct DownloadManagerContentView: View {
             } else if item.status == .inProgress {
                 Button {
                     switch item.transport {
+                    case .torrent:
+                        TorrentDownloadService.shared.pause(item.id)
                     case .background:
                         BackgroundDownloadService.shared.pause(id: item.id)
                     case .separated:
@@ -250,6 +260,8 @@ struct DownloadManagerContentView: View {
             } else if item.status == .paused {
                 Button {
                     switch item.transport {
+                    case .torrent:
+                        TorrentDownloadService.shared.start(item.id)
                     case .background:
                         BackgroundDownloadService.shared.resume(id: item.id)
                     case .separated:
@@ -514,7 +526,9 @@ struct LocalDocumentContent: View {
 
     var body: some View {
         Group {
-            if fileKind == .image {
+            if url.pathExtension.lowercased() == "torrent" {
+                TorrentDocumentContent(url: url)
+            } else if fileKind == .image {
                 LocalImagePreview(url: url)
             } else if fileKind == nil {
                 ProgressView()

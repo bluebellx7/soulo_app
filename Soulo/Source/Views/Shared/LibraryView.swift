@@ -33,6 +33,8 @@ struct LibraryView: View {
     @Environment(\.modelContext) private var modelContext
     @ObservedObject var searchVM: SearchViewModel
     @State private var selectedSection: LibrarySection
+    @State private var compactSections: Set<LibrarySection> = []
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pageProgress: CGFloat
     private let onOpen: ((String) -> Void)?
 
@@ -49,10 +51,21 @@ struct LibraryView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            LibrarySectionSwitcher(selectedSection: $selectedSection, progress: pageProgress)
+            LibrarySectionSwitcher(selectedSection: $selectedSection, progress: pageProgress, compact: compactSections.contains(selectedSection))
 
             LibraryPager(selectedSection: $selectedSection, progress: $pageProgress) { section in
                 page(section)
+                    .background {
+                        LibraryScrollCollapseObserver(active: selectedSection == section) { offset in
+                            let compact = compactSections.contains(section)
+                            if (!compact && offset > 48) || (compact && offset < 8) {
+                                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                                    if offset > 48 { compactSections.insert(section) }
+                                    else { compactSections.remove(section) }
+                                }
+                            }
+                        }.allowsHitTesting(false)
+                    }
             }
         }
         .navigationTitle(LanguageManager.shared.localizedString("library"))
@@ -133,6 +146,7 @@ struct LibraryPager<Content: View>: View {
 struct LibrarySectionSwitcher: View {
     @Binding var selectedSection: LibrarySection
     var progress: CGFloat? = nil
+    var compact = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .caption) private var captionSize: CGFloat = 11
 
@@ -152,8 +166,8 @@ struct LibrarySectionSwitcher: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.top, 2)
-        .padding(.bottom, 6)
+        .padding(.top, compact ? 0 : 1)
+        .padding(.bottom, 4)
         .background(Color(uiColor: .systemBackground))
     }
 
@@ -179,15 +193,16 @@ struct LibrarySectionSwitcher: View {
                                 .accessibilityHidden(true)
                         }
                         .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
-                        .frame(minWidth: 48, minHeight: 50)
-                        .contentShape(RoundedRectangle(cornerRadius: 10))
+                        .padding(.vertical, compact ? 0 : 3)
+                        .frame(minWidth: 48, minHeight: compact ? 36 : 44)
+                        .contentShape(RoundedRectangle(cornerRadius: 10).inset(by: compact ? -4 : 0))
                 }
                 .buttonStyle(.plain)
                 .fixedSize(horizontal: true, vertical: false)
                 .anchorPreference(key: LibraryTabFramesKey.self, value: .bounds) { [section: $0] }
                 .accessibilityLabel(section == .history ? LanguageManager.shared.localizedString("search_history") : title)
                 .accessibilityIdentifier("library.section.\(section.rawValue)")
+                .accessibilityValue(compact ? "compact" : "expanded")
                 .id(section)
                 .accessibilityAddTraits(selected ? .isSelected : [])
                 if section != .files { Spacer(minLength: 0) }
@@ -214,7 +229,8 @@ struct LibrarySectionSwitcher: View {
     }
 
     private func caption(_ section: LibrarySection, title: String) -> some View {
-        VStack(spacing: 4) {
+        let layout = compact ? AnyLayout(HStackLayout(spacing: 5)) : AnyLayout(VStackLayout(spacing: 4))
+        return layout {
             Image(systemName: section.systemImage)
                 .font(.system(size: 17, weight: .medium))
                 .frame(height: 20)

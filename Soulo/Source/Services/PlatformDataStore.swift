@@ -22,7 +22,7 @@ class PlatformDataStore: ObservableObject {
 
     // MARK: - Persistence
 
-    private let platformVersion = 42 // Increment when cached built-in defaults need migration
+    private let platformVersion = 43 // Increment when cached built-in defaults need migration
 
     private func load() {
         let savedVersion = UserDefaults.standard.integer(forKey: "platform_config_version")
@@ -83,6 +83,10 @@ class PlatformDataStore: ObservableObject {
 
     func visiblePlatforms(for region: PlatformRegion) -> [SearchPlatform] {
         platforms(for: region).filter { $0.isVisible }
+    }
+
+    func visiblePlatforms(forGroup group: CustomGroup) -> [SearchPlatform] {
+        platformsForGroup(group).filter(\.isVisible)
     }
 
     func firstVisiblePlatform(for region: PlatformRegion) -> SearchPlatform? {
@@ -249,6 +253,7 @@ class PlatformDataStore: ObservableObject {
     }
 
     func resetToDefaults() {
+        GroupDefaultSearchService.shared.reset()
         platforms = Self.defaultPlatforms()
         customGroups = []
         regionNameOverrides = [:]
@@ -331,6 +336,22 @@ class PlatformDataStore: ObservableObject {
                 .max() ?? -1) + 1
             platforms.append(Self.chinaBingPlatform(sortOrder: nextOrder))
         }
+        if version < 43 {
+            if let index = platforms.firstIndex(where: { $0.isBuiltIn && ["Kimi", "platform_kimi"].contains($0.name) }) {
+                platforms[index].name = "Kimi"
+                platforms[index].homeURL = "https://www.kimi.com/"
+                platforms[index].searchURLTemplate = "https://www.kimi.com/"
+                platforms[index].requiresLogin = true
+                platforms[index].interactionType = .aiChat
+            } else {
+                let order = (platforms.filter { $0.region == .china }.map(\.sortOrder).max() ?? -1) + 1
+                var kimi = Self.kimiPlatform(sortOrder: order)
+                // An update must respect users who deliberately disabled every platform.
+                kimi.isVisible = platforms.contains(where: \.isVisible)
+                platforms.append(kimi)
+            }
+        }
+
     }
 
     @discardableResult
@@ -379,6 +400,7 @@ class PlatformDataStore: ObservableObject {
     }
 
     func deleteGroup(id: UUID) {
+        GroupDefaultSearchService.shared.remove(.custom(id))
         customGroups.removeAll { $0.id == id }
         saveGroups()
     }
@@ -428,6 +450,13 @@ class PlatformDataStore: ObservableObject {
     func renameRegion(_ region: PlatformRegion, to name: String) {
         regionNameOverrides[region.rawValue] = name
         saveRegionNames()
+    }
+
+    static func kimiPlatform(sortOrder: Int) -> SearchPlatform {
+        SearchPlatform(id: UUID(), name: "Kimi", iconName: "icon_kimi",
+            searchURLTemplate: "https://www.kimi.com/", homeURL: "https://www.kimi.com/",
+            region: .china, isBuiltIn: true, isVisible: true, sortOrder: sortOrder,
+            usageCount: 0, isCustom: false, requiresLogin: true, interactionType: .aiChat)
     }
 
     // MARK: - Default Platforms
@@ -549,6 +578,8 @@ class PlatformDataStore: ObservableObject {
                 interactionType: .aiChat
             ))
         }
+
+        all.append(Self.kimiPlatform(sortOrder: chinaData.count + 2 + aiPlatforms.count))
 
         // MARK: Japan (4)
         let japanData: [(String, String, String, String)] = [

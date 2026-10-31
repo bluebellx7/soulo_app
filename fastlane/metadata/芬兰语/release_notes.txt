@@ -1,5 +1,7 @@
 1.2.7
 
+• BT-lataukset: tuo .torrent-tiedostoja tai magnet-linkkejä, valitse tiedostot, keskeytä ja jatka. iOS 26:ssa lataukset voivat jatkua taustalla järjestelmän salliessa; aiemmat versiot tallentavat etenemisen ja keskeyttävät.
+• Valitse aloitussivulle neljä valinnaista oikopolkua latauksiin, tiedostoihin, kirjanmerkkeihin, historiaan, taustakuviin ja muille sivuille. Kirjaston välilehtipalkki tiivistyy vieritettäessä.
 • Parannettu käyttäjäskriptien yhteensopivuutta, myös ulkoisten riippuvuuksien latausta @require-komennolla.
 • Korjattu joidenkin verkkovideoiden ääni mykistyksen jälkeen ja päällekkäinen toisto.
 • Parannettu paluunavigointia ja sivujen palautusta, jotta valmis sisältö näkyy aiemmin.

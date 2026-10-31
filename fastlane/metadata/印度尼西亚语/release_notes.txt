@@ -1,5 +1,7 @@
 1.2.7
 
+• Unduhan BT: impor file .torrent atau tautan magnet, pilih file, jeda dan lanjutkan. Di iOS 26, unduhan dapat berlanjut di latar belakang jika sistem mengizinkan; versi sebelumnya menyimpan progres dan menjeda.
+• Pilih empat pintasan opsional di beranda untuk unduhan, file, penanda, riwayat, wallpaper, dan halaman lainnya. Bilah tab pustaka menjadi ringkas saat digulir.
 • Peningkatan kompatibilitas skrip pengguna, termasuk dependensi eksternal melalui @require.
 • Memperbaiki suara yang tetap terdengar saat video dibisukan atau pemutaran ganda di beberapa halaman web.
 • Meningkatkan navigasi kembali dan pemulihan halaman agar konten siap tampil lebih cepat.

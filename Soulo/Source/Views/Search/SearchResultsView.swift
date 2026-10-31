@@ -20,6 +20,7 @@ struct SearchResultsView: View {
     @EnvironmentObject var searchVM: SearchViewModel
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var tabManager: TabManager
+    @ObservedObject private var defaultSearch = GroupDefaultSearchService.shared
     @ObservedObject private var platformStore = PlatformDataStore.shared
     @ObservedObject private var webAppearance = WebAppearanceService.shared
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -44,6 +45,8 @@ struct SearchResultsView: View {
         let searchID: UUID
         let tabID: UUID
         let platformID: UUID
+        let scopeID: String
+        let template: String
         let keyword: String
     }
 
@@ -57,7 +60,9 @@ struct SearchResultsView: View {
     @AppStorage(AppConstants.StorageKeys.shakeIntensity) private var shakeIntensity = BrowserShakeIntensity.standard.rawValue
     @AppStorage(AppConstants.StorageKeys.browserToolbarHidden) private var toolbarManuallyHidden = false
 
-    @State private var selectedCustomGroup: CustomGroup? = nil
+    private var selectedCustomGroup: CustomGroup? {
+        platformStore.customGroups.first { $0.id == searchVM.selectedGroupID }
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -352,7 +357,7 @@ struct SearchResultsView: View {
                 lastSearchID = searchVM.searchID
                 if let group = platformStore.customGroups.first(where: { $0.id.uuidString == lastGroupID }),
                    platformStore.platformsForGroup(group).contains(where: { $0.id == searchVM.selectedPlatform?.id }) {
-                    selectedCustomGroup = group
+                    searchVM.selectedGroupID = group.id
                 }
                 return
             }
@@ -360,11 +365,8 @@ struct SearchResultsView: View {
             // Restore last selected group and select first platform
             if !lastGroupID.isEmpty,
                let group = platformStore.customGroups.first(where: { $0.id.uuidString == lastGroupID }) {
-                selectedCustomGroup = group
-                let platforms = platformStore.platformsForGroup(group)
-                if let first = platforms.first {
-                    searchVM.selectedPlatform = first
-                }
+                if searchVM.selectedGroupID != group.id { searchVM.selectCustomGroup(group) }
+                else { synchronizeSelectedPlatformAfterStoreChange() }
             } else if !lastRegion.isEmpty, let region = PlatformRegion(rawValue: lastRegion) {
                 searchVM.selectRegion(region)
             }
@@ -401,6 +403,8 @@ struct SearchResultsView: View {
                 isFullscreen = true
             }
         }
+        .onChange(of: defaultSearch.overrides) { _, _ in synchronizeSelectedPlatformAfterStoreChange() }
+        .onChange(of: platformStore.customGroups) { _, _ in synchronizeSelectedPlatformAfterStoreChange() }
         .onChange(of: platformStore.platforms) { _, _ in
             synchronizeSelectedPlatformAfterStoreChange()
         }
@@ -515,26 +519,25 @@ struct SearchResultsView: View {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 0) {
-                        ForEach(PlatformRegion.sortedCases(preferring: searchVM.selectedRegion).filter { !platformStore.visiblePlatforms(for: $0).isEmpty }) { region in
+                        ForEach(PlatformRegion.sortedCases(preferring: searchVM.selectedRegion)) { region in
                             groupPickerRow(
                                 title: "\(platformStore.regionDisplayName(for: region)) (\(platformStore.visiblePlatforms(for: region).count))",
                                 selected: selectedCustomGroup == nil && searchVM.selectedRegion == region
                             ) {
                                 showGroupPicker = false
-                                selectedCustomGroup = nil
                                 lastGroupID = ""
                                 lastRegion = region.rawValue
                                 searchVM.selectRegion(region)
                                 loadCurrentPlatformURL()
                             }
                         }
-                        ForEach(platformStore.customGroups.filter { !platformStore.platformsForGroup($0).isEmpty }) { group in
+                        ForEach(platformStore.customGroups) { group in
                             groupPickerRow(
-                                title: "\(group.name) (\(platformStore.platformsForGroup(group).count))",
+                                title: "\(group.name) (\(platformStore.visiblePlatforms(forGroup: group).count))",
                                 selected: selectedCustomGroup?.id == group.id
                             ) {
                                 showGroupPicker = false
-                                selectedCustomGroup = group
+                                searchVM.selectCustomGroup(group)
                                 lastGroupID = group.id.uuidString
                                 lastRegion = ""
                                 loadCurrentPlatformURL()
@@ -582,18 +585,11 @@ struct SearchResultsView: View {
 
     // Computed: platforms for current selection (region or custom group)
     private var currentPlatforms: [SearchPlatform] {
-        if let group = selectedCustomGroup {
-            return platformStore.platformsForGroup(group)
-        }
-        return platformStore.visiblePlatforms(for: searchVM.selectedRegion)
+        searchVM.availableSearchPlatforms
     }
 
     private func synchronizeSelectedPlatformAfterStoreChange() {
         let availablePlatforms = currentPlatforms
-        guard !availablePlatforms.isEmpty else {
-            searchVM.selectedPlatform = nil
-            return
-        }
         guard let selectedID = searchVM.selectedPlatform?.id,
               availablePlatforms.contains(where: { $0.id == selectedID }) else {
             searchVM.selectedPlatform = availablePlatforms[0]
@@ -659,11 +655,11 @@ struct SearchResultsView: View {
 
     private func loadCurrentPlatformURL() {
         guard let webVM = tabManager.activeWebViewModel else { return }
-        guard let platform = searchVM.selectedPlatform else { return }
+        guard let platform = searchVM.selectedPlatform ?? currentPlatforms.first else { return }
         guard let tabID = tabManager.activeTab?.id else { return }
         let keyword = searchVM.currentKeyword
         let request = SearchNavigationRequest(searchID: searchVM.searchID, tabID: tabID,
-            platformID: platform.id, keyword: keyword)
+            platformID: platform.id, scopeID: searchVM.selectedSearchScope.id, template: platform.searchURLTemplate, keyword: keyword)
         guard lastNavigationRequest != request else { return }
         lastNavigationRequest = request
         cancelAIInteraction()

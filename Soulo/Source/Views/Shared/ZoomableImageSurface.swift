@@ -34,6 +34,7 @@ struct ZoomableImageSurface: UIViewRepresentable {
         swipe.delegate = context.coordinator
         scroll.addGestureRecognizer(swipe)
         scroll.panGestureRecognizer.require(toFail: swipe)
+        scroll.panGestureRecognizer.isEnabled = false
         let doubleTap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.doubleTap(_:)))
         doubleTap.numberOfTapsRequired = 2
         scroll.addGestureRecognizer(doubleTap)
@@ -49,7 +50,11 @@ struct ZoomableImageSurface: UIViewRepresentable {
         var host: UIHostingController<AnyView>?
         var onDismiss: () -> Void
         init(onDismiss: @escaping () -> Void) { self.onDismiss = onDismiss }
-        func scrollViewDidZoom(_ scrollView: UIScrollView) { scrollView.accessibilityValue = "\(Int(scrollView.zoomScale * 100))%" }
+        func scrollViewDidZoom(_ scrollView: UIScrollView) {
+            scrollView.accessibilityValue = "\(Int(scrollView.zoomScale * 100))%"
+            // At fit scale, horizontal pans belong to the enclosing image pager.
+            scrollView.panGestureRecognizer.isEnabled = scrollView.zoomScale > 1.01
+        }
         func viewForZooming(in scrollView: UIScrollView) -> UIView? { (scrollView as? ImageZoomScrollView)?.imageView }
         func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
             guard let pan = gestureRecognizer as? UIPanGestureRecognizer, let scroll = pan.view as? UIScrollView else { return true }

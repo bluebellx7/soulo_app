@@ -401,3 +401,51 @@
 "cross_domain_invalid" = "请输入有效域名，如 *.qq.com";
 "cross_domain_reset" = "恢复默认白名单";
 "cross_domain_trust" = "信任 %@ 并继续";
+
+/* Download task creation and native BitTorrent */
+"new_download" = "新建下载";
+"download_address" = "粘贴网址或磁力链接";
+"download_optional_name" = "文件名（可选）";
+"download_link" = "下载链接";
+"download_link_hint" = "支持 HTTP、HTTPS、磁力链接和种子文件。";
+"download_create" = "创建任务";
+"download_invalid_address" = "请输入有效的 HTTP、HTTPS 或磁力链接。";
+"import_torrent" = "导入种子";
+"torrent_link" = "链接指向种子文件";
+"torrent_task" = "种子下载";
+"torrent_files" = "文件";
+"torrent_metadata" = "正在获取文件目录…";
+"torrent_choose_files" = "选择需要下载的文件";
+"torrent_queued" = "等待下载";
+"torrent_downloading" = "正在下载";
+"torrent_select_all" = "全选";
+"torrent_select_none" = "取消全选";
+"torrent_peers" = "%d 个连接";
+"torrent_duplicate" = "此种子已在下载列表中。";
+"torrent_task_limit" = "请先清理部分下载记录，再添加任务。";
+"torrent_save_error" = "无法保存任务，请检查剩余空间后重试。";
+"torrent_metadata_timeout" = "暂未获取到文件目录，请检查网络或在有可用节点时重试。";
+"torrent_too_large" = "种子文件不能超过 8 MB。";
+"torrent_background_title" = "Soulo 下载";
+"torrent_background_running" = "正在下载文件";
+"torrent_background_unavailable" = "后台任务暂不可用，进入后台时会保存进度。";
+"torrent_background_paused" = "已暂停并保存进度，打开任务即可继续。";
+"torrent_background_hint" = "iOS 26 可在系统允许时继续后台下载；旧版系统进入后台时暂停并保存进度。";
+
+"home_toolbar_customize" = "自定义首页工具栏";
+"home_toolbar_hint" = "选择一个位置，再选择要打开的页面。留空的位置不会在首页显示。";
+"home_toolbar_slot" = "位置 %d";
+"home_toolbar_reset" = "全部隐藏";
+"home_toolbar_default_hint" = "默认隐藏首页的全部四个快捷按钮。";
+"home_toolbar_search" = "查找页面";
+
+"group_default_search" = "默认搜索";
+"group_search_settings" = "分组设置";
+"group_engine_name" = "搜索引擎名称";
+"group_search_url" = "搜索网址，关键词用 %@";
+"group_default_search_hint" = "此分组没有启用的平台时使用。网址中的 %@ 会替换为搜索关键词，不会重新开启已关闭的平台。";
+"group_search_url_invalid" = "请输入名称，以及包含 %@ 的有效 HTTP 或 HTTPS 搜索网址。";
+
+"batch_import_new_group" = "导入分组";
+
+"image_resources" = "网页资源";

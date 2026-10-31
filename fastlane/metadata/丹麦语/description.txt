@@ -4,13 +4,9 @@ Vælg Soulo som standardbrowser i Indstillinger for at åbne links fra andre app
 
 Senest brugte faner og webstedsgrupper vises først, og faneoversigten åbner øverst. Rækkefølgen bevares efter genstart.
 
-Bedre understøttelse af brugerscripts og @require. Rettelser til videolyd, bedre tilbage-navigation og tydeligere indlæsning.
+BT-downloads: Importér .torrent-filer eller magnetlinks, vælg filer, sæt på pause og fortsæt. På iOS 26 kan downloads fortsætte i baggrunden, når systemet tillader det; tidligere versioner gemmer fremdriften og sætter på pause.
 
-Afspil understøttede videoer under download. Bedre baggrundsdownload, fuldskærm og beskyttelse mod skjulte annoncer og uønsket kopiering.
-
-Vælg episoder på understøttede websteder, vend rækkefølgen, hent flere på én gang og prøv mislykkede downloads igen. Hold nede for at øge hastigheden, og slip for at gendanne den. Mere flydende videobetjening.
-
-Valgfri bekræftelse af automatiske skift til andre domæner, betroede domæner og åbning i en ny fane. Bedre fjernelse af reklameoverlejringer og navigation tilbage.
+Vælg fire valgfrie genveje på startsiden til downloads, filer, bogmærker, historik, baggrunde og andre sider. Bibliotekets fanelinje bliver kompakt, når du ruller.
 
 Find information, læs artikler, afspil medier og administrer downloads i samme browser.
 

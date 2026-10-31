@@ -4,13 +4,9 @@ Välj Soulo som förvald webbläsare i Inställningar för att öppna länkar fr
 
 Senast använda flikar och webbplatsgrupper visas först och översikten öppnas högst upp. Användningsordningen sparas efter omstart.
 
-Bättre stöd för användarskript och @require. Rättningar för videoljud, förbättrad bakåtnavigering och tydligare visning av inläsning.
+BT-hämtningar: Importera .torrent-filer eller magnetlänkar, välj filer, pausa och återuppta. På iOS 26 kan hämtningar fortsätta i bakgrunden när systemet tillåter det; äldre versioner sparar förloppet och pausar.
 
-Spela upp videor som stöds under nedladdning. Bättre bakgrundsnedladdningar och helskärm, med skydd mot dolda annonser och oönskad kopiering.
-
-Välj avsnitt på webbplatser som stöds, vänd ordningen, hämta flera samtidigt och försök igen vid misslyckade hämtningar. Håll inne för att öka hastigheten, släpp för att återställa den. Smidigare videokontroller.
-
-Valfri bekräftelse vid automatiska byten till andra domäner, betrodda domäner och öppning i en ny flik. Bättre borttagning av annonsöverlägg och bakåtnavigering.
+Välj fyra valfria genvägar på startsidan till hämtningar, filer, bokmärken, historik, bakgrunder och andra sidor. Bibliotekets flikrad blir kompakt när du rullar.
 
 Hitta information, läs artiklar, spela upp media och hantera hämtningar i samma webbläsare.
 

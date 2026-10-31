@@ -4,13 +4,9 @@ Escolha o Soulo como navegador predefinido nas Definições para abrir ligaçõe
 
 Os separadores e grupos de sites usados recentemente aparecem primeiro, e a vista abre no topo. A ordem de utilização mantém-se após reiniciar.
 
-Melhor compatibilidade de scripts com @require. Correções no áudio dos vídeos, navegação para trás e progresso de carregamento mais visível.
+Transferências BT: importe ficheiros .torrent ou ligações magnet, escolha ficheiros, pause e retome. No iOS 26 podem continuar em segundo plano quando o sistema permite; as versões anteriores guardam o progresso e pausam.
 
-Reproduza vídeos compatíveis durante a transferência. Melhorias em segundo plano e no ecrã inteiro, com proteção contra anúncios ocultos e cópias indesejadas.
-
-Escolha episódios em sites compatíveis, inverta a ordem, descarregue vários de uma vez e repita as descargas falhadas. Mantenha premido para acelerar e solte para repor a velocidade. Controlos de vídeo mais fluidos.
-
-Confirmação opcional de redirecionamentos automáticos para outro domínio, domínios de confiança e abertura num novo separador. Melhorias na remoção de sobreposições publicitárias e na navegação para trás.
+Escolha quatro atalhos opcionais no ecrã inicial para transferências, ficheiros, marcadores, histórico, fundos e outras páginas. A barra de separadores da biblioteca fica mais compacta ao deslocar.
 
 Encontre informação, leia artigos, reproduza conteúdos e faça a gestão das descargas no mesmo navegador.
 

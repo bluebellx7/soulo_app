@@ -4,13 +4,9 @@ Velg Soulo som standardnettleser i Innstillinger for å åpne lenker fra andre a
 
 Nylig brukte faner og nettstedsgrupper vises først, og oversikten åpnes øverst. Bruksrekkefølgen beholdes etter omstart.
 
-Bedre støtte for brukerskript og @require. Rettelser for videolyd, forbedret tilbakenavigering og tydeligere visning av innlasting.
+BT-nedlastinger: Importer .torrent-filer eller magnetlenker, velg filer, sett på pause og fortsett. På iOS 26 kan nedlastinger fortsette i bakgrunnen når systemet tillater det; eldre versjoner lagrer fremdriften og setter på pause.
 
-Spill av støttede videoer mens de lastes ned. Bedre bakgrunnsnedlasting og fullskjerm, med vern mot skjulte annonser og uønsket kopiering.
-
-Velg episoder på støttede nettsteder, snu rekkefølgen, last ned flere samtidig og prøv mislykkede nedlastinger igjen. Hold inne for å øke farten, og slipp for å gjenopprette den. Jevnere videokontroller.
-
-Valgfri bekreftelse ved automatisk overgang til andre domener, betrodde domener og åpning i en ny fane. Bedre fjerning av reklameoverlegg og navigering tilbake.
+Velg fire valgfrie snarveier på startsiden til nedlastinger, filer, bokmerker, historikk, bakgrunner og andre sider. Bibliotekets fanelinje blir kompakt når du ruller.
 
 Finn informasjon, les artikler, spill av medier og administrer nedlastinger i én nettleser.
 

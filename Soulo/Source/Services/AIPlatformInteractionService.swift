@@ -5,9 +5,17 @@ struct AIPlatformInteractionService {
 
     /// Detect login status by checking URL and page content
     static func loginDetectionScript(for platformName: String) -> String {
-        """
+        let kimiLogin = ["Kimi", "platform_kimi"].contains(platformName) ? """
+            var kimiLoginButtons = document.querySelectorAll('.login-button, .next-sidebar-history-list__login');
+            for (var k = 0; k < kimiLoginButtons.length; k++) {
+                var bounds = kimiLoginButtons[k].getBoundingClientRect();
+                if (bounds.width > 0 && bounds.height > 0) return 'needs_login';
+            }
+        """ : ""
+        return """
         (function() {
             var url = window.location.href.toLowerCase();
+            \(kimiLogin)
             // URL-based detection
             if (url.includes('/login') || url.includes('/signin') || url.includes('/auth') || url.includes('/passport')) {
                 return 'needs_login';
@@ -256,11 +264,59 @@ struct AIPlatformInteractionService {
         """
     }
 
+    /// Kimi uses a Lexical editor and a div-based send control, not DeepSeek's button.
+    static func kimiChatScript(query: String) -> String {
+        let escaped = query.escapedForJS
+        return """
+        (function() {
+            \(interactionLifecycle)
+            var query = '\(escaped)', attempts = 0;
+            function visible(el) {
+                return el && el.isConnected && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().height > 0;
+            }
+            function disabled(el) {
+                return !el || el.disabled || el.getAttribute('aria-disabled') === 'true' ||
+                    /(^|[\\s_-])disabled($|[\\s_-])/.test(el.className || '');
+            }
+            function send(editor, attempt) {
+                if (cancelled || !editor.isConnected || (editor.value || editor.innerText || '').trim() !== query.trim()) {
+                    cancelInteraction(); return;
+                }
+                var container = document.querySelector('.send-button-container');
+                var icon = container && container.querySelector('.send-icon, [name="Send"]');
+                var button = icon && (icon.closest('button, [role="button"], .send-button') || container);
+                if (visible(button) && !disabled(button) && !disabled(container)) {
+                    cancelInteraction(); button.click(); return;
+                }
+                if (attempt >= 20) { cancelInteraction(); return; }
+                scheduleInteraction(function() { send(editor, attempt + 1); }, 250);
+            }
+            function fill() {
+                if (++attempts > 30) { cancelInteraction(); return; }
+                var editor = document.querySelector('.chat-input-editor[contenteditable="true"], [data-lexical-editor="true"][contenteditable="true"]');
+                if (!visible(editor)) { scheduleInteraction(fill, 500); return; }
+                editor.focus();
+                var range = document.createRange(); range.selectNodeContents(editor);
+                var selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
+                document.execCommand('insertText', false, query);
+                // Lexical applies insertText asynchronously. Mutating textContent here
+                // races its state update and can duplicate the user's query.
+                scheduleInteraction(function() { send(editor, 0); }, 300);
+            }
+            scheduleInteraction(fill, 500);
+            return 'injecting';
+        })();
+        """
+    }
+
     @MainActor
     static func interact(webView: WKWebView?, platform: SearchPlatform, keyword: String) {
         guard let webView else { return }
         if platform.name == "platform_xiaohongshu" {
             if let url = platform.searchURL(for: keyword) { webView.load(URLRequest(url: url)) }
+        } else if ["Kimi", "platform_kimi"].contains(platform.name) {
+            guard ["www.kimi.com", "kimi.com"].contains(webView.url?.host?.lowercased() ?? "") else { return }
+            webView.evaluateJavaScript(kimiChatScript(query: keyword)) { _, _ in }
         } else if platform.name == "platform_metaso" {
             webView.evaluateJavaScript(metasoSearchScript(query: keyword)) { _, _ in }
         } else {

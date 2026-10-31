@@ -4,13 +4,9 @@ U Postavkama odaberite Soulo kao zadani preglednik za otvaranje poveznica iz dru
 
 Nedavno korištene kartice i grupe web-mjesta prikazuju se prve, a pregled se otvara na vrhu. Redoslijed korištenja čuva se nakon ponovnog pokretanja.
 
-Bolja podrška za korisničke skripte i @require. Ispravci zvuka videa, bolji povratak na stranice i vidljiviji napredak učitavanja.
+BT preuzimanja: uvezite .torrent datoteke ili magnet poveznice, odaberite datoteke, pauzirajte i nastavite. U sustavu iOS 26 preuzimanja mogu raditi u pozadini kada sustav dopusti; starije verzije spremaju napredak i pauziraju.
 
-Gledajte podržane videozapise tijekom preuzimanja. Poboljšani rad u pozadini i cijeli zaslon te zaštita od skrivenih oglasa i neželjenog kopiranja.
-
-Odabir i obrnuti redoslijed epizoda na podržanim stranicama, skupno preuzimanje odabranih epizoda i ponovni pokušaj neuspjelih preuzimanja. Držite za ubrzavanje i pustite za povratak brzine. Fluidnije videokontrole.
-
-Neobavezna potvrda automatskog prelaska na drugu domenu, pouzdane domene i otvaranje u novoj kartici. Poboljšano uklanjanje oglasnih prekrivača i povratak na prethodnu stranicu.
+Odaberite četiri neobavezna prečaca na početnoj stranici za preuzimanja, datoteke, oznake, povijest, pozadine i druge stranice. Traka kartica biblioteke smanjuje se tijekom pomicanja.
 
 Pronađite informacije, čitajte članke, reproducirajte medije i upravljajte preuzimanjima u jednom pregledniku.
 

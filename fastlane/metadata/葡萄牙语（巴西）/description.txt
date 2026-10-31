@@ -4,13 +4,9 @@ Escolha o Soulo como navegador padrão nos Ajustes para abrir links de outros ap
 
 As abas e grupos de sites usados recentemente aparecem primeiro, e a visão geral abre no topo. A ordem de uso é mantida após reiniciar.
 
-Melhor compatibilidade de scripts com @require. Correções no áudio de vídeos, navegação de volta e progresso de carregamento mais visível.
+Downloads BT: importe arquivos .torrent ou links magnet, escolha arquivos, pause e retome. No iOS 26, os downloads podem continuar em segundo plano quando o sistema permitir; versões anteriores salvam o progresso e pausam.
 
-Reproduza vídeos compatíveis durante o download. Downloads em segundo plano e tela cheia melhorados, com proteção contra anúncios ocultos e cópias indesejadas.
-
-Escolha episódios em sites compatíveis, inverta a ordem, baixe vários de uma vez e tente novamente os downloads com falha. Mantenha pressionado para acelerar e solte para restaurar a velocidade. Controles de vídeo mais fluidos.
-
-Confirmação opcional para redirecionamentos automáticos a outro domínio, domínios confiáveis e abertura em nova aba. Melhorias na remoção de sobreposições de anúncios e na navegação de volta.
+Escolha quatro atalhos opcionais na tela inicial para downloads, arquivos, favoritos, histórico, papéis de parede e outras páginas. A barra de abas da biblioteca fica compacta ao rolar.
 
 Encontre informações, leia artigos, reproduza mídia e gerencie downloads no mesmo navegador.
 

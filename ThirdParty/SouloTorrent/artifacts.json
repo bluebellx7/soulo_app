@@ -1,0 +1,5 @@
+{
+  "ThirdParty/SouloTorrent/Artifacts/SouloTorrent.xcframework/ios-arm64_x86_64-simulator/libSouloTorrent.a": "a2bf143402f640f639a7298d1f7c173e36ff690bd78f9f4e869813d6ae17744c",
+  "ThirdParty/SouloTorrent/Artifacts/SouloTorrent.xcframework/ios-arm64/libSouloTorrent.a": "46436111b6464cc79b52c8f40f8865e969eabc29f16b7abdad466b536a61181b",
+  "Soulo/Resources/Torrents/torrent-ca.pem": "796f1389bfea13c0ed78f663b765baaff54a508e5483786bd6ece73c5e3e3cbe"
+}

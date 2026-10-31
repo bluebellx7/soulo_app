@@ -4,13 +4,9 @@ Valitse asetuksissa Soulo oletusselaimeksi, jotta voit avata linkkejä muista ap
 
 Äskettäin käytetyt välilehdet ja sivustoryhmät näkyvät ensin, ja näkymä avautuu ylhäältä. Käyttöjärjestys säilyy uudelleenkäynnistyksen jälkeen.
 
-Parempi tuki käyttäjäskripteille ja @require-riippuvuuksille. Korjauksia videoääniin, sivuille palaamiseen ja latauksen näyttöön.
+BT-lataukset: tuo .torrent-tiedostoja tai magnet-linkkejä, valitse tiedostot, keskeytä ja jatka. iOS 26:ssa lataukset voivat jatkua taustalla järjestelmän salliessa; aiemmat versiot tallentavat etenemisen ja keskeyttävät.
 
-Toista tuettuja videoita latauksen aikana. Paremmat taustalataukset ja koko näytön tila sekä suoja piilomainoksia ja ei-toivottua kopiointia vastaan.
-
-Valitse jaksoja tuetuilla sivustoilla, käännä järjestys, lataa useita kerralla ja yritä epäonnistuneita latauksia uudelleen. Paina pitkään nopeuttaaksesi ja vapauta palauttaaksesi nopeuden. Sujuvammat videosäätimet.
-
-Valinnainen vahvistus automaattiselle siirtymiselle toiseen verkkotunnukseen, luotetut verkkotunnukset ja avaaminen uudella välilehdellä. Parannettu mainospeitteiden poistoa ja paluuta edelliselle sivulle.
+Valitse aloitussivulle neljä valinnaista oikopolkua latauksiin, tiedostoihin, kirjanmerkkeihin, historiaan, taustakuviin ja muille sivuille. Kirjaston välilehtipalkki tiivistyy vieritettäessä.
 
 Etsi tietoa, lue artikkeleita, toista mediaa ja hallitse latauksia samassa selaimessa.
 

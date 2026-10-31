@@ -1,5 +1,7 @@
 1.2.7
 
+• BT-Downloads: Importiere .torrent-Dateien oder Magnet-Links, wähle Dateien, pausiere und setze fort. Unter iOS 26 können Downloads im Hintergrund weiterlaufen, wenn das System es zulässt; ältere Versionen speichern den Fortschritt und pausieren.
+• Wähle vier optionale Startseiten-Kurzbefehle für Downloads, Dateien, Lesezeichen, Verlauf, Hintergrundbilder und weitere Seiten. Die Tab-Leiste der Bibliothek wird beim Scrollen kompakter.
 • Verbesserte Userscript-Kompatibilität, einschließlich externer Abhängigkeiten über @require.
 • Fälle mit Ton trotz stummgeschaltetem Webvideo oder doppelter Wiedergabe auf einigen Webseiten behoben.
 • Zurück-Navigation und Seitenwiederherstellung verbessert, damit bereite Inhalte früher erscheinen.

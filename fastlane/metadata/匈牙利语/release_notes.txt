@@ -1,5 +1,7 @@
 1.2.7
 
+• BT-letöltések: importálj .torrent-fájlokat vagy magnet-hivatkozásokat, válassz fájlokat, szüneteltesd és folytasd. iOS 26-on a letöltés a háttérben is folytatódhat, ha a rendszer engedi; a korábbi verziók mentik az állapotot és szüneteltetik.
+• Válassz négy opcionális kezdőlapi parancsikont a letöltésekhez, fájlokhoz, könyvjelzőkhöz, előzményekhez, háttérképekhez és más oldalakhoz. Görgetéskor a könyvtár lapsávja összébb húzódik.
 • Javított felhasználói szkript-kompatibilitás, beleértve a @require külső függőségeit.
 • Javítva a némított videók hangja és a párhuzamos lejátszás bizonyos weboldalakon.
 • Jobb visszalépés és oldal-visszaállítás, hogy az elkészült tartalom hamarabb megjelenjen.

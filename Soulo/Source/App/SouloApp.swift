@@ -125,7 +125,9 @@ private struct SouloWindowRoot: View {
                 applyWebAppearanceToOpenTabs()
             }
             .onOpenURL { url in
-                if url.isFileURL {
+                if url.scheme?.lowercased() == "magnet" {
+                    NotificationCenter.default.post(name: .createSouloDownload, object: url)
+                } else if url.isFileURL {
                     NotificationCenter.default.post(name: .openSouloDocument, object: url)
                 } else if url.scheme?.lowercased() == "soulo" && url.host?.lowercased() == "action" {
                     let id = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?

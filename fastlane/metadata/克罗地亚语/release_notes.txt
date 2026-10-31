@@ -1,5 +1,7 @@
 1.2.7
 
+• BT preuzimanja: uvezite .torrent datoteke ili magnet poveznice, odaberite datoteke, pauzirajte i nastavite. U sustavu iOS 26 preuzimanja mogu raditi u pozadini kada sustav dopusti; starije verzije spremaju napredak i pauziraju.
+• Odaberite četiri neobavezna prečaca na početnoj stranici za preuzimanja, datoteke, oznake, povijest, pozadine i druge stranice. Traka kartica biblioteke smanjuje se tijekom pomicanja.
 • Poboljšana kompatibilnost korisničkih skripti, uključujući vanjske ovisnosti putem @require.
 • Ispravljeni slučajevi zvuka nakon utišavanja videa ili dvostruke reprodukcije na nekim stranicama.
 • Poboljšani povratak i obnova stranica kako bi se spreman sadržaj prikazao ranije.

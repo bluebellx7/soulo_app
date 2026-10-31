@@ -4,13 +4,9 @@ V Nastaveniach vyberte Soulo ako predvolený prehliadač na otváranie odkazov z
 
 Naposledy použité karty a skupiny webov sa zobrazia ako prvé a prehľad sa otvorí navrchu. Poradie používania sa zachová aj po reštarte.
 
-Lepšia podpora používateľských skriptov a @require. Opravy zvuku videí, lepší návrat na stránky a výraznejší priebeh načítania.
+Sťahovanie BT: importujte súbory .torrent alebo odkazy magnet, vyberte súbory, pozastavte a pokračujte. V iOS 26 môže sťahovanie pokračovať na pozadí, ak to systém dovolí; staršie verzie uložia priebeh a pozastavia ho.
 
-Prehrávajte podporované videá počas sťahovania. Lepšie sťahovanie na pozadí, celá obrazovka a ochrana pred skrytými reklamami a nechceným kopírovaním.
-
-Výber a obrátené poradie epizód na podporovaných weboch, hromadné sťahovanie vybraných epizód a opakovanie neúspešných stiahnutí. Podržaním zrýchlite, uvoľnením obnovíte rýchlosť. Plynulejšie ovládanie videa.
-
-Voliteľné potvrdenie automatického prechodu na inú doménu, dôveryhodné domény a otvorenie na novej karte. Lepšie odstraňovanie reklamných prekrytí a návrat na predošlú stránku.
+Vyberte štyri voliteľné skratky na úvodnej stránke pre sťahovanie, súbory, záložky, históriu, tapety a ďalšie stránky. Lišta kariet knižnice sa pri posúvaní zmenší.
 
 Hľadajte informácie, čítajte články, prehrávajte médiá a spravujte sťahovanie v jednom prehliadači.
 

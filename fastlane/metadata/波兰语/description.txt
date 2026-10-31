@@ -4,13 +4,9 @@ Wybierz Soulo jako domyślną przeglądarkę w Ustawieniach, aby otwierać linki
 
 Ostatnio używane karty i grupy witryn pojawiają się jako pierwsze, a przegląd otwiera się od góry. Kolejność użycia jest zachowana po restarcie.
 
-Lepsza zgodność skryptów i obsługa @require. Poprawki dźwięku filmów, powrotu do stron oraz czytelniejszy wskaźnik ładowania.
+Pobieranie BT: importuj pliki .torrent lub linki magnet, wybieraj pliki, wstrzymuj i wznawiaj. W iOS 26 pobieranie może działać w tle, gdy system na to pozwala; starsze wersje zapisują postęp i wstrzymują zadanie.
 
-Odtwarzaj obsługiwane filmy podczas pobierania. Lepsze pobieranie w tle i pełny ekran oraz ochrona przed ukrytymi reklamami i niechcianym kopiowaniem.
-
-Wybieraj odcinki na obsługiwanych stronach, odwracaj kolejność i pobieraj kilka naraz, z ponawianiem nieudanych pobrań. Przytrzymaj, aby przyspieszyć, i puść, aby przywrócić prędkość. Płynniejsze sterowanie wideo.
-
-Opcjonalne potwierdzenie automatycznych przekierowań do innej domeny, zaufane domeny i otwieranie w nowej karcie. Ulepszono usuwanie nakładek reklamowych i nawigację wstecz.
+Wybierz cztery opcjonalne skróty na stronie głównej do pobierania, plików, zakładek, historii, tapet i innych stron. Pasek kart biblioteki zmniejsza się podczas przewijania.
 
 Szukaj informacji, czytaj artykuły, odtwarzaj multimedia i zarządzaj pobraniami w jednej przeglądarce.
 

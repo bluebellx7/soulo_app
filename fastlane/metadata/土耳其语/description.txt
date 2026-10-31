@@ -4,13 +4,9 @@ Diğer uygulamalardaki bağlantıları açmak için Ayarlar’da Soulo’yu vars
 
 Son kullanılan sekmeler ve site grupları önce gösterilir, sekme görünümü en üstten açılır. Kullanım sırası yeniden başlatınca korunur.
 
-@require ile daha iyi kullanıcı betiği uyumluluğu. Video sesi düzeltildi, geri gezinme ve yükleme ilerleme göstergesi iyileştirildi.
+BT indirmeleri: .torrent dosyaları veya magnet bağlantıları içe aktarın, dosyaları seçin, duraklatın ve sürdürün. iOS 26’da sistem izin verdiğinde arka planda devam edebilir; önceki sürümler ilerlemeyi kaydedip duraklatır.
 
-Desteklenen videoları indirilirken oynatın. Arka plan indirmeleri ve tam ekran iyileştirildi; gizli reklamlara ve istenmeyen kopyalamaya karşı koruma.
-
-Desteklenen sitelerde bölüm seçin, sıralamayı tersine çevirin, birkaç bölümü birlikte indirin ve başarısız indirmeleri yeniden deneyin. Hızlandırmak için basılı tutun, önceki hıza dönmek için bırakın. Daha akıcı video kontrolleri.
-
-Başka bir alan adına otomatik geçiş için isteğe bağlı onay, güvenilen alan adları ve yeni sekmede açma eklendi. Reklam katmanlarının temizlenmesi ve geri gezinme iyileştirildi.
+Ana sayfada indirmeler, dosyalar, yer imleri, geçmiş, duvar kâğıtları ve diğer sayfalara dört isteğe bağlı kısayol seçin. Kitaplık sekme çubuğu kaydırırken daralır.
 
 Bilgi bulun, makale okuyun, medya oynatın ve indirmelerinizi tek tarayıcıda yönetin.
 

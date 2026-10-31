@@ -250,6 +250,7 @@ struct WebViewContainer: View {
     @State private var fullscreenHintDismissTask: Task<Void, Never>?
     @State private var showCaptureOptions = false
     @State private var showResourceInspector = false
+    @State private var showResourcesAfterImagePreview = false
     @State private var showArticleReader = false
     @State private var showWiFiTransfer = false
     @State private var imageTextResult: ImageTextRecognitionResult?
@@ -335,7 +336,7 @@ struct WebViewContainer: View {
 
                     // New Tab Page overlay
                     if isShowingNewTabPage {
-                        NewTabPageView(tabManager: tabManager) { url in
+                        NewTabPageView(tabManager: tabManager, onSearch: newTabSearchAction) { url in
                             webViewModel.loadURL(url)
                         }
                         .transition(.opacity)
@@ -574,7 +575,7 @@ struct WebViewContainer: View {
             fullscreenHandleRevealGesture,
             including: isActiveTab && isFullscreen && !showFullscreenExitHandle
                 ? .all
-                : .none
+                : .subviews
         )
         .onChange(of: webViewModel.isScrollingUp) { _, scrollingUp in
             if isActiveTab {
@@ -865,8 +866,16 @@ struct WebViewContainer: View {
                 WebResourceInspectorView(webViewModel: webViewModel)
             }
         }
-        .fullScreenCover(item: $webViewModel.imagePreview) { request in
-            WebImagePreview(request: request)
+        .fullScreenCover(item: $webViewModel.imagePreview, onDismiss: {
+            if showResourcesAfterImagePreview {
+                showResourcesAfterImagePreview = false
+                showResourceInspector = true
+            }
+        }) { request in
+            WebImagePreview(request: request, onOpenResources: {
+                showResourcesAfterImagePreview = true
+                webViewModel.imagePreview = nil
+            })
         }
         .onChange(of: webViewModel.showMediaDownloads) { _, show in
             if show { showResourceInspector = true; webViewModel.showMediaDownloads = false }
@@ -979,6 +988,15 @@ struct WebViewContainer: View {
         WebNavigationPolicyService.shared.canUseSafariCompatibilityMode(
             for: webViewModel.currentURL
         )
+    }
+
+    private var newTabSearchAction: ((String, PlatformRegion, UUID?) -> Void)? {
+        guard let onAddressSearch else { return nil }
+        return { value, region, groupID in
+            let group = PlatformDataStore.shared.customGroups.first { $0.id == groupID }
+            searchVM.prepareForHomeSearch(preferredRegion: region, customGroup: group)
+            onAddressSearch(value)
+        }
     }
 
     private var isShowingNewTabPage: Bool {

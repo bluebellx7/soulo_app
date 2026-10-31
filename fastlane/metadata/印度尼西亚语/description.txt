@@ -4,13 +4,9 @@ Pilih Soulo sebagai browser default di Pengaturan untuk membuka tautan dari app 
 
 Tab dan grup situs yang baru digunakan tampil lebih dulu, dan tampilan tab dibuka dari atas. Urutan penggunaan tetap tersimpan setelah memulai ulang.
 
-Kompatibilitas skrip pengguna dan dukungan @require ditingkatkan. Perbaikan audio video, navigasi kembali, dan indikator pemuatan.
+Unduhan BT: impor file .torrent atau tautan magnet, pilih file, jeda dan lanjutkan. Di iOS 26, unduhan dapat berlanjut di latar belakang jika sistem mengizinkan; versi sebelumnya menyimpan progres dan menjeda.
 
-Putar video yang didukung sambil mengunduh. Unduhan latar belakang dan layar penuh lebih baik, dengan perlindungan dari iklan tersembunyi dan salinan tak diinginkan.
-
-Pilih episode di situs yang didukung, balik urutannya, unduh beberapa episode sekaligus dan coba lagi unduhan yang gagal. Tekan lama untuk mempercepat, lepaskan untuk memulihkan kecepatan. Kontrol video lebih lancar.
-
-Konfirmasi opsional untuk pengalihan otomatis ke domain lain, domain tepercaya dan buka di tab baru. Pembersihan lapisan iklan dan navigasi kembali ditingkatkan.
+Pilih empat pintasan opsional di beranda untuk unduhan, file, penanda, riwayat, wallpaper, dan halaman lainnya. Bilah tab pustaka menjadi ringkas saat digulir.
 
 Cari informasi, baca artikel, putar media, dan kelola unduhan dalam satu browser.
 

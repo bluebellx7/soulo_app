@@ -230,7 +230,7 @@ struct SearchBarView: View {
 
                 ScrollView {
                     VStack(spacing: 0) {
-                        ForEach(PlatformRegion.sortedCases(preferring: selectedRegion ?? .international).filter { !platformStore.visiblePlatforms(for: $0).isEmpty }) { region in
+                        ForEach(PlatformRegion.sortedCases(preferring: selectedRegion ?? .international)) { region in
                             searchActionRow(
                                 title: "\(platformStore.regionDisplayName(for: region)) (\(platformStore.visiblePlatforms(for: region).count))",
                                 systemImage: selectedGroupID == nil && selectedRegion == region ? "checkmark" : nil
@@ -241,9 +241,9 @@ struct SearchBarView: View {
                         }
 
                         if let onGroupSelect {
-                            ForEach(platformStore.customGroups.filter { !platformStore.platformsForGroup($0).isEmpty }) { group in
+                            ForEach(platformStore.customGroups) { group in
                                 searchActionRow(
-                                    title: "\(group.name) (\(platformStore.platformsForGroup(group).count))",
+                                    title: "\(group.name) (\(platformStore.visiblePlatforms(forGroup: group).count))",
                                     systemImage: selectedGroupID == group.id ? "checkmark" : nil
                                 ) {
                                     showSearchActions = false

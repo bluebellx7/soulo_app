@@ -6,6 +6,8 @@ private enum PlatformManagementLayout: String {
 }
 
 struct PlatformManagementView: View {
+    @ObservedObject private var defaultSearch = GroupDefaultSearchService.shared
+    @State private var searchGroup: GroupSection?
     @ObservedObject private var store = PlatformDataStore.shared
     @State private var showAddGroup = false
     @State private var newGroupName = ""
@@ -34,7 +36,7 @@ struct PlatformManagementView: View {
             let platforms = store.platforms
                 .filter { $0.region == region }
                 .sorted { $0.sortOrder < $1.sortOrder }
-            if !platforms.isEmpty {
+            do {
                 result.append(GroupSection(
                     id: region.rawValue,
                     name: store.regionDisplayName(for: region),
@@ -66,6 +68,12 @@ struct PlatformManagementView: View {
                 gridContent
             } else {
                 listContent
+            }
+        }
+        .sheet(item: $searchGroup) { section in
+            GroupSearchSettingsView(scope: section.region.map(SearchGroupScope.region) ?? .custom(section.customGroup!.id), originalName: section.name) { name in
+                if let region = section.region { store.renameRegion(region, to: name) }
+                else if let group = section.customGroup { store.renameGroup(id: group.id, name: name) }
             }
         }
         .navigationTitle(LanguageManager.shared.localizedString("platform_management"))
@@ -316,10 +324,17 @@ struct PlatformManagementView: View {
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
 
-            Spacer()
+            Button { searchGroup = section } label: {
+                let scope = section.region.map(SearchGroupScope.region) ?? .custom(section.customGroup!.id)
+                Text(ToolText.text("group_default_search") + " · " + LanguageManager.shared.localizedString(defaultSearch.engine(for: scope).name))
+                    .font(.caption).lineLimit(1).foregroundStyle(Color.themePrimary)
+            }.buttonStyle(.plain)
+                .accessibilityIdentifier("platform.default-search.\(section.id)")
+
+            Spacer(minLength: 4)
 
             Button {
-                beginRenaming(section)
+                searchGroup = section
             } label: {
                 Image(systemName: "square.and.pencil")
                     .font(.system(size: 12))
@@ -408,6 +423,8 @@ struct PlatformManagementView: View {
         } label: {
             Image(systemName: "ellipsis.circle")
         }
+        .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
+        .accessibilityIdentifier("platform.managementMenu")
     }
 
     private func beginRenaming(_ section: GroupSection) {

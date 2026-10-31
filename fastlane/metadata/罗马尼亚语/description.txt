@@ -4,13 +4,9 @@ Alege Soulo ca browser implicit în Configurări pentru a deschide linkuri din a
 
 Filele și grupurile de site-uri folosite recent apar primele, iar lista se deschide de sus. Ordinea utilizării se păstrează după repornire.
 
-Compatibilitate mai bună a scripturilor cu @require. Corecții audio pentru videoclipuri, revenire îmbunătățită și încărcare mai vizibilă.
+Descărcări BT: importă fișiere .torrent sau linkuri magnet, alege fișiere, pune pe pauză și reia. În iOS 26 pot continua în fundal când sistemul permite; versiunile anterioare salvează progresul și le pun pe pauză.
 
-Redă videoclipurile compatibile în timpul descărcării. Descărcări în fundal și ecran complet îmbunătățite, cu protecție contra reclamelor ascunse și copierii nedorite.
-
-Alege episoade pe site-urile compatibile, inversează ordinea, descarcă mai multe simultan și reîncearcă descărcările eșuate. Ține apăsat pentru accelerare și eliberează pentru revenirea la viteză. Comenzi video mai fluide.
-
-Confirmare opțională pentru redirecționarea automată spre alt domeniu, domenii de încredere și deschidere într-o filă nouă. Curățarea suprapunerilor publicitare și navigarea înapoi au fost îmbunătățite.
+Alege patru scurtături opționale pe ecranul principal pentru descărcări, fișiere, semne de carte, istoric, imagini de fundal și alte pagini. Bara de file a bibliotecii devine compactă la derulare.
 
 Găsește informații, citește articole, redă conținut și gestionează descărcările într-un singur browser.
 

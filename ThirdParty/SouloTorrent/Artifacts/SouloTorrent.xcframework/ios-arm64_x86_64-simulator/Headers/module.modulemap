@@ -1,0 +1,8 @@
+module SouloTorrent {
+  header "SouloTorrent.h"
+  link "c++"
+  link framework "Foundation"
+  link framework "CoreFoundation"
+  link framework "SystemConfiguration"
+  export *
+}

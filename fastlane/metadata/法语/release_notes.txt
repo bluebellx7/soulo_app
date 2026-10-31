@@ -1,5 +1,7 @@
 1.2.7
 
+• Téléchargements BT : importez des fichiers .torrent ou des liens magnet, choisissez les fichiers, mettez en pause et reprenez. Sous iOS 26, ils peuvent continuer en arrière-plan si le système le permet ; les versions antérieures enregistrent la progression et les mettent en pause.
+• Configurez quatre raccourcis facultatifs sur l’accueil vers les téléchargements, fichiers, signets, historique, fonds d’écran et autres pages. La barre d’onglets de la bibliothèque se réduit lors du défilement.
 • Compatibilité des scripts utilisateur améliorée, y compris les dépendances externes via @require.
 • Correction de cas de son persistant après la mise en sourdine ou de lecture en double sur certaines pages.
 • Navigation retour et restauration des pages améliorées pour afficher plus tôt le contenu prêt.

@@ -4,6 +4,7 @@ struct BatchImportView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var jsonText = ""
     @State private var groupName = ""
+    @State private var preparedDefaultName = false
     @State private var selectedRegion: PlatformRegion = .international
     @State private var selectedCustomGroupID: UUID? = nil
     @State private var useNewGroup = false
@@ -23,8 +24,8 @@ struct BatchImportView: View {
         case groupName
     }
 
-    @State private var selection: GroupSelection = .region(.international)
-    private let filmImportURL = URL(string: "https://soulo.dkluge.com/#film")
+    @State private var selection: GroupSelection = .newGroup
+    private let filmImportURL = URL(string: "https://soulo.dkluge.com/sources.html")
 
     var body: some View {
         NavigationStack {
@@ -51,7 +52,7 @@ struct BatchImportView: View {
                             showFilmExample = true
                         } label: {
                             HStack(spacing: 10) {
-                                Image(systemName: "film.stack")
+                                Image(systemName: "list.bullet.rectangle")
                                     .font(.system(size: 16, weight: .semibold))
                                     .foregroundStyle(Color.themePrimary)
                                 VStack(alignment: .leading, spacing: 2) {
@@ -154,7 +155,7 @@ struct BatchImportView: View {
                         Button {
                             focusedField = .groupName
                             selection = .newGroup
-                            groupName = ""
+                            if groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { groupName = defaultGroupName() }
                         } label: {
                             Label(LanguageManager.shared.localizedString("add_group"), systemImage: "folder.badge.plus")
                         }
@@ -178,6 +179,7 @@ struct BatchImportView: View {
                         )
                         .font(.body)
                         .focused($focusedField, equals: .groupName)
+                        .accessibilityIdentifier("batch-import.groupName")
                         .padding(12)
                         .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
                     }
@@ -223,6 +225,9 @@ struct BatchImportView: View {
                         focusedField = nil
                     }
             }
+            .onAppear {
+                if !preparedDefaultName { groupName = defaultGroupName(); preparedDefaultName = true }
+            }
             .navigationTitle(LanguageManager.shared.localizedString("batch_import"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -258,6 +263,14 @@ struct BatchImportView: View {
         }
     }
 
+    private func defaultGroupName() -> String {
+        let base = ToolText.text("batch_import_new_group")
+        let names = Set(PlatformDataStore.shared.customGroups.map(\.name))
+        var name = base, suffix = 2
+        while names.contains(name) { name = "\(base) \(suffix)"; suffix += 1 }
+        return name
+    }
+
     private func doImport() {
         isImporting = true
 
@@ -274,7 +287,7 @@ struct BatchImportView: View {
             importGroupName = PlatformDataStore.shared.customGroups.first(where: { $0.id == gid })?.name
         case .newGroup:
             region = .international
-            importGroupName = groupName.isEmpty ? nil : groupName
+            importGroupName = groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? defaultGroupName() : groupName.trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {

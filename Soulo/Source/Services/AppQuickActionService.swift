@@ -108,7 +108,9 @@ final class SouloAppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        TorrentBackgroundCoordinator.shared.register()
         Task { @MainActor in
+            _ = TorrentDownloadService.shared
             AppQuickActionService.shared.configureShortcuts()
             _ = SeparatedMediaDownloadService.shared
             RetiredStorageCleanup.schedule()

@@ -4,13 +4,9 @@ V Nastavitvah izberite Soulo kot privzeti brskalnik za odpiranje povezav iz drug
 
 Nedavno uporabljeni zavihki in skupine spletnih mest so prikazani najprej, pregled pa se odpre na vrhu. Vrstni red uporabe se ohrani po ponovnem zagonu.
 
-Boljša podpora za uporabniške skripte in @require. Popravki zvoka videov, vračanja na strani in vidnejši prikaz nalaganja.
+Prenosi BT: uvozite datoteke .torrent ali povezave magnet, izberite datoteke, začasno ustavite in nadaljujte. V iOS 26 se lahko nadaljujejo v ozadju, ko sistem dovoli; starejše različice shranijo napredek in jih začasno ustavijo.
 
-Predvajajte podprte videe med prenosom. Boljši prenosi v ozadju in celozaslonski način ter zaščita pred skritimi oglasi in neželenim kopiranjem.
-
-Izbira epizod in obrnjen vrstni red na podprtih spletnih mestih, skupinski prenos izbranih epizod in ponovni poskus neuspelih prenosov. Pridržite za pospešitev in spustite za vrnitev hitrosti. Bolj tekoče videokontrole.
-
-Izbirna potrditev samodejnega prehoda na drugo domeno, zaupanja vredne domene in odpiranje v novem zavihku. Izboljšano odstranjevanje oglasnih prekrivanj in vračanje na prejšnjo stran.
+Izberite štiri izbirne bližnjice na domači strani za prenose, datoteke, zaznamke, zgodovino, ozadja in druge strani. Vrstica zavihkov knjižnice se med pomikanjem skrči.
 
 Poiščite informacije, berite članke, predvajajte vsebine in upravljajte prenose v enem brskalniku.
 

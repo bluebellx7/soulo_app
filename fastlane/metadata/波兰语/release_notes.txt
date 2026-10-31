@@ -1,5 +1,7 @@
 1.2.7
 
+• Pobieranie BT: importuj pliki .torrent lub linki magnet, wybieraj pliki, wstrzymuj i wznawiaj. W iOS 26 pobieranie może działać w tle, gdy system na to pozwala; starsze wersje zapisują postęp i wstrzymują zadanie.
+• Wybierz cztery opcjonalne skróty na stronie głównej do pobierania, plików, zakładek, historii, tapet i innych stron. Pasek kart biblioteki zmniejsza się podczas przewijania.
 • Poprawiono zgodność skryptów użytkownika, w tym zewnętrznych zależności przez @require.
 • Naprawiono dźwięk mimo wyciszenia filmów i powielone odtwarzanie na niektórych stronach.
 • Usprawniono cofanie i przywracanie stron, aby gotowa treść pojawiała się wcześniej.

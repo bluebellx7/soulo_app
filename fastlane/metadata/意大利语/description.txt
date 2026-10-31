@@ -4,13 +4,9 @@ Scegli Soulo come browser predefinito in Impostazioni per aprire i link da altre
 
 Le schede e i gruppi di siti usati di recente appaiono per primi e la vista si apre dall'alto. L'ordine d'uso si conserva dopo il riavvio.
 
-Migliore compatibilità degli script con @require. Correzioni all'audio video, navigazione indietro e avanzamento del caricamento più chiari.
+Download BT: importa file .torrent o link magnet, scegli i file, metti in pausa e riprendi. Su iOS 26 possono continuare in background quando il sistema lo consente; le versioni precedenti salvano i progressi e li mettono in pausa.
 
-Riproduci i video compatibili durante il download. Download in background e schermo intero migliorati, con protezione da annunci nascosti e copie indesiderate.
-
-Scegli gli episodi sui siti compatibili, inverti l’ordine e scaricane più insieme, riprovando i download non riusciti. Tieni premuto per accelerare, rilascia per ripristinare la velocità. Controlli video più fluidi.
-
-Conferma facoltativa dei reindirizzamenti automatici verso altri domini, domini attendibili e apertura in una nuova scheda. Migliorate la rimozione delle sovrapposizioni pubblicitarie e la navigazione indietro.
+Scegli quattro scorciatoie facoltative nella home per download, file, segnalibri, cronologia, sfondi e altre pagine. La barra delle schede della libreria si compatta durante lo scorrimento.
 
 Trova informazioni, leggi articoli, riproduci contenuti e gestisci i download nello stesso browser.
 

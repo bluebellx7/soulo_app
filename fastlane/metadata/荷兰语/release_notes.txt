@@ -1,5 +1,7 @@
 1.2.7
 
+• BT-downloads: importeer .torrent-bestanden of magnetlinks, kies bestanden, pauzeer en hervat. Op iOS 26 kunnen downloads op de achtergrond doorgaan als het systeem dat toestaat; eerdere versies bewaren de voortgang en pauzeren.
+• Kies vier optionele snelkoppelingen op het startscherm voor downloads, bestanden, bladwijzers, geschiedenis, achtergronden en andere pagina’s. De tabbladbalk van de bibliotheek wordt compacter tijdens het scrollen.
 • Verbeterde compatibiliteit met userscripts, inclusief externe afhankelijkheden via @require.
 • Problemen opgelost met geluid na het dempen van video's en dubbele weergave op sommige webpagina's.
 • Terugnavigatie en paginaherstel verbeterd, zodat beschikbare inhoud eerder verschijnt.

@@ -1,5 +1,7 @@
 1.2.7
 
+• Descàrregues BT: importa fitxers .torrent o enllaços magnet, tria fitxers, posa en pausa i reprèn. A iOS 26 poden continuar en segon pla si el sistema ho permet; les versions anteriors desen el progrés i les pausen.
+• Configura quatre dreceres opcionals a l’inici per obrir descàrregues, fitxers, adreces d’interès, historial, fons i altres pàgines. La barra de pestanyes de la biblioteca es compacta en desplaçar-te.
 • Millorada la compatibilitat amb scripts d'usuari i dependències externes amb @require.
 • Corregits casos de so en vídeos silenciats o reproducció duplicada en algunes pàgines.
 • Millorada la navegació enrere i la restauració de pàgines per mostrar abans el contingut disponible.

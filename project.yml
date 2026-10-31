@@ -64,6 +64,8 @@ targets:
       - Soulo/Source
       - Soulo/Assets.xcassets
       - Soulo/PrivacyInfo.xcprivacy
+      - path: Soulo/Resources/Torrents
+        buildPhase: resources
       - path: Soulo/Resources/UserScripts
         type: folder
         buildPhase: resources
@@ -92,7 +94,6 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        ITSAppUsesNonExemptEncryption: false
         NSCameraUsageDescription: "Allow camera access when you approve a website request, such as for video calls, scanning codes, or taking a photo."
         NSMicrophoneUsageDescription: "Allow microphone access for voice search and, when you approve, website calls or recording."
         NSSpeechRecognitionUsageDescription: "Allow speech recognition to turn your voice into search text."
@@ -100,7 +101,10 @@ targets:
         NSSupportsLiveActivities: true
         UIBackgroundModes:
           - audio
-        NSLocalNetworkUsageDescription: "Transfer files with your computer while Wi-Fi Transfer is open."
+          - processing
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.dkluge.Soulo.torrents.session
+        NSLocalNetworkUsageDescription: "Transfer files with your computer and connect to download peers on your local network."
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
         CFBundleDocumentTypes:
@@ -121,6 +125,7 @@ targets:
               - public.image
               - public.movie
               - public.audio
+              - org.bittorrent.torrent
               - public.zip-archive
               - com.dkluge.soulo.ebook
               - com.dkluge.soulo.archive
@@ -137,6 +142,12 @@ targets:
               - org.7-zip.7-zip-archive
               - com.amazon.mobi8-ebook
         UTImportedTypeDeclarations:
+          - UTTypeIdentifier: org.bittorrent.torrent
+            UTTypeDescription: BitTorrent Metadata
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification:
+              public.filename-extension: [torrent]
+              public.mime-type: application/x-bittorrent
           - UTTypeIdentifier: com.dkluge.soulo.ebook
             UTTypeDescription: Mobipocket eBook
             UTTypeConformsTo: [public.data]
@@ -150,13 +161,14 @@ targets:
         CFBundleURLTypes:
           - CFBundleURLSchemes:
               - soulo
+              - magnet
           - CFBundleTypeRole: Viewer
             CFBundleURLName: com.dkluge.Soulo.browser
             CFBundleURLSchemes:
               - http
               - https
         NSAppTransportSecurity:
-          NSAllowsArbitraryLoadsInWebContent: true
+          NSAllowsArbitraryLoads: true
           NSExceptionDomains:
             delivery.mp.microsoft.com:
               NSIncludesSubdomains: true
@@ -176,6 +188,7 @@ targets:
     dependencies:
       - target: SouloWidgetExtension
       - target: SouloShareExtension
+      - package: SouloTorrent
       - package: PLzmaSDK
       - package: Unrar
       - package: ZipArchive
@@ -290,6 +303,8 @@ targets:
         DEVELOPMENT_TEAM: 7S2LBJA9VA
 
 packages:
+  SouloTorrent:
+    path: ThirdParty/SouloTorrent
   ZipArchive:
     url: https://github.com/ZipArchive/ZipArchive.git
     revision: acc61be58181e635ae77718e66530b4ee7dea4be

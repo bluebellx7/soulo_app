@@ -1182,7 +1182,13 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-            if gestureRecognizer === imageLongPress { return viewModel.manualAdSelection == nil }
+            if gestureRecognizer === imageLongPress {
+                guard viewModel.manualAdSelection == nil, let view = gestureRecognizer.view else { return false }
+                let x = touch.location(in: view).x
+                // Leave both history-swipe edges to WebKit immediately rather
+                // than keeping a competing long press in its possible state.
+                return x >= 24 && x <= view.bounds.width - 24
+            }
             return viewModel.manualAdSelection != nil && !viewModel.manualAdBusy
         }
 
@@ -2693,6 +2699,14 @@ struct WebViewRepresentable: UIViewRepresentable {
                 return
             }
 
+            if url.scheme?.lowercased() == "magnet" {
+                decide(.cancel)
+                if navigationAction.navigationType == .linkActivated {
+                    NotificationCenter.default.post(name: .createSouloDownload, object: url)
+                }
+                return
+            }
+
             let nativeRequest = (webView as? AccessibleWebView)?.consumeNativeNavigation(to: url) == true
             if nativeRequest, navigationAction.targetFrame?.isMainFrame == true { navigationOriginURL = url }
             guard allowsNavigation(navigationAction, in: webView, nativeRequest: nativeRequest) else {
@@ -2762,7 +2776,9 @@ struct WebViewRepresentable: UIViewRepresentable {
                         return
                     }
 
-                    if method == "GET", !shouldSkipPrivacyTransform {
+                    // Rewriting a history action cancels WebKit's interactive
+                    // restoration and replaces it with a fresh load mid-swipe.
+                    if method == "GET", navigationAction.navigationType != .backForward, !shouldSkipPrivacyTransform {
                         switch PrivacyNavigationService.shared.decision(for: url, isMainFrame: isMainFrame) {
                         case .allow:
                             break
@@ -2792,7 +2808,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                     // Loading a rewritten request on WKWebView always navigates its
                     // main frame. Leave iframe requests and new-window contexts to
                     // WebKit instead of replacing the page that contains them.
-                    if isMainFrame, method == "GET",
+                    if isMainFrame, method == "GET", navigationAction.navigationType != .backForward,
                        let privacyHeaderRequest = privacyHeaderRequestIfNeeded(for: navigationAction.request) {
                         privacyHeaderBypassURLs.insert(privacyHeaderRequest.url?.absoluteString ?? url.absoluteString)
                         decide(.cancel)

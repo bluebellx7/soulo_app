@@ -11,9 +11,10 @@ struct ReadingToolsLicensesView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             notices = await Task.detached {
-                guard let url = Bundle.main.url(forResource: "ReadingToolsThirdPartyNotices", withExtension: "txt")
-                else { return "" }
-                return (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+                ["ReadingToolsThirdPartyNotices", "TorrentThirdPartyNotices"].compactMap { name in
+                    Bundle.main.url(forResource: name, withExtension: "txt")
+                        .flatMap { try? String(contentsOf: $0, encoding: .utf8) }
+                }.joined(separator: "\n\n")
             }.value
         }
     }

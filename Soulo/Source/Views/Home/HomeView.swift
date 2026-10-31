@@ -6,6 +6,8 @@ struct HomeView: View {
     @EnvironmentObject var searchVM: SearchViewModel
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var tabManager: TabManager
+    @ObservedObject private var homeToolbar = HomeToolbarConfigurationService.shared
+    @State private var homeToolbarDestination: HomeToolbarAction?
     @ObservedObject private var platformStore = PlatformDataStore.shared
     @ObservedObject var wallpaperManager = WallpaperManager.shared
     @StateObject private var speechService = SpeechRecognitionService()
@@ -25,6 +27,7 @@ struct HomeView: View {
     @State private var selectionSearchID = UUID()
     @State private var pendingURLRoute: SouloURLRoute?
     @State private var urlRouteID = UUID()
+    @State private var downloadCreation: DownloadCreationRequest?
     @State private var incomingDocument: IncomingDocument?
     @State private var showScanner = false
     @State private var showPlatformManagement = false
@@ -174,6 +177,8 @@ struct HomeView: View {
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
+        .sheet(item: $homeToolbarDestination) { HomeToolbarDestinationView(action: $0) }
+        .sheet(item: $downloadCreation) { NewDownloadTaskView(initialURL: $0.url) }
         .sheet(isPresented: $showSettings) {
             SettingsView()
         }
@@ -307,8 +312,15 @@ struct HomeView: View {
         .onReceive(NotificationCenter.default.publisher(for: .openSouloDownloads)) { _ in
             librarySection = .downloads
         }
+        .onReceive(NotificationCenter.default.publisher(for: .createSouloDownload)) { notification in
+            downloadCreation = DownloadCreationRequest(url: notification.object as? URL)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .openSouloDocument)) { notification in
             if let url = notification.object as? URL {
+                if url.pathExtension.lowercased() == "torrent" {
+                    downloadCreation = DownloadCreationRequest(url: url)
+                    return
+                }
                 resetNavigationForExternalEntry()
                 incomingDocument = IncomingDocument(url: url)
             }
@@ -429,7 +441,22 @@ struct HomeView: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
-            // Keep the footer informational only so search remains the single focal point.
+            if homeToolbar.isVisible && !keyboardVisible {
+                HStack(spacing: 18) {
+                    ForEach(Array(homeToolbar.actions.enumerated()), id: \.offset) { index, action in
+                        if action != .none {
+                            Button { performHomeToolbarAction(action) } label: {
+                                HomeToolbarButtonFace(action: action, lightWallpaper: wallpaperManager.isCurrentWallpaperLight)
+                            }.buttonStyle(.plain)
+                                .accessibilityLabel(action.title)
+                                .accessibilityIdentifier("home.toolbar.\(index)")
+                        }
+                    }
+                }
+                .frame(maxWidth: 420)
+                .padding(.horizontal, 32).padding(.top, 8).padding(.bottom, 20)
+            }
+            // Wallpaper attribution remains below the optional shortcuts.
             Text(wallpaperManager.source == .bing ? "Bing Daily" : wallpaperManager.searchTopic)
                 .font(.system(size: 8, weight: .medium))
                 .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.28) : .white.opacity(0.16))
@@ -794,6 +821,24 @@ struct HomeView: View {
             } else {
                 Image(systemName: systemImage).foregroundStyle(.primary)
             }
+        }
+    }
+
+    private func performHomeToolbarAction(_ action: HomeToolbarAction) {
+        HapticsManager.selection()
+        switch action {
+        case .none: break
+        case .downloads: librarySection = .downloads
+        case .files: librarySection = .files
+        case .bookmarks: librarySection = .bookmarks
+        case .history: librarySection = .history
+        case .settings: showSettings = true
+        case .platforms: showPlatformManagement = true
+        case .extensions: showExtensionCenter = true
+        case .newDownload: downloadCreation = DownloadCreationRequest()
+        case .scanner: showScanner = true
+        case .tabs: showTabOverviewFromHome = true
+        default: homeToolbarDestination = action
         }
     }
 

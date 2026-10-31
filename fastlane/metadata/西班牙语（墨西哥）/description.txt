@@ -4,13 +4,9 @@ Elige Soulo como navegador predeterminado en Configuración para abrir enlaces d
 
 Las pestañas y grupos de sitios recientes aparecen primero y la vista se abre arriba. El orden de uso se conserva al reiniciar.
 
-Mejor compatibilidad de scripts con @require. Correcciones de audio en videos, navegación hacia atrás e indicador de carga más visible.
+Descargas BT: importa archivos .torrent o enlaces magnet, elige archivos, pausa y reanuda. En iOS 26 pueden continuar en segundo plano cuando el sistema lo permite; las versiones anteriores guardan el progreso y las pausan.
 
-Reproduce videos compatibles mientras se descargan. Mejoras en segundo plano y pantalla completa, con protección contra anuncios ocultos y copias no deseadas.
-
-Elige episodios en sitios compatibles, invierte el orden, descarga varios a la vez y reintenta las descargas fallidas. Mantén presionado para acelerar y suelta para recuperar la velocidad. Controles de video más fluidos.
-
-Confirmación opcional de redirecciones automáticas a otro dominio, dominios de confianza y apertura en una pestaña nueva. Mejoras al eliminar capas publicitarias y al volver a la página anterior.
+Configura cuatro accesos directos opcionales en el inicio para descargas, archivos, marcadores, historial, fondos y otras páginas. La barra de pestañas de la biblioteca se compacta al desplazarte.
 
 Busca información, lee artículos, reproduce contenido y gestiona descargas en un mismo navegador.
 

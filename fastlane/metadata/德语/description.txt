@@ -4,13 +4,9 @@ Wähle Soulo in den Einstellungen als Standardbrowser, um Links aus anderen Apps
 
 Zuletzt verwendete Tabs und Website-Gruppen stehen zuerst, und die Übersicht öffnet sich oben. Die Reihenfolge bleibt nach einem Neustart erhalten.
 
-Bessere Userscript-Kompatibilität mit @require. Videoton korrigiert, Zurück-Navigation verbessert und Ladefortschritt deutlicher angezeigt.
+BT-Downloads: Importiere .torrent-Dateien oder Magnet-Links, wähle Dateien, pausiere und setze fort. Unter iOS 26 können Downloads im Hintergrund weiterlaufen, wenn das System es zulässt; ältere Versionen speichern den Fortschritt und pausieren.
 
-Unterstützte Videos schon beim Laden abspielen. Bessere Hintergrunddownloads, Vollbildsteuerung und Schutz vor versteckter Werbung und unerwünschtem Kopieren.
-
-Episoden auf unterstützten Websites auswählen, ihre Reihenfolge umkehren, mehrere zusammen laden und fehlgeschlagene Downloads erneut versuchen. Gedrückt halten zum Beschleunigen, loslassen für das vorherige Tempo. Flüssigere Videosteuerung.
-
-Optionale Bestätigung automatischer Wechsel zu anderen Domains, vertrauenswürdige Domains und Öffnen in einem neuen Tab. Entfernen von Werbeüberlagerungen, Zurücknavigation und Untermenüs verbessert.
+Wähle vier optionale Startseiten-Kurzbefehle für Downloads, Dateien, Lesezeichen, Verlauf, Hintergrundbilder und weitere Seiten. Die Tab-Leiste der Bibliothek wird beim Scrollen kompakter.
 
 Informationen finden, Artikel lesen, Medien abspielen und Downloads verwalten, alles in einem Browser.
 

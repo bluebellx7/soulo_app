@@ -162,6 +162,14 @@ struct SettingsView: View {
                         }
                         .buttonStyle(.plain)
 
+                        NavigationLink(value: Destination.homeToolbar) {
+                            Label {
+                                Text(ToolText.text("home_toolbar_customize"))
+                            } icon: {
+                                IconBadge(systemName: "rectangle.split.2x2", color: neutralIconColor)
+                            }
+                        }.accessibilityIdentifier("settings.homeToolbar")
+
                         Toggle(isOn: $showBookmarksOnHome) {
                             SettingsDescriptionLabel(
                                 icon: "bookmark.fill",
@@ -492,7 +500,7 @@ struct SettingsView: View {
     // Value-based links defer service/archive initialization until a subpage
     // is actually opened, instead of constructing every destination at once.
     private enum Destination: Hashable {
-        case platforms, language, wallpaper, webAppearance, shake, toolbar
+        case platforms, language, wallpaper, webAppearance, shake, toolbar, homeToolbar
         case adBlock, privacy, extensions, backups, quickActions, urlSchemes, version
     }
 
@@ -505,6 +513,7 @@ struct SettingsView: View {
         case .webAppearance: WebAppearanceSettingsView()
         case .shake: ShakeActionSettingsView()
         case .toolbar: BrowserToolbarSettingsView()
+        case .homeToolbar: HomeToolbarSettingsView()
         case .adBlock: AdBlockManagementView(currentHost: nil)
         case .privacy: PrivacySettingsView()
         case .extensions:

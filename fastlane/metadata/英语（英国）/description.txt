@@ -4,13 +4,9 @@ Choose Soulo as your default browser in Settings to open links from other apps.
 
 Recently used tabs and website groups appear first, and the overview opens at the top. Recent-use order is preserved after restarting.
 
-Improved userscript compatibility with @require support. Fixed unwanted video audio and improved back navigation and loading indicators.
+BT downloads: import .torrent files or magnet links, choose files, pause and resume. On iOS 26, downloads can continue in the background while the system permits; earlier versions pause and save progress.
 
-Play supported videos while downloading. Improved background downloads, fullscreen controls and protection against hidden ads and unwanted clipboard writes.
-
-Choose and reverse episodes on supported sites, download selected episodes in batches and retry failed downloads. Hold to speed up and release to restore the previous speed. Smoother video controls.
-
-Optional confirmation for automatic navigation to another domain, with trusted domains and opening in a new tab. Improved ad overlay cleanup, back navigation and submenu taps.
+Choose four optional home shortcuts to open Downloads, Files, Bookmarks, History, Wallpaper and other pages. The Library tab bar becomes compact as you scroll.
 
 Find information, read articles, play media and manage downloads in one browser.
 

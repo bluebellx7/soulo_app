@@ -401,3 +401,51 @@
 "cross_domain_invalid" = "Enter a valid domain, such as *.qq.com";
 "cross_domain_reset" = "Restore defaults";
 "cross_domain_trust" = "Trust %@ and continue";
+
+/* Download task creation and native BitTorrent */
+"new_download" = "New Download";
+"download_address" = "Paste a URL or magnet link";
+"download_optional_name" = "File name (optional)";
+"download_link" = "Download Link";
+"download_link_hint" = "Supports HTTP, HTTPS, magnet links and torrent files.";
+"download_create" = "Create Task";
+"download_invalid_address" = "Enter a valid HTTP, HTTPS or magnet link.";
+"import_torrent" = "Import Torrent";
+"torrent_link" = "Link to a torrent file";
+"torrent_task" = "Torrent Download";
+"torrent_files" = "Files";
+"torrent_metadata" = "Getting file list…";
+"torrent_choose_files" = "Choose files to download";
+"torrent_queued" = "Queued";
+"torrent_downloading" = "Downloading";
+"torrent_select_all" = "Select All";
+"torrent_select_none" = "Deselect All";
+"torrent_peers" = "%d peers";
+"torrent_duplicate" = "This torrent is already in Downloads.";
+"torrent_task_limit" = "Remove some download records before adding more tasks.";
+"torrent_save_error" = "Unable to save the task. Check available storage and try again.";
+"torrent_metadata_timeout" = "No file list received. Check your connection and try again when peers are available.";
+"torrent_too_large" = "Torrent files must be 8 MB or smaller.";
+"torrent_background_title" = "Soulo Downloads";
+"torrent_background_running" = "Downloading files";
+"torrent_background_unavailable" = "Background processing is unavailable. Progress will be saved when the app goes into the background.";
+"torrent_background_paused" = "Paused with progress saved. Open the task to resume.";
+"torrent_background_hint" = "iOS 26 can continue downloads in the background while the system permits. Earlier versions pause and save progress when leaving the app.";
+
+"home_toolbar_customize" = "Customize Home Toolbar";
+"home_toolbar_hint" = "Choose a position, then choose the page it opens. Empty positions are hidden on the home screen.";
+"home_toolbar_slot" = "Position %d";
+"home_toolbar_reset" = "Hide All";
+"home_toolbar_default_hint" = "All four home shortcuts are hidden by default.";
+"home_toolbar_search" = "Find a page";
+
+"group_default_search" = "Default search";
+"group_search_settings" = "Group Settings";
+"group_engine_name" = "Search engine name";
+"group_search_url" = "Search URL with %@";
+"group_default_search_hint" = "Used when this group has no enabled platforms. Include %@ in the URL for the search terms. Disabled platforms stay disabled.";
+"group_search_url_invalid" = "Enter a name and a valid HTTP or HTTPS search URL containing %@.";
+
+"batch_import_new_group" = "Imported Group";
+
+"image_resources" = "Resources";

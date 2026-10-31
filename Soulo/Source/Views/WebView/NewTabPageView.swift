@@ -4,6 +4,7 @@ import SwiftUI
 /// Quick links are automatically selected based on the user's language/region.
 struct NewTabPageView: View {
     var tabManager: TabManager?
+    var onSearch: ((String, PlatformRegion, UUID?) -> Void)? = nil
     var onNavigate: (URL) -> Void
 
     // Keep ownership without subscribing the entire quick-link page to typing.
@@ -35,6 +36,7 @@ struct NewTabPageView: View {
         case "zh-Hans", "zh-Hant": return .china
         case "ja":                 return .japan
         case "ru":                 return .russia
+        case "ko":                 return .korea
         default:                   return .international
         }
     }
@@ -48,7 +50,7 @@ struct NewTabPageView: View {
     private var searchPlatforms: [SearchPlatform] {
         if let selectedSearchGroupID,
            let group = platformStore.customGroups.first(where: { $0.id == selectedSearchGroupID }) {
-            return platformStore.platformsForGroup(group).filter { $0.interactionType == .urlSearch }
+            return platformStore.visiblePlatforms(forGroup: group).filter { $0.interactionType == .urlSearch }
         }
         return platformStore.visiblePlatforms(for: selectedSearchRegion ?? detectedRegion)
             .filter { $0.interactionType == .urlSearch }
@@ -118,7 +120,11 @@ struct NewTabPageView: View {
                 Spacer(minLength: 60)
             }
         }
-        .onAppear { wallpaperManager.ensureLoaded() }
+        .onAppear {
+            wallpaperManager.ensureLoaded()
+            selectedSearchRegion = UserDefaults.standard.string(forKey: "last_selected_region").flatMap(PlatformRegion.init(rawValue:))
+            selectedSearchGroupID = UserDefaults.standard.string(forKey: "last_selected_group_id").flatMap(UUID.init(uuidString:))
+        }
     }
 
     // MARK: - Search Bar
@@ -133,9 +139,13 @@ struct NewTabPageView: View {
             onRegionSelect: { region in
                 selectedSearchRegion = region
                 selectedSearchGroupID = nil
+                UserDefaults.standard.set(region.rawValue, forKey: "last_selected_region")
+                UserDefaults.standard.set("", forKey: "last_selected_group_id")
             },
             onGroupSelect: { group in
                 selectedSearchGroupID = group.id
+                UserDefaults.standard.set(group.id.uuidString, forKey: "last_selected_group_id")
+                UserDefaults.standard.set("", forKey: "last_selected_region")
             }
         )
     }
@@ -254,9 +264,16 @@ struct NewTabPageView: View {
     // MARK: - Navigation
 
     private func navigateToInput() {
+        guard !input.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let region = selectedSearchRegion ?? detectedRegion
+        if let onSearch {
+            onSearch(input.text, region, selectedSearchGroupID)
+            return
+        }
+        let scope = selectedSearchGroupID.map(SearchGroupScope.custom) ?? .region(region)
         guard let url = BrowserNavigationResolver.resolve(
             input.text,
-            preferredSearchPlatform: searchPlatforms.first
+            preferredSearchPlatform: searchPlatforms.first ?? GroupDefaultSearchService.shared.platform(for: scope, region: region)
         ) else { return }
         onNavigate(url)
     }

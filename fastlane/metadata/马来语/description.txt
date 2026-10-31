@@ -4,13 +4,9 @@ Pilih Soulo sebagai pelayar lalai dalam Tetapan untuk membuka pautan daripada ap
 
 Tab dan kumpulan laman yang baru digunakan dipaparkan dahulu dan paparan tab dibuka dari atas. Susunan penggunaan kekal selepas dimulakan semula.
 
-Keserasian skrip pengguna dan sokongan @require dipertingkat. Pembetulan audio video, navigasi kembali dan penunjuk pemuatan yang lebih jelas.
+Muat turun BT: import fail .torrent atau pautan magnet, pilih fail, jeda dan sambung semula. Pada iOS 26, muat turun boleh diteruskan di latar belakang jika sistem membenarkan; versi terdahulu menyimpan kemajuan dan menjeda.
 
-Mainkan video yang disokong semasa dimuat turun. Muat turun latar dan skrin penuh ditambah baik, dengan perlindungan daripada iklan tersembunyi dan salinan tidak diminta.
-
-Pilih episod di laman yang disokong, songsangkan susunan, muat turun beberapa episod serentak dan cuba semula muat turun yang gagal. Tekan lama untuk mempercepat, lepaskan untuk memulihkan kelajuan. Kawalan video lebih lancar.
-
-Pengesahan pilihan untuk pengalihan automatik ke domain lain, domain dipercayai dan buka dalam tab baharu. Pembersihan lapisan iklan dan navigasi kembali dipertingkat.
+Pilih empat pintasan pilihan pada halaman utama untuk muat turun, fail, penanda buku, sejarah, kertas dinding dan halaman lain. Bar tab pustaka menjadi padat semasa menatal.
 
 Cari maklumat, baca artikel, mainkan media dan urus muat turun dalam satu pelayar.
 

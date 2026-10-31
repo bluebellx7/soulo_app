@@ -61,7 +61,58 @@ struct LocalImagePreview: View {
 
 struct WebImagePreview: View {
     let request: WebImagePreviewRequest
+    var onOpenResources: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @State private var items: [WebImageGalleryItem]
+    @State private var selectedID: String
+
+    init(request: WebImagePreviewRequest, onOpenResources: @escaping () -> Void) {
+        self.request = request; self.onOpenResources = onOpenResources
+        _items = State(initialValue: [.init(url: request.url, pageURL: request.pageURL, frame: request.frame)])
+        _selectedID = State(initialValue: request.url.absoluteString)
+    }
+    var body: some View {
+        ZStack(alignment: .top) {
+            Color.black.ignoresSafeArea()
+            TabView(selection: $selectedID) {
+                ForEach(items) { item in
+                    WebImagePreviewPage(request: request, item: item, isActive: selectedID == item.id,
+                        onDismiss: { dismiss() }, onOpenResources: onOpenResources)
+                        .tag(item.id)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            HStack {
+                Button { dismiss() } label: {
+                    Image(systemName: "xmark").font(.headline).foregroundStyle(.white)
+                        .frame(width: 44, height: 44).background(.black.opacity(0.6), in: Circle())
+                }.accessibilityLabel(ToolText.text("close"))
+                    .accessibilityIdentifier("browser.imagePreview.close")
+                Spacer()
+                if items.count > 1 {
+                    Text("\((items.firstIndex { $0.id == selectedID } ?? 0) + 1) / \(items.count)")
+                        .font(.subheadline.monospacedDigit().weight(.medium)).foregroundStyle(.white)
+                        .padding(.horizontal, 14).frame(height: 36)
+                        .background(.black.opacity(0.6), in: Capsule())
+                        .accessibilityIdentifier("browser.imagePreview.position")
+                }
+            }.padding(12)
+        }
+        .statusBarHidden()
+        .task {
+            let gallery = await WebImageGalleryService.collect(for: request)
+            guard !Task.isCancelled else { return }
+            selectedID = gallery.selectedID; items = gallery.items
+        }
+    }
+}
+
+private struct WebImagePreviewPage: View {
+    let request: WebImagePreviewRequest
+    let item: WebImageGalleryItem
+    let isActive: Bool
+    let onDismiss: () -> Void
+    let onOpenResources: () -> Void
     @State private var image: UIImage?
     @State private var error: String?
     @State private var attempt = 0
@@ -71,10 +122,9 @@ struct WebImagePreview: View {
     @State private var notice: String?
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Color.black.ignoresSafeArea()
+        ZStack {
             if let image {
-                ZoomableImageSurface(uiImage: image, onDismiss: { dismiss() })
+                ZoomableImageSurface(uiImage: image, onDismiss: onDismiss)
             } else if let error {
                 VStack(spacing: 16) {
                     Image(systemName: "photo.badge.exclamationmark").font(.largeTitle)
@@ -84,40 +134,33 @@ struct WebImagePreview: View {
             } else {
                 ProgressView().tint(.white).frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            Button { dismiss() } label: {
-                Image(systemName: "xmark").font(.headline).foregroundStyle(.white)
-                    .frame(width: 44, height: 44).background(.black.opacity(0.6), in: Circle())
-            }.accessibilityLabel(ToolText.text("close"))
-                .accessibilityIdentifier("browser.imagePreview.close").padding(12)
         }
         .safeAreaInset(edge: .bottom) {
-            if let original, image != nil {
-                HStack(spacing: 32) {
-                    Button {
-                        guard !saving else { return }
-                        saving = true
-                        Task {
-                            defer { saving = false }
-                            do {
-                                try await WebResourceDownloadService.shared.saveImageToPhotos(original.url)
-                                notice = LanguageManager.shared.localizedString("resource_saved_to_photos")
-                            } catch { notice = error.localizedDescription }
-                        }
-                    } label: {
-                        Label(LanguageManager.shared.localizedString("save_to_photos"), systemImage: "square.and.arrow.down")
-                            .frame(minHeight: 44).contentShape(Rectangle())
+            HStack(spacing: 0) {
+                Button {
+                    guard !saving, let original else { return }
+                    saving = true
+                    Task {
+                        defer { saving = false }
+                        do {
+                            try await WebResourceDownloadService.shared.saveImageToPhotos(original.url)
+                            notice = LanguageManager.shared.localizedString("resource_saved_to_photos")
+                        } catch { notice = error.localizedDescription }
                     }
-                    .disabled(saving).accessibilityIdentifier("browser.imagePreview.save")
-                    Button { sharing = true } label: {
-                        Label(ToolText.text("share"), systemImage: "square.and.arrow.up")
-                            .frame(minHeight: 44).contentShape(Rectangle())
-                    }.accessibilityIdentifier("browser.imagePreview.share")
-                }
-                .font(.subheadline.weight(.medium)).foregroundStyle(.white)
-                .buttonStyle(.plain).padding(.horizontal, 24).frame(minHeight: 48)
-                .background(.ultraThinMaterial, in: Capsule())
-                .environment(\.colorScheme, .dark).padding(.bottom, 12)
+                } label: {
+                    actionLabel(LanguageManager.shared.localizedString("save_to_photos"), icon: "square.and.arrow.down")
+                }.disabled(original == nil || saving).accessibilityIdentifier("browser.imagePreview.save")
+                Button { sharing = true } label: {
+                    actionLabel(ToolText.text("share"), icon: "square.and.arrow.up")
+                }.disabled(original == nil).accessibilityIdentifier("browser.imagePreview.share")
+                Button(action: onOpenResources) {
+                    actionLabel(ToolText.text("image_resources"), icon: "square.stack.3d.up")
+                }.accessibilityIdentifier("browser.imagePreview.resources")
             }
+            .font(.subheadline.weight(.medium)).foregroundStyle(.white)
+            .buttonStyle(.plain).padding(.horizontal, 10).padding(.vertical, 4)
+            .background(.ultraThinMaterial, in: Capsule())
+            .environment(\.colorScheme, .dark).padding(.horizontal, 16).padding(.bottom, 12)
         }
         .sheet(isPresented: $sharing) {
             if let original { PreviewImageShare(file: original) }
@@ -125,23 +168,29 @@ struct WebImagePreview: View {
         .alert(notice ?? "", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
             Button(ToolText.text("close"), role: .cancel) { notice = nil }
         }
-        .task(id: attempt) {
-            error = nil
+        .task(id: "\(isActive)-\(attempt)") {
+            image = nil; original = nil; error = nil
+            guard isActive else { return }
             do {
                 let url = try await WebResourceDownloadService.shared.temporaryImageFile(
-                    request.url, pageURL: request.pageURL, webView: request.webView, frame: request.frame)
+                    item.url, pageURL: item.pageURL, webView: request.webView, frame: item.frame)
                 let file = try PreviewImageFile(url: url)
                 let decoding = Task.detached(priority: .userInitiated) { LocalImagePreview.decode(file.url) }
                 let loaded = await withTaskCancellationHandler { await decoding.value } onCancel: { decoding.cancel() }
                 guard !Task.isCancelled else { return }
                 guard let loaded else { throw WebResourceDownloadError.invalidImage }
-                original = file
-                image = loaded
+                original = file; image = loaded
             } catch {
                 guard !Task.isCancelled else { return }
                 self.error = error.localizedDescription
             }
         }
+    }
+    private func actionLabel(_ title: String, icon: String) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon).font(.system(size: 18, weight: .medium))
+            Text(title).font(.caption).lineLimit(1)
+        }.frame(maxWidth: .infinity, minHeight: 48).contentShape(Rectangle())
     }
 }
 

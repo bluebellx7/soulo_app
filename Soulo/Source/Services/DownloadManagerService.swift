@@ -186,6 +186,12 @@ final class DownloadManagerService: ObservableObject {
         return (item, destination)
     }
 
+    func renameTorrent(id: UUID, name: String) {
+        guard let index = downloads.firstIndex(where: { $0.id == id && $0.transport == .torrent }) else { return }
+        downloads[index].fileName = DownloadFilenameSanitizer.sanitize(name)
+        save()
+    }
+
     func markFinished(id: UUID) {
         guard let index = downloads.firstIndex(where: { $0.id == id }),
               downloads[index].status == .inProgress else { return }
@@ -251,8 +257,10 @@ final class DownloadManagerService: ObservableObject {
         downloads[index].status = .failed
         downloads[index].completedAt = Date()
         downloads[index].errorMessage = error.localizedDescription
-        try? FileManager.default.removeItem(at: downloads[index].localURL)
-        removeResumeData(id: id)
+        if downloads[index].transport != .torrent {
+            try? FileManager.default.removeItem(at: downloads[index].localURL)
+            removeResumeData(id: id)
+        }
         save()
     }
 
@@ -298,8 +306,11 @@ final class DownloadManagerService: ObservableObject {
         // A row captured before completion may be stale. Only cancel and clean
         // partial data when the current record still represents an active task.
         guard let current = downloads.first(where: { $0.id == item.id }) else { return }
-        if [.inProgress, .paused].contains(current.status) {
+        if current.transport == .torrent {
+            TorrentDownloadService.shared.remove(id: current.id, deleteFiles: current.status != .finished)
+        } else if [.inProgress, .paused].contains(current.status) {
             switch current.transport {
+            case .torrent: break
             case .background:
                 BackgroundDownloadService.shared.abandon(id: current.id)
             case .separated:
@@ -325,7 +336,10 @@ final class DownloadManagerService: ObservableObject {
     func clearFinished() {
         let removableStatuses: Set<BrowserDownloadStatus> = [.finished, .failed, .canceled]
         let finished = downloads.filter { removableStatuses.contains($0.status) }
-        finished.forEach { removeResumeData(id: $0.id) }
+        finished.forEach {
+            removeResumeData(id: $0.id)
+            if $0.transport == .torrent { TorrentDownloadService.shared.remove(id: $0.id, deleteFiles: false) }
+        }
         downloads.removeAll { removableStatuses.contains($0.status) }
         save()
     }
@@ -447,7 +461,7 @@ final class DownloadManagerService: ObservableObject {
             return true
         case .webKit:
             return resumeData(id: item.id) == nil
-        case .background, .hls, .separated:
+        case .background, .hls, .separated, .torrent:
             return false
         }
     }

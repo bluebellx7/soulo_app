@@ -4,13 +4,9 @@ Válaszd a Soulót alapértelmezett böngészőnek a Beállításokban, hogy má
 
 A legutóbb használt lapok és webhelycsoportok kerülnek előre, az áttekintés felül nyílik meg. A használati sorrend újraindítás után is megmarad.
 
-Jobb felhasználói szkript- és @require-támogatás. Javított videóhang, visszalépés és jobban látható betöltési folyamat.
+BT-letöltések: importálj .torrent-fájlokat vagy magnet-hivatkozásokat, válassz fájlokat, szüneteltesd és folytasd. iOS 26-on a letöltés a háttérben is folytatódhat, ha a rendszer engedi; a korábbi verziók mentik az állapotot és szüneteltetik.
 
-Támogatott videók lejátszása letöltés közben. Jobb háttérletöltés és teljes képernyő, védelem a rejtett hirdetések és kéretlen másolás ellen.
-
-Epizódválasztás és fordított sorrend a támogatott oldalakon, több kijelölt epizód letöltése és a sikertelen letöltések újrapróbálása. Nyomva tartva gyorsíthat, felengedve visszaáll a sebesség. Simább videóvezérlés.
-
-Választható megerősítés másik domainre történő automatikus átirányításkor, megbízható domainek és megnyitás új lapon. Javult a reklámrétegek eltávolítása és a visszalépés.
+Válassz négy opcionális kezdőlapi parancsikont a letöltésekhez, fájlokhoz, könyvjelzőkhöz, előzményekhez, háttérképekhez és más oldalakhoz. Görgetéskor a könyvtár lapsávja összébb húzódik.
 
 Keressen információt, olvasson cikkeket, játsszon le médiát és kezelje letöltéseit egy böngészőben.
 

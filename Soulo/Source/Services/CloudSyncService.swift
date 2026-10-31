@@ -130,6 +130,8 @@ final class CloudSyncService: NSObject, ObservableObject {
         "browser_shake_action",
         "browser_shake_intensity",
         "browser_toolbar_actions",
+        HomeToolbarConfigurationService.storageKey,
+        GroupDefaultSearchService.storageKey,
         "browser_toolbar_address_action",
         "ad_block_enabled",
         LiveActivityService.enabledKey,
@@ -405,6 +407,8 @@ final class CloudSyncService: NSObject, ObservableObject {
         ExternalNavigationService.shared.reloadFromDefaults()
         AdBlockSubscriptionService.shared.reloadFromDefaults()
         BrowserToolbarConfigurationService.shared.reloadFromDefaults()
+        HomeToolbarConfigurationService.shared.reloadFromDefaults()
+        GroupDefaultSearchService.shared.reloadFromDefaults()
 
         let liveActivityEnabled = defaults.object(forKey: LiveActivityService.enabledKey) as? Bool ?? true
         LiveActivityService.shared.setEnabled(liveActivityEnabled)

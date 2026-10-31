@@ -21,6 +21,7 @@ class SearchViewModel: ObservableObject {
     @Published var currentKeyword: String = ""
     var isSelectionSearch = false
     @Published var selectedRegion: PlatformRegion = .international
+    @Published var selectedGroupID: UUID?
     @Published var selectedPlatform: SearchPlatform?
     @Published var clipboardContent: String? = nil
     @Published var showClipboardPrompt: Bool = false {
@@ -56,8 +57,10 @@ class SearchViewModel: ObservableObject {
          }) {
         self.clipboardReader = clipboardReader ?? SystemClipboardReader()
         self.suggestionProvider = suggestionProvider
-        selectedRegion = Self.detectDefaultRegion()
-        selectedPlatform = PlatformDataStore.shared.firstVisiblePlatform(for: selectedRegion)
+        selectedRegion = UserDefaults.standard.string(forKey: "last_selected_region").flatMap(PlatformRegion.init(rawValue:)) ?? Self.detectDefaultRegion()
+        if let id = UserDefaults.standard.string(forKey: "last_selected_group_id").flatMap(UUID.init(uuidString:)),
+           PlatformDataStore.shared.customGroups.contains(where: { $0.id == id }) { selectedGroupID = id }
+        selectedPlatform = availableSearchPlatforms.first
         setupSuggestionDebouncer()
     }
 
@@ -201,9 +204,8 @@ class SearchViewModel: ObservableObject {
             }
         }
 
-        if selectedPlatform == nil || selectedPlatform?.region != selectedRegion {
-            selectedPlatform = PlatformDataStore.shared.firstVisiblePlatform(for: selectedRegion)
-        }
+        let available = availableSearchPlatforms
+        selectedPlatform = available.first(where: { $0.id == selectedPlatform?.id }) ?? available.first
 
         if !isIncognito, var platform = selectedPlatform {
             platform.usageCount += 1
@@ -230,6 +232,7 @@ class SearchViewModel: ObservableObject {
             let all = PlatformDataStore.shared.allPlatforms()
             if let match = all.first(where: { LanguageManager.shared.localizedString($0.name) == name }) {
                 selectedRegion = match.region
+                selectedGroupID = nil
                 selectedPlatform = match
             }
         }
@@ -243,19 +246,38 @@ class SearchViewModel: ObservableObject {
     /// current ordering. `SearchViewModel` can outlive platform-management edits,
     /// so its cached selection must be refreshed before entering results.
     func prepareForHomeSearch(preferredRegion: PlatformRegion?, customGroup: CustomGroup?) {
-        if let customGroup,
-           let firstPlatform = PlatformDataStore.shared.platformsForGroup(customGroup).first {
-            selectedRegion = firstPlatform.region
-            selectedPlatform = firstPlatform
-            return
-        }
+        if let customGroup { selectCustomGroup(customGroup) }
+        else { selectRegion(preferredRegion ?? selectedRegion) }
+    }
 
-        selectRegion(preferredRegion ?? selectedRegion)
+    var selectedSearchScope: SearchGroupScope {
+        if let id = selectedGroupID,
+           PlatformDataStore.shared.customGroups.contains(where: { $0.id == id }) { return .custom(id) }
+        return .region(selectedRegion)
+    }
+
+    /// A default engine is a fallback, not a visibility change in the user's platform list.
+    var availableSearchPlatforms: [SearchPlatform] {
+        let store = PlatformDataStore.shared
+        let visible: [SearchPlatform]
+        if let id = selectedGroupID, let group = store.customGroups.first(where: { $0.id == id }) {
+            visible = store.visiblePlatforms(forGroup: group)
+        } else { visible = store.visiblePlatforms(for: selectedRegion) }
+        return visible.isEmpty ? [GroupDefaultSearchService.shared.platform(for: selectedSearchScope, region: selectedRegion)] : visible
     }
 
     func selectRegion(_ region: PlatformRegion) {
         selectedRegion = region
-        selectedPlatform = PlatformDataStore.shared.firstVisiblePlatform(for: region)
+        selectedGroupID = nil
+        selectedPlatform = availableSearchPlatforms.first
+    }
+
+    func selectCustomGroup(_ group: CustomGroup) {
+        selectedGroupID = group.id
+        let first = PlatformDataStore.shared.visiblePlatforms(forGroup: group).first
+        let language = UserDefaults.standard.string(forKey: "app_language") ?? Locale.preferredLanguages.first ?? "en"
+        selectedRegion = first?.region ?? (language.hasPrefix("zh") ? .china : .international)
+        selectedPlatform = availableSearchPlatforms.first
     }
 
     func selectPlatform(_ platform: SearchPlatform) {
