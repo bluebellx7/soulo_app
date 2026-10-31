@@ -55,14 +55,16 @@ def navigation(page):
 
 
 def movie_mark(site, css_class):
+    style = ''
     if path := site.get('icon'):
         assert re.fullmatch(r'images/movie-icons/[a-z0-9-]+\.png', path), path
         assert (SITE/path).is_file(), f'Missing movie icon: {path}'
         content = f'<img src="{esc(path)}" width="32" height="32" alt="" loading="lazy" decoding="async" />'
         css_class += ' has-icon'
+        style = f' style="--site-logo:url(\'{esc(path)}\')"'
     else:
         content = esc(site['mark'])
-    return f'<span class="{css_class}" aria-hidden="true">{content}</span>'
+    return f'<span class="{css_class}" aria-hidden="true"{style}>{content}</span>'
 
 
 def build_existing_page(file):
