@@ -432,6 +432,81 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
     }
 
     @MainActor
+    func testGenericCatalogAndVideoButtonsKeepTheirSizeWithoutMobileViewport() async throws {
+        let catalog = """
+        <meta name='viewport' content='width=device-width,initial-scale=1'>
+        <h3>Generic stream line</h3><table><tbody>
+        <tr><td>EP1</td><td><a href='/one.mp4'>URL</a></td></tr>
+        <tr><td>EP2</td><td><a href='/two.mp4'>URL</a></td></tr></tbody></table>
+        """
+        let player = """
+        <style>html,body{margin:0;width:100%;height:100%}video{position:fixed;inset:0;width:100%;height:100%}button{width:10px!important;height:10px!important}svg{width:4px!important;height:4px!important}</style>
+        <video playsinline controls></video><ul class='episode-list' style='display:none'><li><a href='/first'>EP1</a></li><li><a href='/second'>EP2</a></li></ul>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files:["/catalog":Data(catalog.utf8),"/wide-player":Data(player.utf8),
+            "/mobile-player":Data(("<meta name='viewport' content='width=device-width,initial-scale=1'>"+player).utf8)])
+        let root = try await server.start();defer{server.stop()}
+        let app = launch()
+        defer { XCUIDevice.shared.orientation = .portrait }
+        try open(root.appendingPathComponent("catalog"),app:app)
+        let dock = app.webViews.buttons["Episodes"].firstMatch
+        XCTAssertTrue(dock.waitForExistence(timeout:10),app.debugDescription)
+        XCTAssertEqual(dock.frame.width,48,accuracy:2)
+        dock.tap()
+        XCTAssertTrue(app.scrollViews.buttons["EP2"].firstMatch.waitForExistence(timeout:5),app.debugDescription)
+        app.buttons["Done"].firstMatch.tap()
+        for path in ["mobile-player","wide-player"] {
+            try open(root.appendingPathComponent(path),app:app)
+            let tools = app.webViews.buttons["Video tools"].firstMatch
+            XCTAssertTrue(tools.waitForExistence(timeout:15),app.debugDescription)
+            XCTAssertEqual(tools.frame.width,48,accuracy:2,path)
+            XCTAssertEqual(tools.frame.height,48,accuracy:2,path)
+            tools.tap()
+            for name in ["Download","Speed","Fullscreen","Episodes","Close"] {
+                let button = app.webViews.buttons[name].firstMatch
+                XCTAssertTrue(button.waitForExistence(timeout:5),app.debugDescription)
+                XCTAssertEqual(button.frame.width,48,accuracy:2,name+" "+path)
+                XCTAssertEqual(button.frame.height,48,accuracy:2,name+" "+path)
+            }
+            app.webViews.buttons["Close"].firstMatch.tap()
+            if path == "mobile-player" {
+                func openZoom() {
+                    app.buttons["More"].firstMatch.tap()
+                    app.buttons["browser.moreMenu.pageTools"].tap()
+                    app.buttons["Page Zoom"].firstMatch.tap()
+                    XCTAssertTrue(app.buttons["Zoom In"].firstMatch.waitForExistence(timeout:5),app.debugDescription)
+                }
+                openZoom()
+                for _ in 0..<10 { app.buttons["Zoom In"].firstMatch.tap() }
+                app.buttons["Done"].firstMatch.tap()
+                tools.tap()
+                for name in ["Download","Speed","Fullscreen","Episodes","Close"] {
+                    let button = app.webViews.buttons[name].firstMatch
+                    XCTAssertTrue(button.waitForExistence(timeout:5),app.debugDescription)
+                    XCTAssertTrue(button.isHittable,name+" must remain visible at 200% page zoom")
+                    XCTAssertEqual(button.frame.width,48,accuracy:2,name+" at 200% page zoom")
+                    XCTAssertEqual(button.frame.height,48,accuracy:2,name+" at 200% page zoom")
+                }
+                let zoomed=XCTAttachment(screenshot:app.screenshot());zoomed.name="Expanded controls at 200 percent page zoom";zoomed.lifetime = .keepAlways;add(zoomed)
+                app.webViews.buttons["Close"].firstMatch.tap()
+                openZoom()
+                app.buttons["Reset to 100%"].firstMatch.tap()
+                app.buttons["Done"].firstMatch.tap()
+            }
+            if path == "wide-player" {
+                app.webViews.firstMatch.pinch(withScale:1.5,velocity:1)
+                XCTAssertTrue(tools.waitForExistence(timeout:5),app.debugDescription)
+                XCTAssertEqual(tools.frame.width,48,accuracy:2,"After pinch zoom")
+                let image=XCTAttachment(screenshot:app.screenshot());image.name="Wide player with 48 point controls";image.lifetime = .keepAlways;add(image)
+                XCUIDevice.shared.orientation = .landscapeLeft
+                let stable = expectation(for:NSPredicate { _,_ in abs(tools.frame.width-48)<=2.5 && abs(tools.frame.height-48)<=2.5 },evaluatedWith:tools)
+                await fulfillment(of:[stable],timeout:10)
+                let landscape=XCTAttachment(screenshot:app.screenshot());landscape.name="Player controls after device orientation change";landscape.lifetime = .keepAlways;add(landscape)
+            }
+        }
+    }
+
+    @MainActor
     func testResourceCatalogStreamsKeepThePickerAndAdjacentEpisodes() async throws {
         let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
         let data = try Data(contentsOf: fixture)

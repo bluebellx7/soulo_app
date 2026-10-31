@@ -97,10 +97,132 @@ import UIKit
         XCTAssertEqual(remaining as? Int, 1)
     }
 
+    func testOverlayButtonsKeep48ScreenPointsAcrossPageViewports() async throws {
+        for viewport in ["<meta name='viewport' content='width=device-width,initial-scale=1'>", "",
+                         "<meta name='viewport' content='width=1280'>",
+                         "<meta name='viewport' content='width=device-width,initial-scale=2'>"] {
+            let web = try await page("""
+            \(viewport)<style>body{margin:0}button{width:9px!important;height:9px!important}svg{width:4px!important;height:4px!important}</style>
+            <video id='v' style='width:100%;height:300px'></video>
+            <ul class='episode-list'><li><a href='/watch/1'>EP1</a></li><li><a href='/watch/2'>EP2</a></li></ul>
+            """)
+            let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+            let previous = scene.windows.first(where: \.isKeyWindow)
+            let window = UIWindow(windowScene:scene)
+            window.rootViewController = UIViewController()
+            window.rootViewController?.view.addSubview(web)
+            window.makeKeyAndVisible()
+            defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+            _ = try await web.evaluateJavaScript(WebEpisodeRuntime.script,in:nil,contentWorld:WebEpisodeRuntime.world)
+            _ = try await web.evaluateJavaScript(WebVideoOrientationRuntime.script(),in:nil,contentWorld:WebVideoOrientationRuntime.world)
+            try await Task.sleep(for:.milliseconds(300))
+            let dimensions = try await web.evaluateJavaScript("""
+            (()=>{const button=document.querySelector('[data-video-toggle]'),r=button.getBoundingClientRect(),s=visualViewport.scale;
+              const icon=button.querySelector('svg').getBoundingClientRect();return {width:r.width*s,height:r.height*s,icon:icon.width*s}})()
+            """,in:nil,contentWorld:WebVideoOrientationRuntime.world) as? [String:Double]
+            XCTAssertEqual(try XCTUnwrap(dimensions?["width"]),48,accuracy:0.8,viewport)
+            XCTAssertEqual(try XCTUnwrap(dimensions?["height"]),48,accuracy:0.8,viewport)
+            XCTAssertEqual(try XCTUnwrap(dimensions?["icon"]),23,accuracy:0.8,viewport)
+            _ = try await web.evaluateJavaScript("document.getElementById('v').hidden=true;null")
+            try await Task.sleep(for:.milliseconds(400))
+            let dockWidth = try await web.evaluateJavaScript("document.getElementById('soulo-episode-dock').getBoundingClientRect().width*visualViewport.scale",
+                in:nil,contentWorld:WebEpisodeRuntime.world) as? Double
+            XCTAssertEqual(try XCTUnwrap(dockWidth),48,accuracy:0.8,viewport)
+            web.frame.size = CGSize(width:760,height:390)
+            try await Task.sleep(for:.milliseconds(350))
+            let resizedDockWidth = try await web.evaluateJavaScript("document.getElementById('soulo-episode-dock').getBoundingClientRect().width*visualViewport.scale",
+                in:nil,contentWorld:WebEpisodeRuntime.world) as? Double
+            XCTAssertEqual(try XCTUnwrap(resizedDockWidth),48,accuracy:0.8,"Wide viewport: "+viewport)
+        }
+    }
+
+    func testEmbeddedVideoToolbarReceivesParentScaleAndZoomUpdates() async throws {
+        let model = WebViewModel()
+        let coordinator = WebViewRepresentable.Coordinator(viewModel:model)
+        let config = WKWebViewConfiguration()
+        let controller = config.userContentController
+        controller.add(coordinator,contentWorld:WebVideoOrientationRuntime.world,name:WebVideoOrientationRuntime.handler)
+        controller.addUserScript(WKUserScript(source:WebVideoOrientationRuntime.script(),injectionTime:.atDocumentEnd,
+            forMainFrameOnly:false,in:WebVideoOrientationRuntime.world))
+        let web = WKWebView(frame:CGRect(x:0,y:0,width:390,height:600),configuration:config)
+        model.webView = web
+        web.scrollView.delegate = coordinator
+        web.navigationDelegate = coordinator
+        coordinator.observe(webView:web,viewModel:model)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene:scene)
+        window.rootViewController = UIViewController()
+        window.rootViewController?.view.addSubview(web)
+        window.makeKeyAndVisible()
+        defer {
+            controller.removeScriptMessageHandler(forName:WebVideoOrientationRuntime.handler,contentWorld:WebVideoOrientationRuntime.world)
+            model.releaseWebViewRuntime();window.isHidden=true;window.rootViewController=nil;previous?.makeKeyAndVisible()
+        }
+        web.loadHTMLString("<body style='margin:0'><iframe style='width:100%;height:600px;border:0' srcdoc=\"<video style='width:100%;height:300px'></video>\"></iframe></body>",baseURL:URL(string:"https://media.test/"))
+        for _ in 0..<120 where model.mediaFrameInfos.isEmpty { try await Task.sleep(for:.milliseconds(25)) }
+        let frame = try XCTUnwrap(model.mediaFrameInfos.first)
+        for (factor,zoom) in [(1.0,1.0),(1.5,1.0),(1.0,1.5),(1.0,0.5)] {
+            model.setPageZoom(zoom)
+            if factor != 1 { web.scrollView.setZoomScale(web.scrollView.zoomScale*factor,animated:false) }
+            coordinator.scrollViewDidZoom(web.scrollView)
+            try await Task.sleep(for:.milliseconds(350))
+            let values = try await web.evaluateJavaScript("""
+            (()=>{const m=window.__souloOverlayControls.metrics(),r=document.querySelector('[data-video-toggle]').getBoundingClientRect();return {scale:m.scale,width:r.width*m.scale}})()
+            """,in:frame,contentWorld:WebVideoOrientationRuntime.world) as? [String:Double]
+            let parentValue = try await web.evaluateJavaScript("visualViewport.scale")
+            let parentScale = try XCTUnwrap(parentValue as? Double)*zoom
+            XCTAssertEqual(try XCTUnwrap(values?["scale"]),parentScale,accuracy:0.01)
+            XCTAssertEqual(try XCTUnwrap(values?["width"]),48,accuracy:0.8)
+        }
+    }
+
+    func testAppPageZoomKeepsBothOverlayButtonsAt48ScreenPoints() async throws {
+        let web = try await page("""
+        <meta name='viewport' content='width=device-width,initial-scale=1'><video id='v' style='width:100%;height:300px'></video>
+        <ul class='episode-list'><li><a href='/watch/1'>EP1</a></li><li><a href='/watch/2'>EP2</a></li></ul>
+        """)
+        let model = WebViewModel()
+        model.webView = web
+        let coordinator = WebViewRepresentable.Coordinator(viewModel:model)
+        web.navigationDelegate = coordinator
+        web.scrollView.delegate = coordinator
+        coordinator.observe(webView:web,viewModel:model)
+        let controller = web.configuration.userContentController
+        controller.add(coordinator,contentWorld:WebVideoOrientationRuntime.world,name:WebVideoOrientationRuntime.handler)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene:scene)
+        window.rootViewController = UIViewController()
+        window.rootViewController?.view.addSubview(web)
+        window.makeKeyAndVisible()
+        defer {
+            controller.removeScriptMessageHandler(forName:WebVideoOrientationRuntime.handler,contentWorld:WebVideoOrientationRuntime.world)
+            model.releaseWebViewRuntime()
+            window.isHidden=true;window.rootViewController=nil;previous?.makeKeyAndVisible()
+        }
+        _ = try await web.evaluateJavaScript(WebEpisodeRuntime.script,in:nil,contentWorld:WebEpisodeRuntime.world)
+        _ = try await web.evaluateJavaScript(WebVideoOrientationRuntime.script(),in:nil,contentWorld:WebVideoOrientationRuntime.world)
+        for zoom in [1.0,1.5,2.0,0.5] {
+            _ = try await web.evaluateJavaScript("document.getElementById('v').hidden=false;null")
+            model.setPageZoom(zoom)
+            try await Task.sleep(for:.milliseconds(400))
+            let videoWidth = try await web.evaluateJavaScript("document.querySelector('[data-video-toggle]').getBoundingClientRect().width*visualViewport.scale",
+                in:nil,contentWorld:WebVideoOrientationRuntime.world) as? Double
+            XCTAssertEqual(try XCTUnwrap(videoWidth)*zoom,48,accuracy:0.8,"Video, page zoom \(zoom)")
+            _ = try await web.evaluateJavaScript("document.getElementById('v').hidden=true;null")
+            try await Task.sleep(for:.milliseconds(400))
+            let dockWidth = try await web.evaluateJavaScript("document.getElementById('soulo-episode-dock').getBoundingClientRect().width*visualViewport.scale",
+                in:nil,contentWorld:WebEpisodeRuntime.world) as? Double
+            XCTAssertEqual(try XCTUnwrap(dockWidth)*zoom,48,accuracy:0.8,"Episodes, page zoom \(zoom)")
+        }
+    }
+
     private final class RotationMessages: NSObject, WKScriptMessageHandler {
         var count = 0
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-            if (message.body as? [String: Any])?["action"] as? String != "ready" { count += 1 }
+            let action = (message.body as? [String: Any])?["action"] as? String
+            if action != "ready" && action != "viewport" { count += 1 }
         }
     }
 

@@ -16,7 +16,7 @@ struct WebEpisode: Codable, Identifiable, Equatable {
 
     var isResourcePlaybackURL: Bool {
         directMediaResource != nil || url.path.range(
-            of: #"/(?:play(?:er)?|vodplay|watch|episodes?|vplay)/"#, options: [.regularExpression, .caseInsensitive]) != nil
+            of: #"/(?:play(?:er)?|vodplay|watch|episodes?|vplay|share)(?:[/.\-_]|$)"#, options: [.regularExpression, .caseInsensitive]) != nil
     }
 }
 
@@ -84,6 +84,13 @@ struct WebEpisodeList: Codable, Equatable {
     }
 }
 
+enum WebOverlayControlsRuntime {
+    static let source: String = {
+        guard let url = Bundle.main.url(forResource: "overlay-controls", withExtension: "js", subdirectory: "UserScripts") else { return "" }
+        return (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+    }()
+}
+
 enum WebEpisodeRuntime {
     static let world = WKContentWorld.world(name: "SouloEpisodes")
     static let handler = "souloEpisodes"
@@ -91,7 +98,7 @@ enum WebEpisodeRuntime {
     // its controls: native navigation avoids delegated advertising handlers.
     static let script: String = {
         guard let url = Bundle.main.url(forResource: "episode-detector", withExtension: "js", subdirectory: "UserScripts") else { return "" }
-        return (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+        return WebOverlayControlsRuntime.source + "\n" + ((try? String(contentsOf: url, encoding: .utf8)) ?? "")
     }()
 
     @MainActor static func configuredScript(enabled: Bool) -> String {

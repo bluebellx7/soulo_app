@@ -1406,8 +1406,13 @@ struct WebViewRepresentable: UIViewRepresentable {
                     }
                 case "ready":
                     guard let webView = message.webView else { return }
+                    viewModel.registerMediaFrame(message.frameInfo)
                     let source = "window.__souloVideoOrientation?.setEpisodesAvailable(\(viewModel.episodeList != nil));"
                     webView.evaluateJavaScript(source, in: message.frameInfo, in: WebVideoOrientationRuntime.world, completionHandler: nil)
+                    synchronizeVideoControlScale(on: webView, in: message.frameInfo)
+                case "viewport":
+                    guard message.frameInfo.isMainFrame, let webView = message.webView else { return }
+                    synchronizeVideoControlScale(on: webView)
                 case "episodes":
                     if let webView = message.webView { presentEpisodePicker(on: webView) }
                 case "speed":
@@ -2115,6 +2120,13 @@ struct WebViewRepresentable: UIViewRepresentable {
                         self?.viewModel.updateTitle(wv.title)
                     }
                 },
+                webView.observe(\.pageZoom, options: [.new]) { [weak self] wv, _ in
+                    Task { @MainActor in
+                        guard let self, wv.navigationDelegate === self,
+                              self.viewModel.webView === wv else { return }
+                        self.synchronizeVideoControlScale(on: wv)
+                    }
+                },
                 webView.observe(\.url, options: [.initial, .new]) { [weak self] wv, _ in
                     Task { @MainActor in
                         guard let self, wv.navigationDelegate === self,
@@ -2425,6 +2437,29 @@ struct WebViewRepresentable: UIViewRepresentable {
             let frames: [WKFrameInfo?] = [nil] + viewModel.mediaFrameInfos.map { Optional($0) }
             for frame in frames {
                 webView.evaluateJavaScript(source, in: frame, in: WebVideoOrientationRuntime.world, completionHandler: nil)
+            }
+        }
+
+        private func synchronizeVideoControlScale(on webView: WKWebView, in target: WKFrameInfo? = nil) {
+            let generation = navigationGeneration
+            webView.evaluateJavaScript("window.visualViewport?.scale || 1", in: nil,
+                in: WebVideoOrientationRuntime.world) { [weak self, weak webView] result in
+                guard let self, let webView, self.viewModel.webView === webView,
+                      self.navigationGeneration == generation else { return }
+                let zoom = webView.pageZoom
+                let pinch: Double
+                if case .success(let value) = result, let scale = value as? Double { pinch = scale }
+                else { pinch = Double(webView.scrollView.zoomScale) }
+                let scale = pinch*zoom
+                guard zoom.isFinite, scale.isFinite, zoom > 0, scale > 0 else { return }
+                let source = "window.__souloVideoOrientation?.setPageScale(\(scale),\(zoom));"
+                let frames: [WKFrameInfo?] = target.map { [Optional($0)] }
+                    ?? ([nil] + self.viewModel.mediaFrameInfos.map { Optional($0) })
+                for frame in frames {
+                    webView.evaluateJavaScript(source, in: frame, in: WebVideoOrientationRuntime.world, completionHandler: nil)
+                }
+                webView.evaluateJavaScript("window.__souloEpisodes?.setContentZoom(\(zoom));", in: nil,
+                    in: WebEpisodeRuntime.world, completionHandler: nil)
             }
         }
 
@@ -3387,6 +3422,9 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func scrollViewDidZoom(_ scrollView: UIScrollView) {
             lastContentOffset = scrollView.contentOffset.y
+            if let webView = viewModel.webView, webView.scrollView === scrollView {
+                synchronizeVideoControlScale(on: webView)
+            }
         }
 
         func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {

@@ -7,7 +7,7 @@ enum WebVideoOrientationRuntime {
     @MainActor static func script() -> String {
         let label = (try? JSONSerialization.data(withJSONObject: [ToolText.text("video_fullscreen"), ToolText.text("video_speed"), LanguageManager.shared.localizedString("download"), ToolText.text("video_tools"), ToolText.text("episodes"), ToolText.text("video_tools_collapse")]))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "[\"Fullscreen\"]"
-        return source + WebVideoHoldSpeedRuntime.source + "\nwindow.__souloVideoOrientation.setLabels(\(label));"
+        return WebOverlayControlsRuntime.source + "\n" + source + WebVideoHoldSpeedRuntime.source + "\nwindow.__souloVideoOrientation.setLabels(\(label));"
     }
 
     // Inject into every frame in an isolated world, so cross-origin embedded
@@ -16,9 +16,10 @@ enum WebVideoOrientationRuntime {
     (() => {
       if (window.__souloVideoOrientation) return;
       const controls = new Map(), roots = new Set(), pending = new Set();
+      const overlay = window.__souloOverlayControls;
       let labels = ['Fullscreen', 'Speed', 'Download', 'Video tools', 'Episodes', 'Close'], frame = 0, scanTimer = 0, active = null, expandedGroup = null;
       let bottomControls = {needed:false}, episodesAvailable = false;
-      const expandedWidth = () => (episodesAvailable ? 5 : 4) * 36;
+      const expandedWidth = () => (episodesAvailable ? 5 : 4) * overlay.size;
       const observationOptions = {childList:true,subtree:true,attributes:true,attributeFilter:['class','style','hidden']};
       function send(action, token, details = {}) {
         try { window.webkit.messageHandlers.souloVideoOrientation.postMessage({action, token, ...details}); } catch (_) {}
@@ -127,6 +128,7 @@ enum WebVideoOrientationRuntime {
         frame = 0;
         prune();
         reportBottomControls([...controls.keys()].some(needsBottomClearance));
+        const viewport = overlay.metrics();
         for (const [video, button] of controls) {
           const r = video.getBoundingClientRect();
           const visible = !active?.began && r.width >= 100 && r.height >= 70 && r.right > 44 && r.bottom > 44
@@ -135,9 +137,14 @@ enum WebVideoOrientationRuntime {
           if(!visible && expandedGroup===button)collapse();
           setStyleIfChanged(button,'display',visible ? 'flex' : 'none');
           if (!visible) continue;
-          const width = button === expandedGroup ? expandedWidth() : 36;
-          setStyleIfChanged(button,'right',Math.max(4, Math.min(innerWidth - width - 4, innerWidth - r.right + 8)) + 'px');
-          setStyleIfChanged(button,'top',Math.max(4, r.top + 8) + 'px');
+          const width = (button === expandedGroup ? expandedWidth() : overlay.size) * viewport.unit;
+          const left = Math.max(viewport.left+viewport.gap,Math.min(r.right-viewport.gap,viewport.left+viewport.width-viewport.gap)-width);
+          const top = Math.max(viewport.top+viewport.gap,Math.min(r.top+viewport.gap,viewport.top+viewport.height-viewport.size-viewport.gap));
+          overlay.apply(button,viewport);
+          // max-width is resolved before the compensating transform.
+          setStyleIfChanged(button,'max-width',Math.max(overlay.size,viewport.width/viewport.unit-16)+'px');
+          setStyleIfChanged(button,'left',left+'px');
+          setStyleIfChanged(button,'top',top+'px');
         }
       }
       function setStyleIfChanged(element,property,value) {
@@ -147,8 +154,8 @@ enum WebVideoOrientationRuntime {
       function collapse() {
         if (!expandedGroup) return;
         const group = expandedGroup; expandedGroup = null;
-        group.style.setProperty('width', '36px', 'important');
-        group.style.setProperty('height', '36px', 'important');
+        group.style.setProperty('width', overlay.size+'px', 'important');
+        group.style.setProperty('height', overlay.size+'px', 'important');
         group.querySelectorAll('[data-video-action]').forEach(el => showAction(el, false));
         const toggle = group.querySelector('[data-video-toggle]');
         setToggleState(toggle,false);
@@ -186,7 +193,7 @@ enum WebVideoOrientationRuntime {
         action.tabIndex = visible ? 0 : -1;
       }
       reducedMotion.addEventListener('change', () => controls.forEach(configureMotion));
-      const svg = content => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + content + '</svg>';
+      const svg = content => '<svg width="23" height="23" style="width:23px!important;height:23px!important;min-width:23px!important;flex:0 0 23px!important;display:block!important" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + content + '</svg>';
       const toolsIcon = svg('<path d="M10 19H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6"/><path d="m8 7 5 3-5 3Z" fill="currentColor" stroke="none"/><path d="M14 16h2m3 0h3m-8 5h5"/><circle cx="17.5" cy="16" r="1.5"/><circle cx="20.5" cy="21" r="1.5"/>');
       const resize = new ResizeObserver(schedule);
       function add(video) {
@@ -196,8 +203,8 @@ enum WebVideoOrientationRuntime {
         button.setAttribute('role', 'group');
         button.dataset.souloMediaID = globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36);
         video.setAttribute('data-soulo-media-id', button.dataset.souloMediaID);
-        button.style.cssText = 'all:initial!important;position:fixed!important;z-index:2147483646!important;display:none!important;width:36px!important;max-width:calc(100vw - 16px)!important;height:36px!important;flex-direction:row!important;align-items:center!important;justify-content:flex-end!important;border-radius:18px!important;background:rgba(24,25,29,.7)!important;backdrop-filter:blur(16px) saturate(1.2)!important;-webkit-backdrop-filter:blur(16px) saturate(1.2)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 2px 8px rgba(0,0,0,.16)!important;color:rgba(255,255,255,.94)!important;pointer-events:auto!important;touch-action:manipulation!important;isolation:isolate!important;overflow:hidden!important;user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;';
-        const controlStyle = 'all:initial!important;box-sizing:border-box!important;width:36px!important;min-width:36px!important;min-height:36px!important;height:36px!important;display:flex!important;flex-direction:row!important;gap:0!important;padding:0!important;align-items:center!important;justify-content:center!important;border-radius:18px!important;color:rgba(255,255,255,.94)!important;cursor:pointer!important;user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;font:600 14px -apple-system,sans-serif!important;';
+        button.style.cssText = 'all:initial!important;position:fixed!important;z-index:2147483646!important;display:none!important;width:48px!important;max-width:calc(100vw - 16px)!important;height:48px!important;flex-direction:row!important;align-items:center!important;justify-content:flex-end!important;border-radius:14px!important;background:rgba(24,25,29,.7)!important;backdrop-filter:blur(16px) saturate(1.2)!important;-webkit-backdrop-filter:blur(16px) saturate(1.2)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 2px 8px rgba(0,0,0,.16)!important;color:rgba(255,255,255,.94)!important;pointer-events:auto!important;touch-action:manipulation!important;isolation:isolate!important;overflow:hidden!important;user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;';
+        const controlStyle = 'all:initial!important;box-sizing:border-box!important;width:48px!important;min-width:48px!important;min-height:48px!important;height:48px!important;display:flex!important;flex-direction:row!important;gap:0!important;padding:0!important;align-items:center!important;justify-content:center!important;border-radius:14px!important;color:rgba(255,255,255,.94)!important;cursor:pointer!important;user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;font:600 14px -apple-system,sans-serif!important;';
         const fullscreen = document.createElement('button'); fullscreen.type = 'button'; fullscreen.style.cssText = controlStyle;
         fullscreen.setAttribute('aria-label', labels[0]); fullscreen.title = labels[0];
         fullscreen.innerHTML = svg('<rect x="3" y="3" width="10" height="18" rx="2.5"/><path d="M6.5 6h3M16 12h2.5a2.5 2.5 0 0 1 2.5 2.5v4a2.5 2.5 0 0 1-2.5 2.5H16M16 3a7 7 0 0 1 5 6m-3-1 3 1 .5-3"/><circle cx="8" cy="17.5" r=".9"/>');
@@ -287,7 +294,9 @@ enum WebVideoOrientationRuntime {
           schedule();
         }, 150);
       });
-      window.__souloVideoOrientation = {setLabels(value) {
+      window.__souloVideoOrientation = {setPageScale(value,zoom = 1) {
+        overlay.setPageScale(value);overlay.setContentZoom(zoom);schedule();
+      },setLabels(value) {
         labels = value;
         controls.forEach(group => {
           const buttons = group.querySelectorAll(':scope > button');
@@ -326,7 +335,10 @@ enum WebVideoOrientationRuntime {
       }
       window.addEventListener('scroll', schedule, {capture:true,passive:true});
       window.addEventListener('resize', schedule, {passive:true});
-      window.visualViewport?.addEventListener('resize', schedule, {passive:true});
+      window.visualViewport?.addEventListener('resize', () => {
+        schedule();if(window===window.top)send('viewport','');
+      }, {passive:true});
+      window.visualViewport?.addEventListener('scroll', schedule, {passive:true});
       document.addEventListener('loadedmetadata', schedule, true);
       document.addEventListener('play', schedule, true);
       scan();
