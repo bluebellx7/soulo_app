@@ -6,7 +6,7 @@ Ostatnio używane karty i grupy witryn pojawiają się jako pierwsze, a przeglą
 
 Pobieranie BT: importuj pliki .torrent lub linki magnet, wybieraj pliki, wstrzymuj i wznawiaj. W iOS 26 pobieranie może działać w tle, gdy system na to pozwala; starsze wersje zapisują postęp i wstrzymują zadanie.
 
-Wybierz cztery opcjonalne skróty na stronie głównej do pobierania, plików, zakładek, historii, tapet i innych stron. Pasek kart biblioteki zmniejsza się podczas przewijania.
+Wybierz pięć opcjonalnych skrótów na stronie głównej do pobierania, plików, zakładek, historii, tapet i innych stron. Pasek kart biblioteki zmniejsza się podczas przewijania.
 
 Szukaj informacji, czytaj artykuły, odtwarzaj multimedia i zarządzaj pobraniami w jednej przeglądarce.
 

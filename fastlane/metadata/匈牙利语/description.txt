@@ -6,7 +6,7 @@ A legutóbb használt lapok és webhelycsoportok kerülnek előre, az áttekint�
 
 BT-letöltések: importálj .torrent-fájlokat vagy magnet-hivatkozásokat, válassz fájlokat, szüneteltesd és folytasd. iOS 26-on a letöltés a háttérben is folytatódhat, ha a rendszer engedi; a korábbi verziók mentik az állapotot és szüneteltetik.
 
-Válassz négy opcionális kezdőlapi parancsikont a letöltésekhez, fájlokhoz, könyvjelzőkhöz, előzményekhez, háttérképekhez és más oldalakhoz. Görgetéskor a könyvtár lapsávja összébb húzódik.
+Válassz öt opcionális kezdőlapi parancsikont a letöltésekhez, fájlokhoz, könyvjelzőkhöz, előzményekhez, háttérképekhez és más oldalakhoz. Görgetéskor a könyvtár lapsávja összébb húzódik.
 
 Keressen információt, olvasson cikkeket, játsszon le médiát és kezelje letöltéseit egy böngészőben.
 

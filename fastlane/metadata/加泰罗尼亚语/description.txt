@@ -6,7 +6,7 @@ Les pestanyes i els grups de llocs utilitzats recentment apareixen primer, i la 
 
 Descàrregues BT: importa fitxers .torrent o enllaços magnet, tria fitxers, posa en pausa i reprèn. A iOS 26 poden continuar en segon pla si el sistema ho permet; les versions anteriors desen el progrés i les pausen.
 
-Configura quatre dreceres opcionals a l’inici per obrir descàrregues, fitxers, adreces d’interès, historial, fons i altres pàgines. La barra de pestanyes de la biblioteca es compacta en desplaçar-te.
+Configura cinc dreceres opcionals a l’inici per obrir descàrregues, fitxers, adreces d’interès, historial, fons i altres pàgines. La barra de pestanyes de la biblioteca es compacta en desplaçar-te.
 
 Troba informació, llegeix articles, reprodueix continguts i gestiona les descàrregues en un sol navegador.
 

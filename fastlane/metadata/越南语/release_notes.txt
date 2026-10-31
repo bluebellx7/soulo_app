@@ -1,7 +1,7 @@
 1.2.7
 
 • Tải xuống BT: nhập tệp .torrent hoặc liên kết magnet, chọn tệp, tạm dừng và tiếp tục. Trên iOS 26, tác vụ có thể tiếp tục chạy nền khi hệ thống cho phép; phiên bản cũ lưu tiến độ rồi tạm dừng.
-• Chọn bốn lối tắt tùy chọn trên trang chủ để mở tải xuống, tệp, dấu trang, lịch sử, hình nền và các trang khác. Thanh tab thư viện thu gọn khi cuộn.
+• Chọn năm lối tắt tùy chọn trên trang chủ để mở tải xuống, tệp, dấu trang, lịch sử, hình nền và các trang khác. Thanh tab thư viện thu gọn khi cuộn.
 • Cải thiện khả năng tương thích tập lệnh người dùng, gồm các thành phần phụ thuộc bên ngoài qua @require.
 • Sửa lỗi video vẫn phát âm thanh sau khi tắt tiếng hoặc phát trùng trên một số trang web.
 • Cải thiện thao tác quay lại và khôi phục trang để hiển thị nội dung sẵn sàng sớm hơn.

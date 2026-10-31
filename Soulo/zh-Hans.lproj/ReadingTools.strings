@@ -433,10 +433,10 @@
 "torrent_background_hint" = "iOS 26 可在系统允许时继续后台下载；旧版系统进入后台时暂停并保存进度。";
 
 "home_toolbar_customize" = "自定义首页工具栏";
-"home_toolbar_hint" = "选择一个位置，再选择要打开的页面。留空的位置不会在首页显示。";
+"home_toolbar_hint" = "最多可设置 %d 个快捷按钮。选择一个位置，再选择要打开的页面。留空的位置不会显示。";
 "home_toolbar_slot" = "位置 %d";
 "home_toolbar_reset" = "全部隐藏";
-"home_toolbar_default_hint" = "默认隐藏首页的全部四个快捷按钮。";
+"home_toolbar_default_hint" = "首页快捷按钮默认全部隐藏。";
 "home_toolbar_search" = "查找页面";
 
 "group_default_search" = "默认搜索";

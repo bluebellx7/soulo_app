@@ -3,24 +3,30 @@ import XCTest
 
 @MainActor
 final class HomeToolbarConfigurationTests: XCTestCase {
-    func testHiddenByDefaultAndFourSlotsPersistAcrossReload() {
+    func testHiddenByDefaultAndFiveSlotsPersistAcrossReload() {
         let name = "HomeToolbarTests." + UUID().uuidString
         let defaults = UserDefaults(suiteName: name)!
         defer { defaults.removePersistentDomain(forName: name) }
         let service = HomeToolbarConfigurationService(defaults: defaults)
         XCTAssertFalse(service.isVisible)
-        XCTAssertEqual(service.actions, Array(repeating: .none, count: 4))
-        service.save([.downloads, .files, .bookmarks, .history])
+        XCTAssertEqual(service.actions, Array(repeating: .none, count: 5))
+        service.save([.downloads, .files, .bookmarks, .history, .wallpaper])
         let restored = HomeToolbarConfigurationService(defaults: defaults)
         XCTAssertTrue(restored.isVisible)
-        XCTAssertEqual(restored.actions, [.downloads, .files, .bookmarks, .history])
+        XCTAssertEqual(restored.actions, [.downloads, .files, .bookmarks, .history, .wallpaper])
         restored.save([])
         XCTAssertFalse(HomeToolbarConfigurationService(defaults: defaults).isVisible)
     }
     func testUnknownSavedActionsLeaveTheirSlotsEmptyWithoutMovingOthers() {
         XCTAssertEqual(HomeToolbarConfigurationService.resolve(["downloads", "future-action", "wallpaper", "files", "settings"]),
-                       [.downloads, .none, .wallpaper, .files])
-        XCTAssertEqual(HomeToolbarConfigurationService.resolve(["history"]), [.history, .none, .none, .none])
+                       [.downloads, .none, .wallpaper, .files, .settings])
+        XCTAssertEqual(HomeToolbarConfigurationService.resolve(["history"]), [.history, .none, .none, .none, .none])
+    }
+    func testFourSlotUpgradeKeepsExistingChoicesAndRejectsASixthSlot() {
+        XCTAssertEqual(HomeToolbarConfigurationService.resolve(["downloads", "files", "bookmarks", "history"]),
+                       [.downloads, .files, .bookmarks, .history, .none])
+        XCTAssertEqual(HomeToolbarConfigurationService.resolve(["downloads", "files", "bookmarks", "history", "wallpaper", "settings"]),
+                       [.downloads, .files, .bookmarks, .history, .wallpaper])
     }
     func testEveryActionHasALocalizedLabelAndSymbol() {
         for action in HomeToolbarAction.allCases {

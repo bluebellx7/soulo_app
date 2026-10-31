@@ -70,7 +70,7 @@ enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
 final class HomeToolbarConfigurationService: ObservableObject {
     static let shared = HomeToolbarConfigurationService()
     static let storageKey = "home_toolbar_actions"
-    static let slotCount = 4
+    static let slotCount = 5
     @Published private(set) var actions: [HomeToolbarAction]
     private let defaults: UserDefaults
     init(defaults: UserDefaults = .standard) {

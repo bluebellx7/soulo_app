@@ -6,7 +6,7 @@ Les onglets et groupes de sites récents apparaissent en premier, et la vue s'ou
 
 Téléchargements BT : importez des fichiers .torrent ou des liens magnet, choisissez les fichiers, mettez en pause et reprenez. Sous iOS 26, ils peuvent continuer en arrière-plan si le système le permet ; les versions antérieures enregistrent la progression et les mettent en pause.
 
-Configurez quatre raccourcis facultatifs sur l’accueil vers les téléchargements, fichiers, signets, historique, fonds d’écran et autres pages. La barre d’onglets de la bibliothèque se réduit lors du défilement.
+Configurez cinq raccourcis facultatifs sur l’accueil vers les téléchargements, fichiers, signets, historique, fonds d’écran et autres pages. La barre d’onglets de la bibliothèque se réduit lors du défilement.
 
 Recherchez, lisez, regardez des vidéos et gérez vos téléchargements au même endroit.
 

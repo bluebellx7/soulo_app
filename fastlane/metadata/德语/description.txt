@@ -6,7 +6,7 @@ Zuletzt verwendete Tabs und Website-Gruppen stehen zuerst, und die Übersicht ö
 
 BT-Downloads: Importiere .torrent-Dateien oder Magnet-Links, wähle Dateien, pausiere und setze fort. Unter iOS 26 können Downloads im Hintergrund weiterlaufen, wenn das System es zulässt; ältere Versionen speichern den Fortschritt und pausieren.
 
-Wähle vier optionale Startseiten-Kurzbefehle für Downloads, Dateien, Lesezeichen, Verlauf, Hintergrundbilder und weitere Seiten. Die Tab-Leiste der Bibliothek wird beim Scrollen kompakter.
+Wähle fünf optionale Startseiten-Kurzbefehle für Downloads, Dateien, Lesezeichen, Verlauf, Hintergrundbilder und weitere Seiten. Die Tab-Leiste der Bibliothek wird beim Scrollen kompakter.
 
 Informationen finden, Artikel lesen, Medien abspielen und Downloads verwalten, alles in einem Browser.
 

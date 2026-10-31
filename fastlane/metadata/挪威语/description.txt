@@ -6,7 +6,7 @@ Nylig brukte faner og nettstedsgrupper vises først, og oversikten åpnes øvers
 
 BT-nedlastinger: Importer .torrent-filer eller magnetlenker, velg filer, sett på pause og fortsett. På iOS 26 kan nedlastinger fortsette i bakgrunnen når systemet tillater det; eldre versjoner lagrer fremdriften og setter på pause.
 
-Velg fire valgfrie snarveier på startsiden til nedlastinger, filer, bokmerker, historikk, bakgrunner og andre sider. Bibliotekets fanelinje blir kompakt når du ruller.
+Velg fem valgfrie snarveier på startsiden til nedlastinger, filer, bokmerker, historikk, bakgrunner og andre sider. Bibliotekets fanelinje blir kompakt når du ruller.
 
 Finn informasjon, les artikler, spill av medier og administrer nedlastinger i én nettleser.
 

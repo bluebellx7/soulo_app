@@ -6,7 +6,7 @@ Filele și grupurile de site-uri folosite recent apar primele, iar lista se desc
 
 Descărcări BT: importă fișiere .torrent sau linkuri magnet, alege fișiere, pune pe pauză și reia. În iOS 26 pot continua în fundal când sistemul permite; versiunile anterioare salvează progresul și le pun pe pauză.
 
-Alege patru scurtături opționale pe ecranul principal pentru descărcări, fișiere, semne de carte, istoric, imagini de fundal și alte pagini. Bara de file a bibliotecii devine compactă la derulare.
+Alege cinci scurtături opționale pe ecranul principal pentru descărcări, fișiere, semne de carte, istoric, imagini de fundal și alte pagini. Bara de file a bibliotecii devine compactă la derulare.
 
 Găsește informații, citește articole, redă conținut și gestionează descărcările într-un singur browser.
 

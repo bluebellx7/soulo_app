@@ -6,7 +6,7 @@ Os separadores e grupos de sites usados recentemente aparecem primeiro, e a vist
 
 Transferências BT: importe ficheiros .torrent ou ligações magnet, escolha ficheiros, pause e retome. No iOS 26 podem continuar em segundo plano quando o sistema permite; as versões anteriores guardam o progresso e pausam.
 
-Escolha quatro atalhos opcionais no ecrã inicial para transferências, ficheiros, marcadores, histórico, fundos e outras páginas. A barra de separadores da biblioteca fica mais compacta ao deslocar.
+Escolha cinco atalhos opcionais no ecrã inicial para transferências, ficheiros, marcadores, histórico, fundos e outras páginas. A barra de separadores da biblioteca fica mais compacta ao deslocar.
 
 Encontre informação, leia artigos, reproduza conteúdos e faça a gestão das descargas no mesmo navegador.
 

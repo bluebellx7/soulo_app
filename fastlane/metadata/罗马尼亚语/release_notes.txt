@@ -1,7 +1,7 @@
 1.2.7
 
 • Descărcări BT: importă fișiere .torrent sau linkuri magnet, alege fișiere, pune pe pauză și reia. În iOS 26 pot continua în fundal când sistemul permite; versiunile anterioare salvează progresul și le pun pe pauză.
-• Alege patru scurtături opționale pe ecranul principal pentru descărcări, fișiere, semne de carte, istoric, imagini de fundal și alte pagini. Bara de file a bibliotecii devine compactă la derulare.
+• Alege cinci scurtături opționale pe ecranul principal pentru descărcări, fișiere, semne de carte, istoric, imagini de fundal și alte pagini. Bara de file a bibliotecii devine compactă la derulare.
 • Compatibilitate îmbunătățită a scripturilor de utilizator, inclusiv dependențe externe prin @require.
 • S-au corectat cazuri de sunet după dezactivarea lui în videoclipuri sau redare duplicată pe unele pagini.
 • Revenirea și restaurarea paginilor au fost îmbunătățite pentru a afișa mai devreme conținutul pregătit.

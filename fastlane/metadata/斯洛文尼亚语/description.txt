@@ -6,7 +6,7 @@ Nedavno uporabljeni zavihki in skupine spletnih mest so prikazani najprej, pregl
 
 Prenosi BT: uvozite datoteke .torrent ali povezave magnet, izberite datoteke, začasno ustavite in nadaljujte. V iOS 26 se lahko nadaljujejo v ozadju, ko sistem dovoli; starejše različice shranijo napredek in jih začasno ustavijo.
 
-Izberite štiri izbirne bližnjice na domači strani za prenose, datoteke, zaznamke, zgodovino, ozadja in druge strani. Vrstica zavihkov knjižnice se med pomikanjem skrči.
+Izberite pet izbirnih bližnjic na domači strani za prenose, datoteke, zaznamke, zgodovino, ozadja in druge strani. Vrstica zavihkov knjižnice se med pomikanjem skrči.
 
 Poiščite informacije, berite članke, predvajajte vsebine in upravljajte prenose v enem brskalniku.
 

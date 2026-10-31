@@ -1,7 +1,7 @@
 1.2.7
 
 • Stahování BT: importujte soubory .torrent nebo odkazy magnet, vyberte soubory, pozastavte a pokračujte. V iOS 26 může stahování běžet na pozadí, pokud to systém dovolí; starší verze uloží průběh a pozastaví jej.
-• Nastavte čtyři volitelné zkratky na úvodní stránce pro stahování, soubory, záložky, historii, tapety a další stránky. Lišta karet knihovny se při posouvání zmenší.
+• Nastavte pět volitelných zkratek na úvodní stránce pro stahování, soubory, záložky, historii, tapety a další stránky. Lišta karet knihovny se při posouvání zmenší.
 • Vylepšena kompatibilita uživatelských skriptů včetně externích závislostí přes @require.
 • Opraveny případy zvuku po ztlumení videa nebo duplicitního přehrávání na některých stránkách.
 • Vylepšena navigace zpět a obnova stránek, aby se připravený obsah zobrazil dříve.

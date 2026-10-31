@@ -433,10 +433,10 @@
 "torrent_background_hint" = "iOS 26 can continue downloads in the background while the system permits. Earlier versions pause and save progress when leaving the app.";
 
 "home_toolbar_customize" = "Customize Home Toolbar";
-"home_toolbar_hint" = "Choose a position, then choose the page it opens. Empty positions are hidden on the home screen.";
+"home_toolbar_hint" = "Choose up to %d shortcuts. Select a position, then choose the page it opens. Empty positions are hidden.";
 "home_toolbar_slot" = "Position %d";
 "home_toolbar_reset" = "Hide All";
-"home_toolbar_default_hint" = "All four home shortcuts are hidden by default.";
+"home_toolbar_default_hint" = "Home shortcuts are hidden by default.";
 "home_toolbar_search" = "Find a page";
 
 "group_default_search" = "Default search";

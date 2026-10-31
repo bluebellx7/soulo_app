@@ -6,7 +6,7 @@ Le schede e i gruppi di siti usati di recente appaiono per primi e la vista si a
 
 Download BT: importa file .torrent o link magnet, scegli i file, metti in pausa e riprendi. Su iOS 26 possono continuare in background quando il sistema lo consente; le versioni precedenti salvano i progressi e li mettono in pausa.
 
-Scegli quattro scorciatoie facoltative nella home per download, file, segnalibri, cronologia, sfondi e altre pagine. La barra delle schede della libreria si compatta durante lo scorrimento.
+Scegli cinque scorciatoie facoltative nella home per download, file, segnalibri, cronologia, sfondi e altre pagine. La barra delle schede della libreria si compatta durante lo scorrimento.
 
 Trova informazioni, leggi articoli, riproduci contenuti e gestisci i download nello stesso browser.
 

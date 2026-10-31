@@ -6,7 +6,7 @@ Recent gebruikte tabbladen en websitegroepen staan vooraan en het overzicht open
 
 BT-downloads: importeer .torrent-bestanden of magnetlinks, kies bestanden, pauzeer en hervat. Op iOS 26 kunnen downloads op de achtergrond doorgaan als het systeem dat toestaat; eerdere versies bewaren de voortgang en pauzeren.
 
-Kies vier optionele snelkoppelingen op het startscherm voor downloads, bestanden, bladwijzers, geschiedenis, achtergronden en andere pagina’s. De tabbladbalk van de bibliotheek wordt compacter tijdens het scrollen.
+Kies vijf optionele snelkoppelingen op het startscherm voor downloads, bestanden, bladwijzers, geschiedenis, achtergronden en andere pagina’s. De tabbladbalk van de bibliotheek wordt compacter tijdens het scrollen.
 
 Zoek informatie, lees artikelen, speel media af en beheer downloads in één browser.
 

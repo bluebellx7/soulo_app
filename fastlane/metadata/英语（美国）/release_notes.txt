@@ -1,7 +1,7 @@
 1.2.7
 
 • BT downloads: import .torrent files or magnet links, choose files, pause and resume. On iOS 26, downloads can continue in the background while the system permits; earlier versions pause and save progress.
-• Choose four optional home shortcuts to open Downloads, Files, Bookmarks, History, Wallpaper and other pages. The Library tab bar becomes compact as you scroll.
+• Choose up to five optional home shortcuts to open Downloads, Files, Bookmarks, History, Wallpaper and other pages. The Library tab bar becomes compact as you scroll.
 • Improved userscript compatibility, including external dependencies through @require.
 • Fixed cases where muted web videos still produced audio or playback was duplicated.
 • Improved back navigation and page restoration so ready content appears sooner.

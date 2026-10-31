@@ -6,7 +6,7 @@ Recently used tabs and website groups appear first, and the overview opens at th
 
 BT downloads: import .torrent files or magnet links, choose files, pause and resume. On iOS 26, downloads can continue in the background while the system permits; earlier versions pause and save progress.
 
-Choose four optional home shortcuts to open Downloads, Files, Bookmarks, History, Wallpaper and other pages. The Library tab bar becomes compact as you scroll.
+Choose up to five optional home shortcuts to open Downloads, Files, Bookmarks, History, Wallpaper and other pages. The Library tab bar becomes compact as you scroll.
 
 Find information, read articles, play media and manage downloads in one browser.
 

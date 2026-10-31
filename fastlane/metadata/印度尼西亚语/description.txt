@@ -6,7 +6,7 @@ Tab dan grup situs yang baru digunakan tampil lebih dulu, dan tampilan tab dibuk
 
 Unduhan BT: impor file .torrent atau tautan magnet, pilih file, jeda dan lanjutkan. Di iOS 26, unduhan dapat berlanjut di latar belakang jika sistem mengizinkan; versi sebelumnya menyimpan progres dan menjeda.
 
-Pilih empat pintasan opsional di beranda untuk unduhan, file, penanda, riwayat, wallpaper, dan halaman lainnya. Bilah tab pustaka menjadi ringkas saat digulir.
+Pilih lima pintasan opsional di beranda untuk unduhan, file, penanda, riwayat, wallpaper, dan halaman lainnya. Bilah tab pustaka menjadi ringkas saat digulir.
 
 Cari informasi, baca artikel, putar media, dan kelola unduhan dalam satu browser.
 

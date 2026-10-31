@@ -6,7 +6,7 @@ As abas e grupos de sites usados recentemente aparecem primeiro, e a visão gera
 
 Downloads BT: importe arquivos .torrent ou links magnet, escolha arquivos, pause e retome. No iOS 26, os downloads podem continuar em segundo plano quando o sistema permitir; versões anteriores salvam o progresso e pausam.
 
-Escolha quatro atalhos opcionais na tela inicial para downloads, arquivos, favoritos, histórico, papéis de parede e outras páginas. A barra de abas da biblioteca fica compacta ao rolar.
+Escolha cinco atalhos opcionais na tela inicial para downloads, arquivos, favoritos, histórico, papéis de parede e outras páginas. A barra de abas da biblioteca fica compacta ao rolar.
 
 Encontre informações, leia artigos, reproduza mídia e gerencie downloads no mesmo navegador.
 

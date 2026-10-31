@@ -6,7 +6,7 @@ Nedavno korištene kartice i grupe web-mjesta prikazuju se prve, a pregled se ot
 
 BT preuzimanja: uvezite .torrent datoteke ili magnet poveznice, odaberite datoteke, pauzirajte i nastavite. U sustavu iOS 26 preuzimanja mogu raditi u pozadini kada sustav dopusti; starije verzije spremaju napredak i pauziraju.
 
-Odaberite četiri neobavezna prečaca na početnoj stranici za preuzimanja, datoteke, oznake, povijest, pozadine i druge stranice. Traka kartica biblioteke smanjuje se tijekom pomicanja.
+Odaberite pet neobaveznih prečaca na početnoj stranici za preuzimanja, datoteke, oznake, povijest, pozadine i druge stranice. Traka kartica biblioteke smanjuje se tijekom pomicanja.
 
 Pronađite informacije, čitajte članke, reproducirajte medije i upravljajte preuzimanjima u jednom pregledniku.
 

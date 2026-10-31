@@ -2,7 +2,7 @@ import SwiftUI
 
 struct HomeToolbarSettingsView: View {
     @ObservedObject private var service = HomeToolbarConfigurationService.shared
-    @State private var draft = Array(repeating: HomeToolbarAction.none, count: 4)
+    @State private var draft = Array(repeating: HomeToolbarAction.none, count: HomeToolbarConfigurationService.slotCount)
     @State private var slot = 0
     @State private var saved = false
     @State private var restore = false
@@ -16,8 +16,8 @@ struct HomeToolbarSettingsView: View {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 14) {
                     Text(LanguageManager.shared.localizedString("toolbar_preview")).font(.headline)
-                    HStack(spacing: 14) {
-                        ForEach(0..<4, id: \.self) { index in
+                    HStack(spacing: 8) {
+                        ForEach(0..<HomeToolbarConfigurationService.slotCount, id: \.self) { index in
                             Button { slot = index; HapticsManager.selection() } label: {
                                 HomeToolbarButtonFace(action: draft[index], lightWallpaper: false, placeholder: index + 1, showsTitle: true)
                                     .overlay {
@@ -28,9 +28,9 @@ struct HomeToolbarSettingsView: View {
                                 .accessibilityAddTraits(slot == index ? .isSelected : [])
                         }
                     }
-                    .padding(18).frame(maxWidth: .infinity)
+                    .padding(12).frame(maxWidth: .infinity)
                     .background(Color(hex: "28374B"), in: RoundedRectangle(cornerRadius: 26))
-                    Text(ToolText.text("home_toolbar_hint")).font(.footnote).foregroundStyle(.secondary)
+                    Text(String(format: ToolText.text("home_toolbar_hint"), HomeToolbarConfigurationService.slotCount)).font(.footnote).foregroundStyle(.secondary)
                 }
                 VStack(alignment: .leading, spacing: 12) {
                     Text(LanguageManager.shared.localizedString("toolbar_replace_action")).font(.headline)
@@ -70,7 +70,7 @@ struct HomeToolbarSettingsView: View {
             Button(ToolText.text("done"), role: .cancel) {}
         }
         .confirmationDialog(ToolText.text("home_toolbar_reset"), isPresented: $restore, titleVisibility: .visible) {
-            Button(ToolText.text("home_toolbar_reset"), role: .destructive) { draft = Array(repeating: .none, count: 4); service.save(draft) }
+            Button(ToolText.text("home_toolbar_reset"), role: .destructive) { draft = Array(repeating: .none, count: HomeToolbarConfigurationService.slotCount); service.save(draft) }
         } message: { Text(ToolText.text("home_toolbar_default_hint")) }
     }
 }

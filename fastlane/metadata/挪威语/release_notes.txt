@@ -1,7 +1,7 @@
 1.2.7
 
 • BT-nedlastinger: Importer .torrent-filer eller magnetlenker, velg filer, sett på pause og fortsett. På iOS 26 kan nedlastinger fortsette i bakgrunnen når systemet tillater det; eldre versjoner lagrer fremdriften og setter på pause.
-• Velg fire valgfrie snarveier på startsiden til nedlastinger, filer, bokmerker, historikk, bakgrunner og andre sider. Bibliotekets fanelinje blir kompakt når du ruller.
+• Velg fem valgfrie snarveier på startsiden til nedlastinger, filer, bokmerker, historikk, bakgrunner og andre sider. Bibliotekets fanelinje blir kompakt når du ruller.
 • Forbedret kompatibilitet med brukerskript, inkludert eksterne avhengigheter via @require.
 • Rettet tilfeller med lyd etter demping av videoer eller dobbel avspilling på enkelte nettsider.
 • Forbedret tilbakenavigering og gjenoppretting av sider, slik at klart innhold vises tidligere.

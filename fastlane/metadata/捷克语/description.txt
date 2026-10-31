@@ -6,7 +6,7 @@ Nedávno použité karty a skupiny webů se zobrazují první a přehled se otev
 
 Stahování BT: importujte soubory .torrent nebo odkazy magnet, vyberte soubory, pozastavte a pokračujte. V iOS 26 může stahování běžet na pozadí, pokud to systém dovolí; starší verze uloží průběh a pozastaví jej.
 
-Nastavte čtyři volitelné zkratky na úvodní stránce pro stahování, soubory, záložky, historii, tapety a další stránky. Lišta karet knihovny se při posouvání zmenší.
+Nastavte pět volitelných zkratek na úvodní stránce pro stahování, soubory, záložky, historii, tapety a další stránky. Lišta karet knihovny se při posouvání zmenší.
 
 Hledejte informace, čtěte články, přehrávejte média a spravujte stahování v jednom prohlížeči.
 

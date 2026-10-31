@@ -6,7 +6,7 @@ Senest brugte faner og webstedsgrupper vises først, og faneoversigten åbner ø
 
 BT-downloads: Importér .torrent-filer eller magnetlinks, vælg filer, sæt på pause og fortsæt. På iOS 26 kan downloads fortsætte i baggrunden, når systemet tillader det; tidligere versioner gemmer fremdriften og sætter på pause.
 
-Vælg fire valgfrie genveje på startsiden til downloads, filer, bogmærker, historik, baggrunde og andre sider. Bibliotekets fanelinje bliver kompakt, når du ruller.
+Vælg fem valgfrie genveje på startsiden til downloads, filer, bogmærker, historik, baggrunde og andre sider. Bibliotekets fanelinje bliver kompakt, når du ruller.
 
 Find information, læs artikler, afspil medier og administrer downloads i samme browser.
 

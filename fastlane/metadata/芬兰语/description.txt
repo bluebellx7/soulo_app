@@ -6,7 +6,7 @@ Valitse asetuksissa Soulo oletusselaimeksi, jotta voit avata linkkejä muista ap
 
 BT-lataukset: tuo .torrent-tiedostoja tai magnet-linkkejä, valitse tiedostot, keskeytä ja jatka. iOS 26:ssa lataukset voivat jatkua taustalla järjestelmän salliessa; aiemmat versiot tallentavat etenemisen ja keskeyttävät.
 
-Valitse aloitussivulle neljä valinnaista oikopolkua latauksiin, tiedostoihin, kirjanmerkkeihin, historiaan, taustakuviin ja muille sivuille. Kirjaston välilehtipalkki tiivistyy vieritettäessä.
+Valitse aloitussivulle viisi valinnaista oikopolkua latauksiin, tiedostoihin, kirjanmerkkeihin, historiaan, taustakuviin ja muille sivuille. Kirjaston välilehtipalkki tiivistyy vieritettäessä.
 
 Etsi tietoa, lue artikkeleita, toista mediaa ja hallitse latauksia samassa selaimessa.
 

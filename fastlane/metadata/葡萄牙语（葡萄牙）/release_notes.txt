@@ -1,7 +1,7 @@
 1.2.7
 
 • Transferências BT: importe ficheiros .torrent ou ligações magnet, escolha ficheiros, pause e retome. No iOS 26 podem continuar em segundo plano quando o sistema permite; as versões anteriores guardam o progresso e pausam.
-• Escolha quatro atalhos opcionais no ecrã inicial para transferências, ficheiros, marcadores, histórico, fundos e outras páginas. A barra de separadores da biblioteca fica mais compacta ao deslocar.
+• Escolha cinco atalhos opcionais no ecrã inicial para transferências, ficheiros, marcadores, histórico, fundos e outras páginas. A barra de separadores da biblioteca fica mais compacta ao deslocar.
 • Melhorámos a compatibilidade de scripts de utilizador, incluindo dependências externas através de @require.
 • Corrigimos casos de áudio em vídeos silenciados ou reprodução duplicada em algumas páginas.
 • Melhorámos a navegação para trás e o restauro de páginas para apresentar o conteúdo pronto mais cedo.

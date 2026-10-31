@@ -442,18 +442,24 @@ struct HomeView: View {
                 .scrollDismissesKeyboard(.interactively)
             }
             if homeToolbar.isVisible && !keyboardVisible {
-                HStack(spacing: 18) {
-                    ForEach(Array(homeToolbar.actions.enumerated()), id: \.offset) { index, action in
-                        if action != .none {
-                            Button { performHomeToolbarAction(action) } label: {
-                                HomeToolbarButtonFace(action: action, lightWallpaper: wallpaperManager.isCurrentWallpaperLight)
-                            }.buttonStyle(.plain)
-                                .accessibilityLabel(action.title)
-                                .accessibilityIdentifier("home.toolbar.\(index)")
+                GeometryReader { geometry in
+                    let visibleCount = homeToolbar.actions.filter { $0 != .none }.count
+                    let spacing = visibleCount > 1
+                        ? min(18, max(0, (geometry.size.width - CGFloat(visibleCount) * 50) / CGFloat(visibleCount - 1)))
+                        : 0
+                    HStack(spacing: spacing) {
+                        ForEach(Array(homeToolbar.actions.enumerated()), id: \.offset) { index, action in
+                            if action != .none {
+                                Button { performHomeToolbarAction(action) } label: {
+                                    HomeToolbarButtonFace(action: action, lightWallpaper: wallpaperManager.isCurrentWallpaperLight)
+                                }.buttonStyle(.plain)
+                                    .accessibilityLabel(action.title)
+                                    .accessibilityIdentifier("home.toolbar.\(index)")
+                            }
                         }
-                    }
+                    }.frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .frame(maxWidth: 420)
+                .frame(maxWidth: 420).frame(height: 48)
                 .padding(.horizontal, 32).padding(.top, 8).padding(.bottom, 20)
             }
             // Wallpaper attribution remains below the optional shortcuts.

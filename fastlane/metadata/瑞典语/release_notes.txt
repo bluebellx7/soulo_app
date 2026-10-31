@@ -1,7 +1,7 @@
 1.2.7
 
 • BT-hämtningar: Importera .torrent-filer eller magnetlänkar, välj filer, pausa och återuppta. På iOS 26 kan hämtningar fortsätta i bakgrunden när systemet tillåter det; äldre versioner sparar förloppet och pausar.
-• Välj fyra valfria genvägar på startsidan till hämtningar, filer, bokmärken, historik, bakgrunder och andra sidor. Bibliotekets flikrad blir kompakt när du rullar.
+• Välj fem valfria genvägar på startsidan till hämtningar, filer, bokmärken, historik, bakgrunder och andra sidor. Bibliotekets flikrad blir kompakt när du rullar.
 • Förbättrad kompatibilitet med användarskript, inklusive externa beroenden via @require.
 • Åtgärdat fall med ljud efter att videor tystats eller dubbel uppspelning på vissa webbsidor.
 • Förbättrad bakåtnavigering och återställning av sidor så att färdigt innehåll visas tidigare.

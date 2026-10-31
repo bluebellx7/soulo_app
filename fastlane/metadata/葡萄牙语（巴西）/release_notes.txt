@@ -1,7 +1,7 @@
 1.2.7
 
 • Downloads BT: importe arquivos .torrent ou links magnet, escolha arquivos, pause e retome. No iOS 26, os downloads podem continuar em segundo plano quando o sistema permitir; versões anteriores salvam o progresso e pausam.
-• Escolha quatro atalhos opcionais na tela inicial para downloads, arquivos, favoritos, histórico, papéis de parede e outras páginas. A barra de abas da biblioteca fica compacta ao rolar.
+• Escolha cinco atalhos opcionais na tela inicial para downloads, arquivos, favoritos, histórico, papéis de parede e outras páginas. A barra de abas da biblioteca fica compacta ao rolar.
 • Melhoramos a compatibilidade de scripts de usuário, incluindo dependências externas via @require.
 • Corrigimos casos de áudio em vídeos silenciados ou reprodução duplicada em algumas páginas.
 • Melhoramos a navegação de volta e a restauração de páginas para exibir o conteúdo pronto mais cedo.
