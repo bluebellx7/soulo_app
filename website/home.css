@@ -59,7 +59,8 @@ h1 span { font-size: .64em; font-weight: 500; letter-spacing: -.04em; }
 .download-button > svg { width: 32px; height: 32px; }
 .download-button small { display: block; font-size: 10px; line-height: 1.5; letter-spacing: .04em; }
 .download-button strong { display: block; font-size: 22px; font-weight: 550; line-height: 1.25; letter-spacing: -.5px; }
-.download-arrow { margin-left: 15px; font-size: 23px; }
+.download-arrow { display: inline-flex; flex-shrink: 0; margin-left: 15px; }
+.download-arrow svg { display: block; width: 23px; height: 23px; }
 .availability { margin-top: 12px; color: var(--muted); font-size: 11px; }
 .qr-download { display: flex; align-items: center; gap: 17px; margin-top: 25px; }
 .qr-download img { width: 90px; height: 90px; border-radius: 5px; background: white; }
