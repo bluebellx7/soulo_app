@@ -51,6 +51,9 @@ final class WebViewModel: ObservableObject {
     @Published var canGoBack: Bool = false
     @Published var canGoForward: Bool = false
     @Published var errorMessage: String?
+    @Published private(set) var failedNavigationURL: URL?
+    private(set) var requestedNavigationURL: URL?
+    var errorPageURL: URL? { failedNavigationURL ?? requestedNavigationURL ?? currentURL }
     @Published var isScrollingUp: Bool = false
     @Published var hasBottomVideoControls = false
     @Published private(set) var videoHoldSpeed: Double?
@@ -160,6 +163,7 @@ final class WebViewModel: ObservableObject {
 
     func loadRequest(_ request: URLRequest, keepSnapshotUntilLoaded: Bool = false) {
         guard let url = request.url else { return }
+        recordNavigationRequest(url)
         cancelScheduledSnapshot()
         historyTransition.cancel()
         resolveDomainNavigationConfirmation(allowed: false)
@@ -320,6 +324,7 @@ final class WebViewModel: ObservableObject {
     }
 
     func reload() {
+        if errorMessage != nil { retryCurrentPage(); return }
         historyTransition.cancel()
         resolveDomainNavigationConfirmation(allowed: false)
         if isLoading {
@@ -346,8 +351,8 @@ final class WebViewModel: ObservableObject {
     }
 
     func retryCurrentPage() {
-        guard let currentURL else { return }
-        loadURL(currentURL, cachePolicy: .reloadRevalidatingCacheData)
+        guard let destination = errorMessage != nil ? errorPageURL : currentURL else { return }
+        loadURL(destination, cachePolicy: .reloadRevalidatingCacheData)
     }
 
     /// Releases the expensive WebKit runtime while preserving the tab URL and snapshot.
@@ -563,8 +568,22 @@ final class WebViewModel: ObservableObject {
         pageTitle = title ?? ""
     }
 
-    func updateCurrentURL(_ url: URL?) {
+    func updateCurrentURL(_ url: URL?, fromObservation: Bool = false) {
         guard let url = url else { return }
+        if errorMessage != nil, let failedNavigationURL, url != failedNavigationURL { return }
+        if fromObservation, isLoading, let requestedNavigationURL, url != requestedNavigationURL { return }
+        currentURL = url
+        lastURLString = url.absoluteString
+        if !isLoading, errorMessage == nil {
+            requestedNavigationURL = url
+            failedNavigationURL = nil
+        }
+    }
+
+    func recordNavigationRequest(_ url: URL) {
+        requestedNavigationURL = url
+        failedNavigationURL = nil
+        errorMessage = nil
         currentURL = url
         lastURLString = url.absoluteString
     }
@@ -676,7 +695,12 @@ final class WebViewModel: ObservableObject {
         }
     }
 
-    func setError(_ message: String) {
+    func setError(_ message: String, failingURL: URL? = nil) {
+        failedNavigationURL = failingURL ?? requestedNavigationURL ?? currentURL
+        if let failedNavigationURL {
+            currentURL = failedNavigationURL
+            lastURLString = failedNavigationURL.absoluteString
+        }
         errorMessage = message
         isLoading = false
         showSnapshotWhileRestoring = false
@@ -767,7 +791,7 @@ final class WebViewModel: ObservableObject {
             let size = webView.flatMap { $0.bounds.width > 1 && $0.bounds.height > 1 ? $0.bounds.size : nil }
                 ?? CGSize(width: 390, height: 700)
             let renderer = ImageRenderer(content: BrowserLoadErrorView(
-                message: errorMessage, url: currentURL, onRetry: {}, onGoHome: nil, onOpenCompatibility: nil)
+                message: errorMessage, url: errorPageURL, onRetry: {}, onGoHome: nil, onOpenCompatibility: nil)
                 .content
                 .frame(width: size.width, height: size.height)
                 .background(Color(uiColor: .systemBackground))

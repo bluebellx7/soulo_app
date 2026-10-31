@@ -39,7 +39,7 @@
 "platform_yandex" = "யாண்டெக்ஸ்";
 "platform_vk" = "வி.கே";
 "loading" = "ஏற்றுகிறது...";
-"load_error" = "ஏற்றுவதில் தோல்வி";
+"load_error" = "அணுக முடியவில்லை";
 "bookmark_added" = "புக்மார்க் சேர்க்கப்பட்டது";
 "bookmark_removed" = "புக்மார்க் அகற்றப்பட்டது";
 "bookmarks" = "புக்மார்க்குகள்";

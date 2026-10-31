@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "Se încarcă...";
-"load_error" = "Nu s-a încărcat";
+"load_error" = "Nu se poate accesa";
 "bookmark_added" = "Semn de carte adăugat";
 "bookmark_removed" = "Marcaj eliminat";
 "bookmarks" = "Marcaje";

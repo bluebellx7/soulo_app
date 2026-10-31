@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "Ladataan...";
-"load_error" = "Lataus epäonnistui";
+"load_error" = "Yhteyttä ei voi muodostaa";
 "bookmark_added" = "Kirjanmerkki lisätty";
 "bookmark_removed" = "Kirjanmerkki poistettu";
 "bookmarks" = "Kirjanmerkit";

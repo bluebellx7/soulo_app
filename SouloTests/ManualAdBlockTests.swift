@@ -106,8 +106,10 @@ final class ManualAdBlockTests: XCTestCase {
         XCTAssertFalse(allowed("https://example.com/story", enabled: false))
         XCTAssertFalse(allowed("https://news.example.com/story", hosts: ["example.com"]))
         XCTAssertTrue(allowed("https://notexample.com/story", hosts: ["example.com"]))
-        XCTAssertFalse(allowed("https://example.com/login"))
-        XCTAssertFalse(allowed("https://weixin.qq.com/story"))
+        XCTAssertTrue(allowed("https://example.com/login"))
+        XCTAssertTrue(allowed("https://www.xiaohongshu.com/explore/example"))
+        XCTAssertFalse(allowed("https://example.com/mp/wappoc_appmsgcaptcha?poc_token=token"))
+        XCTAssertTrue(allowed("https://weixin.qq.com/story"))
         XCTAssertFalse(allowed("file:///private/story.html"))
     }
 
@@ -297,6 +299,24 @@ final class ManualAdBlockTests: XCTestCase {
         try await js(AdBlockService.adHidingScript() + "\nnull", web)
         let enabled = try await js("getComputedStyle(document.querySelector('.qa-lazy-ad')).display === 'none'", web)
         XCTAssertEqual(enabled as? Bool, true)
+    }
+
+    func testLateVerificationControlsRestoreTheirPreviouslyFilteredContainer() async throws {
+        let defaults=UserDefaults.standard,key="soulo_ad_block_subscription_rules",saved=defaults.object(forKey:"soulo_ad_block_subscription_rules")
+        defer { defaults.set(saved,forKey:key) }
+        defaults.set(try JSONEncoder().encode(ParsedAdBlockRules(cosmeticSelectors:[".qa-dynamic-widget"])),forKey:key)
+        let web=try await fixture()
+        try await js("document.body.insertAdjacentHTML('beforeend', '<div id=widget class=qa-dynamic-widget style=\"height:40px\">Widget</div><aside id=other-ad class=qa-dynamic-widget>Advertisement</aside>');null",web)
+        try await js(AdBlockService.adHidingScript()+"\nnull",web)
+        let hidden=try await js("getComputedStyle(document.getElementById('widget')).display",web)
+        XCTAssertEqual(hidden as? String,"none")
+        try await js("document.getElementById('widget').insertAdjacentHTML('beforeend','<input type=hidden name=cf-turnstile-response>');null",web)
+        for _ in 0..<100 {
+            if (try await js("getComputedStyle(document.getElementById('widget')).display!=='none'",web)) as? Bool == true { break }
+            try await Task.sleep(for:.milliseconds(20))
+        }
+        let result=try await js("getComputedStyle(document.getElementById('widget')).display!=='none' && getComputedStyle(document.getElementById('other-ad')).display==='none'",web)
+        XCTAssertEqual(result as? Bool,true)
     }
 
     func testBottomAdFilteringHandlesLateInsertionWithoutHidingFooter() async throws {

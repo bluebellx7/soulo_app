@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "טוען...";
-"load_error" = "הטעינה נכשלה";
+"load_error" = "לא ניתן לגשת";
 "bookmark_added" = "סימניה נוספה";
 "bookmark_removed" = "הסימניה הוסרה";
 "bookmarks" = "סימניות";

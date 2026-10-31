@@ -17,7 +17,7 @@ enum ManualAdBlockRuntime {
     static func configurationUpdateScript(enabled: Bool, allowlistedHosts: [String], rules: [ManualAdRule]) -> String {
         let payload: [String: Any] = [
             "enabled": enabled,
-            "allowlist": WebCompatibilityService.protectionBypassHosts(adding: allowlistedHosts),
+            "allowlist": AdBlockSettingsService.normalizedAllowlistedHosts(allowlistedHosts),
             "rules": rules.map { ["host": $0.host, "path": $0.path as Any? ?? NSNull(), "selector": $0.selector] }
         ]
         let json = (try? JSONSerialization.data(withJSONObject: payload))
@@ -197,6 +197,8 @@ enum ManualAdBlockRuntime {
       }
       function safe(el) {
         if (!(el instanceof Element) || !el.isConnected || el.matches(protectedSelector)) return false;
+        const authentication=\#(WebCompatibilityService.authenticationContentSelectorJSON);
+        if(el.matches(authentication)||el.querySelector(authentication)||el.closest('.cf-turnstile'))return false;
         if (el.closest('form,[contenteditable="true"]') || el.querySelector('input[type="password"],input[autocomplete="one-time-code"]')) return false;
         const r = el.getBoundingClientRect();
         if (r.width <= 0 || r.height <= 0) return false;

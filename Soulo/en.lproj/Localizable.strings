@@ -48,7 +48,7 @@
 
 /* WebView */
 "loading" = "Loading...";
-"load_error" = "Failed to Load";
+"load_error" = "Unable to Access";
 "bookmark_added" = "Bookmark Added";
 "bookmark_removed" = "Bookmark Removed";
 

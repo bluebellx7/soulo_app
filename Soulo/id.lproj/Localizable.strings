@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "Memuat...";
-"load_error" = "Gagal Memuat";
+"load_error" = "Tidak dapat diakses";
 "bookmark_added" = "Penanda Ditambahkan";
 "bookmark_removed" = "Penanda Dihapus";
 "bookmarks" = "Bookmark";

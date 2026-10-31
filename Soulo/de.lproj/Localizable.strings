@@ -36,7 +36,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "Wird geladen...";
-"load_error" = "Laden fehlgeschlagen";
+"load_error" = "Nicht erreichbar";
 "bookmark_added" = "Lesezeichen gesetzt";
 "bookmark_removed" = "Lesezeichen entfernt";
 "bookmarks" = "Lesezeichen";

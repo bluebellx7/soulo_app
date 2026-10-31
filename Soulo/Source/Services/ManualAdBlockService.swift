@@ -31,7 +31,7 @@ final class ManualAdBlockService: ObservableObject {
         guard let url, ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
               url.host != nil, enabled else { return false }
         return !AdBlockSettingsService.isHostAllowlisted(url.host, allowlistedHosts: allowlistedHosts)
-            && !WebCompatibilityService.shouldBypassWebProtection(for: url)
+            && !WebCompatibilityService.isSensitiveChallengeURL(url)
     }
 
     static func pagePath(_ url: URL) -> String {

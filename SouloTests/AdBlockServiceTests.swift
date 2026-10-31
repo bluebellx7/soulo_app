@@ -28,7 +28,7 @@ final class AdBlockServiceTests: XCTestCase {
         for json in AdBlockService.encodedContentRuleLists(batchSize: 2) {
             let data = try XCTUnwrap(json.data(using: .utf8))
             let rules = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [[String: Any]])
-            for filter in WebCompatibilityService.cloudflareChallengeURLFilters {
+            for filter in WebCompatibilityService.verificationResourceURLFilters {
                 XCTAssertTrue(rules.contains { rule in
                     (rule["trigger"] as? [String: Any])?["url-filter"] as? String == filter
                         && (rule["action"] as? [String: Any])?["type"] as? String == "ignore-previous-rules"
@@ -297,8 +297,9 @@ final class AdBlockServiceTests: XCTestCase {
 
         XCTAssertTrue(unlessDomain.contains("*example.com"))
         XCTAssertTrue(unlessDomain.contains("example.com"))
-        XCTAssertTrue(unlessDomain.contains("*weixin.qq.com"))
-        XCTAssertTrue(unlessDomain.contains("weixin.qq.com"))
+        XCTAssertFalse(unlessDomain.contains("*weixin.qq.com"))
+        XCTAssertFalse(unlessDomain.contains("weixin.qq.com"))
+        XCTAssertFalse(unlessDomain.contains("*xiaohongshu.com"))
     }
 
     func testEncodedContentRulesPreserveSupportedStructuredConditionsAndSkipUnsupportedMixedDomains() throws {
@@ -360,7 +361,7 @@ final class AdBlockServiceTests: XCTestCase {
             guard let action = rule["action"] as? [String: Any],
                   let trigger = rule["trigger"] as? [String: Any] else { return false }
             return (action["type"] as? String) == "css-display-none"
-                && (action["selector"] as? String) == ":root:not([data-soulo-native-ads-disabled]) :is(.site-ad)"
+                && (action["selector"] as? String)?.hasPrefix(":root:not([data-soulo-native-ads-disabled]) :is(.site-ad)") == true
                 && ((trigger["if-domain"] as? [String])?.contains("*example.com") == true)
                 && trigger["unless-domain"] == nil
         })

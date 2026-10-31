@@ -22,7 +22,91 @@ final class WebCompatibilityServiceTests: XCTestCase {
         }
         XCTAssertTrue(WebCompatibilityService.isSensitiveChallengeURL(URL(string: "https://example.com/?__cf_chl_rt_tk=token")))
         XCTAssertFalse(WebCompatibilityService.isSensitiveChallengeURL(URL(string: "https://www.diyihuisuo.com/")), "An unmarked root URL requires response/DOM detection")
-        XCTAssertTrue(WebCompatibilityService.shouldBypassWebProtection(for: URL(string: "https://brandverse.ai/user/login?refer=huski.ai")))
+        XCTAssertFalse(WebCompatibilityService.shouldBypassWebProtection(for: URL(string: "https://brandverse.ai/user/login?refer=huski.ai")))
+    }
+
+    func testOrdinaryURLKeywordsDoNotDisableProtection() {
+        for word in ["login", "auth", "passport", "security", "captcha", "verify", "verification", "challenge", "wappoc"] {
+            for address in ["https://example.com/\(word)", "https://\(word).example.com/", "https://example.com/?ref=\(word)", "https://example.com/#\(word)"] {
+                XCTAssertFalse(WebCompatibilityService.shouldBypassWebProtection(for: URL(string: address)), address)
+            }
+        }
+        XCTAssertFalse(WebCompatibilityService.isSensitiveChallengeURL(URL(string: "https://example.com/?redirect=%3F__cf_chl_rt_tk%3Dtoken")))
+        XCTAssertFalse(WebCompatibilityService.isSensitiveChallengeURL(URL(string: "https://example.com/#?__cf_chl_rt_tk=token")))
+        XCTAssertTrue(WebCompatibilityService.isSensitiveChallengeURL(URL(string: "https://mp.weixin.qq.com/mp/wappoc_appmsgcaptcha?poc_token=token")))
+    }
+
+    func testVerificationProviderExceptionsStayScopedToTheirResources() throws {
+        let expressions = try WebCompatibilityService.verificationResourceURLFilters.map { filter in
+            XCTAssertEqual(AdBlockService.sanitizedContentBlockerURLFilter(filter), filter)
+            return try NSRegularExpression(pattern: filter)
+        }
+        for address in ["https://www.google.com/recaptcha/api.js", "https://www.gstatic.com/recaptcha/releases/v1/recaptcha.js",
+            "https://www.recaptcha.net/recaptcha/api2/anchor", "https://newassets.hcaptcha.com/captcha/v1/widget"] {
+            XCTAssertTrue(WebCompatibilityService.isVerificationResourceURL(URL(string: address)))
+            XCTAssertTrue(expressions.contains { $0.firstMatch(in: address, range: NSRange(address.startIndex..., in: address)) != nil })
+        }
+        for address in ["https://www.google.com/analytics/script.js", "https://www.google.com/search?q=recaptcha",
+            "https://newassets.hcaptcha.com.evil.test/widget", "https://example.com/?redirect=https://challenges.cloudflare.com/widget"] {
+            XCTAssertFalse(WebCompatibilityService.isVerificationResourceURL(URL(string: address)))
+            XCTAssertFalse(expressions.contains { $0.firstMatch(in: address, range: NSRange(address.startIndex..., in: address)) != nil })
+        }
+    }
+
+    @MainActor func testEmbeddedVerificationKeepsLoginControlsVisibleWhileAdvertisementsAreFiltered() async throws {
+        let defaults = UserDefaults.standard, key = "soulo_ad_block_subscription_rules"
+        let saved = defaults.object(forKey: key); defer { defaults.set(saved, forKey: key) }
+        defaults.set(try JSONEncoder().encode(ParsedAdBlockRules(cosmeticSelectors: [".qa-filter-target"])), forKey: key)
+        let compiled = await AdBlockService.compileRuleLists()
+        let rules = try XCTUnwrap(compiled)
+        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+        rules.forEach(config.userContentController.add)
+        config.userContentController.addUserScript(WKUserScript(source: AdBlockService.adHidingScript(nativeCosmeticFiltering: true), injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 800), configuration: config)
+        web.loadHTMLString("""
+        <form id='login' class='qa-filter-target'><label>Email<input name='email'></label><input type='password'>
+        <div id='turnstile' class='qa-filter-target'>Verify<input type='hidden' name='cf-turnstile-response' id='cf-chl-widget-fixture_response'></div></form>
+        <div id='hcaptcha' class='qa-filter-target'><div class='h-captcha'>Verify</div></div>
+        <div id='recaptcha' class='qa-filter-target'><div class='g-recaptcha'>Verify</div></div>
+        <aside id='advert' class='qa-filter-target'>Advertisement</aside>
+        """, baseURL: URL(string: "https://brandverse.ai/user/login?refer=huski.ai"))
+        for _ in 0..<100 {
+            if (try? await web.evaluateJavaScript("!!window.__souloAdBlockInstalled")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        let visible = try await web.evaluateJavaScript("['login','turnstile','hcaptcha','recaptcha'].every(id=>getComputedStyle(document.getElementById(id)).display!=='none')")
+        let advert = try await web.evaluateJavaScript("getComputedStyle(document.getElementById('advert')).display")
+        let enabled = try await web.evaluateJavaScript("!document.documentElement.hasAttribute('data-soulo-native-ads-disabled')")
+        XCTAssertEqual(visible as? Bool, true)
+        XCTAssertEqual(advert as? String, "none")
+        XCTAssertEqual(enabled as? Bool, true, "An embedded widget must not bypass the whole login document")
+    }
+
+    @MainActor func testVerificationFramesKeepNativeAPIsAndOrdinaryLoginKeepsProtection() async throws {
+        let pages = [
+            ("https://challenges.cloudflare.com/cdn-cgi/challenge-platform/widget", true),
+            ("https://newassets.hcaptcha.com/captcha/v1/widget", true),
+            ("https://www.google.com/recaptcha/api2/anchor", true),
+            ("https://www.recaptcha.net/recaptcha/api2/anchor", true),
+            ("https://brandverse.ai/user/login?refer=huski.ai", false),
+            ("https://challenges.cloudflare.com.evil.test/turnstile/widget", false)
+        ]
+        for (address, verification) in pages {
+            let web = WKWebView()
+            web.loadHTMLString("""
+            <script>window.originalFetch=fetch;window.originalXHROpen=XMLHttpRequest.prototype.open;window.originalCopy=Document.prototype.execCommand;</script><p id='ready'>Ready</p>
+            """, baseURL: URL(string: address))
+            for _ in 0..<100 {
+                if (try? await web.evaluateJavaScript("!!document.getElementById('ready')")) as? Bool == true { break }
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            _ = try await web.evaluateJavaScript(WebViewScripts.clipboardProtection + "\n" + WebViewScripts.mediaResourceTracking + "\n" + WebViewScripts.textSelection + "\nnull")
+            let value = try await web.evaluateJavaScript("({fetchNative:fetch===originalFetch,xhrNative:XMLHttpRequest.prototype.open===originalXHROpen,copyNative:Document.prototype.execCommand===originalCopy,selection:!!window.__souloTextSelection})") as? [String: Bool]
+            XCTAssertEqual(value?["fetchNative"], verification, address)
+            XCTAssertEqual(value?["xhrNative"], verification, address)
+            XCTAssertEqual(value?["copyNative"], verification, address)
+            XCTAssertEqual(value?["selection"], !verification, address)
+        }
     }
 
     func testCloudflareResponseRequiresTheChallengeHeader() throws {
@@ -42,7 +126,7 @@ final class WebCompatibilityServiceTests: XCTestCase {
         }
         let detector = WebCompatibilityService.sensitiveChallengeDetectionScript + "\nisSensitiveChallengePage();"
         for (markup, expected) in [
-            ("<form id='challenge-form'>Verification</form>", true),
+            ("<form id='challenge-form'>Verification</form>", false),
             ("<script type='application/json' src='/cdn-cgi/challenge-platform/h/g/orchestrate/chl_page/v1'></script>", true),
             ("<script type='application/json' src='/cdn-cgi/challenge-platform/h/g/scripts/jsd/main.js'></script>", false),
             ("<script type='application/json' src='https://challenges.cloudflare.com/turnstile/v0/api.js'></script><p>Article</p>", false)

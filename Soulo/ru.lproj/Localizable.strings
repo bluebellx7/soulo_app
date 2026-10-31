@@ -39,7 +39,7 @@
 "platform_yandex" = "Яндекс";
 "platform_vk" = "ВКонтакте";
 "loading" = "Загрузка...";
-"load_error" = "Ошибка загрузки";
+"load_error" = "Не удаётся получить доступ";
 "bookmark_added" = "Закладка добавлена";
 "bookmark_removed" = "Закладка удалена";
 "bookmarks" = "Закладки";

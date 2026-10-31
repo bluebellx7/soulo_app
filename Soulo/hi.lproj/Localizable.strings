@@ -39,7 +39,7 @@
 "platform_yandex" = "यांडेक्स";
 "platform_vk" = "वी.के";
 "loading" = "लोड हो रहा है...";
-"load_error" = "लोड करने में विफल";
+"load_error" = "ऐक्सेस नहीं किया जा सका";
 "bookmark_added" = "बुकमार्क जोड़ा गया";
 "bookmark_removed" = "बुकमार्क हटा दिया गया";
 "bookmarks" = "बुकमार्क";

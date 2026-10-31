@@ -381,6 +381,57 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
     }
 
     @MainActor
+    func testLoginPageFilteringCanBeSwitchedOffAndBackOn() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: ["/user/login": Data("<h1>Login fixture</h1><form><input placeholder='Email'><input type='password'></form><aside id='float-bottom-ad'>Advertisement</aside>".utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let app = launch()
+        try open(root.appendingPathComponent("user/login"), app: app)
+        XCTAssertTrue(app.webViews.staticTexts["Login fixture"].firstMatch.waitForExistence(timeout: 10))
+        func toggle() -> XCUIElement {
+            let button = app.buttons["site.ad-block-toggle"]
+            if !button.exists { app.buttons["browser.siteInformation"].tap() }
+            XCTAssertTrue(button.waitForExistence(timeout: 5), app.debugDescription)
+            return button
+        }
+        let first = toggle()
+        XCTAssertTrue(first.isEnabled)
+        XCTAssertTrue(first.isSelected)
+        first.tap()
+        let disabled = toggle()
+        XCTAssertFalse(disabled.isSelected)
+        disabled.tap()
+        let enabled = toggle()
+        XCTAssertTrue(enabled.isEnabled)
+        XCTAssertTrue(enabled.isSelected)
+    }
+
+    @MainActor
+    func testTypedAddressFailureShowsTheFailedDestinationAndRetriesIt() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: ["/previous": Data("<h1>Previous document</h1>".utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let unavailable = try DownloadPlaybackHTTPFixture(files: [:])
+        let destination = try await unavailable.start().appendingPathComponent("typed-address")
+        unavailable.stop()
+        let app = launch()
+        try open(root.appendingPathComponent("previous"), app: app)
+        XCTAssertTrue(app.webViews.staticTexts["Previous document"].firstMatch.waitForExistence(timeout: 10))
+        app.buttons["Edit Address or Search"].tap()
+        let field = app.textFields["addressEditor.query"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5), app.debugDescription)
+        field.tap()
+        let count = (field.value as? String)?.count ?? 0
+        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: count) + destination.absoluteString + "\n")
+        let failedURL = app.staticTexts["browser.error.url"]
+        XCTAssertTrue(failedURL.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertEqual(failedURL.label, destination.absoluteString)
+        XCTAssertTrue(app.staticTexts["Unable to Access"].exists, app.debugDescription)
+        app.buttons["browser.error.retry"].tap()
+        XCTAssertTrue(failedURL.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertEqual(failedURL.label, destination.absoluteString)
+        let image = XCTAttachment(screenshot: app.screenshot()); image.name = "failed-typed-address"; image.lifetime = .keepAlways; add(image)
+    }
+
+    @MainActor
     func testResourceCatalogStreamsKeepThePickerAndAdjacentEpisodes() async throws {
         let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
         let data = try Data(contentsOf: fixture)

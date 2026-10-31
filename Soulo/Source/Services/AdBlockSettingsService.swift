@@ -132,10 +132,23 @@ final class AdBlockSettingsService: ObservableObject {
         saveAllowlist()
     }
 
+    func setFilteringEnabled(_ enabled: Bool, for host: String) {
+        let cleanHost = normalizedHost(host)
+        guard !cleanHost.isEmpty else { return }
+        if enabled {
+            // Restore the matching site exception, including one inherited
+            // from its parent domain, so the switch can actually turn on.
+            allowlistedHosts.removeAll { Self.isHostAllowlisted(cleanHost, allowlistedHosts: [$0]) }
+            saveAllowlist()
+        } else {
+            addAllowlistedHost(cleanHost)
+        }
+    }
+
     func toggleAllowlist(for host: String?) {
         guard let host else { return }
         if isAllowlisted(host) {
-            removeAllowlistedHost(host)
+            setFilteringEnabled(true, for: host)
         } else {
             addAllowlistedHost(host)
         }
@@ -186,6 +199,10 @@ final class AdBlockSettingsService: ObservableObject {
         host.lowercased()
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "^www\\.", with: "", options: .regularExpression)
+    }
+
+    nonisolated static func normalizedAllowlistedHosts(_ hosts: [String]) -> [String] {
+        Array(Set(hosts.map(normalizedHost).filter { !$0.isEmpty })).sorted()
     }
 
     private func load() {

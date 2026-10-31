@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "読み込み中...";
-"load_error" = "読み込み失敗";
+"load_error" = "アクセスできません";
 "bookmark_added" = "ブックマークに追加";
 "bookmark_removed" = "ブックマークを削除";
 "bookmarks" = "ブックマーク";

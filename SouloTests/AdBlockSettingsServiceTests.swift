@@ -29,6 +29,19 @@ final class AdBlockSettingsServiceTests: XCTestCase {
         XCTAssertFalse(service.isAllowlisted("other.com"))
     }
 
+    func testSiteFilteringSwitchCanRestoreAnInheritedExceptionAndPersists() {
+        let service = AdBlockSettingsService(userDefaults: defaults)
+        service.addAllowlistedHost("example.com")
+        service.addAllowlistedHost("other.com")
+        service.setFilteringEnabled(true, for: "login.example.com")
+        XCTAssertFalse(service.isAllowlisted("login.example.com"))
+        XCTAssertTrue(service.isAllowlisted("other.com"))
+        service.setFilteringEnabled(false, for: "login.example.com")
+        XCTAssertTrue(AdBlockSettingsService(userDefaults: defaults).isAllowlisted("login.example.com"))
+        service.toggleAllowlist(for: "login.example.com")
+        XCTAssertFalse(AdBlockSettingsService(userDefaults: defaults).isAllowlisted("login.example.com"))
+    }
+
     func testHiddenElementStatsPersist() {
         let first = AdBlockSettingsService(userDefaults: defaults)
         first.recordHiddenElementCount(3, for: "example.com")

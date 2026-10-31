@@ -254,7 +254,7 @@ struct AdBlockService {
                     batch += exceptions.filter {
                         let trigger = $0["trigger"] as? [String: Any]
                         return trigger?["if-top-url"] != nil
-                            || WebCompatibilityService.cloudflareChallengeURLFilters.contains(trigger?["url-filter"] as? String ?? "")
+                            || WebCompatibilityService.verificationResourceURLFilters.contains(trigger?["url-filter"] as? String ?? "")
                     }
                 }
                 batches.append(batch)
@@ -476,7 +476,7 @@ struct AdBlockService {
         }
 
         rulesArray += exceptions
-        for filter in WebCompatibilityService.cloudflareChallengeURLFilters {
+        for filter in WebCompatibilityService.verificationResourceURLFilters {
             rulesArray.append([
                 "trigger": ["url-filter": filter],
                 "action": ["type": "ignore-previous-rules"]
@@ -486,13 +486,14 @@ struct AdBlockService {
     }
 
     private static func normalizedAllowlist(_ hosts: [String]) -> [String] {
-        WebCompatibilityService.protectionBypassHosts(adding: hosts)
+        AdBlockSettingsService.normalizedAllowlistedHosts(hosts)
     }
 
     /// WebKit retains cosmetic styles in already loaded documents after their
     /// rule list is removed. One root attribute can disable those styles live.
     private static func switchableNativeSelector(_ selector: String) -> String {
-        ":root:not([data-soulo-native-ads-disabled]) :is(\(selector))"
+        let authentication = WebCompatibilityService.authenticationContentSelector
+        return ":root:not([data-soulo-native-ads-disabled]) :is(\(selector)):not(:is(\(authentication))):not(:has(:is(\(authentication)))):not(:is(.cf-turnstile,.g-recaptcha,.h-captcha,.grecaptcha-badge) *)"
     }
 
     static func sanitizedContentBlockerURLFilter(_ value: String) -> String? {
@@ -594,7 +595,7 @@ struct AdBlockService {
             .appendingPathComponent("AdBlock/merged-rules.json")
         let attributes = archive.flatMap { try? $0.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]) }
         let fields = [
-            "startup-cache-v5", startupBuildIdentity, String(nativeCosmeticFiltering),
+            "startup-cache-v6", startupBuildIdentity, String(nativeCosmeticFiltering),
             normalizedAllowlist(allowlistedHosts).joined(separator: ","),
             cosmetic.map(String.init) ?? "native", AdBlockSubscriptionService.rulesSignature(),
             BuiltInAdRuleStore.signature(),
@@ -761,7 +762,10 @@ struct AdBlockService {
                 matchedHost = host;
                 matchedSelectors = Array.from(new Set(selectors));
                 matchedURL = location.href;
-                matchedCSS = matchedSelectors.map(function(selector) { return selector + ' { display:none !important; }'; }).join('\\n');
+                var authentication = \(WebCompatibilityService.authenticationContentSelectorJSON);
+                matchedCSS = matchedSelectors.map(function(selector) {
+                    return ':is('+selector+'):not(:is('+authentication+')):not(:has(:is('+authentication+'))):not(:is(.cf-turnstile,.g-recaptcha,.h-captcha,.grecaptcha-badge) *) { display:none !important; }';
+                }).join('\\n');
                 selectorGroups = [];
                 var inlineSelectors = matchedSelectors.filter(function(sel) { return sel !== '\(ManualAdBlockRuntime.imageBannerSelector)'; });
                 for (var i = 0; i < inlineSelectors.length; i += 80) selectorGroups.push(inlineSelectors.slice(i, i + 80));
@@ -834,6 +838,7 @@ struct AdBlockService {
             function isAuthenticationElement(el) {
                 try {
                     if (!el) return false;
+                    if (el.matches(\(WebCompatibilityService.authenticationContentSelectorJSON)) || el.querySelector(\(WebCompatibilityService.authenticationContentSelectorJSON)) || el.closest('.cf-turnstile')) return true;
                     var identity = [
                         el.id || '',
                         typeof el.className === 'string' ? el.className : '',
@@ -878,6 +883,7 @@ struct AdBlockService {
                 var selectors = matchingSubscriptionSelectors();
                 hiddenStyles.forEach(function(style, el) {
                     var keepHidden = adBlockConfig().cosmeticEnabled && !shouldDisableAdBlock()
+                        && !isAuthenticationElement(el) && !isProtectedPageElement(el)
                         && selectors.some(function(selector) { try { return el.matches(selector); } catch (_) { return false; } });
                     if (keepHidden && el.isConnected) return;
                     Object.keys(hiddenProperties).forEach(function(property) {

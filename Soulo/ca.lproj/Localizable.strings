@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "Carregant...";
-"load_error" = "No s'ha pogut carregar";
+"load_error" = "No es pot accedir";
 "bookmark_added" = "Marcador afegit";
 "bookmark_removed" = "S'ha eliminat el marcador";
 "bookmarks" = "Adreces d'interès";

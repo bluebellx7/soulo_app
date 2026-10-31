@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "Laddar...";
-"load_error" = "Det gick inte att ladda";
+"load_error" = "Kan inte nås";
 "bookmark_added" = "Bokmärke tillagt";
 "bookmark_removed" = "Bokmärke borttaget";
 "bookmarks" = "Bokmärken";

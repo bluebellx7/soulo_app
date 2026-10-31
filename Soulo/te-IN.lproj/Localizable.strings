@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "లోడ్ అవుతోంది...";
-"load_error" = "లోడ్ చేయడంలో విఫలమైంది";
+"load_error" = "యాక్సెస్ చేయడం సాధ్యం కాలేదు";
 "bookmark_added" = "బుక్‌మార్క్ జోడించబడింది";
 "bookmark_removed" = "బుక్‌మార్క్ తీసివేయబడింది";
 "bookmarks" = "బుక్‌మార్క్‌లు";

@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "وی کے";
 "loading" = "لوڈ ہو رہا ہے...";
-"load_error" = "لوڈ کرنے میں ناکام";
+"load_error" = "رسائی ممکن نہیں";
 "bookmark_added" = "بک مارک شامل کیا گیا۔";
 "bookmark_removed" = "بک مارک ہٹا دیا گیا۔";
 "bookmarks" = "بک مارکس";

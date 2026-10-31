@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "Đang tải...";
-"load_error" = "Tải thất bại";
+"load_error" = "Không thể truy cập";
 "bookmark_added" = "Đã thêm dấu trang";
 "bookmark_removed" = "Đã xóa dấu trang";
 "bookmarks" = "Dấu trang";

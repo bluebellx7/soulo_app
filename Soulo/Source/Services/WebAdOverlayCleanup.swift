@@ -12,6 +12,8 @@ enum WebAdOverlayCleanup {
         return rect.width>1&&rect.height>1&&style.display!=='none'&&style.visibility!=='hidden'&&Number(style.opacity)!==0;
       };
       const authentication = element => {
+        const controls=\#(WebCompatibilityService.authenticationContentSelectorJSON);
+        if(element.matches(controls)||element.querySelector(controls)||element.closest('.cf-turnstile'))return true;
         const identity=[element.id,element.className,element.getAttribute('aria-label')].join(' ').toLowerCase();
         return /(^|[\s_-])(login|log-in|signin|sign-in|signup|sign-up|register|auth|passport)([\s_-]|$)/.test(identity)
           || !!element.querySelector('input[type="tel"],input[type="password"],input[autocomplete*="one-time-code"],input[name*="captcha" i],input[name*="verify" i]');

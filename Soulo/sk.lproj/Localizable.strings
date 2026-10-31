@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "Načítava sa...";
-"load_error" = "Načítanie zlyhalo";
+"load_error" = "Nedá sa pristúpiť";
 "bookmark_added" = "Záložka bola pridaná";
 "bookmark_removed" = "Záložka bola odstránená";
 "bookmarks" = "Záložky";

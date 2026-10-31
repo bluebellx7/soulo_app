@@ -291,6 +291,46 @@ final class WebViewModelTests: XCTestCase {
         XCTAssertNil(model.errorMessage)
     }
 
+    func testFailedNavigationPinsTheRequestedAddressInsteadOfThePreviousDocument() {
+        let previous = URL(string: "https://www.diyihuisuo.com/")!
+        let requested = URL(string: "https://pbpbs.com/")!
+        let model = WebViewModel()
+        model.loadURL(previous); model.updateLoading(false)
+        model.loadURL(requested)
+        model.updateCurrentURL(previous, fromObservation: true)
+        XCTAssertEqual(model.currentURL, requested)
+        model.setError("Unavailable", failingURL: requested)
+        model.updateCurrentURL(previous, fromObservation: true)
+        XCTAssertEqual(model.errorPageURL, requested)
+        XCTAssertEqual(model.currentURL, requested)
+        XCTAssertEqual(model.lastURLString, requested.absoluteString)
+        model.reload()
+        XCTAssertEqual(model.requestedNavigationURL, requested)
+        XCTAssertEqual(model.currentURL, requested)
+        XCTAssertNil(model.failedNavigationURL)
+        XCTAssertNil(model.errorMessage)
+        XCTAssertTrue(model.isLoading)
+    }
+
+    func testNavigationErrorWithoutURLUsesTheLatestRequestAndKeepsRedirectFailures() {
+        let model = WebViewModel()
+        let previous = URL(string: "https://previous.example/")!
+        let requested = URL(string: "https://requested.example/")!
+        let redirected = URL(string: "https://redirected.example/checkpoint")!
+        model.loadURL(requested)
+        model.updateCurrentURL(previous)
+        model.setError("Unavailable")
+        XCTAssertEqual(model.errorPageURL, requested)
+        model.retryCurrentPage()
+        model.recordNavigationRequest(redirected)
+        model.setError("TLS error", failingURL: redirected)
+        XCTAssertEqual(model.errorPageURL, redirected)
+        model.loadURL(previous)
+        XCTAssertNil(model.failedNavigationURL)
+        XCTAssertNil(model.errorMessage)
+        XCTAssertEqual(model.currentURL, previous)
+    }
+
     func testModerateShakePeaksTriggerRepeatedActionsAfterCooldown() {
         var classifier = ShakeMotionClassifier()
 

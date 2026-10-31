@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "Yükleniyor...";
-"load_error" = "Yükleme Başarısız";
+"load_error" = "Erişilemiyor";
 "bookmark_added" = "Yer İmi Eklendi";
 "bookmark_removed" = "Yer İmi Kaldırıldı";
 "bookmarks" = "Yer İmleri";

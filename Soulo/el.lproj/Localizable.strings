@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "Φόρτωση...";
-"load_error" = "Αποτυχία φόρτωσης";
+"load_error" = "Δεν είναι δυνατή η πρόσβαση";
 "bookmark_added" = "Προστέθηκε σελιδοδείκτης";
 "bookmark_removed" = "Ο σελιδοδείκτης καταργήθηκε";
 "bookmarks" = "Σελιδοδείκτες";

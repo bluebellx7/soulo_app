@@ -5,6 +5,8 @@ enum WebViewScripts {
     // the advertising pattern that writes to the clipboard on the first click.
     static let clipboardProtection = #"""
     (() => {
+        \#(WebCompatibilityService.verificationContextDetectionScript)
+        if (isVerificationResourceContext()) return;
         if (window.__souloClipboardProtectionInstalled) return;
         window.__souloClipboardProtectionInstalled = true;
         let intentUntil = 0, commandDepth = 0;
@@ -883,6 +885,8 @@ enum WebViewScripts {
 
     static let textSelection = #"""
     (() => {
+        \#(WebCompatibilityService.verificationContextDetectionScript)
+        if (isVerificationResourceContext()) return;
         if (window.__souloTextSelection) return;
         window.__souloTextSelection = true;
         const excluded = 'input,textarea,select,button,video,audio,[contenteditable]:not([contenteditable="false"]),[role="textbox"],[role="slider"],[role="button"],[data-soulo-video-rotate]';
@@ -1076,6 +1080,8 @@ enum WebViewScripts {
 
     static let mediaResourceTracking = #"""
     (function() {
+        \#(WebCompatibilityService.verificationContextDetectionScript)
+        if (isVerificationResourceContext()) return;
         if (window.__souloMediaResourceTrackingInstalled) return;
         window.__souloMediaResourceTrackingInstalled = true;
 

@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "불러오는 중...";
-"load_error" = "불러오기 실패";
+"load_error" = "접속할 수 없습니다";
 "bookmark_added" = "북마크 추가됨";
 "bookmark_removed" = "북마크 삭제됨";
 "bookmarks" = "북마크";

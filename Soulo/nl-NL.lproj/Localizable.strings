@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "Laden...";
-"load_error" = "Kan niet laden";
+"load_error" = "Niet bereikbaar";
 "bookmark_added" = "Bladwijzer toegevoegd";
 "bookmark_removed" = "Bladwijzer verwijderd";
 "bookmarks" = "Bladwijzers";

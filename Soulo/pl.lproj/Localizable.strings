@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "Ładowanie...";
-"load_error" = "Nie udało się załadować";
+"load_error" = "Nie można uzyskać dostępu";
 "bookmark_added" = "Zakładka dodana";
 "bookmark_removed" = "Zakładka usunięta";
 "bookmarks" = "Zakładki";

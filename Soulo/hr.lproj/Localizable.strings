@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "Učitavanje...";
-"load_error" = "Učitavanje nije uspjelo";
+"load_error" = "Nije moguće pristupiti";
 "bookmark_added" = "Knjižna oznaka dodana";
 "bookmark_removed" = "Knjižna oznaka uklonjena";
 "bookmarks" = "Knjižne oznake";

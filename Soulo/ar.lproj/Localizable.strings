@@ -46,7 +46,7 @@
 
 /* WebView */
 "loading" = "جارٍ التحميل...";
-"load_error" = "فشل التحميل";
+"load_error" = "يتعذر الوصول";
 "bookmark_added" = "تمت إضافة الإشارة المرجعية";
 "bookmark_removed" = "تمت إزالة الإشارة المرجعية";
 

@@ -69,7 +69,6 @@ struct SiteInformationPopoverView: View {
 
     private var siteAdBlockingEnabled: Bool {
         adBlockEnabled
-            && !usesCompatibilityBypass
             && !adBlockService.isAllowlisted(host)
     }
 
@@ -294,7 +293,7 @@ struct SiteInformationPopoverView: View {
             protectionGroup(
                 titleKey: "ad_block",
                 isEnabled: siteAdBlockingEnabled,
-                isDisabled: host.isEmpty || usesCompatibilityBypass,
+                isDisabled: host.isEmpty,
                 identifier: "site.ad-block-toggle",
                 detailsKey: "ad_block_management",
                 detailsIdentifier: "site.ad-block-details",
@@ -383,11 +382,7 @@ struct SiteInformationPopoverView: View {
         )
 
         adBlockEnabled = nextState.isGloballyEnabled
-        if nextState.isAllowlisted {
-            adBlockService.addAllowlistedHost(host)
-        } else {
-            adBlockService.removeAllowlistedHost(host)
-        }
+        adBlockService.setFilteringEnabled(!nextState.isAllowlisted, for: host)
 
         HapticsManager.selection()
         onReload()

@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "กำลังโหลด...";
-"load_error" = "โหลดไม่สำเร็จ";
+"load_error" = "ไม่สามารถเข้าถึงได้";
 "bookmark_added" = "เพิ่มบุ๊กมาร์กแล้ว";
 "bookmark_removed" = "ลบบุ๊กมาร์กแล้ว";
 "bookmarks" = "บุ๊กมาร์ก";

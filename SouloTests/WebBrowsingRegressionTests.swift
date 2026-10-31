@@ -826,7 +826,7 @@ import Network
         let model = WebViewModel()
         let (window, previous) = try host(model)
         defer { close(model, window, previous) }
-        model.loadURL(root.appendingPathComponent("login"))
+        model.loadURL(root.appendingPathComponent("mp/wappoc_appmsgcaptcha"))
         try await wait(model, for: "!!document.getElementById('destination')")
         let web = try XCTUnwrap(model.webView)
         for _ in 0..<100 {
@@ -842,7 +842,7 @@ import Network
         """)
         try await wait(model, for: "getComputedStyle(document.querySelector('.qa-performance-ad')).display === 'none'")
         XCTAssertEqual(web.configuration.userContentController.userScripts.filter { !$0.source.hasPrefix(AdBlockService.hidingScriptPrefix) }.map(ObjectIdentifier.init), scripts)
-        XCTAssertEqual(server.requests.filter { $0.path == "/login" }.count, 1)
+        XCTAssertEqual(server.requests.filter { $0.path == "/mp/wappoc_appmsgcaptcha" }.count, 1)
         XCTAssertFalse(server.requests.contains { $0.path == "/runtime-reuse" }, "History navigation must not reload the document")
     }
 
@@ -1618,7 +1618,7 @@ import Network
         try await wait(model, for: "location.pathname === '/login' && !!document.getElementById('destination')")
         WebViewRepresentable.applyContentRules(rules, on: web, allowlist: [])
         let challenge = try await canFetch()
-        XCTAssertTrue(challenge, "Late compilation must respect the current challenge page bypass")
+        XCTAssertFalse(challenge, "Ordinary login URLs must retain native filtering")
     }
 
     func testPageRedirectsRemainAvailableAndAdPopupsStayBlocked() async throws {

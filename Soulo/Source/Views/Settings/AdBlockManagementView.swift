@@ -19,11 +19,8 @@ struct AdBlockManagementView: View {
     var onMarkAdvertisement: (() -> Void)? = nil
     var onChanged: (() -> Void)? = nil
 
-    private var currentHostUsesCompatibilityBypass: Bool {
-        WebCompatibilityService.shouldBypassWebProtection(for: currentURL, fallbackHost: currentHost)
-    }
     private var currentHostProtectionEnabled: Bool {
-        adBlockEnabled && !service.isAllowlisted(currentHost) && !currentHostUsesCompatibilityBypass
+        adBlockEnabled && !service.isAllowlisted(currentHost)
     }
 
     var body: some View {
@@ -69,8 +66,7 @@ struct AdBlockManagementView: View {
                     Toggle(isOn: Binding(
                         get: { !service.isAllowlisted(currentHost) },
                         set: { enabled in
-                            if enabled { service.removeAllowlistedHost(currentHost) }
-                            else { service.addAllowlistedHost(currentHost) }
+                            service.setFilteringEnabled(enabled, for: currentHost)
                             onChanged?()
                         }
                     )) {
@@ -81,21 +77,19 @@ struct AdBlockManagementView: View {
                         }
                     }
                     .tint(.green)
-                    .disabled(!adBlockEnabled || currentHostUsesCompatibilityBypass)
+                    .disabled(!adBlockEnabled)
                     .accessibilityIdentifier("adBlock.currentSite")
                     if let onMarkAdvertisement {
                         Button(action: onMarkAdvertisement) {
                             Label(ToolText.text("manual_ad_mark"), systemImage: "viewfinder")
                         }
-                        .disabled(!currentHostProtectionEnabled)
+                        .disabled(!ManualAdBlockService.canUse(on: currentURL, enabled: adBlockEnabled, allowlistedHosts: service.allowlistedHosts))
                         .accessibilityIdentifier("adBlock.markAdvertisement")
                     }
                 } header: {
                     Text(ToolText.text("manual_ad_current_site"))
                 } footer: {
-                    if currentHostUsesCompatibilityBypass {
-                        Text(LanguageManager.shared.localizedString("site_privacy_compatibility_bypass"))
-                    } else if !adBlockEnabled {
+                    if !adBlockEnabled {
                         Text(LanguageManager.shared.localizedString("ad_block_master_disabled_desc"))
                     }
                 }

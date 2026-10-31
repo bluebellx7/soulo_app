@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "載入中...";
-"load_error" = "載入失敗";
+"load_error" = "無法存取";
 "bookmark_added" = "已加入收藏";
 "bookmark_removed" = "已從收藏移除";
 "bookmarks" = "收藏";

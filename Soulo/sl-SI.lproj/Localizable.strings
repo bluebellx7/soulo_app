@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "Nalaganje...";
-"load_error" = "Nalaganje ni uspelo";
+"load_error" = "Dostop ni mogoč";
 "bookmark_added" = "Zaznamek dodan";
 "bookmark_removed" = "Zaznamek odstranjen";
 "bookmarks" = "Zaznamki";

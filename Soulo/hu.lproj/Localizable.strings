@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "Betöltés...";
-"load_error" = "Nem sikerült betölteni";
+"load_error" = "Nem érhető el";
 "bookmark_added" = "Könyvjelző hozzáadva";
 "bookmark_removed" = "Könyvjelző eltávolítva";
 "bookmarks" = "Könyvjelzők";

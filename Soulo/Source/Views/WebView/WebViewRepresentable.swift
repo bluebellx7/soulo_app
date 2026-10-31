@@ -496,10 +496,8 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         Task(priority: .utility) {
             // Match the exact rule set installed by updateUIView. Omitting
-            // compatibility exceptions makes the first page compile it again.
-            let allowlist = WebCompatibilityService.protectionBypassHosts(
-                adding: AdBlockSettingsService.shared.allowlistedHosts
-            )
+            // the user allowlist makes the first page compile it again.
+            let allowlist = AdBlockSettingsService.normalizedAllowlistedHosts(AdBlockSettingsService.shared.allowlistedHosts)
             let signature = allowlistSignature(for: allowlist)
             guard compilingAdBlockAllowlistSignature != signature,
                   cachedAdBlockAllowlistSignature != signature || cachedAdBlockRules == nil else { return }
@@ -537,7 +535,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 )
                 if adBlockEnabled {
                     existingWebView.evaluateJavaScript(AdBlockService.adHidingScript(
-                        allowlistedHosts: WebCompatibilityService.protectionBypassHosts(adding: adBlockSettings.allowlistedHosts)
+                        allowlistedHosts: AdBlockSettingsService.normalizedAllowlistedHosts(adBlockSettings.allowlistedHosts)
                     ), completionHandler: nil)
                 }
             }
@@ -731,16 +729,9 @@ struct WebViewRepresentable: UIViewRepresentable {
         // Long-press context menus are handled natively via WKUIDelegate contextMenuConfigurationForElement.
 
         // Ad blocking: inject CSS/JS to hide ad elements.
-        let protectionBypassHosts = WebCompatibilityService.protectionBypassHosts(
-            adding: adBlockSettings.allowlistedHosts
-        )
-        let shouldBypassWebProtection = WebCompatibilityService.shouldBypassWebProtection(
-            for: viewModel.currentURL,
-            fallbackHost: viewModel.currentURL?.host
-        )
-        let hostIsAllowlisted = shouldBypassWebProtection
-            || adBlockSettings.isAllowlisted(viewModel.currentURL?.host)
-        viewModel.adHidingNeedsBootstrap = hostIsAllowlisted
+        let protectionBypassHosts = AdBlockSettingsService.normalizedAllowlistedHosts(adBlockSettings.allowlistedHosts)
+        let hostIsAllowlisted = adBlockSettings.isAllowlisted(viewModel.currentURL?.host)
+        viewModel.adHidingNeedsBootstrap = hostIsAllowlisted || WebCompatibilityService.isSensitiveChallengeURL(viewModel.currentURL)
         let ruleSignature = Self.allowlistSignature(for: protectionBypassHosts)
         let nativeRules = Self.cachedAdBlockAllowlistSignature == ruleSignature ? Self.cachedAdBlockRules : nil
         let nativeFiltering = adBlockEnabled && !hostIsAllowlisted && nativeRules != nil
@@ -849,9 +840,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             accessibleWebView.onAccessibilityPlatformPage = onAccessibilityPlatformPage
         }
         webAppearance.apply(to: uiView)
-        let adBlockAllowlist = WebCompatibilityService.protectionBypassHosts(
-            adding: adBlockSettings.allowlistedHosts
-        )
+        let adBlockAllowlist = AdBlockSettingsService.normalizedAllowlistedHosts(adBlockSettings.allowlistedHosts)
         Self.synchronizeAdProtection(on: uiView, model: viewModel, enabled: adBlockEnabled, allowlist: adBlockAllowlist)
     }
 
@@ -877,7 +866,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     }
 
     static func synchronizeAdProtection(on webView: WKWebView, model: WebViewModel, enabled: Bool, allowlist: [String]) {
-        if enabled && !WebCompatibilityService.shouldBypassWebProtection(for: webView.url ?? model.currentURL) {
+        if enabled {
             ensureCurrentContentRules(on: webView, allowlist: allowlist, model: model)
         } else {
             webView.configuration.userContentController.removeAllContentRuleLists()
@@ -935,7 +924,6 @@ struct WebViewRepresentable: UIViewRepresentable {
 
     static func applyContentRules(_ rules: [WKContentRuleList]?, on webView: WKWebView, allowlist: [String]) {
         let enabled = (UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true)
-            && !WebCompatibilityService.shouldBypassWebProtection(for: webView.url)
             && !AdBlockSettingsService.isHostAllowlisted(webView.url?.host, allowlistedHosts: allowlist)
         // Preserve working rules on update failure, but always honor disabling.
         if enabled && rules == nil { return }
@@ -953,7 +941,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     }
 
     private static func allowlistSignature(for allowlist: [String]) -> String {
-        let hosts = WebCompatibilityService.protectionBypassHosts(adding: allowlist).joined(separator: ",")
+        let hosts = AdBlockSettingsService.normalizedAllowlistedHosts(allowlist).joined(separator: ",")
         // An explicit legacy payload can change independently of its revision.
         // Never label an older compiled list as covering the new selectors.
         let legacy = UserDefaults.standard.data(forKey: "soulo_ad_block_subscription_rules")
@@ -966,19 +954,17 @@ struct WebViewRepresentable: UIViewRepresentable {
     }
 
     private static func manualAdConfigurationSignature(enabled: Bool, allowlist: [String], revision: UUID) -> String {
-        "\(enabled)|\(revision)|\(WebCompatibilityService.protectionBypassHosts(adding: allowlist).joined(separator: ","))"
+        "\(enabled)|\(revision)|\(AdBlockSettingsService.normalizedAllowlistedHosts(allowlist).joined(separator: ","))"
     }
 
     static func reloadWithCurrentAdRules(_ model: WebViewModel) {
         guard let webView = model.webView else { return }
-        let allowlist = WebCompatibilityService.protectionBypassHosts(adding: AdBlockSettingsService.shared.allowlistedHosts)
+        let allowlist = AdBlockSettingsService.normalizedAllowlistedHosts(AdBlockSettingsService.shared.allowlistedHosts)
         let signature = allowlistSignature(for: allowlist)
         Task { @MainActor [weak webView, weak model] in
             let rules = await AdBlockService.compileRuleLists(allowlistedHosts: allowlist)
             guard let webView, let model, model.webView === webView,
-                  signature == allowlistSignature(for: WebCompatibilityService.protectionBypassHosts(
-                    adding: AdBlockSettingsService.shared.allowlistedHosts
-                  )) else { return }
+                  signature == allowlistSignature(for: AdBlockSettingsService.normalizedAllowlistedHosts(AdBlockSettingsService.shared.allowlistedHosts)) else { return }
             cachedAdBlockAllowlistSignature = signature
             cachedAdBlockRules = rules
             applyContentRules(rules, on: webView, allowlist: allowlist)
@@ -2133,8 +2119,11 @@ struct WebViewRepresentable: UIViewRepresentable {
                     Task { @MainActor in
                         guard let self, wv.navigationDelegate === self,
                               self.viewModel.webView === wv else { return }
+                        if self.provisionalNavigation != nil,
+                           let requested = self.viewModel.requestedNavigationURL,
+                           let observed = wv.url, observed != requested { return }
                         let previousURL = self.viewModel.currentURL
-                        self.viewModel.updateCurrentURL(wv.url)
+                        self.viewModel.updateCurrentURL(wv.url, fromObservation: true)
                         if previousURL != wv.url, !wv.isLoading {
                             wv.evaluateJavaScript("window.__souloEpisodes?.refresh();", in: nil,
                                 in: WebEpisodeRuntime.world, completionHandler: nil)
@@ -2184,13 +2173,13 @@ struct WebViewRepresentable: UIViewRepresentable {
             allowlistedHosts: [String],
             host: String?
         ) {
-            let allowlist = WebCompatibilityService.protectionBypassHosts(adding: allowlistedHosts)
+            let allowlist = AdBlockSettingsService.normalizedAllowlistedHosts(allowlistedHosts)
             let nativeFiltering = WebViewRepresentable.installedContentRuleSignatures[ObjectIdentifier(webView)]
                 == WebViewRepresentable.allowlistSignature(for: allowlist)
             let signature = WebViewRepresentable.adHidingConfigurationSignature(
                 enabled: enabled, cosmetic: cosmetic, allowlist: allowlist, nativeCosmeticFiltering: nativeFiltering
             )
-            let bypassesPage = WebCompatibilityService.shouldBypassWebProtection(for: webView.url, fallbackHost: host)
+            let bypassesPage = WebCompatibilityService.isSensitiveChallengeURL(webView.url)
                 || AdBlockSettingsService.isHostAllowlisted(host, allowlistedHosts: allowlist)
             if bypassesPage { viewModel.adHidingNeedsBootstrap = true }
             guard signature != lastAdHidingSignature else {
@@ -2314,7 +2303,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             provisionalNavigation = navigation
             latestNavigation = navigation
             navigationFinished = false
-            let allowlist = WebCompatibilityService.protectionBypassHosts(adding: AdBlockSettingsService.shared.allowlistedHosts)
+            let allowlist = AdBlockSettingsService.normalizedAllowlistedHosts(AdBlockSettingsService.shared.allowlistedHosts)
             viewModel.nativeCosmeticDocumentReady = WebViewRepresentable.installedContentRuleSignatures[ObjectIdentifier(webView)]
                 == WebViewRepresentable.allowlistSignature(for: allowlist)
             if webView === viewModel.webView {
@@ -2335,6 +2324,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
             guard isCurrentNavigation(navigation, in: webView) else { return }
+            if let url = webView.url { viewModel.recordNavigationRequest(url) }
             if cloudflareChallengeResponse {
                 webView.evaluateJavaScript("""
                 document.documentElement?.setAttribute('data-soulo-cloudflare-challenge', '');
@@ -2352,7 +2342,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             navigationOriginURL = webView.url
             // A new document receives its own user scripts. The bootstrap flag
             // is needed only when a bypassed document is reused by an SPA.
-            viewModel.adHidingNeedsBootstrap = WebCompatibilityService.shouldBypassWebProtection(for: webView.url)
+            viewModel.adHidingNeedsBootstrap = WebCompatibilityService.isSensitiveChallengeURL(webView.url)
                 || AdBlockSettingsService.isHostAllowlisted(webView.url?.host)
                 || (!viewModel.nativeCosmeticDocumentReady
                     && WebViewRepresentable.installedContentRuleSignatures[ObjectIdentifier(webView)] != nil)
@@ -2562,7 +2552,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             default:
                 message = error.localizedDescription
             }
-            viewModel.setError(message)
+            viewModel.setError(message, failingURL: failingURL(from: nsError))
         }
 
         private func scheduleBlankPageRecovery(on webView: WKWebView) {
@@ -2797,6 +2787,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                         return
                     }
 
+                    if isMainFrame, webView === viewModel.webView { viewModel.recordNavigationRequest(url) }
                     decide(.allow)
                 case .cancel:
                     decide(.cancel)
@@ -2849,8 +2840,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                     && ProcessInfo.processInfo.systemUptime - $0.time <= 3
             } ?? false
             let adBlockingEnabled = UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true
-            let bypassesProtection = WebCompatibilityService.shouldBypassWebProtection(for: webView.url)
-                || AdBlockSettingsService.isHostAllowlisted(webView.url?.host)
+            let bypassesProtection = AdBlockSettingsService.isHostAllowlisted(webView.url?.host)
             if adBlockingEnabled, !bypassesProtection, !nativeRequest, targetsTopLevel,
                !(provisionalNavigation != nil && action.targetFrame?.isMainFrame == true),
                BrowserAdNavigationPolicy.shouldBlock(url: url, sourceURL: sourceURL,

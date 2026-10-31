@@ -346,7 +346,7 @@ struct WebViewContainer: View {
                        !webViewModel.isLoading {
                         BrowserLoadErrorView(
                             message: error,
-                            url: webViewModel.currentURL,
+                            url: webViewModel.errorPageURL,
                             onRetry: { webViewModel.retryCurrentPage() },
                             onGoHome: onGoHome,
                             onOpenCompatibility: canOpenSafariCompatibility

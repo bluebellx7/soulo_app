@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "Chargement...";
-"load_error" = "Échec du chargement";
+"load_error" = "Accès impossible";
 "bookmark_added" = "Favori ajouté";
 "bookmark_removed" = "Favori supprimé";
 "bookmarks" = "Favoris";

@@ -39,7 +39,7 @@
 "platform_yandex" = "Yandex";
 "platform_vk" = "VK";
 "loading" = "Завантаження...";
-"load_error" = "Не вдалося завантажити";
+"load_error" = "Не вдається отримати доступ";
 "bookmark_added" = "Закладку додано";
 "bookmark_removed" = "Закладку видалено";
 "bookmarks" = "Закладки";
