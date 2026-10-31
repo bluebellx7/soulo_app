@@ -87,6 +87,73 @@ final class WebEpisodeTests: XCTestCase {
         XCTAssertNil(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last), pageURL: pageURL))
     }
 
+    func testWrappedResourceCatalogExtractsAllEpisodesAndSignedDirectStreams() async throws {
+        // Zuidazy wraps visible "episode$stream" entries in an external player URL.
+        let entries = (1...198).reversed().map { index in
+            let stream = "https://media.example/episodes/\(index)/index.m3u8?token=a+b&expires=10"
+            let escaped = stream.replacingOccurrences(of: "&", with: "&amp;")
+            return "<li><a href='https://player.example/m3u8Player/?url=\(escaped)'>第\(index)集$\(escaped)</a></li>"
+        }.joined()
+        let (web, capture) = try await page("""
+        <div class='vodplayinfo'>剧情简介</div>
+        <div class='vodplayinfo'><div><h3>来源：zuidam3u8</h3><ul>\(entries)</ul></div>
+        <div style='display:none'><h3>来源：备用</h3><ul>
+        <li><a href='https://player.example/play/?url=https%3A%2F%2Fmedia.example%2Fspecial.mp4%3Fkey%3Done'>虚天战纪上$https://media.example/special.mp4?key=one</a></li>
+        </ul></div></div>
+        """, url: "https://www.zuidazy.co/voddetail/34868.html")
+        let pageURL = try XCTUnwrap(web.url)
+        let list = try XCTUnwrap(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last), pageURL: pageURL))
+        XCTAssertEqual(list.sources.map(\.title), ["zuidam3u8", "备用"])
+        XCTAssertEqual(list.sources.map { $0.episodes.count }, [198, 1])
+        XCTAssertEqual(list.sources[0].episodes.map(\.title), (1...198).map { "第\($0)集" })
+        let first = try XCTUnwrap(list.sources[0].episodes.first)
+        XCTAssertEqual(first.url.absoluteString, "https://media.example/episodes/1/index.m3u8?token=a+b&expires=10")
+        XCTAssertEqual(first.resourcePageURL, pageURL)
+        XCTAssertEqual(first.directMediaResource?.delivery, .hls)
+        XCTAssertEqual(first.directMediaResource?.sourcePageURL, pageURL)
+        XCTAssertEqual(list.sources[1].episodes[0].title, "虚天战纪上")
+        XCTAssertEqual(list.sources[1].episodes[0].directMediaResource?.delivery, .direct)
+        let dock = try await web.evaluateJavaScript("!!document.getElementById('soulo-episode-dock')")
+        XCTAssertEqual(dock as? Bool, true)
+    }
+
+    func testWrappedResourceCatalogRejectsMismatchesUnsafeLinksAndRecommendations() async throws {
+        let (web, capture) = try await page("""
+        <div class='vodplayinfo'><h3>来源：测试</h3><ul>
+        <li><a href='https://cdn.example/valid.m3u8'>第1集$https://cdn.example/valid.m3u8</a></li>
+        <li><a href='https://cdn.example/valid.m3u8#duplicate'>第1集$https://cdn.example/valid.m3u8#duplicate</a></li>
+        <li><a href='https://player.example/play/?url=https://ads.example/other.m3u8'>第2集$https://cdn.example/second.m3u8</a></li>
+        <li><a href='javascript:alert(1)'>第3集$https://cdn.example/third.m3u8</a></li>
+        <li><a href='https://player.example/play/?url=https://cdn.example/fourth.m3u8'>第4集$https://user:password@cdn.example/fourth.m3u8</a></li>
+        <li><a href='https://user:password@player.example/play/?url=https://cdn.example/fifth.m3u8'>第5集$https://cdn.example/fifth.m3u8</a></li>
+        <li><a href='https://player.example/play/?url=https://cdn.example/signup'>第6集$https://cdn.example/signup</a></li>
+        <li><a href='https://player.example/play/?url=https://cdn.example/page.html?file=a.m3u8'>第7集$https://cdn.example/page.html?file=a.m3u8</a></li>
+        <li><a href='https://player.example/play/?url=https://cdn.example/empty.m3u8'>$https://cdn.example/empty.m3u8</a></li>
+        <li><a href='https://cdn.example/unlabelled.m3u8'>https://cdn.example/unlabelled.m3u8</a></li>
+        <li><!--第99集$https://cdn.example/commented.m3u8--></li>
+        </ul></div>
+        <div class='recommendations'><div class='vodplayinfo'><ul><li><a href='https://cdn.example/recommended.m3u8'>第98集$https://cdn.example/recommended.m3u8</a></li></ul></div></div>
+        <ul><li><a href='https://cdn.example/outside.m3u8'>第97集$https://cdn.example/outside.m3u8</a></li></ul>
+        """, url: "https://www.zuidazy.co/voddetail/34868.html")
+        let list = try XCTUnwrap(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last), pageURL: try XCTUnwrap(web.url)))
+        XCTAssertEqual(list.sources.flatMap(\.episodes).map(\.title), ["第1集"])
+        XCTAssertEqual(list.sources[0].episodes[0].url.absoluteString, "https://cdn.example/valid.m3u8")
+    }
+
+    func testWrappedResourceCatalogAppearsAndDisappearsDynamically() async throws {
+        let (web, capture) = try await page("<div class='vodplayinfo' id='catalog'></div>", url: "https://catalog.example/voddetail/1.html")
+        _ = try await web.evaluateJavaScript("""
+        document.getElementById('catalog').innerHTML = "<h3>来源：动态线路</h3><ul><li><a href='https://cdn.example/first.m3u8'>第01集$https://cdn.example/first.m3u8</a></li></ul>";null
+        """)
+        for _ in 0..<100 where capture.bodies.count < 2 { try await Task.sleep(for: .milliseconds(20)) }
+        let list = try XCTUnwrap(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last), pageURL: try XCTUnwrap(web.url)))
+        XCTAssertEqual(list.sources.first?.title, "动态线路")
+        XCTAssertEqual(list.sources.first?.episodes.first?.title, "第01集")
+        _ = try await web.evaluateJavaScript("document.getElementById('catalog').replaceChildren();null")
+        for _ in 0..<100 where capture.bodies.count < 3 { try await Task.sleep(for: .milliseconds(20)) }
+        XCTAssertNil(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last), pageURL: try XCTUnwrap(web.url)))
+    }
+
     func testExternalCatalogEpisodesRequireMatchingProvenanceAndPlaybackURLs() throws {
         let pageURL = try XCTUnwrap(URL(string: "https://catalog.example/detail/1"))
         let entries: [[String: Any]] = [
