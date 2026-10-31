@@ -188,7 +188,10 @@ targets:
     dependencies:
       - target: SouloWidgetExtension
       - target: SouloShareExtension
-      - package: SouloTorrent
+      # Link the native artifact directly: a local-package folder reference can
+      # collide with Xcode's Swift package container when the GUI loads it.
+      - framework: ThirdParty/SouloTorrent/Artifacts/SouloTorrent.xcframework
+        embed: false
       - package: PLzmaSDK
       - package: Unrar
       - package: ZipArchive
@@ -303,8 +306,6 @@ targets:
         DEVELOPMENT_TEAM: 7S2LBJA9VA
 
 packages:
-  SouloTorrent:
-    path: ThirdParty/SouloTorrent
   ZipArchive:
     url: https://github.com/ZipArchive/ZipArchive.git
     revision: acc61be58181e635ae77718e66530b4ee7dea4be

@@ -4,6 +4,8 @@ A small, original Objective-C++ interface around **libtorrent 2.0.15**, statical
 
 `Artifacts/SouloTorrent.xcframework` contains iOS arm64 and iOS Simulator arm64/x86_64 slices, built with Xcode 26.2 for iOS 17+. The public module autolinks libc++, Foundation, CoreFoundation and SystemConfiguration. App archives do not contain the simulator slices.
 
+The app links this static XCFramework directly from `project.yml` with `embed: false`. The optional `Package.swift` remains available for SwiftPM clients, but is not an app package dependency: Xcode can otherwise open this in-repository package as a folder before resolving it as a package, causing `Missing package product` in the GUI while command-line builds succeed. Regenerate the Xcode project after changing the dependency.
+
 ## Rebuilding
 
 From the repository root, with Xcode and CMake installed:
