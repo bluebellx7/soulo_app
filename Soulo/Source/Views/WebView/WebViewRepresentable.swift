@@ -1043,12 +1043,9 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var latestNavigation: WKNavigation?
         private var navigationFinished = false
         private var cloudflareChallengeResponse = false
-        private var navigationPreview: UIView?
-        private var isHistoryNavigation = false
         private var outgoingHistoryDocument: URL?
         private var pendingHistoryItem: WKBackForwardListItem?
         private var historyRecoveryID = UUID()
-        private(set) var navigationPreviewCaptureCount = 0
         private var navigationOriginURL: URL?
         private var userInitiatedNavigationChain = false
         private var domainConfirmationID: UUID?
@@ -1087,37 +1084,8 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var navigationGeneration = UUID()
         fileprivate func cancelBackwardTraversal() {
             viewModel.cancelBackwardTraversal()
-            removeNavigationPreview()
         }
 
-        private func retainNavigationPreview(in webView: WKWebView) {
-            guard navigationPreview == nil, viewModel.hasPresentedContent,
-                  !viewModel.showSnapshotWhileRestoring, webView.window != nil,
-                  let preview = webView.snapshotView(afterScreenUpdates: false) else { return }
-            preview.frame = webView.bounds
-            preview.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            // The previous frame is visual continuity, never an interactive
-            // copy of the new document underneath it.
-            preview.isUserInteractionEnabled = true
-            preview.isAccessibilityElement = true
-            preview.accessibilityLabel = LanguageManager.shared.localizedString("loading")
-            preview.accessibilityIdentifier = "browser.navigation-preview"
-            webView.addSubview(preview)
-            navigationPreview = preview
-            navigationPreviewCaptureCount += 1
-        }
-
-        private func removeNavigationPreview(animated: Bool = false) {
-            guard let preview = navigationPreview else { return }
-            navigationPreview = nil
-            guard animated, !UIAccessibility.isReduceMotionEnabled, preview.window != nil else {
-                preview.removeFromSuperview()
-                return
-            }
-            UIView.animate(withDuration: 0.18, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
-                preview.alpha = 0
-            } completion: { _ in preview.removeFromSuperview() }
-        }
         init(viewModel: WebViewModel) {
             self.viewModel = viewModel
             super.init()
@@ -1298,7 +1266,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                       provisionalNavigation == nil else { return }
                 if let source = message.frameInfo.requestURL, let current = message.webView?.url,
                    !WebEpisodeList.matches(source, current) { return }
-                removeNavigationPreview(animated: true)
                 viewModel.markPageContentVisible()
                 return
             }
@@ -2092,7 +2059,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                         guard wv.navigationDelegate === self,
                               self?.viewModel.webView === wv else { return }
                         self?.viewModel.updateLoading(wv.isLoading)
-                        if !wv.isLoading { self?.removeNavigationPreview(animated: true) }
                     }
                 },
                 webView.observe(\.canGoBack, options: [.initial, .new]) { [weak self] wv, _ in
@@ -2305,8 +2271,6 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
             guard webView === viewModel.webView else { return }
-            if isHistoryNavigation { removeNavigationPreview() }
-            else { retainNavigationPreview(in: webView) }
             BrowserStartupTrace.mark("navigation_start")
             cloudflareChallengeResponse = false
             provisionalNavigation = navigation
@@ -2375,7 +2339,6 @@ struct WebViewRepresentable: UIViewRepresentable {
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             guard isCurrentNavigation(navigation, in: webView) else { return }
             outgoingHistoryDocument = nil
-            removeNavigationPreview(animated: true)
             latestNavigation = navigation
             navigationFinished = true
             viewModel.errorMessage = nil
@@ -2516,7 +2479,6 @@ struct WebViewRepresentable: UIViewRepresentable {
             withError error: Error
         ) {
             guard isCurrentNavigation(navigation, in: webView) else { return }
-            removeNavigationPreview()
             outgoingHistoryDocument = nil
             latestNavigation = navigation
             navigationFinished = true
@@ -2530,7 +2492,6 @@ struct WebViewRepresentable: UIViewRepresentable {
             withError error: Error
         ) {
             guard isCurrentNavigation(navigation, in: webView) else { return }
-            removeNavigationPreview()
             outgoingHistoryDocument = nil
             latestNavigation = navigation
             navigationFinished = true
@@ -2869,7 +2830,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                             ? targets.first : nil
                         outgoingHistoryDocument = navigationAction.navigationType == .backForward
                             && pendingHistoryItem != nil ? navigationAction.sourceFrame.requestURL : nil
-                        isHistoryNavigation = navigationAction.navigationType == .backForward
                         if webView === viewModel.webView { viewModel.recordNavigationRequest(url) }
                     }
                     decide(.allow)

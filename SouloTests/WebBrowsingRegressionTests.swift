@@ -987,6 +987,44 @@ import Network
         XCTAssertNil(model.errorMessage)
     }
 
+    func testBackRestoresTheSameDocumentWithoutReloading() async throws {
+        try await checkHistoryDocumentReuse(hasVideo: false)
+    }
+
+    func testBackRestoresMediaDocumentWithoutReloading() async throws {
+        try await checkHistoryDocumentReuse(hasVideo: true)
+    }
+
+    private func checkHistoryDocumentReuse(hasVideo: Bool) async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start(); defer { server.stop() }
+        let model = WebViewModel(), (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        let path = hasVideo ? "/history-with-video" : "/history-without-video"
+        model.loadURL(URL(string: path, relativeTo: root)!)
+        try await wait(model, for: "window.historyShows?.length === 1 && document.readyState === 'complete'")
+        let web = try XCTUnwrap(model.webView)
+        let identity = try await web.evaluateJavaScript("documentIdentity") as? String
+        _ = try await web.evaluateJavaScript("document.getElementById('draft').value='unsaved draft';scrollTo(0,600);true")
+        try await wait(model, for: "scrollY >= 590")
+        for native in [false, true] {
+            _ = try await web.evaluateJavaScript("document.getElementById('next').click();true")
+            try await wait(model, for: "!!document.getElementById('destination') && document.readyState === 'complete'")
+            if native { web.goBack() } else { model.goBack() }
+            try await wait(model, for: "!!document.getElementById('history-source') && document.readyState === 'complete'")
+            try await Task.sleep(for: .milliseconds(1300))
+            let restored = try await web.evaluateJavaScript("documentIdentity") as? String
+            let persisted = try await web.evaluateJavaScript("historyShows.at(-1)") as? Bool
+            let scroll = try await web.evaluateJavaScript("scrollY") as? Double
+            let draft = try await web.evaluateJavaScript("document.getElementById('draft').value") as? String
+            XCTAssertEqual(restored, identity, "Back must reuse the document, not only return to its URL")
+            XCTAssertEqual(persisted, true)
+            XCTAssertEqual(draft, "unsaved draft")
+            XCTAssertEqual(try XCTUnwrap(scroll), 600, accuracy: 2)
+        }
+        XCTAssertEqual(server.requests.filter { $0.path == path }.count, 1, "Back must not request the search page again")
+    }
+
     func testReadyPageRemovesInitialMaskImmediately() throws {
         let web = AccessibleWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 700))
         let window = UIWindow(frame: web.bounds)
@@ -1009,19 +1047,14 @@ import Network
         try await wait(model, for: "!!document.getElementById('list')")
         for _ in 0..<100 where !model.hasVisibleContent { try await Task.sleep(for: .milliseconds(20)) }
         let web = try XCTUnwrap(model.webView)
-        let coordinator = try XCTUnwrap(web.navigationDelegate as? WebViewRepresentable.Coordinator)
         model.loadURL(root.appendingPathComponent("player"))
         try await wait(model, for: "!!document.getElementById('player')")
-        let captures = coordinator.navigationPreviewCaptureCount
-        XCTAssertGreaterThan(captures, 0, "Ordinary navigation still keeps the old content while loading")
         for _ in 0..<3 {
             web.goBack()
             try await wait(model, for: "!!document.getElementById('list')")
             web.goForward()
             try await wait(model, for: "!!document.getElementById('player')")
         }
-        XCTAssertEqual(coordinator.navigationPreviewCaptureCount, captures,
-            "Native history owns its transition; do not add outgoing snapshots during Back/Forward")
         XCTAssertFalse(web.subviews.contains { $0.accessibilityIdentifier == "browser.navigation-preview" })
         XCTAssertNil(model.errorMessage)
     }
@@ -1358,6 +1391,7 @@ import Network
         }
         let selected = try XCTUnwrap(result, "Search page: \(String(describing: model.errorMessage))")
         print("SOULO_SEARCH_BACK|result|\(selected)")
+        let searchDocument = try await web.evaluateJavaScript("window.__souloHistoryDocument = Math.random().toString()") as? String
         let originalSearchURL = web.url
         _ = try await web.evaluateJavaScript("window.location.assign(window.__qaSearchResult.href)")
         for _ in 0..<600 {
@@ -1382,6 +1416,8 @@ import Network
         print("SOULO_SEARCH_BACK|after|\(String(describing: web.url))|\(String(describing: model.errorMessage))")
         XCTAssertNil(model.errorMessage)
         XCTAssertEqual(web.url, originalSearchURL)
+        let restoredDocument = try await web.evaluateJavaScript("window.__souloHistoryDocument") as? String
+        XCTAssertEqual(restoredDocument, searchDocument, "Returning to Baidu must preserve the original document")
         let shot = XCTAttachment(image: try await web.takeSnapshot(configuration: nil))
         shot.name = "live-baidu-after-one-back"; shot.lifetime = .keepAlways; add(shot)
     }
@@ -2015,6 +2051,15 @@ private final class BrowsingHTTPFixture: @unchecked Sendable {
                 connection.send(content: Data("HTTP/1.1 200 OK\r\nContent-Type: application/javascript\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".utf8), completion: .contentProcessed { _ in connection.cancel() })
             }
             return
+        case "/history-with-video", "/history-without-video": body = """
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <h1 id="history-source">Search results</h1><input id="draft">
+            <a id="next" style="display:block;margin-top:650px" href="/destination">Open result</a>
+            \(request.path == "/history-with-video" ? "<video controls preload='none' src='/clip.mp4'></video>" : "")
+            <div style="height:3000px">More results</div>
+            <script>window.documentIdentity=Math.random().toString();window.historyShows=[];
+            addEventListener('pageshow',e=>window.historyShows.push(e.persisted));</script>
+            """
         case "/form": body = "<form id='form' method='post' action='/submit'><input name='query' value='a+b &amp; c'><button>Submit</button></form>"
         case "/form-popup": body = "<form id='form' method='post' action='/submit' target='_blank'><input name='query' value='a+b &amp; c'><button>Submit</button></form>"
         case "/submit": body = "Redirecting"; status = "303 See Other"; extra = "Location: /receipt\r\n"

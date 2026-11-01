@@ -102,6 +102,23 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         shot.name = "toolbar-responsive-returned-home"; shot.lifetime = .keepAlways; add(shot)
     }
 
+    func testPendingNavigationKeepsThePreviousPageScrollableAndInteractive() throws {
+        try open("interactive-source")
+        let web = app.webViews.firstMatch
+        tap(web.links["Open slow result"].firstMatch)
+        XCTAssertTrue(fixture.hasPendingSlowResource)
+        XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "browser.navigation-preview").firstMatch.exists)
+        let button = web.buttons["Check response"].firstMatch
+        let before = button.frame.minY
+        web.swipeUp(velocity: .slow)
+        XCTAssertLessThan(button.frame.minY, before - 100, "The previous document must still scroll while a response is pending")
+        for _ in 0..<3 where !button.isHittable { web.swipeUp(velocity: .slow) }
+        tap(button)
+        XCTAssertTrue(web.staticTexts["Still responsive"].firstMatch.waitForExistence(timeout: 3))
+        tap(web.links["Open another result"].firstMatch)
+        XCTAssertTrue(web.staticTexts["Second page"].firstMatch.waitForExistence(timeout: 10))
+    }
+
     func testOneBackLeavesPlayerAfterTwoTrustedFrameNavigations() throws {
         try open("history-list")
         tap(app.webViews.links["Watch video"].firstMatch)
@@ -173,10 +190,11 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         XCTAssertTrue(heading.waitForExistence(timeout: 20), app.debugDescription)
         XCTAssertTrue(initialLoading.waitForNonExistence(timeout: 5))
         tap(app.webViews.links["Open slow page"].firstMatch)
-        XCTAssertTrue(navigationPreview.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertFalse(navigationPreview.exists, "Loading must keep the live page interactive")
+        XCTAssertTrue(fixture.hasPendingSlowResource)
         XCTAssertFalse(initialLoading.exists)
         let next = XCTAttachment(screenshot: app.screenshot())
-        next.name = "navigation-keeps-previous-content"; next.lifetime = .keepAlways; add(next)
+        next.name = "navigation-without-frozen-cover"; next.lifetime = .keepAlways; add(next)
         tap(app.buttons["Back"].firstMatch)
         XCTAssertTrue(heading.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(navigationPreview.waitForNonExistence(timeout: 5))
@@ -730,6 +748,14 @@ private final class ToolbarHTTPFixture: @unchecked Sendable {
                 let body: String
                 if path == "/slow.js" { body = "window.slowResourceFinished=true;" }
                 else if path == "/second" { body = "<html><body><p>Second page</p></body></html>" }
+                else if path == "/interactive-source" { body = """
+                    <meta name='viewport' content='width=device-width,initial-scale=1'>
+                    <h1>Search results</h1><a href='/never-commits' style='font:24px system-ui'>Open slow result</a>
+                    <div style='height:750px'>More results</div>
+                    <button style='font:24px system-ui' onclick="document.getElementById('status').textContent='Still responsive'">Check response</button>
+                    <p id='status'>Ready</p><a href='/second' style='font:24px system-ui'>Open another result</a>
+                    <div style='height:1600px'>More results below</div>
+                    """ }
                 else if path == "/preview-first" { body = "<html><head><meta name='viewport' content='width=device-width,initial-scale=1'></head><body style='background:#edf5ff;color:#163050;font:24px system-ui;padding:28px'><h1>Keep this page visible</h1><a href='/blocked'>Open slow page</a></body></html>" }
                 else if path == "/history-list" { body = "<meta name='viewport' content='width=device-width,initial-scale=1'><h1>Video list</h1><a href='/history-player' style='font:24px system-ui'>Watch video</a>" }
                 else if path == "/history-player" { body = "<meta name='viewport' content='width=device-width,initial-scale=1'><h1>Video player</h1><iframe src='/history-frame-one' style='width:90%;height:200px'></iframe>" }
@@ -784,7 +810,7 @@ private final class ToolbarHTTPFixture: @unchecked Sendable {
                 var response = Data("HTTP/1.1 200 OK\r\nContent-Type: \(type)\r\nContent-Length: \(bytes.count)\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n".utf8)
                 response.append(bytes)
                 let send = { connection.send(content: response, completion: .contentProcessed { _ in connection.cancel() }) }
-                if path == "/slow.js" {
+                if path == "/slow.js" || path == "/never-commits" {
                     self.slowRequests += 1
                     self.queue.asyncAfter(deadline: .now() + 180) { [weak self] in
                         self?.completedSlowRequests += 1
