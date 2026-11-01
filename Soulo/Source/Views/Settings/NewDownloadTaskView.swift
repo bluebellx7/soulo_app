@@ -184,6 +184,7 @@ struct TorrentTaskDetailView: View {
                                 Button(job.selected.count == job.files.filter { !$0.pad }.count ? ToolText.text("torrent_select_none") : ToolText.text("torrent_select_all")) {
                                     service.select(id, indices: job.selected.count == job.files.filter { !$0.pad }.count ? [] : Set(job.files.filter { !$0.pad }.map(\.index)))
                                 }
+                                .accessibilityIdentifier("torrent.select-all")
                             }
                             ForEach(job.files.filter { !$0.pad }) { file in
                                 Button {
@@ -205,26 +206,38 @@ struct TorrentTaskDetailView: View {
                                     .accessibilityValue(job.selected.contains(file.index) ? "selected" : "unselected")
                             }
                         } header: { Text(ToolText.text("torrent_files")) }
-                          footer: { Text(ByteCountFormatter.string(fromByteCount: job.selectedBytes, countStyle: .file)) }
                     }
-                    Section {
+                    if let error = service.storageError { Section { Text(error).foregroundStyle(.red).font(.footnote) } }
+                }
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        if !job.files.isEmpty {
+                            Text(ByteCountFormatter.string(fromByteCount: job.selectedBytes, countStyle: .file))
+                                .font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                        }
                         if job.state == .finished {
                             NavigationLink { LibraryFilesView(directory: URL(fileURLWithPath: job.directory)) } label: {
                                 Label(ToolText.text("files"), systemImage: "folder")
                             }
+                            .buttonStyle(CompactActionButtonStyle(prominent: true))
                         } else if job.isActive || job.state == .queued {
                             Button { service.pause(id) } label: { Label(ToolText.text("pause"), systemImage: "pause.circle") }
+                                .buttonStyle(CompactActionButtonStyle())
                                 .accessibilityIdentifier("torrent.pause")
                         } else {
                             Button { service.start(id); onStarted?() } label: {
                                 Label(LanguageManager.shared.localizedString(job.state == .selection ? "download" : "resume"), systemImage: "arrow.down.circle.fill")
-                            }.disabled(!job.files.isEmpty && job.selected.isEmpty)
+                            }.buttonStyle(CompactActionButtonStyle(prominent: true))
+                                .disabled(!job.files.isEmpty && job.selected.isEmpty)
                                 .accessibilityIdentifier("torrent.start")
                         }
-                    } footer: {
                         Text(background.message ?? ToolText.text("torrent_background_hint"))
+                            .font(.footnote).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    if let error = service.storageError { Section { Text(error).foregroundStyle(.red).font(.footnote) } }
+                    .padding(.horizontal, 16).padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.regularMaterial)
                 }
             } else {
                 ContentUnavailableView(LanguageManager.shared.localizedString("downloads_empty"), systemImage: "arrow.down.circle")

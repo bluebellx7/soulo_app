@@ -58,9 +58,10 @@ extension NewDownloadTaskUITests {
             return Data("d".utf8) + map.keys.sorted().reduce(Data()) { $0 + bencode($1) + bencode(map[$1]!) } + Data("e".utf8)
         }
         let name = "TorrentUI-" + UUID().uuidString.prefix(6)
+        let files: [[String: Any]] = (0..<32).map { ["length": 5, "path": [String(format: "file-%02d.txt", $0)]] }
         let metadata = bencode(["info": ["name": name, "piece length": 16384,
-            "pieces": Data(Insecure.SHA1.hash(data: Data("hello".utf8))),
-            "files": [["length": 5, "path": ["hello.txt"]]]]])
+            "pieces": Data(Insecure.SHA1.hash(data: Data(String(repeating: "hello", count: files.count).utf8))),
+            "files": files]])
         let server = try DownloadPlaybackHTTPFixture(files: ["/sample.torrent": metadata])
         let root = try await server.start(); defer { server.stop() }
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
@@ -75,8 +76,16 @@ extension NewDownloadTaskUITests {
         XCTAssertTrue(file.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(app.staticTexts["Choose files to download"].exists)
         XCTAssertEqual(file.value as? String, "selected")
-        file.tap(); XCTAssertFalse(app.buttons["torrent.start"].isEnabled)
+        app.buttons["torrent.select-all"].tap(); XCTAssertFalse(app.buttons["torrent.start"].isEnabled)
         file.tap(); XCTAssertTrue(app.buttons["torrent.start"].isEnabled)
+        let start = app.buttons["torrent.start"]
+        XCTAssertTrue(start.isHittable, "Download must be reachable before scrolling through the files")
+        let originalFrame = start.frame
+        let lastFile = app.buttons["torrent.file.31"]
+        for _ in 0..<8 where !lastFile.isHittable { app.swipeUp() }
+        XCTAssertTrue(lastFile.isHittable, app.debugDescription)
+        XCTAssertTrue(start.isHittable)
+        XCTAssertEqual(start.frame.minY, originalFrame.minY, accuracy: 2, "Download stays fixed while the list scrolls")
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "torrent-file-selection"; shot.lifetime = .keepAlways; add(shot)
         app.navigationBars.buttons.firstMatch.tap()
         app.buttons["Cancel"].firstMatch.tap()

@@ -24,6 +24,9 @@ final class GroupDefaultSearchUITests: XCTestCase {
         XCTAssertTrue(field.waitForExistence(timeout:10),app.debugDescription)
         field.tap(); field.typeText("native fallback one\n")
         XCTAssertTrue(app.webViews.staticTexts["Fallback search loaded"].waitForExistence(timeout:20),app.debugDescription)
+        XCTAssertFalse(app.buttons["search.group-picker"].exists, "Fallback search must not show the platform row")
+        let hiddenRow = XCTAttachment(screenshot: app.screenshot())
+        hiddenRow.name = "search-without-platform-row"; hiddenRow.lifetime = .keepAlways; add(hiddenRow)
         app.buttons["browser.tabs"].tap()
         let newTab = app.buttons["tabs.tab_new_tab"]
         XCTAssertTrue(newTab.waitForExistence(timeout:5),app.debugDescription); newTab.tap()
@@ -31,6 +34,7 @@ final class GroupDefaultSearchUITests: XCTestCase {
         XCTAssertTrue(newField.waitForExistence(timeout:5),app.debugDescription)
         newField.tap();newField.typeText("native fallback two\n")
         XCTAssertTrue(app.webViews.staticTexts["Fallback search loaded"].waitForExistence(timeout:20),app.debugDescription)
+        XCTAssertFalse(app.buttons["search.group-picker"].exists)
         var route=URLComponents();route.scheme="soulo";route.host="open"
         route.queryItems=[URLQueryItem(name:"url",value:root.appendingPathComponent("bookmark").absoluteString)]
         app.open(try XCTUnwrap(route.url))
@@ -44,6 +48,25 @@ final class GroupDefaultSearchUITests: XCTestCase {
         XCTAssertTrue(app.webViews.staticTexts["Bookmark target loaded"].waitForExistence(timeout:20),app.debugDescription)
         let shot=XCTAttachment(screenshot:app.screenshot());shot.name="bookmark-open-with-all-platforms-disabled";shot.lifetime = .keepAlways;add(shot)
         app.buttons["Bookmarks"].firstMatch.tap()
+
+        // Restoring an enabled platform must restore the switcher for searches.
+        var enabledPlatform = platform
+        enabledPlatform["name"] = "Fixture platform"
+        enabledPlatform["region"] = "china"
+        enabledPlatform["isVisible"] = true
+        enabledPlatform["searchURLTemplate"] = root.appendingPathComponent("search").absoluteString + "?q=%@"
+        enabledPlatform["homeURL"] = root.absoluteString
+        let configIndex = try XCTUnwrap(app.launchArguments.firstIndex(of: "-platform_config"))
+        app.terminate()
+        app.launchArguments[configIndex + 1] = try argumentData([enabledPlatform])
+        app.launch(); app.open(URL(string: "soulo://")!)
+        XCTAssertTrue(field.waitForExistence(timeout: 10), app.debugDescription)
+        field.tap(); field.typeText("enabled platform search\n")
+        XCTAssertTrue(app.webViews.staticTexts["Fallback search loaded"].waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.buttons["search.group-picker"].exists, "An enabled platform keeps the switcher available")
+        let visibleRow = XCTAttachment(screenshot: app.screenshot())
+        visibleRow.name = "search-with-enabled-platform-row"; visibleRow.lifetime = .keepAlways; add(visibleRow)
+        app.terminate()
     }
     private func replace(_ field: XCUIElement, with value: String) {
         let old = field.value as? String ?? ""

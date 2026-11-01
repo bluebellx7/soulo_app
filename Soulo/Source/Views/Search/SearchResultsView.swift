@@ -64,6 +64,13 @@ struct SearchResultsView: View {
         platformStore.customGroups.first { $0.id == searchVM.selectedGroupID }
     }
 
+    private var hasVisiblePlatforms: Bool {
+        if let group = selectedCustomGroup {
+            return !platformStore.visiblePlatforms(forGroup: group).isEmpty
+        }
+        return !platformStore.visiblePlatforms(for: searchVM.selectedRegion).isEmpty
+    }
+
     var body: some View {
         GeometryReader { geo in
             VStack(spacing: 0) {
@@ -96,26 +103,7 @@ struct SearchResultsView: View {
                             .transition(.move(edge: .top).combined(with: .opacity))
                         }
 
-                        if !searchVM.currentKeyword.isValidURL || searchVM.isSelectionSearch {
-                            HStack(spacing: 2) {
-                                PlatformTabBar(
-                                    platforms: currentPlatforms,
-                                    selectedPlatform: $searchVM.selectedPlatform,
-                                    usesContrastingControlSurface: !showTopSearchBar
-                                )
-                                .frame(maxWidth: .infinity)
-                                .onChange(of: searchVM.selectedPlatform?.id) { _, _ in
-                                    loadCurrentPlatformURL()
-                                }
-
-                                Rectangle()
-                                    .fill(Color(UIColor.separator).opacity(0.35))
-                                    .frame(width: 0.5, height: 18)
-
-                                groupPickerMenu
-                                    .padding(.trailing, 6)
-                            }
-                        }
+                        platformSwitcher
                     }
                     .environment(\.colorScheme, usesDarkBrowserChrome ? .dark : appColorScheme)
                 }
@@ -487,6 +475,36 @@ struct SearchResultsView: View {
         .matchedGeometryEffect(id: "searchBar", in: searchBarNamespace)
     }
 
+    private var platformSwitcher: some View {
+        Group {
+            if hasVisiblePlatforms && (!searchVM.currentKeyword.isValidURL || searchVM.isSelectionSearch) {
+                platformBar
+            }
+        }
+        .onChange(of: searchVM.selectedPlatform?.id) { _, _ in
+            guard !searchVM.currentKeyword.isValidURL || searchVM.isSelectionSearch else { return }
+            loadCurrentPlatformURL()
+        }
+    }
+
+    private var platformBar: some View {
+        HStack(spacing: 2) {
+            PlatformTabBar(
+                platforms: currentPlatforms,
+                selectedPlatform: $searchVM.selectedPlatform,
+                usesContrastingControlSurface: !showTopSearchBar
+            )
+            .frame(maxWidth: .infinity)
+
+            Rectangle()
+                .fill(Color(UIColor.separator).opacity(0.35))
+                .frame(width: 0.5, height: 18)
+
+            groupPickerMenu
+                .padding(.trailing, 6)
+        }
+    }
+
     private var groupPickerMenu: some View {
         Button {
             showGroupPicker = true
@@ -510,6 +528,7 @@ struct SearchResultsView: View {
                 .contentShape(Rectangle())
         }
         .accessibilityLabel(LanguageManager.shared.localizedString("select_region"))
+        .accessibilityIdentifier("search.group-picker")
         .accessibilityValue(
             selectedCustomGroup?.name
                 ?? platformStore.regionDisplayName(for: searchVM.selectedRegion)
