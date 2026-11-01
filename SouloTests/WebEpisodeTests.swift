@@ -451,6 +451,36 @@ final class WebEpisodeTests: XCTestCase {
         XCTAssertEqual(list.sources.first?.episodes.map(\.title),["P1 Old A","P2 Old B"])
     }
 
+    func testEpisodeDockDoesNotInstallScrollBlockingRootTouchListeners() async throws {
+        for hasEpisodes in [false, true] {
+            let configuration = WKWebViewConfiguration(), capture = Capture()
+            configuration.userContentController.add(capture, contentWorld: WebEpisodeRuntime.world, name: WebEpisodeRuntime.handler)
+            configuration.userContentController.addUserScript(WKUserScript(source: """
+            window.__rootTouchListeners=[];
+            const original=EventTarget.prototype.addEventListener;
+            EventTarget.prototype.addEventListener=function(type,handler,options){
+              if((this===window||this===document||this===document.documentElement||this===document.body)
+                  && ['touchstart','touchmove','wheel'].includes(type))
+                __rootTouchListeners.push({type,passive:options?.passive===true});
+              return original.call(this,type,handler,options);
+            };
+            """, injectionTime: .atDocumentStart, forMainFrameOnly: true, in: WebEpisodeRuntime.world))
+            configuration.userContentController.addUserScript(WKUserScript(source: WebEpisodeRuntime.script,
+                injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: WebEpisodeRuntime.world))
+            let web = WKWebView(frame: .zero, configuration: configuration)
+            let list = hasEpisodes ? "<ul class='episode-list'><li><a href='/watch/1'>EP1</a></li><li><a href='/watch/2'>EP2</a></li></ul>" : "<p>Ordinary search results</p>"
+            web.loadHTMLString(list, baseURL: URL(string: "https://example.com/detail"))
+            for _ in 0..<100 where capture.bodies.isEmpty { try await Task.sleep(for: .milliseconds(20)) }
+            XCTAssertFalse(capture.bodies.isEmpty, "The production episode runtime must have started")
+            let blockers = try await web.evaluateJavaScript("__rootTouchListeners.filter(listener=>!listener.passive).map(listener=>listener.type)",
+                in: nil, contentWorld: WebEpisodeRuntime.world) as? [String]
+            XCTAssertEqual(blockers, [], "Touch scrolling must remain asynchronous, whether or not the dock is available")
+            let dock = try await web.evaluateJavaScript("!!document.getElementById('soulo-episode-dock')") as? Bool
+            XCTAssertEqual(dock, hasEpisodes)
+            configuration.userContentController.removeScriptMessageHandler(forName: WebEpisodeRuntime.handler, contentWorld: WebEpisodeRuntime.world)
+        }
+    }
+
     func testFallbackDockOnlyAppearsWithoutAVisiblePlayerAndRejectsSyntheticInput() async throws {
         let (web, capture) = try await page("<ul class='episode-list'><li><a href='/play/68351-1-1.html'>EP1</a></li><li><a href='/play/68351-1-2.html'>EP2</a></li></ul>")
         let dockVisible = try await web.evaluateJavaScript("!!document.getElementById('soulo-episode-dock')")

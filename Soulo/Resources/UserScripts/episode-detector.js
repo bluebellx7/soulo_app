@@ -333,7 +333,13 @@
     }else if(event.type==='click'&&performance.now()-lastUp>400)send('open');
     else if(event.type==='keydown'&&['Enter',' '].includes(event.key))send('open');
   }
-  for(const name of ['pointerdown','pointermove','pointerup','pointercancel','click','keydown','contextmenu','touchstart','touchmove','touchend','touchcancel'])window.addEventListener(name,ownEvent,{capture:true,passive:false});
+  for(const name of ['pointerdown','pointermove','pointerup','pointercancel','click','keydown','contextmenu'])window.addEventListener(name,ownEvent,{capture:true});
+  // A non-passive root touch listener makes every page's scrolling wait for JS,
+  // even when there is no episode dock. Pointer capture and the dock's own
+  // touch-action:none handle dragging; touch events only isolate this control.
+  for(const name of ['touchstart','touchmove','touchend','touchcancel'])window.addEventListener(name,event=>{
+    if(dock?.isConnected&&(event.composedPath?.()||[]).includes(dock))event.stopImmediatePropagation();
+  },{capture:true,passive:true});
   function scheduleDock(){if(!dockFrame)dockFrame=requestAnimationFrame(()=>{dockFrame=0;updateDock()})}
   for(const name of ['scroll','resize'])window.addEventListener(name,scheduleDock,{passive:true});
   visualViewport?.addEventListener('resize',scheduleDock);visualViewport?.addEventListener('scroll',scheduleDock);
