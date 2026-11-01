@@ -103,7 +103,7 @@ final class HomeToolbarConfigurationService: ObservableObject {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         actions = Self.resolve(defaults.stringArray(forKey: Self.storageKey))
-        showsButtonBackground = defaults.bool(forKey: Self.backgroundKey)
+        showsButtonBackground = defaults.object(forKey: Self.backgroundKey) == nil || defaults.bool(forKey: Self.backgroundKey)
     }
     static func resolve(_ raw: [String]?) -> [HomeToolbarAction] {
         (0..<slotCount).map { index in
@@ -113,7 +113,7 @@ final class HomeToolbarConfigurationService: ObservableObject {
     }
     func reloadFromDefaults() {
         actions = Self.resolve(defaults.stringArray(forKey: Self.storageKey))
-        showsButtonBackground = defaults.bool(forKey: Self.backgroundKey)
+        showsButtonBackground = defaults.object(forKey: Self.backgroundKey) == nil || defaults.bool(forKey: Self.backgroundKey)
     }
     func save(_ actions: [HomeToolbarAction], showsButtonBackground: Bool? = nil) {
         self.actions = Self.resolve(actions.map(\.rawValue))

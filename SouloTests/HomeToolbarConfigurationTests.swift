@@ -9,7 +9,7 @@ final class HomeToolbarConfigurationTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: name) }
         let service = HomeToolbarConfigurationService(defaults: defaults)
         XCTAssertFalse(service.isVisible)
-        XCTAssertFalse(service.showsButtonBackground)
+        XCTAssertTrue(service.showsButtonBackground)
         XCTAssertEqual(service.actions, Array(repeating: .none, count: 5))
         service.save([.downloads, .files, .bookmarks, .history, .wallpaper], showsButtonBackground: true)
         let restored = HomeToolbarConfigurationService(defaults: defaults)
@@ -19,7 +19,11 @@ final class HomeToolbarConfigurationTests: XCTestCase {
         defaults.set(false, forKey: HomeToolbarConfigurationService.backgroundKey)
         restored.reloadFromDefaults()
         XCTAssertFalse(restored.showsButtonBackground)
+        XCTAssertFalse(HomeToolbarConfigurationService(defaults: defaults).showsButtonBackground)
         XCTAssertEqual(restored.actions, [.downloads, .files, .bookmarks, .history, .wallpaper])
+        defaults.removeObject(forKey: HomeToolbarConfigurationService.backgroundKey)
+        restored.reloadFromDefaults()
+        XCTAssertTrue(restored.showsButtonBackground)
         restored.save([])
         XCTAssertFalse(HomeToolbarConfigurationService(defaults: defaults).isVisible)
     }
