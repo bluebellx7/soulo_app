@@ -24,7 +24,7 @@
 "platform_zlibrary" = "Z-Library";
 "platform_baidu" = "Baidu";
 "site_plugin_baidu_search" = "Baidu Search Improvements";
-"site_search_optimization_desc" = "Cleaner results, direct links where available, and clear tap feedback.";
+"site_search_optimization_desc" = "Refines result styling and prevents app-opening and redirect prompts.";
 "platform_shenma" = "Shenma Search";
 "platform_quark" = "Quark Search";
 "platform_taobao" = "Taobao";

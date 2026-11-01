@@ -24,7 +24,7 @@
 "platform_zlibrary" = "Z-લાઇબ્રેરી";
 "platform_baidu" = "બાયડુ";
 "site_plugin_baidu_search" = "Baidu શોધ સુધારણા";
-"site_search_optimization_desc" = "સુવ્યવસ્થિત પરિણામો, ઉપલબ્ધ હોય ત્યારે સીધી લિંક્સ અને ટેપ પર સ્પષ્ટ પ્રતિસાદ.";
+"site_search_optimization_desc" = "પરિણામોની શૈલી સુધારે છે અને ઍપ ખોલવા તથા રીડાયરેક્ટની સૂચનાઓ અટકાવે છે.";
 "platform_shenma" = "Shenma";
 "platform_quark" = "Quark";
 "platform_taobao" = "તાઓબાઓ";

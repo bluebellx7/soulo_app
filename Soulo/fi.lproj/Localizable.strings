@@ -24,7 +24,7 @@
 "platform_zlibrary" = "Z-kirjasto";
 "platform_baidu" = "Baidu";
 "site_plugin_baidu_search" = "Baidu-haun parannukset";
-"site_search_optimization_desc" = "Selkeämmät tulokset, suorat linkit mahdollisuuksien mukaan ja näkyvä palaute napautettaessa.";
+"site_search_optimization_desc" = "Selkeyttää tulosten ulkoasua ja estää sovelluksen avaus- ja uudelleenohjauskehotteet.";
 "platform_shenma" = "Shenma";
 "platform_quark" = "Quark";
 "platform_taobao" = "Taobao";

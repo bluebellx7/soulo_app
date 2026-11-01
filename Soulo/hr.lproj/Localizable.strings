@@ -24,7 +24,7 @@
 "platform_zlibrary" = "Z-knjižnica";
 "platform_baidu" = "Baidu";
 "site_plugin_baidu_search" = "Poboljšanja Baidu pretrage";
-"site_search_optimization_desc" = "Pregledniji rezultati, izravne poveznice kada su dostupne i jasna povratna informacija pri dodiru.";
+"site_search_optimization_desc" = "Poboljšava izgled rezultata i sprječava upite za otvaranje aplikacija i preusmjeravanje.";
 "platform_shenma" = "Shenma";
 "platform_quark" = "Quark";
 "platform_taobao" = "Taobao";

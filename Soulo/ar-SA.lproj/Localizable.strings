@@ -24,7 +24,7 @@
 "platform_zlibrary" = "Z-Library";
 "platform_baidu" = "Baidu";
 "site_plugin_baidu_search" = "تحسين بحث بايدو";
-"site_search_optimization_desc" = "نتائج أوضح وروابط مباشرة عند توفرها واستجابة واضحة عند النقر.";
+"site_search_optimization_desc" = "تحسين مظهر النتائج ومنع مطالبات فتح التطبيق وإعادة التوجيه.";
 "platform_shenma" = "Shenma";
 "platform_quark" = "Quark";
 "platform_taobao" = "Taobao";

@@ -35,6 +35,7 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
 }
 @implementation SLTorrentEngine {
     std::unique_ptr<lt::session> _session;
+    bool _discoveryEnabled;
     std::map<std::string, lt::torrent_handle> _handles;
     std::set<std::string> _metadataOnly;
     struct PeerRefresh { std::vector<lt::tcp::endpoint> peers; std::vector<lt::download_priority_t> priorities; };
@@ -42,11 +43,18 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
 }
 - (instancetype)initWithCertificateFile:(NSString *)certificateFile discoveryEnabled:(BOOL)discoveryEnabled {
     if ((self = [super init])) {
+        _discoveryEnabled = discoveryEnabled;
         if (certificateFile.length) setenv("SSL_CERT_FILE", certificateFile.fileSystemRepresentation, 1);
         lt::settings_pack settings;
         settings.set_str(lt::settings_pack::user_agent, "Soulo libtorrent/2.0.15");
         settings.set_str(lt::settings_pack::listen_interfaces, "0.0.0.0:0,[::]:0");
         settings.set_bool(lt::settings_pack::enable_dht, discoveryEnabled);
+        if (discoveryEnabled) {
+            // A trackerless magnet must not depend on one bootstrap provider.
+            // Keep libtorrent's router and an independent DHT entry point.
+            settings.set_str(lt::settings_pack::dht_bootstrap_nodes,
+                "dht.libtorrent.org:25401,dht.transmissionbt.com:6881");
+        }
         settings.set_bool(lt::settings_pack::enable_lsd, false);
         settings.set_bool(lt::settings_pack::enable_upnp, false);
         settings.set_bool(lt::settings_pack::enable_natpmp, false);
@@ -95,6 +103,14 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
         } else if (magnet.length) p = lt::parse_magnet_uri(magnet.UTF8String);
         else throw std::runtime_error("Missing torrent metadata");
         if (p.ti) describe(p.ti);
+        if (_discoveryEnabled && magnet.length && p.trackers.empty() && (!p.ti || !p.ti->priv())) {
+            // Bare magnets otherwise rely exclusively on DHT. Keep a bounded
+            // tracker fallback for networks where DHT cannot find peers. Explicit
+            // trackers, private metainfo and local-only sessions are untouched.
+            p.trackers = {"http://tracker.opentrackr.org:1337/announce",
+                          "udp://tracker.opentrackr.org:1337/announce"};
+            p.tracker_tiers = {0, 1};
+        }
         p.save_path = directory.fileSystemRepresentation;
         p.flags &= ~(lt::torrent_flags::paused | lt::torrent_flags::auto_managed | lt::torrent_flags::stop_when_ready);
         p.flags |= lt::torrent_flags::default_dont_download;

@@ -15,7 +15,7 @@ enum WebVideoOrientationRuntime {
     static let source = #"""
     (() => {
       if (window.__souloVideoOrientation) return;
-      const controls = new Map(), roots = new Set(), pending = new Set();
+      const controls = new Map(), roots = new Set(), pending = new Set(), videos = new Set(), visibleVideos = new Set();
       const overlay = window.__souloOverlayControls;
       let labels = ['Fullscreen', 'Speed', 'Download', 'Video tools', 'Episodes', 'Close'], frame = 0, scanTimer = 0, active = null, expandedGroup = null;
       let bottomControls = {needed:false}, episodesAvailable = false;
@@ -28,22 +28,25 @@ enum WebVideoOrientationRuntime {
         return video.webkitDisplayingFullscreen || video.webkitPresentationMode === 'fullscreen'
           || document.fullscreenElement === video;
       }
-      function isVisible(video) {
+      function computed(node, styles) {
+        if (!styles.has(node)) styles.set(node, getComputedStyle(node));
+        return styles.get(node);
+      }
+      function isVisible(video, styles) {
         for (let node=video;node;node=node.parentElement || node.getRootNode()?.host) {
-          const style=getComputedStyle(node);
+          const style=computed(node, styles);
           if(style.display==='none'||style.visibility==='hidden'||style.visibility==='collapse'||Number(style.opacity)===0)return false;
         }
         return true;
       }
-      function needsBottomClearance(video) {
+      function needsBottomClearance(video, rect, styles) {
         if (window !== window.top || isFullscreen(video)) return false;
-        const rect = video.getBoundingClientRect();
         if (rect.width < 100 || rect.height < 70 || rect.bottom <= 0 || rect.top >= innerHeight
             || rect.right <= 0 || rect.left >= innerWidth) return false;
         let anchored = false;
         for (let node = video; node && node !== document.documentElement;
              node = node.parentElement || node.getRootNode()?.host) {
-          const style = getComputedStyle(node);
+          const style = computed(node, styles);
           if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
           if (node === document.body || !['fixed','absolute','sticky'].includes(style.position)) continue;
           const r = node.getBoundingClientRect();
@@ -125,6 +128,9 @@ enum WebVideoOrientationRuntime {
         } catch (_) { finish('failed'); }
       }
       function prune() {
+        for (const video of videos) if (!video.isConnected) {
+          intersection.unobserve(video); visibleVideos.delete(video); videos.delete(video);
+        }
         for (const [video, button] of controls) {
           if (!video.isConnected) { if (expandedGroup === button) collapse(); if (active?.video === video) finish(); button.remove(); resize.unobserve(video); controls.delete(video); }
         }
@@ -138,21 +144,28 @@ enum WebVideoOrientationRuntime {
       function layout() {
         frame = 0;
         prune();
-        reportBottomControls([...controls.keys()].some(needsBottomClearance));
-        const viewport = overlay.metrics();
-        for (const [video, button] of controls) {
+        const viewport = overlay.metrics(), styles = new Map(), updates = [];
+        let needsClearance = false;
+        // Read all geometry first. Interleaving a floating control's writes with
+        // the next video's reads forces repeated layout on result-heavy pages.
+        for (const video of visibleVideos) {
+          const button = controls.get(video);
+          if (!button) continue;
           const r = video.getBoundingClientRect();
           const visible = !active?.began && r.width >= 100 && r.height >= 70 && r.right > 44 && r.bottom > 44
-            && r.left < innerWidth - 44 && r.top < innerHeight - 44
-            && isVisible(video);
-          if(!visible && expandedGroup===button)collapse();
+            && r.left < innerWidth - 44 && r.top < innerHeight - 44 && isVisible(video, styles);
+          if (visible) needsClearance ||= needsBottomClearance(video, r, styles);
+          const width = (button === expandedGroup ? expandedWidth() : overlay.size) * viewport.unit;
+          updates.push({button, visible,
+            left:Math.max(viewport.left+viewport.gap,Math.min(r.right-viewport.gap,viewport.left+viewport.width-viewport.gap)-width),
+            top:Math.max(viewport.top+viewport.gap,Math.min(r.top+viewport.gap,viewport.top+viewport.height-viewport.size-viewport.gap))});
+        }
+        reportBottomControls(needsClearance);
+        for (const {button,visible,left,top} of updates) {
+          if (!visible && expandedGroup === button) collapse();
           setStyleIfChanged(button,'display',visible ? 'flex' : 'none');
           if (!visible) continue;
-          const width = (button === expandedGroup ? expandedWidth() : overlay.size) * viewport.unit;
-          const left = Math.max(viewport.left+viewport.gap,Math.min(r.right-viewport.gap,viewport.left+viewport.width-viewport.gap)-width);
-          const top = Math.max(viewport.top+viewport.gap,Math.min(r.top+viewport.gap,viewport.top+viewport.height-viewport.size-viewport.gap));
           overlay.apply(button,viewport);
-          // max-width is resolved before the compensating transform.
           setStyleIfChanged(button,'max-width',Math.max(overlay.size,viewport.width/viewport.unit-16)+'px');
           setStyleIfChanged(button,'left',left+'px');
           setStyleIfChanged(button,'top',top+'px');
@@ -207,7 +220,24 @@ enum WebVideoOrientationRuntime {
       const svg = content => '<svg width="23" height="23" style="width:23px!important;height:23px!important;min-width:23px!important;flex:0 0 23px!important;display:block!important" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + content + '</svg>';
       const toolsIcon = svg('<path d="M10 19H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6"/><path d="m8 7 5 3-5 3Z" fill="currentColor" stroke="none"/><path d="M14 16h2m3 0h3m-8 5h5"/><circle cx="17.5" cy="16" r="1.5"/><circle cx="20.5" cy="21" r="1.5"/>');
       const resize = new ResizeObserver(schedule);
+      const intersection = new IntersectionObserver(entries => {
+        for (const entry of entries) {
+          const video = entry.target;
+          if (entry.isIntersecting) { visibleVideos.add(video); createControl(video); }
+          else {
+            visibleVideos.delete(video);
+            const button = controls.get(video);
+            if (expandedGroup === button) collapse();
+            if (button) setStyleIfChanged(button,'display','none');
+          }
+        }
+        schedule();
+      }, {rootMargin:'64px'});
       function add(video) {
+        if (videos.has(video)) return;
+        videos.add(video); intersection.observe(video);
+      }
+      function createControl(video) {
         if (controls.has(video)) return;
         const button = document.createElement('div');
         button.setAttribute('data-soulo-video-rotate', '');
@@ -344,12 +374,13 @@ enum WebVideoOrientationRuntime {
       for (const event of ['pointerdown', 'touchstart']) {
         window.addEventListener(event, collapseOutside, {capture:true, passive:true});
       }
-      window.addEventListener('scroll', schedule, {capture:true,passive:true});
+      const scrollLayout = () => { if (visibleVideos.size) schedule(); };
+      window.addEventListener('scroll', scrollLayout, {capture:true,passive:true});
       window.addEventListener('resize', schedule, {passive:true});
       window.visualViewport?.addEventListener('resize', () => {
         schedule();if(window===window.top)send('viewport','');
       }, {passive:true});
-      window.visualViewport?.addEventListener('scroll', schedule, {passive:true});
+      window.visualViewport?.addEventListener('scroll', scrollLayout, {passive:true});
       document.addEventListener('loadedmetadata', schedule, true);
       document.addEventListener('play', schedule, true);
       scan();

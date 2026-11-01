@@ -24,7 +24,7 @@
 "platform_zlibrary" = "Z-Perpustakaan";
 "platform_baidu" = "Baidu";
 "site_plugin_baidu_search" = "Penyempurnaan pencarian Baidu";
-"site_search_optimization_desc" = "Hasil lebih rapi, tautan langsung jika tersedia, dan respons ketukan yang jelas.";
+"site_search_optimization_desc" = "Memperbaiki tampilan hasil dan mencegah permintaan membuka aplikasi serta pengalihan.";
 "platform_shenma" = "Shenma";
 "platform_quark" = "Quark";
 "platform_taobao" = "Taobao";

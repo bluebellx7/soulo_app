@@ -1,0 +1,25 @@
+const fs=require('fs'),path=require('path'),assert=require('node:assert/strict');
+const {chromium}=require(process.env.SOULO_PLAYWRIGHT_MODULE||'playwright');
+const root=path.resolve(__dirname,'../..');
+const swift=fs.readFileSync(path.join(root,'Soulo/Source/Views/WebView/WebViewScripts.swift'),'utf8');
+const source=swift.match(/static let textSelection = #"""\n([\s\S]*?)\n\s*"""#/)[1].replace('\\#(WebCompatibilityService.verificationContextDetectionScript)','function isVerificationResourceContext(){return false}');
+(async()=>{const browser=await chromium.launch({headless:true});try{
+ const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+ const page=await context.newPage();
+ await page.setContent('<meta name="viewport" content="width=device-width,initial-scale=1"><div id="article" style="height:250px">A selectable article</div><button style="height:80px;width:200px">Player control</button><div style="height:3000px"></div>');
+ await page.evaluate(source);
+ await page.evaluate(()=>{window.mutations=[];new MutationObserver(records=>mutations.push(...records)).observe(document.documentElement,{attributes:true,subtree:true,attributeFilter:['style']})});
+ const cdp=await context.newCDPSession(page);
+ const touch=(type,x=100,y=120)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'||type==='touchCancel'?[]:[{x,y}],modifiers:0});
+ await touch('touchStart');await touch('touchEnd');await page.waitForTimeout(300);
+ assert.equal(await page.evaluate(()=>mutations.length),0,'An ordinary tap must not restyle the document');
+ await touch('touchStart',120,180);await touch('touchMove',120,100);await touch('touchEnd');await page.waitForTimeout(300);
+ assert.equal(await page.evaluate(()=>mutations.length),0,'A scroll gesture must cancel text unlocking');
+ await page.evaluate(()=>{scrollTo(0,0);document.getElementById('article').style.setProperty('user-select','none','important');document.getElementById('article').style.setProperty('-webkit-user-select','none','important');mutations=[]});
+ await touch('touchStart');await page.waitForTimeout(300);await touch('touchEnd');
+ assert.equal(await page.locator('#article').evaluate(el=>el.style.getPropertyValue('user-select')),'text','Inline-disabled selection must still unlock before native hold eligibility is decided');
+ await page.evaluate(()=>mutations=[]);
+ await touch('touchStart',100,300);await page.waitForTimeout(300);await touch('touchEnd');
+ assert.equal(await page.evaluate(()=>mutations.length),0,'Player and form controls remain untouched');
+ console.log('Text selection: taps and pans perform no ancestor writes; blocked text remains selectable and controls stay intact');
+}finally{await browser.close()}})().catch(error=>{console.error(error);process.exitCode=1});

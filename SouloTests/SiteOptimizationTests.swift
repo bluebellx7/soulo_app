@@ -101,7 +101,7 @@ final class SiteOptimizationTests: XCTestCase {
         XCTAssertEqual(styled as? Bool, false)
     }
 
-    func testLiveRuleUpdatesDirectLinksAndCanRestoreOriginalPageWithoutReload() async throws {
+    func testRuleStylesWithoutRewritingLinksAndCanRestoreWithoutReload() async throws {
         let rule = try rule(), (defaults, name) = isolatedDefaults()
         defer { defaults.removePersistentDomain(forName: name) }
         let settings = SiteOptimizationSettings(defaults: defaults), controller = SiteOptimizationController(settings: settings)
@@ -109,23 +109,24 @@ final class SiteOptimizationTests: XCTestCase {
         controller.synchronize(on: web, navigationEnabled: true) { _ in XCTFail("Synthetic click must not navigate"); return false }
         defer { controller.detach() }
         web.loadHTMLString(html, baseURL: URL(string: "https://m.baidu.com/s?word=test"))
-        try await wait(web, "!!document.querySelector('.soulo-baidu-source') && document.querySelector('#related a').href.startsWith('https:')")
+        try await wait(web, "!!document.getElementById('soulo-baidu-search-style')")
         let pageBackground = try await web.evaluateJavaScript("getComputedStyle(document.body).backgroundColor") as? String
         XCTAssertEqual(pageBackground, "rgb(255, 255, 255)")
         let hiddenPromo = try await web.evaluateJavaScript("getComputedStyle(document.getElementById('app-promo')).display") as? String
         XCTAssertEqual(hiddenPromo, "none")
         let relatedTarget = try await web.evaluateJavaScript("document.querySelector('#related a').href") as? String
-        XCTAssertTrue(relatedTarget?.contains("/s?word=") == true)
+        XCTAssertTrue(relatedTarget?.hasPrefix("baiduboxapp:") == true)
         let desktopTarget = try await web.evaluateJavaScript("document.getElementById('desktop-title').href") as? String
-        XCTAssertEqual(desktopTarget, "https://desktop.example/article")
+        XCTAssertTrue(desktopTarget?.contains("/link?url=opaque") == true)
         let identity = try await web.evaluateJavaScript("identity") as? Double
         let original = try await web.evaluateJavaScript("[title.href,sitelink.href,document.querySelector('#opaque a').getAttribute('href'),video.hasAttribute('data-soulo-baidu-card')]") as? [Any]
-        XCTAssertEqual(original?[0] as? String, "https://example.com/first")
+        XCTAssertTrue((original?[0] as? String)?.contains("/link?url=opaque") == true)
         XCTAssertEqual(original?[1] as? String, "https://example.org/separate")
         XCTAssertEqual(original?[2] as? String, "/link?url=unknown")
         XCTAssertEqual(original?[3] as? Bool, false)
         _ = try await web.evaluateJavaScript("document.getElementById('web').setAttribute('data-log',JSON.stringify({mu:'https://second.example/new'}));true")
-        try await wait(web, "title.href==='https://second.example/new' && document.querySelector('.soulo-baidu-source-name').textContent==='second.example'")
+        let unchanged = try await web.evaluateJavaScript("title.getAttribute('href')") as? String
+        XCTAssertEqual(unchanged, "/link?url=opaque")
         _ = try await web.evaluateJavaScript("title.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));true")
         settings.setEnabled(false, for: rule)
         controller.synchronize(on: web, navigationEnabled: true) { _ in false }
@@ -144,7 +145,7 @@ final class SiteOptimizationTests: XCTestCase {
         controller.synchronize(on: web, navigationEnabled: true) { navigations.append($0); return false }
         defer { controller.detach() }
         web.loadHTMLString(html, baseURL: URL(string: "https://www.baidu.com/s?wd=test"))
-        try await wait(web, "!!document.querySelector('.soulo-baidu-source')")
+        try await wait(web, "!!document.getElementById('soulo-baidu-search-style')")
         let pageAccess = try await web.evaluateJavaScript("!!globalThis.webkit?.messageHandlers?.souloSiteOptimizationNavigate")
         XCTAssertEqual(pageAccess as? Bool, false)
         _ = try await web.evaluateJavaScript("webkit.messageHandlers.souloSiteOptimizationNavigate.postMessage({url:'javascript:alert(1)'});true", in: nil, contentWorld: rule.world)
@@ -176,7 +177,7 @@ final class SiteOptimizationTests: XCTestCase {
         defer { controller.detach(); window.isHidden = true; previous?.makeKeyAndVisible() }
         controller.synchronize(on: web, navigationEnabled: true) { _ in false }
         web.load(URLRequest(url: root.appendingPathComponent("s").appending(queryItems: [URLQueryItem(name: "wd", value: "test")])))
-        try await wait(web, "!!document.querySelector('.soulo-baidu-source')")
+        try await wait(web, "!!document.getElementById('soulo-baidu-search-style')")
         let identity = try await web.evaluateJavaScript("identity") as? Double
         _ = try await web.evaluateJavaScript("draft.value='kept on back';true")
         web.load(URLRequest(url: root.appendingPathComponent("article")))

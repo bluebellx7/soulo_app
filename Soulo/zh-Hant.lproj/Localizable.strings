@@ -24,7 +24,7 @@
 "platform_zlibrary" = "Z-Library";
 "platform_baidu" = "百度";
 "site_plugin_baidu_search" = "百度搜尋最佳化";
-"site_search_optimization_desc" = "簡化結果樣式，優先開啟直連，並提供點按回饋。";
+"site_search_optimization_desc" = "優化結果樣式，攔截 App 喚起及跳轉提示。";
 "platform_shenma" = "神馬搜尋";
 "platform_quark" = "夸克搜尋";
 "platform_taobao" = "淘寶";

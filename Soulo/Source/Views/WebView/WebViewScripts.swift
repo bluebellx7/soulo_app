@@ -360,6 +360,13 @@ enum WebViewScripts {
         }
         window.__souloAccessibilityInstalled = true;
 
+        var updates = [];
+        function attribute(element, name, value) { updates.push([element, name, value]); }
+        function candidates(root, selector) {
+            var found = Array.from(root.querySelectorAll(selector));
+            if (root instanceof Element && root.matches(selector)) found.unshift(root);
+            return found;
+        }
         function visible(element) {
             if (!element || !element.getBoundingClientRect) return false;
             var style = window.getComputedStyle(element);
@@ -394,16 +401,16 @@ enum WebViewScripts {
         }
 
         function labelInteractiveElements(root) {
-            var elements = root.querySelectorAll(
+            var elements = candidates(root,
                 'a[href], button, input, select, textarea, [role="button"], [role="link"]'
             );
             Array.prototype.forEach.call(elements, function(element) {
-                if (!visible(element) || accessibleName(element)) return;
+                if (accessibleName(element) || !visible(element)) return;
                 var icon = element.querySelector && element.querySelector('img[alt], svg[aria-label]');
                 var name = icon && cleanText(
                     icon.getAttribute('alt') || icon.getAttribute('aria-label')
                 );
-                if (name) element.setAttribute('aria-label', name);
+                if (name) attribute(element, 'aria-label', name);
             });
         }
 
@@ -419,17 +426,17 @@ enum WebViewScripts {
             if (host.indexOf('bing.com') >= 0) selectors.push('.b_algo');
             if (/search|result|query/.test(path)) selectors.push('.result');
             var cards;
-            try { cards = root.querySelectorAll(selectors.join(',')); } catch (_) { return; }
+            try { cards = candidates(root, selectors.join(',')); } catch (_) { return; }
             Array.prototype.forEach.call(cards, function(card) {
-                if (!visible(card) || card.hasAttribute('aria-label')) return;
+                if (card.hasAttribute('aria-label') || !visible(card)) return;
                 var primary = card.querySelector('h1, h2, h3, [role="heading"], a[href]');
                 var label = accessibleName(primary);
                 if (!label) return;
                 if (!card.hasAttribute('role') && card.tagName !== 'ARTICLE') {
-                    card.setAttribute('role', 'group');
+                    attribute(card, 'role', 'group');
                 }
-                card.setAttribute('aria-label', label);
-                card.setAttribute('data-soulo-accessible-result', 'true');
+                attribute(card, 'aria-label', label);
+                attribute(card, 'data-soulo-accessible-result', 'true');
             });
         }
 
@@ -440,47 +447,60 @@ enum WebViewScripts {
                 '[class*="search-result"] h2', '[class*="search-result"] h3'
             ];
             var headings;
-            try { headings = root.querySelectorAll(selectors.join(',')); } catch (_) { return; }
+            try { headings = candidates(root, selectors.join(',')); } catch (_) { return; }
             Array.prototype.forEach.call(headings, function(heading) {
-                if (!visible(heading)) return;
-                if (!heading.hasAttribute('role')) heading.setAttribute('role', 'heading');
-                if (!heading.hasAttribute('aria-level')) heading.setAttribute('aria-level', '2');
+                if ((heading.hasAttribute('role') && heading.hasAttribute('aria-level')) || !visible(heading)) return;
+                if (!heading.hasAttribute('role')) attribute(heading, 'role', 'heading');
+                if (!heading.hasAttribute('aria-level')) attribute(heading, 'aria-level', '2');
             });
         }
 
         function markClickableContainers(root) {
-            var elements = root.querySelectorAll('[onclick]:not(a):not(button):not(input)');
+            var elements = candidates(root,'[onclick]:not(a):not(button):not(input)');
             Array.prototype.forEach.call(elements, function(element) {
-                if (!visible(element) || element.hasAttribute('role')) return;
+                if (element.hasAttribute('role') || !visible(element)) return;
                 var name = accessibleName(element);
                 if (!name || name.length > 180) return;
-                element.setAttribute('role', 'button');
-                element.setAttribute('tabindex', '0');
-                element.setAttribute('aria-label', name);
+                attribute(element, 'role', 'button');
+                attribute(element, 'tabindex', '0');
+                attribute(element, 'aria-label', name);
             });
         }
 
-        window.__souloAccessibilityScan = function() {
+        window.__souloAccessibilityScan = function(root = document) {
             if (document.hidden) return;
-            var root = document;
+            updates = [];
             labelInteractiveElements(root);
             markResultCards(root);
             markResultHeadings(root);
             markClickableContainers(root);
+            // Read the whole batch before writing accessibility metadata. Search
+            // cards otherwise alternate layout reads and DOM invalidation.
+            updates.forEach(function(change) { change[0].setAttribute(change[1], change[2]); });
+            updates = [];
         };
 
         window.__souloAccessibilityScan();
 
+        var pendingRoots = new Set();
         function installObserver() {
             if (document.hidden || !document.body || window.__souloAccessibilityObserver) return;
             window.__souloAccessibilityObserver = new MutationObserver(function(mutations) {
-                var hasAddedContent = mutations.some(function(mutation) {
-                    return mutation.addedNodes && mutation.addedNodes.length > 0;
+                mutations.forEach(function(mutation) {
+                    Array.from(mutation.addedNodes).forEach(function(node) {
+                        if (!(node instanceof Element) || node.closest('[data-soulo-video-rotate],#soulo-episode-dock,[data-soulo-hold-speed]')) return;
+                        for (var root of pendingRoots) {
+                            if (root.contains(node)) return;
+                            if (node.contains(root)) pendingRoots.delete(root);
+                        }
+                        pendingRoots.add(node);
+                    });
                 });
-                if (!hasAddedContent) return;
+                if (!pendingRoots.size) return;
                 clearTimeout(window.__souloAccessibilityTimer);
                 window.__souloAccessibilityTimer = setTimeout(function() {
-                    window.__souloAccessibilityScan();
+                    pendingRoots.forEach(function(root) { if (root.isConnected) window.__souloAccessibilityScan(root); });
+                    pendingRoots.clear();
                 }, 300);
             });
             window.__souloAccessibilityObserver.observe(document.body, {
@@ -491,7 +511,7 @@ enum WebViewScripts {
 
         document.addEventListener('visibilitychange', function() {
             if (document.hidden) {
-                clearTimeout(window.__souloAccessibilityTimer);
+                clearTimeout(window.__souloAccessibilityTimer); pendingRoots.clear();
                 if (window.__souloAccessibilityObserver) window.__souloAccessibilityObserver.disconnect();
                 window.__souloAccessibilityObserver = null;
             } else {
@@ -905,16 +925,27 @@ enum WebViewScripts {
                 target.style.setProperty('-webkit-user-select', 'none', 'important');
                 return;
             }
-            let element = target;
-            for (let i = 0; element && i < 32; i++, element = element.parentElement || element.getRootNode()?.host) {
-                element.style.setProperty('-webkit-user-select', 'text', 'important');
-                element.style.setProperty('user-select', 'text', 'important');
-                element.style.setProperty('-webkit-touch-callout', 'default', 'important');
+            // WebKit decides selection eligibility at touch-down, so a delayed
+            // unlock breaks long presses on inline user-select:none!important.
+            // Read first and only override properties actually blocking text.
+            // Ordinary taps and pans must not restyle all their ancestors.
+            const changes = [];
+            for (let element=target,depth=0;element&&depth<32;depth++,element=element.parentElement||element.getRootNode()?.host) {
+                const style=getComputedStyle(element);
+                const selection=style.webkitUserSelect==='none'||style.userSelect==='none';
+                const callout=style.webkitTouchCallout==='none';
+                if (selection || callout) changes.push({element,selection,callout});
                 if (element.shadowRoot) install(element.shadowRoot);
             }
+            for (const {element,selection,callout} of changes) {
+                if (selection) {
+                    element.style.setProperty('-webkit-user-select','text','important');
+                    element.style.setProperty('user-select','text','important');
+                }
+                if (callout) element.style.setProperty('-webkit-touch-callout','default','important');
+            }
         }
-        window.addEventListener('touchstart', unlock, {capture:true, passive:true});
-        window.addEventListener('pointerdown', unlock, {capture:true, passive:true});
+        window.addEventListener(typeof PointerEvent==='undefined' ? 'touchstart' : 'pointerdown',unlock,{capture:true,passive:true});
         for (const name of ['selectstart', 'copy', 'contextmenu']) window.addEventListener(name, event => {
             const target = event.composedPath()[0];
             if (event.isTrusted && target instanceof Element && !target.closest(excluded)) event.stopImmediatePropagation();

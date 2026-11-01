@@ -106,6 +106,13 @@ final class TorrentDownloadTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: download.appendingPathComponent("BTFixture/selected.bin").path))
         client.remove("magnet", deleteFiles: false); seeder.remove("seed", deleteFiles: false)
     }
+    func testBase32MagnetMatchesHexadecimalInfoHash() throws {
+        let expected = "35b81a7384baec7e7b62cedd07fa83356dbc28b7"
+        for hash in ["gw4bu44exlwh463cz3oqp6udgvw3ykfx", "GW4BU44EXLWH463CZ3OQP6UDGVW3YKFX", expected] {
+            let metadata = try SLTorrentEngine.inspectMagnet("magnet:?xt=urn:btih:" + hash)
+            XCTAssertEqual(metadata["hash"] as? String, expected)
+        }
+    }
     func testRejectsInvalidOrOversizedMetadataAndMissingMagnetHash() throws {
         XCTAssertThrowsError(try SLTorrentEngine.inspectData(Data("not a torrent".utf8)))
         XCTAssertThrowsError(try SLTorrentEngine.inspectData(Data(repeating: 0, count: 8*1024*1024+1)))

@@ -24,7 +24,7 @@
 "platform_zlibrary" = "Z-könyvtár";
 "platform_baidu" = "Baidu";
 "site_plugin_baidu_search" = "Baidu-keresés javítása";
-"site_search_optimization_desc" = "Áttekinthetőbb találatok, közvetlen hivatkozások, ahol elérhetők, és látható érintési visszajelzés.";
+"site_search_optimization_desc" = "Javítja a találatok megjelenését, és letiltja az alkalmazásnyitási és átirányítási kéréseket.";
 "platform_shenma" = "Shenma";
 "platform_quark" = "Quark";
 "platform_taobao" = "Taobao";
