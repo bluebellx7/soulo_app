@@ -25,7 +25,7 @@ struct WallpaperSettingsView: View {
                         ForEach(WallpaperSource.allCases, id: \.self) { src in sourceTile(src) }
                     }.padding(.vertical, 10).padding(.horizontal, 4)
                 }.listRowBackground(Color.clear).listRowInsets(EdgeInsets())
-            } header: { Label(LText("wallpaper_source"), systemImage: "photo.on.rectangle.angled") }
+            } header: { Label(LText("wallpaper_source"), systemImage: HomeToolbarAction.wallpaper.listSymbol) }
 
             // 2. Auto Refresh
             Section {

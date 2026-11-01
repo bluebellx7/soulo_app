@@ -28,6 +28,26 @@ final class DownloadManagerServiceTests: XCTestCase {
         XCTAssertEqual(persisted.first?.localURL, url)
     }
 
+    func testRenamedMagnetFolderAndProgressSurviveRelocatedContainer() throws {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let (item, url) = service.beginDownload(suggestedFilename: "Torrent abc123", sourceURL: nil, transport: .torrent)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        try Data("partial torrent".utf8).write(to: url.appendingPathComponent("partial.bin"))
+        service.renameTorrent(id: item.id, name: "Movie from metadata")
+        service.updateProgress(id: item.id, completed: 500, total: 1000)
+        service.markPaused(id: item.id)
+        var saved = try JSONDecoder().decode([BrowserDownloadItem].self, from: XCTUnwrap(defaults.data(forKey: "soulo_browser_downloads")))
+        saved[0].localPath = "/old-container/Documents/Downloads/" + url.lastPathComponent
+        defaults.set(try JSONEncoder().encode(saved), forKey: "soulo_browser_downloads")
+        let restored = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let record = try XCTUnwrap(restored.downloads.first)
+        XCTAssertEqual(record.localURL.path, url.path)
+        XCTAssertEqual(record.fileName, "Movie from metadata")
+        XCTAssertEqual(record.status, .paused)
+        XCTAssertEqual(record.progress, 0.5)
+        XCTAssertEqual(try Data(contentsOf: record.localURL.appendingPathComponent("partial.bin")), Data("partial torrent".utf8))
+    }
+
     func testMediaDownloadsUsePageTitleAndKeepOutputExtension() {
         let hls = WebMediaResource(
             kind: .video,

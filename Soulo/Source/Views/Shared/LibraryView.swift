@@ -20,10 +20,10 @@ enum LibrarySection: String, CaseIterable, Identifiable {
 
     var systemImage: String {
         switch self {
-        case .bookmarks: "bookmark.fill"
+        case .bookmarks: HomeToolbarAction.bookmarks.listSymbol
         case .history: "clock.arrow.circlepath"
-        case .files: "folder.fill"
-        case .downloads: "arrow.down.circle.fill"
+        case .files: HomeToolbarAction.files.listSymbol
+        case .downloads: HomeToolbarAction.downloads.listSymbol
         }
     }
 }

@@ -35,6 +35,18 @@ enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .version: "info.circle"
         }
     }
+    var listSymbol: String {
+        switch self {
+        case .downloads: "arrow.down.circle.fill"
+        case .files: "folder.fill"
+        case .bookmarks: "bookmark.fill"
+        case .wallpaper: "photo.stack.fill"
+        case .platforms: "square.grid.2x2.fill"
+        case .extensions: "puzzlepiece.extension.fill"
+        case .settings: "gearshape.fill"
+        default: symbol
+        }
+    }
     @MainActor var title: String {
         switch self {
         case .none: LanguageManager.shared.localizedString("toolbar_action_empty")
@@ -60,7 +72,7 @@ enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .quickActions: ToolText.text("quick_actions_title")
         case .urlSchemes: ToolText.text("scheme_title")
         case .shake: LanguageManager.shared.localizedString("shake_action")
-        case .feedback: LanguageManager.shared.localizedString("feedback")
+        case .feedback: LanguageManager.shared.localizedString("feedback_title")
         case .version: LanguageManager.shared.localizedString("settings_version")
         }
     }

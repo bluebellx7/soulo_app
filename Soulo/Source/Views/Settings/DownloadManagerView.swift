@@ -413,7 +413,7 @@ struct DownloadManagerContentView: View {
 
     private func icon(for status: BrowserDownloadStatus) -> String {
         switch status {
-        case .inProgress: "arrow.down.circle"
+        case .inProgress: HomeToolbarAction.downloads.listSymbol
         case .paused: "pause.circle.fill"
         case .finished: "checkmark.circle.fill"
         case .failed: "exclamationmark.triangle.fill"

@@ -456,3 +456,5 @@
 "delete_items_confirm" = "Delete selected items?";
 "delete_folders_message" = "Delete %ld item(s), including folders and all their contents. This cannot be undone.";
 "delete_files_busy" = "Some items are still downloading or paused. Remove their tasks in Downloads before deleting them.";
+
+"torrent_checking" = "Checking downloaded files…";

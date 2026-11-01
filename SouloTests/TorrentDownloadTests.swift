@@ -129,4 +129,159 @@ final class TorrentDownloadTests: XCTestCase {
         manager.markFailed(id: normal.id, error: URLError(.networkConnectionLost))
         XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
     }
+    @MainActor
+    func testResumeCheckingKeepsSavedProgressUntilVerifiedSnapshotArrives() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite = UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { try? FileManager.default.removeItem(at: root); defaults.removePersistentDomain(forName: suite) }
+        let manager = DownloadManagerService(userDefaults: defaults, storageDirectory: root.appendingPathComponent("Downloads"))
+        let worker = ControlledTorrentEngine()
+        let service = TorrentDownloadService(manager: manager, root: root.appendingPathComponent("Tasks"), worker: worker, workChanged: {}, userStartedWork: {})
+        let id = try await service.create(data: Data([1]), magnet: nil)
+        service.start(id)
+        try await wait { manager.downloads.first?.receivedBytes == 500 }
+        await service.suspendAll()
+        await worker.setChecking(true)
+        service.start(id)
+        try await wait { service.snapshots[id]?.checking == true }
+        XCTAssertEqual(manager.downloads.first?.receivedBytes, 500)
+        XCTAssertEqual(manager.downloads.first?.progress, 0.5)
+        await worker.setChecking(false, completed: 750)
+        try await wait { manager.downloads.first?.receivedBytes == 750 }
+        await service.suspendAll()
+    }
+
+    @MainActor
+    func testResumeWaitsForBackgroundPauseToFinishForEveryJob() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite = UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { try? FileManager.default.removeItem(at: root); defaults.removePersistentDomain(forName: suite) }
+        let manager = DownloadManagerService(userDefaults: defaults, storageDirectory: root.appendingPathComponent("Downloads"))
+        let worker = ControlledTorrentEngine()
+        let service = TorrentDownloadService(manager: manager, root: root.appendingPathComponent("Tasks"), worker: worker, workChanged: {}, userStartedWork: {})
+        let first = try await service.create(data: Data([1]), magnet: nil)
+        let second = try await service.create(data: Data([2]), magnet: nil)
+        service.start(first); service.start(second)
+        try await wait { service.jobs.allSatisfy { $0.state == .downloading } }
+        await worker.holdPauses()
+        let suspension = Task { await service.suspendAll() }
+        try await waitAsync { await worker.hasHeldPause }
+        // The first-created job is last in the persisted queue. Its pause must
+        // already be pending even while another job's checkpoint is blocked.
+        service.start(first)
+        try await Task.sleep(for: .milliseconds(150))
+        let earlyResumes = await worker.resumeCount(first)
+        XCTAssertEqual(earlyResumes, 0, "Continuing must wait for its background checkpoint")
+        await worker.releasePauses()
+        await suspension.value
+        try await wait { service.job(first)?.state == .downloading }
+        let stillPaused = await worker.isPaused(first)
+        XCTAssertFalse(stillPaused, "An older checkpoint must not pause the resumed engine")
+        await service.suspendAll()
+    }
+
+    @MainActor
+    func testAppRestartRestoresPausedTorrentSelectionAndSavedProgress() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite = UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { try? FileManager.default.removeItem(at: root); defaults.removePersistentDomain(forName: suite) }
+        let files = root.appendingPathComponent("Downloads"), tasks = root.appendingPathComponent("Tasks")
+        let manager = DownloadManagerService(userDefaults: defaults, storageDirectory: files)
+        let service = TorrentDownloadService(manager: manager, root: tasks, worker: ControlledTorrentEngine(), workChanged: {}, userStartedWork: {})
+        let id = try await service.create(data: Data([1]), magnet: nil)
+        service.start(id)
+        try await wait { manager.downloads.first?.receivedBytes == 500 }
+        await service.suspendAll()
+        let ledger = tasks.appendingPathComponent("tasks.json")
+        var oldJobs = try JSONDecoder().decode([TorrentDownloadJob].self, from: Data(contentsOf: ledger))
+        oldJobs[0].directory = "/old-container/Documents/Downloads/old-folder"
+        try JSONEncoder().encode(oldJobs).write(to: ledger)
+        let restoredManager = DownloadManagerService(userDefaults: defaults, storageDirectory: files)
+        let worker = ControlledTorrentEngine()
+        let restored = TorrentDownloadService(manager: restoredManager, root: tasks, worker: worker, workChanged: {}, userStartedWork: {})
+        XCTAssertEqual(restored.job(id)?.state, .paused)
+        XCTAssertEqual(restored.job(id)?.selected, [0])
+        XCTAssertEqual(restored.job(id)?.directory, restoredManager.downloads.first?.localPath)
+        XCTAssertEqual(restoredManager.downloads.first?.progress, 0.5)
+        await worker.setChecking(false, completed: 750)
+        restored.start(id)
+        try await wait { restoredManager.downloads.first?.receivedBytes == 750 }
+        await restored.suspendAll()
+    }
+
+    private func waitAsync(until condition: () async -> Bool) async throws {
+        let deadline = Date().addingTimeInterval(5)
+        while Date() < deadline {
+            if await condition() { return }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTFail("Timed out waiting for the controlled engine")
+        throw URLError(.timedOut)
+    }
+
+    func testNativePauseAndResumeReconnectsWithoutReplacingHandleOrResettingFiles() async throws {
+        let fixture = fixture()
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let seed = root.appendingPathComponent("seed"), download = root.appendingPathComponent("download")
+        try FileManager.default.createDirectory(at: seed.appendingPathComponent("BTFixture"), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: download, withIntermediateDirectories: true)
+        try fixture.first.write(to: seed.appendingPathComponent("BTFixture/selected.bin"))
+        try fixture.second.write(to: seed.appendingPathComponent("BTFixture/excluded.bin"))
+        let seeder = SLTorrentEngine(certificateFile: "", discoveryEnabled: false)
+        let client = SLTorrentEngine(certificateFile: "", discoveryEnabled: false)
+        defer { client.remove("download", deleteFiles: false); seeder.remove("seed", deleteFiles: false) }
+        try seeder.addIdentifier("seed", data: fixture.data, magnet: nil, directory: seed.path, resumeData: nil, priorities: [1,1], metadataOnly: false)
+        try await wait { seeder.snapshots().first?["finished"] as? Bool == true && seeder.listeningPort > 0 }
+        try client.addIdentifier("download", data: fixture.data, magnet: nil, directory: download.path, resumeData: nil, priorities: [1,0], metadataOnly: false)
+        client.setDownloadLimit(128 * 1024, identifier: "download")
+        client.connectIdentifier("download", host: "127.0.0.1", port: seeder.listeningPort)
+        try await wait { (client.snapshots().first?["done"] as? Int64 ?? 0) > 128 * 1024 }
+        _ = try XCTUnwrap(client.pauseAndSave("download"))
+        let checkpoint = client.snapshots().first?["done"] as? Int64 ?? 0
+        client.resume("download", priorities: [1,0])
+        // No test-only connect_peer call after resuming: the engine must recover.
+        try await wait { (client.snapshots().first?["done"] as? Int64 ?? 0) > checkpoint }
+        try await wait { client.snapshots().first?["finished"] as? Bool == true }
+        XCTAssertEqual(try Data(contentsOf: download.appendingPathComponent("BTFixture/selected.bin")), fixture.first)
+    }
+
+}
+
+private actor ControlledTorrentEngine: TorrentEngine {
+    private var ids = Set<UUID>()
+    private var paused = Set<UUID>()
+    private var resumes: [UUID: Int] = [:]
+    private var checking = false
+    private var completed: Int64 = 500
+    private var holding = false
+    private var pending: [CheckedContinuation<Void, Never>] = []
+    var hasHeldPause: Bool { !pending.isEmpty }
+    func holdPauses() { holding = true }
+    func releasePauses() { holding = false; let values = pending; pending.removeAll(); values.forEach { $0.resume() } }
+    func resumeCount(_ id: UUID) -> Int { resumes[id, default: 0] }
+    func isPaused(_ id: UUID) -> Bool { paused.contains(id) }
+    func setChecking(_ value: Bool, completed: Int64 = 500) { checking = value; self.completed = completed }
+    func inspect(data: Data) async throws -> TorrentMetadata {
+        TorrentMetadata(["name": UUID().uuidString, "hash": UUID().uuidString,
+            "files": [["index": 0, "path": "file.bin", "size": Int64(1000), "pad": false]]])
+    }
+    func inspect(magnet: String) async throws -> TorrentMetadata { try await inspect(data: Data()) }
+    func add(id: UUID, data: Data?, magnet: String?, directory: URL, resume: Data?, priorities: [Bool], metadataOnly: Bool) async throws { ids.insert(id) }
+    func snapshots() async -> [TorrentSnapshot] {
+        ids.compactMap { TorrentSnapshot(["id": $0.uuidString, "done": checking ? Int64(0) : completed, "total": Int64(1000), "checking": checking]) }
+    }
+    func save(id: UUID, pause: Bool) async throws -> Data? {
+        if pause {
+            if holding { await withCheckedContinuation { pending.append($0) } }
+            paused.insert(id)
+        }
+        return Data([1])
+    }
+    func resumeMetadata(id: UUID) async { paused.remove(id) }
+    func resume(id: UUID, priorities: [Bool]) async { resumes[id, default: 0] += 1; paused.remove(id) }
+    func remove(id: UUID, deleteFiles: Bool) async -> Bool { ids.remove(id) != nil }
 }

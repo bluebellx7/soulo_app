@@ -27,7 +27,7 @@ final class HomeToolbarUITests: XCTestCase {
         app.navigationBars.buttons.firstMatch.tap()
         app.buttons["Done"].firstMatch.tap()
         XCTAssertTrue(app.buttons["home.toolbar.0"].waitForExistence(timeout: 5), app.debugDescription)
-        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "five-home-glass-shortcuts"; shot.lifetime = .keepAlways; add(shot)
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "five-home-icon-shortcuts"; shot.lifetime = .keepAlways; add(shot)
         app.terminate(); app.launch(); app.open(URL(string: "soulo://")!)
         for (index, section) in actions.prefix(4).enumerated() {
             let button = app.buttons["home.toolbar.\(index)"]

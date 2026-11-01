@@ -48,8 +48,19 @@ struct TorrentSnapshot: Sendable {
     }
 }
 
+protocol TorrentEngine: Sendable {
+    func inspect(data: Data) async throws -> TorrentMetadata
+    func inspect(magnet: String) async throws -> TorrentMetadata
+    func add(id: UUID, data: Data?, magnet: String?, directory: URL, resume: Data?, priorities: [Bool], metadataOnly: Bool) async throws
+    func snapshots() async -> [TorrentSnapshot]
+    func save(id: UUID, pause: Bool) async throws -> Data?
+    func resumeMetadata(id: UUID) async
+    func resume(id: UUID, priorities: [Bool]) async
+    func remove(id: UUID, deleteFiles: Bool) async -> Bool
+}
+
 /// Owns all C++ calls on one worker queue, including synchronous resume-data creation.
-final class TorrentEngineWorker: @unchecked Sendable {
+final class TorrentEngineWorker: TorrentEngine, @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.dkluge.Soulo.torrent-engine", qos: .utility)
     private var engine: SLTorrentEngine?
     private func instance() -> SLTorrentEngine {

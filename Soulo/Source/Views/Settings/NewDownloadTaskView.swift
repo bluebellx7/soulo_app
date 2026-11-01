@@ -166,7 +166,7 @@ struct TorrentTaskDetailView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             Label(job.name, systemImage: "point.3.connected.trianglepath.dotted")
                                 .font(.headline).textSelection(.enabled)
-                            Text(TorrentTaskLabels.state(job)).font(.subheadline).foregroundStyle(.secondary)
+                            Text(TorrentTaskLabels.state(job, snapshot: service.snapshots[job.id])).font(.subheadline).foregroundStyle(.secondary)
                             if let record { ProgressView(value: record.progress) }
                             if let s = service.snapshots[id], job.isActive {
                                 HStack {
@@ -237,13 +237,13 @@ struct TorrentTaskDetailView: View {
 
 @MainActor
 enum TorrentTaskLabels {
-    static func state(_ job: TorrentDownloadJob) -> String {
+    static func state(_ job: TorrentDownloadJob, snapshot: TorrentSnapshot? = nil) -> String {
         switch job.state {
         case .metadata: ToolText.text("torrent_metadata")
         case .selection: ToolText.text("torrent_choose_files")
         case .queued: ToolText.text("torrent_queued")
         case .starting: ToolText.text("loading")
-        case .downloading: ToolText.text("torrent_downloading")
+        case .downloading: ToolText.text(snapshot?.checking == true ? "torrent_checking" : "torrent_downloading")
         case .paused: LanguageManager.shared.localizedString("downloads_paused")
         case .failed: job.error
         case .finished: LanguageManager.shared.localizedString("downloads_finished")
@@ -264,7 +264,7 @@ struct TorrentDownloadRow: View {
                 VStack(alignment: .leading, spacing: 5) {
                     Text(item.fileName).font(.subheadline.weight(.medium)).lineLimit(1)
                     if let job = service.job(item.id) {
-                        Text(TorrentTaskLabels.state(job)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        Text(TorrentTaskLabels.state(job, snapshot: service.snapshots[job.id])).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                     }
                     if item.status == .inProgress { ProgressView(value: item.progress) }
                     if item.expectedBytes > 0 {

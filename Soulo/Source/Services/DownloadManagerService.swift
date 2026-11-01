@@ -428,9 +428,12 @@ final class DownloadManagerService: ObservableObject {
         // files; a stale absolute path must not discard a saved download.
         for index in downloads.indices {
             let item = downloads[index]
+            // A magnet task's display name can change after metadata arrives;
+            // its download folder keeps the original reserved name.
+            let storedName = item.transport == .torrent ? item.localURL.lastPathComponent : item.fileName
             guard !FileManager.default.fileExists(atPath: item.localPath),
-                  Array(item.localURL.pathComponents.suffix(3)) == ["Documents", "Downloads", item.fileName] else { continue }
-            let relocated = storageDirectory.appendingPathComponent(item.fileName)
+                  Array(item.localURL.pathComponents.suffix(3)) == ["Documents", "Downloads", storedName] else { continue }
+            let relocated = storageDirectory.appendingPathComponent(storedName)
             if FileManager.default.fileExists(atPath: relocated.path) {
                 downloads[index].localPath = relocated.path
             }

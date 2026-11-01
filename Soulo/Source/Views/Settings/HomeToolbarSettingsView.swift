@@ -38,7 +38,12 @@ struct HomeToolbarSettingsView: View {
                         ForEach(actions) { action in
                             Button { draft[slot] = action; HapticsManager.selection() } label: {
                                 VStack(spacing: 10) {
-                                    Image(systemName: action.symbol).font(.system(size: 23, weight: .medium)).frame(height: 28)
+                                    Image(systemName: action.listSymbol)
+                                        .font(.system(size: 22, weight: .semibold))
+                                        .symbolRenderingMode(.hierarchical)
+                                        .foregroundStyle(Color.themePrimary)
+                                        .frame(width: 44, height: 44)
+                                        .background(Color.themePrimary.opacity(0.09), in: RoundedRectangle(cornerRadius: 13))
                                     Text(action.title).font(.caption.weight(.medium)).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                                 }
                                 .frame(maxWidth: .infinity, minHeight: 92).padding(.horizontal, 8).padding(.vertical, 10)
@@ -80,40 +85,36 @@ struct HomeToolbarButtonFace: View {
     let lightWallpaper: Bool
     var placeholder: Int?
     var showsTitle = false
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     var body: some View {
         VStack(spacing: 6) {
             Image(systemName: action == .none ? "\(placeholder ?? 1).circle" : action.symbol)
                 .font(.system(size: showsTitle ? 22 : 20, weight: .medium)).frame(height: 25)
             if showsTitle { Text(action.title).font(.caption2.weight(.medium)).lineLimit(1) }
         }
-        .foregroundStyle(lightWallpaper ? Color(hex: "242635") : .white)
+        .foregroundStyle(lightWallpaper ? Color(hex: "242635").opacity(0.85) : .white.opacity(0.85))
         .frame(maxWidth: showsTitle ? .infinity : nil)
         .frame(width: showsTitle ? nil : 50, height: showsTitle ? 68 : 48)
         .padding(.horizontal, showsTitle ? 4 : 0)
-        .modifier(HomeToolbarGlass(light: lightWallpaper, opaque: reduceTransparency, radius: showsTitle ? 20 : 16))
         .contentShape(RoundedRectangle(cornerRadius: 20))
     }
 }
-private struct HomeToolbarGlass: ViewModifier {
-    let light: Bool
-    let opaque: Bool
-    var radius: CGFloat = 20
-    func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-        content
+struct HomeToolbarButtonStyle: ButtonStyle {
+    var lightWallpaper = false
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
             .background {
-                if opaque {
-                    shape.fill(light ? Color(hex: "F0F1F5") : Color(hex: "252734"))
-                } else {
-                    // Keep every face on the same material theme after sheets return.
-                    // Per-control adaptive interaction highlights are not part of this surface.
-                    shape.fill(.ultraThinMaterial)
-                        .environment(\.colorScheme, light ? .light : .dark)
-                        .overlay { shape.fill(light ? .white.opacity(0.08) : .black.opacity(0.18)) }
+                if configuration.isPressed {
+                    let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    if reduceTransparency {
+                        shape.fill(lightWallpaper ? Color(hex: "F0F1F5") : Color(hex: "252734"))
+                    } else {
+                        shape.fill(.ultraThinMaterial)
+                            .environment(\.colorScheme, lightWallpaper ? .light : .dark)
+                    }
                 }
             }
-            .overlay { shape.strokeBorder(.white.opacity(light ? 0.5 : 0.18), lineWidth: 0.7) }
-            .shadow(color: .black.opacity(light ? 0.08 : 0.16), radius: 8, y: 3)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.94 : 1)
     }
 }

@@ -25,7 +25,10 @@ final class TorrentDownloadService: ObservableObject {
     @Published private(set) var jobs: [TorrentDownloadJob] = []
     @Published private(set) var snapshots: [UUID: TorrentSnapshot] = [:]
     @Published private(set) var storageError: String?
-    private let worker = TorrentEngineWorker()
+    private let worker: any TorrentEngine
+    private let manager: DownloadManagerService
+    private let workChanged: @MainActor () -> Void
+    private let userStartedWork: @MainActor () -> Void
     private let root: URL
     private var engineIDs = Set<UUID>()
     private var pollTask: Task<Void, Never>?
@@ -33,22 +36,34 @@ final class TorrentDownloadService: ObservableObject {
     private var suspended = false
     private var metadataStarted: [UUID: Date] = [:]
     private var generations: [UUID: UUID] = [:]
+    private var pauseCheckpoints: [UUID: Task<Void, Never>] = [:]
     var activeJobs: [TorrentDownloadJob] { jobs.filter(\.isActive) }
     var hasWork: Bool { jobs.contains { $0.isActive || $0.state == .queued } }
 
-    private init() {
-        root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("TorrentTasks", isDirectory: true)
+    init(manager: DownloadManagerService? = nil, root: URL? = nil, worker: any TorrentEngine = TorrentEngineWorker(),
+         workChanged: @escaping @MainActor () -> Void = { TorrentBackgroundCoordinator.shared.workChanged() },
+         userStartedWork: @escaping @MainActor () -> Void = { TorrentBackgroundCoordinator.shared.userStartedWork() }) {
+        self.manager = manager ?? .shared
+        self.worker = worker
+        self.workChanged = workChanged
+        self.userStartedWork = userStartedWork
+        self.root = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("TorrentTasks", isDirectory: true)
         do {
-            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true,
+            try FileManager.default.createDirectory(at: self.root, withIntermediateDirectories: true,
                 attributes: [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication])
-            let ledger = root.appendingPathComponent("tasks.json")
+            let ledger = self.root.appendingPathComponent("tasks.json")
             if FileManager.default.fileExists(atPath: ledger.path) {
                 jobs = try JSONDecoder().decode([TorrentDownloadJob].self, from: Data(contentsOf: ledger))
-                let records = Set(DownloadManagerService.shared.downloads.filter { $0.transport == .torrent }.map(\.id))
+                let records = Set(self.manager.downloads.filter { $0.transport == .torrent }.map(\.id))
                 jobs = jobs.filter { records.contains($0.id) }
+                for i in jobs.indices {
+                    if let record = self.manager.downloads.first(where: { $0.id == jobs[i].id }) {
+                        jobs[i].directory = record.localURL.path
+                    }
+                }
                 for i in jobs.indices where jobs[i].isActive || jobs[i].state == .queued {
                     jobs[i].state = .paused
-                    DownloadManagerService.shared.markPaused(id: jobs[i].id)
+                    self.manager.markPaused(id: jobs[i].id)
                 }
                 persist()
             }
@@ -77,7 +92,6 @@ final class TorrentDownloadService: ObservableObject {
             if openExisting { return existing.id }
             throw TorrentTaskError.duplicate
         }
-        let manager = DownloadManagerService.shared
         let name = metadata.name.isEmpty ? "Torrent " + String(metadata.hash.prefix(8)) : metadata.name
         let (item, destination) = manager.beginDownload(suggestedFilename: name, sourceURL: magnet.flatMap(URL.init(string:)), transport: .torrent)
         do {
@@ -88,7 +102,7 @@ final class TorrentDownloadService: ObservableObject {
                 selected: Set(metadata.files.filter { !$0.pad }.map(\.index)), state: data == nil ? .queued : .selection, directory: destination.path)
             jobs.insert(job, at: 0); persist()
             guard storageError == nil else { throw TorrentTaskError.persistence }
-            if data == nil { suspended = false; pump(); TorrentBackgroundCoordinator.shared.userStartedWork() }
+            if data == nil { suspended = false; pump(); userStartedWork() }
             else { manager.markPaused(id: item.id) }
             return item.id
         } catch {
@@ -107,9 +121,9 @@ final class TorrentDownloadService: ObservableObject {
         if !job.files.isEmpty && job.selected.isEmpty { return }
         suspended = false
         mutate(id) { $0.state = .queued; $0.error = "" }
-        DownloadManagerService.shared.markResumed(id: id)
+        self.manager.markResumed(id: id)
         pump()
-        TorrentBackgroundCoordinator.shared.userStartedWork()
+        userStartedWork()
     }
     private func pump() {
         guard !suspended else { return }
@@ -121,11 +135,13 @@ final class TorrentDownloadService: ObservableObject {
         }
     }
     private func launch(_ id: UUID, metadataOnly: Bool) async {
-        guard !suspended, let job = job(id), job.isActive else { return }
+        guard !suspended, job(id)?.isActive == true else { return }
         let generation = UUID(); generations[id] = generation
+        await pauseCheckpoints[id]?.value
+        guard !suspended, generations[id] == generation, let job = job(id), job.isActive else { return }
         if metadataOnly { metadataStarted[id] = Date() }
         mutate(id) { $0.state = metadataOnly ? .metadata : .starting; $0.error = "" }
-        DownloadManagerService.shared.markResumed(id: id)
+        self.manager.markResumed(id: id)
         do {
             if engineIDs.contains(id) && !metadataOnly { await worker.resume(id: id, priorities: job.priorities) }
             else if !engineIDs.contains(id) {
@@ -142,14 +158,15 @@ final class TorrentDownloadService: ObservableObject {
             guard generations[id] == generation else { return }
             fail(id, error: error)
         }
-        TorrentBackgroundCoordinator.shared.workChanged()
+        workChanged()
     }
     func pause(_ id: UUID) {
         guard let job = job(id), job.isActive || job.state == .queued else { return }
         generations[id] = UUID()
         mutate(id) { $0.state = .paused }
-        DownloadManagerService.shared.markPaused(id: id)
-        Task { await save(id, pause: true); pump(); TorrentBackgroundCoordinator.shared.workChanged() }
+        self.manager.markPaused(id: id)
+        let checkpoint = checkpointPause(id)
+        Task { await checkpoint.value; pump(); workChanged() }
     }
     /// Used by expiration handlers. The completion waits for the native engine and atomic resume writes.
     func suspendAll() async {
@@ -158,10 +175,23 @@ final class TorrentDownloadService: ObservableObject {
         for id in ids {
             generations[id] = UUID()
             mutate(id) { $0.state = .paused }
-            DownloadManagerService.shared.markPaused(id: id)
+            self.manager.markPaused(id: id)
         }
-        for id in ids { await save(id, pause: true) }
+        // Register every checkpoint before yielding. A newly resumed job must
+        // never be paused later by the remainder of this background batch.
+        let checkpoints = ids.map { checkpointPause($0) }
+        for checkpoint in checkpoints { await checkpoint.value }
         persist()
+    }
+    @discardableResult
+    private func checkpointPause(_ id: UUID) -> Task<Void, Never> {
+        let previous = pauseCheckpoints[id]
+        let checkpoint = Task { [weak self] in
+            await previous?.value
+            await self?.save(id, pause: true)
+        }
+        pauseCheckpoints[id] = checkpoint
+        return checkpoint
     }
     private func save(_ id: UUID, pause: Bool = false) async {
         do {
@@ -175,19 +205,22 @@ final class TorrentDownloadService: ObservableObject {
         let existing = job(id)
         jobs.removeAll { $0.id == id }; snapshots[id] = nil; persist()
         engineIDs.remove(id)
+        let checkpoint = pauseCheckpoints.removeValue(forKey: id)
         Task {
             // Wait for preceding add/save calls before removing native ownership.
+            await checkpoint?.value
             let nativeOwned = await worker.remove(id: id, deleteFiles: deleteFiles)
             if deleteFiles && !nativeOwned, let existing { try? FileManager.default.removeItem(atPath: existing.directory) }
             try? FileManager.default.removeItem(at: dataURL(id, "torrent"))
             try? FileManager.default.removeItem(at: dataURL(id, "resume"))
-            pump(); TorrentBackgroundCoordinator.shared.workChanged()
+            pump(); workChanged()
         }
     }
     private func fail(_ id: UUID, error: Error) {
         mutate(id) { $0.state = .failed; $0.error = error.localizedDescription }
-        DownloadManagerService.shared.markFailed(id: id, error: error)
-        Task { await save(id, pause: true); pump() }
+        self.manager.markFailed(id: id, error: error)
+        let checkpoint = checkpointPause(id)
+        Task { await checkpoint.value; pump() }
     }
     private func beginPolling() {
         guard pollTask == nil else { return }
@@ -211,18 +244,19 @@ final class TorrentDownloadService: ObservableObject {
                     $0.files = metadata.files; $0.name = metadata.name
                     $0.selected = Set(metadata.files.filter { !$0.pad }.map(\.index)); $0.state = .selection
                 }
-                DownloadManagerService.shared.renameTorrent(id: job.id, name: metadata.name)
-                DownloadManagerService.shared.markPaused(id: job.id)
-                await save(job.id, pause: true)
+                self.manager.renameTorrent(id: job.id, name: metadata.name)
+                self.manager.markPaused(id: job.id)
+                await checkpointPause(job.id).value
             } else if job.state == .metadata && Date().timeIntervalSince(metadataStarted[job.id] ?? Date()) > 300 {
                 fail(job.id, error: TorrentTaskError.metadataTimeout)
-            } else if job.state == .downloading {
-                DownloadManagerService.shared.updateProgress(id: job.id, completed: value.completed, total: value.total)
-                if value.finished && !value.checking && !job.selected.isEmpty
-                    && value.total == job.selectedBytes && value.completed >= job.selectedBytes {
+            } else if job.state == .downloading, !value.checking, value.total == job.selectedBytes {
+                // Initial checking/priority snapshots can temporarily report zero.
+                // Only replace persisted progress once the selected data is verified.
+                self.manager.updateProgress(id: job.id, completed: value.completed, total: value.total)
+                if value.finished && !job.selected.isEmpty && value.completed >= job.selectedBytes {
                     mutate(job.id) { $0.state = .finished }
-                    await save(job.id, pause: true) // Do not seed after completion.
-                    DownloadManagerService.shared.markFinished(id: job.id)
+                    await checkpointPause(job.id).value // Do not seed after completion.
+                    self.manager.markFinished(id: job.id)
                 }
             }
         }
@@ -231,7 +265,7 @@ final class TorrentDownloadService: ObservableObject {
             for id in activeJobs.map(\.id) { await save(id) }
         }
         pump()
-        TorrentBackgroundCoordinator.shared.workChanged()
+        workChanged()
     }
 }
 

@@ -32,6 +32,7 @@ final class HomeToolbarConfigurationTests: XCTestCase {
         for action in HomeToolbarAction.allCases {
             XCTAssertFalse(action.title.isEmpty)
             XCTAssertNotNil(UIImage(systemName: action.symbol), action.rawValue)
+            XCTAssertNotNil(UIImage(systemName: action.listSymbol), action.rawValue)
             XCTAssertFalse(action.title.contains("_"), "Unresolved localization key: " + action.rawValue)
         }
     }

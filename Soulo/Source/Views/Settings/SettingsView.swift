@@ -123,7 +123,7 @@ struct SettingsView: View {
                             Label {
                                 Text(LanguageManager.shared.localizedString("settings_wallpaper"))
                             } icon: {
-                                IconBadge(systemName: "photo.fill", color: neutralIconColor)
+                                IconBadge(systemName: HomeToolbarAction.wallpaper.listSymbol, color: neutralIconColor)
                             }
                         }
 
