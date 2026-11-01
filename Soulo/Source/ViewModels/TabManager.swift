@@ -699,7 +699,7 @@ final class TabManager: ObservableObject {
             let restoredURL = saved.urlString.flatMap(URL.init(string:))
             guard Self.isRestorableAcrossLaunches(restoredURL) else { continue }
             let platform = saved.platformName.flatMap { name in
-                allPlatforms.first { $0.name == name }
+                allPlatforms.first { $0.name == (name == "platform_shenma" ? "platform_quark" : name) }
             }
             var tab = BrowserTab(
                 id: UUID(uuidString: saved.id) ?? UUID(),

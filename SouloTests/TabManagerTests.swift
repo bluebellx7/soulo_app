@@ -7,6 +7,28 @@ final class TabManagerTests: XCTestCase {
     private let storageKey = "soulo_saved_tabs"
 
     @MainActor
+    func testSavedShenmaTabKeepsItsPlatformWhenRestoredAsQuark() throws {
+        let key = "quark-tab-migration-\(UUID())"
+        let privacy = UserDefaults.standard.object(forKey: "is_incognito")
+        UserDefaults.standard.set(false, forKey: "is_incognito")
+        UserDefaults.standard.set(Data(#"{"tabs":[],"activeIndex":0}"#.utf8), forKey: key)
+        defer {
+            UserDefaults.standard.removeObject(forKey: key)
+            UserDefaults.standard.set(privacy, forKey: "is_incognito")
+        }
+        var legacy = try XCTUnwrap(PlatformDataStore.shared.platforms.first { $0.name == "platform_quark" })
+        legacy.name = "platform_shenma"
+        let url = URL(string: "https://m.sm.cn/s?q=legacy")!
+        let manager = TabManager(storageKey: key)
+        manager.createTab(url: url, keyword: "legacy", platform: legacy)
+        manager.saveToDisk()
+        let restored = TabManager(storageKey: key)
+        let tab = try XCTUnwrap(restored.tabs.first { $0.keyword == "legacy" })
+        XCTAssertEqual(tab.platform?.name, "platform_quark")
+        XCTAssertEqual(tab.webViewModel.currentURL, url, "Restoring a tab must preserve its existing page")
+    }
+
+    @MainActor
     func testOverviewUsesRecentVisitsWithoutReorderingTheTabStripAndSurvivesRestart() throws {
         let key = "recent-overview-\(UUID())"
         UserDefaults.standard.set(Data(#"{"tabs":[],"activeIndex":0}"#.utf8), forKey: key)
@@ -537,26 +559,51 @@ final class TabManagerTests: XCTestCase {
 
 @MainActor
 final class PlatformDataStoreTests: XCTestCase {
-    func testShenmaDefaultsPrecedeBaiduAndUseTheOfficialSearchURL() throws {
-        let china = PlatformDataStore.defaultPlatforms().filter { $0.region == .china }.sorted { $0.sortOrder < $1.sortOrder }
-        let baidu = try XCTUnwrap(china.firstIndex { $0.name == "platform_baidu" })
-        let shenma = china[baidu - 1]
-        XCTAssertEqual(shenma.name, "platform_shenma")
-        XCTAssertTrue(shenma.isVisible)
-        XCTAssertFalse(shenma.requiresLogin)
-        XCTAssertNotNil(UIImage(named: shenma.iconName))
-        let url = try XCTUnwrap(shenma.searchURL(for: "黑夜传说"))
-        XCTAssertEqual(url.host, "m.sm.cn")
-        XCTAssertEqual(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "q" }?.value, "黑夜传说")
-    }
-
-    func testShenmaUpgradePreservesUserOrderAndManualVisibility() throws {
+    func testSavedShenmaIsReplacedInPlaceWithoutChangingVisibilityOrOrder() throws {
         let defaults = UserDefaults.standard, store = PlatformDataStore.shared
         let data = defaults.data(forKey: "platform_config"), version = defaults.object(forKey: "platform_config_version")
         defer {
             defaults.set(data, forKey: "platform_config"); defaults.set(version, forKey: "platform_config_version"); store.reloadFromDefaults()
         }
-        var old = PlatformDataStore.defaultPlatforms().filter { $0.name != "platform_shenma" }
+        var old = PlatformDataStore.defaultPlatforms()
+        let index = try XCTUnwrap(old.firstIndex { $0.name == "platform_quark" })
+        let id = old[index].id
+        old[index].name = "platform_shenma"; old[index].iconName = "icon_shenma"
+        old[index].homeURL = "https://m.sm.cn/"
+        old[index].searchURLTemplate = "https://m.sm.cn/s?q=%@&from=smor&safe=1"
+        old[index].isVisible = false
+        defaults.set(try JSONEncoder().encode(old), forKey: "platform_config")
+        defaults.set(45, forKey: "platform_config_version"); store.reloadFromDefaults()
+        let replacement = try XCTUnwrap(store.platforms.first { $0.id == id })
+        XCTAssertEqual(replacement.name, "platform_quark")
+        XCTAssertEqual(replacement.iconName, "icon_quark")
+        XCTAssertFalse(replacement.isVisible)
+        XCTAssertEqual(replacement.searchURL(for: "天字怎么写")?.host, "quark.sm.cn")
+        XCTAssertEqual(store.platforms(for: .china).map(\.id), old.filter { $0.region == .china }.map(\.id))
+        store.reloadFromDefaults()
+        XCTAssertEqual(store.platforms.filter { $0.name == "platform_quark" }.count, 1)
+    }
+
+    func testQuarkDefaultsPrecedeBaiduAndUseTheOfficialSearchURL() throws {
+        let china = PlatformDataStore.defaultPlatforms().filter { $0.region == .china }.sorted { $0.sortOrder < $1.sortOrder }
+        let baidu = try XCTUnwrap(china.firstIndex { $0.name == "platform_baidu" })
+        let quark = china[baidu - 1]
+        XCTAssertEqual(quark.name, "platform_quark")
+        XCTAssertTrue(quark.isVisible)
+        XCTAssertFalse(quark.requiresLogin)
+        XCTAssertNotNil(UIImage(named: quark.iconName))
+        let url = try XCTUnwrap(quark.searchURL(for: "黑夜传说"))
+        XCTAssertEqual(url.host, "quark.sm.cn")
+        XCTAssertEqual(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "q" }?.value, "黑夜传说")
+    }
+
+    func testQuarkUpgradePreservesUserOrderAndManualVisibility() throws {
+        let defaults = UserDefaults.standard, store = PlatformDataStore.shared
+        let data = defaults.data(forKey: "platform_config"), version = defaults.object(forKey: "platform_config_version")
+        defer {
+            defaults.set(data, forKey: "platform_config"); defaults.set(version, forKey: "platform_config_version"); store.reloadFromDefaults()
+        }
+        var old = PlatformDataStore.defaultPlatforms().filter { $0.name != "platform_quark" }
         let chinaIDs = old.filter { $0.region == .china }.reversed().map(\.id)
         for (order, id) in chinaIDs.enumerated() {
             let index = try XCTUnwrap(old.firstIndex { $0.id == id })
@@ -567,31 +614,31 @@ final class PlatformDataStoreTests: XCTestCase {
         defaults.set(43, forKey: "platform_config_version"); store.reloadFromDefaults()
         let china = store.platforms(for: .china)
         let baidu = try XCTUnwrap(china.firstIndex { $0.name == "platform_baidu" })
-        let shenma = china[baidu - 1]
-        XCTAssertEqual(shenma.name, "platform_shenma")
-        XCTAssertEqual(china.filter { $0.id != shenma.id }.map(\.id), chinaIDs)
+        let quark = china[baidu - 1]
+        XCTAssertEqual(quark.name, "platform_quark")
+        XCTAssertEqual(china.filter { $0.id != quark.id }.map(\.id), chinaIDs)
         for platform in old {
             XCTAssertEqual(store.platforms.first { $0.id == platform.id }?.isVisible, platform.isVisible)
         }
-        store.toggleVisibility(for: shenma.id); store.reloadFromDefaults()
-        XCTAssertEqual(store.platforms.filter { $0.name == "platform_shenma" }.count, 1)
-        XCTAssertFalse(try XCTUnwrap(store.platforms.first { $0.id == shenma.id }).isVisible)
+        store.toggleVisibility(for: quark.id); store.reloadFromDefaults()
+        XCTAssertEqual(store.platforms.filter { $0.name == "platform_quark" }.count, 1)
+        XCTAssertFalse(try XCTUnwrap(store.platforms.first { $0.id == quark.id }).isVisible)
     }
 
-    func testShenmaUpgradeKeepsAnEntirelyDisabledChinaGroupDisabled() throws {
+    func testQuarkUpgradeKeepsAnEntirelyDisabledChinaGroupDisabled() throws {
         let defaults = UserDefaults.standard, store = PlatformDataStore.shared
         let data = defaults.data(forKey: "platform_config"), version = defaults.object(forKey: "platform_config_version")
         defer {
             defaults.set(data, forKey: "platform_config"); defaults.set(version, forKey: "platform_config_version"); store.reloadFromDefaults()
         }
-        let old = PlatformDataStore.defaultPlatforms().filter { $0.name != "platform_shenma" }.map { platform in
+        let old = PlatformDataStore.defaultPlatforms().filter { $0.name != "platform_quark" }.map { platform in
             var platform = platform
             if platform.region == .china { platform.isVisible = false }
             return platform
         }
         defaults.set(try JSONEncoder().encode(old), forKey: "platform_config")
         defaults.set(43, forKey: "platform_config_version"); store.reloadFromDefaults()
-        XCTAssertNotNil(store.platforms.first { $0.name == "platform_shenma" })
+        XCTAssertNotNil(store.platforms.first { $0.name == "platform_quark" })
         XCTAssertTrue(store.visiblePlatforms(for: .china).isEmpty)
     }
 

@@ -24,6 +24,7 @@
 "platform_zlibrary" = "जेड-लाइब्रेरी";
 "platform_baidu" = "Baidu";
 "platform_shenma" = "Shenma";
+"platform_quark" = "Quark";
 "platform_taobao" = "ताओबाओ";
 "platform_jd" = "जद";
 "platform_wechat" = "वीचैट खोज";

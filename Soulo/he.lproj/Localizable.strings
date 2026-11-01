@@ -24,6 +24,7 @@
 "platform_zlibrary" = "Z-Library";
 "platform_baidu" = "באידו";
 "platform_shenma" = "Shenma";
+"platform_quark" = "Quark";
 "platform_taobao" = "טאובאו";
 "platform_jd" = "JD";
 "platform_wechat" = "חיפוש WeChat";

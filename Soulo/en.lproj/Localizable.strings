@@ -31,6 +31,7 @@
 "platform_zlibrary" = "Z-Library";
 "platform_baidu" = "Baidu";
 "platform_shenma" = "Shenma Search";
+"platform_quark" = "Quark Search";
 "platform_taobao" = "Taobao";
 "platform_jd" = "JD";
 "platform_wechat" = "WeChat Search";

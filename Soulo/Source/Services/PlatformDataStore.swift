@@ -22,7 +22,7 @@ class PlatformDataStore: ObservableObject {
 
     // MARK: - Persistence
 
-    private let platformVersion = 45 // Increment when cached built-in defaults need migration
+    private let platformVersion = 46 // Increment when cached built-in defaults need migration
 
     private func load() {
         let savedVersion = UserDefaults.standard.integer(forKey: "platform_config_version")
@@ -380,6 +380,30 @@ class PlatformDataStore: ObservableObject {
             }
         }
 
+        if version < 46,
+           let quarkDefault = Self.defaultPlatforms().first(where: { $0.name == "platform_quark" }) {
+            if let index = platforms.firstIndex(where: { $0.isBuiltIn && $0.name == "platform_shenma" }) {
+                platforms[index].name = quarkDefault.name
+                platforms[index].iconName = quarkDefault.iconName
+                platforms[index].searchURLTemplate = quarkDefault.searchURLTemplate
+                platforms[index].homeURL = quarkDefault.homeURL
+            } else if version < 44, !platforms.contains(where: { $0.isBuiltIn && $0.name == "platform_quark" }) {
+                // Older catalogs never had Shenma. Preserve an intentionally
+                // deleted entry in newer catalogs, and a fully disabled group.
+                let china = platforms(for: .china)
+                let position = china.firstIndex(where: { $0.isBuiltIn && $0.name == "platform_baidu" }) ?? 0
+                var quark = quarkDefault
+                quark.isVisible = china.contains(where: \.isVisible)
+                quark.sortOrder = position
+                for (order, platform) in china.enumerated() {
+                    if let index = platforms.firstIndex(where: { $0.id == platform.id }) {
+                        platforms[index].sortOrder = order >= position ? order + 1 : order
+                    }
+                }
+                platforms.append(quark)
+            }
+        }
+
     }
 
     @discardableResult
@@ -494,7 +518,7 @@ class PlatformDataStore: ObservableObject {
 
         // MARK: China
         let chinaData: [(String, String, String, String)] = [
-            ("platform_shenma",       "icon_shenma",       "https://m.sm.cn/s?q=%@&from=smor&safe=1",                    "https://m.sm.cn/"),
+            ("platform_quark",        "icon_quark",        "https://quark.sm.cn/s?q=%@&safe=1&by=submit&snum=1",           "https://quark.sm.cn/"),
             ("platform_baidu",        "icon_baidu",        "https://www.baidu.com/s?wd=%@",                             "https://www.baidu.com"),
             ("platform_bilibili",     "icon_bilibili",     "https://search.bilibili.com/all?keyword=%@",                "https://www.bilibili.com"),
             ("platform_weibo",        "icon_weibo",        "https://s.weibo.com/weibo?q=%@",                            "https://weibo.com"),
