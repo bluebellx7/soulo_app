@@ -100,14 +100,20 @@ private struct HomeToolbarGlass: ViewModifier {
     let opaque: Bool
     var radius: CGFloat = 20
     func body(content: Content) -> some View {
-        if opaque {
-            content.background(light ? Color(uiColor: .secondarySystemGroupedBackground) : Color(hex: "252734"), in: RoundedRectangle(cornerRadius: radius))
-        } else if #available(iOS 26.0, *) {
-            content.glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: radius))
-        } else {
-            content.background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: radius))
-                .overlay { RoundedRectangle(cornerRadius: radius).stroke(.white.opacity(light ? 0.4 : 0.18), lineWidth: 0.7) }
-                .shadow(color: .black.opacity(0.1), radius: 10, y: 4)
-        }
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        content
+            .background {
+                if opaque {
+                    shape.fill(light ? Color(hex: "F0F1F5") : Color(hex: "252734"))
+                } else {
+                    // Keep every face on the same material theme after sheets return.
+                    // Per-control adaptive interaction highlights are not part of this surface.
+                    shape.fill(.ultraThinMaterial)
+                        .environment(\.colorScheme, light ? .light : .dark)
+                        .overlay { shape.fill(light ? .white.opacity(0.08) : .black.opacity(0.18)) }
+                }
+            }
+            .overlay { shape.strokeBorder(.white.opacity(light ? 0.5 : 0.18), lineWidth: 0.7) }
+            .shadow(color: .black.opacity(light ? 0.08 : 0.16), radius: 8, y: 3)
     }
 }

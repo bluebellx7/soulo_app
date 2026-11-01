@@ -95,6 +95,7 @@ private struct SouloWindowRoot: View {
             .environmentObject(searchVM)
             .environmentObject(tabManager)
             .task {
+                VideoScreenAwakeService.shared.reloadUserPreference()
                 CloudSyncService.shared.startIfEnabled()
             }
             .onChange(of: scenePhase, initial: true) { _, newPhase in

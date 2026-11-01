@@ -22,6 +22,7 @@ struct SettingsView: View {
     @ObservedObject private var cloudSync = CloudSyncService.shared
     @AppStorage(AppConstants.StorageKeys.shakeAction) private var shakeAction = BrowserShakeAction.none.rawValue
     @AppStorage(LiveActivityService.enabledKey) private var liveActivityEnabled: Bool = true
+    @AppStorage(VideoScreenAwakeService.preferenceKey) private var keepScreenAwake = false
     @AppStorage("show_bookmarks_on_home") private var showBookmarksOnHome: Bool = false
     @AppStorage("show_group_picker_on_home") private var showGroupPickerOnHome: Bool = false
     @AppStorage("show_recent_searches_on_home") private var showRecentSearchesOnHome: Bool = true
@@ -243,6 +244,20 @@ struct SettingsView: View {
                             )
                         }
                         .tint(Color.themePrimary)
+
+                        Toggle(isOn: $keepScreenAwake) {
+                            SettingsDescriptionLabel(
+                                icon: "sun.max.fill",
+                                color: keepScreenAwake ? Color.themePrimary : Color(uiColor: .systemGray3),
+                                title: ToolText.text("screen_keep_awake"),
+                                description: ToolText.text("screen_keep_awake_desc")
+                            )
+                        }
+                        .tint(Color.themePrimary)
+                        .accessibilityIdentifier("settings.keepScreenAwake")
+                        .onChange(of: keepScreenAwake) { _, _ in
+                            VideoScreenAwakeService.shared.reloadUserPreference()
+                        }
 
                         Toggle(isOn: $keepFullscreenBrowsing) {
                             SettingsDescriptionLabel(

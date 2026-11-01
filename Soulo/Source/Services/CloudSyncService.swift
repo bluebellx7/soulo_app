@@ -135,6 +135,7 @@ final class CloudSyncService: NSObject, ObservableObject {
         "browser_toolbar_address_action",
         "ad_block_enabled",
         LiveActivityService.enabledKey,
+        VideoScreenAwakeService.preferenceKey,
         "privacy_https_upgrade_enabled",
         "privacy_strip_tracking_parameters",
         "privacy_gpc_enabled",

@@ -449,3 +449,6 @@
 "batch_import_new_group" = "匯入群組";
 
 "image_resources" = "網頁資源";
+
+"screen_keep_awake" = "螢幕常亮";
+"screen_keep_awake_desc" = "開啟後，App 在前景使用時不會自動鎖定螢幕。";

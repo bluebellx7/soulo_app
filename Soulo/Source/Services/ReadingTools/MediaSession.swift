@@ -7,6 +7,9 @@ import CryptoKit
 @MainActor
 final class VideoScreenAwakeService {
     static let shared = VideoScreenAwakeService()
+    static let preferenceKey = "keep_screen_awake"
+    private let preferenceOwner = UUID()
+    private var userPreferenceEnabled = false
     private var owners = Set<UUID>()
     private var previousIdleTimerDisabled: Bool?
 
@@ -19,6 +22,20 @@ final class VideoScreenAwakeService {
             object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.refresh() }
         }
+        NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification,
+            object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.reloadUserPreference() }
+        }
+        reloadUserPreference()
+    }
+
+    /// Use the same lease collection as playback, so disabling the setting
+    /// never releases another player's request to keep the display awake.
+    func reloadUserPreference() {
+        let enabled = UserDefaults.standard.bool(forKey: Self.preferenceKey)
+        guard enabled != userPreferenceEnabled else { return }
+        userPreferenceEnabled = enabled
+        setActive(enabled, owner: preferenceOwner)
     }
 
     func setActive(_ active: Bool, owner: UUID) {

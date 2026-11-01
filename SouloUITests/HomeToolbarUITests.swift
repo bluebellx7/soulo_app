@@ -45,6 +45,8 @@ final class HomeToolbarUITests: XCTestCase {
         fifth.tap()
         XCTAssertTrue(app.navigationBars["Wallpaper"].waitForExistence(timeout: 5), app.debugDescription)
         app.buttons["Done"].firstMatch.tap()
+        let returned = XCTAttachment(screenshot: app.screenshot())
+        returned.name = "home-shortcuts-after-presentations"; returned.lifetime = .keepAlways; add(returned)
         openSettings(app)
         app.buttons["Hide All"].firstMatch.tap()
         app.sheets.buttons["Hide All"].tap()

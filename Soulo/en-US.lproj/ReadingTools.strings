@@ -449,3 +449,6 @@
 "batch_import_new_group" = "Imported Group";
 
 "image_resources" = "Resources";
+
+"screen_keep_awake" = "Keep Screen On";
+"screen_keep_awake_desc" = "Prevent automatic locking while the app is in the foreground.";
