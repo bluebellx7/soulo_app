@@ -40,7 +40,8 @@ struct GroupDefaultSearchEngine: Codable, Hashable, Identifiable {
         .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000004")!, name: "platform_google_kr", template: "https://www.google.co.kr/search?q=%@&hl=ko&gl=kr", homeURL: "https://www.google.co.kr", icon: "icon_google"),
         .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000005")!, name: "platform_yandex", template: "https://yandex.ru/search/?text=%@", homeURL: "https://yandex.ru", icon: "icon_yandex"),
         .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000006")!, name: "platform_bing", template: "https://www.bing.com/search?q=%@", homeURL: "https://www.bing.com", icon: "icon_bing"),
-        .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000007")!, name: "platform_duckduckgo", template: "https://duckduckgo.com/?q=%@", homeURL: "https://duckduckgo.com", icon: "icon_duckduckgo")
+        .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000007")!, name: "platform_duckduckgo", template: "https://duckduckgo.com/?q=%@", homeURL: "https://duckduckgo.com", icon: "icon_duckduckgo"),
+        .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000008")!, name: "platform_shenma", template: "https://m.sm.cn/s?q=%@&from=smor&safe=1", homeURL: "https://m.sm.cn/", icon: "icon_shenma")
     ]
     static func initial(scope: SearchGroupScope, language: String) -> Self {
         switch scope {
