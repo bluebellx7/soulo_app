@@ -4,14 +4,14 @@ import XCTest
 @MainActor
 final class GroupDefaultSearchTests: XCTestCase {
     func testRegionDefaultsAndLanguageDependentCustomDefaults() {
-        let regions: [(PlatformRegion, String)] = [(.china,"www.baidu.com"),(.international,"www.google.com"),
+        let regions: [(PlatformRegion, String)] = [(.china,"m.sm.cn"),(.international,"www.google.com"),
             (.japan,"www.google.co.jp"),(.korea,"www.google.co.kr"),(.russia,"yandex.ru")]
         for (region, host) in regions {
             let engine = GroupDefaultSearchEngine.initial(scope: .region(region), language: "en-US")
             XCTAssertEqual(engine.platform(region: region).searchURL(for: "a & 中文")?.host, host)
         }
         let scope = SearchGroupScope.custom(UUID())
-        XCTAssertEqual(GroupDefaultSearchEngine.initial(scope: scope, language: "zh-Hant").name, "platform_baidu")
+        XCTAssertEqual(GroupDefaultSearchEngine.initial(scope: scope, language: "zh-Hant").name, "platform_shenma")
         XCTAssertEqual(GroupDefaultSearchEngine.initial(scope: scope, language: "en-US").name, "platform_google")
     }
     func testIndependentOverridesPersistAndValidateURLs() throws {
@@ -25,6 +25,9 @@ final class GroupDefaultSearchTests: XCTestCase {
         try service.save(engine, for: scope)
         XCTAssertEqual(GroupDefaultSearchService(defaults: defaults).engine(for: scope), engine)
         XCTAssertEqual(service.engine(for: .region(.russia)).name, "platform_yandex")
+        let baidu = try XCTUnwrap(GroupDefaultSearchEngine.presets.first { $0.name == "platform_baidu" })
+        try service.save(baidu, for: .region(.china))
+        XCTAssertEqual(GroupDefaultSearchService(defaults: defaults).engine(for: .region(.china)), baidu)
         engine.template = "javascript:alert('%@')"
         XCTAssertThrowsError(try service.save(engine, for: scope))
         engine.template = "https://example.com/search"
@@ -71,8 +74,8 @@ final class GroupDefaultSearchTests: XCTestCase {
         UserDefaults.standard.set("zh-Hans", forKey: "app_language")
         let model = SearchViewModel(suggestionProvider: { _,_ in [] })
         model.selectCustomGroup(group)
-        XCTAssertEqual(model.selectedPlatform?.name, "platform_baidu")
-        try GroupDefaultSearchService.shared.save(GroupDefaultSearchEngine.presets[4], for: .custom(group.id))
+        XCTAssertEqual(model.selectedPlatform?.name, "platform_shenma")
+        try GroupDefaultSearchService.shared.save(try XCTUnwrap(GroupDefaultSearchEngine.presets.first { $0.name == "platform_yandex" }), for: .custom(group.id))
         model.selectCustomGroup(group)
         XCTAssertEqual(model.selectedPlatform?.name, "platform_yandex")
         XCTAssertEqual(model.selectedGroupID, group.id)

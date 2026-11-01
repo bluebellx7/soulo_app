@@ -34,24 +34,26 @@ struct GroupDefaultSearchEngine: Codable, Hashable, Identifiable {
         return true
     }
     static let presets: [Self] = [
+        .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000008")!, name: "platform_shenma", template: "https://m.sm.cn/s?q=%@&from=smor&safe=1", homeURL: "https://m.sm.cn/", icon: "icon_shenma"),
         .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000001")!, name: "platform_baidu", template: "https://www.baidu.com/s?wd=%@", homeURL: "https://www.baidu.com", icon: "icon_baidu"),
         .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000002")!, name: "platform_google", template: "https://www.google.com/search?q=%@", homeURL: "https://www.google.com", icon: "icon_google"),
         .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000003")!, name: "platform_google_jp", template: "https://www.google.co.jp/search?q=%@&hl=ja&gl=jp", homeURL: "https://www.google.co.jp", icon: "icon_google"),
         .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000004")!, name: "platform_google_kr", template: "https://www.google.co.kr/search?q=%@&hl=ko&gl=kr", homeURL: "https://www.google.co.kr", icon: "icon_google"),
         .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000005")!, name: "platform_yandex", template: "https://yandex.ru/search/?text=%@", homeURL: "https://yandex.ru", icon: "icon_yandex"),
         .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000006")!, name: "platform_bing", template: "https://www.bing.com/search?q=%@", homeURL: "https://www.bing.com", icon: "icon_bing"),
-        .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000007")!, name: "platform_duckduckgo", template: "https://duckduckgo.com/?q=%@", homeURL: "https://duckduckgo.com", icon: "icon_duckduckgo"),
-        .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000008")!, name: "platform_shenma", template: "https://m.sm.cn/s?q=%@&from=smor&safe=1", homeURL: "https://m.sm.cn/", icon: "icon_shenma")
+        .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000007")!, name: "platform_duckduckgo", template: "https://duckduckgo.com/?q=%@", homeURL: "https://duckduckgo.com", icon: "icon_duckduckgo")
     ]
     static func initial(scope: SearchGroupScope, language: String) -> Self {
-        switch scope {
-        case .region(.china): presets[0]
-        case .region(.international): presets[1]
-        case .region(.japan): presets[2]
-        case .region(.korea): presets[3]
-        case .region(.russia): presets[4]
-        case .custom: language.lowercased().hasPrefix("zh") ? presets[0] : presets[1]
+        // Preset menu ordering must not change a region's default engine.
+        let name = switch scope {
+        case .region(.china): "platform_shenma"
+        case .region(.international): "platform_google"
+        case .region(.japan): "platform_google_jp"
+        case .region(.korea): "platform_google_kr"
+        case .region(.russia): "platform_yandex"
+        case .custom: language.lowercased().hasPrefix("zh") ? "platform_shenma" : "platform_google"
         }
+        return presets.first { $0.name == name }!
     }
 }
 

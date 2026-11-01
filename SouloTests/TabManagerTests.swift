@@ -537,10 +537,10 @@ final class TabManagerTests: XCTestCase {
 
 @MainActor
 final class PlatformDataStoreTests: XCTestCase {
-    func testShenmaDefaultsFollowBaiduAndUseTheOfficialSearchURL() throws {
+    func testShenmaDefaultsPrecedeBaiduAndUseTheOfficialSearchURL() throws {
         let china = PlatformDataStore.defaultPlatforms().filter { $0.region == .china }.sorted { $0.sortOrder < $1.sortOrder }
         let baidu = try XCTUnwrap(china.firstIndex { $0.name == "platform_baidu" })
-        let shenma = china[baidu + 1]
+        let shenma = china[baidu - 1]
         XCTAssertEqual(shenma.name, "platform_shenma")
         XCTAssertTrue(shenma.isVisible)
         XCTAssertFalse(shenma.requiresLogin)
@@ -567,7 +567,7 @@ final class PlatformDataStoreTests: XCTestCase {
         defaults.set(43, forKey: "platform_config_version"); store.reloadFromDefaults()
         let china = store.platforms(for: .china)
         let baidu = try XCTUnwrap(china.firstIndex { $0.name == "platform_baidu" })
-        let shenma = china[baidu + 1]
+        let shenma = china[baidu - 1]
         XCTAssertEqual(shenma.name, "platform_shenma")
         XCTAssertEqual(china.filter { $0.id != shenma.id }.map(\.id), chinaIDs)
         for platform in old {
