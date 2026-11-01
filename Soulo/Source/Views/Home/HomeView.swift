@@ -452,7 +452,7 @@ struct HomeView: View {
                             if action != .none {
                                 Button { performHomeToolbarAction(action) } label: {
                                     HomeToolbarButtonFace(action: action, lightWallpaper: wallpaperManager.isCurrentWallpaperLight)
-                                }.buttonStyle(HomeToolbarButtonStyle(lightWallpaper: wallpaperManager.isCurrentWallpaperLight))
+                                }.buttonStyle(HomeToolbarButtonStyle(lightWallpaper: wallpaperManager.isCurrentWallpaperLight, showsBackground: homeToolbar.showsButtonBackground))
                                     .accessibilityLabel(action.title)
                                     .accessibilityIdentifier("home.toolbar.\(index)")
                             }

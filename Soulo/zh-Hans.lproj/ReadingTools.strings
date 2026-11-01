@@ -458,3 +458,5 @@
 "delete_files_busy" = "所选项目中有未完成的下载，请先到下载页面取消对应任务。";
 
 "torrent_checking" = "正在校验已下载内容…";
+
+"home_toolbar_button_background" = "按钮背景与边框";

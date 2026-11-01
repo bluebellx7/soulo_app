@@ -458,3 +458,5 @@
 "delete_files_busy" = "Some items are still downloading or paused. Remove their tasks in Downloads before deleting them.";
 
 "torrent_checking" = "Checking downloaded files…";
+
+"home_toolbar_button_background" = "Button Background & Border";

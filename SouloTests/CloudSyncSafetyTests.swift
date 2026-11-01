@@ -177,6 +177,7 @@ final class CloudSyncSafetyTests: XCTestCase {
         local.set("Soulo", forKey: "home_title")
         local.set("dark", forKey: "appearance")
         local.set(false, forKey: "show_bookmarks_on_home")
+        local.set(false, forKey: HomeToolbarConfigurationService.backgroundKey)
         try setPlatforms(PlatformDataStore.defaultPlatforms(), in: local)
         local.set(try JSONEncoder().encode(AdBlockSubscriptionService.defaultSubscriptions()), forKey: "soulo_ad_block_subscriptions")
         let journal = try CloudSettingsSyncEngine.seed(CloudSettingsSyncEngine.snapshot(local), writerID: "fresh", date: later)

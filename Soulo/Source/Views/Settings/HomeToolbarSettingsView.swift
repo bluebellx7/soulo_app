@@ -4,6 +4,7 @@ struct HomeToolbarSettingsView: View {
     @ObservedObject private var service = HomeToolbarConfigurationService.shared
     @State private var draft = Array(repeating: HomeToolbarAction.none, count: HomeToolbarConfigurationService.slotCount)
     @State private var slot = 0
+    @State private var draftShowsBackground = false
     @State private var saved = false
     @State private var restore = false
     @State private var search = ""
@@ -20,6 +21,7 @@ struct HomeToolbarSettingsView: View {
                         ForEach(0..<HomeToolbarConfigurationService.slotCount, id: \.self) { index in
                             Button { slot = index; HapticsManager.selection() } label: {
                                 HomeToolbarButtonFace(action: draft[index], lightWallpaper: false, placeholder: index + 1, showsTitle: true)
+                                    .modifier(HomeToolbarButtonSurface(visible: draftShowsBackground, outlined: draftShowsBackground, radius: 20))
                                     .overlay {
                                         RoundedRectangle(cornerRadius: 20).stroke(slot == index ? Color.themePrimary : .clear, lineWidth: 2)
                                     }
@@ -31,6 +33,9 @@ struct HomeToolbarSettingsView: View {
                     .padding(12).frame(maxWidth: .infinity)
                     .background(Color(hex: "28374B"), in: RoundedRectangle(cornerRadius: 26))
                     Text(String(format: ToolText.text("home_toolbar_hint"), HomeToolbarConfigurationService.slotCount)).font(.footnote).foregroundStyle(.secondary)
+                    Toggle(ToolText.text("home_toolbar_button_background"), isOn: $draftShowsBackground)
+                        .tint(Color.themePrimary)
+                        .accessibilityIdentifier("home-toolbar.background")
                 }
                 VStack(alignment: .leading, spacing: 12) {
                     Text(LanguageManager.shared.localizedString("toolbar_replace_action")).font(.headline)
@@ -63,14 +68,14 @@ struct HomeToolbarSettingsView: View {
             AdaptiveActionRow(spacing: 12) {
                 Button { restore = true } label: { Label(ToolText.text("home_toolbar_reset"), systemImage: "arrow.counterclockwise") }
                     .buttonStyle(CompactActionButtonStyle(fillsHeight: true))
-                Button { service.save(draft); saved = true; HapticsManager.selection() } label: {
+                Button { service.save(draft, showsButtonBackground: draftShowsBackground); saved = true; HapticsManager.selection() } label: {
                     Label(LanguageManager.shared.localizedString("save"), systemImage: "checkmark")
                 }.buttonStyle(CompactActionButtonStyle(prominent: true, fillsHeight: true))
                     .accessibilityIdentifier("home-toolbar.save")
             }.padding(.horizontal, 16).padding(.vertical, 12).background(.regularMaterial)
         }
         .navigationTitle(ToolText.text("home_toolbar_customize")).navigationBarTitleDisplayMode(.inline)
-        .onAppear { draft = service.actions }
+        .onAppear { draft = service.actions; draftShowsBackground = service.showsButtonBackground }
         .alert(LanguageManager.shared.localizedString("toolbar_saved"), isPresented: $saved) {
             Button(ToolText.text("done"), role: .cancel) {}
         }
@@ -100,13 +105,27 @@ struct HomeToolbarButtonFace: View {
 }
 struct HomeToolbarButtonStyle: ButtonStyle {
     var lightWallpaper = false
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    var showsBackground = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .modifier(HomeToolbarButtonSurface(visible: showsBackground || configuration.isPressed,
+                outlined: showsBackground, lightWallpaper: lightWallpaper))
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.94 : 1)
+    }
+}
+
+private struct HomeToolbarButtonSurface: ViewModifier {
+    let visible: Bool
+    let outlined: Bool
+    var lightWallpaper = false
+    var radius: CGFloat = 16
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        content
             .background {
-                if configuration.isPressed {
-                    let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+                if visible {
                     if reduceTransparency {
                         shape.fill(lightWallpaper ? Color(hex: "F0F1F5") : Color(hex: "252734"))
                     } else {
@@ -115,6 +134,10 @@ struct HomeToolbarButtonStyle: ButtonStyle {
                     }
                 }
             }
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.94 : 1)
+            .overlay {
+                if outlined {
+                    shape.strokeBorder(.white.opacity(lightWallpaper ? 0.5 : 0.18), lineWidth: 0.7)
+                }
+            }
     }
 }

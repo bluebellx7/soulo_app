@@ -82,12 +82,15 @@ enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
 final class HomeToolbarConfigurationService: ObservableObject {
     static let shared = HomeToolbarConfigurationService()
     static let storageKey = "home_toolbar_actions"
+    static let backgroundKey = "home_toolbar_button_background"
     static let slotCount = 5
     @Published private(set) var actions: [HomeToolbarAction]
+    @Published private(set) var showsButtonBackground: Bool
     private let defaults: UserDefaults
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         actions = Self.resolve(defaults.stringArray(forKey: Self.storageKey))
+        showsButtonBackground = defaults.bool(forKey: Self.backgroundKey)
     }
     static func resolve(_ raw: [String]?) -> [HomeToolbarAction] {
         (0..<slotCount).map { index in
@@ -95,10 +98,17 @@ final class HomeToolbarConfigurationService: ObservableObject {
             return HomeToolbarAction(rawValue: raw[index]) ?? .none
         }
     }
-    func reloadFromDefaults() { actions = Self.resolve(defaults.stringArray(forKey: Self.storageKey)) }
-    func save(_ actions: [HomeToolbarAction]) {
+    func reloadFromDefaults() {
+        actions = Self.resolve(defaults.stringArray(forKey: Self.storageKey))
+        showsButtonBackground = defaults.bool(forKey: Self.backgroundKey)
+    }
+    func save(_ actions: [HomeToolbarAction], showsButtonBackground: Bool? = nil) {
         self.actions = Self.resolve(actions.map(\.rawValue))
         defaults.set(self.actions.map(\.rawValue), forKey: Self.storageKey)
+        if let showsButtonBackground {
+            self.showsButtonBackground = showsButtonBackground
+            defaults.set(showsButtonBackground, forKey: Self.backgroundKey)
+        }
     }
     var isVisible: Bool { actions.contains { $0 != .none } }
 }

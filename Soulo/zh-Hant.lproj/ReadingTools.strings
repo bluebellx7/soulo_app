@@ -458,3 +458,5 @@
 "delete_files_busy" = "所選項目中有未完成的下載，請先到下載頁面取消對應工作。";
 
 "torrent_checking" = "正在驗證已下載內容…";
+
+"home_toolbar_button_background" = "按鈕背景與邊框";

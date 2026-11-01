@@ -51,6 +51,28 @@ final class KimiInteractionTests: XCTestCase {
         let status = try await web.evaluateJavaScript(AIPlatformInteractionService.loginDetectionScript(for: "Kimi"))
         XCTAssertEqual(status as? String, "needs_login")
     }
+    func testKimiIsHiddenInTheDefaultCatalog() throws {
+        let kimi = try XCTUnwrap(PlatformDataStore.defaultPlatforms().first { $0.name == "Kimi" })
+        XCTAssertFalse(kimi.isVisible)
+        XCTAssertTrue(kimi.requiresLogin)
+        XCTAssertEqual(kimi.interactionType, .aiChat)
+    }
+    func testKimiMigrationAddsHiddenEntryAndPreservesManualEnable() throws {
+        let defaults = UserDefaults.standard, store = PlatformDataStore.shared
+        let data = defaults.data(forKey: "platform_config"), version = defaults.object(forKey: "platform_config_version")
+        defer {
+            defaults.set(data, forKey: "platform_config"); defaults.set(version, forKey: "platform_config_version"); store.reloadFromDefaults()
+        }
+        let old = PlatformDataStore.defaultPlatforms().filter { $0.name != "Kimi" }
+        defaults.set(try JSONEncoder().encode(old), forKey: "platform_config")
+        defaults.set(42, forKey: "platform_config_version"); store.reloadFromDefaults()
+        let kimi = try XCTUnwrap(store.platforms.first { $0.name == "Kimi" })
+        XCTAssertFalse(kimi.isVisible)
+        XCTAssertTrue(store.platforms.contains(where: \.isVisible))
+        store.toggleVisibility(for: kimi.id)
+        store.reloadFromDefaults()
+        XCTAssertTrue(try XCTUnwrap(store.platforms.first { $0.id == kimi.id }).isVisible)
+    }
     func testKimiMigrationPreservesAllDisabledSetting() throws {
         let defaults = UserDefaults.standard, store = PlatformDataStore.shared
         let data = defaults.data(forKey: "platform_config"), version = defaults.object(forKey: "platform_config_version")

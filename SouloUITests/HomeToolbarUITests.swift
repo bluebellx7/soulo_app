@@ -17,6 +17,12 @@ final class HomeToolbarUITests: XCTestCase {
         app.launch(); app.open(URL(string: "soulo://")!)
         XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 10))
         openSettings(app)
+        let background = app.switches["home-toolbar.background"].firstMatch
+        XCTAssertTrue(background.waitForExistence(timeout: 5), app.debugDescription)
+        if background.value as? String != "1" {
+            background.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        }
+        XCTAssertEqual(background.value as? String, "1")
         let actions = ["downloads", "files", "bookmarks", "history", "wallpaper"]
         for (index, action) in actions.enumerated() {
             app.buttons["home-toolbar.slot.\(index)"].tap()
@@ -27,7 +33,7 @@ final class HomeToolbarUITests: XCTestCase {
         app.navigationBars.buttons.firstMatch.tap()
         app.buttons["Done"].firstMatch.tap()
         XCTAssertTrue(app.buttons["home.toolbar.0"].waitForExistence(timeout: 5), app.debugDescription)
-        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "five-home-icon-shortcuts"; shot.lifetime = .keepAlways; add(shot)
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "five-home-framed-shortcuts"; shot.lifetime = .keepAlways; add(shot)
         app.terminate(); app.launch(); app.open(URL(string: "soulo://")!)
         for (index, section) in actions.prefix(4).enumerated() {
             let button = app.buttons["home.toolbar.\(index)"]
@@ -48,6 +54,20 @@ final class HomeToolbarUITests: XCTestCase {
         let returned = XCTAttachment(screenshot: app.screenshot())
         returned.name = "home-shortcuts-after-presentations"; returned.lifetime = .keepAlways; add(returned)
         openSettings(app)
+        let restoredBackground = app.switches["home-toolbar.background"].firstMatch
+        XCTAssertEqual(restoredBackground.value as? String, "1")
+        restoredBackground.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        XCTAssertEqual(restoredBackground.value as? String, "0")
+        let setting = XCTAttachment(screenshot: app.screenshot())
+        setting.name = "home-toolbar-background-setting"; setting.lifetime = .keepAlways; add(setting)
+        app.buttons["home-toolbar.save"].tap()
+        app.alerts.buttons["Done"].tap()
+        app.navigationBars.buttons.firstMatch.tap()
+        app.buttons["Done"].firstMatch.tap()
+        let plain = XCTAttachment(screenshot: app.screenshot())
+        plain.name = "five-home-plain-shortcuts"; plain.lifetime = .keepAlways; add(plain)
+        openSettings(app)
+        XCTAssertEqual(app.switches["home-toolbar.background"].firstMatch.value as? String, "0")
         app.buttons["Hide All"].firstMatch.tap()
         app.sheets.buttons["Hide All"].tap()
         app.navigationBars.buttons.firstMatch.tap()

@@ -379,6 +379,7 @@ enum CloudSettingsSyncEngine {
          "show_top_search_bar": false, "keep_fullscreen_browsing": false, "web_follows_app_color_scheme": true,
          "web_warm_color_shift": false, "web_force_dark_pages": false, "web_reduce_page_motion": false,
          "web_underline_links": false, "browser_shake_action": "none", "browser_shake_intensity": "standard",
+         HomeToolbarConfigurationService.backgroundKey: false,
          "home_toolbar_actions": Array(repeating: HomeToolbarAction.none.rawValue, count: HomeToolbarConfigurationService.slotCount), "group_default_search_engines": Data(),
          "browser_toolbar_actions": ["home", "back", "tabs", "more"], "browser_toolbar_address_action": "darkMode",
          "ad_block_enabled": true, LiveActivityService.enabledKey: true,

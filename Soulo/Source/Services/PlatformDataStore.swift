@@ -345,10 +345,7 @@ class PlatformDataStore: ObservableObject {
                 platforms[index].interactionType = .aiChat
             } else {
                 let order = (platforms.filter { $0.region == .china }.map(\.sortOrder).max() ?? -1) + 1
-                var kimi = Self.kimiPlatform(sortOrder: order)
-                // An update must respect users who deliberately disabled every platform.
-                kimi.isVisible = platforms.contains(where: \.isVisible)
-                platforms.append(kimi)
+                platforms.append(Self.kimiPlatform(sortOrder: order))
             }
         }
 
@@ -455,7 +452,7 @@ class PlatformDataStore: ObservableObject {
     static func kimiPlatform(sortOrder: Int) -> SearchPlatform {
         SearchPlatform(id: UUID(), name: "Kimi", iconName: "icon_kimi",
             searchURLTemplate: "https://www.kimi.com/", homeURL: "https://www.kimi.com/",
-            region: .china, isBuiltIn: true, isVisible: true, sortOrder: sortOrder,
+            region: .china, isBuiltIn: true, isVisible: false, sortOrder: sortOrder,
             usageCount: 0, isCustom: false, requiresLogin: true, interactionType: .aiChat)
     }
 

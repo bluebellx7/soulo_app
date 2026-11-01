@@ -131,6 +131,7 @@ final class CloudSyncService: NSObject, ObservableObject {
         "browser_shake_intensity",
         "browser_toolbar_actions",
         HomeToolbarConfigurationService.storageKey,
+        HomeToolbarConfigurationService.backgroundKey,
         GroupDefaultSearchService.storageKey,
         "browser_toolbar_address_action",
         "ad_block_enabled",
