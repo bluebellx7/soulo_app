@@ -95,6 +95,12 @@ final class BuiltInAdRuleStore: ObservableObject {
 final class AdBlockSettingsService: ObservableObject {
     static let shared = AdBlockSettingsService()
 
+    /// Match AppStorage/UserDefaults boolean semantics, including argument-domain
+    /// strings. Casting "NO" to Bool would incorrectly fall back to enabled.
+    nonisolated static func filteringEnabled(in defaults: UserDefaults = .standard) -> Bool {
+        defaults.object(forKey: "ad_block_enabled") == nil ? true : defaults.bool(forKey: "ad_block_enabled")
+    }
+
     @Published private(set) var allowlistedHosts: [String] = []
     @Published private(set) var hiddenElementCountByHost: [String: Int] = [:]
 

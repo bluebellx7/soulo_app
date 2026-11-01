@@ -465,22 +465,22 @@ final class WebViewModel: ObservableObject {
     // MARK: - State Sync (called from Coordinator / KVO)
 
     func updateProgress(_ progress: Double) {
-        estimatedProgress = progress
+        if estimatedProgress != progress { estimatedProgress = progress }
         if progress >= 0.999, isLoading {
             updateLoading(false)
         }
     }
 
     func updateLoading(_ loading: Bool) {
-        isLoading = loading
+        if isLoading != loading { isLoading = loading }
         if !loading {
-            estimatedProgress = 1.0
-            showSnapshotWhileRestoring = false
+            if estimatedProgress != 1 { estimatedProgress = 1 }
+            if showSnapshotWhileRestoring { showSnapshotWhileRestoring = false }
         }
     }
 
-    func updateCanGoBack(_ value: Bool) { canGoBack = value }
-    func updateCanGoForward(_ value: Bool) { canGoForward = value }
+    func updateCanGoBack(_ value: Bool) { if canGoBack != value { canGoBack = value } }
+    func updateCanGoForward(_ value: Bool) { if canGoForward != value { canGoForward = value } }
 
     func updateDownloadState(activeCount: Int, fileName: String? = nil) {
         nativeDownloadCount = max(0, activeCount)
@@ -512,9 +512,9 @@ final class WebViewModel: ObservableObject {
         clearVideoHoldSpeed()
         cancelScheduledSnapshot()
         snapshotDocumentGeneration = UUID()
-        hasBottomVideoControls = false
-        episodeList = nil
-        hasVisibleContent = false
+        if hasBottomVideoControls { hasBottomVideoControls = false }
+        if episodeList != nil { episodeList = nil }
+        if hasVisibleContent { hasVisibleContent = false }
         mediaFrameInfos.removeAll()
     }
 
@@ -554,9 +554,9 @@ final class WebViewModel: ObservableObject {
     }
 
     func markPageContentVisible() {
-        showSnapshotWhileRestoring = false
+        if showSnapshotWhileRestoring { showSnapshotWhileRestoring = false }
         guard !hasVisibleContent else { return }
-        hasPresentedContent = true
+        if !hasPresentedContent { hasPresentedContent = true }
         BrowserStartupTrace.mark("content_visible")
         hasVisibleContent = true
         // A visible page can keep loading ads/images indefinitely. Save its
@@ -565,26 +565,27 @@ final class WebViewModel: ObservableObject {
     }
 
     func updateTitle(_ title: String?) {
-        pageTitle = title ?? ""
+        let value = title ?? ""
+        if pageTitle != value { pageTitle = value }
     }
 
     func updateCurrentURL(_ url: URL?, fromObservation: Bool = false) {
         guard let url = url else { return }
         if errorMessage != nil, let failedNavigationURL, url != failedNavigationURL { return }
         if fromObservation, isLoading, let requestedNavigationURL, url != requestedNavigationURL { return }
-        currentURL = url
+        if currentURL != url { currentURL = url }
         lastURLString = url.absoluteString
         if !isLoading, errorMessage == nil {
             requestedNavigationURL = url
-            failedNavigationURL = nil
+            if failedNavigationURL != nil { failedNavigationURL = nil }
         }
     }
 
     func recordNavigationRequest(_ url: URL) {
         requestedNavigationURL = url
-        failedNavigationURL = nil
-        errorMessage = nil
-        currentURL = url
+        if failedNavigationURL != nil { failedNavigationURL = nil }
+        if errorMessage != nil { errorMessage = nil }
+        if currentURL != url { currentURL = url }
         lastURLString = url.absoluteString
     }
 

@@ -1,5 +1,7 @@
 # Physical iPad browsing and trackerless-magnet verification
 
+**Measurement correction:** The follow-up [state synchronization audit](2026-11-01-browser-state-performance.md) found that the former `-ad_block_enabled NO` reader could disagree with AppStorage, so the nominal ad-off runs below did not keep filtering consistently off. Identical diagnostic requests could also be cached. Retain these numbers as historical observations, not a controlled filtering comparison; use the corrected follow-up measurements for the current build.
+
 Device: iPad Air 11-inch (M3), iPadOS 26.6.1. Browsing measurements use the installed Release app, not a simulator or a Debug build. App version remains 1.2.7 (51). The baseline includes the user's existing working changes over `f53d52a`; these changes were preserved.
 
 ## Changes and regression boundaries

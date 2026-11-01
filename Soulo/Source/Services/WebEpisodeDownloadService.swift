@@ -153,7 +153,7 @@ enum WebEpisodeDownloadError: LocalizedError, Equatable {
         // Catalogs can link directly to a stream. Loading an M3U8 as an HTML
         // page may trigger a download instead of publishing a DOM video.
         if let resource = episode.directMediaResource { return resource }
-        if UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true {
+        if AdBlockSettingsService.filteringEnabled() {
             for rule in await AdBlockService.compileRuleLists(allowlistedHosts: AdBlockSettingsService.shared.allowlistedHosts) ?? [] {
                 webView.configuration.userContentController.add(rule)
             }

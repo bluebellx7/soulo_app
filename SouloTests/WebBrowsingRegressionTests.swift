@@ -6,6 +6,68 @@ import Network
 
 /// Real HTTP navigation through the production representable and its delegates.
 @MainActor final class WebBrowsingRegressionTests: XCTestCase {
+    func testRepeatedWebKitStateDoesNotRepublishIdenticalValues() {
+        let model=WebViewModel(),url=URL(string:"https://fixture.example/")!
+        model.updateLoading(false);model.updateCurrentURL(url);model.updateTitle("Fixture")
+        model.markPageContentVisible()
+        var events=0
+        let observer=model.objectWillChange.sink { events += 1 }
+        defer {observer.cancel()}
+        for _ in 0..<5 {
+            model.updateProgress(1);model.updateLoading(false)
+            model.updateCanGoBack(false);model.updateCanGoForward(false)
+            model.updateTitle("Fixture");model.updateCurrentURL(url)
+            model.markPageContentVisible()
+        }
+        XCTAssertEqual(events,0,"Unchanged WebKit notifications must not invalidate the entire browser UI")
+        model.updateLoading(true);model.updateProgress(0.4)
+        model.updateCanGoBack(true);model.updateTitle("Changed")
+        model.updateCurrentURL(URL(string:"https://fixture.example/next"))
+        XCTAssertEqual(events,5,"Real state changes must still be published")
+        let revision=model.pageRevision
+        model.pageDidFinishLoading();model.pageDidFinishLoading()
+        XCTAssertEqual(model.pageRevision,revision+2,"Same-URL reloads still have distinct navigation revisions")
+    }
+
+    func testLoadingNormalizationRunsEvenWhenTheInputIsUnchanged() {
+        let model=WebViewModel()
+        model.estimatedProgress=0.2;model.showSnapshotWhileRestoring=true
+        model.updateLoading(false)
+        XCTAssertEqual(model.estimatedProgress,1)
+        XCTAssertFalse(model.showSnapshotWhileRestoring)
+        model.isLoading=true
+        model.updateProgress(1)
+        XCTAssertFalse(model.isLoading,"A completed progress value must still end loading")
+    }
+
+    func testFilteringPreferenceUsesUserDefaultsBooleanSemantics() {
+        let name="AdFilteringPreference-"+UUID().uuidString
+        let defaults=UserDefaults(suiteName:name)!
+        defer {defaults.removePersistentDomain(forName:name)}
+        XCTAssertTrue(AdBlockSettingsService.filteringEnabled(in:defaults))
+        for value in [false, "NO", "false", 0] as [Any] {
+            defaults.set(value,forKey:"ad_block_enabled")
+            XCTAssertFalse(AdBlockSettingsService.filteringEnabled(in:defaults))
+        }
+        for value in [true, "YES", "true", 1] as [Any] {
+            defaults.set(value,forKey:"ad_block_enabled")
+            XCTAssertTrue(AdBlockSettingsService.filteringEnabled(in:defaults))
+        }
+    }
+
+    func testRepeatedRequestStillClearsFailureWithoutDuplicateNotifications() {
+        let model=WebViewModel(),url=URL(string:"https://fixture.example/")!
+        model.setError("Failure",failingURL:url)
+        model.recordNavigationRequest(url)
+        XCTAssertNil(model.errorMessage);XCTAssertNil(model.failedNavigationURL)
+        XCTAssertEqual(model.requestedNavigationURL,url)
+        var events=0
+        let observer=model.objectWillChange.sink { events += 1 }
+        defer {observer.cancel()}
+        model.recordNavigationRequest(url);model.recordNavigationRequest(url)
+        XCTAssertEqual(events,0)
+    }
+
     private var saved: [String: Any] = [:]
     private let keys = ["privacy_gpc_enabled", "privacy_gpc_header_enabled_sites", "privacy_cookie_banner_enabled", "soulo_privacy_disabled_hosts",
                         "privacy_https_upgrade_enabled", "privacy_strip_tracking_parameters", "is_incognito", "ad_block_enabled",

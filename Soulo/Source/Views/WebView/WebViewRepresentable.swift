@@ -477,7 +477,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         let defaults = UserDefaults.standard
-        guard defaults.object(forKey: "ad_block_enabled") as? Bool ?? true else {
+        guard AdBlockSettingsService.filteringEnabled(in: defaults) else {
             return
         }
 
@@ -912,7 +912,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     }
 
     static func applyContentRules(_ rules: [WKContentRuleList]?, on webView: WKWebView, allowlist: [String]) {
-        let enabled = (UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true)
+        let enabled = (AdBlockSettingsService.filteringEnabled())
             && !AdBlockSettingsService.isHostAllowlisted(webView.url?.host, allowlistedHosts: allowlist)
         // Preserve working rules on update failure, but always honor disabling.
         if enabled && rules == nil { return }
@@ -961,7 +961,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             let others = controller.userScripts.filter { !$0.source.hasPrefix(AdBlockService.hidingScriptPrefix) }
             controller.removeAllUserScripts()
             others.forEach(controller.addUserScript)
-            let enabled = UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true
+            let enabled = AdBlockSettingsService.filteringEnabled()
             if enabled {
                 controller.addUserScript(WKUserScript(source: AdBlockService.adHidingScript(allowlistedHosts: allowlist),
                     injectionTime: .atDocumentStart, forMainFrameOnly: false))
@@ -2251,7 +2251,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         func cancelManualAdPicker() { viewModel.cancelMarkingAdvertisement() }
 
         func synchronizeManualAdRules(on webView: WKWebView) {
-            let enabled = UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true
+            let enabled = AdBlockSettingsService.filteringEnabled()
             let service = ManualAdBlockService.shared
             let allowlist = AdBlockSettingsService.shared.allowlistedHosts
             let configurationSignature = WebViewRepresentable.manualAdConfigurationSignature(
@@ -2899,7 +2899,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 $0.webView == ObjectIdentifier(webView) && $0.frameURL == sourceURL
                     && ProcessInfo.processInfo.systemUptime - $0.time <= 3
             } ?? false
-            let adBlockingEnabled = UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true
+            let adBlockingEnabled = AdBlockSettingsService.filteringEnabled()
             let bypassesProtection = AdBlockSettingsService.isHostAllowlisted(webView.url?.host)
             if adBlockingEnabled, !bypassesProtection, !nativeRequest, targetsTopLevel,
                !(provisionalNavigation != nil && action.targetFrame?.isMainFrame == true),
@@ -3018,7 +3018,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             let defaults = UserDefaults.standard
             applyAdHidingIfNeeded(
                 on: webView,
-                enabled: defaults.object(forKey: "ad_block_enabled") as? Bool ?? true,
+                enabled: AdBlockSettingsService.filteringEnabled(in: defaults),
                 cosmetic: true,
                 allowlistedHosts: AdBlockSettingsService.shared.allowlistedHosts,
                 host: webView.url?.host

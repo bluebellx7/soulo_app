@@ -15,7 +15,7 @@ extension WebViewModel {
     var canMarkAdvertisement: Bool {
         webView?.url != nil && ManualAdBlockService.canUse(
             on: webView?.url ?? currentURL,
-            enabled: UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true,
+            enabled: AdBlockSettingsService.filteringEnabled(),
             allowlistedHosts: AdBlockSettingsService.shared.allowlistedHosts
         )
     }
