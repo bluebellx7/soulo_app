@@ -109,8 +109,6 @@ extension WebViewModel {
                       let selector = body["selector"] as? String,
                       let rule = ManualAdBlockService.shared.save(url: selection.url, selector: selector, wholeSite: wholeSite)
                 else { self.failMarkingAdvertisement(); return }
-                AdBlockSettingsService.shared.recordHiddenElementCount(1, for: selection.url.host)
-                PrivacyProtectionService.shared.recordHiddenElementCount(1, for: selection.url.host)
                 self.cancelMarkingAdvertisement()
                 self.manualAdSavedRuleID = rule.id
                 UINotificationFeedbackGenerator().notificationOccurred(.success)

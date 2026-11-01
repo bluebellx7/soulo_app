@@ -103,7 +103,6 @@ struct SettingsView: View {
                                 }.labelsHidden().pickerStyle(.menu)
                             }
                         }
-                        .padding(.vertical, 4)
 
                         NavigationLink(value: Destination.language) {
                             Label {
@@ -128,12 +127,16 @@ struct SettingsView: View {
                         }
 
                         Toggle(isOn: $keepScreenAwake) {
-                            SettingsDescriptionLabel(
-                                icon: "sun.max.fill",
-                                color: keepScreenAwake ? Color.themePrimary : Color(uiColor: .systemGray3),
-                                title: ToolText.text("screen_keep_awake"),
-                                description: ToolText.text("screen_keep_awake_desc")
-                            )
+                            Label {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(ToolText.text("screen_keep_awake"))
+                                    Text(ToolText.text("screen_keep_awake_desc"))
+                                        .font(.caption).foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            } icon: {
+                                IconBadge(systemName: "sun.max.fill", color: keepScreenAwake ? Color.themePrimary : Color(uiColor: .systemGray3))
+                            }
                         }
                         .tint(Color.themePrimary)
                         .accessibilityIdentifier("settings.keepScreenAwake")

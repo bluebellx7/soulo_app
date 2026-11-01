@@ -260,6 +260,7 @@ struct ToolbarActionChoiceLabel: View {
     let symbol: String
     let title: String
     let isSelected: Bool
+    @ScaledMetric(relativeTo: .caption) private var titleHeight: CGFloat = 32
     var body: some View {
         VStack(spacing: 7) {
             Image(systemName: symbol)
@@ -268,8 +269,9 @@ struct ToolbarActionChoiceLabel: View {
             Text(title)
                 .font(.caption.weight(.medium))
                 .multilineTextAlignment(.center)
-                .frame(minHeight: 30)
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+                .frame(height: titleHeight)
         }
         .foregroundStyle(isSelected ? Color.themePrimary : .primary)
         .frame(maxWidth: .infinity)

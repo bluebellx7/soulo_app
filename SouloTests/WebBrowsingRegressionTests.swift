@@ -987,6 +987,73 @@ import Network
         XCTAssertNil(model.errorMessage)
     }
 
+    func testReadyPageRemovesInitialMaskImmediately() throws {
+        let web = AccessibleWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 700))
+        let window = UIWindow(frame: web.bounds)
+        let controller = UIViewController(); window.rootViewController = controller
+        controller.view.addSubview(web); window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil }
+        web.prepareInitialContentReveal()
+        XCTAssertNotNil(web.layer.mask)
+        web.revealInitialContent()
+        XCTAssertNil(web.layer.mask, "The readiness signal must reveal the page in the same frame")
+    }
+
+    func testNativeHistoryDoesNotCaptureOrCoverTheOutgoingPage() async throws {
+        let server = try frameHistoryFixture()
+        let root = try await server.start(); defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("list"))
+        try await wait(model, for: "!!document.getElementById('list')")
+        for _ in 0..<100 where !model.hasVisibleContent { try await Task.sleep(for: .milliseconds(20)) }
+        let web = try XCTUnwrap(model.webView)
+        let coordinator = try XCTUnwrap(web.navigationDelegate as? WebViewRepresentable.Coordinator)
+        model.loadURL(root.appendingPathComponent("player"))
+        try await wait(model, for: "!!document.getElementById('player')")
+        let captures = coordinator.navigationPreviewCaptureCount
+        XCTAssertGreaterThan(captures, 0, "Ordinary navigation still keeps the old content while loading")
+        for _ in 0..<3 {
+            web.goBack()
+            try await wait(model, for: "!!document.getElementById('list')")
+            web.goForward()
+            try await wait(model, for: "!!document.getElementById('player')")
+        }
+        XCTAssertEqual(coordinator.navigationPreviewCaptureCount, captures,
+            "Native history owns its transition; do not add outgoing snapshots during Back/Forward")
+        XCTAssertFalse(web.subviews.contains { $0.accessibilityIdentifier == "browser.navigation-preview" })
+        XCTAssertNil(model.errorMessage)
+    }
+
+    func testOutgoingScriptCannotReplaceAnAcceptedBackNavigation() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start(); defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("form"))
+        try await wait(model, for: "!!document.getElementById('form')")
+        model.loadURL(root.appendingPathComponent("destination"))
+        try await wait(model, for: "!!document.getElementById('destination')")
+        let web = try XCTUnwrap(model.webView)
+        let coordinator = try XCTUnwrap(web.navigationDelegate as? WebViewRepresentable.Coordinator)
+        let delayed = DelayedHistoryDecision(coordinator: coordinator)
+        web.navigationDelegate = delayed
+        defer { web.navigationDelegate = coordinator }
+        web.goBack()
+        for _ in 0..<100 where !delayed.historyPending { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertTrue(delayed.historyPending)
+        // Run an outgoing document's redirect while WebKit is waiting for the
+        // accepted traversal. This models a slow search-result redirect page.
+        _ = try? await web.evaluateJavaScript("location.assign('/receipt')")
+        try await wait(model, for: "!!document.getElementById('form')")
+        XCTAssertTrue(delayed.sawOutgoingRequest, "The competing navigation must actually execute")
+        XCTAssertTrue(delayed.cancelledOutgoingRequest)
+        XCTAssertFalse(server.requests.contains { $0.path == "/receipt" }, "The abandoned redirect must never reach the network")
+        XCTAssertNil(model.errorMessage)
+    }
+
     func testBackButtonSkipsChildFrameHistoryAndKeepsForwardHistory() async throws {
         let server = try frameHistoryFixture()
         let root = try await server.start()
@@ -1748,6 +1815,37 @@ import Network
         XCTAssertNil(model.errorMessage)
         XCTAssertEqual(web.url?.path, "/form")
     }
+}
+
+@MainActor
+private final class DelayedHistoryDecision: NSObject, WKNavigationDelegate {
+    let coordinator: WebViewRepresentable.Coordinator
+    var historyPending = false
+    var sawOutgoingRequest = false
+    var cancelledOutgoingRequest = false
+    init(coordinator: WebViewRepresentable.Coordinator) { self.coordinator = coordinator }
+    func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
+                 preferences: WKWebpagePreferences,
+                 decisionHandler: @escaping (WKNavigationActionPolicy, WKWebpagePreferences) -> Void) {
+        coordinator.webView(webView, decidePolicyFor: action, preferences: preferences) { policy, preferences in
+            if action.navigationType == .backForward, policy == .allow {
+                self.historyPending = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+                    decisionHandler(policy, preferences)
+                }
+            } else {
+                if action.request.url?.path == "/receipt" {
+                    self.sawOutgoingRequest = true; self.cancelledOutgoingRequest = policy == .cancel
+                }
+                decisionHandler(policy, preferences)
+            }
+        }
+    }
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) { coordinator.webView(webView, didStartProvisionalNavigation: navigation) }
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) { coordinator.webView(webView, didCommit: navigation) }
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { coordinator.webView(webView, didFinish: navigation) }
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { coordinator.webView(webView, didFailProvisionalNavigation: navigation, withError: error) }
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { coordinator.webView(webView, didFail: navigation, withError: error) }
 }
 
 @MainActor

@@ -326,10 +326,8 @@ struct WebViewContainer: View {
                                 if showsInitialLoading, let url = webViewModel.currentURL {
                                     BrowserInitialLoadingView(url: url,
                                         contentBottomInset: showsBottomToolbar ? max(0, pageBottomClearance - pageViewportBottomInset) : 0)
-                                        .transition(.asymmetric(insertion: .identity, removal: .opacity))
                                 }
                             }
-                            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: showsInitialLoading)
                             .allowsHitTesting(showsInitialLoading)
                             .accessibilityHidden(!showsInitialLoading)
                         }

@@ -487,11 +487,6 @@ struct SitePrivacyPanelView: View {
                     systemImage: "shield.lefthalf.filled"
                 )
                 summaryRow(
-                    titleKey: "site_hidden_elements",
-                    value: max(summary.hiddenElementCount, adBlockService.hiddenElementCount(for: host)),
-                    systemImage: "eye.slash"
-                )
-                summaryRow(
                     titleKey: "site_privacy_actions",
                     value: handledActionCount,
                     systemImage: "wand.and.stars"

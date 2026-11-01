@@ -915,7 +915,7 @@ struct AdBlockService {
 
             \(WebAdOverlayCleanup.source)
 
-            var mosaicSheet = null, mosaicCSS = '', mosaicSeen = new WeakSet(), pendingMosaicCount = 0;
+            var mosaicSheet = null, mosaicCSS = '';
             function maskMosaics(groups) {
                 if (!mosaicSheet) {
                     mosaicSheet = new CSSStyleSheet();
@@ -928,7 +928,6 @@ struct AdBlockService {
                         // Match only the inline styles of a confirmed mosaic.
                         // Leave its DOM, display and measured size untouched:
                         // anti-block scripts otherwise rebuild it and cause flashes.
-                        if (!mosaicSeen.has(el)) { mosaicSeen.add(el); pendingMosaicCount++; }
                         var parent = el.parentElement;
                         var scope = parent === document.body ? 'body' : (parent && parent.id ? '#' + CSS.escape(parent.id) : null);
                         if (!scope && parent) {
@@ -974,8 +973,6 @@ struct AdBlockService {
                 // Keep visible targets stable while the user marks them. The
                 // explicit picker-end event resumes normal filtering after exit.
                 if (document.documentElement.hasAttribute('data-soulo-ad-picker-active')) return;
-                var hiddenCount = pendingMosaicCount;
-                pendingMosaicCount = 0;
                 var trackerHosts = [];
                 if (adBlockConfig().cosmeticEnabled) {
                     matchingSubscriptionSelectors();
@@ -984,7 +981,6 @@ struct AdBlockService {
                         document.querySelectorAll(selector).forEach(function(el) {
                             var host = hostFromElement(el);
                             if (hideAdElement(el)) {
-                                hiddenCount++;
                                 if (looksLikeTrackerHost(host)) trackerHosts.push(host);
                             }
                         });
@@ -997,11 +993,10 @@ struct AdBlockService {
                     cleanupAdOverlays();
                 }
 
-                if (hiddenCount > 0 && window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.souloAdBlocker) {
+                if (trackerHosts.length > 0 && window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.souloAdBlocker) {
                     try {
                         window.webkit.messageHandlers.souloAdBlocker.postMessage({
                             host: location.hostname,
-                            hiddenCount: hiddenCount,
                             trackerHosts: Array.from(new Set(trackerHosts)).slice(0, 80)
                         });
                     } catch(e) {}

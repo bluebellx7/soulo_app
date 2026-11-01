@@ -10,7 +10,6 @@ struct AdBlockManagementView: View {
     @AppStorage("ad_block_enabled") private var adBlockEnabled = true
     @AppStorage(BrowserDomainNavigationPolicy.preferenceKey) private var confirmCrossDomain = false
     @ObservedObject private var domainAllowlist = BrowserDomainAllowlist.shared
-    @State private var showsStatistics = false
     @State private var showsDomainAllowlist = false
 
     let currentHost: String?
@@ -122,17 +121,6 @@ struct AdBlockManagementView: View {
                 .accessibilityIdentifier("adBlock.allowedSites")
             }
 
-            Section {
-                DisclosureGroup(isExpanded: $showsStatistics) {
-                    if currentHost != nil {
-                        AdBlockMetricRow(title: LanguageManager.shared.localizedString("ad_block_current_site_hidden"), systemImage: "eye.slash", value: service.hiddenElementCount(for: currentHost), isHighlighted: false)
-                    }
-                    AdBlockMetricRow(title: LanguageManager.shared.localizedString("ad_block_total_hidden"), systemImage: "sum", value: SafeNumericValue.totalCount(service.hiddenElementCountByHost.values), isHighlighted: false)
-                } label: {
-                    Label(ToolText.text("ad_filter_statistics"), systemImage: "chart.bar")
-                }
-                .accessibilityIdentifier("adBlock.statistics")
-            }
         }
         .navigationTitle(LanguageManager.shared.localizedString("ad_block_management"))
         .navigationBarTitleDisplayMode(.inline)
@@ -712,33 +700,5 @@ private struct AdBlockStatusPill: View {
             in: Capsule()
         )
         .fixedSize()
-    }
-}
-
-private struct AdBlockMetricRow: View {
-    let title: String
-    let systemImage: String
-    let value: Int
-    let isHighlighted: Bool
-    var highlightColor: Color = .green
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(isHighlighted ? highlightColor : Color.secondary)
-                .frame(width: 30, height: 30)
-                .background(
-                    (isHighlighted ? highlightColor : Color.secondary).opacity(0.1),
-                    in: RoundedRectangle(cornerRadius: 8, style: .continuous)
-                )
-            Text(title)
-            Spacer()
-            Text("\(value)")
-                .font(.body.weight(.semibold))
-                .foregroundStyle(isHighlighted ? highlightColor : Color.secondary)
-                .monospacedDigit()
-        }
-        .accessibilityElement(children: .combine)
     }
 }

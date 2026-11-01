@@ -25,6 +25,16 @@ struct AppVersionView: View {
                 }.frame(maxWidth: .infinity).padding(.vertical, 20)
             }
             Section {
+                NavigationLink {
+                    SouloWebsiteView()
+                } label: {
+                    Label { Text(ToolText.text("soulo_website")) } icon: {
+                        IconBadge(systemName: "globe", color: iconColor)
+                    }
+                }
+                .accessibilityIdentifier("version.website")
+            }.tint(.primary)
+            Section {
                 NavigationLink(destination: PrivacyPolicyView()) {
                     Label { Text(LanguageManager.shared.localizedString("settings_privacy_policy")) } icon: {
                         IconBadge(systemName: "hand.raised.fill", color: iconColor)
@@ -44,5 +54,21 @@ struct AppVersionView: View {
         }
         .navigationTitle(LanguageManager.shared.localizedString("settings_version"))
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct SouloWebsiteView: View {
+    @StateObject private var model = WebViewModel()
+    @StateObject private var bookmarks = BookmarkViewModel()
+    @State private var fullscreen = false
+    var body: some View {
+        WebViewContainer(webViewModel: model, bookmarkViewModel: bookmarks, isFullscreen: $fullscreen)
+            .navigationTitle(ToolText.text("soulo_website"))
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                if model.currentURL == nil, let url = URL(string: "https://soulo.dkluge.com") {
+                    model.loadURL(url)
+                }
+            }
     }
 }

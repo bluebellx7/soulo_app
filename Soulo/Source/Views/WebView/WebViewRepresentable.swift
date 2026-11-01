@@ -327,22 +327,8 @@ final class AccessibleWebView: WKWebView {
             self.initialRevealMask = nil
             self.isRevealingInitialContent = false
         }
-        guard !UIAccessibility.isReduceMotionEnabled, window != nil else { finish(); return }
-        isRevealingInitialContent = true
-        // A layer mask keeps the WKWebView attached, visible to WebKit and
-        // rendering its first frame. Remove it after this single short fade so
-        // normal browsing/video has no permanent compositing mask.
-        CATransaction.begin()
-        CATransaction.setCompletionBlock(finish)
-        CATransaction.setDisableActions(true)
-        mask.opacity = 1
-        let fade = CABasicAnimation(keyPath: "opacity")
-        fade.fromValue = 0
-        fade.toValue = 1
-        fade.duration = 0.18
-        fade.timingFunction = CAMediaTimingFunction(name: .easeOut)
-        mask.add(fade, forKey: "soulo.initial-content")
-        CATransaction.commit()
+        // WebKit has already painted. Reveal those pixels without another fade.
+        finish()
     }
 
     private func recordNativeNavigation(to url: URL?) {
@@ -1058,6 +1044,11 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var navigationFinished = false
         private var cloudflareChallengeResponse = false
         private var navigationPreview: UIView?
+        private var isHistoryNavigation = false
+        private var outgoingHistoryDocument: URL?
+        private var pendingHistoryItem: WKBackForwardListItem?
+        private var historyRecoveryID = UUID()
+        private(set) var navigationPreviewCaptureCount = 0
         private var navigationOriginURL: URL?
         private var userInitiatedNavigationChain = false
         private var domainConfirmationID: UUID?
@@ -1113,6 +1104,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             preview.accessibilityIdentifier = "browser.navigation-preview"
             webView.addSubview(preview)
             navigationPreview = preview
+            navigationPreviewCaptureCount += 1
         }
 
         private func removeNavigationPreview(animated: Bool = false) {
@@ -1515,12 +1507,10 @@ struct WebViewRepresentable: UIViewRepresentable {
             if message.name == "souloAdBlocker" {
                 guard message.webView === viewModel.webView, message.world == .page,
                       message.webView?.configuration.websiteDataStore.isPersistent == true else { return }
-                let count = SafeNumericValue.eventCount(body["hiddenCount"]) ?? 0
                 let host = (body["host"] as? String) ?? viewModel.currentURL?.host
                 let trackerHosts = body["trackerHosts"] as? [String] ?? []
+                guard !trackerHosts.isEmpty else { return }
                 Task { @MainActor in
-                    AdBlockSettingsService.shared.recordHiddenElementCount(count, for: host)
-                    PrivacyProtectionService.shared.recordHiddenElementCount(count, for: host)
                     PrivacyProtectionService.shared.recordTrackerHosts(trackerHosts, for: host)
                 }
                 return
@@ -2315,7 +2305,8 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
             guard webView === viewModel.webView else { return }
-            retainNavigationPreview(in: webView)
+            if isHistoryNavigation { removeNavigationPreview() }
+            else { retainNavigationPreview(in: webView) }
             BrowserStartupTrace.mark("navigation_start")
             cloudflareChallengeResponse = false
             provisionalNavigation = navigation
@@ -2342,6 +2333,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
             guard isCurrentNavigation(navigation, in: webView) else { return }
+            outgoingHistoryDocument = nil
             if let url = webView.url { viewModel.recordNavigationRequest(url) }
             if cloudflareChallengeResponse {
                 webView.evaluateJavaScript("""
@@ -2382,6 +2374,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             guard isCurrentNavigation(navigation, in: webView) else { return }
+            outgoingHistoryDocument = nil
             removeNavigationPreview(animated: true)
             latestNavigation = navigation
             navigationFinished = true
@@ -2524,6 +2517,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         ) {
             guard isCurrentNavigation(navigation, in: webView) else { return }
             removeNavigationPreview()
+            outgoingHistoryDocument = nil
             latestNavigation = navigation
             navigationFinished = true
             if provisionalNavigation === navigation { provisionalNavigation = nil }
@@ -2537,6 +2531,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         ) {
             guard isCurrentNavigation(navigation, in: webView) else { return }
             removeNavigationPreview()
+            outgoingHistoryDocument = nil
             latestNavigation = navigation
             navigationFinished = true
             if provisionalNavigation === navigation { provisionalNavigation = nil }
@@ -2708,6 +2703,32 @@ struct WebViewRepresentable: UIViewRepresentable {
             }
 
             let nativeRequest = (webView as? AccessibleWebView)?.consumeNativeNavigation(to: url) == true
+            // Once Back/Forward starts, a timer in the abandoned document must
+            // not replace that traversal with a fresh redirect. Explicit taps,
+            // address entries and the history request itself still take priority.
+            if navigationAction.targetFrame?.isMainFrame == true,
+               navigationAction.navigationType == .other, !nativeRequest,
+               !isExplicitNavigation(navigationAction, in: webView),
+               let outgoingHistoryDocument,
+               navigationAction.sourceFrame.requestURL == outgoingHistoryDocument {
+                BrowserStartupTrace.mark("history_outgoing_redirect_cancelled")
+                let recoveryID = historyRecoveryID
+                let target = pendingHistoryItem
+                decide(.cancel)
+                // WebKit may invalidate the earlier policy listener when the
+                // abandoned document starts this request. Reassert the exact
+                // history item, preserving its state instead of loading a URL.
+                DispatchQueue.main.async { [weak self, weak webView] in
+                    guard let self, let webView, let target,
+                          self.historyRecoveryID == recoveryID,
+                          self.viewModel.webView === webView else { return }
+                    let entries = webView.backForwardList.backList
+                        + (webView.backForwardList.currentItem.map { [$0] } ?? [])
+                        + webView.backForwardList.forwardList
+                    if entries.contains(where: { $0 === target }) { webView.go(to: target) }
+                }
+                return
+            }
             if nativeRequest, navigationAction.targetFrame?.isMainFrame == true { navigationOriginURL = url }
             guard allowsNavigation(navigationAction, in: webView, nativeRequest: nativeRequest) else {
                 decide(.cancel)
@@ -2838,7 +2859,19 @@ struct WebViewRepresentable: UIViewRepresentable {
                         return
                     }
 
-                    if isMainFrame, webView === viewModel.webView { viewModel.recordNavigationRequest(url) }
+                    if isMainFrame {
+                        historyRecoveryID = UUID()
+                        let entries = webView.backForwardList.backList
+                            + (webView.backForwardList.currentItem.map { [$0] } ?? [])
+                            + webView.backForwardList.forwardList
+                        let targets = entries.filter { $0.url == url }
+                        pendingHistoryItem = navigationAction.navigationType == .backForward && targets.count == 1
+                            ? targets.first : nil
+                        outgoingHistoryDocument = navigationAction.navigationType == .backForward
+                            && pendingHistoryItem != nil ? navigationAction.sourceFrame.requestURL : nil
+                        isHistoryNavigation = navigationAction.navigationType == .backForward
+                        if webView === viewModel.webView { viewModel.recordNavigationRequest(url) }
+                    }
                     decide(.allow)
                 case .cancel:
                     decide(.cancel)

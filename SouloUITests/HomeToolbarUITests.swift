@@ -80,8 +80,8 @@ final class HomeToolbarUITests: XCTestCase {
         for _ in 0..<8 {
             let bottom = save.exists ? save.frame.minY - 12 : app.frame.maxY - 40
             let top = app.navigationBars.firstMatch.exists ? app.navigationBars.firstMatch.frame.maxY + 4 : app.frame.minY
-            if element.exists && element.isHittable && element.frame.minY >= top && element.frame.maxY <= bottom { return }
-            if downward { app.swipeDown() } else { app.swipeUp() }
+            if element.exists && element.isHittable && (!save.exists || (element.frame.minY >= top && element.frame.maxY <= bottom)) { return }
+            if downward { app.swipeDown(velocity: .slow) } else { app.swipeUp(velocity: .slow) }
         }
         XCTAssertTrue(element.exists && element.isHittable, app.debugDescription)
     }
@@ -97,6 +97,45 @@ final class HomeToolbarUITests: XCTestCase {
             if index > 0 { XCTAssertGreaterThan(cell.frame.minX, cells[index-1].frame.minX) }
         }
         XCTAssertGreaterThan(app.buttons[prefix + next].frame.minY, cells[0].frame.maxY)
+    }
+
+    func testSettingsLayoutWebsiteEntryAndRemovedCosmeticStatistics() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-appearance", "dark", "-wallpaper_source", "gradient", "-icloud_sync_enabled", "NO"]
+        app.launch(); app.open(URL(string: "soulo://")!)
+        XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 10))
+        app.buttons["home.menu"].tap(); app.buttons["Settings"].firstMatch.tap()
+        XCTAssertTrue(app.switches["settings.keepScreenAwake"].waitForExistence(timeout: 5))
+        let appearance = XCTAttachment(screenshot: app.screenshot())
+        appearance.name = "settings-aligned-appearance-rows"; appearance.lifetime = .keepAlways; add(appearance)
+        let toolbar = app.buttons["settings.homeToolbar"]
+        reveal(toolbar, in: app); toolbar.tap()
+        let normalHeight = app.buttons["home-toolbar.action.downloads"].frame.height
+        let longTitle = app.buttons["home-toolbar.action.urlSchemes"]
+        reveal(longTitle, in: app)
+        XCTAssertEqual(longTitle.frame.height, normalHeight, accuracy: 1)
+        XCTAssertEqual(longTitle.frame.height, app.buttons["home-toolbar.action.quickActions"].frame.height, accuracy: 1)
+        let cards = XCTAttachment(screenshot: app.screenshot())
+        cards.name = "toolbar-long-titles-uniform-height"; cards.lifetime = .keepAlways; add(cards)
+        app.navigationBars.buttons.firstMatch.tap()
+        let version = app.buttons["settings.version"]
+        reveal(version, in: app); version.tap()
+        let website = app.buttons["version.website"]
+        XCTAssertTrue(website.waitForExistence(timeout: 5), app.debugDescription)
+        let about = XCTAttachment(screenshot: app.screenshot())
+        about.name = "version-soulo-website-entry"; about.lifetime = .keepAlways; add(about)
+        website.tap()
+        let storeLink = app.webViews.links.matching(NSPredicate(format: "label CONTAINS[c] %@", "App Store")).firstMatch
+        XCTAssertTrue(storeLink.waitForExistence(timeout: 25), app.debugDescription)
+        app.navigationBars.buttons.firstMatch.tap(); app.navigationBars.buttons.firstMatch.tap()
+        let adFiltering = app.buttons["Ad Blocking"].firstMatch
+        reveal(adFiltering, in: app, downward: true); adFiltering.tap()
+        XCTAssertTrue(app.switches["adBlock.enabled"].waitForExistence(timeout: 5))
+        app.swipeUp()
+        XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "adBlock.statistics").firstMatch.exists)
+        let filtering = XCTAttachment(screenshot: app.screenshot())
+        filtering.name = "ad-filtering-without-cosmetic-counts"; filtering.lifetime = .keepAlways; add(filtering)
     }
 
     func testDirectWallpaperChangeAndMatchingFourColumnPickers() throws {

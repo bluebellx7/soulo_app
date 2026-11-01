@@ -66,6 +66,8 @@ import ImageIO
                 return image
             }
             var sources = [key]
+            var visited = Set<URL>()
+            var discovered = false
             // Keep the existing bookmark fallbacks for public domains only.
             if let host = key.host, host.contains("."), !host.contains(":"),
                !host.split(separator: ".").allSatisfy({ Int($0) != nil }),
@@ -75,12 +77,14 @@ import ImageIO
                 google.queryItems = [URLQueryItem(name: "domain", value: host), URLQueryItem(name: "sz", value: "64")]
                 if let url = google.url { sources.append(url) }
             }
-            for url in sources {
+            while !sources.isEmpty {
+                let url = sources.removeFirst()
+                guard visited.insert(url).inserted else { continue }
                 guard !Task.isCancelled, generation == epoch else { return nil }
                 do {
-                    let data = try await Self.download(url, session: session)
+                    let (data, _) = try await Self.download(url, session: session)
                     guard let image = await Self.decode(data),
-                          !Task.isCancelled, generation == epoch else { continue }
+                          !Task.isCancelled, generation == epoch else { throw URLError(.cannotDecodeContentData) }
                     let timestamp = now()
                     images.setObject(Entry(image, expires: timestamp.addingTimeInterval(Self.lifetime)), forKey: key as NSURL, cost: 64 * 64 * 4)
                     if let png = image.pngData(), let storedResponse = HTTPURLResponse(url: key, statusCode: 200,
@@ -91,6 +95,20 @@ import ImageIO
                     pending[key] = nil
                     return image
                 } catch { if Task.isCancelled { return nil } }
+                if !discovered {
+                    discovered = true
+                    // A site's declared icon may live anywhere, including a CDN.
+                    // Inspect only the public origin, never a bookmark's query or path.
+                    let origin = key.deletingLastPathComponent()
+                    if let (html, response) = try? await Self.download(origin, session: session, maximumBytes: 512 * 1024),
+                       response.mimeType?.lowercased() == "text/html" {
+                        let pageURL = response.url ?? origin
+                        let declared = await Task.detached(priority: .utility) {
+                            Self.declaredIconURLs(in: html, pageURL: pageURL)
+                        }.value
+                        sources.insert(contentsOf: declared, at: 0)
+                    }
+                }
             }
             guard generation == epoch else { return nil }
             failures = failures.filter { $0.value > now() }
@@ -101,6 +119,67 @@ import ImageIO
         }
         pending[key] = task
         return await task.value
+    }
+
+    /// Bounded HTML metadata parsing; no WebKit instance or page scripts are needed.
+    nonisolated static func declaredIconURLs(in data: Data, pageURL: URL) -> [URL] {
+        guard data.count <= 512 * 1024,
+              let html = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .windowsCP1252),
+              let tags = try? NSRegularExpression(pattern: #"<!--[\s\S]*?-->|<script\b[^>]*>[\s\S]*?</script\s*>|<style\b[^>]*>[\s\S]*?</style\s*>|<(?:base|link)\b(?:"[^"]*"|'[^']*'|[^'">])*>|</head\s*>"#, options: [.caseInsensitive]),
+              let attrs = try? NSRegularExpression(pattern: #"([a-zA-Z_][\w:-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))"#) else { return [] }
+        var base = pageURL
+        var usedBase = false
+        var icons: [(URL, Bool)] = []
+        for match in tags.matches(in: html, range: NSRange(html.startIndex..., in: html)) {
+            guard let range = Range(match.range, in: html) else { continue }
+            let tag = String(html[range])
+            let lower = tag.lowercased()
+            if lower.hasPrefix("</head") { break }
+            guard lower.hasPrefix("<link") || lower.hasPrefix("<base") else { continue }
+            var values: [String: String] = [:]
+            for attr in attrs.matches(in: tag, range: NSRange(tag.startIndex..., in: tag)) {
+                guard let name = Range(attr.range(at: 1), in: tag) else { continue }
+                for index in 2...4 {
+                    if let value = Range(attr.range(at: index), in: tag) {
+                        values[tag[name].lowercased()] = decodeEntities(String(tag[value]))
+                        break
+                    }
+                }
+            }
+            guard let href = values["href"],
+                  let url = URL(string: href, relativeTo: base)?.absoluteURL,
+                  ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
+                  url.host != nil, url.user == nil, url.password == nil else { continue }
+            if lower.hasPrefix("<base") {
+                if !usedBase { base = url; usedBase = true }
+                continue
+            }
+            let rel = (values["rel"] ?? "").lowercased().split(whereSeparator: \.isWhitespace)
+            guard rel.contains("icon") || rel.contains("apple-touch-icon") || rel.contains("apple-touch-icon-precomposed") else { continue }
+            guard !icons.contains(where: { $0.0 == url }) else { continue }
+            let vector = values["type"]?.lowercased() == "image/svg+xml" || url.pathExtension.lowercased() == "svg"
+            icons.append((url, vector))
+            if icons.count == 8 { break }
+        }
+        // ImageIO supports raster icons; prefer them over SVG-only declarations.
+        return icons.filter { !$0.1 }.map(\.0) + icons.filter { $0.1 }.map(\.0)
+    }
+
+    nonisolated private static func decodeEntities(_ value: String) -> String {
+        guard let regex = try? NSRegularExpression(pattern: #"&(#x[0-9a-f]+|#\d+|amp|quot|apos|lt|gt);"#, options: [.caseInsensitive]) else { return value }
+        let names = ["amp": "&", "quot": "\"", "apos": "'", "lt": "<", "gt": ">"]
+        var result = value
+        for match in regex.matches(in: value, range: NSRange(value.startIndex..., in: value)).reversed() {
+            guard let range = Range(match.range, in: result), let inner = Range(match.range(at: 1), in: value) else { continue }
+            let entity = value[inner].lowercased()
+            var decoded = names[entity]
+            if entity.hasPrefix("#") {
+                let hex = entity.hasPrefix("#x")
+                if let code = UInt32(entity.dropFirst(hex ? 2 : 1), radix: hex ? 16 : 10), let scalar = UnicodeScalar(code), code != 0 { decoded = String(scalar) }
+            }
+            if let decoded { result.replaceSubrange(range, with: decoded) }
+        }
+        return result
     }
 
     func clear() {
@@ -124,16 +203,16 @@ import ImageIO
     }
 
     /// Byte iteration must not monopolize the UI actor on a fast/cached response.
-    nonisolated private static func download(_ url: URL, session: URLSession) async throws -> Data {
+    nonisolated private static func download(_ url: URL, session: URLSession, maximumBytes: Int = 1024 * 1024) async throws -> (Data, HTTPURLResponse) {
         let (bytes, response) = try await session.bytes(for: URLRequest(url: url))
         guard let response = response as? HTTPURLResponse, (200..<300).contains(response.statusCode),
-              response.expectedContentLength <= 1024 * 1024 else { throw URLError(.badServerResponse) }
+              response.expectedContentLength <= maximumBytes else { throw URLError(.badServerResponse) }
         var data = Data()
         for try await byte in bytes {
             data.append(byte)
-            if data.count > 1024 * 1024 { throw URLError(.dataLengthExceedsMaximum) }
+            if data.count > maximumBytes { throw URLError(.dataLengthExceedsMaximum) }
         }
         try Task.checkCancellation()
-        return data
+        return (data, response)
     }
 }
