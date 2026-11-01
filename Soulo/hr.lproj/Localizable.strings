@@ -23,6 +23,8 @@
 "platform_zhihu" = "Zhihu";
 "platform_zlibrary" = "Z-knjižnica";
 "platform_baidu" = "Baidu";
+"site_plugin_baidu_search" = "Poboljšanja Baidu pretrage";
+"site_search_optimization_desc" = "Pregledniji rezultati, izravne poveznice kada su dostupne i jasna povratna informacija pri dodiru.";
 "platform_shenma" = "Shenma";
 "platform_quark" = "Quark";
 "platform_taobao" = "Taobao";

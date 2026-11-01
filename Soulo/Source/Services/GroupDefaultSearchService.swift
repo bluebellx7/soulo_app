@@ -34,8 +34,8 @@ struct GroupDefaultSearchEngine: Codable, Hashable, Identifiable {
         return true
     }
     static let presets: [Self] = [
-        .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000008")!, name: "platform_quark", template: "https://quark.sm.cn/s?q=%@&safe=1&by=submit&snum=1", homeURL: "https://quark.sm.cn/", icon: "icon_quark"),
         .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000001")!, name: "platform_baidu", template: "https://www.baidu.com/s?wd=%@", homeURL: "https://www.baidu.com", icon: "icon_baidu"),
+        .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000008")!, name: "platform_quark", template: "https://quark.sm.cn/s?q=%@&safe=1&by=submit&snum=1", homeURL: "https://quark.sm.cn/", icon: "icon_quark"),
         .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000002")!, name: "platform_google", template: "https://www.google.com/search?q=%@", homeURL: "https://www.google.com", icon: "icon_google"),
         .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000003")!, name: "platform_google_jp", template: "https://www.google.co.jp/search?q=%@&hl=ja&gl=jp", homeURL: "https://www.google.co.jp", icon: "icon_google"),
         .init(id: UUID(uuidString: "76B3B5DD-95C0-4F61-9635-000000000004")!, name: "platform_google_kr", template: "https://www.google.co.kr/search?q=%@&hl=ko&gl=kr", homeURL: "https://www.google.co.kr", icon: "icon_google"),
@@ -46,12 +46,12 @@ struct GroupDefaultSearchEngine: Codable, Hashable, Identifiable {
     static func initial(scope: SearchGroupScope, language: String) -> Self {
         // Preset menu ordering must not change a region's default engine.
         let name = switch scope {
-        case .region(.china): "platform_quark"
+        case .region(.china): "platform_baidu"
         case .region(.international): "platform_google"
         case .region(.japan): "platform_google_jp"
         case .region(.korea): "platform_google_kr"
         case .region(.russia): "platform_yandex"
-        case .custom: language.lowercased().hasPrefix("zh") ? "platform_quark" : "platform_google"
+        case .custom: language.lowercased().hasPrefix("zh") ? "platform_baidu" : "platform_google"
         }
         return presets.first { $0.name == name }!
     }

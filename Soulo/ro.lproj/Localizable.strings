@@ -23,6 +23,8 @@
 "platform_zhihu" = "Zhihu";
 "platform_zlibrary" = "Z-Biblioteca";
 "platform_baidu" = "Baidu";
+"site_plugin_baidu_search" = "Îmbunătățiri căutare Baidu";
+"site_search_optimization_desc" = "Rezultate mai clare, linkuri directe când sunt disponibile și răspuns vizibil la atingere.";
 "platform_shenma" = "Shenma";
 "platform_quark" = "Quark";
 "platform_taobao" = "Taobao";

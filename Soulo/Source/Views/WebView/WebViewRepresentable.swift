@@ -460,6 +460,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     @ObservedObject private var manualAdRules = ManualAdBlockService.shared
     @ObservedObject private var privacyService = PrivacyProtectionService.shared
     @ObservedObject private var webAppearance = WebAppearanceService.shared
+    @ObservedObject private var siteOptimizationSettings = SiteOptimizationSettings.shared
 
     // MARK: - Make View
 
@@ -750,6 +751,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     }
 
     private func configureWebView(_ webView: WKWebView, context: Context) {
+        context.coordinator.synchronizeSiteOptimizations(on: webView)
         context.coordinator.updateManualAdTap(on: webView)
         context.coordinator.installImageLongPress(on: webView)
         webView.navigationDelegate = context.coordinator
@@ -812,6 +814,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
+        context.coordinator.synchronizeSiteOptimizations(on: uiView)
         synchronizePageBackground(on: uiView)
         updateObscuredInsets(on: uiView)
         context.coordinator.updateManualAdTap(on: uiView)
@@ -1046,6 +1049,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var outgoingHistoryDocument: URL?
         private var pendingHistoryItem: WKBackForwardListItem?
         private var historyRecoveryID = UUID()
+        private let siteOptimizations = SiteOptimizationController()
         private var navigationOriginURL: URL?
         private var userInitiatedNavigationChain = false
         private var domainConfirmationID: UUID?
@@ -1084,6 +1088,16 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var navigationGeneration = UUID()
         fileprivate func cancelBackwardTraversal() {
             viewModel.cancelBackwardTraversal()
+        }
+
+        func synchronizeSiteOptimizations(on webView: WKWebView) {
+            siteOptimizations.synchronize(on: webView, navigationEnabled: viewModel.manualAdSelection == nil) { [weak self, weak webView] request in
+                guard let self, let webView, self.viewModel.webView === webView,
+                      self.viewModel.manualAdSelection == nil, self.viewModel.mediaSession.isActive else { return false }
+                self.userInitiatedNavigationChain = true
+                self.viewModel.loadRequest(request)
+                return true
+            }
         }
 
         init(viewModel: WebViewModel) {
@@ -2059,6 +2073,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                         guard wv.navigationDelegate === self,
                               self?.viewModel.webView === wv else { return }
                         self?.viewModel.updateLoading(wv.isLoading)
+                        if !wv.isLoading { self?.siteOptimizations.finishNavigation() }
                     }
                 },
                 webView.observe(\.canGoBack, options: [.initial, .new]) { [weak self] wv, _ in
@@ -2116,6 +2131,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         func invalidateObservations() {
+            siteOptimizations.detach()
             videoFullscreenOrientation.end()
             clearVideoAwake()
             observations.forEach { $0.invalidate() }

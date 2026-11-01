@@ -1,0 +1,31 @@
+[
+  {
+    "id": "baidu-search",
+    "platformNames": [
+      "platform_baidu"
+    ],
+    "resourceFile": "baidu-search.js",
+    "nameKey": "site_plugin_baidu_search",
+    "iconName": "icon_baidu",
+    "descriptionKey": "site_search_optimization_desc",
+    "preferenceKey": "baidu_search_optimization_enabled",
+    "enabledByDefault": true,
+    "hosts": [
+      "baidu.com",
+      "www.baidu.com",
+      "m.baidu.com"
+    ],
+    "pathSuffixes": [
+      "/s",
+      "/baidu"
+    ],
+    "queryKeys": [
+      "wd",
+      "word",
+      "w",
+      "kw"
+    ],
+    "recordID": "A2162AB4-272E-4D30-A266-9C0CD228A769",
+    "version": "1.0.0"
+  }
+]

@@ -23,6 +23,8 @@
 "platform_zhihu" = "ऱ्हिहू";
 "platform_zlibrary" = "Z-लायब्ररी";
 "platform_baidu" = "बायडू";
+"site_plugin_baidu_search" = "Baidu शोध सुधारणा";
+"site_search_optimization_desc" = "सुबक निकाल, उपलब्ध असल्यास थेट दुवे आणि टॅप केल्यावर स्पष्ट प्रतिसाद.";
 "platform_shenma" = "Shenma";
 "platform_quark" = "Quark";
 "platform_taobao" = "ताओबाओ";

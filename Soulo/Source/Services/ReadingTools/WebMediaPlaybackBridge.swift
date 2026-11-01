@@ -71,9 +71,17 @@ enum WebVideoOrientationRuntime {
         }
         send(action, active.token); active = null; schedule();
       }
-      function fullscreenChanged() {
+      function fullscreenChanged(event) {
         if (!active) return;
-        if (isFullscreen(active.video)) {
+        if (active.mode === 'native') {
+          // AVKit and document fullscreen have independent event streams.
+          // Baidu can dispatch a document transition while AVKit is rotating;
+          // only the active video's native end event should restore portrait.
+          if (event?.target !== active.video) return;
+          if (event.type === 'webkitendfullscreen') { finish(); return; }
+          if (event.type !== 'webkitbeginfullscreen' && !isFullscreen(active.video)) return;
+        }
+        if (active.mode === 'native' || isFullscreen(active.video)) {
           if (!active.began) {
             active.began = true; clearTimeout(active.timeout); send('begin', active.token); schedule();
           }
@@ -107,10 +115,13 @@ enum WebVideoOrientationRuntime {
           }
           video.getBoundingClientRect();
           video.play()?.catch(() => {});
-          if (document.fullscreenEnabled && video.requestFullscreen) {
+          if (typeof video.webkitEnterFullscreen === 'function') {
+            active.mode = 'native';
+            video.webkitEnterFullscreen();
+          } else if (document.fullscreenEnabled && video.requestFullscreen) {
+            active.mode = 'document';
             video.requestFullscreen().catch(() => { if (active?.token === token) finish('failed'); });
-          } else if (typeof video.webkitEnterFullscreen === 'function') video.webkitEnterFullscreen();
-          else finish('failed');
+          } else finish('failed');
         } catch (_) { finish('failed'); }
       }
       function prune() {

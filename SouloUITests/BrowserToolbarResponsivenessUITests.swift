@@ -106,6 +106,10 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         try open("interactive-source")
         let web = app.webViews.firstMatch
         tap(web.links["Open slow result"].firstMatch)
+        let responsePending = XCTNSPredicateExpectation(predicate: NSPredicate { [weak self] _, _ in
+            self?.fixture.hasPendingSlowResource == true
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [responsePending], timeout: 5), .completed)
         XCTAssertTrue(fixture.hasPendingSlowResource)
         XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "browser.navigation-preview").firstMatch.exists)
         let button = web.buttons["Check response"].firstMatch

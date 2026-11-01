@@ -584,10 +584,34 @@ final class PlatformDataStoreTests: XCTestCase {
         XCTAssertEqual(store.platforms.filter { $0.name == "platform_quark" }.count, 1)
     }
 
-    func testQuarkDefaultsPrecedeBaiduAndUseTheOfficialSearchURL() throws {
+    func testBaiduFirstMigrationKeepsDisabledFlagsAndOtherPlatformOrder() throws {
+        let defaults = UserDefaults.standard, store = PlatformDataStore.shared
+        let data = defaults.data(forKey: "platform_config"), version = defaults.object(forKey: "platform_config_version")
+        defer {
+            defaults.set(data, forKey: "platform_config"); defaults.set(version, forKey: "platform_config_version"); store.reloadFromDefaults()
+        }
+        var old = PlatformDataStore.defaultPlatforms()
+        let baidu = try XCTUnwrap(old.firstIndex { $0.name == "platform_baidu" })
+        let quark = try XCTUnwrap(old.firstIndex { $0.name == "platform_quark" })
+        old[baidu].sortOrder = 1; old[quark].sortOrder = 0
+        old[baidu].isVisible = false
+        let otherIDs = old.filter { $0.region == .china && $0.name != "platform_baidu" }.sorted { $0.sortOrder < $1.sortOrder }.map(\.id)
+        defaults.set(try JSONEncoder().encode(old), forKey: "platform_config")
+        defaults.set(46, forKey: "platform_config_version"); store.reloadFromDefaults()
+        let china = store.platforms(for: .china)
+        XCTAssertEqual(china.prefix(2).map(\.name), ["platform_baidu", "platform_quark"])
+        XCTAssertEqual(china.filter { $0.name != "platform_baidu" }.map(\.id), otherIDs)
+        XCTAssertEqual(china.first?.id, old[baidu].id)
+        XCTAssertEqual(china.first?.isVisible, false)
+        let orderedIDs = china.map(\.id)
+        store.reloadFromDefaults()
+        XCTAssertEqual(store.platforms(for: .china).map(\.id), orderedIDs)
+    }
+
+    func testQuarkDefaultsFollowBaiduAndUseTheOfficialSearchURL() throws {
         let china = PlatformDataStore.defaultPlatforms().filter { $0.region == .china }.sorted { $0.sortOrder < $1.sortOrder }
         let baidu = try XCTUnwrap(china.firstIndex { $0.name == "platform_baidu" })
-        let quark = china[baidu - 1]
+        let quark = china[baidu + 1]
         XCTAssertEqual(quark.name, "platform_quark")
         XCTAssertTrue(quark.isVisible)
         XCTAssertFalse(quark.requiresLogin)
@@ -614,7 +638,7 @@ final class PlatformDataStoreTests: XCTestCase {
         defaults.set(43, forKey: "platform_config_version"); store.reloadFromDefaults()
         let china = store.platforms(for: .china)
         let baidu = try XCTUnwrap(china.firstIndex { $0.name == "platform_baidu" })
-        let quark = china[baidu - 1]
+        let quark = china[baidu + 1]
         XCTAssertEqual(quark.name, "platform_quark")
         XCTAssertEqual(china.filter { $0.id != quark.id }.map(\.id), chinaIDs)
         for platform in old {

@@ -1,0 +1,32 @@
+const fs=require('fs'),path=require('path'),assert=require('node:assert/strict');
+const {chromium}=require(process.env.SOULO_PLAYWRIGHT_MODULE||'playwright');
+const root=path.resolve(__dirname,'../..');
+const swift=fs.readFileSync(path.join(root,'Soulo/Source/Services/ReadingTools/WebMediaPlaybackBridge.swift'),'utf8');
+const source=swift.match(/static let source = #"""\n([\s\S]*?)\n\s*"""#/)[1];
+const overlay=fs.readFileSync(path.join(root,'Soulo/Resources/UserScripts/overlay-controls.js'),'utf8');
+(async()=>{const browser=await chromium.launch({headless:true});try{
+ const page=await browser.newPage({viewport:{width:390,height:844}});
+ await page.setContent('<meta name="viewport" content="width=device-width,initial-scale=1"><video id="v" playsinline style="width:340px;height:200px"></video>');
+ await page.evaluate(()=>{
+  window.messages=[];window.nativeCalls=0;window.documentCalls=0;
+  window.webkit={messageHandlers:{souloVideoOrientation:{postMessage(body){messages.push(body)}}}};
+  const v=document.getElementById('v');
+  v.webkitEnterFullscreen=()=>{nativeCalls++;v.dispatchEvent(new Event('webkitbeginfullscreen'))};
+  v.requestFullscreen=()=>{documentCalls++;return Promise.resolve()};
+ });
+ await page.evaluate(overlay+'\n'+source);await page.waitForSelector('[data-video-toggle]',{state:'visible'});
+ await page.evaluate(()=>document.querySelector('[data-video-toggle]').click());
+ assert.equal(await page.evaluate(()=>nativeCalls),0);
+ await page.locator('[data-video-toggle]').click();
+ await page.getByRole('button',{name:'Fullscreen',exact:true}).click();
+ assert.equal(await page.evaluate(()=>nativeCalls),1);
+ assert.equal(await page.evaluate(()=>documentCalls),0,'Prefer native AVKit over the page fullscreen API on iOS');
+ assert.deepEqual(await page.evaluate(()=>messages.filter(m=>['prepare','begin','end','failed'].includes(m.action)).map(m=>m.action)),['prepare','begin']);
+ await page.evaluate(()=>{document.dispatchEvent(new Event('fullscreenchange'));document.getElementById('v').dispatchEvent(new Event('webkitpresentationmodechanged'))});
+ await page.waitForTimeout(200);
+ assert.equal(await page.evaluate(()=>messages.filter(m=>m.action==='end').length),0,'Page fullscreen changes must not restore portrait during a native video transition');
+ await page.evaluate(()=>document.getElementById('v').dispatchEvent(new Event('webkitendfullscreen')));
+ assert.equal(await page.evaluate(()=>messages.filter(m=>m.action==='end').length),1);
+ assert.equal(await page.locator('#v').evaluate(v=>v.style.width),'340px');
+ console.log('Web video fullscreen: native entry, independent event streams, real exit and size restoration passed');
+}finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});

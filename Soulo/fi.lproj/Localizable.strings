@@ -23,6 +23,8 @@
 "platform_zhihu" = "Zhihu";
 "platform_zlibrary" = "Z-kirjasto";
 "platform_baidu" = "Baidu";
+"site_plugin_baidu_search" = "Baidu-haun parannukset";
+"site_search_optimization_desc" = "Selkeämmät tulokset, suorat linkit mahdollisuuksien mukaan ja näkyvä palaute napautettaessa.";
 "platform_shenma" = "Shenma";
 "platform_quark" = "Quark";
 "platform_taobao" = "Taobao";

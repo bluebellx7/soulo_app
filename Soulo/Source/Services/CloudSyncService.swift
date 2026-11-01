@@ -163,7 +163,7 @@ final class CloudSyncService: NSObject, ObservableObject {
         "platform_config",
         "custom_groups",
         "region_name_overrides"
-    ]
+    ] + SiteOptimizationRules.all.map(\.preferenceKey)
 
     init(defaults: UserDefaults = .standard,
          store: (any CloudSettingsStore)? = nil,

@@ -25,14 +25,14 @@ final class GroupDefaultSearchTests: XCTestCase {
     }
 
     func testRegionDefaultsAndLanguageDependentCustomDefaults() {
-        let regions: [(PlatformRegion, String)] = [(.china,"quark.sm.cn"),(.international,"www.google.com"),
+        let regions: [(PlatformRegion, String)] = [(.china,"www.baidu.com"),(.international,"www.google.com"),
             (.japan,"www.google.co.jp"),(.korea,"www.google.co.kr"),(.russia,"yandex.ru")]
         for (region, host) in regions {
             let engine = GroupDefaultSearchEngine.initial(scope: .region(region), language: "en-US")
             XCTAssertEqual(engine.platform(region: region).searchURL(for: "a & 中文")?.host, host)
         }
         let scope = SearchGroupScope.custom(UUID())
-        XCTAssertEqual(GroupDefaultSearchEngine.initial(scope: scope, language: "zh-Hant").name, "platform_quark")
+        XCTAssertEqual(GroupDefaultSearchEngine.initial(scope: scope, language: "zh-Hant").name, "platform_baidu")
         XCTAssertEqual(GroupDefaultSearchEngine.initial(scope: scope, language: "en-US").name, "platform_google")
     }
     func testIndependentOverridesPersistAndValidateURLs() throws {
@@ -95,7 +95,7 @@ final class GroupDefaultSearchTests: XCTestCase {
         UserDefaults.standard.set("zh-Hans", forKey: "app_language")
         let model = SearchViewModel(suggestionProvider: { _,_ in [] })
         model.selectCustomGroup(group)
-        XCTAssertEqual(model.selectedPlatform?.name, "platform_quark")
+        XCTAssertEqual(model.selectedPlatform?.name, "platform_baidu")
         try GroupDefaultSearchService.shared.save(try XCTUnwrap(GroupDefaultSearchEngine.presets.first { $0.name == "platform_yandex" }), for: .custom(group.id))
         model.selectCustomGroup(group)
         XCTAssertEqual(model.selectedPlatform?.name, "platform_yandex")

@@ -15,6 +15,7 @@ struct ExtensionCenterView: View {
     var onOpenInBrowser: ((URL) -> Void)? = nil
 
     @ObservedObject private var service = BrowserExtensionService.shared
+    @ObservedObject private var siteOptimizations = SiteOptimizationSettings.shared
     @State private var selectedTab: ExtensionCenterTab = .installed
     @State private var importWebExtension = false
     @State private var showStoreLinkInstaller = false
@@ -179,7 +180,7 @@ struct ExtensionCenterView: View {
                 userScriptExperimentalNotice
             }
 
-            if service.userScripts.isEmpty {
+            if service.userScripts.isEmpty && SiteOptimizationRules.all.isEmpty {
                 ContentUnavailableView(
                     LanguageManager.shared.localizedString("userscripts_empty"),
                     systemImage: "puzzlepiece.extension",
@@ -204,8 +205,22 @@ struct ExtensionCenterView: View {
                 }
             }
 
-            if !service.userScripts.isEmpty {
+            if !service.userScripts.isEmpty || !SiteOptimizationRules.all.isEmpty {
                 Section {
+                    ForEach(SiteOptimizationRules.all) { rule in
+                        HStack(spacing: 12) {
+                            NavigationLink {
+                                UserScriptEditorView(script: rule.scriptRecord, builtInNotice: "")
+                            } label: {
+                                userScriptRow(rule.scriptRecord, showBuiltInBadge: false)
+                            }
+                            .accessibilityIdentifier("extensions.site-script.details." + rule.id)
+                            Toggle("", isOn: Binding(get: { siteOptimizations.isEnabled(rule) },
+                                                     set: { siteOptimizations.setEnabled($0, for: rule) }))
+                                .labelsHidden()
+                                .accessibilityIdentifier("extensions.site-plugin." + rule.id)
+                        }
+                    }
                     ForEach(service.userScripts) { script in
                         HStack(spacing: 12) {
                             NavigationLink {
@@ -303,7 +318,7 @@ struct ExtensionCenterView: View {
         .contentShape(Rectangle())
     }
 
-    private func userScriptRow(_ script: UserScriptRecord) -> some View {
+    private func userScriptRow(_ script: UserScriptRecord, showBuiltInBadge: Bool = true) -> some View {
         HStack(spacing: 12) {
             extensionIcon(systemName: "chevron.left.forwardslash.chevron.right", tint: .orange)
             VStack(alignment: .leading, spacing: 3) {
@@ -311,7 +326,7 @@ struct ExtensionCenterView: View {
                     Text(BuiltInUserScripts.displayName(for: script))
                         .font(.body.weight(.medium))
                         .lineLimit(1)
-                    if script.isBuiltIn == true {
+                    if script.isBuiltIn == true && showBuiltInBadge {
                         Text(LanguageManager.shared.localizedString("userscript_builtin_badge"))
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(Color.themePrimary)
@@ -863,6 +878,7 @@ struct UserScriptEditorView: View {
     private let scriptID: UUID?
     private let isBuiltIn: Bool
     private let builtInDescription: String?
+    private let builtInNotice: String?
     @State private var name: String
     @State private var patternsText: String
     @State private var source: String
@@ -871,7 +887,8 @@ struct UserScriptEditorView: View {
     @State private var sourceCopied = false
     @Environment(\.dismiss) private var dismiss
 
-    init(script: UserScriptRecord?) {
+    init(script: UserScriptRecord?, builtInNotice: String? = nil) {
+        self.builtInNotice = builtInNotice
         scriptID = script?.id
         isBuiltIn = script?.isBuiltIn == true
         builtInDescription = script.flatMap { record in
@@ -902,7 +919,11 @@ struct UserScriptEditorView: View {
                         )
                     )
                 } footer: {
-                    Text(LanguageManager.shared.localizedString("userscript_builtin_readonly_desc"))
+                    if let builtInNotice {
+                        if !builtInNotice.isEmpty { Text(builtInNotice) }
+                    } else {
+                        Text(LanguageManager.shared.localizedString("userscript_builtin_readonly_desc"))
+                    }
                 }
             } else {
                 Section {
@@ -979,6 +1000,7 @@ struct UserScriptEditorView: View {
                         Text(source)
                             .font(.system(.footnote, design: .monospaced))
                             .textSelection(.enabled)
+                            .accessibilityIdentifier("userscripts.source")
                     }
                     .frame(minHeight: 280, alignment: .topLeading)
                 } else {
