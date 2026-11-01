@@ -87,7 +87,7 @@ struct LibraryFilesView: View {
                     .accessibilityLabel(ToolText.text(isSelecting ? "done" : "select"))
                     .accessibilityIdentifier("files.selectionMode")
                     .accessibilityAddTraits(isSelecting ? .isSelected : [])
-                    .disabled(busy || (!isSelecting && !files.contains(where: { !$0.directory })))
+                    .disabled(busy || (!isSelecting && files.isEmpty))
                 }
             }
         }
@@ -223,7 +223,7 @@ struct LibraryFilesView: View {
             }
             ForEach(files) { file in
                 HStack(spacing: 8) {
-                    if file.directory {
+                    if file.directory && !isSelecting {
                         NavigationLink { LibraryFilesView(directory: file.url) } label: { fileLabel(file) }
                     } else {
                         Button { open(file) } label: { fileLabel(file) }
@@ -268,23 +268,20 @@ struct LibraryFilesView: View {
                                 Label(LanguageManager.shared.localizedString("save") + " HLS", systemImage: "square.and.arrow.down")
                             }
                         }
-                        Button(ToolText.text("delete_files"), systemImage: "trash", role: .destructive) {
-                            pendingDeletion = [file.url]; deletionAnchor = file.id
-                        }
+                    }
+                    Button(ToolText.text("delete_files"), systemImage: "trash", role: .destructive) {
+                        pendingDeletion = [file.url]; deletionAnchor = file.id
                     }
                 }
                 .swipeActions(edge: .trailing) {
-                    if !file.directory {
-                        // The destructive role makes List optimistically remove
-                        // this row, taking its confirmation presenter with it.
-                        Button {
-                            pendingDeletion = [file.url]; deletionAnchor = file.id
-                        } label: { Label(ToolText.text("delete_files"), systemImage: "trash") }
-                        .tint(.red)
-                    }
+                    // Keep the row and its confirmation presenter visible until confirmed.
+                    Button {
+                        pendingDeletion = [file.url]; deletionAnchor = file.id
+                    } label: { Label(ToolText.text("delete_files"), systemImage: "trash") }
+                    .tint(.red)
                 }
                 .background(LibrarySwipeActionsRegion())
-                .fileDeletionConfirmation(isPresented: deletionBinding(file.id), count: pendingDeletion.count, confirm: deleteSelectedFiles)
+                .fileDeletionConfirmation(isPresented: deletionBinding(file.id), count: pendingDeletion.count, includesFolders: deletionIncludesFolders, confirm: deleteSelectedFiles)
             }
         }
         .listStyle(.plain)
@@ -304,7 +301,7 @@ struct LibraryFilesView: View {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 18), count: count), alignment: .leading, spacing: 24) {
                         ForEach(files) { file in
                             VStack(alignment: .leading, spacing: 8) {
-                                if file.directory {
+                                if file.directory && !isSelecting {
                                     NavigationLink { LibraryFilesView(directory: file.url) } label: { gridLabel(file) }
                                 } else {
                                     Button { open(file) } label: { gridLabel(file) }
@@ -312,7 +309,7 @@ struct LibraryFilesView: View {
                             }
                             .buttonStyle(.plain)
                             .overlay(alignment: .topTrailing) {
-                                if isSelecting && !file.directory {
+                                if isSelecting {
                                     Button {
                                         if !selected.insert(file.id).inserted { selected.remove(file.id) }
                                     } label: {
@@ -349,12 +346,12 @@ struct LibraryFilesView: View {
                                             Label(LanguageManager.shared.localizedString("save") + " HLS", systemImage: "square.and.arrow.down")
                                         }
                                     }
-                                    Button(ToolText.text("delete_files"), systemImage: "trash", role: .destructive) {
-                                        pendingDeletion = [file.url]; deletionAnchor = file.id
-                                    }
+                                }
+                                Button(ToolText.text("delete_files"), systemImage: "trash", role: .destructive) {
+                                    pendingDeletion = [file.url]; deletionAnchor = file.id
                                 }
                             }
-                            .fileDeletionConfirmation(isPresented: deletionBinding(file.id), count: pendingDeletion.count, confirm: deleteSelectedFiles)
+                            .fileDeletionConfirmation(isPresented: deletionBinding(file.id), count: pendingDeletion.count, includesFolders: deletionIncludesFolders, confirm: deleteSelectedFiles)
                         }
                     }
                     .padding(.horizontal, 20).padding(.vertical, 18)
@@ -380,6 +377,12 @@ struct LibraryFilesView: View {
     }
 
     private var selectedURLs: [URL] { files.filter { selected.contains($0.id) }.map(\.url) }
+    private var deletionIncludesFolders: Bool {
+        files.contains { $0.directory && pendingDeletion.contains($0.url) }
+    }
+    private var selectionContainsUnshareableItems: Bool {
+        files.contains { selected.contains($0.id) && ($0.directory || ["movpkg", OfflineHLSReference.fileExtension].contains($0.url.pathExtension.lowercased())) }
+    }
 
     private func fileLabel(_ file: LocalFile) -> some View {
         HStack(spacing: 12) {
@@ -423,16 +426,16 @@ struct LibraryFilesView: View {
             AdaptiveActionRow(spacing: 8) {
                 Button { compressing = true } label: { Label(ToolText.text("compress"), systemImage: "doc.zipper") }
                     .buttonStyle(CompactActionButtonStyle())
-                    .disabled(selectedURLs.contains(where: { ["movpkg", OfflineHLSReference.fileExtension].contains($0.pathExtension.lowercased()) }))
+                    .disabled(selectionContainsUnshareableItems)
                 ShareLink(items: selectedURLs) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
                     .buttonStyle(CompactActionButtonStyle())
-                    .disabled(selectedURLs.contains(where: { ["movpkg", OfflineHLSReference.fileExtension].contains($0.pathExtension.lowercased()) }))
+                    .disabled(selectionContainsUnshareableItems)
                 Button(role: .destructive) {
                     pendingDeletion = selectedURLs; deletionAnchor = "selection"
                 } label: { Label(ToolText.text("delete_files"), systemImage: "trash") }
                         .tint(.red)
                     .buttonStyle(CompactActionButtonStyle())
-                    .fileDeletionConfirmation(isPresented: deletionBinding("selection"), count: pendingDeletion.count, confirm: deleteSelectedFiles)
+                    .fileDeletionConfirmation(isPresented: deletionBinding("selection"), count: pendingDeletion.count, includesFolders: deletionIncludesFolders, confirm: deleteSelectedFiles)
             }
             .disabled(selected.isEmpty)
         }
@@ -485,13 +488,21 @@ struct LibraryFilesView: View {
     private func deleteSelectedFiles() {
         let targets = pendingDeletion
         pendingDeletion = []
+        let manager = DownloadManagerService.shared
+        let relatedDownloads = manager.downloads.filter { LibraryFileActions.contains($0.localURL, in: targets) }
+        guard !relatedDownloads.contains(where: { [.inProgress, .paused].contains($0.status) }) else {
+            error = ToolText.text("delete_files_busy"); return
+        }
+        let bookIDs = BookLibrary.shared.books.filter { LibraryFileActions.contains($0.url, in: targets) }.map(\.id)
+        let playingTarget = MediaSession.shared.url.map { LibraryFileActions.contains($0, in: targets) } ?? false
         busy = true
         Task {
             do {
                 try await Task.detached { try LibraryFileActions.delete(targets, in: directory) }.value
-                DownloadManagerService.shared.removeMissingFiles()
-                if let current = MediaSession.shared.url, targets.contains(current) { MediaSession.shared.stop() }
-                for book in BookLibrary.shared.books where targets.contains(book.url) { BookLibrary.shared.remove(book.id) }
+                relatedDownloads.forEach { manager.delete($0) }
+                manager.removeMissingFiles()
+                if playingTarget { MediaSession.shared.stop() }
+                for id in bookIDs { BookLibrary.shared.remove(id) }
             } catch { self.error = error.localizedDescription }
             busy = false; reload()
         }
@@ -732,12 +743,12 @@ private struct FileDestinationView: View {
 }
 
 private extension View {
-    func fileDeletionConfirmation(isPresented: Binding<Bool>, count: Int, confirm: @escaping () -> Void) -> some View {
-        confirmationDialog(ToolText.text("delete_files_confirm"), isPresented: isPresented, titleVisibility: .visible) {
+    func fileDeletionConfirmation(isPresented: Binding<Bool>, count: Int, includesFolders: Bool, confirm: @escaping () -> Void) -> some View {
+        confirmationDialog(ToolText.text(includesFolders ? "delete_items_confirm" : "delete_files_confirm"), isPresented: isPresented, titleVisibility: .visible) {
             Button(ToolText.text("delete_files"), role: .destructive, action: confirm)
             Button(ToolText.text("cancel"), role: .cancel) {}
         } message: {
-            Text(String(format: ToolText.text("delete_files_message"), count))
+            Text(String(format: ToolText.text(includesFolders ? "delete_folders_message" : "delete_files_message"), count))
         }
     }
 }

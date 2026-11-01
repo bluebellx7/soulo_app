@@ -452,3 +452,7 @@
 
 "screen_keep_awake" = "Keep Screen On";
 "screen_keep_awake_desc" = "Prevent automatic locking while the app is in the foreground.";
+
+"delete_items_confirm" = "Delete selected items?";
+"delete_folders_message" = "Delete %ld item(s), including folders and all their contents. This cannot be undone.";
+"delete_files_busy" = "Some items are still downloading or paused. Remove their tasks in Downloads before deleting them.";

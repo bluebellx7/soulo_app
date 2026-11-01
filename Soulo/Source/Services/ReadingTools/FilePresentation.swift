@@ -115,8 +115,8 @@ struct PreparedFilePreview: Sendable {
     func removeTemporaryFile() { if let temporaryDirectory { try? FileManager.default.removeItem(at: temporaryDirectory) } }
 }
 
-/// Only selected, app-owned files and legacy HLS packages are removed.
-/// Ordinary directories and symlinks are excluded.
+/// Only selected children of the current directory can be removed.
+/// Folders include their contents; symbolic links are never followed.
 enum LibraryFileActions {
     static func rename(_ file: URL, baseName: String, in directory: URL) throws -> URL {
         let name = baseName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -143,17 +143,37 @@ enum LibraryFileActions {
     static func delete(_ files: [URL], in directory: URL) throws {
         let root = directory.standardizedFileURL.resolvingSymlinksInPath()
         for file in files {
+            guard file.isFileURL else { throw ReadingToolError.unsafePath }
             let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey, .isSymbolicLinkKey])
-            let isManagedPackage = file.pathExtension.lowercased() == "movpkg" && values.isDirectory == true
-            guard (values.isRegularFile == true || isManagedPackage), values.isSymbolicLink != true,
+            guard (values.isRegularFile == true || values.isDirectory == true), values.isSymbolicLink != true,
                   file.standardizedFileURL.deletingLastPathComponent().resolvingSymlinksInPath() == root,
                   !file.lastPathComponent.hasPrefix(".") else { throw ReadingToolError.unsafePath }
         }
         for file in files {
-            if file.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
-                try? OfflineHLSReference.removePackage(for: file)
+            // HLS references can point to system-owned packages outside Downloads.
+            // Remove those packages as well when deleting their containing folder.
+            var references = [file]
+            if try file.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true,
+               let contents = FileManager.default.enumerator(at: file,
+                includingPropertiesForKeys: [.isSymbolicLinkKey], options: [.skipsPackageDescendants]) {
+                for case let child as URL in contents where child.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
+                    if (try? child.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == false {
+                        references.append(child)
+                    }
+                }
+            }
+            for reference in references where reference.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
+                try? OfflineHLSReference.removePackage(for: reference)
             }
             try FileManager.default.removeItem(at: file)
+        }
+    }
+
+    static func contains(_ url: URL, in targets: [URL]) -> Bool {
+        let path = url.standardizedFileURL.path
+        return targets.contains {
+            let target = $0.standardizedFileURL.path
+            return path == target || path.hasPrefix(target + "/")
         }
     }
 }

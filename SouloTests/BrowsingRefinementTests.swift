@@ -69,12 +69,13 @@ final class BrowsingRefinementTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: reference.path))
         XCTAssertFalse(FileManager.default.fileExists(atPath: package.path))
     }
-    func testDeletionPreflightRejectsOutsideFilesDirectoriesAndSymlinks() throws {
+    func testDeletionPreflightRejectsOutsideItemsHiddenFilesAndSymlinks() throws {
         let file = root.appendingPathComponent("keep.txt"); try Data("keep".utf8).write(to: file)
         let child = root.appendingPathComponent("child"); try FileManager.default.createDirectory(at: child, withIntermediateDirectories: true)
         let outside = child.appendingPathComponent("outside.txt"); try Data().write(to: outside)
         let link = root.appendingPathComponent("link"); try FileManager.default.createSymbolicLink(at: link, withDestinationURL: outside)
-        for invalid in [outside, child, link] {
+        let hidden = root.appendingPathComponent(".hidden"); try Data().write(to: hidden)
+        for invalid in [outside, root!, link, hidden] {
             XCTAssertThrowsError(try LibraryFileActions.delete([file, invalid], in: root))
             XCTAssertTrue(FileManager.default.fileExists(atPath: file.path))
         }
@@ -82,6 +83,61 @@ final class BrowsingRefinementTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: outside.path))
     }
+    func testDeletingFoldersRemovesAllContentsAndEmptyFoldersWithoutFollowingLinks() throws {
+        let folder = root.appendingPathComponent("folder")
+        let nested = folder.appendingPathComponent("nested/deeper")
+        let empty = root.appendingPathComponent("empty")
+        let outside = root.appendingPathComponent("folder-other")
+        for url in [nested, empty, outside] {
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        }
+        let sentinel = outside.appendingPathComponent("keep.txt")
+        try Data("keep outside".utf8).write(to: sentinel)
+        try Data("nested".utf8).write(to: nested.appendingPathComponent("child.txt"))
+        try Data("hidden".utf8).write(to: folder.appendingPathComponent(".hidden"))
+        try FileManager.default.createSymbolicLink(at: folder.appendingPathComponent("file-link"), withDestinationURL: sentinel)
+        try FileManager.default.createSymbolicLink(at: folder.appendingPathComponent("folder-link"), withDestinationURL: outside)
+        let file = root.appendingPathComponent("selected.txt")
+        try Data().write(to: file)
+        try LibraryFileActions.delete([folder, empty, file], in: root)
+        for url in [folder, empty, file] { XCTAssertFalse(FileManager.default.fileExists(atPath: url.path)) }
+        XCTAssertEqual(try Data(contentsOf: sentinel), Data("keep outside".utf8))
+    }
+
+    func testDeletingFolderAlsoRemovesNestedOfflineHLSPackage() throws {
+        let folder = root.appendingPathComponent("videos/subfolder")
+        let packageFolder = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
+            .appendingPathComponent("Library/HLSFolderTest-" + UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: packageFolder) }
+        let package = packageFolder.appendingPathComponent("system-video.movpkg")
+        let unrelatedPackage = packageFolder.appendingPathComponent("unrelated.movpkg")
+        let outside = root.appendingPathComponent("outside")
+        for url in [folder, package, unrelatedPackage, outside] {
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        }
+        try Data([1, 2, 3]).write(to: package.appendingPathComponent("segment.ts"))
+        let reference = folder.appendingPathComponent("video.soulohls")
+        try OfflineHLSReference.write(packageURL: package, to: reference)
+        let outsideReference = outside.appendingPathComponent("keep.soulohls")
+        try OfflineHLSReference.write(packageURL: unrelatedPackage, to: outsideReference)
+        try FileManager.default.createSymbolicLink(at: folder.appendingPathComponent("outside-link"), withDestinationURL: outside)
+        try FileManager.default.createSymbolicLink(at: folder.appendingPathComponent("link.soulohls"), withDestinationURL: outsideReference)
+        try LibraryFileActions.delete([folder.deletingLastPathComponent()], in: root)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: folder.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: package.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: unrelatedPackage.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: outsideReference.path))
+    }
+
+    func testDeletionScopeIncludesDescendantsButKeepsSimilarlyNamedSiblings() {
+        let folder = root.appendingPathComponent("folder")
+        XCTAssertTrue(LibraryFileActions.contains(folder, in: [folder]))
+        XCTAssertTrue(LibraryFileActions.contains(folder.appendingPathComponent("nested/book.txt"), in: [folder]))
+        XCTAssertFalse(LibraryFileActions.contains(root.appendingPathComponent("folder-other/book.txt"), in: [folder]))
+        XCTAssertFalse(LibraryFileActions.contains(root.appendingPathComponent("other.txt"), in: [folder]))
+        XCTAssertFalse(LibraryFileActions.contains(root, in: [folder]))
+    }
+
     func testReviewRequestAfterSevenDaysOnlyOnceAndNeverRewritesFirstUse() throws {
         let suite = "review-test-" + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)); defer { defaults.removePersistentDomain(forName: suite) }

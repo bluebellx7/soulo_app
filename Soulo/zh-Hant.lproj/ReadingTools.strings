@@ -452,3 +452,7 @@
 
 "screen_keep_awake" = "螢幕常亮";
 "screen_keep_awake_desc" = "開啟後，App 在前景使用時不會自動鎖定螢幕。";
+
+"delete_items_confirm" = "刪除所選項目？";
+"delete_folders_message" = "將刪除 %ld 項，所選資料夾及其全部內容都會一併刪除，且無法復原。";
+"delete_files_busy" = "所選項目中有未完成的下載，請先到下載頁面取消對應工作。";

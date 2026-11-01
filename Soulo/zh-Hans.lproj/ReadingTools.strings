@@ -452,3 +452,7 @@
 
 "screen_keep_awake" = "屏幕常亮";
 "screen_keep_awake_desc" = "开启后，App 在前台使用时不会自动锁屏。";
+
+"delete_items_confirm" = "删除所选项目？";
+"delete_folders_message" = "将删除 %ld 项，所选文件夹及其全部内容都会一并删除，且无法恢复。";
+"delete_files_busy" = "所选项目中有未完成的下载，请先到下载页面取消对应任务。";
