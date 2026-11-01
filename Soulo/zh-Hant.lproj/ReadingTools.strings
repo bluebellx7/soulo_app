@@ -459,4 +459,7 @@
 
 "torrent_checking" = "正在驗證已下載內容…";
 
-"home_toolbar_button_background" = "按鈕背景與邊框";
+"home_toolbar_button_background" = "按鈕背景";
+
+"home_toolbar_browser_tools" = "瀏覽器工具列";
+"home_toolbar_home_tools" = "首頁工具列";

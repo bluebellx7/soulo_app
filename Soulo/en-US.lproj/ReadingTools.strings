@@ -459,4 +459,7 @@
 
 "torrent_checking" = "Checking downloaded files…";
 
-"home_toolbar_button_background" = "Button Background & Border";
+"home_toolbar_button_background" = "Button Background";
+
+"home_toolbar_browser_tools" = "Browser Toolbar";
+"home_toolbar_home_tools" = "Home Toolbar";

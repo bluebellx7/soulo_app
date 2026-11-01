@@ -127,6 +127,20 @@ struct SettingsView: View {
                             }
                         }
 
+                        Toggle(isOn: $keepScreenAwake) {
+                            SettingsDescriptionLabel(
+                                icon: "sun.max.fill",
+                                color: keepScreenAwake ? Color.themePrimary : Color(uiColor: .systemGray3),
+                                title: ToolText.text("screen_keep_awake"),
+                                description: ToolText.text("screen_keep_awake_desc")
+                            )
+                        }
+                        .tint(Color.themePrimary)
+                        .accessibilityIdentifier("settings.keepScreenAwake")
+                        .onChange(of: keepScreenAwake) { _, _ in
+                            VideoScreenAwakeService.shared.reloadUserPreference()
+                        }
+
                     } header: {
                         SectionHeader(title: LanguageManager.shared.localizedString("settings_section_appearance"))
                     }
@@ -244,20 +258,6 @@ struct SettingsView: View {
                             )
                         }
                         .tint(Color.themePrimary)
-
-                        Toggle(isOn: $keepScreenAwake) {
-                            SettingsDescriptionLabel(
-                                icon: "sun.max.fill",
-                                color: keepScreenAwake ? Color.themePrimary : Color(uiColor: .systemGray3),
-                                title: ToolText.text("screen_keep_awake"),
-                                description: ToolText.text("screen_keep_awake_desc")
-                            )
-                        }
-                        .tint(Color.themePrimary)
-                        .accessibilityIdentifier("settings.keepScreenAwake")
-                        .onChange(of: keepScreenAwake) { _, _ in
-                            VideoScreenAwakeService.shared.reloadUserPreference()
-                        }
 
                         Toggle(isOn: $keepFullscreenBrowsing) {
                             SettingsDescriptionLabel(

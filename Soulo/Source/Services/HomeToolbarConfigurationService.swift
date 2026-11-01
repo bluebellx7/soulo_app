@@ -2,9 +2,10 @@ import Combine
 import Foundation
 
 enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
-    case none, downloads, files, bookmarks, history, wallpaper, platforms, extensions, settings
+    case none, downloads, files, bookmarks, history, wallpaper, refreshWallpaper, platforms, extensions, settings
     case newDownload, wifiTransfer, scanner, tabs, language, webAppearance, browserToolbar, homeToolbar
     case adBlock, privacy, backups, quickActions, urlSchemes, shake, feedback, version
+    case search, newTab, privateBrowsing, shareApp, help
     var id: String { rawValue }
     var symbol: String {
         switch self {
@@ -14,6 +15,12 @@ enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .bookmarks: "bookmark"
         case .history: "clock.arrow.circlepath"
         case .wallpaper: "photo"
+        case .refreshWallpaper: "sparkles"
+        case .search: "magnifyingglass"
+        case .newTab: "plus.square"
+        case .privateBrowsing: "eye.slash"
+        case .shareApp: "square.and.arrow.up"
+        case .help: "questionmark.circle"
         case .platforms: "square.grid.2x2"
         case .extensions: "puzzlepiece.extension"
         case .settings: "gearshape"
@@ -55,6 +62,12 @@ enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .bookmarks: LanguageManager.shared.localizedString("bookmarks")
         case .history: LanguageManager.shared.localizedString("library_history_tab")
         case .wallpaper: LanguageManager.shared.localizedString("settings_wallpaper")
+        case .refreshWallpaper: LanguageManager.shared.localizedString("wallpaper_refresh")
+        case .search: LanguageManager.shared.localizedString("search")
+        case .newTab: LanguageManager.shared.localizedString("tab_new_tab")
+        case .privateBrowsing: LanguageManager.shared.localizedString("privacy_incognito")
+        case .shareApp: LanguageManager.shared.localizedString("quick_action_share_app")
+        case .help: LanguageManager.shared.localizedString("help_title")
         case .platforms: LanguageManager.shared.localizedString("settings_platforms")
         case .extensions: LanguageManager.shared.localizedString("userscripts")
         case .settings: LanguageManager.shared.localizedString("settings")
@@ -64,8 +77,8 @@ enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .tabs: LanguageManager.shared.localizedString("browser_tabs")
         case .language: LanguageManager.shared.localizedString("settings_language")
         case .webAppearance: LanguageManager.shared.localizedString("web_appearance")
-        case .browserToolbar: LanguageManager.shared.localizedString("toolbar_customize")
-        case .homeToolbar: ToolText.text("home_toolbar_customize")
+        case .browserToolbar: ToolText.text("home_toolbar_browser_tools")
+        case .homeToolbar: ToolText.text("home_toolbar_home_tools")
         case .adBlock: LanguageManager.shared.localizedString("ad_block")
         case .privacy: LanguageManager.shared.localizedString("settings_privacy")
         case .backups: LanguageManager.shared.localizedString("settings_backups")

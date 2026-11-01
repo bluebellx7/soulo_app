@@ -49,6 +49,7 @@ struct WallpaperSettingsView: View {
 
                 if !wallpaperManager.onlyUseFavoriteWallpapers {
                     Toggle(LText("wallpaper_random_sources"), isOn: $wallpaperManager.autoRandomizeRemoteSources)
+                        .accessibilityIdentifier("wallpaper.randomSources")
 
                     if wallpaperManager.autoRandomizeRemoteSources {
                         ForEach([WallpaperSource.pexels, .pixabay, .bing], id: \.self) { src in
@@ -248,6 +249,8 @@ struct WallpaperSettingsView: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("wallpaper.gradient.\(preset.id)")
+                    .accessibilityAddTraits(wallpaperManager.selectedGradientId == preset.id ? .isSelected : [])
                 }
             }.padding(.vertical, 4)
         }

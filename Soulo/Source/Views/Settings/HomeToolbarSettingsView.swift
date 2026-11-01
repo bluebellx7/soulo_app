@@ -8,7 +8,6 @@ struct HomeToolbarSettingsView: View {
     @State private var saved = false
     @State private var restore = false
     @State private var search = ""
-    @ScaledMetric(relativeTo: .caption) private var minimumWidth: CGFloat = 92
     private var actions: [HomeToolbarAction] {
         HomeToolbarAction.allCases.filter { search.isEmpty || $0.title.localizedCaseInsensitiveContains(search) }
     }
@@ -21,7 +20,7 @@ struct HomeToolbarSettingsView: View {
                         ForEach(0..<HomeToolbarConfigurationService.slotCount, id: \.self) { index in
                             Button { slot = index; HapticsManager.selection() } label: {
                                 HomeToolbarButtonFace(action: draft[index], lightWallpaper: false, placeholder: index + 1, showsTitle: true)
-                                    .modifier(HomeToolbarButtonSurface(visible: draftShowsBackground, outlined: draftShowsBackground, radius: 20))
+                                    .modifier(HomeToolbarButtonSurface(visible: draftShowsBackground, radius: 20))
                                     .overlay {
                                         RoundedRectangle(cornerRadius: 20).stroke(slot == index ? Color.themePrimary : .clear, lineWidth: 2)
                                     }
@@ -39,22 +38,10 @@ struct HomeToolbarSettingsView: View {
                 }
                 VStack(alignment: .leading, spacing: 12) {
                     Text(LanguageManager.shared.localizedString("toolbar_replace_action")).font(.headline)
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: minimumWidth), spacing: 10)], spacing: 10) {
+                    LazyVGrid(columns: ToolbarActionPickerLayout.columns, spacing: 10) {
                         ForEach(actions) { action in
                             Button { draft[slot] = action; HapticsManager.selection() } label: {
-                                VStack(spacing: 10) {
-                                    Image(systemName: action.listSymbol)
-                                        .font(.system(size: 22, weight: .semibold))
-                                        .symbolRenderingMode(.hierarchical)
-                                        .foregroundStyle(Color.themePrimary)
-                                        .frame(width: 44, height: 44)
-                                        .background(Color.themePrimary.opacity(0.09), in: RoundedRectangle(cornerRadius: 13))
-                                    Text(action.title).font(.caption.weight(.medium)).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-                                }
-                                .frame(maxWidth: .infinity, minHeight: 92).padding(.horizontal, 8).padding(.vertical, 10)
-                                .foregroundStyle(draft[slot] == action ? Color.themePrimary : .primary)
-                                .background(draft[slot] == action ? Color.themePrimary.opacity(0.12) : Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
-                                .overlay { RoundedRectangle(cornerRadius: 18).stroke(draft[slot] == action ? Color.themePrimary : .clear, lineWidth: 2) }
+                                ToolbarActionChoiceLabel(symbol: action.listSymbol, title: action.title, isSelected: draft[slot] == action)
                             }.buttonStyle(.plain).accessibilityIdentifier("home-toolbar.action.\(action.rawValue)")
                                 .accessibilityAddTraits(draft[slot] == action ? .isSelected : [])
                         }
@@ -90,10 +77,18 @@ struct HomeToolbarButtonFace: View {
     let lightWallpaper: Bool
     var placeholder: Int?
     var showsTitle = false
+    var isActive = false
+    var isLoading = false
     var body: some View {
         VStack(spacing: 6) {
-            Image(systemName: action == .none ? "\(placeholder ?? 1).circle" : action.symbol)
-                .font(.system(size: showsTitle ? 22 : 20, weight: .medium)).frame(height: 25)
+            Group {
+                if isLoading {
+                    ProgressView()
+                } else {
+                    Image(systemName: action == .none ? "\(placeholder ?? 1).circle" : action == .privateBrowsing && isActive ? "eye.slash.fill" : action.symbol)
+                }
+            }
+            .font(.system(size: showsTitle ? 22 : 20, weight: .medium)).frame(height: 25)
             if showsTitle { Text(action.title).font(.caption2.weight(.medium)).lineLimit(1) }
         }
         .foregroundStyle(lightWallpaper ? Color(hex: "242635").opacity(0.85) : .white.opacity(0.85))
@@ -110,14 +105,13 @@ struct HomeToolbarButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .modifier(HomeToolbarButtonSurface(visible: showsBackground || configuration.isPressed,
-                outlined: showsBackground, lightWallpaper: lightWallpaper))
+                lightWallpaper: lightWallpaper))
             .scaleEffect(configuration.isPressed && !reduceMotion ? 0.94 : 1)
     }
 }
 
 private struct HomeToolbarButtonSurface: ViewModifier {
     let visible: Bool
-    let outlined: Bool
     var lightWallpaper = false
     var radius: CGFloat = 16
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -128,16 +122,13 @@ private struct HomeToolbarButtonSurface: ViewModifier {
                 if visible {
                     if reduceTransparency {
                         shape.fill(lightWallpaper ? Color(hex: "F0F1F5") : Color(hex: "252734"))
+                    } else if lightWallpaper {
+                        shape.fill(Color.black.opacity(0.04))
                     } else {
-                        shape.fill(.ultraThinMaterial)
-                            .environment(\.colorScheme, lightWallpaper ? .light : .dark)
+                        shape.fill(.ultraThinMaterial.opacity(0.3))
                     }
                 }
             }
-            .overlay {
-                if outlined {
-                    shape.strokeBorder(.white.opacity(lightWallpaper ? 0.5 : 0.18), lineWidth: 0.7)
-                }
-            }
+
     }
 }

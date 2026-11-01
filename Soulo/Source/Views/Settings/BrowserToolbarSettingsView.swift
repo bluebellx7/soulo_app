@@ -8,8 +8,6 @@ struct BrowserToolbarSettingsView: View {
     @State private var showSaved = false
     @State private var showRestoreConfirmation = false
 
-    @ScaledMetric(relativeTo: .caption) private var actionMinimumWidth: CGFloat = 92
-    private var columns: [GridItem] { [GridItem(.adaptive(minimum: actionMinimumWidth), spacing: 10)] }
 
     var body: some View {
         ScrollView {
@@ -34,7 +32,7 @@ struct BrowserToolbarSettingsView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    LazyVGrid(columns: columns, spacing: 10) {
+                    LazyVGrid(columns: ToolbarActionPickerLayout.columns, spacing: 10) {
                         ForEach(availableActions) { action in
                             actionChoice(action)
                         }
@@ -90,6 +88,7 @@ struct BrowserToolbarSettingsView: View {
                 Label(LanguageManager.shared.localizedString("save"), systemImage: "checkmark")
             }
             .buttonStyle(CompactActionButtonStyle(prominent: true, fillsHeight: true))
+            .accessibilityIdentifier("browser-toolbar.save")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -178,6 +177,7 @@ struct BrowserToolbarSettingsView: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("browser-toolbar.slot.\(index)")
                 .accessibilityLabel(
                     index == 4
                         ? LanguageManager.shared.localizedString("browser_edit_address")
@@ -224,30 +224,11 @@ struct BrowserToolbarSettingsView: View {
             }
             HapticsManager.selection()
         } label: {
-            VStack(spacing: 7) {
-                Image(systemName: action.systemImage)
-                    .font(.system(size: 17, weight: .semibold))
-                    .frame(height: 22)
-                Text(action.localizedTitle)
-                    .font(.caption.weight(.medium))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .foregroundStyle(isSelected ? Color.themePrimary : .primary)
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 10)
-            .frame(minHeight: 72)
-            .background(
-                isSelected ? Color.themePrimary.opacity(0.12) : Color(uiColor: .secondarySystemGroupedBackground),
-                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(isSelected ? Color.themePrimary.opacity(0.75) : Color.primary.opacity(0.06), lineWidth: isSelected ? 1.5 : 0.5)
-            }
+            ToolbarActionChoiceLabel(symbol: action.systemImage, title: action.localizedTitle, isSelected: isSelected)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("browser-toolbar.action.\(action.rawValue)")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var selectedAction: BrowserToolbarAction {
@@ -266,5 +247,40 @@ struct BrowserToolbarSettingsView: View {
             return visibleActions.filter { ![.more, .tabs].contains($0) }
         }
         return visibleActions
+    }
+}
+
+
+// Both toolbar editors use the same four-column picker and selection treatment.
+enum ToolbarActionPickerLayout {
+    static var columns: [GridItem] { Array(repeating: GridItem(.flexible(), spacing: 10), count: 4) }
+}
+
+struct ToolbarActionChoiceLabel: View {
+    let symbol: String
+    let title: String
+    let isSelected: Bool
+    var body: some View {
+        VStack(spacing: 7) {
+            Image(systemName: symbol)
+                .font(.system(size: 17, weight: .semibold))
+                .frame(height: 22)
+            Text(title)
+                .font(.caption.weight(.medium))
+                .multilineTextAlignment(.center)
+                .frame(minHeight: 30)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .foregroundStyle(isSelected ? Color.themePrimary : .primary)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 10)
+        .frame(minHeight: 82)
+        .background(isSelected ? Color.themePrimary.opacity(0.12) : Color(uiColor: .secondarySystemGroupedBackground),
+                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(isSelected ? Color.themePrimary.opacity(0.75) : Color.primary.opacity(0.06), lineWidth: isSelected ? 1.5 : 0.5)
+        }
     }
 }

@@ -451,10 +451,14 @@ struct HomeView: View {
                         ForEach(Array(homeToolbar.actions.enumerated()), id: \.offset) { index, action in
                             if action != .none {
                                 Button { performHomeToolbarAction(action) } label: {
-                                    HomeToolbarButtonFace(action: action, lightWallpaper: wallpaperManager.isCurrentWallpaperLight)
+                                    HomeToolbarButtonFace(action: action, lightWallpaper: wallpaperManager.isCurrentWallpaperLight,
+                                        isActive: action == .privateBrowsing && searchVM.isIncognito,
+                                        isLoading: action == .refreshWallpaper && wallpaperManager.networkLoading)
                                 }.buttonStyle(HomeToolbarButtonStyle(lightWallpaper: wallpaperManager.isCurrentWallpaperLight, showsBackground: homeToolbar.showsButtonBackground))
                                     .accessibilityLabel(action.title)
                                     .accessibilityIdentifier("home.toolbar.\(index)")
+                                    .accessibilityAddTraits(action == .privateBrowsing && searchVM.isIncognito ? .isSelected : [])
+                                    .disabled(action == .refreshWallpaper && wallpaperManager.networkLoading)
                             }
                         }
                     }.frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -834,6 +838,13 @@ struct HomeView: View {
         HapticsManager.selection()
         switch action {
         case .none: break
+        case .refreshWallpaper: Task { await wallpaperManager.refreshRandom() }
+        case .search: NotificationCenter.default.post(name: .focusHomeSearch, object: nil)
+        case .newTab:
+            tabManager.createTab()
+            searchVM.isSearching = true
+        case .privateBrowsing: togglePrivateModeFromSearchBar()
+        case .shareApp: showAppShareSheet = true
         case .downloads: librarySection = .downloads
         case .files: librarySection = .files
         case .bookmarks: librarySection = .bookmarks
