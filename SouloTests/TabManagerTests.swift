@@ -537,6 +537,64 @@ final class TabManagerTests: XCTestCase {
 
 @MainActor
 final class PlatformDataStoreTests: XCTestCase {
+    func testShenmaDefaultsFollowBaiduAndUseTheOfficialSearchURL() throws {
+        let china = PlatformDataStore.defaultPlatforms().filter { $0.region == .china }.sorted { $0.sortOrder < $1.sortOrder }
+        let baidu = try XCTUnwrap(china.firstIndex { $0.name == "platform_baidu" })
+        let shenma = china[baidu + 1]
+        XCTAssertEqual(shenma.name, "platform_shenma")
+        XCTAssertTrue(shenma.isVisible)
+        XCTAssertFalse(shenma.requiresLogin)
+        XCTAssertNotNil(UIImage(named: shenma.iconName))
+        let url = try XCTUnwrap(shenma.searchURL(for: "黑夜传说"))
+        XCTAssertEqual(url.host, "m.sm.cn")
+        XCTAssertEqual(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "q" }?.value, "黑夜传说")
+    }
+
+    func testShenmaUpgradePreservesUserOrderAndManualVisibility() throws {
+        let defaults = UserDefaults.standard, store = PlatformDataStore.shared
+        let data = defaults.data(forKey: "platform_config"), version = defaults.object(forKey: "platform_config_version")
+        defer {
+            defaults.set(data, forKey: "platform_config"); defaults.set(version, forKey: "platform_config_version"); store.reloadFromDefaults()
+        }
+        var old = PlatformDataStore.defaultPlatforms().filter { $0.name != "platform_shenma" }
+        let chinaIDs = old.filter { $0.region == .china }.reversed().map(\.id)
+        for (order, id) in chinaIDs.enumerated() {
+            let index = try XCTUnwrap(old.firstIndex { $0.id == id })
+            old[index].sortOrder = order
+            if old[index].name == "platform_bilibili" { old[index].isVisible = false }
+        }
+        defaults.set(try JSONEncoder().encode(old), forKey: "platform_config")
+        defaults.set(43, forKey: "platform_config_version"); store.reloadFromDefaults()
+        let china = store.platforms(for: .china)
+        let baidu = try XCTUnwrap(china.firstIndex { $0.name == "platform_baidu" })
+        let shenma = china[baidu + 1]
+        XCTAssertEqual(shenma.name, "platform_shenma")
+        XCTAssertEqual(china.filter { $0.id != shenma.id }.map(\.id), chinaIDs)
+        for platform in old {
+            XCTAssertEqual(store.platforms.first { $0.id == platform.id }?.isVisible, platform.isVisible)
+        }
+        store.toggleVisibility(for: shenma.id); store.reloadFromDefaults()
+        XCTAssertEqual(store.platforms.filter { $0.name == "platform_shenma" }.count, 1)
+        XCTAssertFalse(try XCTUnwrap(store.platforms.first { $0.id == shenma.id }).isVisible)
+    }
+
+    func testShenmaUpgradeKeepsAnEntirelyDisabledChinaGroupDisabled() throws {
+        let defaults = UserDefaults.standard, store = PlatformDataStore.shared
+        let data = defaults.data(forKey: "platform_config"), version = defaults.object(forKey: "platform_config_version")
+        defer {
+            defaults.set(data, forKey: "platform_config"); defaults.set(version, forKey: "platform_config_version"); store.reloadFromDefaults()
+        }
+        let old = PlatformDataStore.defaultPlatforms().filter { $0.name != "platform_shenma" }.map { platform in
+            var platform = platform
+            if platform.region == .china { platform.isVisible = false }
+            return platform
+        }
+        defaults.set(try JSONEncoder().encode(old), forKey: "platform_config")
+        defaults.set(43, forKey: "platform_config_version"); store.reloadFromDefaults()
+        XCTAssertNotNil(store.platforms.first { $0.name == "platform_shenma" })
+        XCTAssertTrue(store.visiblePlatforms(for: .china).isEmpty)
+    }
+
     func testBingIsAvailableInChinaAndInternationalGroups() throws {
         let platforms = PlatformDataStore.shared.allPlatforms()
             .filter { $0.isBuiltIn && $0.name == "platform_bing" }

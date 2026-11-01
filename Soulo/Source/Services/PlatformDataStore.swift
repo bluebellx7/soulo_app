@@ -22,7 +22,7 @@ class PlatformDataStore: ObservableObject {
 
     // MARK: - Persistence
 
-    private let platformVersion = 43 // Increment when cached built-in defaults need migration
+    private let platformVersion = 44 // Increment when cached built-in defaults need migration
 
     private func load() {
         let savedVersion = UserDefaults.standard.integer(forKey: "platform_config_version")
@@ -349,6 +349,22 @@ class PlatformDataStore: ObservableObject {
             }
         }
 
+        if version < 44,
+           !platforms.contains(where: { $0.isBuiltIn && $0.name == "platform_shenma" }),
+           var shenma = Self.defaultPlatforms().first(where: { $0.name == "platform_shenma" }) {
+            let china = platforms(for: .china)
+            let position = china.firstIndex(where: { $0.isBuiltIn && $0.name == "platform_baidu" }).map { $0 + 1 } ?? 0
+            // Respect a fully disabled group and preserve the user's existing order.
+            shenma.isVisible = china.contains(where: \.isVisible)
+            shenma.sortOrder = position
+            for (order, platform) in china.enumerated() {
+                if let index = platforms.firstIndex(where: { $0.id == platform.id }) {
+                    platforms[index].sortOrder = order >= position ? order + 1 : order
+                }
+            }
+            platforms.append(shenma)
+        }
+
     }
 
     @discardableResult
@@ -464,6 +480,7 @@ class PlatformDataStore: ObservableObject {
         // MARK: China
         let chinaData: [(String, String, String, String)] = [
             ("platform_baidu",        "icon_baidu",        "https://www.baidu.com/s?wd=%@",                             "https://www.baidu.com"),
+            ("platform_shenma",       "icon_shenma",       "https://m.sm.cn/s?q=%@&from=smor&safe=1",                    "https://m.sm.cn/"),
             ("platform_bilibili",     "icon_bilibili",     "https://search.bilibili.com/all?keyword=%@",                "https://www.bilibili.com"),
             ("platform_weibo",        "icon_weibo",        "https://s.weibo.com/weibo?q=%@",                            "https://weibo.com"),
             ("platform_wechat",       "icon_wechat",       "https://weixin.sogou.com/weixinwap?type=2&ie=utf8&s_from=input&query=%@", "https://weixin.sogou.com"),
