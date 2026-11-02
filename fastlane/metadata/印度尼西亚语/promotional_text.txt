@@ -1,1 +1,1 @@
-Kompatibilitas skrip pengguna dan dukungan @require ditingkatkan. Perbaikan audio video, navigasi kembali, dan indikator pemuatan.
+Unduhan BT dan magnet dengan pilihan file dan lanjutkan. Putar media yang didukung saat diunduh, buka MKV, dan impor tautan ed2k/thunder.

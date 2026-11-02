@@ -6,6 +6,42 @@ const swift=fs.readFileSync(path.join(root,'Soulo/Source/Services/ReadingTools/W
 const source=swift.match(/static let source = #"""\n([\s\S]*?)\n\s*"""#/)[1];
 const overlay=fs.readFileSync(path.join(root,'Soulo/Resources/UserScripts/overlay-controls.js'),'utf8');
 (async()=>{const browser=await chromium.launch({headless:true});try{
+ const empty=await browser.newPage();
+ await empty.setContent('<main>'+Array.from({length:80},(_,i)=>`<p id="text${i}">Text</p>`).join('')+'</main>');
+ await empty.evaluate(()=>{
+  window.work={timers:0,frames:0,scans:0};
+  const timeout=setTimeout,raf=requestAnimationFrame,query=Element.prototype.querySelectorAll;
+  window.setTimeout=(callback,delay,...args)=>{if(delay===150)work.timers++;return timeout(callback,delay,...args)};
+  window.requestAnimationFrame=callback=>{work.frames++;return raf(callback)};
+  Element.prototype.querySelectorAll=function(selector){if(selector==='*')work.scans++;return query.call(this,selector)};
+ });
+ await empty.evaluate(overlay+'\n'+source);await empty.waitForTimeout(300);
+ await empty.evaluate(()=>Object.keys(work).forEach(key=>work[key]=0));
+ for(let i=0;i<20;i++){
+  await empty.evaluate(i=>document.getElementById('text'+i).style.opacity='.9',i);
+  await empty.waitForTimeout(20);
+ }
+ await empty.waitForTimeout(250);
+ assert.deepEqual(await empty.evaluate(()=>work),{timers:0,frames:0,scans:0},'Text-only animation must not wake video tools');
+ await empty.evaluate(()=>{
+  const parent=document.createElement('article');document.body.append(parent);
+  for(let i=0;i<400;i++){const child=document.createElement('div');parent.append(child);child.textContent='New text'}
+ });
+ await empty.waitForTimeout(300);
+ assert.equal(await empty.evaluate(()=>work.scans),1,'A batch must scan each new subtree once');
+ await empty.evaluate(()=>{
+  window.scaleReports=[];
+  window.webkit={messageHandlers:{souloVideoOrientation:{postMessage(body){if(body.action==='viewport')scaleReports.push(body)}}}};
+  window.__souloVideoOrientation.setContentZoom(1);
+  for(let i=0;i<50;i++)dispatchEvent(new Event('resize'));
+ });
+ assert.equal(await empty.evaluate(()=>scaleReports.length),1,'Unchanged viewport geometry must not repeatedly cross the native bridge');
+ await empty.evaluate(()=>window.__souloVideoOrientation.setPageScale(9,1));
+ assert.equal(await empty.evaluate(()=>window.__souloOverlayControls.metrics().scale),1,'The owning document must use its actual CSS scale, not a stale native estimate');
+ await empty.evaluate(()=>window.__souloVideoOrientation.setContentZoom(0.5));
+ assert.equal(await empty.evaluate(()=>scaleReports.at(-1).scale),0.5);
+ assert.equal(await empty.evaluate(()=>scaleReports.at(-1).zoom),0.5);
+ await empty.close();
  const page=await browser.newPage({viewport:{width:390,height:844}});
  await page.setContent('<style>article{height:600px}video{width:320px;height:180px}</style>'+Array.from({length:100},(_,i)=>`<article><video id="v${i}" playsinline></video></article>`).join(''));
  await page.evaluate(()=>{

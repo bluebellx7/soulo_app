@@ -4,7 +4,7 @@ Choose Soulo as your default browser in Settings to open links from other apps.
 
 Recently used tabs and website groups appear first, and the overview opens at the top. Recent-use order is preserved after restarting.
 
-BT downloads: import .torrent files or magnet links, choose files, pause and resume. On iOS 26, downloads can continue in the background while the system permits; earlier versions pause and save progress.
+BT downloads: import .torrent files or magnet links, choose files, pause and resume. On iOS 26, downloads can continue in the background while the system permits; earlier versions pause and save progress. Play supported BT media while downloading and open MKV files. Import ed2k/thunder links. Downloads need available sources; playback depends on codecs.
 
 Choose up to five optional home shortcuts to open Downloads, Files, Bookmarks, History, Wallpaper and other pages. The Library tab bar becomes compact as you scroll.
 

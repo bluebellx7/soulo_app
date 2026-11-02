@@ -1,0 +1,22 @@
+[
+  {
+    "source": "animes-garden",
+    "uri": "magnet:?xt=urn:btih:HYLBK7YIPHVUH2PFD5C5JBP676IKO4UD&dn=ubuntu-10.04-desktop-i386.iso&tr=http%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&tr=http%3A%2F%2Fdenis.stalker.h3q.com%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.ktxp.com%3A6868%2Fannounce&tr=http%3A%2F%2Ftracker.prq.to%2Fannounce&tr=http%3A%2F%2Ftorrent.ubuntu.com%3A6969%2Fannounce&tr=http%3A%2F%2Fipv6.torrent.ubuntu.com%3A6969%2Fannounce",
+    "hash": "3e16157f0879eb43e9e51f45d485feff90a77283"
+  },
+  {
+    "source": "animes-garden",
+    "uri": "magnet:?xt=urn:btih:2HP5O4LPFDLGVODCG5NXBPEHZQMH2FBR&dn=ubuntu-10.04-rc-desktop-i386.iso&tr=http%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&tr=http%3A%2F%2Fdenis.stalker.h3q.com%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.ktxp.com%3A6868%2Fannounce&tr=http%3A%2F%2Ftracker.prq.to%2Fannounce&tr=http%3A%2F%2Ftorrent.ubuntu.com%3A6969%2Fannounce&tr=http%3A%2F%2Fipv6.torrent.ubuntu.com%3A6969%2Fannounce",
+    "hash": "d1dfd7716f28d66ab862375b70bc87cc187d1431"
+  },
+  {
+    "source": "nyaa",
+    "uri": "magnet:?xt=urn:btih:45008e48c8800b7d7643337b2e70a634e4c69f6a&dn=Koha%20Live%20CD%20Release%203%20%283.0.4%20Ubuntu%209.10%20Desktop%20x86%29&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce",
+    "hash": "45008e48c8800b7d7643337b2e70a634e4c69f6a"
+  },
+  {
+    "source": "nyaa-cn",
+    "uri": "magnet:?xt=urn:btih:45008e48c8800b7d7643337b2e70a634e4c69f6a&dn=Koha%20Live%20CD%20Release%203%20%283.0.4%20Ubuntu%209.10%20Desktop%20x86%29&tr=udp%3A%2F%2Ftracker.cn.nyaa.net%3A6969%2Fannounce&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce",
+    "hash": "45008e48c8800b7d7643337b2e70a634e4c69f6a"
+  }
+]

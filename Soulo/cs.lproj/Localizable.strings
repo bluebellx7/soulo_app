@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "Otevřené stránky se znovu načtou po instalaci, úpravě, povolení, zakázání nebo odstranění skriptu.";
 "userscript_experimental_badge" = "Kompatibilita";
 "userscript_experimental_title" = "UserScript kompatibilita";
-"userscript_experimental_desc" = "Podporuje pravidla webu, začátek/konec dokumentu, rozsáhlé úložiště GM a rozhraní API pro stránky, příkazy skriptu, upozornění, karty, stahování, soubory cookie, zdroje a požadavky v rozsahu oprávnění. Před instalací zkontrolujte každý skript; externí soubory @require se nespustí.";
+"userscript_experimental_desc" = "Podporuje pravidla webu, začátek/konec dokumentu, rozsáhlé úložiště GM a rozhraní API pro stránky, příkazy skriptu, upozornění, karty, stahování, soubory cookie, zdroje a požadavky v rozsahu oprávnění. Před instalací zkontrolujte každý skript.";
 "extension_choose_file" = "Vybrat soubor či složku…";
 "extension_installing" = "Kontrola a instalace rozšíření…";
 "extension_install_failed" = "Rozšíření nelze nainstalovat";
@@ -659,7 +659,7 @@
 "userscript_new" = "Nový skript";
 "userscript_edit" = "Upravit skript";
 "userscript_choose_file" = "Vybrat skript…";
-"userscript_install_footer" = "Klepnutím na zdrojový řádek jej otevřete na aktuální kartě Soulo. Odkaz .user.js otevře potvrzení instalace. Podporován je standardní JavaScript a široká sada GM API; skripty se v soukromém prohlížení nespouštějí a externí soubory @require se nespouštějí.";
+"userscript_install_footer" = "Klepnutím na zdrojový řádek jej otevřete na aktuální kartě Soulo. Odkaz .user.js otevře potvrzení instalace. Podporován je standardní JavaScript a široká sada GM API. UserScripts neběží v anonymním prohlížení.";
 "userscript_install_failed" = "UserScript nelze nainstalovat";
 "web_extension_temporarily_disabled" = "Po dokončení testování kompatibility jsou standardní rozšíření prohlížeče dočasně nedostupná.";
 "userscript_unreadable" = "Vybraný skript nelze přečíst jako text UTF-8.";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "Částečně podporováno";
 "userscript_docs_partial_desc" = "Síťové požadavky vynechávají nahrávání/průběh a přenos souborů cookie. Oznámení jsou na stránce, rozhraní API prostředků jsou asynchronní a posluchači změn hodnoty hlásí změny provedené aktuální stránkou. Kontroly aktualizací jsou ruční.";
 "userscript_docs_unsupported_title" = "Aktuálně není podporováno";
-"userscript_docs_unsupported_desc" = "Externí @vyžadovat spuštění, zachycení GM_webRequest, GM_audio, izolace sandbox/run-in, automatické kontroly aktualizací a přesné chování pouze na ploše, které WKWebView nemůže poskytnout.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, izolace sandbox/run-in, automatické kontroly aktualizací a přesné chování pouze na ploše, které WKWebView nemůže poskytnout.";
 "userscript_docs_metadata_title" = "Metadata";
 "userscript_docs_metadata_identity" = "Lidsky čitelný název skriptu a volitelný popis zobrazený před instalací a v podrobnostech skriptu.";
 "userscript_docs_metadata_version" = "Používejte stabilní, jedinečný jmenný prostor a zvyšujte verzi, kdykoli se změní dodávaný skript.";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "Autorizovat hostitele používané privilegovanými síťovými požadavky. Bez něj jsou požadavky omezeny na aktuálního hostitele stránky.";
 "userscript_docs_metadata_urls" = "Volitelná identita a aktualizace metadat. Soulo je používá k rozpoznání reinstalací stejného skriptu.";
 "userscript_docs_metadata_resource" = "Deklaruje pojmenovaný zdroj. Přidejte odpovídající hostitele @connect; načítání je odloženo, dokud se neočekává moderní API prostředků.";
-"userscript_docs_metadata_require" = "Externí požadavky jsou zveřejněny během instalace, ale nejsou stahovány ani spouštěny; skripty musí být samostatné.";
+"userscript_docs_metadata_require" = "Soubory @require přes HTTPS se při instalaci nebo uložení stáhnou a uloží do mezipaměti a spustí se v pořadí před skriptem.";
 "userscript_docs_api_title" = "Podporovaná privilegovaná rozhraní API";
 "userscript_docs_api_info" = "Čte obslužnou rutinu skriptu, verzi Soulo a analyzovaná metadata skriptu. K dispozici v původní i moderní podobě.";
 "userscript_docs_api_unsafe_window" = "Poskytuje aktuální okno stránky, když je explicitně deklarováno udělení unsafeWindow.";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "Uložené hodnoty musí být možné serializovat pomocí JSON: až 256 kB na hodnotu a celkem 1 MB na skript.";
 "userscript_docs_limits_network" = "Privilegované odpovědi jsou omezeny na 20 MB, časový limit je omezen na 1–60 sekund a hlavičky Cookie/Host/Origin nejsou akceptovány.";
 "userscript_docs_limits_private" = "UserScripts neběží v anonymním prohlížení.";
-"userscript_docs_limits_require" = "Externí soubory @require se nikdy nespustí. Vyhněte se závislostem CDN a zahrňte do skriptu veškerou požadovanou logiku.";
+"userscript_docs_limits_require" = "Soubory @require přes HTTPS se při instalaci nebo uložení stáhnou a uloží do mezipaměti a spustí se v pořadí před skriptem.";
 "userscript_docs_template_title" = "Minimální šablona";
 "userscript_docs_template_footer" = "Použijte jedinečný jmenný prostor a nejužší možné deklarace @match a @grant.";
 "userscript_too_large" = "Vybraný skript je větší než limit 2 MB.";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "Žádná další oprávnění";
 "userscript_network_title" = "Přístup k síti";
 "userscript_external_requirements" = "Externí závislosti";
-"userscript_external_requirements_desc" = "Tento skript deklaruje externí soubory @require. Soulo je nenačte automaticky.";
+"userscript_external_requirements_desc" = "Soubory @require přes HTTPS se při instalaci nebo uložení stáhnou a uloží do mezipaměti a spustí se v pořadí před skriptem.";
 "userscript_metadata_title" = "Podrobnosti skriptu";
 "userscript_unsupported_permissions" = "Zatím není podporováno: %@";
 "userscript_sample_name" = "Ukazatel průběhu čtení";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "Zobrazení karet";
 "tab_close_group" = "Zavřít skupinu";
 "tab_close_group_confirm" = "Zavřít všechny panely ve skupině „%@“ (%d)?";
+
+"userscript_require_failed" = "Závislost %@ se nepodařilo načíst: %@";
+"userscript_require_integrity_failed" = "Kontrola integrity závislosti selhala.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "Spravovat";
+"extension_update" = "Aktualizovat";
+"extension_rollback" = "Obnovit předchozí verzi";
+"extension_blocked_sites" = "Blokované weby";
+"extension_diagnostics" = "Kompatibilita";
+"extension_review_access" = "Vyberte oprávnění a weby, ke kterým může toto rozšíření přistupovat.";
+"extension_limit_commands" = "Klávesové zkratky rozšíření nejsou v iOS dostupné.";
+"extension_limit_notifications" = "Oznámení lze zobrazit, ale události kliknutí a zavření nejsou podporovány.";
+"extension_limit_offscreen" = "Dokumenty mimo obrazovku podporují pouze přehrávání zvuku.";

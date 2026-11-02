@@ -4,7 +4,7 @@ Valitse asetuksissa Soulo oletusselaimeksi, jotta voit avata linkkejä muista ap
 
 Äskettäin käytetyt välilehdet ja sivustoryhmät näkyvät ensin, ja näkymä avautuu ylhäältä. Käyttöjärjestys säilyy uudelleenkäynnistyksen jälkeen.
 
-BT-lataukset: tuo .torrent-tiedostoja tai magnet-linkkejä, valitse tiedostot, keskeytä ja jatka. iOS 26:ssa lataukset voivat jatkua taustalla järjestelmän salliessa; aiemmat versiot tallentavat etenemisen ja keskeyttävät.
+BT-lataukset: tuo .torrent-tiedostoja tai magnet-linkkejä, valitse tiedostot, keskeytä ja jatka. iOS 26:ssa lataukset voivat jatkua taustalla järjestelmän salliessa; aiemmat versiot tallentavat etenemisen ja keskeyttävät. Toista tuettuja BT-tiedostoja latauksen aikana ja avaa MKV-tiedostoja. Tuo ed2k/thunder-linkkejä. Lataus vaatii saatavilla olevia lähteitä; toisto riippuu koodekeista.
 
 Valitse aloitussivulle viisi valinnaista oikopolkua latauksiin, tiedostoihin, kirjanmerkkeihin, historiaan, taustakuviin ja muille sivuille. Kirjaston välilehtipalkki tiivistyy vieritettäessä.
 

@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "เปิดหน้าโหลดซ้ำหลังจากติดตั้ง แก้ไข เปิดใช้งาน ปิดใช้งาน หรือลบสคริปต์แล้ว";
 "userscript_experimental_badge" = "ความเข้ากันได้";
 "userscript_experimental_title" = "UserScript ความเข้ากันได้";
-"userscript_experimental_desc" = "รองรับกฎของไซต์, การเริ่ม/สิ้นสุดเอกสาร, พื้นที่จัดเก็บ GM ที่กว้างขวางและ API ของเพจ, คำสั่งสคริปต์, การแจ้งเตือน, แท็บ, การดาวน์โหลด, คุกกี้, ทรัพยากร และคำขอที่กำหนดขอบเขตสิทธิ์ ตรวจสอบทุกสคริปต์ก่อนการติดตั้ง ไฟล์ @require ภายนอกจะไม่ถูกดำเนินการ";
+"userscript_experimental_desc" = "รองรับกฎของไซต์, การเริ่ม/สิ้นสุดเอกสาร, พื้นที่จัดเก็บ GM ที่กว้างขวางและ API ของเพจ, คำสั่งสคริปต์, การแจ้งเตือน, แท็บ, การดาวน์โหลด, คุกกี้, ทรัพยากร และคำขอที่กำหนดขอบเขตสิทธิ์ ตรวจสอบทุกสคริปต์ก่อนการติดตั้ง";
 "extension_choose_file" = "เลือกไฟล์หรือโฟลเดอร์…";
 "extension_installing" = "กำลังตรวจสอบและติดตั้งส่วนขยาย...";
 "extension_install_failed" = "ไม่สามารถติดตั้งส่วนขยายได้";
@@ -659,7 +659,7 @@
 "userscript_new" = "สคริปต์ใหม่";
 "userscript_edit" = "แก้ไขสคริปต์";
 "userscript_choose_file" = "เลือกสคริปต์…";
-"userscript_install_footer" = "แตะแถวแหล่งที่มาเพื่อเปิดในแท็บ Soulo ปัจจุบัน ลิงก์ .user.js จะเปิดการยืนยันการติดตั้ง รองรับ JavaScript มาตรฐานและชุด GM API ที่หลากหลาย สคริปต์ไม่ทำงานในการดูเว็บแบบส่วนตัวและไฟล์ @require ภายนอกจะไม่ถูกดำเนินการ";
+"userscript_install_footer" = "แตะแถวแหล่งที่มาเพื่อเปิดในแท็บ Soulo ปัจจุบัน ลิงก์ .user.js จะเปิดการยืนยันการติดตั้ง รองรับ JavaScript มาตรฐานและชุด GM API ที่หลากหลาย UserScripts ไม่ทำงานในการดูเว็บแบบส่วนตัว";
 "userscript_install_failed" = "UserScript ไม่สามารถติดตั้งได้";
 "web_extension_temporarily_disabled" = "ส่วนขยายเบราว์เซอร์มาตรฐานไม่สามารถใช้งานได้ชั่วคราวในขณะที่การทดสอบความเข้ากันได้เสร็จสิ้น";
 "userscript_unreadable" = "ไม่สามารถอ่านสคริปต์ที่เลือกเป็นข้อความ UTF-8 ได้";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "รองรับได้บางส่วน";
 "userscript_docs_partial_desc" = "คำขอเครือข่ายละเว้นการอัปโหลด/ความคืบหน้าและการขนส่งคุกกี้ การแจ้งเตือนอยู่ในเพจ API ทรัพยากรเป็นแบบอะซิงโครนัส และผู้ฟังการเปลี่ยนแปลงค่ารายงานการเปลี่ยนแปลงที่ทำโดยเพจปัจจุบัน การตรวจสอบการอัปเดตเป็นการดำเนินการด้วยตนเอง";
 "userscript_docs_unsupported_title" = "ยังไม่รองรับในขณะนี้";
-"userscript_docs_unsupported_desc" = "@require ภายนอก, การสกัดกั้น GM_webRequest, GM_audio, การแยกแซนด์บ็อกซ์/รันอิน, การตรวจสอบการอัปเดตอัตโนมัติ และลักษณะการทำงานเฉพาะบนเดสก์ท็อปเท่านั้นที่ WKWebView ไม่สามารถให้ได้";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, การแยกแซนด์บ็อกซ์/รันอิน, การตรวจสอบการอัปเดตอัตโนมัติ และลักษณะการทำงานเฉพาะบนเดสก์ท็อปเท่านั้นที่ WKWebView ไม่สามารถให้ได้";
 "userscript_docs_metadata_title" = "ข้อมูลเมตา";
 "userscript_docs_metadata_identity" = "ชื่อสคริปต์ที่มนุษย์สามารถอ่านได้และคำอธิบายเพิ่มเติมที่แสดงก่อนการติดตั้งและในรายละเอียดสคริปต์";
 "userscript_docs_metadata_version" = "ใช้เนมสเปซที่เสถียรและไม่ซ้ำกัน และเพิ่มเวอร์ชันทุกครั้งที่มีการเปลี่ยนแปลงสคริปต์ที่รวมกลุ่ม";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "อนุญาตโฮสต์ที่ใช้โดยคำขอเครือข่ายที่มีสิทธิพิเศษ หากไม่มีสิ่งนี้ คำขอจะถูกจำกัดไว้ที่โฮสต์ของเพจปัจจุบัน";
 "userscript_docs_metadata_urls" = "ข้อมูลระบุตัวตนเพิ่มเติมและอัปเดตข้อมูลเมตา Soulo ใช้สิ่งเหล่านี้เพื่อจดจำการติดตั้งสคริปต์เดียวกันใหม่";
 "userscript_docs_metadata_resource" = "ประกาศทรัพยากรที่มีชื่อ เพิ่มโฮสต์ @connect ที่ตรงกัน การดึงข้อมูลจะถูกเลื่อนออกไปจนกว่าจะรอ API ทรัพยากรสมัยใหม่";
-"userscript_docs_metadata_require" = "มีการเปิดเผยข้อกำหนดภายนอกระหว่างการติดตั้ง แต่ไม่ได้ดาวน์โหลดหรือดำเนินการ สคริปต์จะต้องมีอยู่ในตัวเอง";
+"userscript_docs_metadata_require" = "ไฟล์ @require ผ่าน HTTPS จะดาวน์โหลดและแคชเมื่อติดตั้งหรือบันทึก แล้วทำงานตามลำดับก่อนสคริปต์หลัก";
 "userscript_docs_api_title" = "API สิทธิพิเศษที่รองรับ";
 "userscript_docs_api_info" = "อ่านตัวจัดการสคริปต์ เวอร์ชัน Soulo และข้อมูลเมตาของสคริปต์ที่แยกวิเคราะห์ มีให้เลือกทั้งแบบเดิมและแบบสมัยใหม่";
 "userscript_docs_api_unsafe_window" = "แสดงหน้าต่างเพจปัจจุบันเมื่อมีการประกาศการให้สิทธิ์ unsafeWindow อย่างชัดเจน";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "ค่าที่เก็บไว้ต้องเป็นแบบอนุกรม JSON: สูงสุด 256 KB ต่อค่า และรวม 1 MB ต่อสคริปต์";
 "userscript_docs_limits_network" = "การตอบกลับแบบมีสิทธิพิเศษจำกัดอยู่ที่ 20 MB การหมดเวลาจะถูกจำกัดไว้ที่ 1–60 วินาที และไม่ยอมรับส่วนหัวของ Cookie/Host/Origin";
 "userscript_docs_limits_private" = "UserScripts ไม่ทำงานในการดูเว็บแบบส่วนตัว";
-"userscript_docs_limits_require" = "ไฟล์ @require ภายนอกจะไม่ถูกดำเนินการ หลีกเลี่ยงการพึ่งพา CDN และรวมตรรกะที่จำเป็นทั้งหมดไว้ในสคริปต์";
+"userscript_docs_limits_require" = "ไฟล์ @require ผ่าน HTTPS จะดาวน์โหลดและแคชเมื่อติดตั้งหรือบันทึก แล้วทำงานตามลำดับก่อนสคริปต์หลัก";
 "userscript_docs_template_title" = "เทมเพลตขั้นต่ำ";
 "userscript_docs_template_footer" = "ใช้เนมสเปซที่ไม่ซ้ำกันและการประกาศ @match และ @grant ที่แคบที่สุดที่เป็นไปได้";
 "userscript_too_large" = "สคริปต์ที่เลือกเกินขีดจำกัด 2 MB";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "ไม่มีสิทธิ์เพิ่มเติม";
 "userscript_network_title" = "การเข้าถึงเครือข่าย";
 "userscript_external_requirements" = "การพึ่งพาภายนอก";
-"userscript_external_requirements_desc" = "สคริปต์นี้ประกาศไฟล์ @require ภายนอก Soulo จะไม่โหลดไฟล์เหล่านี้โดยอัตโนมัติ";
+"userscript_external_requirements_desc" = "ไฟล์ @require ผ่าน HTTPS จะดาวน์โหลดและแคชเมื่อติดตั้งหรือบันทึก แล้วทำงานตามลำดับก่อนสคริปต์หลัก";
 "userscript_metadata_title" = "รายละเอียดสคริปต์";
 "userscript_unsupported_permissions" = "ยังไม่รองรับ: %@";
 "userscript_sample_name" = "แถบความคืบหน้าการอ่าน";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "มุมมองการ์ด";
 "tab_close_group" = "ปิดกลุ่ม";
 "tab_close_group_confirm" = "ปิดแท็บทั้งหมดใน “%@” (%d แท็บ) หรือไม่?";
+
+"userscript_require_failed" = "โหลดไฟล์ที่จำเป็น %@ ไม่สำเร็จ: %@";
+"userscript_require_integrity_failed" = "การตรวจสอบความถูกต้องของไฟล์ที่จำเป็นล้มเหลว";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "จัดการ";
+"extension_update" = "อัปเดต";
+"extension_rollback" = "คืนค่าเวอร์ชันก่อนหน้า";
+"extension_blocked_sites" = "เว็บไซต์ที่บล็อก";
+"extension_diagnostics" = "ความเข้ากันได้";
+"extension_review_access" = "เลือกสิทธิ์และเว็บไซต์ที่ส่วนขยายนี้เข้าถึงได้";
+"extension_limit_commands" = "แป้นพิมพ์ลัดของส่วนขยายไม่พร้อมใช้งานบน iOS";
+"extension_limit_notifications" = "แสดงการแจ้งเตือนได้ แต่ไม่รองรับเหตุการณ์คลิกและปิด";
+"extension_limit_offscreen" = "เอกสารนอกหน้าจอรองรับเฉพาะการเล่นเสียง";

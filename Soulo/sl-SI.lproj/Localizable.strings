@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "Odprte strani se znova naložijo, ko je skript nameščen, urejen, omogočen, onemogočen ali odstranjen.";
 "userscript_experimental_badge" = "Združljivost";
 "userscript_experimental_title" = "UserScript združljivost";
-"userscript_experimental_desc" = "Podpira pravila spletnega mesta, začetek/konec dokumenta, obsežno shranjevanje GM in API-je strani, ukaze skriptov, obvestila, zavihke, prenose, piškotke, vire in zahteve v obsegu dovoljenj. Pred namestitvijo preglejte vsak skript; zunanje datoteke @require se ne izvajajo.";
+"userscript_experimental_desc" = "Podpira pravila spletnega mesta, začetek/konec dokumenta, obsežno shranjevanje GM in API-je strani, ukaze skriptov, obvestila, zavihke, prenose, piškotke, vire in zahteve v obsegu dovoljenj. Pred namestitvijo preglejte vsak skript.";
 "extension_choose_file" = "Izberi datoteko ali mapo…";
 "extension_installing" = "Preverjanje in nameščanje razširitve …";
 "extension_install_failed" = "Razširitve ni bilo mogoče namestiti";
@@ -659,7 +659,7 @@
 "userscript_new" = "Nov scenarij";
 "userscript_edit" = "Uredi skript";
 "userscript_choose_file" = "Izberi skript…";
-"userscript_install_footer" = "Tapnite izvorno vrstico, da jo odprete v trenutnem zavihku Soulo. Povezava .user.js odpre potrditev namestitve. Podprt je standardni JavaScript in širok nabor API-jev GM; skripti se ne izvajajo v zasebnem brskanju in zunanje datoteke @require se ne izvajajo.";
+"userscript_install_footer" = "Tapnite izvorno vrstico, da jo odprete v trenutnem zavihku Soulo. Povezava .user.js odpre potrditev namestitve. Podprt je standardni JavaScript in širok nabor API-jev GM. UserScript se ne izvajajo v zasebnem brskanju.";
 "userscript_install_failed" = "UserScript Ni bilo mogoče namestiti";
 "web_extension_temporarily_disabled" = "Standardne razširitve brskalnika začasno niso na voljo, medtem ko je testiranje združljivosti končano.";
 "userscript_unreadable" = "Izbranega skripta ni bilo mogoče brati kot besedilo UTF-8.";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "Delno podprto";
 "userscript_docs_partial_desc" = "Omrežne zahteve izpustijo nalaganje/napredek in prenos piškotkov. Obvestila so na strani, API-ji virov so asinhroni, poslušalci sprememb vrednosti pa poročajo o spremembah, ki jih je naredila trenutna stran. Preverjanja posodobitev so ročna.";
 "userscript_docs_unsupported_title" = "Trenutno ni podprto";
-"userscript_docs_unsupported_desc" = "Zunanje izvajanje @require, prestrezanje GM_webRequest, GM_audio, izolacija peskovnika/zagona, samodejna preverjanja posodobitev in natančno vedenje samo za namizje, ki ga WKWebView ne more zagotoviti.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, izolacija peskovnika/zagona, samodejna preverjanja posodobitev in natančno vedenje samo za namizje, ki ga WKWebView ne more zagotoviti.";
 "userscript_docs_metadata_title" = "Metapodatki";
 "userscript_docs_metadata_identity" = "Človeku berljivo ime skripta in izbirni opis, prikazan pred namestitvijo in v podrobnostih skripta.";
 "userscript_docs_metadata_version" = "Uporabite stabilen, edinstven imenski prostor in povečajte različico vsakič, ko se skript v paketu spremeni.";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "Pooblastite gostitelje, ki jih uporabljajo privilegirane omrežne zahteve. Brez tega so zahteve omejene na trenutnega gostitelja strani.";
 "userscript_docs_metadata_urls" = "Izbirna identiteta in posodobitev metapodatkov. Soulo jih uporablja za prepoznavanje ponovnih namestitev istega skripta.";
 "userscript_docs_metadata_resource" = "Označi imenovani vir. Dodajte ujemajočega se gostitelja @connect; pridobivanje je odloženo, dokler se ne počaka na API sodobnega vira.";
-"userscript_docs_metadata_require" = "Zunanje zahteve so razkrite med namestitvijo, vendar niso prenesene ali izvedene; skripti morajo biti samostojni.";
+"userscript_docs_metadata_require" = "Datoteke @require prek HTTPS se ob namestitvi ali shranjevanju prenesejo in predpomnijo ter se izvedejo po vrsti pred skriptom.";
 "userscript_docs_api_title" = "Podprti privilegirani API-ji";
 "userscript_docs_api_info" = "Prebere upravljalnik skripta, različico Soulo in razčlenjene metapodatke skripta. Na voljo v stari in sodobni obliki.";
 "userscript_docs_api_unsafe_window" = "Zagotavlja trenutno okno strani, ko je odobritev unsafeWindow izrecno deklarirana.";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "Shranjene vrednosti morajo imeti možnost serializacije JSON: do 256 KB na vrednost in skupno 1 MB na skript.";
 "userscript_docs_limits_network" = "Privilegirani odgovori so omejeni na 20 MB, časovna omejitev je omejena na 1–60 sekund in glave Cookie/Host/Origin niso sprejete.";
 "userscript_docs_limits_private" = "UserScript se ne izvajajo v zasebnem brskanju.";
-"userscript_docs_limits_require" = "Zunanje datoteke @require se nikoli ne izvajajo. Izogibajte se odvisnosti od CDN in v skript vključite vso potrebno logiko.";
+"userscript_docs_limits_require" = "Datoteke @require prek HTTPS se ob namestitvi ali shranjevanju prenesejo in predpomnijo ter se izvedejo po vrsti pred skriptom.";
 "userscript_docs_template_title" = "Minimalna predloga";
 "userscript_docs_template_footer" = "Uporabite edinstveni imenski prostor in najožje možne deklaracije @match in @grant.";
 "userscript_too_large" = "Izbrani skript je večji od omejitve 2 MB.";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "Brez dodatnih dovoljenj";
 "userscript_network_title" = "Dostop do omrežja";
 "userscript_external_requirements" = "Zunanje odvisnosti";
-"userscript_external_requirements_desc" = "Ta skript deklarira zunanje datoteke @require. Soulo jih ne naloži samodejno.";
+"userscript_external_requirements_desc" = "Datoteke @require prek HTTPS se ob namestitvi ali shranjevanju prenesejo in predpomnijo ter se izvedejo po vrsti pred skriptom.";
 "userscript_metadata_title" = "Podrobnosti scenarija";
 "userscript_unsupported_permissions" = "Še ni podprto: %@";
 "userscript_sample_name" = "Vrstica napredka branja";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "Prikaz kartic";
 "tab_close_group" = "Zapri skupino";
 "tab_close_group_confirm" = "Zaprem vse zavihke v skupini »%@« (%d)?";
+
+"userscript_require_failed" = "Odvisnosti %@ ni bilo mogoče naložiti: %@";
+"userscript_require_integrity_failed" = "Preverjanje celovitosti odvisnosti ni uspelo.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "Upravljaj";
+"extension_update" = "Posodobi";
+"extension_rollback" = "Obnovi prejšnjo različico";
+"extension_blocked_sites" = "Blokirana spletna mesta";
+"extension_diagnostics" = "Združljivost";
+"extension_review_access" = "Izberite dovoljenja in spletna mesta, do katerih lahko dostopa ta razširitev.";
+"extension_limit_commands" = "Bližnjice na tipkovnici za razširitve v sistemu iOS niso na voljo.";
+"extension_limit_notifications" = "Obvestila je mogoče prikazati, dogodki klika in zapiranja pa niso podprti.";
+"extension_limit_offscreen" = "Dokumenti zunaj zaslona podpirajo samo predvajanje zvoka.";

@@ -4,7 +4,7 @@ Pilih Soulo sebagai browser default di Pengaturan untuk membuka tautan dari app 
 
 Tab dan grup situs yang baru digunakan tampil lebih dulu, dan tampilan tab dibuka dari atas. Urutan penggunaan tetap tersimpan setelah memulai ulang.
 
-Unduhan BT: impor file .torrent atau tautan magnet, pilih file, jeda dan lanjutkan. Di iOS 26, unduhan dapat berlanjut di latar belakang jika sistem mengizinkan; versi sebelumnya menyimpan progres dan menjeda.
+Unduhan BT: impor file .torrent atau tautan magnet, pilih file, jeda dan lanjutkan. Di iOS 26, unduhan dapat berlanjut di latar belakang jika sistem mengizinkan; versi sebelumnya menyimpan progres dan menjeda. Putar media BT yang didukung saat diunduh dan buka file MKV. Impor tautan ed2k/thunder. Unduhan memerlukan sumber yang tersedia; pemutaran bergantung pada codec.
 
 Pilih lima pintasan opsional di beranda untuk unduhan, file, penanda, riwayat, wallpaper, dan halaman lainnya. Bilah tab pustaka menjadi ringkas saat digulir.
 

@@ -14,7 +14,6 @@ struct NewDownloadTaskView: View {
     var initialURL: URL?
     @State private var address = ""
     @State private var filename = ""
-    @State private var torrentLink = false
     @State private var importing = false
     @State private var working = false
     @State private var error: String?
@@ -28,40 +27,45 @@ struct NewDownloadTaskView: View {
                     TextField(ToolText.text("download_address"), text: $address, axis: .vertical)
                         .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
                         .lineLimit(2...5).accessibilityIdentifier("downloads.new.address")
-                    if !address.lowercased().hasPrefix("magnet:") {
-                        Toggle(ToolText.text("torrent_link"), isOn: $torrentLink)
-                        if !torrentLink {
+                    if !["magnet:", "ed2k:", "thunder:"].contains(where: { address.trimmingCharacters(in: .whitespacesAndNewlines).lowercased().hasPrefix($0) }) {
+                        if URL(string: address)?.pathExtension.lowercased() != "torrent" {
                             TextField(ToolText.text("download_optional_name"), text: $filename)
                                 .accessibilityIdentifier("downloads.new.filename")
                         }
                     }
                 } header: { Text(ToolText.text("download_link")) }
                   footer: { Text(ToolText.text("download_link_hint")) }
-                Section {
-                    Button { importing = true } label: {
-                        Label(ToolText.text("import_torrent"), systemImage: "doc.badge.plus")
-                    }.accessibilityIdentifier("downloads.new.import")
-                }
                 if let error {
                     Section { Text(error).foregroundStyle(.red).textSelection(.enabled) }
                 }
-                Section {
-                    Button(action: submit) {
-                        HStack {
-                            Label(ToolText.text("download_create"), systemImage: "arrow.down.circle.fill")
-                            Spacer()
-                            if working { ProgressView() }
-                        }
-                    }.disabled(working || address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        .accessibilityIdentifier("downloads.new.create")
-                }
             }
             .disabled(working)
+            .dismissKeyboardOnBackgroundTap()
+            .safeAreaInset(edge: .bottom) {
+                Button(action: submit) {
+                    HStack(spacing: 10) {
+                        if working { ProgressView().tint(.white) }
+                        Label(ToolText.text("download_create"), systemImage: "arrow.down.circle.fill")
+                    }.frame(maxWidth: .infinity, minHeight: 30)
+                }
+                .buttonStyle(.borderedProminent).controlSize(.large).tint(.blue)
+                .disabled(working || address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .accessibilityIdentifier("downloads.new.create")
+                .padding(.horizontal, 20).padding(.vertical, 12).background(.bar)
+            }
             .navigationTitle(ToolText.text("new_download"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(ToolText.text("cancel")) { operation?.cancel(); dismiss() }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { importing = true } label: {
+                        Image(systemName: "doc.badge.plus")
+                    }
+                    .disabled(working)
+                    .accessibilityLabel(ToolText.text("import_torrent"))
+                    .accessibilityIdentifier("downloads.new.import")
                 }
             }
             .navigationDestination(for: UUID.self) { id in
@@ -73,7 +77,7 @@ struct NewDownloadTaskView: View {
             .onAppear {
                 guard !importedInitial, let initialURL else { return }
                 if initialURL.isFileURL { importFile(initialURL) }
-                else { address = initialURL.absoluteString; torrentLink = initialURL.pathExtension.lowercased() == "torrent" }
+                else { address = initialURL.absoluteString }
                 self.initialImportCompleted()
             }
         }
@@ -100,29 +104,39 @@ struct NewDownloadTaskView: View {
         }
     }
     private func submit() {
-        guard let url = URL(string: address.trimmingCharacters(in: .whitespacesAndNewlines)),
-              ["magnet", "http", "https"].contains(url.scheme?.lowercased() ?? ""),
-              url.scheme?.lowercased() == "magnet" || (url.host?.isEmpty == false && url.user == nil && url.password == nil) else {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        guard let link = try? PeerDownloadLink.parse(address) else {
             error = ToolText.text("download_invalid_address"); return
         }
         working = true; error = nil
         operation = Task {
             defer { working = false }
             do {
-                if url.scheme?.lowercased() == "magnet" {
+                switch link {
+                case .ed2k(let file):
+                    try await ED2KDownloadService.shared.create(file)
+                    dismiss()
+                case .magnet(let url):
                     path.append(try await TorrentDownloadService.shared.create(data: nil, magnet: url.absoluteString))
-                } else if torrentLink || url.pathExtension.lowercased() == "torrent" {
-                    let data = try await TorrentMetadataFetcher.fetch(url)
-                    try Task.checkCancellation()
-                    path.append(try await TorrentDownloadService.shared.create(data: data, magnet: nil))
-                } else {
+                case .web(let url):
+                    if let data = try await TorrentMetadataFetcher.fetchIfTorrent(url) {
+                        try Task.checkCancellation()
+                        path.append(try await TorrentDownloadService.shared.create(data: data, magnet: nil))
+                        return
+                    }
                     let suggested = filename.isEmpty
                         ? WebDownloadFilename.native(suggested: url.lastPathComponent, pageTitle: nil) : filename
                     let (item, _) = DownloadManagerService.shared.beginDownload(
                         suggestedFilename: suggested, sourceURL: url, transport: .background)
                     // The native session owns the transfer after this form closes.
                     Task {
-                        do { _ = try await BackgroundDownloadService.shared.start(request: URLRequest(url: url), item: item) }
+                        do {
+                            let local = try await BackgroundDownloadService.shared.start(request: URLRequest(url: url), item: item)
+                            if let data = await TorrentMetadataFetcher.validTorrentData(at: local),
+                               (try? await TorrentDownloadService.shared.create(data: data, magnet: nil, openExisting: true)) != nil {
+                                DownloadManagerService.shared.delete(item)
+                            }
+                        }
                         catch { DownloadManagerService.shared.markFailed(id: item.id, error: error) }
                     }
                     dismiss()
@@ -133,6 +147,36 @@ struct NewDownloadTaskView: View {
 }
 
 enum TorrentMetadataFetcher {
+    /// Recognizable torrent URLs open immediately. Ambiguous downloads are
+    /// inspected after their existing background transfer, avoiding a second
+    /// GET or a preflight that could consume a signed/one-use URL.
+    static func fetchIfTorrent(_ url: URL) async throws -> Data? {
+        guard url.pathExtension.lowercased() == "torrent" else { return nil }
+        return try await fetch(url)
+    }
+
+    static func validTorrentData(at url: URL) async -> Data? {
+        let data = await Task.detached(priority: .utility) { () -> Data? in
+            guard let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize,
+                  size > 0, size <= 8 * 1024 * 1024,
+                  let file = try? FileHandle(forReadingFrom: url) else { return nil }
+            defer { try? file.close() }
+            guard let prefix = try? file.read(upToCount: 128), looksLikeTorrent(prefix) else { return nil }
+            return try? Data(contentsOf: url)
+        }.value
+        guard let data, (try? await TorrentEngineWorker().inspect(data: data)) != nil else { return nil }
+        return data
+    }
+
+    static func looksLikeTorrent(_ data: Data) -> Bool {
+        let bytes = Array(data)
+        guard bytes.first == 100, let colon = bytes.firstIndex(of: 58), (2...4).contains(colon),
+              let count = Int(String(decoding: bytes[1..<colon], as: UTF8.self)), count > 0,
+              colon + 1 + count <= bytes.count else { return false }
+        let key = String(decoding: bytes[(colon + 1)..<(colon + 1 + count)], as: UTF8.self)
+        return ["announce", "announce-list", "info", "comment", "created by", "creation date", "encoding", "nodes", "url-list", "piece layers"].contains(key)
+    }
+
     static func fetch(_ url: URL) async throws -> Data {
         var request = URLRequest(url: url); request.timeoutInterval = 30
         let config = URLSessionConfiguration.ephemeral
@@ -157,6 +201,7 @@ struct TorrentTaskDetailView: View {
     @ObservedObject private var service = TorrentDownloadService.shared
     @ObservedObject private var manager = DownloadManagerService.shared
     @ObservedObject private var background = TorrentBackgroundCoordinator.shared
+    @State private var playingFile: TorrentFileEntry?
     private var record: BrowserDownloadItem? { manager.downloads.first { $0.id == id } }
     var body: some View {
         Group {
@@ -187,7 +232,8 @@ struct TorrentTaskDetailView: View {
                                 .accessibilityIdentifier("torrent.select-all")
                             }
                             ForEach(job.files.filter { !$0.pad }) { file in
-                                Button {
+                                VStack(alignment: .leading, spacing: 2) {
+                                  Button {
                                     var selected = job.selected
                                     if selected.contains(file.index) { selected.remove(file.index) } else { selected.insert(file.index) }
                                     service.select(id, indices: selected)
@@ -204,6 +250,16 @@ struct TorrentTaskDetailView: View {
                                 }.buttonStyle(.plain).disabled(job.isActive || job.state == .finished)
                                     .accessibilityIdentifier("torrent.file.\(file.index)")
                                     .accessibilityValue(job.selected.contains(file.index) ? "selected" : "unselected")
+                                  if service.canStream(id, file: file) {
+                                    Button { playingFile = file } label: {
+                                        Label(job.state == .finished ? ToolText.text("play") : LanguageManager.shared.localizedString("downloads_play_while_downloading"),
+                                              systemImage: "play.circle")
+                                            .font(.subheadline).frame(minHeight: 44, alignment: .leading)
+                                    }
+                                    .buttonStyle(.borderless)
+                                    .accessibilityIdentifier("torrent.play.\(file.index)")
+                                  }
+                                }
                             }
                         } header: { Text(ToolText.text("torrent_files")) }
                     }
@@ -245,6 +301,11 @@ struct TorrentTaskDetailView: View {
         }
         .navigationTitle(ToolText.text("torrent_task"))
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $playingFile) { file in
+            NavigationStack {
+                TorrentFilePlaybackView(id: id, file: file)
+            }
+        }
     }
 }
 

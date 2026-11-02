@@ -97,7 +97,7 @@ class PlatformDataStore: ObservableObject {
 
     func incrementUsage(for platformID: UUID) {
         guard let index = platforms.firstIndex(where: { $0.id == platformID }) else { return }
-        platforms[index].usageCount += 1
+        platforms[index].recordUse()
         savePlatforms()
     }
 
@@ -186,7 +186,8 @@ class PlatformDataStore: ObservableObject {
 
     /// Batch import platforms from JSON string.
     /// Format: [{"name": "xxx", "url": "https://...?wd=%@"}, ...]
-    func importPlatformsFromJSON(_ jsonString: String, groupName: String?, region: PlatformRegion = .international) -> Int {
+    func importPlatformsFromJSON(_ jsonString: String, groupName: String?, region: PlatformRegion = .international,
+                                 intoGroupID: UUID? = nil) -> Int {
         struct ImportItem: Decodable {
             let name: String
             let url: String
@@ -195,9 +196,19 @@ class PlatformDataStore: ObservableObject {
               let items = try? JSONDecoder().decode([ImportItem].self, from: data),
               !items.isEmpty else { return 0 }
 
-        // Create group if specified
-        var groupID: UUID? = nil
-        if let gName = groupName, !gName.isEmpty {
+        if let intoGroupID, !customGroups.contains(where: { $0.id == intoGroupID }) { return 0 }
+        var knownTemplates = Set(platforms.map(\.searchURLTemplate))
+        let validItems = items.compactMap { item -> ImportItem? in
+            let name = item.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty, let template = SearchPlatformURLInput.searchTemplate(item.url),
+                  knownTemplates.insert(template).inserted else { return nil }
+            return ImportItem(name: name, url: template)
+        }
+        guard !validItems.isEmpty else { return 0 }
+
+        // Resolve an existing selection by identity; group names need not be unique.
+        var groupID = intoGroupID
+        if groupID == nil, let gName = groupName?.trimmingCharacters(in: .whitespacesAndNewlines), !gName.isEmpty {
             if let existing = customGroups.first(where: { $0.name == gName }) {
                 groupID = existing.id
             } else {
@@ -209,17 +220,8 @@ class PlatformDataStore: ObservableObject {
         }
 
         var count = 0
-        for item in items {
-            // Skip duplicates
-            if platforms.contains(where: { $0.searchURLTemplate == item.url }) { continue }
-
-            let homeURL: String
-            if let url = URL(string: item.url.replacingOccurrences(of: "%@", with: "")),
-               let scheme = url.scheme, let host = url.host {
-                homeURL = "\(scheme)://\(host)"
-            } else {
-                homeURL = ""
-            }
+        for item in validItems {
+            let homeURL = SearchPlatformURLInput.derivedHomeURL(from: item.url)
 
             addCustomPlatform(name: item.name, searchURL: item.url, homeURL: homeURL, region: region)
 

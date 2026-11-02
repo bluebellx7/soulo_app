@@ -1,6 +1,8 @@
 1.2.7
 
 • Pobieranie BT: importuj pliki .torrent lub linki magnet, wybieraj pliki, wstrzymuj i wznawiaj. W iOS 26 pobieranie może działać w tle, gdy system na to pozwala; starsze wersje zapisują postęp i wstrzymują zadanie.
+• Odtwarzaj obsługiwane media BT podczas pobierania i otwieraj pliki MKV. Importuj linki ed2k/thunder. Pobieranie wymaga dostępnych źródeł; odtwarzanie zależy od kodeków.
+• Optymalizacja wyszukiwania Baidu jest domyślnie włączona. Skrypt można wyświetlić lub wyłączyć w Rozszerzeniach.
 • Wybierz pięć opcjonalnych skrótów na stronie głównej do pobierania, plików, zakładek, historii, tapet i innych stron. Pasek kart biblioteki zmniejsza się podczas przewijania.
 • Poprawiono zgodność skryptów użytkownika, w tym zewnętrznych zależności przez @require.
 • Naprawiono dźwięk mimo wyciszenia filmów i powielone odtwarzanie na niektórych stronach.

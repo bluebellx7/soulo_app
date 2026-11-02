@@ -1,6 +1,8 @@
 1.2.7
 
 • BT-letöltések: importálj .torrent-fájlokat vagy magnet-hivatkozásokat, válassz fájlokat, szüneteltesd és folytasd. iOS 26-on a letöltés a háttérben is folytatódhat, ha a rendszer engedi; a korábbi verziók mentik az állapotot és szüneteltetik.
+• Játssz le támogatott BT-médiát letöltés közben, és nyiss meg MKV-fájlokat. Importálj ed2k/thunder-linkeket. A letöltéshez elérhető források kellenek; a lejátszás a kodekektől függ.
+• A Baidu keresésoptimalizálása alapból aktív. A bővítményeknél megtekintheted a szkriptet vagy kikapcsolhatod.
 • Válassz öt opcionális kezdőlapi parancsikont a letöltésekhez, fájlokhoz, könyvjelzőkhöz, előzményekhez, háttérképekhez és más oldalakhoz. Görgetéskor a könyvtár lapsávja összébb húzódik.
 • Javított felhasználói szkript-kompatibilitás, beleértve a @require külső függőségeit.
 • Javítva a némított videók hangja és a párhuzamos lejátszás bizonyos weboldalakon.

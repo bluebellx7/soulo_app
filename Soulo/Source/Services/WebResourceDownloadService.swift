@@ -173,8 +173,11 @@ final class WebResourceDownloadService {
         pageURL: URL? = nil,
         webView: WKWebView? = nil,
         fallbackBaseName: String = "Download",
-        playbackResource: WebMediaResource? = nil
+        playbackResource: WebMediaResource? = nil,
+        userScriptPolicy: UserScriptDownloadPolicy? = nil,
+        onStart: ((UUID) -> Void)? = nil
     ) async throws -> URL {
+        if let userScriptPolicy, !userScriptPolicy.allows(url) { throw URLError(.unsupportedURL) }
         let automaticName = preferredFilename == nil
             ? WebDownloadFilename.native(suggested: url.lastPathComponent, pageTitle: webView?.title)
             : nil
@@ -189,8 +192,13 @@ final class WebResourceDownloadService {
         let (item, destinationURL) = manager.beginDownload(
             suggestedFilename: suggestedFilename,
             sourceURL: url,
-            transport: .background
+            transport: .background,
+            userScriptPolicy: userScriptPolicy
         )
+        onStart?(item.id)
+        guard manager.downloads.contains(where: { $0.id == item.id && $0.status == .inProgress }) else {
+            throw CancellationError()
+        }
 
         _ = destinationURL
         let request = await resourceRequest(url, pageURL: pageURL, webView: webView)

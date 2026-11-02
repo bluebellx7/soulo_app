@@ -19,6 +19,7 @@ enum WebVideoOrientationRuntime {
       const overlay = window.__souloOverlayControls;
       let labels = ['Fullscreen', 'Speed', 'Download', 'Video tools', 'Episodes', 'Close'], frame = 0, scanTimer = 0, active = null, expandedGroup = null;
       let bottomControls = {needed:false}, episodesAvailable = false;
+      let reportedViewportScale = null;
       const expandedWidth = () => (episodesAvailable ? 5 : 4) * overlay.size;
       const observationOptions = {childList:true,subtree:true,attributes:true,attributeFilter:['class','style','hidden']};
       function send(action, token, details = {}) {
@@ -26,7 +27,7 @@ enum WebVideoOrientationRuntime {
       }
       function isFullscreen(video) {
         return video.webkitDisplayingFullscreen || video.webkitPresentationMode === 'fullscreen'
-          || document.fullscreenElement === video;
+          || document.fullscreenElement === video || video.getRootNode()?.fullscreenElement === video;
       }
       function computed(node, styles) {
         if (!styles.has(node)) styles.set(node, getComputedStyle(node));
@@ -61,17 +62,17 @@ enum WebVideoOrientationRuntime {
         bottomControls.needed = needed;
         send('bottomControls', '', {needed});
       }
+      function reportViewportScale(force = false) {
+        if (window !== window.top) return;
+        const {scale,zoom} = overlay.metrics();
+        if (!force && reportedViewportScale?.scale === scale && reportedViewportScale?.zoom === zoom) return;
+        reportedViewportScale = {scale,zoom};
+        send('viewport','',{scale,zoom,url:location.href});
+      }
       function finish(action = 'end') {
         if (!active) return;
         clearTimeout(active.timeout);
-        if (active.sizing) {
-          const {video, sizing} = active;
-          for (const [property, old] of sizing) {
-            if (video.style.getPropertyValue(property) !== old.applied) continue;
-            if (old.value) video.style.setProperty(property, old.value, old.priority);
-            else video.style.removeProperty(property);
-          }
-        }
+        active.cleanup?.();
         send(action, active.token); active = null; schedule();
       }
       function fullscreenChanged(event) {
@@ -86,7 +87,7 @@ enum WebVideoOrientationRuntime {
         }
         if (active.mode === 'native' || isFullscreen(active.video)) {
           if (!active.began) {
-            active.began = true; clearTimeout(active.timeout); send('begin', active.token); schedule();
+            active.began = true; clearTimeout(active.timeout); active.cleanup?.(); send('begin', active.token); schedule();
           }
         } else if (active.began) finish();
       }
@@ -94,38 +95,45 @@ enum WebVideoOrientationRuntime {
         if (active) return;
         const token = globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36);
         active = {video, token, began:false, timeout:setTimeout(() => { if (active?.token === token) finish('failed'); }, 5000)};
-        const rect = video.getBoundingClientRect();
-        const naturalRatio = video.videoWidth > 0 && video.videoHeight > 0 ? video.videoWidth / video.videoHeight : 0;
-        const ratio = naturalRatio || (rect.height > 0 ? rect.width / rect.height : 16 / 9);
-        const landscape = ratio > 1.1;
-        send('prepare', token, {landscape});
-        try {
-          // Keep this call synchronous within the real click's user activation.
-          // The video stays in its original player: no URL extraction or reload.
-          // WebKit can retain the inline render-box size when transferring
-          // the video layer to AVKit, including through requestFullscreen().
-          // Prepare the landscape fit size before transfer and restore only
-          // our own overrides on exit. The media element and source stay intact.
-          const w = landscape ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
-          const h = landscape ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height);
-          const values = {width:Math.min(w, h * ratio) + 'px', height:Math.min(h, w / ratio) + 'px',
-            'max-width':'none', 'max-height':'none', 'min-width':'0px', 'min-height':'0px', 'object-fit':'contain'};
-          active.sizing = new Map();
-          for (const [property, value] of Object.entries(values)) {
-            const old = {value:video.style.getPropertyValue(property), priority:video.style.getPropertyPriority(property)};
-            video.style.setProperty(property, value, 'important');
-            old.applied = video.style.getPropertyValue(property); active.sizing.set(property, old);
-          }
-          video.getBoundingClientRect();
-          video.play()?.catch(() => {});
-          if (typeof video.webkitEnterFullscreen === 'function') {
-            active.mode = 'native';
-            video.webkitEnterFullscreen();
-          } else if (document.fullscreenEnabled && video.requestFullscreen) {
+        let playbackReady = !video.paused;
+        const failed = () => { if (active?.token === token && !active.began) finish('failed'); };
+        const request = () => {
+          if (active?.token !== token || active.began || active.requested) return;
+          if (!video.isConnected) { failed(); return; }
+          // Later feed/playlist videos can still be loading or switching source.
+          // Transfer an actual decoded frame, never an empty AVKit surface.
+          if (!playbackReady || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return;
+          active.requested = true;
+          send('prepare', token, {landscape:video.videoWidth / video.videoHeight > 1.1});
+          const documentFullscreen = () => {
+            if (active?.token !== token) return;
+            if (!document.fullscreenEnabled || typeof video.requestFullscreen !== 'function') { failed(); return; }
             active.mode = 'document';
-            video.requestFullscreen().catch(() => { if (active?.token === token) finish('failed'); });
-          } else finish('failed');
-        } catch (_) { finish('failed'); }
+            try { Promise.resolve(video.requestFullscreen()).catch(failed); } catch (_) { failed(); }
+          };
+          // Preserve the site's video geometry, source and player. Changing its
+          // inline size before AVKit entry can rebuild a responsive player.
+          if (typeof video.webkitEnterFullscreen === 'function' && video.webkitSupportsFullscreen !== false) {
+            active.mode = 'native';
+            try { video.webkitEnterFullscreen(); } catch (_) { documentFullscreen(); }
+          } else documentFullscreen();
+        };
+        const readyEvents = ['loadeddata','canplay','playing'];
+        readyEvents.forEach(event => video.addEventListener(event, request));
+        active.cleanup = () => readyEvents.forEach(event => video.removeEventListener(event, request));
+        if (video.paused) {
+          // Start loading inside the real user gesture. WebKit grants media
+          // playback here; completion only requests fullscreen for this session.
+          try {
+            Promise.resolve(video.play()).then(() => {
+              if (active?.token !== token) return;
+              playbackReady = true; request();
+            }, failed);
+          } catch (_) { failed(); }
+        } else {
+          // A playing, ready video keeps synchronous native fullscreen entry.
+          request();
+        }
       }
       function prune() {
         for (const video of videos) if (!video.isConnected) {
@@ -318,6 +326,9 @@ enum WebVideoOrientationRuntime {
         schedule();
       }
       const observer = new MutationObserver(records => {
+        // Text-only pages often animate classes/styles while scrolling. There
+        // is no video geometry to update until a media element is discovered.
+        if (!videos.size && records.every(record => record.type === 'attributes')) return;
         const ownUI='[data-soulo-video-rotate],[data-soulo-hold-speed],#soulo-episode-dock';
         if (records.every(r =>
           (r.target instanceof Element && r.target.closest(ownUI))
@@ -328,7 +339,14 @@ enum WebVideoOrientationRuntime {
         }
         if (!scanTimer) scanTimer = setTimeout(() => {
           scanTimer = 0;
-          pending.forEach(node => { if (node.isConnected) scan(node); }); pending.clear();
+          pending.forEach(node => {
+            if (!node.isConnected) return;
+            // Scanning an added parent already covers its added descendants.
+            for (let parent = node.parentElement; parent; parent = parent.parentElement) {
+              if (pending.has(parent)) return;
+            }
+            scan(node);
+          }); pending.clear();
           // Hidden tabs may suspend animation frames. Release detached videos
           // and controls even while layout is paused.
           prune();
@@ -336,7 +354,11 @@ enum WebVideoOrientationRuntime {
         }, 150);
       });
       window.__souloVideoOrientation = {setPageScale(value,zoom = 1) {
-        overlay.setPageScale(value);overlay.setContentZoom(zoom);schedule();
+        const scaleChanged=overlay.setPageScale(value),zoomChanged=overlay.setContentZoom(zoom);
+        if(scaleChanged||zoomChanged)schedule();
+      },setContentZoom(zoom) {
+        if (overlay.setContentZoom(zoom)) schedule();
+        reportViewportScale(true);
       },setLabels(value) {
         labels = value;
         controls.forEach(group => {
@@ -376,10 +398,11 @@ enum WebVideoOrientationRuntime {
       }
       const scrollLayout = () => { if (visibleVideos.size) schedule(); };
       window.addEventListener('scroll', scrollLayout, {capture:true,passive:true});
-      window.addEventListener('resize', schedule, {passive:true});
-      window.visualViewport?.addEventListener('resize', () => {
-        schedule();if(window===window.top)send('viewport','');
-      }, {passive:true});
+      const viewportChanged = () => { schedule(); reportViewportScale(); };
+      window.addEventListener('resize', viewportChanged, {passive:true});
+      // Report only an actual scale change. Height-only changes and ordinary
+      // scrolling keep their local layout without messages to native frames.
+      window.visualViewport?.addEventListener('resize', viewportChanged, {passive:true});
       window.visualViewport?.addEventListener('scroll', scrollLayout, {passive:true});
       document.addEventListener('loadedmetadata', schedule, true);
       document.addEventListener('play', schedule, true);
@@ -570,19 +593,64 @@ struct WebMediaPlaybackState: Equatable {
     """#
 }
 
+struct WebMediaPlaybackHandoff {
+    let target: URL
+    let time: Double
+    let duration: Double
+    let volume: Double
+    let muted: Bool
+    let playing: Bool
+
+    init?(target: URL, values: [String: Any]) {
+        guard let time = values["time"] as? Double, time.isFinite, (0...43_200).contains(time),
+              let duration = values["duration"] as? Double, duration.isFinite, duration >= 0,
+              let volume = values["volume"] as? Double, volume.isFinite, (0...1).contains(volume),
+              let muted = values["muted"] as? Bool, let playing = values["playing"] as? Bool else { return nil }
+        self.target = target; self.time = time; self.duration = duration
+        self.volume = volume; self.muted = muted; self.playing = playing
+    }
+
+    func matches(_ document: URL) -> Bool {
+        guard target.scheme == document.scheme, target.host == document.host,
+              target.port == document.port, target.path == document.path else { return false }
+        let expected = URLComponents(url: target, resolvingAgainstBaseURL: false)
+        let actual = URLComponents(url: document, resolvingAgainstBaseURL: false)
+        if let id = expected?.queryItems?.first(where: { $0.name == "nid" })?.value {
+            return actual?.queryItems?.first(where: { $0.name == "nid" })?.value == id
+        }
+        return expected?.query == actual?.query
+    }
+
+    var scriptValues: [String: Any] {
+        ["time": time, "duration": duration, "volume": volume, "muted": muted, "playing": playing]
+    }
+}
+
 /// Lives with a tab, not its SwiftUI wrapper. Keeps bounded, in-memory checkpoints
 /// for frames (including cross-origin players); private tabs never write these to disk.
 @MainActor final class WebMediaSession: NSObject, WKScriptMessageHandler {
     static let handler = "souloMediaSession"
     static let world = WKContentWorld.world(name: "SouloMediaSession")
-    weak var webView: WKWebView?
+    weak var webView: WKWebView? {
+        didSet {
+            guard oldValue !== webView else { return }
+            navigationPending = false
+            navigationWasCancelled = false
+            suspensionApplied = false
+            updatePlaybackSuspension()
+        }
+    }
     private(set) var isActive = true
+    private var navigationPending = false
+    private(set) var navigationWasCancelled = false
+    private var suspensionApplied = false
     private var frames: [String: WKFrameInfo] = [:]
     private weak var installedController: WKUserContentController?
     private var pendingRestoration: [String: [[String: Any]]] = [:]
     private var mainDocumentKey: String?
     private var generation = 0
     private(set) var checkpoints: [String: [[String: Any]]] = [:]
+    private var playbackHandoff: WebMediaPlaybackHandoff?
 
     func install(on controller: WKUserContentController) {
         controller.removeScriptMessageHandler(forName: Self.handler, contentWorld: Self.world)
@@ -601,6 +669,11 @@ struct WebMediaPlaybackState: Equatable {
         generation += 1
         checkpoints.removeAll(); pendingRestoration.removeAll(); frames.removeAll()
         mainDocumentKey = nil
+        playbackHandoff = nil
+    }
+
+    func preparePlaybackHandoff(_ handoff: WebMediaPlaybackHandoff) {
+        playbackHandoff = handoff
     }
     func detach() {
         generation += 1
@@ -610,7 +683,53 @@ struct WebMediaPlaybackState: Equatable {
     func setActive(_ active: Bool) {
         guard active != isActive else { return }
         isActive = active
-        webView?.setAllMediaPlaybackSuspended(!active, completionHandler: nil)
+        updatePlaybackSuspension()
+    }
+
+    /// User navigation leaves media and page-cache lifecycle to WebKit.
+    /// Only inactive tabs use web-view-wide playback suspension.
+    func allowUserNavigation() { navigationWasCancelled = false }
+
+    func beginNavigation(to destination: URL, navigationType: WKNavigationType = .other, startsNewRequest: Bool = false) {
+        if startsNewRequest { navigationWasCancelled = false }
+        guard !navigationWasCancelled else { return }
+        finishNavigation()
+    }
+
+    func finishNavigation(restoreInterruptedMedia: Bool = false) {
+        navigationPending = false
+        updatePlaybackSuspension()
+        if restoreInterruptedMedia {
+            webView?.callAsyncJavaScript("window.__souloMediaResume?.();", arguments: [:],
+                in: nil, in: Self.world, completionHandler: nil)
+        }
+    }
+
+    func cancelNavigation() {
+        navigationWasCancelled = true
+        finishNavigation(restoreInterruptedMedia: true)
+    }
+
+    private func updatePlaybackSuspension() {
+        let suspended = !isActive || navigationPending
+        guard let webView, suspensionApplied != suspended else { return }
+        // Suspend only inactive tabs. WebKit owns foreground page navigation.
+        suspensionApplied = suspended
+        BrowserStartupTrace.mark("media_suspension", detail: "suspended=\(suspended) active=\(isActive) navigation=\(navigationPending)")
+        webView.setAllMediaPlaybackSuspended(suspended, completionHandler: nil)
+    }
+
+    static func replacesDocument(from source: URL?, to destination: URL, navigationType: WKNavigationType) -> Bool {
+        guard ["http", "https", "file", "about", "blob", "data", "webkit-extension"].contains(destination.scheme?.lowercased() ?? "") else { return false }
+        guard let source,
+              var previous = URLComponents(url: source, resolvingAgainstBaseURL: true),
+              var next = URLComponents(url: destination, resolvingAgainstBaseURL: true) else { return true }
+        let oldFragment = previous.fragment, newFragment = next.fragment
+        previous.fragment = nil; next.fragment = nil
+        let explicitReload = [.reload, .formSubmitted, .formResubmitted].contains(navigationType)
+        if !explicitReload, previous.url == next.url,
+           newFragment != nil || (navigationType == .backForward && oldFragment != newFragment) { return false }
+        return true
     }
 
     func capture() async {
@@ -653,6 +772,14 @@ struct WebMediaPlaybackState: Equatable {
             let saved = pendingRestoration.removeValue(forKey: key) ?? []
             webView.callAsyncJavaScript("window.__souloMediaRestore?.(items);", arguments: ["items": saved],
                 in: message.frameInfo, in: Self.world, completionHandler: nil)
+            if message.frameInfo.isMainFrame, let handoff = playbackHandoff,
+               let suffix = key.range(of: "#soulo-frame=", options: .backwards),
+               let document = URL(string: String(key[..<suffix.lowerBound])), handoff.matches(document) {
+                playbackHandoff = nil
+                webView.callAsyncJavaScript("window.__souloMediaRestorePlayback?.(intent);",
+                    arguments: ["intent": handoff.scriptValues], in: message.frameInfo,
+                    in: Self.world, completionHandler: nil)
+            }
         }
         save(items, for: key)
     }
@@ -673,6 +800,7 @@ struct WebMediaPlaybackState: Equatable {
             return location.href + '#soulo-frame=' + path.join('.');
         })();
         let saved = [], restorationResolved = false;
+        let playbackIntent = null, playbackStart = null;
         let lastSent = 0;
         function snapshot() {
             return [...tracked].filter(m => m.isConnected).slice(0,32).map((m,index) => ({
@@ -691,6 +819,55 @@ struct WebMediaPlaybackState: Equatable {
             saved = items; restorationResolved = true;
             tracked.forEach(restore); send();
         };
+        window.__souloMediaRestorePlayback = intent => {
+            playbackIntent = intent;
+            tracked.forEach(schedulePlaybackIntent);
+        };
+        function schedulePlaybackIntent(media) {
+            if (playbackIntent) setTimeout(() => applyPlaybackIntent(media), 0);
+        }
+        function applyPlaybackIntent(media) {
+            if (!playbackIntent || media.tagName !== 'VIDEO' || !media.isConnected || media.readyState < 1) return;
+            const customSound = location.hostname === 'm.baidu.com' && location.pathname === '/video/page' && !media.controls;
+            const soundControl = customSound ? document.querySelector('[class*="voiceControlContainer"]') : null;
+            // Baidu keeps a separate muted flag in its custom player. Changing
+            // only HTMLMediaElement.muted leaves its icon and next click stale.
+            // Wait for the control, then use its own action to update both.
+            if (customSound && !soundControl) return;
+            const videos = [...tracked].filter(m => m.tagName === 'VIDEO' && m.isConnected);
+            const area = m => {const r=m.getBoundingClientRect();return Math.max(0,Math.min(innerWidth,r.right)-Math.max(0,r.left))*Math.max(0,Math.min(innerHeight,r.bottom)-Math.max(0,r.top));};
+            videos.sort((a,b) => area(b)-area(a));
+            if (videos[0] !== media) return;
+            const intent = playbackIntent; playbackIntent = null;
+            if (soundControl) {
+                const off = soundControl.querySelector('[class*="voiceOffSvg"]');
+                const iconMuted = !!off && getComputedStyle(off).display !== 'none';
+                if (iconMuted !== intent.muted) soundControl.click();
+            }
+            media.muted = intent.muted; media.volume = intent.volume;
+            if (intent.time > 0 && Number.isFinite(media.duration) && media.duration > 0
+                && (!intent.duration || Math.abs(media.duration-intent.duration) < Math.max(3,intent.duration*0.03))) {
+                try { media.currentTime = Math.min(intent.time,Math.max(0,media.duration-0.1)); } catch (_) {}
+            }
+            if (intent.playing) {
+                // iOS can queue a pause while an autoplaying player becomes
+                // audible or seeks during startup. Retry once after that pause;
+                // a subsequent user gesture always cancels the handoff.
+                const start = {media,expires:Date.now()+5000}; playbackStart = start;
+                setTimeout(() => {if(playbackStart===start)playbackStart=null;},5000);
+                play.call(media)?.catch(() => {});
+            }
+            send();
+        }
+        function resumePlaybackStart(media) {
+            const start = playbackStart;
+            if (!start || start.media !== media || Date.now()>start.expires || !media.paused) return;
+            playbackStart = null;
+            play.call(media)?.catch(() => {});
+        }
+        for (const event of ['pointerdown','keydown']) window.addEventListener(event,e => {
+            if (e.isTrusted) {playbackIntent = null;playbackStart = null;}
+        },true);
         function restore(m) {
             if (!restorationResolved || restored.has(m) || m.readyState < 1) return;
             const index = [...tracked].filter(x => x.isConnected).indexOf(m), src = m.currentSrc || m.src || '';
@@ -710,25 +887,53 @@ struct WebMediaPlaybackState: Equatable {
             tracked.add(m);
             if (!registered.has(m)) {
                 registered.add(m);
-                for (const event of ['loadedmetadata','canplay']) m.addEventListener(event, () => restore(m));
-                for (const event of ['play','pause','seeked','ratechange','ended']) m.addEventListener(event, send);
+                for (const event of ['loadedmetadata','canplay']) m.addEventListener(event, () => {restore(m);schedulePlaybackIntent(m);resumePlaybackStart(m);});
+                m.addEventListener('play', send);
+                m.addEventListener('pause', () => {if(playbackStart?.media===m)setTimeout(()=>resumePlaybackStart(m),0);});
+                for (const event of ['pause','seeked','ratechange','ended']) m.addEventListener(event, send);
                 m.addEventListener('timeupdate', () => { if (Date.now() - lastSent >= 5000) send(); });
             }
             restore(m);
+            schedulePlaybackIntent(m);
         }
         function scan(root) {
             if (root.matches?.('video,audio')) add(root);
             root.querySelectorAll?.('video,audio').forEach(add);
-            for (const m of tracked) if (!m.isConnected) tracked.delete(m);
+        }
+        const pause = HTMLMediaElement.prototype.pause;
+        const play = HTMLMediaElement.prototype.play;
+        function prune() {
+            for (const media of tracked) if (!media.isConnected) {
+                try { pause.call(media); } catch (_) {}
+                tracked.delete(media);
+            }
         }
         const observer = new MutationObserver(records => {
-            for (const record of records) for (const node of record.addedNodes) if (node instanceof Element) scan(node);
+            // A parent record already covers its newly inserted descendants.
+            // Discover each live subtree once instead of rescanning it for
+            // every result, thumbnail and control inserted in the same batch.
+            const pending = new Set();
+            for (const record of records) for (const node of record.addedNodes) {
+                if (node instanceof Element && node.isConnected) pending.add(node);
+            }
+            for (const node of pending) {
+                let covered = false;
+                for (let parent = node.parentElement; parent; parent = parent.parentElement) {
+                    if (pending.has(parent)) { covered = true; break; }
+                }
+                if (!covered) scan(node);
+            }
             // Removal-only mutations must also release detached media buffers.
-            for (const media of tracked) if (!media.isConnected) tracked.delete(media);
+            prune();
+            if(playbackIntent)tracked.forEach(schedulePlaybackIntent);
         });
         observer.observe(document, {childList:true,subtree:true});
         scan(document); send(true);
+        window.__souloMediaResume = send;
+        // WebKit owns BFCache restoration and media teardown. Do not clear
+        // src/srcObject or call load() while a native navigation is in flight.
         window.addEventListener('pagehide', send);
+        window.addEventListener('pageshow', send);
     })();
     """#
 }

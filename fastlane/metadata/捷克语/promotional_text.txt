@@ -1,1 +1,1 @@
-Lepší podpora uživatelských skriptů a @require. Opravy zvuku videí, lepší návrat na stránky a výraznější průběh načítání.
+BT a magnet stahování s výběrem a pokračováním. Přehrávejte podporovaná média během stahování, otevírejte MKV a importujte odkazy ed2k/thunder.

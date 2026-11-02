@@ -282,6 +282,7 @@ struct AddCustomPlatformView: View {
                     selectedRegion = region
                 }
             }
+            .dismissKeyboardOnBackgroundTap()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

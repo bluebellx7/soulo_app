@@ -4,7 +4,7 @@ Scegli Soulo come browser predefinito in Impostazioni per aprire i link da altre
 
 Le schede e i gruppi di siti usati di recente appaiono per primi e la vista si apre dall'alto. L'ordine d'uso si conserva dopo il riavvio.
 
-Download BT: importa file .torrent o link magnet, scegli i file, metti in pausa e riprendi. Su iOS 26 possono continuare in background quando il sistema lo consente; le versioni precedenti salvano i progressi e li mettono in pausa.
+Download BT: importa file .torrent o link magnet, scegli i file, metti in pausa e riprendi. Su iOS 26 possono continuare in background quando il sistema lo consente; le versioni precedenti salvano i progressi e li mettono in pausa. Riproduci i media BT compatibili durante il download e apri file MKV. Importa link ed2k/thunder. I download richiedono fonti disponibili; la riproduzione dipende dai codec.
 
 Scegli cinque scorciatoie facoltative nella home per download, file, segnalibri, cronologia, sfondi e altre pagine. La barra delle schede della libreria si compatta durante lo scorrimento.
 

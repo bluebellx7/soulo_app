@@ -11,6 +11,8 @@ final class DownloadPlaybackSource {
     let persistsPosition: Bool
     weak var webView: WKWebView?
     private var packageToRemove: URL?
+    /// Keeps a playback-scoped local resource alive after its sheet is closed.
+    var resourceLease: AnyObject?
 
     func removePackageWhenReleased(_ url: URL) { packageToRemove = url }
 
@@ -161,7 +163,8 @@ final class DownloadManagerService: ObservableObject {
     func beginDownload(
         suggestedFilename: String,
         sourceURL: URL?,
-        transport: BrowserDownloadItem.Transport = .webKit
+        transport: BrowserDownloadItem.Transport = .webKit,
+        userScriptPolicy: UserScriptDownloadPolicy? = nil
     ) -> (BrowserDownloadItem, URL) {
         let fileName = uniqueFilename(for: DownloadFilenameSanitizer.sanitize(suggestedFilename))
         let destination = storageDirectory.appendingPathComponent(fileName)
@@ -179,7 +182,8 @@ final class DownloadManagerService: ObservableObject {
             progress: 0,
             receivedBytes: 0,
             expectedBytes: 0,
-            transport: transport
+            transport: transport,
+            userScriptPolicy: userScriptPolicy
         )
         downloads.insert(item, at: 0)
         save()
@@ -257,7 +261,7 @@ final class DownloadManagerService: ObservableObject {
         downloads[index].status = .failed
         downloads[index].completedAt = Date()
         downloads[index].errorMessage = error.localizedDescription
-        if downloads[index].transport != .torrent {
+        if ![.torrent, .ed2k].contains(downloads[index].transport) {
             try? FileManager.default.removeItem(at: downloads[index].localURL)
             removeResumeData(id: id)
         }
@@ -308,9 +312,11 @@ final class DownloadManagerService: ObservableObject {
         guard let current = downloads.first(where: { $0.id == item.id }) else { return }
         if current.transport == .torrent {
             TorrentDownloadService.shared.remove(id: current.id, deleteFiles: current.status != .finished)
+        } else if current.transport == .ed2k {
+            ED2KDownloadService.shared.remove(current.id, deleteFiles: current.status != .finished)
         } else if [.inProgress, .paused].contains(current.status) {
             switch current.transport {
-            case .torrent: break
+            case .torrent, .ed2k: break
             case .background:
                 BackgroundDownloadService.shared.abandon(id: current.id)
             case .separated:
@@ -339,6 +345,7 @@ final class DownloadManagerService: ObservableObject {
         finished.forEach {
             removeResumeData(id: $0.id)
             if $0.transport == .torrent { TorrentDownloadService.shared.remove(id: $0.id, deleteFiles: false) }
+            if $0.transport == .ed2k { ED2KDownloadService.shared.remove($0.id, deleteFiles: false) }
         }
         downloads.removeAll { removableStatuses.contains($0.status) }
         save()
@@ -464,7 +471,7 @@ final class DownloadManagerService: ObservableObject {
             return true
         case .webKit:
             return resumeData(id: item.id) == nil
-        case .background, .hls, .separated, .torrent:
+        case .background, .hls, .separated, .torrent, .ed2k:
             return false
         }
     }

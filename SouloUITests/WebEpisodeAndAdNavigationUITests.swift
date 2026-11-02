@@ -2,6 +2,119 @@ import XCTest
 
 final class WebEpisodeAndAdNavigationUITests: XCTestCase {
     @MainActor
+    func testUnprocessedBaiduPlaybackBaseline() throws {
+        guard ProcessInfo.processInfo.environment["SOULO_RAW_BASELINE_QA"] == "1" else {
+            throw XCTSkip("Opt-in isolated WKWebView baseline, requires the separate RawBrowser app")
+        }
+        let profiles = (ProcessInfo.processInfo.environment["SOULO_BASELINE_PROFILES"] ?? "system,inline,autoplay,ua").split(separator: ",").map(String.init)
+        let entries = (ProcessInfo.processInfo.environment["SOULO_BASELINE_ENTRIES"] ?? "title,picture,source").split(separator: ",").map(String.init)
+        var observations: [[String: Any]] = []
+        func state(_ app: XCUIApplication) -> [String: Any]? {
+            let label = app.staticTexts["baseline.state"].firstMatch
+            guard label.exists, let value = label.value as? String, let data = value.data(using: .utf8) else { return nil }
+            return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        }
+        func front(_ value: [String: Any]?) -> [String: Any]? {
+            let views = value?["views"] as? [[String: Any]] ?? []
+            return views.last(where: { $0["inWindow"] as? Bool == true }) ?? views.last
+        }
+        func tapRect(_ name: String, app: XCUIApplication) -> Bool {
+            guard let view = front(state(app)), let frame = view["frame"] as? [String: Double],
+                  let page = view["state"] as? [String: Any], let rect = page[name] as? [String: Double],
+                  let width = rect["w"], width > 0, let height = rect["h"], height > 0,
+                  let innerWidth = page["innerWidth"] as? Double, innerWidth > 0 else { return false }
+            let scale = (frame["w"] ?? innerWidth) / innerWidth
+            let x = (frame["x"] ?? 0) + ((rect["x"] ?? 0) + width / 2) * scale
+            let y = (frame["y"] ?? 0) + ((rect["y"] ?? 0) + height / 2) * scale
+            app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: x, dy: y)).tap()
+            return true
+        }
+        func revealControls(_ app: XCUIApplication) {
+            guard let view=front(state(app)), let frame=view["frame"] as? [String: Double],
+                  let page=view["state"] as? [String:Any], let width=page["innerWidth"] as? Double,
+                  let media=(page["media"] as? [[String:Any]])?.first,
+                  let x=media["x"] as? Double, let y=media["y"] as? Double, let w=media["w"] as? Double, w>0 else { return }
+            let scale=(frame["w"] ?? width)/width
+            app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx:(frame["x"] ?? 0)+(x+w/2)*scale,dy:(frame["y"] ?? 0)+(y+20)*scale)).tap()
+            Thread.sleep(forTimeInterval: 1.1)
+        }
+        for profile in profiles {
+            for entry in entries {
+                let app = XCUIApplication(bundleIdentifier: "com.soulo.qa.RawBrowser.\(profile)")
+                app.launchArguments = ["-profile", profile, "-entry", entry]
+                let cloneAudit = ProcessInfo.processInfo.environment["SOULO_BASELINE_CLONE_AUDIT"] == "1"
+                if cloneAudit { app.launchArguments += ["-cloneAudit", "YES"] }
+                app.launch()
+                var observation: [String: Any] = ["profile": profile, "entry": entry]
+                let title = app.webViews.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "又挖出一部宝藏")).firstMatch
+                guard title.waitForExistence(timeout: 35) else {
+                    observation["unavailable"] = "Reported card not returned"
+                    observations.append(observation)
+                    let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "baseline-\(profile)-\(entry)-unavailable"; shot.lifetime = .keepAlways; add(shot)
+                    app.terminate(); continue
+                }
+                for _ in 0..<6 where !title.isHittable { app.webViews.firstMatch.swipeUp() }
+                if title.frame.maxY + 160 > app.frame.maxY - 70 { app.webViews.firstMatch.swipeUp() }
+                Thread.sleep(forTimeInterval: 6)
+                if ProcessInfo.processInfo.environment["SOULO_BASELINE_UNMUTE_SOURCE"] == "1" {
+                    let sound = app.webViews.images.matching(NSPredicate(format:"label CONTAINS %@","打开视频声音")).firstMatch
+                    if sound.exists && sound.isHittable { sound.tap(); Thread.sleep(forTimeInterval:1.1) }
+                }
+                observation["before"] = state(app)
+                let views = state(app)?["views"] as? [[String: Any]] ?? []
+                XCTAssertFalse(views.isEmpty, "The read-only baseline state must be observable")
+                let expectedScripts = (profile == "script-all" ? 7 : profile == "script-handoff" ? 2 : profile.hasPrefix("script-") ? 1 : 0) + (cloneAudit ? 1 : 0)
+                XCTAssertTrue(views.allSatisfy { $0["scripts"] as? Int == expectedScripts }, "Verify the isolated profile script count")
+                if entry == "source" {
+                    let source = app.webViews.staticTexts["B站精选"].firstMatch
+                    for _ in 0..<3 where !source.isHittable { app.webViews.firstMatch.swipeUp() }
+                    if source.exists && source.isHittable { source.tap() }
+                    else { observation["unavailable"] = "Source label not hittable" }
+                } else if entry == "picture" {
+                    app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: app.frame.midX, dy: title.frame.maxY + 100)).tap()
+                } else {
+                    app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: app.frame.midX, dy: title.frame.midY)).tap()
+                }
+                Thread.sleep(forTimeInterval: 5)
+                observation["afterEntry"] = state(app)
+                let sample = app.buttons["采样"].firstMatch
+                if sample.exists && sample.isHittable { sample.tap() }
+                let entered = XCTAttachment(screenshot: app.screenshot()); entered.name = "baseline-\(profile)-\(entry)-entered"; entered.lifetime = .keepAlways; add(entered)
+                if front(state(app))?["url"] as? String == "m.baidu.com/video/page" {
+                    if !tapRect("soundRect", app: app) { revealControls(app);observation["soundControlAvailable"] = tapRect("soundRect", app: app) }
+                    else { observation["soundControlAvailable"] = true }
+                    Thread.sleep(forTimeInterval: 1.1)
+                    observation["soundTap1"] = state(app)
+                    if !tapRect("soundRect", app: app) { revealControls(app);_ = tapRect("soundRect", app: app) }
+                    Thread.sleep(forTimeInterval: 1.1)
+                    observation["soundTap2"] = state(app)
+                    if !tapRect("playRect", app: app) { revealControls(app);_ = tapRect("playRect", app: app) }
+                    Thread.sleep(forTimeInterval: 1.1)
+                    observation["pauseTap"] = state(app)
+                    // Baidu auto-hides its controls: the first touch can reveal
+                    // them. Observe each retry instead of assuming a tap paused.
+                    for retry in 1...2 {
+                        let page = front(state(app))?["state"] as? [String: Any]
+                        let media = (page?["media"] as? [[String: Any]])?.first
+                        if media?["paused"] as? Bool == true { break }
+                        revealControls(app)
+                        _ = tapRect("playRect", app: app)
+                        Thread.sleep(forTimeInterval: 1.1)
+                        observation["pauseRetry\(retry)"] = state(app)
+                    }
+                }
+                let end = XCTAttachment(screenshot: app.screenshot()); end.name = "baseline-\(profile)-\(entry)-controls"; end.lifetime = .keepAlways; add(end)
+                let tree = XCTAttachment(string: app.debugDescription); tree.name = "baseline-\(profile)-\(entry)-accessibility"; tree.lifetime = .keepAlways; add(tree)
+                observations.append(observation)
+                if let data = try? JSONSerialization.data(withJSONObject: observations, options: [.prettyPrinted,.sortedKeys]), let text = String(data: data, encoding: .utf8) {
+                    let report = XCTAttachment(string: text); report.name = "baseline-observations-\(profile)-\(entry)"; report.lifetime = .keepAlways; add(report)
+                }
+                app.terminate()
+            }
+        }
+    }
+
+    @MainActor
     private func open(_ url: URL, app: XCUIApplication) throws {
         var route = URLComponents()
         route.scheme = "soulo"; route.host = "open"
@@ -10,13 +123,23 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
     }
 
     @MainActor
-    private func launch() -> XCUIApplication {
+    private func launch(incognito: Bool = false, confirmCrossDomain: Bool? = nil) -> XCUIApplication {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
         app.launchArguments = ["-app_language", "en-US", "-privacy_https_upgrade_enabled", "NO",
             "-ad_block_enabled", "YES",
-            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-is_incognito", "NO"]
+            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-is_incognito", incognito ? "YES" : "NO"]
+        if let confirmCrossDomain {
+            app.launchArguments += ["-ad_block_confirm_cross_domain", confirmCrossDomain ? "YES" : "NO"]
+        }
+        if ProcessInfo.processInfo.environment["SOULO_LIVE_SEARCH_VIDEO_QA"] == "1" {
+            app.launchArguments += ["-privacy_cookie_banner_enabled", "YES"]
+            app.launchEnvironment["SOULO_BROWSER_TRACE"] = "1"
+        }
+        if ProcessInfo.processInfo.environment["SOULO_LIVE_DOMAIN_CONFIRMATION_QA"] == "1" {
+            app.launchEnvironment["SOULO_BROWSER_TRACE"] = "1"
+        }
         app.launch()
         return app
     }
@@ -72,6 +195,8 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         <p><a id="handled" href="/wrong.html">Site handled result</a></p>
         <article id="card" data-sf-href="/tracking.html" style="padding:15px">Delegated result card</article>
         <article id="logcard" style="padding:15px">Result metadata card</article>
+        <article id="richcard" style="padding:15px"><h3>Rich video title</h3></article>
+        <article id="landingcard" style="padding:15px"><span>Video landing title</span></article>
         <a id="newtab" target="_blank">Native new window result</a>
         <form id="form" action="/receipt.html"><input name="q" value="movie"><button>Search chosen site</button></form>
         <script>
@@ -81,6 +206,13 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         card.onclick=()=>location.href=other+'/redirect.html';
         logcard.setAttribute('data-log',JSON.stringify({mu:other+'/chosen.html'}));
         logcard.onclick=()=>location.href=other+'/chosen.html';
+        richcard.setAttribute('rl-link-href',other+'/chosen.html');
+        richcard.setAttribute('data-log',JSON.stringify({mu:other+'/wrong.html'}));
+        richcard.innerHTML='<div>'.repeat(18)+'<h3>Rich video title</h3>'+'</div>'.repeat(18);
+        richcard.onclick=()=>window.open(richcard.getAttribute('rl-link-href'),'_blank');
+        landingcard.setAttribute('rl-link-data-url',other+'/chosen.html');
+        landingcard.setAttribute('data-log',JSON.stringify({mu:other+'/wrong.html'}));
+        landingcard.onclick=()=>window.open(landingcard.getAttribute('rl-link-data-url'),'_blank');
         newtab.href=other+'/chosen.html';form.action=other+'/receipt.html';
         </script></body>
         """#
@@ -94,7 +226,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         try open(origin,app:app)
         XCTAssertTrue(app.webViews.staticTexts["Search results fixture"].firstMatch.waitForExistence(timeout:20))
         setConfirmation(true,app:app)
-        for label in ["Site handled result","Delegated result card","Result metadata card","Native new window result"] {
+        for label in ["Site handled result","Delegated result card","Result metadata card","Rich video title","Video landing title","Native new window result"] {
             try open(origin,app:app)
             let target=app.webViews.descendants(matching:.any).matching(NSPredicate(format:"label == %@",label)).firstMatch
             XCTAssertTrue(target.waitForExistence(timeout:10),app.debugDescription)
@@ -109,6 +241,125 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         XCTAssertTrue(app.webViews.staticTexts["Chosen search submitted"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
         XCTAssertFalse(app.buttons["browser.domain-confirmation.continue"].exists)
         setConfirmation(false,app:app)
+    }
+
+    @MainActor
+    func testLiveBaiduVideoCardTitleOpensItsLandingPage() throws {
+        try checkLiveBaiduVideoCard(tapPicture: false)
+    }
+
+    @MainActor
+    func testHistoryBackRevealsContentBeforePendingResourcesFinish() async throws {
+        let origin = "<meta name='viewport' content='width=device-width,initial-scale=1'><body style='font:24px system-ui;padding:20px'><h1>Previous search results</h1><a href='/player.html'>Open video detail</a><iframe src='/hold' style='width:1px;height:1px;border:0'></iframe></body>"
+        let player = "<meta name='viewport' content='width=device-width,initial-scale=1'><h1>Current video detail</h1>"
+        let server = try DownloadPlaybackHTTPFixture(files:["/origin.html":Data(origin.utf8),"/player.html":Data(player.utf8),"/hold":Data("<p>Late resource</p>".utf8)],heldPaths:["/hold"])
+        let root = try await server.start(); defer { server.stop() }
+        let app = launch()
+        try open(root.appendingPathComponent("origin.html"),app:app)
+        let previous = app.webViews.staticTexts["Previous search results"].firstMatch
+        XCTAssertTrue(previous.waitForExistence(timeout:20))
+        Thread.sleep(forTimeInterval:1)
+        let loading = XCTAttachment(screenshot:app.screenshot())
+        loading.name="Gold loading progress before opening detail";loading.lifetime = .keepAlways;add(loading)
+        app.webViews.links["Open video detail"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Current video detail"].firstMatch.waitForExistence(timeout:10))
+        app.buttons["Back"].firstMatch.tap()
+        XCTAssertTrue(previous.waitForExistence(timeout:10))
+        let deadline = Date().addingTimeInterval(5)
+        while Date() < deadline, app.otherElements["browser.history-preview"].exists { Thread.sleep(forTimeInterval:0.05) }
+        XCTAssertFalse(app.otherElements["browser.history-preview"].exists,"Usable content must not wait for the hanging iframe")
+        XCTAssertTrue(previous.isHittable)
+        let screenshot = XCTAttachment(screenshot:app.screenshot())
+        screenshot.name="Back reveals search with gold loading progress";screenshot.lifetime = .keepAlways;add(screenshot)
+    }
+
+    @MainActor
+    func testLiveBaiduVideoCardPictureOpensItsLandingPage() throws {
+        try checkLiveBaiduVideoCard(tapPicture: true)
+    }
+
+    @MainActor
+    private func checkLiveBaiduVideoCard(tapPicture: Bool) throws {
+        guard ProcessInfo.processInfo.environment["SOULO_LIVE_SEARCH_VIDEO_QA"] == "1" else {
+            throw XCTSkip("Opt-in live Baidu video result check")
+        }
+        let app = launch(incognito: ProcessInfo.processInfo.environment["SOULO_MEDIA_NORMAL_QA"] != "1")
+        var search = URLComponents(string: "https://www.baidu.com/s")!
+        search.queryItems = [URLQueryItem(name: "wd", value: "20201年喜剧电影解说")]
+        try open(try XCTUnwrap(search.url), app: app)
+        let title = app.webViews.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "又挖出一部宝藏")).firstMatch
+        guard title.waitForExistence(timeout: 40) else {
+            throw XCTSkip("The live search did not return the reported video card: \(app.debugDescription)")
+        }
+        for _ in 0..<6 where !title.isHittable { app.webViews.firstMatch.swipeUp() }
+        if tapPicture, title.frame.maxY + 120 > app.frame.maxY - 80 { app.webViews.firstMatch.swipeUp() }
+        Thread.sleep(forTimeInterval: 10)
+        let tree = XCTAttachment(string: app.debugDescription)
+        tree.name = "baidu-search-card-accessibility"; tree.lifetime = .keepAlways; add(tree)
+        let before = XCTAttachment(screenshot: app.screenshot())
+        before.name = "baidu-video-card-before-title-tap"; before.lifetime = .keepAlways; add(before)
+        if tapPicture {
+            app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: app.frame.midX, dy: title.frame.maxY + 100)).tap()
+        } else {
+            // The first text span may be covered by Baidu's AI tooltip. Tap
+            // the exposed center of the heading instead of that span's center.
+            app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: app.frame.midX, dy: title.frame.midY)).tap()
+        }
+        let address = app.buttons["Edit Address or Search"].firstMatch
+        var reachedVideo = false
+        for _ in 0..<80 {
+            let value = address.value as? String ?? ""
+            // The compact address button exposes only the host. The original
+            // page link belongs to the video detail page, not its search card.
+            if value.contains("m.baidu.com"), app.webViews.links["原网页"].firstMatch.exists {
+                reachedVideo = true; break
+            }
+            Thread.sleep(forTimeInterval: 0.25)
+        }
+        XCTAssertTrue(reachedVideo, app.debugDescription)
+        guard reachedVideo else { return }
+        // Seeking to the preview position changes the clock once even when
+        // playback is stuck. Sample only after startup/seek have settled.
+        Thread.sleep(forTimeInterval: 8)
+        let clock = app.webViews.otherElements.matching(NSPredicate(format: "label MATCHES %@", "^.+(秒钟|seconds?|minutes?).*[,，].+$")).firstMatch
+        var firstTime: String?, progressed = false
+        for _ in 0..<160 {
+            if clock.exists {
+                let time = clock.label.components(separatedBy: CharacterSet(charactersIn: ",，")).first ?? ""
+                if let firstTime, time != firstTime { progressed = true; break }
+                if firstTime == nil { firstTime = time }
+            }
+            Thread.sleep(forTimeInterval: 0.25)
+        }
+        if tapPicture, progressed {
+            let player = clock.frame
+            app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: player.midX, dy: player.minY + 20)).tap()
+            let sound = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: player.minX + 22, dy: player.maxY - 20))
+            sound.tap()
+            Thread.sleep(forTimeInterval: 2.5)
+            let muted = XCTAttachment(screenshot: app.screenshot())
+            muted.name = "baidu-detail-after-native-mute-tap"; muted.lifetime = .keepAlways; add(muted)
+            sound.tap()
+            Thread.sleep(forTimeInterval: 1)
+            app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: player.midX, dy: player.midY)).tap()
+            Thread.sleep(forTimeInterval: 0.5)
+            let afterFirstTap = clock.label
+            Thread.sleep(forTimeInterval: 1.2)
+            if clock.label != afterFirstTap {
+                // The controls auto-hide. In that state the first tap reveals
+                // them and the next tap activates the visible pause control.
+                app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: player.midX, dy: player.midY)).tap()
+                Thread.sleep(forTimeInterval: 0.5)
+            }
+            let pausedTime = clock.label
+            Thread.sleep(forTimeInterval: 1.5)
+            XCTAssertEqual(clock.label, pausedTime, "The site's pause button must stop the actual detail timeline")
+        }
+        let after = XCTAttachment(screenshot: app.screenshot())
+        after.name = "baidu-video-card-after-title-tap"; after.lifetime = .keepAlways; add(after)
+        let detailTree = XCTAttachment(string: app.debugDescription)
+        detailTree.name = "baidu-detail-accessibility"; detailTree.lifetime = .keepAlways; add(detailTree)
+        XCTAssertTrue(progressed, "The real destination video did not advance: \(app.debugDescription)")
     }
 
     @MainActor
@@ -217,6 +468,23 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         XCTAssertTrue(episodes.waitForExistence(timeout: timeout), app.debugDescription)
         episodes.tap()
         XCTAssertTrue(app.buttons["browser.episodes-order"].waitForExistence(timeout: 5), app.debugDescription)
+    }
+
+    @MainActor
+    private func selectFixtureTab(title: String, app: XCUIApplication) {
+        let mode=app.buttons["tabs.view-mode"]
+        if mode.exists, mode.value as? String != "Group by Domain" { mode.tap() }
+        // The top tab strip exposes the same labels as the overview cards.
+        // Scope to the overview so the most recently used source is selected.
+        let groups=app.scrollViews["tabs.groups"].firstMatch
+        XCTAssertTrue(groups.waitForExistence(timeout:5),app.debugDescription)
+        let tab=groups.buttons.matching(NSPredicate(format:"label BEGINSWITH %@",title+",")).firstMatch
+        for _ in 0..<12 {
+            if tab.exists, tab.isHittable, app.frame.insetBy(dx:20,dy:70).contains(CGPoint(x:tab.frame.midX,y:tab.frame.midY)) { break }
+            groups.swipeUp()
+        }
+        XCTAssertTrue(tab.exists && tab.isHittable,app.debugDescription)
+        tab.tap()
     }
 
     @MainActor
@@ -637,6 +905,68 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
     }
 
     @MainActor
+    func testLiveBaiduResultClickDoesNotRepeatDomainConfirmation() throws {
+        guard ProcessInfo.processInfo.environment["SOULO_LIVE_DOMAIN_CONFIRMATION_QA"] == "1" else {
+            throw XCTSkip("Opt-in live Baidu result click")
+        }
+        let app=launch(confirmCrossDomain:true)
+        var search=URLComponents(string:"https://www.baidu.com/s")!
+        search.queryItems=[URLQueryItem(name:"wd",value:"MDN JavaScript Array")]
+        try open(try XCTUnwrap(search.url),app:app)
+        let result=app.webViews.otherElements.matching(NSPredicate(format:"label == %@","Array - JavaScript | MDN")).firstMatch
+        guard result.waitForExistence(timeout:35) else { throw XCTSkip("The live search did not return the intended MDN result") }
+        for _ in 0..<6 where !result.isHittable { app.webViews.firstMatch.swipeUp() }
+        let before=XCTAttachment(screenshot:app.screenshot());before.name="Live Baidu result before click";before.lifetime = .keepAlways;add(before)
+        result.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.5)).tap()
+        let confirm=app.buttons["browser.domain-confirmation.continue"]
+        let address=app.buttons["Edit Address or Search"].firstMatch
+        var arrived=false
+        for _ in 0..<80 {
+            if confirm.exists { XCTFail("A chosen Baidu result must retain its declared destination: \(app.debugDescription)");return }
+            let host=address.value as? String ?? ""
+            // Baidu may return the official MDN page or a university mirror.
+            if !host.isEmpty && host != "baidu.com" && !host.hasSuffix(".baidu.com") { arrived=true;break }
+            Thread.sleep(forTimeInterval:0.25)
+        }
+        XCTAssertTrue(arrived,"The chosen external result did not open: \(app.debugDescription)")
+        let heading=app.webViews.staticTexts["Array"].firstMatch
+        XCTAssertTrue(heading.waitForExistence(timeout:20) && heading.isHittable,"Verify actual destination content, not only its address")
+        let after=XCTAttachment(screenshot:app.screenshot());after.name="Live Baidu external destination";after.lifetime = .keepAlways;add(after)
+    }
+
+    @MainActor
+    func testDeclaredSearchDestinationKeepsClickIntentThroughIntermediateDocument() async throws {
+        let origin="<meta name='viewport' content='width=device-width,initial-scale=1'><article id='result'><a href='/bridge.html'>Chosen search result</a></article><script>result.setAttribute('data-log',JSON.stringify({mu:location.origin.replace('127.0.0.1','localhost')+'/chosen.html'}));</script>"
+        let bridge="<body>Opening result…<script>setTimeout(()=>location.replace(location.origin.replace('127.0.0.1','localhost')+'/chosen.html'),250)</script></body>"
+        let server=try DownloadPlaybackHTTPFixture(files:["/origin.html":Data(origin.utf8),"/bridge.html":Data(bridge.utf8),"/chosen.html":Data("<h1>Chosen result destination</h1>".utf8)])
+        let root=try await server.start();defer { server.stop() }
+        let app=launch(confirmCrossDomain:true)
+        try open(root.appendingPathComponent("origin.html"),app:app)
+        let result=app.webViews.links["Chosen search result"].firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout:15));result.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Chosen result destination"].firstMatch.waitForExistence(timeout:8),app.debugDescription)
+        XCTAssertFalse(app.buttons["browser.domain-confirmation.continue"].exists,"The clicked result already declares this exact destination")
+    }
+
+    @MainActor
+    func testUndeclaredDestinationAfterIntermediateDocumentStillNeedsConfirmation() async throws {
+        let origin="<meta name='viewport' content='width=device-width,initial-scale=1'><a href='/bridge.html'>Open intermediate page</a>"
+        let bridge="<body>Intermediate content<script>setTimeout(()=>location.replace(location.origin.replace('127.0.0.1','localhost')+'/unrelated.html'),250)</script></body>"
+        let server=try DownloadPlaybackHTTPFixture(files:["/origin.html":Data(origin.utf8),"/bridge.html":Data(bridge.utf8),"/unrelated.html":Data("<h1>Unrelated destination</h1>".utf8)])
+        let root=try await server.start();defer { server.stop() }
+        let app=launch(confirmCrossDomain:true)
+        try open(root.appendingPathComponent("origin.html"),app:app)
+        let result=app.webViews.links["Open intermediate page"].firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout:15));result.tap()
+        let confirm=app.buttons["browser.domain-confirmation.continue"]
+        XCTAssertTrue(confirm.waitForExistence(timeout:10),"Unrelated automatic destinations must still ask")
+        XCTAssertFalse(app.webViews.staticTexts["Unrelated destination"].firstMatch.exists)
+        confirm.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Unrelated destination"].firstMatch.waitForExistence(timeout:10))
+        XCTAssertFalse(confirm.exists)
+    }
+
+    @MainActor
     func testCrossDomainSettingOnlyConfirmsAutomaticNavigation() async throws {
         let html = #"""
         <html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -644,13 +974,16 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         <a id="other">Other website</a><p><a href='/redirect.html'>Chosen redirect</a></p><iframe id="embed" style="height:40px"></iframe>
         <script>const other=location.origin.replace('127.0.0.1','localhost');document.getElementById('other').href=other+'/chosen.html';document.getElementById('embed').src=other+'/embedded.html';</script></body></html>
         """#
-        let server=try DownloadPlaybackHTTPFixture(files:["/origin.html":Data(html.utf8),"/chosen.html":Data("<body>Confirmed destination</body>".utf8),"/embedded.html":Data("<body>Embedded content</body>".utf8),"/automatic.html":Data("<head><title>Automatic origin</title></head><body><h3>Automatic origin</h3><script>setTimeout(()=>location.href='/redirect.html',600)</script></body>".utf8)],redirects:["/redirect.html":(host:"localhost",path:"/chosen.html")])
+        let server=try DownloadPlaybackHTTPFixture(files:["/origin.html":Data(html.utf8),"/chosen.html":Data("<body>Confirmed destination</body>".utf8),"/embedded.html":Data("<body>Embedded content</body>".utf8),"/automatic.html":Data("<head><title>Automatic origin</title></head><body><h3>Automatic origin</h3><script>document.title='Automatic origin '+location.port+location.search;setTimeout(()=>location.href='/redirect.html',600)</script></body>".utf8)],redirects:["/redirect.html":(host:"localhost",path:"/chosen.html")])
         let root=try await server.start();defer{server.stop()}
         let app=launch(),origin=root.appendingPathComponent("origin.html")
         try open(origin,app:app)
         XCTAssertTrue(app.webViews.staticTexts["Domain fixture"].firstMatch.waitForExistence(timeout:20))
         let confirm=app.buttons["browser.domain-confirmation.continue"],cancel=app.buttons["browser.domain-confirmation.cancel"]
         XCTAssertFalse(confirm.exists)
+        // This scenario changes the preference itself. Start from a known
+        // value even when a previous interrupted UI run left it enabled.
+        setConfirmation(false,app:app)
         setConfirmation(true,app:app,expectDefaultOff:true)
         app.webViews.links["Other website"].firstMatch.tap()
         XCTAssertTrue(app.webViews.staticTexts["Confirmed destination"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
@@ -673,8 +1006,9 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         let screenshot=XCTAttachment(screenshot:app.screenshot());screenshot.name="Automatic navigation confirmation";screenshot.lifetime = .keepAlways;add(screenshot)
         confirm.tap()
         XCTAssertTrue(app.webViews.staticTexts["Confirmed destination"].firstMatch.waitForExistence(timeout:10))
-        for horizontalEdge in [0.05,0.95] {
-            try open(root.appendingPathComponent("automatic.html"),app:app)
+        for (iteration,horizontalEdge) in [0.05,0.95].enumerated() {
+            let source=root.appendingPathComponent("automatic.html").appending(queryItems:[URLQueryItem(name:"qa",value:String(iteration))])
+            try open(source,app:app)
             let newTab=app.buttons["browser.domain-confirmation.new-tab"]
             XCTAssertTrue(newTab.waitForExistence(timeout:10),app.debugDescription)
             XCTAssertTrue(newTab.isEnabled)
@@ -683,9 +1017,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
             newTab.coordinate(withNormalizedOffset:CGVector(dx:horizontalEdge,dy:0.5)).tap()
             XCTAssertTrue(app.webViews.staticTexts["Confirmed destination"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
             app.buttons["browser.tabs"].tap()
-            let retained=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Automatic origin,")).firstMatch
-            XCTAssertTrue(retained.waitForExistence(timeout:5),app.debugDescription)
-            retained.tap()
+            selectFixtureTab(title:"Automatic origin \(root.port ?? 0)?qa=\(iteration)",app:app)
             XCTAssertTrue(app.webViews.staticTexts["Automatic origin"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
             XCTAssertFalse(confirm.exists)
         }
@@ -723,6 +1055,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         <title>Automatic POST origin</title><h3>Automatic POST origin</h3>
         <form id="submission" method="post"><input name="query" value="chosen"></form>
         <script>
+        document.title='Automatic POST origin '+location.port;
         submission.action=location.origin.replace('127.0.0.1','localhost')+'/post-destination.html';
         setTimeout(()=>submission.submit(),600);
         </script>
@@ -743,9 +1076,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         newTab.tap()
         XCTAssertTrue(app.webViews.staticTexts["New tab destination"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
         app.buttons["browser.tabs"].tap()
-        let retained=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Automatic POST origin,")).firstMatch
-        XCTAssertTrue(retained.waitForExistence(timeout:5),app.debugDescription)
-        retained.tap()
+        selectFixtureTab(title:"Automatic POST origin \(root.port ?? 0)",app:app)
         XCTAssertTrue(app.webViews.staticTexts["Automatic POST origin"].firstMatch.waitForExistence(timeout:10))
         XCTAssertFalse(app.buttons["browser.domain-confirmation.continue"].exists)
         setConfirmation(false,app:app)

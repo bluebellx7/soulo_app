@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "Açık sayfalar, bir komut dosyası yüklendikten, düzenlendikten, etkinleştirildikten, devre dışı bırakıldıktan veya kaldırıldıktan sonra yeniden yüklenir.";
 "userscript_experimental_badge" = "Uyumluluk";
 "userscript_experimental_title" = "UserScript uyumluluğu";
-"userscript_experimental_desc" = "Site kurallarını, belge başlangıç/bitişini, kapsamlı GM depolama ve sayfa API'lerini, komut dosyası komutlarını, bildirimleri, sekmeleri, indirmeleri, çerezleri, kaynakları ve izin kapsamlı istekleri destekler. Yüklemeden önce her komut dosyasını inceleyin; harici @require dosyaları yürütülmez.";
+"userscript_experimental_desc" = "Site kurallarını, belge başlangıç/bitişini, kapsamlı GM depolama ve sayfa API'lerini, komut dosyası komutlarını, bildirimleri, sekmeleri, indirmeleri, çerezleri, kaynakları ve izin kapsamlı istekleri destekler. Yüklemeden önce her komut dosyasını inceleyin.";
 "extension_choose_file" = "Dosya veya klasör seç…";
 "extension_installing" = "Uzantı kontrol ediliyor ve yükleniyor…";
 "extension_install_failed" = "Uzantı Yüklenemedi";
@@ -659,7 +659,7 @@
 "userscript_new" = "Yeni Komut Dosyası";
 "userscript_edit" = "Komut Dosyasını Düzenle";
 "userscript_choose_file" = "Betik seç…";
-"userscript_install_footer" = "Geçerli Soulo sekmesinde açmak için bir kaynak satırına dokunun. Bir .user.js bağlantısı bir yükleme onayını açar. Standart JavaScript ve geniş bir GM API kümesi desteklenir; komut dosyaları Özel Tarama'da çalışmaz ve harici @require dosyaları yürütülmez.";
+"userscript_install_footer" = "Geçerli Soulo sekmesinde açmak için bir kaynak satırına dokunun. Bir .user.js bağlantısı bir yükleme onayını açar. Standart JavaScript ve geniş bir GM API kümesi desteklenir. UserScript'ler Özel Dolaşma'da çalışmaz.";
 "userscript_install_failed" = "UserScript Yüklenemedi";
 "web_extension_temporarily_disabled" = "Uyumluluk testi tamamlanırken standart tarayıcı uzantıları geçici olarak kullanılamıyor.";
 "userscript_unreadable" = "Seçilen komut dosyası UTF-8 metni olarak okunamadı.";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "Kısmen destekleniyor";
 "userscript_docs_partial_desc" = "Ağ istekleri, yükleme/ilerleme ve çerez aktarımını atlar. Bildirimler sayfa içidir, kaynak API'leri eşzamansızdır ve değer değişikliği dinleyicileri geçerli sayfa tarafından yapılan değişiklikleri bildirir. Güncelleme kontrolleri manueldir.";
 "userscript_docs_unsupported_title" = "Şu anda desteklenmiyor";
-"userscript_docs_unsupported_desc" = "Harici @require yürütme, GM_webRequest müdahalesi, GM_audio, sandbox/run-in izolasyonu, otomatik güncelleme kontrolleri ve WKWebView'ün sağlayamadığı tam olarak yalnızca masaüstüne yönelik davranışlar.";
+"userscript_docs_unsupported_desc" = "GM_webRequest müdahalesi, GM_audio, sandbox/run-in izolasyonu, otomatik güncelleme kontrolleri ve WKWebView'ün sağlayamadığı tam olarak yalnızca masaüstüne yönelik davranışlar.";
 "userscript_docs_metadata_title" = "Meta veriler";
 "userscript_docs_metadata_identity" = "İnsan tarafından okunabilen komut dosyası adı ve isteğe bağlı açıklama, kurulumdan önce ve komut dosyası ayrıntılarında gösterilir.";
 "userscript_docs_metadata_version" = "Sabit, benzersiz bir ad alanı kullanın ve paketteki komut dosyası değiştiğinde sürümü artırın.";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "Ayrıcalıklı ağ istekleri tarafından kullanılan ana bilgisayarları yetkilendirin. Bu olmadan, istekler geçerli sayfa ana bilgisayarıyla sınırlıdır.";
 "userscript_docs_metadata_urls" = "İsteğe bağlı kimlik ve güncelleme meta verileri. Soulo bunları aynı betiğin yeniden kurulumunu tanımak için kullanır.";
 "userscript_docs_metadata_resource" = "Adlandırılmış bir kaynak bildirir. Eşleşen bir @connect ana bilgisayarı ekleyin; modern kaynak API'si beklenene kadar getirme işlemi ertelenir.";
-"userscript_docs_metadata_require" = "Harici gereksinimler kurulum sırasında açıklanır ancak indirilmez veya yürütülmez; komut dosyaları bağımsız olmalıdır.";
+"userscript_docs_metadata_require" = "HTTPS @require dosyaları yükleme veya kaydetme sırasında indirilip önbelleğe alınır ve betikten önce sırayla çalıştırılır.";
 "userscript_docs_api_title" = "Desteklenen ayrıcalıklı API'ler";
 "userscript_docs_api_info" = "Komut dosyası işleyicisini, Soulo sürümünü ve ayrıştırılmış komut dosyası meta verilerini okur. Eski ve modern formda mevcuttur.";
 "userscript_docs_api_unsafe_window" = "unsafeWindow izni açıkça bildirildiğinde geçerli sayfa penceresini sağlar.";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "Saklanan değerler JSON ile serileştirilebilir olmalıdır: değer başına en fazla 256 KB ve komut dosyası başına toplam 1 MB.";
 "userscript_docs_limits_network" = "Ayrıcalıklı yanıtlar 20 MB ile sınırlıdır, zaman aşımı 1-60 saniyeye sabitlenir ve Cookie/Host/Origin başlıkları kabul edilmez.";
 "userscript_docs_limits_private" = "UserScript'ler Özel Dolaşma'da çalışmaz.";
-"userscript_docs_limits_require" = "Harici @require dosyaları hiçbir zaman yürütülmez. CDN bağımlılıklarından kaçının ve gerekli tüm mantığı komut dosyasına ekleyin.";
+"userscript_docs_limits_require" = "HTTPS @require dosyaları yükleme veya kaydetme sırasında indirilip önbelleğe alınır ve betikten önce sırayla çalıştırılır.";
 "userscript_docs_template_title" = "Minimum şablon";
 "userscript_docs_template_footer" = "Benzersiz bir ad alanı ve mümkün olan en dar @match ve @grant bildirimlerini kullanın.";
 "userscript_too_large" = "Seçilen komut dosyası 2 MB sınırını aşıyor.";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "Ek izin yok";
 "userscript_network_title" = "Ağ Erişimi";
 "userscript_external_requirements" = "Harici Bağımlılıklar";
-"userscript_external_requirements_desc" = "Bu komut dosyası harici @require dosyaları bildiriyor. Soulo bunları otomatik yüklemez.";
+"userscript_external_requirements_desc" = "HTTPS @require dosyaları yükleme veya kaydetme sırasında indirilip önbelleğe alınır ve betikten önce sırayla çalıştırılır.";
 "userscript_metadata_title" = "Komut Dosyası Ayrıntıları";
 "userscript_unsupported_permissions" = "Henüz desteklenmiyor: %@";
 "userscript_sample_name" = "Okuma İlerleme Çubuğu";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "Kart görünümü";
 "tab_close_group" = "Grubu Kapat";
 "tab_close_group_confirm" = "“%@” grubundaki tüm sekmeler kapatılsın mı (%d)?";
+
+"userscript_require_failed" = "%@ bağımlılığı yüklenemedi: %@";
+"userscript_require_integrity_failed" = "Bağımlılığın bütünlük denetimi başarısız oldu.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "Yönet";
+"extension_update" = "Güncelle";
+"extension_rollback" = "Önceki sürümü geri yükle";
+"extension_blocked_sites" = "Engellenen siteler";
+"extension_diagnostics" = "Uyumluluk";
+"extension_review_access" = "Bu uzantının erişebileceği izinleri ve web sitelerini seçin.";
+"extension_limit_commands" = "Uzantı klavye kısayolları iOS’te kullanılamaz.";
+"extension_limit_notifications" = "Bildirimler gösterilebilir, ancak tıklama ve kapatma olayları desteklenmez.";
+"extension_limit_offscreen" = "Ekran dışı belgeler yalnızca ses oynatmayı destekler.";

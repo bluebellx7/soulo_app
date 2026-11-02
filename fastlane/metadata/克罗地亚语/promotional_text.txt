@@ -1,1 +1,1 @@
-Bolja podrška za korisničke skripte i @require. Ispravci zvuka videa, bolji povratak na stranice i vidljiviji napredak učitavanja.
+BT i magnet preuzimanja uz odabir i nastavak. Reproducirajte podržane medije tijekom preuzimanja, otvorite MKV i uvezite ed2k/thunder poveznice.

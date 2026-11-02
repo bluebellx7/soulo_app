@@ -1,6 +1,8 @@
 1.2.7
 
 • BT-Downloads: Importiere .torrent-Dateien oder Magnet-Links, wähle Dateien, pausiere und setze fort. Unter iOS 26 können Downloads im Hintergrund weiterlaufen, wenn das System es zulässt; ältere Versionen speichern den Fortschritt und pausieren.
+• Spiele unterstützte BT-Medien während des Downloads ab und öffne MKV-Dateien. Importiere ed2k/thunder-Links. Downloads brauchen verfügbare Quellen; die Wiedergabe hängt von Codecs ab.
+• Die Baidu-Suchoptimierung ist standardmäßig aktiv. Das Skript lässt sich unter Erweiterungen ansehen oder deaktivieren.
 • Wähle fünf optionale Startseiten-Kurzbefehle für Downloads, Dateien, Lesezeichen, Verlauf, Hintergrundbilder und weitere Seiten. Die Tab-Leiste der Bibliothek wird beim Scrollen kompakter.
 • Verbesserte Userscript-Kompatibilität, einschließlich externer Abhängigkeiten über @require.
 • Fälle mit Ton trotz stummgeschaltetem Webvideo oder doppelter Wiedergabe auf einigen Webseiten behoben.

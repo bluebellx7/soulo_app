@@ -639,7 +639,7 @@
 "userscripts_reload_note" = "安裝、編輯、啟用、停用或刪除腳本後，開啟的頁面會重新載入。";
 "userscript_experimental_badge" = "相容性";
 "userscript_experimental_title" = "UserScript 相容性";
-"userscript_experimental_desc" = "支援網站規則、文件開始/結束、廣泛的 GM 儲存和頁面 API、腳本命令、通知、標籤、下載、cookie、資源和權限範圍的請求。安裝前檢查每個腳本；外部@require 檔案不會被執行。";
+"userscript_experimental_desc" = "支援網站規則、文件開始/結束、廣泛的 GM 儲存和頁面 API、腳本命令、通知、標籤、下載、cookie、資源和權限範圍的請求。安裝前檢查每個腳本。";
 "extension_choose_file" = "選擇檔案或資料夾…";
 "extension_installing" = "檢查並安裝擴充功能...";
 "extension_install_failed" = "無法安裝擴充功能";
@@ -665,7 +665,7 @@
 "userscript_new" = "新腳本";
 "userscript_edit" = "編輯腳本";
 "userscript_choose_file" = "選擇腳本…";
-"userscript_install_footer" = "點選來源行可在目前 Soulo 標籤中開啟。 .user.js 連結會開啟安裝確認訊息。支援標準 JavaScript 和廣泛的 GM API；腳本不會在無痕瀏覽中運行，並且不會執行外部 @require 檔案。";
+"userscript_install_footer" = "點選來源行可在目前 Soulo 標籤中開啟。 .user.js 連結會開啟安裝確認訊息。支援標準 JavaScript 和廣泛的 GM API。UserScripts 不在無痕瀏覽中運作。";
 "userscript_install_failed" = "UserScript 無法安裝";
 "web_extension_temporarily_disabled" = "相容性測試完成後，標準瀏覽器擴充功能暫時無法使用。";
 "userscript_unreadable" = "無法將所選腳本讀取為 UTF-8 文字。";
@@ -690,7 +690,7 @@
 "userscript_docs_partial_title" = "部分支持";
 "userscript_docs_partial_desc" = "網路請求省略上傳/進度和 cookie 傳輸。通知位於頁內，資源 API 是非同步的，值變更偵聽器報告目前頁面所做的變更。更新檢查是手動的。";
 "userscript_docs_unsupported_title" = "目前不支援";
-"userscript_docs_unsupported_desc" = "外部 @require 執行、GM_webRequest 攔截、GM_audio、沙箱/運行隔離、自動更新檢查以及 WKWebView 無法提供的精確的僅桌面行為。";
+"userscript_docs_unsupported_desc" = "GM_webRequest 攔截、GM_audio、沙箱/運行隔離、自動更新檢查以及 WKWebView 無法提供的精確的僅桌面行為。";
 "userscript_docs_metadata_title" = "元數據";
 "userscript_docs_metadata_identity" = "在安裝之前和腳本詳細資訊中顯示人類可讀的腳本名稱和可選描述。";
 "userscript_docs_metadata_version" = "使用穩定、唯一的命名空間，並在捆綁腳本發生變更時增加版本。";
@@ -701,7 +701,7 @@
 "userscript_docs_metadata_connect" = "授權特權網路請求使用的主機。如果沒有它，請求將僅限於目前頁面主機。";
 "userscript_docs_metadata_urls" = "可選身份和更新元資料。 Soulo 使用這些來識別相同腳本的重新安裝。";
 "userscript_docs_metadata_resource" = "聲明一個命名資源。新增匹配的@connect主機；獲取會被推遲，直到等待現代資源 API 為止。";
-"userscript_docs_metadata_require" = "外部要求在安裝期間公開，但不下載或執行；腳本必須是獨立的。";
+"userscript_docs_metadata_require" = "安裝或儲存時下載並快取 HTTPS @require 檔案，在腳本主體前依宣告順序執行。";
 "userscript_docs_api_title" = "支援的特權 API";
 "userscript_docs_api_info" = "讀取腳本處理程序、Soulo 版本和解析的腳本元資料。有傳統形式和現代形式可供選擇。";
 "userscript_docs_api_unsafe_window" = "當明確聲明 unsafeWindow 授予時提供目前頁面視窗。";
@@ -736,7 +736,7 @@
 "userscript_docs_limits_storage" = "儲存的值必須是 JSON 可序列化的：每個值最多 256 KB，每個腳本總共 1 MB。";
 "userscript_docs_limits_network" = "特權回應限制為 20 MB，超時限制為 1-60 秒，且不接受 Cookie/Host/Origin 標頭。";
 "userscript_docs_limits_private" = "UserScripts 不在無痕瀏覽中運作。";
-"userscript_docs_limits_require" = "外部 @require 檔案永遠不會被執行。避免 CDN 依賴性並在腳本中包含所有必需的邏輯。";
+"userscript_docs_limits_require" = "安裝或儲存時下載並快取 HTTPS @require 檔案，在腳本主體前依宣告順序執行。";
 "userscript_docs_template_title" = "最小模板";
 "userscript_docs_template_footer" = "使用唯一的命名空間和盡可能窄的 @match 和 @grant 聲明。";
 "userscript_too_large" = "所選指令碼超過 2 MB 大小限制。";
@@ -750,7 +750,7 @@
 "userscript_no_extra_permissions" = "沒有額外權限";
 "userscript_network_title" = "網路存取";
 "userscript_external_requirements" = "外部相依項目";
-"userscript_external_requirements_desc" = "此指令碼宣告了外部 @require 檔案，Soulo 不會自動載入。";
+"userscript_external_requirements_desc" = "安裝或儲存時下載並快取 HTTPS @require 檔案，在腳本主體前依宣告順序執行。";
 "userscript_metadata_title" = "指令碼詳細資料";
 "userscript_unsupported_permissions" = "尚不支持：%@";
 "userscript_sample_name" = "閱讀進度列";
@@ -891,3 +891,17 @@
 "tab_view_carousel" = "卡片檢視";
 "tab_close_group" = "關閉整組";
 "tab_close_group_confirm" = "關閉「%@」中的所有分頁（%d 個）？";
+
+"userscript_require_failed" = "無法載入依賴 %@：%@";
+"userscript_require_integrity_failed" = "依賴檔案完整性驗證失敗。";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "管理";
+"extension_update" = "更新";
+"extension_rollback" = "回復上一版";
+"extension_blocked_sites" = "停用網站";
+"extension_diagnostics" = "相容性";
+"extension_review_access" = "選擇此擴充功能可使用的權限和可存取的網站。";
+"extension_limit_commands" = "iOS 不支援擴充功能鍵盤快速鍵。";
+"extension_limit_notifications" = "支援顯示通知，暫不支援通知點擊和關閉事件。";
+"extension_limit_offscreen" = "離屏文件僅支援音訊播放。";

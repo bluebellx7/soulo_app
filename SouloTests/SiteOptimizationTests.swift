@@ -68,11 +68,12 @@ final class SiteOptimizationTests: XCTestCase {
         XCTAssertNil(rule.navigationRequest(to: URL(string: "https://example.com/" + String(repeating: "a", count: 8200))!, from: source))
     }
 
-    func testDefaultOnExplicitOffAndCloudBackupRoundTrip() throws {
+    func testDefaultOnPreservesExplicitChoiceAndCloudBackupRoundTrip() throws {
         let rule = try rule(), (defaults, name) = isolatedDefaults()
         defer { defaults.removePersistentDomain(forName: name) }
         let settings = SiteOptimizationSettings(defaults: defaults)
         XCTAssertTrue(settings.isEnabled(rule))
+        XCTAssertEqual(SiteOptimizationRules.preferenceDefaults[rule.preferenceKey] as? Bool, true)
         XCTAssertTrue(CloudSyncService.syncedKeys.contains(rule.preferenceKey))
         var changes = 0
         let observer = settings.$values.dropFirst().sink { _ in changes += 1 }
@@ -80,10 +81,12 @@ final class SiteOptimizationTests: XCTestCase {
         defaults.set("unrelated", forKey: "test-other-setting"); settings.reload()
         XCTAssertEqual(changes, 0)
         settings.setEnabled(false, for: rule)
-        XCTAssertFalse(SiteOptimizationSettings(defaults: defaults).isEnabled(rule))
+        XCTAssertFalse(SiteOptimizationSettings(defaults: defaults).isEnabled(rule), "Preserve an explicit existing opt-out")
         XCTAssertEqual(changes, 1)
         let backup = try CloudSettingsSyncEngine.propertyList(CloudSettingsSyncEngine.snapshot(defaults))
         XCTAssertEqual(try CloudSettingsSyncEngine.values(backup)[rule.preferenceKey] as? Bool, false)
+        settings.setEnabled(true, for: rule)
+        XCTAssertTrue(SiteOptimizationSettings(defaults: defaults).isEnabled(rule))
         defaults.set("NO", forKey: rule.preferenceKey); settings.reload()
         XCTAssertFalse(settings.isEnabled(rule))
     }
@@ -105,6 +108,7 @@ final class SiteOptimizationTests: XCTestCase {
         let rule = try rule(), (defaults, name) = isolatedDefaults()
         defer { defaults.removePersistentDomain(forName: name) }
         let settings = SiteOptimizationSettings(defaults: defaults), controller = SiteOptimizationController(settings: settings)
+        settings.setEnabled(true, for: rule)
         let web = WKWebView()
         controller.synchronize(on: web, navigationEnabled: true) { _ in XCTFail("Synthetic click must not navigate"); return false }
         defer { controller.detach() }
@@ -140,7 +144,11 @@ final class SiteOptimizationTests: XCTestCase {
     }
 
     func testBridgeIsIsolatedAndRejectsUnsafeDestinations() async throws {
-        let rule = try rule(), web = WKWebView(), controller = SiteOptimizationController()
+        let rule = try rule(), web = WKWebView(), (defaults, name) = isolatedDefaults()
+        defer { defaults.removePersistentDomain(forName: name) }
+        let settings = SiteOptimizationSettings(defaults: defaults)
+        settings.setEnabled(true, for: rule)
+        let controller = SiteOptimizationController(settings: settings)
         var navigations: [URLRequest] = []
         controller.synchronize(on: web, navigationEnabled: true) { navigations.append($0); return false }
         defer { controller.detach() }
@@ -167,6 +175,7 @@ final class SiteOptimizationTests: XCTestCase {
         var rule = try rule(); rule.hosts = ["127.0.0.1"]
         let (defaults, name) = isolatedDefaults(); defer { defaults.removePersistentDomain(forName: name) }
         let settings = SiteOptimizationSettings(defaults: defaults, rules: [rule])
+        settings.setEnabled(true, for: rule)
         let controller = SiteOptimizationController(rules: [rule], settings: settings)
         let server = try DownloadPlaybackHTTPFixture(files: ["/s":Data(html.utf8), "/article":Data("<h1 id='article'>Article</h1>".utf8)])
         let root = try await server.start(); defer { server.stop() }

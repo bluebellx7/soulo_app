@@ -17,5 +17,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)resumeMetadata:(NSString *)identifier;
 - (BOOL)remove:(NSString *)identifier deleteFiles:(BOOL)deleteFiles;
 - (void)setDownloadLimit:(NSInteger)bytesPerSecond identifier:(NSString *)identifier;
+/// Returns only bytes from a hash-verified piece already written to disk.
+/// Empty data means the requested piece is still downloading (or the offset is EOF).
+/// nil is reserved for NSError so Swift does not import buffering as a thrown error.
+- (nullable NSData *)availableDataForIdentifier:(NSString *)identifier fileIndex:(NSInteger)fileIndex
+                                       offset:(int64_t)offset maximumLength:(NSInteger)maximumLength
+                                        error:(NSError **)error NS_SWIFT_NAME(availableData(id:file:offset:length:));
+- (void)endStreaming:(NSString *)identifier NS_SWIFT_NAME(endStreaming(id:));
 @end
 NS_ASSUME_NONNULL_END

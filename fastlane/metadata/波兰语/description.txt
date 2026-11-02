@@ -4,7 +4,7 @@ Wybierz Soulo jako domyślną przeglądarkę w Ustawieniach, aby otwierać linki
 
 Ostatnio używane karty i grupy witryn pojawiają się jako pierwsze, a przegląd otwiera się od góry. Kolejność użycia jest zachowana po restarcie.
 
-Pobieranie BT: importuj pliki .torrent lub linki magnet, wybieraj pliki, wstrzymuj i wznawiaj. W iOS 26 pobieranie może działać w tle, gdy system na to pozwala; starsze wersje zapisują postęp i wstrzymują zadanie.
+Pobieranie BT: importuj pliki .torrent lub linki magnet, wybieraj pliki, wstrzymuj i wznawiaj. W iOS 26 pobieranie może działać w tle, gdy system na to pozwala; starsze wersje zapisują postęp i wstrzymują zadanie. Odtwarzaj obsługiwane media BT podczas pobierania i otwieraj pliki MKV. Importuj linki ed2k/thunder. Pobieranie wymaga dostępnych źródeł; odtwarzanie zależy od kodeków.
 
 Wybierz pięć opcjonalnych skrótów na stronie głównej do pobierania, plików, zakładek, historii, tapet i innych stron. Pasek kart biblioteki zmniejsza się podczas przewijania.
 

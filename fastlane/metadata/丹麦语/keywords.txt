@@ -1,1 +1,1 @@
-privatliv,faner,videodownload,annonceblokering,brugerscript,udvidelser,oversættelse,mediefinder
+privatliv,faner,videodownload,annonceblokering,brugerscript,udvidelser,torrent,magnet,MKV

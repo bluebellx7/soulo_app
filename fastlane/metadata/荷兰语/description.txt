@@ -4,7 +4,7 @@ Kies Soulo als standaardbrowser in Instellingen om links uit andere apps te open
 
 Recent gebruikte tabbladen en websitegroepen staan vooraan en het overzicht opent bovenaan. De volgorde blijft na een herstart bewaard.
 
-BT-downloads: importeer .torrent-bestanden of magnetlinks, kies bestanden, pauzeer en hervat. Op iOS 26 kunnen downloads op de achtergrond doorgaan als het systeem dat toestaat; eerdere versies bewaren de voortgang en pauzeren.
+BT-downloads: importeer .torrent-bestanden of magnetlinks, kies bestanden, pauzeer en hervat. Op iOS 26 kunnen downloads op de achtergrond doorgaan als het systeem dat toestaat; eerdere versies bewaren de voortgang en pauzeren. Speel ondersteunde BT-media af tijdens het downloaden en open MKV-bestanden. Importeer ed2k/thunder-links. Downloads vereisen beschikbare bronnen; afspelen hangt af van codecs.
 
 Kies vijf optionele snelkoppelingen op het startscherm voor downloads, bestanden, bladwijzers, geschiedenis, achtergronden en andere pagina’s. De tabbladbalk van de bibliotheek wordt compacter tijdens het scrollen.
 

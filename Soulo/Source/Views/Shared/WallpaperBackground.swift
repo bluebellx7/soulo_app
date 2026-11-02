@@ -97,6 +97,7 @@ struct DynamicGradientView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isVisible = false
+    @ObservedObject private var resources = BrowserResourcePolicy.shared
 
     static func fallback(isPaused: Bool = false) -> DynamicGradientView {
         DynamicGradientView(colors: [
@@ -108,7 +109,7 @@ struct DynamicGradientView: View {
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 24.0,
-            paused: isPaused || !isVisible || scenePhase != .active || reduceMotion)) { timeline in
+            paused: isPaused || !isVisible || scenePhase != .active || reduceMotion || !resources.allowsSpeculation)) { timeline in
             Canvas { ctx, size in
                 render(ctx: ctx, size: size, time: timeline.date.timeIntervalSinceReferenceDate)
             }

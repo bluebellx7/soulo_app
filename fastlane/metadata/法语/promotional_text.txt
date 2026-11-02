@@ -1,1 +1,1 @@
-Scripts utilisateur avec @require, son des vidéos corrigé et retour aux pages amélioré. Indicateur de chargement plus visible.
+BT et magnet : choix des fichiers et reprise. Lisez les médias compatibles pendant le téléchargement, ouvrez les MKV et importez les liens ed2k/thunder.

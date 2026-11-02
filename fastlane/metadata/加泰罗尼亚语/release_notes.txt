@@ -1,6 +1,8 @@
 1.2.7
 
 • Descàrregues BT: importa fitxers .torrent o enllaços magnet, tria fitxers, posa en pausa i reprèn. A iOS 26 poden continuar en segon pla si el sistema ho permet; les versions anteriors desen el progrés i les pausen.
+• Reprodueix contingut BT compatible mentre es baixa i obre fitxers MKV. Importa enllaços ed2k/thunder. Les baixades necessiten fonts disponibles; la reproducció depèn dels còdecs.
+• L’optimització de Baidu està activada per defecte. Consulta el script o desactiva’l a Extensions.
 • Configura cinc dreceres opcionals a l’inici per obrir descàrregues, fitxers, adreces d’interès, historial, fons i altres pàgines. La barra de pestanyes de la biblioteca es compacta en desplaçar-te.
 • Millorada la compatibilitat amb scripts d'usuari i dependències externes amb @require.
 • Corregits casos de so en vídeos silenciats o reproducció duplicada en algunes pàgines.

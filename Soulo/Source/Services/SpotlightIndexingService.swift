@@ -32,11 +32,11 @@ struct SpotlightIndexingService {
         CSSearchableIndex.default().indexSearchableItems([item])
     }
 
-    static func deindexItem(id: String) {
-        CSSearchableIndex.default().deleteSearchableItems(withIdentifiers: [id])
+    static func deindexItem(id: String, index: CSSearchableIndex = .default()) {
+        index.deleteSearchableItems(withIdentifiers: [id])
     }
 
-    static func deindexAll(domain: String) {
-        CSSearchableIndex.default().deleteSearchableItems(withDomainIdentifiers: [domain])
+    static func deindexAll(domain: String, index: CSSearchableIndex = .default()) {
+        index.deleteSearchableItems(withDomainIdentifiers: [domain])
     }
 }

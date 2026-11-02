@@ -4,7 +4,7 @@ Choisissez Soulo comme navigateur par défaut dans Réglages pour ouvrir les lie
 
 Les onglets et groupes de sites récents apparaissent en premier, et la vue s'ouvre en haut. L'ordre d'utilisation est conservé après un redémarrage.
 
-Téléchargements BT : importez des fichiers .torrent ou des liens magnet, choisissez les fichiers, mettez en pause et reprenez. Sous iOS 26, ils peuvent continuer en arrière-plan si le système le permet ; les versions antérieures enregistrent la progression et les mettent en pause.
+Téléchargements BT : importez des fichiers .torrent ou des liens magnet, choisissez les fichiers, mettez en pause et reprenez. Sous iOS 26, ils peuvent continuer en arrière-plan si le système le permet ; les versions antérieures enregistrent la progression et les mettent en pause. Lisez les médias BT compatibles pendant le téléchargement et ouvrez les MKV. Importez les liens ed2k/thunder. Le téléchargement exige des sources disponibles ; la lecture dépend des codecs.
 
 Configurez cinq raccourcis facultatifs sur l’accueil vers les téléchargements, fichiers, signets, historique, fonds d’écran et autres pages. La barre d’onglets de la bibliothèque se réduit lors du défilement.
 

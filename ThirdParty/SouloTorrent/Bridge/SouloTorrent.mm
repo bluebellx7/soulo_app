@@ -11,6 +11,8 @@
 #include <map>
 #include <set>
 #include <stdexcept>
+#include <fstream>
+#include <chrono>
 namespace lt = libtorrent;
 static NSString *str(std::string const& value) { return [[NSString alloc] initWithBytes:value.data() length:value.size() encoding:NSUTF8StringEncoding] ?: @""; }
 static void failure(NSError **error, std::exception const& e) {
@@ -40,6 +42,7 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
     std::set<std::string> _metadataOnly;
     struct PeerRefresh { std::vector<lt::tcp::endpoint> peers; std::vector<lt::download_priority_t> priorities; };
     std::map<std::string, PeerRefresh> _peerRefresh;
+    std::map<std::string, std::map<lt::piece_index_t, std::chrono::steady_clock::time_point>> _streamPieces;
 }
 - (instancetype)initWithCertificateFile:(NSString *)certificateFile discoveryEnabled:(BOOL)discoveryEnabled {
     if ((self = [super init])) {
@@ -166,6 +169,61 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
     std::vector<lt::alert*> alerts; _session->pop_alerts(&alerts);
     return result;
 }
+- (NSData *)availableDataForIdentifier:(NSString *)identifier fileIndex:(NSInteger)fileIndex offset:(int64_t)offset maximumLength:(NSInteger)maximumLength error:(NSError **)error {
+    try {
+        auto found = _handles.find(identifier.UTF8String);
+        if (found == _handles.end()) throw std::runtime_error("Torrent is no longer available");
+        auto handle = found->second;
+        auto ti = handle.torrent_file();
+        if (!ti || fileIndex < 0 || fileIndex >= ti->num_files() || offset < 0 || maximumLength <= 0)
+            throw std::runtime_error("Invalid torrent stream range");
+        auto const& fs = ti->files();
+        lt::file_index_t index{static_cast<int>(fileIndex)};
+        if (bool(fs.file_flags(index) & (lt::file_storage::flag_pad_file | lt::file_storage::flag_symlink)))
+            throw std::runtime_error("Invalid torrent media file");
+        // Priorities commit asynchronously when a paused task resumes.
+        if (handle.file_priority(index) == lt::dont_download) return [NSData data];
+        if (offset >= fs.file_size(index)) return [NSData data];
+        auto absolute = fs.file_offset(index) + offset;
+        lt::piece_index_t piece{static_cast<int>(absolute / ti->piece_length())};
+        auto last = lt::piece_index_t{static_cast<int>((fs.file_offset(index) + fs.file_size(index) - 1) / ti->piece_length())};
+        auto& pending = _streamPieces[identifier.UTF8String];
+        auto now = std::chrono::steady_clock::now();
+        for (auto it = pending.begin(); it != pending.end();) {
+            if (now - it->second > std::chrono::seconds(15) || handle.have_piece(it->first)) {
+                handle.reset_piece_deadline(it->first); it = pending.erase(it);
+            } else ++it;
+        }
+        // Bounded prefetch around the requested playback/seek position. File
+        // priorities and excluded files retain the user's original selection.
+        int ahead = std::max(1, std::min(8, 2 * 1024 * 1024 / ti->piece_length()));
+        for (int i = 0; i < ahead && static_cast<int>(piece) + i <= static_cast<int>(last); ++i) {
+            lt::piece_index_t next{static_cast<int>(piece) + i};
+            if (!handle.have_piece(next) && !pending.count(next)) {
+                if (pending.size() >= 64) { handle.reset_piece_deadline(pending.begin()->first); pending.erase(pending.begin()); }
+                handle.set_piece_deadline(next, 200 + i * 150); pending.emplace(next, now);
+            }
+        }
+        if (!handle.have_piece(piece)) return [NSData data];
+        NSInteger count = static_cast<NSInteger>(std::min<std::int64_t>({maximumLength, 128 * 1024,
+            fs.file_size(index) - offset, ti->piece_length() - absolute % ti->piece_length()}));
+        NSURL *root = [[NSURL fileURLWithPath:str(handle.status(lt::torrent_handle::query_save_path).save_path) isDirectory:YES] URLByResolvingSymlinksInPath];
+        NSURL *file = [[root URLByAppendingPathComponent:str(fs.file_path(index))] URLByResolvingSymlinksInPath];
+        if (![file.path hasPrefix:[root.path stringByAppendingString:@"/"]]) throw std::runtime_error("Unsafe torrent stream path");
+        std::ifstream input(file.fileSystemRepresentation, std::ios::binary);
+        if (!input) throw std::runtime_error("Torrent file is unavailable");
+        input.seekg(offset);
+        NSMutableData *data = [NSMutableData dataWithLength:count];
+        input.read(static_cast<char *>(data.mutableBytes), count);
+        if (input.gcount() != count) throw std::runtime_error("Torrent file was truncated");
+        return data;
+    } catch (std::exception const& e) { failure(error,e); return nil; }
+}
+- (void)endStreaming:(NSString *)identifier {
+    auto found = _handles.find(identifier.UTF8String);
+    if (found != _handles.end()) { try { found->second.clear_piece_deadlines(); } catch (...) {} }
+    _streamPieces.erase(identifier.UTF8String);
+}
 - (NSData *)save:(NSString *)identifier error:(NSError **)error {
     try {
         auto it=_handles.find(identifier.UTF8String); if (it==_handles.end()) return nil;
@@ -210,6 +268,7 @@ static NSDictionary *describe(std::shared_ptr<lt::torrent_info const> const& ti)
     _handles.erase(it);
     _metadataOnly.erase(identifier.UTF8String);
     _peerRefresh.erase(identifier.UTF8String);
+    _streamPieces.erase(identifier.UTF8String);
     return YES;
 }
 @end

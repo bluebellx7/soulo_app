@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import Combine
 import os
 
 @MainActor
@@ -11,6 +12,12 @@ class WallpaperManager: ObservableObject {
         didSet {
             UserDefaults.standard.set(source.rawValue, forKey: "wallpaper_source")
             resetPreloadedWallpaper()
+            imageLoadRevision = UUID()
+            if source == .photo {
+                if customImage == nil { loadCustomImage() }
+            } else { customImage = nil }
+            if source == .gradient || source == .solid { currentImage = nil }
+            if source.isRemote && currentImage == nil { loadPersistedRemoteWallpaper() }
         }
     }
     @Published var selectedGradientId: String {
@@ -81,11 +88,22 @@ class WallpaperManager: ObservableObject {
     private var autoRefreshTimer: Timer?
     private var preloadTimer: Timer?
     private var preloadTask: Task<Void, Never>?
+    private var preloadRevision = UUID()
+    private var autoRefreshTask: Task<Void, Never>?
+    private var autoRefreshRevision = UUID()
     private var preloadedWallpaper: RemoteWallpaper?
     private var preloadedImage: UIImage?
     private var preloadedImageData: Data?
+    private var imageLoadRevision = UUID()
+    private var automaticRefreshActive = true
+    private let resources: BrowserResourcePolicy
+    private var resourceObservers = Set<AnyCancellable>()
 
-    private init() {
+    var hasAutomaticRefreshWork: Bool { autoRefreshTimer != nil || preloadTimer != nil || preloadTask != nil || autoRefreshTask != nil }
+
+    init(resources: BrowserResourcePolicy? = nil) {
+        let resources = resources ?? .shared
+        self.resources = resources
         self.source = BrowserInitialPreferences.wallpaperSource(in: .standard)
         self.selectedGradientId = UserDefaults.standard.string(forKey: "wallpaper_gradient_id") ?? "aurora"
         self.solidColor = UserDefaults.standard.string(forKey: "wallpaper_solid_color") ?? "#FFFFFF"
@@ -104,7 +122,13 @@ class WallpaperManager: ObservableObject {
         loadBlocked()
         loadCustomImage()
         loadPersistedRemoteWallpaper()
+        automaticRefreshActive = UIApplication.shared.applicationState != .background
         setupAutoRefreshTimer(startPreloadImmediately: false)
+        resources.$allowsSpeculation.dropFirst().receive(on: DispatchQueue.main).sink { [weak self] _ in
+            self?.setupAutoRefreshTimer(startPreloadImmediately: false)
+        }.store(in: &resourceObservers)
+        NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)
+            .sink { [weak self] _ in self?.suspendAutomaticRefresh() }.store(in: &resourceObservers)
     }
 
     func reloadPreferencesFromDefaults() {
@@ -238,10 +262,11 @@ class WallpaperManager: ObservableObject {
         preloadTimer?.invalidate()
         autoRefreshTimer = nil
         preloadTimer = nil
-        preloadTask?.cancel()
-        preloadTask = nil
+        autoRefreshTask?.cancel(); autoRefreshTask = nil
+        autoRefreshRevision = UUID()
+        resetPreloadedWallpaper()
 
-        guard autoRefreshInterval != .none else { return }
+        guard automaticRefreshActive, resources.allowsSpeculation, autoRefreshInterval != .none else { return }
 
         let interval = TimeInterval(autoRefreshInterval.rawValue)
         let preloadDelay = max(5, interval - 30)
@@ -250,8 +275,10 @@ class WallpaperManager: ObservableObject {
             Task { @MainActor in self?.preloadNextAutoWallpaper() }
         }
         autoRefreshTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
-            Task { @MainActor in await self?.applyAutoRefresh() }
+            Task { @MainActor in self?.startAutomaticRefresh() }
         }
+        preloadTimer?.tolerance = min(30, preloadDelay * 0.1)
+        autoRefreshTimer?.tolerance = min(30, interval * 0.1)
 
         if startPreloadImmediately {
             preloadNextAutoWallpaper()
@@ -259,14 +286,38 @@ class WallpaperManager: ObservableObject {
     }
 
     func refreshIfNeededAfterForeground() {
+        if !automaticRefreshActive {
+            automaticRefreshActive = true
+            setupAutoRefreshTimer(startPreloadImmediately: false)
+        }
+        guard resources.allowsSpeculation else { return }
         guard autoRefreshInterval != .none else { return }
         let lastRefresh = UserDefaults.standard.double(forKey: "wallpaper_last_auto_refresh_at")
         guard lastRefresh == 0 || Date().timeIntervalSince1970 - lastRefresh >= TimeInterval(autoRefreshInterval.rawValue) else { return }
-        Task { await applyAutoRefresh() }
+        startAutomaticRefresh()
+    }
+
+    private func startAutomaticRefresh() {
+        guard automaticRefreshActive, resources.allowsSpeculation, autoRefreshTask == nil else { return }
+        let revision = UUID(); autoRefreshRevision = revision
+        autoRefreshTask = Task { [weak self] in
+            guard let self else { return }
+            defer { if self.autoRefreshRevision == revision { self.autoRefreshTask = nil } }
+            await self.applyAutoRefresh()
+        }
+    }
+
+    func suspendAutomaticRefresh() {
+        automaticRefreshActive = false
+        autoRefreshTimer?.invalidate(); autoRefreshTimer = nil
+        preloadTimer?.invalidate(); preloadTimer = nil
+        autoRefreshTask?.cancel(); autoRefreshTask = nil
+        autoRefreshRevision = UUID()
+        resetPreloadedWallpaper()
     }
 
     private func applyAutoRefresh() async {
-        guard !networkLoading else { return }
+        guard automaticRefreshActive, resources.allowsSpeculation, !networkLoading else { return }
         UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "wallpaper_last_auto_refresh_at")
 
         if let wall = preloadedWallpaper,
@@ -293,9 +344,10 @@ class WallpaperManager: ObservableObject {
     }
 
     private func preloadNextAutoWallpaper() {
-        guard autoRefreshInterval != .none, preloadedWallpaper == nil, preloadTask == nil else { return }
+        guard automaticRefreshActive, resources.allowsSpeculation, autoRefreshInterval != .none, preloadedWallpaper == nil, preloadTask == nil else { return }
+        let revision = UUID(); preloadRevision = revision
         preloadTask = Task { @MainActor in
-            defer { preloadTask = nil }
+            defer { if preloadRevision == revision { preloadTask = nil } }
             let wall: RemoteWallpaper
             if onlyUseFavoriteWallpapers {
                 guard let favorite = favoriteWallpaperForRefresh() else { return }
@@ -310,7 +362,7 @@ class WallpaperManager: ObservableObject {
             }
             guard !Task.isCancelled else { return }
             guard let imageData = await imageData(for: wall),
-                  let image = UIImage(data: imageData) else { return }
+                  let image = await decodedBackground(imageData) else { return }
             guard !Task.isCancelled else { return }
             preloadedWallpaper = wall
             preloadedImage = image
@@ -319,6 +371,7 @@ class WallpaperManager: ObservableObject {
     }
 
     private func resetPreloadedWallpaper() {
+        preloadRevision = UUID()
         preloadTask?.cancel()
         preloadTask = nil
         preloadedWallpaper = nil
@@ -376,7 +429,7 @@ class WallpaperManager: ObservableObject {
     }
 
     private func fetchPexelsCandidates(query: String, page: Int) async -> [RemoteWallpaper] {
-        let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "nature"
+        let encoded = SearchQueryEncoding.encode(query) ?? "nature"
         guard let url = URL(string: "https://api.pexels.com/v1/search?query=\(encoded)&page=\(page)&per_page=15&orientation=portrait") else { return [] }
         var request = URLRequest(url: url)
         request.setValue(pexelsKey, forHTTPHeaderField: "Authorization")
@@ -393,7 +446,7 @@ class WallpaperManager: ObservableObject {
     }
 
     private func fetchPixabayCandidates(query: String, page: Int) async -> [RemoteWallpaper] {
-        let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "nature"
+        let encoded = SearchQueryEncoding.encode(query) ?? "nature"
         guard let url = URL(string: "https://pixabay.com/api/?key=\(pixabayKey)&q=\(encoded)&page=\(page)&per_page=15&safesearch=true&image_type=photo&orientation=vertical") else { return [] }
         guard let (data, _) = try? await URLSession.shared.data(from: url),
               let res = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -473,7 +526,7 @@ class WallpaperManager: ObservableObject {
         addVibeTag(query)
         networkLoading = true
         defer { networkLoading = false }
-        let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "nature"
+        let encoded = SearchQueryEncoding.encode(query) ?? "nature"
         guard let url = URL(string: "https://api.pexels.com/v1/search?query=\(encoded)&page=\(Int.random(in: 1...10))&per_page=15&orientation=portrait") else { return }
         var request = URLRequest(url: url); request.setValue(pexelsKey, forHTTPHeaderField: "Authorization")
         do {
@@ -500,7 +553,7 @@ class WallpaperManager: ObservableObject {
         addVibeTag(query)
         networkLoading = true
         defer { networkLoading = false }
-        let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "nature"
+        let encoded = SearchQueryEncoding.encode(query) ?? "nature"
         guard let url = URL(string: "https://pixabay.com/api/?key=\(pixabayKey)&q=\(encoded)&page=\(Int.random(in: 1...5))&per_page=15&safesearch=true&image_type=photo&orientation=vertical") else { return }
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
@@ -547,8 +600,11 @@ class WallpaperManager: ObservableObject {
     }
 
     func applyWallpaper(_ wallpaper: RemoteWallpaper) async {
+        let revision = UUID(); imageLoadRevision = revision
+        let expectedSource = source
         guard let imageData = await imageData(for: wallpaper),
-              let image = UIImage(data: imageData) else { return }
+              let image = await decodedBackground(imageData),
+              imageLoadRevision == revision, source == expectedSource else { return }
 
         currentImageURLString = wallpaper.url
         withAnimation(.easeInOut(duration: 0.45)) {
@@ -556,6 +612,15 @@ class WallpaperManager: ObservableObject {
             currentImageID = wallpaper.id
         }
         await persistRemoteWallpaper(imageData, wallpaper: wallpaper)
+    }
+
+    private static var backgroundPixels: CGSize { UIScreen.main.nativeBounds.size }
+
+    private func decodedBackground(_ data: Data) async -> UIImage? {
+        let pixels = Self.backgroundPixels
+        return await Task.detached(priority: .utility) {
+            WallpaperImageDecoder.decode(data, targetPixels: pixels).map { UIImage(cgImage: $0) }
+        }.value
     }
 
     private func imageData(for wallpaper: RemoteWallpaper) async -> Data? {
@@ -584,6 +649,7 @@ class WallpaperManager: ObservableObject {
     }
 
     private func recordRemoteError(source: WallpaperSource, error: Error) {
+        guard !Task.isCancelled else { return }
         Self.logger.error("Wallpaper source \(source.rawValue, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
         lastRemoteError = LanguageManager.shared.localizedString("wallpaper_remote_error")
         lastRemoteErrorAt = Date()
@@ -628,15 +694,19 @@ class WallpaperManager: ObservableObject {
     private func saveBlocked() { UserDefaults.standard.set(Array(blockedIDs), forKey: "wallpaper_blocked") }
     private func loadBlocked() { let arr = UserDefaults.standard.stringArray(forKey: "wallpaper_blocked") ?? []; blockedIDs = Set(arr) }
     func saveCustomImage(_ image: UIImage) {
-        customImage = image
-        currentImage = image
         currentImageID = "custom_\(Date().timeIntervalSince1970)"
         if let data = image.jpegData(compressionQuality: 0.8) {
             try? data.write(to: Self.customImageURL)
+            let display = WallpaperImageDecoder.decode(data, targetPixels: Self.backgroundPixels).map { UIImage(cgImage: $0) } ?? image
+            customImage = display; currentImage = display
+        } else {
+            customImage = image; currentImage = image
         }
     }
     private func loadCustomImage() {
-        if let data = try? Data(contentsOf: Self.customImageURL), let image = UIImage(data: data) {
+        guard source == .photo else { return }
+        if let bitmap = WallpaperImageDecoder.decode(file: Self.customImageURL, targetPixels: Self.backgroundPixels) {
+            let image = UIImage(cgImage: bitmap)
             customImage = image
             if source == .photo {
                 currentImage = image
@@ -676,13 +746,12 @@ class WallpaperManager: ObservableObject {
         }
 
         let fileURL = Self.currentWallpaperCacheDirectory.appendingPathComponent(fileName)
-        guard let data = try? Data(contentsOf: fileURL),
-              let image = UIImage(data: data) else {
+        guard let image = WallpaperImageDecoder.decode(file: fileURL, targetPixels: Self.backgroundPixels) else {
             removePersistedRemoteWallpaper()
             return
         }
 
-        currentImage = image.preparingForDisplay() ?? image
+        currentImage = UIImage(cgImage: image)
         currentImageID = imageID
         currentImageURLString = defaults.string(forKey: Self.currentWallpaperURLKey)
     }

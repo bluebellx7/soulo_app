@@ -4,7 +4,7 @@ Diğer uygulamalardaki bağlantıları açmak için Ayarlar’da Soulo’yu vars
 
 Son kullanılan sekmeler ve site grupları önce gösterilir, sekme görünümü en üstten açılır. Kullanım sırası yeniden başlatınca korunur.
 
-BT indirmeleri: .torrent dosyaları veya magnet bağlantıları içe aktarın, dosyaları seçin, duraklatın ve sürdürün. iOS 26’da sistem izin verdiğinde arka planda devam edebilir; önceki sürümler ilerlemeyi kaydedip duraklatır.
+BT indirmeleri: .torrent dosyaları veya magnet bağlantıları içe aktarın, dosyaları seçin, duraklatın ve sürdürün. iOS 26’da sistem izin verdiğinde arka planda devam edebilir; önceki sürümler ilerlemeyi kaydedip duraklatır. Desteklenen BT medyasını indirirken oynatın ve MKV dosyalarını açın. ed2k/thunder bağlantılarını içe aktarın. İndirmeler kullanılabilir kaynaklar gerektirir; oynatma kodeklere bağlıdır.
 
 Ana sayfada indirmeler, dosyalar, yer imleri, geçmiş, duvar kâğıtları ve diğer sayfalara beş isteğe bağlı kısayol seçin. Kitaplık sekme çubuğu kaydırırken daralır.
 

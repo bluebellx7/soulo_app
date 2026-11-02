@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "Open pages reload after a script is installed, edited, enabled, disabled, or removed.";
 "userscript_experimental_badge" = "Compatibility";
 "userscript_experimental_title" = "UserScript compatibility";
-"userscript_experimental_desc" = "Supports site rules, document-start/end, extensive GM storage and page APIs, script commands, notifications, tabs, downloads, cookies, resources, and permission-scoped requests. Review every script before installing; external @require files are not executed.";
+"userscript_experimental_desc" = "Supports site rules, document-start/end, extensive GM storage and page APIs, script commands, notifications, tabs, downloads, cookies, resources, and permission-scoped requests. Review every script before installing.";
 "extension_choose_file" = "Choose File or Folder…";
 "extension_installing" = "Checking and installing extension…";
 "extension_install_failed" = "Extension Could Not Be Installed";
@@ -659,7 +659,7 @@
 "userscript_new" = "New Script";
 "userscript_edit" = "Edit Script";
 "userscript_choose_file" = "Choose Script…";
-"userscript_install_footer" = "Tap a source row to open it in the current Soulo tab. A .user.js link opens an installation confirmation. Standard JavaScript and a broad set of GM APIs are supported; scripts do not run in Private Browsing and external @require files are not executed.";
+"userscript_install_footer" = "Tap a source row to open it in the current Soulo tab. A .user.js link opens an installation confirmation. Standard JavaScript and a broad set of GM APIs are supported. UserScripts do not run in Private Browsing.";
 "userscript_install_failed" = "UserScript Could Not Be Installed";
 "web_extension_temporarily_disabled" = "Standard browser extensions are temporarily unavailable while compatibility testing is completed.";
 "userscript_unreadable" = "The selected script could not be read as UTF-8 text.";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "Partially supported";
 "userscript_docs_partial_desc" = "Network requests omit upload/progress and cookie transport. Notifications are in-page, resource APIs are asynchronous, and value-change listeners report changes made by the current page. Update checks are manual.";
 "userscript_docs_unsupported_title" = "Not currently supported";
-"userscript_docs_unsupported_desc" = "External @require execution, GM_webRequest interception, GM_audio, sandbox/run-in isolation, automatic update checks, and exact desktop-only behaviors that WKWebView cannot provide.";
+"userscript_docs_unsupported_desc" = "GM_webRequest interception, GM_audio, sandbox/run-in isolation, automatic update checks, and exact desktop-only behaviors that WKWebView cannot provide.";
 "userscript_docs_metadata_title" = "Metadata";
 "userscript_docs_metadata_identity" = "Human-readable script name and optional description shown before installation and in script details.";
 "userscript_docs_metadata_version" = "Use a stable, unique namespace and increment the version whenever the bundled script changes.";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "Authorize hosts used by privileged network requests. Without it, requests are limited to the current page host.";
 "userscript_docs_metadata_urls" = "Optional identity and update metadata. Soulo uses these to recognize reinstallations of the same script.";
 "userscript_docs_metadata_resource" = "Declares a named resource. Add a matching @connect host; fetching is deferred until the modern resource API is awaited.";
-"userscript_docs_metadata_require" = "External requirements are disclosed during installation but are not downloaded or executed; scripts must be self-contained.";
+"userscript_docs_metadata_require" = "HTTPS @require files are downloaded and cached when installing or saving, then run in order before the script.";
 "userscript_docs_api_title" = "Supported privileged APIs";
 "userscript_docs_api_info" = "Reads the script handler, Soulo version, and parsed script metadata. Available in legacy and modern form.";
 "userscript_docs_api_unsafe_window" = "Provides the current page window when the unsafeWindow grant is explicitly declared.";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "Stored values must be JSON-serializable: up to 256 KB per value and 1 MB total per script.";
 "userscript_docs_limits_network" = "Privileged responses are limited to 20 MB, timeout is clamped to 1–60 seconds, and Cookie/Host/Origin headers are not accepted.";
 "userscript_docs_limits_private" = "UserScripts do not run in Private Browsing.";
-"userscript_docs_limits_require" = "External @require files are never executed. Avoid CDN dependencies and include all required logic in the script.";
+"userscript_docs_limits_require" = "HTTPS @require files are downloaded and cached when installing or saving, then run in order before the script.";
 "userscript_docs_template_title" = "Minimal template";
 "userscript_docs_template_footer" = "Use a unique namespace and the narrowest possible @match and @grant declarations.";
 "userscript_too_large" = "The selected script is larger than the 2 MB limit.";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "No additional permissions";
 "userscript_network_title" = "Network Access";
 "userscript_external_requirements" = "External Dependencies";
-"userscript_external_requirements_desc" = "This script declares external @require files. Soulo does not load them automatically.";
+"userscript_external_requirements_desc" = "HTTPS @require files are downloaded and cached when installing or saving, then run in order before the script.";
 "userscript_metadata_title" = "Script Details";
 "userscript_unsupported_permissions" = "Not yet supported: %@";
 "userscript_sample_name" = "Reading Progress Bar";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "Card View";
 "tab_close_group" = "Close Group";
 "tab_close_group_confirm" = "Close all tabs in “%@” (%d)?";
+
+"userscript_require_failed" = "Could not load dependency %@: %@";
+"userscript_require_integrity_failed" = "Dependency integrity check failed.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "Manage";
+"extension_update" = "Update";
+"extension_rollback" = "Restore previous version";
+"extension_blocked_sites" = "Blocked websites";
+"extension_diagnostics" = "Compatibility";
+"extension_review_access" = "Choose which permissions and websites this extension can access.";
+"extension_limit_commands" = "Keyboard shortcuts are unavailable on iOS.";
+"extension_limit_notifications" = "Notifications can be shown, but click and close events are unavailable.";
+"extension_limit_offscreen" = "Offscreen support is limited to audio playback.";

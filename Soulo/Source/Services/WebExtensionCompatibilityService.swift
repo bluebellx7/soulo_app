@@ -45,6 +45,7 @@ enum WebExtensionPackagePreparer {
     }
 
     static func installCompatibilityLayer(in resourceDirectory: URL) throws {
+        try validateResourceTree(in: resourceDirectory)
         let manifestURL = resourceDirectory.appendingPathComponent("manifest.json")
         guard let manifestData = try? Data(contentsOf: manifestURL),
               var manifest = try JSONSerialization.jsonObject(with: manifestData) as? [String: Any]
@@ -55,7 +56,7 @@ enum WebExtensionPackagePreparer {
         let permissions = (manifest["permissions"] as? [String]) ?? []
         let needsNotifications = permissions.contains("notifications")
         let needsOffscreen = permissions.contains("offscreen")
-        guard needsNotifications || needsOffscreen else { return }
+        guard needsNotifications || needsOffscreen || manifest["commands"] != nil else { return }
 
         var updatedPermissions = permissions
         if !updatedPermissions.contains("nativeMessaging") {
@@ -68,27 +69,30 @@ enum WebExtensionPackagePreparer {
         try Data(compatibilityJavaScript.utf8).write(to: compatibilityURL, options: .atomic)
 
         if var background = manifest["background"] as? [String: Any] {
-            if let serviceWorker = background["service_worker"] as? String,
-               serviceWorker != "__soulo_webextension_background_v3.js" {
-                // Version the wrapper name so an extension whose first worker
-                // failed during startup is not permanently served WebKit's
-                // cached copy after Soulo improves its compatibility layer.
-                let wrapperName = "__soulo_webextension_background_v3.js"
+            if let serviceWorker = background["service_worker"] as? String {
                 let isModule = (background["type"] as? String)?.lowercased() == "module"
-                let escapedWorker = javaScriptString(normalizedResourcePath(serviceWorker))
+                let workerURL = try originalWorkerURL(serviceWorker, isModule: isModule, in: resourceDirectory)
+                let root = resourceDirectory.resolvingSymlinksInPath().standardizedFileURL
+                let relativeDirectory = String(workerURL.deletingLastPathComponent().path.dropFirst(root.path.count))
+                    .split(separator: "/").map(String.init)
+                let wrapperName = (relativeDirectory + ["__soulo_webextension_background_v4.js"]).joined(separator: "/")
+                let compatibilityImport = relativeDirectory.isEmpty ? "./\(compatibilityFilename)"
+                    : String(repeating: "../", count: relativeDirectory.count) + compatibilityFilename
+                let escapedWorker = javaScriptString("./" + workerURL.lastPathComponent)
                 let wrapper: String
                 if isModule {
-                    wrapper = "import \"./\(compatibilityFilename)\";\nimport \"./\(escapedWorker)\";\n"
+                    wrapper = "import \"\(compatibilityImport)\";\nimport \"\(escapedWorker)\";\n"
                 } else {
-                    wrapper = "importScripts(\"\(compatibilityFilename)\", \"\(escapedWorker)\");\n"
+                    wrapper = "importScripts(\"\(compatibilityImport)\", \"\(escapedWorker)\");\n"
                 }
                 try Data(wrapper.utf8).write(
-                    to: resourceDirectory.appendingPathComponent(wrapperName),
+                    to: try resourceURL(wrapperName, in: resourceDirectory),
                     options: .atomic
                 )
                 background["service_worker"] = wrapperName
             } else if var scripts = background["scripts"] as? [String],
                       !scripts.contains(compatibilityFilename) {
+                for script in scripts { _ = try resourceURL(script, in: resourceDirectory) }
                 scripts.insert(compatibilityFilename, at: 0)
                 background["scripts"] = scripts
             }
@@ -98,53 +102,15 @@ enum WebExtensionPackagePreparer {
         for page in extensionPages(in: manifest) {
             try injectCompatibilityScript(
                 filename: compatibilityFilename,
-                into: resourceDirectory.appendingPathComponent(normalizedResourcePath(page))
+                into: try resourceURL(page, in: resourceDirectory)
             )
         }
-        makeUnsupportedListenerNamespacesOptional(in: resourceDirectory)
 
         let updatedManifest = try JSONSerialization.data(
             withJSONObject: manifest,
             options: [.prettyPrinted, .sortedKeys]
         )
         try updatedManifest.write(to: manifestURL, options: .atomic)
-    }
-
-    /// Some Chromium extensions register optional desktop-only APIs during
-    /// background startup. WebKit can omit an entire namespace on iOS; a
-    /// direct listener registration then aborts the service worker before its
-    /// otherwise-supported runtime/storage listeners are installed. Optional
-    /// chaining preserves the supported portion of those extensions.
-    private static func makeUnsupportedListenerNamespacesOptional(in resourceDirectory: URL) {
-        let replacements = [
-            (".notifications.onClicked.addListener", ".notifications?.onClicked?.addListener"),
-            (".notifications.onButtonClicked.addListener", ".notifications?.onButtonClicked?.addListener"),
-            (".notifications.create(", ".notifications?.create?.("),
-            (".notifications.clear(", ".notifications?.clear?.("),
-            (".commands.onCommand.addListener", ".commands?.onCommand?.addListener"),
-            (".offscreen.createDocument(", ".offscreen?.createDocument?.("),
-        ]
-        guard let enumerator = FileManager.default.enumerator(
-            at: resourceDirectory,
-            includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey],
-            options: [.skipsHiddenFiles]
-        ) else { return }
-
-        for case let fileURL as URL in enumerator where fileURL.pathExtension.lowercased() == "js" {
-            if fileURL.lastPathComponent.hasPrefix("__soulo_webextension_") { continue }
-            guard let values = try? fileURL.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey]) else {
-                continue
-            }
-            guard values.isRegularFile == true, (values.fileSize ?? 0) <= 32 * 1_024 * 1_024,
-                  var source = try? String(contentsOf: fileURL, encoding: .utf8) else { continue }
-            let original = source
-            for (needle, replacement) in replacements {
-                source = source.replacingOccurrences(of: needle, with: replacement)
-            }
-            if source != original {
-                try? Data(source.utf8).write(to: fileURL, options: .atomic)
-            }
-        }
     }
 
     private static func extensionPages(in manifest: [String: Any]) -> Set<String> {
@@ -164,6 +130,8 @@ enum WebExtensionPackagePreparer {
            !page.isEmpty {
             pages.insert(page)
         }
+        if let background = manifest["background"] as? [String: Any],
+           let page = background["page"] as? String, !page.isEmpty { pages.insert(page) }
         return pages
     }
 
@@ -181,10 +149,53 @@ enum WebExtensionPackagePreparer {
         try Data(html.utf8).write(to: pageURL, options: .atomic)
     }
 
-    private static func normalizedResourcePath(_ path: String) -> String {
-        var value = path
-        while value.hasPrefix("/") { value.removeFirst() }
-        return value
+    private static func validateResourceTree(in root: URL) throws {
+        guard try root.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink != true else {
+            throw BrowserExtensionError.invalidExtension
+        }
+        guard let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.isSymbolicLinkKey]) else {
+            throw BrowserExtensionError.invalidExtension
+        }
+        for case let url as URL in enumerator {
+            if try url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink == true {
+                throw BrowserExtensionError.invalidExtension
+            }
+        }
+    }
+
+    private static func resourceURL(_ reference: String, in root: URL) throws -> URL {
+        guard let components = URLComponents(string: reference), components.scheme == nil, components.host == nil,
+              !components.path.isEmpty, !components.path.contains("\\"), !components.path.contains("\0"),
+              !components.path.split(separator: "/").contains("..") else {
+            throw BrowserExtensionError.invalidExtension
+        }
+        let base = root.resolvingSymlinksInPath().standardizedFileURL
+        let path = components.path.drop(while: { $0 == "/" })
+        let target = base.appendingPathComponent(String(path)).resolvingSymlinksInPath().standardizedFileURL
+        guard target.path.hasPrefix(base.path + "/") else { throw BrowserExtensionError.invalidExtension }
+        return target
+    }
+
+    private static func originalWorkerURL(_ reference: String, isModule: Bool, in root: URL) throws -> URL {
+        let wrapperURL = try resourceURL(reference, in: root)
+        guard wrapperURL.lastPathComponent.hasPrefix("__soulo_webextension_background_"),
+              let source = try? String(contentsOf: wrapperURL, encoding: .utf8),
+              source.contains("__soulo_webextension_compatibility.js") else { return wrapperURL }
+        // Recover the original entry point from wrappers installed by earlier
+        // Soulo versions, so updating compatibility never nests wrappers.
+        let pattern = isModule ? #"import\s+("(?:[^"\\]|\\.)*")\s*;"#
+            : #"importScripts\([^,]+,\s*("(?:[^"\\]|\\.)*")\s*\);"#
+        let regex = try NSRegularExpression(pattern: pattern)
+        guard let match = regex.matches(in: source, range: NSRange(source.startIndex..., in: source)).last,
+              let range = Range(match.range(at: 1), in: source),
+              let data = String(source[range]).data(using: .utf8),
+              let original = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) as? String,
+              let url = URL(string: original, relativeTo: wrapperURL)?.absoluteURL else {
+            throw BrowserExtensionError.invalidExtension
+        }
+        let base = root.resolvingSymlinksInPath().standardizedFileURL
+        guard url.path.hasPrefix(base.path + "/") else { throw BrowserExtensionError.invalidExtension }
+        return try resourceURL(String(url.path.dropFirst(base.path.count + 1)), in: root)
     }
 
     private static func javaScriptString(_ value: String) -> String {
@@ -250,26 +261,50 @@ enum WebExtensionPackagePreparer {
         addListener() {}, removeListener() {}, hasListener() { return false; },
         hasListeners() { return false; }
       });
+      // iOS has no desktop keyboard shortcuts. Keep registration safe without
+      // rewriting the extension's source; the management page reports this limit.
+      const commands = chrome.commands || {};
+      setIfMissing(commands, 'onCommand', event());
+      setIfMissing(commands, 'getAll', function(callback) {
+        if (typeof callback === 'function') { callback([]); return; }
+        return Promise.resolve([]);
+      });
+      setIfMissing(chrome, 'commands', commands);
+      if (root.browser && root.browser !== chrome) setIfMissing(root.browser, 'commands', commands);
       const native = (payload, callback, transform = value => value) => {
         let settled = false;
+        let resolveReply, rejectReply;
+        const promise = new Promise((resolve, reject) => { resolveReply = resolve; rejectReply = reject; });
+        if (typeof callback === 'function') promise.catch(() => {});
         const done = value => {
           if (settled) return;
+          const lastError = chrome.runtime.lastError;
+          if (lastError) {
+            failed(new Error(lastError.message || String(lastError)));
+            return;
+          }
           settled = true;
-          if (typeof callback === 'function') callback(transform(value));
+          try {
+            const result = transform(value);
+            resolveReply(result);
+            if (typeof callback === 'function') callback(result);
+          } catch (error) { rejectReply(error); }
+        };
+        const failed = error => {
+          if (settled) return;
+          settled = true;
+          rejectReply(error);
+          if (typeof callback === 'function') callback(undefined);
         };
         try {
           if (typeof chrome.runtime.sendNativeMessage !== 'function') {
             done(null);
-            return typeof callback === 'function' ? undefined : Promise.resolve(transform(null));
+          } else {
+            const result = chrome.runtime.sendNativeMessage(host, payload, done);
+            if (result && typeof result.then === 'function') result.then(done, failed);
           }
-          const result = chrome.runtime.sendNativeMessage(host, payload, done);
-          if (result && typeof result.then === 'function') {
-            return result.then(transform, () => transform(null));
-          }
-        } catch (_) {
-          done(null);
-        }
-        if (typeof callback !== 'function') return Promise.resolve(transform(null));
+        } catch (error) { failed(error); }
+        return typeof callback === 'function' ? undefined : promise;
       };
 
       const notifications = chrome.notifications || {};
@@ -660,6 +695,7 @@ final class WebExtensionCompatibilityHost {
         applicationIdentifier: String?,
         context: WKWebExtensionContext,
         resourceURL: URL?,
+        access: WebExtensionAccess? = nil,
         replyHandler: @escaping (Any?, Error?) -> Void
     ) -> Bool {
         guard applicationIdentifier == Self.applicationIdentifier,
@@ -668,8 +704,16 @@ final class WebExtensionCompatibilityHost {
               let api = values["api"] as? String else { return false }
         switch api {
         case "notifications":
+            guard hasPermission("notifications", context: context, access: access) else {
+                replyHandler(nil, NativeWebExtensionCompatibilityError.missingPermission("notifications"))
+                return true
+            }
             handleNotification(values, context: context, replyHandler: replyHandler)
         case "audio":
+            guard hasPermission("offscreen", context: context, access: access) else {
+                replyHandler(nil, NativeWebExtensionCompatibilityError.missingPermission("offscreen"))
+                return true
+            }
             handleAudio(values, context: context, resourceURL: resourceURL, replyHandler: replyHandler)
         case "lifecycle":
             // Accepted for packages prepared by an earlier compatibility wrapper.
@@ -678,6 +722,13 @@ final class WebExtensionCompatibilityHost {
             replyHandler(nil, NativeWebExtensionCompatibilityError.unsupportedAPI)
         }
         return true
+    }
+
+    private func hasPermission(_ permission: String, context: WKWebExtensionContext, access: WebExtensionAccess?) -> Bool {
+        let manifest = context.webExtension.manifest
+        let declared = (manifest["permissions"] as? [String] ?? []) + (manifest["optional_permissions"] as? [String] ?? [])
+        guard declared.contains(permission) else { return false }
+        return access?.allowsPermission(permission) ?? context.hasPermission(.init(rawValue: permission))
     }
 
     func remove(context: WKWebExtensionContext) {
@@ -712,7 +763,7 @@ final class WebExtensionCompatibilityHost {
                 do {
                     let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
                     guard granted else {
-                        replyHandler(["id": String(notificationID.dropFirst(extensionPrefix.count))], nil)
+                        replyHandler(nil, NativeWebExtensionCompatibilityError.notificationPermissionDenied)
                         return
                     }
                     try await center.add(UNNotificationRequest(
@@ -735,11 +786,12 @@ final class WebExtensionCompatibilityHost {
         case "getAll":
             Task { @MainActor in
                 let requests = await center.pendingNotificationRequests()
-                let pairs: [(String, [String: Any])] = requests.compactMap { request in
-                    guard request.identifier.hasPrefix(extensionPrefix) else { return nil }
-                    return (String(request.identifier.dropFirst(extensionPrefix.count)), [:] as [String: Any])
+                let delivered = await center.deliveredNotifications()
+                var notifications: [String: [String: Any]] = [:]
+                for identifier in requests.map(\.identifier) + delivered.map({ $0.request.identifier }) {
+                    guard identifier.hasPrefix(extensionPrefix) else { continue }
+                    notifications[String(identifier.dropFirst(extensionPrefix.count))] = [:]
                 }
-                let notifications = Dictionary(uniqueKeysWithValues: pairs)
                 replyHandler(["notifications": notifications], nil)
             }
         case "permission":
@@ -795,17 +847,21 @@ final class WebExtensionCompatibilityHost {
 }
 
 private enum NativeWebExtensionCompatibilityError: LocalizedError {
+    case missingPermission(String)
     case unsupportedAPI
     case unsupportedOperation
     case invalidResource
     case audioPlaybackFailed
+    case notificationPermissionDenied
 
     var errorDescription: String? {
         switch self {
+        case let .missingPermission(permission): "Extension permission required: \(permission)."
         case .unsupportedAPI: "The requested compatibility API is unsupported."
         case .unsupportedOperation: "The requested compatibility operation is unsupported."
         case .invalidResource: "The extension resource is invalid or unavailable."
         case .audioPlaybackFailed: "The extension audio resource could not be played."
+        case .notificationPermissionDenied: "System notification permission was denied."
         }
     }
 }

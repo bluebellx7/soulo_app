@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "يتم إعادة تحميل الصفحات المفتوحة بعد تثبيت البرنامج النصي أو تحريره أو تمكينه أو تعطيله أو إزالته.";
 "userscript_experimental_badge" = "التوافق";
 "userscript_experimental_title" = "التوافق UserScript";
-"userscript_experimental_desc" = "يدعم قواعد الموقع، وبدء/نهاية المستند، وتخزين GM الشامل وواجهات برمجة التطبيقات للصفحة، وأوامر البرنامج النصي، والإشعارات، وعلامات التبويب، والتنزيلات، وملفات تعريف الارتباط، والموارد، والطلبات ذات نطاق الأذونات. قم بمراجعة كل برنامج نصي قبل التثبيت؛ لا يتم تنفيذ الملفات @require الخارجية.";
+"userscript_experimental_desc" = "يدعم قواعد الموقع، وبدء/نهاية المستند، وتخزين GM الشامل وواجهات برمجة التطبيقات للصفحة، وأوامر البرنامج النصي، والإشعارات، وعلامات التبويب، والتنزيلات، وملفات تعريف الارتباط، والموارد، والطلبات ذات نطاق الأذونات. قم بمراجعة كل برنامج نصي قبل التثبيت.";
 "extension_choose_file" = "اختيار ملف أو مجلد…";
 "extension_installing" = "جارٍ التحقق من الإضافة وتثبيتها…";
 "extension_install_failed" = "تعذر تثبيت الامتداد";
@@ -659,7 +659,7 @@
 "userscript_new" = "البرنامج النصي الجديد";
 "userscript_edit" = "تحرير البرنامج النصي";
 "userscript_choose_file" = "اختيار نص برمجي…";
-"userscript_install_footer" = "اضغط على صف المصدر لفتحه في علامة التبويب Soulo الحالية. يفتح رابط .user.js تأكيد التثبيت. يتم دعم JavaScript القياسي ومجموعة واسعة من واجهات برمجة تطبيقات GM؛ لا تعمل البرامج النصية في التصفح الخاص ولا يتم تنفيذ ملفات @require الخارجية.";
+"userscript_install_footer" = "اضغط على صف المصدر لفتحه في علامة التبويب Soulo الحالية. يفتح رابط .user.js تأكيد التثبيت. يتم دعم JavaScript القياسي ومجموعة واسعة من واجهات برمجة تطبيقات GM. UserScripts لا تعمل في التصفح الخاص.";
 "userscript_install_failed" = "UserScript لا يمكن تثبيته";
 "web_extension_temporarily_disabled" = "ملحقات المتصفح القياسية غير متاحة مؤقتًا أثناء اكتمال اختبار التوافق.";
 "userscript_unreadable" = "لا يمكن قراءة البرنامج النصي المحدد كنص UTF-8.";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "مدعومة جزئيا";
 "userscript_docs_partial_desc" = "تتجاهل طلبات الشبكة التحميل/التقدم ونقل ملفات تعريف الارتباط. تكون الإشعارات موجودة في الصفحة، وتكون واجهات برمجة تطبيقات الموارد غير متزامنة، ويقوم مستمعو تغيير القيمة بالإبلاغ عن التغييرات التي تجريها الصفحة الحالية. عمليات التحقق من التحديث تتم يدويًا.";
 "userscript_docs_unsupported_title" = "غير معتمد حاليا";
-"userscript_docs_unsupported_desc" = "تنفيذ @require خارجي، واعتراض GM_webRequest، وGM_audio، وعزل وضع الحماية/التشغيل، وعمليات التحقق من التحديث التلقائي، والسلوكيات الدقيقة لسطح المكتب فقط التي لا يمكن لـ WKWebView توفيرها.";
+"userscript_docs_unsupported_desc" = "GM_webRequest، وGM_audio، وعزل وضع الحماية/التشغيل، وعمليات التحقق من التحديث التلقائي، والسلوكيات الدقيقة لسطح المكتب فقط التي لا يمكن لـ WKWebView توفيرها.";
 "userscript_docs_metadata_title" = "البيانات الوصفية";
 "userscript_docs_metadata_identity" = "يظهر اسم البرنامج النصي الذي يمكن قراءته بواسطة الإنسان والوصف الاختياري قبل التثبيت وفي تفاصيل البرنامج النصي.";
 "userscript_docs_metadata_version" = "استخدم مساحة اسم ثابتة وفريدة من نوعها وقم بزيادة الإصدار كلما تغير البرنامج النصي المجمع.";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "تفويض المضيفين الذين تستخدمهم طلبات الشبكة المميزة. وبدون ذلك، تقتصر الطلبات على مضيف الصفحة الحالية.";
 "userscript_docs_metadata_urls" = "الهوية الاختيارية وتحديث البيانات الوصفية. يستخدم Soulo هذه للتعرف على عمليات إعادة تثبيت نفس البرنامج النصي.";
 "userscript_docs_metadata_resource" = "يعلن عن مورد مسمى. أضف مضيف @connect مطابق؛ يتم تأجيل الجلب حتى يتم انتظار واجهة برمجة تطبيقات المورد الحديثة.";
-"userscript_docs_metadata_require" = "يتم الكشف عن المتطلبات الخارجية أثناء التثبيت ولكن لا يتم تنزيلها أو تنفيذها؛ يجب أن تكون البرامج النصية قائمة بذاتها.";
+"userscript_docs_metadata_require" = "تُنزَّل ملفات @require عبر HTTPS وتُحفَظ عند التثبيت أو الحفظ، ثم تُنفَّذ بالترتيب قبل البرنامج النصي.";
 "userscript_docs_api_title" = "واجهات برمجة التطبيقات المميزة المدعومة";
 "userscript_docs_api_info" = "يقرأ معالج البرنامج النصي، إصدار Soulo، وبيانات تعريف البرنامج النصي التي تم تحليلها. متوفر في الشكل القديم والحديث.";
 "userscript_docs_api_unsafe_window" = "يوفر نافذة الصفحة الحالية عندما يتم الإعلان بشكل صريح عن منح unsafeWindow.";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "يجب أن تكون القيم المخزنة قابلة للتسلسل بتنسيق JSON: ما يصل إلى 256 كيلو بايت لكل قيمة وإجمالي 1 ميجابايت لكل برنامج نصي.";
 "userscript_docs_limits_network" = "تقتصر الاستجابات المميزة على 20 ميجابايت، ويتم تحديد المهلة لمدة تتراوح من 1 إلى 60 ثانية، ولا يتم قبول رؤوس ملفات تعريف الارتباط/المضيف/الأصل.";
 "userscript_docs_limits_private" = "UserScripts لا تعمل في التصفح الخاص.";
-"userscript_docs_limits_require" = "لا يتم تنفيذ الملفات @require الخارجية مطلقًا. تجنب تبعيات CDN وقم بتضمين كل المنطق المطلوب في البرنامج النصي.";
+"userscript_docs_limits_require" = "تُنزَّل ملفات @require عبر HTTPS وتُحفَظ عند التثبيت أو الحفظ، ثم تُنفَّذ بالترتيب قبل البرنامج النصي.";
 "userscript_docs_template_title" = "قالب الحد الأدنى";
 "userscript_docs_template_footer" = "استخدم مساحة اسم فريدة وأضيق نطاق ممكن لإعلانات @match و@grant.";
 "userscript_too_large" = "يتجاوز البرنامج النصي المحدد حد 2 ميجابايت.";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "لا أذونات إضافية";
 "userscript_network_title" = "الوصول إلى الشبكة";
 "userscript_external_requirements" = "تبعيات خارجية";
-"userscript_external_requirements_desc" = "يعلن هذا البرنامج النصي ملفات @require خارجية. لا يحمّلها Soulo تلقائيًا.";
+"userscript_external_requirements_desc" = "تُنزَّل ملفات @require عبر HTTPS وتُحفَظ عند التثبيت أو الحفظ، ثم تُنفَّذ بالترتيب قبل البرنامج النصي.";
 "userscript_metadata_title" = "تفاصيل البرنامج النصي";
 "userscript_unsupported_permissions" = "غير مدعوم بعد: %@";
 "userscript_sample_name" = "شريط تقدم القراءة";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "عرض البطاقات";
 "tab_close_group" = "إغلاق المجموعة";
 "tab_close_group_confirm" = "إغلاق كل علامات التبويب في «%@» (%d)؟";
+
+"userscript_require_failed" = "تعذّر تحميل التبعية %@: %@";
+"userscript_require_integrity_failed" = "فشل التحقق من سلامة التبعية.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "إدارة";
+"extension_update" = "تحديث";
+"extension_rollback" = "استعادة الإصدار السابق";
+"extension_blocked_sites" = "المواقع المحظورة";
+"extension_diagnostics" = "التوافق";
+"extension_review_access" = "اختر الأذونات والمواقع التي يمكن لهذه الإضافة الوصول إليها.";
+"extension_limit_commands" = "اختصارات لوحة المفاتيح للإضافات غير متاحة على iOS.";
+"extension_limit_notifications" = "يمكن عرض الإشعارات، لكن أحداث النقر والإغلاق غير مدعومة.";
+"extension_limit_offscreen" = "يقتصر دعم المستندات خارج الشاشة على تشغيل الصوت.";

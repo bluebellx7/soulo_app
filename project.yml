@@ -1,5 +1,6 @@
 name: Soulo
 options:
+  preGenCommand: python3 scripts/prepare_mobilevlckit_symbols.py
   bundleIdPrefix: com.dkluge
   deploymentTarget:
     iOS: "17.0"
@@ -61,7 +62,9 @@ targets:
     type: application
     platform: iOS
     sources:
-      - Soulo/Source
+      - path: Soulo/Source
+        excludes:
+          - Resources/trackerData.json
       - Soulo/Assets.xcassets
       - Soulo/PrivacyInfo.xcprivacy
       - path: Soulo/Resources/Torrents
@@ -107,6 +110,8 @@ targets:
         NSLocalNetworkUsageDescription: "Transfer files with your computer and connect to download peers on your local network."
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
+        LSApplicationQueriesSchemes:
+          - bilibili
         CFBundleDocumentTypes:
           - CFBundleTypeName: Soulo Documents
             CFBundleTypeRole: Viewer
@@ -162,6 +167,8 @@ targets:
           - CFBundleURLSchemes:
               - soulo
               - magnet
+              - ed2k
+              - thunder
           - CFBundleTypeRole: Viewer
             CFBundleURLName: com.dkluge.Soulo.browser
             CFBundleURLSchemes:
@@ -185,6 +192,23 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_PREVIEWS: "YES"
         SWIFT_EMIT_LOC_STRINGS: "YES"
+        OTHER_SWIFT_FLAGS: "$(inherited) -Xcc -fmodule-map-file=$(SRCROOT)/ThirdParty/SouloED2K/Bridge/include/SouloED2K.modulemap"
+      configs:
+        Release:
+          DEAD_CODE_STRIPPING: "YES"
+          DEPLOYMENT_POSTPROCESSING: "YES"
+          STRIP_INSTALLED_PRODUCT: "YES"
+          STRIP_STYLE: all
+          COPY_PHASE_STRIP: "YES"
+    postBuildScripts:
+      - name: Package compressed tracker data
+        script: |
+          python3 "${SRCROOT}/scripts/package_tracker_data.py" --output "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/trackerData.lzfse"
+        inputFiles:
+          - $(SRCROOT)/scripts/package_tracker_data.py
+          - $(SRCROOT)/Soulo/Source/Resources/trackerData.json
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/trackerData.lzfse
     dependencies:
       - target: SouloWidgetExtension
       - target: SouloShareExtension
@@ -192,6 +216,25 @@ targets:
       # collide with Xcode's Swift package container when the GUI loads it.
       - framework: ThirdParty/SouloTorrent/Artifacts/SouloTorrent.xcframework
         embed: false
+      - framework: ThirdParty/SouloED2K/Artifacts/SouloED2K.xcframework
+        embed: false
+      - framework: ThirdParty/MobileVLCKit/Artifacts/MobileVLCKit.xcframework
+        embed: true
+        codeSign: true
+      - sdk: QuartzCore.framework
+      - sdk: CoreText.framework
+      - sdk: AVFoundation.framework
+      - sdk: Security.framework
+      - sdk: CFNetwork.framework
+      - sdk: AudioToolbox.framework
+      - sdk: OpenGLES.framework
+      - sdk: CoreGraphics.framework
+      - sdk: VideoToolbox.framework
+      - sdk: CoreMedia.framework
+      - sdk: libxml2.tbd
+      - sdk: libz.tbd
+      - sdk: libbz2.tbd
+      - sdk: libiconv.tbd
       - package: PLzmaSDK
       - package: Unrar
       - package: ZipArchive
@@ -282,12 +325,15 @@ targets:
       - path: SouloTests/ReadingFixtures
         type: folder
         buildPhase: resources
+      - path: Soulo/Source/Resources/trackerData.json
+        buildPhase: resources
       - path: SouloShareExtension/SouloExtensionURLOpener.m
     dependencies:
       - target: Soulo
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dkluge.Soulo.Tests
+        OTHER_SWIFT_FLAGS: "$(inherited) -Xcc -fmodule-map-file=$(SRCROOT)/ThirdParty/SouloED2K/Bridge/include/SouloED2K.modulemap"
         SWIFT_OBJC_BRIDGING_HEADER: SouloShareExtension/ShareExtension-Bridging-Header.h
         GENERATE_INFOPLIST_FILE: "YES"
 

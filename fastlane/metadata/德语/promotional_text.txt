@@ -1,1 +1,1 @@
-Bessere Userscript-Kompatibilität mit @require. Videoton korrigiert, Zurück-Navigation verbessert und Ladefortschritt deutlicher angezeigt.
+BT- und Magnet-Downloads mit Dateiauswahl und Fortsetzen. Spiele unterstützte Medien beim Laden ab, öffne MKV und importiere ed2k/thunder-Links.

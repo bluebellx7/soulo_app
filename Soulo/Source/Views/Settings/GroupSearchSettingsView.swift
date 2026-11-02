@@ -34,6 +34,7 @@ struct GroupSearchSettingsView: View {
                   footer: { Text(ToolText.text("group_default_search_hint")) }
                 if let error { Section { Text(error).foregroundStyle(.red) } }
             }
+            .dismissKeyboardOnBackgroundTap()
             .navigationTitle(ToolText.text("group_search_settings"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

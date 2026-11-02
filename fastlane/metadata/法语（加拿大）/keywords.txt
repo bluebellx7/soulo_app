@@ -1,1 +1,1 @@
-confidentialité,onglets,téléchargement vidéo,antipub,scripts,extensions,traduction,médias
+confidentialité,onglets,téléchargement vidéo,antipub,scripts,extensions,torrent,magnet,MKV

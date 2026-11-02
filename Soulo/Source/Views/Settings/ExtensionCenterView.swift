@@ -26,6 +26,7 @@ struct ExtensionCenterView: View {
     @State private var successMessage: String?
     @State private var scriptPendingDeletion: UserScriptRecord?
     @State private var extensionActionRevision = 0
+    @State private var nativePreview: WebExtensionInstallPreview?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -60,10 +61,7 @@ struct ExtensionCenterView: View {
             isInstalling = true
             Task {
                 do {
-                    let item = try await service.installWebExtension(from: url)
-                    selectedTab = .installed
-                    successMessage = AppAccessibility.formatted("extension_installed_success_desc", item.name)
-                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    nativePreview = try await service.previewWebExtension(from: url)
                 } catch {
                     errorMessage = error.localizedDescription
                     UINotificationFeedbackGenerator().notificationOccurred(.error)
@@ -76,6 +74,9 @@ struct ExtensionCenterView: View {
                 .presentationDetents([.height(390), .large])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(item: $nativePreview) { preview in
+            WebExtensionReviewView(preview: preview) { _ in selectedTab = .installed }
+        }
         .fileImporter(
             isPresented: $importUserScript,
             allowedContentTypes: userScriptContentTypes,
@@ -85,14 +86,18 @@ struct ExtensionCenterView: View {
                 if case let .failure(error) = result { errorMessage = error.localizedDescription }
                 return
             }
-            do {
-                let script = try service.importUserScript(from: url)
-                selectedTab = .installed
-                successMessage = AppAccessibility.formatted("extension_installed_success_desc", script.name)
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
-            } catch {
-                errorMessage = error.localizedDescription
-                UINotificationFeedbackGenerator().notificationOccurred(.error)
+            isInstalling = true
+            Task {
+                defer { isInstalling = false }
+                do {
+                    let script = try await service.importUserScript(from: url)
+                    selectedTab = .installed
+                    successMessage = AppAccessibility.formatted("extension_installed_success_desc", script.name)
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                } catch {
+                    errorMessage = error.localizedDescription
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                }
             }
         }
         .navigationDestination(isPresented: $showNewScript) {
@@ -229,6 +234,9 @@ struct ExtensionCenterView: View {
                                 userScriptRow(script)
                             }
 
+                            if service.loadingUserScripts.contains(script.id) {
+                                ProgressView().controlSize(.small)
+                            }
                             Toggle("", isOn: Binding(
                                 get: { script.isEnabled },
                                 set: { service.setUserScriptEnabled(script.id, enabled: $0) }
@@ -278,6 +286,12 @@ struct ExtensionCenterView: View {
             }
 
             if service.loadingWebExtensions.contains(item.id) { ProgressView().controlSize(.small) }
+            NavigationLink { WebExtensionManagementView(id: item.id) } label: {
+                Image(systemName: "gearshape")
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(AppLocalization.string("extension_manage"))
+            .accessibilityIdentifier("extensions.manage-" + item.id.uuidString)
             Toggle("", isOn: Binding(
                 get: { item.isEnabled },
                 set: { service.setWebExtensionEnabled(item.id, enabled: $0) }
@@ -353,6 +367,16 @@ struct ExtensionCenterView: View {
                 ))
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
+                if let error = service.userScriptErrors[script.id] {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if let error = service.userScriptRuntimeErrors[script.id] {
+                    Text(error).font(.caption).foregroundStyle(.red).lineLimit(3)
+                        .textSelection(.enabled)
+                }
             }
         }
         .padding(.vertical, 3)
@@ -529,6 +553,7 @@ struct WebExtensionStoreInstallView: View {
     @State private var installedName: String?
     @State private var errorMessage: String?
     @State private var didAutoStart = false
+    @State private var nativePreview: WebExtensionInstallPreview?
 
     init(initialValue: String = "", autoStart: Bool = false) {
         self.initialValue = initialValue
@@ -602,6 +627,9 @@ struct WebExtensionStoreInstallView: View {
                 }
             }
         }
+        .sheet(item: $nativePreview) { preview in
+            WebExtensionReviewView(preview: preview) { _ in dismiss() }
+        }
         .interactiveDismissDisabled(isInstalling)
         .task {
             guard autoStart, !didAutoStart else { return }
@@ -637,9 +665,7 @@ struct WebExtensionStoreInstallView: View {
         isInstalling = true
         Task { @MainActor in
             do {
-                let item = try await WebExtensionStoreInstallService.shared.install(from: linkText)
-                installedName = item.name
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                nativePreview = try await WebExtensionStoreInstallService.shared.preview(from: linkText)
             } catch {
                 errorMessage = error.localizedDescription
                 UINotificationFeedbackGenerator().notificationOccurred(.error)
@@ -658,6 +684,7 @@ struct BrowserPackageInstallView: View {
     @State private var showSuccess = false
     @State private var errorMessage: String?
     @State private var scriptPreview: UserScriptInstallPreview?
+    @State private var nativePreview: WebExtensionInstallPreview?
 
     var body: some View {
         NavigationStack {
@@ -731,11 +758,16 @@ struct BrowserPackageInstallView: View {
                         if !preview.metadata.requiredURLs.isEmpty {
                             Divider().padding(.leading, 42)
                             previewRow(
-                                icon: "exclamationmark.triangle",
+                                icon: "arrow.down.circle",
                                 title: LanguageManager.shared.localizedString("userscript_external_requirements"),
                                 detail: preview.metadata.requiredURLs.joined(separator: "\n"),
-                                tint: .orange
+                                tint: .secondary
                             )
+                            Text(LanguageManager.shared.localizedString("userscript_external_requirements_desc"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 14)
+                                .padding(.bottom, 14)
                         }
                     }
                     .background(.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -785,6 +817,9 @@ struct BrowserPackageInstallView: View {
             } catch {
                 errorMessage = error.localizedDescription
             }
+        }
+        .sheet(item: $nativePreview) { preview in
+            WebExtensionReviewView(preview: preview) { _ in dismiss() }
         }
         .interactiveDismissDisabled(isInstalling)
         .alert(
@@ -854,14 +889,16 @@ struct BrowserPackageInstallView: View {
             do {
                 switch candidate.kind {
                 case .userScript:
-                    let script = try BrowserExtensionService.shared.importUserScript(
+                    let script = try await BrowserExtensionService.shared.importUserScript(
                         from: candidate.fileURL,
                         sourceURL: candidate.sourceURL
                     )
                     installedName = script.name
                 case .webExtension:
-                    let item = try await BrowserExtensionService.shared.installWebExtension(from: candidate.fileURL)
-                    installedName = item.name
+                    nativePreview = try await BrowserExtensionService.shared.previewWebExtension(
+                        from: candidate.fileURL, sourceURL: candidate.sourceURL)
+                    isInstalling = false
+                    return
                 }
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
                 showSuccess = true
@@ -885,6 +922,7 @@ struct UserScriptEditorView: View {
     @State private var injectionTime: UserScriptInjectionTime
     @State private var errorMessage: String?
     @State private var sourceCopied = false
+    @State private var isSaving = false
     @Environment(\.dismiss) private var dismiss
 
     init(script: UserScriptRecord?, builtInNotice: String? = nil) {
@@ -959,10 +997,10 @@ struct UserScriptEditorView: View {
                 if !metadata.requiredURLs.isEmpty {
                     Label(
                         LanguageManager.shared.localizedString("userscript_external_requirements_desc"),
-                        systemImage: "exclamationmark.triangle.fill"
+                        systemImage: "arrow.down.circle"
                     )
                     .font(.footnote)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(.secondary)
                 }
                 let unsupported = metadata.grants.filter {
                     !UserScriptRuntime.supportedGrantNames.contains($0.lowercased())
@@ -1030,6 +1068,10 @@ struct UserScriptEditorView: View {
                 }
             }
         }
+        .disabled(isSaving)
+        .overlay { if isSaving { ProgressView() } }
+        .interactiveDismissDisabled(isSaving)
+        .dismissKeyboardOnBackgroundTap()
         .navigationTitle(isBuiltIn
             ? LanguageManager.shared.localizedString("userscript_metadata_title")
             : LanguageManager.shared.localizedString(scriptID == nil ? "userscript_new" : "userscript_edit"))
@@ -1039,7 +1081,7 @@ struct UserScriptEditorView: View {
                 if !isBuiltIn {
                     Button(LanguageManager.shared.localizedString("save")) { save() }
                         .fontWeight(.semibold)
-                        .disabled(source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        .disabled(isSaving || source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                             || patternsText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
@@ -1068,18 +1110,23 @@ struct UserScriptEditorView: View {
     }
 
     private func save() {
-        do {
-            _ = try BrowserExtensionService.shared.saveUserScript(
-                id: scriptID,
-                fallbackName: name,
-                source: source,
-                explicitPatterns: patternsText.components(separatedBy: .newlines),
-                injectionTime: injectionTime,
-                explicitName: name
-            )
-            dismiss()
-        } catch {
-            errorMessage = error.localizedDescription
+        guard !isSaving else { return }
+        isSaving = true
+        Task { @MainActor in
+            defer { isSaving = false }
+            do {
+                _ = try await BrowserExtensionService.shared.saveUserScriptResolvingRequirements(
+                    id: scriptID,
+                    fallbackName: name,
+                    source: source,
+                    explicitPatterns: patternsText.components(separatedBy: .newlines),
+                    injectionTime: injectionTime,
+                    explicitName: name
+                )
+                dismiss()
+            } catch {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 }

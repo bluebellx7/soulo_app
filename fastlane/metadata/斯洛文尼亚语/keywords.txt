@@ -1,1 +1,1 @@
-zasebnost,zavihki,prenos videa,blokiranje oglasov,uporabniške skripte,razširitve,prevod,mediji
+zasebnost,zavihki,prenos videa,blokiranje oglasov,uporabniške skripte,razširitve,torrent,magnet,MKV

@@ -1,1 +1,1 @@
-prywatność,karty,pobierz wideo,blokada reklam,skrypty,rozszerzenia,tłumaczenie,multimedia
+prywatność,karty,pobierz wideo,blokada reklam,skrypty,rozszerzenia,tłumaczenie,torrent,magnet,MKV

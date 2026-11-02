@@ -4,7 +4,7 @@ Vælg Soulo som standardbrowser i Indstillinger for at åbne links fra andre app
 
 Senest brugte faner og webstedsgrupper vises først, og faneoversigten åbner øverst. Rækkefølgen bevares efter genstart.
 
-BT-downloads: Importér .torrent-filer eller magnetlinks, vælg filer, sæt på pause og fortsæt. På iOS 26 kan downloads fortsætte i baggrunden, når systemet tillader det; tidligere versioner gemmer fremdriften og sætter på pause.
+BT-downloads: Importér .torrent-filer eller magnetlinks, vælg filer, sæt på pause og fortsæt. På iOS 26 kan downloads fortsætte i baggrunden, når systemet tillader det; tidligere versioner gemmer fremdriften og sætter på pause. Afspil understøttede BT-medier under download, og åbn MKV-filer. Importér ed2k/thunder-links. Downloads kræver tilgængelige kilder; afspilning afhænger af codecs.
 
 Vælg fem valgfrie genveje på startsiden til downloads, filer, bogmærker, historik, baggrunde og andre sider. Bibliotekets fanelinje bliver kompakt, når du ruller.
 

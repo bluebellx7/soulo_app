@@ -6,7 +6,10 @@ final class DownloadPlaybackUITests: XCTestCase {
         continueAfterFailure = false
         let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
         let html = "<html><head><meta name='viewport' content='width=device-width,initial-scale=1'></head><body><h2>Concurrent video download</h2><video src='/clip.mp4' controls autoplay loop playsinline style='width:100%'></video></body></html>"
-        let server = try DownloadPlaybackHTTPFixture(files: ["/page.html": Data(html.utf8), "/clip.mp4": try Data(contentsOf: video)])
+        // Keep this small fixture downloading throughout slower UI operations;
+        // range reads used by the player remain fast.
+        let server = try DownloadPlaybackHTTPFixture(
+            files: ["/page.html": Data(html.utf8), "/clip.mp4": try Data(contentsOf: video)], slowChunkSize: 128)
         let root = try await server.start()
         defer { server.stop() }
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")

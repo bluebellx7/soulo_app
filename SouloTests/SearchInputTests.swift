@@ -18,6 +18,27 @@ private actor SuggestionRequests {
 }
 
 @MainActor final class SearchInputTests: XCTestCase {
+    func testAutocompleteHighlightPreservesUnicodeAndOriginalStringIndices() throws {
+        let cases: [(String, String, String, String, String)] = [
+            ("中文输入法", " 中文 ", "", "中文", "输入法"),
+            ("Learn SWIFT today", "swift", "Learn ", "SWIFT", " today"),
+            ("AİB中文", "中文", "AİB", "中文", ""),
+            ("👩‍💻中文 café", "中文", "👩‍💻", "中文", " café"),
+            ("前缀 e\u{301}cole 后缀", "école", "前缀 ", "e\u{301}cole", " 后缀")
+        ]
+        for (suggestion, query, prefix, match, suffix) in cases {
+            let parts = try XCTUnwrap(SearchAutocompleteView.highlightedParts(suggestion, query: query))
+            XCTAssertEqual(parts.prefix, prefix)
+            XCTAssertEqual(parts.match, match)
+            XCTAssertEqual(parts.suffix, suffix)
+            XCTAssertEqual(parts.prefix + parts.match + parts.suffix, suggestion)
+        }
+        let bridged = NSString(string: "中文建议跨越原生字符串边界").substring(from: 0)
+        XCTAssertEqual(SearchAutocompleteView.highlightedParts(bridged, query: "建议")?.match, "建议")
+        XCTAssertNil(SearchAutocompleteView.highlightedParts("A suggestion", query: " "))
+        XCTAssertNil(SearchAutocompleteView.highlightedParts("A suggestion", query: "missing"))
+    }
+
     func testMarkedSyllablesNeverFetchSuggestionsAndCommittingFetchesOnce() async throws {
         let requests = SuggestionRequests()
         let model = SearchViewModel(suggestionProvider: { await requests.fetch($0, $1) })

@@ -111,6 +111,7 @@ final class SouloAppDelegate: NSObject, UIApplicationDelegate {
         TorrentBackgroundCoordinator.shared.register()
         Task { @MainActor in
             _ = TorrentDownloadService.shared
+            _ = ED2KDownloadService.shared
             AppQuickActionService.shared.configureShortcuts()
             _ = SeparatedMediaDownloadService.shared
             RetiredStorageCleanup.schedule()

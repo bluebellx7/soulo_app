@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "Otvorené stránky sa znova načítajú po nainštalovaní, úprave, povolení, zakázaní alebo odstránení skriptu.";
 "userscript_experimental_badge" = "Kompatibilita";
 "userscript_experimental_title" = "UserScript kompatibilita";
-"userscript_experimental_desc" = "Podporuje pravidlá lokality, spustenie/ukončenie dokumentu, rozsiahle úložisko GM a rozhrania API stránok, príkazy skriptov, upozornenia, karty, sťahovanie, súbory cookie, zdroje a požiadavky v rozsahu povolení. Pred inštaláciou skontrolujte každý skript; externé súbory @require sa nespustia.";
+"userscript_experimental_desc" = "Podporuje pravidlá lokality, spustenie/ukončenie dokumentu, rozsiahle úložisko GM a rozhrania API stránok, príkazy skriptov, upozornenia, karty, sťahovanie, súbory cookie, zdroje a požiadavky v rozsahu povolení. Pred inštaláciou skontrolujte každý skript.";
 "extension_choose_file" = "Vybrať súbor alebo priečinok…";
 "extension_installing" = "Kontrola a inštalácia rozšírenia…";
 "extension_install_failed" = "Rozšírenie sa nepodarilo nainštalovať";
@@ -659,7 +659,7 @@
 "userscript_new" = "Nový skript";
 "userscript_edit" = "Upraviť skript";
 "userscript_choose_file" = "Vybrať skript…";
-"userscript_install_footer" = "Klepnutím na zdrojový riadok ho otvoríte na aktuálnej karte Soulo. Odkaz .user.js otvorí potvrdenie inštalácie. Podporovaný je štandardný JavaScript a široká sada GM API; skripty sa nespúšťajú v režime Súkromné ​​prehliadanie a externé súbory @require sa nevykonávajú.";
+"userscript_install_footer" = "Klepnutím na zdrojový riadok ho otvoríte na aktuálnej karte Soulo. Odkaz .user.js otvorí potvrdenie inštalácie. Podporovaný je štandardný JavaScript a široká sada GM API. UserScripts sa nespúšťajú v režime Súkromné prehliadanie.";
 "userscript_install_failed" = "UserScript sa nepodarilo nainštalovať";
 "web_extension_temporarily_disabled" = "Kým sa dokončí testovanie kompatibility, štandardné rozšírenia prehliadača sú dočasne nedostupné.";
 "userscript_unreadable" = "Vybratý skript sa nepodarilo prečítať ako text UTF-8.";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "Čiastočne podporované";
 "userscript_docs_partial_desc" = "Sieťové požiadavky vynechávajú nahrávanie/postup a prenos súborov cookie. Oznámenia sú na stránke, rozhrania API prostriedkov sú asynchrónne a poslucháči zmien hodnoty hlásia zmeny vykonané aktuálnou stránkou. Kontroly aktualizácií sú manuálne.";
 "userscript_docs_unsupported_title" = "Momentálne nie je podporované";
-"userscript_docs_unsupported_desc" = "Externé @vyžadovať spustenie, zachytenie GM_webRequest, GM_audio, izolovanie karantény/spustenia, automatické kontroly aktualizácií a presné správanie iba pre pracovnú plochu, ktoré WKWebView nemôže poskytnúť.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, izolovanie karantény/spustenia, automatické kontroly aktualizácií a presné správanie iba pre pracovnú plochu, ktoré WKWebView nemôže poskytnúť.";
 "userscript_docs_metadata_title" = "Metadáta";
 "userscript_docs_metadata_identity" = "Ľudsky čitateľný názov skriptu a voliteľný popis zobrazené pred inštaláciou a v detailoch skriptu.";
 "userscript_docs_metadata_version" = "Použite stabilný, jedinečný priestor názvov a zvýšte verziu vždy, keď sa zmení pribalený skript.";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "Autorizovať hostiteľov používaných privilegovanými sieťovými požiadavkami. Bez neho sú požiadavky obmedzené na aktuálneho hostiteľa stránky.";
 "userscript_docs_metadata_urls" = "Voliteľná identita a aktualizácia metadát. Soulo ich používa na rozpoznanie preinštalovania toho istého skriptu.";
 "userscript_docs_metadata_resource" = "Deklaruje pomenovaný zdroj. Pridajte zodpovedajúceho hostiteľa @connect; načítanie sa odloží, kým sa nečaká na moderné rozhranie API.";
-"userscript_docs_metadata_require" = "Externé požiadavky sú zverejnené počas inštalácie, ale nie sú stiahnuté ani spustené; skripty musia byť samostatné.";
+"userscript_docs_metadata_require" = "Súbory @require cez HTTPS sa pri inštalácii alebo uložení stiahnu a uložia do vyrovnávacej pamäte a spustia sa v poradí pred skriptom.";
 "userscript_docs_api_title" = "Podporované privilegované API";
 "userscript_docs_api_info" = "Číta obslužný program skriptu, verziu Soulo a analyzované metadáta skriptu. Dostupné v staršej aj modernej podobe.";
 "userscript_docs_api_unsafe_window" = "Poskytuje aktuálne okno stránky, keď je explicitne deklarované udelenie unsafeWindow.";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "Uložené hodnoty musia byť serializovateľné JSON: až 256 kB na hodnotu a 1 MB celkovo na skript.";
 "userscript_docs_limits_network" = "Privilegované odpovede sú obmedzené na 20 MB, časový limit je obmedzený na 1–60 sekúnd a hlavičky Cookie/Host/Origin nie sú akceptované.";
 "userscript_docs_limits_private" = "UserScripts sa nespúšťajú v režime Súkromné prehliadanie.";
-"userscript_docs_limits_require" = "Externé súbory @require sa nikdy nespustia. Vyhnite sa závislostiam CDN a zahrňte do skriptu všetku požadovanú logiku.";
+"userscript_docs_limits_require" = "Súbory @require cez HTTPS sa pri inštalácii alebo uložení stiahnu a uložia do vyrovnávacej pamäte a spustia sa v poradí pred skriptom.";
 "userscript_docs_template_title" = "Minimálna šablóna";
 "userscript_docs_template_footer" = "Použite jedinečný priestor názvov a najužšie možné deklarácie @match a @grant.";
 "userscript_too_large" = "Vybratý skript je väčší ako limit 2 MB.";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "Žiadne ďalšie povolenia";
 "userscript_network_title" = "Prístup k sieti";
 "userscript_external_requirements" = "Vonkajšie závislosti";
-"userscript_external_requirements_desc" = "Tento skript deklaruje externé súbory @require. Soulo ich nenačítava automaticky.";
+"userscript_external_requirements_desc" = "Súbory @require cez HTTPS sa pri inštalácii alebo uložení stiahnu a uložia do vyrovnávacej pamäte a spustia sa v poradí pred skriptom.";
 "userscript_metadata_title" = "Podrobnosti skriptu";
 "userscript_unsupported_permissions" = "Zatiaľ nepodporované: %@";
 "userscript_sample_name" = "Ukazovateľ priebehu čítania";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "Zobrazenie kariet";
 "tab_close_group" = "Zavrieť skupinu";
 "tab_close_group_confirm" = "Zavrieť všetky karty v skupine „%@“ (%d)?";
+
+"userscript_require_failed" = "Závislosť %@ sa nepodarilo načítať: %@";
+"userscript_require_integrity_failed" = "Kontrola integrity závislosti zlyhala.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "Spravovať";
+"extension_update" = "Aktualizovať";
+"extension_rollback" = "Obnoviť predošlú verziu";
+"extension_blocked_sites" = "Blokované weby";
+"extension_diagnostics" = "Kompatibilita";
+"extension_review_access" = "Vyberte oprávnenia a weby, ku ktorým má toto rozšírenie prístup.";
+"extension_limit_commands" = "Klávesové skratky rozšírení nie sú v iOS dostupné.";
+"extension_limit_notifications" = "Upozornenia možno zobraziť, ale udalosti kliknutia a zatvorenia nie sú podporované.";
+"extension_limit_offscreen" = "Dokumenty mimo obrazovky podporujú iba prehrávanie zvuku.";

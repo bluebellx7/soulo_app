@@ -4,7 +4,7 @@ V Nastavitvah izberite Soulo kot privzeti brskalnik za odpiranje povezav iz drug
 
 Nedavno uporabljeni zavihki in skupine spletnih mest so prikazani najprej, pregled pa se odpre na vrhu. Vrstni red uporabe se ohrani po ponovnem zagonu.
 
-Prenosi BT: uvozite datoteke .torrent ali povezave magnet, izberite datoteke, začasno ustavite in nadaljujte. V iOS 26 se lahko nadaljujejo v ozadju, ko sistem dovoli; starejše različice shranijo napredek in jih začasno ustavijo.
+Prenosi BT: uvozite datoteke .torrent ali povezave magnet, izberite datoteke, začasno ustavite in nadaljujte. V iOS 26 se lahko nadaljujejo v ozadju, ko sistem dovoli; starejše različice shranijo napredek in jih začasno ustavijo. Predvajajte podprte BT medije med prenosom in odprite datoteke MKV. Uvozite povezave ed2k/thunder. Prenosi potrebujejo razpoložljive vire; predvajanje je odvisno od kodekov.
 
 Izberite pet izbirnih bližnjic na domači strani za prenose, datoteke, zaznamke, zgodovino, ozadja in druge strani. Vrstica zavihkov knjižnice se med pomikanjem skrči.
 

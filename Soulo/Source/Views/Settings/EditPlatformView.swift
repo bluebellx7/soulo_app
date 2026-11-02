@@ -57,6 +57,7 @@ struct EditPlatformView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            .dismissKeyboardOnBackgroundTap()
             .navigationTitle(LanguageManager.shared.localizedString("edit"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

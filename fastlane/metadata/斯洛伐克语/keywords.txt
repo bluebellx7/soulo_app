@@ -1,1 +1,1 @@
-súkromie,karty,sťahovanie videa,blokovanie reklám,používateľské skripty,rozšírenia,preklad
+súkromie,karty,sťahovanie videa,blokovanie reklám,používateľské skripty,torrent,magnet,MKV

@@ -1,1 +1,1 @@
-Cải thiện tập lệnh người dùng với @require, sửa lỗi âm thanh video, cải thiện quay lại trang và làm rõ tiến trình tải.
+Tải BT và magnet với chọn tệp, tiếp tục tải. Phát nội dung được hỗ trợ khi đang tải, mở MKV và nhập liên kết ed2k/thunder.

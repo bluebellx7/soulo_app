@@ -1,1 +1,1 @@
-privacitat,pestanyes,baixar vídeos,bloqueig anuncis,scripts,extensions,traducció,recursos multimèdia
+privacitat,pestanyes,baixar vídeos,bloqueig anuncis,scripts,extensions,traducció,torrent,magnet,MKV

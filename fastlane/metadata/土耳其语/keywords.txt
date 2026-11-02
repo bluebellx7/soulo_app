@@ -1,1 +1,1 @@
-gizli,sekmeler,video indirme,reklam engelleme,kullanıcı betiği,uzantılar,çeviri,medya bulucu
+gizli,sekmeler,video indirme,reklam engelleme,kullanıcı betiği,uzantılar,çeviri,torrent,magnet,MKV

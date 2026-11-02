@@ -93,19 +93,19 @@ struct SearchPlatform: Codable, Identifiable, Hashable {
         faviconURL = try container.decodeIfPresent(String.self, forKey: .faviconURL)
     }
 
-    /// Character set safe for URL query values — encodes +, #, &, = etc.
-    private static let queryValueAllowed: CharacterSet = {
-        var cs = CharacterSet.urlQueryAllowed
-        cs.remove(charactersIn: "#+&=@!$'()*,;")
-        return cs
-    }()
-
+    /// A placeholder can be a query value or a single path segment. Encode
+    /// delimiters for both so keywords never change the template's structure.
     func searchURL(for keyword: String) -> URL? {
-        guard let encoded = keyword.addingPercentEncoding(withAllowedCharacters: Self.queryValueAllowed) else {
+        guard let encoded = SearchQueryEncoding.encode(keyword) else {
             return nil
         }
         let urlString = searchURLTemplate.replacingOccurrences(of: "%@", with: encoded)
         return URL(string: urlString)
+    }
+
+    mutating func recordUse() {
+        if usageCount < 0 { usageCount = 0 }
+        if usageCount < Int.max { usageCount += 1 }
     }
 
     var homePageURL: URL? {

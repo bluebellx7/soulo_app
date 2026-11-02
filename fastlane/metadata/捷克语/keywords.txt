@@ -1,1 +1,1 @@
-soukromí,karty,stahování videa,blokování reklam,uživatelské skripty,rozšíření,překlad,média
+soukromí,karty,stahování videa,blokování reklam,uživatelské skripty,rozšíření,torrent,magnet,MKV

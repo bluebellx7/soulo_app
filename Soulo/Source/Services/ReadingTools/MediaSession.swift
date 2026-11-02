@@ -392,7 +392,18 @@ final class MediaSession: ObservableObject {
         let limit = player.currentItem?.duration.seconds ?? 0
         guard limit.isFinite, limit > 0 else { return }
         let target = min(max(0, seconds), limit)
-        player.seek(to: CMTime(seconds: target, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
+        if retainedDownloadSource?.resourceLease is TorrentPlaybackLease {
+            let token = generation
+            player.seek(to: CMTime(seconds: target, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
+                Task { @MainActor in
+                    guard finished, let self, self.generation == token,
+                          self.wantsPlayback, self.interruptedGeneration == nil else { return }
+                    self.play()
+                }
+            }
+        } else {
+            player.seek(to: CMTime(seconds: target, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
+        }
         elapsed = target
     }
     private func positionKey(_ url: URL) -> String {

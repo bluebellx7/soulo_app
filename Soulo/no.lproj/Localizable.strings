@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "Åpne sider lastes inn på nytt etter at et skript er installert, redigert, aktivert, deaktivert eller fjernet.";
 "userscript_experimental_badge" = "Kompatibilitet";
 "userscript_experimental_title" = "UserScript kompatibilitet";
-"userscript_experimental_desc" = "Støtter nettstedregler, dokumentstart/slutt, omfattende GM-lagring og side-API-er, skriptkommandoer, varsler, faner, nedlastinger, informasjonskapsler, ressurser og forespørsler med tillatelsesomfang. Gå gjennom hvert skript før du installerer; eksterne @require-filer kjøres ikke.";
+"userscript_experimental_desc" = "Støtter nettstedregler, dokumentstart/slutt, omfattende GM-lagring og side-API-er, skriptkommandoer, varsler, faner, nedlastinger, informasjonskapsler, ressurser og forespørsler med tillatelsesomfang. Gå gjennom hvert skript før du installerer.";
 "extension_choose_file" = "Velg fil eller mappe…";
 "extension_installing" = "Sjekker og installerer utvidelsen …";
 "extension_install_failed" = "Utvidelsen kunne ikke installeres";
@@ -659,7 +659,7 @@
 "userscript_new" = "Nytt skript";
 "userscript_edit" = "Rediger skript";
 "userscript_choose_file" = "Velg skript…";
-"userscript_install_footer" = "Trykk på en kilderad for å åpne den i gjeldende Soulo-fane. En .user.js-kobling åpner en installasjonsbekreftelse. Standard JavaScript og et bredt sett med GM APIer støttes; skript kjører ikke i privat surfing og eksterne @require-filer kjøres ikke.";
+"userscript_install_footer" = "Trykk på en kilderad for å åpne den i gjeldende Soulo-fane. En .user.js-kobling åpner en installasjonsbekreftelse. Standard JavaScript og et bredt sett med GM APIer støttes. UserScripter kjører ikke i privat nettlesing.";
 "userscript_install_failed" = "UserScript Kunne ikke installeres";
 "web_extension_temporarily_disabled" = "Standard nettleserutvidelser er midlertidig utilgjengelige mens kompatibilitetstesting er fullført.";
 "userscript_unreadable" = "Det valgte skriptet kunne ikke leses som UTF-8-tekst.";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "Delvis støttet";
 "userscript_docs_partial_desc" = "Nettverksforespørsler utelater opplasting/fremdrift og informasjonskapseltransport. Varslinger er på siden, ressurs-API-er er asynkrone, og verdiendringslyttere rapporterer endringer gjort av gjeldende side. Oppdateringssjekker er manuelle.";
 "userscript_docs_unsupported_title" = "Støttes ikke for øyeblikket";
-"userscript_docs_unsupported_desc" = "Ekstern @require-utførelse, GM_webRequest-avskjæring, GM_audio, sandkasse/innkjøringsisolasjon, automatiske oppdateringskontroller og eksakt kun skrivebordsatferd som WKWebView ikke kan tilby.";
+"userscript_docs_unsupported_desc" = "GM_webRequest-avskjæring, GM_audio, sandkasse/innkjøringsisolasjon, automatiske oppdateringskontroller og eksakt kun skrivebordsatferd som WKWebView ikke kan tilby.";
 "userscript_docs_metadata_title" = "Metadata";
 "userscript_docs_metadata_identity" = "Menneskelest skriptnavn og valgfri beskrivelse vist før installasjon og i skriptdetaljer.";
 "userscript_docs_metadata_version" = "Bruk et stabilt, unikt navneområde og øk versjonen hver gang det medfølgende skriptet endres.";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "Autoriser verter som brukes av privilegerte nettverksforespørsler. Uten det er forespørsler begrenset til den gjeldende sideverten.";
 "userscript_docs_metadata_urls" = "Valgfri identitet og oppdateringsmetadata. Soulo bruker disse til å gjenkjenne reinstallasjoner av det samme skriptet.";
 "userscript_docs_metadata_resource" = "Erklærer en navngitt ressurs. Legg til en matchende @connect-vert; henting utsettes til det moderne ressurs-APIet avventes.";
-"userscript_docs_metadata_require" = "Eksterne krav avsløres under installasjonen, men blir ikke lastet ned eller utført; skript må være selvstendige.";
+"userscript_docs_metadata_require" = "HTTPS @require-filer lastes ned og mellomlagres ved installasjon eller lagring og kjøres i rekkefølge før skriptet.";
 "userscript_docs_api_title" = "Støttede privilegerte APIer";
 "userscript_docs_api_info" = "Leser skriptbehandleren, Soulo-versjonen og analyserte skriptmetadata. Tilgjengelig i eldre og moderne form.";
 "userscript_docs_api_unsafe_window" = "Gir det gjeldende sidevinduet når unsafeWindow-tilskuddet er eksplisitt erklært.";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "Lagrede verdier må være JSON-serialiserbare: opptil 256 KB per verdi og 1 MB totalt per skript.";
 "userscript_docs_limits_network" = "Privilegerte svar er begrenset til 20 MB, tidsavbrudd er begrenset til 1–60 sekunder, og informasjonskapsel/vert/opprinnelse er ikke akseptert.";
 "userscript_docs_limits_private" = "UserScripter kjører ikke i privat nettlesing.";
-"userscript_docs_limits_require" = "Eksterne @require-filer kjøres aldri. Unngå CDN-avhengigheter og inkludere all nødvendig logikk i skriptet.";
+"userscript_docs_limits_require" = "HTTPS @require-filer lastes ned og mellomlagres ved installasjon eller lagring og kjøres i rekkefølge før skriptet.";
 "userscript_docs_template_title" = "Minimal mal";
 "userscript_docs_template_footer" = "Bruk et unikt navneområde og de smaleste mulige @match- og @grant-erklæringene.";
 "userscript_too_large" = "Det valgte skriptet er større enn grensen på 2 MB.";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "Ingen ytterligere tillatelser";
 "userscript_network_title" = "Nettverkstilgang";
 "userscript_external_requirements" = "Eksterne avhengigheter";
-"userscript_external_requirements_desc" = "Dette skriptet erklærer eksterne @require-filer. Soulo laster dem ikke automatisk.";
+"userscript_external_requirements_desc" = "HTTPS @require-filer lastes ned og mellomlagres ved installasjon eller lagring og kjøres i rekkefølge før skriptet.";
 "userscript_metadata_title" = "Skriptdetaljer";
 "userscript_unsupported_permissions" = "Ikke støttet ennå: %@";
 "userscript_sample_name" = "Lesefremdriftslinje";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "Kortvisning";
 "tab_close_group" = "Lukk gruppe";
 "tab_close_group_confirm" = "Lukk alle fanene i «%@» (%d)?";
+
+"userscript_require_failed" = "Kunne ikke laste avhengigheten %@: %@";
+"userscript_require_integrity_failed" = "Integritetskontrollen av avhengigheten mislyktes.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "Administrer";
+"extension_update" = "Oppdater";
+"extension_rollback" = "Gjenopprett forrige versjon";
+"extension_blocked_sites" = "Blokkerte nettsteder";
+"extension_diagnostics" = "Kompatibilitet";
+"extension_review_access" = "Velg tillatelsene og nettstedene denne utvidelsen kan få tilgang til.";
+"extension_limit_commands" = "Tastatursnarveier for utvidelser er ikke tilgjengelige på iOS.";
+"extension_limit_notifications" = "Varsler kan vises, men klikk- og lukkehendelser støttes ikke.";
+"extension_limit_offscreen" = "Dokumenter utenfor skjermen støtter bare lydavspilling.";

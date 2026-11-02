@@ -122,22 +122,24 @@ struct SearchAutocompleteView: View {
     }
 
     private func buildHighlightedText(_ suggestion: String) -> Text {
-        let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let lower = suggestion.lowercased()
-        guard !q.isEmpty, let range = lower.range(of: q) else {
+        guard let parts = Self.highlightedParts(suggestion, query: query) else {
             return Text(suggestion)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(textColor)
         }
 
-        let prefix = String(suggestion[suggestion.startIndex..<range.lowerBound])
-        let middle = String(suggestion[range])
-        let suffix = String(suggestion[range.upperBound..<suggestion.endIndex])
-
-        let prefixText = Text(prefix).font(.system(size: 14)).foregroundColor(addendumColor)
-        let middleText = Text(middle).font(.system(size: 14, weight: .semibold)).foregroundColor(textColor)
-        let suffixText = Text(suffix).font(.system(size: 14)).foregroundColor(addendumColor)
+        let prefixText = Text(parts.prefix).font(.system(size: 14)).foregroundColor(addendumColor)
+        let middleText = Text(parts.match).font(.system(size: 14, weight: .semibold)).foregroundColor(textColor)
+        let suffixText = Text(parts.suffix).font(.system(size: 14)).foregroundColor(addendumColor)
         return prefixText + middleText + suffixText
+    }
+
+    static func highlightedParts(_ suggestion: String, query: String) -> (prefix: String, match: String, suffix: String)? {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Case conversion can change Unicode length and string storage. Always
+        // obtain the range from the same string that will be sliced.
+        guard !trimmed.isEmpty, let range = suggestion.range(of: trimmed, options: .caseInsensitive) else { return nil }
+        return (String(suggestion[..<range.lowerBound]), String(suggestion[range]), String(suggestion[range.upperBound...]))
     }
 
     // MARK: - Colors

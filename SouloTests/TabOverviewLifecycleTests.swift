@@ -155,19 +155,21 @@ import Vision
     }
 
     func testSnapshotLoadsOnDemandAndCanBeEvictedWithoutLosingDiskPreview() async throws {
-        let id = UUID()
-        let directory = try XCTUnwrap(FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first)
-            .appendingPathComponent("SouloTabSnapshots", isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let file = directory.appendingPathComponent("\(id.uuidString).jpg")
-        defer { try? FileManager.default.removeItem(at: file) }
-        let image = UIGraphicsImageRenderer(size: CGSize(width: 12, height: 12)).image { context in
-            UIColor.blue.setFill(); context.fill(CGRect(x: 0, y: 0, width: 12, height: 12))
-        }
-        try XCTUnwrap(image.jpegData(compressionQuality: 0.8)).write(to: file)
         let wasPrivate = UserDefaults.standard.object(forKey: "is_incognito")
         UserDefaults.standard.set(false, forKey: "is_incognito")
         defer { UserDefaults.standard.set(wasPrivate, forKey: "is_incognito") }
+        let id = UUID()
+        // Save through the production queue after the privacy transition. A
+        // direct fixture write can race the app's asynchronous snapshot purge.
+        let fixture = try await snapshotFixture(id: id, privateMode: false)
+        defer { closeSnapshotFixture(fixture); fixture.0.deletePersistedSnapshot() }
+        await fixture.0.captureSnapshot()
+        XCTAssertNotNil(fixture.0.snapshot)
+        fixture.0.releaseSnapshotMemory()
+        fixture.0.releaseWebViewRuntime()
+        let directory = try XCTUnwrap(FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first)
+            .appendingPathComponent("SouloTabSnapshots", isDirectory: true)
+        let file = directory.appendingPathComponent("\(id.uuidString).jpg")
         let model = WebViewModel()
         model.configureSnapshotPersistence(id: id)
         XCTAssertNil(model.snapshot, "Restoring tab metadata must not read every preview")
@@ -264,7 +266,9 @@ import Vision
             model.releaseWebViewRuntime(); model.deletePersistedSnapshot()
             window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
         }
-        for _ in 0..<200 {
+        // This checks capture before didFinish, not a five-second load budget.
+        // A cold simulator may still be launching WebKit and GPU processes.
+        for _ in 0..<600 {
             if model.snapshot != nil { break }
             try await Task.sleep(for: .milliseconds(25))
         }
@@ -288,7 +292,7 @@ import Vision
         try await Task.sleep(for: .milliseconds(600))
         XCTAssertNil(model.snapshot, "The previous document's delayed capture must not run in a new navigation")
         model.markPageContentVisible()
-        for _ in 0..<100 {
+        for _ in 0..<600 {
             if model.snapshot != nil { break }
             try await Task.sleep(for: .milliseconds(25))
         }
@@ -363,20 +367,35 @@ import Vision
         let model = WebViewModel(); model.configureSnapshotPersistence(id: id)
         let config = WKWebViewConfiguration()
         config.websiteDataStore = privateMode ? .nonPersistent() : .default()
+        config.setURLSchemeHandler(SnapshotFixtureSchemeHandler(), forURLScheme: "soulo-snapshot")
         let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 700), configuration: config)
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene); window.rootViewController = UIViewController()
+        var delivered = false
+        defer {
+            if !delivered {
+                model.releaseWebViewRuntime(); web.removeFromSuperview()
+                window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
+            }
+        }
         window.rootViewController?.view.addSubview(web); window.makeKeyAndVisible()
         model.webView = web
-        web.loadHTMLString("<body style='background:#663399;color:white'><h1>Saved tab</h1><p>Preview stays available</p></body>",
-            baseURL: URL(string: "https://preview.example/article"))
-        for _ in 0..<100 {
-            if !web.isLoading, web.url?.host == "preview.example" { break }
+        web.load(URLRequest(url: URL(string: "soulo-snapshot://preview.example/article")!))
+        var loaded = false
+        for _ in 0..<1200 {
+            if !web.isLoading, web.url?.host == "preview.example",
+               (try? await web.evaluateJavaScript("document.querySelector('h1')?.textContent==='Saved tab'")) as? Bool == true {
+                loaded = true
+                break
+            }
             try await Task.sleep(for: .milliseconds(25))
         }
+        XCTAssertTrue(loaded, "The snapshot fixture must finish loading before capture")
+        guard loaded else { throw URLError(.timedOut) }
         model.updateCurrentURL(web.url)
         try await Task.sleep(for: .milliseconds(150))
+        delivered = true
         return (model, web, window, previous)
     }
 
@@ -488,4 +507,17 @@ import Vision
         XCTAssertEqual(draft, "Unsubmitted draft")
         XCTAssertEqual(marker, 42)
     }
+}
+
+/// Preview persistence tests need a painted document, not a network session.
+private final class SnapshotFixtureSchemeHandler: NSObject, WKURLSchemeHandler {
+    func webView(_ webView: WKWebView, start urlSchemeTask: any WKURLSchemeTask) {
+        guard let url = urlSchemeTask.request.url else { return }
+        let data = Data("<body style='background:#663399;color:white'><h1>Saved tab</h1><p>Preview stays available</p></body>".utf8)
+        urlSchemeTask.didReceive(URLResponse(url: url, mimeType: "text/html", expectedContentLength: data.count,
+            textEncodingName: "utf-8"))
+        urlSchemeTask.didReceive(data)
+        urlSchemeTask.didFinish()
+    }
+    func webView(_ webView: WKWebView, stop urlSchemeTask: any WKURLSchemeTask) {}
 }

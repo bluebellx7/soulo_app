@@ -1,1 +1,1 @@
-Bedre understøttelse af brugerscripts og @require. Rettelser til videolyd, bedre tilbage-navigation og tydeligere indlæsning.
+BT- og magnet-downloads med filvalg og genoptagelse. Afspil understøttede medier under download, åbn MKV og importér ed2k/thunder-links.

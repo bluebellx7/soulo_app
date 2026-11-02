@@ -1,1 +1,1 @@
-Melhor compatibilidade de scripts com @require. Correções no áudio de vídeos, navegação de volta e progresso de carregamento mais visível.
+Downloads BT e magnet com seleção e retomada. Reproduza mídias compatíveis durante o download, abra MKV e importe links ed2k/thunder.

@@ -41,8 +41,8 @@ enum BrowserCacheService {
     static func clear(tabManager: TabManager?, historyContext: ModelContext? = nil) async {
         URLCache.shared.removeAllCachedResponses()
         WebsiteFaviconService.shared.clear()
-        WebViewModel.deleteAllPersistedSnapshots()
-        tabManager?.tabs.forEach { $0.webViewModel.snapshot = nil }
+        tabManager?.tabs.forEach { $0.webViewModel.clearSnapshotCache() }
+        await WebViewModel.deleteAllPersistedSnapshotsAndWait()
         if let historyContext {
             SearchHistoryService.clearBrowsingHistory(context: historyContext)
         }
@@ -68,6 +68,7 @@ enum BrowserCacheService {
                 + Int64(URLCache.shared.currentMemoryUsage)
                 + Int64(WebsiteFaviconService.responseCache.currentDiskUsage)
                 + Int64(WebsiteFaviconService.responseCache.currentMemoryUsage)
+            total += allocatedSize(at: WebViewModel.snapshotDirectory)
 
             if let cachesDirectory = fileManager.urls(
                 for: .cachesDirectory,

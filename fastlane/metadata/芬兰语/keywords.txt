@@ -1,1 +1,1 @@
-yksityisyys,välilehdet,videolataus,mainosten esto,käyttäjäskriptit,laajennukset,käännös,mediahaku
+yksityisyys,välilehdet,videolataus,mainosten esto,käyttäjäskriptit,laajennukset,torrent,magnet,MKV

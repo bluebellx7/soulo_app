@@ -576,7 +576,7 @@ Dites-nous :
 "userscript_no_extra_permissions" = "Aucune autorisation supplémentaire";
 "userscript_network_title" = "Accès réseau";
 "userscript_external_requirements" = "Dépendances externes";
-"userscript_external_requirements_desc" = "Ce script déclare des fichiers @require externes. Soulo ne les charge pas automatiquement.";
+"userscript_external_requirements_desc" = "Les fichiers @require HTTPS sont téléchargés et mis en cache lors de l’installation ou de l’enregistrement, puis exécutés dans l’ordre avant le script.";
 "userscript_metadata_title" = "Détails du script";
 "userscript_sample_name" = "Barre de progression de lecture";
 "userscript_sample_desc" = "Affiche une progression discrète en haut de chaque page web.";
@@ -627,3 +627,18 @@ Dites-nous :
 "tab_view_carousel" = "Vue en cartes";
 "tab_close_group" = "Fermer le groupe";
 "tab_close_group_confirm" = "Fermer tous les onglets de « %@ » (%d) ?";
+
+"userscript_require_failed" = "Impossible de charger la dépendance %@ : %@";
+
+"userscript_require_integrity_failed" = "La vérification de l’intégrité de la dépendance a échoué.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "Gérer";
+"extension_update" = "Mettre à jour";
+"extension_rollback" = "Restaurer la version précédente";
+"extension_blocked_sites" = "Sites bloqués";
+"extension_diagnostics" = "Compatibilité";
+"extension_review_access" = "Choisissez les autorisations et les sites accessibles à cette extension.";
+"extension_limit_commands" = "Les raccourcis clavier des extensions ne sont pas disponibles sur iOS.";
+"extension_limit_notifications" = "Les notifications peuvent être affichées, mais les événements de clic et de fermeture ne sont pas pris en charge.";
+"extension_limit_offscreen" = "Les documents hors écran prennent uniquement en charge la lecture audio.";

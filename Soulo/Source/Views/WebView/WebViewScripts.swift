@@ -897,7 +897,13 @@ enum WebViewScripts {
         observer.observe(document, {childList:true,subtree:true});
         document.addEventListener('DOMContentLoaded', parsedContentReady, {once:true});
         document.addEventListener('load', () => { schedule(); parsedContentReady(); }, true);
-        window.addEventListener('pageshow', schedule);
+        window.addEventListener('pageshow', event => {
+            // A cached document keeps its JS state. Report readiness again so
+            // browser history can reveal it without waiting for load to finish.
+            if (event.persisted) sent = false;
+            schedule();
+            parsedContentReady();
+        });
         window.addEventListener('pagehide', () => observer.disconnect(), {once:true});
         schedule();
     })();
@@ -1078,6 +1084,7 @@ enum WebViewScripts {
         if (window.__souloVideoScreenAwake) return;
         var frameID = String(Date.now()) + '-' + Math.random().toString(36).slice(2);
         var lastActive = false;
+        var heartbeat = null;
         function visibleVideo(video) {
             if (video.paused || video.ended || video.readyState < 2) return false;
             var rect = video.getBoundingClientRect(), style = getComputedStyle(video);
@@ -1088,8 +1095,13 @@ enum WebViewScripts {
             try { window.webkit.messageHandlers.souloVideoAwake.postMessage({id:frameID, active:active}); } catch (_) {}
         }
         function sync() {
-            var active = Array.prototype.some.call(document.querySelectorAll('video'), visibleVideo);
+            var active = !document.hidden && Array.prototype.some.call(document.querySelectorAll('video'), visibleVideo);
             if (active !== lastActive) { lastActive = active; send(active); }
+            if (active && heartbeat === null) {
+                heartbeat = setInterval(function() { if (sync()) send(true); }, 10000);
+            } else if (!active && heartbeat !== null) {
+                clearInterval(heartbeat); heartbeat = null;
+            }
             return active;
         }
         var scheduled = false;
@@ -1103,9 +1115,13 @@ enum WebViewScripts {
         });
         window.addEventListener('scroll', schedule, {passive:true});
         window.addEventListener('resize', schedule);
-        window.addEventListener('pagehide', function() { lastActive = false; send(false); });
-        setInterval(function() { if (sync()) send(true); }, 10000);
-        window.__souloVideoScreenAwake = {sync:function() { lastActive = false; sync(); }};
+        document.addEventListener('visibilitychange', sync);
+        window.addEventListener('pageshow', sync);
+        window.addEventListener('pagehide', function() {
+            lastActive = false; send(false);
+            if (heartbeat !== null) { clearInterval(heartbeat); heartbeat = null; }
+        });
+        window.__souloVideoScreenAwake = {sync:function() { sync(); send(lastActive); }};
     })();
     """#
 
@@ -1694,11 +1710,24 @@ enum WebViewScripts {
                     if (!el || !isOverlayLike(el) || isProtectedPageElement(el) || isServiceAgreement(el)) return false;
                     // Account drawers commonly contain Cookie Policy and
                     // Privacy Policy links. They are navigation, not consent.
-                    var content = el.cloneNode(true);
-                    content.querySelectorAll('a, [role="link"], nav, [role="navigation"], [role="menu"], [role="menubar"]').forEach(function(link) {
-                        link.remove();
+                    // Inspect existing text only. A deep clone can create an
+                    // autoplaying, detached player whose runtime mute state is
+                    // not copied, producing audio outside DOM media queries.
+                    var excluded = 'a, [role="link"], nav, [role="navigation"], [role="menu"], [role="menubar"], script, style, template, video, audio, iframe, object, embed';
+                    if (el.matches(excluded)) return false;
+                    var walker = document.createTreeWalker(el, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+                        acceptNode: function(node) {
+                            if (node.nodeType === Node.ELEMENT_NODE) {
+                                return node.matches(excluded) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP;
+                            }
+                            return NodeFilter.FILTER_ACCEPT;
+                        }
                     });
-                    var text = textOf(content);
+                    var parts = [], node;
+                    while ((node = walker.nextNode())) {
+                        parts.push(String(node.nodeValue || ''));
+                    }
+                    var text = parts.join('').toLowerCase().replace(/\\s+/g, ' ').trim();
                     if (text.length > 1400) return false;
                     return hasCookieConsentLanguage(text);
                 } catch (_) {

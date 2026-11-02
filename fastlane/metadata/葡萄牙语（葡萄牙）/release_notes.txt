@@ -1,6 +1,8 @@
 1.2.7
 
 • Transferências BT: importe ficheiros .torrent ou ligações magnet, escolha ficheiros, pause e retome. No iOS 26 podem continuar em segundo plano quando o sistema permite; as versões anteriores guardam o progresso e pausam.
+• Reproduza conteúdos BT compatíveis durante a transferência e abra ficheiros MKV. Importe ligações ed2k/thunder. As transferências exigem fontes disponíveis; a reprodução depende dos codecs.
+• A otimização da pesquisa Baidu está ativa por predefinição. Veja o script ou desative-a em Extensões.
 • Escolha cinco atalhos opcionais no ecrã inicial para transferências, ficheiros, marcadores, histórico, fundos e outras páginas. A barra de separadores da biblioteca fica mais compacta ao deslocar.
 • Melhorámos a compatibilidade de scripts de utilizador, incluindo dependências externas através de @require.
 • Corrigimos casos de áudio em vídeos silenciados ou reprodução duplicada em algumas páginas.

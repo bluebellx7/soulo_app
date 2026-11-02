@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import CoreSpotlight
 
 struct SearchHistoryService {
     static let browsingHistoryLifetime: TimeInterval = 3 * 24 * 60 * 60
@@ -145,46 +146,48 @@ struct SearchHistoryService {
 
         components.scheme = scheme
         components.host = components.host?.lowercased()
+        components.user = nil
+        components.password = nil
         components.fragment = nil
-        if let queryItems = components.queryItems {
+        if let queryItems = components.percentEncodedQueryItems {
             let stableItems = queryItems.filter { item in
-                let name = item.name.lowercased()
+                let name = (item.name.removingPercentEncoding ?? item.name).lowercased()
                 return !transientQueryNames.contains(name)
                     && !name.hasPrefix("utm_")
                     && name != "fbclid"
                     && name != "gclid"
             }
-            components.queryItems = stableItems.isEmpty ? nil : stableItems
+            components.percentEncodedQueryItems = stableItems.isEmpty ? nil : stableItems
         }
         return components.url?.absoluteString
     }
 
     // MARK: - Delete Entry
 
-    static func deleteEntry(_ item: SearchHistoryItem, context: ModelContext) {
+    static func deleteEntry(_ item: SearchHistoryItem, context: ModelContext, index: CSSearchableIndex = .default()) {
+        let identifier = "search-history-\(item.id.uuidString)"
         context.delete(item)
-        try? context.save()
+        do {
+            try context.save()
+            SpotlightIndexingService.deindexItem(id: identifier, index: index)
+        } catch {}
     }
 
     // MARK: - Clear All
 
-    static func clearAll(context: ModelContext) {
-        let descriptor = FetchDescriptor<SearchHistoryItem>()
-        guard let all = try? context.fetch(descriptor) else { return }
-        for item in all {
-            context.delete(item)
-        }
-        try? context.save()
+    static func clearAll(context: ModelContext, index: CSSearchableIndex = .default()) {
+        try? clearAll(in: context, index: index)
     }
 
     /// Alias for PrivacySettingsView (throws version)
-    static func clearAll(in context: ModelContext) throws {
+    static func clearAll(in context: ModelContext, index: CSSearchableIndex = .default()) throws {
         let descriptor = FetchDescriptor<SearchHistoryItem>()
         let all = try context.fetch(descriptor)
         for item in all {
             context.delete(item)
         }
         try context.save()
+        SpotlightIndexingService.deindexAll(domain: "soulo.history", index: index)
     }
 
     // MARK: - Suggestions

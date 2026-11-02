@@ -4,7 +4,7 @@ Chọn Soulo làm trình duyệt mặc định trong Cài đặt để mở liê
 
 Các tab và nhóm trang web dùng gần đây hiện trước, và danh sách tab mở từ trên cùng. Thứ tự sử dụng được giữ lại sau khi khởi động lại.
 
-Tải xuống BT: nhập tệp .torrent hoặc liên kết magnet, chọn tệp, tạm dừng và tiếp tục. Trên iOS 26, tác vụ có thể tiếp tục chạy nền khi hệ thống cho phép; phiên bản cũ lưu tiến độ rồi tạm dừng.
+Tải xuống BT: nhập tệp .torrent hoặc liên kết magnet, chọn tệp, tạm dừng và tiếp tục. Trên iOS 26, tác vụ có thể tiếp tục chạy nền khi hệ thống cho phép; phiên bản cũ lưu tiến độ rồi tạm dừng. Phát nội dung BT được hỗ trợ khi đang tải và mở tệp MKV. Nhập liên kết ed2k/thunder. Tải xuống cần nguồn khả dụng; phát lại tùy thuộc codec.
 
 Chọn năm lối tắt tùy chọn trên trang chủ để mở tải xuống, tệp, dấu trang, lịch sử, hình nền và các trang khác. Thanh tab thư viện thu gọn khi cuộn.
 

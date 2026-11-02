@@ -407,9 +407,9 @@
 "download_address" = "粘贴网址或磁力链接";
 "download_optional_name" = "文件名（可选）";
 "download_link" = "下载链接";
-"download_link_hint" = "支持 HTTP、HTTPS、磁力链接和种子文件。";
+"download_link_hint" = "HTTP / HTTPS · magnet · .torrent · ed2k · thunder";
 "download_create" = "创建任务";
-"download_invalid_address" = "请输入有效的 HTTP、HTTPS 或磁力链接。";
+"download_invalid_address" = "请输入有效的下载链接。";
 "import_torrent" = "导入种子";
 "torrent_link" = "链接指向种子文件";
 "torrent_task" = "种子下载";

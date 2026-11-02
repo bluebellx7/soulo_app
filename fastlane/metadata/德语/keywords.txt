@@ -1,1 +1,1 @@
-privat,Tabs,Video Downloader,Werbeblocker,Userscripts,Erweiterungen,Übersetzer,Medienfinder
+privat,Tabs,Video Downloader,Werbeblocker,Userscripts,Erweiterungen,Übersetzer,torrent,magnet,MKV

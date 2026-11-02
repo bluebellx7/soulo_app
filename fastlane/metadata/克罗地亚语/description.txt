@@ -4,7 +4,7 @@ U Postavkama odaberite Soulo kao zadani preglednik za otvaranje poveznica iz dru
 
 Nedavno korištene kartice i grupe web-mjesta prikazuju se prve, a pregled se otvara na vrhu. Redoslijed korištenja čuva se nakon ponovnog pokretanja.
 
-BT preuzimanja: uvezite .torrent datoteke ili magnet poveznice, odaberite datoteke, pauzirajte i nastavite. U sustavu iOS 26 preuzimanja mogu raditi u pozadini kada sustav dopusti; starije verzije spremaju napredak i pauziraju.
+BT preuzimanja: uvezite .torrent datoteke ili magnet poveznice, odaberite datoteke, pauzirajte i nastavite. U sustavu iOS 26 preuzimanja mogu raditi u pozadini kada sustav dopusti; starije verzije spremaju napredak i pauziraju. Reproducirajte podržane BT medije tijekom preuzimanja i otvorite MKV datoteke. Uvezite ed2k/thunder poveznice. Preuzimanje traži dostupne izvore; reprodukcija ovisi o kodecima.
 
 Odaberite pet neobaveznih prečaca na početnoj stranici za preuzimanja, datoteke, oznake, povijest, pozadine i druge stranice. Traka kartica biblioteke smanjuje se tijekom pomicanja.
 

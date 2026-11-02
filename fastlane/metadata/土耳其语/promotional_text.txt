@@ -1,1 +1,1 @@
-@require ile daha iyi kullanıcı betiği uyumluluğu. Video sesi düzeltildi, geri gezinme ve yükleme ilerleme göstergesi iyileştirildi.
+Dosya seçimi ve sürdürme ile BT ve magnet indirmeleri. Desteklenen medyayı indirirken oynatın, MKV açın ve ed2k/thunder bağlantılarını içe aktarın.

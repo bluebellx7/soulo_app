@@ -46,7 +46,7 @@ struct SearchHistoryContentView: View {
                     || ($0.visitedURLString?.localizedCaseInsensitiveContains(filterText) == true)
             }
         for item in source {
-            let key = item.visitedURLString.map { "url:\($0.lowercased())" }
+            let key = item.visitedURLString.map { "url:\($0)" }
                 ?? "search:\(item.keyword.lowercased())"
             if !seen.contains(key) {
                 seen.insert(key)

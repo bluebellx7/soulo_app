@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "Les pàgines obertes es tornen a carregar després d'instal·lar, editar, activar, desactivar o eliminar un script.";
 "userscript_experimental_badge" = "Compatibilitat";
 "userscript_experimental_title" = "Compatibilitat UserScript";
-"userscript_experimental_desc" = "Admet regles del lloc, inici/finalització de documents, emmagatzematge extensiu de GM i API de pàgines, ordres d'script, notificacions, pestanyes, descàrregues, galetes, recursos i sol·licituds amb àmbit de permís. Reviseu cada script abans d'instal·lar-lo; Els fitxers @require externs no s'executen.";
+"userscript_experimental_desc" = "Admet regles del lloc, inici/finalització de documents, emmagatzematge extensiu de GM i API de pàgines, ordres d'script, notificacions, pestanyes, descàrregues, galetes, recursos i sol·licituds amb àmbit de permís. Reviseu cada script abans d'instal·lar-lo.";
 "extension_choose_file" = "Tria un fitxer o carpeta…";
 "extension_installing" = "S'està comprovant i instal·lant l'extensió...";
 "extension_install_failed" = "No s'ha pogut instal·lar l'extensió";
@@ -659,7 +659,7 @@
 "userscript_new" = "Nou guió";
 "userscript_edit" = "Edita el guió";
 "userscript_choose_file" = "Tria un script…";
-"userscript_install_footer" = "Toqueu una fila d'origen per obrir-la a la pestanya Soulo actual. Un enllaç .user.js obre una confirmació d'instal·lació. S'admeten JavaScript estàndard i un ampli conjunt d'API de GM; els scripts no s'executen a la navegació privada i els fitxers @require externs no s'executen.";
+"userscript_install_footer" = "Toqueu una fila d'origen per obrir-la a la pestanya Soulo actual. Un enllaç .user.js obre una confirmació d'instal·lació. S'admeten JavaScript estàndard i un ampli conjunt d'API de GM. UserScripts no s'executen a la navegació privada.";
 "userscript_install_failed" = "UserScript No s'ha pogut instal·lar";
 "web_extension_temporarily_disabled" = "Les extensions estàndard del navegador no estan disponibles temporalment mentre es completen les proves de compatibilitat.";
 "userscript_unreadable" = "L'script seleccionat no s'ha pogut llegir com a text UTF-8.";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "Suport parcialment";
 "userscript_docs_partial_desc" = "Les sol·licituds de xarxa ometen la càrrega/progrés i el transport de galetes. Les notificacions són a la pàgina, les API de recursos són asíncrones i els oients de canvi de valor informen dels canvis fets per la pàgina actual. Les comprovacions d'actualització són manuals.";
 "userscript_docs_unsupported_title" = "Actualment no s'admet";
-"userscript_docs_unsupported_desc" = "Execució @require externa, intercepció de GM_webRequest, GM_audio, sandbox/run-in aïllament, comprovacions automàtiques d'actualització i comportaments exactes només per a escriptori que WKWebView no pot proporcionar.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, sandbox/run-in aïllament, comprovacions automàtiques d'actualització i comportaments exactes només per a escriptori que WKWebView no pot proporcionar.";
 "userscript_docs_metadata_title" = "Metadades";
 "userscript_docs_metadata_identity" = "El nom de l'script llegible per l'home i la descripció opcional es mostren abans de la instal·lació i als detalls de l'script.";
 "userscript_docs_metadata_version" = "Utilitzeu un espai de noms únic i estable i incrementeu la versió sempre que canviï l'script inclòs.";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "Autoritzar els amfitrions utilitzats per les sol·licituds de xarxa privilegiades. Sense això, les sol·licituds es limiten a l'amfitrió de la pàgina actual.";
 "userscript_docs_metadata_urls" = "Identitat opcional i metadades d'actualització. Soulo les utilitza per reconèixer les reinstal·lacions del mateix script.";
 "userscript_docs_metadata_resource" = "Declara un recurs anomenat. Afegiu un host @connect que coincideixi; l'obtenció s'ajorna fins que s'espera l'API de recursos moderna.";
-"userscript_docs_metadata_require" = "Els requisits externs es revelen durant la instal·lació, però no es descarreguen ni s'executen; els guions han de ser autònoms.";
+"userscript_docs_metadata_require" = "Els fitxers @require HTTPS es descarreguen i es desen en instal·lar o desar, i s’executen en ordre abans de l’script.";
 "userscript_docs_api_title" = "API privilegiades compatibles";
 "userscript_docs_api_info" = "Llegeix el controlador de l'script, la versió Soulo i les metadades de l'script analitzat. Disponible en forma heretada i moderna.";
 "userscript_docs_api_unsafe_window" = "Proporciona la finestra de la pàgina actual quan es declara explícitament la concessió unsafeWindow.";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "Els valors emmagatzemats han de ser serialitzables amb JSON: fins a 256 KB per valor i 1 MB total per script.";
 "userscript_docs_limits_network" = "Les respostes privilegiades estan limitades a 20 MB, el temps d'espera es limita a 1-60 segons i no s'accepten capçaleres de galetes/amfitrió/origen.";
 "userscript_docs_limits_private" = "UserScripts no s'executen a la navegació privada.";
-"userscript_docs_limits_require" = "Els fitxers @require externs no s'executen mai. Eviteu les dependències CDN i inclogueu tota la lògica necessària a l'script.";
+"userscript_docs_limits_require" = "Els fitxers @require HTTPS es descarreguen i es desen en instal·lar o desar, i s’executen en ordre abans de l’script.";
 "userscript_docs_template_title" = "Plantilla mínima";
 "userscript_docs_template_footer" = "Utilitzeu un espai de noms únic i les declaracions @match i @grant més estretes possibles.";
 "userscript_too_large" = "L'script seleccionat supera el límit de 2 MB.";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "Sense permisos addicionals";
 "userscript_network_title" = "Accés a la xarxa";
 "userscript_external_requirements" = "Dependències externes";
-"userscript_external_requirements_desc" = "Aquest script declara fitxers @require externs. Soulo no els carrega automàticament.";
+"userscript_external_requirements_desc" = "Els fitxers @require HTTPS es descarreguen i es desen en instal·lar o desar, i s’executen en ordre abans de l’script.";
 "userscript_metadata_title" = "Detalls del guió";
 "userscript_unsupported_permissions" = "Encara no és compatible: %@";
 "userscript_sample_name" = "Barra de progrés de lectura";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "Vista de targetes";
 "tab_close_group" = "Tanca el grup";
 "tab_close_group_confirm" = "Vols tancar totes les pestanyes de «%@» (%d)?";
+
+"userscript_require_failed" = "No s’ha pogut carregar la dependència %@: %@";
+"userscript_require_integrity_failed" = "La comprovació d’integritat de la dependència ha fallat.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "Gestiona";
+"extension_update" = "Actualitza";
+"extension_rollback" = "Restaura la versió anterior";
+"extension_blocked_sites" = "Llocs bloquejats";
+"extension_diagnostics" = "Compatibilitat";
+"extension_review_access" = "Tria els permisos i els llocs web als quals pot accedir aquesta extensió.";
+"extension_limit_commands" = "Les dreceres de teclat de les extensions no estan disponibles a iOS.";
+"extension_limit_notifications" = "Es poden mostrar notificacions, però no s’admeten els esdeveniments de clic i tancament.";
+"extension_limit_offscreen" = "Els documents fora de pantalla només admeten reproducció d’àudio.";

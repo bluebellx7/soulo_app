@@ -1,5 +1,6 @@
 /* Baidu search: result typography and browser-only result navigation.
  * No result scanning, URL rewriting, scroll handlers, timers or media changes.
+ * Ordinary HTTP links keep WebKit's default activation and history behavior.
  * The native bridge is isolated from website JavaScript.
  */
 (() => {
@@ -82,10 +83,10 @@ html[data-soulo-baidu-search] [style*="position:fixed"][style*="bottom:0"]:has([
     const title = card.querySelector('h3,.c-title,[data-module="title"],[role="heading"]');
     if (anchor) {
       const url = http(anchor.getAttribute('href'));
-      if (url && !redirect(url)) return url.href;
-      if (!title || !(title.contains(anchor) || anchor.contains(title))) return url?.href || null;
+      if (url && !redirect(url)) return {native:true};
+      if (!title || !(title.contains(anchor) || anchor.contains(title))) return url ? {native:true} : null;
       // Resolve only this trusted result activation. The document's URLs stay intact.
-      return webFallback(anchor) || webFallback(card) || webFallback(title?.closest('article')) || url?.href || null;
+      return webFallback(anchor) || webFallback(card) || webFallback(title?.closest('article')) || (url ? {native:true} : null);
     }
     if (!title?.contains(element)) return null;
     return webFallback(title) || webFallback(card) || webFallback(title.closest('article'));
@@ -113,9 +114,10 @@ html[data-soulo-baidu-search] [style*="position:fixed"][style*="bottom:0"]:has([
         || event.button > 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || getSelection()?.toString()) return;
     const element = event.target instanceof Element ? event.target : event.target?.parentElement;
     if (!element) return;
+    const url = destination(element); if (!url) return;
+    if (url.native) { event.stopImmediatePropagation(); return; }
     const bridge = globalThis.webkit?.messageHandlers?.souloSiteOptimizationNavigate;
     if (!bridge) return;
-    const url = destination(element); if (!url) return;
     event.preventDefault(); event.stopImmediatePropagation(); bridge.postMessage({url});
   },true);
   window.addEventListener('pageshow',() => {

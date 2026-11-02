@@ -589,7 +589,7 @@
 "userscript_no_extra_permissions" = "لا أذونات إضافية";
 "userscript_network_title" = "الوصول إلى الشبكة";
 "userscript_external_requirements" = "تبعيات خارجية";
-"userscript_external_requirements_desc" = "يعلن هذا البرنامج النصي ملفات @require خارجية. لا يحمّلها Soulo تلقائيًا.";
+"userscript_external_requirements_desc" = "تُنزَّل ملفات @require عبر HTTPS وتُحفَظ عند التثبيت أو الحفظ، ثم تُنفَّذ بالترتيب قبل البرنامج النصي.";
 "userscript_metadata_title" = "تفاصيل البرنامج النصي";
 "userscript_sample_name" = "شريط تقدم القراءة";
 "userscript_sample_desc" = "يعرض مؤشرًا بسيطًا لتقدم القراءة أعلى كل صفحة ويب.";
@@ -640,3 +640,18 @@
 "tab_view_carousel" = "عرض البطاقات";
 "tab_close_group" = "إغلاق المجموعة";
 "tab_close_group_confirm" = "إغلاق كل علامات التبويب في «%@» (%d)؟";
+
+"userscript_require_failed" = "تعذّر تحميل التبعية %@: %@";
+
+"userscript_require_integrity_failed" = "فشل التحقق من سلامة التبعية.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "إدارة";
+"extension_update" = "تحديث";
+"extension_rollback" = "استعادة الإصدار السابق";
+"extension_blocked_sites" = "المواقع المحظورة";
+"extension_diagnostics" = "التوافق";
+"extension_review_access" = "اختر الأذونات والمواقع التي يمكن لهذه الإضافة الوصول إليها.";
+"extension_limit_commands" = "اختصارات لوحة المفاتيح للإضافات غير متاحة على iOS.";
+"extension_limit_notifications" = "يمكن عرض الإشعارات، لكن أحداث النقر والإغلاق غير مدعومة.";
+"extension_limit_offscreen" = "يقتصر دعم المستندات خارج الشاشة على تشغيل الصوت.";

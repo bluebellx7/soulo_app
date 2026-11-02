@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "स्क्रिप्ट स्थापित, संपादित, सक्षम, अक्षम किंवा काढल्यानंतर उघडलेली पृष्ठे रीलोड होतात.";
 "userscript_experimental_badge" = "सुसंगतता";
 "userscript_experimental_title" = "UserScript सुसंगतता";
-"userscript_experimental_desc" = "साइट नियम, दस्तऐवज-प्रारंभ/एंड, विस्तृत GM स्टोरेज आणि पृष्ठ API, स्क्रिप्ट आदेश, सूचना, टॅब, डाउनलोड, कुकीज, संसाधने आणि परवानगी-व्याप्ती विनंत्यांचे समर्थन करते. स्थापित करण्यापूर्वी प्रत्येक स्क्रिप्टचे पुनरावलोकन करा; external @require फाइल्स चालवल्या जात नाहीत.";
+"userscript_experimental_desc" = "साइट नियम, दस्तऐवज-प्रारंभ/एंड, विस्तृत GM स्टोरेज आणि पृष्ठ API, स्क्रिप्ट आदेश, सूचना, टॅब, डाउनलोड, कुकीज, संसाधने आणि परवानगी-व्याप्ती विनंत्यांचे समर्थन करते. स्थापित करण्यापूर्वी प्रत्येक स्क्रिप्टचे पुनरावलोकन करा।";
 "extension_choose_file" = "फाइल किंवा फोल्डर निवडा…";
 "extension_installing" = "विस्तार तपासत आहे आणि स्थापित करत आहे...";
 "extension_install_failed" = "विस्तार स्थापित करणे शक्य झाले नाही";
@@ -659,7 +659,7 @@
 "userscript_new" = "नवीन स्क्रिप्ट";
 "userscript_edit" = "स्क्रिप्ट संपादित करा";
 "userscript_choose_file" = "स्क्रिप्ट निवडा…";
-"userscript_install_footer" = "वर्तमान Soulo टॅबमध्ये उघडण्यासाठी स्त्रोत पंक्तीवर टॅप करा. .user.js लिंक इंस्टॉलेशन पुष्टीकरण उघडते. मानक JavaScript आणि GM API चा विस्तृत संच समर्थित आहे; स्क्रिप्ट खाजगी ब्राउझिंगमध्ये चालत नाहीत आणि बाह्य @require फाइल्स कार्यान्वित केल्या जात नाहीत.";
+"userscript_install_footer" = "वर्तमान Soulo टॅबमध्ये उघडण्यासाठी स्त्रोत पंक्तीवर टॅप करा. .user.js लिंक इंस्टॉलेशन पुष्टीकरण उघडते. मानक JavaScript आणि GM API चा विस्तृत संच समर्थित आहे। UserScripts खाजगी ब्राउझिंगमध्ये चालत नाहीत.";
 "userscript_install_failed" = "UserScript स्थापित करणे शक्य नाही";
 "web_extension_temporarily_disabled" = "सुसंगतता चाचणी पूर्ण झाल्यावर मानक ब्राउझर विस्तार तात्पुरते अनुपलब्ध असतात.";
 "userscript_unreadable" = "निवडलेली स्क्रिप्ट UTF-8 मजकूर म्हणून वाचली जाऊ शकत नाही.";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "अंशतः समर्थित";
 "userscript_docs_partial_desc" = "नेटवर्क विनंत्या अपलोड/प्रगती आणि कुकी वाहतूक वगळतात. सूचना पृष्ठामध्ये आहेत, संसाधन API एसिंक्रोनस आहेत आणि मूल्य-बदल श्रोते वर्तमान पृष्ठाद्वारे केलेल्या बदलांची तक्रार करतात. अपडेट चेक मॅन्युअल आहेत.";
 "userscript_docs_unsupported_title" = "सध्या समर्थित नाही";
-"userscript_docs_unsupported_desc" = "External @require execution, GM_webRequest इंटरसेप्शन, GM_audio, सँडबॉक्स/रन-इन आयसोलेशन, ऑटोमॅटिक अपडेट चेक आणि अचूक डेस्कटॉप फक्त वर्तन जे WKWebView प्रदान करू शकत नाही.";
+"userscript_docs_unsupported_desc" = "GM_webRequest इंटरसेप्शन, GM_audio, सँडबॉक्स/रन-इन आयसोलेशन, ऑटोमॅटिक अपडेट चेक आणि अचूक डेस्कटॉप फक्त वर्तन जे WKWebView प्रदान करू शकत नाही.";
 "userscript_docs_metadata_title" = "मेटाडेटा";
 "userscript_docs_metadata_identity" = "मानवी-वाचनीय स्क्रिप्टचे नाव आणि पर्यायी वर्णन इंस्टॉलेशनपूर्वी आणि स्क्रिप्ट तपशीलांमध्ये दर्शविले आहे.";
 "userscript_docs_metadata_version" = "एक स्थिर, अनन्य नेमस्पेस वापरा आणि बंडल स्क्रिप्ट बदलल्यावर आवृत्ती वाढवा.";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "विशेषाधिकार प्राप्त नेटवर्क विनंत्यांनी वापरलेल्या होस्टला अधिकृत करा. त्याशिवाय, विनंत्या वर्तमान पृष्ठ होस्टपर्यंत मर्यादित आहेत.";
 "userscript_docs_metadata_urls" = "पर्यायी ओळख आणि अपडेट मेटाडेटा. Soulo समान स्क्रिप्टची पुनर्स्थापना ओळखण्यासाठी याचा वापर करते.";
 "userscript_docs_metadata_resource" = "नामांकित संसाधन घोषित करते. जुळणारे @connect होस्ट जोडा; आधुनिक संसाधन API ची प्रतीक्षा होईपर्यंत आणणे पुढे ढकलले आहे.";
-"userscript_docs_metadata_require" = "स्थापनेदरम्यान बाह्य आवश्यकता उघड केल्या जातात परंतु डाउनलोड किंवा अंमलात आणल्या जात नाहीत; स्क्रिप्ट स्वयंपूर्ण असणे आवश्यक आहे.";
+"userscript_docs_metadata_require" = "HTTPS @require फायली इंस्टॉल किंवा जतन करताना डाउनलोड करून कॅशेमध्ये ठेवल्या जातात, नंतर स्क्रिप्टच्या आधी क्रमाने चालतात.";
 "userscript_docs_api_title" = "समर्थित विशेषाधिकारित API";
 "userscript_docs_api_info" = "स्क्रिप्ट हँडलर, Soulo आवृत्ती आणि विश्लेषित स्क्रिप्ट मेटाडेटा वाचतो. वारसा आणि आधुनिक स्वरूपात उपलब्ध.";
 "userscript_docs_api_unsafe_window" = "जेव्हा असुरक्षित विंडो अनुदान स्पष्टपणे घोषित केले जाते तेव्हा वर्तमान पृष्ठ विंडो प्रदान करते.";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "संचयित मूल्ये JSON-सिरीलायझ करण्यायोग्य असणे आवश्यक आहे: प्रति मूल्य 256 KB पर्यंत आणि प्रति स्क्रिप्ट एकूण 1 MB.";
 "userscript_docs_limits_network" = "विशेषाधिकार प्राप्त प्रतिसाद 20 MB पर्यंत मर्यादित आहेत, कालबाह्य 1-60 सेकंदांपर्यंत क्लॅम्प केलेले आहेत आणि कुकी/होस्ट/ओरिजिन शीर्षलेख स्वीकारले जात नाहीत.";
 "userscript_docs_limits_private" = "UserScripts खाजगी ब्राउझिंगमध्ये चालत नाहीत.";
-"userscript_docs_limits_require" = "बाह्य @require फाइल्स कधीही कार्यान्वित केल्या जात नाहीत. CDN अवलंबित्व टाळा आणि स्क्रिप्टमध्ये सर्व आवश्यक तर्क समाविष्ट करा.";
+"userscript_docs_limits_require" = "HTTPS @require फायली इंस्टॉल किंवा जतन करताना डाउनलोड करून कॅशेमध्ये ठेवल्या जातात, नंतर स्क्रिप्टच्या आधी क्रमाने चालतात.";
 "userscript_docs_template_title" = "किमान टेम्पलेट";
 "userscript_docs_template_footer" = "अनन्य नेमस्पेस आणि शक्य तितक्या अरुंद @match आणि @grant घोषणा वापरा.";
 "userscript_too_large" = "निवडलेली स्क्रिप्ट 2 MB मर्यादेपेक्षा मोठी आहे.";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "कोणत्याही अतिरिक्त परवानग्या नाहीत";
 "userscript_network_title" = "नेटवर्क प्रवेश";
 "userscript_external_requirements" = "बाह्य अवलंबित्व";
-"userscript_external_requirements_desc" = "ही स्क्रिप्ट बाह्य @require फाइल्स घोषित करते. Soulo त्यांना आपोआप लोड करत नाही.";
+"userscript_external_requirements_desc" = "HTTPS @require फायली इंस्टॉल किंवा जतन करताना डाउनलोड करून कॅशेमध्ये ठेवल्या जातात, नंतर स्क्रिप्टच्या आधी क्रमाने चालतात.";
 "userscript_metadata_title" = "स्क्रिप्ट तपशील";
 "userscript_unsupported_permissions" = "अद्याप समर्थित नाही: %@";
 "userscript_sample_name" = "प्रगती बार वाचणे";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "कार्ड दृश्य";
 "tab_close_group" = "गट बंद करा";
 "tab_close_group_confirm" = "“%@” गटातील सर्व टॅब बंद करायचे (%d)?";
+
+"userscript_require_failed" = "अवलंबित्व %@ लोड करता आले नाही: %@";
+"userscript_require_integrity_failed" = "अवलंबित्वाची अखंडता तपासणी अयशस्वी झाली.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "व्यवस्थापन";
+"extension_update" = "अपडेट";
+"extension_rollback" = "मागील आवृत्ती पुनर्संचयित करा";
+"extension_blocked_sites" = "ब्लॉक केलेल्या वेबसाइट्स";
+"extension_diagnostics" = "सुसंगतता";
+"extension_review_access" = "या एक्स्टेंशनला कोणत्या परवानग्या आणि वेबसाइट्स वापरता येतील ते निवडा.";
+"extension_limit_commands" = "iOS वर एक्स्टेंशनचे कीबोर्ड शॉर्टकट उपलब्ध नाहीत.";
+"extension_limit_notifications" = "सूचना दाखवता येतात, परंतु क्लिक आणि बंद करण्याचे इव्हेंट समर्थित नाहीत.";
+"extension_limit_offscreen" = "ऑफस्क्रीन दस्तऐवज फक्त ऑडिओ प्लेबॅकला समर्थन देतात.";

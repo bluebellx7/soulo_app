@@ -126,7 +126,7 @@ private struct SouloWindowRoot: View {
                 applyWebAppearanceToOpenTabs()
             }
             .onOpenURL { url in
-                if url.scheme?.lowercased() == "magnet" {
+                if ["magnet", "ed2k", "thunder"].contains(url.scheme?.lowercased() ?? "") {
                     NotificationCenter.default.post(name: .createSouloDownload, object: url)
                 } else if url.isFileURL {
                     NotificationCenter.default.post(name: .openSouloDocument, object: url)
@@ -190,6 +190,7 @@ private struct SouloWindowRoot: View {
         // refreshes must not overwrite those fixtures while a test is running.
         guard NSClassFromString("XCTestCase") == nil else { return }
         BrowserWebViewPool.shared.activate(isIncognito: isIncognito)
+        BrowserStartupTrace.scheduleBenchmarkSearch(searchVM)
         activationTask?.cancel()
         activationTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 350_000_000)
@@ -200,7 +201,7 @@ private struct SouloWindowRoot: View {
                 try? await Task.sleep(for: .milliseconds(250))
                 guard !Task.isCancelled, scenePhase == .active else { return }
             }
-            WebViewRepresentable.preWarm()
+            if BrowserResourcePolicy.shared.allowsSpeculation { WebViewRepresentable.preWarm() }
             searchVM.detectClipboard()
             try? await Task.sleep(nanoseconds: 450_000_000)
             guard !Task.isCancelled else { return }
@@ -214,6 +215,7 @@ private struct SouloWindowRoot: View {
             // Search may have begun since the earlier idle check. Recheck at
             // the actual call, before initializing/parsing subscription archives.
             guard !Task.isCancelled, !searchVM.isSearching,
+                  BrowserResourcePolicy.shared.allowsSpeculation,
                   AdBlockSubscriptionService.needsAutomaticUpdateCheck() else { return }
             BrowserStartupTrace.mark("subscription_check_start")
             await AdBlockSubscriptionService.shared.updateEnabledSubscriptionsIfNeeded()

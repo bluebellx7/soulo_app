@@ -1,1 +1,1 @@
-Millor compatibilitat amb scripts i @require. Correccions del so dels vídeos, millor navegació enrere i càrrega més visible.
+Baixades BT i magnet amb selecció i represa. Reprodueix contingut compatible mentre es baixa, obre MKV i importa enllaços ed2k/thunder.

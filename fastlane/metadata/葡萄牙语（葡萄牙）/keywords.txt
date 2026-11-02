@@ -1,1 +1,1 @@
-privacidade,separadores,descarregar vídeo,bloqueador anúncios,scripts,extensões,tradução,multimédia
+privacidade,separadores,descarregar vídeo,bloqueador anúncios,scripts,extensões,torrent,magnet,MKV

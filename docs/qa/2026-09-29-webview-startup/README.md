@@ -2,6 +2,8 @@
 
 用户反馈上一版只增加备用 WebView 后没有明显变快。本次实际启动模拟器，先测上一版，再根据分段计时修复瓶颈并复测。数据见 [measurements.json](measurements.json)，复测脚本见 [benchmark_webview_startup.py](../../../scripts/benchmark_webview_startup.py)。
 
+2026-10-29 工具更新：脚本已使用显式启用的 Debug 正常搜索驱动，避开 URL scheme 的系统确认；无需再为当前脚本处理该确认。本文保留 9 月的历史数据和口径，当前条件、无效样本处理及测量见 [资源效率报告](../2026-10-29-resource-efficiency.md)。
+
 ## 条件和口径
 
 - iPhone 17 Pro / iOS 26.2 模拟器，Debug，同一台 Mac；每轮终止并重新启动 App，模拟器系统保持启动。

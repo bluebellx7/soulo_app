@@ -1,1 +1,1 @@
-Improved userscript compatibility with @require support. Fixed unwanted video audio and improved back navigation and loading indicators.
+BT and magnet downloads with file selection and resume. Play supported media while downloading, open MKV files, and import ed2k/thunder links.

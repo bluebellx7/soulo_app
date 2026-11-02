@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import CoreSpotlight
 
 struct BookmarkService {
 
@@ -29,7 +30,7 @@ struct BookmarkService {
 
     // MARK: - Clear All
 
-    static func clearAll(in context: ModelContext) throws {
+    static func clearAll(in context: ModelContext, index: CSSearchableIndex = .default()) throws {
         let descriptor = FetchDescriptor<BookmarkItem>()
         let all = try context.fetch(descriptor)
         for item in all {
@@ -39,6 +40,7 @@ struct BookmarkService {
             context.delete(folder)
         }
         try context.save()
+        SpotlightIndexingService.deindexAll(domain: "soulo.bookmarks", index: index)
     }
 
     // MARK: - Is Bookmarked

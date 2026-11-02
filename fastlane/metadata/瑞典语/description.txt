@@ -4,7 +4,7 @@ Välj Soulo som förvald webbläsare i Inställningar för att öppna länkar fr
 
 Senast använda flikar och webbplatsgrupper visas först och översikten öppnas högst upp. Användningsordningen sparas efter omstart.
 
-BT-hämtningar: Importera .torrent-filer eller magnetlänkar, välj filer, pausa och återuppta. På iOS 26 kan hämtningar fortsätta i bakgrunden när systemet tillåter det; äldre versioner sparar förloppet och pausar.
+BT-hämtningar: Importera .torrent-filer eller magnetlänkar, välj filer, pausa och återuppta. På iOS 26 kan hämtningar fortsätta i bakgrunden när systemet tillåter det; äldre versioner sparar förloppet och pausar. Spela upp BT-medier som stöds under nedladdning och öppna MKV-filer. Importera ed2k/thunder-länkar. Nedladdningar kräver tillgängliga källor; uppspelning beror på kodekar.
 
 Välj fem valfria genvägar på startsidan till hämtningar, filer, bokmärken, historik, bakgrunder och andra sidor. Bibliotekets flikrad blir kompakt när du rullar.
 

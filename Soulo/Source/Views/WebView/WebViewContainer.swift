@@ -225,6 +225,7 @@ struct WebViewContainer: View {
     @State private var showBookmarkToast: Bool = false
     @State private var showLinkCopiedToast: Bool = false
     @State private var externalURL: URL? = nil
+    @State private var externalBrowserURL: URL? = nil
     @State private var showNewTabPage: Bool = true
     @State private var toolbarMinimized: Bool = false
     @State private var localToolbarManuallyHidden: Bool = false
@@ -356,7 +357,8 @@ struct WebViewContainer: View {
                         .transition(.opacity)
                     }
                 }
-                // A shorter viewport keeps fixed page controls above the floating toolbar.
+                // Older WebKit needs a shorter viewport for floating chrome.
+                // On iOS 26, native obscured insets preserve swipe snapshot dimensions.
                 .padding(.bottom, pageViewportBottomInset)
             }
 
@@ -494,11 +496,15 @@ struct WebViewContainer: View {
                         icon: "arrow.up.forward.app",
                         title: LanguageManager.shared.localizedString("open_external_title"),
                         destination: WebNavigationPolicyService.shared.externalDestinationName(for: extURL),
-                        cancelTitle: LanguageManager.shared.localizedString("cancel"),
+                        cancelTitle: LanguageManager.shared.localizedString(externalBrowserURL == nil ? "cancel" : "browser_open_page"),
                         confirmTitle: LanguageManager.shared.localizedString("confirm"),
                         identifier: "browser.external-app-confirmation",
                         onCancel: {
                             withAnimation { showExternalConfirm = false }
+                            if let url = externalBrowserURL {
+                                externalBrowserURL = nil
+                                webViewModel.loadURL(url)
+                            }
                         },
                         onConfirm: {
                             openExternalURL(extURL)
@@ -693,6 +699,7 @@ struct WebViewContainer: View {
                     return
                 }
                 externalURL = url
+                externalBrowserURL = notification.userInfo?["browserURL"] as? URL
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                     showExternalConfirm = true
                 }
@@ -1121,7 +1128,9 @@ struct WebViewContainer: View {
     private var pageViewportBottomInset: CGFloat {
         guard shouldKeepPageAboveToolbar else { return 0 }
         if #available(iOS 26.0, *) {
-            return videoViewportBottomInset
+            // WebKit discards history swipe snapshots when the live view changes
+            // size. Keep the frame stable as video controls appear or disappear.
+            return 0
         }
         return BrowserChromeLayout.pageViewportBottomInset(
             isActiveTab: isActiveTab,
@@ -1132,9 +1141,11 @@ struct WebViewContainer: View {
     }
 
     private var webViewObscuredBottomInset: CGFloat {
-        guard shouldKeepPageAboveToolbar, showsBottomToolbar,
-              !webViewModel.needsVideoViewportClearance else { return 0 }
-        return pageBottomClearance
+        guard shouldKeepPageAboveToolbar else { return 0 }
+        if webViewModel.needsVideoViewportClearance {
+            return videoViewportBottomInset
+        }
+        return showsBottomToolbar ? pageBottomClearance : 0
     }
 
     private var videoBottomChromeBackdrop: some View {

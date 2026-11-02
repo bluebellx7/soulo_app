@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "Open pagina's worden opnieuw geladen nadat een script is geïnstalleerd, bewerkt, ingeschakeld, uitgeschakeld of verwijderd.";
 "userscript_experimental_badge" = "Compatibiliteit";
 "userscript_experimental_title" = "UserScript compatibiliteit";
-"userscript_experimental_desc" = "Ondersteunt siteregels, begin/einde van documenten, uitgebreide GM-opslag en pagina-API's, scriptopdrachten, meldingen, tabbladen, downloads, cookies, bronnen en op toestemming gerichte verzoeken. Controleer elk script voordat u het installeert; externe @require-bestanden worden niet uitgevoerd.";
+"userscript_experimental_desc" = "Ondersteunt siteregels, begin/einde van documenten, uitgebreide GM-opslag en pagina-API's, scriptopdrachten, meldingen, tabbladen, downloads, cookies, bronnen en op toestemming gerichte verzoeken. Controleer elk script voordat u het installeert.";
 "extension_choose_file" = "Kies bestand of map…";
 "extension_installing" = "Extensie controleren en installeren…";
 "extension_install_failed" = "Extensie kon niet worden geïnstalleerd";
@@ -659,7 +659,7 @@
 "userscript_new" = "Nieuw script";
 "userscript_edit" = "Script bewerken";
 "userscript_choose_file" = "Kies script…";
-"userscript_install_footer" = "Tik op een bronrij om deze te openen op het huidige tabblad Soulo. Een .user.js-link opent een installatiebevestiging. Standaard JavaScript en een brede reeks GM API's worden ondersteund; scripts worden niet uitgevoerd in Private Browsing en externe @require-bestanden worden niet uitgevoerd.";
+"userscript_install_footer" = "Tik op een bronrij om deze te openen op het huidige tabblad Soulo. Een .user.js-link opent een installatiebevestiging. Standaard JavaScript en een brede reeks GM API's worden ondersteund. UserScripts worden niet uitgevoerd in Privénavigatie.";
 "userscript_install_failed" = "UserScript Kan niet worden geïnstalleerd";
 "web_extension_temporarily_disabled" = "Standaard browserextensies zijn tijdelijk niet beschikbaar zolang de compatibiliteitstests zijn voltooid.";
 "userscript_unreadable" = "Het geselecteerde script kon niet worden gelezen als UTF-8-tekst.";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "Gedeeltelijk ondersteund";
 "userscript_docs_partial_desc" = "Netwerkverzoeken laten upload/voortgang en cookietransport achterwege. Meldingen staan ​​op de pagina, resource-API's zijn asynchroon en luisteraars voor waardewijzigingen rapporteren wijzigingen die door de huidige pagina zijn aangebracht. Updatecontroles zijn handmatig.";
 "userscript_docs_unsupported_title" = "Momenteel niet ondersteund";
-"userscript_docs_unsupported_desc" = "Externe @require-uitvoering, GM_webRequest-onderschepping, GM_audio, sandbox/run-in-isolatie, automatische updatecontroles en exact desktopgedrag dat WKWebView niet kan bieden.";
+"userscript_docs_unsupported_desc" = "GM_webRequest-onderschepping, GM_audio, sandbox/run-in-isolatie, automatische updatecontroles en exact desktopgedrag dat WKWebView niet kan bieden.";
 "userscript_docs_metadata_title" = "Metagegevens";
 "userscript_docs_metadata_identity" = "Voor mensen leesbare scriptnaam en optionele beschrijving weergegeven vóór de installatie en in scriptdetails.";
 "userscript_docs_metadata_version" = "Gebruik een stabiele, unieke naamruimte en verhoog de versie wanneer het gebundelde script verandert.";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "Autoriseer hosts die worden gebruikt door geprivilegieerde netwerkverzoeken. Zonder dit zijn de verzoeken beperkt tot de huidige paginahost.";
 "userscript_docs_metadata_urls" = "Optionele identiteit en update-metagegevens. Soulo gebruikt deze om herinstallaties van hetzelfde script te herkennen.";
 "userscript_docs_metadata_resource" = "Declareert een benoemde resource. Voeg een overeenkomende @connect-host toe; het ophalen wordt uitgesteld totdat er op de moderne resource-API wordt gewacht.";
-"userscript_docs_metadata_require" = "Externe vereisten worden tijdens de installatie bekendgemaakt, maar worden niet gedownload of uitgevoerd; scripts moeten op zichzelf staan.";
+"userscript_docs_metadata_require" = "HTTPS @require-bestanden worden bij installatie of opslaan gedownload en gecachet en vóór het script in de opgegeven volgorde uitgevoerd.";
 "userscript_docs_api_title" = "Ondersteunde bevoorrechte API's";
 "userscript_docs_api_info" = "Leest de scripthandler, Soulo versie en geparseerde scriptmetagegevens. Verkrijgbaar in legacy en moderne vorm.";
 "userscript_docs_api_unsafe_window" = "Biedt het huidige paginavenster wanneer de unsafeWindow-toekenning expliciet wordt gedeclareerd.";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "Opgeslagen waarden moeten JSON-serialiseerbaar zijn: maximaal 256 KB per waarde en 1 MB totaal per script.";
 "userscript_docs_limits_network" = "Bevoorrechte reacties zijn beperkt tot 20 MB, de time-out is beperkt tot 1-60 seconden en Cookie/Host/Origin-headers worden niet geaccepteerd.";
 "userscript_docs_limits_private" = "UserScripts worden niet uitgevoerd in Privénavigatie.";
-"userscript_docs_limits_require" = "Externe @require-bestanden worden nooit uitgevoerd. Vermijd CDN-afhankelijkheden en neem alle vereiste logica op in het script.";
+"userscript_docs_limits_require" = "HTTPS @require-bestanden worden bij installatie of opslaan gedownload en gecachet en vóór het script in de opgegeven volgorde uitgevoerd.";
 "userscript_docs_template_title" = "Minimale sjabloon";
 "userscript_docs_template_footer" = "Gebruik een unieke naamruimte en de smalst mogelijke @match- en @grant-declaraties.";
 "userscript_too_large" = "Het geselecteerde script is groter dan de limiet van 2 MB.";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "Geen extra machtigingen";
 "userscript_network_title" = "Netwerktoegang";
 "userscript_external_requirements" = "Externe afhankelijkheden";
-"userscript_external_requirements_desc" = "Dit script declareert externe @require-bestanden. Soulo laadt ze niet automatisch.";
+"userscript_external_requirements_desc" = "HTTPS @require-bestanden worden bij installatie of opslaan gedownload en gecachet en vóór het script in de opgegeven volgorde uitgevoerd.";
 "userscript_metadata_title" = "Scriptdetails";
 "userscript_unsupported_permissions" = "Nog niet ondersteund: %@";
 "userscript_sample_name" = "Voortgangsbalk lezen";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "Kaartweergave";
 "tab_close_group" = "Groep sluiten";
 "tab_close_group_confirm" = "Alle tabbladen in ‘%@’ sluiten (%d)?";
+
+"userscript_require_failed" = "Kan afhankelijkheid %@ niet laden: %@";
+"userscript_require_integrity_failed" = "Integriteitscontrole van de afhankelijkheid mislukt.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "Beheren";
+"extension_update" = "Bijwerken";
+"extension_rollback" = "Vorige versie herstellen";
+"extension_blocked_sites" = "Geblokkeerde websites";
+"extension_diagnostics" = "Compatibiliteit";
+"extension_review_access" = "Kies de machtigingen en websites waartoe deze extensie toegang heeft.";
+"extension_limit_commands" = "Sneltoetsen voor extensies zijn niet beschikbaar op iOS.";
+"extension_limit_notifications" = "Meldingen kunnen worden weergegeven, maar klik- en sluitgebeurtenissen worden niet ondersteund.";
+"extension_limit_offscreen" = "Offscreen-documenten ondersteunen alleen het afspelen van audio.";

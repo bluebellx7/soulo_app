@@ -14,6 +14,8 @@ struct TorrentDownloadJob: Codable, Identifiable, Equatable {
     var error = ""
     var createdAt = Date()
     var directory: String
+    // Nil in older ledgers. Only system interruptions opt into automatic resume.
+    var resumeAfterSystemPause: Bool? = nil
     var isActive: Bool { [.metadata, .starting, .downloading].contains(state) }
     var priorities: [Bool] { files.map { selected.contains($0.index) && !$0.pad } }
     var selectedBytes: Int64 { files.filter { selected.contains($0.index) && !$0.pad }.reduce(0) { $0 + $1.size } }
@@ -63,6 +65,7 @@ final class TorrentDownloadService: ObservableObject {
                 }
                 for i in jobs.indices where jobs[i].isActive || jobs[i].state == .queued {
                     jobs[i].state = .paused
+                    jobs[i].resumeAfterSystemPause = true
                     self.manager.markPaused(id: jobs[i].id)
                 }
                 persist()
@@ -70,6 +73,47 @@ final class TorrentDownloadService: ObservableObject {
         } catch { storageError = error.localizedDescription }
     }
     func job(_ id: UUID) -> TorrentDownloadJob? { jobs.first { $0.id == id } }
+    func canStream(_ id: UUID, file: TorrentFileEntry) -> Bool {
+        guard let job = job(id), !file.pad, file.size > 0,
+              job.files.contains(file), job.selected.contains(file.index),
+              TorrentMediaFile.supports(file.path) else { return false }
+        return [.selection, .queued, .starting, .downloading, .paused, .finished].contains(job.state)
+    }
+    func openStream(_ id: UUID, file: TorrentFileEntry) async throws -> TorrentPlaybackLease {
+        guard canStream(id, file: file) else { throw TorrentTaskError.invalid }
+        if let job = job(id), !job.isActive && job.state != .finished { start(id) }
+        while !engineIDs.contains(id) {
+            try Task.checkCancellation()
+            guard let job = job(id), [.queued, .starting, .downloading].contains(job.state) else { throw TorrentTaskError.invalid }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        let worker = worker
+        let server = try await TorrentStreamServer.start(size: file.size, name: file.path) { offset, length in
+            try await worker.streamData(id: id, file: file.index, offset: offset, length: length)
+        }
+        return TorrentPlaybackLease(server: server, id: id, worker: worker)
+    }
+    func completedFileURL(_ id: UUID, file: TorrentFileEntry) -> URL? {
+        guard let job = job(id), job.state == .finished, job.files.contains(file), job.selected.contains(file.index) else { return nil }
+        let root = URL(fileURLWithPath: job.directory, isDirectory: true).resolvingSymlinksInPath()
+        let url = root.appendingPathComponent(file.path).resolvingSymlinksInPath()
+        guard url.path.hasPrefix(root.path + "/"),
+              (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true else { return nil }
+        return url
+    }
+    func playbackTarget(for url: URL) -> (id: UUID, file: TorrentFileEntry)? {
+        guard url.isFileURL, TorrentMediaFile.supports(url.path) else { return nil }
+        let path = url.standardizedFileURL.resolvingSymlinksInPath().path
+        for job in jobs where job.state != .finished {
+            let root = URL(fileURLWithPath: job.directory, isDirectory: true).standardizedFileURL.resolvingSymlinksInPath().path + "/"
+            guard path.hasPrefix(root) else { continue }
+            let relative = String(path.dropFirst(root.count)).precomposedStringWithCanonicalMapping
+            guard let file = job.files.first(where: { $0.path.precomposedStringWithCanonicalMapping == relative }),
+                  canStream(job.id, file: file) else { return nil }
+            return (job.id, file)
+        }
+        return nil
+    }
     private func dataURL(_ id: UUID, _ suffix: String) -> URL { root.appendingPathComponent(id.uuidString + "." + suffix) }
     private func persist() {
         do {
@@ -120,7 +164,7 @@ final class TorrentDownloadService: ObservableObject {
         guard let job = job(id), !job.isActive, job.state != .finished else { return }
         if !job.files.isEmpty && job.selected.isEmpty { return }
         suspended = false
-        mutate(id) { $0.state = .queued; $0.error = "" }
+        mutate(id) { $0.state = .queued; $0.error = ""; $0.resumeAfterSystemPause = false }
         self.manager.markResumed(id: id)
         pump()
         userStartedWork()
@@ -161,12 +205,20 @@ final class TorrentDownloadService: ObservableObject {
         workChanged()
     }
     func pause(_ id: UUID) {
-        guard let job = job(id), job.isActive || job.state == .queued else { return }
+        guard let job = job(id) else { return }
+        guard job.isActive || job.state == .queued else {
+            if job.resumeAfterSystemPause == true { mutate(id) { $0.resumeAfterSystemPause = false } }
+            return
+        }
         generations[id] = UUID()
-        mutate(id) { $0.state = .paused }
+        mutate(id) { $0.state = .paused; $0.resumeAfterSystemPause = false }
         self.manager.markPaused(id: id)
         let checkpoint = checkpointPause(id)
         Task { await checkpoint.value; pump(); workChanged() }
+    }
+    func resumeSystemPausedTasks() {
+        let ids = jobs.filter { $0.state == .paused && $0.resumeAfterSystemPause == true }.map(\.id)
+        for id in ids { start(id) }
     }
     /// Used by expiration handlers. The completion waits for the native engine and atomic resume writes.
     func suspendAll() async {
@@ -174,7 +226,7 @@ final class TorrentDownloadService: ObservableObject {
         let ids = jobs.filter { $0.isActive || $0.state == .queued }.map(\.id)
         for id in ids {
             generations[id] = UUID()
-            mutate(id) { $0.state = .paused }
+            mutate(id) { $0.state = .paused; $0.resumeAfterSystemPause = true }
             self.manager.markPaused(id: id)
         }
         // Register every checkpoint before yielding. A newly resumed job must

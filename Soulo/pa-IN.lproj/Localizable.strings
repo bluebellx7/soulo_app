@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "ਸਕ੍ਰਿਪਟ ਸਥਾਪਤ, ਸੰਪਾਦਿਤ, ਸਮਰੱਥ, ਅਯੋਗ, ਜਾਂ ਹਟਾਏ ਜਾਣ ਤੋਂ ਬਾਅਦ ਓਪਨ ਪੰਨੇ ਰੀਲੋਡ ਹੁੰਦੇ ਹਨ।";
 "userscript_experimental_badge" = "ਅਨੁਕੂਲਤਾ";
 "userscript_experimental_title" = "UserScript ਅਨੁਕੂਲਤਾ";
-"userscript_experimental_desc" = "ਸਾਈਟ ਨਿਯਮਾਂ, ਦਸਤਾਵੇਜ਼-ਸ਼ੁਰੂ/ਅੰਤ, ਵਿਆਪਕ GM ਸਟੋਰੇਜ ਅਤੇ ਪੇਜ API, ਸਕ੍ਰਿਪਟ ਕਮਾਂਡਾਂ, ਸੂਚਨਾਵਾਂ, ਟੈਬਾਂ, ਡਾਉਨਲੋਡਸ, ਕੂਕੀਜ਼, ਸਰੋਤਾਂ ਅਤੇ ਅਨੁਮਤੀ-ਸਕੋਪ ਬੇਨਤੀਆਂ ਦਾ ਸਮਰਥਨ ਕਰਦਾ ਹੈ। ਇੰਸਟਾਲ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਹਰ ਸਕ੍ਰਿਪਟ ਦੀ ਸਮੀਖਿਆ ਕਰੋ; external @require ਫਾਈਲਾਂ ਨੂੰ ਐਗਜ਼ੀਕਿਊਟ ਨਹੀਂ ਕੀਤਾ ਜਾਂਦਾ ਹੈ।";
+"userscript_experimental_desc" = "ਸਾਈਟ ਨਿਯਮਾਂ, ਦਸਤਾਵੇਜ਼-ਸ਼ੁਰੂ/ਅੰਤ, ਵਿਆਪਕ GM ਸਟੋਰੇਜ ਅਤੇ ਪੇਜ API, ਸਕ੍ਰਿਪਟ ਕਮਾਂਡਾਂ, ਸੂਚਨਾਵਾਂ, ਟੈਬਾਂ, ਡਾਉਨਲੋਡਸ, ਕੂਕੀਜ਼, ਸਰੋਤਾਂ ਅਤੇ ਅਨੁਮਤੀ-ਸਕੋਪ ਬੇਨਤੀਆਂ ਦਾ ਸਮਰਥਨ ਕਰਦਾ ਹੈ। ਇੰਸਟਾਲ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਹਰ ਸਕ੍ਰਿਪਟ ਦੀ ਸਮੀਖਿਆ ਕਰੋ।";
 "extension_choose_file" = "ਫਾਈਲ ਜਾਂ ਫੋਲਡਰ ਚੁਣੋ…";
 "extension_installing" = "ਐਕਸਟੈਂਸ਼ਨ ਦੀ ਜਾਂਚ ਅਤੇ ਸਥਾਪਨਾ ਕੀਤੀ ਜਾ ਰਹੀ ਹੈ...";
 "extension_install_failed" = "ਐਕਸਟੈਂਸ਼ਨ ਨੂੰ ਸਥਾਪਿਤ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ";
@@ -659,7 +659,7 @@
 "userscript_new" = "ਨਵੀਂ ਸਕ੍ਰਿਪਟ";
 "userscript_edit" = "ਸਕ੍ਰਿਪਟ ਦਾ ਸੰਪਾਦਨ ਕਰੋ";
 "userscript_choose_file" = "ਸਕ੍ਰਿਪਟ ਚੁਣੋ…";
-"userscript_install_footer" = "ਮੌਜੂਦਾ Soulo ਟੈਬ ਵਿੱਚ ਇਸਨੂੰ ਖੋਲ੍ਹਣ ਲਈ ਇੱਕ ਸਰੋਤ ਕਤਾਰ 'ਤੇ ਟੈਪ ਕਰੋ। ਇੱਕ .user.js ਲਿੰਕ ਇੱਕ ਇੰਸਟਾਲੇਸ਼ਨ ਪੁਸ਼ਟੀ ਨੂੰ ਖੋਲ੍ਹਦਾ ਹੈ। ਸਟੈਂਡਰਡ JavaScript ਅਤੇ GM API ਦਾ ਇੱਕ ਵਿਸ਼ਾਲ ਸਮੂਹ ਸਮਰਥਿਤ ਹੈ; ਸਕ੍ਰਿਪਟਾਂ ਪ੍ਰਾਈਵੇਟ ਬ੍ਰਾਊਜ਼ਿੰਗ ਵਿੱਚ ਨਹੀਂ ਚੱਲਦੀਆਂ ਹਨ ਅਤੇ ਬਾਹਰੀ @require ਫਾਈਲਾਂ ਨੂੰ ਚਲਾਇਆ ਨਹੀਂ ਜਾਂਦਾ ਹੈ।";
+"userscript_install_footer" = "ਮੌਜੂਦਾ Soulo ਟੈਬ ਵਿੱਚ ਇਸਨੂੰ ਖੋਲ੍ਹਣ ਲਈ ਇੱਕ ਸਰੋਤ ਕਤਾਰ 'ਤੇ ਟੈਪ ਕਰੋ। ਇੱਕ .user.js ਲਿੰਕ ਇੱਕ ਇੰਸਟਾਲੇਸ਼ਨ ਪੁਸ਼ਟੀ ਨੂੰ ਖੋਲ੍ਹਦਾ ਹੈ। ਸਟੈਂਡਰਡ JavaScript ਅਤੇ GM API ਦਾ ਇੱਕ ਵਿਸ਼ਾਲ ਸਮੂਹ ਸਮਰਥਿਤ ਹੈ। UserScripts ਨਿੱਜੀ ਬ੍ਰਾਊਜ਼ਿੰਗ ਵਿੱਚ ਨਹੀਂ ਚੱਲਦੇ।";
 "userscript_install_failed" = "UserScript ਨੂੰ ਸਥਾਪਿਤ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ";
 "web_extension_temporarily_disabled" = "ਅਨੁਕੂਲਤਾ ਜਾਂਚ ਪੂਰੀ ਹੋਣ 'ਤੇ ਸਟੈਂਡਰਡ ਬ੍ਰਾਊਜ਼ਰ ਐਕਸਟੈਂਸ਼ਨ ਅਸਥਾਈ ਤੌਰ 'ਤੇ ਉਪਲਬਧ ਨਹੀਂ ਹਨ।";
 "userscript_unreadable" = "ਚੁਣੀ ਗਈ ਸਕ੍ਰਿਪਟ ਨੂੰ UTF-8 ਟੈਕਸਟ ਵਜੋਂ ਪੜ੍ਹਿਆ ਨਹੀਂ ਜਾ ਸਕਦਾ ਹੈ।";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "ਅੰਸ਼ਕ ਤੌਰ 'ਤੇ ਸਮਰਥਿਤ ਹੈ";
 "userscript_docs_partial_desc" = "ਨੈੱਟਵਰਕ ਬੇਨਤੀਆਂ ਅੱਪਲੋਡ/ਪ੍ਰਗਤੀ ਅਤੇ ਕੂਕੀ ਟ੍ਰਾਂਸਪੋਰਟ ਨੂੰ ਛੱਡ ਦਿੰਦੀਆਂ ਹਨ। ਸੂਚਨਾਵਾਂ ਪੰਨੇ ਵਿੱਚ ਹਨ, ਸਰੋਤ API ਅਸਿੰਕ੍ਰੋਨਸ ਹਨ, ਅਤੇ ਮੁੱਲ-ਪਰਿਵਰਤਨ ਸੁਣਨ ਵਾਲੇ ਮੌਜੂਦਾ ਪੰਨੇ ਦੁਆਰਾ ਕੀਤੀਆਂ ਤਬਦੀਲੀਆਂ ਦੀ ਰਿਪੋਰਟ ਕਰਦੇ ਹਨ। ਅੱਪਡੇਟ ਜਾਂਚ ਦਸਤੀ ਹਨ।";
 "userscript_docs_unsupported_title" = "ਫਿਲਹਾਲ ਸਮਰਥਿਤ ਨਹੀਂ ਹੈ";
-"userscript_docs_unsupported_desc" = "ਬਾਹਰੀ @require ਐਗਜ਼ੀਕਿਊਸ਼ਨ, GM_webRequest ਇੰਟਰਸੈਪਸ਼ਨ, GM_audio, ਸੈਂਡਬਾਕਸ/ਰਨ-ਇਨ ਆਈਸੋਲੇਸ਼ਨ, ਆਟੋਮੈਟਿਕ ਅੱਪਡੇਟ ਜਾਂਚਾਂ, ਅਤੇ ਸਿਰਫ਼ ਡੈਸਕਟੌਪ-ਸਿਰਫ਼ ਵਿਵਹਾਰ ਜੋ WKWebView ਪ੍ਰਦਾਨ ਨਹੀਂ ਕਰ ਸਕਦੇ ਹਨ।";
+"userscript_docs_unsupported_desc" = "GM_webRequest ਇੰਟਰਸੈਪਸ਼ਨ, GM_audio, ਸੈਂਡਬਾਕਸ/ਰਨ-ਇਨ ਆਈਸੋਲੇਸ਼ਨ, ਆਟੋਮੈਟਿਕ ਅੱਪਡੇਟ ਜਾਂਚਾਂ, ਅਤੇ ਸਿਰਫ਼ ਡੈਸਕਟੌਪ-ਸਿਰਫ਼ ਵਿਵਹਾਰ ਜੋ WKWebView ਪ੍ਰਦਾਨ ਨਹੀਂ ਕਰ ਸਕਦੇ ਹਨ।";
 "userscript_docs_metadata_title" = "ਮੈਟਾਡਾਟਾ";
 "userscript_docs_metadata_identity" = "ਮਨੁੱਖੀ-ਪੜ੍ਹਨਯੋਗ ਸਕ੍ਰਿਪਟ ਨਾਮ ਅਤੇ ਵਿਕਲਪਿਕ ਵਰਣਨ ਇੰਸਟਾਲੇਸ਼ਨ ਤੋਂ ਪਹਿਲਾਂ ਅਤੇ ਸਕ੍ਰਿਪਟ ਵੇਰਵਿਆਂ ਵਿੱਚ ਦਿਖਾਇਆ ਗਿਆ ਹੈ।";
 "userscript_docs_metadata_version" = "ਇੱਕ ਸਥਿਰ, ਵਿਲੱਖਣ ਨੇਮਸਪੇਸ ਦੀ ਵਰਤੋਂ ਕਰੋ ਅਤੇ ਜਦੋਂ ਵੀ ਬੰਡਲ ਸਕ੍ਰਿਪਟ ਬਦਲਦੀ ਹੈ ਤਾਂ ਸੰਸਕਰਣ ਨੂੰ ਵਧਾਓ।";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "ਵਿਸ਼ੇਸ਼ ਅਧਿਕਾਰ ਪ੍ਰਾਪਤ ਨੈਟਵਰਕ ਬੇਨਤੀਆਂ ਦੁਆਰਾ ਵਰਤੇ ਗਏ ਮੇਜ਼ਬਾਨਾਂ ਨੂੰ ਅਧਿਕਾਰਤ ਕਰੋ। ਇਸ ਤੋਂ ਬਿਨਾਂ, ਬੇਨਤੀਆਂ ਮੌਜੂਦਾ ਪੇਜ ਹੋਸਟ ਤੱਕ ਸੀਮਿਤ ਹਨ.";
 "userscript_docs_metadata_urls" = "ਵਿਕਲਪਿਕ ਪਛਾਣ ਅਤੇ ਅੱਪਡੇਟ ਮੈਟਾਡੇਟਾ। Soulo ਇਹਨਾਂ ਦੀ ਵਰਤੋਂ ਇੱਕੋ ਸਕ੍ਰਿਪਟ ਦੀ ਮੁੜ ਸਥਾਪਨਾ ਨੂੰ ਪਛਾਣਨ ਲਈ ਕਰਦਾ ਹੈ।";
 "userscript_docs_metadata_resource" = "ਇੱਕ ਨਾਮਿਤ ਸਰੋਤ ਘੋਸ਼ਿਤ ਕਰਦਾ ਹੈ। ਇੱਕ ਮੇਲ ਖਾਂਦਾ @connect ਹੋਸਟ ਸ਼ਾਮਲ ਕਰੋ; ਪ੍ਰਾਪਤ ਕਰਨਾ ਉਦੋਂ ਤੱਕ ਮੁਲਤਵੀ ਕੀਤਾ ਜਾਂਦਾ ਹੈ ਜਦੋਂ ਤੱਕ ਆਧੁਨਿਕ ਸਰੋਤ API ਦੀ ਉਡੀਕ ਨਹੀਂ ਕੀਤੀ ਜਾਂਦੀ।";
-"userscript_docs_metadata_require" = "ਇੰਸਟਾਲੇਸ਼ਨ ਦੌਰਾਨ ਬਾਹਰੀ ਲੋੜਾਂ ਦਾ ਖੁਲਾਸਾ ਕੀਤਾ ਜਾਂਦਾ ਹੈ ਪਰ ਡਾਊਨਲੋਡ ਜਾਂ ਲਾਗੂ ਨਹੀਂ ਕੀਤਾ ਜਾਂਦਾ ਹੈ; ਸਕ੍ਰਿਪਟਾਂ ਸਵੈ-ਨਿਰਭਰ ਹੋਣੀਆਂ ਚਾਹੀਦੀਆਂ ਹਨ।";
+"userscript_docs_metadata_require" = "HTTPS @require ਫ਼ਾਈਲਾਂ ਇੰਸਟਾਲ ਜਾਂ ਸੁਰੱਖਿਅਤ ਕਰਨ ਵੇਲੇ ਡਾਊਨਲੋਡ ਅਤੇ ਕੈਸ਼ ਹੁੰਦੀਆਂ ਹਨ, ਫਿਰ ਸਕ੍ਰਿਪਟ ਤੋਂ ਪਹਿਲਾਂ ਕ੍ਰਮ ਵਿੱਚ ਚੱਲਦੀਆਂ ਹਨ।";
 "userscript_docs_api_title" = "ਸਮਰਥਿਤ ਵਿਸ਼ੇਸ਼ ਅਧਿਕਾਰ ਪ੍ਰਾਪਤ APIs";
 "userscript_docs_api_info" = "ਸਕ੍ਰਿਪਟ ਹੈਂਡਲਰ, Soulo ਸੰਸਕਰਣ, ਅਤੇ ਪਾਰਸਡ ਸਕ੍ਰਿਪਟ ਮੈਟਾਡੇਟਾ ਪੜ੍ਹਦਾ ਹੈ। ਵਿਰਾਸਤੀ ਅਤੇ ਆਧੁਨਿਕ ਰੂਪ ਵਿੱਚ ਉਪਲਬਧ।";
 "userscript_docs_api_unsafe_window" = "ਜਦੋਂ ਅਸੁਰੱਖਿਅਤ ਵਿੰਡੋ ਗ੍ਰਾਂਟ ਸਪੱਸ਼ਟ ਤੌਰ 'ਤੇ ਘੋਸ਼ਿਤ ਕੀਤੀ ਜਾਂਦੀ ਹੈ ਤਾਂ ਮੌਜੂਦਾ ਪੰਨਾ ਵਿੰਡੋ ਪ੍ਰਦਾਨ ਕਰਦਾ ਹੈ।";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "ਸਟੋਰ ਕੀਤੇ ਮੁੱਲ JSON-ਸੀਰੀਅਲਾਈਜ਼ ਹੋਣ ਯੋਗ ਹੋਣੇ ਚਾਹੀਦੇ ਹਨ: ਪ੍ਰਤੀ ਮੁੱਲ 256 KB ਅਤੇ ਪ੍ਰਤੀ ਸਕ੍ਰਿਪਟ ਕੁੱਲ 1 MB ਤੱਕ।";
 "userscript_docs_limits_network" = "ਵਿਸ਼ੇਸ਼ ਅਧਿਕਾਰ ਪ੍ਰਾਪਤ ਜਵਾਬ 20 MB ਤੱਕ ਸੀਮਿਤ ਹਨ, ਸਮਾਂ ਸਮਾਪਤੀ 1-60 ਸਕਿੰਟਾਂ ਤੱਕ ਸੀਮਿਤ ਹੈ, ਅਤੇ ਕੂਕੀ/ਹੋਸਟ/ਮੂਲ ਸਿਰਲੇਖ ਸਵੀਕਾਰ ਨਹੀਂ ਕੀਤੇ ਜਾਂਦੇ ਹਨ।";
 "userscript_docs_limits_private" = "UserScripts ਨਿੱਜੀ ਬ੍ਰਾਊਜ਼ਿੰਗ ਵਿੱਚ ਨਹੀਂ ਚੱਲਦੇ।";
-"userscript_docs_limits_require" = "ਬਾਹਰੀ @require ਫਾਈਲਾਂ ਕਦੇ ਨਹੀਂ ਚਲਾਈਆਂ ਜਾਂਦੀਆਂ ਹਨ। CDN ਨਿਰਭਰਤਾਵਾਂ ਤੋਂ ਬਚੋ ਅਤੇ ਸਕ੍ਰਿਪਟ ਵਿੱਚ ਸਾਰੇ ਲੋੜੀਂਦੇ ਤਰਕ ਸ਼ਾਮਲ ਕਰੋ।";
+"userscript_docs_limits_require" = "HTTPS @require ਫ਼ਾਈਲਾਂ ਇੰਸਟਾਲ ਜਾਂ ਸੁਰੱਖਿਅਤ ਕਰਨ ਵੇਲੇ ਡਾਊਨਲੋਡ ਅਤੇ ਕੈਸ਼ ਹੁੰਦੀਆਂ ਹਨ, ਫਿਰ ਸਕ੍ਰਿਪਟ ਤੋਂ ਪਹਿਲਾਂ ਕ੍ਰਮ ਵਿੱਚ ਚੱਲਦੀਆਂ ਹਨ।";
 "userscript_docs_template_title" = "ਨਿਊਨਤਮ ਟੈਮਪਲੇਟ";
 "userscript_docs_template_footer" = "ਇੱਕ ਵਿਲੱਖਣ ਨੇਮਸਪੇਸ ਅਤੇ ਸਭ ਤੋਂ ਘੱਟ ਸੰਭਵ @match ਅਤੇ @grant ਘੋਸ਼ਣਾਵਾਂ ਦੀ ਵਰਤੋਂ ਕਰੋ।";
 "userscript_too_large" = "ਚੁਣੀ ਗਈ ਸਕ੍ਰਿਪਟ 2 MB ਸੀਮਾ ਤੋਂ ਵੱਡੀ ਹੈ।";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "ਕੋਈ ਵਾਧੂ ਇਜਾਜ਼ਤਾਂ ਨਹੀਂ";
 "userscript_network_title" = "ਨੈੱਟਵਰਕ ਪਹੁੰਚ";
 "userscript_external_requirements" = "ਬਾਹਰੀ ਨਿਰਭਰਤਾ";
-"userscript_external_requirements_desc" = "ਇਹ ਸਕ੍ਰਿਪਟ ਬਾਹਰੀ @require ਫਾਈਲਾਂ ਦਾ ਐਲਾਨ ਕਰਦੀ ਹੈ। Soulo ਉਹਨਾਂ ਨੂੰ ਆਪਣੇ ਆਪ ਲੋਡ ਨਹੀਂ ਕਰਦਾ ਹੈ।";
+"userscript_external_requirements_desc" = "HTTPS @require ਫ਼ਾਈਲਾਂ ਇੰਸਟਾਲ ਜਾਂ ਸੁਰੱਖਿਅਤ ਕਰਨ ਵੇਲੇ ਡਾਊਨਲੋਡ ਅਤੇ ਕੈਸ਼ ਹੁੰਦੀਆਂ ਹਨ, ਫਿਰ ਸਕ੍ਰਿਪਟ ਤੋਂ ਪਹਿਲਾਂ ਕ੍ਰਮ ਵਿੱਚ ਚੱਲਦੀਆਂ ਹਨ।";
 "userscript_metadata_title" = "ਸਕ੍ਰਿਪਟ ਵੇਰਵੇ";
 "userscript_unsupported_permissions" = "ਹਾਲੇ ਸਮਰਥਿਤ ਨਹੀਂ: %@";
 "userscript_sample_name" = "ਰੀਡਿੰਗ ਪ੍ਰਗਤੀ ਪੱਟੀ";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "ਕਾਰਡ ਦ੍ਰਿਸ਼";
 "tab_close_group" = "ਗਰੁੱਪ ਬੰਦ ਕਰੋ";
 "tab_close_group_confirm" = "“%@” ਗਰੁੱਪ ਦੀਆਂ ਸਾਰੀਆਂ ਟੈਬਾਂ ਬੰਦ ਕਰਨੀਆਂ ਹਨ (%d)?";
+
+"userscript_require_failed" = "ਨਿਰਭਰਤਾ %@ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀ: %@";
+"userscript_require_integrity_failed" = "ਨਿਰਭਰਤਾ ਦੀ ਅਖੰਡਤਾ ਜਾਂਚ ਅਸਫਲ ਰਹੀ।";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "ਪ੍ਰਬੰਧਨ";
+"extension_update" = "ਅੱਪਡੇਟ";
+"extension_rollback" = "ਪਿਛਲਾ ਸੰਸਕਰਣ ਬਹਾਲ ਕਰੋ";
+"extension_blocked_sites" = "ਬਲੌਕ ਕੀਤੀਆਂ ਵੈੱਬਸਾਈਟਾਂ";
+"extension_diagnostics" = "ਅਨੁਕੂਲਤਾ";
+"extension_review_access" = "ਚੁਣੋ ਕਿ ਇਹ ਐਕਸਟੈਂਸ਼ਨ ਕਿਹੜੀਆਂ ਇਜਾਜ਼ਤਾਂ ਅਤੇ ਵੈੱਬਸਾਈਟਾਂ ਵਰਤ ਸਕਦੀ ਹੈ।";
+"extension_limit_commands" = "iOS ਉੱਤੇ ਐਕਸਟੈਂਸ਼ਨਾਂ ਦੇ ਕੀਬੋਰਡ ਸ਼ਾਰਟਕੱਟ ਉਪਲਬਧ ਨਹੀਂ ਹਨ।";
+"extension_limit_notifications" = "ਸੂਚਨਾਵਾਂ ਦਿਖਾਈਆਂ ਜਾ ਸਕਦੀਆਂ ਹਨ, ਪਰ ਕਲਿੱਕ ਅਤੇ ਬੰਦ ਕਰਨ ਦੇ ਇਵੈਂਟ ਸਮਰਥਿਤ ਨਹੀਂ ਹਨ।";
+"extension_limit_offscreen" = "ਆਫ਼ਸਕ੍ਰੀਨ ਦਸਤਾਵੇਜ਼ ਸਿਰਫ਼ ਆਡੀਓ ਪਲੇਬੈਕ ਦਾ ਸਮਰਥਨ ਕਰਦੇ ਹਨ।";

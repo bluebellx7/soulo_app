@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "اسکرپٹ کے انسٹال، ترمیم، فعال، غیر فعال، یا ہٹائے جانے کے بعد کھلے صفحات دوبارہ لوڈ ہوتے ہیں۔";
 "userscript_experimental_badge" = "مطابقت";
 "userscript_experimental_title" = "UserScript مطابقت";
-"userscript_experimental_desc" = "سائٹ کے قوانین، دستاویز شروع/اختتام، وسیع GM اسٹوریج اور صفحہ APIs، اسکرپٹ کمانڈز، اطلاعات، ٹیبز، ڈاؤن لوڈ، کوکیز، وسائل اور اجازت کے دائرہ کار کی درخواستوں کی حمایت کرتا ہے۔ انسٹال کرنے سے پہلے ہر اسکرپٹ کا جائزہ لیں؛ external @require فائلوں پر عمل درآمد نہیں ہوتا ہے۔";
+"userscript_experimental_desc" = "سائٹ کے قوانین، دستاویز شروع/اختتام، وسیع GM اسٹوریج اور صفحہ APIs، اسکرپٹ کمانڈز، اطلاعات، ٹیبز، ڈاؤن لوڈ، کوکیز، وسائل اور اجازت کے دائرہ کار کی درخواستوں کی حمایت کرتا ہے۔ انسٹال کرنے سے پہلے ہر اسکرپٹ کا جائزہ لیں.";
 "extension_choose_file" = "فائل یا فولڈر منتخب کریں…";
 "extension_installing" = "ایکسٹینشن کو چیک اور انسٹال کیا جا رہا ہے…";
 "extension_install_failed" = "ایکسٹینشن انسٹال نہیں ہو سکی";
@@ -659,7 +659,7 @@
 "userscript_new" = "نیا اسکرپٹ";
 "userscript_edit" = "اسکرپٹ میں ترمیم کریں۔";
 "userscript_choose_file" = "اسکرپٹ منتخب کریں…";
-"userscript_install_footer" = "کسی ماخذ کی قطار کو موجودہ Soulo ٹیب میں کھولنے کے لیے اسے تھپتھپائیں۔ .user.js لنک انسٹالیشن کی تصدیق کو کھولتا ہے۔ معیاری JavaScript اور GM APIs کا ایک وسیع سیٹ تعاون یافتہ ہے۔ اسکرپٹس پرائیویٹ براؤزنگ میں نہیں چلتی ہیں اور external @require فائلوں پر عمل نہیں کیا جاتا ہے۔";
+"userscript_install_footer" = "کسی ماخذ کی قطار کو موجودہ Soulo ٹیب میں کھولنے کے لیے اسے تھپتھپائیں۔ .user.js لنک انسٹالیشن کی تصدیق کو کھولتا ہے۔ معیاری JavaScript اور GM APIs کا ایک وسیع سیٹ تعاون یافتہ ہے۔ UserScripts نجی براؤزنگ میں نہیں چلتی ہیں۔";
 "userscript_install_failed" = "UserScript انسٹال نہیں کیا جا سکا";
 "web_extension_temporarily_disabled" = "مطابقت کی جانچ مکمل ہونے کے دوران معیاری براؤزر ایکسٹینشنز عارضی طور پر دستیاب نہیں ہیں۔";
 "userscript_unreadable" = "منتخب کردہ اسکرپٹ کو UTF-8 متن کے طور پر نہیں پڑھا جا سکتا۔";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "جزوی طور پر حمایت یافتہ";
 "userscript_docs_partial_desc" = "نیٹ ورک کی درخواستیں اپ لوڈ/پیش رفت اور کوکی ٹرانسپورٹ کو چھوڑ دیتی ہیں۔ اطلاعات صفحہ کے اندر ہیں، وسائل APIs غیر مطابقت پذیر ہیں، اور قدر کی تبدیلی کے سامعین موجودہ صفحہ کے ذریعے کی گئی تبدیلیوں کی اطلاع دیتے ہیں۔ اپ ڈیٹ چیک دستی ہیں۔";
 "userscript_docs_unsupported_title" = "فی الحال تعاون یافتہ نہیں ہے۔";
-"userscript_docs_unsupported_desc" = "External @require execution، GM_webRequest انٹرسیپشن، GM_audio، سینڈ باکس/رن ان آئسولیشن، خودکار اپ ڈیٹ چیک، اور صرف ڈیسک ٹاپ کے عین مطابق رویے جو WKWebView فراہم نہیں کر سکتا۔";
+"userscript_docs_unsupported_desc" = "GM_webRequest انٹرسیپشن، GM_audio، سینڈ باکس/رن ان آئسولیشن، خودکار اپ ڈیٹ چیک، اور صرف ڈیسک ٹاپ کے عین مطابق رویے جو WKWebView فراہم نہیں کر سکتا۔";
 "userscript_docs_metadata_title" = "میٹا ڈیٹا";
 "userscript_docs_metadata_identity" = "انسانی پڑھنے کے قابل اسکرپٹ کا نام اور اختیاری تفصیل انسٹالیشن سے پہلے اور اسکرپٹ کی تفصیلات میں دکھائی گئی ہے۔";
 "userscript_docs_metadata_version" = "ایک مستحکم، منفرد نام کی جگہ کا استعمال کریں اور جب بھی بنڈل اسکرپٹ میں تبدیلی آئے تو ورژن میں اضافہ کریں۔";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "مراعات یافتہ نیٹ ورک کی درخواستوں کے ذریعہ استعمال ہونے والے میزبانوں کو اجازت دیں۔ اس کے بغیر، درخواستیں موجودہ صفحہ کے میزبان تک محدود ہیں۔";
 "userscript_docs_metadata_urls" = "اختیاری شناخت اور اپ ڈیٹ میٹا ڈیٹا۔ Soulo ان کا استعمال اسی اسکرپٹ کی دوبارہ انسٹالیشن کو پہچاننے کے لیے کرتا ہے۔";
 "userscript_docs_metadata_resource" = "ایک نامزد وسائل کا اعلان کرتا ہے۔ ایک مماثل @connect میزبان شامل کریں؛ جب تک جدید وسائل API کا انتظار نہیں کیا جاتا ہے بازیافت موخر کردی جاتی ہے۔";
-"userscript_docs_metadata_require" = "بیرونی ضروریات کو انسٹالیشن کے دوران ظاہر کیا جاتا ہے لیکن ڈاؤن لوڈ یا ان پر عمل نہیں کیا جاتا ہے۔ سکرپٹ خود موجود ہونا ضروری ہے.";
+"userscript_docs_metadata_require" = "HTTPS کی @require فائلیں انسٹال یا محفوظ کرتے وقت ڈاؤن لوڈ اور کیش کی جاتی ہیں، پھر اسکرپٹ سے پہلے ترتیب سے چلتی ہیں۔";
 "userscript_docs_api_title" = "تعاون یافتہ مراعات یافتہ APIs";
 "userscript_docs_api_info" = "اسکرپٹ ہینڈلر، Soulo ورژن، اور پارس شدہ اسکرپٹ میٹا ڈیٹا کو پڑھتا ہے۔ وراثت اور جدید شکل میں دستیاب ہے۔";
 "userscript_docs_api_unsafe_window" = "موجودہ صفحہ ونڈو فراہم کرتا ہے جب غیر محفوظ ونڈو گرانٹ کا واضح طور پر اعلان کیا جاتا ہے۔";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "ذخیرہ شدہ قدریں JSON- سیریلائز ہونے کے قابل ہونی چاہئیں: فی قدر 256 KB تک اور فی اسکرپٹ کل 1 MB۔";
 "userscript_docs_limits_network" = "مراعات یافتہ جوابات 20 MB تک محدود ہیں، ٹائم آؤٹ کو 1-60 سیکنڈ تک بند کر دیا گیا ہے، اور Cookie/Host/Origin ہیڈر قبول نہیں کیے جاتے ہیں۔";
 "userscript_docs_limits_private" = "UserScripts نجی براؤزنگ میں نہیں چلتی ہیں۔";
-"userscript_docs_limits_require" = "External @require فائلوں کو کبھی بھی عمل میں نہیں لایا جاتا ہے۔ CDN انحصار سے بچیں اور اسکرپٹ میں تمام مطلوبہ منطق شامل کریں۔";
+"userscript_docs_limits_require" = "HTTPS کی @require فائلیں انسٹال یا محفوظ کرتے وقت ڈاؤن لوڈ اور کیش کی جاتی ہیں، پھر اسکرپٹ سے پہلے ترتیب سے چلتی ہیں۔";
 "userscript_docs_template_title" = "کم سے کم ٹیمپلیٹ";
 "userscript_docs_template_footer" = "ایک منفرد نام کی جگہ اور مختصر ترین @match اور @grant کے اعلانات کا استعمال کریں۔";
 "userscript_too_large" = "منتخب کردہ اسکرپٹ 2 MB کی حد سے بڑی ہے۔";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "کوئی اضافی اجازت نہیں۔";
 "userscript_network_title" = "نیٹ ورک تک رسائی";
 "userscript_external_requirements" = "بیرونی انحصار";
-"userscript_external_requirements_desc" = "یہ اسکرپٹ external @require فائلوں کا اعلان کرتا ہے۔ Soulo انہیں خود بخود لوڈ نہیں کرتا ہے۔";
+"userscript_external_requirements_desc" = "HTTPS کی @require فائلیں انسٹال یا محفوظ کرتے وقت ڈاؤن لوڈ اور کیش کی جاتی ہیں، پھر اسکرپٹ سے پہلے ترتیب سے چلتی ہیں۔";
 "userscript_metadata_title" = "اسکرپٹ کی تفصیلات";
 "userscript_unsupported_permissions" = "ابھی تک تعاون یافتہ نہیں: %@";
 "userscript_sample_name" = "پڑھنا پروگریس بار";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "کارڈ منظر";
 "tab_close_group" = "گروپ بند کریں";
 "tab_close_group_confirm" = "“%@” گروپ کے تمام ٹیب بند کریں (%d)؟";
+
+"userscript_require_failed" = "انحصار %@ لوڈ نہیں ہو سکا: %@";
+"userscript_require_integrity_failed" = "انحصار کی سالمیت کی جانچ ناکام رہی۔";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "انتظام";
+"extension_update" = "اپ ڈیٹ";
+"extension_rollback" = "پچھلا ورژن بحال کریں";
+"extension_blocked_sites" = "بلاک کردہ ویب سائٹس";
+"extension_diagnostics" = "مطابقت";
+"extension_review_access" = "منتخب کریں کہ یہ ایکسٹینشن کون سی اجازتیں اور ویب سائٹس استعمال کر سکتی ہے۔";
+"extension_limit_commands" = "iOS پر ایکسٹینشن کے کی بورڈ شارٹ کٹس دستیاب نہیں ہیں۔";
+"extension_limit_notifications" = "اطلاعات دکھائی جا سکتی ہیں، لیکن کلک اور بند کرنے کے ایونٹس کی معاونت نہیں ہے۔";
+"extension_limit_offscreen" = "آف اسکرین دستاویزات صرف آڈیو پلے بیک کی معاونت کرتی ہیں۔";

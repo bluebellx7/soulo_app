@@ -205,6 +205,7 @@ struct FeedbackView: View {
                 if let window { diagnostics = FeedbackDiagnostics.capture(in: window) }
             })
             .interactiveDismissDisabled(isSubmitting)
+            .dismissKeyboardOnBackgroundTap()
             .navigationTitle(lm.localizedString("feedback_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

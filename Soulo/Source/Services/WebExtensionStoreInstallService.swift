@@ -47,11 +47,26 @@ enum WebExtensionStoreRedirectPolicy {
     }
 }
 
-private final class WebExtensionStoreSessionDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+final class WebExtensionStoreSessionDelegate: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
     private let store: WebExtensionRemotePackage.Store
+    private let lock = NSLock()
+    private var sizeLimitExceeded = false
+
+    var exceededSizeLimit: Bool { lock.withLock { sizeLimitExceeded } }
 
     init(store: WebExtensionRemotePackage.Store) {
         self.store = store
+    }
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {}
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64,
+                    totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        if totalBytesWritten > WebExtensionStoreInstallService.maximumPackageSize
+            || totalBytesExpectedToWrite > WebExtensionStoreInstallService.maximumPackageSize {
+            lock.withLock { sizeLimitExceeded = true }
+            downloadTask.cancel()
+        }
     }
 
     func urlSession(
@@ -178,7 +193,7 @@ enum WebExtensionStoreLinkResolver {
 @MainActor
 final class WebExtensionStoreInstallService {
     static let shared = WebExtensionStoreInstallService()
-    static let maximumPackageSize: Int64 = 100 * 1_024 * 1_024
+    nonisolated static let maximumPackageSize: Int64 = 100 * 1_024 * 1_024
 
     private init() {}
 
@@ -194,9 +209,20 @@ final class WebExtensionStoreInstallService {
     }
 
     func install(from rawValue: String) async throws -> WebExtensionRecord {
+        let preview = try await preview(from: rawValue)
+        return try await BrowserExtensionService.shared.installWebExtension(preview, access: preview.access)
+    }
+
+    func preview(from rawValue: String, replacing id: UUID? = nil) async throws -> WebExtensionInstallPreview {
+        let package = try WebExtensionStoreLinkResolver.resolve(rawValue)
         let localURL = try await downloadPackage(from: rawValue)
         defer { try? FileManager.default.removeItem(at: localURL) }
-        return try await BrowserExtensionService.shared.installWebExtension(from: localURL)
+        let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let source: URL
+        if value.range(of: #"^[a-p]{32}$"#, options: .regularExpression) != nil {
+            source = URL(string: "https://chromewebstore.google.com/detail/" + value)!
+        } else { source = URL(string: value) ?? package.downloadURL }
+        return try await BrowserExtensionService.shared.previewWebExtension(from: localURL, sourceURL: source, replacing: id)
     }
 
     func downloadPackage(from rawValue: String) async throws -> URL {
@@ -210,9 +236,16 @@ final class WebExtensionStoreInstallService {
         let response: URLResponse
         do {
             (temporaryDownload, response) = try await session.download(for: request)
-        } catch let error as URLError where error.code == .appTransportSecurityRequiresSecureConnection {
-            throw WebExtensionStoreInstallError.insecureRedirect
+        } catch {
+            if (session.delegate as? WebExtensionStoreSessionDelegate)?.exceededSizeLimit == true {
+                throw WebExtensionStoreInstallError.packageTooLarge
+            }
+            if (error as? URLError)?.code == .appTransportSecurityRequiresSecureConnection {
+                throw WebExtensionStoreInstallError.insecureRedirect
+            }
+            throw error
         }
+        defer { try? FileManager.default.removeItem(at: temporaryDownload) }
         guard let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {
             throw WebExtensionStoreInstallError.invalidResponse

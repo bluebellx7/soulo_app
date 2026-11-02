@@ -1,1 +1,1 @@
-Jobb felhasználói szkript- és @require-támogatás. Javított videóhang, visszalépés és jobban látható betöltési folyamat.
+BT- és magnet-letöltések fájlválasztással és folytatással. Támogatott média lejátszása letöltés közben, MKV-megnyitás és ed2k/thunder-importálás.

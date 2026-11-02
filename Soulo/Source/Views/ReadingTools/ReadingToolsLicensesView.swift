@@ -11,7 +11,7 @@ struct ReadingToolsLicensesView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             notices = await Task.detached {
-                ["ReadingToolsThirdPartyNotices", "TorrentThirdPartyNotices"].compactMap { name in
+                ["ReadingToolsThirdPartyNotices", "TorrentThirdPartyNotices", "MediaPlaybackThirdPartyNotices", "ED2KThirdPartyNotices"].compactMap { name in
                     Bundle.main.url(forResource: name, withExtension: "txt")
                         .flatMap { try? String(contentsOf: $0, encoding: .utf8) }
                 }.joined(separator: "\n\n")

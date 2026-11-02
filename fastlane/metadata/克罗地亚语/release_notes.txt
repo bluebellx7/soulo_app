@@ -1,6 +1,8 @@
 1.2.7
 
 • BT preuzimanja: uvezite .torrent datoteke ili magnet poveznice, odaberite datoteke, pauzirajte i nastavite. U sustavu iOS 26 preuzimanja mogu raditi u pozadini kada sustav dopusti; starije verzije spremaju napredak i pauziraju.
+• Reproducirajte podržane BT medije tijekom preuzimanja i otvorite MKV datoteke. Uvezite ed2k/thunder poveznice. Preuzimanje traži dostupne izvore; reprodukcija ovisi o kodecima.
+• Optimizacija pretraživanja Baidu uključena je prema zadanim postavkama. Skriptu možete pregledati ili isključiti u Proširenjima.
 • Odaberite pet neobaveznih prečaca na početnoj stranici za preuzimanja, datoteke, oznake, povijest, pozadine i druge stranice. Traka kartica biblioteke smanjuje se tijekom pomicanja.
 • Poboljšana kompatibilnost korisničkih skripti, uključujući vanjske ovisnosti putem @require.
 • Ispravljeni slučajevi zvuka nakon utišavanja videa ili dvostruke reprodukcije na nekim stranicama.

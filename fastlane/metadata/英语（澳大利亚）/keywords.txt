@@ -1,1 +1,1 @@
-private browsing,tabs,video downloader,ad blocker,userscripts,extensions,translate,downloads
+private browsing,tabs,video downloader,ad blocker,userscripts,extensions,torrent,magnet,MKV

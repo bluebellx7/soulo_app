@@ -223,6 +223,7 @@ struct PrivacySettingsView: View {
             do {
                 try SearchHistoryService.clearAll(in: modelContext)
                 await MainActor.run {
+                    searchVM.recentSearches = []
                     clearingHistory = false
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                         historyCleared = true

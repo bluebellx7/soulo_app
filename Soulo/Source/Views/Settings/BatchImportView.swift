@@ -9,6 +9,7 @@ struct BatchImportView: View {
     @State private var selectedCustomGroupID: UUID? = nil
     @State private var useNewGroup = false
     @State private var importResult: String? = nil
+    @State private var importedCount = 0
     @State private var isImporting = false
     @State private var showFilmExample = false
     @FocusState private var focusedField: Field?
@@ -190,7 +191,7 @@ struct BatchImportView: View {
                 if let result = importResult {
                     Text(result)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(result.contains("0") ? .orange : .green)
+                        .foregroundStyle(importedCount == 0 ? .orange : .green)
                         .padding(.horizontal, 20)
                 }
 
@@ -228,6 +229,7 @@ struct BatchImportView: View {
             .onAppear {
                 if !preparedDefaultName { groupName = defaultGroupName(); preparedDefaultName = true }
             }
+            .dismissKeyboardOnBackgroundTap()
             .navigationTitle(LanguageManager.shared.localizedString("batch_import"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -277,25 +279,32 @@ struct BatchImportView: View {
         // Determine region and group name
         let region: PlatformRegion
         let importGroupName: String?
+        let importGroupID: UUID?
 
         switch selection {
         case .region(let r):
             region = r
             importGroupName = nil
+            importGroupID = nil
         case .customGroup(let gid):
             region = .international
-            importGroupName = PlatformDataStore.shared.customGroups.first(where: { $0.id == gid })?.name
+            importGroupName = nil
+            importGroupID = gid
         case .newGroup:
             region = .international
             importGroupName = groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? defaultGroupName() : groupName.trimmingCharacters(in: .whitespacesAndNewlines)
+            importGroupID = nil
         }
 
+        let source = jsonText
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             let count = PlatformDataStore.shared.importPlatformsFromJSON(
-                jsonText,
+                source,
                 groupName: importGroupName,
-                region: region
+                region: region,
+                intoGroupID: importGroupID
             )
+            importedCount = count
             importResult = String(format: LanguageManager.shared.localizedString("batch_import_result"), count)
             isImporting = false
             if count > 0 {

@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "Mở các trang tải lại sau khi tập lệnh được cài đặt, chỉnh sửa, bật, tắt hoặc xóa.";
 "userscript_experimental_badge" = "Khả năng tương thích";
 "userscript_experimental_title" = "Khả năng tương thích UserScript";
-"userscript_experimental_desc" = "Hỗ trợ các quy tắc trang web, bắt đầu/kết thúc tài liệu, API trang và lưu trữ GM mở rộng, lệnh tập lệnh, thông báo, tab, tải xuống, cookie, tài nguyên và các yêu cầu trong phạm vi quyền. Xem lại mọi tập lệnh trước khi cài đặt; các tệp @require bên ngoài không được thực thi.";
+"userscript_experimental_desc" = "Hỗ trợ các quy tắc trang web, bắt đầu/kết thúc tài liệu, API trang và lưu trữ GM mở rộng, lệnh tập lệnh, thông báo, tab, tải xuống, cookie, tài nguyên và các yêu cầu trong phạm vi quyền. Xem lại mọi tập lệnh trước khi cài đặt.";
 "extension_choose_file" = "Chọn tệp hoặc thư mục…";
 "extension_installing" = "Đang kiểm tra và cài đặt tiện ích mở rộng…";
 "extension_install_failed" = "Không thể cài đặt tiện ích mở rộng";
@@ -659,7 +659,7 @@
 "userscript_new" = "Tập lệnh mới";
 "userscript_edit" = "Chỉnh sửa tập lệnh";
 "userscript_choose_file" = "Chọn tập lệnh…";
-"userscript_install_footer" = "Nhấn vào hàng nguồn để mở nó trong tab Soulo hiện tại. Liên kết .user.js sẽ mở ra xác nhận cài đặt. Hỗ trợ JavaScript tiêu chuẩn và một loạt API GM; tập lệnh không chạy trong Duyệt web riêng tư và các tệp @require bên ngoài không được thực thi.";
+"userscript_install_footer" = "Nhấn vào hàng nguồn để mở nó trong tab Soulo hiện tại. Liên kết .user.js sẽ mở ra xác nhận cài đặt. Hỗ trợ JavaScript tiêu chuẩn và một loạt API GM. UserScriptkhông chạy trong Duyệt web riêng tư.";
 "userscript_install_failed" = "UserScript Không thể cài đặt được";
 "web_extension_temporarily_disabled" = "Tiện ích mở rộng trình duyệt tiêu chuẩn tạm thời không khả dụng trong khi quá trình kiểm tra khả năng tương thích hoàn tất.";
 "userscript_unreadable" = "Không thể đọc tập lệnh đã chọn dưới dạng văn bản UTF-8.";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "Được hỗ trợ một phần";
 "userscript_docs_partial_desc" = "Yêu cầu mạng bỏ qua quá trình tải lên/tiến trình và truyền tải cookie. Thông báo nằm trong trang, API tài nguyên không đồng bộ và trình xử lý thay đổi giá trị báo cáo các thay đổi do trang hiện tại thực hiện. Kiểm tra cập nhật là thủ công.";
 "userscript_docs_unsupported_title" = "Hiện không được hỗ trợ";
-"userscript_docs_unsupported_desc" = "Thực thi @require bên ngoài, chặn GM_webRequest, GM_audio, cách ly sandbox/run-in, kiểm tra cập nhật tự động và các hành vi chính xác chỉ dành cho máy tính để bàn mà WKWebView không thể cung cấp.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, cách ly sandbox/run-in, kiểm tra cập nhật tự động và các hành vi chính xác chỉ dành cho máy tính để bàn mà WKWebView không thể cung cấp.";
 "userscript_docs_metadata_title" = "Siêu dữ liệu";
 "userscript_docs_metadata_identity" = "Tên tập lệnh mà con người có thể đọc được và mô tả tùy chọn được hiển thị trước khi cài đặt và trong chi tiết tập lệnh.";
 "userscript_docs_metadata_version" = "Sử dụng một không gian tên ổn định, duy nhất và tăng phiên bản bất cứ khi nào tập lệnh đi kèm thay đổi.";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "Cho phép các máy chủ được sử dụng bởi các yêu cầu mạng đặc quyền. Không có nó, các yêu cầu sẽ bị giới hạn ở máy chủ trang hiện tại.";
 "userscript_docs_metadata_urls" = "Tùy chọn nhận dạng và cập nhật siêu dữ liệu. Soulo sử dụng những thông tin này để nhận dạng các bản cài đặt lại của cùng một tập lệnh.";
 "userscript_docs_metadata_resource" = "Khai báo một tài nguyên được đặt tên. Thêm máy chủ @connect phù hợp; quá trình tìm nạp bị trì hoãn cho đến khi chờ đợi API tài nguyên hiện đại.";
-"userscript_docs_metadata_require" = "Các yêu cầu bên ngoài được tiết lộ trong quá trình cài đặt nhưng không được tải xuống hoặc thực thi; các kịch bản phải được khép kín.";
+"userscript_docs_metadata_require" = "Các tệp @require HTTPS được tải xuống và lưu đệm khi cài đặt hoặc lưu, sau đó chạy theo thứ tự trước tập lệnh.";
 "userscript_docs_api_title" = "API đặc quyền được hỗ trợ";
 "userscript_docs_api_info" = "Đọc trình xử lý tập lệnh, phiên bản Soulo và siêu dữ liệu tập lệnh được phân tích cú pháp. Có sẵn ở dạng cũ và hiện đại.";
 "userscript_docs_api_unsafe_window" = "Cung cấp cửa sổ trang hiện tại khi mức cấp phép safeWindow được khai báo rõ ràng.";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "Các giá trị được lưu trữ phải có khả năng tuần tự hóa JSON: tối đa 256 KB mỗi giá trị và tổng cộng 1 MB cho mỗi tập lệnh.";
 "userscript_docs_limits_network" = "Phản hồi đặc quyền được giới hạn ở 20 MB, thời gian chờ được giới hạn ở mức 1–60 giây và tiêu đề Cookie/Máy chủ/Nguồn gốc không được chấp nhận.";
 "userscript_docs_limits_private" = "UserScriptkhông chạy trong Duyệt web riêng tư.";
-"userscript_docs_limits_require" = "Các tệp @require bên ngoài không bao giờ được thực thi. Tránh phụ thuộc vào CDN và đưa tất cả logic cần thiết vào tập lệnh.";
+"userscript_docs_limits_require" = "Các tệp @require HTTPS được tải xuống và lưu đệm khi cài đặt hoặc lưu, sau đó chạy theo thứ tự trước tập lệnh.";
 "userscript_docs_template_title" = "Mẫu tối thiểu";
 "userscript_docs_template_footer" = "Sử dụng một không gian tên duy nhất và các khai báo @match và @grant hẹp nhất có thể.";
 "userscript_too_large" = "Tập lệnh đã chọn vượt quá giới hạn 2 MB.";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "Không có quyền bổ sung";
 "userscript_network_title" = "Truy cập mạng";
 "userscript_external_requirements" = "Phần phụ thuộc bên ngoài";
-"userscript_external_requirements_desc" = "Tập lệnh này khai báo tệp @require bên ngoài. Soulo không tự động tải chúng.";
+"userscript_external_requirements_desc" = "Các tệp @require HTTPS được tải xuống và lưu đệm khi cài đặt hoặc lưu, sau đó chạy theo thứ tự trước tập lệnh.";
 "userscript_metadata_title" = "Chi tiết tập lệnh";
 "userscript_unsupported_permissions" = "Chưa được hỗ trợ: %@";
 "userscript_sample_name" = "Thanh tiến trình đọc";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "Dạng thẻ";
 "tab_close_group" = "Đóng nhóm";
 "tab_close_group_confirm" = "Đóng tất cả các thẻ trong “%@” (%d)?";
+
+"userscript_require_failed" = "Không thể tải phần phụ thuộc %@: %@";
+"userscript_require_integrity_failed" = "Kiểm tra tính toàn vẹn của phần phụ thuộc thất bại.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "Quản lý";
+"extension_update" = "Cập nhật";
+"extension_rollback" = "Khôi phục bản trước";
+"extension_blocked_sites" = "Trang web bị chặn";
+"extension_diagnostics" = "Khả năng tương thích";
+"extension_review_access" = "Chọn quyền và trang web mà tiện ích này có thể truy cập.";
+"extension_limit_commands" = "Phím tắt của tiện ích không khả dụng trên iOS.";
+"extension_limit_notifications" = "Có thể hiển thị thông báo, nhưng không hỗ trợ sự kiện nhấp và đóng.";
+"extension_limit_offscreen" = "Tài liệu ngoài màn hình chỉ hỗ trợ phát âm thanh.";

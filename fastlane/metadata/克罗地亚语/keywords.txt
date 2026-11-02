@@ -1,1 +1,1 @@
-privatnost,kartice,preuzimanje videa,blokiranje oglasa,korisničke skripte,proširenja,prijevod
+privatnost,kartice,preuzimanje videa,blokiranje oglasa,korisničke skripte,torrent,magnet,MKV

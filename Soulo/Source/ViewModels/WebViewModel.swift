@@ -69,6 +69,7 @@ final class WebViewModel: ObservableObject {
     }
     @Published var snapshot: UIImage?
     @Published var showSnapshotWhileRestoring: Bool = false
+    @Published private(set) var historyPreview: WebHistoryPreview?
     @Published private(set) var pageZoom: CGFloat = 1
     @Published private(set) var pageLanguageIdentifier: String?
     @Published private(set) var isPageTranslationApplied = false
@@ -95,6 +96,7 @@ final class WebViewModel: ObservableObject {
     var installedManualAdScriptSignature = ""
     private var hasAppliedCustomPageZoom = false
     let userScriptBridgeToken = UUID().uuidString
+    let userScriptTabID = UUID().uuidString
     var isStreamingDownloadHandlerInstalled: Bool = false
     var isDesktopModeEnabled: Bool = false
     private(set) var mediaFrameInfos: [WKFrameInfo] = []
@@ -120,6 +122,8 @@ final class WebViewModel: ObservableObject {
     private var mediaDownloads: [URL: String] = [:]
 
     deinit {
+        let tabID = userScriptTabID
+        Task { @MainActor in UserScriptTabStore.shared.remove(tabID: tabID) }
         webView = nil
     }
 
@@ -131,12 +135,18 @@ final class WebViewModel: ObservableObject {
     var webView: WKWebView? {
         didSet {
             guard oldValue !== webView else { return }
+            historyTransition.reset()
+            finishHistoryPreview()
+            // SwiftUI, WebKit presentations or downloads can retain a retired
+            // runtime after the model drops it. stopLoading() does not stop
+            // media, and a one-off pause lets page scripts start it again.
+            oldValue?.setAllMediaPlaybackSuspended(true, completionHandler: nil)
+            oldValue?.closeAllMediaPresentations(completionHandler: nil)
             if webView == nil {
                 isStreamingDownloadHandlerInstalled = false
             }
             guard let webView else { mediaSession.detach(); return }
             mediaSession.webView = webView
-            if !mediaSession.isActive { webView.setAllMediaPlaybackSuspended(true, completionHandler: nil) }
             applyWebPreferences(to: webView)
             if let request = pendingRequest {
                 pendingRequest = nil
@@ -155,21 +165,29 @@ final class WebViewModel: ObservableObject {
     func loadURL(
         _ url: URL,
         cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
-        keepSnapshotUntilLoaded: Bool = false
+        keepSnapshotUntilLoaded: Bool = false,
+        mediaHandoff: WebMediaPlaybackHandoff? = nil
     ) {
         loadRequest(URLRequest(url: url, cachePolicy: cachePolicy, timeoutInterval: 30),
-                    keepSnapshotUntilLoaded: keepSnapshotUntilLoaded)
+                    keepSnapshotUntilLoaded: keepSnapshotUntilLoaded, mediaHandoff: mediaHandoff)
     }
 
-    func loadRequest(_ request: URLRequest, keepSnapshotUntilLoaded: Bool = false) {
+    func loadVideoDetail(_ url: URL, mediaHandoff: WebMediaPlaybackHandoff?) {
+        loadURL(url, mediaHandoff: mediaHandoff)
+    }
+
+    func loadRequest(_ request: URLRequest, keepSnapshotUntilLoaded: Bool = false, mediaHandoff: WebMediaPlaybackHandoff? = nil) {
         guard let url = request.url else { return }
         recordNavigationRequest(url)
+        mediaSession.beginNavigation(to: url, startsNewRequest: true)
         cancelScheduledSnapshot()
         historyTransition.cancel()
+        finishHistoryPreview()
         resolveDomainNavigationConfirmation(allowed: false)
         BrowserStartupTrace.mark("load_requested", detail: webView == nil ? "pending" : "attached")
         errorMessage = nil
         if !keepSnapshotUntilLoaded { mediaSession.reset() }
+        if let mediaHandoff, mediaHandoff.matches(url) { mediaSession.preparePlaybackHandoff(mediaHandoff) }
         currentURL = url
         lastURLString = url.absoluteString
         isLoading = true
@@ -286,11 +304,27 @@ final class WebViewModel: ObservableObject {
         guard let webView else { return }
         errorMessage = nil
         updateCurrentURL(webView.url)
-        historyTransition.goBack(in: webView)
+        historyTransition.cancel()
+        finishHistoryPreview()
+        mediaSession.allowUserNavigation()
+        mediaSession.finishNavigation()
+        webView.goBack()
     }
 
     func willNavigateHistory(in webView: WKWebView, isMainFrame: Bool, frameURL: URL?) {
+        if isMainFrame, let preview = historyPreview, let frameURL, preview.url != frameURL {
+            historyPreview = historyTransition.preview(to: frameURL, in: webView)
+        }
         historyTransition.willNavigateHistory(in: webView, isMainFrame: isMainFrame, frameURL: frameURL)
+    }
+
+    func finishHistoryPreview() {
+        if historyPreview != nil { historyPreview = nil }
+    }
+
+    func historyDocumentDidCommit(to url: URL?) {
+        guard let url, let preview = historyPreview, preview.url != url else { return }
+        historyPreview = WebHistoryPreview(url: url, image: nil)
     }
 
     func historyFrameDidShow(in webView: WKWebView, url: URL?, isHistoryTraversal: Bool) {
@@ -320,21 +354,28 @@ final class WebViewModel: ObservableObject {
         guard let webView else { return }
         errorMessage = nil
         updateCurrentURL(webView.url)
-        historyTransition.goForward(in: webView)
+        finishHistoryPreview()
+        mediaSession.finishNavigation()
+        historyTransition.cancel()
+        mediaSession.allowUserNavigation()
+        webView.goForward()
     }
 
     func reload() {
         if errorMessage != nil { retryCurrentPage(); return }
         historyTransition.cancel()
+        finishHistoryPreview()
         resolveDomainNavigationConfirmation(allowed: false)
         if isLoading {
             pendingRequest = nil
             webView?.stopLoading()
+            mediaSession.cancelNavigation()
             webView?.scrollView.refreshControl?.endRefreshing()
             // Explicit cancellation must dismiss the restoration snapshot even
             // when WebKit has no loading-state transition left to deliver.
             updateLoading(false)
         } else {
+            mediaSession.allowUserNavigation()
             webView?.reload()
         }
     }
@@ -554,6 +595,7 @@ final class WebViewModel: ObservableObject {
     }
 
     func markPageContentVisible() {
+        finishHistoryPreview()
         if showSnapshotWhileRestoring { showSnapshotWhileRestoring = false }
         guard !hasVisibleContent else { return }
         if !hasPresentedContent { hasPresentedContent = true }
@@ -697,6 +739,7 @@ final class WebViewModel: ObservableObject {
     }
 
     func setError(_ message: String, failingURL: URL? = nil) {
+        finishHistoryPreview()
         failedNavigationURL = failingURL ?? requestedNavigationURL ?? currentURL
         if let failedNavigationURL {
             currentURL = failedNavigationURL
@@ -882,6 +925,32 @@ final class WebViewModel: ObservableObject {
         }
     }
 
+    /// A cache clear invalidates queued reads and captures, while leaving the
+    /// tab eligible to save a new preview after its next explicit capture.
+    func clearSnapshotCache() {
+        cancelScheduledSnapshot()
+        snapshotGeneration = UUID()
+        snapshotDocumentGeneration = UUID()
+        snapshotRevision &+= 1
+        snapshotNeedsRefresh = false
+        isLoadingSnapshot = false
+        memorySnapshotData = nil
+        snapshot = nil
+        showSnapshotWhileRestoring = false
+        historyTransition.reset()
+        finishHistoryPreview()
+    }
+
+    static func deleteAllPersistedSnapshotsAndWait() async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            snapshotWriteQueue.async {
+                try? FileManager.default.removeItem(at: snapshotDirectory)
+                try? FileManager.default.removeItem(at: legacySnapshotDirectory)
+                continuation.resume()
+            }
+        }
+    }
+
     static func deleteAllPersistedSnapshots() {
         snapshotWriteQueue.async {
             try? FileManager.default.removeItem(at: snapshotDirectory)
@@ -933,7 +1002,7 @@ final class WebViewModel: ObservableObject {
         return image
     }
 
-    nonisolated private static var snapshotDirectory: URL {
+    nonisolated static var snapshotDirectory: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         return base.appendingPathComponent("SouloTabSnapshots", isDirectory: true)

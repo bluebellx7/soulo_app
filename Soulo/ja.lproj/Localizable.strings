@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "スクリプトがインストール、編集、有効化、無効化、または削除された後、開いているページがリロードされます。";
 "userscript_experimental_badge" = "互換性";
 "userscript_experimental_title" = "UserScript 互換性";
-"userscript_experimental_desc" = "サイト ルール、ドキュメントの開始/終了、広範な GM ストレージとページ API、スクリプト コマンド、通知、タブ、ダウンロード、Cookie、リソース、および権限スコープのリクエストをサポートします。インストールする前にすべてのスクリプトを確認してください。外部 @require ファイルは実行されません。";
+"userscript_experimental_desc" = "サイト ルール、ドキュメントの開始/終了、広範な GM ストレージとページ API、スクリプト コマンド、通知、タブ、ダウンロード、Cookie、リソース、および権限スコープのリクエストをサポートします。インストールする前にすべてのスクリプトを確認してください。";
 "extension_choose_file" = "ファイル・フォルダを選択…";
 "extension_installing" = "拡張機能を確認してインストールしています…";
 "extension_install_failed" = "拡張機能をインストールできませんでした";
@@ -659,7 +659,7 @@
 "userscript_new" = "新しいスクリプト";
 "userscript_edit" = "スクリプトの編集";
 "userscript_choose_file" = "スクリプトを選択…";
-"userscript_install_footer" = "ソース行をタップして、現在の Soulo タブで開きます。 .user.js リンクをクリックすると、インストールの確認が開きます。標準の JavaScript と幅広い GM API がサポートされています。スクリプトはプライベート ブラウズでは実行されず、外部の @require ファイルも実行されません。";
+"userscript_install_footer" = "ソース行をタップして、現在の Soulo タブで開きます。 .user.js リンクをクリックすると、インストールの確認が開きます。標準の JavaScript と幅広い GM API がサポートされています。UserScript はプライベート ブラウズでは実行されません。";
 "userscript_install_failed" = "UserScript をインストールできませんでした";
 "web_extension_temporarily_disabled" = "互換性テストが完了するまで、標準のブラウザ拡張機能は一時的に利用できなくなります。";
 "userscript_unreadable" = "選択したスクリプトを UTF-8 テキストとして読み取ることができませんでした。";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "部分的にサポートされています";
 "userscript_docs_partial_desc" = "ネットワーク リクエストでは、アップロード/進行状況と Cookie の転送が省略されます。通知はページ内で行われ、リソース API は非同期で、値変更リスナーは現在のページで行われた変更を報告します。更新チェックは手動です。";
 "userscript_docs_unsupported_title" = "現在サポートされていません";
-"userscript_docs_unsupported_desc" = "外部 @require 実行、GM_webRequest インターセプト、GM_audio、サンドボックス/ランイン分離、自動更新チェック、および WKWebView では提供できない厳密なデスクトップのみの動作。";
+"userscript_docs_unsupported_desc" = "GM_webRequest インターセプト、GM_audio、サンドボックス/ランイン分離、自動更新チェック、および WKWebView では提供できない厳密なデスクトップのみの動作。";
 "userscript_docs_metadata_title" = "メタデータ";
 "userscript_docs_metadata_identity" = "インストール前およびスクリプトの詳細に人間が判読できるスクリプト名とオプションの説明が表示されます。";
 "userscript_docs_metadata_version" = "安定した一意の名前空間を使用し、バンドルされたスクリプトが変更されるたびにバージョンを増やします。";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "特権ネットワーク要求で使用されるホストを承認します。これがないと、リクエストは現在のページホストに限定されます。";
 "userscript_docs_metadata_urls" = "オプションの ID および更新メタデータ。 Soulo はこれらを使用して、同じスクリプトの再インストールを認識します。";
 "userscript_docs_metadata_resource" = "名前付きリソースを宣言します。一致する @connect ホストを追加します。最新のリソース API が待機するまで、取得は延期されます。";
-"userscript_docs_metadata_require" = "外部要件はインストール中に開示されますが、ダウンロードまたは実行されません。スクリプトは自己完結型である必要があります。";
+"userscript_docs_metadata_require" = "HTTPS の @require ファイルはインストール時や保存時にダウンロードしてキャッシュされ、スクリプト本体より先に宣言順で実行されます。";
 "userscript_docs_api_title" = "サポートされている特権API";
 "userscript_docs_api_info" = "スクリプト ハンドラー、Soulo バージョン、および解析されたスクリプト メタデータを読み取ります。従来の形式と最新の形式で利用可能です。";
 "userscript_docs_api_unsafe_window" = "unsafeWindow 許可が明示的に宣言されている場合に、現在のページ ウィンドウを提供します。";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "保存される値は JSON シリアル化可能である必要があります。値ごとに最大 256 KB、スクリプトごとに合計 1 MB までです。";
 "userscript_docs_limits_network" = "特権応答は 20 MB に制限され、タイムアウトは 1 ～ 60 秒に制限され、Cookie/ホスト/オリジン ヘッダーは受け入れられません。";
 "userscript_docs_limits_private" = "UserScript はプライベート ブラウズでは実行されません。";
-"userscript_docs_limits_require" = "外部の @require ファイルは実行されません。 CDN への依存関係を回避し、必要なロジックをすべてスクリプトに含めます。";
+"userscript_docs_limits_require" = "HTTPS の @require ファイルはインストール時や保存時にダウンロードしてキャッシュされ、スクリプト本体より先に宣言順で実行されます。";
 "userscript_docs_template_title" = "最小限のテンプレート";
 "userscript_docs_template_footer" = "一意の名前空間と、可能な限り狭い @match および @grant 宣言を使用します。";
 "userscript_too_large" = "選択したスクリプトは 2 MB の上限を超えています。";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "追加の権限なし";
 "userscript_network_title" = "ネットワークアクセス";
 "userscript_external_requirements" = "外部依存関係";
-"userscript_external_requirements_desc" = "このスクリプトは外部 @require ファイルを宣言しています。Soulo は自動読み込みしません。";
+"userscript_external_requirements_desc" = "HTTPS の @require ファイルはインストール時や保存時にダウンロードしてキャッシュされ、スクリプト本体より先に宣言順で実行されます。";
 "userscript_metadata_title" = "スクリプトの詳細";
 "userscript_unsupported_permissions" = "まだサポートされていません: %@";
 "userscript_sample_name" = "読書進捗バー";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "カード表示";
 "tab_close_group" = "グループを閉じる";
 "tab_close_group_confirm" = "「%@」のタブをすべて閉じますか（%d 個）？";
+
+"userscript_require_failed" = "依存ファイル %@ を読み込めませんでした：%@";
+"userscript_require_integrity_failed" = "依存ファイルの整合性チェックに失敗しました。";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "管理";
+"extension_update" = "更新";
+"extension_rollback" = "前のバージョンに戻す";
+"extension_blocked_sites" = "ブロックしたサイト";
+"extension_diagnostics" = "互換性";
+"extension_review_access" = "この拡張機能に許可する権限とウェブサイトを選択してください。";
+"extension_limit_commands" = "iOS では拡張機能のキーボードショートカットを利用できません。";
+"extension_limit_notifications" = "通知の表示は可能ですが、クリックと終了のイベントには対応していません。";
+"extension_limit_offscreen" = "オフスクリーンドキュメントは音声再生のみに対応しています。";

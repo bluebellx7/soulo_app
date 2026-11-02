@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 import Combine
 import OSLog
 import UniformTypeIdentifiers
@@ -63,6 +64,8 @@ struct UserScriptRecord: Codable, Identifiable, Equatable {
     var updateURL: String?
     var downloadURL: String?
     var requiredURLs: [String]?
+    /// Installed dependency snapshots, keyed by the exact @require declaration.
+    var requiredSources: [String: String]?
     var resources: [String: String]?
     var sourceURL: String?
     /// JSON object wrappers keyed by storage name. Optional keeps old stores decodable.
@@ -90,6 +93,7 @@ struct UserScriptRecord: Codable, Identifiable, Equatable {
         updateURL: String? = nil,
         downloadURL: String? = nil,
         requiredURLs: [String] = [],
+        requiredSources: [String: String] = [:],
         resources: [String: String] = [:],
         sourceURL: String? = nil,
         storedValues: [String: String] = [:],
@@ -114,6 +118,7 @@ struct UserScriptRecord: Codable, Identifiable, Equatable {
         self.updateURL = updateURL
         self.downloadURL = downloadURL
         self.requiredURLs = requiredURLs
+        self.requiredSources = requiredSources
         self.resources = resources
         self.sourceURL = sourceURL
         self.storedValues = storedValues
@@ -152,6 +157,10 @@ struct UserScriptRecord: Codable, Identifiable, Equatable {
     var unsupportedGrants: [String] {
         (grants ?? []).filter { !UserScriptRuntime.supportedGrantNames.contains($0.lowercased()) }
     }
+
+    var hasResolvedRequirements: Bool {
+        (requiredURLs ?? []).allSatisfy { requiredSources?[$0] != nil }
+    }
 }
 
 struct WebExtensionRecord: Codable, Identifiable, Equatable {
@@ -166,6 +175,10 @@ struct WebExtensionRecord: Codable, Identifiable, Equatable {
     var compatibilityWarningCount: Int?
     var isEnabled: Bool
     var installedAt: Date
+    var access: WebExtensionAccess? = nil
+    var packageIdentity: String? = nil
+    var sourceURL: String? = nil
+    var previousVersion: WebExtensionVersionSnapshot? = nil
 }
 
 enum BrowserInstallPackageKind: String, Equatable {
@@ -174,8 +187,8 @@ enum BrowserInstallPackageKind: String, Equatable {
 }
 
 /// A package downloaded from a webpage that Soulo can install directly.
-/// Recognition intentionally requires a known package suffix or a UserScript
-/// metadata block so ordinary JavaScript downloads are not treated as scripts.
+/// UserScript detection verifies its metadata, including when a store supplies
+/// a generic filename, so HTTP error pages are not offered for installation.
 struct BrowserExtensionInstallCandidate: Identifiable, Equatable {
     let id = UUID()
     let fileURL: URL
@@ -205,9 +218,15 @@ struct BrowserExtensionInstallCandidate: Identifiable, Equatable {
             && url.path.lowercased().contains("/service/update2/crx")
     }
 
+    static func isUserScriptURL(_ url: URL?) -> Bool {
+        url?.lastPathComponent.lowercased().hasSuffix(".user.js") == true
+    }
+
     static func detect(fileURL: URL, sourceURL: URL?) -> Self? {
         let filename = fileURL.lastPathComponent.lowercased()
-        if filename.hasSuffix(".user.js") || containsUserScriptMetadata(fileURL) {
+        let scriptURL = isUserScriptURL(sourceURL)
+        if filename.hasSuffix(".js") || scriptURL {
+            guard containsUserScriptMetadata(fileURL) else { return nil }
             return Self(fileURL: fileURL, sourceURL: sourceURL, kind: .userScript)
         }
 
@@ -220,12 +239,14 @@ struct BrowserExtensionInstallCandidate: Identifiable, Equatable {
     }
 
     private static func containsUserScriptMetadata(_ fileURL: URL) -> Bool {
-        guard fileURL.pathExtension.lowercased() == "js",
-              let handle = try? FileHandle(forReadingFrom: fileURL) else { return false }
+        guard let handle = try? FileHandle(forReadingFrom: fileURL) else { return false }
         defer { try? handle.close() }
-        guard let data = try? handle.read(upToCount: 64 * 1024),
-              let prefix = String(data: data, encoding: .utf8) else { return false }
-        return prefix.contains("==UserScript==") && prefix.contains("@name")
+        guard let data = try? handle.read(upToCount: 64 * 1024) else { return false }
+        // The bounded prefix may end in the middle of a UTF-8 character.
+        let prefix = String(decoding: data, as: UTF8.self)
+        let start = prefix.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !start.hasPrefix("<!doctype"), !start.hasPrefix("<html") else { return false }
+        return prefix.contains("==UserScript==") && prefix.contains("==/UserScript==") && prefix.contains("@name")
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
@@ -294,13 +315,28 @@ final class BrowserExtensionService: ObservableObject {
     @Published private(set) var webExtensions: [WebExtensionRecord] = []
     @Published private(set) var loadingWebExtensions: Set<UUID> = []
     @Published private(set) var webExtensionErrors: [UUID: String] = [:]
+    @Published private(set) var loadingUserScripts: Set<UUID> = []
+    @Published private(set) var userScriptErrors: [UUID: String] = [:]
+    @Published private(set) var userScriptRuntimeErrors: [UUID: String] = [:]
+    private var preparedExtensions: [UUID: WebExtensionInstallPreview] = [:]
+    private var installingExtensionIDs: Set<UUID> = []
+    private var storageRevisions: [UUID: Int] = [:]
     private var extensionLoadRevisions: [UUID: UUID] = [:]
+    private var requirementTasks: [UUID: Task<Void, Never>] = [:]
+    private var requirementRevisions: [UUID: UUID] = [:]
+    private let requirementSession: URLSession
+    private let customExtensionRoot: URL?
 
     private let fileManager = FileManager.default
 
-    private init() {
+    init(extensionRoot: URL? = nil, requirementSession: URLSession = UserScriptRequirementLoader.makeSession()) {
+        self.customExtensionRoot = extensionRoot
+        self.requirementSession = requirementSession
         loadStore()
         installBuiltInExamplesIfNeeded()
+        for script in userScripts where script.isEnabled && !script.hasResolvedRequirements {
+            resolveUserScriptRequirements(script.id)
+        }
         if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled {
             Task { [weak self] in
                 await self?.restoreEnabledNativeExtensions()
@@ -338,15 +374,50 @@ final class BrowserExtensionService: ObservableObject {
         )
     }
 
-    func importUserScript(from fileURL: URL, sourceURL: URL? = nil) throws -> UserScriptRecord {
+    func importUserScript(from fileURL: URL, sourceURL: URL? = nil) async throws -> UserScriptRecord {
         let preview = try previewUserScript(from: fileURL, sourceURL: sourceURL)
-        return try saveUserScript(
+        return try await saveUserScriptResolvingRequirements(
             id: nil,
             fallbackName: preview.name,
             source: preview.source,
             explicitPatterns: nil,
             injectionTime: nil,
             sourceURL: sourceURL
+        )
+    }
+
+    @discardableResult
+    func saveUserScriptResolvingRequirements(
+        id: UUID?,
+        fallbackName: String,
+        source: String,
+        explicitPatterns: [String]?,
+        injectionTime: UserScriptInjectionTime?,
+        explicitName: String? = nil,
+        sourceURL: URL? = nil
+    ) async throws -> UserScriptRecord {
+        let metadata = try Self.validateUserScriptSource(source, explicitPatterns: explicitPatterns)
+        let previous = id.flatMap { userScript(id: $0) }
+        if id != nil && previous == nil { throw CancellationError() }
+        let baseURL = sourceURL ?? previous?.sourceURL.flatMap(URL.init(string:))
+        let sources = try await UserScriptRequirementLoader.resolve(
+            metadata.requiredURLs,
+            baseURL: baseURL,
+            cachedSources: baseURL?.absoluteString == previous?.sourceURL ? previous?.requiredSources ?? [:] : [:],
+            session: requirementSession
+        )
+        try Task.checkCancellation()
+        // An edit finishing after a delete or another edit must not restore stale code.
+        if let previous {
+            guard let current = userScript(id: previous.id),
+                  current.source == previous.source, current.updatedAt == previous.updatedAt else {
+                throw CancellationError()
+            }
+        }
+        return try saveUserScript(
+            id: id, fallbackName: fallbackName, source: source,
+            explicitPatterns: explicitPatterns, injectionTime: injectionTime,
+            explicitName: explicitName, sourceURL: baseURL, requiredSources: sources
         )
     }
 
@@ -358,32 +429,17 @@ final class BrowserExtensionService: ObservableObject {
         explicitPatterns: [String]?,
         injectionTime: UserScriptInjectionTime?,
         explicitName: String? = nil,
-        sourceURL: URL? = nil
+        sourceURL: URL? = nil,
+        requiredSources: [String: String]? = nil
     ) throws -> UserScriptRecord {
-        guard source.utf8.count <= Self.maximumUserScriptSize else {
-            throw BrowserExtensionError.scriptTooLarge
-        }
-        let trimmedSource = source.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedSource.isEmpty else { throw BrowserExtensionError.emptyScript }
-
-        let metadata = Self.parseMetadata(from: source)
+        let metadata = try Self.validateUserScriptSource(source, explicitPatterns: explicitPatterns)
         let requestedPatterns = (explicitPatterns ?? metadata.patterns)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-        // An explicitly cleared scope must not silently become access to every site.
-        if explicitPatterns != nil && requestedPatterns.isEmpty {
-            throw BrowserExtensionError.invalidMatchPattern("")
-        }
         let normalizedPatterns = Self.deduplicated(requestedPatterns.isEmpty ? ["*://*/*"] : requestedPatterns)
         let normalizedExcludes = metadata.excludePatterns
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-        if let invalid = (normalizedPatterns + normalizedExcludes).first(where: {
-            !UserScriptURLMatcher.isValid(pattern: $0)
-        }) {
-            throw BrowserExtensionError.invalidMatchPattern(invalid)
-        }
-        try Self.validate(metadata: metadata)
 
         let resolvedName = explicitName?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
             ?? Self.resolvedUserScriptName(metadata: metadata, fallbackName: fallbackName)
@@ -406,6 +462,10 @@ final class BrowserExtensionService: ObservableObject {
                         && $0.namespace?.caseInsensitiveCompare(namespace) == .orderedSame
                 }
             }
+        let dependencySources = requiredSources ?? existingRecord?.requiredSources ?? [:]
+        if let missing = metadata.requiredURLs.first(where: { dependencySources[$0] == nil }) {
+            throw UserScriptRequirementLoader.Failure(declaration: missing, underlying: URLError(.resourceUnavailable))
+        }
         let record = UserScriptRecord(
             id: existingRecord?.id ?? id ?? UUID(),
             name: resolvedName,
@@ -422,6 +482,7 @@ final class BrowserExtensionService: ObservableObject {
             updateURL: metadata.updateURL,
             downloadURL: metadata.downloadURL,
             requiredURLs: metadata.requiredURLs,
+            requiredSources: dependencySources.filter { metadata.requiredURLs.contains($0.key) },
             resources: metadata.resources,
             sourceURL: normalizedSourceURL ?? existingRecord?.sourceURL,
             storedValues: existingRecord?.storedValues ?? [:],
@@ -432,32 +493,93 @@ final class BrowserExtensionService: ObservableObject {
             updatedAt: Date()
         )
 
+        let previousScripts = userScripts
         if let index = userScripts.firstIndex(where: { $0.id == record.id }) {
             userScripts[index] = record
         } else {
             userScripts.insert(record, at: 0)
         }
-        persistAndNotify()
+        do { try writeExtensionStore() } catch { userScripts = previousScripts; throw error }
+        cancelRequirementResolution(record.id)
+        userScriptErrors[record.id] = nil
+        userScriptRuntimeErrors[record.id] = nil
+        NotificationCenter.default.post(name: .browserExtensionsChanged, object: nil)
         return record
     }
 
     func setUserScriptEnabled(_ id: UUID, enabled: Bool) {
         guard let index = userScripts.firstIndex(where: { $0.id == id }) else { return }
+        let previous = userScripts[index].isEnabled
         userScripts[index].isEnabled = enabled
-        persistAndNotify()
+        do { try writeExtensionStore() } catch {
+            userScripts[index].isEnabled = previous; userScriptErrors[id] = error.localizedDescription; return
+        }
+        if enabled && !userScripts[index].hasResolvedRequirements {
+            resolveUserScriptRequirements(id)
+        } else if !enabled {
+            cancelRequirementResolution(id)
+        }
+        NotificationCenter.default.post(name: .browserExtensionsChanged, object: nil)
     }
 
     func deleteUserScript(_ id: UUID) {
         guard userScripts.first(where: { $0.id == id })?.isBuiltIn != true else { return }
+        let previousScripts = userScripts
         userScripts.removeAll { $0.id == id }
-        persistAndNotify()
+        do { try writeExtensionStore() } catch {
+            userScripts = previousScripts; userScriptErrors[id] = error.localizedDescription; return
+        }
+        cancelRequirementResolution(id)
+        userScriptErrors[id] = nil
+        userScriptRuntimeErrors[id] = nil
+        UserScriptTabStore.shared.remove(scriptID: id)
+        NotificationCenter.default.post(name: .browserExtensionsChanged, object: nil)
+    }
+
+    private func cancelRequirementResolution(_ id: UUID) {
+        requirementTasks.removeValue(forKey: id)?.cancel()
+        requirementRevisions[id] = nil
+        loadingUserScripts.remove(id)
+    }
+
+    private func resolveUserScriptRequirements(_ id: UUID) {
+        guard let script = userScript(id: id), !script.hasResolvedRequirements else { return }
+        cancelRequirementResolution(id)
+        let revision = UUID()
+        requirementRevisions[id] = revision
+        loadingUserScripts.insert(id)
+        userScriptErrors[id] = nil
+        requirementTasks[id] = Task { [weak self, requirementSession] in
+            do {
+                let sources = try await UserScriptRequirementLoader.resolve(
+                    script.requiredURLs ?? [], baseURL: script.sourceURL.flatMap(URL.init(string:)),
+                    cachedSources: script.requiredSources ?? [:], session: requirementSession
+                )
+                try Task.checkCancellation()
+                guard let self, self.requirementRevisions[id] == revision,
+                      let index = self.userScripts.firstIndex(where: { $0.id == id }) else { return }
+                self.userScripts[index].requiredSources = sources
+                self.persistAndNotify()
+            } catch {
+                guard let self, self.requirementRevisions[id] == revision else { return }
+                self.userScriptErrors[id] = error.localizedDescription
+                if let index = self.userScripts.firstIndex(where: { $0.id == id }) {
+                    self.userScripts[index].isEnabled = false
+                    self.persistAndNotify()
+                }
+            }
+            guard let self, self.requirementRevisions[id] == revision else { return }
+            self.requirementTasks[id] = nil
+            self.requirementRevisions[id] = nil
+            self.loadingUserScripts.remove(id)
+        }
     }
 
     func setStoredValue(_ encodedValue: String, forKey key: String, scriptID: UUID) throws {
         try setStoredValues([key: encodedValue], scriptID: scriptID)
     }
 
-    func setStoredValues(_ encodedValues: [String: String], scriptID: UUID) throws {
+    func setStoredValues(_ encodedValues: [String: String], scriptID: UUID, origin: String = "", mutationID: String = "") throws {
         guard let index = userScripts.firstIndex(where: { $0.id == scriptID }),
               !encodedValues.isEmpty,
               encodedValues.allSatisfy({ key, encodedValue in
@@ -467,7 +589,7 @@ final class BrowserExtensionService: ObservableObject {
                         let data = encodedValue.data(using: .utf8),
                         let wrapper = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
                   else { return false }
-                  return wrapper.keys.allSatisfy { $0 == "value" }
+                  return wrapper.count == 1 && wrapper["value"] != nil
               }) else {
             throw BrowserExtensionError.invalidStorageValue
         }
@@ -479,8 +601,10 @@ final class BrowserExtensionService: ObservableObject {
         guard totalSize <= Self.maximumStoredValuesSize else {
             throw BrowserExtensionError.invalidStorageValue
         }
+        let previous = userScripts[index].storedValues
         userScripts[index].storedValues = values
-        persistAndNotify(reloadPages: false)
+        do { try writeExtensionStore() } catch { userScripts[index].storedValues = previous; throw error }
+        publishStorage(scriptID: scriptID, origin: origin, mutationID: mutationID)
     }
 
     func deleteStoredValue(forKey key: String, scriptID: UUID) {
@@ -488,68 +612,53 @@ final class BrowserExtensionService: ObservableObject {
     }
 
     func deleteStoredValues(forKeys keys: [String], scriptID: UUID) {
-        guard let index = userScripts.firstIndex(where: { $0.id == scriptID }) else { return }
+        try? deleteStoredValuesPersisting(forKeys: keys, scriptID: scriptID)
+    }
+
+    func deleteStoredValuesPersisting(forKeys keys: [String], scriptID: UUID, origin: String = "", mutationID: String = "") throws {
+        guard let index = userScripts.firstIndex(where: { $0.id == scriptID }) else { throw BrowserExtensionError.invalidStorageValue }
+        let previous = userScripts[index].storedValues
         for key in keys {
             userScripts[index].storedValues?.removeValue(forKey: key)
         }
-        persistAndNotify(reloadPages: false)
+        do { try writeExtensionStore() } catch { userScripts[index].storedValues = previous; throw error }
+        publishStorage(scriptID: scriptID, origin: origin, mutationID: mutationID)
+    }
+
+    func storageSnapshot(scriptID: UUID, origin: String = "", mutationID: String = "") -> [String: Any] {
+        ["scriptID": scriptID.uuidString, "values": userScript(id: scriptID)?.storedValues ?? [:],
+         "revision": storageRevisions[scriptID] ?? 0, "origin": origin, "mutationID": mutationID]
+    }
+
+    private func publishStorage(scriptID: UUID, origin: String, mutationID: String) {
+        storageRevisions[scriptID, default: 0] += 1
+        NotificationCenter.default.post(name: .userScriptStorageChanged, object: self,
+            userInfo: storageSnapshot(scriptID: scriptID, origin: origin, mutationID: mutationID))
+    }
+
+    func reportUserScriptError(_ message: String, scriptID: UUID) {
+        guard userScript(id: scriptID)?.isEnabled == true else { return }
+        userScriptRuntimeErrors[scriptID] = String(message.prefix(2000))
     }
 
     @discardableResult
     func installWebExtension(from sourceURL: URL) async throws -> WebExtensionRecord {
-        guard BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled else {
-            throw BrowserExtensionError.temporarilyDisabled
-        }
-        guard #available(iOS 18.4, *) else { throw BrowserExtensionError.unsupportedSystem }
-
-        let identifier = UUID()
-        let destinationDirectory = webExtensionRoot
-            .appendingPathComponent(identifier.uuidString, isDirectory: true)
-        try fileManager.createDirectory(at: destinationDirectory, withIntermediateDirectories: true)
-        let storedResourceName = WebExtensionPackagePreparer.preparedResourceName
-
-        let didAccess = sourceURL.startAccessingSecurityScopedResource()
-        defer { if didAccess { sourceURL.stopAccessingSecurityScopedResource() } }
-
-        do {
-            let destination = try WebExtensionPackagePreparer.prepare(
-                sourceURL: sourceURL,
-                in: destinationDirectory
-            )
-            let metadata = try await NativeWebExtensionRuntime.shared.load(
-                id: identifier,
-                resourceURL: destination
-            )
-            let record = WebExtensionRecord(
-                id: identifier,
-                name: metadata.name,
-                version: metadata.version,
-                storedResourceName: storedResourceName,
-                requestedPermissionCount: metadata.permissionCount,
-                requestedSiteCount: metadata.siteCount,
-                compatibilityWarningCount: metadata.compatibilityWarningCount,
-                isEnabled: true,
-                installedAt: Date()
-            )
-            webExtensions.insert(record, at: 0)
-            // Reload the visible page once so the newly loaded extension can
-            // attach to an already-open tab as well as future navigations.
-            persistAndNotify()
-            return record
-        } catch {
-            try? fileManager.removeItem(at: destinationDirectory)
-            throw error
-        }
+        let preview = try await previewWebExtension(from: sourceURL)
+        return try await installWebExtension(preview, access: preview.access)
     }
 
     func setWebExtensionEnabled(_ id: UUID, enabled: Bool) {
+        guard !installingExtensionIDs.contains(id) else { return }
         guard let index = webExtensions.firstIndex(where: { $0.id == id }) else { return }
+        let previous = webExtensions[index].isEnabled
+        webExtensions[index].isEnabled = enabled
+        do { try writeExtensionStore() } catch {
+            webExtensions[index].isEnabled = previous; webExtensionErrors[id] = error.localizedDescription; return
+        }
         let revision = UUID()
         extensionLoadRevisions[id] = revision
         webExtensionErrors[id] = nil
-        webExtensions[index].isEnabled = enabled
         let record = webExtensions[index]
-        persistAndNotify(reloadPages: false)
         guard #available(iOS 18.4, *) else { return }
         if !enabled {
             loadingWebExtensions.remove(id)
@@ -563,7 +672,7 @@ final class BrowserExtensionService: ObservableObject {
                 if extensionLoadRevisions[id] == revision { loadingWebExtensions.remove(id) }
             }
             do {
-                _ = try await NativeWebExtensionRuntime.shared.load(id: id, resourceURL: resourceURL(for: record))
+                _ = try await loadNativeExtension(record)
                 guard extensionLoadRevisions[id] == revision else {
                     if webExtensions.first(where: { $0.id == id })?.isEnabled != true { NativeWebExtensionRuntime.shared.unload(id: id) }
                     return
@@ -591,29 +700,36 @@ final class BrowserExtensionService: ObservableObject {
     }
 
     func deleteWebExtension(_ id: UUID) {
+        guard let record = webExtensions.first(where: { $0.id == id }) else { return }
+        let previous = webExtensions
+        webExtensions.removeAll { $0.id == id }
+        do { try writeExtensionStore() } catch {
+            webExtensions = previous; webExtensionErrors[id] = error.localizedDescription; return
+        }
         extensionLoadRevisions[id] = nil
         loadingWebExtensions.remove(id)
         webExtensionErrors[id] = nil
-        guard let record = webExtensions.first(where: { $0.id == id }) else { return }
         if #available(iOS 18.4, *) {
             NativeWebExtensionRuntime.shared.unload(id: id)
         }
-        webExtensions.removeAll { $0.id == id }
         try? fileManager.removeItem(
             at: webExtensionRoot.appendingPathComponent(record.id.uuidString, isDirectory: true)
         )
-        persistAndNotify()
+        NotificationCenter.default.post(name: .browserExtensionsChanged, object: nil)
     }
 
     private func restoreEnabledNativeExtensions() async {
         guard #available(iOS 18.4, *) else { return }
         var migratedStore = false
+        var restoredAny = false
         for record in webExtensions.filter(\.isEnabled) {
-            guard let index = webExtensions.firstIndex(where: { $0.id == record.id }) else { continue }
+            guard let index = webExtensions.firstIndex(where: { $0.id == record.id }), webExtensions[index].isEnabled else { continue }
+            loadingWebExtensions.insert(record.id)
+            defer { loadingWebExtensions.remove(record.id) }
             let originalResourceURL = resourceURL(for: record)
             let resourceURL: URL
-            if record.storedResourceName == WebExtensionPackagePreparer.preparedResourceName {
-                try? WebExtensionPackagePreparer.installCompatibilityLayer(in: originalResourceURL)
+            if record.storedResourceName == WebExtensionPackagePreparer.preparedResourceName
+                || record.storedResourceName.hasPrefix("Versions/") {
                 resourceURL = originalResourceURL
             } else {
                 do {
@@ -634,9 +750,11 @@ final class BrowserExtensionService: ObservableObject {
             }
             let revision = extensionLoadRevisions[record.id]
             do {
-                _ = try await NativeWebExtensionRuntime.shared.load(id: record.id, resourceURL: resourceURL)
+                _ = try await loadNativeExtension(record, resourceURL: resourceURL)
                 if webExtensions.first(where: { $0.id == record.id })?.isEnabled != true {
                     NativeWebExtensionRuntime.shared.unload(id: record.id)
+                } else {
+                    restoredAny = true
                 }
             } catch {
                 if extensionLoadRevisions[record.id] == revision,
@@ -650,6 +768,7 @@ final class BrowserExtensionService: ObservableObject {
         if migratedStore {
             persistAndNotify(reloadPages: false)
         }
+        if restoredAny { NotificationCenter.default.post(name: .browserExtensionsChanged, object: nil) }
     }
 
     private func resourceURL(for record: WebExtensionRecord) -> URL {
@@ -663,7 +782,13 @@ final class BrowserExtensionService: ObservableObject {
               let store = try? JSONDecoder().decode(BrowserExtensionStore.self, from: data) else {
             return
         }
-        userScripts = store.userScripts
+        userScripts = store.userScripts.map { stored in
+            var script = stored
+            // Re-read old headers, including stores predating @require parsing
+            // and URLs previously collapsed by case-insensitive deduplication.
+            script.requiredURLs = Self.parseMetadata(from: script.source).requiredURLs
+            return script
+        }
         webExtensions = store.webExtensions
     }
 
@@ -695,18 +820,21 @@ final class BrowserExtensionService: ObservableObject {
         persistAndNotify(reloadPages: false)
     }
 
-    private func persistAndNotify(reloadPages: Bool = true) {
+    private func writeExtensionStore() throws {
         let store = BrowserExtensionStore(userScripts: userScripts, webExtensions: webExtensions)
-        try? fileManager.createDirectory(at: extensionRoot, withIntermediateDirectories: true)
-        if let data = try? JSONEncoder().encode(store) {
-            try? data.write(to: storeURL, options: .atomic)
-        }
+        try fileManager.createDirectory(at: extensionRoot, withIntermediateDirectories: true)
+        try JSONEncoder().encode(store).write(to: storeURL, options: .atomic)
+    }
+
+    private func persistAndNotify(reloadPages: Bool = true) {
+        try? writeExtensionStore()
         if reloadPages {
             NotificationCenter.default.post(name: .browserExtensionsChanged, object: nil)
         }
     }
 
     private var extensionRoot: URL {
+        if let customExtensionRoot { return customExtensionRoot }
         let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? fileManager.temporaryDirectory
         return base.appendingPathComponent("SouloExtensions", isDirectory: true)
@@ -829,7 +957,7 @@ final class BrowserExtensionService: ObservableObject {
             excludePatterns: deduplicated(excludePatterns),
             grants: deduplicated(grants),
             connectDomains: deduplicated(connectDomains),
-            requiredURLs: deduplicated(requiredURLs),
+            requiredURLs: deduplicated(requiredURLs, caseSensitive: true),
             resources: resources,
             injectionTime: injectionTime
         )
@@ -892,12 +1020,27 @@ final class BrowserExtensionService: ObservableObject {
         }
     }
 
-    private static func deduplicated(_ values: [String]) -> [String] {
+    private static func validateUserScriptSource(_ source: String, explicitPatterns: [String]?) throws -> UserScriptMetadata {
+        guard source.utf8.count <= maximumUserScriptSize else { throw BrowserExtensionError.scriptTooLarge }
+        guard !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw BrowserExtensionError.emptyScript }
+        let metadata = parseMetadata(from: source)
+        if let explicitPatterns {
+            let patterns = explicitPatterns.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+            guard !patterns.isEmpty else { throw BrowserExtensionError.invalidMatchPattern("") }
+            if let invalid = patterns.first(where: { !UserScriptURLMatcher.isValid(pattern: $0) }) {
+                throw BrowserExtensionError.invalidMatchPattern(invalid)
+            }
+        }
+        try validate(metadata: metadata)
+        return metadata
+    }
+
+    private static func deduplicated(_ values: [String], caseSensitive: Bool = false) -> [String] {
         var seen = Set<String>()
         return values.compactMap { rawValue in
             let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !value.isEmpty else { return nil }
-            let key = value.lowercased()
+            let key = caseSensitive ? value : value.lowercased()
             guard seen.insert(key).inserted else { return nil }
             return value
         }
@@ -905,7 +1048,188 @@ final class BrowserExtensionService: ObservableObject {
 
 }
 
+extension BrowserExtensionService {
+    func discardWebExtensionPreview(_ preview: WebExtensionInstallPreview) {
+        guard preparedExtensions.removeValue(forKey: preview.id) != nil else { return }
+        try? fileManager.removeItem(at: preview.resourceURL.deletingLastPathComponent())
+    }
+
+    func previewWebExtension(from source: URL, sourceURL: URL? = nil, replacing id: UUID? = nil) async throws -> WebExtensionInstallPreview {
+        guard BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled else { throw BrowserExtensionError.temporarilyDisabled }
+        guard #available(iOS 18.4, *) else { throw BrowserExtensionError.unsupportedSystem }
+        let token = UUID()
+        let stage = extensionRoot.appendingPathComponent("Staging/" + token.uuidString, isDirectory: true)
+        try fileManager.createDirectory(at: stage, withIntermediateDirectories: true)
+        let scoped = source.startAccessingSecurityScopedResource()
+        defer { if scoped { source.stopAccessingSecurityScopedResource() } }
+        do {
+            let resources = try WebExtensionPackagePreparer.prepare(sourceURL: source, in: stage)
+            let object = try await WKWebExtension(resourceBaseURL: resources)
+            if let error = NativeWebExtensionIssuePolicy.firstFatalIssue(in: object.errors) { throw error }
+            let identity = WebExtensionPackageIdentity.value(manifest: object.manifest, source: sourceURL)
+            let previous = id.flatMap { target in webExtensions.first { $0.id == target } }
+                ?? identity.flatMap { key in webExtensions.first { $0.packageIdentity == key } }
+            if id != nil && previous == nil { throw CancellationError() }
+            let descriptor = Self.extensionDescriptor(object.manifest)
+            let permissions = Set(descriptor.permissions + object.requestedPermissions.map(\.rawValue)).sorted()
+            let sites = Set(descriptor.sites + object.requestedPermissionMatchPatterns.map(\.string)).sorted()
+            let access = previous.map { webExtensionAccess($0.id) } ?? .requested(permissions: permissions, sites: sites)
+            var warnings = object.errors.map(\.localizedDescription)
+            if object.manifest["commands"] != nil { warnings.append("commands") }
+            if permissions.contains("offscreen") { warnings.append("offscreen: AUDIO_PLAYBACK") }
+            if permissions.contains("notifications") { warnings.append("notifications: onClicked / onClosed") }
+            let preview = WebExtensionInstallPreview(id: token, resourceURL: resources,
+                name: object.displayName ?? AppLocalization.string("extension_untitled"), version: object.version,
+                permissions: permissions, sites: sites, warnings: warnings, identity: identity ?? previous?.packageIdentity,
+                sourceURL: sourceURL?.absoluteString ?? previous?.sourceURL, replacingID: previous?.id,
+                replacingResourceName: previous?.storedResourceName, access: access)
+            preparedExtensions[token] = preview
+            return preview
+        } catch {
+            try? fileManager.removeItem(at: stage)
+            throw error
+        }
+    }
+
+    @discardableResult
+    func installWebExtension(_ preview: WebExtensionInstallPreview, access: WebExtensionAccess) async throws -> WebExtensionRecord {
+        guard #available(iOS 18.4, *) else { throw BrowserExtensionError.unsupportedSystem }
+        guard preparedExtensions[preview.id]?.resourceURL == preview.resourceURL else { throw CancellationError() }
+        let previous = preview.replacingID.flatMap { id in webExtensions.first { $0.id == id } }
+        guard previous?.storedResourceName == preview.replacingResourceName else { throw CancellationError() }
+        if preview.replacingID != nil && previous == nil { throw CancellationError() }
+        if let previous, webExtensionAccess(previous.id) != preview.access { throw CancellationError() }
+        let id = previous?.id ?? UUID()
+        guard !installingExtensionIDs.contains(id),
+              preview.identity == nil || !webExtensions.contains(where: { $0.packageIdentity == preview.identity && $0.id != id })
+        else { throw CancellationError() }
+        installingExtensionIDs.insert(id); loadingWebExtensions.insert(id)
+        let revision = UUID(); extensionLoadRevisions[id] = revision
+        let relativeName = "Versions/" + UUID().uuidString + "/Extension"
+        let destination = webExtensionRoot.appendingPathComponent(id.uuidString).appendingPathComponent(relativeName)
+        defer {
+            installingExtensionIDs.remove(id); loadingWebExtensions.remove(id)
+            discardWebExtensionPreview(preview)
+        }
+        try fileManager.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
+        do {
+            try fileManager.moveItem(at: preview.resourceURL, to: destination)
+            NativeWebExtensionRuntime.shared.unload(id: id)
+            var record = WebExtensionRecord(id: id, name: preview.name, version: preview.version,
+                storedResourceName: relativeName, requestedPermissionCount: preview.permissions.count,
+                requestedSiteCount: preview.sites.count, compatibilityWarningCount: preview.warnings.count,
+                isEnabled: previous?.isEnabled ?? true, installedAt: previous?.installedAt ?? Date())
+            record.access = access; record.packageIdentity = preview.identity; record.sourceURL = preview.sourceURL
+            record.previousVersion = previous.map(WebExtensionVersionSnapshot.init)
+            if record.isEnabled { _ = try await loadNativeExtension(record) }
+            try Task.checkCancellation()
+            guard extensionLoadRevisions[id] == revision else { throw CancellationError() }
+            let original = webExtensions
+            if let index = webExtensions.firstIndex(where: { $0.id == id }) { webExtensions[index] = record }
+            else { webExtensions.insert(record, at: 0) }
+            do { try writeExtensionStore() } catch { webExtensions = original; throw error }
+            webExtensionErrors[id] = nil
+            if let obsolete = previous?.previousVersion?.storedResourceName,
+               obsolete != relativeName, obsolete != previous?.storedResourceName {
+                try? fileManager.removeItem(at: checkedResourceURL(id: id, name: obsolete))
+            }
+            NotificationCenter.default.post(name: .browserExtensionsChanged, object: nil)
+            return record
+        } catch {
+            NativeWebExtensionRuntime.shared.unload(id: id)
+            if let previous, extensionLoadRevisions[id] == revision,
+               webExtensions.contains(where: { $0.id == id }), previous.isEnabled {
+                do { _ = try await loadNativeExtension(previous) }
+                catch { webExtensionErrors[id] = error.localizedDescription }
+            }
+            try? fileManager.removeItem(at: destination.deletingLastPathComponent())
+            throw error
+        }
+    }
+
+    func previewPreviousWebExtension(_ id: UUID) async throws -> WebExtensionInstallPreview {
+        guard let record = webExtensions.first(where: { $0.id == id }), let previous = record.previousVersion else {
+            throw BrowserExtensionError.invalidExtension
+        }
+        return try await previewWebExtension(from: checkedResourceURL(id: id, name: previous.storedResourceName), replacing: id)
+    }
+
+    func webExtensionAccess(_ id: UUID) -> WebExtensionAccess {
+        guard let record = webExtensions.first(where: { $0.id == id }) else { return .init() }
+        if let access = record.access { return access }
+        let descriptor = webExtensionDetails(id)
+        return .requested(permissions: descriptor.permissions, sites: descriptor.sites)
+    }
+
+    func webExtensionDetails(_ id: UUID) -> (permissions: [String], sites: [String]) {
+        guard let record = webExtensions.first(where: { $0.id == id }),
+              let data = try? Data(contentsOf: checkedResourceURL(id: id, name: record.storedResourceName).appendingPathComponent("manifest.json")),
+              let manifest = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return ([], []) }
+        return Self.extensionDescriptor(manifest)
+    }
+
+    func setWebExtensionAccess(_ access: WebExtensionAccess, id: UUID) throws {
+        guard !installingExtensionIDs.contains(id), let index = webExtensions.firstIndex(where: { $0.id == id }) else { throw CancellationError() }
+        guard access.blockedHosts.allSatisfy({ WebExtensionAccess.normalizedHost($0) == $0 }) else {
+            throw BrowserExtensionError.invalidExtension
+        }
+        let previous = webExtensions[index].access
+        webExtensions[index].access = access
+        do { try writeExtensionStore() } catch { webExtensions[index].access = previous; throw error }
+        if #available(iOS 18.4, *) { NativeWebExtensionRuntime.shared.applyAccess(access, id: id) }
+        NotificationCenter.default.post(name: .browserExtensionsChanged, object: nil)
+    }
+
+    func webExtensionDiagnostics(_ id: UUID) -> [String] {
+        var messages: [String] = []
+        if let error = webExtensionErrors[id] { messages.append(error) }
+        let descriptor = webExtensionDetails(id)
+        for name in ["offscreen", "debugger", "desktopCapture", "nativeMessaging"] where descriptor.permissions.contains(name) {
+            if name != "nativeMessaging" { messages.append(name) }
+        }
+        if #available(iOS 18.4, *) { messages += NativeWebExtensionRuntime.shared.diagnostics(id: id) }
+        return Array(Set(messages)).sorted()
+    }
+
+    private static func extensionDescriptor(_ manifest: [String: Any]) -> (permissions: [String], sites: [String]) {
+        let entries = manifest["permissions"] as? [String] ?? []
+        let permissions = entries.filter { !$0.contains("://") && $0 != "<all_urls>" }
+        let matches = (manifest["content_scripts"] as? [[String: Any]] ?? []).flatMap { $0["matches"] as? [String] ?? [] }
+        let sites = entries.filter { $0.contains("://") || $0 == "<all_urls>" }
+            + (manifest["host_permissions"] as? [String] ?? []) + matches
+        return (Array(Set(permissions)).sorted(), Array(Set(sites)).sorted())
+    }
+
+    private func checkedResourceURL(id: UUID, name: String) throws -> URL {
+        let root = webExtensionRoot.appendingPathComponent(id.uuidString).standardizedFileURL
+        let url = root.appendingPathComponent(name).standardizedFileURL
+        guard url.path.hasPrefix(root.path + "/") else { throw BrowserExtensionError.invalidExtension }
+        return url
+    }
+
+    @available(iOS 18.4, *)
+    private func loadNativeExtension(_ record: WebExtensionRecord, resourceURL: URL? = nil) async throws -> NativeWebExtensionRuntime.Metadata {
+        try await NativeWebExtensionRuntime.shared.load(id: record.id,
+            resourceURL: resourceURL ?? checkedResourceURL(id: record.id, name: record.storedResourceName), access: record.access,
+            onAccessChange: { [weak self] access in
+                guard let self, !self.installingExtensionIDs.contains(record.id),
+                      let index = self.webExtensions.firstIndex(where: { $0.id == record.id }) else { return false }
+                let previous = self.webExtensions[index].access
+                self.webExtensions[index].access = access
+                do { try self.writeExtensionStore(); return true }
+                catch { self.webExtensions[index].access = previous; self.webExtensionErrors[record.id] = error.localizedDescription; return false }
+            })
+    }
+}
+
 enum UserScriptRuntime {
+    static let sourcePrefix = "/* Soulo UserScript */\n"
+
+    static func storageUpdateScript(_ snapshot: [String: Any], bridgeToken: String) -> String? {
+        var payload = snapshot; payload["token"] = bridgeToken
+        guard let data = try? JSONSerialization.data(withJSONObject: payload), let json = String(data: data, encoding: .utf8) else { return nil }
+        return "window.__souloReceiveUserScriptStorage?.(\(json));"
+    }
     static let supportedGrantNames: Set<String> = [
         "none", "unsafewindow", "gm_info", "gm.info",
         "gm_xmlhttprequest", "gm.xmlhttprequest",
@@ -981,10 +1305,10 @@ enum UserScriptRuntime {
         let infoLiteral = userScriptInfoLiteral(script)
 
         return #"""
-        var __souloStorage = \#(storageLiteral);
-        var __souloResources = \#(resourcesLiteral);
+        var __souloStorage = Object.assign(Object.create(null), JSON.parse(\#(stringLiteral(storageLiteral))));
+        var __souloResources = Object.assign(Object.create(null), JSON.parse(\#(stringLiteral(resourcesLiteral))));
         var __souloGM = {};
-        var GM_info = \#(infoLiteral);
+        var GM_info = JSON.parse(\#(stringLiteral(infoLiteral)));
         __souloGM.info = GM_info;
 
         function __souloBridge(action, details) {
@@ -1019,27 +1343,106 @@ enum UserScriptRuntime {
         }
         function __souloEncodeValue(value) {
             var encoded = JSON.stringify({ value: value });
-            if (typeof encoded !== 'string') throw new TypeError('Value is not JSON serializable');
+            if (typeof encoded !== 'string' || !Object.prototype.hasOwnProperty.call(JSON.parse(encoded), 'value')) {
+                throw new TypeError('Value is not JSON serializable');
+            }
             return encoded;
+        }
+        var __souloCommittedStorage = Object.assign(Object.create(null), __souloStorage);
+        var __souloPendingStorage = [];
+        var __souloStorageRevision = -1, __souloNextMutation = 0;
+        function __souloApplyStorage(target, changes) {
+            Object.keys(changes).forEach(function(key) {
+                if (changes[key] === null) delete target[key];
+                else target[key] = changes[key];
+            });
+        }
+        function __souloRefreshStorage(remote) {
+            while (__souloPendingStorage.length && __souloPendingStorage[0].state !== 'pending') {
+                var finished = __souloPendingStorage.shift();
+                if (finished.state === 'committed' && finished.nativeRevision == null) __souloApplyStorage(__souloCommittedStorage, finished.changes);
+            }
+            var next = Object.assign(Object.create(null), __souloCommittedStorage);
+            __souloPendingStorage.forEach(function(entry) {
+                if (entry.state !== 'failed' && entry.nativeRevision == null) __souloApplyStorage(next, entry.changes);
+            });
+            var previous = __souloStorage;
+            __souloStorage = next;
+            var keys = Object.keys(Object.assign(Object.create(null), previous, next));
+            keys.forEach(function(key) {
+                if (JSON.stringify(previous[key]) !== JSON.stringify(next[key])) {
+                    __souloNotifyValueListeners(key, previous[key] && previous[key].value, next[key] && next[key].value, remote);
+                }
+            });
+        }
+        function __souloReceiveStorage(snapshot) {
+            if (!snapshot || typeof snapshot.revision !== 'number' || !snapshot.values) return false;
+            if (snapshot.origin === '\#(bridgeToken.escapedForJS)') {
+                __souloPendingStorage.forEach(function(entry) {
+                    if (entry.id === snapshot.mutationID) { entry.state = 'committed'; entry.nativeRevision = snapshot.revision; }
+                });
+            }
+            if (snapshot.revision >= __souloStorageRevision) {
+                var next = Object.create(null);
+                Object.keys(snapshot.values).forEach(function(key) {
+                    try { next[key] = JSON.parse(snapshot.values[key]); } catch (_) {}
+                });
+                __souloCommittedStorage = next;
+                __souloStorageRevision = snapshot.revision;
+            }
+            __souloRefreshStorage(snapshot.origin !== '\#(bridgeToken.escapedForJS)');
+            return true;
+        }
+        var __souloStorageReceivers = window.__souloUserScriptStorageReceivers;
+        if (!__souloStorageReceivers) {
+            __souloStorageReceivers = Object.create(null);
+            Object.defineProperty(window, '__souloUserScriptStorageReceivers', {value:__souloStorageReceivers,configurable:true});
+        }
+        __souloStorageReceivers['\#(script.id.uuidString)'] = function(snapshot) {
+            if (snapshot.token === '\#(bridgeToken.escapedForJS)') __souloReceiveStorage(snapshot);
+        };
+        window.__souloReceiveUserScriptStorage = function(snapshot) {
+            var receiver = snapshot && __souloStorageReceivers[snapshot.scriptID];
+            if (typeof receiver === 'function') receiver(snapshot);
+        };
+        function __souloMutateStorage(action, payload, changes) {
+            if (!Object.keys(changes).length) return Promise.resolve(true);
+            var entry = { id: String(++__souloNextMutation), state: 'pending', changes: changes };
+            payload.__souloMutationID = entry.id;
+            __souloPendingStorage.push(entry);
+            __souloRefreshStorage();
+            var request;
+            try { request = Promise.resolve(__souloBridge(action, payload)); }
+            catch (error) { request = Promise.reject(error); }
+            return request.then(function(result) {
+                entry.state = 'committed';
+                if (result && typeof result.revision === 'number') {
+                    entry.nativeRevision = result.revision;
+                    __souloReceiveStorage(result);
+                }
+                __souloRefreshStorage();
+                return result;
+            }, function(error) {
+                entry.state = 'failed';
+                __souloRefreshStorage();
+                throw error;
+            });
         }
         function __souloSetValue(key, value) {
             key = String(key);
-            var oldValue = __souloStoredValue(key, undefined);
             var encoded = __souloEncodeValue(value);
-            __souloStorage[key] = { value: value };
-            __souloNotifyValueListeners(key, oldValue, value, false);
-            return __souloBridge('setValue', { key: key, value: encoded });
+            var changes = Object.create(null);
+            changes[key] = JSON.parse(encoded);
+            return __souloMutateStorage('setValue', { key: key, value: encoded }, changes);
         }
         function __souloDeleteValue(key) {
             key = String(key);
-            var oldValue = __souloStoredValue(key, undefined);
-            var existed = Object.prototype.hasOwnProperty.call(__souloStorage, key);
-            delete __souloStorage[key];
-            if (existed) __souloNotifyValueListeners(key, oldValue, undefined, false);
-            return __souloBridge('deleteValue', { key: key });
+            var changes = Object.create(null);
+            changes[key] = null;
+            return __souloMutateStorage('deleteValue', { key: key }, changes);
         }
         function __souloGetValues(keysOrDefaults) {
-            var result = {};
+            var result = Object.create(null);
             if (Array.isArray(keysOrDefaults)) {
                 keysOrDefaults.forEach(function(key) {
                     key = String(key);
@@ -1063,28 +1466,19 @@ enum UserScriptRuntime {
         }
         function __souloSetValues(values) {
             values = values && typeof values === 'object' ? values : {};
-            var encodedValues = {};
+            var encodedValues = Object.create(null);
+            var changes = Object.create(null);
             Object.keys(values).forEach(function(key) {
                 encodedValues[key] = __souloEncodeValue(values[key]);
+                changes[key] = JSON.parse(encodedValues[key]);
             });
-            Object.keys(values).forEach(function(key) {
-                var oldValue = __souloStoredValue(key, undefined);
-                __souloStorage[key] = { value: values[key] };
-                __souloNotifyValueListeners(key, oldValue, values[key], false);
-            });
-            if (!Object.keys(encodedValues).length) return Promise.resolve(true);
-            return __souloBridge('setValues', { values: encodedValues });
+            return __souloMutateStorage('setValues', { values: encodedValues }, changes);
         }
         function __souloDeleteValues(keys) {
             keys = Array.isArray(keys) ? keys.map(String) : [];
-            keys.forEach(function(key) {
-                var oldValue = __souloStoredValue(key, undefined);
-                var existed = Object.prototype.hasOwnProperty.call(__souloStorage, key);
-                delete __souloStorage[key];
-                if (existed) __souloNotifyValueListeners(key, oldValue, undefined, false);
-            });
-            if (!keys.length) return Promise.resolve(true);
-            return __souloBridge('deleteValues', { keys: keys });
+            var changes = Object.create(null);
+            keys.forEach(function(key) { changes[key] = null; });
+            return __souloMutateStorage('deleteValues', { keys: keys }, changes);
         }
         function __souloAddValueChangeListener(key, callback) {
             if (typeof callback !== 'function') throw new TypeError('callback must be a function');
@@ -1215,19 +1609,41 @@ enum UserScriptRuntime {
         function __souloDownload(details, name) {
             if (typeof details === 'string') details = { url: details, name: name };
             details = details || {};
-            var aborted = false;
-            var promise = __souloBridge('download', {
+            var requestID = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+            var finished = false, resolveDownload, rejectDownload;
+            var promise = new Promise(function(resolve, reject) { resolveDownload = resolve; rejectDownload = reject; });
+            // Legacy callers receive a handle rather than the Promise.
+            promise.catch(function() {});
+            function callback(name, event) {
+                try { if (typeof details[name] === 'function') details[name](event); }
+                catch (error) { console.error(error); }
+            }
+            __souloBridge('download', {
+                __souloDownloadID: requestID,
                 url: new URL(String(details.url || ''), location.href).href,
                 name: details.name == null ? '' : String(details.name)
             }).then(function(result) {
-                if (aborted) return result;
-                if (typeof details.onload === 'function') details.onload(result);
-                return result;
+                if (finished) return;
+                finished = true;
+                resolveDownload(result);
+                callback('onload', result);
             }).catch(function(error) {
-                if (!aborted && typeof details.onerror === 'function') details.onerror(error);
-                throw error;
+                if (finished) return;
+                finished = true;
+                rejectDownload(error);
+                callback('onerror', error);
             });
-            return { abort: function() { aborted = true; }, promise: promise };
+            function abort() {
+                if (finished) return;
+                finished = true;
+                var error = { error: 'aborted' };
+                __souloBridge('abortDownload', { __souloDownloadID: requestID }).catch(console.error);
+                rejectDownload(error);
+                callback('onabort', error);
+                callback('onerror', error);
+            }
+            promise.abort = abort;
+            return { abort: abort, promise: promise };
         }
         function __souloGetResource(name) {
             name = String(name);
@@ -1287,7 +1703,7 @@ enum UserScriptRuntime {
         \#(allowsCookie ? "var GM_cookie = __souloCookieAPI; __souloGM.cookie = __souloCookieAPI;" : "")
         \#(allowsURLChange ? "if (!window.__souloURLChangeInstalled) { window.__souloURLChangeInstalled = true; (function() { var lastURL = location.href; function emit() { var nextURL = location.href; if (nextURL === lastURL) return; lastURL = nextURL; window.dispatchEvent(new CustomEvent('urlchange', { detail: { url: nextURL } })); if (typeof window.onurlchange === 'function') window.onurlchange({ url: nextURL }); } ['pushState', 'replaceState'].forEach(function(name) { var original = history[name]; history[name] = function() { var result = original.apply(this, arguments); emit(); return result; }; }); addEventListener('popstate', emit); addEventListener('hashchange', emit); })(); }" : "")
 
-        function base64Blob(value, mimeType) {
+        function __souloBase64Blob(value, mimeType) {
             var binary = atob(value || '');
             var bytes = new Uint8Array(binary.length);
             for (var index = 0; index < binary.length; index += 1) {
@@ -1296,75 +1712,99 @@ enum UserScriptRuntime {
             return new Blob([bytes], { type: mimeType || 'application/octet-stream' });
         }
 
-        function request(details) {
+        function __souloXMLHTTP(details, modern) {
             details = details || {};
-            var aborted = false;
+            var finished = false;
+            var resolveRequest, rejectRequest;
+            var promise = new Promise(function(resolve, reject) { resolveRequest = resolve; rejectRequest = reject; });
+            if (!modern) promise.catch(function() {});
             var bridge = window.webkit && window.webkit.messageHandlers
                 && window.webkit.messageHandlers.souloUserScriptXHR;
-            if (!bridge || typeof bridge.postMessage !== 'function') {
-                var unavailable = new Error('Soulo UserScript network bridge is unavailable');
-                if (typeof details.onerror === 'function') details.onerror(unavailable);
-                return { abort: function() { aborted = true; } };
+            var requestID = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+            function callback(name, event) {
+                try { if (typeof details[name] === 'function') details[name](event); }
+                catch (error) { console.error(error); }
             }
-
+            function fail(error, type) {
+                if (finished) return;
+                finished = true;
+                var event = { readyState: 4, status: 0, error: String(error), type: type || 'error' };
+                callback('onreadystatechange', event);
+                callback(type === 'abort' ? 'onabort' : 'onerror', event);
+                callback('onloadend', event);
+                rejectRequest(event);
+            }
             var payload = {
                 __souloToken: '\#(bridgeToken.escapedForJS)',
                 __souloScriptID: '\#(script.id.uuidString)',
+                __souloRequestID: requestID,
                 url: String(details.url || ''),
                 method: String(details.method || 'GET'),
                 headers: details.headers || {},
                 data: details.data == null ? null : String(details.data),
                 timeout: Number(details.timeout || 30_000),
-                responseType: String(details.responseType || '')
+                responseType: String(details.responseType || '').toLowerCase()
             };
-
-            if (typeof details.onloadstart === 'function') {
-                details.onloadstart({ readyState: 1 });
-            }
-            bridge.postMessage(payload).then(function(result) {
-                if (aborted) return;
-                var responseText = result.responseText || '';
-                var response = responseText;
-                if (payload.responseType === 'blob') {
-                    response = base64Blob(result.base64, result.mimeType);
-                } else if (payload.responseType === 'arraybuffer') {
-                    var binary = atob(result.base64 || '');
-                    var bytes = new Uint8Array(binary.length);
-                    for (var index = 0; index < binary.length; index += 1) {
-                        bytes[index] = binary.charCodeAt(index);
-                    }
-                    response = bytes.buffer;
-                } else if (payload.responseType === 'json') {
-                    try { response = JSON.parse(responseText); } catch (_) { response = null; }
+            function abort() {
+                if (finished) return;
+                fail('Request aborted', 'abort');
+                if (bridge && typeof bridge.postMessage === 'function') {
+                    bridge.postMessage({
+                        __souloToken: payload.__souloToken, __souloScriptID: payload.__souloScriptID,
+                        __souloRequestID: requestID, action: 'abort'
+                    }).catch(console.error);
                 }
-                var event = {
-                    readyState: 4,
-                    status: result.status || 0,
-                    statusText: result.statusText || '',
-                    finalUrl: result.finalURL || payload.url,
-                    responseHeaders: result.responseHeaders || '',
-                    responseText: responseText,
-                    response: response
-                };
-                if (typeof details.onreadystatechange === 'function') details.onreadystatechange(event);
-                if (typeof details.onload === 'function') details.onload(event);
-                if (typeof details.onloadend === 'function') details.onloadend(event);
-            }).catch(function(error) {
-                if (aborted) return;
-                var event = { readyState: 4, status: 0, error: String(error) };
-                if (typeof details.onreadystatechange === 'function') details.onreadystatechange(event);
-                if (typeof details.onerror === 'function') details.onerror(event);
-                if (typeof details.onloadend === 'function') details.onloadend(event);
-            });
-            return { abort: function() { aborted = true; } };
+            }
+            promise.abort = abort;
+            if (!bridge || typeof bridge.postMessage !== 'function') {
+                fail('Soulo UserScript network bridge is unavailable');
+                return modern ? promise : { abort: abort };
+            }
+            callback('onloadstart', { readyState: 1 });
+            try {
+                bridge.postMessage(payload).then(function(result) {
+                    if (finished) return;
+                    var responseText = result.responseText || '';
+                    var response = responseText;
+                    if (payload.responseType === 'blob') {
+                        response = __souloBase64Blob(result.base64, result.mimeType);
+                    } else if (payload.responseType === 'arraybuffer') {
+                        var binary = atob(result.base64 || '');
+                        var bytes = new Uint8Array(binary.length);
+                        for (var index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+                        response = bytes.buffer;
+                    } else if (payload.responseType === 'json') {
+                        try { response = JSON.parse(responseText); } catch (_) { response = null; }
+                    }
+                    var event = {
+                        readyState: 4, status: result.status || 0, statusText: result.statusText || '',
+                        finalUrl: result.finalURL || payload.url, responseHeaders: result.responseHeaders || '',
+                        responseText: responseText, response: response
+                    };
+                    finished = true;
+                    callback('onreadystatechange', event);
+                    callback('onload', event);
+                    callback('onloadend', event);
+                    resolveRequest(event);
+                }).catch(function(error) { fail(error); });
+            } catch (error) { fail(error); }
+            return modern ? promise : { abort: abort };
         }
 
-        \#(allowsXHR ? "var GM_xmlhttpRequest = request; __souloGM.xmlHttpRequest = request;" : "")
+        \#(allowsXHR ? "var GM_xmlhttpRequest = function(details) { return __souloXMLHTTP(details, false); }; __souloGM.xmlHttpRequest = function(details) { return __souloXMLHTTP(details, true); };" : "")
         var GM = Object.freeze(__souloGM);
+        \#((allowsGetValue || allowsGetValues || allowsListValues || allowsAddValueListener) ? "__souloBridge('getStorageSnapshot').then(__souloReceiveStorage).catch(console.error);" : "")
         """#
     }
 
     static func wrappedSource(for script: UserScriptRecord, bridgeToken: String = "") -> String {
+        guard script.hasResolvedRequirements else {
+            return sourcePrefix + "console.error('Soulo UserScript: @require dependencies are not ready');"
+        }
+        // Newlines prevent trailing // comments or source maps in a dependency
+        // from swallowing the next file. All files share the script's scope.
+        let dependencies = (script.requiredURLs ?? []).compactMap { script.requiredSources?[$0] }
+            .map { $0 + "\n;\n" }.joined()
         let includeLiteral = jsonLiteral(
             script.matchPatterns.compactMap(UserScriptURLMatcher.regularExpression)
         )
@@ -1376,14 +1816,33 @@ enum UserScriptRuntime {
             script: script
         )
         let execution = """
+        function __souloReportScriptError(error) {
+            try {
+                var message = String(error && (error.message || error) || error);
+                var stack = String(error && error.stack || '');
+                if (stack && stack.indexOf(message) === -1) message += '\\n' + stack;
+                window.webkit.messageHandlers.souloUserScriptAPI.postMessage({
+                    __souloToken: '\(bridgeToken.escapedForJS)', __souloScriptID: '\(script.id.uuidString)',
+                    action: 'reportError', message: message.slice(0,2000)
+                }).catch(function() {});
+            } catch (_) {}
+        }
         function __souloRunUserScript() {
             try {
                 \(compatibility)
+                \(dependencies)
                 \(script.source)
             } catch (error) {
                 console.error('Soulo UserScript \(script.name.escapedForJS):', error);
+                __souloReportScriptError(error);
             }
         }
+        window.addEventListener?.('error', function(event) {
+            if (String(event.error && event.error.stack || event.filename || '').includes('soulo-userscript-\(script.id.uuidString)')) __souloReportScriptError(event.error || event.message);
+        });
+        window.addEventListener?.('unhandledrejection', function(event) {
+            if (String(event.reason && event.reason.stack || '').includes('soulo-userscript-\(script.id.uuidString)')) __souloReportScriptError(event.reason);
+        });
         """
 
         let schedule = script.injectionTime == .documentEnd
@@ -1397,8 +1856,9 @@ enum UserScriptRuntime {
             : "__souloRunUserScript();"
 
         return """
-        (function() {
+        \(sourcePrefix)(function() {
             var __souloURL = String(window.location.href || '');
+            if (__souloURL.toLowerCase().indexOf('http://') !== 0 && __souloURL.toLowerCase().indexOf('https://') !== 0) return;
             var __souloIncludes = \(includeLiteral);
             var __souloExcludes = \(excludeLiteral);
             function __souloMatches(expressions) {
@@ -1429,6 +1889,12 @@ enum UserScriptRuntime {
             return "{}"
         }
         return value
+    }
+
+    private static func stringLiteral(_ value: String) -> String {
+        guard let data = try? JSONSerialization.data(withJSONObject: value, options: [.fragmentsAllowed]),
+              let encoded = String(data: data, encoding: .utf8) else { return "\"\"" }
+        return encoded
     }
 
     private static func storedValuesLiteral(_ values: [String: String]) -> String {
@@ -1464,7 +1930,7 @@ enum UserScriptRuntime {
         ]
         let info: [String: Any] = [
             "scriptHandler": "Soulo",
-            "version": AppConstants.appVersion,
+            "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? AppConstants.appVersion,
             "isIncognito": false,
             "script": scriptInfo
         ]
@@ -1491,6 +1957,58 @@ enum UserScriptRuntime {
     }
 }
 
+struct UserScriptDownloadPolicy: Codable, Equatable, Sendable {
+    let connectDomains: [String]
+    let pageURL: String?
+
+    init(script: UserScriptRecord, pageURL: URL?) {
+        self.connectDomains = script.connectDomains ?? []
+        self.pageURL = pageURL?.absoluteString
+    }
+
+    func allows(_ url: URL) -> Bool {
+        UserScriptHTTPBridge.isAllowedTarget(
+            url, script: UserScriptRecord(name: "Download", source: "", connectDomains: connectDomains),
+            pageURL: pageURL.flatMap(URL.init(string:))
+        )
+    }
+}
+
+/// Register before dispatching an async bridge action so an immediate abort
+/// also cancels downloads whose transport has not been created yet.
+@MainActor
+final class UserScriptDownloadRequests {
+    private struct Request {
+        var itemID: UUID?
+        var isCanceled = false
+    }
+    private var requests: [String: Request] = [:]
+
+    func begin(_ key: String) -> Bool {
+        guard requests[key] == nil, requests.count < 64 else { return false }
+        requests[key] = Request()
+        return true
+    }
+
+    func attach(_ itemID: UUID, to key: String) -> Bool {
+        guard let request = requests[key], !request.isCanceled else { return false }
+        requests[key]?.itemID = itemID
+        return true
+    }
+
+    func cancel(_ key: String) -> UUID? {
+        guard var request = requests[key], !request.isCanceled else { return nil }
+        request.isCanceled = true
+        requests[key] = request
+        return request.itemID
+    }
+
+    @discardableResult
+    func finish(_ key: String) -> UUID? {
+        requests.removeValue(forKey: key)?.itemID
+    }
+}
+
 enum UserScriptHTTPBridge {
     static let maximumResponseSize = 20 * 1_024 * 1_024
     private static let allowedMethods = Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"])
@@ -1499,7 +2017,8 @@ enum UserScriptHTTPBridge {
     static func response(
         for body: [String: Any],
         script: UserScriptRecord,
-        pageURL: URL?
+        pageURL: URL?,
+        configuration: URLSessionConfiguration = .ephemeral
     ) async throws -> [String: Any] {
         guard let rawURL = body["url"] as? String,
               let url = URL(string: rawURL, relativeTo: pageURL)?.absoluteURL,
@@ -1528,7 +2047,6 @@ enum UserScriptHTTPBridge {
             request.httpBody = Data(data.utf8)
         }
 
-        let configuration = URLSessionConfiguration.ephemeral
         configuration.httpShouldSetCookies = false
         configuration.httpCookieAcceptPolicy = .never
         let redirectDelegate = UserScriptURLSessionDelegate(script: script, pageURL: pageURL)
@@ -1537,8 +2055,9 @@ enum UserScriptHTTPBridge {
             delegate: redirectDelegate,
             delegateQueue: nil
         )
-        defer { session.finishTasksAndInvalidate() }
+        defer { session.invalidateAndCancel() }
         let (bytes, response) = try await session.bytes(for: request)
+        defer { bytes.task.cancel() }
         guard response.expectedContentLength <= Int64(maximumResponseSize)
                 || response.expectedContentLength == NSURLSessionTransferSizeUnknown else {
             throw URLError(.dataLengthExceedsMaximum)
@@ -1578,6 +2097,23 @@ enum UserScriptHTTPBridge {
         return result
     }
 
+    static func resourceResponse(
+        named name: String, script: UserScriptRecord, pageURL: URL?,
+        configuration: URLSessionConfiguration = .ephemeral
+    ) async throws -> [String: Any] {
+        guard let declaration = script.resources?[name],
+              let url = URL(string: declaration, relativeTo: script.sourceURL.flatMap(URL.init(string:)))?.absoluteURL,
+              url.scheme != nil else { throw URLError(.unsupportedURL) }
+        let result = try await response(
+            for: ["url": url.absoluteString, "method": "GET", "timeout": 30_000, "responseType": "arraybuffer"],
+            script: script, pageURL: pageURL, configuration: configuration
+        )
+        guard let status = result["status"] as? Int, (200..<300).contains(status) else {
+            throw URLError(.badServerResponse)
+        }
+        return result
+    }
+
     static func isAllowedTarget(_ url: URL, script: UserScriptRecord, pageURL: URL?) -> Bool {
         guard let scheme = url.scheme?.lowercased(),
               ["http", "https"].contains(scheme),
@@ -1591,29 +2127,34 @@ enum UserScriptHTTPBridge {
     private static func isLocalOrPrivateHost(_ host: String) -> Bool {
         let cleanHost = host.lowercased()
             .trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+            .components(separatedBy: "%").first!
             .trimmingCharacters(in: CharacterSet(charactersIn: "."))
-        let isPrivateIPv6 = cleanHost.contains(":") && (
-            cleanHost.hasPrefix("fc")
-                || cleanHost.hasPrefix("fd")
-                || cleanHost.range(of: #"^fe[89ab]"#, options: .regularExpression) != nil
-                || cleanHost.hasPrefix("::ffff:127.")
-        )
-        if cleanHost == "localhost"
-            || cleanHost == "::1"
-            || cleanHost.hasSuffix(".local")
-            || isPrivateIPv6
-            || cleanHost.hasPrefix("127.")
-            || cleanHost.hasPrefix("0.")
-            || cleanHost.hasPrefix("10.")
-            || cleanHost.hasPrefix("192.168.")
-            || cleanHost.hasPrefix("169.254.") {
-            return true
+        if cleanHost == "localhost" || cleanHost.hasSuffix(".localhost") || cleanHost.hasSuffix(".local") { return true }
+        var ipv4 = in_addr()
+        // inet_aton also recognizes integer, hexadecimal and abbreviated IPv4.
+        if inet_aton(cleanHost, &ipv4) == 1 { return isPrivateIPv4(UInt32(bigEndian: ipv4.s_addr)) }
+        guard cleanHost.contains(":") else { return false }
+        var ipv6 = in6_addr()
+        guard inet_pton(AF_INET6, cleanHost, &ipv6) == 1 else { return true }
+        let bytes = withUnsafeBytes(of: ipv6) { Array($0) }
+        if bytes.allSatisfy({ $0 == 0 }) || (bytes.dropLast().allSatisfy({ $0 == 0 }) && bytes.last == 1)
+            || bytes[0] & 0xfe == 0xfc || (bytes[0] == 0xfe && bytes[1] & 0xc0 == 0x80) { return true }
+        let mapped = bytes.prefix(10).allSatisfy { $0 == 0 } && bytes[10] == 0xff && bytes[11] == 0xff
+        let compatible = bytes.prefix(12).allSatisfy { $0 == 0 }
+        if mapped || compatible {
+            let address = bytes.suffix(4).reduce(UInt32(0)) { ($0 << 8) | UInt32($1) }
+            return isPrivateIPv4(address)
         }
-        let parts = cleanHost.split(separator: ".").compactMap { Int($0) }
-        guard parts.count == 4 else { return false }
-        return (parts[0] == 172 && (16...31).contains(parts[1]))
-            || (parts[0] == 100 && (64...127).contains(parts[1]))
+        return false
     }
+
+    private static func isPrivateIPv4(_ value: UInt32) -> Bool {
+        let first = value >> 24, second = (value >> 16) & 0xff
+        return [0, 10, 127].contains(first) || first >= 224
+            || (first == 169 && second == 254) || (first == 192 && second == 168)
+            || (first == 172 && (16...31).contains(second)) || (first == 100 && (64...127).contains(second))
+    }
+
 }
 
 private final class UserScriptURLSessionDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
@@ -1647,7 +2188,8 @@ private final class UserScriptURLSessionDelegate: NSObject, URLSessionTaskDelega
 
 enum UserScriptURLMatcher {
     static func matches(url: URL, patterns: [String]) -> Bool {
-        patterns.contains { pattern in
+        guard ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return false }
+        return patterns.contains { pattern in
             guard let expression = regularExpression(for: pattern) else { return false }
             return url.absoluteString.range(
                 of: expression,
@@ -1766,6 +2308,7 @@ private extension String {
 }
 
 extension Notification.Name {
+    static let userScriptStorageChanged = Notification.Name("soulo.userScriptStorageChanged")
     static let browserExtensionsChanged = Notification.Name("soulo.browserExtensionsChanged")
     static let browserExtensionActionsChanged = Notification.Name("soulo.browserExtensionActionsChanged")
     static let browserExtensionInstallCandidate = Notification.Name("soulo.browserExtensionInstallCandidate")
@@ -1799,11 +2342,15 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
     let controller: WKWebExtensionController
     private let browserWindow = NativeExtensionWindow()
     private var contexts: [UUID: WKWebExtensionContext] = [:]
+    private var pendingLoads: [UUID: (revision: UUID, task: Task<Metadata, Error>)] = [:]
     private var contextResourceURLs: [ObjectIdentifier: URL] = [:]
     private weak var tabManager: TabManager?
     private var tabObservers: Set<AnyCancellable> = []
     private var retainedMessagePorts: [ObjectIdentifier: WKWebExtension.MessagePort] = [:]
     private let compatibilityHost = WebExtensionCompatibilityHost()
+    private var accessSettings: [UUID: WebExtensionAccess] = [:]
+    private var accessHandlers: [UUID: (WebExtensionAccess) -> Bool] = [:]
+    private var permissionObservers: [UUID: [NSObjectProtocol]] = [:]
 
     private override init() {
         controller = WKWebExtensionController()
@@ -1940,6 +2487,8 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
     }
 
     func register(_ webView: WKWebView) {
+        guard !UserDefaults.standard.bool(forKey: "is_incognito"),
+              webView.configuration.websiteDataStore.isPersistent else { return }
         let browserTabID = tabManager?.tabs.first(where: {
             $0.webViewModel.webView === webView
         })?.id
@@ -1974,14 +2523,17 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
     private func synchronizeBrowserTabs() {
         guard let tabManager else { return }
         let previousOrder = browserWindow.tabs
-        let browserIDs = Set(tabManager.tabs.map(\.id))
+        let publicTabs = UserDefaults.standard.bool(forKey: "is_incognito") ? [] : tabManager.tabs.filter {
+            $0.webViewModel.webView?.configuration.websiteDataStore.isPersistent != false
+        }
+        let browserIDs = Set(publicTabs.map(\.id))
         for nativeTab in browserWindow.tabs.reversed()
             where nativeTab.browserTabID.map({ !browserIDs.contains($0) }) == true {
             closeNativeTab(nativeTab)
         }
 
         var orderedTabs: [NativeExtensionTab] = []
-        for browserTab in tabManager.tabs {
+        for browserTab in publicTabs {
             let nativeTab: NativeExtensionTab
             if let existing = browserWindow.tab(id: browserTab.id) {
                 nativeTab = existing
@@ -2014,7 +2566,8 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
     }
 
     private func synchronizeActiveBrowserTab() {
-        guard let browserTabID = tabManager?.activeTab?.id,
+        guard !UserDefaults.standard.bool(forKey: "is_incognito"),
+              let browserTabID = tabManager?.activeTab?.id,
               let nativeTab = browserWindow.tab(id: browserTabID) else { return }
         activate(nativeTab)
     }
@@ -2042,10 +2595,26 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
     }
 
     @discardableResult
-    func load(id: UUID, resourceURL: URL) async throws -> Metadata {
+    func load(id: UUID, resourceURL: URL, access: WebExtensionAccess? = nil,
+              onAccessChange: ((WebExtensionAccess) -> Bool)? = nil) async throws -> Metadata {
+        if let onAccessChange { accessHandlers[id] = onAccessChange }
         if let current = contexts[id] {
+            if let access { applyAccess(access, id: id, context: current) }
             let extensionObject = current.webExtension
             return metadata(for: extensionObject)
+        }
+        if let pending = pendingLoads[id] { return try await pending.task.value }
+        let revision = UUID()
+        let task = Task { @MainActor in try await self.loadContext(id: id, resourceURL: resourceURL, access: access) }
+        pendingLoads[id] = (revision, task)
+        defer { if pendingLoads[id]?.revision == revision { pendingLoads[id] = nil } }
+        return try await task.value
+    }
+
+    private func loadContext(id: UUID, resourceURL: URL, access: WebExtensionAccess?) async throws -> Metadata {
+        try Task.checkCancellation()
+        if try resourceURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true {
+            try WebExtensionPackagePreparer.installCompatibilityLayer(in: resourceURL)
         }
 
         let extensionObject: WKWebExtension
@@ -2062,24 +2631,114 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
             }
             throw rawError
         }
+        try Task.checkCancellation()
 
         let context = WKWebExtensionContext(for: extensionObject)
         context.uniqueIdentifier = id.uuidString
-        let expiration = Date.distantFuture
-        context.grantedPermissions = Dictionary(
-            uniqueKeysWithValues: extensionObject.requestedPermissions.map { ($0, expiration) }
-        )
-        context.grantedPermissionMatchPatterns = Dictionary(
-            uniqueKeysWithValues: extensionObject.requestedPermissionMatchPatterns.map { ($0, expiration) }
-        )
+        context.baseURL = URL(string: "webkit-extension://" + id.uuidString.lowercased() + "/")!
+        let manifestPermissions = (extensionObject.manifest["permissions"] as? [String] ?? []).filter { !$0.contains("://") && $0 != "<all_urls>" }
+        let decisions = access ?? .requested(permissions: Array(Set(manifestPermissions + extensionObject.requestedPermissions.map { $0.rawValue })),
+                                            sites: extensionObject.requestedPermissionMatchPatterns.map(\.string))
+        applyAccess(decisions, id: id, context: context)
         try controller.load(context)
         contexts[id] = context
         contextResourceURLs[ObjectIdentifier(context)] = resourceURL
+        observePermissions(id: id, context: context)
         return metadata(for: extensionObject)
     }
 
+    func applyAccess(_ access: WebExtensionAccess, id: UUID, context supplied: WKWebExtensionContext? = nil) {
+        accessSettings[id] = access
+        guard let context = supplied ?? contexts[id] else { return }
+        let recognized = Set(context.webExtension.requestedPermissions.union(context.webExtension.optionalPermissions).map(\.rawValue))
+        context.grantedPermissions = Dictionary(uniqueKeysWithValues: access.permissions.filter { recognized.contains($0.key) }.map { (.init(rawValue: $0.key), $0.value) })
+        context.deniedPermissions = Dictionary(uniqueKeysWithValues: access.deniedPermissions.filter { recognized.contains($0.key) }.map { (.init(rawValue: $0.key), $0.value) })
+        context.grantedPermissionMatchPatterns = Dictionary(access.sites.compactMap { key, date in
+            guard let pattern = try? WKWebExtension.MatchPattern(string: key), !Self.isBlocked(pattern, by: access) else { return nil }
+            return (pattern, date)
+        }, uniquingKeysWith: { a, _ in a })
+        var denied = access.deniedSites
+        for host in access.blockedHosts {
+            denied["*://\(host)/*"] = .distantFuture
+            denied["*://*.\(host)/*"] = .distantFuture
+        }
+        context.deniedPermissionMatchPatterns = Dictionary(denied.compactMap { key, date in
+            (try? WKWebExtension.MatchPattern(string: key)).map { ($0, date) }
+        }, uniquingKeysWith: { a, _ in a })
+    }
+
+    private func observePermissions(id: UUID, context: WKWebExtensionContext) {
+        // WebKit can also change grants via permissions.remove(). Capture the
+        // complete dictionaries after its notification transaction finishes.
+        let notifications: [Notification.Name] = [WKWebExtensionContext.permissionsWereGrantedNotification,
+            WKWebExtensionContext.permissionsWereDeniedNotification, WKWebExtensionContext.grantedPermissionsWereRemovedNotification,
+            WKWebExtensionContext.deniedPermissionsWereRemovedNotification,
+            WKWebExtensionContext.permissionMatchPatternsWereGrantedNotification,
+            WKWebExtensionContext.permissionMatchPatternsWereDeniedNotification,
+            WKWebExtensionContext.grantedPermissionMatchPatternsWereRemovedNotification,
+            WKWebExtensionContext.deniedPermissionMatchPatternsWereRemovedNotification]
+        permissionObservers[id] = notifications.map { name in
+            NotificationCenter.default.addObserver(forName: name, object: context, queue: .main) { [weak self, weak context] _ in
+                Task { @MainActor in
+                    guard let self, let context, self.contexts[id] === context,
+                          var access = self.accessSettings[id] else { return }
+                    let recognized = Set(context.webExtension.requestedPermissions.union(context.webExtension.optionalPermissions).map(\.rawValue))
+                    access.permissions = access.permissions.filter { !recognized.contains($0.key) }
+                        .merging(Dictionary(uniqueKeysWithValues: context.grantedPermissions.map { ($0.key.rawValue, $0.value) })) { _, new in new }
+                    access.deniedPermissions = access.deniedPermissions.filter { !recognized.contains($0.key) }
+                        .merging(Dictionary(uniqueKeysWithValues: context.deniedPermissions.map { ($0.key.rawValue, $0.value) })) { _, new in new }
+                    let blockedGrant = context.grantedPermissionMatchPatterns.keys.contains { Self.isBlocked($0, by: access) }
+                    access.sites = Dictionary(uniqueKeysWithValues: context.grantedPermissionMatchPatterns
+                        .filter { !Self.isBlocked($0.key, by: access) }.map { ($0.key.string, $0.value) })
+                    access.deniedSites = Dictionary(uniqueKeysWithValues: context.deniedPermissionMatchPatterns.map { ($0.key.string, $0.value) })
+                    for host in access.blockedHosts {
+                        for pattern in ["*://\(host)/*", "*://*.\(host)/*"]
+                        where self.accessSettings[id]?.deniedSites[pattern] == nil { access.deniedSites[pattern] = nil }
+                    }
+                    let missingBlock = access.blockedHosts.contains { host in
+                        ["https://\(host)/", "http://\(host)/", "https://sub.\(host)/"].contains {
+                            URL(string: $0).map { context.hasAccess(to: $0) } == true
+                        }
+                    }
+                    guard access != self.accessSettings[id] else {
+                        if blockedGrant || missingBlock { self.applyAccess(access, id: id) }
+                        return
+                    }
+                    if self.accessHandlers[id]?(access) != false {
+                        self.accessSettings[id] = access
+                        if blockedGrant || missingBlock { self.applyAccess(access, id: id) }
+                    }
+                    else if let previous = self.accessSettings[id] { self.applyAccess(previous, id: id) }
+                }
+            }
+        }
+    }
+
+    private static func isBlocked(_ pattern: WKWebExtension.MatchPattern, by access: WebExtensionAccess) -> Bool {
+        guard let host = pattern.host, host != "*" else { return false }
+        let base = host.hasPrefix("*.") ? String(host.dropFirst(2)) : host
+        return URL(string: "https://" + base + "/").map(access.blocks) == true
+    }
+
+    private func saveDecision(_ context: WKWebExtensionContext, permissions: [String] = [], sites: [String] = [], allowed: Bool) -> Bool {
+        guard let id = UUID(uuidString: context.uniqueIdentifier), contexts[id] === context,
+              var access = accessSettings[id] else { return false }
+        for name in permissions { access.setPermission(name, allowed: allowed) }
+        for pattern in sites { access.setSite(pattern, allowed: allowed) }
+        guard accessHandlers[id]?(access) != false else { return false }
+        applyAccess(access, id: id)
+        return true
+    }
+
+    func diagnostics(id: UUID) -> [String] {
+        guard let context = contexts[id] else { return [] }
+        var errors = context.errors.map(\.localizedDescription)
+        if context.webExtension.manifest["commands"] != nil { errors.append("commands") }
+        return errors
+    }
+
     func actionPresentation(id: UUID) -> WebExtensionActionPresentation? {
-        guard let context = contexts[id] else { return nil }
+        guard !UserDefaults.standard.bool(forKey: "is_incognito"), let context = contexts[id] else { return nil }
         let manifest = context.webExtension.manifest
         guard manifest["action"] != nil
                 || manifest["browser_action"] != nil
@@ -2097,7 +2756,7 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
 
     @discardableResult
     func performAction(id: UUID) -> Bool {
-        guard let context = contexts[id] else { return false }
+        guard !UserDefaults.standard.bool(forKey: "is_incognito"), let context = contexts[id] else { return false }
         let manifest = context.webExtension.manifest
         guard manifest["action"] != nil
                 || manifest["browser_action"] != nil
@@ -2117,6 +2776,10 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
     }
 
     func unload(id: UUID) {
+        pendingLoads.removeValue(forKey: id)?.task.cancel()
+        permissionObservers.removeValue(forKey: id)?.forEach { NotificationCenter.default.removeObserver($0) }
+        accessSettings[id] = nil
+        accessHandlers[id] = nil
         guard let context = contexts.removeValue(forKey: id) else { return }
         contextResourceURLs.removeValue(forKey: ObjectIdentifier(context))
         compatibilityHost.remove(context: context)
@@ -2133,6 +2796,9 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
         active: Bool,
         parent: NativeExtensionTab? = nil
     ) throws -> NativeExtensionTab {
+        guard !UserDefaults.standard.bool(forKey: "is_incognito") else {
+            throw NativeWebExtensionHostError.unsupported("private extension tabs")
+        }
         guard let tabManager else { throw NativeWebExtensionHostError.browserUnavailable }
         let browserTab = tabManager.createTab(url: url, switchTo: active)
         // createTab has completed here, so explicitly expose the new tab before
@@ -2295,7 +2961,9 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
             extensionName: context.webExtension.displayName,
             items: permissions.map(String.init(describing:)).sorted()
         ) { allowed in
-            completionHandler(allowed ? permissions : [], allowed ? .distantFuture : nil)
+            guard let allowed else { completionHandler([], nil); return }
+            let saved = self.saveDecision(context, permissions: permissions.map(\.rawValue), allowed: allowed)
+            completionHandler(saved && allowed ? permissions : [], saved && allowed ? .distantFuture : nil)
         }
     }
 
@@ -2306,11 +2974,19 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
         for context: WKWebExtensionContext,
         completionHandler: @escaping (Set<URL>, Date?) -> Void
     ) {
+        let blocked = UUID(uuidString: context.uniqueIdentifier).flatMap { accessSettings[$0] }
+        let eligible = urls.filter { blocked?.blocks($0) != true }
+        guard !eligible.isEmpty else { completionHandler([], nil); return }
         WebExtensionPermissionPrompter.confirm(
             extensionName: context.webExtension.displayName,
-            items: urls.map(\.absoluteString).sorted()
+            items: eligible.map(\.absoluteString).sorted()
         ) { allowed in
-            completionHandler(allowed ? urls : [], allowed ? .distantFuture : nil)
+            guard let allowed else { completionHandler([], nil); return }
+            let patterns = eligible.compactMap { url -> String? in
+                guard let host = url.host else { return nil }; return "\(url.scheme ?? "https")://\(host)/*"
+            }
+            let saved = self.saveDecision(context, sites: patterns, allowed: allowed)
+            completionHandler(saved && allowed ? Set(eligible) : [], saved && allowed ? .distantFuture : nil)
         }
     }
 
@@ -2321,11 +2997,16 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
         for context: WKWebExtensionContext,
         completionHandler: @escaping (Set<WKWebExtension.MatchPattern>, Date?) -> Void
     ) {
+        let access = UUID(uuidString: context.uniqueIdentifier).flatMap { accessSettings[$0] } ?? .init()
+        let eligible = matchPatterns.filter { !Self.isBlocked($0, by: access) }
+        guard !eligible.isEmpty else { completionHandler([], nil); return }
         WebExtensionPermissionPrompter.confirm(
             extensionName: context.webExtension.displayName,
-            items: matchPatterns.map(\.string).sorted()
+            items: eligible.map(\.string).sorted()
         ) { allowed in
-            completionHandler(allowed ? matchPatterns : [], allowed ? .distantFuture : nil)
+            guard let allowed else { completionHandler([], nil); return }
+            let saved = self.saveDecision(context, sites: eligible.map(\.string), allowed: allowed)
+            completionHandler(saved && allowed ? Set(eligible) : [], saved && allowed ? .distantFuture : nil)
         }
     }
 
@@ -2362,6 +3043,7 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
             applicationIdentifier: applicationIdentifier,
             context: context,
             resourceURL: contextResourceURLs[ObjectIdentifier(context)],
+            access: UUID(uuidString: context.uniqueIdentifier).flatMap { accessSettings[$0] },
             replyHandler: replyHandler
         ) {
             return
@@ -2463,14 +3145,14 @@ private enum WebExtensionPermissionPrompter {
     static func confirm(
         extensionName: String?,
         items: [String],
-        completion: @escaping (Bool) -> Void
+        completion: @escaping (Bool?) -> Void
     ) {
         guard !items.isEmpty else {
             completion(true)
             return
         }
         guard let presenter = WebExtensionPopupPresenter.foregroundPresenter() else {
-            completion(false)
+            completion(nil)
             return
         }
         let title = LanguageManager.shared.localizedString("userscript_permissions_title")
@@ -2591,8 +3273,16 @@ private final class NativeExtensionWindow: NSObject, WKWebExtensionWindow {
     var activeNativeTab: NativeExtensionTab?
     weak var runtime: NativeWebExtensionRuntime?
 
-    func tabs(for context: WKWebExtensionContext) -> [any WKWebExtensionTab] { tabs }
-    func activeTab(for context: WKWebExtensionContext) -> (any WKWebExtensionTab)? { activeNativeTab }
+    func tabs(for context: WKWebExtensionContext) -> [any WKWebExtensionTab] {
+        UserDefaults.standard.bool(forKey: "is_incognito") ? [] : tabs.filter {
+            $0.webView?.configuration.websiteDataStore.isPersistent != false
+        }
+    }
+    func activeTab(for context: WKWebExtensionContext) -> (any WKWebExtensionTab)? {
+        guard !UserDefaults.standard.bool(forKey: "is_incognito"),
+              activeNativeTab?.webView?.configuration.websiteDataStore.isPersistent != false else { return nil }
+        return activeNativeTab
+    }
 
     func windowType(for context: WKWebExtensionContext) -> WKWebExtension.WindowType { .normal }
 

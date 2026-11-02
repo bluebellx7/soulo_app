@@ -1,1 +1,1 @@
-integritet,flikar,videonedladdning,annonsblockering,användarskript,tillägg,översättning,mediefinnare
+integritet,flikar,videonedladdning,annonsblockering,användarskript,tillägg,torrent,magnet,MKV

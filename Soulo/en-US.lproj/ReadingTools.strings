@@ -407,9 +407,9 @@
 "download_address" = "Paste a URL or magnet link";
 "download_optional_name" = "File name (optional)";
 "download_link" = "Download Link";
-"download_link_hint" = "Supports HTTP, HTTPS, magnet links and torrent files.";
+"download_link_hint" = "HTTP / HTTPS · magnet · .torrent · ed2k · thunder";
 "download_create" = "Create Task";
-"download_invalid_address" = "Enter a valid HTTP, HTTPS or magnet link.";
+"download_invalid_address" = "Enter a valid download link.";
 "import_torrent" = "Import Torrent";
 "torrent_link" = "Link to a torrent file";
 "torrent_task" = "Torrent Download";

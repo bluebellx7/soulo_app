@@ -16,15 +16,8 @@ final class HomeSearchInputUITests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
-        let globe = keyboardSwitcher
-        if app.state == .runningForeground && globe.exists {
-            globe.press(forDuration: 1)
-            let predicate = NSPredicate(format: "label CONTAINS[c] %@ OR label CONTAINS %@", "English", "英语")
-            let button = app.buttons.matching(predicate).firstMatch
-            let text = app.staticTexts.matching(predicate).firstMatch
-            if button.exists { button.tap() }
-            else if text.exists { text.tap() }
-        }
+        // This test explicitly selects Pinyin on entry. Switching keyboards
+        // during cleanup can exhaust the test budget waiting for live-page animations.
         app.terminate()
     }
 

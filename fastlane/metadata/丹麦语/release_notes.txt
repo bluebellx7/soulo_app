@@ -1,6 +1,8 @@
 1.2.7
 
 • BT-downloads: Importér .torrent-filer eller magnetlinks, vælg filer, sæt på pause og fortsæt. På iOS 26 kan downloads fortsætte i baggrunden, når systemet tillader det; tidligere versioner gemmer fremdriften og sætter på pause.
+• Afspil understøttede BT-medier under download, og åbn MKV-filer. Importér ed2k/thunder-links. Downloads kræver tilgængelige kilder; afspilning afhænger af codecs.
+• Baidu-søgeoptimering er slået til som standard. Se scriptet eller slå det fra under Udvidelser.
 • Vælg fem valgfrie genveje på startsiden til downloads, filer, bogmærker, historik, baggrunde og andre sider. Bibliotekets fanelinje bliver kompakt, når du ruller.
 • Forbedret kompatibilitet med brugerscripts, herunder eksterne afhængigheder via @require.
 • Rettet tilfælde, hvor lyden fortsatte efter at en video var slået på lydløs, eller afspilningen blev fordoblet på visse websider.

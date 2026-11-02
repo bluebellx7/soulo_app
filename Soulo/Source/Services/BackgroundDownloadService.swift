@@ -23,6 +23,7 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
     private let lock = NSLock()
     private var continuations: [UUID: CheckedContinuation<URL, Error>] = [:]
     private var foregroundFallbackIDs = Set<UUID>()
+    private var userScriptPolicies: [UUID: UserScriptDownloadPolicy] = [:]
     var backgroundEventsCompletionHandler: (() -> Void)?
 
     static var stagingDirectory: URL {
@@ -81,12 +82,22 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
         session.getAllTasks { tasks in
             let activeIDs = Set(tasks.compactMap { $0.taskDescription.flatMap(UUID.init(uuidString:)) })
             Task { @MainActor in
-                DownloadManagerService.shared.reconcileBackgroundDownloads(activeIDs: activeIDs)
+                let startedIDs = self.lock.withLock { Set(self.continuations.keys) }
+                DownloadManagerService.shared.reconcileBackgroundDownloads(activeIDs: activeIDs.union(startedIDs))
             }
         }
     }
 
     func start(request: URLRequest, item: BrowserDownloadItem) async throws -> URL {
+        if let policy = item.userScriptPolicy {
+            // Background URLSession automatically follows redirects. Script
+            // downloads need a foreground session so every hop can be checked.
+            lock.withLock {
+                userScriptPolicies[item.id] = policy
+                _ = foregroundFallbackIDs.insert(item.id)
+            }
+            return try await startTask(in: foregroundFallbackSession, request: request, item: item)
+        }
         do {
             return try await startTask(in: session, request: request, item: item)
         } catch {
@@ -155,6 +166,12 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
     func resume(id: UUID) {
         Task { @MainActor in
             guard let data = DownloadManagerService.shared.resumeData(id: id) else { return }
+            if let policy = DownloadManagerService.shared.downloads.first(where: { $0.id == id })?.userScriptPolicy {
+                lock.withLock {
+                    userScriptPolicies[id] = policy
+                    _ = foregroundFallbackIDs.insert(id)
+                }
+            }
             let usesFallback = lock.withLock {
                 foregroundFallbackIDs.contains(id)
             }
@@ -196,12 +213,33 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
 
     func urlSession(
         _ session: URLSession,
+        task: URLSessionTask,
+        willPerformHTTPRedirection response: HTTPURLResponse,
+        newRequest request: URLRequest,
+        completionHandler: @escaping (URLRequest?) -> Void
+    ) {
+        let policy = task.taskDescription.flatMap(UUID.init(uuidString:)).flatMap { id in
+            lock.withLock { userScriptPolicies[id] }
+        }
+        if let policy, request.url.map(policy.allows) != true {
+            completionHandler(nil)
+        } else {
+            completionHandler(request)
+        }
+    }
+
+    func urlSession(
+        _ session: URLSession,
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
         guard let id = downloadTask.taskDescription.flatMap(UUID.init(uuidString:)) else { return }
         let stagedURL: URL
         do {
+            if let policy = lock.withLock({ userScriptPolicies[id] }),
+               downloadTask.response?.url.map(policy.allows) != true {
+                throw URLError(.unsupportedURL)
+            }
             if let response = downloadTask.response as? HTTPURLResponse,
                !(200...299).contains(response.statusCode) {
                 throw WebResourceDownloadError.invalidResponse
@@ -287,6 +325,7 @@ final class BackgroundDownloadService: NSObject, URLSessionDownloadDelegate {
         lock.lock()
         let continuation = continuations.removeValue(forKey: id)
         foregroundFallbackIDs.remove(id)
+        userScriptPolicies[id] = nil
         lock.unlock()
         continuation?.resume(with: result)
     }

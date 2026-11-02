@@ -208,7 +208,7 @@ class SearchViewModel: ObservableObject {
         selectedPlatform = available.first(where: { $0.id == selectedPlatform?.id }) ?? available.first
 
         if !isIncognito, var platform = selectedPlatform {
-            platform.usageCount += 1
+            platform.recordUse()
             selectedPlatform = platform
             PlatformDataStore.shared.incrementUsage(for: platform.id)
         }

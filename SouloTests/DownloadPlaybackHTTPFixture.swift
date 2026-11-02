@@ -11,6 +11,7 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
     private let heldPaths: Set<String>
     private let responseHeaders: [String: [String: String]]
     private let redirects: [String: (host: String, path: String)]
+    private let slowChunkSize: Int
     private var connections: [NWConnection] = []
     private var released = false
     private var started = false
@@ -22,10 +23,13 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
 
     init(files: [String: Data], heldPaths: Set<String> = [], requiredCookie: String? = nil,
          responseHeaders: [String: [String: String]] = [:],
-         redirects: [String: (host: String, path: String)] = [:]) throws {
+         redirects: [String: (host: String, path: String)] = [:],
+         slowChunkSize: Int = 1024) throws {
+        precondition(slowChunkSize > 0)
         self.files = files; self.heldPaths = heldPaths; self.requiredCookie = requiredCookie
         self.responseHeaders = responseHeaders
         self.redirects = redirects
+        self.slowChunkSize = slowChunkSize
         listener = try NWListener(using: .tcp, on: .any)
     }
 
@@ -127,7 +131,7 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
 
     private func sendBody(_ connection: NWConnection, body: Data, offset: Int, slow: Bool) {
         guard !connections.isEmpty else { connection.cancel(); return }
-        let count = slow && !released ? (offset == 0 ? 8192 : 1024) : body.count - offset
+        let count = slow && !released ? (offset == 0 ? 8192 : slowChunkSize) : body.count - offset
         let end = min(offset + count, body.count)
         if slow { fullFileBytes += end - offset }
         connection.send(content: body.subdata(in: offset..<end), completion: .contentProcessed { [weak self] error in

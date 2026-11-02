@@ -1,1 +1,1 @@
-confidențialitate,file,descărcare video,blocare reclame,scripturi,extensii,traducere,resurse media
+confidențialitate,file,descărcare video,blocare reclame,scripturi,extensii,torrent,magnet,MKV

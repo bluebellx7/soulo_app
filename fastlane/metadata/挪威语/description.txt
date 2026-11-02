@@ -4,7 +4,7 @@ Velg Soulo som standardnettleser i Innstillinger for å åpne lenker fra andre a
 
 Nylig brukte faner og nettstedsgrupper vises først, og oversikten åpnes øverst. Bruksrekkefølgen beholdes etter omstart.
 
-BT-nedlastinger: Importer .torrent-filer eller magnetlenker, velg filer, sett på pause og fortsett. På iOS 26 kan nedlastinger fortsette i bakgrunnen når systemet tillater det; eldre versjoner lagrer fremdriften og setter på pause.
+BT-nedlastinger: Importer .torrent-filer eller magnetlenker, velg filer, sett på pause og fortsett. På iOS 26 kan nedlastinger fortsette i bakgrunnen når systemet tillater det; eldre versjoner lagrer fremdriften og setter på pause. Spill støttede BT-medier mens de lastes ned, og åpne MKV-filer. Importer ed2k/thunder-lenker. Nedlastinger krever tilgjengelige kilder; avspilling avhenger av kodeker.
 
 Velg fem valgfrie snarveier på startsiden til nedlastinger, filer, bokmerker, historikk, bakgrunner og andre sider. Bibliotekets fanelinje blir kompakt når du ruller.
 

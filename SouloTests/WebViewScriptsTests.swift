@@ -7,6 +7,33 @@ import UIKit
 @testable import Soulo
 
 final class WebViewScriptsTests: XCTestCase {
+    private final class PageReadyCapture: NSObject, WKScriptMessageHandler {
+        var count = 0
+        func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+            if (message.body as? [String:Any])?["visible"] as? Bool == true { count += 1 }
+        }
+    }
+
+    @MainActor
+    func testCachedDocumentReportsReadyAgainOnPageShow() async throws {
+        let capture = PageReadyCapture(), configuration = WKWebViewConfiguration()
+        configuration.userContentController.add(capture,contentWorld:.defaultClient,name:"souloPageReady")
+        configuration.userContentController.addUserScript(WKUserScript(source:WebViewScripts.pageContentReady,
+            injectionTime:.atDocumentStart,forMainFrameOnly:true,in:.defaultClient))
+        let web = WKWebView(frame:CGRect(x:0,y:0,width:390,height:650),configuration:configuration)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene:scene), host = UIViewController()
+        window.rootViewController=host;window.makeKeyAndVisible();host.view.addSubview(web)
+        defer { window.isHidden=true;previous?.makeKeyAndVisible() }
+        web.loadHTMLString("<main style='height:300px'>Restored search results</main>",baseURL:URL(string:"https://example.test/results"))
+        for _ in 0..<100 where capture.count == 0 { try await Task.sleep(for:.milliseconds(20)) }
+        XCTAssertEqual(capture.count,1)
+        _ = try await web.evaluateJavaScript("window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));",in:nil,contentWorld:.defaultClient)
+        for _ in 0..<100 where capture.count < 2 { try await Task.sleep(for:.milliseconds(20)) }
+        XCTAssertEqual(capture.count,2,"Cached runtimes must send readiness again instead of waiting for a new load event")
+    }
+
     private final class MediaFrameCapture: NSObject, WKScriptMessageHandler {
         var frames: [WKFrameInfo] = []
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -1097,22 +1124,21 @@ final class WebViewScriptsTests: XCTestCase {
             try JSONSerialization.jsonObject(with: preparedManifestData) as? [String: Any]
         )
         let background = try XCTUnwrap(preparedManifest["background"] as? [String: Any])
-        XCTAssertEqual(background["service_worker"] as? String, "__soulo_webextension_background_v3.js")
+        XCTAssertEqual(background["service_worker"] as? String, "background/__soulo_webextension_background_v4.js")
         XCTAssertTrue((preparedManifest["permissions"] as? [String])?.contains("nativeMessaging") == true)
 
         let wrapper = try String(
-            contentsOf: preparedURL.appendingPathComponent("__soulo_webextension_background_v3.js"),
+            contentsOf: preparedURL.appendingPathComponent("background/__soulo_webextension_background_v4.js"),
             encoding: .utf8
         )
         XCTAssertTrue(wrapper.contains("__soulo_webextension_compatibility.js"))
-        XCTAssertTrue(wrapper.contains("background/worker.js"))
+        XCTAssertTrue(wrapper.contains("./worker.js"))
 
         let preparedWorker = try String(
             contentsOf: preparedURL.appendingPathComponent("background/worker.js"),
             encoding: .utf8
         )
-        XCTAssertTrue(preparedWorker.contains("notifications?.onClicked?.addListener"))
-        XCTAssertTrue(preparedWorker.contains("commands?.onCommand?.addListener"))
+        XCTAssertEqual(preparedWorker, try String(contentsOf: fixtureDirectory.appendingPathComponent("background/worker.js"), encoding: .utf8))
 
         let compatibility = try String(
             contentsOf: preparedURL.appendingPathComponent("__soulo_webextension_compatibility.js"),
@@ -1120,6 +1146,12 @@ final class WebViewScriptsTests: XCTestCase {
         )
         XCTAssertTrue(compatibility.contains("chrome.notifications"))
         XCTAssertTrue(compatibility.contains("chrome.offscreen"))
+        let javascript = try XCTUnwrap(JSContext())
+        javascript.evaluateScript("var chrome={runtime:{}};var console={error:function(){}};")
+        javascript.evaluateScript(compatibility)
+        javascript.evaluateScript(preparedWorker)
+        XCTAssertNil(javascript.exception)
+        XCTAssertEqual(javascript.evaluateScript("globalThis.__originalWorkerLoaded")?.toBool(), true)
 
         let popup = try String(
             contentsOf: preparedURL.appendingPathComponent("popup.html"),
@@ -1669,10 +1701,15 @@ final class WebViewScriptsTests: XCTestCase {
             """,
             baseURL: try XCTUnwrap(URL(string: "https://m.youtube.com/watch?v=fixture"))
         )
-        for _ in 0..<20 {
+        var fixtureReady = false
+        for _ in 0..<600 {
+            if (try? await webView.evaluateJavaScript("window.ytInitialPlayerResponse?.videoDetails?.videoId==='fixture'")) as? Bool == true {
+                fixtureReady = true; break
+            }
             try await Task.sleep(for: .milliseconds(50))
-            if !webView.isLoading { break }
         }
+        XCTAssertTrue(fixtureReady, "Inspect the inline player fixture after its script has executed")
+        guard fixtureReady else { throw URLError(.timedOut) }
 
         let snapshot = try await WebResourceInspectionService.inspect(webView: webView)
 
@@ -2338,7 +2375,10 @@ final class WebViewScriptsTests: XCTestCase {
 
         XCTAssertTrue(bootstrap.contains("GM_getValue"))
         XCTAssertTrue(bootstrap.contains("GM_setValue"))
-        XCTAssertTrue(bootstrap.contains(#""theme":{"value":"dark"}"#))
+        let context = JSContext()!
+        context.evaluateScript("var window=globalThis;")
+        context.evaluateScript(bootstrap)
+        XCTAssertEqual(context.evaluateScript("GM_getValue('theme')")?.toString(), "dark")
         XCTAssertFalse(bootstrap.contains("var GM_addStyle"))
         XCTAssertFalse(bootstrap.contains("var GM_xmlhttpRequest"))
         assertJavaScriptParses(bootstrap)
@@ -2384,6 +2424,7 @@ final class WebViewScriptsTests: XCTestCase {
     @MainActor
     func testUserScriptRuntimeActuallyExecutesInsideWKWebView() async throws {
         let webView = WKWebView(frame: .zero)
+        try await loadUserScriptTestPage(webView)
         _ = try await evaluate("globalThis.__souloUserScriptProbe = 0", in: webView)
         let script = UserScriptRecord(
             name: "Runtime Probe",
@@ -2405,6 +2446,7 @@ final class WebViewScriptsTests: XCTestCase {
     @MainActor
     func testExpandedUserScriptDOMStorageAndURLAPIsExecuteInsideWKWebView() async throws {
         let webView = WKWebView(frame: .zero)
+        try await loadUserScriptTestPage(webView)
         let script = UserScriptRecord(
             name: "Expanded API Probe",
             source: """
@@ -2536,6 +2578,7 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertEqual(installed.grants, ["GM_addStyle"])
 
         let webView = WKWebView(frame: .zero)
+        try await loadUserScriptTestPage(webView)
         let script = UserScriptRecord(
             name: installed.name,
             source: definition.source,
@@ -2560,6 +2603,7 @@ final class WebViewScriptsTests: XCTestCase {
     @MainActor
     func testBuiltInAreaTextExtractorShowsLauncherAndStartsPicking() async throws {
         let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        try await loadUserScriptTestPage(webView)
         _ = try await evaluate(
             "document.open(); document.write('<p>Important text for this page.</p>'); document.close();",
             in: webView
@@ -2595,6 +2639,7 @@ final class WebViewScriptsTests: XCTestCase {
     @MainActor
     func testBuiltInAreaTextExtractorExtractsTappedRegion() async throws {
         let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        try await loadUserScriptTestPage(webView)
         _ = try await evaluate(
             "document.open(); document.write('<section id=content><h2>Important title</h2><p>Text from this region.</p></section>'); document.close();",
             in: webView
@@ -2642,6 +2687,7 @@ final class WebViewScriptsTests: XCTestCase {
     @MainActor
     func testBuiltInAreaTextExtractorLauncherCanBeDragged() async throws {
         let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        try await loadUserScriptTestPage(webView)
         _ = try await evaluate(
             "document.open(); document.write('<p>Drag test</p>'); document.close();",
             in: webView
@@ -2869,6 +2915,18 @@ final class WebViewScriptsTests: XCTestCase {
         let data = try! JSONSerialization.data(withJSONObject: [value], options: [])
         let arrayLiteral = String(data: data, encoding: .utf8)!
         return "(\(arrayLiteral))[0]"
+    }
+
+    @MainActor
+    private func loadUserScriptTestPage(_ webView: WKWebView) async throws {
+        let marker = "fixture-" + UUID().uuidString
+        webView.loadHTMLString("<html><body id='\(marker)'>UserScript fixture</body></html>", baseURL: URL(string: "https://example.com/"))
+        for _ in 0..<100 {
+            if (try? await webView.evaluateJavaScript("document.readyState==='complete' && location.protocol==='https:' && document.body && document.body.id==='\(marker)'")) as? Bool == true { return }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTFail("UserScript fixture did not load")
+        throw URLError(.timedOut)
     }
 
     @MainActor

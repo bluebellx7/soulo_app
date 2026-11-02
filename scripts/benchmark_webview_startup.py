@@ -4,19 +4,19 @@
 Install the app first. Example:
   python3 scripts/benchmark_webview_startup.py --device <UDID> --repeats 3
 Each run terminates the app, toggles only the debug warmup switch, then opens a
-URL via Soulo's existing search route. Local responses disable HTTP caching.
+URL via an opt-in DEBUG hook into the normal search path. Local responses disable HTTP caching.
 This measures app-process cold starts, not simulator/OS cold boots.
 """
 import argparse
 import http.server
 import json
+import math
 import os
 from pathlib import Path
 import statistics
 import subprocess
 import threading
 import time
-import urllib.parse
 
 
 class Fixture(http.server.BaseHTTPRequestHandler):
@@ -46,11 +46,12 @@ def events(path):
     return result
 
 
-def wait_event(path, names, timeout):
+def wait_event(path, names, timeout, after=None):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         records = events(path)
-        if any(item["event"] in names for item in records):
+        threshold = next((item["time"] for item in records if item["event"] == after), None) if after else float("-inf")
+        if threshold is not None and any(item["event"] in names and item["time"] >= threshold for item in records):
             return records
         time.sleep(0.05)
     return events(path)
@@ -60,8 +61,17 @@ def summarize(records):
     first = {}
     for item in records:
         first.setdefault(item["event"], item["time"])
+    submitted = first.get("search_submit")
+    if submitted is not None:
+        for name in ["content_visible", "navigation_commit", "navigation_finish", "acquire_start", "acquire_end", "runtime_start", "runtime_end", "view_attached"]:
+            first.pop(name, None)
+            for item in records:
+                if item["event"] == name and item["time"] >= submitted:
+                    first[name] = item["time"]
+                    break
     metrics = {}
     for name, start, end in [
+        ("app_init_to_activation_ms", "app_init", "pool_activate"),
         ("submit_to_visible_ms", "search_submit", "content_visible"),
         ("submit_to_commit_ms", "search_submit", "navigation_commit"),
         ("submit_to_finish_ms", "search_submit", "navigation_finish"),
@@ -85,6 +95,8 @@ def main():
     parser.add_argument("--url", help="Real website; default is a fixed localhost fixture")
     parser.add_argument("--output", default="/tmp/soulo-webview-startup-ab")
     args = parser.parse_args()
+    if args.repeats < 1 or any(not math.isfinite(delay) or not 0 <= delay <= 10 for delay in args.delays):
+        parser.error("repeats must be positive and delays must be finite values from 0 to 10 seconds")
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Fixture)
@@ -93,6 +105,7 @@ def main():
     bundle = "com.dkluge.Soulo"
 
     def simctl(*command, **kwargs):
+        kwargs.setdefault("timeout", 60)
         return subprocess.run(["xcrun", "simctl", *command], text=True, capture_output=True, **kwargs)
 
     container = simctl("get_app_container", args.device, bundle, "data")
@@ -114,23 +127,24 @@ def main():
                     simctl("terminate", args.device, bundle)
                     time.sleep(1)
                     env = dict(os.environ, SIMCTL_CHILD_SOULO_BROWSER_TRACE="1",
-                               SIMCTL_CHILD_SOULO_DISABLE_WEBVIEW_WARMUP="0" if warm else "1")
+                               SIMCTL_CHILD_SOULO_DISABLE_WEBVIEW_WARMUP="0" if warm else "1",
+                               SIMCTL_CHILD_SOULO_BENCHMARK_URL=target,
+                               SIMCTL_CHILD_SOULO_BENCHMARK_DELAY=str(delay))
                     launched = simctl("launch", f"--stdout={redirected}", f"--stderr={redirected}.stderr",
-                                      args.device, bundle, "-privacy_https_upgrade_enabled", "NO", env=env)
+                                      args.device, bundle, "-privacy_https_upgrade_enabled", "NO",
+                                      "-wallpaper_source", "gradient", "-wallpaper_gradient_id", "dawn",
+                                      "-wallpaper_refresh_interval", "0", "-icloud_sync_enabled", "NO", env=env)
                     if launched.returncode:
                         raise RuntimeError(launched.stderr)
                     activated = wait_event(log, {"pool_activate"}, 30)
                     if not any(item["event"] == "pool_activate" for item in activated):
                         raise RuntimeError(f"App never reached activation: {log}")
-                    time.sleep(delay)
-                    route = "soulo://open?" + urllib.parse.urlencode({"url": target})
-                    opened = simctl("openurl", args.device, route)
-                    if opened.returncode:
-                        raise RuntimeError(opened.stderr)
-                    records = wait_event(log, {"content_visible"}, 45)
+                    records = wait_event(log, {"content_visible"}, 45, after="search_submit")
+                    if "submit_to_visible_ms" not in summarize(records):
+                        raise RuntimeError(f"Page never became visible; no valid timing sample: {log}")
                     # Capture load completion too, but don't confuse it with first content.
                     if any(item["event"] == "content_visible" for item in records):
-                        records = wait_event(log, {"navigation_finish"}, 5)
+                        records = wait_event(log, {"navigation_finish"}, 5, after="search_submit")
                     result = dict(label=label, warm=warm, delay=delay, url=target,
                                   metrics=summarize(records), events=records)
                     (output / f"{label}.log").write_text(log.read_text(errors="replace"))

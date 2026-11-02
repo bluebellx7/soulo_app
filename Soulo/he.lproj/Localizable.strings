@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "דפים פתוחים נטענים מחדש לאחר שסקריפט מותקן, ערוך, מופעל, מושבת או הוסר.";
 "userscript_experimental_badge" = "תאימות";
 "userscript_experimental_title" = "UserScript תאימות";
-"userscript_experimental_desc" = "תומך בכללי האתר, התחלה/סיום של מסמכים, אחסון GM ו-API של עמודים נרחבים, פקודות סקריפט, התראות, כרטיסיות, הורדות, קובצי Cookie, משאבים ובקשות בהיקף הרשאות. סקור כל סקריפט לפני ההתקנה; קבצי @require חיצוניים אינם מופעלים.";
+"userscript_experimental_desc" = "תומך בכללי האתר, התחלה/סיום של מסמכים, אחסון GM ו-API של עמודים נרחבים, פקודות סקריפט, התראות, כרטיסיות, הורדות, קובצי Cookie, משאבים ובקשות בהיקף הרשאות. סקור כל סקריפט לפני ההתקנה.";
 "extension_choose_file" = "בחר קובץ או תיקייה…";
 "extension_installing" = "בודק ומתקין תוסף...";
 "extension_install_failed" = "לא ניתן היה להתקין את ההרחבה";
@@ -659,7 +659,7 @@
 "userscript_new" = "סקריפט חדש";
 "userscript_edit" = "ערוך סקריפט";
 "userscript_choose_file" = "בחר סקריפט…";
-"userscript_install_footer" = "הקש על שורת מקור כדי לפתוח אותה בכרטיסייה הנוכחית Soulo. קישור ‎.user.js פותח אישור התקנה. נתמכים ב-JavaScript סטנדרטי וקבוצה רחבה של ממשקי API של GM; סקריפטים אינם פועלים בגלישה פרטית וקבצי @require חיצוניים אינם מופעלים.";
+"userscript_install_footer" = "הקש על שורת מקור כדי לפתוח אותה בכרטיסייה הנוכחית Soulo. קישור ‎.user.js פותח אישור התקנה. נתמכים ב-JavaScript סטנדרטי וקבוצה רחבה של ממשקי API של GM. UserScriptים אינם פועלים בגלישה פרטית.";
 "userscript_install_failed" = "UserScript לא ניתן להתקין";
 "web_extension_temporarily_disabled" = "הרחבות דפדפן סטנדרטיות אינן זמינות באופן זמני בזמן שבדיקות התאימות מושלמות.";
 "userscript_unreadable" = "לא ניתן היה לקרוא את הסקריפט שנבחר כטקסט UTF-8.";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "נתמך חלקית";
 "userscript_docs_partial_desc" = "בקשות רשת משמיטות העלאה/התקדמות והובלת עוגיות. ההתראות נמצאות בתוך הדף, ממשקי API של משאבים הם אסינכרוניים, ומאזינים עם שינוי ערך מדווחים על שינויים שבוצעו על ידי הדף הנוכחי. בדיקות העדכון הן ידניות.";
 "userscript_docs_unsupported_title" = "לא נתמך כרגע";
-"userscript_docs_unsupported_desc" = "ביצוע @require חיצוני, יירוט GM_webRequest, GM_audio, בידוד ארגז חול/ריצה, בדיקות עדכונים אוטומטיות והתנהגויות מדויקות לשולחן העבודה בלבד ש-WKWebView לא יכול לספק.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, בידוד ארגז חול/ריצה, בדיקות עדכונים אוטומטיות והתנהגויות מדויקות לשולחן העבודה בלבד ש-WKWebView לא יכול לספק.";
 "userscript_docs_metadata_title" = "מטא נתונים";
 "userscript_docs_metadata_identity" = "שם סקריפט קריא לאדם ותיאור אופציונלי מוצג לפני ההתקנה ובפרטי הסקריפט.";
 "userscript_docs_metadata_version" = "השתמש במרחב שמות יציב וייחודי והגדל את הגרסה בכל פעם שהסקריפט המצורף משתנה.";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "אשר מארחים המשמשים בקשות רשת מורשות. בלעדיו, הבקשות מוגבלות למארח העמוד הנוכחי.";
 "userscript_docs_metadata_urls" = "מטא נתונים אופציונליים של זהות ועדכון. Soulo משתמש באלה כדי לזהות התקנות מחדש של אותו סקריפט.";
 "userscript_docs_metadata_resource" = "מצהיר על משאב בעל שם. הוסף מארח @connect תואם; האחזור נדחה עד להמתנה ל-API של המשאבים המודרני.";
-"userscript_docs_metadata_require" = "דרישות חיצוניות נחשפות במהלך ההתקנה אך אינן מורדות או מבוצעות; סקריפטים חייבים להיות עצמאיים.";
+"userscript_docs_metadata_require" = "קובצי @require ב־HTTPS מורדים ונשמרים במטמון בעת התקנה או שמירה, ומופעלים לפי הסדר לפני הסקריפט.";
 "userscript_docs_api_title" = "ממשקי API מועדפים נתמכים";
 "userscript_docs_api_info" = "קורא את המטפל בסקריפט, את גרסת Soulo ומטא-נתונים של סקריפט. זמין בצורה מורשת ומודרנית.";
 "userscript_docs_api_unsafe_window" = "מספק את חלון העמוד הנוכחי כאשר מענק unsafeWindow מוצהר במפורש.";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "הערכים המאוחסנים חייבים להיות ניתנים להסדרה של JSON: עד 256 KB לכל ערך ו-1 MB בסך הכל לסקריפט.";
 "userscript_docs_limits_network" = "תגובות מועדפות מוגבלות ל-20 מגה-בייט, פסק הזמן קצוב ל-1-60 שניות, וכותרות Cookie/Host/Origin אינן מתקבלות.";
 "userscript_docs_limits_private" = "UserScriptים אינם פועלים בגלישה פרטית.";
-"userscript_docs_limits_require" = "קבצי @require חיצוניים לעולם אינם מופעלים. הימנע מתלות ב-CDN וכלול את כל ההיגיון הנדרש בסקריפט.";
+"userscript_docs_limits_require" = "קובצי @require ב־HTTPS מורדים ונשמרים במטמון בעת התקנה או שמירה, ומופעלים לפי הסדר לפני הסקריפט.";
 "userscript_docs_template_title" = "תבנית מינימלית";
 "userscript_docs_template_footer" = "השתמש במרחב שמות ייחודי ובהצהרות ה-@match ו-@grant המצומצמות ביותר.";
 "userscript_too_large" = "הסקריפט שנבחר גדול ממגבלת ה-2 MB.";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "אין הרשאות נוספות";
 "userscript_network_title" = "גישה לרשת";
 "userscript_external_requirements" = "תלות חיצונית";
-"userscript_external_requirements_desc" = "סקריפט זה מצהיר על קבצי @require חיצוניים. Soulo אינו טוען אותם באופן אוטומטי.";
+"userscript_external_requirements_desc" = "קובצי @require ב־HTTPS מורדים ונשמרים במטמון בעת התקנה או שמירה, ומופעלים לפי הסדר לפני הסקריפט.";
 "userscript_metadata_title" = "פרטי תסריט";
 "userscript_unsupported_permissions" = "עדיין לא נתמך: %@";
 "userscript_sample_name" = "סרגל התקדמות הקריאה";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "תצוגת כרטיסים";
 "tab_close_group" = "סגירת קבוצה";
 "tab_close_group_confirm" = "לסגור את כל הכרטיסיות בקבוצה ״%@״ (%d)?";
+
+"userscript_require_failed" = "לא ניתן לטעון את התלות %@: %@";
+"userscript_require_integrity_failed" = "בדיקת תקינות התלות נכשלה.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "ניהול";
+"extension_update" = "עדכון";
+"extension_rollback" = "שחזור הגרסה הקודמת";
+"extension_blocked_sites" = "אתרים חסומים";
+"extension_diagnostics" = "תאימות";
+"extension_review_access" = "בחרו את ההרשאות ואת האתרים שאליהם תוסף זה יכול לגשת.";
+"extension_limit_commands" = "קיצורי מקשים של תוספים אינם זמינים ב-iOS.";
+"extension_limit_notifications" = "ניתן להציג התראות, אך אירועי לחיצה וסגירה אינם נתמכים.";
+"extension_limit_offscreen" = "מסמכים מחוץ למסך תומכים בניגון שמע בלבד.";

@@ -2,8 +2,7 @@ import SwiftUI
 
 // MARK: - WebViewProgressBar
 
-/// A quiet neutral progress indicator that adapts to light and dark browser
-/// chrome without competing with page content.
+/// Use the shared theme accent for clear loading feedback in both appearances.
 struct WebViewProgressBar: View {
 
     @Environment(\.colorScheme) private var colorScheme
@@ -26,21 +25,17 @@ struct WebViewProgressBar: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
-                (colorScheme == .dark ? Color(uiColor: .systemGray5) : Color.primary.opacity(0.06))
+                Color.themePrimary.opacity(colorScheme == .dark ? 0.16 : 0.12)
                     .frame(height: barHeight)
 
                 // Filled bar
                 let filledWidth = geometry.size.width * min(max(progress, 0), 1)
 
-                (colorScheme == .dark
-                    ? Color(uiColor: .systemGray2)
-                    : Color.primary.opacity(0.68))
+                Color.themePrimary
                     .frame(width: filledWidth, height: barHeight)
                     .clipShape(Capsule())
                     .shadow(
-                        color: colorScheme == .dark
-                            ? Color.black.opacity(0.18)
-                            : Color.primary.opacity(0.12),
+                        color: Color.themePrimary.opacity(0.2),
                         radius: 1,
                         y: 0.5
                     )

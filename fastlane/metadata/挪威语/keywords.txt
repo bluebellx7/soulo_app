@@ -1,1 +1,1 @@
-personvern,faner,videonedlasting,reklameblokkering,brukerskript,utvidelser,oversettelse,mediefinner
+personvern,faner,videonedlasting,reklameblokkering,brukerskript,utvidelser,torrent,magnet,MKV

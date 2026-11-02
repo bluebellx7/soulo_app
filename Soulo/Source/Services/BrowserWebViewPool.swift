@@ -19,11 +19,19 @@ final class BrowserWebViewPool: NSObject, WKNavigationDelegate {
     private var observers: Set<AnyCancellable> = []
     private let warmupDelay: Duration
     private let refillDelay: Duration
+    private let resources: BrowserResourcePolicy
 
-    init(warmupDelay: Duration = .milliseconds(350), refillDelay: Duration = .seconds(2)) {
+    init(warmupDelay: Duration = .milliseconds(350), refillDelay: Duration = .seconds(2), resources: BrowserResourcePolicy? = nil) {
+        let resources = resources ?? .shared
         self.warmupDelay = warmupDelay
         self.refillDelay = refillDelay
+        self.resources = resources
         super.init()
+        resources.$allowsSpeculation.dropFirst().receive(on: DispatchQueue.main).sink { [weak self] allowed in
+            guard let self else { return }
+            if allowed { self.scheduleWarmup(after: self.warmupDelay) }
+            else { self.discardPreparedWebView() }
+        }.store(in: &observers)
         NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)
             .sink { [weak self] _ in self?.handleMemoryPressure() }
             .store(in: &observers)
@@ -90,7 +98,7 @@ final class BrowserWebViewPool: NSObject, WKNavigationDelegate {
     }
 
     private func scheduleWarmup(after delay: Duration) {
-        guard isActive, !isSuppressedForMemoryPressure,
+        guard isActive, resources.allowsSpeculation, !isSuppressedForMemoryPressure,
               preparedWebView == nil, warmupTask == nil else { return }
         warmupTask = Task { @MainActor [weak self] in
             do {
@@ -104,7 +112,7 @@ final class BrowserWebViewPool: NSObject, WKNavigationDelegate {
             } catch { return }
             guard let self else { return }
             self.warmupTask = nil
-            guard self.isActive, !self.isSuppressedForMemoryPressure,
+            guard self.isActive, self.resources.allowsSpeculation, !self.isSuppressedForMemoryPressure,
                   self.preparedWebView == nil else { return }
             BrowserStartupTrace.mark("warmup_start")
             let webView = AccessibleWebView(frame: .zero, configuration: Self.configuration(isIncognito: self.isIncognito, for: nil))

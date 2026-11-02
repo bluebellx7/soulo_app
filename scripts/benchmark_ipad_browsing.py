@@ -20,7 +20,7 @@ def main():
     parser.add_argument('--team', required=True, help='Development team for the test driver')
     parser.add_argument('--output', type=Path, required=True, help='New local artifact directory')
     parser.add_argument('--workload', choices=['fixture', 'live', 'interaction', 'history', 'recorder'], default='fixture')
-    parser.add_argument('--browser', choices=['both', 'safari', 'soulo'], default='both')
+    parser.add_argument('--browser', choices=['both', 'safari', 'webkit', 'soulo', 'all'], default='both', help='webkit/all add a minimal WKWebView control for the fixed fixture')
     parser.add_argument('--scrolls', type=int, choices=range(0,11), default=4)
     parser.add_argument('--trials', type=int, choices=range(1,11), default=3)
     parser.add_argument('--trace-template', choices=['Animation Hitches', 'Time Profiler', 'SwiftUI'], default='Animation Hitches')
@@ -29,20 +29,45 @@ def main():
     parser.add_argument('--scroll-only', action='store_true')
     parser.add_argument('--edge', action='store_true', help='Use a native edge gesture in the interaction diagnostic instead of the Back button')
     parser.add_argument('--ads', choices=['YES','NO'], default='NO', help='Ad filtering mode for the fixed workload')
-    parser.add_argument('--baidu', choices=['YES', 'NO'], default='YES')
+    parser.add_argument('--baidu', choices=['YES', 'NO'], default='NO')
     parser.add_argument('--trace-browser', choices=['soulo', 'safari'], help='Capture a finite Instruments trace during this browser workload')
     args = parser.parse_args()
+    if args.browser in {'webkit', 'all'} and args.workload != 'fixture':
+        parser.error('The minimal WKWebView control supports only --workload fixture')
     root = Path(__file__).resolve().parent.parent
     state = args.output.resolve()
     state.mkdir(parents=True, exist_ok=False)
     driver = state / 'driver'
     driver.mkdir()
     (driver / 'Host.swift').write_text('''import UIKit
+import WebKit
 @main final class Host: UIResponder, UIApplicationDelegate {
  var window: UIWindow?
+ var webView: WKWebView?
  func application(_ app: UIApplication, didFinishLaunchingWithOptions options: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-  window=UIWindow(frame:UIScreen.main.bounds);window?.rootViewController=UIViewController();window?.makeKeyAndVisible();return true
+  let host=UIViewController();window=UIWindow(frame:UIScreen.main.bounds)
+  window?.rootViewController=host;window?.makeKeyAndVisible()
+  let arguments=ProcessInfo.processInfo.arguments
+  if let index=arguments.firstIndex(of:"--benchmark-url"),arguments.indices.contains(index+1),let url=URL(string:arguments[index+1]) {
+   let config=WKWebViewConfiguration();config.websiteDataStore = .nonPersistent()
+   config.defaultWebpagePreferences.preferredContentMode = .mobile
+   config.allowsInlineMediaPlayback=true
+   let web=WKWebView(frame:.zero,configuration:config);webView=web
+   web.allowsBackForwardNavigationGestures=true;web.translatesAutoresizingMaskIntoConstraints=false
+   let back=UIButton(type:.system);back.setTitle("Back",for:.normal);back.accessibilityLabel="Back"
+   back.addTarget(self,action:#selector(goBack),for:.touchUpInside);back.translatesAutoresizingMaskIntoConstraints=false
+   host.view.backgroundColor = .systemBackground;host.view.addSubview(web);host.view.addSubview(back)
+   NSLayoutConstraint.activate([
+    web.topAnchor.constraint(equalTo:host.view.safeAreaLayoutGuide.topAnchor),
+    web.leadingAnchor.constraint(equalTo:host.view.leadingAnchor),web.trailingAnchor.constraint(equalTo:host.view.trailingAnchor),
+    web.bottomAnchor.constraint(equalTo:back.topAnchor),back.heightAnchor.constraint(equalToConstant:44),
+    back.leadingAnchor.constraint(equalTo:host.view.leadingAnchor),back.trailingAnchor.constraint(equalTo:host.view.trailingAnchor),
+    back.bottomAnchor.constraint(equalTo:host.view.safeAreaLayoutGuide.bottomAnchor)])
+   web.load(URLRequest(url:url))
+  }
+  return true
  }
+ @objc func goBack(){webView?.goBack()}
 }
 ''')
     spec = {

@@ -1,6 +1,8 @@
 1.2.7
 
 • Unduhan BT: impor file .torrent atau tautan magnet, pilih file, jeda dan lanjutkan. Di iOS 26, unduhan dapat berlanjut di latar belakang jika sistem mengizinkan; versi sebelumnya menyimpan progres dan menjeda.
+• Putar media BT yang didukung saat diunduh dan buka file MKV. Impor tautan ed2k/thunder. Unduhan memerlukan sumber yang tersedia; pemutaran bergantung pada codec.
+• Optimasi pencarian Baidu aktif secara default. Lihat skrip atau nonaktifkan di Ekstensi.
 • Pilih lima pintasan opsional di beranda untuk unduhan, file, penanda, riwayat, wallpaper, dan halaman lainnya. Bilah tab pustaka menjadi ringkas saat digulir.
 • Peningkatan kompatibilitas skrip pengguna, termasuk dependensi eksternal melalui @require.
 • Memperbaiki suara yang tetap terdengar saat video dibisukan atau pemutaran ganda di beberapa halaman web.

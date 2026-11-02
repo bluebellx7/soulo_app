@@ -57,6 +57,15 @@ protocol TorrentEngine: Sendable {
     func resumeMetadata(id: UUID) async
     func resume(id: UUID, priorities: [Bool]) async
     func remove(id: UUID, deleteFiles: Bool) async -> Bool
+    func streamData(id: UUID, file: Int, offset: Int64, length: Int) async throws -> Data?
+    func endStreaming(id: UUID) async
+}
+
+extension TorrentEngine {
+    func streamData(id: UUID, file: Int, offset: Int64, length: Int) async throws -> Data? {
+        throw TorrentTaskError.invalid
+    }
+    func endStreaming(id: UUID) async {}
 }
 
 /// Owns all C++ calls on one worker queue, including synchronous resume-data creation.
@@ -122,5 +131,12 @@ final class TorrentEngineWorker: TorrentEngine, @unchecked Sendable {
                 continuation.resume(returning: engine?.remove(id.uuidString, deleteFiles: deleteFiles) ?? false)
             }
         }
+    }
+    func streamData(id: UUID, file: Int, offset: Int64, length: Int) async throws -> Data? {
+        let data = try await perform { try $0.availableData(id: id.uuidString, file: file, offset: offset, length: length) }
+        return data.isEmpty ? nil : data
+    }
+    func endStreaming(id: UUID) async {
+        _ = try? await perform { $0.endStreaming(id: id.uuidString) }
     }
 }

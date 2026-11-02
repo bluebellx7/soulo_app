@@ -1,0 +1,4 @@
+module SouloED2K {
+    header "SouloED2K.h"
+    export *
+}

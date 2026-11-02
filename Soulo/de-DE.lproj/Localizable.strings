@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "Geöffnete Seiten werden neu geladen, nachdem ein Skript installiert, bearbeitet, aktiviert, deaktiviert oder entfernt wurde.";
 "userscript_experimental_badge" = "Kompatibilität";
 "userscript_experimental_title" = "UserScript Kompatibilität";
-"userscript_experimental_desc" = "Unterstützt Site-Regeln, Dokumentstart/-ende, umfangreiche GM-Speicher- und Seiten-APIs, Skriptbefehle, Benachrichtigungen, Registerkarten, Downloads, Cookies, Ressourcen und berechtigungsbezogene Anfragen. Überprüfen Sie jedes Skript vor der Installation. externe @require-Dateien werden nicht ausgeführt.";
+"userscript_experimental_desc" = "Unterstützt Site-Regeln, Dokumentstart/-ende, umfangreiche GM-Speicher- und Seiten-APIs, Skriptbefehle, Benachrichtigungen, Registerkarten, Downloads, Cookies, Ressourcen und berechtigungsbezogene Anfragen. Überprüfen Sie jedes Skript vor der Installation.";
 "extension_choose_file" = "Datei oder Ordner wählen…";
 "extension_installing" = "Erweiterung prüfen und installieren…";
 "extension_install_failed" = "Erweiterung konnte nicht installiert werden";
@@ -659,7 +659,7 @@
 "userscript_new" = "Neues Skript";
 "userscript_edit" = "Skript bearbeiten";
 "userscript_choose_file" = "Skript wählen…";
-"userscript_install_footer" = "Tippen Sie auf eine Quellzeile, um sie im aktuellen Tab Soulo zu öffnen. Ein .user.js-Link öffnet eine Installationsbestätigung. Standard-JavaScript und eine breite Palette von GM-APIs werden unterstützt; Skripte werden beim privaten Surfen nicht ausgeführt und externe @require-Dateien werden nicht ausgeführt.";
+"userscript_install_footer" = "Tippen Sie auf eine Quellzeile, um sie im aktuellen Tab Soulo zu öffnen. Ein .user.js-Link öffnet eine Installationsbestätigung. Standard-JavaScript und eine breite Palette von GM-APIs werden unterstützt. UserScripts werden beim privaten Surfen nicht ausgeführt.";
 "userscript_install_failed" = "UserScript konnte nicht installiert werden";
 "web_extension_temporarily_disabled" = "Standard-Browsererweiterungen sind vorübergehend nicht verfügbar, während die Kompatibilitätstests abgeschlossen sind.";
 "userscript_unreadable" = "Das ausgewählte Skript konnte nicht als UTF-8-Text gelesen werden.";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "Teilweise unterstützt";
 "userscript_docs_partial_desc" = "Netzwerkanfragen lassen Upload/Fortschritt und Cookie-Transport aus. Benachrichtigungen erfolgen seitenintern, Ressourcen-APIs sind asynchron und Wertänderungs-Listener melden Änderungen, die von der aktuellen Seite vorgenommen wurden. Aktualisierungsprüfungen erfolgen manuell.";
 "userscript_docs_unsupported_title" = "Derzeit nicht unterstützt";
-"userscript_docs_unsupported_desc" = "Externe @require-Ausführung, GM_webRequest-Abfangen, GM_audio, Sandbox-/Run-in-Isolation, automatische Update-Prüfungen und exakte reine Desktop-Verhaltensweisen, die WKWebView nicht bieten kann.";
+"userscript_docs_unsupported_desc" = "GM_webRequest-Abfangen, GM_audio, Sandbox-/Run-in-Isolation, automatische Update-Prüfungen und exakte reine Desktop-Verhaltensweisen, die WKWebView nicht bieten kann.";
 "userscript_docs_metadata_title" = "Metadaten";
 "userscript_docs_metadata_identity" = "Für Menschen lesbarer Skriptname und optionale Beschreibung, die vor der Installation und in den Skriptdetails angezeigt werden.";
 "userscript_docs_metadata_version" = "Verwenden Sie einen stabilen, eindeutigen Namespace und erhöhen Sie die Version, wenn sich das gebündelte Skript ändert.";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "Autorisieren Sie Hosts, die von privilegierten Netzwerkanforderungen verwendet werden. Ohne sie sind Anfragen auf den aktuellen Seitenhost beschränkt.";
 "userscript_docs_metadata_urls" = "Optionale Identitäts- und Aktualisierungsmetadaten. Soulo verwendet diese, um Neuinstallationen desselben Skripts zu erkennen.";
 "userscript_docs_metadata_resource" = "Deklariert eine benannte Ressource. Fügen Sie einen passenden @connect-Host hinzu. Der Abruf wird verschoben, bis auf die moderne Ressourcen-API gewartet wird.";
-"userscript_docs_metadata_require" = "Externe Anforderungen werden während der Installation offengelegt, aber nicht heruntergeladen oder ausgeführt; Skripte müssen eigenständig sein.";
+"userscript_docs_metadata_require" = "HTTPS-Dateien aus @require werden beim Installieren oder Speichern heruntergeladen und zwischengespeichert und vor dem Skript der Reihe nach ausgeführt.";
 "userscript_docs_api_title" = "Unterstützte privilegierte APIs";
 "userscript_docs_api_info" = "Liest den Skripthandler, die Soulo-Version und die analysierten Skriptmetadaten. Erhältlich in traditioneller und moderner Form.";
 "userscript_docs_api_unsafe_window" = "Stellt das aktuelle Seitenfenster bereit, wenn die unsafeWindow-Bewilligung explizit deklariert wird.";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "Gespeicherte Werte müssen JSON-serialisierbar sein: bis zu 256 KB pro Wert und 1 MB insgesamt pro Skript.";
 "userscript_docs_limits_network" = "Privilegierte Antworten sind auf 20 MB begrenzt, das Timeout ist auf 1–60 Sekunden begrenzt und Cookie/Host/Origin-Header werden nicht akzeptiert.";
 "userscript_docs_limits_private" = "UserScripts werden beim privaten Surfen nicht ausgeführt.";
-"userscript_docs_limits_require" = "Externe @require-Dateien werden nie ausgeführt. Vermeiden Sie CDN-Abhängigkeiten und integrieren Sie die gesamte erforderliche Logik in das Skript.";
+"userscript_docs_limits_require" = "HTTPS-Dateien aus @require werden beim Installieren oder Speichern heruntergeladen und zwischengespeichert und vor dem Skript der Reihe nach ausgeführt.";
 "userscript_docs_template_title" = "Minimale Vorlage";
 "userscript_docs_template_footer" = "Verwenden Sie einen eindeutigen Namespace und die engstmöglichen @match- und @grant-Deklarationen.";
 "userscript_too_large" = "Das ausgewählte Skript überschreitet das Limit von 2 MB.";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "Keine zusätzlichen Berechtigungen";
 "userscript_network_title" = "Netzwerkzugriff";
 "userscript_external_requirements" = "Externe Abhängigkeiten";
-"userscript_external_requirements_desc" = "Dieses Skript deklariert externe @require-Dateien. Soulo lädt sie nicht automatisch.";
+"userscript_external_requirements_desc" = "HTTPS-Dateien aus @require werden beim Installieren oder Speichern heruntergeladen und zwischengespeichert und vor dem Skript der Reihe nach ausgeführt.";
 "userscript_metadata_title" = "Skriptdetails";
 "userscript_unsupported_permissions" = "Noch nicht unterstützt: %@";
 "userscript_sample_name" = "Lesefortschrittsbalken";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "Kartenansicht";
 "tab_close_group" = "Gruppe schließen";
 "tab_close_group_confirm" = "Alle Tabs in „%@“ schließen (%d)?";
+
+"userscript_require_failed" = "Abhängigkeit %@ konnte nicht geladen werden: %@";
+"userscript_require_integrity_failed" = "Die Integritätsprüfung der Abhängigkeit ist fehlgeschlagen.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "Verwalten";
+"extension_update" = "Aktualisieren";
+"extension_rollback" = "Vorherige Version wiederherstellen";
+"extension_blocked_sites" = "Gesperrte Websites";
+"extension_diagnostics" = "Kompatibilität";
+"extension_review_access" = "Wähle die Berechtigungen und Websites, auf die diese Erweiterung zugreifen darf.";
+"extension_limit_commands" = "Tastaturkurzbefehle für Erweiterungen sind unter iOS nicht verfügbar.";
+"extension_limit_notifications" = "Benachrichtigungen können angezeigt werden; Klick- und Schließereignisse werden nicht unterstützt.";
+"extension_limit_offscreen" = "Offscreen-Dokumente unterstützen nur die Audiowiedergabe.";

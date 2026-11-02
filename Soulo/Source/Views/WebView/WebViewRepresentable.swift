@@ -31,6 +31,51 @@ enum WebNavigationErrorClassifier {
     }
 }
 
+enum BaiduSearchVideoNavigation {
+    static let playbackIntent = #"""
+    card => {
+      const media=card?.querySelector('video');
+      return {time:Number.isFinite(media?.currentTime)?media.currentTime:0,
+        duration:Number.isFinite(media?.duration)?media.duration:0,volume:1,muted:false,playing:true};
+    }
+    """#
+    static func destination(from source: URL, to target: URL) -> URL? {
+        guard ["http", "https"].contains(source.scheme?.lowercased() ?? ""),
+              ["baidu.com", "www.baidu.com", "m.baidu.com"].contains(source.host?.lowercased() ?? ""),
+              source.path == "/s", target.scheme?.lowercased() == "https",
+              target.host?.lowercased() == "m.baidu.com", target.path == "/video/page",
+              target.absoluteString.utf8.count <= 8192,
+              let components = URLComponents(url: target, resolvingAgainstBaseURL: false),
+              let id = components.queryItems?.first(where: { $0.name == "nid" })?.value,
+              (1...30).contains(id.utf8.count), id.utf8.allSatisfy({ (48...57).contains($0) }) else { return nil }
+        return target
+    }
+
+    // Resolve only the search card's title and picture. Its control bar, Soulo
+    // overlays and native video controls retain their own click behavior.
+    static let resolver = #"""
+    (sourceURL, path) => {
+      try {
+        const source = new URL(sourceURL);
+        if (!['http:', 'https:'].includes(source.protocol)
+            || !['baidu.com','www.baidu.com','m.baidu.com'].includes(source.hostname)
+            || source.pathname !== '/s') return null;
+        if (path.some(node => node instanceof HTMLVideoElement && node.controls)) return null;
+        const controls = 'a,button,input,select,textarea,[role=button],[role=slider],[contenteditable=true],[data-soulo-video-rotate],[data-soulo-hold-speed],#soulo-episode-dock,.cos-rich-video-player-controls-icon-container,.cos-rich-video-player-controls-btn-group,.cos-rich-video-player-progress,.cos-rich-video-player-progress-mount';
+        if (path.some(node => node instanceof Element && node.matches(controls))) return null;
+        const player = path.find(node => node instanceof Element && node.matches('.cos-rich-video-player,[data-module="top_title"]'));
+        const card = player?.closest('.c-result[tpl="vid_recommend"],.c-result[srcid="vid_recommend"]');
+        const link = player?.closest('article[rl-link-data-url]');
+        if (!card || !link || !card.contains(link)) return null;
+        const target = new URL(link.getAttribute('rl-link-data-url'), source);
+        if (target.href.length > 8192 || target.protocol !== 'https:' || target.hostname !== 'm.baidu.com'
+            || target.pathname !== '/video/page' || !/^\d{1,30}$/.test(target.searchParams.get('nid') || '')) return null;
+        return target.href;
+      } catch (_) { return null; }
+    }
+    """#
+}
+
 enum BrowserNavigationGesture {
     static let world = WKContentWorld.world(name: "SouloNavigationGesture")
     static let handler = "souloNavigationGesture"
@@ -57,12 +102,12 @@ enum BrowserNavigationGesture {
           } catch (_) { return false; }
         }
         let link = !!anchor;
-        // Observe the clicked path only. Do not rewrite hrefs, cancel clicks,
-        // invoke site handlers, or navigate on the page's behalf.
-        for (const node of path.slice(0, 12)) {
+        // Read generic link metadata without rewriting hrefs or invoking site
+        // handlers. Site click behavior remains entirely inside WebKit.
+        for (const node of path.slice(0, 24)) {
           if (!(node instanceof Element) || node === document.body || node === document.documentElement) continue;
           if (node.getAttribute('role') === 'link') link = true;
-          for (const name of ['href', 'data-href', 'data-url', 'data-sf-href', 'data-landurl', 'mu']) {
+          for (const name of ['href', 'data-href', 'data-url', 'data-sf-href', 'data-landurl', 'rl-link-href', 'rl-link-data-url', 'mu']) {
             if (record(node.getAttribute(name))) link = true;
           }
           const log = node.getAttribute('data-log');
@@ -71,12 +116,12 @@ enum BrowserNavigationGesture {
           }
         }
         if (form) record(control?.hasAttribute('formaction') ? control.formAction : form.action);
-        window.webkit.messageHandlers.souloNavigationGesture.postMessage({destinations: destinations.slice(0, 16), link, form: !!form, control: !!control || !!form});
+        window.webkit.messageHandlers.souloNavigationGesture.postMessage({destinations: destinations.slice(0, 16), link, form: !!form, control: !!control || !!form, event:event.type});
       }
-      window.addEventListener('pointerdown', interacted, true);
-      window.addEventListener('touchstart', interacted, true);
-      window.addEventListener('click', interacted, true);
-      window.addEventListener('keydown', interacted, true);
+      window.addEventListener('pointerdown', interacted, {capture:true,passive:true});
+      window.addEventListener('touchstart', interacted, {capture:true,passive:true});
+      window.addEventListener('click', interacted, {capture:true,passive:true});
+      window.addEventListener('keydown', interacted, {capture:true,passive:true});
     })();
     """
 }
@@ -118,31 +163,20 @@ enum BrowserPopupPolicy {
 }
 
 enum BrowserWebLinkPolicy {
-    /// Cancel page-created GET navigations before WebKit tries an associated
-    /// native app, then start the same request through WKWebView.load. New
-    /// windows must be handled here: app links run before createWebViewWith.
+    /// Only new-window GET requests need application routing. Reissuing a
+    /// main-frame request turns location.replace()/redirects into extra history
+    /// entries and leaves intermediate documents behind on native Back.
     static func shouldLoadInBrowser(
         url: URL, sourceURL: URL?, navigationType: WKNavigationType,
         targetsMainFrame: Bool?, method: String, nativeRequest: Bool
     ) -> Bool {
-        guard !nativeRequest, targetsMainFrame != false, method.uppercased() == "GET",
+        guard !nativeRequest, targetsMainFrame == nil, method.uppercased() == "GET",
               ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
               navigationType != .backForward, navigationType != .reload,
               !BrowserPopupPolicy.shouldPreserveJavaScriptContext(navigationType: navigationType, url: url)
         else { return false }
-        if targetsMainFrame == nil {
-            // Forms need the new window's opener and submission context.
-            return navigationType != .formSubmitted && navigationType != .formResubmitted
-        }
-        var source = sourceURL.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) }
-        var destination = URLComponents(url: url, resolvingAgainstBaseURL: false)
-        source?.fragment = nil
-        destination?.fragment = nil
-        guard source?.url != destination?.url else { return false }
-        // Scripted and redirected navigations may arrive without a gesture or
-        // with their source still pointing at the previous document.
-        return navigationType == .linkActivated
-            || (sourceURL?.host != nil && sourceURL?.host?.lowercased() != url.host?.lowercased())
+        // Forms need the new window's opener and submission context.
+        return navigationType != .formSubmitted && navigationType != .formResubmitted
     }
 }
 
@@ -261,7 +295,7 @@ enum WebAccessibilityPaging {
 }
 
 @MainActor
-private final class UserScriptTabStore {
+final class UserScriptTabStore {
     static let shared = UserScriptTabStore()
 
     private var values: [UUID: [String: String]] = [:]
@@ -272,7 +306,20 @@ private final class UserScriptTabStore {
               (try? JSONSerialization.jsonObject(with: data)) != nil else {
             throw BrowserExtensionError.invalidStorageValue
         }
+        let otherSize = (values[scriptID] ?? [:]).filter { $0.key != tabID }.values.reduce(0) { $0 + $1.utf8.count }
+        guard otherSize + encodedValue.utf8.count <= BrowserExtensionService.maximumStoredValuesSize else {
+            throw BrowserExtensionError.invalidStorageValue
+        }
         values[scriptID, default: [:]][tabID] = encodedValue
+    }
+
+    func remove(scriptID: UUID) { values[scriptID] = nil }
+
+    func remove(tabID: String) {
+        for id in Array(values.keys) {
+            values[id]?[tabID] = nil
+            if values[id]?.isEmpty == true { values[id] = nil }
+        }
     }
 
     func value(scriptID: UUID, tabID: String) -> Any {
@@ -990,6 +1037,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         coordinator.removeManualAdTap()
         coordinator.removeImageLongPress()
         coordinator.cancelBackwardTraversal()
+        coordinator.cancelUserScriptRequests()
         guard uiView.navigationDelegate === coordinator else { return }
         removeRuntimeMessageHandlers(from: uiView.configuration.userContentController)
         coordinator.dismissEmbeddedPopups(in: uiView)
@@ -1018,6 +1066,14 @@ struct WebViewRepresentable: UIViewRepresentable {
     // MARK: - Coordinator
 
     final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, UIScrollViewDelegate, WKDownloadDelegate, WKScriptMessageHandler, WKScriptMessageHandlerWithReply, UIGestureRecognizerDelegate {
+        private var userScriptRequests: [String: Task<Void, Never>] = [:]
+        private let userScriptDownloads = UserScriptDownloadRequests()
+
+        func cancelUserScriptRequests() {
+            let requests = Array(userScriptRequests.values)
+            userScriptRequests.removeAll()
+            requests.forEach { $0.cancel() }
+        }
         private var imageLongPress: UILongPressGestureRecognizer?
         private var contextResource: (resource: WebContextResource?, frame: WKFrameInfo, time: TimeInterval, linkURL: URL?)?
 
@@ -1037,19 +1093,23 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var playingVideoFrames: [String: TimeInterval] = [:]
         private var videoAwakeTimer: Timer?
         deinit {
+            if let storageObserver { NotificationCenter.default.removeObserver(storageObserver) }
             videoAwakeTimer?.invalidate()
             let owner = screenAwakeOwner
             Task { @MainActor in VideoScreenAwakeService.shared.setActive(false, owner: owner) }
         }
-        private var navigationGesture: (webView: ObjectIdentifier, frameURL: URL, time: TimeInterval, destinations: [URL], isLink: Bool, isForm: Bool, isControl: Bool)?
+        private var navigationGesture: (webView: ObjectIdentifier, frameURL: URL, mainFrame: Bool, time: TimeInterval, destinations: [URL], isLink: Bool, isForm: Bool, isControl: Bool)?
         private var provisionalNavigation: WKNavigation?
         private var latestNavigation: WKNavigation?
         private var navigationFinished = false
         private var cloudflareChallengeResponse = false
-        private var outgoingHistoryDocument: URL?
-        private var pendingHistoryItem: WKBackForwardListItem?
-        private var historyRecoveryID = UUID()
         private let siteOptimizations = SiteOptimizationController()
+        private struct PrivacyConfiguration: Equatable {
+            let gpcEnabled: Bool
+            let cookieBannerHandling: Bool
+            let disabledHosts: [String]
+        }
+        private var lastPrivacyConfiguration: PrivacyConfiguration?
         private var navigationOriginURL: URL?
         private var userInitiatedNavigationChain = false
         private var domainConfirmationID: UUID?
@@ -1069,6 +1129,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var downloadProgressObservations: [ObjectIdentifier: NSKeyValueObservation] = [:]
         private var pageDownloadTransfers: [String: PageDownloadTransfer] = [:]
         private var downloadCancelObserver: NSObjectProtocol?
+        private var storageObserver: NSObjectProtocol?
         private var individualDownloadCancelObserver: NSObjectProtocol?
         private var downloadPauseObserver: NSObjectProtocol?
         private var downloadResumeObserver: NSObjectProtocol?
@@ -1083,9 +1144,10 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var httpsUpgradeFallbacks: [String: URL] = [:]
         private var oneShotHTTPFallbacks = Set<String>()
         private var privacyHeaderBypassURLs = Set<String>()
-        private var blankPageRecoveryAttempts: [String: Int] = [:]
         private var terminatedProcessRecoveryURLs = Set<String>()
         private var navigationGeneration = UUID()
+        private var lastVideoControlScale: (generation: UUID, scale: Double, zoom: Double)?
+        private var lastVideoScaleInput: (generation: UUID, scale: CGFloat, zoom: CGFloat)?
         fileprivate func cancelBackwardTraversal() {
             viewModel.cancelBackwardTraversal()
         }
@@ -1103,6 +1165,24 @@ struct WebViewRepresentable: UIViewRepresentable {
         init(viewModel: WebViewModel) {
             self.viewModel = viewModel
             super.init()
+            storageObserver = NotificationCenter.default.addObserver(forName: .userScriptStorageChanged,
+                object: BrowserExtensionService.shared, queue: .main) { [weak self] notification in
+                let snapshot = notification.userInfo as? [String: Any]
+                Task { @MainActor in
+                guard let self, let snapshot,
+                      let rawID = snapshot["scriptID"] as? String, let id = UUID(uuidString: rawID),
+                      let webView = self.viewModel.webView, (webView.navigationDelegate as? Coordinator) === self,
+                      webView.configuration.websiteDataStore.isPersistent,
+                      !UserDefaults.standard.bool(forKey: "is_incognito") else { return }
+                guard let script = BrowserExtensionService.shared.userScript(id: id), script.isEnabled else { return }
+                Self.refreshStoredUserScript(script, on: webView, bridgeToken: self.userScriptBridgeToken)
+                guard let url = webView.url, UserScriptURLMatcher.matches(url: url, patterns: script.matchPatterns),
+                      !UserScriptURLMatcher.matches(url: url, patterns: script.excludePatterns ?? []) else { return }
+                if let source = UserScriptRuntime.storageUpdateScript(snapshot, bridgeToken: self.userScriptBridgeToken) {
+                    webView.evaluateJavaScript(source, completionHandler: nil)
+                }
+                }
+            }
             downloadCancelObserver = NotificationCenter.default.addObserver(
                 forName: .cancelActiveDownloads,
                 object: nil,
@@ -1134,6 +1214,22 @@ struct WebViewRepresentable: UIViewRepresentable {
                 guard let id = notification.userInfo?["id"] as? UUID else { return }
                 self?.resumeDownload(id: id)
             }
+        }
+
+        private static func refreshStoredUserScript(_ script: UserScriptRecord, on webView: WKWebView, bridgeToken: String) {
+            guard script.hasResolvedRequirements else { return }
+            let controller = webView.configuration.userContentController
+            let marker = "//# sourceURL=soulo-userscript-" + script.id.uuidString + ".js"
+            let replacement = WKUserScript(source: UserScriptRuntime.wrappedSource(for: script, bridgeToken: bridgeToken),
+                injectionTime: script.injectionTime == .documentStart ? .atDocumentStart : .atDocumentEnd,
+                forMainFrameOnly: true, in: .page)
+            var found = false
+            var scripts = controller.userScripts.map { existing in
+                guard existing.source.hasPrefix(UserScriptRuntime.sourcePrefix), existing.source.hasSuffix(marker) else { return existing }
+                found = true; return replacement
+            }
+            if !found { scripts.append(replacement) }
+            controller.removeAllUserScripts(); scripts.forEach(controller.addUserScript)
         }
 
         func updateManualAdTap(on webView: WKWebView) {
@@ -1280,6 +1376,8 @@ struct WebViewRepresentable: UIViewRepresentable {
                       provisionalNavigation == nil else { return }
                 if let source = message.frameInfo.requestURL, let current = message.webView?.url,
                    !WebEpisodeList.matches(source, current) { return }
+                if let preview = viewModel.historyPreview, let source = message.frameInfo.requestURL,
+                   !WebEpisodeList.matches(source, preview.url) { return }
                 viewModel.markPageContentVisible()
                 return
             }
@@ -1288,7 +1386,11 @@ struct WebViewRepresentable: UIViewRepresentable {
                 guard message.webView === viewModel.webView,
                       message.world == .defaultClient else { return }
                 if message.frameInfo.isMainFrame {
-                    if body["history"] as? Bool == true { viewModel.cancelBackwardTraversal() }
+                    if body["history"] as? Bool == true {
+                        viewModel.cancelBackwardTraversal()
+                        viewModel.finishHistoryPreview()
+                        viewModel.mediaSession.finishNavigation()
+                    }
                     return
                 }
                 if body["shown"] as? Bool != true || body["restored"] as? Bool == true {
@@ -1325,14 +1427,19 @@ struct WebViewRepresentable: UIViewRepresentable {
                       webView === parent || webView.isDescendant(of: parent),
                       let url = message.frameInfo.requestURL else { return }
                 viewModel.recordDocumentInteraction(in: parent)
+                viewModel.mediaSession.allowUserNavigation()
                 viewModel.cancelBackwardTraversal()
                 let destinations = (body["destinations"] as? [String] ?? []).prefix(16).compactMap { raw -> URL? in
                     guard raw.count <= 8192, let target = URL(string: raw),
                           ["http", "https"].contains(target.scheme?.lowercased() ?? "") else { return nil }
                     return target
                 }
-                navigationGesture = (ObjectIdentifier(webView), url, ProcessInfo.processInfo.systemUptime,
+                navigationGesture = (ObjectIdentifier(webView), url, message.frameInfo.isMainFrame, ProcessInfo.processInfo.systemUptime,
                     destinations, body["link"] as? Bool ?? false, body["form"] as? Bool ?? false, body["control"] as? Bool ?? false)
+                BrowserStartupTrace.mark("navigation_gesture", detail: "event=\(body["event"] ?? "") source=\(url.host ?? "")\(url.path) main=\(webView === parent) landing=\(body["videoLanding"] as? String != nil) observed=\(body["videoObserved"] ?? "none") handoff=\(body["videoPlayback"] ?? "none")")
+                if body["event"] as? String == "click", url.host == "m.baidu.com", url.path == "/video/page" {
+                    traceMedia(in: webView, stage: "control_click")
+                }
                 return
             }
 
@@ -1390,8 +1497,17 @@ struct WebViewRepresentable: UIViewRepresentable {
                     webView.evaluateJavaScript(source, in: message.frameInfo, in: WebVideoOrientationRuntime.world, completionHandler: nil)
                     synchronizeVideoControlScale(on: webView, in: message.frameInfo)
                 case "viewport":
-                    guard message.frameInfo.isMainFrame, let webView = message.webView else { return }
-                    synchronizeVideoControlScale(on: webView)
+                    guard message.frameInfo.isMainFrame, let webView = message.webView,
+                          let scale = body["scale"] as? Double, scale.isFinite, scale > 0,
+                          let zoom = body["zoom"] as? Double, zoom.isFinite,
+                          abs(zoom - Double(webView.pageZoom)) < 0.0001,
+                          let reported = body["url"] as? String,
+                          var source = URLComponents(string: reported),
+                          let current = webView.url,
+                          var destination = URLComponents(url: current, resolvingAgainstBaseURL: false) else { return }
+                    source.fragment = nil; destination.fragment = nil
+                    guard source.url == destination.url else { return }
+                    applyVideoControlScale(scale, zoom: zoom, on: webView)
                 case "episodes":
                     if let webView = message.webView { presentEpisodePicker(on: webView) }
                 case "speed":
@@ -1536,10 +1652,38 @@ struct WebViewRepresentable: UIViewRepresentable {
             replyHandler: @escaping (Any?, String?) -> Void
         ) {
             if ["souloUserScriptXHR", "souloUserScriptAPI"].contains(message.name),
+               message.frameInfo.isMainFrame,
+               message.webView?.configuration.websiteDataStore.isPersistent == true,
+               !UserDefaults.standard.bool(forKey: "is_incognito"),
                let body = message.body as? [String: Any],
                let script = authorizedUserScript(for: body, pageURL: message.webView?.url) {
                 if message.name == "souloUserScriptAPI" {
+                    let action = body["action"] as? String
+                    var downloadKey: String?
+                    if action == "download" || action == "abortDownload" {
+                        guard script.hasGrant("GM_download", "GM.download"),
+                              let requestID = body["__souloDownloadID"] as? String,
+                              !requestID.isEmpty, requestID.count <= 180 else {
+                            replyHandler(nil, "Invalid or unauthorized UserScript download")
+                            return
+                        }
+                        let key = script.id.uuidString + ":" + requestID
+                        if action == "abortDownload" {
+                            if let itemID = userScriptDownloads.cancel(key) {
+                                DownloadManagerService.shared.markCanceled(id: itemID)
+                                BackgroundDownloadService.shared.abandon(id: itemID)
+                            }
+                            replyHandler(true, nil)
+                            return
+                        }
+                        guard userScriptDownloads.begin(key) else {
+                            replyHandler(nil, "Duplicate or excessive UserScript download")
+                            return
+                        }
+                        downloadKey = key
+                    }
                     Task { @MainActor in
+                        defer { if let downloadKey { self.userScriptDownloads.finish(downloadKey) } }
                         await self.handleUserScriptAPI(
                             body,
                             script: script,
@@ -1553,7 +1697,22 @@ struct WebViewRepresentable: UIViewRepresentable {
                     replyHandler(nil, "Unauthorized UserScript request")
                     return
                 }
-                Task {
+                guard let requestID = body["__souloRequestID"] as? String, !requestID.isEmpty, requestID.count <= 180 else {
+                    replyHandler(nil, "Invalid UserScript request identifier")
+                    return
+                }
+                let key = script.id.uuidString + ":" + requestID
+                if body["action"] as? String == "abort" {
+                    userScriptRequests[key]?.cancel()
+                    replyHandler(true, nil)
+                    return
+                }
+                guard userScriptRequests[key] == nil else {
+                    replyHandler(nil, "Duplicate UserScript request identifier")
+                    return
+                }
+                userScriptRequests[key] = Task { @MainActor [weak self] in
+                    defer { self?.userScriptRequests[key] = nil }
                     do {
                         replyHandler(
                             try await UserScriptHTTPBridge.response(
@@ -1609,28 +1768,39 @@ struct WebViewRepresentable: UIViewRepresentable {
             replyHandler: @escaping (Any?, String?) -> Void
         ) async {
             do {
+                let service = BrowserExtensionService.shared
+                let mutationID = body["__souloMutationID"] as? String ?? ""
                 switch body["action"] as? String {
+                case "getStorageSnapshot" where script.hasGrant(
+                    "GM_getValue", "GM.getValue", "GM_getValues", "GM.getValues",
+                    "GM_listValues", "GM.listValues", "GM_addValueChangeListener", "GM.addValueChangeListener"
+                ):
+                    replyHandler(service.storageSnapshot(scriptID: script.id), nil)
+                    return
+                case "reportError":
+                    guard let message = body["message"] as? String else { throw BrowserExtensionError.invalidStorageValue }
+                    service.reportUserScriptError(message, scriptID: script.id)
                 case "setValue" where script.hasGrant("GM_setValue", "GM.setValue"):
                     guard let key = body["key"] as? String,
                           let value = body["value"] as? String else {
                         throw BrowserExtensionError.invalidStorageValue
                     }
-                    try BrowserExtensionService.shared.setStoredValue(value, forKey: key, scriptID: script.id)
+                    try service.setStoredValues([key: value], scriptID: script.id, origin: userScriptBridgeToken, mutationID: mutationID)
                 case "deleteValue" where script.hasGrant("GM_deleteValue", "GM.deleteValue"):
                     guard let key = body["key"] as? String else {
                         throw BrowserExtensionError.invalidStorageValue
                     }
-                    BrowserExtensionService.shared.deleteStoredValue(forKey: key, scriptID: script.id)
+                    try service.deleteStoredValuesPersisting(forKeys: [key], scriptID: script.id, origin: userScriptBridgeToken, mutationID: mutationID)
                 case "setValues" where script.hasGrant("GM_setValues", "GM.setValues"):
                     guard let values = body["values"] as? [String: String] else {
                         throw BrowserExtensionError.invalidStorageValue
                     }
-                    try BrowserExtensionService.shared.setStoredValues(values, scriptID: script.id)
+                    try service.setStoredValues(values, scriptID: script.id, origin: userScriptBridgeToken, mutationID: mutationID)
                 case "deleteValues" where script.hasGrant("GM_deleteValues", "GM.deleteValues"):
                     guard let keys = body["keys"] as? [String] else {
                         throw BrowserExtensionError.invalidStorageValue
                     }
-                    BrowserExtensionService.shared.deleteStoredValues(forKeys: keys, scriptID: script.id)
+                    try service.deleteStoredValuesPersisting(forKeys: keys, scriptID: script.id, origin: userScriptBridgeToken, mutationID: mutationID)
                 case "setClipboard" where script.hasGrant("GM_setClipboard", "GM.setClipboard"):
                     guard let value = body["value"] as? String else {
                         throw BrowserExtensionError.invalidStorageValue
@@ -1709,7 +1879,16 @@ struct WebViewRepresentable: UIViewRepresentable {
                         preferredFilename: preferredName,
                         pageURL: webView?.url,
                         webView: webView,
-                        fallbackBaseName: script.name
+                        fallbackBaseName: script.name,
+                        userScriptPolicy: UserScriptDownloadPolicy(script: script, pageURL: webView?.url),
+                        onStart: { [weak self] itemID in
+                            let key = script.id.uuidString + ":" + (body["__souloDownloadID"] as? String ?? "")
+                            guard self?.userScriptDownloads.attach(itemID, to: key) == true else {
+                                DownloadManagerService.shared.markCanceled(id: itemID)
+                                BackgroundDownloadService.shared.abandon(id: itemID)
+                                return
+                            }
+                        }
                     )
                     replyHandler(["success": true, "name": fileURL.lastPathComponent], nil)
                     return
@@ -1717,19 +1896,11 @@ struct WebViewRepresentable: UIViewRepresentable {
                     "GM_getResourceText", "GM.getResourceText",
                     "GM_getResourceURL", "GM.getResourceUrl", "GM.getResourceURL"
                 ):
-                    guard let name = body["name"] as? String,
-                          let resourceURL = script.resources?[name] else {
+                    guard let name = body["name"] as? String else {
                         throw WebResourceDownloadError.invalidResponse
                     }
-                    let response = try await UserScriptHTTPBridge.response(
-                        for: [
-                            "url": resourceURL,
-                            "method": "GET",
-                            "timeout": 30_000,
-                            "responseType": "arraybuffer"
-                        ],
-                        script: script,
-                        pageURL: webView?.url
+                    let response = try await UserScriptHTTPBridge.resourceResponse(
+                        named: name, script: script, pageURL: webView?.url
                     )
                     replyHandler(response, nil)
                     return
@@ -1783,7 +1954,9 @@ struct WebViewRepresentable: UIViewRepresentable {
                     replyHandler(nil, "Unsupported or unauthorized UserScript API")
                     return
                 }
-                replyHandler(true, nil)
+                if ["setValue", "setValues", "deleteValue", "deleteValues"].contains(body["action"] as? String ?? "") {
+                    replyHandler(service.storageSnapshot(scriptID: script.id, origin: userScriptBridgeToken, mutationID: mutationID), nil)
+                } else { replyHandler(true, nil) }
             } catch {
                 replyHandler(nil, error.localizedDescription)
             }
@@ -1791,7 +1964,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         @MainActor
         private var userScriptTabIdentifier: String {
-            String(describing: ObjectIdentifier(viewModel))
+            viewModel.userScriptTabID
         }
 
         private func resolvedUserScriptURL(_ value: Any?, relativeTo baseURL: URL?) -> URL? {
@@ -2221,7 +2394,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func applyPrivacyProtectionIfNeeded(on webView: WKWebView, forceCurrentDocument: Bool = false) {
             let defaults = UserDefaults.standard
-            let source = WebViewScripts.privacyProtection(
+            let configuration = PrivacyConfiguration(
                 gpcEnabled: defaults.object(forKey: "privacy_gpc_enabled") as? Bool
                     ?? PrivacyFeatureDefaults.gpcEnabled,
                 cookieBannerHandling: defaults.object(forKey: "privacy_cookie_banner_enabled") as? Bool
@@ -2230,6 +2403,14 @@ struct WebViewRepresentable: UIViewRepresentable {
                     adding: defaults.stringArray(forKey: "soulo_privacy_disabled_hosts") ?? []
                 )
             )
+            let source: String
+            if lastPrivacyConfiguration == configuration, !viewModel.installedPrivacyProtectionSource.isEmpty {
+                source = viewModel.installedPrivacyProtectionSource
+            } else {
+                source = WebViewScripts.privacyProtection(gpcEnabled: configuration.gpcEnabled,
+                    cookieBannerHandling: configuration.cookieBannerHandling, disabledHosts: configuration.disabledHosts)
+                lastPrivacyConfiguration = configuration
+            }
             let changed = source != viewModel.installedPrivacyProtectionSource
             if changed {
                 viewModel.installedPrivacyProtectionSource = source
@@ -2296,6 +2477,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             viewModel.nativeCosmeticDocumentReady = WebViewRepresentable.installedContentRuleSignatures[ObjectIdentifier(webView)]
                 == WebViewRepresentable.allowlistSignature(for: allowlist)
             if webView === viewModel.webView {
+                cancelUserScriptRequests()
                 cancelDomainConfirmation()
                 clearVideoAwake()
                 viewModel.beginPageNavigation()
@@ -2313,7 +2495,6 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
             guard isCurrentNavigation(navigation, in: webView) else { return }
-            outgoingHistoryDocument = nil
             if let url = webView.url { viewModel.recordNavigationRequest(url) }
             if cloudflareChallengeResponse {
                 webView.evaluateJavaScript("""
@@ -2322,13 +2503,18 @@ struct WebViewRepresentable: UIViewRepresentable {
                 window.__souloAdBlockRemoveAds?.();
                 """, completionHandler: nil)
             }
+            viewModel.historyDocumentDidCommit(to: webView.url)
+            viewModel.mediaSession.finishNavigation()
             latestNavigation = navigation
             BrowserStartupTrace.mark("navigation_commit")
+            traceMedia(in: webView, stage: "commit")
             viewModel.errorMessage = nil
             provisionalNavigation = nil
             viewModel.currentDocumentHasUserInteraction = false
             userInitiatedNavigationChain = false
-            navigationGesture = nil
+            // Search results can use an intermediate document before reaching
+            // their declared destination. Keep only the bounded click record;
+            // generic link/control heuristics still require the original frame.
             navigationOriginURL = webView.url
             // A new document receives its own user scripts. The bootstrap flag
             // is needed only when a bypassed document is reused by an SPA.
@@ -2354,7 +2540,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             guard isCurrentNavigation(navigation, in: webView) else { return }
-            outgoingHistoryDocument = nil
+            viewModel.mediaSession.finishNavigation()
             latestNavigation = navigation
             navigationFinished = true
             viewModel.errorMessage = nil
@@ -2382,12 +2568,28 @@ struct WebViewRepresentable: UIViewRepresentable {
                 self.applyCurrentAdHidingIfNeeded(on: webView)
                 self.applyPrivacyProtectionIfNeeded(on: webView, forceCurrentDocument: true)
                 WebAppearanceService.shared.apply(to: webView, force: true)
-                self.scheduleBlankPageRecovery(on: webView)
                 self.viewModel.scheduleSnapshotCapture()
                 self.focusAccessibilityOnLoadedPage(webView)
                 self.scheduleVideoViewportSynchronization(on: webView)
                 await self.viewModel.refreshPageTranslationState()
             }
+        }
+
+        private func traceMedia(in webView: WKWebView, stage: String) {
+            #if DEBUG
+            guard ProcessInfo.processInfo.environment["SOULO_BROWSER_TRACE"] == "1" else { return }
+            for delay in [0.5, 2.0, 5.0] {
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self, weak webView] in
+                    guard let self, let webView else { return }
+                    let page = "\(webView.url?.host ?? "")\(webView.url?.path ?? "")"
+                    let main = webView === self.viewModel.webView
+                    webView.callAsyncJavaScript("const off=document.querySelector('[class*=voiceControlContainer] [class*=voiceOffSvg]');return {iconMuted:!!off&&getComputedStyle(off).display!=='none',media:[...document.querySelectorAll('video,audio')].map(m=>({time:m.currentTime,paused:m.paused,muted:m.muted,ready:m.readyState}))};",
+                        arguments: [:], in: nil, in: WebMediaSession.world) { result in
+                        BrowserStartupTrace.mark("media_\(stage)", detail: "delay=\(delay) page=\(page) main=\(main) state=\(result)")
+                    }
+                }
+            }
+            #endif
         }
 
         private func presentEpisodePicker(on webView: WKWebView) {
@@ -2419,26 +2621,43 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         private func synchronizeVideoControlScale(on webView: WKWebView, in target: WKFrameInfo? = nil) {
-            let generation = navigationGeneration
-            webView.evaluateJavaScript("window.visualViewport?.scale || 1", in: nil,
-                in: WebVideoOrientationRuntime.world) { [weak self, weak webView] result in
-                guard let self, let webView, self.viewModel.webView === webView,
-                      self.navigationGeneration == generation else { return }
-                let zoom = webView.pageZoom
-                let pinch: Double
-                if case .success(let value) = result, let scale = value as? Double { pinch = scale }
-                else { pinch = Double(webView.scrollView.zoomScale) }
-                let scale = pinch*zoom
-                guard zoom.isFinite, scale.isFinite, zoom > 0, scale > 0 else { return }
-                let source = "window.__souloVideoOrientation?.setPageScale(\(scale),\(zoom));"
-                let frames: [WKFrameInfo?] = target.map { [Optional($0)] }
-                    ?? ([nil] + self.viewModel.mediaFrameInfos.map { Optional($0) })
-                for frame in frames {
-                    webView.evaluateJavaScript(source, in: frame, in: WebVideoOrientationRuntime.world, completionHandler: nil)
-                }
-                webView.evaluateJavaScript("window.__souloEpisodes?.setContentZoom(\(zoom));", in: nil,
-                    in: WebEpisodeRuntime.world, completionHandler: nil)
+            guard viewModel.webView === webView else { return }
+            let zoom = webView.pageZoom, scale = webView.scrollView.zoomScale
+            guard zoom.isFinite, scale.isFinite, zoom > 0, scale > 0 else { return }
+            if let target, !target.isMainFrame,
+               let last = lastVideoControlScale, last.generation == navigationGeneration,
+               abs(last.zoom - Double(zoom)) < 0.0001 {
+                applyVideoControlScale(last.scale, zoom: last.zoom, on: webView, in: target)
+                return
             }
+            if target == nil, let last = lastVideoScaleInput, last.generation == navigationGeneration,
+               last.scale == scale, last.zoom == zoom { return }
+            lastVideoScaleInput = (navigationGeneration, scale, zoom)
+            // The owning document reports its real CSS viewport and current
+            // content zoom. Its URL and zoom are checked before forwarding to
+            // embedded players, so an outgoing document cannot resize them.
+            webView.evaluateJavaScript("window.__souloVideoOrientation?.setContentZoom(\(Double(zoom)));",
+                in: nil, in: WebVideoOrientationRuntime.world, completionHandler: nil)
+        }
+
+        private func applyVideoControlScale(_ scale: Double, zoom: Double, on webView: WKWebView, in target: WKFrameInfo? = nil) {
+            guard viewModel.webView === webView else { return }
+            // Height-only viewport changes and WebKit layout callbacks must not
+            // fan out identical scripts to every media frame. A ready/restored
+            // frame still receives its explicit initialization below.
+            if target == nil {
+                if let last = lastVideoControlScale, last.generation == navigationGeneration,
+                   abs(last.scale - scale) < 0.0001, abs(last.zoom - zoom) < 0.0001 { return }
+                lastVideoControlScale = (navigationGeneration, scale, zoom)
+            }
+            let source = "window.__souloVideoOrientation?.setPageScale(\(scale),\(zoom));"
+            let frames: [WKFrameInfo?] = target.map { [Optional($0)] }
+                ?? ([nil] + viewModel.mediaFrameInfos.map { Optional($0) })
+            for frame in frames {
+                webView.evaluateJavaScript(source, in: frame, in: WebVideoOrientationRuntime.world, completionHandler: nil)
+            }
+            webView.evaluateJavaScript("window.__souloEpisodes?.setContentZoom(\(zoom));", in: nil,
+                in: WebEpisodeRuntime.world, completionHandler: nil)
         }
 
         private func refreshSiteEpisodeData(on webView: WKWebView) {
@@ -2495,7 +2714,8 @@ struct WebViewRepresentable: UIViewRepresentable {
             withError error: Error
         ) {
             guard isCurrentNavigation(navigation, in: webView) else { return }
-            outgoingHistoryDocument = nil
+            viewModel.finishHistoryPreview()
+            viewModel.mediaSession.finishNavigation(restoreInterruptedMedia: true)
             latestNavigation = navigation
             navigationFinished = true
             if provisionalNavigation === navigation { provisionalNavigation = nil }
@@ -2508,13 +2728,14 @@ struct WebViewRepresentable: UIViewRepresentable {
             withError error: Error
         ) {
             guard isCurrentNavigation(navigation, in: webView) else { return }
-            outgoingHistoryDocument = nil
             latestNavigation = navigation
             navigationFinished = true
             if provisionalNavigation === navigation { provisionalNavigation = nil }
             if retryHTTPFallbackIfNeeded(on: webView, error: error) {
                 return
             }
+            viewModel.finishHistoryPreview()
+            viewModel.mediaSession.finishNavigation(restoreInterruptedMedia: true)
             handleNavigationError(error)
         }
 
@@ -2568,84 +2789,6 @@ struct WebViewRepresentable: UIViewRepresentable {
             viewModel.setError(message, failingURL: failingURL(from: nsError))
         }
 
-        private func scheduleBlankPageRecovery(on webView: WKWebView) {
-            guard let url = webView.url, isRecoverableWebPageURL(url) else { return }
-            let urlString = url.absoluteString
-            let generation = navigationGeneration
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self, weak webView] in
-                guard let self,
-                      let webView,
-                      self.navigationGeneration == generation,
-                      webView.url?.absoluteString == urlString,
-                      !webView.isLoading else {
-                    return
-                }
-
-                webView.evaluateJavaScript(WebViewScripts.blankPageProbe) { [weak self, weak webView] result, error in
-                    guard let self,
-                          let webView,
-                          error == nil,
-                          self.navigationGeneration == generation,
-                          webView.url?.absoluteString == urlString,
-                          !webView.isLoading else {
-                        return
-                    }
-
-                    guard self.shouldRecoverBlankPage(from: result) else {
-                        self.blankPageRecoveryAttempts.removeValue(forKey: urlString)
-                        return
-                    }
-
-                    self.recoverBlankPage(on: webView, url: url, urlString: urlString)
-                }
-            }
-        }
-
-        private func recoverBlankPage(on webView: WKWebView, url: URL, urlString: String) {
-            let attempt = blankPageRecoveryAttempts[urlString, default: 0]
-            guard attempt < 2 else {
-                Task { @MainActor in
-                    viewModel.setError(LanguageManager.shared.localizedString("load_error"))
-                }
-                return
-            }
-
-            blankPageRecoveryAttempts[urlString] = attempt + 1
-            navigationGeneration = UUID()
-            Task { @MainActor in
-                viewModel.errorMessage = nil
-                viewModel.updateLoading(true)
-            }
-
-            if attempt == 0 {
-                webView.reload()
-            } else {
-                webView.load(URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30))
-            }
-        }
-
-        private func shouldRecoverBlankPage(from value: Any?) -> Bool {
-            guard let probe = value as? [String: Any],
-                  (probe["readyState"] as? String) == "complete" else {
-                return false
-            }
-
-            guard let titleLength = SafeNumericValue.nonnegativeInt(probe["titleLength"]),
-                  let textLength = SafeNumericValue.nonnegativeInt(probe["textLength"]),
-                  let bodyChildCount = SafeNumericValue.nonnegativeInt(probe["bodyChildCount"]),
-                  let bodyHTMLLength = SafeNumericValue.nonnegativeInt(probe["bodyHTMLLength"]),
-                  let visibleElementCount = SafeNumericValue.nonnegativeInt(probe["visibleElementCount"]) else { return false }
-
-            guard titleLength == 0,
-                  textLength == 0,
-                  visibleElementCount == 0 else {
-                return false
-            }
-
-            return bodyChildCount == 0 || bodyHTMLLength < 240
-        }
-
         private func isRecoverableWebPageURL(_ url: URL) -> Bool {
             let scheme = url.scheme?.lowercased()
             return scheme == "http" || scheme == "https"
@@ -2671,40 +2814,46 @@ struct WebViewRepresentable: UIViewRepresentable {
                 return
             }
 
-            if url.scheme?.lowercased() == "magnet" {
+            if ["magnet", "ed2k", "thunder"].contains(url.scheme?.lowercased() ?? "") {
                 decide(.cancel)
-                if navigationAction.navigationType == .linkActivated {
+                // Search sites also launch links from a real button's onclick.
+                // Keep unsolicited script redirects blocked, but preserve that
+                // recent activation from this exact document and WebView.
+                let activatedButton = navigationGesture.map {
+                    $0.webView == ObjectIdentifier(webView)
+                        && $0.frameURL == navigationAction.sourceFrame.requestURL
+                        && ProcessInfo.processInfo.systemUptime - $0.time <= 3
+                        && ($0.isControl || $0.isLink)
+                } ?? false
+                if navigationAction.navigationType == .linkActivated
+                    || (navigationAction.navigationType == .other && activatedButton) {
+                    navigationGesture = nil
                     NotificationCenter.default.post(name: .createSouloDownload, object: url)
                 }
                 return
             }
 
             let nativeRequest = (webView as? AccessibleWebView)?.consumeNativeNavigation(to: url) == true
-            // Once Back/Forward starts, a timer in the abandoned document must
-            // not replace that traversal with a fresh redirect. Explicit taps,
-            // address entries and the history request itself still take priority.
-            if navigationAction.targetFrame?.isMainFrame == true,
-               navigationAction.navigationType == .other, !nativeRequest,
-               !isExplicitNavigation(navigationAction, in: webView),
-               let outgoingHistoryDocument,
-               navigationAction.sourceFrame.requestURL == outgoingHistoryDocument {
-                BrowserStartupTrace.mark("history_outgoing_redirect_cancelled")
-                let recoveryID = historyRecoveryID
-                let target = pendingHistoryItem
-                decide(.cancel)
-                // WebKit may invalidate the earlier policy listener when the
-                // abandoned document starts this request. Reassert the exact
-                // history item, preserving its state instead of loading a URL.
-                DispatchQueue.main.async { [weak self, weak webView] in
-                    guard let self, let webView, let target,
-                          self.historyRecoveryID == recoveryID,
-                          self.viewModel.webView === webView else { return }
-                    let entries = webView.backForwardList.backList
-                        + (webView.backForwardList.currentItem.map { [$0] } ?? [])
-                        + webView.backForwardList.forwardList
-                    if entries.contains(where: { $0 === target }) { webView.go(to: target) }
+            // Preserve WebKit's exact history item, page cache and interactive
+            // transition. Never cancel/reissue a Back/Forward navigation.
+            if navigationAction.navigationType == .backForward {
+                viewModel.cancelBackwardTraversal()
+                viewModel.finishHistoryPreview()
+                viewModel.mediaSession.allowUserNavigation()
+                viewModel.mediaSession.finishNavigation()
+                if navigationAction.targetFrame?.isMainFrame == true {
+                    viewModel.recordNavigationRequest(url)
                 }
+                decide(.allow)
                 return
+            }
+            if navigationAction.targetFrame?.isMainFrame == true {
+                if navigationAction.navigationType == .reload {
+                    viewModel.mediaSession.allowUserNavigation()
+                } else if viewModel.mediaSession.navigationWasCancelled {
+                    decide(.cancel)
+                    return
+                }
             }
             if nativeRequest, navigationAction.targetFrame?.isMainFrame == true { navigationOriginURL = url }
             guard allowsNavigation(navigationAction, in: webView, nativeRequest: nativeRequest) else {
@@ -2712,18 +2861,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 return
             }
 
-            if navigationAction.navigationType == .backForward {
-                if navigationAction.targetFrame?.isMainFrame == true,
-                   let target = viewModel.historyTargetSkippingAutomaticRedirects(to: url,
-                        from: navigationAction.sourceFrame.requestURL, in: webView) {
-                    decide(.cancel)
-                    DispatchQueue.main.async { [weak webView] in webView?.go(to: target) }
-                    return
-                }
-                viewModel.willNavigateHistory(in: webView,
-                    isMainFrame: navigationAction.targetFrame?.isMainFrame != false,
-                    frameURL: navigationAction.request.url)
-            } else if navigationAction.targetFrame?.isMainFrame == true {
+            if navigationAction.targetFrame?.isMainFrame == true {
                 viewModel.cancelBackwardTraversal()
             }
 
@@ -2751,6 +2889,17 @@ struct WebViewRepresentable: UIViewRepresentable {
                 case .allow:
                     let method = navigationAction.request.httpMethod?.uppercased() ?? "GET"
                     let isMainFrame = navigationAction.targetFrame?.isMainFrame == true
+                    if !nativeRequest, (isMainFrame || navigationAction.targetFrame == nil), method == "GET",
+                       navigationAction.navigationType != .reload,
+                       (navigationAction.navigationType == .linkActivated || userInitiatedNavigationChain),
+                       let appScheme = WebNavigationPolicyService.shared.universalAppScheme(for: url),
+                       WebNavigationPolicyService.shared.universalAppScheme(for: navigationAction.sourceFrame.requestURL ?? navigationOriginURL ?? url) != appScheme,
+                       let appURL = URL(string: appScheme + "://"), UIApplication.shared.canOpenURL(appURL) {
+                        decide(.cancel)
+                        viewModel.mediaSession.finishNavigation()
+                        routeExternalURL(url, browserURL: url)
+                        return
+                    }
                     if isMainFrame, method == "GET", navigationAction.sourceFrame.isMainFrame,
                        navigationAction.navigationType == .other,
                        !nativeRequest, !viewModel.currentDocumentHasUserInteraction,
@@ -2762,6 +2911,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                         if from?.url != to?.url { viewModel.recordAutomaticRedirect(in: webView) }
                     }
                     let shouldSkipPrivacyTransform = oneShotHTTPFallbacks.remove(url.absoluteString) != nil
+                    let mayRewriteRequest = nativeRequest || navigationAction.navigationType == .linkActivated
 
                     if isMainFrame, method == "GET",
                        navigationAction.navigationType == .linkActivated,
@@ -2776,7 +2926,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
                     // Rewriting a history action cancels WebKit's interactive
                     // restoration and replaces it with a fresh load mid-swipe.
-                    if method == "GET", navigationAction.navigationType != .backForward, !shouldSkipPrivacyTransform {
+                    if mayRewriteRequest, method == "GET", navigationAction.navigationType != .backForward, !shouldSkipPrivacyTransform {
                         switch PrivacyNavigationService.shared.decision(for: url, isMainFrame: isMainFrame) {
                         case .allow:
                             break
@@ -2806,7 +2956,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                     // Loading a rewritten request on WKWebView always navigates its
                     // main frame. Leave iframe requests and new-window contexts to
                     // WebKit instead of replacing the page that contains them.
-                    if isMainFrame, method == "GET", navigationAction.navigationType != .backForward,
+                    if mayRewriteRequest, isMainFrame, method == "GET", navigationAction.navigationType != .backForward,
                        let privacyHeaderRequest = privacyHeaderRequestIfNeeded(for: navigationAction.request) {
                         privacyHeaderBypassURLs.insert(privacyHeaderRequest.url?.absoluteString ?? url.absoluteString)
                         decide(.cancel)
@@ -2837,21 +2987,15 @@ struct WebViewRepresentable: UIViewRepresentable {
                     }
 
                     if isMainFrame {
-                        historyRecoveryID = UUID()
-                        let entries = webView.backForwardList.backList
-                            + (webView.backForwardList.currentItem.map { [$0] } ?? [])
-                            + webView.backForwardList.forwardList
-                        let targets = entries.filter { $0.url == url }
-                        pendingHistoryItem = navigationAction.navigationType == .backForward && targets.count == 1
-                            ? targets.first : nil
-                        outgoingHistoryDocument = navigationAction.navigationType == .backForward
-                            && pendingHistoryItem != nil ? navigationAction.sourceFrame.requestURL : nil
                         if webView === viewModel.webView { viewModel.recordNavigationRequest(url) }
+                        viewModel.mediaSession.beginNavigation(to: url, navigationType: navigationAction.navigationType)
                     }
                     decide(.allow)
                 case .cancel:
+                    if navigationAction.targetFrame?.isMainFrame == true { viewModel.mediaSession.finishNavigation() }
                     decide(.cancel)
                 case .external(let externalURL):
+                    if navigationAction.targetFrame?.isMainFrame == true { viewModel.mediaSession.finishNavigation() }
                     decide(.cancel)
                     routeExternalURL(externalURL)
                 }
@@ -2860,7 +3004,10 @@ struct WebViewRepresentable: UIViewRepresentable {
                navigationAction.navigationType != .backForward, navigationAction.navigationType != .reload {
                 let origin = provisionalNavigation != nil ? navigationOriginURL : webView.url
                 if requestDomainConfirmation(to: url, from: origin, in: webView, request: navigationAction.request, completion: { allowed in
-                    if allowed { continueNavigation() } else { decide(.cancel) }
+                    if allowed {
+                        self.userInitiatedNavigationChain = true
+                        continueNavigation()
+                    } else { decide(.cancel) }
                 }) { return }
             }
             continueNavigation()
@@ -2868,19 +3015,28 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         private func isExplicitNavigation(_ action: WKNavigationAction, in webView: WKWebView,
                                           nativeRequest: Bool = false) -> Bool {
-            guard let destination = action.request.url else { return false }
+            guard action.request.url != nil else { return false }
             if nativeRequest { return true }
+            if isDeclaredNavigation(action, in: webView) { return true }
             guard let gesture = navigationGesture,
                   gesture.webView == ObjectIdentifier(webView),
                   gesture.frameURL == action.sourceFrame.requestURL,
                   ProcessInfo.processInfo.systemUptime - gesture.time <= 3 else { return false }
-            if gesture.destinations.contains(where: {
-                BrowserDomainNavigationPolicy.isExplicitNavigation(nativeRequest: false,
-                    destination: destination, recentGestureDestination: $0)
-            }) { return true }
             if gesture.isForm && [.formSubmitted, .formResubmitted].contains(action.navigationType) { return true }
             return gesture.isLink && (action.navigationType == .linkActivated
                 || (action.targetFrame?.isMainFrame == true && action.navigationType == .other))
+        }
+
+        private func isDeclaredNavigation(_ action: WKNavigationAction, in webView: WKWebView) -> Bool {
+            guard let destination = action.request.url, let gesture = navigationGesture,
+                  gesture.webView == ObjectIdentifier(webView),
+                  gesture.frameURL == action.sourceFrame.requestURL
+                    || (gesture.mainFrame && action.sourceFrame.isMainFrame),
+                  ProcessInfo.processInfo.systemUptime - gesture.time <= 10 else { return false }
+            return gesture.destinations.contains {
+                BrowserDomainNavigationPolicy.isExplicitNavigation(nativeRequest:false,
+                    destination:destination,recentGestureDestination:$0)
+            }
         }
 
         private func allowsNavigation(
@@ -2895,10 +3051,10 @@ struct WebViewRepresentable: UIViewRepresentable {
             if case .external = WebNavigationPolicyService.shared.decision(for: url) { return true }
             let targetsTopLevel = action.targetFrame == nil || action.targetFrame?.isMainFrame == true
             let sourceURL = action.sourceFrame.requestURL
-            let recentGesture = navigationGesture.map {
+            let recentGesture = isDeclaredNavigation(action, in: webView) || (navigationGesture.map {
                 $0.webView == ObjectIdentifier(webView) && $0.frameURL == sourceURL
                     && ProcessInfo.processInfo.systemUptime - $0.time <= 3
-            } ?? false
+            } ?? false)
             let adBlockingEnabled = AdBlockSettingsService.filteringEnabled()
             let bypassesProtection = AdBlockSettingsService.isHostAllowlisted(webView.url?.host)
             if adBlockingEnabled, !bypassesProtection, !nativeRequest, targetsTopLevel,
@@ -3000,12 +3156,12 @@ struct WebViewRepresentable: UIViewRepresentable {
             return nil
         }
 
-        private func routeExternalURL(_ url: URL) {
+        private func routeExternalURL(_ url: URL, browserURL: URL? = nil) {
             guard viewModel.mediaSession.isActive else { return }
             NotificationCenter.default.post(
                 name: .webViewExternalURLRequest,
                 object: viewModel,
-                userInfo: ["url": url]
+                userInfo: ["url": url, "browserURL": browserURL as Any]
             )
         }
 
@@ -3053,11 +3209,19 @@ struct WebViewRepresentable: UIViewRepresentable {
         // MARK: Navigation becomes download
 
         func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) {
+            if webView === viewModel.webView, navigationAction.targetFrame?.isMainFrame == true {
+                viewModel.finishHistoryPreview()
+                viewModel.mediaSession.finishNavigation(restoreInterruptedMedia: true)
+            }
             webView.scrollView.refreshControl?.endRefreshing()
             download.delegate = self
         }
 
         func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) {
+            if webView === viewModel.webView, navigationResponse.isForMainFrame {
+                viewModel.finishHistoryPreview()
+                viewModel.mediaSession.finishNavigation(restoreInterruptedMedia: true)
+            }
             webView.scrollView.refreshControl?.endRefreshing()
             download.delegate = self
         }
@@ -3127,6 +3291,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             configuration: WKWebViewConfiguration,
             userInitiated: Bool
         ) -> WKWebView {
+            BrowserStartupTrace.mark("embedded_popup_open")
             // WebKit supplies a new-window configuration, but per-view settings
             // such as the custom user agent are not copied automatically. Match
             // the parent tab so iPad does not silently promote a mobile popup to
@@ -3160,6 +3325,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 if domainDelegate?.userInitiatedNavigationChain != true,
                    !self.isExplicitNavigation(action, in: popup),
                    self.requestDomainConfirmation(to: url, from: origin, in: parentWebView, request: action.request, completion: { allowed in
+                    if allowed { domainDelegate?.userInitiatedNavigationChain = true }
                     decision(allowed ? .allow : .cancel)
                     if !allowed, domainDelegate?.hasCommittedDocument != true { self.dismissEmbeddedPopups(in: parentWebView) }
                 }) { return }
@@ -3214,6 +3380,8 @@ struct WebViewRepresentable: UIViewRepresentable {
                 closeButton.heightAnchor.constraint(equalToConstant: 44)
             ])
             parentWebView.addSubview(container)
+            traceMedia(in: parentWebView, stage: "covered_parent")
+            traceMedia(in: popupWebView, stage: "popup")
             return popupWebView
         }
 
@@ -3232,6 +3400,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         private func removeEmbeddedPopup(_ container: UIView) {
+            BrowserStartupTrace.mark("embedded_popup_close")
             cancelDomainConfirmation()
             for popup in container.subviews.compactMap({ $0 as? WKWebView }) {
                 popup.stopLoading()
@@ -3370,6 +3539,14 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         // MARK: UIScrollViewDelegate
+
+        func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+            if !decelerate { viewModel.scheduleSnapshotCapture() }
+        }
+
+        func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+            viewModel.scheduleSnapshotCapture()
+        }
 
         func scrollViewDidScroll(_ scrollView: UIScrollView) {
             let currentOffset = scrollView.contentOffset.y
@@ -3678,7 +3855,11 @@ struct WebViewRepresentable: UIViewRepresentable {
                 completionHandler(existing.localURL)
                 return
             }
-            if WebResourceDownloadService.canDownloadInBackground(download.originalRequest),
+            // Small script installs keep WebKit's existing response, cookies
+            // and redirect context instead of fetching a relay/token twice.
+            if !BrowserExtensionInstallCandidate.isUserScriptURL(response.url),
+               !BrowserExtensionInstallCandidate.isUserScriptURL(download.originalRequest?.url),
+               WebResourceDownloadService.canDownloadInBackground(download.originalRequest),
                let originalRequest = download.originalRequest {
                 let (item, _) = DownloadManagerService.shared.beginDownload(
                     suggestedFilename: WebDownloadFilename.native(
@@ -3708,7 +3889,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                     }
                     do {
                         let fileURL = try await BackgroundDownloadService.shared.start(request: request, item: item)
-                        self?.presentDownloadedFile(fileURL, sourceURL: originalRequest.url)
+                        self?.presentDownloadedFile(fileURL, sourceURL: response.url ?? originalRequest.url)
                     } catch {
                         // The service has already published the failed state.
                     }

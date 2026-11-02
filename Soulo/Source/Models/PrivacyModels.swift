@@ -162,7 +162,7 @@ enum BrowserDownloadStatus: String, Codable, Hashable {
 }
 
 struct BrowserDownloadItem: Identifiable, Codable, Equatable {
-    enum Transport: String, Codable { case webKit, background, streaming, hls, separated, torrent }
+    enum Transport: String, Codable { case webKit, background, streaming, hls, separated, torrent, ed2k }
     let id: UUID
     var fileName: String
     var sourceURLString: String
@@ -175,6 +175,7 @@ struct BrowserDownloadItem: Identifiable, Codable, Equatable {
     var receivedBytes: Int64
     var expectedBytes: Int64
     var transport: Transport
+    var userScriptPolicy: UserScriptDownloadPolicy?
 
     init(
         id: UUID,
@@ -188,7 +189,8 @@ struct BrowserDownloadItem: Identifiable, Codable, Equatable {
         progress: Double = 0,
         receivedBytes: Int64 = 0,
         expectedBytes: Int64 = 0,
-        transport: Transport = .webKit
+        transport: Transport = .webKit,
+        userScriptPolicy: UserScriptDownloadPolicy? = nil
     ) {
         self.id = id
         self.fileName = fileName
@@ -202,11 +204,12 @@ struct BrowserDownloadItem: Identifiable, Codable, Equatable {
         self.receivedBytes = receivedBytes
         self.expectedBytes = expectedBytes
         self.transport = transport
+        self.userScriptPolicy = userScriptPolicy
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, fileName, sourceURLString, localPath, startedAt, completedAt, status
-        case errorMessage, progress, receivedBytes, expectedBytes, transport
+        case errorMessage, progress, receivedBytes, expectedBytes, transport, userScriptPolicy
     }
 
     init(from decoder: Decoder) throws {
@@ -223,6 +226,7 @@ struct BrowserDownloadItem: Identifiable, Codable, Equatable {
         receivedBytes = try container.decodeIfPresent(Int64.self, forKey: .receivedBytes) ?? 0
         expectedBytes = try container.decodeIfPresent(Int64.self, forKey: .expectedBytes) ?? 0
         transport = try container.decodeIfPresent(Transport.self, forKey: .transport) ?? .webKit
+        userScriptPolicy = try container.decodeIfPresent(UserScriptDownloadPolicy.self, forKey: .userScriptPolicy)
     }
 
     var localURL: URL {

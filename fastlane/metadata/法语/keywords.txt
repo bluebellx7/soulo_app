@@ -1,1 +1,1 @@
-privé,onglets,télécharger vidéo,bloqueur de pub,scripts,extensions,traduction,détection média
+privé,onglets,télécharger vidéo,bloqueur de pub,scripts,extensions,traduction,torrent,magnet,MKV

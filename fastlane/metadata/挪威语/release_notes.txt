@@ -1,6 +1,8 @@
 1.2.7
 
 • BT-nedlastinger: Importer .torrent-filer eller magnetlenker, velg filer, sett på pause og fortsett. På iOS 26 kan nedlastinger fortsette i bakgrunnen når systemet tillater det; eldre versjoner lagrer fremdriften og setter på pause.
+• Spill støttede BT-medier mens de lastes ned, og åpne MKV-filer. Importer ed2k/thunder-lenker. Nedlastinger krever tilgjengelige kilder; avspilling avhenger av kodeker.
+• Baidu-søkeoptimalisering er aktivert som standard. Se skriptet eller slå det av under Utvidelser.
 • Velg fem valgfrie snarveier på startsiden til nedlastinger, filer, bokmerker, historikk, bakgrunner og andre sider. Bibliotekets fanelinje blir kompakt når du ruller.
 • Forbedret kompatibilitet med brukerskript, inkludert eksterne avhengigheter via @require.
 • Rettet tilfeller med lyd etter demping av videoer eller dobbel avspilling på enkelte nettsider.

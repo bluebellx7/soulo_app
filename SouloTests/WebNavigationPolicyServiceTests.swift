@@ -3,11 +3,25 @@ import WebKit
 @testable import Soulo
 
 final class WebNavigationPolicyServiceTests: XCTestCase {
-    func testScriptedCrossSiteRedirectStartsInBrowserWithoutRequiringGesture() {
+    func testBilibiliUniversalAppLinksHaveExactHostAndWebFallback() throws {
+        let policy = WebNavigationPolicyService.shared
+        for raw in ["https://www.bilibili.com/video/BV1test", "https://m.bilibili.com/video/BV1test", "https://b23.tv/example"] {
+            let url = try XCTUnwrap(URL(string: raw))
+            XCTAssertEqual(policy.universalAppScheme(for: url), "bilibili")
+            XCTAssertEqual(policy.decision(for: url), .allow, "A user-chosen web fallback must stay navigable")
+        }
+        for raw in ["https://bilibili.com.evil.test/video/BV1test", "https://hdslb.com/video/a", "https://www.bilibili.com/favicon.ico"] {
+            XCTAssertNil(policy.universalAppScheme(for: try XCTUnwrap(URL(string: raw))))
+        }
+    }
+    func testMainFrameCrossSiteNavigationPreservesWebKitRequestAndHistory() {
         let source = URL(string: "https://cn.bing.com/videos/search?q=eggs")!
         let destination = URL(string: "https://www.bilibili.com/video/BV1example")!
-        XCTAssertTrue(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
-            navigationType: .other, targetsMainFrame: true, method: "GET", nativeRequest: false))
+        for type in [WKNavigationType.other, .linkActivated] {
+            XCTAssertFalse(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
+                navigationType: type, targetsMainFrame: true, method: "GET", nativeRequest: false),
+                "Main-frame clicks and location.replace must not be canceled and reissued as app loads")
+        }
         XCTAssertTrue(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
             navigationType: .linkActivated, targetsMainFrame: nil, method: "GET", nativeRequest: false))
         XCTAssertFalse(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
@@ -282,12 +296,12 @@ final class WebNavigationPolicyServiceTests: XCTestCase {
         XCTAssertTrue(BrowserExtensionInstallCandidate.recognizedDownloadURL(
             URL(string: "https://example.com/tools/helper.user.js")!
         ))
-        XCTAssertTrue(BrowserExtensionInstallCandidate.recognizedDownloadURL(
+        XCTAssertEqual(BrowserExtensionInstallCandidate.recognizedDownloadURL(
             URL(string: "https://example.com/extension.xpi")!
-        ))
-        XCTAssertTrue(BrowserExtensionInstallCandidate.recognizedDownloadURL(
+        ), BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled)
+        XCTAssertEqual(BrowserExtensionInstallCandidate.recognizedDownloadURL(
             URL(string: "https://clients2.google.com/service/update2/crx?response=redirect")!
-        ))
+        ), BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled)
         XCTAssertFalse(BrowserExtensionInstallCandidate.recognizedDownloadURL(
             URL(string: "https://example.com/app.js")!
         ))

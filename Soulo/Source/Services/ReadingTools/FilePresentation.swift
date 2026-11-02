@@ -54,7 +54,7 @@ struct FilePresentation: Sendable, Hashable {
         else if ["epub", "mobi", "azw", "azw3", "azw4", "prc", "pdb"].contains(ext) { kind = .book }
         else if ["zip", "rar", "7z"].contains(ext) { kind = .archive }
         else if type?.conforms(to: .audio) == true { kind = .audio }
-        else if type?.conforms(to: .movie) == true { kind = .video }
+        else if ext == "mkv" || type?.conforms(to: .movie) == true { kind = .video }
         else if Self.textExtensions.contains(ext) || type?.conforms(to: .text) == true { kind = .text }
         else { kind = .other }
         return FilePresentation(kind: kind, fileExtension: ext, size: Int64(values?.fileSize ?? 0))

@@ -6,9 +6,8 @@ import WebKit
 final class IPadBrowserBenchmarkUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
-        guard ProcessInfo.processInfo.environment["SOULO_IPAD_BENCHMARK"] == "1",
-              UIDevice.current.userInterfaceIdiom == .pad else {
-            throw XCTSkip("Opt-in physical iPad browser comparison")
+        guard ProcessInfo.processInfo.environment["SOULO_IPAD_BENCHMARK"] == "1" else {
+            throw XCTSkip("Opt-in physical iPhone/iPad browser comparison")
         }
     }
     func testFixtureDiagnosticsAreNotCached() async throws {
@@ -24,7 +23,8 @@ final class IPadBrowserBenchmarkUITests: XCTestCase {
     }
     private var benchmarkBrowsers: [String] {
         let value=ProcessInfo.processInfo.environment["SOULO_BENCH_BROWSER"] ?? "both"
-        return ["safari","soulo"].contains(value) ? [value] : ["safari","soulo"]
+        if value == "all" { return ["safari", "webkit", "soulo"] }
+        return ["safari","webkit","soulo"].contains(value) ? [value] : ["safari","soulo"]
     }
     private func attach(_ app: XCUIApplication, _ name: String) {
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = name; shot.lifetime = .keepAlways; add(shot)
@@ -53,6 +53,7 @@ final class IPadBrowserBenchmarkUITests: XCTestCase {
         attach(soulo,"ipad-soulo-after-scroll")
     }
     func testLiveSaltComparison() throws {
+        guard !benchmarkBrowsers.contains("webkit") else { throw XCTSkip("The minimal WebKit control is for the fixed fixture") }
         XCUIDevice.shared.orientation = .portrait
         let safari = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
         var ownsSafariTab = false
@@ -64,7 +65,7 @@ final class IPadBrowserBenchmarkUITests: XCTestCase {
                 app.activate(); app.typeKey("t",modifierFlags:.command); ownsSafariTab = true
                 app.typeKey("l",modifierFlags:.command); app.typeText(url+"\n")
             } else {
-                app.launchArguments=["-app_language","en-US","-is_incognito","YES","-baidu_search_optimization_enabled",ProcessInfo.processInfo.environment["SOULO_BENCH_BAIDU"] ?? "YES"]
+                app.launchArguments=["-app_language","en-US","-is_incognito","YES","-ad_block_enabled",ProcessInfo.processInfo.environment["SOULO_BENCH_ADS"] ?? "YES","-baidu_search_optimization_enabled",ProcessInfo.processInfo.environment["SOULO_BENCH_BAIDU"] ?? "NO"]
                 app.launch()
                 var route=URLComponents();route.scheme="soulo";route.host="open";route.queryItems=[URLQueryItem(name:"url",value:url)]
                 app.open(try XCTUnwrap(route.url))
@@ -74,6 +75,7 @@ final class IPadBrowserBenchmarkUITests: XCTestCase {
             let salt=web.staticTexts.matching(NSPredicate(format:"label CONTAINS %@","盐焗")).firstMatch
             XCTAssertTrue(salt.waitForExistence(timeout:30),"Salt results must appear")
             attach(app,"ipad-live-\(browser)-start")
+            print("IPAD_LIVE_CONTENT|\(browser)|texts=\(web.staticTexts.count)|links=\(web.links.count)|viewport=\(web.frame)");fflush(stdout)
             print("IPAD_BENCH_PHASE|\(browser)|scroll-start|\(Date().timeIntervalSince1970)");fflush(stdout)
             let scrolls=min(10,max(0,Int(ProcessInfo.processInfo.environment["SOULO_BENCH_SCROLLS"] ?? "4") ?? 4))
             for _ in 0..<scrolls {web.swipeUp(velocity:.fast)}
@@ -84,6 +86,26 @@ final class IPadBrowserBenchmarkUITests: XCTestCase {
             attach(app,"ipad-live-\(browser)-returned-top")
             if browser == "safari" { app.typeKey("w",modifierFlags:.command); ownsSafariTab=false }
         }
+    }
+    func testBaiduOptimizationIsOff() throws {
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US"]
+        app.launch(); app.open(URL(string: "soulo://")!)
+        app.buttons["home.menu"].tap()
+        app.buttons["Settings"].firstMatch.tap()
+        let extensions = app.buttons["Scripts & Extensions"].firstMatch
+        for _ in 0..<10 {
+            if extensions.exists && extensions.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(extensions.waitForExistence(timeout: 5)); extensions.tap()
+        let toggle = app.switches["extensions.site-plugin.baidu-search"].firstMatch
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        if toggle.value as? String == "1" {
+            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        }
+        XCTAssertEqual(toggle.value as? String, "0")
+        attach(app, "ipad-baidu-optimization-off")
     }
     func testLongPressSelectionAndHistory() async throws {
         XCUIDevice.shared.orientation = .portrait
@@ -159,11 +181,15 @@ final class IPadBrowserBenchmarkUITests: XCTestCase {
         let safari=XCUIApplication(bundleIdentifier:"com.apple.mobilesafari")
         defer { if ownsSafariTab { safari.activate();safari.typeKey("w",modifierFlags:.command) } }
         for browser in benchmarkBrowsers {
-            let app=XCUIApplication(bundleIdentifier:browser=="safari" ? "com.apple.mobilesafari":"com.dkluge.Soulo")
+            let bundleID = browser == "safari" ? "com.apple.mobilesafari" : browser == "webkit" ? "com.dkluge.Soulo.BenchmarkHost" : "com.dkluge.Soulo"
+            let app=XCUIApplication(bundleIdentifier:bundleID)
             print("IPAD_BENCH_PHASE|\(browser)|begin|\(Date().timeIntervalSince1970)");fflush(stdout)
             let url=root.appendingPathComponent("source").appending(queryItems:[URLQueryItem(name:"browser",value:browser)])
             if browser=="safari" {
                 app.activate();app.typeKey("t",modifierFlags:.command);ownsSafariTab=true;app.typeKey("l",modifierFlags:.command);app.typeText(url.absoluteString+"\n")
+            } else if browser == "webkit" {
+                app.launchArguments = ["--benchmark-url", url.absoluteString]
+                app.launch()
             } else {
                 app.launchArguments=["-app_language","en-US","-is_incognito","YES","-baidu_search_optimization_enabled","NO","-ad_block_enabled",ProcessInfo.processInfo.environment["SOULO_BENCH_ADS"] ?? "NO"]
                 app.launch()
@@ -177,7 +203,11 @@ final class IPadBrowserBenchmarkUITests: XCTestCase {
                 if trial>0 {web.links["Reload benchmark page"].firstMatch.tap();try waitForMark(server,browser,"ready",trial+1)}
                 web.links["Open benchmark result"].firstMatch.tap();try waitForMark(server,browser,"result",trial+1)
                 let back=app.buttons.matching(NSPredicate(format:"label IN %@",["Back","返回","后退"])).allElementsBoundByIndex.first{$0.isEnabled&&$0.isHittable}
-                if let back {back.tap()} else {
+                if ProcessInfo.processInfo.environment["SOULO_BENCH_EDGE"] == "1" {
+                    web.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5)).press(
+                        forDuration: 0, thenDragTo: web.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)),
+                        withVelocity: .slow, thenHoldForDuration: 0)
+                } else if let back {back.tap()} else {
                     let origin=app.coordinate(withNormalizedOffset:.zero)
                     origin.withOffset(CGVector(dx:2,dy:app.frame.height*0.5)).press(forDuration:0.05,thenDragTo:origin.withOffset(CGVector(dx:app.frame.width*0.8,dy:app.frame.height*0.5)))
                 }

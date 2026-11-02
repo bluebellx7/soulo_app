@@ -639,7 +639,7 @@
 "userscripts_reload_note" = "脚本安装、编辑、启用、停用或删除后，已打开的网页会重新加载以应用新状态。";
 "userscript_experimental_badge" = "兼容性";
 "userscript_experimental_title" = "UserScript 兼容性";
-"userscript_experimental_desc" = "支持网站规则、document-start/end、较完整的 GM 存储与页面 API、脚本命令、通知、标签页、下载、Cookie、资源及按权限开放的请求。安装前请检查脚本；外部 @require 不会执行。";
+"userscript_experimental_desc" = "支持网站规则、document-start/end、较完整的 GM 存储与页面 API、脚本命令、通知、标签页、下载、Cookie、资源及按权限开放的请求。安装前请检查脚本。";
 "extension_choose_file" = "选择文件或文件夹…";
 "extension_installing" = "正在检查并安装扩展…";
 "extension_install_failed" = "无法安装扩展";
@@ -665,7 +665,7 @@
 "userscript_new" = "新建脚本";
 "userscript_edit" = "编辑脚本";
 "userscript_choose_file" = "选择脚本…";
-"userscript_install_footer" = "点击来源整行即可在 Soulo 当前标签页打开，点击 .user.js 链接会显示安装确认。现支持标准 JavaScript 与较完整的 GM API；脚本不会在隐私模式运行，外部 @require 文件不会执行。";
+"userscript_install_footer" = "点击来源整行即可在 Soulo 当前标签页打开，点击 .user.js 链接会显示安装确认。现支持标准 JavaScript 与较完整的 GM API。UserScript 不会在隐私浏览中运行。";
 "userscript_install_failed" = "无法安装 UserScript";
 "web_extension_temporarily_disabled" = "标准浏览器扩展正在进行兼容性测试，本版本暂不开放。";
 "userscript_unreadable" = "无法以 UTF-8 文本读取所选脚本。";
@@ -690,7 +690,7 @@
 "userscript_docs_partial_title" = "部分支持";
 "userscript_docs_partial_desc" = "网络请求暂不支持上传/进度事件及 Cookie 传输；通知显示在网页内，资源 API 为异步调用，值监听只报告当前页面产生的变化；脚本更新需手动完成。";
 "userscript_docs_unsupported_title" = "暂不支持";
-"userscript_docs_unsupported_desc" = "暂不执行外部 @require，不支持 GM_webRequest 拦截、GM_audio、sandbox/run-in 隔离、自动更新检查，以及 WKWebView 无法等价提供的桌面专属行为。";
+"userscript_docs_unsupported_desc" = "GM_webRequest 拦截、GM_audio、sandbox/run-in 隔离、自动更新检查，以及 WKWebView 无法等价提供的桌面专属行为。";
 "userscript_docs_metadata_title" = "元数据";
 "userscript_docs_metadata_identity" = "脚本名称及可选描述，会显示在安装确认和脚本详情中。";
 "userscript_docs_metadata_version" = "使用稳定且唯一的命名空间；内置脚本发生变化时应递增版本号。";
@@ -701,7 +701,7 @@
 "userscript_docs_metadata_connect" = "授权特权网络请求可访问的主机；未声明时只能请求当前网页主机。";
 "userscript_docs_metadata_urls" = "可选的来源与更新信息，Soulo 会据此识别同一脚本的重新安装。";
 "userscript_docs_metadata_resource" = "声明具名资源；需要同时添加匹配的 @connect，等待现代资源 API 时才会获取。";
-"userscript_docs_metadata_require" = "外部依赖会在安装时提示，但不会下载或执行；脚本必须完全自包含。";
+"userscript_docs_metadata_require" = "安装或保存时下载并缓存 HTTPS @require 文件，在脚本正文前按声明顺序执行。";
 "userscript_docs_api_title" = "支持的特权接口";
 "userscript_docs_api_info" = "读取脚本管理器、Soulo 版本及解析后的脚本元数据，同时支持传统与现代写法。";
 "userscript_docs_api_unsafe_window" = "明确声明 unsafeWindow 权限后，可访问当前网页的 window。";
@@ -736,7 +736,7 @@
 "userscript_docs_limits_storage" = "存储值必须可 JSON 序列化：单项最大 256 KB，每个脚本合计最大 1 MB。";
 "userscript_docs_limits_network" = "特权请求响应最大 20 MB，超时限制为 1–60 秒，且不接受 Cookie、Host、Origin 等请求头。";
 "userscript_docs_limits_private" = "UserScript 不会在隐私浏览中运行。";
-"userscript_docs_limits_require" = "外部 @require 文件不会执行，请避免 CDN 依赖，并将所需逻辑完整写入脚本。";
+"userscript_docs_limits_require" = "安装或保存时下载并缓存 HTTPS @require 文件，在脚本正文前按声明顺序执行。";
 "userscript_docs_template_title" = "最小脚本模板";
 "userscript_docs_template_footer" = "请使用唯一命名空间，并尽量缩小 @match 与 @grant 的声明范围。";
 "userscript_too_large" = "所选脚本超过 2 MB 大小限制。";
@@ -750,7 +750,7 @@
 "userscript_no_extra_permissions" = "无额外权限";
 "userscript_network_title" = "网络访问";
 "userscript_external_requirements" = "外部依赖";
-"userscript_external_requirements_desc" = "此脚本声明了外部 @require 文件，Soulo 不会自动加载它们。";
+"userscript_external_requirements_desc" = "安装或保存时下载并缓存 HTTPS @require 文件，在脚本正文前按声明顺序执行。";
 "userscript_metadata_title" = "脚本详情";
 "userscript_unsupported_permissions" = "暂不支持：%@";
 "userscript_sample_name" = "阅读进度条";
@@ -891,3 +891,17 @@
 "tab_view_carousel" = "卡片视图";
 "tab_close_group" = "关闭整组";
 "tab_close_group_confirm" = "关闭“%@”中的全部标签页（%d 个）？";
+
+"userscript_require_failed" = "无法加载依赖 %@：%@";
+"userscript_require_integrity_failed" = "依赖文件完整性校验失败。";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "管理";
+"extension_update" = "更新";
+"extension_rollback" = "恢复上一版";
+"extension_blocked_sites" = "禁用网站";
+"extension_diagnostics" = "兼容性";
+"extension_review_access" = "选择此扩展可使用的权限和可访问的网站。";
+"extension_limit_commands" = "iOS 不支持扩展键盘快捷键。";
+"extension_limit_notifications" = "支持显示通知，暂不支持通知点击和关闭事件。";
+"extension_limit_offscreen" = "离屏文档仅支持音频播放。";

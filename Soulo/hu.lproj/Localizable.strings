@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "A megnyitott oldalak újratöltődnek egy szkript telepítése, szerkesztése, engedélyezése, letiltása vagy eltávolítása után.";
 "userscript_experimental_badge" = "Kompatibilitás";
 "userscript_experimental_title" = "UserScript kompatibilitás";
-"userscript_experimental_desc" = "Támogatja a webhelyszabályokat, a dokumentum kezdetét/végét, kiterjedt GM-tárhely- és oldal API-kat, szkriptparancsokat, értesítéseket, lapokat, letöltéseket, cookie-kat, erőforrásokat és engedély-hatókörű kéréseket. Telepítés előtt nézzen át minden szkriptet; külső @require fájlok nem hajtódnak végre.";
+"userscript_experimental_desc" = "Támogatja a webhelyszabályokat, a dokumentum kezdetét/végét, kiterjedt GM-tárhely- és oldal API-kat, szkriptparancsokat, értesítéseket, lapokat, letöltéseket, cookie-kat, erőforrásokat és engedély-hatókörű kéréseket. Telepítés előtt nézzen át minden szkriptet.";
 "extension_choose_file" = "Fájl vagy mappa kiválasztása…";
 "extension_installing" = "Bővítmény ellenőrzése és telepítése…";
 "extension_install_failed" = "A bővítményt nem sikerült telepíteni";
@@ -659,7 +659,7 @@
 "userscript_new" = "Új Script";
 "userscript_edit" = "Szkript szerkesztése";
 "userscript_choose_file" = "Szkript kiválasztása…";
-"userscript_install_footer" = "Koppintson egy forrássorra, hogy megnyissa az aktuális Soulo lapon. A .user.js hivatkozás megnyitja a telepítés megerősítését. A szabványos JavaScript és a GM API-k széles készlete támogatott; a szkriptek nem futnak privát böngészésben, és a külső @require fájlok nem futnak le.";
+"userscript_install_footer" = "Koppintson egy forrássorra, hogy megnyissa az aktuális Soulo lapon. A .user.js hivatkozás megnyitja a telepítés megerősítését. A szabványos JavaScript és a GM API-k széles készlete támogatott. UserScripts nem futnak privát böngészés közben.";
 "userscript_install_failed" = "UserScript Nem sikerült telepíteni";
 "web_extension_temporarily_disabled" = "A szabványos böngészőbővítmények átmenetileg nem érhetők el, amíg a kompatibilitási tesztelés befejeződik.";
 "userscript_unreadable" = "A kiválasztott szkript nem olvasható UTF-8 szövegként.";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "Részben támogatott";
 "userscript_docs_partial_desc" = "A hálózati kérések kihagyják a feltöltést/haladást és a cookie-átvitelt. Az értesítések az oldalon belüliek, az erőforrás-API-k aszinkronok, és az értékváltozás-figyelők jelentik az aktuális oldal módosításait. A frissítések ellenőrzése manuális.";
 "userscript_docs_unsupported_title" = "Jelenleg nem támogatott";
-"userscript_docs_unsupported_desc" = "Külső @végrehajtást igényel, GM_webRequest lehallgatás, GM_audio, homokozó/befutó elkülönítés, automatikus frissítésellenőrzés és olyan pontos, csak az asztali számítógépeken végzett viselkedés, amelyet a WKWebView nem tud biztosítani.";
+"userscript_docs_unsupported_desc" = "GM_webRequest lehallgatás, GM_audio, homokozó/befutó elkülönítés, automatikus frissítésellenőrzés és olyan pontos, csak az asztali számítógépeken végzett viselkedés, amelyet a WKWebView nem tud biztosítani.";
 "userscript_docs_metadata_title" = "Metaadatok";
 "userscript_docs_metadata_identity" = "Ember által olvasható szkriptnév és opcionális leírás a telepítés előtt és a szkript részleteiben.";
 "userscript_docs_metadata_version" = "Használjon stabil, egyedi névteret, és növelje a verziót, amikor a kötegelt szkript változik.";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "Engedélyezze a privilegizált hálózati kérések által használt gazdagépeket. Enélkül a kérelmek az aktuális oldal gazdagépére korlátozódnak.";
 "userscript_docs_metadata_urls" = "Opcionális identitás és frissítési metaadatok. A Soulo ezeket használja ugyanannak a szkriptnek az újratelepítéseinek felismerésére.";
 "userscript_docs_metadata_resource" = "Egy elnevezett erőforrást deklarál. Adjon hozzá egy megfelelő @connect gazdagépet; a lekérés elhalasztva a modern erőforrás API-ra vár.";
-"userscript_docs_metadata_require" = "A külső követelményeket a telepítés során nyilvánosságra hozzák, de nem töltik le vagy hajtják végre; a szkripteknek önállóaknak kell lenniük.";
+"userscript_docs_metadata_require" = "A HTTPS @require fájlok telepítéskor vagy mentéskor letöltődnek és gyorsítótárba kerülnek, majd a szkript előtt sorrendben futnak.";
 "userscript_docs_api_title" = "Támogatott privilegizált API-k";
 "userscript_docs_api_info" = "Beolvassa a szkriptkezelőt, a Soulo verziót és az elemzett szkript metaadatait. Elérhető örökölt és modern formában.";
 "userscript_docs_api_unsafe_window" = "Az aktuális oldalablakot adja meg, amikor a nem biztonságos ablak engedélyezése kifejezetten deklarálva van.";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "A tárolt értékeknek JSON-sorosíthatónak kell lenniük: legfeljebb 256 KB értékenként és összesen 1 MB szkriptenként.";
 "userscript_docs_limits_network" = "A privilegizált válaszok 20 MB-ra korlátozódnak, az időtúllépés 1–60 másodpercre van korlátozva, és a Cookie/Host/Origin fejlécek nem fogadhatók el.";
 "userscript_docs_limits_private" = "UserScripts nem futnak privát böngészés közben.";
-"userscript_docs_limits_require" = "A külső @require fájlok soha nem futnak le. Kerülje el a CDN-függőségeket, és foglalja bele az összes szükséges logikát a szkriptbe.";
+"userscript_docs_limits_require" = "A HTTPS @require fájlok telepítéskor vagy mentéskor letöltődnek és gyorsítótárba kerülnek, majd a szkript előtt sorrendben futnak.";
 "userscript_docs_template_title" = "Minimális sablon";
 "userscript_docs_template_footer" = "Használjon egyedi névteret és a lehető legszűkebb @match és @grant deklarációkat.";
 "userscript_too_large" = "A kiválasztott szkript nagyobb, mint a 2 MB-os korlát.";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "Nincsenek további engedélyek";
 "userscript_network_title" = "Hálózati hozzáférés";
 "userscript_external_requirements" = "Külső függőségek";
-"userscript_external_requirements_desc" = "Ez a szkript külső @require fájlokat deklarál. A Soulo nem tölti be őket automatikusan.";
+"userscript_external_requirements_desc" = "A HTTPS @require fájlok telepítéskor vagy mentéskor letöltődnek és gyorsítótárba kerülnek, majd a szkript előtt sorrendben futnak.";
 "userscript_metadata_title" = "Szkript részletei";
 "userscript_unsupported_permissions" = "Még nem támogatott: %@";
 "userscript_sample_name" = "Olvasási folyamatjelző sáv";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "Kártyanézet";
 "tab_close_group" = "Csoport bezárása";
 "tab_close_group_confirm" = "Bezárja a(z) „%@” csoport összes lapját (%d)?";
+
+"userscript_require_failed" = "A(z) %@ függőség nem tölthető be: %@";
+"userscript_require_integrity_failed" = "A függőség integritásának ellenőrzése sikertelen.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "Kezelés";
+"extension_update" = "Frissítés";
+"extension_rollback" = "Előző verzió visszaállítása";
+"extension_blocked_sites" = "Letiltott webhelyek";
+"extension_diagnostics" = "Kompatibilitás";
+"extension_review_access" = "Válassza ki a bővítmény által használható engedélyeket és webhelyeket.";
+"extension_limit_commands" = "A bővítmények billentyűparancsai nem érhetők el iOS-en.";
+"extension_limit_notifications" = "Az értesítések megjeleníthetők, de a kattintási és bezárási események nem támogatottak.";
+"extension_limit_offscreen" = "A képernyőn kívüli dokumentumok csak hanglejátszást támogatnak.";

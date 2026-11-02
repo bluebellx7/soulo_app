@@ -4,7 +4,7 @@ Válaszd a Soulót alapértelmezett böngészőnek a Beállításokban, hogy má
 
 A legutóbb használt lapok és webhelycsoportok kerülnek előre, az áttekintés felül nyílik meg. A használati sorrend újraindítás után is megmarad.
 
-BT-letöltések: importálj .torrent-fájlokat vagy magnet-hivatkozásokat, válassz fájlokat, szüneteltesd és folytasd. iOS 26-on a letöltés a háttérben is folytatódhat, ha a rendszer engedi; a korábbi verziók mentik az állapotot és szüneteltetik.
+BT-letöltések: importálj .torrent-fájlokat vagy magnet-hivatkozásokat, válassz fájlokat, szüneteltesd és folytasd. iOS 26-on a letöltés a háttérben is folytatódhat, ha a rendszer engedi; a korábbi verziók mentik az állapotot és szüneteltetik. Játssz le támogatott BT-médiát letöltés közben, és nyiss meg MKV-fájlokat. Importálj ed2k/thunder-linkeket. A letöltéshez elérhető források kellenek; a lejátszás a kodekektől függ.
 
 Válassz öt opcionális kezdőlapi parancsikont a letöltésekhez, fájlokhoz, könyvjelzőkhöz, előzményekhez, háttérképekhez és más oldalakhoz. Görgetéskor a könyvtár lapsávja összébb húzódik.
 

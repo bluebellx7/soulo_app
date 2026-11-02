@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "Halaman terbuka dimuat ulang setelah skrip diinstal, diedit, diaktifkan, dinonaktifkan, atau dihapus.";
 "userscript_experimental_badge" = "Kompatibilitas";
 "userscript_experimental_title" = "UserScript kompatibilitas";
-"userscript_experimental_desc" = "Mendukung aturan situs, awal/akhir dokumen, penyimpanan GM yang luas dan API halaman, perintah skrip, notifikasi, tab, unduhan, cookie, sumber daya, dan permintaan dengan cakupan izin. Tinjau setiap skrip sebelum menginstal; file @require eksternal tidak dijalankan.";
+"userscript_experimental_desc" = "Mendukung aturan situs, awal/akhir dokumen, penyimpanan GM yang luas dan API halaman, perintah skrip, notifikasi, tab, unduhan, cookie, sumber daya, dan permintaan dengan cakupan izin. Tinjau setiap skrip sebelum menginstal.";
 "extension_choose_file" = "Pilih File atau Folder…";
 "extension_installing" = "Memeriksa dan memasang ekstensi…";
 "extension_install_failed" = "Ekstensi Tidak Dapat Dipasang";
@@ -659,7 +659,7 @@
 "userscript_new" = "Skrip Baru";
 "userscript_edit" = "Sunting Skrip";
 "userscript_choose_file" = "Pilih Skrip…";
-"userscript_install_footer" = "Ketuk baris sumber untuk membukanya di tab Soulo saat ini. Tautan .user.js membuka konfirmasi instalasi. JavaScript standar dan serangkaian API GM didukung; skrip tidak berjalan di Penjelajahan Pribadi dan file @require eksternal tidak dijalankan.";
+"userscript_install_footer" = "Ketuk baris sumber untuk membukanya di tab Soulo saat ini. Tautan .user.js membuka konfirmasi instalasi. JavaScript standar dan serangkaian API GM didukung. UserScripts tidak berjalan di Penjelajahan Pribadi.";
 "userscript_install_failed" = "UserScript Tidak Dapat Dipasang";
 "web_extension_temporarily_disabled" = "Ekstensi browser standar untuk sementara tidak tersedia saat pengujian kompatibilitas selesai.";
 "userscript_unreadable" = "Skrip yang dipilih tidak dapat dibaca sebagai teks UTF-8.";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "Didukung sebagian";
 "userscript_docs_partial_desc" = "Permintaan jaringan menghilangkan unggahan/kemajuan dan pengangkutan cookie. Notifikasi ada di dalam halaman, API sumber daya tidak sinkron, dan pemroses perubahan nilai melaporkan perubahan yang dibuat oleh halaman saat ini. Pemeriksaan pembaruan bersifat manual.";
 "userscript_docs_unsupported_title" = "Saat ini tidak didukung";
-"userscript_docs_unsupported_desc" = "Eksekusi @require eksternal, intersepsi GM_webRequest, GM_audio, isolasi sandbox/run-in, pemeriksaan pembaruan otomatis, dan perilaku khusus desktop yang tidak dapat disediakan oleh WKWebView.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, isolasi sandbox/run-in, pemeriksaan pembaruan otomatis, dan perilaku khusus desktop yang tidak dapat disediakan oleh WKWebView.";
 "userscript_docs_metadata_title" = "Metadata";
 "userscript_docs_metadata_identity" = "Nama skrip yang dapat dibaca manusia dan deskripsi opsional ditampilkan sebelum instalasi dan dalam detail skrip.";
 "userscript_docs_metadata_version" = "Gunakan namespace yang stabil dan unik, serta tingkatkan versinya setiap kali skrip yang dibundel berubah.";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "Otorisasi host yang digunakan oleh permintaan jaringan yang memiliki hak istimewa. Tanpanya, permintaan terbatas pada host halaman saat ini.";
 "userscript_docs_metadata_urls" = "Identitas opsional dan perbarui metadata. Soulo menggunakan ini untuk mengenali instalasi ulang skrip yang sama.";
 "userscript_docs_metadata_resource" = "Mendeklarasikan sumber daya bernama. Tambahkan host @connect yang cocok; pengambilan ditunda hingga API sumber daya modern ditunggu.";
-"userscript_docs_metadata_require" = "Persyaratan eksternal diungkapkan selama instalasi tetapi tidak diunduh atau dijalankan; skrip harus mandiri.";
+"userscript_docs_metadata_require" = "File @require HTTPS diunduh dan disimpan dalam cache saat memasang atau menyimpan, lalu dijalankan berurutan sebelum skrip.";
 "userscript_docs_api_title" = "API istimewa yang didukung";
 "userscript_docs_api_info" = "Membaca pengendali skrip, versi Soulo, dan metadata skrip yang diurai. Tersedia dalam bentuk warisan dan modern.";
 "userscript_docs_api_unsafe_window" = "Menyediakan jendela halaman saat ini ketika pemberian unsafeWindow dideklarasikan secara eksplisit.";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "Nilai yang disimpan harus dapat diserialkan JSON: hingga 256 KB per nilai dan total 1 MB per skrip.";
 "userscript_docs_limits_network" = "Respons istimewa dibatasi hingga 20 MB, batas waktu dibatasi hingga 1–60 detik, dan header Cookie/Host/Asal tidak diterima.";
 "userscript_docs_limits_private" = "UserScripts tidak berjalan di Penjelajahan Pribadi.";
-"userscript_docs_limits_require" = "File @require eksternal tidak pernah dijalankan. Hindari ketergantungan CDN dan sertakan semua logika yang diperlukan dalam skrip.";
+"userscript_docs_limits_require" = "File @require HTTPS diunduh dan disimpan dalam cache saat memasang atau menyimpan, lalu dijalankan berurutan sebelum skrip.";
 "userscript_docs_template_title" = "Templat minimal";
 "userscript_docs_template_footer" = "Gunakan namespace unik dan deklarasi @match dan @grant yang sesempit mungkin.";
 "userscript_too_large" = "Skrip yang dipilih lebih besar dari batas 2 MB.";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "Tidak ada izin tambahan";
 "userscript_network_title" = "Akses Jaringan";
 "userscript_external_requirements" = "Ketergantungan Eksternal";
-"userscript_external_requirements_desc" = "Skrip ini mendeklarasikan file @require eksternal. Soulo tidak memuatnya secara otomatis.";
+"userscript_external_requirements_desc" = "File @require HTTPS diunduh dan disimpan dalam cache saat memasang atau menyimpan, lalu dijalankan berurutan sebelum skrip.";
 "userscript_metadata_title" = "Detail Skrip";
 "userscript_unsupported_permissions" = "Belum didukung: %@";
 "userscript_sample_name" = "Bilah Kemajuan Membaca";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "Tampilan kartu";
 "tab_close_group" = "Tutup Grup";
 "tab_close_group_confirm" = "Tutup semua tab di “%@” (%d)?";
+
+"userscript_require_failed" = "Tidak dapat memuat dependensi %@: %@";
+"userscript_require_integrity_failed" = "Pemeriksaan integritas dependensi gagal.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "Kelola";
+"extension_update" = "Perbarui";
+"extension_rollback" = "Pulihkan versi sebelumnya";
+"extension_blocked_sites" = "Situs yang diblokir";
+"extension_diagnostics" = "Kompatibilitas";
+"extension_review_access" = "Pilih izin dan situs yang dapat diakses ekstensi ini.";
+"extension_limit_commands" = "Pintasan keyboard ekstensi tidak tersedia di iOS.";
+"extension_limit_notifications" = "Notifikasi dapat ditampilkan, tetapi peristiwa klik dan tutup tidak didukung.";
+"extension_limit_offscreen" = "Dokumen di luar layar hanya mendukung pemutaran audio.";

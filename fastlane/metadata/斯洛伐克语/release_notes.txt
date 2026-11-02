@@ -1,6 +1,8 @@
 1.2.7
 
 • Sťahovanie BT: importujte súbory .torrent alebo odkazy magnet, vyberte súbory, pozastavte a pokračujte. V iOS 26 môže sťahovanie pokračovať na pozadí, ak to systém dovolí; staršie verzie uložia priebeh a pozastavia ho.
+• Prehrávajte podporované BT médiá počas sťahovania a otvárajte súbory MKV. Importujte odkazy ed2k/thunder. Sťahovanie vyžaduje dostupné zdroje; prehrávanie závisí od kodekov.
+• Optimalizácia vyhľadávania Baidu je predvolene zapnutá. Skript si môžete pozrieť alebo vypnúť v Rozšíreniach.
 • Vyberte päť voliteľných skratiek na úvodnej stránke pre sťahovanie, súbory, záložky, históriu, tapety a ďalšie stránky. Lišta kariet knižnice sa pri posúvaní zmenší.
 • Vylepšená kompatibilita používateľských skriptov vrátane externých závislostí cez @require.
 • Opravené prípady zvuku po stíšení videa alebo duplicitného prehrávania na niektorých stránkach.

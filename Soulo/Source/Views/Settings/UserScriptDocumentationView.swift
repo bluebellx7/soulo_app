@@ -242,9 +242,9 @@ struct UserScriptDocumentationView: View {
     3. @match 支持 `http`、`https`、`*://*/*`、`https://*.example.com/*` 和 `<all_urls>`；如需排除页面，使用 @exclude 或 @exclude-match。
     4. 只声明实际使用的权限。无特权 API 时写 `@grant none`。支持传统及 GM.* 现代写法：GM_info、unsafeWindow、GM_addStyle、GM_addElement、GM_log、单项/批量存储、值变化监听、GM_setClipboard、GM_xmlhttpRequest、菜单命令、通知、打开/关闭/聚焦标签页、下载、Tab 数据、GM_cookie、GM.getResourceText/GM.getResourceUrl 和 window.onurlchange。
     5. 跨域请求必须同时声明 GM_xmlhttpRequest 或 GM.xmlHttpRequest，以及对应 @connect。@connect 支持 self、域名、*.域名或 *。没有 @connect 时仅允许请求当前网页主机。
-    6. GM_xmlhttpRequest details 支持 url、method、headers、data、timeout、responseType，以及 onloadstart、onreadystatechange、onload、onerror、onloadend；responseType 可为 json、blob、arraybuffer 或文本。网络响应上限 20 MB，超时范围 1–60 秒，不发送 Cookie。
+    6. GM_xmlhttpRequest details 支持 url、method、headers、data、timeout、responseType，以及 onloadstart、onreadystatechange、onload、onerror、onloadend；responseType 可为 json、blob、arraybuffer 或文本。GM.xmlHttpRequest 返回可 await 的 Promise，两种写法均可通过 abort() 取消。网络响应上限 20 MB，超时范围 1–60 秒，不发送 Cookie。
     7. 存储单个值上限 256 KB、脚本总存储上限 1 MB，只保存可 JSON 序列化的数据。
-    8. @resource 需要声明名称、URL 及匹配的 @connect；资源 API 是异步 Promise。@require 只会在安装时显示，不会自动下载或执行，因此脚本必须自包含，不依赖 CDN 或外部库。
+    8. @resource 需要声明名称、URL 及匹配的 @connect；资源 API 是异步 Promise。HTTPS @require 在安装或保存时下载并缓存，按声明顺序在正文前执行，不需要 @connect；旧 HTTP 地址会升级为 HTTPS。最多 32 个依赖，单文件 5 MB、合计 20 MB；支持 URL 片段中的 MD5、SHA-1/256/384/512 完整性校验，不支持 tampermonkey:// 内置依赖。
     9. 可以使用标准 DOM、事件、MutationObserver、fetch 等网页 API；fetch 仍受网页同源和 CORS 限制。脚本在隐私浏览中不运行。
     10. 兼顾 iPhone/iPad、明暗模式、安全区、动态网页和无障碍；所有新增 DOM id/class 使用独特前缀，避免污染网页；避免高频无节制的 MutationObserver、轮询和全局样式。
     11. 代码应可重复执行而不产生重复控件，包含必要的空值检查、错误处理和清理逻辑。
@@ -264,9 +264,9 @@ struct UserScriptDocumentationView: View {
     3. Match rules support http, https, `*://*/*`, `https://*.example.com/*`, and `<all_urls>`. Use @exclude or @exclude-match when needed.
     4. Declare only permissions actually used. Use `@grant none` when no privileged API is needed. Soulo supports legacy and GM.* forms for script info, unsafeWindow, styles/elements, logging, single/bulk storage, value listeners, clipboard, privileged requests, menu commands, notifications, tab opening/closing/focusing, downloads, tab data, cookies, resources, and URL-change events.
     5. Cross-origin requests require the XHR grant and matching @connect entries. @connect accepts self, a domain, *.domain, or *. Without @connect, privileged requests are limited to the current page host.
-    6. XHR details support url, method, headers, data, timeout, responseType, onloadstart, onreadystatechange, onload, onerror, and onloadend. responseType may be json, blob, arraybuffer, or text. Responses are limited to 20 MB, timeout is 1–60 seconds, and cookies are not sent.
+    6. XHR details support url, method, headers, data, timeout, responseType, onloadstart, onreadystatechange, onload, onerror, and onloadend. responseType may be json, blob, arraybuffer, or text. Responses are limited to 20 MB, timeout is 1–60 seconds, and cookies are not sent. GM.xmlHttpRequest returns an awaitable Promise; both forms support abort().
     7. Persist only JSON-serializable values. The limit is 256 KB per value and 1 MB per script.
-    8. @resource requires a name, URL, and matching @connect; resource APIs return Promises. @require is displayed during installation but is not downloaded or executed. The script must be self-contained with no CDN dependency.
+    8. @resource requires a name, URL, and matching @connect; resource APIs return Promises. HTTPS @require files are downloaded and cached at installation or save, then executed in declaration order before the main script without needing @connect; legacy HTTP URLs are upgraded to HTTPS. Limits: 32 dependencies, 5 MB each, 20 MB total. MD5 and SHA-1/256/384/512 integrity hashes in URL fragments are supported; tampermonkey:// built-in dependencies are not.
     9. Standard DOM, events, MutationObserver, fetch, and other web APIs are available; fetch remains subject to page origin and CORS. Scripts do not run in Private Browsing.
     10. Support iPhone/iPad, light/dark appearance, safe areas, dynamic pages, and accessibility. Namespace every inserted id/class and avoid expensive polling, unbounded observers, and global CSS leakage.
     11. Make execution idempotent and include appropriate null checks, error handling, and cleanup.

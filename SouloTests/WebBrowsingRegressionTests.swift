@@ -2,10 +2,205 @@ import XCTest
 import SwiftUI
 import WebKit
 import Network
+import Combine
 @testable import Soulo
 
 /// Real HTTP navigation through the production representable and its delegates.
 @MainActor final class WebBrowsingRegressionTests: XCTestCase {
+    func testMagnetButtonUsesTrustedActivationAndBlocksUnsolicitedScriptLaunch() async throws {
+        let uri = "magnet:?xt=urn:btih:45008e48c8800b7d7643337b2e70a634e4c69f6a"
+        let html = "<button id='get-magnet' onclick=\"location.href='\(uri)'\">Download</button>"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/search":Data(html.utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let model = WebViewModel(), (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("search"))
+        try await wait(model, for: "!!document.getElementById('get-magnet')")
+        let web = try XCTUnwrap(model.webView)
+        var requests: [URL] = []
+        let observer = NotificationCenter.default.addObserver(forName: .createSouloDownload, object: nil, queue: .main) {
+            if let url = $0.object as? URL { requests.append(url) }
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+        _ = try await web.evaluateJavaScript("location.href='\(uri)';null")
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertTrue(requests.isEmpty)
+        let exposed = try await web.evaluateJavaScript("!!globalThis.webkit?.messageHandlers?.souloNavigationGesture") as? Bool
+        XCTAssertEqual(exposed, false, "Website code cannot forge the isolated gesture bridge")
+        _ = try await web.evaluateJavaScript("webkit.messageHandlers.souloNavigationGesture.postMessage({event:'click',control:true,link:false,form:false,destinations:[]});null",
+            in: nil, contentWorld: BrowserNavigationGesture.world)
+        try await Task.sleep(for: .milliseconds(50))
+        _ = try await web.evaluateJavaScript("document.getElementById('get-magnet').click();null")
+        for _ in 0..<100 {
+            if !requests.isEmpty { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertEqual(requests.map(\.absoluteString), [uri])
+        XCTAssertEqual(web.url?.path, "/search", "Offering a task must keep the source result page intact")
+    }
+
+    func testLiveUserScriptSourcesPresentInstallSheet() async throws {
+        guard ProcessInfo.processInfo.environment["SOULO_LIVE_SCRIPT_SOURCES"] == "1" else {
+            throw XCTSkip("Explicit live source audit only")
+        }
+        let search = URL(string: "https://www.userscript.zone/search?q=wide+github")!
+        let (data, _) = try await URLSession.shared.data(from: search)
+        let html = String(decoding: data, as: UTF8.self)
+        let expression = try NSRegularExpression(pattern: #"<a[^>]+href="(/go/[^"<>]+)"[^>]+data-update-text"#)
+        let match = try XCTUnwrap(expression.firstMatch(in: html, range: NSRange(html.startIndex..., in: html)))
+        let path = String(html[try XCTUnwrap(Range(match.range(at: 1), in: html))])
+        let relay = try XCTUnwrap(URL(string: path, relativeTo: search)?.absoluteURL)
+        let sources = [
+            URL(string: "https://update.greasyfork.org/scripts/41026/Wide%20Github%20%5Bfork%5D.user.js")!,
+            URL(string: "https://openuserjs.org/install/xthexder/Wide_GitHub.user.js")!,
+            URL(string: "https://raw.githubusercontent.com/xthexder/wide-github/master/build/wide-github.user.js")!,
+            relay
+        ]
+        for source in sources {
+            let model = WebViewModel()
+            let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+            let previous = scene.windows.first(where: \.isKeyWindow), window = UIWindow(windowScene: scene)
+            window.rootViewController = UIHostingController(rootView:
+                WebViewContainer(webViewModel: model, bookmarkViewModel: BookmarkViewModel(), isFullscreen: .constant(false))
+                    .environmentObject(SearchViewModel()))
+            let downloadIDs = Set(DownloadManagerService.shared.downloads.map(\.id))
+            let installedCount = BrowserExtensionService.shared.userScripts.count
+            var detected: BrowserExtensionInstallCandidate?
+            let observer = NotificationCenter.default.addObserver(forName: .browserExtensionInstallCandidate,
+                object: model, queue: .main) { detected = $0.userInfo?["candidate"] as? BrowserExtensionInstallCandidate }
+            defer {
+                NotificationCenter.default.removeObserver(observer)
+                close(model, window, previous)
+                for item in DownloadManagerService.shared.downloads where !downloadIDs.contains(item.id) {
+                    DownloadManagerService.shared.delete(item)
+                }
+            }
+            window.makeKeyAndVisible()
+            try await wait(model, for: "true")
+            model.loadURL(source)
+            for _ in 0..<800 {
+                if detected != nil, window.rootViewController?.presentedViewController != nil { break }
+                try await Task.sleep(for: .milliseconds(25))
+            }
+            let candidate = try XCTUnwrap(detected, source.host ?? "source")
+            XCTAssertEqual(candidate.kind, .userScript)
+            XCTAssertNotNil(window.rootViewController?.presentedViewController, "Soulo's review sheet must be visible")
+            let preview = try BrowserExtensionService.shared.previewUserScript(from: candidate.fileURL, sourceURL: candidate.sourceURL)
+            XCTAssertFalse(preview.name.isEmpty)
+            XCTAssertFalse(preview.metadata.patterns.isEmpty)
+            XCTAssertEqual(BrowserExtensionService.shared.userScripts.count, installedCount, "Review must not install without confirmation")
+            print("LIVE_SCRIPT_INSTALL|\(source.host ?? "")|\(preview.name)|review_sheet_presented")
+        }
+    }
+
+    func testGroupedAdStylesStillProtectAuthenticationAndRespectExceptions() async throws {
+        let defaults = UserDefaults.standard, saved = UserDefaults.standard.object(forKey: "ad_block_enabled")
+        defaults.set(true, forKey: "ad_block_enabled")
+        defer { defaults.set(saved, forKey: "ad_block_enabled") }
+        let model = WebViewModel(), (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        try await wait(model, for: "true")
+        let web = try XCTUnwrap(model.webView)
+        web.loadHTMLString("<main>Content</main>", baseURL: URL(string: "https://css-group-fixture.example/"))
+        try await wait(model, for: "document.readyState === 'complete' && typeof window.__souloAdBlockRemoveAds === 'function'")
+        let result = try await web.evaluateJavaScript("""
+        (()=>{
+          document.body.innerHTML='<div class="qa-ad">Advertisement</div><div id="qa-id">Advertisement</div><div class="qa-ad" id="qa-login"><input type="password"></div><div class="qa-keep">Excepted content</div>';
+          const rules=Array.from({length:200},(_,i)=>['.qa-unused-'+i,[],[]]);
+          rules.push(['.qa-ad',[],[]],['#qa-id',[],[]],['.qa-keep',[],[]]);
+          window.__souloAdBlockConfig={...window.__souloAdBlockConfig,cosmeticEnabled:true,
+            subscriptionCosmeticRules:rules,cosmeticExceptions:[{selector:'.qa-keep',ifDomains:[],unlessDomains:[]}]};
+          window.__souloAdBlockRemoveAds();
+          const style=document.getElementById('soulo-ad-hiding-style');
+          return {rules:style.sheet.cssRules.length,bytes:style.textContent.length,
+            hidden:getComputedStyle(document.querySelector('.qa-ad')).display==='none' && getComputedStyle(document.getElementById('qa-id')).display==='none',
+            login:getComputedStyle(document.getElementById('qa-login')).display!=='none' && document.querySelector('input').getBoundingClientRect().width>0,
+            exception:getComputedStyle(document.querySelector('.qa-keep')).display!=='none'};
+        })()
+        """) as? [String: Any]
+        let values = try XCTUnwrap(result)
+        XCTAssertEqual(values["hidden"] as? Bool, true)
+        XCTAssertEqual(values["login"] as? Bool, true)
+        XCTAssertEqual(values["exception"] as? Bool, true)
+        XCTAssertLessThanOrEqual(values["rules"] as? Int ?? .max, 4)
+        XCTAssertLessThan(values["bytes"] as? Int ?? .max, 16_000)
+        print("GROUPED_AD_CSS|\(values)")
+    }
+
+    func testVideoClearancePreservesNativeBackSwipeSnapshot() async throws {
+        guard #available(iOS 26.0, *) else { throw XCTSkip("Native obscured content insets require iOS 26") }
+        let defaults = UserDefaults.standard
+        let key = AppConstants.StorageKeys.keepPageAboveToolbar
+        let saved = defaults.object(forKey: key)
+        defaults.set(false, forKey: key)
+        defer { defaults.set(saved, forKey: key) }
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start(); defer { server.stop() }
+        let model = WebViewModel()
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = UIHostingController(rootView:
+            WebViewContainer(webViewModel: model, bookmarkViewModel: BookmarkViewModel(),
+                             isFullscreen: .constant(false))
+                .environmentObject(SearchViewModel()))
+        window.makeKeyAndVisible()
+        defer { close(model, window, previous) }
+        try await wait(model, for: "true")
+        let web = try XCTUnwrap(model.webView)
+        model.loadURL(root.appendingPathComponent("history-without-video"))
+        try await wait(model, for: "!!document.getElementById('history-source') && document.readyState === 'complete'")
+        try await Task.sleep(for: .milliseconds(400))
+        let resultsSize = web.bounds.size
+        var destination = URLComponents(url: root.appendingPathComponent("destination"), resolvingAgainstBaseURL: false)!
+        destination.host = "localhost"
+        model.loadURL(try XCTUnwrap(destination.url))
+        try await wait(model, for: "!!document.getElementById('destination') && document.readyState === 'complete'")
+        model.hasBottomVideoControls = true
+        try await Task.sleep(for: .milliseconds(400))
+        window.layoutIfNeeded()
+        XCTAssertEqual(web.bounds.size, resultsSize,
+                       "WebKit rejects the previous page's swipe image when the live view changes size")
+        XCTAssertGreaterThan(web.obscuredContentInsets.bottom, 0,
+                             "Video controls must still avoid the floating toolbar")
+        _ = try await web.evaluateJavaScript("""
+        document.body.insertAdjacentHTML('beforeend',
+          '<div id="video-controls" style="position:fixed;bottom:0;left:0;right:0;height:32px">Controls</div>'); null
+        """)
+        try await Task.sleep(for: .milliseconds(150))
+        let controlsBottom = try await web.evaluateJavaScript("document.getElementById('video-controls').getBoundingClientRect().bottom")
+        XCTAssertLessThanOrEqual(try XCTUnwrap(controlsBottom as? Double),
+                                 web.bounds.height - web.obscuredContentInsets.bottom + 1,
+                                 "Fixed player controls must remain above the bottom chrome")
+
+        // These WebKit test hooks exercise its real swipe snapshot. They are used
+        // only by the test bundle, never by the shipping application.
+        func invokeSwipeHook(_ name: String) throws -> Bool {
+            let selector = NSSelectorFromString(name)
+            guard web.responds(to: selector), let implementation = web.method(for: selector) else {
+                throw XCTSkip("WebKit does not expose its swipe test hook on this OS")
+            }
+            typealias Hook = @convention(c) (AnyObject, Selector) -> Bool
+            return unsafeBitCast(implementation, to: Hook.self)(web, selector)
+        }
+        XCTAssertTrue(try invokeSwipeHook("_beginBackSwipeForTesting"))
+        func snapshotLayer(in layer: CALayer) -> CALayer? {
+            if layer.name == "SwipeSnapshot" { return layer }
+            return layer.sublayers?.compactMap { snapshotLayer(in: $0) }.first
+        }
+        let preview = try XCTUnwrap(snapshotLayer(in: window.layer))
+        XCTAssertNotNil(preview.contents, "The revealed side must contain the previous page, not a blank background")
+        let attachment = XCTAttachment(image: UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+        })
+        attachment.name = "native-back-swipe-preview"; attachment.lifetime = .keepAlways; add(attachment)
+        XCTAssertTrue(try invokeSwipeHook("_completeBackSwipeForTesting"))
+        try await wait(model, for: "!!document.getElementById('history-source')")
+        XCTAssertEqual(server.requests.filter { $0.path == "/history-without-video" }.count, 1)
+        XCTAssertEqual(web.bounds.size, resultsSize)
+        XCTAssertEqual(web.obscuredContentInsets.bottom, 0)
+    }
+
     func testRepeatedWebKitStateDoesNotRepublishIdenticalValues() {
         let model=WebViewModel(),url=URL(string:"https://fixture.example/")!
         model.updateLoading(false);model.updateCurrentURL(url);model.updateTitle("Fixture")
@@ -68,6 +263,135 @@ import Network
         XCTAssertEqual(events,0)
     }
 
+    func testUnchangedAppearanceDoesNotRereadInstalledScriptSources() {
+        let appearance = WebAppearanceService.shared
+        let saved = (appearance.forceDarkPages, appearance.reducePageMotion, appearance.underlineLinks)
+        defer {
+            appearance.forceDarkPages = saved.0
+            appearance.reducePageMotion = saved.1
+            appearance.underlineLinks = saved.2
+        }
+        appearance.forceDarkPages = false
+        appearance.reducePageMotion = false
+        appearance.underlineLinks = false
+        let web = WKWebView()
+        let controller = web.configuration.userContentController
+        let scripts = (0..<3).map { index in
+            SourceReadCountingUserScript(source: "// foreign \(index)\n" + String(repeating: " ", count: 65_536),
+                                         injectionTime: .atDocumentStart, forMainFrameOnly: true)
+        }
+        scripts.forEach(controller.addUserScript)
+        appearance.apply(to: web)
+        let initialReads = scripts.map(\.sourceReads)
+        let started = ContinuousClock.now
+        for _ in 0..<100 { appearance.apply(to: web) }
+        print("APPEARANCE_REPEATED_UPDATES|\(started.duration(to: .now))")
+        XCTAssertEqual(scripts.map(\.sourceReads), initialReads,
+                       "Unchanged updates must not reread every installed script's source")
+        XCTAssertEqual(controller.userScripts.map(ObjectIdentifier.init), scripts.map(ObjectIdentifier.init))
+    }
+
+    func testAppearanceRepairsChangedScriptListAndPreservesForeignScripts() async throws {
+        let appearance = WebAppearanceService.shared
+        let saved = (appearance.forceDarkPages, appearance.reducePageMotion, appearance.underlineLinks)
+        defer {
+            appearance.forceDarkPages = saved.0
+            appearance.reducePageMotion = saved.1
+            appearance.underlineLinks = saved.2
+        }
+        appearance.forceDarkPages = false
+        appearance.reducePageMotion = true
+        appearance.underlineLinks = false
+        let web = WKWebView()
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene), host = UIViewController()
+        host.view = web
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer {
+            web.stopLoading(); window.isHidden = true; window.rootViewController = nil
+            previous?.makeKeyAndVisible()
+        }
+        web.loadHTMLString("<html><body id='first'>First document</body></html>", baseURL: nil)
+        for _ in 0..<100 {
+            if (try? await web.evaluateJavaScript("!!document.getElementById('first') && document.readyState === 'complete'")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        let controller = web.configuration.userContentController
+        let foreign = (0..<2).map { index in
+            WKUserScript(source: "window.foreign\(index)=true", injectionTime: .atDocumentStart, forMainFrameOnly: true)
+        }
+        foreign.forEach(controller.addUserScript)
+        appearance.apply(to: web)
+        let original = try XCTUnwrap(controller.userScripts.first { $0.source.hasPrefix(WebAppearanceService.scriptPrefix) })
+        let expectedSource = original.source
+        controller.removeAllUserScripts()
+        foreign.forEach(controller.addUserScript)
+        controller.addUserScript(WKUserScript(source: WebAppearanceService.scriptPrefix + "window.obsoleteAppearance=true",
+                                              injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        // The array count is unchanged, but another feature replaced its contents.
+        appearance.apply(to: web)
+        XCTAssertTrue(controller.userScripts[0] === foreign[0])
+        XCTAssertTrue(controller.userScripts[1] === foreign[1])
+        XCTAssertEqual(controller.userScripts.count, 3)
+        XCTAssertEqual(controller.userScripts[2].source, expectedSource)
+        web.loadHTMLString("<html><body id='next'>Next document</body></html>", baseURL: nil)
+        for _ in 0..<100 {
+            if (try? await web.evaluateJavaScript("!!document.getElementById('next') && document.readyState === 'complete' && !!document.getElementById('soulo-reduce-motion-style')")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        let hasMotionStyle = try await web.evaluateJavaScript("!!document.getElementById('soulo-reduce-motion-style') && window.foreign0 && window.foreign1")
+        XCTAssertEqual(hasMotionStyle as? Bool, true, "Repaired scripts must also run in future documents")
+        appearance.reducePageMotion = false
+        appearance.apply(to: web)
+        XCTAssertEqual(controller.userScripts.map(ObjectIdentifier.init), foreign.map(ObjectIdentifier.init))
+        for _ in 0..<100 {
+            if (try? await web.evaluateJavaScript("!document.getElementById('soulo-reduce-motion-style')")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        let removedStyle = try await web.evaluateJavaScript("!document.getElementById('soulo-reduce-motion-style')")
+        XCTAssertEqual(removedStyle as? Bool, true)
+    }
+
+    func testCrossSiteCachedMediaDoesNotReloadItsSources() async throws {
+        let server = try BrowsingHTTPFixture()
+        let root = try await server.start(); defer { server.stop() }
+        let model = WebViewModel(), (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        try await wait(model, for: "true")
+        let web = try XCTUnwrap(model.webView)
+        let content = web.configuration.userContentController
+        let scripts = content.userScripts.map { $0 }
+        content.removeAllUserScripts()
+        content.addUserScript(WKUserScript(source: """
+        globalThis.__qaMediaLoadCalls=0;
+        const originalMediaLoad=HTMLMediaElement.prototype.load;
+        HTMLMediaElement.prototype.load=function(){
+            globalThis.__qaMediaLoadCalls++;
+            return originalMediaLoad.apply(this,arguments);
+        };
+        """, injectionTime: .atDocumentStart, forMainFrameOnly: true, in: WebMediaSession.world))
+        scripts.forEach(content.addUserScript)
+        model.loadURL(root.appendingPathComponent("history-with-video"))
+        try await wait(model, for: "window.historyShows?.length === 1 && document.readyState === 'complete'")
+        let before = server.requests.filter { $0.path == "/clip.mp4" }.count
+        var crossSite = URLComponents(url: root.appendingPathComponent("destination"), resolvingAgainstBaseURL: false)!
+        crossSite.host = "localhost"
+        model.loadURL(try XCTUnwrap(crossSite.url))
+        try await wait(model, for: "!!document.getElementById('destination') && document.readyState === 'complete'")
+        model.goBack()
+        try await wait(model, for: "!!document.getElementById('history-source') && historyShows.at(-1) === true")
+        try await Task.sleep(for: .milliseconds(350))
+        let src = try await web.evaluateJavaScript("document.querySelector('video').getAttribute('src')") as? String
+        XCTAssertEqual(src, "/clip.mp4")
+        XCTAssertEqual(server.requests.filter { $0.path == "/history-with-video" }.count, 1)
+        XCTAssertEqual(server.requests.filter { $0.path == "/clip.mp4" }.count, before,
+                       "Returning to a cached document must not restart media loading")
+        let reloads = try await web.evaluateJavaScript("globalThis.__qaMediaLoadCalls", in: nil, contentWorld: WebMediaSession.world)
+        XCTAssertEqual(reloads as? Int, 0, "A retained player must not be torn down and reconstructed")
+    }
+
     private var saved: [String: Any] = [:]
     private let keys = ["privacy_gpc_enabled", "privacy_gpc_header_enabled_sites", "privacy_cookie_banner_enabled", "soulo_privacy_disabled_hosts",
                         "privacy_https_upgrade_enabled", "privacy_strip_tracking_parameters", "is_incognito", "ad_block_enabled",
@@ -95,6 +419,75 @@ import Network
         for key in keys { UserDefaults.standard.set(saved[key], forKey: key) }
         saved.removeAll()
         super.tearDown()
+    }
+
+    func testRepeatedAutomaticRequestsKeepOneConfirmationAndContinueLatestRequest() async throws {
+        let defaults = UserDefaults.standard
+        let keys = [BrowserDomainNavigationPolicy.preferenceKey, BrowserDomainNavigationPolicy.allowlistKey]
+        let old = keys.map { defaults.object(forKey:$0) }
+        defer { for (key,value) in zip(keys,old) { defaults.set(value,forKey:key) } }
+        defaults.set(true,forKey:BrowserDomainNavigationPolicy.preferenceKey)
+        defaults.set([],forKey:BrowserDomainNavigationPolicy.allowlistKey)
+        defaults.set(false,forKey:"ad_block_enabled")
+        let html = """
+        <h1 id="origin">Automatic retry source</h1><script>
+        window.startBurst=()=>{
+          let attempts=0;
+          const target=location.origin.replace('127.0.0.1','localhost')+'/chosen.html';
+          const timer=setInterval(()=>{location.href=target;if(++attempts===6)clearInterval(timer)},80);
+        };
+        </script>
+        """
+        let server=try DownloadPlaybackHTTPFixture(files:["/origin.html":Data(html.utf8),"/chosen.html":Data("<h1 id='chosen'>Confirmed retry destination</h1>".utf8)])
+        let root=try await server.start();defer { server.stop() }
+        let model=WebViewModel(),(window,previous)=try host(model)
+        defer { close(model,window,previous) }
+        model.loadURL(root.appendingPathComponent("origin.html"))
+        try await wait(model,for:"!!document.getElementById('origin')")
+        let web=try XCTUnwrap(model.webView)
+        var prompts:[UUID]=[]
+        let observation=model.$domainNavigationConfirmation.compactMap { $0?.id }.sink { prompts.append($0) }
+        defer { observation.cancel() }
+        _ = try await web.evaluateJavaScript("startBurst();true")
+        for _ in 0..<100 where model.domainNavigationConfirmation == nil { try await Task.sleep(for:.milliseconds(20)) }
+        let confirmation=try XCTUnwrap(model.domainNavigationConfirmation)
+        try await Task.sleep(for:.milliseconds(700))
+        XCTAssertEqual(prompts,[confirmation.id],"Repeated requests must not dismiss and recreate the same prompt")
+        XCTAssertNil(model.errorMessage,"Blocked retries must not turn the source page into a load failure")
+        model.resolveDomainNavigationConfirmation(id:confirmation.id,allowed:true)
+        try await wait(model,for:"!!document.getElementById('chosen')")
+        XCTAssertNil(model.domainNavigationConfirmation)
+        XCTAssertEqual(prompts,[confirmation.id],"One Continue must complete the latest request")
+    }
+
+    func testConfirmedPostKeepsConsentThroughServerRedirects() async throws {
+        let defaults=UserDefaults.standard
+        let keys=[BrowserDomainNavigationPolicy.preferenceKey,BrowserDomainNavigationPolicy.allowlistKey]
+        let old=keys.map { defaults.object(forKey:$0) }
+        defer { for (key,value) in zip(keys,old) { defaults.set(value,forKey:key) } }
+        defaults.set(true,forKey:BrowserDomainNavigationPolicy.preferenceKey)
+        defaults.set([],forKey:BrowserDomainNavigationPolicy.allowlistKey)
+        defaults.set(false,forKey:"ad_block_enabled")
+        let html="<form id='f' method='post'><input name='payload' value='once'></form><script>f.action=location.origin.replace('127.0.0.1','localhost')+'/submit';</script>"
+        let server=try DownloadPlaybackHTTPFixture(files:["/origin.html":Data(html.utf8),"/chosen.html":Data("<h1 id='chosen'>Confirmed redirect destination</h1>".utf8)],redirects:["/submit":(host:"127.0.0.2",path:"/chosen.html")])
+        let root=try await server.start();defer { server.stop() }
+        let model=WebViewModel(),(window,previous)=try host(model)
+        defer { close(model,window,previous) }
+        model.loadURL(root.appendingPathComponent("origin.html"))
+        try await wait(model,for:"!!document.getElementById('f')")
+        let web=try XCTUnwrap(model.webView)
+        _ = try await web.evaluateJavaScript("f.submit()")
+        for _ in 0..<100 where model.domainNavigationConfirmation == nil { try await Task.sleep(for:.milliseconds(20)) }
+        let confirmation=try XCTUnwrap(model.domainNavigationConfirmation)
+        XCTAssertEqual(confirmation.originalRequest?.httpMethod,"POST")
+        model.resolveDomainNavigationConfirmation(id:confirmation.id,allowed:true)
+        for _ in 0..<200 {
+            if model.domainNavigationConfirmation != nil { break }
+            if (try? await web.evaluateJavaScript("!!document.getElementById('chosen')")) as? Bool == true { break }
+            try await Task.sleep(for:.milliseconds(20))
+        }
+        XCTAssertNil(model.domainNavigationConfirmation,"The approved navigation's HTTP redirects must not ask again")
+        XCTAssertEqual(web.url?.host,"127.0.0.2")
     }
 
     func testPrivacyHandlingPreservesAccountSidebarAndRejectsActualCookieBanner() async throws {
@@ -131,6 +524,10 @@ import Network
         try await wait(model, for: "window.rejectClicks === 1")
         let drawerVisible = try await web.evaluateJavaScript("getComputedStyle(document.getElementById('drawer')).display !== 'none'") as? Bool
         XCTAssertEqual(drawerVisible, true)
+        _ = try await web.evaluateJavaScript("""
+          document.body.insertAdjacentHTML('beforeend', '<div class="overlay" style="height:120px"><p>We use coo<b>kies</b> to personalize content.</p><button onclick="window.rejectClicks++;this.parentElement.remove()">Reject optional</button></div>');
+        """)
+        try await wait(model, for: "window.rejectClicks === 2")
     }
 
     func testGPCScriptRestoresOriginalPropertyWhenDisabledOrSiteBypassed() async throws {
@@ -286,8 +683,8 @@ import Network
             if PrivacyProtectionService.shared.summary(for: host).cookieBannerActionCount == 1 { break }
             try await Task.sleep(for: .milliseconds(20))
         }
-        XCTAssertEqual(AdBlockSettingsService.shared.hiddenElementCount(for: host), 3)
-        XCTAssertEqual(PrivacyProtectionService.shared.summary(for: host).hiddenElementCount, 3)
+        XCTAssertEqual(AdBlockSettingsService.shared.hiddenElementCount(for: host), 0)
+        XCTAssertEqual(PrivacyProtectionService.shared.summary(for: host).hiddenElementCount, 0)
         XCTAssertEqual(PrivacyProtectionService.shared.summary(for: host).cookieBannerActionCount, 1)
     }
 
@@ -1069,6 +1466,15 @@ import Network
         let identity = try await web.evaluateJavaScript("documentIdentity") as? String
         _ = try await web.evaluateJavaScript("document.getElementById('draft').value='unsaved draft';scrollTo(0,600);true")
         try await wait(model, for: "scrollY >= 590")
+        // DOM scrollY can lead the UI process by a frame. Commit the native
+        // source position before leaving, as a visible result tap would.
+        let beforeNativeScroll = web.scrollView.contentOffset.y
+        for _ in 0..<80 where abs(web.scrollView.contentOffset.y - 600) > 2 {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        print("HISTORY_SCROLL_BEFORE_LEAVING video=\(hasVideo) firstNative=\(beforeNativeScroll) settledNative=\(web.scrollView.contentOffset.y)")
+        XCTAssertEqual(web.scrollView.contentOffset.y, 600, accuracy: 2,
+            "Native scrolling must reach the fixture position before capturing navigation history")
         for native in [false, true] {
             _ = try await web.evaluateJavaScript("document.getElementById('next').click();true")
             try await wait(model, for: "!!document.getElementById('destination') && document.readyState === 'complete'")
@@ -1149,6 +1555,36 @@ import Network
         XCTAssertNil(model.errorMessage)
     }
 
+    func testHistoryButtonsPresentDestinationBeforeNavigationCompletes() async throws {
+        let server = try frameHistoryFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        for page in ["list", "player"] {
+            model.loadURL(root.appendingPathComponent(page))
+            try await wait(model, for: "!!document.getElementById('\(page)')")
+            for _ in 0..<100 where !model.hasVisibleContent { try await Task.sleep(for: .milliseconds(20)) }
+            await withCheckedContinuation { continuation in
+                model.takeSnapshot { continuation.resume() }
+            }
+        }
+        model.goBack()
+        XCTAssertEqual(model.historyPreview?.url.path,"/list", "Back must change the presented destination immediately")
+        XCTAssertNotNil(model.historyPreview?.image, "Reuse the saved destination rather than the outgoing player")
+        try await wait(model,for:"!!document.getElementById('list')")
+        for _ in 0..<100 where model.historyPreview != nil { try await Task.sleep(for:.milliseconds(20)) }
+        XCTAssertNil(model.historyPreview,"Reveal restored content as soon as it is ready")
+        model.goForward()
+        try await wait(model,for:"!!document.getElementById('player')")
+        XCTAssertNil(model.historyPreview)
+        model.goBack()
+        XCTAssertNotNil(model.historyPreview)
+        model.reload()
+        XCTAssertNil(model.historyPreview,"Stopping a history request must not leave a frozen preview")
+    }
+
     func testBackButtonSkipsChildFrameHistoryAndKeepsForwardHistory() async throws {
         let server = try frameHistoryFixture()
         let root = try await server.start()
@@ -1167,6 +1603,26 @@ import Network
         XCTAssertTrue(web.canGoForward, "Returning must retain WebKit's forward list")
         model.goForward()
         try await wait(model, for: "!!document.getElementById('player')")
+    }
+
+    func testBackWithOnlyChildFrameHistoryDismissesItsPreview() async throws {
+        let server = try frameHistoryFixture()
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("player"))
+        try await addFrameHistory(to: model)
+        model.goBack()
+        for _ in 0..<200 where model.historyPreview != nil { try await Task.sleep(for:.milliseconds(20)) }
+        XCTAssertNil(model.historyPreview,"Exhausting child-frame history must reveal the remaining main page")
+        let web = try XCTUnwrap(model.webView)
+        XCTAssertEqual(web.url?.path,"/player")
+        let state = await withCheckedContinuation { continuation in
+            web.requestMediaPlaybackState { continuation.resume(returning:$0) }
+        }
+        XCTAssertNotEqual(state,.suspended)
     }
 
     func testBackButtonPreservesSameURLMainFrameStateBehindChildHistory() async throws {
@@ -1912,6 +2368,14 @@ import Network
         try await wait(model, for: "!!document.getElementById('form')")
         XCTAssertNil(model.errorMessage)
         XCTAssertEqual(web.url?.path, "/form")
+    }
+}
+
+private final class SourceReadCountingUserScript: WKUserScript {
+    private(set) var sourceReads = 0
+    override var source: String {
+        sourceReads += 1
+        return super.source
     }
 }
 

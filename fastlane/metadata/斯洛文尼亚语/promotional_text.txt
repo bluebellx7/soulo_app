@@ -1,1 +1,1 @@
-Boljša podpora za uporabniške skripte in @require. Popravki zvoka videov, vračanja na strani in vidnejši prikaz nalaganja.
+Prenosi BT in magnet z izbiro in nadaljevanjem. Predvajajte podprte medije med prenosom, odprite MKV in uvozite povezave ed2k/thunder.

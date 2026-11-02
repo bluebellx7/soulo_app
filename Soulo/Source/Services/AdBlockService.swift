@@ -595,7 +595,7 @@ struct AdBlockService {
             .appendingPathComponent("AdBlock/merged-rules.json")
         let attributes = archive.flatMap { try? $0.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]) }
         let fields = [
-            "startup-cache-v6", startupBuildIdentity, String(nativeCosmeticFiltering),
+            "startup-cache-v8", startupBuildIdentity, String(nativeCosmeticFiltering),
             normalizedAllowlist(allowlistedHosts).joined(separator: ","),
             cosmetic.map(String.init) ?? "native", AdBlockSubscriptionService.rulesSignature(),
             BuiltInAdRuleStore.signature(),
@@ -763,9 +763,27 @@ struct AdBlockService {
                 matchedSelectors = Array.from(new Set(selectors));
                 matchedURL = location.href;
                 var authentication = \(WebCompatibilityService.authenticationContentSelectorJSON);
-                matchedCSS = matchedSelectors.map(function(selector) {
-                    return ':is('+selector+'):not(:is('+authentication+')):not(:has(:is('+authentication+'))):not(:is(.cf-turnstile,.g-recaptcha,.h-captcha,.grecaptcha-badge) *) { display:none !important; }';
-                }).join('\\n');
+                // Share the expensive authentication guard across small groups.
+                // Repeating :has(authentication) for every subscription rule
+                // makes stylesheet parsing and layout needlessly expensive.
+                var protection = ':not(:is('+authentication+')):not(:has(:is('+authentication+'))):not(:is(.cf-turnstile,.g-recaptcha,.h-captcha,.grecaptcha-badge) *) { display:none !important; }';
+                var cssRules = [], cssGroup = [];
+                function flushCSSGroup() {
+                    if (cssGroup.length) cssRules.push(':is('+cssGroup.join(',')+')'+protection);
+                    cssGroup = [];
+                }
+                matchedSelectors.forEach(function(selector) {
+                    // Keep selectors that cannot participate in a selector()
+                    // test standalone, preserving the existing fallback.
+                    if (window.CSS && CSS.supports('selector('+selector+')')) {
+                        cssGroup.push(selector);
+                        if (cssGroup.length === 80) flushCSSGroup();
+                    } else {
+                        flushCSSGroup(); cssRules.push(':is('+selector+')'+protection);
+                    }
+                });
+                flushCSSGroup();
+                matchedCSS = cssRules.join('\\n');
                 selectorGroups = [];
                 var inlineSelectors = matchedSelectors.filter(function(sel) { return sel !== '\(ManualAdBlockRuntime.imageBannerSelector)'; });
                 for (var i = 0; i < inlineSelectors.length; i += 80) selectorGroups.push(inlineSelectors.slice(i, i + 80));
@@ -899,7 +917,7 @@ struct AdBlockService {
 
             function hideAdElement(el) {
                 try {
-                    if (!el || isProtectedPageElement(el) || isAuthenticationElement(el) || el.hasAttribute('data-soulo-hidden-ad')) return false;
+                    if (!el || el.hasAttribute('data-soulo-hidden-ad') || isProtectedPageElement(el) || isAuthenticationElement(el)) return false;
                     el.setAttribute('data-soulo-hidden-ad', 'true');
                     var original = {};
                     Object.keys(hiddenProperties).forEach(function(property) {
@@ -979,8 +997,8 @@ struct AdBlockService {
                     // Reuse compiled selector groups across DOM mutations.
                     function hideMatches(selector) {
                         document.querySelectorAll(selector).forEach(function(el) {
-                            var host = hostFromElement(el);
                             if (hideAdElement(el)) {
+                                var host = hostFromElement(el);
                                 if (looksLikeTrackerHost(host)) trackerHosts.push(host);
                             }
                         });

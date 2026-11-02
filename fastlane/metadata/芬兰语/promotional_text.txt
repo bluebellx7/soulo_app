@@ -1,1 +1,1 @@
-Parempi tuki käyttäjäskripteille ja @require-riippuvuuksille. Korjauksia videoääniin, sivuille palaamiseen ja latauksen näyttöön.
+BT- ja magnet-lataukset: tiedostojen valinta ja jatkaminen. Toista tuettuja tiedostoja latauksen aikana, avaa MKV ja tuo ed2k/thunder-linkkejä.

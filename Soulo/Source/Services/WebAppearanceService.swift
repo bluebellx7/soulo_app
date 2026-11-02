@@ -28,6 +28,31 @@ final class WebAppearanceService: ObservableObject {
     private let defaults = UserDefaults.standard
     private var defaultsObserver: NSObjectProtocol?
     private let appliedScripts = NSMapTable<WKWebView, NSString>.weakToStrongObjects()
+    private struct ScriptOptions: Equatable {
+        let forceDark: Bool
+        let reduceMotion: Bool
+        let underlineLinks: Bool
+        var isEnabled: Bool { forceDark || reduceMotion || underlineLinks }
+    }
+    private final class ScriptInstallation {
+        let options: ScriptOptions
+        let scripts: [WKUserScript]
+
+        init(options: ScriptOptions, scripts: [WKUserScript]) {
+            self.options = options
+            // The imported array can share WebKit's mutable Objective-C storage.
+            // Own a snapshot of the references so external edits invalidate it.
+            self.scripts = scripts.map { $0 }
+        }
+
+        func matches(_ options: ScriptOptions, scripts: [WKUserScript]) -> Bool {
+            self.options == options && self.scripts.count == scripts.count
+                && zip(self.scripts, scripts).allSatisfy { pair in pair.0 === pair.1 }
+        }
+    }
+    private let scriptInstallations = NSMapTable<WKUserContentController, ScriptInstallation>.weakToStrongObjects()
+    private var cachedScriptOptions: ScriptOptions?
+    private var cachedScriptSource = ""
 
     private init() {
         followsAppColorScheme = defaults.object(
@@ -72,21 +97,30 @@ final class WebAppearanceService: ObservableObject {
             overlay?.removeFromSuperview()
         }
 
-        let needsDOMAppearance = forceDarkPages || reducePageMotion || underlineLinks
-        let source = needsDOMAppearance ? Self.scriptPrefix + WebViewScripts.applyWebAppearance(
-            forceDark: forceDarkPages,
-            reduceMotion: reducePageMotion,
-            underlineLinks: underlineLinks
-        ) : ""
+        let options = ScriptOptions(forceDark: forceDarkPages, reduceMotion: reducePageMotion, underlineLinks: underlineLinks)
+        let needsDOMAppearance = options.isEnabled
+        if cachedScriptOptions != options {
+            cachedScriptSource = needsDOMAppearance ? Self.scriptPrefix + WebViewScripts.applyWebAppearance(
+                forceDark: options.forceDark, reduceMotion: options.reduceMotion, underlineLinks: options.underlineLinks
+            ) : ""
+            cachedScriptOptions = options
+        }
+        let source = cachedScriptSource
         let controller = webView.configuration.userContentController
-        let existing = controller.userScripts.filter { $0.source.hasPrefix(Self.scriptPrefix) }
-        if existing.count != (source.isEmpty ? 0 : 1) || existing.first?.source != (source.isEmpty ? nil : source) {
-            let others = controller.userScripts.filter { !$0.source.hasPrefix(Self.scriptPrefix) }
-            controller.removeAllUserScripts()
-            others.forEach(controller.addUserScript)
-            if !source.isEmpty {
-                controller.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        let scripts = controller.userScripts
+        // Scripts are immutable. Comparing the retained objects detects additions,
+        // removals and replacements without reading every source on each update.
+        if scriptInstallations.object(forKey: controller)?.matches(options, scripts: scripts) != true {
+            let existing = scripts.filter { $0.source.hasPrefix(Self.scriptPrefix) }
+            if existing.count != (source.isEmpty ? 0 : 1) || existing.first?.source != (source.isEmpty ? nil : source) {
+                let others = scripts.filter { !$0.source.hasPrefix(Self.scriptPrefix) }
+                controller.removeAllUserScripts()
+                others.forEach(controller.addUserScript)
+                if !source.isEmpty {
+                    controller.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+                }
             }
+            scriptInstallations.setObject(ScriptInstallation(options: options, scripts: controller.userScripts), forKey: controller)
         }
         let previous = appliedScripts.object(forKey: webView) as String?
         guard needsDOMAppearance || previous != nil else { return }

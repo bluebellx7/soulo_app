@@ -245,6 +245,7 @@ final class TabManager: ObservableObject {
         let tab = tabs[index]
         unregisterWebExtensionTab(tab)
         tab.webViewModel.releaseWebViewRuntime()
+        UserScriptTabStore.shared.remove(tabID: tab.webViewModel.userScriptTabID)
         tab.webViewModel.deletePersistedSnapshot()
 
         let closed = RecentlyClosedTab(
@@ -306,6 +307,7 @@ final class TabManager: ObservableObject {
         for tab in closing {
             unregisterWebExtensionTab(tab)
             tab.webViewModel.releaseWebViewRuntime()
+            UserScriptTabStore.shared.remove(tabID: tab.webViewModel.userScriptTabID)
             tab.webViewModel.deletePersistedSnapshot()
         }
         desktopModeTabs.subtract(closingIDs)
@@ -348,6 +350,7 @@ final class TabManager: ObservableObject {
         for tab in tabs {
             unregisterWebExtensionTab(tab)
             tab.webViewModel.releaseWebViewRuntime()
+            UserScriptTabStore.shared.remove(tabID: tab.webViewModel.userScriptTabID)
             tab.webViewModel.deletePersistedSnapshot()
             if addingToRecentlyClosed {
                 let closed = RecentlyClosedTab(
@@ -375,6 +378,7 @@ final class TabManager: ObservableObject {
         for tab in tabs where tab.id != current.id {
             unregisterWebExtensionTab(tab)
             tab.webViewModel.releaseWebViewRuntime()
+            UserScriptTabStore.shared.remove(tabID: tab.webViewModel.userScriptTabID)
             tab.webViewModel.deletePersistedSnapshot()
             let closed = RecentlyClosedTab(
                 id: tab.id, title: tab.displayTitle,

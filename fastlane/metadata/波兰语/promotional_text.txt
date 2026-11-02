@@ -1,1 +1,1 @@
-Lepsza zgodność skryptów i obsługa @require. Poprawki dźwięku filmów, powrotu do stron oraz czytelniejszy wskaźnik ładowania.
+Pobieranie BT i magnet z wyborem plików i wznawianiem. Odtwarzaj obsługiwane media podczas pobierania, otwieraj MKV i importuj ed2k/thunder.

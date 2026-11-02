@@ -1,6 +1,8 @@
 1.2.7
 
 • BT indirmeleri: .torrent dosyaları veya magnet bağlantıları içe aktarın, dosyaları seçin, duraklatın ve sürdürün. iOS 26’da sistem izin verdiğinde arka planda devam edebilir; önceki sürümler ilerlemeyi kaydedip duraklatır.
+• Desteklenen BT medyasını indirirken oynatın ve MKV dosyalarını açın. ed2k/thunder bağlantılarını içe aktarın. İndirmeler kullanılabilir kaynaklar gerektirir; oynatma kodeklere bağlıdır.
+• Baidu arama optimizasyonu varsayılan olarak açık. Betiği Uzantılar bölümünde görüntüleyebilir veya kapatabilirsiniz.
 • Ana sayfada indirmeler, dosyalar, yer imleri, geçmiş, duvar kâğıtları ve diğer sayfalara beş isteğe bağlı kısayol seçin. Kitaplık sekme çubuğu kaydırırken daralır.
 • @require üzerinden harici bağımlılıklar dahil kullanıcı betiği uyumluluğu iyileştirildi.
 • Bazı web sayfalarında sessize alınan videolardan ses gelmesi veya yinelenen oynatma sorunları giderildi.

@@ -1,6 +1,8 @@
 1.2.7
 
 • BT downloads: import .torrent files or magnet links, choose files, pause and resume. On iOS 26, downloads can continue in the background while the system permits; earlier versions pause and save progress.
+• Play supported BT media while downloading and open MKV files. Import ed2k/thunder links. Downloads need available sources; playback depends on codecs.
+• Baidu search optimisation is enabled by default. View its script or turn it off in Extensions.
 • Choose up to five optional home shortcuts to open Downloads, Files, Bookmarks, History, Wallpaper and other pages. The Library tab bar becomes compact as you scroll.
 • Improved userscript compatibility, including external dependencies through @require.
 • Fixed cases where muted web videos still produced audio or playback was duplicated.

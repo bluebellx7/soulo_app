@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "Paginile deschise se reîncarcă după ce un script este instalat, editat, activat, dezactivat sau eliminat.";
 "userscript_experimental_badge" = "Compatibilitate";
 "userscript_experimental_title" = "Compatibilitate UserScript";
-"userscript_experimental_desc" = "Acceptă regulile site-ului, pornirea/sfârșitul documentului, stocare extinsă GM și API-uri de pagină, comenzi de script, notificări, file, descărcări, cookie-uri, resurse și solicitări cu permisiuni. Examinați fiecare script înainte de instalare; fișierele externe @require nu sunt executate.";
+"userscript_experimental_desc" = "Acceptă regulile site-ului, pornirea/sfârșitul documentului, stocare extinsă GM și API-uri de pagină, comenzi de script, notificări, file, descărcări, cookie-uri, resurse și solicitări cu permisiuni. Examinați fiecare script înainte de instalare.";
 "extension_choose_file" = "Alege fișier sau dosar…";
 "extension_installing" = "Se verifică și se instalează extensia...";
 "extension_install_failed" = "Extensia nu a putut fi instalată";
@@ -659,7 +659,7 @@
 "userscript_new" = "Script nou";
 "userscript_edit" = "Editați Scriptul";
 "userscript_choose_file" = "Alege script…";
-"userscript_install_footer" = "Atingeți un rând sursă pentru a-l deschide în fila Soulo curentă. Un link .user.js deschide o confirmare de instalare. JavaScript standard și un set larg de API-uri GM sunt acceptate; scripturile nu rulează în Navigarea privată și fișierele externe @require nu sunt executate.";
+"userscript_install_footer" = "Atingeți un rând sursă pentru a-l deschide în fila Soulo curentă. Un link .user.js deschide o confirmare de instalare. JavaScript standard și un set larg de API-uri GM sunt acceptate. UserScripte nu rulează în Navigare privată.";
 "userscript_install_failed" = "UserScript Nu a putut fi instalat";
 "web_extension_temporarily_disabled" = "Extensiile standard de browser sunt temporar indisponibile în timp ce testarea de compatibilitate este finalizată.";
 "userscript_unreadable" = "Scriptul selectat nu a putut fi citit ca text UTF-8.";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "Susținut parțial";
 "userscript_docs_partial_desc" = "Solicitările de rețea omit încărcarea/progresul și transportul cookie-urilor. Notificările sunt în pagină, API-urile de resurse sunt asincrone, iar ascultătorii care modifică valoarea raportează modificările făcute de pagina curentă. Verificările de actualizare sunt manuale.";
 "userscript_docs_unsupported_title" = "Nu este acceptat momentan";
-"userscript_docs_unsupported_desc" = "Execuție externă @require, interceptarea GM_webRequest, GM_audio, izolarea sandbox/run-in, verificări automate de actualizare și comportamente exacte numai pentru desktop pe care WKWebView nu le poate oferi.";
+"userscript_docs_unsupported_desc" = "GM_webRequest, GM_audio, izolarea sandbox/run-in, verificări automate de actualizare și comportamente exacte numai pentru desktop pe care WKWebView nu le poate oferi.";
 "userscript_docs_metadata_title" = "Metadate";
 "userscript_docs_metadata_identity" = "Numele scriptului care poate fi citit de om și descrierea opțională sunt afișate înainte de instalare și în detaliile scriptului.";
 "userscript_docs_metadata_version" = "Folosiți un spațiu de nume stabil și unic și creșteți versiunea ori de câte ori se modifică scriptul inclus.";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "Autorizați gazdele utilizate de solicitările de rețea privilegiate. Fără aceasta, solicitările sunt limitate la gazda actuală a paginii.";
 "userscript_docs_metadata_urls" = "Identitate opțională și actualizare metadate. Soulo le folosește pentru a recunoaște reinstalările aceluiași script.";
 "userscript_docs_metadata_resource" = "Declara o resursă numită. Adăugați o gazdă @connect care se potrivește; preluarea este amânată până când API-ul de resurse modern este așteptat.";
-"userscript_docs_metadata_require" = "Cerințele externe sunt dezvăluite în timpul instalării, dar nu sunt descărcate sau executate; scripturile trebuie să fie autonome.";
+"userscript_docs_metadata_require" = "Fișierele @require HTTPS sunt descărcate și memorate în cache la instalare sau salvare, apoi executate în ordine înaintea scriptului.";
 "userscript_docs_api_title" = "API-uri privilegiate acceptate";
 "userscript_docs_api_info" = "Citește gestionarea scriptului, versiunea Soulo și metadatele scriptului analizat. Disponibil în formă moștenită și modernă.";
 "userscript_docs_api_unsafe_window" = "Furnizează fereastra paginii curente când acordarea unsafeWindow este declarată în mod explicit.";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "Valorile stocate trebuie să fie serializabile prin JSON: până la 256 KB per valoare și 1 MB total per script.";
 "userscript_docs_limits_network" = "Răspunsurile privilegiate sunt limitate la 20 MB, timeout-ul este limitat la 1–60 de secunde, iar anteturile Cookie/Gazdă/Origine nu sunt acceptate.";
 "userscript_docs_limits_private" = "UserScripte nu rulează în Navigare privată.";
-"userscript_docs_limits_require" = "Fișierele externe @require nu sunt niciodată executate. Evitați dependențele CDN și includeți toată logica necesară în script.";
+"userscript_docs_limits_require" = "Fișierele @require HTTPS sunt descărcate și memorate în cache la instalare sau salvare, apoi executate în ordine înaintea scriptului.";
 "userscript_docs_template_title" = "Șablon minim";
 "userscript_docs_template_footer" = "Utilizați un spațiu de nume unic și cele mai înguste declarații @match și @grant posibile.";
 "userscript_too_large" = "Scriptul selectat este mai mare decât limita de 2 MB.";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "Fără permisiuni suplimentare";
 "userscript_network_title" = "Acces la rețea";
 "userscript_external_requirements" = "Dependențe externe";
-"userscript_external_requirements_desc" = "Acest script declară fișiere @require externe. Soulo nu le încarcă automat.";
+"userscript_external_requirements_desc" = "Fișierele @require HTTPS sunt descărcate și memorate în cache la instalare sau salvare, apoi executate în ordine înaintea scriptului.";
 "userscript_metadata_title" = "Detalii script";
 "userscript_unsupported_permissions" = "Nu este încă acceptat: %@";
 "userscript_sample_name" = "Bara de progres de citire";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "Vizualizare carduri";
 "tab_close_group" = "Închide grupul";
 "tab_close_group_confirm" = "Închizi toate filele din „%@” (%d)?";
+
+"userscript_require_failed" = "Nu s-a putut încărca dependența %@: %@";
+"userscript_require_integrity_failed" = "Verificarea integrității dependenței a eșuat.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "Gestionează";
+"extension_update" = "Actualizează";
+"extension_rollback" = "Restaurează versiunea anterioară";
+"extension_blocked_sites" = "Site-uri blocate";
+"extension_diagnostics" = "Compatibilitate";
+"extension_review_access" = "Alege permisiunile și site-urile pe care le poate accesa această extensie.";
+"extension_limit_commands" = "Scurtăturile de tastatură ale extensiilor nu sunt disponibile pe iOS.";
+"extension_limit_notifications" = "Notificările pot fi afișate, dar evenimentele de clic și închidere nu sunt acceptate.";
+"extension_limit_offscreen" = "Documentele în afara ecranului acceptă doar redarea audio.";

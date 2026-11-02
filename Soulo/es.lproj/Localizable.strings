@@ -576,7 +576,7 @@ Cuentanos:
 "userscript_no_extra_permissions" = "Sin permisos adicionales";
 "userscript_network_title" = "Acceso a la red";
 "userscript_external_requirements" = "Dependencias externas";
-"userscript_external_requirements_desc" = "Este script declara archivos @require externos. Soulo no los carga automáticamente.";
+"userscript_external_requirements_desc" = "Los archivos @require HTTPS se descargan y almacenan al instalar o guardar y se ejecutan en orden antes del script.";
 "userscript_metadata_title" = "Detalles del script";
 "userscript_sample_name" = "Barra de progreso de lectura";
 "userscript_sample_desc" = "Muestra un indicador discreto en la parte superior de cada página web.";
@@ -627,3 +627,18 @@ Cuentanos:
 "tab_view_carousel" = "Vista de tarjetas";
 "tab_close_group" = "Cerrar grupo";
 "tab_close_group_confirm" = "¿Cerrar todas las pestañas de «%@» (%d)?";
+
+"userscript_require_failed" = "No se pudo cargar la dependencia %@: %@";
+
+"userscript_require_integrity_failed" = "Falló la comprobación de integridad de la dependencia.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "Gestionar";
+"extension_update" = "Actualizar";
+"extension_rollback" = "Restaurar versión anterior";
+"extension_blocked_sites" = "Sitios bloqueados";
+"extension_diagnostics" = "Compatibilidad";
+"extension_review_access" = "Elige los permisos y sitios web a los que puede acceder esta extensión.";
+"extension_limit_commands" = "Los atajos de teclado de las extensiones no están disponibles en iOS.";
+"extension_limit_notifications" = "Se pueden mostrar notificaciones, pero no se admiten los eventos de clic y cierre.";
+"extension_limit_offscreen" = "Los documentos fuera de pantalla solo admiten reproducción de audio.";

@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.dkluge.Soulo.torrents.session</string>
+	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -30,6 +34,7 @@
 				<string>public.image</string>
 				<string>public.movie</string>
 				<string>public.audio</string>
+				<string>org.bittorrent.torrent</string>
 				<string>public.zip-archive</string>
 				<string>com.dkluge.soulo.ebook</string>
 				<string>com.dkluge.soulo.archive</string>
@@ -66,6 +71,9 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>soulo</string>
+				<string>magnet</string>
+				<string>ed2k</string>
+				<string>thunder</string>
 			</array>
 		</dict>
 		<dict>
@@ -82,13 +90,15 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>bilibili</string>
+	</array>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSAllowsArbitraryLoadsInWebContent</key>
+		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
@@ -104,7 +114,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Allow camera access when you approve a website request, such as for video calls, scanning codes, or taking a photo.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Transfer files with your computer while Wi-Fi Transfer is open.</string>
+	<string>Transfer files with your computer and connect to download peers on your local network.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Allow microphone access for voice search and, when you approve, website calls or recording.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
@@ -125,6 +135,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
+		<string>processing</string>
 	</array>
 	<key>UIFileSharingEnabled</key>
 	<true/>
@@ -148,6 +159,25 @@
 	</array>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>BitTorrent Metadata</string>
+			<key>UTTypeIdentifier</key>
+			<string>org.bittorrent.torrent</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>torrent</string>
+				</array>
+				<key>public.mime-type</key>
+				<string>application/x-bittorrent</string>
+			</dict>
+		</dict>
 		<dict>
 			<key>UTTypeConformsTo</key>
 			<array>

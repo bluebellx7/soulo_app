@@ -1,4 +1,6 @@
 import Foundation
+import Compression
+import CryptoKit
 
 struct TrackerRadarService {
     static let shared = TrackerRadarService()
@@ -7,7 +9,7 @@ struct TrackerRadarService {
 
     init(data: Data? = nil, bundle: Bundle = .main) {
         let sourceData = data
-            ?? bundle.url(forResource: "trackerData", withExtension: "json").flatMap { try? Data(contentsOf: $0) }
+            ?? TrackerRadarResource.load(in: bundle)
         if let sourceData,
            let decoded = try? JSONDecoder().decode(TrackerRadarRoot.self, from: sourceData) {
             trackersByDomain = decoded.trackers.reduce(into: [:]) { result, pair in
@@ -120,6 +122,43 @@ struct TrackerRadarService {
         host.lowercased()
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "^www\\.", with: "", options: .regularExpression)
+    }
+}
+
+/// The shared service decodes this once. Request classification uses the
+/// existing in-memory map; compressed data is never read on each web request.
+enum TrackerRadarResource {
+    static let magic = Data("SOULOTR1".utf8)
+    static let headerSize = 48
+    static let maximumDecodedSize = 16 * 1024 * 1024
+
+    static func load(in bundle: Bundle) -> Data? {
+        if let url = bundle.url(forResource: "trackerData", withExtension: "lzfse"),
+           let payload = try? Data(contentsOf: url), let original = decode(payload) {
+            return original
+        }
+        // Retain compatibility with raw-data fixture and older resource bundles.
+        return bundle.url(forResource: "trackerData", withExtension: "json")
+            .flatMap { try? Data(contentsOf: $0) }
+    }
+
+    static func decode(_ payload: Data) -> Data? {
+        guard payload.count > headerSize, payload.prefix(8) == magic else { return nil }
+        let start = payload.startIndex
+        let size = payload[(start + 8)..<(start + 16)].enumerated().reduce(UInt64(0)) {
+            $0 | (UInt64($1.element) << ($1.offset * 8))
+        }
+        guard size > 0, size <= UInt64(maximumDecodedSize) else { return nil }
+        var original = Data(count: Int(size))
+        let decoded = original.withUnsafeMutableBytes { destination in
+            payload.withUnsafeBytes { source in
+                compression_decode_buffer(destination.bindMemory(to: UInt8.self).baseAddress!, Int(size),
+                    source.bindMemory(to: UInt8.self).baseAddress!.advanced(by: headerSize),
+                    payload.count - headerSize, nil, COMPRESSION_LZFSE)
+            }
+        }
+        guard decoded == Int(size), Data(SHA256.hash(data: original)) == payload[(start + 16)..<(start + headerSize)] else { return nil }
+        return original
     }
 }
 

@@ -1,8 +1,20 @@
 import UIKit
 import WebKit
 
-/// Use WebKit's live history documents for both gestures and buttons.
+struct WebHistoryPreview {
+    let url: URL
+    let image: UIImage?
+}
+
+/// Keep WebKit's history semantics and reuse bounded, in-memory page previews
+/// while a button-triggered traversal restores its destination document.
 @MainActor final class WebHistoryTransition {
+    private struct PageSnapshot {
+        weak var item: WKBackForwardListItem?
+        let image: UIImage
+    }
+    private var snapshots: [PageSnapshot] = []
+    var onTraversalExhausted: (() -> Void)?
     private weak var backwardWebView: WKWebView?
     private var backwardDepth = 0
     private var backwardFrameURL: URL?
@@ -21,6 +33,32 @@ import WebKit
 
     private func pageTarget(in entries: [WKBackForwardListItem]) -> WKBackForwardListItem? {
         entries.first { !automaticRedirectEntries.contains($0) }
+    }
+
+    func cache(_ image: UIImage, for item: WKBackForwardListItem) {
+        snapshots.removeAll { $0.item == nil || $0.item === item }
+        snapshots.append(PageSnapshot(item: item, image: image))
+        if snapshots.count > 6 { snapshots.removeFirst(snapshots.count - 6) }
+    }
+
+    private func preview(for item: WKBackForwardListItem?) -> WebHistoryPreview? {
+        guard let item else { return nil }
+        return WebHistoryPreview(url: item.url, image: snapshots.last { $0.item === item }?.image)
+    }
+
+    func backPreview(in webView: WKWebView) -> WebHistoryPreview? {
+        preview(for: pageTarget(in: Array(webView.backForwardList.backList.reversed())))
+    }
+
+    func preview(to url: URL, in webView: WKWebView) -> WebHistoryPreview {
+        let entries = webView.backForwardList.backList
+            + (webView.backForwardList.currentItem.map { [$0] } ?? [])
+            + webView.backForwardList.forwardList
+        let matches = entries.filter { $0.url == url }
+        // Same-URL SPA entries can represent different views. Do not substitute
+        // another entry's pixels when the exact destination is ambiguous.
+        if matches.count == 1, let result = preview(for: matches[0]) { return result }
+        return WebHistoryPreview(url: url, image: nil)
     }
 
     /// Also handles WebKit's own Back/Forward gestures. Identify the exact
@@ -79,6 +117,7 @@ import WebKit
             // is restoring can leave the native cursor and SPA state out of sync.
             guard webView.canGoBack, webView.backForwardList.backList.count < sourceDepth else {
                 self.cancelBackwardTraversal()
+                self.onTraversalExhausted?()
                 return
             }
             self.backwardDepth = webView.backForwardList.backList.count
@@ -95,5 +134,10 @@ import WebKit
 
     func cancel() {
         cancelBackwardTraversal()
+    }
+
+    func reset() {
+        cancel()
+        snapshots.removeAll()
     }
 }

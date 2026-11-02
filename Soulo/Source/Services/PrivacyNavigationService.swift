@@ -153,17 +153,19 @@ struct PrivacyNavigationService {
 
     private func strippedTrackingParametersURL(from url: URL) -> URL? {
         guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let queryItems = components.queryItems,
+              let queryItems = components.percentEncodedQueryItems,
               !queryItems.isEmpty else {
             return nil
         }
 
-        let filteredItems = queryItems.filter { !isTrackingParameter($0.name) }
+        let filteredItems = queryItems.filter {
+            !isTrackingParameter($0.name.removingPercentEncoding ?? $0.name)
+        }
         guard filteredItems.count != queryItems.count else {
             return nil
         }
 
-        components.queryItems = filteredItems.isEmpty ? nil : filteredItems
+        components.percentEncodedQueryItems = filteredItems.isEmpty ? nil : filteredItems
         return components.url
     }
 

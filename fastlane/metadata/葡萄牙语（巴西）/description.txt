@@ -4,7 +4,7 @@ Escolha o Soulo como navegador padrão nos Ajustes para abrir links de outros ap
 
 As abas e grupos de sites usados recentemente aparecem primeiro, e a visão geral abre no topo. A ordem de uso é mantida após reiniciar.
 
-Downloads BT: importe arquivos .torrent ou links magnet, escolha arquivos, pause e retome. No iOS 26, os downloads podem continuar em segundo plano quando o sistema permitir; versões anteriores salvam o progresso e pausam.
+Downloads BT: importe arquivos .torrent ou links magnet, escolha arquivos, pause e retome. No iOS 26, os downloads podem continuar em segundo plano quando o sistema permitir; versões anteriores salvam o progresso e pausam. Reproduza mídias BT compatíveis durante o download e abra arquivos MKV. Importe links ed2k/thunder. Downloads precisam de fontes disponíveis; a reprodução depende dos codecs.
 
 Escolha cinco atalhos opcionais na tela inicial para downloads, arquivos, favoritos, histórico, papéis de parede e outras páginas. A barra de abas da biblioteca fica compacta ao rolar.
 

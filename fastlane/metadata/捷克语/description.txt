@@ -4,7 +4,7 @@ V Nastavení vyberte Soulo jako výchozí prohlížeč pro otevírání odkazů 
 
 Nedávno použité karty a skupiny webů se zobrazují první a přehled se otevírá nahoře. Pořadí použití se zachová i po restartu.
 
-Stahování BT: importujte soubory .torrent nebo odkazy magnet, vyberte soubory, pozastavte a pokračujte. V iOS 26 může stahování běžet na pozadí, pokud to systém dovolí; starší verze uloží průběh a pozastaví jej.
+Stahování BT: importujte soubory .torrent nebo odkazy magnet, vyberte soubory, pozastavte a pokračujte. V iOS 26 může stahování běžet na pozadí, pokud to systém dovolí; starší verze uloží průběh a pozastaví jej. Přehrávejte podporovaná BT média během stahování a otevírejte soubory MKV. Importujte odkazy ed2k/thunder. Stahování vyžaduje dostupné zdroje; přehrávání závisí na kodecích.
 
 Nastavte pět volitelných zkratek na úvodní stránce pro stahování, soubory, záložky, historii, tapety a další stránky. Lišta karet knihovny se při posouvání zmenší.
 

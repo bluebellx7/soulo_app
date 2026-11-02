@@ -28,6 +28,7 @@ struct DownloadManagerView: View {
 struct DownloadManagerContentView: View {
     @Environment(\.libraryPageIsActive) private var libraryPageIsActive
     @ObservedObject private var downloadManager = DownloadManagerService.shared
+    @ObservedObject private var ed2kDownloads = ED2KDownloadService.shared
     @ObservedObject private var episodeDownloads = WebEpisodeDownloadService.shared
     let highlightedItemID: UUID?
     var embeddedInLibrary = false
@@ -240,6 +241,8 @@ struct DownloadManagerContentView: View {
             } else if item.status == .inProgress {
                 Button {
                     switch item.transport {
+                    case .ed2k:
+                        ED2KDownloadService.shared.pause(item.id)
                     case .torrent:
                         TorrentDownloadService.shared.pause(item.id)
                     case .background:
@@ -257,9 +260,11 @@ struct DownloadManagerContentView: View {
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel(LanguageManager.shared.localizedString("pause"))
-            } else if item.status == .paused {
+            } else if item.status == .paused || (item.transport == .ed2k && item.status == .failed) {
                 Button {
                     switch item.transport {
+                    case .ed2k:
+                        ED2KDownloadService.shared.resume(item.id)
                     case .torrent:
                         TorrentDownloadService.shared.start(item.id)
                     case .background:
@@ -350,7 +355,9 @@ struct DownloadManagerContentView: View {
                     .font(.subheadline.weight(.medium))
                     .lineLimit(1)
                 HStack(spacing: 6) {
-                    Text(statusText(for: item.status))
+                    if item.transport == .ed2k { Text("ED2K ·") }
+                    Text(item.transport == .ed2k && item.status == .inProgress && ed2kDownloads.snapshots[item.id]?.state == "VERIFYING"
+                        ? ToolText.text("torrent_checking") : statusText(for: item.status))
                     if item.status != .inProgress && item.status != .paused {
                         Text("·")
                         Text(sizeText(item))
@@ -370,6 +377,12 @@ struct DownloadManagerContentView: View {
                     Text(progressText(item))
                         .font(.caption2.monospacedDigit())
                         .foregroundStyle(.tertiary)
+                    if item.transport == .ed2k, item.status == .inProgress,
+                       let state = ed2kDownloads.snapshots[item.id] {
+                        Text(ByteCountFormatter.string(fromByteCount: state.speed, countStyle: .file) + "/s · "
+                            + String(format: ToolText.text("torrent_peers"), state.peers))
+                            .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                    }
                     if downloadManager.playbackSource(for: item.id) != nil {
                         Button {
                             guard let source = downloadManager.playbackSource(for: item.id) else { return }
@@ -521,6 +534,7 @@ struct LocalDocumentContent: View {
     @State private var error: String?
 
     @State private var fileKind: FilePresentation.Kind?
+    @State private var torrentTarget: (id: UUID, file: TorrentFileEntry)?
 
     private var isBook: Bool { BookFormat.extensions.contains(url.pathExtension.lowercased()) }
 
@@ -549,6 +563,10 @@ struct LocalDocumentContent: View {
                         || UTType(filenameExtension: url.pathExtension)?.conforms(to: .plainText) == true
                         || UTType(filenameExtension: url.pathExtension)?.conforms(to: .sourceCode) == true {
                 TextDocumentPreview(url: url)
+            } else if let torrentTarget {
+                TorrentFilePlaybackView(id: torrentTarget.id, file: torrentTarget.file)
+            } else if url.pathExtension.lowercased() == "mkv" {
+                MatroskaPlayerView(url: url)
             } else if isPlayableMedia {
                 MediaPlaybackContent()
                     .task { MediaSession.shared.open(url: url, title: url.lastPathComponent) }
@@ -557,6 +575,7 @@ struct LocalDocumentContent: View {
             }
         }
         .task(id: url) {
+            torrentTarget = TorrentDownloadService.shared.playbackTarget(for: url)
             fileKind = await Task.detached { FilePresentation.inspect(url).kind }.value
         }
         .navigationTitle(isBook ? "" : url.lastPathComponent)

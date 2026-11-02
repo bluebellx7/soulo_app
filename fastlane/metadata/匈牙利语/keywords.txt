@@ -1,1 +1,1 @@
-privát,lapok,videóletöltés,reklámblokkoló,felhasználói szkript,bővítmények,fordítás,média
+privát,lapok,videóletöltés,reklámblokkoló,felhasználói szkript,bővítmények,torrent,magnet,MKV

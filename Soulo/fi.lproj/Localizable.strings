@@ -633,7 +633,7 @@
 "userscripts_reload_note" = "Avoimet sivut latautuvat uudelleen, kun komentosarja on asennettu, muokattu, otettu käyttöön, poistettu käytöstä tai poistettu.";
 "userscript_experimental_badge" = "Yhteensopivuus";
 "userscript_experimental_title" = "UserScript yhteensopivuus";
-"userscript_experimental_desc" = "Tukee sivustosääntöjä, asiakirjan alkua/loppua, laajaa GM-tallennustilaa ja sivujen sovellusliittymiä, komentosarjakomentoja, ilmoituksia, välilehtiä, latauksia, evästeitä, resursseja ja käyttöoikeuslaajuisia pyyntöjä. Tarkista jokainen komentosarja ennen asennusta; ulkoisia @require-tiedostoja ei suoriteta.";
+"userscript_experimental_desc" = "Tukee sivustosääntöjä, asiakirjan alkua/loppua, laajaa GM-tallennustilaa ja sivujen sovellusliittymiä, komentosarjakomentoja, ilmoituksia, välilehtiä, latauksia, evästeitä, resursseja ja käyttöoikeuslaajuisia pyyntöjä. Tarkista jokainen komentosarja ennen asennusta.";
 "extension_choose_file" = "Valitse tiedosto tai kansio…";
 "extension_installing" = "Tarkistetaan ja asennetaan laajennusta…";
 "extension_install_failed" = "Laajennusta ei voitu asentaa";
@@ -659,7 +659,7 @@
 "userscript_new" = "Uusi Script";
 "userscript_edit" = "Muokkaa skriptiä";
 "userscript_choose_file" = "Valitse skripti…";
-"userscript_install_footer" = "Napauta lähderiviä avataksesi sen nykyisessä Soulo-välilehdessä. .user.js-linkki avaa asennusvahvistuksen. Vakio JavaScript ja laaja joukko GM-sovellusliittymiä tuetaan. komentosarjat eivät toimi yksityisessä selauksessa ja ulkoisia @require-tiedostoja ei suoriteta.";
+"userscript_install_footer" = "Napauta lähderiviä avataksesi sen nykyisessä Soulo-välilehdessä. .user.js-linkki avaa asennusvahvistuksen. Vakio JavaScript ja laaja joukko GM-sovellusliittymiä tuetaan. UserScripts eivät toimi yksityisessä selauksessa.";
 "userscript_install_failed" = "UserScript Ei voitu asentaa";
 "web_extension_temporarily_disabled" = "Vakioselainlaajennukset ovat tilapäisesti poissa käytöstä, kun yhteensopivuustesti on valmis.";
 "userscript_unreadable" = "Valittua komentosarjaa ei voitu lukea UTF-8-tekstina.";
@@ -684,7 +684,7 @@
 "userscript_docs_partial_title" = "Osittain tuettu";
 "userscript_docs_partial_desc" = "Verkkopyynnöt jättävät pois latauksen/edistymisen ja evästeiden kuljetuksen. Ilmoitukset ovat sivulla, resurssien sovellusliittymät ovat asynkronisia, ja arvonmuutosseuraajat raportoivat nykyisen sivun tekemät muutokset. Päivitystarkistukset ovat manuaalisia.";
 "userscript_docs_unsupported_title" = "Ei tällä hetkellä tuettu";
-"userscript_docs_unsupported_desc" = "Ulkoinen @require execution, GM_webRequest sieppaus, GM_audio, sandbox/run-in-eristys, automaattiset päivitystarkistukset ja täsmälliset vain työpöydän toiminnot, joita WKWebView ei pysty tarjoamaan.";
+"userscript_docs_unsupported_desc" = "GM_webRequest sieppaus, GM_audio, sandbox/run-in-eristys, automaattiset päivitystarkistukset ja täsmälliset vain työpöydän toiminnot, joita WKWebView ei pysty tarjoamaan.";
 "userscript_docs_metadata_title" = "Metatiedot";
 "userscript_docs_metadata_identity" = "Ihmisten luettavissa oleva komentosarjan nimi ja valinnainen kuvaus näkyvät ennen asennusta ja komentosarjan tiedoissa.";
 "userscript_docs_metadata_version" = "Käytä vakaata, ainutlaatuista nimiavaruutta ja lisää versiota aina, kun niputettu komentosarja muuttuu.";
@@ -695,7 +695,7 @@
 "userscript_docs_metadata_connect" = "Valtuuta etuoikeutettujen verkkopyyntöjen käyttämät isännät. Ilman sitä pyynnöt rajoittuvat nykyiseen sivun isäntään.";
 "userscript_docs_metadata_urls" = "Valinnainen identiteetti ja päivitä metatiedot. Soulo käyttää näitä tunnistaakseen saman skriptin uudelleenasennukset.";
 "userscript_docs_metadata_resource" = "Ilmoittaa nimetyn resurssin. Lisää vastaava @connect-isäntä; hakua lykätään, kunnes modernia resurssisovellusliittymää odotetaan.";
-"userscript_docs_metadata_require" = "Ulkoiset vaatimukset julkistetaan asennuksen aikana, mutta niitä ei ladata tai suoriteta; skriptien on oltava itsenäisiä.";
+"userscript_docs_metadata_require" = "HTTPS-osoitteiden @require-tiedostot ladataan ja tallennetaan välimuistiin asennettaessa tai tallennettaessa ja suoritetaan järjestyksessä ennen komentosarjaa.";
 "userscript_docs_api_title" = "Tuetut etuoikeutetut sovellusliittymät";
 "userscript_docs_api_info" = "Lukee komentosarjan käsittelijän, Soulo version ja jäsennetyn skriptin metatiedot. Saatavana vanhassa ja modernissa muodossa.";
 "userscript_docs_api_unsafe_window" = "Tarjoaa nykyisen sivuikkunan, kun unsafeWindow-lupa on nimenomaisesti ilmoitettu.";
@@ -730,7 +730,7 @@
 "userscript_docs_limits_storage" = "Tallennettujen arvojen on oltava JSON-sarjoitettavissa: enintään 256 kt arvoa kohden ja yhteensä 1 megatavu skriptiä kohden.";
 "userscript_docs_limits_network" = "Etuoikeutettujen vastausten enimmäiskoko on 20 megatavua, aikakatkaisu on rajoitettu 1–60 sekuntiin, eikä eväste-/isäntä-/alkuperä-otsikoita hyväksytä.";
 "userscript_docs_limits_private" = "UserScripts eivät toimi yksityisessä selauksessa.";
-"userscript_docs_limits_require" = "Ulkoisia @require-tiedostoja ei koskaan suoriteta. Vältä CDN-riippuvuuksia ja sisällytä kaikki tarvittava logiikka komentosarjaan.";
+"userscript_docs_limits_require" = "HTTPS-osoitteiden @require-tiedostot ladataan ja tallennetaan välimuistiin asennettaessa tai tallennettaessa ja suoritetaan järjestyksessä ennen komentosarjaa.";
 "userscript_docs_template_title" = "Minimaalinen malli";
 "userscript_docs_template_footer" = "Käytä yksilöllistä nimiavaruutta ja kapeimpia mahdollisia @match- ja @grant-ilmoituksia.";
 "userscript_too_large" = "Valittu komentosarja on suurempi kuin 2 Mt.";
@@ -744,7 +744,7 @@
 "userscript_no_extra_permissions" = "Ei lisäoikeuksia";
 "userscript_network_title" = "Verkkoyhteys";
 "userscript_external_requirements" = "Ulkoiset riippuvuudet";
-"userscript_external_requirements_desc" = "Tämä komentosarja ilmoittaa ulkoiset @require-tiedostot. Soulo ei lataa niitä automaattisesti.";
+"userscript_external_requirements_desc" = "HTTPS-osoitteiden @require-tiedostot ladataan ja tallennetaan välimuistiin asennettaessa tai tallennettaessa ja suoritetaan järjestyksessä ennen komentosarjaa.";
 "userscript_metadata_title" = "Käsikirjoituksen tiedot";
 "userscript_unsupported_permissions" = "Ei vielä tuettu: %@";
 "userscript_sample_name" = "Lukemisen edistymispalkki";
@@ -893,3 +893,17 @@
 "tab_view_carousel" = "Korttinäkymä";
 "tab_close_group" = "Sulje ryhmä";
 "tab_close_group_confirm" = "Suljetaanko kaikki ryhmän ”%@” välilehdet (%d)?";
+
+"userscript_require_failed" = "Riippuvuutta %@ ei voitu ladata: %@";
+"userscript_require_integrity_failed" = "Riippuvuuden eheyden tarkistus epäonnistui.";
+
+/* Extension access, upgrades and compatibility */
+"extension_manage" = "Hallitse";
+"extension_update" = "Päivitä";
+"extension_rollback" = "Palauta edellinen versio";
+"extension_blocked_sites" = "Estetyt sivustot";
+"extension_diagnostics" = "Yhteensopivuus";
+"extension_review_access" = "Valitse oikeudet ja sivustot, joita tämä laajennus saa käyttää.";
+"extension_limit_commands" = "Laajennusten pikanäppäimet eivät ole käytettävissä iOS:ssä.";
+"extension_limit_notifications" = "Ilmoituksia voidaan näyttää, mutta napsautus- ja sulkemistapahtumia ei tueta.";
+"extension_limit_offscreen" = "Näytön ulkopuoliset dokumentit tukevat vain äänen toistoa.";

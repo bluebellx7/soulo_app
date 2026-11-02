@@ -46,6 +46,18 @@ struct WebNavigationPolicyService {
         return .allow
     }
 
+    /// A normal HTTPS navigation can itself invoke an installed app, without
+    /// passing through a custom-scheme policy action. Keep this list narrow.
+    func universalAppScheme(for url: URL) -> String? {
+        guard ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
+              let host = url.host?.lowercased() else { return nil }
+        if host == "b23.tv" { return "bilibili" }
+        if host == "bilibili.com" || host.hasSuffix(".bilibili.com") {
+            if ["/video/", "/bangumi/", "/festival/"].contains(where: { url.path.hasPrefix($0) }) { return "bilibili" }
+        }
+        return nil
+    }
+
     /// Baidu's share-page SDK wraps its app scheme in an HTTPS Universal Link.
     /// Resolve only that specific SDK link shape, so ordinary cross-site pages
     /// continue through the browser's ad-navigation checks.
@@ -83,6 +95,7 @@ struct WebNavigationPolicyService {
     /// A user-facing destination for external navigation prompts. Custom URL
     /// hosts such as `v1` are internal routes, so prefer the owning app scheme.
     func externalDestinationName(for url: URL) -> String {
+        if universalAppScheme(for: url) == "bilibili" { return "Bilibili" }
         let scheme = url.scheme?.lowercased() ?? ""
         let knownApps: [String: String] = [
             "baiduboxapp": "百度 App",

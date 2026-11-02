@@ -1,12 +1,24 @@
 import Foundation
 
+enum SearchQueryEncoding {
+    private static let allowed: CharacterSet = {
+        var characters = CharacterSet.urlQueryAllowed
+        characters.remove(charactersIn: "/?#+&=@!$'()*,;")
+        return characters
+    }()
+
+    static func encode(_ text: String) -> String? {
+        text.addingPercentEncoding(withAllowedCharacters: allowed)
+    }
+}
+
 extension String {
     var isValidURL: Bool {
         BrowserNavigationResolver.webURL(for: self) != nil
     }
 
     var percentEncoded: String {
-        addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? self
+        SearchQueryEncoding.encode(self) ?? self
     }
 
     func asSearchURL(template: String) -> URL? {

@@ -35,7 +35,7 @@ async function setup(browser,url,config={}) {
  await page.waitForSelector('#soulo-baidu-search-style',{state:'attached'});return {context,page};
 }
 (async()=>{
- const browser=await chromium.launch({headless:true});let checks=0;
+ const browser=await chromium.launch({headless:true,channel:process.env.SOULO_CHROME_CHANNEL});let checks=0;
  try {
   for (const url of ['https://m.baidu.com/s?word=test','https://m.baidu.com/from=home/s?word=test','https://www.baidu.com/s?wd=test','https://baidu.com/s?wd=test']) {
    const {context,page}=await setup(browser,url);
@@ -59,8 +59,6 @@ async function setup(browser,url,config={}) {
    await page.mouse.wheel(0,450);await page.waitForTimeout(100);
    assert.ok(await page.evaluate(()=>scrollY)>100);
    await page.locator('#play').click();assert.equal(await page.evaluate(()=>playClicks),1);
-   await page.locator('#opaque h3 a').click();
-   assert.match(await page.evaluate(()=>nativeMessages.filter(m=>m.url).at(-1).url),/\/link\?url=unknown$/);
    await page.locator('#mobile h3').click();
    assert.equal(await page.evaluate(()=>nativeMessages.filter(m=>m.url).at(-1).url),'https://hanyu.baidu.com/view/%E5%A4%A9');
    await page.evaluate(()=>document.getElementById('main').dataset.log=JSON.stringify({mu:'https://new.example/changed'}));
@@ -92,6 +90,15 @@ async function setup(browser,url,config={}) {
    assert.equal(await page.locator('#main-title').getAttribute('target'),'_blank');
    assert.equal(await page.locator('#draft').inputValue(),'kept');
    checks++;await context.close();
+  }
+  for (const [selector,expected] of [['#opaque h3 a','https://m.baidu.com/link?url=unknown'],['#sitelink','https://example.com/meaning']]) {
+   const {context,page}=await setup(browser,'https://m.baidu.com/s?word=test');
+   const request=page.waitForRequest(r=>r.isNavigationRequest()&&r.url()===expected);
+   await page.locator(selector).click(); await request;
+   // The new document's init script starts with no native navigation messages.
+   await page.waitForLoadState('domcontentloaded');
+   assert.equal(await page.evaluate(()=>nativeMessages.filter(m=>m.url).length),0,'Ordinary HTTP activation must stay in the browser engine');
+   await context.close();checks++;
   }
   for (const [name,width,colorScheme] of [['mobile-light',390,'light'],['mobile-dark',390,'dark'],['desktop',1440,'light']]) {
    const {context,page}=await setup(browser,'https://www.baidu.com/s?wd=test',{viewport:{width,height:920},colorScheme});

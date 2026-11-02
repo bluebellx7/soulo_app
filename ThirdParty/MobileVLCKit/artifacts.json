@@ -1,0 +1,19 @@
+{
+  "version": "3.7.5",
+  "source": "https://download.videolan.org/pub/cocoapods/prod/MobileVLCKit-3.7.5-a213fd11-6de05adc.tar.xz",
+  "sourceSHA256": "a76f7a6cfcde4209b56f943e6e18400659d8a7a93ff482f8b1d059468d11e6be",
+  "files": {
+    "Artifacts/MobileVLCKit.xcframework/Info.plist": "5348c7086d7d42b73f798e1899d0241655ea32292a53818a40efe542c6e43cf6",
+    "Artifacts/MobileVLCKit.xcframework/ios-arm64/MobileVLCKit.framework/Info.plist": "8358fbe5c2b4739216c78710c220c5aeba885b9b07deef6cf43533a4874e2a13",
+    "Artifacts/MobileVLCKit.xcframework/ios-arm64/MobileVLCKit.framework/MobileVLCKit": "553f91c6fcb0c4bc62bfa605e2ccacc910dc0c36f8ff4ae8339baf643fc81418",
+    "Artifacts/MobileVLCKit.xcframework/ios-arm64_x86_64-simulator/MobileVLCKit.framework/Info.plist": "5f52114de413fa13a85835d687f582be9b1ffce54963458bb7a091b65d60c060",
+    "Artifacts/MobileVLCKit.xcframework/ios-arm64_x86_64-simulator/MobileVLCKit.framework/MobileVLCKit": "434296baae56165d70f4c683f587cc3a63a8524224bc15e045a8e52ee18a3d61"
+  },
+  "optimization": "iOS 17+ device arm64 only; non-global/debug symbols stripped; codecs unchanged",
+  "debugSymbols": {
+    "archive": "Symbols/ios-arm64.dSYM.tar.xz",
+    "sha256": "b80e574e436442d6fd10715948d2848d6636ec101239ee16583d6b9d21d50bee",
+    "uuid": "411F9415-74D5-32BD-86AB-C1C337978956",
+    "source": "Original pinned upstream dSYM, thinned to arm64; not embedded in the app"
+  }
+}
