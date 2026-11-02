@@ -1,13 +1,13 @@
 # Soulo website context
 
-Updated: 2026-10-31
+Updated: 2026-11-01
 Canonical website: https://soulo.dkluge.com/
 
 ## What is Soulo?
 
 Soulo is an iPhone multi-platform search browser for iOS 17.0 or later. Enter a query once, then switch between 40+ search engines, video platforms, communities and third-party AI services. Those platforms provide their own results; Soulo does not generate or merge answers.
 
-The app includes ad blocking, download management, page translation, webpage screenshots and PDF export, user scripts, custom search platforms, wallpapers, local browsing history and private browsing. See https://soulo.dkluge.com/ and https://apps.apple.com/app/id6761165330 for product and download information. The homepage supports Chinese and English display on one canonical URL; the directories are in Chinese.
+The app includes ad blocking (with rule subscriptions and manual element picker), BT & resource download management (magnet links, `.torrent` files, file selection, pause/resume, and web media/image/document sniffing), enhanced video & audio playback (HLS streams, playback speed, long-press speed-up, floating window, Picture-in-Picture, background audio, AirPlay, frame capture), eBook & reader mode (auto next-page article extraction plus EPUB, PDF, TXT, MOBI, AZW3 reader with Simplified/Traditional Chinese conversion), archive management & Wi-Fi transfer (ZIP, RAR, 7z extraction and password-protected compression), page translation with follow-up link translation, full-page screenshots, PDF export, image OCR, QR code generation, JavaScript UserScripts, compatible WebExtensions, custom search platforms, wallpapers, local browsing history, private browsing, HTML bookmark import/export, optional iCloud settings sync, and iOS default browser support. See https://soulo.dkluge.com/ and https://apps.apple.com/app/id6761165330 for product and download information. All five public pages support Chinese and English UI display with dark mode as the default appearance.
 
 ## Search source directory
 
@@ -20,11 +20,11 @@ The directory groups URL-based search templates into AI search, general search, 
 URL: https://soulo.dkluge.com/movies.html
 Data: https://soulo.dkluge.com/movies.json
 
-This is a classified directory of 90 external websites, not a hosted video catalog or streaming service. It provides website search, category filtering and local browser favorites. It does not require a Soulo account. Favorites are saved only in the visitor's browser and are lost when local website data is cleared.
+This is a classified directory of 86 external websites, not a hosted video catalog or streaming service. It provides website search, category filtering and local browser favorites. It does not require a Soulo account. Favorites are saved only in the visitor's browser and are lost when local website data is cleared.
 
 Categories and uses:
 
-- 综合影视: general movie, series and variety-show websites, including the supplied 片吧影院 and 片吧影视 URLs.
+- 综合影视: general movie, series and variety-show websites, including the supplied 片吧影视 URL.
 - 电影下载: movie information and download-resource directories, including the supplied 6V 电影 URL.
 - 追剧专区: Japanese and Korean series and entertainment information.
 - 动漫番剧: animation, seasonal schedules, anime communities and screenshot lookup.
@@ -35,7 +35,38 @@ Categories and uses:
 - 纪录与直播: documentary directories, CCTV and sports information.
 - 影视工具: desktop players and media-resource directories.
 
-Address research sources: https://i8k.tv/, https://www.weidus.com/favorites/mfys, https://tv.baozangdh.com/, https://ailongmiao.com/movie/, https://cn1.xgcartoon.com/ . Additional addresses were supplied by the website owner. Descriptions summarize intended use and are not independent claims about content rights, access conditions, availability or streaming quality. Source provenance and the directory's editorial date are recorded in movies.json. External websites manage their own accounts, media and playback services. The 2026-10-31 review checked destination pages in Chrome, including redirects and page content. The directory now has 90 entries, with 54 newly added destinations; SubHD was temporarily removed after repeated HTTP 522 responses. Failed, unrelated, duplicate and persistently verification-gated entries are omitted. Login-required entries are labeled. Site icons are served as local PNG assets. Availability can change with time, location and access conditions. Do not describe them as operated or endorsed by Soulo.
+Descriptions summarize intended use and are not independent claims about content rights, access conditions, availability or streaming quality. The directory's editorial date is recorded in movies.json. External websites manage their own accounts, media and playback services. The 2026-11-01 review checked destination pages in Chrome, including redirects and page content. The directory has 86 entries. Failed, unrelated, duplicate and persistently verification-gated entries are omitted. Login-required entries are labeled. Site icons are served as local PNG assets. Availability can change with time, location and access conditions. Do not describe them as operated or endorsed by Soulo.
+
+## Soulo 磁力搜索 / magnet & BT directory
+
+URL: https://soulo.dkluge.com/magnets.html
+Data: https://soulo.dkluge.com/magnets.json
+
+This is a classified directory of 37 verified external magnet search engines, BT torrent websites and anime/international torrent indexes. It provides website search, category filtering and local browser favorites (`soulo-magnet-favorites`). Visitors can open magnet links (`magnet:?`) or `.torrent` files in the Soulo iOS browser to select files and manage downloads locally.
+
+Categories and uses:
+
+- 磁力引擎: DHT magnet search engines and multi-source torrent search portals (including 无极磁链, 磁力熊猫, 磁力炮, 磁力么, 磁力搜索, 找磁力, 磁力蜘蛛, 磁力王, 种子吧, 磁力虎, 磁力大大).
+- 影视种子: movie and series BT/magnet download directories and forums (including 6V 电影, 80s 电影, BT之家 1LOU, SeedHub, 飘花电影网, 迅雷电影天堂, 磁力熊, 比特大雄, 人人电影网).
+- 动漫追番: anime torrent trackers and seasonal magnet directories (including 蜜柑计划 Mikan, ACG.RIP, Anime Garden, Nyaa, 樱花动漫).
+- 国际种子: international torrent and TV release indexes (including EZTV, RuTracker, PirateProxy).
+- 磁力导航: magnet search navigation hubs and client tools (including BT蚂蚁磁力, 磁力搜索神器, 迅雷下载天堂).
+
+Every destination URL was verified in headless Chrome on 2026-11-01; broken domains, empty SPAs and clipboard hijackers were excluded.
+
+## Soulo 网盘搜索 / cloud drive search directory
+
+URL: https://soulo.dkluge.com/pans.html
+Data: https://soulo.dkluge.com/pans.json
+
+This is a classified directory of 30 verified external cloud drive search engines, movie cloud-share communities, study & eBook cloud indexes, and official cloud drive web portals. It provides website search, category filtering and local browser favorites (`soulo-pan-favorites`).
+
+Categories and uses:
+
+- 多盘聚合: multi-cloud search engines covering Quark, Baidu, AliPan, Xunlei, UC, 115, Lanzou and Tianyi cloud drives (including 千帆搜索, 盘搜Pro, 阿立盘搜, 搜盘鸭, 爱搜, 易搜, 影盘社, UP云搜, 盘了个盘, 小马盘, 小兔搜搜, Ai资源帮).
+- 影视网盘站: movie, series and documentary cloud-sharing communities and catalogs (including 云盘资源社区, 阿里小站, 团长资源, 影视搜, 人人电影网, SeedHub, 纪录片数据库).
+- 学习与专项: study materials, exam prep, eBook and 4K UHD cloud resource indexes (including 学霸盘, 会搜盘, 4K精品夸克资源, 资源收藏夹·网盘, 爱达杂货铺).
+- 网盘工作台: official web consoles for Quark, AliPan, Baidu, Xunlei, 115 and Lanzou cloud drives.
 
 ## App privacy and website analytics
 
@@ -43,16 +74,18 @@ App privacy policy: https://soulo.dkluge.com/privacy.html
 
 The app policy describes local data handling, optional iCloud sync, permissions and third-party services. Search requests go to the selected platforms. Voice-search processing may depend on Apple services, device, language and OS support; avoid claiming every intelligence feature is always offline.
 
-The public website separately loads Baidu Analytics. Do not generalize the app's no-analytics statements to the website. The watch guide's favorite identifiers are stored locally in the browser.
+The public website separately loads Baidu Analytics. Do not generalize the app's no-analytics statements to the website. The watch guide's and magnet directory's favorite identifiers are stored locally in the browser.
 
 ## Discovery and citation
 
 Home: https://soulo.dkluge.com/
 Search sources: https://soulo.dkluge.com/sources.html
 Watch guide: https://soulo.dkluge.com/movies.html
+Magnet directory: https://soulo.dkluge.com/magnets.html
+Cloud drive directory: https://soulo.dkluge.com/pans.html
 App privacy: https://soulo.dkluge.com/privacy.html
 Sitemap: https://soulo.dkluge.com/sitemap.xml
 Crawler rules: https://soulo.dkluge.com/robots.txt
 Short context: https://soulo.dkluge.com/llms.txt
 
-Public pages do not require authentication. Main directory content is present in HTML. The watch guide includes CollectionPage, BreadcrumbList and ItemList JSON-LD matching the visible entries. Prefer the canonical page relevant to a claim when citing the site. This summary supplies context; it does not replace the pages or guarantee search inclusion.
+Public pages do not require authentication. Main directory content is present in HTML. `movies.html`, `magnets.html`, and `pans.html` include CollectionPage, BreadcrumbList and ItemList JSON-LD matching the visible entries. Prefer the canonical page relevant to a claim when citing the site. This summary supplies context; it does not replace the pages or guarantee search inclusion.

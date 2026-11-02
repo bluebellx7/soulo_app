@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark" data-resolved-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>磁力搜索 - BT 种子、影视磁力链与动漫资源导航 | Soulo</title>
+    <meta name="description" content="Soulo 磁力搜索导航整理 {{site_count}} 个可用磁力与 BT 种子网站，覆盖 DHT 磁力引擎、4K 影视种子、新番动漫花园、国际 BitTorrent 索引与磁力导航。配合 Soulo 内置 BT 下载引擎一键直连。" />
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+    <meta name="theme-color" content="#111217" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)" />
+    <link rel="canonical" href="https://soulo.dkluge.com/magnets.html" />
+    <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg?v=20261030" />
+    <link rel="apple-touch-icon" href="app-icon.png?v=1.1.4" />
+    <link rel="alternate" type="text/plain" href="llms.txt" title="Soulo 网站与磁力搜索导航摘要" />
+    <meta property="og:site_name" content="Soulo" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:title" content="Soulo 磁力搜索 · 磁力与种子，一触即达。" />
+    <meta property="og:description" content="{{site_count}} 个磁力与 BT 网站，{{category_count}} 个分类。聚合 DHT 磁力引擎、高清影视种子与动漫追番花园。" />
+    <meta property="og:url" content="https://soulo.dkluge.com/magnets.html" />
+    <meta property="og:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.4" />
+    <meta property="og:image:width" content="1024" />
+    <meta property="og:image:height" content="1024" />
+    <meta property="og:image:alt" content="Soulo 图标" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Soulo 磁力搜索 · 磁力与种子，一触即达。" />
+    <meta name="twitter:description" content="聚合可用磁力搜索引擎、4K 影视种子与新番动漫花园，配合 Soulo 内置 BT 下载即刻开下。" />
+    <meta name="twitter:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.4" />
+    <meta name="twitter:image:alt" content="Soulo 图标" />
+    <script>
+      (() => {
+        let theme = 'dark';
+        try {
+          const saved = localStorage.getItem('soulo-theme');
+          if (saved === 'light' || saved === 'dark') theme = saved;
+        } catch {}
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.resolvedTheme = theme === 'light' ? 'light' : 'dark';
+      })();
+    </script>
+    <link rel="stylesheet" href="home.css?v=20261030b" />
+    <link rel="stylesheet" href="movies.css?v=20261101" />
+    <link rel="stylesheet" href="navigation.css?v=20261030b" />
+    <script type="application/ld+json">{{structured_data}}</script>
+    <script src="site-ui.js?v=20261030b" defer></script>
+    <script src="movies.js?v=20261030" defer></script>
+    <noscript><style>.favorite-button,.directory-toolbar,.favorite-picks{display:none!important}</style></noscript>
+    <script>
+      var _hmt = _hmt || [];
+      (function() {
+        var hm = document.createElement("script");
+        hm.src = "https://hm.baidu.com/hm.js?bdc8ea6c501e6ff0d7b16dc13b09b991";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+      })();
+    </script>
+  </head>
+  <body class="movies-page magnets-page" data-favorites-key="soulo-magnet-favorites">
+    <a class="skip-link" href="#directory" data-page-i18n="magnets.skip">跳到磁力搜索目录</a>
+    {{navigation}}
+    <main class="wrap">
+      <nav class="breadcrumbs" aria-label="面包屑"><a href="./" data-page-i18n="breadcrumb.home">首页</a><span aria-hidden="true">/</span><span aria-current="page" data-page-i18n="magnets">磁力搜索</span></nav>
+      <section class="cinema-hero" aria-labelledby="cinema-title">
+        <div class="cinema-copy">
+          <h1 id="cinema-title" data-page-i18n-html="magnets.heroTitle">磁力与种子，<br />一触即达。</h1>
+          <p data-page-i18n-html="magnets.heroDesc">聚合可用 DHT 磁力引擎、4K 影视种子与新番动漫花园。<br />配合 Soulo 内置 BT 引擎，复制磁力链即可直接下载。</p>
+          <a class="browse-link" href="#directory"><span data-page-i18n="magnets.heroAction">浏览磁力索引库</span> {{arrow}}</a>
+        </div>
+        <div class="cinema-art" aria-hidden="true">
+          <svg viewBox="0 0 480 340" fill="none">
+            <defs>
+              <radialGradient id="magnet-radar-glow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#38bdf8" stop-opacity=".28" />
+                <stop offset="65%" stop-color="#3b82f6" stop-opacity=".08" />
+                <stop offset="100%" stop-color="#3b82f6" stop-opacity="0" />
+              </radialGradient>
+              <linearGradient id="magnet-sweep" x1="250" y1="170" x2="358" y2="86" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#38bdf8" stop-opacity=".42" />
+                <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
+              </linearGradient>
+              <linearGradient id="magnet-arch" x1="176" y1="98" x2="312" y2="242" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#60a5fa" />
+                <stop offset="100%" stop-color="#2563eb" />
+              </linearGradient>
+            </defs>
+            <!-- Outer orbital rings -->
+            <circle cx="250" cy="170" r="144" stroke="currentColor" stroke-opacity=".14" stroke-dasharray="4 8" />
+            <circle cx="250" cy="170" r="120" fill="url(#magnet-radar-glow)" />
+            <!-- Circular DHT Radar Disc -->
+            <circle cx="250" cy="170" r="110" fill="#131e2e" stroke="#3b82f6" stroke-opacity=".38" stroke-width="2" />
+            <circle cx="250" cy="170" r="82" stroke="#60a5fa" stroke-opacity=".2" stroke-dasharray="3 6" />
+            <circle cx="250" cy="170" r="52" stroke="#60a5fa" stroke-opacity=".18" />
+            <path d="M140 170H360M250 60V280" stroke="#60a5fa" stroke-opacity=".14" />
+            <!-- Radar sweep sector -->
+            <path d="M250 170L328 92A110 110 0 0 1 360 170Z" fill="url(#magnet-sweep)" />
+            <!-- DHT Peer Constellation Lines & Nodes -->
+            <path d="M182 114L250 96L318 118L332 192L204 226Z" stroke="#38bdf8" stroke-opacity=".28" stroke-width="1.5" stroke-dasharray="3 4" />
+            <circle cx="182" cy="114" r="5" fill="#38bdf8" />
+            <circle cx="250" cy="96" r="4" fill="#34d399" />
+            <circle cx="318" cy="118" r="6" fill="#60a5fa" />
+            <circle cx="332" cy="192" r="4.5" fill="#38bdf8" />
+            <circle cx="204" cy="226" r="5" fill="#34d399" />
+            <!-- Sculpted 3D Horseshoe Magnet -->
+            <g transform="translate(250 174) rotate(-24) translate(-70 -72)">
+              <!-- Magnetic flux waves -->
+              <path d="M36 6C54 -8 86 -8 104 6" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 5" />
+              <path d="M24 -8C50 -24 90 -24 116 -8" stroke="#38bdf8" stroke-opacity=".55" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 6" />
+              <!-- U-Magnet Body -->
+              <path d="M26 24V78A44 44 0 0 0 114 78V24" stroke="url(#magnet-arch)" stroke-width="26" stroke-linecap="butt" />
+              <!-- Pole Tips (Red / Blue-Silver) -->
+              <rect x="13" y="12" width="26" height="22" rx="6" fill="#f43f5e" />
+              <rect x="13" y="8" width="26" height="10" rx="4" fill="#f8fafc" />
+              <rect x="101" y="12" width="26" height="22" rx="6" fill="#38bdf8" />
+              <rect x="101" y="8" width="26" height="10" rx="4" fill="#f8fafc" />
+              <!-- Lightning Spark between poles -->
+              <path d="M73 10L64 26H74L67 42" stroke="#fde047" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+            </g>
+            <!-- Floating Badges -->
+            <g transform="translate(48 216) rotate(-5)">
+              <rect width="134" height="46" rx="23" fill="#fff" />
+              <circle cx="26" cy="23" r="13" fill="#e0f2fe" />
+              <path d="M26 16v12m0 0-4.5-4.5M26 28l4.5-4.5" stroke="#0284c7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" />
+              <text x="47" y="28" fill="#1e293b" font-size="14" font-weight="600" font-family="sans-serif" data-page-i18n="magnets.ticketBadge">磁力直连</text>
+            </g>
+            <g transform="translate(332 62) rotate(8)">
+              <rect width="98" height="42" rx="12" fill="#1e293b" stroke="#38bdf8" stroke-opacity=".45" stroke-width="1.5" />
+              <circle cx="18" cy="21" r="4" fill="#34d399" />
+              <text x="29" y="26" fill="#e0f2fe" font-size="13" font-weight="700" font-family="monospace">DHT·P2P</text>
+            </g>
+            <circle cx="104" cy="88" r="5" fill="#38bdf8" fill-opacity=".65" />
+            <circle cx="394" cy="252" r="6" fill="#60a5fa" fill-opacity=".55" />
+          </svg>
+        </div>
+      </section>
+      <section class="favorite-picks" id="favorite-picks" aria-labelledby="favorite-picks-title" hidden>
+        <div class="directory-intro">
+          <p id="favorite-picks-title">我的收藏 · 1 个常用入口</p>
+          <span id="favorite-picks-note" data-page-i18n="magnets.favoritesNote">保存在当前浏览器</span>
+        </div>
+        <div class="quick-picks" id="favorite-picks-grid"></div>
+      </section>
+      <div class="directory-toolbar" id="directory">
+        <label class="movie-search">{{search_icon}}<span class="visually-hidden" data-page-i18n="magnets.searchLabel">搜索磁力站、分类或域名</span><input id="movie-search" type="search" placeholder="搜索磁力站、分类或域名" data-page-i18n-placeholder="magnets.searchPlaceholder" autocomplete="off" /><kbd aria-hidden="true">/</kbd></label>
+        <div class="directory-tabs" aria-label="显示范围"><button type="button" id="show-all" aria-pressed="true" data-page-i18n="magnets.allSites">全部网站</button><button type="button" id="show-favorites" aria-pressed="false">{{heart_icon}}<span data-page-i18n="magnets.myFavorites">我的收藏</span><span id="favorite-count">0</span></button></div>
+      </div>
+      <div class="directory-layout">
+        <aside class="category-sidebar"><nav aria-label="磁力网站分类"><a class="category-link is-active" href="#directory" data-category="all" aria-current="true">{{grid_icon}}<span data-page-i18n="magnets.allCategories">全部分类</span><span class="nav-count">{{site_count}}</span></a>{{category_links}}</nav><a class="sidebar-note" href="movies.html"><strong data-page-i18n="magnets.sidebarPrompt">想直接在线看片？</strong><span><em data-page-i18n="magnets.sidebarAction">打开影视导航目录</em> {{arrow}}</span></a></aside>
+        <div class="directory-results">
+          <p class="results-meta" id="results-meta" role="status" aria-live="polite">共 {{site_count}} 个磁力网站</p>
+          {{catalog}}
+          <div class="movie-empty" id="movie-empty" hidden><div>{{search_icon}}</div><h2 id="empty-title">没有找到匹配的网站</h2><p id="empty-description">试试网站名称、域名，或“DHT”“4K”“动漫”等关键词。</p><button type="button" id="reset-filters" data-page-i18n="magnets.resetFilters">查看全部网站</button></div>
+        </div>
+      </div>
+      <section class="directory-about" aria-labelledby="about-title"><div><h2 id="about-title" data-page-i18n="magnets.aboutTitle">一份经过连通性验证的磁力与种子索引。</h2><p data-page-i18n="magnets.aboutDesc">Soulo 磁力搜索收录 DHT 磁力搜索引擎、4K 与 1080P 影视种子站、新番动漫花园、国际 BitTorrent 社区与磁力导航。每个站点均经过可访问性检验，配合 Soulo 内置的磁力（magnet:）与 BT 种子（.torrent）下载能力，查找与下载一气呵成。</p></div><div class="directory-questions"><details><summary data-page-i18n="magnets.faq1Q">如何在 Soulo 中下载磁力链接或 BT 种子？</summary><p data-page-i18n="magnets.faq1A">在任意磁力站点点击或复制 magnet:?xt= 开头的磁力链接，或下载 .torrent 种子文件，Soulo 内置下载管理器即可直接解析文件列表、选择剧集并高速下载。</p></details><details><summary data-page-i18n="magnets.faq2Q">收藏的磁力网站保存在哪里？</summary><p data-page-i18n="magnets.faq2A">点击卡片右下角的爱心即可收藏常用磁力站，收藏独立保存在当前浏览器的本地存储中，并置顶展示在页面上方。</p></details></div></section>
+    </main>
+    <footer class="site-footer wrap"><div><a class="footer-brand" href="./">Soulo</a><span>© 2026 DKluge</span></div><div class="footer-links"><a href="sources.html" data-i18n="sources">搜索源</a><a href="movies.html" data-i18n="movies">影视导航</a><a href="magnets.html" aria-current="page" data-i18n="magnets">磁力搜索</a><a href="pans.html" data-i18n="pans">网盘搜索</a><a href="privacy.html" data-i18n="privacy">隐私政策</a><a href="https://www.dkluge.com/contact-us" data-i18n="support">技术支持</a></div></footer>
+    <div class="movie-toast" id="movie-toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

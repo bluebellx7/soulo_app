@@ -86,7 +86,7 @@ h1 span { font-size: .64em; font-weight: 500; letter-spacing: -.04em; }
 .sources-link a > svg { width: 18px; height: 18px; flex-shrink: 0; }
 .sources-link a:hover { color: var(--accent); }
 .site-footer { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding-block: 29px; color: var(--muted); font-size: 11px; }
-.site-footer > div { display: flex; align-items: center; gap: 24px; }
+.site-footer > div { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 24px; }
 .footer-brand { color: var(--text); font-size: 21px; font-weight: 600; letter-spacing: -.7px; }
 .footer-links a { padding-block: 10px; }
 .footer-links a:hover { color: var(--accent); }
@@ -140,7 +140,7 @@ h1 span { font-size: .64em; font-weight: 500; letter-spacing: -.04em; }
  .feature p { font-size: 12px; line-height: 1.85; }
  .sources-link { margin-top: 35px; font-size: 12px; flex-wrap: wrap; gap: 8px; padding-block: 22px; }
  .site-footer { padding-block: 24px; flex-wrap: wrap; gap: 12px; }
- .site-footer > div { gap: 20px; }
+ .site-footer > div { gap: 8px 16px; }
  .directory-promo { grid-template-columns: 1fr; gap: 22px; margin-block: 35px 20px; padding: 26px; border-radius: 17px; }
  .directory-promo h2 { font-size: 21px; }
  .directory-promo a { justify-self: start; }

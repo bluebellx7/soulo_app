@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark" data-resolved-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>影视导航 - 电影、追剧、动漫与字幕网站目录 | Soulo</title>
     <meta name="description" content="Soulo 影视导航整理 {{site_count}} 个影视网站，覆盖综合影视、电影下载、日剧韩剧、动漫番剧、网盘搜索、字幕台词、影评片单与影视工具。按分类浏览、搜索网站，收藏常用入口。" />
     <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
-    <meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#111217" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)" />
     <link rel="canonical" href="https://soulo.dkluge.com/movies.html" />
     <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg?v=20261030" />
     <link rel="apple-touch-icon" href="app-icon.png?v=1.1.4" />
@@ -29,19 +29,22 @@
     <meta name="twitter:image:alt" content="Soulo 图标" />
     <script>
       (() => {
-        let theme = 'system';
-        try { theme = localStorage.getItem('soulo-theme') || 'system'; } catch {}
-        const dark = matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.dataset.resolvedTheme = theme === 'dark' || (theme !== 'light' && dark) ? 'dark' : 'light';
+        let theme = 'dark';
+        try {
+          const saved = localStorage.getItem('soulo-theme');
+          if (saved === 'light' || saved === 'dark') theme = saved;
+        } catch {}
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.resolvedTheme = theme === 'light' ? 'light' : 'dark';
       })();
     </script>
     <link rel="stylesheet" href="home.css?v=20261030b" />
-    <link rel="stylesheet" href="movies.css?v=20261031c" />
+    <link rel="stylesheet" href="movies.css?v=20261101" />
     <link rel="stylesheet" href="navigation.css?v=20261030b" />
     <script type="application/ld+json">{{structured_data}}</script>
     <script src="site-ui.js?v=20261030b" defer></script>
     <script src="movies.js?v=20261030" defer></script>
-    <noscript><style>.favorite-button,.directory-toolbar{display:none!important}</style></noscript>
+    <noscript><style>.favorite-button,.directory-toolbar,.favorite-picks{display:none!important}</style></noscript>
     <script>
       var _hmt = _hmt || [];
       (function() {
@@ -53,15 +56,15 @@
     </script>
   </head>
   <body class="movies-page">
-    <a class="skip-link" href="#directory">跳到影视网站目录</a>
+    <a class="skip-link" href="#directory" data-page-i18n="movies.skip">跳到影视网站目录</a>
     {{navigation}}
     <main class="wrap">
-      <nav class="breadcrumbs" aria-label="面包屑"><a href="./">首页</a><span aria-hidden="true">/</span><span aria-current="page">影视导航</span></nav>
+      <nav class="breadcrumbs" aria-label="面包屑"><a href="./" data-page-i18n="breadcrumb.home">首页</a><span aria-hidden="true">/</span><span aria-current="page" data-page-i18n="movies">影视导航</span></nav>
       <section class="cinema-hero" aria-labelledby="cinema-title">
         <div class="cinema-copy">
-          <h1 id="cinema-title">今晚，<br />看点什么？</h1>
-          <p>电影、追剧、动漫，还有下一部心头好。<br />把找片的时间，留给好故事。</p>
-          <a class="browse-link" href="#directory">打开观影收藏夹 {{arrow}}</a>
+          <h1 id="cinema-title" data-page-i18n-html="movies.heroTitle">今晚，<br />看点什么？</h1>
+          <p data-page-i18n-html="movies.heroDesc">电影、追剧、动漫，还有下一部心头好。<br />把找片的时间，留给好故事。</p>
+          <a class="browse-link" href="#directory"><span data-page-i18n="movies.heroAction">打开观影收藏夹</span> {{arrow}}</a>
         </div>
         <div class="cinema-art" aria-hidden="true">
           <svg viewBox="0 0 480 340" fill="none">
@@ -77,30 +80,35 @@
               <path d="M26 183H112M26 193H84" stroke="#4a3f78" stroke-width="4" stroke-linecap="round" />
               <path d="M189 179V201M195 179V201M204 179V201M209 179V201M218 179V201M225 179V201M232 179V201" stroke="#4a3f78" stroke-width="2" />
             </g>
-            <g transform="translate(53 217) rotate(7)"><rect width="119" height="47" rx="23.5" fill="#fff" /><path d="m23 15 10 8-10 8V15Z" fill="#7764c5"/><text x="45" y="29" fill="#34313f" font-size="14" font-family="sans-serif">好戏开场</text></g>
+            <g transform="translate(53 217) rotate(7)"><rect width="119" height="47" rx="23.5" fill="#fff" /><path d="m23 15 10 8-10 8V15Z" fill="#7764c5"/><text x="45" y="29" fill="#34313f" font-size="14" font-family="sans-serif" data-page-i18n="movies.ticketBadge">好戏开场</text></g>
             <g transform="translate(350 71) rotate(11)"><rect width="79" height="45" rx="22.5" fill="#a4c4f3"/><path d="M24 14v17m-8-9h16M49 14v17m-8-9h16" stroke="#334d7d" stroke-width="2" stroke-linecap="round"/></g>
             <path d="m85 96 3 10 10 3-10 3-3 10-3-10-10-3 10-3Z" fill="#a297d8" />
             <circle cx="395" cy="261" r="6" fill="#a297d8" />
           </svg>
         </div>
       </section>
-      <div class="directory-intro"><p>{{site_count}} 个网站，{{category_count}} 个分类。你的下一场放映，从这里开始。</p><span>整理于 <time datetime="{{updated}}">{{updated}}</time></span></div>
-      <section class="quick-picks" aria-label="常用入口">{{featured_sites}}</section>
+      <section class="favorite-picks" id="favorite-picks" aria-labelledby="favorite-picks-title" hidden>
+        <div class="directory-intro">
+          <p id="favorite-picks-title">我的收藏 · 1 个常用入口</p>
+          <span id="favorite-picks-note" data-page-i18n="movies.favoritesNote">保存在当前浏览器</span>
+        </div>
+        <div class="quick-picks" id="favorite-picks-grid"></div>
+      </section>
       <div class="directory-toolbar" id="directory">
-        <label class="movie-search">{{search_icon}}<span class="visually-hidden">搜索网站、分类或域名</span><input id="movie-search" type="search" placeholder="搜索网站、分类或域名" autocomplete="off" /><kbd aria-hidden="true">/</kbd></label>
-        <div class="directory-tabs" aria-label="显示范围"><button type="button" id="show-all" aria-pressed="true">全部网站</button><button type="button" id="show-favorites" aria-pressed="false">{{heart_icon}}我的收藏<span id="favorite-count">0</span></button></div>
+        <label class="movie-search">{{search_icon}}<span class="visually-hidden" data-page-i18n="movies.searchLabel">搜索网站、分类或域名</span><input id="movie-search" type="search" placeholder="搜索网站、分类或域名" data-page-i18n-placeholder="movies.searchPlaceholder" autocomplete="off" /><kbd aria-hidden="true">/</kbd></label>
+        <div class="directory-tabs" aria-label="显示范围"><button type="button" id="show-all" aria-pressed="true" data-page-i18n="movies.allSites">全部网站</button><button type="button" id="show-favorites" aria-pressed="false">{{heart_icon}}<span data-page-i18n="movies.myFavorites">我的收藏</span><span id="favorite-count">0</span></button></div>
       </div>
       <div class="directory-layout">
-        <aside class="category-sidebar"><nav aria-label="影视网站分类"><a class="category-link is-active" href="#directory" data-category="all" aria-current="true">{{grid_icon}}<span>全部分类</span><span class="nav-count">{{site_count}}</span></a>{{category_links}}</nav><a class="sidebar-note" href="sources.html">想在 Soulo 中搜索？<span>浏览可导入的搜索源 {{arrow}}</span></a></aside>
+        <aside class="category-sidebar"><nav aria-label="影视网站分类"><a class="category-link is-active" href="#directory" data-category="all" aria-current="true">{{grid_icon}}<span data-page-i18n="movies.allCategories">全部分类</span><span class="nav-count">{{site_count}}</span></a>{{category_links}}</nav><a class="sidebar-note" href="sources.html"><strong data-page-i18n="movies.sidebarPrompt">想在 Soulo 中搜索？</strong><span><em data-page-i18n="movies.sidebarAction">浏览可导入的搜索源</em> {{arrow}}</span></a></aside>
         <div class="directory-results">
           <p class="results-meta" id="results-meta" role="status" aria-live="polite">共 {{site_count}} 个影视网站</p>
           {{catalog}}
-          <div class="movie-empty" id="movie-empty" hidden><div>{{search_icon}}</div><h2 id="empty-title">没有找到匹配的网站</h2><p id="empty-description">试试网站名称、域名，或“动漫”“字幕”等分类。</p><button type="button" id="reset-filters">查看全部网站</button></div>
+          <div class="movie-empty" id="movie-empty" hidden><div>{{search_icon}}</div><h2 id="empty-title">没有找到匹配的网站</h2><p id="empty-description">试试网站名称、域名，或“动漫”“字幕”等分类。</p><button type="button" id="reset-filters" data-page-i18n="movies.resetFilters">查看全部网站</button></div>
         </div>
       </div>
-      <section class="directory-about" aria-labelledby="about-title"><div><h2 id="about-title">一份按用途整理的影视收藏夹。</h2><p>Soulo 影视导航收录综合影视、电影下载、追剧、动漫、找片搜索、网盘资源、字幕台词、影评片单、纪录直播和影视工具。每个入口都标注网站名称、域名与用途，点击后在新标签页打开。</p></div><div class="directory-questions"><details><summary>怎么找到想要的网站？</summary><p>按左侧分类浏览，或搜索网站名称、域名和用途。点击网站卡片打开对应网站，点击爱心将入口加入当前浏览器的收藏。</p></details><details><summary>收藏保存在哪里？</summary><p>收藏保存在当前浏览器的本地存储中，无需注册；清除网站数据或更换浏览器后不会保留。</p></details><details><summary>这些网站从哪里整理而来？</summary><p>网站地址参考 {{source_links}}，并结合实际访问结果整理。Soulo 提供分类导航，影片、账号与播放服务由目标网站提供；地址与访问条件以目标网站为准。</p></details></div></section>
+      <section class="directory-about" aria-labelledby="about-title"><div><h2 id="about-title" data-page-i18n="movies.aboutTitle">一份按用途整理的影视收藏夹。</h2><p data-page-i18n="movies.aboutDesc">Soulo 影视导航收录综合影视、电影下载、追剧、动漫、找片搜索、网盘资源、字幕台词、影评片单、纪录直播和影视工具。每个入口都标注网站名称、域名与用途，点击后在新标签页打开。</p></div><div class="directory-questions"><details><summary data-page-i18n="movies.faq1Q">怎么找到想要的网站？</summary><p data-page-i18n="movies.faq1A">按左侧分类浏览，或搜索网站名称、域名和用途。点击网站卡片打开对应网站，点击爱心将入口加入当前浏览器的收藏。</p></details><details><summary data-page-i18n="movies.faq2Q">收藏保存在哪里？</summary><p data-page-i18n="movies.faq2A">收藏保存在当前浏览器的本地存储中，无需注册；清除网站数据或更换浏览器后不会保留。</p></details></div></section>
     </main>
-    <footer class="site-footer wrap"><div><a class="footer-brand" href="./">Soulo</a><span>© 2026 DKluge</span></div><div class="footer-links"><a href="sources.html">搜索源</a><a href="movies.html" aria-current="page">影视导航</a><a href="privacy.html">隐私政策</a><a href="https://www.dkluge.com/contact-us">技术支持</a></div></footer>
+    <footer class="site-footer wrap"><div><a class="footer-brand" href="./">Soulo</a><span>© 2026 DKluge</span></div><div class="footer-links"><a href="sources.html" data-i18n="sources">搜索源</a><a href="movies.html" aria-current="page" data-i18n="movies">影视导航</a><a href="magnets.html" data-i18n="magnets">磁力搜索</a><a href="pans.html" data-i18n="pans">网盘搜索</a><a href="privacy.html" data-i18n="privacy">隐私政策</a><a href="https://www.dkluge.com/contact-us" data-i18n="support">技术支持</a></div></footer>
     <div class="movie-toast" id="movie-toast" role="status" aria-live="polite"></div>
   </body>
 </html>

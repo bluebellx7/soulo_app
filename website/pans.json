@@ -1,0 +1,451 @@
+{
+  "updated": "2026-11-01",
+  "categories": [
+    {
+      "id": "engine",
+      "name": "多盘聚合",
+      "icon": "search",
+      "description": "一次输入关键词，同时检索夸克、百度、阿里、迅雷、UC 与 115 等多网盘分享链接。"
+    },
+    {
+      "id": "community",
+      "name": "影视网盘站",
+      "icon": "film",
+      "description": "按海报、片单或社区帖子整理的夸克、阿里与百度网盘高清影视资源站。"
+    },
+    {
+      "id": "special",
+      "name": "学习与专项",
+      "icon": "book",
+      "description": "针对电子书、公开课、考公考研题库、4K 原盘片单与实用软件的专项网盘索引。"
+    },
+    {
+      "id": "official",
+      "name": "网盘工作台",
+      "icon": "cloud",
+      "description": "主流云盘官方网页版入口，方便直接管理转存文件、云端解压与原画在线播放。"
+    }
+  ],
+  "sites": [
+    {
+      "id": "pan-qianfan",
+      "name": "千帆搜索",
+      "url": "https://pan.qianfan.app/",
+      "category": "engine",
+      "mark": "千帆",
+      "description": "聚合阿里、百度、夸克、蓝奏、天翼与迅雷网盘的多源搜索引擎。",
+      "tags": [
+        "多盘聚合",
+        "夸克/百度",
+        "阿里/蓝奏"
+      ],
+      "icon": "images/movie-icons/pan-pan-qianfan.png"
+    },
+    {
+      "id": "panso-vip",
+      "name": "盘搜Pro",
+      "url": "https://panso.vip/",
+      "category": "engine",
+      "mark": "PS",
+      "description": "覆盖百度、夸克、阿里、迅雷、UC 与 115 网盘的实时资源搜索引擎。",
+      "tags": [
+        "多盘聚合",
+        "实时索引",
+        "6大网盘"
+      ],
+      "icon": "images/movie-icons/pan-panso-vip.png"
+    },
+    {
+      "id": "aliso-vip",
+      "name": "阿立盘搜",
+      "url": "https://aliso.vip/",
+      "category": "engine",
+      "mark": "阿立",
+      "description": "支持夸克、百度、迅雷、阿里、UC、115、123、天翼与移动云盘的九合一搜索。",
+      "tags": [
+        "九盘聚合",
+        "123/天翼",
+        "移动云盘"
+      ],
+      "icon": "images/movie-icons/pan-aliso-vip.png"
+    },
+    {
+      "id": "sopanya",
+      "name": "搜盘鸭",
+      "url": "https://sopanya.com/",
+      "category": "engine",
+      "mark": "搜鸭",
+      "description": "聚合夸克、百度、阿里、UC 与迅雷公开分享链接的轻量网盘搜索引擎。",
+      "tags": [
+        "夸克网盘",
+        "百度网盘",
+        "公开分享"
+      ],
+      "icon": "images/movie-icons/pan-sopanya.png"
+    },
+    {
+      "id": "esoua",
+      "name": "爱搜",
+      "url": "https://www.esoua.com/",
+      "category": "engine",
+      "mark": "爱搜",
+      "description": "一站式检索阿里云盘、夸克、百度、迅雷与 UC 网盘的综合搜索入口。",
+      "tags": [
+        "一站式搜索",
+        "阿里云盘",
+        "夸克/百度"
+      ],
+      "icon": "images/movie-icons/pan-esoua.png"
+    },
+    {
+      "id": "yiso",
+      "name": "易搜",
+      "url": "https://yiso.fun/",
+      "category": "engine",
+      "mark": "易搜",
+      "description": "专注阿里云盘、夸克网盘与百度网盘的清爽聚合搜索工具。",
+      "tags": [
+        "聚合搜索",
+        "阿里云盘",
+        "夸克/百度"
+      ],
+      "icon": "images/movie-icons/pan-yiso.png"
+    },
+    {
+      "id": "melost",
+      "name": "影盘社",
+      "url": "https://www.melost.cn/",
+      "category": "engine",
+      "mark": "影盘",
+      "description": "面向影视与热门资源的百度、夸克、迅雷、阿里、UC 与 115 盘搜索引擎。",
+      "tags": [
+        "影视盘搜",
+        "6盘聚合",
+        "热门榜单"
+      ],
+      "icon": "images/movie-icons/pan-melost.png"
+    },
+    {
+      "id": "upyunso",
+      "name": "UP云搜",
+      "url": "https://www.upyunso.com/",
+      "category": "engine",
+      "mark": "UP",
+      "description": "专注阿里云盘与夸克网盘高速分享资源的垂直搜索引擎。",
+      "tags": [
+        "阿里云盘",
+        "夸克网盘",
+        "极速检索"
+      ],
+      "icon": "images/movie-icons/upyunso.png"
+    },
+    {
+      "id": "panlegepan",
+      "name": "盘了个盘",
+      "url": "https://www.panlegepan.com/",
+      "category": "engine",
+      "mark": "盘盘",
+      "description": "聚合阿里云盘与主流云盘公开分享链接的资源搜索站点。",
+      "tags": [
+        "阿里云盘",
+        "聚合盘搜",
+        "分享检索"
+      ],
+      "icon": "images/movie-icons/pan-panlegepan.png"
+    },
+    {
+      "id": "xiaomapan",
+      "name": "小马盘",
+      "url": "https://www.xiaomapan.com/#/main/search?restype=1",
+      "category": "engine",
+      "mark": "小马",
+      "description": "界面清爽的多源网盘分享链接检索工具，支持按资源类型筛选。",
+      "tags": [
+        "多源检索",
+        "类型筛选",
+        "网盘直达"
+      ],
+      "icon": "images/movie-icons/site-xiaomapan-com.png"
+    },
+    {
+      "id": "xiaotusoso",
+      "name": "小兔搜搜",
+      "url": "https://xiaotusoso.com/",
+      "category": "engine",
+      "mark": "小兔",
+      "description": "结合网盘资源聚合检索与常用在线效率工具的综合导航搜索站。",
+      "tags": [
+        "网盘搜索",
+        "聚合导航",
+        "在线工具"
+      ],
+      "icon": "images/movie-icons/pan-xiaotusoso.png"
+    },
+    {
+      "id": "ai-zyb",
+      "name": "Ai资源帮",
+      "url": "https://ai-zyb.com/",
+      "category": "engine",
+      "mark": "AI",
+      "description": "聚合影视、小说、电子书、软件与学习资料的智能网盘搜索引擎。",
+      "tags": [
+        "智能盘搜",
+        "电子书/软件",
+        "影视资料"
+      ],
+      "icon": "images/movie-icons/pan-ai-zyb.png"
+    },
+    {
+      "id": "yunpan1",
+      "name": "云盘资源社区",
+      "url": "https://yunpan1.cc/",
+      "category": "community",
+      "mark": "云盘",
+      "description": "阿里云盘与夸克网盘高清电影、剧集、动漫与无损音乐分享社区。",
+      "tags": [
+        "云盘社区",
+        "阿里/夸克",
+        "影视动漫"
+      ],
+      "icon": "images/movie-icons/site-yunpan1-cc.png"
+    },
+    {
+      "id": "pan666",
+      "name": "阿里小站",
+      "url": "https://pan666.net/",
+      "category": "community",
+      "mark": "盘他",
+      "description": "活跃的阿里云盘与夸克网盘原盘电影、热门剧集与动漫交流论坛。",
+      "tags": [
+        "盘他社区",
+        "原盘影视",
+        "交流论坛"
+      ],
+      "icon": "images/movie-icons/pan666.png"
+    },
+    {
+      "id": "tzfile",
+      "name": "团长资源",
+      "url": "https://t-rex.tzfile.com/",
+      "category": "community",
+      "mark": "团长",
+      "description": "持续更新的院线大片、高分剧集与精选专题网盘分享目录。",
+      "tags": [
+        "精选片单",
+        "高清影视",
+        "网盘直链"
+      ],
+      "icon": "images/movie-icons/site-t-rex-tzfile-com.png"
+    },
+    {
+      "id": "yingshi-xyz",
+      "name": "影视搜",
+      "url": "https://yingshi.xyz/",
+      "category": "community",
+      "mark": "影搜",
+      "description": "按影视海报与剧名快速定位夸克、阿里与百度网盘播放及转存链接。",
+      "tags": [
+        "影视检索",
+        "海报索引",
+        "多盘转存"
+      ],
+      "icon": "images/movie-icons/yingshisou.png"
+    },
+    {
+      "id": "rrdynb",
+      "name": "人人电影网",
+      "url": "https://www.rrdynb.com/",
+      "category": "community",
+      "mark": "人人",
+      "description": "老牌影视下载站，提供百度网盘、阿里云盘与夸克网盘电影剧集转存。",
+      "tags": [
+        "百度网盘",
+        "夸克/阿里",
+        "经典影视"
+      ],
+      "icon": "images/movie-icons/site-rrdynb-com.png"
+    },
+    {
+      "id": "seedhub-pan",
+      "name": "SeedHub",
+      "url": "https://www.seedhub.cc/",
+      "category": "community",
+      "mark": "SH",
+      "description": "聚合夸克网盘、百度网盘分享链接与高清影视动漫资讯的资源站。",
+      "tags": [
+        "夸克网盘",
+        "百度网盘",
+        "动漫剧集"
+      ],
+      "icon": "images/movie-icons/magnet-seedhub.png"
+    },
+    {
+      "id": "docu-lib",
+      "name": "纪录片数据库",
+      "url": "https://docu-lib.com/",
+      "category": "community",
+      "mark": "纪录",
+      "description": "盗火线高清纪录片专题库，提供百度网盘与云盘纪录片归档下载。",
+      "tags": [
+        "纪录片库",
+        "百度网盘",
+        "专题归档"
+      ],
+      "icon": "images/movie-icons/pan-docu-lib.png"
+    },
+    {
+      "id": "xuebapan",
+      "name": "学霸盘",
+      "url": "https://www.xuebapan.com/",
+      "category": "special",
+      "mark": "学霸",
+      "description": "专注百度网盘学习资料、考研考公课程、电子书与专业文档搜索。",
+      "tags": [
+        "百度网盘",
+        "考研考公",
+        "电子书/课程"
+      ],
+      "icon": "images/movie-icons/pan-xuebapan.png"
+    },
+    {
+      "id": "huisoupan",
+      "name": "会搜盘",
+      "url": "https://www.huisoupan.com/",
+      "category": "special",
+      "mark": "会搜",
+      "description": "覆盖百度网盘与夸克网盘的考试题库、办公模板、软件与电子书搜索。",
+      "tags": [
+        "学习资料",
+        "办公模板",
+        "夸克/百度"
+      ],
+      "icon": "images/movie-icons/pan-huisoupan.png"
+    },
+    {
+      "id": "link3-4kzy",
+      "name": "4K精品夸克资源",
+      "url": "https://link3.cc/4kzy",
+      "category": "special",
+      "mark": "4K",
+      "description": "整理夸克、阿里与 UC 网盘 4K UHD 原盘电影、杜比视界与热门剧集清单。",
+      "tags": [
+        "4K原盘",
+        "夸克/UC",
+        "杜比视界"
+      ],
+      "icon": "images/movie-icons/pan-link3-4kzy.png"
+    },
+    {
+      "id": "zyscj-disk",
+      "name": "资源收藏夹·网盘",
+      "url": "https://zyscj.com/zy/search/diskresource.html",
+      "category": "special",
+      "mark": "收藏",
+      "description": "汇总主流网盘搜索入口、Z-Library 电子书与数字工具的精选收藏夹。",
+      "tags": [
+        "盘搜合集",
+        "电子书库",
+        "精选索引"
+      ],
+      "icon": "images/movie-icons/pan-zyscj-disk.png"
+    },
+    {
+      "id": "adzhp",
+      "name": "爱达杂货铺",
+      "url": "https://adzhp.cc/",
+      "category": "special",
+      "mark": "爱达",
+      "description": "收录实用网盘检索器、直链解析工具、软件与学习资源的口碑导航站。",
+      "tags": [
+        "资源导航",
+        "盘搜收录",
+        "实用工具"
+      ],
+      "icon": "images/movie-icons/pan-adzhp.png"
+    },
+    {
+      "id": "quark-pan",
+      "name": "夸克网盘",
+      "url": "https://pan.quark.cn/",
+      "category": "official",
+      "mark": "夸克",
+      "description": "夸克网盘网页版，支持大文件极速转存、AI 总结与 4K 原画云端播放。",
+      "tags": [
+        "官方网页版",
+        "极速转存",
+        "原画播放"
+      ],
+      "icon": "images/movie-icons/pan-quark-pan.png"
+    },
+    {
+      "id": "alipan",
+      "name": "阿里云盘",
+      "url": "https://www.alipan.com/",
+      "category": "official",
+      "mark": "阿里",
+      "description": "阿里云盘网页版，提供清爽的云端文件管理、高清视频在线预览与备份。",
+      "tags": [
+        "官方网页版",
+        "高清预览",
+        "云端备份"
+      ],
+      "icon": "images/movie-icons/pan-alipan.png"
+    },
+    {
+      "id": "baidu-pan",
+      "name": "百度网盘",
+      "url": "https://pan.baidu.com/",
+      "category": "official",
+      "mark": "百度",
+      "description": "百度网盘网页版，国内资源存量最大的文档、课程与影视云存储平台。",
+      "tags": [
+        "官方网页版",
+        "海量生态",
+        "文档管理"
+      ],
+      "icon": "images/movie-icons/pan-baidu-pan.png"
+    },
+    {
+      "id": "xunlei-pan",
+      "name": "迅雷云盘",
+      "url": "https://pan.xunlei.com/",
+      "category": "official",
+      "mark": "迅雷",
+      "description": "迅雷云盘网页版，支持云端添加磁力链接、BT 离线下载与分享转存。",
+      "tags": [
+        "官方网页版",
+        "云端磁力",
+        "在线播放"
+      ],
+      "icon": "images/movie-icons/magnet-xunleis.png"
+    },
+    {
+      "id": "pan-115",
+      "name": "115生活",
+      "url": "https://115.com/",
+      "category": "official",
+      "mark": "115",
+      "description": "大容量个人云存储平台，支持云端离线任务与蓝光原盘高码率在线播放。",
+      "tags": [
+        "官方网页版",
+        "原盘播放",
+        "云端离线"
+      ],
+      "icon": "images/movie-icons/pan-pan-115.png"
+    },
+    {
+      "id": "lanzou",
+      "name": "蓝奏云盘",
+      "url": "https://www.lanzou.com/",
+      "category": "official",
+      "mark": "蓝奏",
+      "description": "免登录即可高速下载的轻量化网盘，常用于软件安装包、补丁与电子书分享。",
+      "tags": [
+        "官方网页版",
+        "免登录下载",
+        "软件/电子书"
+      ],
+      "icon": "images/movie-icons/pan-lanzou.png"
+    }
+  ]
+}

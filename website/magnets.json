@@ -1,0 +1,520 @@
+{
+  "updated": "2026-11-01",
+  "categories": [
+    {
+      "id": "engine",
+      "name": "磁力引擎",
+      "description": "输入片名、番号或关键词，直接检索 DHT 磁力链与种子元数据。",
+      "icon": "search"
+    },
+    {
+      "id": "movie",
+      "name": "影视种子",
+      "description": "4K 原盘、蓝光 1080P 电影与热播剧集 BT 种子及磁力下载。",
+      "icon": "film"
+    },
+    {
+      "id": "anime",
+      "name": "动漫追番",
+      "description": "新番动画、字幕组发布与 ACG 磁力种子花园。",
+      "icon": "spark"
+    },
+    {
+      "id": "global",
+      "name": "国际种子",
+      "description": "海外美剧、无损音乐与全球综合 BitTorrent 磁力索引。",
+      "icon": "globe"
+    },
+    {
+      "id": "nav",
+      "name": "磁力导航",
+      "description": "多线路磁力搜索入口汇总与备用域名发布页。",
+      "icon": "grid"
+    }
+  ],
+  "sites": [
+    {
+      "id": "wuji",
+      "name": "无极磁链",
+      "url": "https://wuji.me/",
+      "category": "engine",
+      "description": "收录 277 万+ 磁力链接索引，支持按关键词快速检索 BT 种子资源。",
+      "tags": [
+        "DHT 索引",
+        "极简搜索"
+      ],
+      "mark": "无",
+      "featured": true,
+      "icon": "images/movie-icons/magnet-wuji.png"
+    },
+    {
+      "id": "xcili",
+      "name": "无极磁链镜像",
+      "url": "https://xcili.net/",
+      "category": "engine",
+      "description": "无极磁链备用域名，同步提供 DHT 种子索引与磁力链接搜索。",
+      "tags": [
+        "DHT 索引",
+        "备用入口"
+      ],
+      "mark": "无",
+      "icon": "images/movie-icons/magnet-xcili.png"
+    },
+    {
+      "id": "xiongmao",
+      "name": "磁力熊猫",
+      "url": "https://xiongmaoto.top/",
+      "category": "engine",
+      "description": "简洁快速的磁力链接搜索引擎，覆盖电影、剧集、音乐与综合资源。",
+      "tags": [
+        "磁力搜索",
+        "综合资源"
+      ],
+      "mark": "熊",
+      "featured": true,
+      "icon": "images/movie-icons/magnet-xiongmao.png"
+    },
+    {
+      "id": "cilipao",
+      "name": "磁力炮",
+      "url": "https://www.cilipao.pics/",
+      "category": "engine",
+      "description": "支持按相关度、文件大小与收录时间筛选的磁力链接搜索引擎。",
+      "tags": [
+        "磁力搜索",
+        "多维排序"
+      ],
+      "mark": "炮",
+      "icon": "images/movie-icons/magnet-cilipao.png"
+    },
+    {
+      "id": "cilime",
+      "name": "磁力么",
+      "url": "https://www.cilime.lat/",
+      "category": "engine",
+      "description": "轻量级 DHT 磁力链接搜索引擎，支持关键词直达与文件列表预览。",
+      "tags": [
+        "DHT 搜索",
+        "文件列表"
+      ],
+      "mark": "么",
+      "icon": "images/movie-icons/magnet-cilime.png"
+    },
+    {
+      "id": "cilisousuo",
+      "name": "磁力搜索",
+      "url": "https://cilisousuo.co/",
+      "category": "engine",
+      "description": "免登录极简磁力检索工具，输入片名或关键词即可获取磁力链接。",
+      "tags": [
+        "极简",
+        "直达磁力"
+      ],
+      "mark": "磁",
+      "icon": "images/movie-icons/magnet-cilisousuo.png"
+    },
+    {
+      "id": "zhaocili",
+      "name": "找磁力",
+      "url": "https://www.1000zhaocili.xyz/",
+      "category": "engine",
+      "description": "基于 DHT 网络自动匹配更新的磁力链接与种子任务搜索引擎。",
+      "tags": [
+        "DHT 匹配",
+        "磁力搜索"
+      ],
+      "mark": "找",
+      "icon": "images/movie-icons/magnet-zhaocili.png"
+    },
+    {
+      "id": "btmovi",
+      "name": "磁力蜘蛛",
+      "url": "https://btmovi.cyou/",
+      "category": "engine",
+      "description": "专注 BT 种子元数据与磁力链接索引的垂直搜索站点。",
+      "tags": [
+        "元数据",
+        "垂直搜索"
+      ],
+      "mark": "蛛",
+      "icon": "images/movie-icons/magnet-btmovi.png"
+    },
+    {
+      "id": "ciliwang",
+      "name": "磁力王",
+      "url": "https://www.ciliwang360.shop/",
+      "category": "engine",
+      "description": "24 小时自动更新的 DHT 磁力搜索引擎，收录影视、音乐与游戏种子。",
+      "tags": [
+        "实时更新",
+        "综合磁力"
+      ],
+      "mark": "王",
+      "icon": "images/movie-icons/magnet-ciliwang.png"
+    },
+    {
+      "id": "zhongziba",
+      "name": "种子吧",
+      "url": "https://zzb05.top/",
+      "category": "engine",
+      "description": "老牌网页 BT 种子与磁力链接搜索引擎，支持多关键词组合检索。",
+      "tags": [
+        "种子搜索",
+        "老牌站点"
+      ],
+      "mark": "种",
+      "icon": "images/movie-icons/magnet-zhongziba.png"
+    },
+    {
+      "id": "cilihu",
+      "name": "磁力虎",
+      "url": "https://www.cilihu.vip/",
+      "category": "engine",
+      "description": "磁力链接任务搜索引擎与多线路可用节点入口。",
+      "tags": [
+        "多线路",
+        "磁力搜索"
+      ],
+      "mark": "虎",
+      "icon": "images/movie-icons/magnet-cilihu.png"
+    },
+    {
+      "id": "cilidada",
+      "name": "磁力大大",
+      "url": "https://www.cilidada.org/v/",
+      "category": "engine",
+      "description": "磁力链接与影视种子资源数据库，支持按关键词快速检索。",
+      "tags": [
+        "种子库",
+        "磁力检索"
+      ],
+      "mark": "大",
+      "icon": "images/movie-icons/magnet-cilidada.png"
+    },
+    {
+      "id": "1lou",
+      "name": "BT之家 1LOU",
+      "url": "https://www.1lou.pro/",
+      "category": "movie",
+      "description": "高清电影、热播剧集、动漫与无损音乐 BT 种子分享社区。",
+      "tags": [
+        "BT 社区",
+        "1080P/4K"
+      ],
+      "mark": "1L",
+      "featured": true,
+      "icon": "images/movie-icons/magnet-1lou.png"
+    },
+    {
+      "id": "seedhub",
+      "name": "SeedHub",
+      "url": "https://www.seedhub.cc/",
+      "category": "movie",
+      "description": "聚合优质电影、剧集与动漫资讯，提供多画质磁力与种子下载。",
+      "tags": [
+        "电影剧集",
+        "磁力下载"
+      ],
+      "mark": "SH",
+      "icon": "images/movie-icons/magnet-seedhub.png"
+    },
+    {
+      "id": "6vdyy",
+      "name": "6V 电影",
+      "url": "https://www.6vdyy.com/",
+      "category": "movie",
+      "description": "按类型整理院线大片、欧美剧与经典影视的磁力及电驴下载。",
+      "tags": [
+        "电影",
+        "磁力下载"
+      ],
+      "mark": "6V",
+      "icon": "images/movie-icons/6v.png"
+    },
+    {
+      "id": "6v520",
+      "name": "6V 电影备用",
+      "url": "https://www.6v520.com/",
+      "category": "movie",
+      "description": "6V 电影发布页与备用站点，持续更新高清电影与剧集磁力链接。",
+      "tags": [
+        "电影",
+        "备用站"
+      ],
+      "mark": "6V",
+      "icon": "images/movie-icons/6v.png"
+    },
+    {
+      "id": "cilixiong",
+      "name": "磁力熊",
+      "url": "https://www.cilixiong.org/",
+      "category": "movie",
+      "description": "豆瓣高分电影 1080P / 4K 磁力下载站，海报墙式选片体验。",
+      "tags": [
+        "高分电影",
+        "1080P/4K"
+      ],
+      "mark": "熊",
+      "icon": "images/movie-icons/cilixiong.png"
+    },
+    {
+      "id": "xunlei8",
+      "name": "迅雷电影天堂",
+      "url": "https://xunlei8.org/",
+      "category": "movie",
+      "description": "提供 720P、1080P 与蓝光高清电影、电视剧磁力与种子下载。",
+      "tags": [
+        "蓝光电影",
+        "剧集下载"
+      ],
+      "mark": "雷",
+      "icon": "images/movie-icons/magnet-xunlei8.png"
+    },
+    {
+      "id": "btdx8",
+      "name": "比特大雄",
+      "url": "https://www.btdx8.net/",
+      "category": "movie",
+      "description": "按评分、年份与类型整理的电影、剧集 BT 种子及磁力下载站。",
+      "tags": [
+        "电影",
+        "BT 资源"
+      ],
+      "mark": "比",
+      "icon": "images/movie-icons/site-btdx8-net.png"
+    },
+    {
+      "id": "piaohua",
+      "name": "飘花电影",
+      "url": "https://www.piaohua.com/",
+      "category": "movie",
+      "description": "按分类与更新日期查找最新电影、电视剧磁力与下载信息。",
+      "tags": [
+        "电影",
+        "磁力下载"
+      ],
+      "mark": "飘",
+      "icon": "images/movie-icons/site-piaohua-com.png"
+    },
+    {
+      "id": "chaospace",
+      "name": "CHAOSPACE",
+      "url": "https://www.chaospace.xyz/",
+      "category": "movie",
+      "description": "蓝光电影、热门欧美日韩剧集与配套字幕资源下载站。",
+      "tags": [
+        "蓝光影视",
+        "字幕"
+      ],
+      "mark": "C",
+      "icon": "images/movie-icons/site-chaospace-xyz.png"
+    },
+    {
+      "id": "yyets",
+      "name": "人人影视分享",
+      "url": "https://yyets.click/",
+      "category": "movie",
+      "description": "按作品条目整理的影视剧集磁力、种子与多渠道下载索引。",
+      "tags": [
+        "海外剧",
+        "磁力种子"
+      ],
+      "mark": "人",
+      "icon": "images/movie-icons/site-yyets-click.png"
+    },
+    {
+      "id": "rrdynb",
+      "name": "人人电影网",
+      "url": "https://www.rrdynb.com/",
+      "category": "movie",
+      "description": "涵盖最新电影、电视剧、经典老片与动漫的影视下载目录。",
+      "tags": [
+        "电影下载",
+        "经典影视"
+      ],
+      "mark": "人",
+      "icon": "images/movie-icons/site-rrdynb-com.png"
+    },
+    {
+      "id": "dianying4k",
+      "name": "Ultra4K",
+      "url": "https://dianying4k.com/",
+      "category": "movie",
+      "description": "专注 4K UHD、REMUX 与蓝光原盘电影资料及种子目录（需登录）。",
+      "tags": [
+        "4K 原盘",
+        "需登录"
+      ],
+      "mark": "4K",
+      "icon": "images/movie-icons/site-dianying4k-com.png"
+    },
+    {
+      "id": "dyjie",
+      "name": "电影街",
+      "url": "https://dyjie.net/",
+      "category": "movie",
+      "description": "按画质与年份整理的高清电影与剧集 BT 下载目录（需登录）。",
+      "tags": [
+        "高清 BT",
+        "需登录"
+      ],
+      "mark": "街",
+      "icon": "images/movie-icons/site-dyjie-net.png"
+    },
+    {
+      "id": "mikanani",
+      "name": "蜜柑计划 Mikan",
+      "url": "https://mikanani.me/",
+      "category": "anime",
+      "description": "新番动画磁力链接、BT 种子下载与字幕组 RSS 订阅平台。",
+      "tags": [
+        "新番磁力",
+        "RSS 订阅"
+      ],
+      "mark": "蜜",
+      "icon": "images/movie-icons/site-mikanani-me.png"
+    },
+    {
+      "id": "animes-garden",
+      "name": "Anime Garden",
+      "url": "https://animes.garden/",
+      "category": "anime",
+      "description": "动漫花园第三方镜像与多源动画 BT / 磁力资源聚合搜索站。",
+      "tags": [
+        "动漫花园",
+        "聚合搜索"
+      ],
+      "mark": "AG",
+      "icon": "images/movie-icons/site-animes-garden.png"
+    },
+    {
+      "id": "acgrip",
+      "name": "ACG.RIP",
+      "url": "https://acg.rip/",
+      "category": "anime",
+      "description": "动画番剧、字幕组发布与二次元 ACG 种子资源分享社区。",
+      "tags": [
+        "番剧种子",
+        "字幕组"
+      ],
+      "mark": "A",
+      "icon": "images/movie-icons/site-acg-rip.png"
+    },
+    {
+      "id": "nyaa",
+      "name": "Nyaa",
+      "url": "https://nyaa.si/",
+      "category": "anime",
+      "description": "全球知名的东亚动漫、无损音乐与媒体 BitTorrent 磁力社区。",
+      "tags": [
+        "全球动漫",
+        "BitTorrent"
+      ],
+      "mark": "Ny",
+      "icon": "images/movie-icons/magnet-nyaa-cn.png"
+    },
+    {
+      "id": "nyaa-cn",
+      "name": "Nyaa 中文站",
+      "url": "https://cn.nyaa.net/",
+      "category": "anime",
+      "description": "中文界面的动漫磁力搜索引擎，支持番剧、音频与文学分类筛选。",
+      "tags": [
+        "中文界面",
+        "动漫磁力"
+      ],
+      "mark": "Ny",
+      "icon": "images/movie-icons/magnet-nyaa-cn.png"
+    },
+    {
+      "id": "yhdm33",
+      "name": "樱花动漫 BT",
+      "url": "https://yhdm33.com/",
+      "category": "anime",
+      "description": "专注二次元 ACG 动画番剧与剧场版的 BT 种子及磁力下载。",
+      "tags": [
+        "动画种子",
+        "ACG"
+      ],
+      "mark": "樱",
+      "icon": "images/movie-icons/magnet-yhdm33.png"
+    },
+    {
+      "id": "eztv",
+      "name": "EZTV",
+      "url": "https://eztvx.to/",
+      "category": "global",
+      "description": "海外美剧、英剧与电视节目专用 BitTorrent 磁力发布站。",
+      "tags": [
+        "美剧磁力",
+        "海外剧集"
+      ],
+      "mark": "EZ",
+      "icon": "images/movie-icons/magnet-eztv.png"
+    },
+    {
+      "id": "rutracker",
+      "name": "RuTracker",
+      "url": "https://rutracker.net/forum/index.php",
+      "category": "global",
+      "description": "国际大型综合影视、无损音乐、纪录片与软件 BT 种子论坛。",
+      "tags": [
+        "国际 BT",
+        "无损音乐"
+      ],
+      "mark": "RT",
+      "icon": "images/movie-icons/magnet-rutracker.png"
+    },
+    {
+      "id": "pirateproxy",
+      "name": "Pirate Proxy",
+      "url": "https://pirateproxy.tube/",
+      "category": "global",
+      "description": "The Pirate Bay（海盗湾）实时可用镜像检测与代理访问列表。",
+      "tags": [
+        "海盗湾",
+        "镜像列表"
+      ],
+      "mark": "PB"
+    },
+    {
+      "id": "btmayi",
+      "name": "BT蚂蚁磁力",
+      "url": "https://btmayi.cc/",
+      "category": "nav",
+      "description": "聚合磁力搜索框与多类型 BT 站点入口的磁力搜索导航网站。",
+      "tags": [
+        "磁力导航",
+        "聚合搜索"
+      ],
+      "mark": "蚁",
+      "icon": "images/movie-icons/magnet-btmayi.png"
+    },
+    {
+      "id": "cilishenqi",
+      "name": "磁力搜索神器",
+      "url": "https://cilishenqi.me/",
+      "category": "nav",
+      "description": "BT 磁力搜索引擎网址目录与多源聚合检索入口。",
+      "tags": [
+        "磁力目录",
+        "多源检索"
+      ],
+      "mark": "神",
+      "icon": "images/movie-icons/magnet-cilishenqi.png"
+    },
+    {
+      "id": "xunleis",
+      "name": "迅雷下载天堂",
+      "url": "https://xunleis.pro/",
+      "category": "nav",
+      "description": "汇总磁力搜索引擎、影视下载站与种子工具的资源导航。",
+      "tags": [
+        "下载导航",
+        "种子工具"
+      ],
+      "mark": "迅",
+      "icon": "images/movie-icons/magnet-xunleis.png"
+    }
+  ]
+}

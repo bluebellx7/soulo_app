@@ -4,6 +4,8 @@ const {chromium} = require(process.env.SOULO_PLAYWRIGHT_MODULE || 'playwright');
 const base = process.env.SOULO_WEBSITE_URL || 'http://127.0.0.1:8765';
 const errors = [];
 const movieData = require('../../website/movies.json');
+const magnetData = require('../../website/magnets.json');
+const panData = require('../../website/pans.json');
 
 async function main() {
   const options = {headless: true};
@@ -33,14 +35,24 @@ async function main() {
     assert.equal(await visible(), movieData.sites.filter(site => site.category === 'anime').length);
     assert.equal(await page.locator('[data-section]:visible').count(), 1);
     await page.locator('[data-category="all"]').click();
-    await page.locator('[data-favorite="pbpbw"]').click();
+    assert.equal(await page.locator('#favorite-picks').isVisible(), false);
+    await page.locator('[data-favorite="pbkan"]').click();
+    await page.locator('[data-favorite="6v"]').click();
+    await page.locator('[data-favorite="y80s"]').click();
+    assert.equal(await page.locator('#favorite-picks').isVisible(), true);
+    assert.equal(await page.locator('#favorite-picks-grid .quick-pick').count(), 3);
+    await page.locator('[data-favorite="6v"]').click();
+    await page.locator('[data-favorite="y80s"]').click();
+    assert.equal(await page.locator('#favorite-picks-grid .quick-pick').count(), 1);
     await page.locator('#show-favorites').click();
     assert.equal(await visible(), 1);
     await page.reload();
-    assert.equal(await page.locator('[data-favorite="pbpbw"]').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('[data-favorite="pbkan"]').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('#favorite-picks').isVisible(), true);
     await page.locator('#show-favorites').click();
     assert.equal(await visible(), 1);
-    await page.locator('[data-favorite="pbpbw"]').click();
+    await page.locator('[data-favorite="pbkan"]').click();
+    assert.equal(await page.locator('#favorite-picks').isVisible(), false);
     assert.equal(await visible(), 0);
     assert.match(await page.locator('#empty-title').innerText(), /喜欢的入口/);
     await page.locator('#reset-filters').click();
@@ -49,18 +61,73 @@ async function main() {
     await page.keyboard.type('字幕');
     await page.keyboard.press('Escape');
     assert.equal(await visible(), total);
+    assert.equal(await page.locator('html').getAttribute('data-resolved-theme'), 'dark');
+    await page.locator('#theme-toggle').click();
+    assert.equal(await page.locator('html').getAttribute('data-resolved-theme'), 'light');
+    const lightBrandLogo = await page.locator('[data-shared-nav] .brand img').evaluate(img => {
+      const style = getComputedStyle(img);
+      return {borderWidth: style.borderTopWidth, filter: style.filter};
+    });
+    assert.equal(lightBrandLogo.borderWidth, '1px');
+    assert.notEqual(lightBrandLogo.filter, 'none');
     await page.locator('#theme-toggle').click();
     assert.equal(await page.locator('html').getAttribute('data-resolved-theme'), 'dark');
     await page.reload();
     assert.equal(await page.locator('html').getAttribute('data-resolved-theme'), 'dark');
     const cardBackground = await page.locator('.movie-card').first().evaluate(e => getComputedStyle(e).backgroundColor);
     assert.equal(cardBackground, 'rgb(27, 28, 36)');
+    await page.goto(base+'/magnets.html');
+    const magnetTotal = await page.locator('.movie-card').count();
+    assert.equal(magnetTotal, magnetData.sites.length);
+    const brokenIcons = await page.locator('.movie-card .movie-icon img').evaluateAll(imgs =>
+      imgs.filter(img => !img.complete || img.naturalWidth === 0).map(img => img.getAttribute('src'))
+    );
+    assert.deepEqual(brokenIcons, []);
+    await page.locator('#movie-search').fill('wuji.me');
+    assert.equal(await visible(), 1);
+    assert.match(await page.locator('.movie-card:visible h3').innerText(), /无极磁链/);
+    await page.locator('#movie-search').fill('无极磁链');
+    assert.equal(await visible(), 2);
+    await page.locator('#movie-search').fill('this-magnet-does-not-exist');
+    assert.equal(await visible(), 0);
+    await page.locator('#reset-filters').click();
+    assert.equal(await visible(), magnetTotal);
+    await page.locator('[data-category="anime"]').click();
+    assert.equal(await visible(), magnetData.sites.filter(site => site.category === 'anime').length);
+    await page.locator('[data-category="all"]').click();
+    await page.locator('[data-favorite="wuji"]').click();
+    assert.equal(await page.locator('#favorite-picks').isVisible(), true);
+    assert.equal(await page.locator('#favorite-picks-grid .quick-pick').count(), 1);
+    await page.locator('[data-favorite="wuji"]').click();
+    assert.equal(await page.locator('#favorite-picks').isVisible(), false);
+    await page.goto(base+'/pans.html');
+    const panTotal = await page.locator('.movie-card').count();
+    assert.equal(panTotal, panData.sites.length);
+    await page.locator('#movie-search').fill('qianfan.app');
+    assert.equal(await visible(), 1);
+    assert.match(await page.locator('.movie-card:visible h3').innerText(), /千帆搜索/);
+    await page.locator('#movie-search').fill('this-pan-does-not-exist');
+    assert.equal(await visible(), 0);
+    await page.locator('#reset-filters').click();
+    assert.equal(await visible(), panTotal);
+    await page.locator('[data-category="official"]').click();
+    assert.equal(await visible(), panData.sites.filter(site => site.category === 'official').length);
+    await page.locator('[data-category="all"]').click();
+    await page.locator('[data-favorite="pan-qianfan"]').click();
+    assert.equal(await page.locator('#favorite-picks').isVisible(), true);
+    assert.equal(await page.locator('#favorite-picks-grid .quick-pick').count(), 1);
+    await page.locator('[data-favorite="pan-qianfan"]').click();
+    assert.equal(await page.locator('#favorite-picks').isVisible(), false);
     await page.goto(base+'/');
     assert.equal(await page.locator('.nav-links a[href="#features"]').count(), 0);
     assert.equal(await page.locator('.nav-links a[href="movies.html"]').count(), 1);
+    assert.equal(await page.locator('.nav-links a[href="magnets.html"]').count(), 1);
+    assert.equal(await page.locator('.nav-links a[href="pans.html"]').count(), 1);
     await page.locator('#language-toggle').click();
     assert.equal(await page.locator('html').getAttribute('lang'), 'en');
     assert.equal(await page.locator('.nav-links a[href="movies.html"]').innerText(), 'Movies');
+    assert.equal(await page.locator('.nav-links a[href="magnets.html"]').innerText(), 'Magnets');
+    assert.equal(await page.locator('.nav-links a[href="pans.html"]').innerText(), 'Cloud');
     await page.goto(base+'/sources.html');
     const sourceCount = await page.locator('.source-card').count();
     assert.equal(sourceCount, 85);
@@ -95,7 +162,7 @@ async function main() {
     for (const width of [320, 360, 390, 768, 1280]) {
       await page.setViewportSize({width, height: 900});
       let homeNavigation;
-      for (const file of ['', 'movies.html', 'sources.html', 'privacy.html']) {
+      for (const file of ['', 'movies.html', 'magnets.html', 'pans.html', 'sources.html', 'privacy.html']) {
         await page.goto(base+'/'+file);
         const dimensions = await page.evaluate(() => ({viewport:innerWidth, content:document.documentElement.scrollWidth}));
         assert.ok(dimensions.content <= dimensions.viewport, `${file || 'index.html'} overflows at ${width}px: ${dimensions.content}`);
@@ -110,7 +177,7 @@ async function main() {
         });
         if (!file) homeNavigation = navigation;
         else assert.deepEqual(navigation, homeNavigation, `Navigation differs on ${file} at ${width}px`);
-        assert.deepEqual(await page.locator('[data-shared-nav] .nav-links a').allTextContents(), ['Sources','Movies']);
+        assert.deepEqual(await page.locator('[data-shared-nav] .nav-links a').allTextContents(), ['Sources','Movies','Magnets','Cloud']);
         assert.equal(await page.locator('#language-toggle').innerText(), '中文');
       }
     }
@@ -119,6 +186,14 @@ async function main() {
     await plain.goto(base+'/movies.html');
     assert.equal(await plain.locator('.movie-card:visible').count(), total);
     assert.equal(await plain.locator('.movie-category:visible').count(), movieData.categories.length);
+    assert.equal(await plain.locator('.favorite-button:visible').count(), 0);
+    await plain.goto(base+'/magnets.html');
+    assert.equal(await plain.locator('.movie-card:visible').count(), magnetTotal);
+    assert.equal(await plain.locator('.movie-category:visible').count(), magnetData.categories.length);
+    assert.equal(await plain.locator('.favorite-button:visible').count(), 0);
+    await plain.goto(base+'/pans.html');
+    assert.equal(await plain.locator('.movie-card:visible').count(), panTotal);
+    assert.equal(await plain.locator('.movie-category:visible').count(), panData.categories.length);
     assert.equal(await plain.locator('.favorite-button:visible').count(), 0);
     await plain.goto(base+'/sources.html');
     assert.equal(await plain.locator('.source-card:visible').count(), sourceCount);
@@ -146,7 +221,7 @@ async function main() {
     const privatePage = await restricted.newPage();
     privatePage.on('pageerror', error => errors.push(error.message));
     await privatePage.goto(base+'/movies.html');
-    await privatePage.locator('[data-favorite="pbpbw"]').click();
+    await privatePage.locator('[data-favorite="pbkan"]').click();
     assert.match(await privatePage.locator('#movie-toast').innerText(), /仅在本页有效/);
     await privatePage.locator('#show-favorites').click();
     assert.equal(await privatePage.locator('.movie-card:visible').count(), 1);

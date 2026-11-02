@@ -9,3 +9,16 @@ The four `soulo-home*.webp` images are actual Soulo 1.1.4 (build 19) screens cap
 Screenshots are encoded as lossless WebP to reduce transfer size without changing their pixels. The website applies the device frames with CSS. Keep screenshot pixels unmodified and replace each language pair together when the app UI changes.
 
 - `search-home.png`: user-supplied homepage foreground screenshot, copied unchanged from https://www.dkluge.com/images/apps/soulo/search-home.png on 2026-09-05. Used in both website languages; the rear phone still uses the localized light screenshot.
+
+## Web delivery variants
+
+Original images above and `../app-icon.png` remain unchanged. The website loads
+generated variants under `web/`: a 108px navigation icon, the foreground screen
+encoded with lossless WebP, and 804px rear screens encoded with quality 94 WebP.
+The latter cover the CSS phone size at 3x density. CSS frames and page layout are
+unchanged; sharing metadata and the Apple touch icon retain the full-size icon.
+
+Regenerate with `python3 scripts/optimize_website_images.py` (requires Pillow),
+then `python3 scripts/build_website.py`. Use the optimizer's `--check` option to
+verify generated assets. The HTML generator adds content hashes to image URLs,
+including localized rear-screen URLs, so changed images receive fresh URLs.

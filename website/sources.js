@@ -14,6 +14,18 @@
   const timers = new WeakMap();
   let category = 'all';
   let toastTimer;
+  const isEn = () => document.documentElement.lang === 'en';
+  const categoryNamesEn = {
+    ai: 'AI Search',
+    general: 'General Search',
+    academic: 'Academic',
+    social: 'Social & Content',
+    developer: 'Developer',
+    shopping: 'Shopping',
+    comic: 'Comics & Art',
+    video: 'Video & Streaming',
+    book: 'Books & Reading',
+  };
   const visible = () => cards.filter(card => !card.hidden).map(card => sources[Number(card.dataset.index)]);
   const config = items => JSON.stringify(items.map(source => ({name: source.name, url: source.url})), null, 2);
 
@@ -41,9 +53,16 @@
       if (active) link.setAttribute('aria-current', 'true'); else link.removeAttribute('aria-current');
     });
     const selected = categories.find(c => c.id === category);
-    document.getElementById('filterMeta').textContent = selected ? `${selected.name} · ${count} 个搜索源` : terms.length ? `找到 ${count} 个搜索源` : `共 ${count} 个可导入的搜索源`;
-    copyVisible.querySelector('span').textContent = terms.length || category !== 'all' ? '复制结果' : '复制全部';
-    copyVisible.setAttribute('aria-label', `复制当前 ${count} 个搜索源的配置`);
+    if (isEn()) {
+      const selectedName = selected ? (categoryNamesEn[selected.id] || selected.name) : '';
+      document.getElementById('filterMeta').textContent = selected ? `${selectedName} · ${count} search ${count === 1 ? 'source' : 'sources'}` : terms.length ? `Found ${count} search ${count === 1 ? 'source' : 'sources'}` : `${count} importable search sources`;
+      copyVisible.querySelector('span').textContent = terms.length || category !== 'all' ? 'Copy Results' : 'Copy All';
+      copyVisible.setAttribute('aria-label', `Copy JSON config for ${count} visible search sources`);
+    } else {
+      document.getElementById('filterMeta').textContent = selected ? `${selected.name} · ${count} 个搜索源` : terms.length ? `找到 ${count} 个搜索源` : `共 ${count} 个可导入的搜索源`;
+      copyVisible.querySelector('span').textContent = terms.length || category !== 'all' ? '复制结果' : '复制全部';
+      copyVisible.setAttribute('aria-label', `复制当前 ${count} 个搜索源的配置`);
+    }
     copyVisible.disabled = count === 0;
     document.getElementById('emptyState').hidden = count !== 0;
     if (panel.open) preview.textContent = config(visible());
@@ -70,12 +89,16 @@
     catch {
       panel.open = true;
       preview.focus();
-      announce('请在配置预览中选择文字并复制。');
+      announce(isEn() ? 'Select and copy the JSON config from the preview panel.' : '请在配置预览中选择文字并复制。');
       return;
     }
     clearTimeout(timers.get(button));
     button.dataset.copyState = 'copied';
-    announce(items.length === 1 ? `已复制 ${items[0].name}` : `已复制 ${items.length} 个搜索源`);
+    if (isEn()) {
+      announce(items.length === 1 ? `Copied ${items[0].name}` : `Copied ${items.length} search sources`);
+    } else {
+      announce(items.length === 1 ? `已复制 ${items[0].name}` : `已复制 ${items.length} 个搜索源`);
+    }
     timers.set(button, setTimeout(() => { delete button.dataset.copyState; }, 1800));
   }
   links.forEach(link => link.addEventListener('click', event => {
@@ -85,7 +108,18 @@
     filter();
     document.getElementById('source-tools').scrollIntoView({block: 'start'});
   }));
-  cards.forEach(card => card.querySelector('.source-copy').addEventListener('click', event => copy([sources[Number(card.dataset.index)]], event.currentTarget)));
+  cards.forEach(card => {
+    const image = card.querySelector('.source-avatar img');
+    if (image) {
+      const fallback = () => {
+        image.hidden = true;
+        image.parentElement.classList.remove('has-icon');
+      };
+      image.addEventListener('error', fallback, {once: true});
+      if (image.complete && !image.naturalWidth) fallback();
+    }
+    card.querySelector('.source-copy').addEventListener('click', event => copy([sources[Number(card.dataset.index)]], event.currentTarget));
+  });
   sections.forEach(section => section.querySelector('.category-copy').addEventListener('click', event => {
     const items = [...section.querySelectorAll('.source-card')].filter(card => !card.hidden).map(card => sources[Number(card.dataset.index)]);
     copy(items, event.currentTarget);
@@ -99,5 +133,6 @@
     if (event.key === '/' && !event.metaKey && !event.ctrlKey && !event.altKey && !editing) { event.preventDefault(); input.focus(); }
     if (event.key === 'Escape' && document.activeElement === input) { input.value = ''; filter(); input.blur(); }
   });
+  window.addEventListener('soulo:langchange', () => filter());
   filter();
 })();

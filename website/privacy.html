@@ -1,141 +1,84 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN" data-theme="dark" data-resolved-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#111217" media="(prefers-color-scheme: dark)">
-    <meta name="apple-mobile-web-app-title" content="Soulo">
-    <meta
-        name="description"
-        content="Privacy policy for Soulo, a privacy-first multi-search browser that keeps search history, bookmarks, and preferences on-device."
-    >
-    <meta
-        name="robots"
-        content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
-    >
-    <meta
-        name="googlebot"
-        content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
-    >
-    <link rel="canonical" href="https://soulo.dkluge.com/privacy.html">
-    <meta property="og:site_name" content="Soulo">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Privacy Policy - Soulo">
-    <meta
-        property="og:description"
-        content="Privacy policy for Soulo, a privacy-first multi-search browser that keeps search history, bookmarks, and preferences on-device."
-    >
-    <meta property="og:url" content="https://soulo.dkluge.com/privacy.html">
-    <meta property="og:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.4">
-    <meta property="og:image:width" content="1024">
-    <meta property="og:image:height" content="1024">
-    <meta property="og:image:alt" content="Soulo App icon">
-    <meta property="og:locale" content="en_US">
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Privacy Policy - Soulo">
-    <meta
-        name="twitter:description"
-        content="Privacy policy for Soulo, a privacy-first multi-search browser that keeps search history, bookmarks, and preferences on-device."
-    >
-    <meta name="twitter:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.4">
-    <meta name="twitter:image:alt" content="Soulo App icon">
-    <title>Privacy Policy - Soulo</title>
-    <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg?v=20261030">
-    <link rel="apple-touch-icon" href="app-icon.png?v=1.1.4">
-    <script>
-        (function () {
-            var selectedTheme = 'system';
-            try {
-                var savedTheme = localStorage.getItem('soulo-theme');
-                selectedTheme = savedTheme === 'light' || savedTheme === 'dark'
-                    ? savedTheme
-                    : 'system';
-            } catch (error) {}
-            var prefersDark = window.matchMedia
-                && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            var resolvedTheme = selectedTheme === 'system'
-                ? (prefersDark ? 'dark' : 'light')
-                : selectedTheme;
-            document.documentElement.setAttribute('data-theme', selectedTheme);
-            document.documentElement.setAttribute('data-resolved-theme', resolvedTheme);
-        })();
-    </script>
-    <script type="application/ld+json">
-        {"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://soulo.dkluge.com/privacy.html#webpage","name":"Privacy Policy - Soulo","description":"Privacy policy for the Soulo iOS app, including on-device data, optional iCloud sync and third-party services.","url":"https://soulo.dkluge.com/privacy.html","inLanguage":"en","isPartOf":{"@id":"https://soulo.dkluge.com/#website"},"breadcrumb":{"@id":"https://soulo.dkluge.com/privacy.html#breadcrumb"}},{"@type":"BreadcrumbList","@id":"https://soulo.dkluge.com/privacy.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Soulo","item":"https://soulo.dkluge.com/"},{"@type":"ListItem","position":2,"name":"Privacy policy","item":"https://soulo.dkluge.com/privacy.html"}]}]}
-    </script>
-    <style>
-        :root {
-            --primary-color: #6366F1;
-            --text-color: #1d1d1f;
-            --bg-color: #f5f5f7;
-            --card-bg: #ffffff;
-            --secondary-text: #86868b;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: var(--text-color);
-            background-color: var(--bg-color);
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 40px;
-            background-color: var(--card-bg);
-            border-radius: 20px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.04);
-        }
-        header {
-            border-bottom: 1px solid #e5e5e5;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-        }
-        h1 { font-size: 32px; font-weight: 700; margin-bottom: 10px; color: #000; }
-        h2 { font-size: 22px; font-weight: 600; margin-top: 30px; margin-bottom: 15px; color: var(--primary-color); }
-        p, li { font-size: 16px; margin-bottom: 15px; }
-        .last-updated { font-size: 14px; color: var(--secondary-text); margin-bottom: 20px; }
-        .highlight-box {
-            background-color: #eef2ff;
-            border-left: 4px solid var(--primary-color);
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-        }
-        footer {
-            margin-top: 50px;
-            text-align: center;
-            font-size: 14px;
-            color: var(--secondary-text);
-        }
-        @media (max-width: 600px) {
-            .container { margin: 10px; padding: 20px; border-radius: 12px; }
-            h1 { font-size: 24px; }
-        }
-    </style>
-    <link rel="stylesheet" href="site.css?v=20261030">
-    <link rel="alternate" type="text/plain" href="llms.txt" title="Soulo website summary">
-    <script src="site-ui.js?v=20261030b" defer></script>
-    <script>
-        var _hmt = _hmt || [];
-        (function() {
-            var hm = document.createElement("script");
-            hm.src = "https://hm.baidu.com/hm.js?bdc8ea6c501e6ff0d7b16dc13b09b991";
-            var s = document.getElementsByTagName("script")[0];
-            s.parentNode.insertBefore(hm, s);
-        })();
-    </script>
-    <link rel="stylesheet" href="navigation.css?v=20261030b" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#111217" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)" />
+  <meta name="apple-mobile-web-app-title" content="Soulo" />
+  <meta
+    name="description"
+    content="Soulo 隐私政策说明本地数据存储、可选 iCloud 同步、权限使用与第三方平台交互规则。无账号体系、无搜索中转服务器、无第三方追踪 SDK。"
+  />
+  <meta
+    name="robots"
+    content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
+  />
+  <meta
+    name="googlebot"
+    content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
+  />
+  <link rel="canonical" href="https://soulo.dkluge.com/privacy.html" />
+  <meta property="og:site_name" content="Soulo" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="隐私政策 - Soulo" />
+  <meta
+    property="og:description"
+    content="Soulo 隐私政策说明本地数据存储、可选 iCloud 同步、权限使用与第三方平台交互规则。无账号体系、无搜索中转服务器、无第三方追踪 SDK。"
+  />
+  <meta property="og:url" content="https://soulo.dkluge.com/privacy.html" />
+  <meta property="og:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.4" />
+  <meta property="og:image:width" content="1024" />
+  <meta property="og:image:height" content="1024" />
+  <meta property="og:image:alt" content="Soulo 图标" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="隐私政策 - Soulo" />
+  <meta
+    name="twitter:description"
+    content="Soulo 隐私政策说明本地数据存储、可选 iCloud 同步、权限使用与第三方平台交互规则。"
+  />
+  <meta name="twitter:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.4" />
+  <meta name="twitter:image:alt" content="Soulo 图标" />
+  <title>隐私政策 - Soulo</title>
+  <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg?v=20261030" />
+  <link rel="apple-touch-icon" href="app-icon.png?v=1.1.4" />
+  <script>
+    (() => {
+      let theme = 'dark';
+      try {
+        const saved = localStorage.getItem('soulo-theme');
+        if (saved === 'light' || saved === 'dark') theme = saved;
+      } catch {}
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.dataset.resolvedTheme = theme === 'light' ? 'light' : 'dark';
+    })();
+  </script>
+  <script type="application/ld+json">
+    {"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://soulo.dkluge.com/privacy.html#webpage","name":"隐私政策 - Soulo","description":"Soulo iOS 浏览器的隐私政策，涵盖设备端本地存储、可选 iCloud 同步、权限说明与第三方服务。","url":"https://soulo.dkluge.com/privacy.html","inLanguage":["zh-CN","en"],"isPartOf":{"@id":"https://soulo.dkluge.com/#website"},"breadcrumb":{"@id":"https://soulo.dkluge.com/privacy.html#breadcrumb"}},{"@type":"BreadcrumbList","@id":"https://soulo.dkluge.com/privacy.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Soulo","item":"https://soulo.dkluge.com/"},{"@type":"ListItem","position":2,"name":"隐私政策","item":"https://soulo.dkluge.com/privacy.html"}]}]}
+  </script>
+  <link rel="stylesheet" href="home.css?v=1657cd12" />
+  <link rel="stylesheet" href="site.css?v=5bfa7c3b" />
+  <link rel="alternate" type="text/plain" href="llms.txt" title="Soulo 网站摘要" />
+  <script src="site-ui.js?v=8928ed92" defer></script>
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?bdc8ea6c501e6ff0d7b16dc13b09b991";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+  <link rel="stylesheet" href="navigation.css?v=696e9cb2" />
 </head>
 <body class="privacy-page">
-    <a class="skip-link" href="#main-content">Skip to main content</a>
-    <!-- site-nav:start -->
+  <a class="skip-link" href="#main-content" data-page-i18n="privacy.skip">跳到主要内容</a>
+  <!-- site-nav:start -->
     <header class="site-header" data-shared-nav>
       <nav class="nav wrap" aria-label="主导航" data-label="navigation">
-        <a class="brand" href="./" aria-label="Soulo 首页"><img src="app-icon.png?v=1.1.4" width="36" height="36" alt="" /><span>Soulo</span></a>
-        <div class="nav-links"><a href="sources.html" data-i18n="sources" data-nav-i18n="sources">搜索源</a><a href="movies.html" data-i18n="movies" data-nav-i18n="movies">影视导航</a></div>
+        <a class="brand" href="./" aria-label="Soulo 首页"><img src="images/web/app-icon-108.webp?v=3b1ff126" width="36" height="36" alt="" /><span>Soulo</span></a>
+        <div class="nav-links"><a href="sources.html" data-i18n="sources" data-nav-i18n="sources">搜索源</a><a href="movies.html" data-i18n="movies" data-nav-i18n="movies">影视导航</a><a href="magnets.html" data-i18n="magnets" data-nav-i18n="magnets">磁力搜索</a><a href="pans.html" data-i18n="pans" data-nav-i18n="pans">网盘搜索</a></div>
         <div class="nav-tools">
           <button id="language-toggle" type="button" aria-label="Switch navigation to English" title="切换导航语言">EN</button>
           <button id="theme-toggle" type="button" aria-label="切换至深色外观" title="切换至深色外观"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20.4 14.3A8.7 8.7 0 0 1 9.7 3.6a8.7 8.7 0 1 0 10.7 10.7Z"/></svg></button>
@@ -143,87 +86,255 @@
       </nav>
     </header>
     <!-- site-nav:end -->
-    <main class="container" id="main-content">
-        <header>
-            <h1>Privacy Policy</h1>
-            <p class="last-updated">Last Updated: September 2026</p>
-            <p><strong>App Name:</strong> Soulo</p>
-        </header>
 
-        <section>
-            <div class="highlight-box">
-                <strong>Core Commitment:</strong> Soulo is a multi-platform search browser. Soulo does not operate a backend that receives your searches. Browsing history and bookmarks stay on your device. Optional settings sync, feedback, and network features are described below.
-            </div>
+  <main class="wrap" id="main-content">
+    <nav class="privacy-breadcrumbs" aria-label="面包屑">
+      <a href="./" data-page-i18n="breadcrumb.home">首页</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page" data-page-i18n="privacy">隐私政策</span>
+    </nav>
 
-            <h2>1. What Soulo Does</h2>
-            <p>Soulo is a multi-platform search browser that helps you search across platforms such as Google, Baidu, YouTube, Bilibili, and third-party AI services. When you search, Soulo opens the selected platform in its embedded browser. Your query is sent directly to that platform under the platform's own privacy policy; it is not relayed through a Soulo server.</p>
+    <section class="privacy-hero" aria-labelledby="privacy-title">
+      <div class="privacy-hero-copy">
+        <span class="privacy-eyebrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M12 3l7 3v5c0 5-3.4 8.7-7 10-3.6-1.3-7-5-7-10V6l7-3z" />
+            <path d="M9.5 12l1.8 1.8 3.4-3.6" />
+          </svg>
+          <em data-page-i18n="privacy.eyebrow">隐私优先架构</em>
+        </span>
+        <h1 id="privacy-title" data-page-i18n="privacy.title">隐私政策</h1>
+        <p data-page-i18n="privacy.heroDesc">Soulo 默认将搜索历史、书签与个人偏好保存在你的设备本地——无需注册账号，不经过搜索中转服务器，也不接入任何第三方追踪 SDK。</p>
+        <div class="privacy-summary">
+          <span class="last-updated">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <circle cx="12" cy="12" r="8.5" />
+              <path d="M12 7.5v4.8l3.2 1.9" />
+            </svg>
+            <em data-page-i18n="privacy.updated">更新于 2026 年 9 月</em>
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <rect x="6" y="3.5" width="12" height="17" rx="2.5" />
+              <path d="M10 17.5h4" />
+            </svg>
+            <strong data-page-i18n="privacy.appNameLabel">应用名称：</strong>Soulo
+          </span>
+          <a href="#section-contact">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <rect x="3.5" y="5.5" width="17" height="13" rx="2.2" />
+              <path d="M4.5 7l7.5 5.5L19.5 7" />
+            </svg>
+            contact@dkluge.com
+          </a>
+        </div>
+      </div>
 
-            <h2>2. Browsing Data and Optional Contact Details</h2>
-            <ul>
-                <li><strong>No Browsing-History Upload:</strong> Soulo does not automatically send browsing history or bookmarks to a Soulo server. Optional feedback is sent to DKluge only when you submit it.</li>
-                <li><strong>Optional Contact Details:</strong> No account is required. You may provide an email address or other contact details when submitting feedback so we can reply.</li>
-                <li><strong>No Tracking:</strong> We do not use any third-party analytics, advertising SDKs, or tracking frameworks.</li>
-            </ul>
+      <div class="privacy-hero-visual" aria-hidden="true">
+        <div class="privacy-pillar">
+          <span class="privacy-pillar-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+              <rect x="4" y="5" width="16" height="14" rx="2.5" />
+              <path d="M8 10h8M8 14h5" />
+            </svg>
+          </span>
+          <div>
+            <strong data-page-i18n="privacy.pillar1Title">默认保存在设备端</strong>
+            <span data-page-i18n="privacy.pillar1Desc">搜索记录与书签仅存储在本地设备</span>
+          </div>
+        </div>
+        <div class="privacy-pillar">
+          <span class="privacy-pillar-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </span>
+          <div>
+            <strong data-page-i18n="privacy.pillar2Title">搜索请求直连目标平台</strong>
+            <span data-page-i18n="privacy.pillar2Desc">直接发往你选择的平台，绝不经过中转</span>
+          </div>
+        </div>
+        <div class="privacy-pillar">
+          <span class="privacy-pillar-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+              <path d="M12 3l7 3v5c0 5-3.4 8.7-7 10-3.6-1.3-7-5-7-10V6l7-3z" />
+              <path d="M9 9l6 6M15 9l-6 6" />
+            </svg>
+          </span>
+          <div>
+            <strong data-page-i18n="privacy.pillar3Title">零第三方追踪 SDK</strong>
+            <span data-page-i18n="privacy.pillar3Desc">不集成任何第三方统计或广告框架</span>
+          </div>
+        </div>
+      </div>
+    </section>
 
-            <h2>3. Local Data Storage</h2>
-            <p>The following data is stored locally on your device by default. Data you explicitly enable for iCloud sync is described in the next section:</p>
-            <ul>
-                <li><strong>Search History:</strong> Your recent search keywords are saved using SwiftData for quick access. You can clear this at any time in Settings → Privacy.</li>
-                <li><strong>Bookmarks:</strong> Pages you bookmark are stored locally. You can delete them individually or clear all.</li>
-                <li><strong>Platform Configuration:</strong> Your platform visibility, order, and custom groups are saved in UserDefaults.</li>
-                <li><strong>Preferences:</strong> Language, appearance, wallpaper settings, and home screen customization are stored locally via UserDefaults.</li>
-            </ul>
+    <div class="privacy-workspace">
+      <aside class="privacy-sidebar">
+        <nav aria-label="隐私政策章节">
+          <a class="privacy-nav-link" href="#section-overview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="M12 8.5v4M12 15.5h.01" /></svg>
+            <span data-page-i18n="privacy.navOverview">概览与浏览数据</span>
+          </a>
+          <a class="privacy-nav-link" href="#section-storage">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><ellipse cx="12" cy="6.5" rx="7.5" ry="3" /><path d="M4.5 6.5v11c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-11" /><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3" /></svg>
+            <span data-page-i18n="privacy.navStorage">本地存储与 iCloud</span>
+          </a>
+          <a class="privacy-nav-link" href="#section-permissions">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="11" width="14" height="9.5" rx="2.2" /><path d="M8 11V7.8a4 4 0 0 1 8 0V11" /></svg>
+            <span data-page-i18n="privacy.navPermissions">系统权限说明</span>
+          </a>
+          <a class="privacy-nav-link" href="#section-content">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="M3.8 12h16.4M12 3.8c2.3 2.4 3.6 5.2 3.6 8.2s-1.3 5.8-3.6 8.2c-2.3-2.4-3.6-5.2-3.6-8.2s1.3-5.8 3.6-8.2Z" /></svg>
+            <span data-page-i18n="privacy.navContent">第三方网页与过滤</span>
+          </a>
+          <a class="privacy-nav-link" href="#section-ai">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3.5l2 4.7 4.8.7-3.6 3.3.9 4.8-4.1-2.4-4.1 2.4.9-4.8-3.6-3.3 4.8-.7 2-4.7Z" /></svg>
+            <span data-page-i18n="privacy.navAi">端侧智能与 AI</span>
+          </a>
+          <a class="privacy-nav-link" href="#section-network">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 9.5a12.5 12.5 0 0 1 16 0M7 13a8 8 0 0 1 10 0M10.5 16.5a3.5 3.5 0 0 1 3 0M12 19.5h.01" /></svg>
+            <span data-page-i18n="privacy.navNetwork">网络服务与删除</span>
+          </a>
+          <a class="privacy-nav-link" href="#section-contact">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2.2" /><path d="M4.5 7l7.5 5.5L19.5 7" /></svg>
+            <span data-page-i18n="privacy.navContact">联系我们</span>
+          </a>
+        </nav>
 
-            <h2>4. iCloud Sync</h2>
-            <p>If you enable iCloud sync in Settings, appearance, home-screen, browser, privacy, wallpaper preferences, platform configuration, toolbar layout, and site rules are synced through Apple's iCloud Key-Value Store. Search and browsing history, bookmarks, cache, cookies and login data, downloads, private-browsing state, usage statistics, and wallpaper image files are never synced. Synced settings are protected by Apple and accessible only through your Apple ID. Soulo does not have access to your iCloud credentials.</p>
+        <a class="privacy-sidebar-note" href="sources.html">
+          <strong data-page-i18n="privacy.sidebarPrompt">探索可导入的搜索源</strong>
+          <span>
+            <em data-page-i18n="privacy.sidebarAction">浏览搜索源目录</em>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </span>
+        </a>
+      </aside>
 
-            <h2>5. Permissions</h2>
-            <ul>
-                <li><strong>Microphone:</strong> Used for voice search and, after you approve a secure website's request, for website features such as calls or recording. Depending on the device, language, and operating system, Apple may process voice-search transcription on-device or through its speech service. Soulo never grants website access automatically and does not record, store, or send the audio to a Soulo server. A website you approve may process it under that website's privacy policy.</li>
-                <li><strong>Camera:</strong> Available only after you approve a secure website's request, for features such as video calls, scanning codes, or taking a photo. Soulo never grants website access automatically and does not record, store, or send the video to a Soulo server. A website you approve may process it under that website's privacy policy.</li>
-                <li><strong>Photo Library:</strong> Used to set custom wallpapers and save wallpaper images. Photos are never uploaded.</li>
-            </ul>
+      <div class="privacy-content">
+        <div class="highlight-box">
+          <span class="highlight-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M12 3l7 3v5c0 5-3.4 8.7-7 10-3.6-1.3-7-5-7-10V6l7-3z" />
+              <path d="M9.5 12l1.8 1.8 3.4-3.6" />
+            </svg>
+          </span>
+          <p data-page-i18n-html="privacy.highlight">
+            <strong>核心承诺：</strong>Soulo 是一款多平台搜索浏览器，不运营任何接收或中转你搜索请求的后端服务器。浏览历史与书签默认保存在你的设备上。可选的设置同步、反馈提交及网络功能详见下文说明。
+          </p>
+        </div>
 
-            <h2>6. Third-Party Content</h2>
-            <p>Search results are displayed from third-party platforms via WebView. Each platform has its own privacy policy and data practices. Soulo does not control the content provided by these platforms. If you enable ad filtering, Soulo may block known advertising requests and hide matching ad elements inside its WebView.</p>
-            <p><strong>User-installed scripts:</strong> UserScript is an experimental, opt-in browser feature. A script you choose to install can read or modify matching web pages and may make network requests according to its code. Soulo does not install scripts automatically or send their data to a Soulo server. Only install and enable scripts from authors you trust.</p>
-
-            <h2>7. Ad Filtering</h2>
-            <p>Soulo includes an optional ad blocker that can be enabled in Settings. When enabled, it blocks network requests to known advertising domains and hides ad elements using CSS/JavaScript injection. This feature operates entirely within the app's WebView and does not affect other apps or browsers.</p>
-
-            <h2>8. Intelligent Features and Third-Party AI Platforms</h2>
-            <p>Soulo uses Apple frameworks for local intelligent features:</p>
-            <ul>
-                <li><strong>Spell Correction:</strong> UITextChecker (on-device)</li>
-                <li><strong>Language Detection:</strong> NLLanguageRecognizer (on-device)</li>
-                <li><strong>Text Extraction:</strong> Vision framework OCR (on-device)</li>
-                <li><strong>Clipboard Analysis:</strong> NLTagger for content type detection (on-device)</li>
-            </ul>
-            <p>These Soulo features do not send their input to a Soulo server. If you deliberately select a third-party AI platform, Soulo sends your query directly to that platform so it can provide an answer. The platform may process and retain the query according to its own privacy policy. Soulo does not merge third-party AI answers or submit your query to multiple AI platforms without your action.</p>
-
-            <h2>9. Children's Privacy</h2>
-            <p>Soulo does not require registration. We do not knowingly collect information from children under 13. Websites you visit provide their own content and have their own age requirements.</p>
-
-            <h2>10. Data Deletion</h2>
-            <p>Deleting the app removes its locally stored data from the device. There is no Soulo account to delete. Removing the app does not delete feedback already submitted; you can request deletion by contacting contact@dkluge.com. You can also selectively clear search history, bookmarks, and WebView cache from Settings.</p>
-
-            <h2>11. Optional Feedback</h2>
-            <p>When you tap Submit in Feedback, Soulo sends your feedback category, message, optional email or other contact details, app version, device model and name, operating system, screen size and scale, and language to api.dkluge.com. This information is used to investigate your request and reply to you. Contact details are optional. To request deletion of submitted feedback, contact contact@dkluge.com.</p>
-
-            <h2>12. Network Services and Wi-Fi Transfer</h2>
-            <p>Website icons are requested from the original website. If an icon is unavailable, the website domain may be sent to DuckDuckGo or Google to retrieve it; full page URLs and search terms are not included in icon requests. Online wallpapers and filter subscriptions contact their selected providers. Google translation sends the text or page you choose to Google. These providers receive network requests under their own privacy policies.</p>
-            <p>Wi-Fi Transfer makes files available to devices connected to your transfer session on the local network. Pairing is enabled by default; if you disable it, other devices that can reach the transfer address may access the session. Stop Wi-Fi Transfer when finished. Imported files remain on your device unless you choose to share or transfer them.</p>
-
-            <h2>13. Changes to This Policy</h2>
-            <p>We may update this privacy policy from time to time. Changes will be reflected in the "Last Updated" date above.</p>
-
-            <h2>14. Contact Us</h2>
-            <p>If you have questions about this privacy policy, please contact us at <a href="mailto:contact@dkluge.com">contact@dkluge.com</a></p>
+        <section class="privacy-section" id="section-overview">
+          <h2><span class="section-badge">01</span><em data-page-i18n="privacy.s1Title">1. Soulo 的工作方式</em></h2>
+          <p data-page-i18n="privacy.s1Body">Soulo 是一款多平台搜索浏览器，帮助你在 Google、百度、YouTube、哔哩哔哩以及第三方 AI 服务之间快速切换搜索。当你发起搜索时，Soulo 会在内置浏览器中直接打开你选择的平台；搜索词直连发送至目标平台并受该平台自身隐私政策约束，不会经过 Soulo 服务器中转。</p>
         </section>
 
-        <footer>
-            &copy; 2025-2026 DKluge.com. All Rights Reserved.
-        </footer>
-    </main>
+        <section class="privacy-section">
+          <h2><span class="section-badge">02</span><em data-page-i18n="privacy.s2Title">2. 浏览数据与可选联系方式</em></h2>
+          <ul data-page-i18n-html="privacy.s2List">
+            <li><strong>不上传浏览记录：</strong>Soulo 不会将浏览历史或书签自动发送至任何服务器。仅当你主动提交意见反馈时，相关反馈内容才会发送至 DKluge。</li>
+            <li><strong>可选联系方式：</strong>使用 Soulo 无需注册账号。在提交反馈时，你可以自愿填写邮箱或其他联系方式以便我们回复。</li>
+            <li><strong>无追踪框架：</strong>应用内不集成任何第三方统计、广告 SDK 或用户追踪框架。</li>
+          </ul>
+        </section>
+
+        <section class="privacy-section" id="section-storage">
+          <h2><span class="section-badge">03</span><em data-page-i18n="privacy.s3Title">3. 本地数据存储</em></h2>
+          <p data-page-i18n="privacy.s3Intro">以下数据默认存储在你的设备本地（你主动开启 iCloud 同步的设置项见下一节说明）：</p>
+          <ul data-page-i18n-html="privacy.s3List">
+            <li><strong>搜索历史：</strong>近期搜索关键词通过 SwiftData 保存在本地以便快速回顾，你可随时在「设置 → 隐私」中清除。</li>
+            <li><strong>书签收藏：</strong>你收藏的网页保存在本地，支持逐条删除或一键清空。</li>
+            <li><strong>平台配置：</strong>搜索平台的启用状态、排序和自定义分组保存在本地 UserDefaults 中。</li>
+            <li><strong>偏好设置：</strong>语言、外观模式、壁纸设置及首页自定义项保存在本地 UserDefaults 中。</li>
+          </ul>
+        </section>
+
+        <section class="privacy-section">
+          <h2><span class="section-badge">04</span><em data-page-i18n="privacy.s4Title">4. iCloud 同步</em></h2>
+          <p data-page-i18n="privacy.s4Body">如果你在设置中开启 iCloud 同步，外观、首页、浏览器、隐私偏好、壁纸设置、搜索平台配置、工具栏布局与站点规则会通过 Apple 的 iCloud 键值存储（Key-Value Store）进行同步。搜索与浏览历史、书签、缓存、Cookie 与登录状态、下载文件、无痕浏览状态、使用统计及本地壁纸图片文件绝不会同步。同步数据受 Apple 加密保护且仅能通过你的 Apple ID 访问，Soulo 无法获取你的 iCloud 凭据。</p>
+        </section>
+
+        <section class="privacy-section" id="section-permissions">
+          <h2><span class="section-badge">05</span><em data-page-i18n="privacy.s5Title">5. 系统权限说明</em></h2>
+          <ul data-page-i18n-html="privacy.s5List">
+            <li><strong>麦克风：</strong>用于语音搜索，以及在你明确授权某个安全网站后用于网页通话或录音功能。根据设备、语言与系统版本不同，Apple 可能在设备端或通过其语音服务完成语音转文字。Soulo 绝不会自动向网站授予权限，也不会录制、存储或向 Soulo 服务器上传音频。</li>
+            <li><strong>相机：</strong>仅在你明确授权某个安全网站后可用，用于视频通话、扫码或拍照。Soulo 绝不会自动授予网站权限，也不会录制、存储或上传视频内容。</li>
+            <li><strong>相册：</strong>用于选择自定义首页壁纸及保存图片至相册，照片绝不会上传至服务器。</li>
+          </ul>
+        </section>
+
+        <section class="privacy-section" id="section-content">
+          <h2><span class="section-badge">06</span><em data-page-i18n="privacy.s6Title">6. 第三方网页内容与扩展脚本</em></h2>
+          <p data-page-i18n="privacy.s6Body1">搜索结果通过内置 WebView 展示自第三方平台，各平台拥有独立的隐私政策与数据处理规则。若你开启广告过滤，Soulo 会在 WebView 内拦截已知广告请求并隐藏页面广告元素。</p>
+          <p data-page-i18n-html="privacy.s6Body2"><strong>用户自定义脚本（UserScript）：</strong>UserScript 是一项可选的进阶功能。你主动安装的脚本可根据其代码读取或修改匹配的网页并发起网络请求。Soulo 不会自动安装脚本，也不会将脚本数据发送至 Soulo 服务器。请仅安装来自可信作者的脚本。</p>
+        </section>
+
+        <section class="privacy-section">
+          <h2><span class="section-badge">07</span><em data-page-i18n="privacy.s7Title">7. 广告过滤</em></h2>
+          <p data-page-i18n="privacy.s7Body">Soulo 内置可选的广告拦截功能。开启后，应用会拦截向已知广告域名发起的请求，并通过 CSS/JavaScript 隐藏广告占位。该功能完全在应用内 WebView 本地运行，不影响系统其他应用或浏览器。</p>
+        </section>
+
+        <section class="privacy-section" id="section-ai">
+          <h2><span class="section-badge">08</span><em data-page-i18n="privacy.s8Title">8. 端侧智能功能与第三方 AI 平台</em></h2>
+          <p data-page-i18n="privacy.s8Intro">Soulo 使用 Apple 原生系统框架实现本地智能辅助功能：</p>
+          <ul class="privacy-feature-pills" data-page-i18n-html="privacy.s8Pills">
+            <li><strong>拼写检查：</strong>UITextChecker（设备端）</li>
+            <li><strong>语言识别：</strong>NLLanguageRecognizer（设备端）</li>
+            <li><strong>文字识别：</strong>Vision 框架 OCR（设备端）</li>
+            <li><strong>剪贴板识别：</strong>NLTagger 内容类型检测（设备端）</li>
+          </ul>
+          <p data-page-i18n="privacy.s8Body">上述功能均在设备端运行，不会将输入内容发送至 Soulo 服务器。当你主动选择某个第三方 AI 平台进行提问时，Soulo 会将搜索词直接发送给该平台以获取回答；该平台将按其自身隐私政策处理你的提问。</p>
+        </section>
+
+        <section class="privacy-section">
+          <h2><span class="section-badge">09</span><em data-page-i18n="privacy.s9Title">9. 未成年人隐私</em></h2>
+          <p data-page-i18n="privacy.s9Body">Soulo 无需注册即可使用，我们不会有意收集 13 周岁以下儿童的个人信息。你访问的第三方网站拥有各自的内容规范与年龄限制。</p>
+        </section>
+
+        <section class="privacy-section" id="section-network">
+          <h2><span class="section-badge">10</span><em data-page-i18n="privacy.s10Title">10. 数据清除与删除</em></h2>
+          <p data-page-i18n-html="privacy.s10Body">卸载应用即可移除设备上的全部本地数据，无需注销账号。你也可以在应用「设置」中单独清除搜索历史、书签和网页缓存。如需删除已提交的反馈记录，请发送邮件至 <a href="mailto:contact@dkluge.com">contact@dkluge.com</a>。</p>
+        </section>
+
+        <section class="privacy-section">
+          <h2><span class="section-badge">11</span><em data-page-i18n="privacy.s11Title">11. 可选意见反馈</em></h2>
+          <p data-page-i18n-html="privacy.s11Body">当你在意见反馈页面点击提交时，Soulo 会将反馈类别、正文、可选联系方式以及应用版本、设备型号、系统版本、屏幕尺寸与语言设置发送至 api.dkluge.com，仅用于排查问题与回复反馈。如需删除已提交的反馈，请联系 <a href="mailto:contact@dkluge.com">contact@dkluge.com</a>。</p>
+        </section>
+
+        <section class="privacy-section">
+          <h2><span class="section-badge">12</span><em data-page-i18n="privacy.s12Title">12. 网络服务与局域网互传</em></h2>
+          <p data-page-i18n="privacy.s12Body1">网站图标优先从目标站点获取；若无法获取，可能会向 DuckDuckGo 或 Google 请求对应域名的图标（请求中不包含完整网页 URL 或搜索词）。在线壁纸、规则订阅与 Google 网页翻译在触发时会直连对应服务商。</p>
+          <p data-page-i18n="privacy.s12Body2">Wi-Fi 局域网传输仅在你开启传输会话时向同一局域网开放，默认启用配对验证；传输完成后请及时关闭会话。导入的文件仅保存在你的设备本地。</p>
+        </section>
+
+        <section class="privacy-section">
+          <h2><span class="section-badge">13</span><em data-page-i18n="privacy.s13Title">13. 政策更新</em></h2>
+          <p data-page-i18n="privacy.s13Body">我们可能会根据功能演进适时更新本隐私政策，更新后的版本将在页面顶部标注最新生效日期。</p>
+        </section>
+
+        <section class="privacy-section" id="section-contact">
+          <h2><span class="section-badge">14</span><em data-page-i18n="privacy.s14Title">14. 联系我们</em></h2>
+          <p data-page-i18n-html="privacy.s14Body">如果你对本隐私政策有任何疑问，请通过邮件联系我们：<a href="mailto:contact@dkluge.com">contact@dkluge.com</a></p>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer wrap">
+    <div>
+      <a class="footer-brand" href="./">Soulo</a>
+      <span>© 2026 DKluge</span>
+    </div>
+    <div class="footer-links">
+      <a href="sources.html" data-i18n="sources">搜索源</a>
+      <a href="movies.html" data-i18n="movies">影视导航</a>
+      <a href="magnets.html" data-i18n="magnets">磁力搜索</a>
+      <a href="pans.html" data-i18n="pans">网盘搜索</a>
+      <a href="privacy.html" aria-current="page" data-i18n="privacy">隐私政策</a>
+      <a href="https://www.dkluge.com/contact-us" data-i18n="support">技术支持</a>
+    </div>
+  </footer>
 </body>
 </html>

@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT/'website'
 BASE = 'https://soulo.dkluge.com/'
-PAGES = ['index.html', 'sources.html', 'movies.html', 'privacy.html']
+PAGES = ['index.html', 'sources.html', 'movies.html', 'magnets.html', 'pans.html', 'privacy.html']
 
 
 class Page(HTMLParser):
@@ -79,19 +79,21 @@ def check():
                     assert unquote(url.fragment) in ids, (file, value, 'missing anchor')
         print(f'{file}: metadata, JSON-LD, links, headings and analytics OK')
 
-    data = json.loads((SITE/'movies.json').read_text())
-    movies = pages['movies.html']
-    cards = [a for t,a in movies.tags if 'movie-card' in a.get('class','').split()]
-    assert len(cards) == len(data['sites']) == len({s['url'] for s in data['sites']})
-    assert {a['data-site'] for a in cards} == {s['id'] for s in data['sites']}
-    links = {a.get('href') for t,a in movies.tags if t == 'a'}
-    assert {s['url'] for s in data['sites']} <= links
-    card_urls = {a['href'] for t,a in movies.tags if t == 'a' and 'movie-card-link' in a.get('class','').split()}
-    assert card_urls == {s['url'] for s in data['sites']}, 'Directory must match the current curated inventory'
-    graph = movies.schema[0]['@graph']
-    directory = next(n for n in graph if n['@type'] == 'ItemList')
-    assert directory['numberOfItems'] == len(data['sites'])
-    assert {x['item']['url'] for x in directory['itemListElement']} == {s['url'] for s in data['sites']}
+    for page_name, json_name in [('movies.html', 'movies.json'), ('magnets.html', 'magnets.json'), ('pans.html', 'pans.json')]:
+        data = json.loads((SITE/json_name).read_text())
+        dir_page = pages[page_name]
+        cards = [a for t,a in dir_page.tags if 'movie-card' in a.get('class','').split()]
+        assert len(cards) == len(data['sites']) == len({s['url'] for s in data['sites']}), (page_name, 'card count or duplicate URL')
+        assert {a['data-site'] for a in cards} == {s['id'] for s in data['sites']}, (page_name, 'site IDs')
+        links = {a.get('href') for t,a in dir_page.tags if t == 'a'}
+        assert {s['url'] for s in data['sites']} <= links, (page_name, 'links')
+        card_urls = {a['href'] for t,a in dir_page.tags if t == 'a' and 'movie-card-link' in a.get('class','').split()}
+        assert card_urls == {s['url'] for s in data['sites']}, f'{page_name} must match {json_name}'
+        graph = dir_page.schema[0]['@graph']
+        directory = next(n for n in graph if n['@type'] == 'ItemList')
+        assert directory['numberOfItems'] == len(data['sites'])
+        assert {x['item']['url'] for x in directory['itemListElement']} == {s['url'] for s in data['sites']}
+        print(f'{page_name}: {len(cards)} sites across {len(data["categories"])} categories OK')
     source_data = json.loads((SITE/'sources.json').read_text())
     source_cards = [a for t,a in pages['sources.html'].tags if 'source-card' in a.get('class','').split()]
     assert len(source_cards) == len(source_data['sources'])
