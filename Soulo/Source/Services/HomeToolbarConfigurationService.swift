@@ -27,7 +27,7 @@ enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .newDownload: "plus.circle"
         case .wifiTransfer: "wifi"
         case .scanner: "qrcode.viewfinder"
-        case .tabs: "square.on.square"
+        case .tabs: "square"
         case .language: "globe"
         case .webAppearance: "paintbrush"
         case .browserToolbar: "rectangle.bottomthird.inset.filled"

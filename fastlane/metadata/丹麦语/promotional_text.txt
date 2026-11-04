@@ -1,1 +1,1 @@
-BT- og magnet-downloads med filvalg og genoptagelse. Afspil understøttede medier under download, åbn MKV og importér ed2k/thunder-links.
+Lokale videoer og BT-videoer bruger Soulo: episoder, 0,5–4× hastighed og systemafspiller til kompatible formater.

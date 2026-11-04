@@ -1,1 +1,1 @@
-BT et magnet : choix des fichiers et reprise. Lisez les médias compatibles pendant le téléchargement, ouvrez les MKV et importez les liens ed2k/thunder.
+Soulo par défaut : vidéos locales/BT, épisodes, vitesse 0,5–4×, lecteur système si compatible.

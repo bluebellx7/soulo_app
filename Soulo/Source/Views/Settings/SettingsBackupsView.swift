@@ -4,6 +4,7 @@ struct SettingsBackupsView: View {
     @ObservedObject private var sync = CloudSyncService.shared
     @State private var backups: [CloudSettingsBackup] = []
     @State private var selectedBackup: CloudSettingsBackup?
+    @State private var deletingBackup: CloudSettingsBackup?
     @State private var showError = false
 
     var body: some View {
@@ -26,12 +27,36 @@ struct SettingsBackupsView: View {
                         }
                     }
                     .accessibilityIdentifier("settings.backups.restore.\(backup.id.uuidString)")
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) { deletingBackup = backup } label: {
+                            Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
+                        }
+                    }
+                    .contextMenu {
+                        Button(role: .destructive) { deletingBackup = backup } label: {
+                            Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
+                        }
+                    }
                 }
+            } header: {
+                Text(ToolText.text("settings_backup_intro"))
+                    .textCase(nil)
+            } footer: {
+                Text(ToolText.text("settings_backup_manage_hint"))
             }
         }
         .navigationTitle(LanguageManager.shared.localizedString("settings_backups"))
         .onAppear(perform: load)
         .onChange(of: sync.backupRevision) { _, _ in load() }
+        .alert(LanguageManager.shared.localizedString("delete"), isPresented: Binding(
+            get: { deletingBackup != nil }, set: { if !$0 { deletingBackup = nil } }
+        ), presenting: deletingBackup) { backup in
+            Button(LanguageManager.shared.localizedString("delete"), role: .destructive) {
+                do { try sync.deleteBackup(backup); deletingBackup = nil; load() }
+                catch { deletingBackup = nil; showError = true }
+            }
+            Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) { deletingBackup = nil }
+        } message: { _ in Text(ToolText.text("settings_backup_delete_message")) }
         .alert(LanguageManager.shared.localizedString("restore"), isPresented: Binding(
             get: { selectedBackup != nil }, set: { if !$0 { selectedBackup = nil } }
         ), presenting: selectedBackup) { backup in

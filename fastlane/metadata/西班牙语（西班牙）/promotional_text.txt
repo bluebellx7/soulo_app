@@ -1,1 +1,1 @@
-Descargas BT y magnet con selección y reanudación. Reproduce medios compatibles al descargar, abre MKV e importa enlaces ed2k/thunder.
+Vídeos locales y BT en Soulo: episodios, velocidad 0,5–4× y reproductor del sistema para formatos compatibles.

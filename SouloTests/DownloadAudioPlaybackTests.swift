@@ -26,12 +26,13 @@ import AVFoundation
         window.rootViewController = UIHostingController(rootView: NavigationStack { DownloadContentPreview(item: item) })
         window.makeKeyAndVisible()
         for _ in 0..<160 {
-            if session.player.currentTime().seconds > 0.3 { break }
+            if session.elapsed > 0.3 { break }
             try await Task.sleep(for: .milliseconds(50))
         }
         XCTAssertEqual(session.url, url)
         XCTAssertNil(session.error)
         XCTAssertTrue(session.playing)
-        XCTAssertGreaterThan(session.player.currentTime().seconds, 0.3)
+        XCTAssertGreaterThan(session.elapsed, 0.3)
+        XCTAssertEqual(session.soulo == nil, VideoPlaybackPreferences.usesSystemPlayer())
     }
 }

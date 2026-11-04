@@ -6,6 +6,8 @@ Os separadores e grupos de sites usados recentemente aparecem primeiro, e a vist
 
 Transferências BT: importe ficheiros .torrent ou ligações magnet, escolha ficheiros, pause e retome. No iOS 26 podem continuar em segundo plano quando o sistema permite; as versões anteriores guardam o progresso e pausam. Reproduza conteúdos BT compatíveis durante a transferência e abra ficheiros MKV. Importe ligações ed2k/thunder. As transferências exigem fontes disponíveis; a reprodução depende dos codecs.
 
+Vídeos locais e BT no Soulo: episódios, velocidade de 0,5–4× e leitor do sistema para formatos compatíveis.
+
 Escolha cinco atalhos opcionais no ecrã inicial para transferências, ficheiros, marcadores, histórico, fundos e outras páginas. A barra de separadores da biblioteca fica mais compacta ao deslocar.
 
 Encontre informação, leia artigos, reproduza conteúdos e faça a gestão das descargas no mesmo navegador.

@@ -1,10 +1,7 @@
-1.2.7
+1.2.8
 
-• Descargas BT: importa archivos .torrent o enlaces magnet, elige archivos, pausa y reanuda. En iOS 26 pueden continuar en segundo plano cuando el sistema lo permite; las versiones anteriores guardan el progreso y las pausan.
-• Reproduce medios BT compatibles mientras se descargan y abre archivos MKV. Importa enlaces ed2k/thunder. Las descargas requieren fuentes disponibles; la reproducción depende de los códecs.
-• La optimización de Baidu está activada de forma predeterminada. Consulta el script o desactívala en Extensiones.
-• Configura cinco accesos directos opcionales en el inicio para descargas, archivos, marcadores, historial, fondos y otras páginas. La barra de pestañas de la biblioteca se compacta al desplazarte.
-• Mejoramos la compatibilidad de los scripts de usuario, incluidas las dependencias externas mediante @require.
-• Corregimos casos de audio en videos silenciados o reproducción duplicada en algunas páginas web.
-• Mejoramos la navegación hacia atrás y la restauración de páginas para mostrar antes el contenido listo.
-• La barra de progreso de carga es más visible con el azul del tema de la app.
+• Nuevo reproductor predeterminado para videos locales y BT, con episodios, velocidad 0.5–4× y opción del sistema para formatos compatibles.
+• Controles de pantalla completa que se ocultan automáticamente, presión prolongada para 2× temporal y gestos de brillo a la izquierda y volumen a la derecha.
+• Corregidos videos HEVC/MKV con solo audio sin imagen y los indicadores de carga que permanecían visibles.
+• Mejor compatibilidad de ventanas emergentes y filtros de anuncios para evitar bloqueos incorrectos y capas residuales sobre los videos.
+• Corregidos conflictos entre deslizar para eliminar y cambiar de pestaña, alineadas las carpetas en ambas vistas y estabilizada la altura de las búsquedas recientes al mantener presionado.

@@ -1,10 +1,7 @@
-1.2.7
+1.2.8
 
-• Transferências BT: importe ficheiros .torrent ou ligações magnet, escolha ficheiros, pause e retome. No iOS 26 podem continuar em segundo plano quando o sistema permite; as versões anteriores guardam o progresso e pausam.
-• Reproduza conteúdos BT compatíveis durante a transferência e abra ficheiros MKV. Importe ligações ed2k/thunder. As transferências exigem fontes disponíveis; a reprodução depende dos codecs.
-• A otimização da pesquisa Baidu está ativa por predefinição. Veja o script ou desative-a em Extensões.
-• Escolha cinco atalhos opcionais no ecrã inicial para transferências, ficheiros, marcadores, histórico, fundos e outras páginas. A barra de separadores da biblioteca fica mais compacta ao deslocar.
-• Melhorámos a compatibilidade de scripts de utilizador, incluindo dependências externas através de @require.
-• Corrigimos casos de áudio em vídeos silenciados ou reprodução duplicada em algumas páginas.
-• Melhorámos a navegação para trás e o restauro de páginas para apresentar o conteúdo pronto mais cedo.
-• A barra de progresso do carregamento ficou mais visível com o azul do tema da aplicação.
+• Novo leitor predefinido para vídeos locais e BT, com seleção de episódios, velocidade de 0,5–4× e leitor do sistema para formatos compatíveis.
+• Controlos de ecrã inteiro com ocultação automática, pressão prolongada para 2× temporário e gestos de brilho à esquerda e volume à direita.
+• Corrigidos vídeos HEVC/MKV que reproduziam apenas áudio e indicadores de carregamento que permaneciam visíveis.
+• Melhor compatibilidade de janelas emergentes e filtros de anúncios para evitar bloqueios incorretos e camadas residuais sobre os vídeos.
+• Corrigidos conflitos entre deslizar para apagar e mudar de separador, alinhamento das pastas nas duas vistas e altura das pesquisas recentes ao manter premido.

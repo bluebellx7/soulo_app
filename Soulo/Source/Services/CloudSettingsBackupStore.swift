@@ -56,6 +56,12 @@ final class CloudSettingsBackupStore {
         return values
     }
 
+    func delete(_ backup: CloudSettingsBackup) throws {
+        let file = url(for: backup)
+        guard fileManager.fileExists(atPath: file.path) else { return }
+        try fileManager.removeItem(at: file)
+    }
+
     private func url(for backup: CloudSettingsBackup) -> URL {
         directory.appendingPathComponent("\(backup.id.uuidString).json")
     }

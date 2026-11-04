@@ -19,6 +19,8 @@ final class MediaPictureInPicture: NSObject, ObservableObject, @preconcurrency A
     private var attachment: UUID?
     private var attachmentIsPrimary = false
     private var starting = false
+    private var requested = false
+    private var startTimeout: Task<Void, Never>?
     private var restoration: ((Bool) -> Void)?
     private var restorationTimeout: Task<Void, Never>?
 
@@ -46,6 +48,7 @@ final class MediaPictureInPicture: NSObject, ObservableObject, @preconcurrency A
                 Task { @MainActor in
                     guard let self, self.controller === pip else { return }
                     self.possible = possible
+                    self.startIfReady()
                 }
             }
         }
@@ -55,6 +58,7 @@ final class MediaPictureInPicture: NSObject, ObservableObject, @preconcurrency A
     func didMount() {
         guard surface?.window != nil else { return }
         finishRestoration(true)
+        startIfReady()
     }
 
     func detach(id: UUID) {
@@ -69,12 +73,35 @@ final class MediaPictureInPicture: NSObject, ObservableObject, @preconcurrency A
         if controller.isPictureInPictureActive {
             controller.stopPictureInPicture()
         } else if controller.isPictureInPicturePossible {
-            MediaSession.shared.play()
-            controller.startPictureInPicture()
+            requestStart()
         }
     }
 
+    /// Decoder handoffs can precede the new AVPlayerLayer by a frame. Retain the
+    /// user's request until that actual layer is mounted and ready for PiP.
+    func requestStart() {
+        guard supported, !active, !starting else { return }
+        requested = true
+        startTimeout?.cancel()
+        startTimeout = Task { @MainActor [weak self] in
+            do { try await Task.sleep(for: .seconds(10)) } catch { return }
+            guard let self, self.requested else { return }
+            self.requested = false
+            MediaSession.shared.error = ToolText.text("media_pip_unavailable")
+        }
+        startIfReady()
+    }
+    private func startIfReady() {
+        guard requested, !active, !starting, surface?.window != nil,
+              let controller, controller.isPictureInPicturePossible else { return }
+        requested = false; starting = true
+        startTimeout?.cancel(); startTimeout = nil
+        MediaSession.shared.play()
+        controller.startPictureInPicture()
+    }
+
     func stop() {
+        requested = false; startTimeout?.cancel(); startTimeout = nil
         controller?.stopPictureInPicture()
         starting = false
         active = false
@@ -93,11 +120,11 @@ final class MediaPictureInPicture: NSObject, ObservableObject, @preconcurrency A
 
     func pictureInPictureControllerWillStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         starting = true
-        active = true
     }
 
     func pictureInPictureControllerDidStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         starting = false
+        active = true
     }
 
     func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController,

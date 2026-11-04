@@ -1,1 +1,1 @@
-Pobieranie BT i magnet z wyborem plików i wznawianiem. Odtwarzaj obsługiwane media podczas pobierania, otwieraj MKV i importuj ed2k/thunder.
+Lokalne filmy i BT w Soulo: odcinki, szybkość 0,5–4× i odtwarzacz systemowy dla zgodnych formatów.

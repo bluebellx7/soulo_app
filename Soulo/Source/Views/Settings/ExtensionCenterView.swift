@@ -27,6 +27,7 @@ struct ExtensionCenterView: View {
     @State private var scriptPendingDeletion: UserScriptRecord?
     @State private var extensionActionRevision = 0
     @State private var nativePreview: WebExtensionInstallPreview?
+    @State private var showScriptUpdates = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -49,6 +50,16 @@ struct ExtensionCenterView: View {
         }
         .navigationTitle(LanguageManager.shared.localizedString("userscripts"))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                if selectedTab == .installed {
+                    Button { showScriptUpdates = true } label: { Image(systemName: "arrow.triangle.2.circlepath") }
+                        .accessibilityLabel(ToolText.text("userscript_check_updates"))
+                        .accessibilityIdentifier("userscripts.updates")
+                }
+            }
+        }
+        .navigationDestination(isPresented: $showScriptUpdates) { UserScriptUpdatesView() }
         .fileImporter(
             isPresented: $importWebExtension,
             allowedContentTypes: webExtensionContentTypes,
@@ -945,6 +956,18 @@ struct UserScriptEditorView: View {
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
         Form {
+            if let scriptID, !isBuiltIn {
+                Section {
+                    NavigationLink(ToolText.text("userscript_check_updates")) {
+                        UserScriptUpdatesView(onlyID: scriptID) { record in
+                            name = record.name; source = record.source
+                            patternsText = record.matchPatterns.joined(separator: "\n")
+                            injectionTime = record.injectionTime
+                        }
+                    }
+                    .disabled(hasUnsavedChanges)
+                }
+            }
             if isBuiltIn {
                 Section {
                     LabeledContent(LanguageManager.shared.localizedString("userscript_name"), value: name)
@@ -1107,6 +1130,12 @@ struct UserScriptEditorView: View {
             try? await Task.sleep(for: .seconds(1.5))
             sourceCopied = false
         }
+    }
+
+    private var hasUnsavedChanges: Bool {
+        guard let scriptID, let record = BrowserExtensionService.shared.userScript(id: scriptID) else { return true }
+        return source != record.source || name != record.name
+            || patternsText != record.matchPatterns.joined(separator: "\n") || injectionTime != record.injectionTime
     }
 
     private func save() {

@@ -41,7 +41,8 @@ struct HomeToolbarSettingsView: View {
                     LazyVGrid(columns: ToolbarActionPickerLayout.columns, spacing: 10) {
                         ForEach(actions) { action in
                             Button { draft[slot] = action; HapticsManager.selection() } label: {
-                                ToolbarActionChoiceLabel(symbol: action.listSymbol, title: action.title, isSelected: draft[slot] == action)
+                                ToolbarActionChoiceLabel(symbol: action.listSymbol, title: action.title, isSelected: draft[slot] == action,
+                                    tabCount: action == .tabs ? 2 : nil)
                             }.buttonStyle(.plain).accessibilityIdentifier("home-toolbar.action.\(action.rawValue)")
                                 .accessibilityAddTraits(draft[slot] == action ? .isSelected : [])
                         }
@@ -79,11 +80,14 @@ struct HomeToolbarButtonFace: View {
     var showsTitle = false
     var isActive = false
     var isLoading = false
+    var tabCount = 2
     var body: some View {
         VStack(spacing: 6) {
             Group {
                 if isLoading {
                     ProgressView()
+                } else if action == .tabs {
+                    TabCountSymbol(count: tabCount)
                 } else {
                     Image(systemName: action == .none ? "\(placeholder ?? 1).circle" : action == .privateBrowsing && isActive ? "eye.slash.fill" : action.symbol)
                 }

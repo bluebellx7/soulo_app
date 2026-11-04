@@ -1,10 +1,7 @@
-1.2.7
+1.2.8
 
-• BT preuzimanja: uvezite .torrent datoteke ili magnet poveznice, odaberite datoteke, pauzirajte i nastavite. U sustavu iOS 26 preuzimanja mogu raditi u pozadini kada sustav dopusti; starije verzije spremaju napredak i pauziraju.
-• Reproducirajte podržane BT medije tijekom preuzimanja i otvorite MKV datoteke. Uvezite ed2k/thunder poveznice. Preuzimanje traži dostupne izvore; reprodukcija ovisi o kodecima.
-• Optimizacija pretraživanja Baidu uključena je prema zadanim postavkama. Skriptu možete pregledati ili isključiti u Proširenjima.
-• Odaberite pet neobaveznih prečaca na početnoj stranici za preuzimanja, datoteke, oznake, povijest, pozadine i druge stranice. Traka kartica biblioteke smanjuje se tijekom pomicanja.
-• Poboljšana kompatibilnost korisničkih skripti, uključujući vanjske ovisnosti putem @require.
-• Ispravljeni slučajevi zvuka nakon utišavanja videa ili dvostruke reprodukcije na nekim stranicama.
-• Poboljšani povratak i obnova stranica kako bi se spreman sadržaj prikazao ranije.
-• Traka napretka učitavanja vidljivija je u plavoj boji teme aplikacije.
+• Novi zadani reproduktor lokalnih i BT videozapisa s odabirom epizoda, brzinom 0,5–4× i sistemskim reproduktorom za kompatibilne formate.
+• Kontrole cijelog zaslona automatski se skrivaju; držite za privremenih 2×, kliznite lijevo za svjetlinu ili desno za glasnoću.
+• Ispravljena reprodukcija samo zvuka nekih HEVC/MKV videozapisa i trajni prikaz učitavanja.
+• Poboljšana kompatibilnost skočnih prozora i filtriranja oglasa radi sprječavanja pogrešnih blokiranja i zaostalih slojeva preko videa.
+• Ispravljeni sukobi brisanja klizanjem i promjene kartice, poravnanje mapa u oba prikaza te promjena visine nedavnih pretraga pri držanju.

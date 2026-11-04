@@ -1,10 +1,7 @@
-1.2.7
+1.2.8
 
-• BT-hämtningar: Importera .torrent-filer eller magnetlänkar, välj filer, pausa och återuppta. På iOS 26 kan hämtningar fortsätta i bakgrunden när systemet tillåter det; äldre versioner sparar förloppet och pausar.
-• Spela upp BT-medier som stöds under nedladdning och öppna MKV-filer. Importera ed2k/thunder-länkar. Nedladdningar kräver tillgängliga källor; uppspelning beror på kodekar.
-• Baidu-sökoptimering är aktiverad som standard. Visa skriptet eller stäng av det under Tillägg.
-• Välj fem valfria genvägar på startsidan till hämtningar, filer, bokmärken, historik, bakgrunder och andra sidor. Bibliotekets flikrad blir kompakt när du rullar.
-• Förbättrad kompatibilitet med användarskript, inklusive externa beroenden via @require.
-• Åtgärdat fall med ljud efter att videor tystats eller dubbel uppspelning på vissa webbsidor.
-• Förbättrad bakåtnavigering och återställning av sidor så att färdigt innehåll visas tidigare.
-• Förloppsindikatorn för inläsning är tydligare i appens blå temafärg.
+• Ny standardspelare för lokala videor och BT-videor med avsnittsval, 0,5–4× hastighet och systemspelare för kompatibla format.
+• Helskärmskontroller döljs automatiskt. Håll för tillfällig 2× hastighet och svep på vänster sida för ljusstyrka eller höger sida för volym.
+• Åtgärdat vissa HEVC/MKV-videor med ljud utan bild och laddningsindikatorer som blev kvar under uppspelning.
+• Bättre kompatibilitet mellan popupfönster och annonsfilter förhindrar felaktig blockering och kvarvarande lager över videon.
+• Åtgärdat konflikt mellan svep för radering och flikbyte, justerat mappar i båda vyerna och stabiliserat höjden på senaste sökningar vid långt tryck.

@@ -53,6 +53,11 @@ import WebKit
             searchURLTemplate: "data:text/html;base64,\(Data(html.utf8).base64EncodedString())#%@",
             homeURL: "https://example.com", region: .international, isBuiltIn: false,
             isVisible: true, sortOrder: 999, usageCount: 0, isCustom: true)
+        // A selectable engine must be registered in the same store as the UI.
+        // Otherwise performSearch correctly replaces this orphan fixture.
+        let store = PlatformDataStore.shared, savedPlatforms = PlatformDataStore.shared.platforms
+        store.platforms.append(platform)
+        defer { store.platforms = savedPlatforms }
         let search = SearchViewModel()
         search.selectedRegion = .international
         search.selectedPlatform = platform
@@ -126,6 +131,11 @@ import WebKit
         let platform = SearchPlatform(id: UUID(), name: "Selection fixture", iconName: "globe",
             searchURLTemplate: template, homeURL: "https://example.com", region: .international,
             isBuiltIn: false, isVisible: true, sortOrder: 999, usageCount: 0, isCustom: true)
+        // A selectable engine must be registered in the same store as the UI.
+        // Otherwise performSearch correctly replaces this orphan fixture.
+        let store = PlatformDataStore.shared, savedPlatforms = PlatformDataStore.shared.platforms
+        store.platforms.append(platform)
+        defer { store.platforms = savedPlatforms }
         let search = SearchViewModel()
         search.selectedRegion = .international
         search.selectedPlatform = platform
@@ -156,8 +166,10 @@ import WebKit
             .environmentObject(ThemeManager.shared)
             .environmentObject(WallpaperManager.shared).modelContainer(container))
         window.makeKeyAndVisible()
-        for _ in 0..<120 {
-            if !tab.webViewModel.isLoading, tab.webViewModel.webView != nil { break }
+        for _ in 0..<600 {
+            if tab.webViewModel.isWebViewRuntimeInstalled,
+               let web = tab.webViewModel.webView, !web.isLoading,
+               (try? await web.evaluateJavaScript("document.getElementById('result')?.textContent || ''")) as? String == search.currentKeyword { break }
             try await Task.sleep(for: .milliseconds(50))
         }
         XCTAssertEqual(search.selectedPlatform?.id, platform.id, "Appearing results must preserve the selection search's platform")

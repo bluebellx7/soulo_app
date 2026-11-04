@@ -84,6 +84,7 @@ struct PrivacyNavigationService {
             return nil
         }
         guard !WebCompatibilityService.shouldBypassWebProtection(for: url, fallbackHost: url.host),
+              !WebCompatibilityService.isSensitiveChallengeURL(url),
               !PrivacyProtectionService.isProtectionDisabled(url.host, userDefaults: userDefaults) else {
             return nil
         }

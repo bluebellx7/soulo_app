@@ -1,10 +1,7 @@
-1.2.7
+1.2.8
 
-• BT downloads: import .torrent files or magnet links, choose files, pause and resume. On iOS 26, downloads can continue in the background while the system permits; earlier versions pause and save progress.
-• Play supported BT media while downloading and open MKV files. Import ed2k/thunder links. Downloads need available sources; playback depends on codecs.
-• Baidu search optimization is enabled by default. View its script or turn it off in Extensions.
-• Choose up to five optional home shortcuts to open Downloads, Files, Bookmarks, History, Wallpaper and other pages. The Library tab bar becomes compact as you scroll.
-• Improved userscript compatibility, including external dependencies through @require.
-• Fixed cases where muted web videos still produced audio or playback was duplicated.
-• Improved back navigation and page restoration so ready content appears sooner.
-• Made the loading progress bar more visible with the app's theme blue.
+• New default player for local and BT videos, with episode selection, 0.5–4× speed and a system player option for compatible formats.
+• Improved fullscreen controls: auto-hide, hold for temporary 2× speed, and swipe to adjust brightness on the left or volume on the right.
+• Fixed audio-only playback in some HEVC/MKV videos and loading indicators that stayed visible during playback.
+• Improved web popup and ad filtering compatibility to prevent incorrectly blocked windows and leftover video overlays.
+• Fixed conflicts between Library swipe-to-delete and tab switching, aligned folders in both file views, and kept recent search items steady when held.

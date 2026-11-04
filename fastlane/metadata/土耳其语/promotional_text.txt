@@ -1,1 +1,1 @@
-Dosya seçimi ve sürdürme ile BT ve magnet indirmeleri. Desteklenen medyayı indirirken oynatın, MKV açın ve ed2k/thunder bağlantılarını içe aktarın.
+Yerel ve BT videolarında Soulo: bölüm seçimi, 0,5–4× hız ve uyumlu biçimler için sistem oynatıcısı.

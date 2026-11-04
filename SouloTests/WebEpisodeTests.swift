@@ -27,6 +27,25 @@ final class WebEpisodeTests: XCTestCase {
         throw ReadingToolError.invalid
     }
 
+    func testDisablingEpisodeDockStopsAutomaticScansButKeepsManualSelection() async throws {
+        let (web, capture) = try await page("<ul class='episode-list'><li><a href='/player/68351-1-1.html'>EP1</a></li><li><a href='/player/68351-1-2.html'>EP2</a></li></ul>")
+        _ = try await web.evaluateJavaScript("window.__souloEpisodes.configure({dockEnabled:false,watchChanges:false});null", in: nil, contentWorld: WebEpisodeRuntime.world)
+        try await Task.sleep(for: .milliseconds(100))
+        let hidden = try await web.evaluateJavaScript("!document.getElementById('soulo-episode-dock')")
+        XCTAssertEqual(hidden as? Bool, true)
+        let count = capture.bodies.count
+        _ = try await web.evaluateJavaScript("document.querySelector('ul').insertAdjacentHTML('beforeend',`<li><a href='/player/68351-1-3.html'>EP3</a></li>`);null")
+        try await Task.sleep(for: .milliseconds(450))
+        XCTAssertEqual(capture.bodies.count, count)
+        _ = try await web.evaluateJavaScript("window.__souloEpisodes.refresh();null", in: nil, contentWorld: WebEpisodeRuntime.world)
+        try await Task.sleep(for: .milliseconds(100))
+        let list = try XCTUnwrap(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last), pageURL: try XCTUnwrap(web.url)))
+        XCTAssertEqual(list.currentSource?.episodes.count, 3)
+        _ = try await web.evaluateJavaScript("window.__souloEpisodes.configure({dockEnabled:true,watchChanges:true});null", in: nil, contentWorld: WebEpisodeRuntime.world)
+        let visible = try await web.evaluateJavaScript("!!document.getElementById('soulo-episode-dock')")
+        XCTAssertEqual(visible as? Bool, true)
+    }
+
     func testMacCMSPlaylistsKeepSourcesAndRealEpisodeURLs() async throws {
         // Same structure and line lengths as pbpbw's detail page. Episode
         // numbers need not equal the URL's index (specials can shift it).

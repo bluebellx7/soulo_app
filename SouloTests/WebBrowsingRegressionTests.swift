@@ -7,6 +7,202 @@ import Combine
 
 /// Real HTTP navigation through the production representable and its delegates.
 @MainActor final class WebBrowsingRegressionTests: XCTestCase {
+    private final class ZoomChromeState: ObservableObject { @Published var hidden = false }
+    private struct ZoomPage: View {
+        @ObservedObject var chrome: ZoomChromeState
+        let model: WebViewModel
+        var body: some View {
+            WebViewContainer(webViewModel: model, bookmarkViewModel: BookmarkViewModel(),
+                isFullscreen: .constant(false), toolbarManuallyHiddenBinding: $chrome.hidden)
+                .environmentObject(SearchViewModel())
+        }
+    }
+    func testLiveNestedPlayerResolvesItsActualMediaSource() async throws {
+        guard let raw = ProcessInfo.processInfo.environment["SOULO_LIVE_PLAYER_QA_URL"], let page = URL(string: raw) else { throw XCTSkip("Opt-in page handoff audit") }
+        let model = WebViewModel(), (window, previous) = try host(model)
+        defer { close(model, window, previous); MediaSession.shared.stop() }
+        model.loadURL(page)
+        var resolved: WebMediaResource?
+        for attempt in 0..<240 {
+            if let web = model.webView {
+                for frame in model.mediaFrameInfos {
+                    guard let tokens = try? await web.evaluateJavaScript("Array.from(document.querySelectorAll('video')).map(v=>v.getAttribute('data-soulo-media-id')).filter(Boolean)", in: frame, contentWorld: .page) as? [String] else { continue }
+                    for token in tokens {
+                        if let resource = await WebResourceInspectionService.currentVideoResource(webView: web, frame: frame, token: token), resource.delivery == .hls {
+                            resolved = resource; break
+                        }
+                    }
+                    if resolved != nil { break }
+                }
+            }
+            if resolved != nil { break }
+            if attempt % 60 == 0 { print("LIVE_PLAYER_WAIT|frames=\(model.mediaFrameInfos.count)|url=\(model.webView?.url?.host ?? "")|error=\(model.errorMessage ?? "")") }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        let resource = try XCTUnwrap(resolved, "The live iframe must expose a media URL, rather than its player HTML")
+        print("LIVE_PLAYER_SOURCE|url=\(resource.url.absoluteString)|frame=\(resource.sourcePageURL?.host ?? "")")
+        XCTAssertFalse(["html", "htm"].contains(resource.url.pathExtension.lowercased()))
+        XCTAssertEqual(resource.url.host, "xgct-video.bzcdn.net")
+    }
+
+    func testLiveNovelZoomFeedback() async throws {
+        guard ProcessInfo.processInfo.environment["SOULO_LIVE_NOVEL_ZOOM_QA"] == "1" else {
+            throw XCTSkip("Opt-in live website audit")
+        }
+        let filtersOff = ProcessInfo.processInfo.environment["SOULO_LIVE_NOVEL_FILTERS_OFF"] == "1"
+        let savedAd = UserDefaults.standard.object(forKey: "ad_block_enabled")
+        let privacy = PrivacyProtectionService.shared
+        let wasDisabled = privacy.isProtectionDisabled(for: "vip261112.com")
+        if filtersOff {
+            UserDefaults.standard.set(false, forKey: "ad_block_enabled")
+            privacy.setProtectionEnabled(false, for: "vip261112.com")
+        }
+        defer {
+            if filtersOff {
+                UserDefaults.standard.set(savedAd, forKey: "ad_block_enabled")
+                privacy.setProtectionEnabled(!wasDisabled, for: "vip261112.com")
+            }
+        }
+        let model = WebViewModel(), chrome = ZoomChromeState(); chrome.hidden = true
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.windows.first(where: \.isKeyWindow), window = UIWindow(windowScene: scene)
+        window.rootViewController = UIHostingController(rootView: ZoomPage(chrome: chrome, model: model))
+        window.makeKeyAndVisible(); defer { close(model, window, previous) }
+        model.loadURL(URL(string: "https://www.vip261112.com/novel/chapter?id=1229574755309457408")!)
+        var ready = false
+        for _ in 0..<200 {
+            if let web = model.webView,
+               (try? await web.evaluateJavaScript("!window._cf_chl_opt && document.body?.innerText.length > 500")) as? Bool == true {
+                ready = true; break
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        let web = try XCTUnwrap(model.webView)
+        let userAgent = try? await web.evaluateJavaScript("navigator.userAgent")
+        print("NOVEL_COMPARISON|Soulo|filtersOff=\(filtersOff)|title=\(web.title ?? "")|UA=\(String(describing: userAgent))")
+        guard ready else { throw XCTSkip("Live novel not accessible: \(web.title ?? model.errorMessage ?? "loading")") }
+        for zoom in [1.0, 1.5, 0.8] {
+            model.setPageZoom(zoom); try await Task.sleep(for: .milliseconds(400))
+            _ = try await web.evaluateJavaScript("window.scrollTo(0,500);null")
+            let metrics = try await web.evaluateJavaScript("({h:innerHeight,v:visualViewport.height,s:visualViewport.scale,html:document.documentElement.getBoundingClientRect().height,body:document.body.getBoundingClientRect().height})")
+            print("LIVE_NOVEL_ZOOM|\(zoom)|\(web.bounds)|\(metrics)")
+            let attachment = XCTAttachment(image: try await web.takeSnapshot(configuration: nil))
+            attachment.name = "Live novel zoom \(zoom)"; attachment.lifetime = .keepAlways; add(attachment)
+        }
+    }
+
+    func testLiveNovelWithUnmodifiedWebKit() async throws {
+        guard ProcessInfo.processInfo.environment["SOULO_LIVE_NOVEL_ZOOM_QA"] == "1" else { throw XCTSkip("Opt-in live website audit") }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.windows.first(where: \.isKeyWindow), window = UIWindow(windowScene: scene)
+        let controller = UIViewController(), web = WKWebView()
+        window.rootViewController = controller; window.makeKeyAndVisible()
+        web.frame = controller.view.bounds; web.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        controller.view.addSubview(web)
+        defer { web.stopLoading(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        web.load(URLRequest(url: URL(string: "https://www.vip261112.com/novel/chapter?id=1229574755309457408")!))
+        var ready = false
+        for _ in 0..<200 {
+            if (try? await web.evaluateJavaScript("!window._cf_chl_opt && document.body?.innerText.length > 500")) as? Bool == true {
+                ready = true; break
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        let userAgent = try? await web.evaluateJavaScript("navigator.userAgent")
+        print("NOVEL_COMPARISON|UnmodifiedWebKit|title=\(web.title ?? "")|UA=\(String(describing: userAgent))")
+        guard ready else { throw XCTSkip("Unmodified WebKit did not reach the novel: \(web.title ?? "loading")") }
+        let shot = XCTAttachment(image: try await web.takeSnapshot(configuration: nil))
+        shot.name = "Novel in unmodified WebKit"; shot.lifetime = .keepAlways; add(shot)
+    }
+    func testZoomedFixedReaderFillsTheViewport() async throws {
+        let html = """
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+        <style>#reader{position:fixed;inset:0;background:#f4ecd8}#scroll{position:absolute;inset:0;overflow:auto}p{padding:12px}footer{position:absolute;bottom:0;left:0;right:0;height:8px;background:#08b76a}</style>
+        <div id="reader"><div id="scroll">\((0..<100).map { "<p>Chapter line \($0)</p>" }.joined())</div><footer></footer></div>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: ["/reader": Data(html.utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let model = WebViewModel(), (window, previous) = try host(model)
+        defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("reader"))
+        try await wait(model, for: "!!document.getElementById('reader')")
+        let web = try XCTUnwrap(model.webView)
+        for zoom in [0.9, 0.5, 1.2, 2.0, 1.0] {
+            model.setPageZoom(zoom)
+            try await Task.sleep(for: .milliseconds(250))
+            XCTAssertEqual(web.pageZoom, 1, "Fixed text readers use reflow zoom instead of scaling a stale viewport")
+            let image = try await web.takeSnapshot(configuration: nil)
+            let cg = try XCTUnwrap(image.cgImage)
+            let sample = try XCTUnwrap(cg.cropping(to: CGRect(x: cg.width / 2, y: cg.height - 3, width: 1, height: 1)))
+            var rgba = [UInt8](repeating: 0, count: 4)
+            rgba.withUnsafeMutableBytes { bytes in
+                let context = CGContext(data: bytes.baseAddress, width: 1, height: 1, bitsPerComponent: 8,
+                    bytesPerRow: 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+                context.draw(sample, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+            }
+            XCTAssertLessThan(rgba[0], 30, "The reader footer must reach the actual bottom pixels at \(zoom)")
+            XCTAssertGreaterThan(rgba[1], 150)
+            let attachment = XCTAttachment(image: image); attachment.name = "Fixed reader zoom \(zoom)"
+            attachment.lifetime = .keepAlways; add(attachment)
+        }
+        let restored = try await web.evaluateJavaScript("document.documentElement.style.zoom === '' && typeof window.__souloPageZoomWidthState === 'undefined'")
+        XCTAssertEqual(restored as? Bool, true)
+    }
+
+    func testZoomedPageKeepsItsBottomViewportAndHiddenToolbarClearance() async throws {
+        guard #available(iOS 26.0, *) else { throw XCTSkip("Requires native viewport insets") }
+        let defaults = UserDefaults.standard
+        let keys = [AppConstants.StorageKeys.keepPageAboveToolbar]
+        let saved = keys.map { defaults.object(forKey: $0) }
+        defaults.set(true, forKey: keys[0])
+        defer { for (key, value) in zip(keys, saved) { defaults.set(value, forKey: key) } }
+        let html = """
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>html{background:#f8f6f1}body{margin:0;min-height:6000px;background:repeating-linear-gradient(#c9e5cf 0px,#c9e5cf 30px,#9bc9aa 30px,#9bc9aa 60px);font:18px sans-serif}p{margin:0;padding:12px}</style>
+        \((0..<100).map { "<p>Chapter line \($0) 页面缩放检查</p>" }.joined())
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: ["/chapter": Data(html.utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let model = WebViewModel()
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.windows.first(where: \.isKeyWindow), window = UIWindow(windowScene: scene)
+        let chrome = ZoomChromeState()
+        window.rootViewController = UIHostingController(rootView: ZoomPage(chrome: chrome, model: model))
+        window.makeKeyAndVisible(); defer { close(model, window, previous) }
+        model.loadURL(root.appendingPathComponent("chapter"))
+        try await wait(model, for: "document.querySelectorAll('p').length === 100")
+        let web = try XCTUnwrap(model.webView)
+        for zoom in [1.0, 1.5, 0.8, 2.0, 1.0] {
+            model.setPageZoom(zoom)
+            try await Task.sleep(for: .milliseconds(220))
+            web.scrollView.setContentOffset(CGPoint(x: 0, y: 300), animated: false)
+            let rawMetrics = try await web.evaluateJavaScript("({v:visualViewport.height,s:visualViewport.scale})")
+            let metrics = try XCTUnwrap(rawMetrics as? [String: Double])
+            XCTAssertEqual(try XCTUnwrap(metrics["v"]) * (metrics["s"] ?? 1) * zoom,
+                web.bounds.height - web.obscuredContentInsets.bottom, accuracy: 1.5,
+                "Percent zoom must fill the available viewport without leaving a scaled chrome gap")
+            if zoom == 1.5 {
+                let attachment = XCTAttachment(image: try await web.takeSnapshot(configuration: nil))
+                attachment.name = "Zoomed chapter native viewport"; attachment.lifetime = .keepAlways; add(attachment)
+            }
+        }
+        chrome.hidden = true
+        try await Task.sleep(for: .milliseconds(300))
+        XCTAssertEqual(web.obscuredContentInsets.bottom, 0, "Hiding chrome must remove its reserved viewport space")
+        model.setPageZoom(1.5)
+        try await Task.sleep(for: .milliseconds(200))
+        for factor in [1.5, 0.8, 1.0] {
+            web.scrollView.setZoomScale(max(web.scrollView.minimumZoomScale, factor), animated: false)
+            try await Task.sleep(for: .milliseconds(200))
+            let rawValue = try await web.evaluateJavaScript("({v:visualViewport.height,s:visualViewport.scale})")
+            let value = try XCTUnwrap(rawValue as? [String: Double])
+            XCTAssertEqual(try XCTUnwrap(value["v"]) * (value["s"] ?? 1) * Double(web.pageZoom),
+                web.bounds.height, accuracy: 1.5, "Pinching with hidden chrome must fill the entire viewport")
+            let attachment = XCTAttachment(image: try await web.takeSnapshot(configuration: nil))
+            attachment.name = "Hidden toolbar pinch \(factor)"; attachment.lifetime = .keepAlways; add(attachment)
+        }
+    }
+
     func testMagnetButtonUsesTrustedActivationAndBlocksUnsolicitedScriptLaunch() async throws {
         let uri = "magnet:?xt=urn:btih:45008e48c8800b7d7643337b2e70a634e4c69f6a"
         let html = "<button id='get-magnet' onclick=\"location.href='\(uri)'\">Download</button>"
@@ -422,6 +618,14 @@ import Combine
     }
 
     func testRepeatedAutomaticRequestsKeepOneConfirmationAndContinueLatestRequest() async throws {
+        try await verifyRepeatedAutomaticRequests(allowed: true)
+    }
+
+    func testRepeatedAutomaticRequestsCanBeCancelledWithoutLeavingTheSourcePage() async throws {
+        try await verifyRepeatedAutomaticRequests(allowed: false)
+    }
+
+    private func verifyRepeatedAutomaticRequests(allowed: Bool) async throws {
         let defaults = UserDefaults.standard
         let keys = [BrowserDomainNavigationPolicy.preferenceKey, BrowserDomainNavigationPolicy.allowlistKey]
         let old = keys.map { defaults.object(forKey:$0) }
@@ -433,7 +637,7 @@ import Combine
         <h1 id="origin">Automatic retry source</h1><script>
         window.startBurst=()=>{
           let attempts=0;
-          const target=location.origin.replace('127.0.0.1','localhost')+'/chosen.html';
+          const target='__SOULO_DESTINATION__';
           const timer=setInterval(()=>{location.href=target;if(++attempts===6)clearInterval(timer)},80);
         };
         </script>
@@ -442,9 +646,14 @@ import Combine
         let root=try await server.start();defer { server.stop() }
         let model=WebViewModel(),(window,previous)=try host(model)
         defer { close(model,window,previous) }
-        model.loadURL(root.appendingPathComponent("origin.html"))
+        // Keep the two HTTP origins distinct without depending on the Mac's
+        // PAC/DNS configuration for a second loopback address.
+        for _ in 0..<100 where model.webView == nil { try await Task.sleep(for: .milliseconds(20)) }
+        let source = URL(string: "http://soulo-source.invalid/origin.html")!
+        model.webView?.loadHTMLString(html.replacingOccurrences(of: "__SOULO_DESTINATION__", with: root.appendingPathComponent("chosen.html").absoluteString), baseURL: source)
         try await wait(model,for:"!!document.getElementById('origin')")
         let web=try XCTUnwrap(model.webView)
+        XCTAssertEqual(web.url, source)
         var prompts:[UUID]=[]
         let observation=model.$domainNavigationConfirmation.compactMap { $0?.id }.sink { prompts.append($0) }
         defer { observation.cancel() }
@@ -454,10 +663,11 @@ import Combine
         try await Task.sleep(for:.milliseconds(700))
         XCTAssertEqual(prompts,[confirmation.id],"Repeated requests must not dismiss and recreate the same prompt")
         XCTAssertNil(model.errorMessage,"Blocked retries must not turn the source page into a load failure")
-        model.resolveDomainNavigationConfirmation(id:confirmation.id,allowed:true)
-        try await wait(model,for:"!!document.getElementById('chosen')")
+        model.resolveDomainNavigationConfirmation(id:confirmation.id,allowed:allowed)
+        try await wait(model,for: allowed ? "!!document.getElementById('chosen')" : "!!document.getElementById('origin')")
+        XCTAssertNil(model.errorMessage)
         XCTAssertNil(model.domainNavigationConfirmation)
-        XCTAssertEqual(prompts,[confirmation.id],"One Continue must complete the latest request")
+        XCTAssertEqual(prompts,[confirmation.id],"The pending prompt must resolve once")
     }
 
     func testConfirmedPostKeepsConsentThroughServerRedirects() async throws {
@@ -469,7 +679,9 @@ import Combine
         defaults.set([],forKey:BrowserDomainNavigationPolicy.allowlistKey)
         defaults.set(false,forKey:"ad_block_enabled")
         let html="<form id='f' method='post'><input name='payload' value='once'></form><script>f.action=location.origin.replace('127.0.0.1','localhost')+'/submit';</script>"
-        let server=try DownloadPlaybackHTTPFixture(files:["/origin.html":Data(html.utf8),"/chosen.html":Data("<h1 id='chosen'>Confirmed redirect destination</h1>".utf8)],redirects:["/submit":(host:"127.0.0.2",path:"/chosen.html")])
+        // Keep three reachable hosts: IPv4 loopback, localhost, IPv6 loopback.
+        // An unconfigured 127.0.0.2 alias times out on this Mac.
+        let server=try DownloadPlaybackHTTPFixture(files:["/origin.html":Data(html.utf8),"/chosen.html":Data("<h1 id='chosen'>Confirmed redirect destination</h1>".utf8)],redirects:["/submit":(host:"[::1]",path:"/chosen.html")])
         let root=try await server.start();defer { server.stop() }
         let model=WebViewModel(),(window,previous)=try host(model)
         defer { close(model,window,previous) }
@@ -481,13 +693,46 @@ import Combine
         let confirmation=try XCTUnwrap(model.domainNavigationConfirmation)
         XCTAssertEqual(confirmation.originalRequest?.httpMethod,"POST")
         model.resolveDomainNavigationConfirmation(id:confirmation.id,allowed:true)
-        for _ in 0..<200 {
+        // Consent must survive the actual redirect, including a cold proxy/DNS
+        // lookup; four seconds can expire before WebKit receives the response.
+        for _ in 0..<1200 {
             if model.domainNavigationConfirmation != nil { break }
             if (try? await web.evaluateJavaScript("!!document.getElementById('chosen')")) as? Bool == true { break }
             try await Task.sleep(for:.milliseconds(20))
         }
         XCTAssertNil(model.domainNavigationConfirmation,"The approved navigation's HTTP redirects must not ask again")
-        XCTAssertEqual(web.url?.host,"127.0.0.2")
+        XCTAssertEqual(web.url?.host,"::1")
+        let rendered = try await web.evaluateJavaScript("!!document.getElementById('chosen')") as? Bool
+        XCTAssertEqual(rendered, true, "The redirect destination must render, not just update the address")
+    }
+
+    func testPlainWebKitFormRedirectRendersWithTheHTTPFixture() async throws {
+        let html = "<form id='f' method='post'><input name='payload' value='once'></form><script>f.action=location.origin.replace('127.0.0.1','localhost')+'/submit';</script>"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/origin.html": Data(html.utf8),
+            "/chosen.html": Data("<h1 id='chosen'>Native redirect destination</h1>".utf8)],
+            redirects: ["/submit": (host: "[::1]", path: "/chosen.html")])
+        let root = try await server.start(); defer { server.stop() }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
+        let controller = UIViewController(), configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .nonPersistent()
+        configuration.websiteDataStore.proxyConfigurations = []
+        let web = WKWebView(frame: .zero, configuration: configuration)
+        window.rootViewController = controller; window.makeKeyAndVisible()
+        web.frame = controller.view.bounds; controller.view.addSubview(web)
+        defer { web.stopLoading(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        web.load(URLRequest(url: root.appendingPathComponent("origin.html")))
+        for _ in 0..<1200 {
+            if (try? await web.evaluateJavaScript("!!document.getElementById('f')")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        _ = try await web.evaluateJavaScript("f.submit()")
+        for _ in 0..<1200 {
+            if (try? await web.evaluateJavaScript("!!document.getElementById('chosen')")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let rendered = try await web.evaluateJavaScript("!!document.getElementById('chosen')") as? Bool
+        XCTAssertEqual(rendered, true, "The native WebKit control must render with the same fixture")
     }
 
     func testPrivacyHandlingPreservesAccountSidebarAndRejectsActualCookieBanner() async throws {
@@ -1105,7 +1350,9 @@ import Combine
         try await wait(model, for: "document.body && document.body.getBoundingClientRect().height > 0")
         try await Task.sleep(for: .milliseconds(300))
         XCTAssertTrue(model.isLoading)
-        XCTAssertFalse(model.hasVisibleContent, "Layout alone must not dismiss loading feedback before WebKit renders")
+        XCTAssertFalse(model.hasVisibleContent, "Layout alone must not claim a first paint before WebKit renders")
+        XCTAssertTrue(model.hasPresentedContent, "The first response must reveal WebKit without waiting for a blocked parser or the load event")
+        XCTAssertNil(model.webView?.layer.mask, "App loading feedback must not obscure the committed document")
     }
 
     func testReturningToTabSynchronizesLoadFinishedWhileUnmounted() async throws {

@@ -1,10 +1,7 @@
-1.2.7
+1.2.8
 
-• Unduhan BT: impor file .torrent atau tautan magnet, pilih file, jeda dan lanjutkan. Di iOS 26, unduhan dapat berlanjut di latar belakang jika sistem mengizinkan; versi sebelumnya menyimpan progres dan menjeda.
-• Putar media BT yang didukung saat diunduh dan buka file MKV. Impor tautan ed2k/thunder. Unduhan memerlukan sumber yang tersedia; pemutaran bergantung pada codec.
-• Optimasi pencarian Baidu aktif secara default. Lihat skrip atau nonaktifkan di Ekstensi.
-• Pilih lima pintasan opsional di beranda untuk unduhan, file, penanda, riwayat, wallpaper, dan halaman lainnya. Bilah tab pustaka menjadi ringkas saat digulir.
-• Peningkatan kompatibilitas skrip pengguna, termasuk dependensi eksternal melalui @require.
-• Memperbaiki suara yang tetap terdengar saat video dibisukan atau pemutaran ganda di beberapa halaman web.
-• Meningkatkan navigasi kembali dan pemulihan halaman agar konten siap tampil lebih cepat.
-• Bilah progres pemuatan lebih jelas dengan warna biru tema aplikasi.
+• Pemutar default baru untuk video lokal dan BT dengan pilihan episode, kecepatan 0,5–4×, serta pemutar sistem untuk format yang kompatibel.
+• Kontrol layar penuh tersembunyi otomatis. Tahan untuk 2× sementara; geser sisi kiri untuk kecerahan dan kanan untuk volume.
+• Memperbaiki video HEVC/MKV tertentu yang hanya bersuara tanpa gambar dan indikator memuat yang terus muncul saat diputar.
+• Meningkatkan kompatibilitas pop-up dan filter iklan agar jendela tidak salah diblokir dan lapisan sisa tidak menghalangi video.
+• Memperbaiki konflik geser untuk menghapus dan berpindah tab, meratakan folder di kedua tampilan, serta menjaga tinggi pencarian terbaru saat ditekan lama.

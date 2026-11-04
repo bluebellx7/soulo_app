@@ -5,6 +5,7 @@ enum WebVideoHoldSpeedRuntime {
     (() => {
       if (window.__souloVideoHoldSpeed) return;
       let pending = null, active = null, released = null;
+      let holdRate = 2;
       const nativeRate = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'playbackRate');
       const rate = video => nativeRate.get.call(video);
       const setRate = (video, value) => { try { nativeRate.set.call(video, value); } catch (_) {} };
@@ -57,13 +58,13 @@ enum WebVideoHoldSpeedRuntime {
         if (event.touches && event.touches.length !== 1) { end(); return; }
         if (pending || active) return;
         const point = event.touches?.[0] || event, video = videoAt(event, point);
-        if (!video || rate(video) >= 2) return;
+        if (!video || rate(video) >= holdRate) return;
         const press = {video, target:event.composedPath?.()[0] || event.target, x:point.clientX, y:point.clientY, pointer:event.pointerId};
         pending = press;
         press.timer = setTimeout(() => {
           if (pending !== press || !video.isConnected || video.paused || video.ended) { end(); return; }
           const oldRate = rate(video);
-          if (oldRate >= 2) { end(); return; }
+          if (oldRate >= holdRate) { end(); return; }
           // HTML fullscreen is above the native browser chrome; keep a local
           // fallback there. Inline and embedded players use the native toast.
           let badge = null;
@@ -74,7 +75,7 @@ enum WebVideoHoldSpeedRuntime {
           }
           const token = globalThis.crypto?.randomUUID?.() || Date.now().toString(36)+Math.random().toString(36);
           active = {video, target:press.target, rate:oldRate, badge, token};
-          setRate(video, 2);
+          setRate(video, holdRate);
           refresh();
           if (active) active.heartbeat = setInterval(refresh, 750);
         }, 450);
@@ -110,7 +111,10 @@ enum WebVideoHoldSpeedRuntime {
       document.addEventListener('ratechange',event => { if (event.target === active?.video) refresh(); },true);
       new MutationObserver(() => { if (active && !active.video.isConnected) end(); })
         .observe(document.documentElement,{childList:true,subtree:true});
-      window.__souloVideoHoldSpeed = {end};
+      window.__souloVideoHoldSpeed = {end, setRate(value) {
+        if (!Number.isFinite(value) || value < 1.25 || value > 4 || value === holdRate) return;
+        end(); holdRate = value;
+      }};
     })();
     """#
 }

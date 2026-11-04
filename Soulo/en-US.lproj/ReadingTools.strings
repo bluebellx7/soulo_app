@@ -464,3 +464,42 @@
 "home_toolbar_browser_tools" = "Browser Toolbar";
 "home_toolbar_home_tools" = "Home Toolbar";
 "soulo_website" = "Soulo Website";
+
+"file_folder" = "Folder";
+"media_player" = "Player";
+"media_player_system" = "System";
+
+"media_airplay_mirroring_hint" = "This format cannot be sent directly with the system player. Open Control Center, choose Screen Mirroring, then select your TV or Mac.";
+
+"userscript_check_updates" = "Check Updates";
+"userscript_update_no_url" = "No update address is provided. Import a newer script file to update it.";
+"userscript_update_manual_hint" = "Checks run only when requested. Review the new version before updating. Built-in scripts update with the app.";
+"userscript_update_latest" = "Up to date";
+"userscript_update_invalid" = "The update is invalid, belongs to a different script, or has an inconsistent version.";
+"userscript_update_changed" = "This script changed after the check. Check for updates again.";
+
+"media_options" = "Playback Options";
+"media_audio_tracks" = "Audio Tracks";
+"media_subtitles" = "Subtitles";
+"media_track_off" = "Off";
+
+/* Video preferences */
+"video_settings" = "Video";
+"video_show_tools" = "Show video tools";
+"video_show_tools_desc" = "Show tools on web videos for playback speed, downloads and fullscreen.";
+"video_default_player" = "Default player";
+"video_default_player_desc" = "Used for videos in downloads, files and web resources. You can switch players during playback.";
+"video_hold_speed" = "Hold speed";
+"video_hold_speed_desc" = "Hold the playing video to speed up temporarily. Release to restore the original speed. Available rates depend on the media format.";
+"video_soulo_player_desc" = "The default mode supports more audio and video formats, with shared controls for web media, downloads and files. Picture in Picture and AirPlay use system decoding and require a system-supported format.";
+"video_system_player_desc" = "Uses Apple’s system decoder, including Picture in Picture and AirPlay. Format support depends on iOS. In both modes, swipe vertically on the left to adjust brightness and on the right to adjust volume.";
+"settings_backup_delete_message" = "Delete this backup? Your current settings will stay as they are.";
+"media_pip_unavailable" = "Picture in Picture is not ready. Wait for the media to load, then try again.";
+"feedback_telegram" = "Telegram feedback group";
+"feedback_telegram_desc" = "Join the group to share issues and suggestions.";
+"settings_backup_intro" = "Save a copy of your settings on this device to restore later. Backups do not include browsing history, sign-in data or downloaded files.";
+"settings_backup_manage_hint" = "Restoring first saves your current settings and turns off iCloud settings sync. Swipe left or touch and hold a backup to delete it. Deleting a backup does not change your current settings.";
+"files_move" = "Move";
+"files_move_busy" = "Wait for downloads to finish before moving or renaming these items.";
+"video_show_episode_dock" = "Show episode dock";
+"video_show_episode_dock_desc" = "Show a docked episode button on web pages with episodes. Episodes remain available inside the player.";

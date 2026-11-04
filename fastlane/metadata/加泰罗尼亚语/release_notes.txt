@@ -1,10 +1,7 @@
-1.2.7
+1.2.8
 
-• Descàrregues BT: importa fitxers .torrent o enllaços magnet, tria fitxers, posa en pausa i reprèn. A iOS 26 poden continuar en segon pla si el sistema ho permet; les versions anteriors desen el progrés i les pausen.
-• Reprodueix contingut BT compatible mentre es baixa i obre fitxers MKV. Importa enllaços ed2k/thunder. Les baixades necessiten fonts disponibles; la reproducció depèn dels còdecs.
-• L’optimització de Baidu està activada per defecte. Consulta el script o desactiva’l a Extensions.
-• Configura cinc dreceres opcionals a l’inici per obrir descàrregues, fitxers, adreces d’interès, historial, fons i altres pàgines. La barra de pestanyes de la biblioteca es compacta en desplaçar-te.
-• Millorada la compatibilitat amb scripts d'usuari i dependències externes amb @require.
-• Corregits casos de so en vídeos silenciats o reproducció duplicada en algunes pàgines.
-• Millorada la navegació enrere i la restauració de pàgines per mostrar abans el contingut disponible.
-• Barra de progrés de càrrega més visible amb el blau del tema de l'app.
+• Nou reproductor predeterminat per a vídeos locals i BT, amb episodis, velocitat de 0,5–4× i opció del sistema per a formats compatibles.
+• Controls de pantalla completa amb ocultació automàtica, pulsació llarga per a 2× temporal i gestos de brillantor a l’esquerra i volum a la dreta.
+• Corregida la reproducció només amb àudio d’alguns vídeos HEVC/MKV i els indicadors de càrrega persistents.
+• Millor compatibilitat de finestres emergents i filtratge d’anuncis per evitar bloquejos incorrectes i capes que tapaven els vídeos.
+• Corregits els conflictes entre eliminar lliscant i canviar de pestanya, l’alineació de carpetes i l’alçada de les cerques recents en mantenir-les premudes.

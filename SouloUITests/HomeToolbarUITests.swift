@@ -2,6 +2,107 @@ import XCTest
 
 @MainActor
 final class HomeToolbarUITests: XCTestCase {
+    func testHiddenToolbarLockOpensTheSharedSitePanel() async throws {
+        continueAfterFailure = false
+        let server = try DownloadPlaybackHTTPFixture(files: ["/page": Data("<meta name='viewport' content='width=device-width,initial-scale=1'><h1>Site panel fixture</h1>".utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-browser_toolbar_hidden", "YES", "-keep_fullscreen_browsing", "NO", "-privacy_https_upgrade_enabled", "NO"]
+        app.launch(); defer { app.terminate() }
+        var route = URLComponents(); route.scheme = "soulo"; route.host = "open"
+        route.queryItems = [URLQueryItem(name: "url", value: root.appendingPathComponent("page").absoluteString)]
+        app.open(try XCTUnwrap(route.url))
+        XCTAssertTrue(app.webViews.staticTexts["Site panel fixture"].waitForExistence(timeout: 10))
+        app.buttons["More"].firstMatch.tap()
+        let lock = app.buttons["browser.hiddenSiteInformation"]
+        XCTAssertTrue(lock.waitForExistence(timeout: 5), app.debugDescription)
+        lock.tap()
+        XCTAssertTrue(app.buttons["site.connection"].waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.buttons["site.user-agent"].exists)
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        shot.name = "Shared site information from the hidden toolbar lock"; shot.lifetime = .keepAlways; add(shot)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).tap()
+        XCTAssertTrue(app.buttons["site.user-agent"].waitForNonExistence(timeout: 3))
+    }
+
+    func testVideoSettingsAndTelegramFeedbackEntry() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "zh-Hans", "-appearance", "light", "-wallpaper_source", "gradient", "-icloud_sync_enabled", "NO", "-video.holdSpeed", "2"]
+        app.launch(); app.open(URL(string: "soulo://")!)
+        defer { app.terminate() }
+        XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 10))
+        app.buttons["home.menu"].tap(); app.buttons["设置"].firstMatch.tap()
+        XCTAssertTrue(app.switches["settings.keepScreenAwake"].waitForExistence(timeout: 5))
+        func capture(_ name: String) {
+            let image = XCTAttachment(screenshot: app.screenshot())
+            image.name = name; image.lifetime = .keepAlways; add(image)
+        }
+        capture("Settings appearance and home icon columns")
+        let video = app.buttons["settings.video"]
+        reveal(video, in: app); video.tap()
+        let holdSpeed = app.descendants(matching: .any)["video-settings.hold-speed"].firstMatch
+        XCTAssertTrue(app.switches["video-settings.episode-dock"].waitForExistence(timeout: 5))
+        XCTAssertTrue(holdSpeed.waitForExistence(timeout: 5))
+        XCTAssertTrue(holdSpeed.label.contains("2") || (holdSpeed.value as? String)?.contains("2") == true, app.debugDescription)
+        XCTAssertTrue(app.staticTexts["Soulo"].firstMatch.exists)
+        capture("Video settings hold speed and decoder explanations")
+        app.navigationBars.buttons.firstMatch.tap()
+        let backups = app.buttons["settings.backups"]
+        reveal(backups, in: app); backups.tap()
+        let save = app.buttons["settings.backups.save"]
+        XCTAssertTrue(app.staticTexts["将当前设置备份到此设备，方便以后恢复。备份不包含浏览记录、登录状态和下载文件。"].exists)
+        XCTAssertTrue(save.waitForExistence(timeout: 5)); save.tap()
+        let copy = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "settings.backups.restore.")).firstMatch
+        XCTAssertTrue(copy.waitForExistence(timeout: 5))
+        let identifier = copy.identifier
+        copy.swipeLeft()
+        app.buttons["删除"].firstMatch.tap()
+        XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 3))
+        app.alerts.buttons["删除"].tap()
+        XCTAssertTrue(app.buttons[identifier].waitForNonExistence(timeout: 3))
+        app.navigationBars.buttons.firstMatch.tap()
+        let feedback = app.buttons["settings.feedback"]
+        reveal(feedback, in: app)
+        capture("Settings other and support icon columns")
+        feedback.tap()
+        let telegram = app.descendants(matching: .any)["feedback.telegram"].firstMatch
+        XCTAssertTrue(telegram.waitForExistence(timeout: 5))
+        XCTAssertTrue(telegram.isHittable)
+        XCTAssertTrue(app.staticTexts["加入群组，交流问题与建议。"].exists)
+        capture("Feedback Telegram group entry")
+        app.navigationBars["用户反馈"].buttons["取消"].tap()
+        let version = app.buttons["settings.version"]
+        reveal(version, in: app); version.tap()
+        let versionTelegram = app.descendants(matching: .any)["version.telegram"].firstMatch
+        XCTAssertTrue(versionTelegram.waitForExistence(timeout: 5))
+        XCTAssertTrue(versionTelegram.isHittable)
+        capture("Version Telegram group entry and aligned icons")
+    }
+
+    func testOverviewPlusReturnsHomeAndKeepsTheExistingTabCount() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: ["/page": Data("<h1>Keep this tab</h1>".utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO"]
+        app.launch()
+        var route = URLComponents(); route.scheme = "soulo"; route.host = "open"
+        route.queryItems = [URLQueryItem(name: "url", value: root.appendingPathComponent("page").absoluteString)]
+        app.open(try XCTUnwrap(route.url))
+        let tabs = app.buttons["browser.tabs"]
+        XCTAssertTrue(tabs.waitForExistence(timeout: 15), app.debugDescription)
+        let countLabel = tabs.label
+        tabs.tap()
+        let home = app.buttons["tabs.browser_home"]
+        XCTAssertTrue(home.waitForExistence(timeout: 5))
+        home.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        let dismissed = NSPredicate { _, _ in !app.otherElements["tabs.dock"].exists }
+        await fulfillment(of: [XCTNSPredicateExpectation(predicate: dismissed, object: nil)], timeout: 5)
+        XCTAssertTrue(app.buttons["home.menu"].isHittable, app.debugDescription)
+        let homeTabs = app.descendants(matching: .any)["home.tabs"].firstMatch
+        XCTAssertEqual(homeTabs.value as? String, countLabel.split(separator: " ").first.map(String.init), app.debugDescription)
+    }
+
     private func openSettings(_ app: XCUIApplication) {
         app.buttons["home.menu"].tap()
         app.buttons["Settings"].firstMatch.tap()

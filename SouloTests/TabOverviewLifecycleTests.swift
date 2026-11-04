@@ -94,7 +94,7 @@ import Vision
             manager.tabs.forEach { $0.webViewModel.releaseSnapshotMemory() }
             LanguageManager.shared.currentLanguage = code
             window.rootViewController = UIHostingController(rootView: TabSwitcherOverlay(
-                tabManager: manager, onSelectTab: { _ in }, onNewTab: {}, onDismiss: {})
+                tabManager: manager, onSelectTab: { _ in }, onGoHome: {}, onDismiss: {})
                 .background(Color(red: 0.12, green: 0.13, blue: 0.16).ignoresSafeArea())
                 .environment(\.colorScheme, .dark)
                 .environment(\.layoutDirection, code == "ar-SA" ? .rightToLeft : .leftToRight)

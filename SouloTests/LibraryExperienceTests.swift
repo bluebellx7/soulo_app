@@ -5,6 +5,41 @@ import CoreImage
 @testable import Soulo
 
 final class LibraryExperienceTests: XCTestCase {
+    func testMoveAndFolderRenamePreserveContentsAndRejectUnsafeDestinations() throws {
+        let manager = FileManager.default, root = manager.temporaryDirectory.appendingPathComponent("Relocate-\(UUID())")
+        let source = root.appendingPathComponent("Music.2026"), target = root.appendingPathComponent("Target")
+        try manager.createDirectory(at: source, withIntermediateDirectories: true)
+        try manager.createDirectory(at: target, withIntermediateDirectories: true)
+        defer { try? manager.removeItem(at: root) }
+        let song = source.appendingPathComponent("Song.mp3"), data = Data("Original audio bytes".utf8)
+        try data.write(to: song)
+        let renamed = try LibraryFileActions.rename(source, baseName: "Renamed.music", in: root)
+        XCTAssertEqual(renamed.lastPathComponent, "Renamed.music")
+        XCTAssertEqual(try Data(contentsOf: renamed.appendingPathComponent("Song.mp3")), data)
+        let nested = renamed.appendingPathComponent("Nested")
+        try manager.createDirectory(at: nested, withIntermediateDirectories: true)
+        XCTAssertThrowsError(try LibraryFileActions.move([renamed], from: root, to: nested, root: root))
+        let moved = try LibraryFileActions.move([renamed], from: root, to: target, root: root)
+        XCTAssertEqual(moved.map(\.lastPathComponent), ["Renamed.music"])
+        XCTAssertEqual(try Data(contentsOf: moved[0].appendingPathComponent("Song.mp3")), data)
+        XCTAssertEqual(LibraryFileActions.relocated(song, from: source, to: moved[0])?.lastPathComponent, "Song.mp3")
+        let duplicate = root.appendingPathComponent("Song.mp3"), original = moved[0].appendingPathComponent("Song.mp3")
+        try Data("Keep destination".utf8).write(to: target.appendingPathComponent("Song.mp3"))
+        try data.write(to: duplicate)
+        XCTAssertThrowsError(try LibraryFileActions.move([duplicate], from: root, to: target, root: root))
+        XCTAssertEqual(try Data(contentsOf: duplicate), data)
+        XCTAssertEqual(try Data(contentsOf: original), data)
+        let link = root.appendingPathComponent("linked.mp3")
+        try manager.createSymbolicLink(at: link, withDestinationURL: original)
+        XCTAssertThrowsError(try LibraryFileActions.move([link], from: root, to: target, root: root))
+        let package = root.appendingPathComponent("Offline.hls")
+        try manager.createDirectory(at: package, withIntermediateDirectories: true)
+        try Data("#EXTM3U".utf8).write(to: package.appendingPathComponent("index.m3u8"))
+        let renamedPackage = try LibraryFileActions.rename(package, baseName: "Episode", in: root)
+        XCTAssertEqual(renamedPackage.lastPathComponent, "Episode.hls")
+        XCTAssertEqual(try LocalHLSMedia.playlistURL(for: renamedPackage).lastPathComponent, "index.m3u8")
+    }
+
     func testScannedURLsAndLocalTextStaySeparate() {
         for value in ["https://example.com/a?b=1", "http://localhost:8080", "example.com/path", "example.com?a=1", "192.168.1.1:8080", "https://example.com/image.jpg", "https://example.com/book.pdf"] {
             XCTAssertNotNil(ScannedContent(text: value).webURL, value)
@@ -68,6 +103,34 @@ final class LibraryExperienceTests: XCTestCase {
         XCTAssertThrowsError(try ExternalDocumentImporter.copyToLibrary(URL(string: "https://example.com/file.txt")!))
     }
 
+    func testOpeningMoviesIsRegisteredIncludingMatroska() throws {
+        let declarations = try XCTUnwrap(Bundle.main.object(forInfoDictionaryKey: "CFBundleDocumentTypes") as? [[String: Any]])
+        let types = declarations.flatMap { $0["LSItemContentTypes"] as? [String] ?? [] }
+        XCTAssertTrue(types.contains("public.movie"))
+        XCTAssertTrue(types.contains("org.matroska.mkv"))
+        let imported = try XCTUnwrap(Bundle.main.object(forInfoDictionaryKey: "UTImportedTypeDeclarations") as? [[String: Any]])
+        let matroska = try XCTUnwrap(imported.first { $0["UTTypeIdentifier"] as? String == "org.matroska.mkv" })
+        XCTAssertTrue((matroska["UTTypeConformsTo"] as? [String])?.contains("public.movie") == true)
+    }
+
+    func testExternalLargeVideoCanBeImportedWithoutChangingTheOriginal() throws {
+        let source = FileManager.default.temporaryDirectory.appendingPathComponent("External-\(UUID().uuidString).mkv")
+        let header = Data([0x1a, 0x45, 0xdf, 0xa3])
+        try header.write(to: source)
+        defer { try? FileManager.default.removeItem(at: source) }
+        let size: UInt64 = 1024 * 1024 * 1024 + 4096
+        let writer = try FileHandle(forWritingTo: source)
+        try writer.truncate(atOffset: size); try writer.close()
+        let imported = try ExternalDocumentImporter.copyToLibrary(source)
+        defer { try? FileManager.default.removeItem(at: imported) }
+        for file in [source, imported] {
+            XCTAssertEqual(try file.resourceValues(forKeys: [.fileSizeKey]).fileSize, Int(size))
+            let reader = try FileHandle(forReadingFrom: file)
+            XCTAssertEqual(try reader.read(upToCount: header.count), header)
+            try reader.close()
+        }
+    }
+
     @MainActor func testContinuousReaderCrossesChaptersAndBoundsLoadedDocuments() async throws {
         let chunks = (0..<12).map { "Chapter \($0)\n" + String(repeating: "Paragraph of original test prose, with a steady rhythm for continuous scrolling.\n", count: 50) }
         let controller = BookReaderController(book: LibraryBook(id: UUID().uuidString, name: "Continuous", fileName: "continuous.txt"))
@@ -84,8 +147,10 @@ final class LibraryExperienceTests: XCTestCase {
         XCTAssertGreaterThan(try XCTUnwrap(count), 1, "Neighboring chapters should already be ready")
         _ = try await web.evaluateJavaScript("""
         (() => {const r = document.querySelector('foliate-view').renderer;
-        const frame = r.getContents()[0].doc.defaultView.frameElement;
-        r.scrollBy(0, frame.parentElement.parentElement.offsetHeight + 100); return true;})()
+        const section = r.getContents()[0].doc.defaultView.frameElement.closest('.section');
+        // Neighbor measurement can adjust the offset after goTo. Cross the
+        // actual chapter boundary instead of assuming we are still at its top.
+        r.scrollBy(0, section.offsetTop + section.offsetHeight + 100 - section.parentElement.scrollTop); return true;})()
         """)
         try await waitJS(web, "document.querySelector('foliate-view').renderer.getContents()[0]?.index === 6")
         try await waitJS(web, "document.querySelector('foliate-view').lastLocation?.tocItem?.href === '6'")
@@ -129,11 +194,13 @@ final class LibraryExperienceTests: XCTestCase {
         return window
     }
     @MainActor private func wait(_ condition: () -> Bool) async throws {
-        for _ in 0..<200 {
+        // A cold WebKit process can take longer than five seconds to launch.
+        for _ in 0..<1200 {
             if condition() { return }
             try await Task.sleep(for: .milliseconds(25))
         }
         XCTFail("Timed out waiting for the reader")
+        throw URLError(.timedOut)
     }
     @MainActor private func waitJS(_ web: WKWebView, _ script: String) async throws {
         for _ in 0..<150 {

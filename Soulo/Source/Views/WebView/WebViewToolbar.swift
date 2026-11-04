@@ -158,6 +158,7 @@ struct WebViewToolbar: View {
     @State private var showMediaRateControls = false
     @State private var isChangingMediaRate = false
     @State private var showMoreMenu = false
+    @State private var showMoreSiteInformation = false
     @State private var menuAnchorGeneration = 0
     @State private var menuAnchorNeedsRefresh = false
     @State private var pendingMoreMenuAction: (() -> Void)?
@@ -265,38 +266,7 @@ struct WebViewToolbar: View {
                 attachmentAnchor: .rect(.bounds),
                 arrowEdge: .bottom
             ) {
-                SiteInformationPopoverView(
-                    webViewModel: viewModel,
-                    onSetDesktopMode: { enabled in
-                        if let tabManager { tabManager.setDesktopModeEnabled(enabled, reload: false) }
-                        else { viewModel.setDesktopModeEnabled(enabled) }
-                    },
-                    currentURL: viewModel.currentURL,
-                    isPrivateMode: isIncognito,
-                    onSetPrivateMode: { enabled in
-                        dismissSiteInformation { onSetPrivateMode?(enabled) }
-                    },
-                    onReload: {
-                        viewModel.retryCurrentPage()
-                    },
-                    onShowDetails: {
-                        dismissSiteInformation { onShowPrivacy?() }
-                    },
-                    onManageAdBlock: {
-                        dismissSiteInformation { onManageAdBlock?() }
-                    },
-                    onMarkAdvertisement: {
-                        dismissSiteInformation { viewModel.beginMarkingAdvertisement() }
-                    },
-                    onPrivacySettings: {
-                        dismissSiteInformation { onPrivacySettings?() }
-                    }
-                )
-                .onDisappear {
-                    guard let action = pendingSiteAction else { return }
-                    pendingSiteAction = nil
-                    DispatchQueue.main.async(execute: action)
-                }
+                siteInformationPanel
             }
 
             Rectangle()
@@ -465,9 +435,45 @@ struct WebViewToolbar: View {
         .fixedSize(horizontal: true, vertical: false)
     }
 
+    private var siteInformationPanel: some View {
+        SiteInformationPopoverView(
+            webViewModel: viewModel,
+            onSetDesktopMode: { enabled in
+                if let tabManager { tabManager.setDesktopModeEnabled(enabled, reload: false) }
+                else { viewModel.setDesktopModeEnabled(enabled) }
+            },
+            currentURL: viewModel.currentURL,
+            isPrivateMode: isIncognito,
+            onSetPrivateMode: { enabled in
+                dismissSiteInformation { onSetPrivateMode?(enabled) }
+            },
+            onReload: {
+                viewModel.retryCurrentPage()
+            },
+            onShowDetails: {
+                dismissSiteInformation { onShowPrivacy?() }
+            },
+            onManageAdBlock: {
+                dismissSiteInformation { onManageAdBlock?() }
+            },
+            onMarkAdvertisement: {
+                dismissSiteInformation { viewModel.beginMarkingAdvertisement() }
+            },
+            onPrivacySettings: {
+                dismissSiteInformation { onPrivacySettings?() }
+            }
+        )
+        .onDisappear {
+            guard let action = pendingSiteAction else { return }
+            pendingSiteAction = nil
+            DispatchQueue.main.async(execute: action)
+        }
+    }
+
     // MARK: - More Actions Menu
 
     private func dismissSiteInformation(then action: @escaping () -> Void) {
+        if showMoreSiteInformation { performMoreMenuAction(action); return }
         pendingSiteAction = action
         showSiteInformation = false
     }
@@ -530,7 +536,10 @@ struct WebViewToolbar: View {
             attachmentAnchor: .rect(.bounds),
             arrowEdge: .bottom
         ) {
-            moreMenuPanel
+            Group {
+                if showMoreSiteInformation { siteInformationPanel }
+                else { moreMenuPanel }
+            }
                 .background(MoreMenuDismissalObserver(onDismiss: completeMoreMenuAction))
                 .presentationCompactAdaptation(.popover)
                 .presentationBackground(.ultraThinMaterial)
@@ -679,54 +688,34 @@ struct WebViewToolbar: View {
     private var hiddenToolbarAddressRow: some View {
         let isSecurePage = viewModel.currentURL?.scheme == "https"
         let urlText = viewModel.currentURL?.absoluteString
-
-        return Button {
-            performMoreMenuAction {
-                onEditAddress?()
+        return HStack(spacing: 4) {
+            Button { HapticsManager.light(); showMoreSiteInformation = true } label: {
+                Image(systemName: isIncognito ? "eye.slash.fill" : isSecurePage ? "lock.fill" : "globe")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(isIncognito ? Color.teal : Color.primary.opacity(0.72))
+                    .frame(width: 44, height: 48).contentShape(Rectangle())
             }
-        } label: {
-            HStack(spacing: 10) {
-                Image(
-                    systemName: isIncognito
-                        ? "eye.slash.fill"
-                        : isSecurePage ? "lock.fill" : "globe"
-                )
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(isIncognito ? Color.teal : Color.primary.opacity(0.72))
-                .frame(width: 28, height: 28)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(fullAddressDisplayText)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-
-                    if let urlText, !urlText.isEmpty {
-                        Text(urlText)
-                            .font(.system(size: 10, weight: .regular))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    }
-                }
-
-                Spacer(minLength: 8)
-
-                Image(systemName: "pencil")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.secondary)
+            .disabled(viewModel.currentURL?.host == nil)
+            .accessibilityLabel(LanguageManager.shared.localizedString("site_information"))
+            .accessibilityIdentifier("browser.hiddenSiteInformation")
+            Button { performMoreMenuAction { onEditAddress?() } } label: {
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(fullAddressDisplayText).font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.primary).lineLimit(1).truncationMode(.middle)
+                        if let urlText, !urlText.isEmpty {
+                            Text(urlText).font(.system(size: 10)).foregroundStyle(.secondary)
+                                .lineLimit(1).truncationMode(.middle)
+                        }
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                    Image(systemName: "pencil").font(.system(size: 13, weight: .semibold)).foregroundStyle(.secondary)
+                }.padding(.trailing, 8).frame(maxWidth: .infinity, minHeight: 48).contentShape(Rectangle())
             }
-            .padding(.horizontal, 8)
-            .frame(maxWidth: .infinity, minHeight: 48)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(onEditAddress == nil)
-        .opacity(onEditAddress == nil ? 0.35 : 1)
-        .accessibilityLabel(LanguageManager.shared.localizedString("browser_edit_address"))
-        .accessibilityValue(urlText ?? fullAddressDisplayText)
-        .accessibilityHint(LanguageManager.shared.localizedString("accessibility_edit_address_hint"))
+            .disabled(onEditAddress == nil)
+            .accessibilityLabel(LanguageManager.shared.localizedString("browser_edit_address"))
+            .accessibilityValue(urlText ?? fullAddressDisplayText)
+            .accessibilityHint(LanguageManager.shared.localizedString("accessibility_edit_address_hint"))
+        }.buttonStyle(.plain)
     }
 
     private var pageToolsMenu: some View {
@@ -1019,7 +1008,7 @@ struct WebViewToolbar: View {
                 }
                 moreMenuShortcut(
                     "browser_tabs",
-                    systemImage: "square.on.square",
+                    systemImage: "square",
                     isEnabled: tabManager != nil
                 ) {
                     guard let tabManager else { return }
@@ -1204,6 +1193,7 @@ struct WebViewToolbar: View {
     }
 
     private func completeMoreMenuAction() {
+        showMoreSiteInformation = false
         guard let action = pendingMoreMenuAction else { return }
         pendingMoreMenuAction = nil
         DispatchQueue.main.async(execute: action)

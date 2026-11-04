@@ -81,12 +81,12 @@ final class LocalizationLayoutTests: XCTestCase {
                     Button(manager.localizedString("delete")) {}.buttonStyle(CompactActionButtonStyle())
                 }.padding(.horizontal, 16)
             }
-            .environment(\.dynamicTypeSize, .accessibility3)
             .environment(\.layoutDirection, code == "ar-SA" ? .rightToLeft : .leftToRight)
             .frame(width: 320)
-            let image = try await snapshot(view)
+            let image = try await snapshot(view.environment(\.dynamicTypeSize, .accessibility3))
+            let standard = try await snapshot(view.environment(\.dynamicTypeSize, .large))
             XCTAssertEqual(image.size.width, 320, accuracy: 0.5)
-            XCTAssertGreaterThan(image.size.height, 150)
+            XCTAssertGreaterThan(image.size.height, standard.size.height)
             let attachment = XCTAttachment(image: image)
             attachment.name = "accessibility-320-\(code)"
             attachment.lifetime = .keepAlways

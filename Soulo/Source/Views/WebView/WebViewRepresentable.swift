@@ -116,7 +116,9 @@ enum BrowserNavigationGesture {
           }
         }
         if (form) record(control?.hasAttribute('formaction') ? control.formAction : form.action);
-        window.webkit.messageHandlers.souloNavigationGesture.postMessage({destinations: destinations.slice(0, 16), link, form: !!form, control: !!control || !!form, event:event.type});
+        const target = (anchor?.getAttribute('target') || document.querySelector('base[target]')?.getAttribute('target') || '').toLowerCase();
+        const newTab = !!anchor && target === '_blank' && !(anchor.getAttribute('rel') || '').toLowerCase().split(/\\s+/).includes('opener') && !anchor.hasAttribute('download');
+        window.webkit.messageHandlers.souloNavigationGesture.postMessage({destinations: destinations.slice(0, 16), link, form: !!form, control: !!control || !!form, newTab, event:event.type});
       }
       window.addEventListener('pointerdown', interacted, {capture:true,passive:true});
       window.addEventListener('touchstart', interacted, {capture:true,passive:true});
@@ -126,62 +128,17 @@ enum BrowserNavigationGesture {
     """
 }
 
-enum BrowserPopupPolicy {
-    private static let authenticationHostSuffixes = [
-        "accounts.google.com",
-        "appleid.apple.com",
-        "login.microsoftonline.com",
-        "login.live.com",
-        "auth0.com",
-        "okta.com"
-    ]
-
-    private static let authenticationURLMarkers = [
-        "/oauth", "/authorize", "/authorization", "/auth/",
-        "/login", "/signin", "/sign-in", "/sso/"
-    ]
-
-    static func shouldPreserveJavaScriptContext(
-        navigationType: WKNavigationType,
-        url: URL
-    ) -> Bool {
-        if url.scheme?.lowercased() == "about" {
-            return true
-        }
-        guard navigationType == .other || navigationType == .linkActivated,
-              let host = url.host?.lowercased() else {
-            return false
-        }
-        if authenticationHostSuffixes.contains(where: {
-            host == $0 || host.hasSuffix(".\($0)")
-        }) {
-            return true
-        }
-        let normalizedURL = url.absoluteString.lowercased()
-        return authenticationURLMarkers.contains { normalizedURL.contains($0) }
-    }
-}
-
-enum BrowserWebLinkPolicy {
-    /// Only new-window GET requests need application routing. Reissuing a
-    /// main-frame request turns location.replace()/redirects into extra history
-    /// entries and leaves intermediate documents behind on native Back.
-    static func shouldLoadInBrowser(
-        url: URL, sourceURL: URL?, navigationType: WKNavigationType,
-        targetsMainFrame: Bool?, method: String, nativeRequest: Bool
-    ) -> Bool {
-        guard !nativeRequest, targetsMainFrame == nil, method.uppercased() == "GET",
-              ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
-              navigationType != .backForward, navigationType != .reload,
-              !BrowserPopupPolicy.shouldPreserveJavaScriptContext(navigationType: navigationType, url: url)
-        else { return false }
-        // Forms need the new window's opener and submission context.
-        return navigationType != .formSubmitted && navigationType != .formResubmitted
-    }
-}
-
 private enum EmbeddedBrowserPopupTag {
     static let container = 0x534F554C
+}
+
+enum BrowserDirectMediaPolicy {
+    static func audioResource(for response: URLResponse) -> WebMediaResource? {
+        guard let url = response.url, ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
+              let mime = response.mimeType?.lowercased(), mime.hasPrefix("audio/"), !mime.contains("mpegurl"),
+              (response as? HTTPURLResponse).map({ (200..<300).contains($0.statusCode) }) ?? true else { return nil }
+        return WebMediaResource(kind: .audio, url: url, title: url.lastPathComponent, posterURL: nil)
+    }
 }
 
 enum WebMediaCapturePermissionPolicy {
@@ -500,6 +457,10 @@ struct WebViewRepresentable: UIViewRepresentable {
     var obscuredBottomInset: CGFloat = 0
     @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = true
     @AppStorage("is_incognito") private var isIncognito: Bool = false
+    @AppStorage(VideoPlaybackPreferences.showsToolsKey) private var showsVideoTools = true
+    @AppStorage(VideoPlaybackPreferences.holdSpeedKey) private var videoHoldSpeed = 2.0
+    @AppStorage(VideoPlaybackPreferences.showsEpisodeDockKey) private var showsEpisodeDock = true
+    @AppStorage(VideoPlaybackPreferences.defaultPlayerKey) private var defaultVideoPlayer = "soulo"
     @AppStorage("privacy_gpc_enabled") private var gpcEnabled = PrivacyFeatureDefaults.gpcEnabled
     @AppStorage("privacy_cookie_banner_enabled")
     private var cookieBannerEnabled = PrivacyFeatureDefaults.cookieBannerHandling
@@ -661,6 +622,8 @@ struct WebViewRepresentable: UIViewRepresentable {
             source: WebVideoOrientationRuntime.script(), injectionTime: .atDocumentEnd,
             forMainFrameOnly: false, in: WebVideoOrientationRuntime.world
         ))
+        contentController.addUserScript(WKUserScript(source: WebVideoOrientationRuntime.fullscreenRequests,
+            injectionTime: .atDocumentStart, forMainFrameOnly: false, in: .page))
         contentController.addUserScript(WKUserScript(
             source: ManualAdBlockRuntime.configuredScript(enabled: adBlockEnabled,
                 allowlistedHosts: adBlockSettings.allowlistedHosts, rules: manualAdRules.rules),
@@ -765,7 +728,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         // Ad blocking: inject CSS/JS to hide ad elements.
         let protectionBypassHosts = AdBlockSettingsService.normalizedAllowlistedHosts(adBlockSettings.allowlistedHosts)
         let hostIsAllowlisted = adBlockSettings.isAllowlisted(viewModel.currentURL?.host)
-        viewModel.adHidingNeedsBootstrap = hostIsAllowlisted || WebCompatibilityService.isSensitiveChallengeURL(viewModel.currentURL)
+        viewModel.adHidingNeedsBootstrap = hostIsAllowlisted || WebCompatibilityService.isVerificationPageURL(viewModel.currentURL)
         let ruleSignature = Self.allowlistSignature(for: protectionBypassHosts)
         let nativeRules = Self.cachedAdBlockAllowlistSignature == ruleSignature ? Self.cachedAdBlockRules : nil
         let nativeFiltering = adBlockEnabled && !hostIsAllowlisted && nativeRules != nil
@@ -861,6 +824,9 @@ struct WebViewRepresentable: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
+        context.coordinator.synchronizeEpisodeDock(enabled: showsEpisodeDock, toolsEnabled: showsVideoTools, on: uiView)
+        context.coordinator.synchronizeVideoTools(enabled: showsVideoTools, on: uiView,
+            holdSpeed: videoHoldSpeed, prefersSoulo: defaultVideoPlayer != "system")
         context.coordinator.synchronizeSiteOptimizations(on: uiView)
         synchronizePageBackground(on: uiView)
         updateObscuredInsets(on: uiView)
@@ -1038,6 +1004,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         coordinator.removeImageLongPress()
         coordinator.cancelBackwardTraversal()
         coordinator.cancelUserScriptRequests()
+        coordinator.dismissNativeVideoSwitch()
         guard uiView.navigationDelegate === coordinator else { return }
         removeRuntimeMessageHandlers(from: uiView.configuration.userContentController)
         coordinator.dismissEmbeddedPopups(in: uiView)
@@ -1089,6 +1056,9 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         private weak var manualAdTapRecognizer: UITapGestureRecognizer?
         private let videoFullscreenOrientation = WebVideoFullscreenOrientation()
+        private var nativeVideoFullscreenToken: String?
+        private var unifiedVideoPlayerTask: Task<Void, Never>?
+        private weak var browserPresentationWindow: UIWindow?
         private let screenAwakeOwner = UUID()
         private var playingVideoFrames: [String: TimeInterval] = [:]
         private var videoAwakeTimer: Timer?
@@ -1099,6 +1069,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             Task { @MainActor in VideoScreenAwakeService.shared.setActive(false, owner: owner) }
         }
         private var navigationGesture: (webView: ObjectIdentifier, frameURL: URL, mainFrame: Bool, time: TimeInterval, destinations: [URL], isLink: Bool, isForm: Bool, isControl: Bool)?
+        private var newTabGesture: (webView: ObjectIdentifier, frameURL: URL, target: URL, time: TimeInterval)?
         private var provisionalNavigation: WKNavigation?
         private var latestNavigation: WKNavigation?
         private var navigationFinished = false
@@ -1113,6 +1084,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var navigationOriginURL: URL?
         private var userInitiatedNavigationChain = false
         private var domainConfirmationID: UUID?
+        private var domainConfirmationDecision: ((Bool) -> Void)?
         private var popupDomainDelegates: [ObjectIdentifier: WebDomainPopupDelegate] = [:]
         private var lastContentOffset: CGFloat = 0
         private var lastReportedScrollingUp: Bool?
@@ -1436,6 +1408,9 @@ struct WebViewRepresentable: UIViewRepresentable {
                 }
                 navigationGesture = (ObjectIdentifier(webView), url, message.frameInfo.isMainFrame, ProcessInfo.processInfo.systemUptime,
                     destinations, body["link"] as? Bool ?? false, body["form"] as? Bool ?? false, body["control"] as? Bool ?? false)
+                if body["newTab"] as? Bool == true, body["form"] as? Bool != true, let target = destinations.first {
+                    newTabGesture = (ObjectIdentifier(webView), url, target, ProcessInfo.processInfo.systemUptime)
+                } else { newTabGesture = nil }
                 BrowserStartupTrace.mark("navigation_gesture", detail: "event=\(body["event"] ?? "") source=\(url.host ?? "")\(url.path) main=\(webView === parent) landing=\(body["videoLanding"] as? String != nil) observed=\(body["videoObserved"] ?? "none") handoff=\(body["videoPlayback"] ?? "none")")
                 if body["event"] as? String == "click", url.host == "m.baidu.com", url.path == "/video/page" {
                     traceMedia(in: webView, stage: "control_click")
@@ -1493,6 +1468,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                 case "ready":
                     guard let webView = message.webView else { return }
                     viewModel.registerMediaFrame(message.frameInfo)
+                    synchronizeVideoTools(enabled: VideoPlaybackPreferences.showsTools(), on: webView, in: message.frameInfo)
                     let source = "window.__souloVideoOrientation?.setEpisodesAvailable(\(viewModel.episodeList != nil));"
                     webView.evaluateJavaScript(source, in: message.frameInfo, in: WebVideoOrientationRuntime.world, completionHandler: nil)
                     synchronizeVideoControlScale(on: webView, in: message.frameInfo)
@@ -1500,7 +1476,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                     guard message.frameInfo.isMainFrame, let webView = message.webView,
                           let scale = body["scale"] as? Double, scale.isFinite, scale > 0,
                           let zoom = body["zoom"] as? Double, zoom.isFinite,
-                          abs(zoom - Double(webView.pageZoom)) < 0.0001,
+                          abs(zoom - Double(viewModel.pageZoom)) < 0.0001,
                           let reported = body["url"] as? String,
                           var source = URLComponents(string: reported),
                           let current = webView.url,
@@ -1510,6 +1486,30 @@ struct WebViewRepresentable: UIViewRepresentable {
                     applyVideoControlScale(scale, zoom: zoom, on: webView)
                 case "episodes":
                     if let webView = message.webView { presentEpisodePicker(on: webView) }
+                case "settings":
+                    viewModel.showVideoSettings = true
+                case "fullscreenPlayer":
+                    guard let webView = message.webView else { return }
+                    presentUnifiedVideoPlayer(on: webView, frame: message.frameInfo, token: token,
+                                              inlineLandscape: body["landscape"] as? Bool ?? true,
+                                              systemPlayer: body["system"] as? Bool ?? VideoPlaybackPreferences.usesSystemPlayer())
+                case "nativeFullscreen":
+                    guard !token.isEmpty, let webView = message.webView else { return }
+                    if nativeVideoFullscreenToken == token, unifiedVideoPlayerTask != nil { return }
+                    nativeVideoFullscreenToken = token
+                    if let scene = webView.window?.windowScene {
+                        videoFullscreenOrientation.prepare(token: token, scene: scene,
+                            prefersLandscape: body["landscape"] as? Bool ?? true, nativeWebKit: true, sourceView: webView)
+                    }
+                    presentUnifiedVideoPlayer(on: webView, frame: message.frameInfo, token: token,
+                                              systemPlayer: VideoPlaybackPreferences.usesSystemPlayer())
+                case "nativePlayback":
+                    guard nativeVideoFullscreenToken == token, let playing = body["playing"] as? Bool else { return }
+                    _ = playing
+                case "nativeFullscreenEnd":
+                    guard nativeVideoFullscreenToken == token else { return }
+                    nativeVideoFullscreenToken = nil
+                    videoFullscreenOrientation.nativeFullscreenEnded()
                 case "speed":
                     guard let webView = message.webView, let host = topViewController(for: webView) else { return }
                     let currentRate = body["rate"] as? Double ?? 1
@@ -1532,49 +1532,16 @@ struct WebViewRepresentable: UIViewRepresentable {
                     host.present(menu, animated: true)
                 case "download":
                     guard let webView = message.webView else { return }
-                    let frame = message.frameInfo
-                    let source = (body["url"] as? String).flatMap(URL.init(string:))
-                    Task { @MainActor [self, webView] in
-                        let resource: WebMediaResource?
-                        if let current = await WebResourceInspectionService.currentVideoResource(
-                            webView: webView, frame: frame, token: token
-                        ) {
-                            resource = current
-                        } else if let source, ["http", "https"].contains(source.scheme?.lowercased() ?? "") {
-                            let delivery = WebResourceInspectionService.delivery(for: source)
-                            let frameURL = frame.requestURL
-                            let sourcePageURL = ["http", "https"].contains(frameURL?.scheme?.lowercased() ?? "")
-                                ? frameURL : webView.url
-                            resource = WebMediaResource(kind: .video, url: source, title: viewModel.pageTitle,
-                                posterURL: nil, delivery: delivery, sourcePageURL: sourcePageURL)
-                        } else {
-                            let snapshot = try? await WebResourceInspectionService.inspect(
-                                webView: webView, frames: viewModel.mediaFrameInfos
-                            )
-                            resource = snapshot?.videos.count == 1 ? snapshot?.videos.first : nil
-                        }
-                        guard let resource else {
-                            viewModel.showMediaDownloads = true
-                            return
-                        }
-                        let url = resource.url
-                        guard viewModel.beginMediaDownload(url: url, name: viewModel.pageTitle) else { return }
-                        do {
-                            let file = try await WebResourceDownloadService.shared.download(resource,
-                                pageURL: resource.sourcePageURL ?? frame.requestURL ?? webView.url, webView: webView)
-                            self.viewModel.finishMediaDownload(url: url)
-                            self.presentDownloadedFile(file, sourceURL: url)
-                        } catch {
-                            self.viewModel.finishMediaDownload(url: url)
-                            NotificationCenter.default.post(name: .browserDownloadFailed, object: self.viewModel)
-                        }
-                    }
+                    downloadVideo(on: webView, frame: message.frameInfo, token: token,
+                                  source: (body["url"] as? String).flatMap(URL.init(string:)))
                 case "prepare":
                     if let scene = message.webView?.window?.windowScene {
                         videoFullscreenOrientation.prepare(
                             token: token,
                             scene: scene,
-                            prefersLandscape: body["landscape"] as? Bool ?? true
+                            prefersLandscape: body["landscape"] as? Bool ?? true,
+                            nativeWebKit: body["native"] as? Bool ?? false,
+                            sourceView: message.webView
                         )
                     }
                 case "begin":
@@ -1582,7 +1549,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                         self?.viewModel.videoOrientationError = error.localizedDescription
                     }
                 case "end", "failed":
-                    videoFullscreenOrientation.end(token: token)
+                    if !videoFullscreenOrientation.handingOff || action == "failed" { videoFullscreenOrientation.end(token: token) }
                     if action == "failed" { viewModel.videoOrientationError = ToolText.text("media_fullscreen_unavailable") }
                 default: break
                 }
@@ -2342,7 +2309,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             let signature = WebViewRepresentable.adHidingConfigurationSignature(
                 enabled: enabled, cosmetic: cosmetic, allowlist: allowlist, nativeCosmeticFiltering: nativeFiltering
             )
-            let bypassesPage = WebCompatibilityService.isSensitiveChallengeURL(webView.url)
+            let bypassesPage = WebCompatibilityService.isVerificationPageURL(webView.url)
                 || AdBlockSettingsService.isHostAllowlisted(host, allowlistedHosts: allowlist)
             if bypassesPage { viewModel.adHidingNeedsBootstrap = true }
             guard signature != lastAdHidingSignature else {
@@ -2495,6 +2462,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
             guard isCurrentNavigation(navigation, in: webView) else { return }
+            browserPresentationWindow = webView.window
             if let url = webView.url { viewModel.recordNavigationRequest(url) }
             if cloudflareChallengeResponse {
                 webView.evaluateJavaScript("""
@@ -2507,6 +2475,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             viewModel.mediaSession.finishNavigation()
             latestNavigation = navigation
             BrowserStartupTrace.mark("navigation_commit")
+            viewModel.markDocumentCommitted()
             traceMedia(in: webView, stage: "commit")
             viewModel.errorMessage = nil
             provisionalNavigation = nil
@@ -2518,7 +2487,7 @@ struct WebViewRepresentable: UIViewRepresentable {
             navigationOriginURL = webView.url
             // A new document receives its own user scripts. The bootstrap flag
             // is needed only when a bypassed document is reused by an SPA.
-            viewModel.adHidingNeedsBootstrap = WebCompatibilityService.isSensitiveChallengeURL(webView.url)
+            viewModel.adHidingNeedsBootstrap = WebCompatibilityService.isVerificationPageURL(webView.url)
                 || AdBlockSettingsService.isHostAllowlisted(webView.url?.host)
                 || (!viewModel.nativeCosmeticDocumentReady
                     && WebViewRepresentable.installedContentRuleSignatures[ObjectIdentifier(webView)] != nil)
@@ -2543,6 +2512,8 @@ struct WebViewRepresentable: UIViewRepresentable {
             viewModel.mediaSession.finishNavigation()
             latestNavigation = navigation
             navigationFinished = true
+            synchronizeEpisodeDock(enabled: VideoPlaybackPreferences.showsEpisodeDock(),
+                toolsEnabled: VideoPlaybackPreferences.showsTools(), on: webView, force: true)
             viewModel.errorMessage = nil
             BrowserStartupTrace.mark("navigation_finish")
             webView.scrollView.refreshControl?.endRefreshing()
@@ -2620,9 +2591,123 @@ struct WebViewRepresentable: UIViewRepresentable {
             }
         }
 
+        private var lastVideoToolsEnabled: Bool?
+        private var lastVideoHoldSpeed: Double?
+        private var lastVideoPrefersSoulo: Bool?
+        func dismissNativeVideoSwitch() {
+            unifiedVideoPlayerTask?.cancel(); unifiedVideoPlayerTask = nil
+            nativeVideoFullscreenToken = nil
+        }
+
+        private func downloadVideo(on webView: WKWebView, frame: WKFrameInfo, token: String, source: URL? = nil,
+                                   presentWhenFinished: Bool = true) {
+            Task { @MainActor [self, webView] in
+                let resource: WebMediaResource?
+                if let current = await WebResourceInspectionService.currentVideoResource(
+                    webView: webView, frame: frame, token: token
+                ) {
+                    resource = current
+                } else if let source, ["http", "https"].contains(source.scheme?.lowercased() ?? "") {
+                    let delivery = WebResourceInspectionService.delivery(for: source)
+                    let frameURL = frame.requestURL
+                    let sourcePageURL = ["http", "https"].contains(frameURL?.scheme?.lowercased() ?? "")
+                        ? frameURL : webView.url
+                    resource = WebMediaResource(kind: .video, url: source, title: viewModel.pageTitle,
+                        posterURL: nil, delivery: delivery, sourcePageURL: sourcePageURL)
+                } else {
+                    let snapshot = try? await WebResourceInspectionService.inspect(
+                        webView: webView, frames: viewModel.mediaFrameInfos
+                    )
+                    resource = snapshot?.videos.count == 1 ? snapshot?.videos.first : nil
+                }
+                guard let resource else {
+                    viewModel.showMediaDownloads = true
+                    return
+                }
+                let url = resource.url
+                guard viewModel.beginMediaDownload(url: url, name: viewModel.pageTitle) else { return }
+                do {
+                    let file = try await WebResourceDownloadService.shared.download(resource,
+                        pageURL: resource.sourcePageURL ?? frame.requestURL ?? webView.url, webView: webView)
+                    self.viewModel.finishMediaDownload(url: url)
+                    if presentWhenFinished { self.presentDownloadedFile(file, sourceURL: url) }
+                } catch {
+                    self.viewModel.finishMediaDownload(url: url)
+                    NotificationCenter.default.post(name: .browserDownloadFailed, object: self.viewModel)
+                }
+            }
+        }
+
+        private func presentUnifiedVideoPlayer(on webView: WKWebView, frame: WKFrameInfo, token: String, inlineLandscape: Bool? = nil,
+                                               systemPlayer: Bool = false) {
+            guard unifiedVideoPlayerTask == nil else { return }
+            let generation = navigationGeneration
+            unifiedVideoPlayerTask = Task { @MainActor [weak self, weak webView] in
+                guard let self, let webView else { return }
+                defer { self.unifiedVideoPlayerTask = nil }
+                let resource = await WebResourceInspectionService.currentVideoResource(webView: webView, frame: frame, token: token)
+                guard self.navigationGeneration == generation, !Task.isCancelled else { return }
+                guard resource != nil else { self.viewModel.videoOrientationError = ToolText.text("media_unavailable"); return }
+                if inlineLandscape == nil { self.videoFullscreenOrientation.handOff() }
+                let state = try? await webView.callAsyncJavaScript("return window.__souloVideoOrientation?.exitForPlayer(token);",
+                    arguments: ["token": token], in: frame, contentWorld: WebVideoOrientationRuntime.world) as? [String: Double]
+                if let scene = webView.window?.windowScene {
+                    self.videoFullscreenOrientation.prepare(token: token, scene: scene, prefersLandscape: inlineLandscape ?? true, sourceView: webView)
+                }
+                self.videoFullscreenOrientation.handOff()
+                var settled = 0
+                for _ in 0..<80 {
+                    guard !Task.isCancelled, self.navigationGeneration == generation else { return }
+                    let host = self.topViewController(for: webView)
+                    if self.nativeVideoFullscreenToken != token, host?.transitionCoordinator == nil,
+                       host?.isBeingDismissed == false,
+                       self.browserPresentationWindow?.isKeyWindow != false,
+                       host?.viewIfLoaded.map({ webView.isDescendant(of: $0) }) == true {
+                        settled += 1
+                    } else { settled = 0 }
+                    if settled >= 2 { break }
+                    do { try await Task.sleep(for: .milliseconds(25)) } catch { return }
+                }
+                guard settled >= 2, let resource else {
+                    self.videoFullscreenOrientation.end()
+                    self.viewModel.videoOrientationError = ToolText.text("media_unavailable")
+                    return
+                }
+                self.videoFullscreenOrientation.rebaseSource(on: webView)
+                await self.videoFullscreenOrientation.prepareNativeLandscape(token: token)
+                guard !Task.isCancelled, self.navigationGeneration == generation else { return }
+                self.viewModel.webVideoPlayback = WebVideoPlaybackRequest(resource: resource, time: max(0, state?["time"] ?? 0),
+                    orientation: self.videoFullscreenOrientation, playing: state?["playing"] != 0,
+                    systemPlayer: systemPlayer)
+            }
+        }
+
+        private var lastEpisodeDockConfiguration: (Bool, Bool)?
+        func synchronizeEpisodeDock(enabled: Bool, toolsEnabled: Bool, on webView: WKWebView, force: Bool = false) {
+            guard webView === viewModel.webView else { return }
+            if !force, let last = lastEpisodeDockConfiguration, last.0 == enabled, last.1 == toolsEnabled { return }
+            lastEpisodeDockConfiguration = (enabled, toolsEnabled)
+            webView.evaluateJavaScript("window.__souloEpisodes?.configure({enabled:true,dockEnabled:\(enabled),watchChanges:\(enabled || toolsEnabled)});",
+                in: nil, in: WebEpisodeRuntime.world, completionHandler: nil)
+        }
+
+        func synchronizeVideoTools(enabled: Bool, on webView: WKWebView, in target: WKFrameInfo? = nil,
+                                   holdSpeed: Double? = nil, prefersSoulo: Bool? = nil) {
+            guard webView === viewModel.webView else { return }
+            let speed = VideoPlaybackPreferences.holdSpeeds.contains(holdSpeed ?? 0) ? holdSpeed! : VideoPlaybackPreferences.holdSpeed()
+            let soulo = prefersSoulo ?? !VideoPlaybackPreferences.usesSystemPlayer()
+            if target == nil, lastVideoToolsEnabled == enabled, lastVideoHoldSpeed == speed, lastVideoPrefersSoulo == soulo { return }
+            if target == nil { lastVideoToolsEnabled = enabled; lastVideoHoldSpeed = speed; lastVideoPrefersSoulo = soulo }
+            let frames: [WKFrameInfo?] = target.map { [Optional($0)] } ?? ([nil] + viewModel.mediaFrameInfos.map(Optional.init))
+            for frame in frames {
+                webView.evaluateJavaScript("window.__souloVideoHoldSpeed?.setRate(\(speed));window.__souloVideoOrientation?.setToolsEnabled(\(enabled));window.__souloVideoOrientation?.setPrefersSoulo(\(soulo));",
+                    in: frame, in: WebVideoOrientationRuntime.world, completionHandler: nil)
+            }
+        }
+
         private func synchronizeVideoControlScale(on webView: WKWebView, in target: WKFrameInfo? = nil) {
             guard viewModel.webView === webView else { return }
-            let zoom = webView.pageZoom, scale = webView.scrollView.zoomScale
+            let zoom = viewModel.pageZoom, scale = webView.scrollView.zoomScale
             guard zoom.isFinite, scale.isFinite, zoom > 0, scale > 0 else { return }
             if let target, !target.isMainFrame,
                let last = lastVideoControlScale, last.generation == navigationGeneration,
@@ -2887,6 +2972,7 @@ struct WebViewRepresentable: UIViewRepresentable {
 
                 switch WebNavigationPolicyService.shared.decision(for: url) {
                 case .allow:
+                    if openRequestedNewTab(navigationAction, in: webView) { decide(.cancel); return }
                     let method = navigationAction.request.httpMethod?.uppercased() ?? "GET"
                     let isMainFrame = navigationAction.targetFrame?.isMainFrame == true
                     if !nativeRequest, (isMainFrame || navigationAction.targetFrame == nil), method == "GET",
@@ -2961,28 +3047,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                         privacyHeaderBypassURLs.insert(privacyHeaderRequest.url?.absoluteString ?? url.absoluteString)
                         decide(.cancel)
                         webView.load(privacyHeaderRequest)
-                        return
-                    }
-
-                    if BrowserWebLinkPolicy.shouldLoadInBrowser(
-                        url: url, sourceURL: navigationAction.sourceFrame.requestURL,
-                        navigationType: navigationAction.navigationType,
-                        targetsMainFrame: navigationAction.targetFrame?.isMainFrame,
-                        method: method, nativeRequest: nativeRequest
-                    ) {
-                        if navigationAction.targetFrame == nil, !isExplicitNavigation(navigationAction, in: webView),
-                           requestDomainConfirmation(to: url, from: webView.url, in: webView,
-                            request: navigationAction.request, completion: { [weak webView] allowed in
-                                if allowed { webView?.load(navigationAction.request) }
-                            }) {
-                            decide(.cancel)
-                            return
-                        }
-                        decide(.cancel)
-                        let request = navigationAction.request
-                        DispatchQueue.main.async { [weak webView] in
-                            webView?.load(request)
-                        }
                         return
                     }
 
@@ -3078,16 +3142,35 @@ struct WebViewRepresentable: UIViewRepresentable {
                                                request: URLRequest? = nil,
                                                completion: @escaping (Bool) -> Void) -> Bool {
             guard BrowserDomainNavigationPolicy.requiresConfirmation(from: source, to: url) else { return false }
+            let generation = navigationGeneration
+            let decision: (Bool) -> Void = { [weak self, weak webView] allowed in
+                completion(allowed && self?.navigationGeneration == generation && self?.viewModel.webView === webView)
+            }
+            if viewModel.mediaSession.isActive, let id = domainConfirmationID,
+               let pending = viewModel.domainNavigationConfirmation,
+               pending.id == id, pending.sourceURL == source, pending.destinationURL == url,
+               pending.originalRequest == request {
+                // WebKit supersedes the original policy action when a script
+                // repeats navigation. Keep one prompt for the newest identical
+                // request; different destinations and request bodies stay denied.
+                let previous = domainConfirmationDecision
+                domainConfirmationDecision = decision
+                previous?(false)
+                return true
+            }
             guard let source, viewModel.mediaSession.isActive,
                   domainConfirmationID == nil, viewModel.domainNavigationConfirmation == nil,
                   let host = topViewController(for: webView), host.presentedViewController == nil else {
                 completion(false)
                 return true
             }
-            let generation = navigationGeneration
-            domainConfirmationID = viewModel.requestDomainNavigationConfirmation(from: source, to: url, originalRequest: request) { [weak self, weak webView] allowed in
-                self?.domainConfirmationID = nil
-                completion(allowed && self?.navigationGeneration == generation && self?.viewModel.webView === webView)
+            domainConfirmationDecision = decision
+            domainConfirmationID = viewModel.requestDomainNavigationConfirmation(from: source, to: url, originalRequest: request) { [weak self] allowed in
+                guard let self else { decision(false); return }
+                let pending = self.domainConfirmationDecision
+                self.domainConfirmationDecision = nil
+                self.domainConfirmationID = nil
+                pending?(allowed)
             }
             return true
         }
@@ -3183,6 +3266,19 @@ struct WebViewRepresentable: UIViewRepresentable {
 
         // MARK: Download detection — handle non-displayable responses
 
+        private func openRequestedNewTab(_ action: WKNavigationAction, in webView: WKWebView) -> Bool {
+            guard action.targetFrame == nil, action.navigationType == .linkActivated, let gesture = newTabGesture,
+                  gesture.webView == ObjectIdentifier(webView), gesture.frameURL == action.sourceFrame.requestURL,
+                  ProcessInfo.processInfo.systemUptime - gesture.time <= 3,
+                  action.request.url == gesture.target,
+                  (action.request.httpMethod ?? "GET").uppercased() == "GET",
+                  action.request.httpBody == nil, action.request.httpBodyStream == nil else { return false }
+            newTabGesture = nil
+            NotificationCenter.default.post(name: .openInNewTab, object: nil,
+                userInfo: ["url": gesture.target, "request": action.request])
+            return true
+        }
+
         func webView(
             _ webView: WKWebView,
             decidePolicyFor navigationResponse: WKNavigationResponse,
@@ -3201,6 +3297,19 @@ struct WebViewRepresentable: UIViewRepresentable {
                 responseURL: response.url
             ) {
                 decisionHandler(.download)
+            } else if webView === viewModel.webView, navigationResponse.isForMainFrame,
+                      let audio = BrowserDirectMediaPolicy.audioResource(for: response) {
+                // A standalone audio document has no page video toolbar. Use
+                // the shared player so download and mode selection are available.
+                decisionHandler(.cancel)
+                viewModel.mediaSession.finishNavigation()
+                viewModel.updateLoading(false)
+                viewModel.markDocumentCommitted()
+                if let previous = webView.url { viewModel.updateCurrentURL(previous) }
+                DispatchQueue.main.async { [weak self] in
+                    self?.viewModel.webVideoPlayback = WebVideoPlaybackRequest(resource: audio, time: 0,
+                        systemPlayer: VideoPlaybackPreferences.usesSystemPlayer(), fullscreen: false)
+                }
             } else {
                 decisionHandler(.allow)
             }
@@ -3243,34 +3352,15 @@ struct WebViewRepresentable: UIViewRepresentable {
                 if let url = navigationAction.request.url {
                     switch WebNavigationPolicyService.shared.decision(for: url) {
                     case .allow:
-                        let crossDomainForm = [WKNavigationType.formSubmitted, .formResubmitted].contains(navigationAction.navigationType)
-                            && BrowserDomainNavigationPolicy.requiresConfirmation(from: webView.url, to: url)
-                        if crossDomainForm || BrowserPopupPolicy.shouldPreserveJavaScriptContext(
-                            navigationType: navigationAction.navigationType,
-                            url: url
-                        ) {
-                            return makeEmbeddedPopup(
-                                in: webView,
-                                configuration: configuration,
-                                userInitiated: explicit
-                            )
-                        } else {
-                            if !explicit, requestDomainConfirmation(to: url, from: webView.url, in: webView, request: navigationAction.request, completion: { [weak webView] allowed in
-                                if allowed { webView?.load(navigationAction.request) }
-                            }) { return nil }
-                            // Regular target="_blank" and script-created links do
-                            // not need a separate browser surface. Keep navigation
-                            // in the current Soulo tab; explicit context-menu actions
-                            // can still create a real new tab.
-                            // Loading synchronously from the click callback can
-                            // preserve WebKit's user gesture and let iOS hand an
-                            // HTTPS Universal Link to an installed native app.
-                            // Start our own navigation on the next turn instead.
-                            let request = navigationAction.request
-                            DispatchQueue.main.async { [weak webView] in
-                                webView?.load(request)
-                            }
-                        }
+                        if openRequestedNewTab(navigationAction, in: webView) { return nil }
+                        // Preserve WebKit's window/opener relationship for every
+                        // admitted popup. Reissuing it on the parent breaks scripts,
+                        // form submissions and the parent's native back history.
+                        return makeEmbeddedPopup(
+                            in: webView,
+                            configuration: configuration,
+                            userInitiated: explicit
+                        )
                     case .cancel:
                         break
                     case .external(let externalURL):
@@ -3278,9 +3368,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                         // requests intercepted by the navigation delegate.
                         routeExternalURL(externalURL)
                     }
-                } else {
-                    // Fallback: load in current webView
-                    webView.load(navigationAction.request)
                 }
             }
             return nil

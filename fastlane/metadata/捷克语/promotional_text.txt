@@ -1,1 +1,1 @@
-BT a magnet stahování s výběrem a pokračováním. Přehrávejte podporovaná média během stahování, otevírejte MKV a importujte odkazy ed2k/thunder.
+Místní a BT videa přehrává Soulo: výběr dílů, rychlost 0,5–4× a systémový přehrávač pro kompatibilní formáty.

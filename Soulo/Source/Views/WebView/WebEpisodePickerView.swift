@@ -133,6 +133,11 @@ struct WebEpisodePickerView: View {
                     Button(ToolText.text("done")) { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink { VideoSettingsView() } label: { Image(systemName: "gearshape") }
+                        .accessibilityLabel(LanguageManager.shared.localizedString("settings"))
+                        .accessibilityIdentifier("browser.episodes-settings")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
                         DownloadManagerContentView()
                             .navigationTitle(LanguageManager.shared.localizedString("downloads"))
@@ -156,7 +161,7 @@ struct WebEpisodePickerView: View {
                                 preferredFilename: WebDownloadFilename.media(media, requested: nil, pageTitle: media.title),
                                 pageURL: media.sourcePageURL ?? viewModel.currentURL, webView: viewModel.webView)
                         } catch { mediaDownloadError = error.localizedDescription; return nil }
-                    })
+                    }, episodeList: viewModel.episodeList)
                     .alert(ToolText.text("error"), isPresented: Binding(
                         get: { !mediaDownloadError.isEmpty }, set: { if !$0 { mediaDownloadError = "" } }
                     )) { Button(ToolText.text("done"), role: .cancel) {} } message: { Text(mediaDownloadError) }

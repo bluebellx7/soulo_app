@@ -464,3 +464,42 @@
 "home_toolbar_browser_tools" = "浏览器工具栏";
 "home_toolbar_home_tools" = "首页工具栏";
 "soulo_website" = "Soulo 网站";
+
+"file_folder" = "文件夹";
+"media_player" = "播放器";
+"media_player_system" = "系统";
+
+"media_airplay_mirroring_hint" = "此格式无法通过系统播放器直接投放。请打开控制中心，选择“屏幕镜像”，再选择电视或 Mac。";
+
+"userscript_check_updates" = "检查更新";
+"userscript_update_no_url" = "此脚本未提供更新地址，可重新导入新版文件。";
+"userscript_update_manual_hint" = "仅在点击时检查更新，查看新版内容后再更新。内置脚本随 App 更新。";
+"userscript_update_latest" = "已是最新版本";
+"userscript_update_invalid" = "更新文件无效、与原脚本不符，或版本不一致。";
+"userscript_update_changed" = "脚本已发生变化，请重新检查更新。";
+
+"media_options" = "播放选项";
+"media_audio_tracks" = "音轨";
+"media_subtitles" = "字幕";
+"media_track_off" = "关闭";
+
+/* Video preferences */
+"video_settings" = "视频";
+"video_show_tools" = "显示视频工具";
+"video_show_tools_desc" = "在网页视频上显示工具按钮，可调节倍速、下载或进入全屏。";
+"video_default_player" = "默认播放器";
+"video_default_player_desc" = "用于下载、文件和网页资源中的视频。播放时可临时切换播放器。";
+"video_hold_speed" = "长按倍速";
+"video_hold_speed_desc" = "视频播放时长按画面临时加速，松手恢复原速。可用倍速取决于媒体格式。";
+"video_soulo_player_desc" = "默认模式，支持更多音视频格式，网页、下载和文件共用控制界面。悬浮窗和 AirPlay 使用系统解码，适用于系统支持的媒体格式。";
+"video_system_player_desc" = "使用 Apple 系统解码，支持悬浮窗和 AirPlay，格式支持取决于系统。两种模式均可在左侧上下滑调亮度，右侧上下滑调音量。";
+"settings_backup_delete_message" = "删除这份备份？当前设置不会改变。";
+"media_pip_unavailable" = "暂时无法开启悬浮窗，请等待媒体加载后重试。";
+"feedback_telegram" = "Telegram 反馈群";
+"feedback_telegram_desc" = "加入群组，交流问题与建议。";
+"settings_backup_intro" = "将当前设置备份到此设备，方便以后恢复。备份不包含浏览记录、登录状态和下载文件。";
+"settings_backup_manage_hint" = "恢复前会先备份当前设置，并关闭 iCloud 设置同步。向左滑动或长按备份可删除，删除不会改变当前设置。";
+"files_move" = "移动";
+"files_move_busy" = "请等待下载完成后再移动或重命名这些项目。";
+"video_show_episode_dock" = "显示选集浮标";
+"video_show_episode_dock_desc" = "网页有选集时，在侧边显示吸附按钮。关闭后仍可在播放器中选集。";

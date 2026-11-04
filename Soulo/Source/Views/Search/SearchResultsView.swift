@@ -274,11 +274,14 @@ struct SearchResultsView: View {
         .onReceive(NotificationCenter.default.publisher(for: .openInNewTab)) { notification in
             if let url = notification.userInfo?["url"] as? URL {
                 let tab = tabManager.createTab(
-                    url: url,
+                    url: notification.userInfo?["request"] is URLRequest ? nil : url,
                     keyword: searchVM.currentKeyword,
                     platform: searchVM.selectedPlatform,
                     switchTo: notification.userInfo?["switchTo"] as? Bool ?? true
                 )
+                if let request = notification.userInfo?["request"] as? URLRequest {
+                    tab.webViewModel.loadRequest(request)
+                }
                 if let scriptTabID = notification.userInfo?["userScriptTabID"] as? String,
                    !scriptTabID.isEmpty {
                     userScriptOpenedTabs[scriptTabID] = tab.id

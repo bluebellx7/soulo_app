@@ -97,7 +97,25 @@ import UIKit
         XCTAssertEqual(remaining as? Int, 1)
     }
 
-    func testOverlayButtonsKeep48ScreenPointsAcrossPageViewports() async throws {
+    func testNativeFullscreenRecoversBeforeAnInlineControlIsVisible() async throws {
+        let web = try await page("<video id='v' style='display:none'></video>")
+        let messages = RotationMessages()
+        web.configuration.userContentController.add(messages, contentWorld: WebVideoOrientationRuntime.world, name: WebVideoOrientationRuntime.handler)
+        defer { web.configuration.userContentController.removeScriptMessageHandler(forName: WebVideoOrientationRuntime.handler,
+            contentWorld: WebVideoOrientationRuntime.world) }
+        _ = try await web.evaluateJavaScript("Object.defineProperty(document.getElementById('v'),'webkitDisplayingFullscreen',{get:()=>true});" + WebVideoOrientationRuntime.script(),
+                                            in: nil, contentWorld: WebVideoOrientationRuntime.world)
+        for _ in 0..<40 where messages.count == 0 { try await Task.sleep(for: .milliseconds(25)) }
+        XCTAssertEqual(messages.count, 1, "An already-fullscreen media document must recover its native toolbar")
+        let rawToken = try await web.evaluateJavaScript("document.getElementById('v').getAttribute('data-soulo-media-id')")
+        let token = try XCTUnwrap(rawToken as? String)
+        XCTAssertFalse(token.isEmpty)
+        let applied = try await web.callAsyncJavaScript("return await window.__souloVideoOrientation.setRate(token, 2);",
+            arguments: ["token": token], in: nil, contentWorld: WebVideoOrientationRuntime.world)
+        XCTAssertEqual(applied as? Bool, true, "Native video tools must work without a visible inline toolbar")
+    }
+
+    func testVideoToolsStayCompactAcrossPageViewports() async throws {
         for viewport in ["<meta name='viewport' content='width=device-width,initial-scale=1'>", "",
                          "<meta name='viewport' content='width=1280'>",
                          "<meta name='viewport' content='width=device-width,initial-scale=2'>"] {
@@ -120,9 +138,9 @@ import UIKit
             (()=>{const button=document.querySelector('[data-video-toggle]'),r=button.getBoundingClientRect(),s=visualViewport.scale;
               const icon=button.querySelector('svg').getBoundingClientRect();return {width:r.width*s,height:r.height*s,icon:icon.width*s}})()
             """,in:nil,contentWorld:WebVideoOrientationRuntime.world) as? [String:Double]
-            XCTAssertEqual(try XCTUnwrap(dimensions?["width"]),48,accuracy:0.8,viewport)
-            XCTAssertEqual(try XCTUnwrap(dimensions?["height"]),48,accuracy:0.8,viewport)
-            XCTAssertEqual(try XCTUnwrap(dimensions?["icon"]),23,accuracy:0.8,viewport)
+            XCTAssertEqual(try XCTUnwrap(dimensions?["width"]),40,accuracy:0.8,viewport)
+            XCTAssertEqual(try XCTUnwrap(dimensions?["height"]),40,accuracy:0.8,viewport)
+            XCTAssertEqual(try XCTUnwrap(dimensions?["icon"]),20,accuracy:0.8,viewport)
             _ = try await web.evaluateJavaScript("document.getElementById('v').hidden=true;null")
             try await Task.sleep(for:.milliseconds(400))
             let dockWidth = try await web.evaluateJavaScript("document.getElementById('soulo-episode-dock').getBoundingClientRect().width*visualViewport.scale",
@@ -173,11 +191,33 @@ import UIKit
             let parentValue = try await web.evaluateJavaScript("visualViewport.scale")
             let parentScale = try XCTUnwrap(parentValue as? Double)*zoom
             XCTAssertEqual(try XCTUnwrap(values?["scale"]),parentScale,accuracy:0.01)
-            XCTAssertEqual(try XCTUnwrap(values?["width"]),48,accuracy:0.8)
+            XCTAssertEqual(try XCTUnwrap(values?["width"]),40,accuracy:0.8)
         }
     }
 
-    func testAppPageZoomKeepsBothOverlayButtonsAt48ScreenPoints() async throws {
+    func testVideoToolsCanHideWithoutReloadingThePageOrPausingItsVideo() async throws {
+        let web = try await page("<video id='v' style='width:300px;height:160px'></video><p>Stable document</p>")
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.windows.first(where: \.isKeyWindow), window = UIWindow(windowScene: scene)
+        window.rootViewController = UIViewController()
+        window.rootViewController?.view.addSubview(web); window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let model = WebViewModel(); model.webView = web
+        let coordinator = WebViewRepresentable.Coordinator(viewModel: model)
+        _ = try await web.evaluateJavaScript(WebVideoOrientationRuntime.script(), in: nil, contentWorld: WebVideoOrientationRuntime.world)
+        _ = try await web.evaluateJavaScript("window.pageIdentity='unchanged';window.pauses=0;document.getElementById('v').addEventListener('pause',()=>window.pauses++);null")
+        try await Task.sleep(for: .milliseconds(200))
+        coordinator.synchronizeVideoTools(enabled: false, on: web)
+        try await Task.sleep(for: .milliseconds(100))
+        let hidden = try await web.evaluateJavaScript("(() => { const button=document.querySelector('[data-soulo-video-rotate]'); return !button || getComputedStyle(button).display === 'none'; })()")
+        XCTAssertEqual(hidden as? Bool, true)
+        coordinator.synchronizeVideoTools(enabled: true, on: web)
+        try await Task.sleep(for: .milliseconds(100))
+        let visible = try await web.evaluateJavaScript("getComputedStyle(document.querySelector('[data-soulo-video-rotate]')).display !== 'none' && window.pageIdentity === 'unchanged' && window.pauses === 0")
+        XCTAssertEqual(visible as? Bool, true)
+    }
+
+    func testAppPageZoomPreservesCompactVideoToolsAndEpisodeDock() async throws {
         let web = try await page("""
         <meta name='viewport' content='width=device-width,initial-scale=1'><video id='v' style='width:100%;height:300px'></video>
         <ul class='episode-list'><li><a href='/watch/1'>EP1</a></li><li><a href='/watch/2'>EP2</a></li></ul>
@@ -209,7 +249,7 @@ import UIKit
             try await Task.sleep(for:.milliseconds(400))
             let videoWidth = try await web.evaluateJavaScript("document.querySelector('[data-video-toggle]').getBoundingClientRect().width*visualViewport.scale",
                 in:nil,contentWorld:WebVideoOrientationRuntime.world) as? Double
-            XCTAssertEqual(try XCTUnwrap(videoWidth)*zoom,48,accuracy:0.8,"Video, page zoom \(zoom)")
+            XCTAssertEqual(try XCTUnwrap(videoWidth)*zoom,40,accuracy:0.8,"Video, page zoom \(zoom)")
             _ = try await web.evaluateJavaScript("document.getElementById('v').hidden=true;null")
             try await Task.sleep(for:.milliseconds(400))
             let dockWidth = try await web.evaluateJavaScript("document.getElementById('soulo-episode-dock').getBoundingClientRect().width*visualViewport.scale",

@@ -51,6 +51,63 @@ final class SearchVideoNavigationTests: XCTestCase {
         }
     }
 
+    func testStandaloneMP3OpensSharedPlayerInsteadOfUncontrollableWebDocument() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: ["/track.mp3": Data(repeating: 0, count: 64)],
+            responseHeaders: ["/track.mp3": ["Content-Type": "audio/mpeg"]])
+        let root = try await server.start(); defer { server.stop() }
+        let model = WebViewModel(), (window, previous) = try host(model)
+        defer { window.isHidden = true; window.rootViewController = nil; model.releaseWebViewRuntime(); previous?.makeKeyAndVisible() }
+        model.loadURL(root.appendingPathComponent("track.mp3"))
+        for _ in 0..<100 {
+            if model.webVideoPlayback != nil { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let request = try XCTUnwrap(model.webVideoPlayback)
+        XCTAssertEqual(request.resource.kind, .audio)
+        XCTAssertEqual(request.resource.url.path, "/track.mp3")
+        XCTAssertFalse(request.fullscreen)
+        XCTAssertFalse(model.isLoading)
+        let html = HTTPURLResponse(url: root, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "text/html"])!
+        let hls = HTTPURLResponse(url: root, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "audio/x-mpegurl"])!
+        XCTAssertNil(BrowserDirectMediaPolicy.audioResource(for: html))
+        XCTAssertNil(BrowserDirectMediaPolicy.audioResource(for: hls))
+    }
+
+    func testClickedNoOpenerLinkOpensNewTabAndKeepsParentDocument() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/music": Data("<h1 id='ready'>Music</h1><a id='card' target='_blank' rel='noopener noreferrer' href='/songs'>Songs</a>".utf8),
+            "/songs": Data("<h1>Songs</h1>".utf8)
+        ])
+        let root = try await server.start(); defer { server.stop() }
+        let model = WebViewModel(), (window, previous) = try host(model)
+        defer { window.isHidden = true; window.rootViewController = nil; model.releaseWebViewRuntime(); previous?.makeKeyAndVisible() }
+        model.loadURL(root.appendingPathComponent("music"))
+        for _ in 0..<100 {
+            if let web = model.webView, (try? await web.evaluateJavaScript("!!document.getElementById('card')")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let web = try XCTUnwrap(model.webView), opened = expectation(description: "Open the selected URL in a browser tab")
+        let target = root.appendingPathComponent("songs")
+        let observer = NotificationCenter.default.addObserver(forName: .openInNewTab, object: nil, queue: .main) { note in
+            guard note.userInfo?["url"] as? URL == target else { return }
+            let request = note.userInfo?["request"] as? URLRequest
+            XCTAssertEqual(request?.url, target)
+            XCTAssertEqual(request?.httpMethod, "GET")
+            XCTAssertNil(request?.httpBody)
+            opened.fulfill()
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+        // This is the same isolated message emitted by a trusted pointer event.
+        // Synthetic DOM clicks deliberately cannot manufacture one in the page world.
+        _ = try await web.callAsyncJavaScript("window.webkit.messageHandlers.souloNavigationGesture.postMessage({newTab:true,link:true,event:'click',destinations:[target]});",
+            arguments: ["target": target.absoluteString], in: nil, contentWorld: BrowserNavigationGesture.world)
+        try await Task.sleep(for: .milliseconds(100))
+        _ = try await web.evaluateJavaScript("document.getElementById('card').click();null")
+        await fulfillment(of: [opened], timeout: 5)
+        XCTAssertEqual(web.url?.path, "/music")
+        XCTAssertFalse(web.subviews.contains { $0.subviews.contains { $0 is WKWebView } })
+    }
+
     func testBaiduPreviewPictureResolverPreservesPlaybackAndBrowserControls() async throws {
         let web = WKWebView()
         web.loadHTMLString("""
@@ -86,6 +143,65 @@ final class SearchVideoNavigationTests: XCTestCase {
         XCTAssertEqual(intent?["muted"] as? Bool, false, "An automatically muted preview must not mute explicit detail playback")
         XCTAssertEqual(intent?["playing"] as? Bool, true, "An unloaded or paused preview must not suppress explicit playback")
         XCTAssertEqual(intent?["time"] as? Double, 0)
+    }
+
+    func testPopupOpenerAndParentHistorySurviveWithAdFilteringOff() async throws {
+        UserDefaults.standard.set(false, forKey: "ad_block_enabled")
+        let parent = """
+        <h1 id="parent">Parent document</h1>
+        <div id="overlay" hidden>Popup acknowledged</div>
+        <form id="form" method="post" action="/child.html" target="form-popup"><input name="value" value="kept"></form>
+        <script>
+        window.parentSentinel = Math.random();
+        addEventListener('message', event => {
+          if (event.data === 'popup-ready') {
+            overlay.hidden = false;
+            window.popupAcknowledged = true;
+            event.source.postMessage('close-popup', '*');
+          }
+        });
+        </script>
+        """
+        let child = """
+        <h1>Child document</h1>
+        <script>
+        addEventListener('message', event => { if (event.data === 'close-popup') window.close(); });
+        if (window.opener) window.opener.postMessage('popup-ready', '*');
+        </script>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/parent.html": Data(parent.utf8), "/child.html": Data(child.utf8)
+        ])
+        let root = try await server.start()
+        defer { server.stop() }
+        let model = WebViewModel()
+        let (window, previous) = try host(model)
+        defer {
+            window.isHidden = true; window.rootViewController = nil
+            model.releaseWebViewRuntime(); previous?.makeKeyAndVisible()
+        }
+        let parentURL = root.appendingPathComponent("parent.html")
+        model.loadURL(parentURL)
+        for _ in 0..<100 where model.webView == nil { try await Task.sleep(for: .milliseconds(20)) }
+        let web = try XCTUnwrap(model.webView)
+        try await wait(web, for: "!!window.parentSentinel")
+        let sentinel = try await web.evaluateJavaScript("parentSentinel") as? Double
+        let historyCount = try await web.evaluateJavaScript("history.length") as? Int
+        // A normal cross-origin script popup must have its real WindowProxy.
+        // The old current-tab rewrite returned null and replaced this parent.
+        for open in [
+            "window.child = window.open(location.origin.replace('127.0.0.1','localhost') + '/child.html', '_blank'); window.popupReturned = !!child;",
+            "window.child = window.open('about:blank', '_blank'); window.popupReturned = !!child; child.document.write(\(String(reflecting: child))); child.document.close();",
+            "window.popupReturned = true; document.getElementById('form').submit();"
+        ] {
+            _ = try await web.evaluateJavaScript("window.popupAcknowledged=false; overlay.hidden=true; " + open + " null")
+            try await wait(web, for: "window.popupReturned && window.popupAcknowledged && !overlay.hidden")
+            XCTAssertEqual(web.url, parentURL)
+            let currentSentinel = try await web.evaluateJavaScript("parentSentinel") as? Double
+            let currentHistoryCount = try await web.evaluateJavaScript("history.length") as? Int
+            XCTAssertEqual(currentSentinel, sentinel, "Popup handling must not replace or reload its opener")
+            XCTAssertEqual(currentHistoryCount, historyCount, "Popup handling must not insert parent history entries")
+        }
     }
 
     private func host(_ model: WebViewModel) throws -> (UIWindow, UIWindow?) {

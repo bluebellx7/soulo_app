@@ -358,6 +358,34 @@ final class BrowserExtensionService: ObservableObject {
         userScripts.first { $0.id == id }
     }
 
+    func previewUserScriptUpdate(_ id: UUID) async throws -> UserScriptUpdatePreview? {
+        guard let script = userScript(id: id) else { throw CancellationError() }
+        let preview = try await UserScriptUpdateLoader.check(script, session: requirementSession)
+        try Task.checkCancellation()
+        guard let current = userScript(id: id), current.source == script.source,
+              current.updatedAt == script.updatedAt else { throw CancellationError() }
+        return preview
+    }
+
+    @discardableResult
+    func applyUserScriptUpdate(_ preview: UserScriptUpdatePreview) async throws -> UserScriptRecord {
+        func stillCurrent() -> Bool {
+            guard let current = userScript(id: preview.id) else { return false }
+            return current.isBuiltIn != true && current.source == preview.installed.source
+                && current.updatedAt == preview.installed.updatedAt
+        }
+        guard stillCurrent() else { throw CancellationError() }
+        let metadata = try Self.validateUserScriptSource(preview.source, explicitPatterns: nil)
+        // Re-fetch dependencies after review. An unchanged dependency URL may
+        // publish a new version, so the old installation's cache is unsuitable.
+        let sources = try await UserScriptRequirementLoader.resolve(metadata.requiredURLs,
+            baseURL: preview.sourceURL, session: requirementSession)
+        try Task.checkCancellation()
+        guard stillCurrent() else { throw CancellationError() }
+        return try saveUserScript(id: preview.id, fallbackName: preview.installed.name, source: preview.source,
+            explicitPatterns: nil, injectionTime: nil, sourceURL: preview.sourceURL, requiredSources: sources)
+    }
+
     @discardableResult
     func previewUserScript(from fileURL: URL, sourceURL: URL? = nil) throws -> UserScriptInstallPreview {
         let source = try Self.readUserScriptSource(from: fileURL)

@@ -186,7 +186,7 @@ struct TabSwitcherOverlay: View {
     @State private var orderedTabIDs: [UUID] = []
     @ObservedObject var tabManager: TabManager
     let onSelectTab: (Int) -> Void
-    let onNewTab: () -> Void
+    let onGoHome: () -> Void
     let onDismiss: () -> Void
 
     @State private var isExpanding: Bool = false
@@ -265,28 +265,19 @@ struct TabSwitcherOverlay: View {
 
     private var bottomDock: some View {
         HStack(spacing: 14) {
-            Button {
+            iconButton(showsDomainGroups ? "rectangle.stack" : "rectangle.3.group",
+                       label: showsDomainGroups ? "tab_view_carousel" : "tab_view_grouped") {
                 HapticsManager.selection()
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
                     showsDomainGroups.toggle()
                 }
-            } label: {
-                Image(systemName: showsDomainGroups ? "rectangle.stack" : "rectangle.3.group")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(showsDomainGroups ? Color.black.opacity(0.85) : .white.opacity(0.9))
-                    .frame(width: 44, height: 44)
-                    .background(showsDomainGroups ? .white.opacity(0.94) : .black.opacity(0.34), in: Circle())
-                    .overlay(Circle().stroke(.white.opacity(0.2), lineWidth: 0.5))
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(LanguageManager.shared.localizedString(showsDomainGroups ? "tab_view_carousel" : "tab_view_grouped"))
             .accessibilityValue(LanguageManager.shared.localizedString(showsDomainGroups ? "tab_view_grouped" : "tab_view_carousel"))
             .accessibilityIdentifier("tabs.view-mode")
 
-            iconButton("plus", label: "tab_new_tab") {
+            iconButton("plus", label: "browser_home") {
                 HapticsManager.light()
-                onNewTab()
-                dismiss()
+                onGoHome()
             }
 
             if let closed = tabManager.recentlyClosed.first {

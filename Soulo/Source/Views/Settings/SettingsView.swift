@@ -64,11 +64,7 @@ struct SettingsView: View {
                     // MARK: - Platform Management
                     Section {
                         NavigationLink(value: Destination.platforms) {
-                            Label {
-                                Text(LanguageManager.shared.localizedString("settings_platforms"))
-                            } icon: {
-                                IconBadge(systemName: "square.grid.2x2.fill", color: neutralIconColor)
-                            }
+                            SettingsNavigationLabel(icon: "square.grid.2x2.fill", color: neutralIconColor, title: LanguageManager.shared.localizedString("settings_platforms"))
                         }
                     } header: {
                         SectionHeader(title: LanguageManager.shared.localizedString("settings_section_platforms"))
@@ -77,11 +73,7 @@ struct SettingsView: View {
                     // MARK: - Appearance, Language & Background
                     Section {
                         HStack(spacing: 12) {
-                            Label {
-                                Text(LanguageManager.shared.localizedString("settings_appearance"))
-                            } icon: {
-                                IconBadge(systemName: "paintbrush.fill", color: neutralIconColor)
-                            }
+                            SettingsNavigationLabel(icon: "paintbrush.fill", color: neutralIconColor, title: LanguageManager.shared.localizedString("settings_appearance"))
                             Spacer(minLength: 4)
                             ViewThatFits(in: .horizontal) {
                                 HStack(spacing: 4) {
@@ -105,38 +97,21 @@ struct SettingsView: View {
                         }
 
                         NavigationLink(value: Destination.language) {
-                            Label {
-                                HStack {
-                                    Text(LanguageManager.shared.localizedString("settings_language"))
-                                    Spacer()
-                                    Text(currentLanguageName)
-                                        .foregroundStyle(.secondary)
-                                        .font(.subheadline)
-                                }
-                            } icon: {
-                                IconBadge(systemName: "globe", color: neutralIconColor)
+                            HStack(spacing: 12) {
+                                SettingsNavigationLabel(icon: "globe", color: neutralIconColor,
+                                    title: LanguageManager.shared.localizedString("settings_language"))
+                                Text(currentLanguageName).foregroundStyle(.secondary).font(.subheadline)
                             }
                         }
 
                         NavigationLink(value: Destination.wallpaper) {
-                            Label {
-                                Text(LanguageManager.shared.localizedString("settings_wallpaper"))
-                            } icon: {
-                                IconBadge(systemName: HomeToolbarAction.wallpaper.listSymbol, color: neutralIconColor)
-                            }
+                            SettingsNavigationLabel(icon: HomeToolbarAction.wallpaper.listSymbol, color: neutralIconColor, title: LanguageManager.shared.localizedString("settings_wallpaper"))
                         }
 
                         Toggle(isOn: $keepScreenAwake) {
-                            Label {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(ToolText.text("screen_keep_awake"))
-                                    Text(ToolText.text("screen_keep_awake_desc"))
-                                        .font(.caption).foregroundStyle(.secondary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                            } icon: {
-                                IconBadge(systemName: "sun.max.fill", color: keepScreenAwake ? Color.themePrimary : Color(uiColor: .systemGray3))
-                            }
+                            SettingsDescriptionLabel(icon: "sun.max.fill",
+                                color: keepScreenAwake ? Color.themePrimary : Color(uiColor: .systemGray3),
+                                title: ToolText.text("screen_keep_awake"), description: ToolText.text("screen_keep_awake_desc"))
                         }
                         .tint(Color.themePrimary)
                         .accessibilityIdentifier("settings.keepScreenAwake")
@@ -181,11 +156,7 @@ struct SettingsView: View {
                         .buttonStyle(.plain)
 
                         NavigationLink(value: Destination.homeToolbar) {
-                            Label {
-                                Text(ToolText.text("home_toolbar_customize"))
-                            } icon: {
-                                IconBadge(systemName: "rectangle.split.2x2", color: neutralIconColor)
-                            }
+                            SettingsNavigationLabel(icon: "rectangle.split.2x2", color: neutralIconColor, title: ToolText.text("home_toolbar_customize"))
                         }.accessibilityIdentifier("settings.homeToolbar")
 
                         Toggle(isOn: $showBookmarksOnHome) {
@@ -282,6 +253,13 @@ struct SettingsView: View {
                         }
                         .tint(Color.themePrimary)
 
+                        NavigationLink(value: Destination.video) {
+                            SettingsNavigationLabel(icon: "play.rectangle", color: neutralIconColor,
+                                title: ToolText.text("video_settings"))
+                        }
+                        .accessibilityIdentifier("settings.video")
+                        .accessibilityIdentifier("settings.video")
+
                         NavigationLink(value: Destination.webAppearance) {
                             SettingsNavigationLabel(
                                 icon: "circle.lefthalf.filled",
@@ -291,21 +269,10 @@ struct SettingsView: View {
                         }
 
                         NavigationLink(value: Destination.shake) {
-                            HStack(alignment: .top, spacing: 12) {
-                                IconBadge(systemName: "iphone.radiowaves.left.and.right", color: neutralIconColor)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(LanguageManager.shared.localizedString("shake_action"))
-                                    Text(
-                                        LanguageManager.shared.localizedString(
-                                            BrowserShakeAction(rawValue: shakeAction)?.titleKey
-                                                ?? BrowserShakeAction.none.titleKey
-                                        )
-                                    )
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                }
-                                .padding(.top, 2)
-                            }
+                            SettingsDescriptionLabel(icon: "iphone.radiowaves.left.and.right", color: neutralIconColor,
+                                title: LanguageManager.shared.localizedString("shake_action"),
+                                description: LanguageManager.shared.localizedString(
+                                    BrowserShakeAction(rawValue: shakeAction)?.titleKey ?? BrowserShakeAction.none.titleKey))
                         }
 
                         NavigationLink(value: Destination.toolbar) {
@@ -393,19 +360,11 @@ struct SettingsView: View {
                             }
                         }
                         NavigationLink(value: Destination.backups) {
-                            Label {
-                                Text(LanguageManager.shared.localizedString("settings_backups"))
-                            } icon: {
-                                IconBadge(systemName: "clock.arrow.circlepath", color: neutralIconColor)
-                            }
+                            SettingsNavigationLabel(icon: "clock.arrow.circlepath", color: neutralIconColor, title: LanguageManager.shared.localizedString("settings_backups"))
                         }
                         .accessibilityIdentifier("settings.backups")
                         NavigationLink(value: Destination.quickActions) {
-                            Label {
-                                Text(ToolText.text("quick_actions_title"))
-                            } icon: {
-                                IconBadge(systemName: "hand.tap", color: neutralIconColor)
-                            }
+                            SettingsNavigationLabel(icon: "hand.tap", color: neutralIconColor, title: ToolText.text("quick_actions_title"))
                         }.accessibilityIdentifier("settings.quick-actions")
                     } header: {
                         SectionHeader(title: ToolText.text("settings_other"))
@@ -429,24 +388,17 @@ struct SettingsView: View {
                                 title: LanguageManager.shared.localizedString("settings_feedback")
                             )
                         }
+                        .accessibilityIdentifier("settings.feedback")
                         .buttonStyle(.plain)
 
                         NavigationLink(value: Destination.urlSchemes) {
-                            Label {
-                                Text(verbatim: "URL Scheme")
-                            } icon: {
-                                IconBadge(systemName: "link", color: neutralIconColor)
-                            }
+                            SettingsNavigationLabel(icon: "link", color: neutralIconColor, title: "URL Scheme")
                         }
                         .accessibilityIdentifier("settings.url-schemes")
 
                         NavigationLink(value: Destination.version) {
                             HStack {
-                                Label {
-                                    Text(LanguageManager.shared.localizedString("settings_version"))
-                                } icon: {
-                                    IconBadge(systemName: "info.circle.fill", color: neutralIconColor)
-                                }
+                                SettingsNavigationLabel(icon: "info.circle.fill", color: neutralIconColor, title: LanguageManager.shared.localizedString("settings_version"))
                                 Spacer()
                                 Text(appVersion)
                                     .foregroundStyle(.secondary)
@@ -518,7 +470,7 @@ struct SettingsView: View {
     // Value-based links defer service/archive initialization until a subpage
     // is actually opened, instead of constructing every destination at once.
     private enum Destination: Hashable {
-        case platforms, language, wallpaper, webAppearance, shake, toolbar, homeToolbar
+        case platforms, language, wallpaper, webAppearance, video, shake, toolbar, homeToolbar
         case adBlock, privacy, extensions, backups, quickActions, urlSchemes, version
     }
 
@@ -529,6 +481,7 @@ struct SettingsView: View {
         case .language: LanguageSettingsView()
         case .wallpaper: WallpaperSettingsView()
         case .webAppearance: WebAppearanceSettingsView()
+        case .video: VideoSettingsView()
         case .shake: ShakeActionSettingsView()
         case .toolbar: BrowserToolbarSettingsView()
         case .homeToolbar: HomeToolbarSettingsView()
@@ -600,14 +553,7 @@ struct SettingsNavigationLabel: View {
     let title: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            IconBadge(systemName: icon, color: color)
-            Text(title)
-                .font(.body)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 3)
-        }
-        .padding(.vertical, 1)
+        SettingsRowLabel(icon: icon, color: color, title: title)
     }
 }
 
@@ -639,20 +585,7 @@ struct SettingsDetailActionLabel: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            IconBadge(systemName: icon, color: color)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                Text(description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.top, 2)
-
-            Spacer(minLength: 8)
+            SettingsRowLabel(icon: icon, color: color, title: title, description: description)
 
             HStack(spacing: 6) {
                 Text(detail)
@@ -665,10 +598,9 @@ struct SettingsDetailActionLabel: View {
                     .foregroundStyle(.tertiary)
                     .accessibilityHidden(true)
             }
-            .padding(.top, 5)
+            .padding(.top, 7)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 4)
         .contentShape(Rectangle())
     }
 }
@@ -680,19 +612,35 @@ struct SettingsDescriptionLabel: View {
     let description: String
 
     var body: some View {
+        SettingsRowLabel(icon: icon, color: color, title: title, description: description)
+    }
+}
+
+/// Every settings row reserves the same icon column and title origin.
+/// Navigation, buttons and toggles share this layout, including multiline text.
+struct SettingsRowLabel: View {
+    let icon: String
+    let color: Color
+    let title: String
+    var description: String? = nil
+
+    var body: some View {
         HStack(alignment: .top, spacing: 12) {
             IconBadge(systemName: icon, color: color)
-
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.body)
-                Text(description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                Text(title).font(.body).foregroundStyle(.primary)
+                if let description, !description.isEmpty {
+                    Text(description).font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             .padding(.top, 2)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding(.vertical, 2)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .alignmentGuide(.listRowSeparatorLeading) { _ in 44 }
     }
 }
 

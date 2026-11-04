@@ -28,6 +28,25 @@ struct FeedbackView: View {
             ZStack {
                 ScrollView {
                     VStack(spacing: 20) {
+                        Link(destination: URL(string: "https://t.me/soulobrowser")!) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "paperplane.fill")
+                                    .font(.system(size: 20)).foregroundStyle(Color.themePrimary)
+                                    .frame(width: 40, height: 40)
+                                    .background(Color.themePrimary.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(ToolText.text("feedback_telegram")).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+                                    Text(ToolText.text("feedback_telegram_desc")).font(.caption).foregroundStyle(.secondary)
+                                }.frame(maxWidth: .infinity, alignment: .leading)
+                                Image(systemName: "arrow.up.right").font(.system(size: 14, weight: .medium)).foregroundStyle(.secondary)
+                            }
+                            .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12))
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("feedback.telegram")
+
                         // Type picker
                         VStack(alignment: .leading, spacing: 8) {
                             Text(lm.localizedString("feedback_type"))

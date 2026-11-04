@@ -103,7 +103,10 @@ enum WebEpisodeRuntime {
 
     @MainActor static func configuredScript(enabled: Bool) -> String {
         let defaults = UserDefaults.standard
-        let configuration: [String: Any] = ["enabled": enabled, "label": ToolText.text("episodes"),
+        let configuration: [String: Any] = ["enabled": enabled,
+            "dockEnabled": VideoPlaybackPreferences.showsEpisodeDock(),
+            "watchChanges": VideoPlaybackPreferences.showsEpisodeDock() || VideoPlaybackPreferences.showsTools(),
+            "label": ToolText.text("episodes"),
             "edge": defaults.string(forKey: "web_episode_dock_edge") ?? "right",
             "fraction": defaults.object(forKey: "web_episode_dock_fraction") as? Double ?? 0.62]
         let json = (try? JSONSerialization.data(withJSONObject: configuration))

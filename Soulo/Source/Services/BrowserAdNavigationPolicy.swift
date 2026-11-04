@@ -25,7 +25,7 @@ enum BrowserAdNavigationPolicy {
         }
         if url.absoluteString == "about:blank" && hasRecentGesture && gestureIsControl { return false }
         let authentication = url.scheme?.lowercased() != "about"
-            && BrowserPopupPolicy.shouldPreserveJavaScriptContext(navigationType: navigationType, url: url)
+            && isAuthenticationWindow(navigationType: navigationType, url: url)
         if authentication && hasRecentGesture && gestureIsControl { return false }
         let sameHost = sourceURL?.host?.lowercased() == url.host?.lowercased() && url.host != nil
         if isNewWindow {
@@ -40,6 +40,20 @@ enum BrowserAdNavigationPolicy {
             if !sameHost && hasRecentGesture { return true }
         }
         return false
+    }
+
+    /// Authentication controls may legitimately open a cross-site window.
+    /// This exception belongs to ad filtering, not ordinary window routing.
+    static func isAuthenticationWindow(navigationType: WKNavigationType, url: URL) -> Bool {
+        guard navigationType == .other || navigationType == .linkActivated,
+              let host = url.host?.lowercased() else { return false }
+        let hosts = ["accounts.google.com", "appleid.apple.com", "login.microsoftonline.com",
+                     "login.live.com", "auth0.com", "okta.com"]
+        if hosts.contains(where: { host == $0 || host.hasSuffix(".\($0)") }) { return true }
+        let markers = ["/oauth", "/authorize", "/authorization", "/auth/",
+                       "/login", "/signin", "/sign-in", "/sso/"]
+        let address = url.absoluteString.lowercased()
+        return markers.contains { address.contains($0) }
     }
 
     private static func isCloudflareChallengeReturn(from source: URL?, to destination: URL, mainDocumentURL: URL?) -> Bool {

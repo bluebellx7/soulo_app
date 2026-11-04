@@ -6,6 +6,8 @@ Senast använda flikar och webbplatsgrupper visas först och översikten öppnas
 
 BT-hämtningar: Importera .torrent-filer eller magnetlänkar, välj filer, pausa och återuppta. På iOS 26 kan hämtningar fortsätta i bakgrunden när systemet tillåter det; äldre versioner sparar förloppet och pausar. Spela upp BT-medier som stöds under nedladdning och öppna MKV-filer. Importera ed2k/thunder-länkar. Nedladdningar kräver tillgängliga källor; uppspelning beror på kodekar.
 
+Lokala videor och BT-videor med Soulo: avsnitt, 0,5–4× hastighet och systemspelare för kompatibla format.
+
 Välj fem valfria genvägar på startsidan till hämtningar, filer, bokmärken, historik, bakgrunder och andra sidor. Bibliotekets flikrad blir kompakt när du rullar.
 
 Hitta information, läs artiklar, spela upp media och hantera hämtningar i samma webbläsare.

@@ -1313,7 +1313,7 @@ enum OfflineHLSReference {
 /// HLS files. The system-owned package remains in place for in-app playback.
 enum PortableHLSBundle {
     private struct Fragment {
-        let start: Int
+        let start: Double
         let part: Int
         let duration: Double
         let url: URL
@@ -1333,13 +1333,13 @@ enum PortableHLSBundle {
 
     static func export(packageURL: URL, name: String, into directory: URL,
                        sourceURL: URL? = nil, session: URLSession = .shared,
-                       operation: FileOperationProgress? = nil) async throws -> URL {
+                       operation: FileOperationProgress? = nil, linkFragments: Bool = false) async throws -> URL {
         try operation?.check()
         let manager = FileManager.default
         guard let enumerator = manager.enumerator(at: packageURL, includingPropertiesForKeys: [
             .isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey
         ]) else { throw StreamingMediaDownloadError.unsupportedManifest }
-        let pattern = try NSRegularExpression(pattern: #"^\(([0-9]+)\)_\(([0-9]+)\)_\(([0-9.]+)\)\.frag$"#)
+        let pattern = try NSRegularExpression(pattern: #"^\(([0-9]+(?:\.[0-9]+)?)\)_\(([0-9]+)\)_\(([0-9.]+)\)\.frag$"#)
         var fragments: [Fragment] = []
         var renditionDirectory: URL?
         while let candidate = enumerator.nextObject() {
@@ -1351,7 +1351,8 @@ enum PortableHLSBundle {
                   let startRange = Range(match.range(at: 1), in: filename),
                   let partRange = Range(match.range(at: 2), in: filename),
                   let durationRange = Range(match.range(at: 3), in: filename),
-                  let start = Int(filename[startRange]), let part = Int(filename[partRange]),
+                  let start = Double(filename[startRange]), start.isFinite,
+                  let part = Int(filename[partRange]),
                   let duration = Double(filename[durationRange]), duration.isFinite,
                   duration > 0, duration <= 600,
                   entry.deletingLastPathComponent().standardizedFileURL.path.hasPrefix(
@@ -1388,6 +1389,11 @@ enum PortableHLSBundle {
         let mediaPlaylist = try String(contentsOf: innerPlaylists[0], encoding: .utf8)
             .replacingOccurrences(of: "\0", with: "")
         let mediaLines = mediaPlaylist.components(separatedBy: .newlines)
+        var discontinuities = Set<Int>(), segmentIndex = 0
+        for line in mediaLines {
+            if line == "#EXT-X-DISCONTINUITY" { discontinuities.insert(segmentIndex) }
+            else if line.hasPrefix("#EXTINF:") { segmentIndex += 1 }
+        }
         guard mediaLines.filter({ $0.hasPrefix("#EXTINF:") }).count == fragments.count,
               mediaLines.contains("#EXT-X-ENDLIST") else {
             throw StreamingMediaDownloadError.unsupportedManifest
@@ -1477,10 +1483,16 @@ enum PortableHLSBundle {
                 playlist += "\n"
             }
             for (index, fragment) in fragments.enumerated() {
+                try Task.checkCancellation()
                 try operation?.check()
                 let filename = String(format: "%06d.ts", index)
-                try manager.copyItem(at: fragment.url, to: staging.appendingPathComponent(filename))
+                if linkFragments {
+                    try manager.linkItem(at: fragment.url, to: staging.appendingPathComponent(filename))
+                } else {
+                    try manager.copyItem(at: fragment.url, to: staging.appendingPathComponent(filename))
+                }
                 operation?.progress.completedUnitCount = Int64(index + 1)
+                if discontinuities.contains(index) { playlist += "#EXT-X-DISCONTINUITY\n" }
                 playlist += "#EXTINF:\(String(format: "%.5f", fragment.duration)),\n\(filename)\n"
             }
             playlist += "#EXT-X-ENDLIST\n"

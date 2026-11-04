@@ -1,1 +1,1 @@
-BT and magnet downloads with file selection and resume. Play supported media while downloading, open MKV files, and import ed2k/thunder links.
+Local and BT videos use Soulo by default: episodes, 0.5–4× speed, and a system player for compatible formats.

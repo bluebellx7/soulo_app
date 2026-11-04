@@ -2,6 +2,11 @@ import SwiftUI
 import UniformTypeIdentifiers
 import PhotosUI
 
+private enum FileRelocationError: LocalizedError {
+    case busy
+    var errorDescription: String? { ToolText.text("files_move_busy") }
+}
+
 struct LocalFile: Identifiable, Hashable {
     var id: String { url.path }
     let url: URL
@@ -43,6 +48,9 @@ struct LibraryFilesView: View {
     @State private var deletionAnchor: String?
     @State private var renamingFile: LocalFile?
     @State private var renameText = ""
+    @State private var movingURLs: [URL] = []
+    @State private var moveDestination: URL?
+    @State private var choosingMoveDestination = false
     var body: some View {
         Group {
             if showsGrid { gridContent } else { listContent }
@@ -107,7 +115,18 @@ struct LibraryFilesView: View {
                 renamingFile = nil
             }.disabled(renameText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             Button(ToolText.text("cancel"), role: .cancel) { renamingFile = nil }
-        } message: { Text(ToolText.text("rename_file_extension_hint")) }
+        } message: {
+            if renamingFile?.directory != true { Text(ToolText.text("rename_file_extension_hint")) }
+        }
+        .sheet(isPresented: $choosingMoveDestination, onDismiss: {
+            if let moveDestination { moveFiles(movingURLs, to: moveDestination) }
+            movingURLs = []; moveDestination = nil
+        }) {
+            NavigationStack {
+                FileDestinationView(selection: $moveDestination, excluding: movingURLs, currentDirectory: directory)
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button(ToolText.text("cancel")) { choosingMoveDestination = false } } }
+            }
+        }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.data], allowsMultipleSelection: true) { result in
             Task {
                 do {
@@ -269,6 +288,8 @@ struct LibraryFilesView: View {
                             }
                         }
                     }
+                    if file.directory { renameAction(file) }
+                    if file.url.pathExtension.lowercased() != "movpkg" { moveAction([file.url]) }
                     Button(ToolText.text("delete_files"), systemImage: "trash", role: .destructive) {
                         pendingDeletion = [file.url]; deletionAnchor = file.id
                     }
@@ -347,6 +368,8 @@ struct LibraryFilesView: View {
                                         }
                                     }
                                 }
+                                if file.directory { renameAction(file) }
+                                if file.url.pathExtension.lowercased() != "movpkg" { moveAction([file.url]) }
                                 Button(ToolText.text("delete_files"), systemImage: "trash", role: .destructive) {
                                     pendingDeletion = [file.url]; deletionAnchor = file.id
                                 }
@@ -370,7 +393,7 @@ struct LibraryFilesView: View {
             Text(file.url.lastPathComponent)
                 .font(.subheadline.weight(.medium)).foregroundStyle(.primary)
                 .lineLimit(1).truncationMode(.middle)
-            if !file.directory { fileMetadata(file) }
+            fileMetadata(file)
         }
         .contentShape(Rectangle())
         .accessibilityIdentifier("files.item.\(file.url.lastPathComponent)")
@@ -395,9 +418,7 @@ struct LibraryFilesView: View {
                     .font(.subheadline.weight(.medium)).foregroundStyle(.primary)
                     .lineLimit(1).truncationMode(.middle)
                     .fixedSize(horizontal: false, vertical: true)
-                if !file.directory {
-                    fileMetadata(file)
-                }
+                fileMetadata(file)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }.frame(minHeight: 48).contentShape(Rectangle())
@@ -406,11 +427,15 @@ struct LibraryFilesView: View {
 
     private func fileMetadata(_ file: LocalFile) -> some View {
         HStack(spacing: 8) {
-            Text(file.info.badge)
-                .font(.system(.caption2, design: .rounded).weight(.semibold))
-            Text(ByteCountFormatter.string(fromByteCount: file.info.size, countStyle: .file))
-                .font(.caption.monospacedDigit())
-                .accessibilityIdentifier("files.size.\(file.url.lastPathComponent)")
+            if file.directory {
+                Text(ToolText.text("file_folder")).font(.caption)
+            } else {
+                Text(file.info.badge)
+                    .font(.system(.caption2, design: .rounded).weight(.semibold))
+                Text(ByteCountFormatter.string(fromByteCount: file.info.size, countStyle: .file))
+                    .font(.caption.monospacedDigit())
+                    .accessibilityIdentifier("files.size.\(file.url.lastPathComponent)")
+            }
         }
         .foregroundStyle(.secondary)
         .lineLimit(1)
@@ -424,6 +449,7 @@ struct LibraryFilesView: View {
                 Button(ToolText.text("cancel")) { endSelection() }.font(.caption)
             }
             AdaptiveActionRow(spacing: 8) {
+                moveAction(selectedURLs).buttonStyle(CompactActionButtonStyle())
                 Button { compressing = true } label: { Label(ToolText.text("compress"), systemImage: "doc.zipper") }
                     .buttonStyle(CompactActionButtonStyle())
                     .disabled(selectionContainsUnshareableItems)
@@ -456,16 +482,44 @@ struct LibraryFilesView: View {
 
     private func renameAction(_ file: LocalFile) -> some View {
         Button(ToolText.text("rename_file"), systemImage: "pencil") {
-            renameText = file.url.deletingPathExtension().lastPathComponent
+            renameText = file.directory ? file.url.lastPathComponent : file.url.deletingPathExtension().lastPathComponent
             renamingFile = file
         }
     }
 
-    private func rename(_ file: LocalFile, to name: String) {
+    private func moveAction(_ urls: [URL]) -> some View {
+        Button { movingURLs = urls; moveDestination = nil; choosingMoveDestination = true } label: {
+            Label(ToolText.text("files_move"), systemImage: "folder")
+        }.accessibilityIdentifier("files.move")
+    }
+
+    private func ensureRelocationIsAvailable(_ urls: [URL]) throws {
         guard !DownloadManagerService.shared.downloads.contains(where: {
-            $0.localURL.standardizedFileURL == file.url.standardizedFileURL && [.inProgress, .paused].contains($0.status)
-        }) else { error = ToolText.text("file_busy"); return }
-        let bookIDs = Set(BookLibrary.shared.books.filter { $0.url.standardizedFileURL == file.url.standardizedFileURL }.map(\.id))
+            LibraryFileActions.contains($0.localURL, in: urls) && [.inProgress, .paused].contains($0.status)
+        }) else { throw FileRelocationError.busy }
+    }
+    private func updateRelocatedReferences(from source: URL, to target: URL) throws {
+        let books = BookLibrary.shared.books.compactMap { book -> (String, URL, URL)? in
+            let old = BookLibrary.directory.appendingPathComponent(book.fileName)
+            guard let next = LibraryFileActions.relocated(old, from: source, to: target) else { return nil }
+            return (book.id, old, next)
+        }
+        do {
+            for (id, _, next) in books { try BookLibrary.shared.updateFileReference(bookIDs: [id], to: next) }
+        } catch {
+            for (id, old, _) in books { try? BookLibrary.shared.updateFileReference(bookIDs: [id], to: old) }
+            throw error
+        }
+        let downloads = DownloadManagerService.shared.downloads.map(\.localURL)
+        for old in downloads {
+            if let next = LibraryFileActions.relocated(old, from: source, to: target) {
+                DownloadManagerService.shared.updateFileReference(from: old, to: next)
+            }
+        }
+        MediaSession.shared.updateFileReference(from: source, to: target)
+    }
+    private func rename(_ file: LocalFile, to name: String) {
+        do { try ensureRelocationIsAvailable([file.url]) } catch { self.error = error.localizedDescription; return }
         let directory = directory
         busy = true
         Task {
@@ -473,14 +527,30 @@ struct LibraryFilesView: View {
             do {
                 let target = try await Task.detached { try LibraryFileActions.rename(file.url, baseName: name, in: directory) }.value
                 guard target != file.url else { return }
-                do { try BookLibrary.shared.updateFileReference(bookIDs: bookIDs, to: target) }
-                catch {
-                    try await Task.detached { try FileManager.default.moveItem(at: target, to: file.url) }.value
+                do { try updateRelocatedReferences(from: file.url, to: target) }
+                catch { try await Task.detached { try FileManager.default.moveItem(at: target, to: file.url) }.value; throw error }
+                if selected.remove(file.id) != nil { selected.insert(target.path) }
+            } catch { self.error = error.localizedDescription }
+        }
+    }
+    private func moveFiles(_ urls: [URL], to destination: URL) {
+        do { try ensureRelocationIsAvailable(urls) } catch { self.error = error.localizedDescription; return }
+        let source = directory
+        busy = true
+        Task {
+            defer { busy = false; reload() }
+            do {
+                let targets = try await Task.detached { try LibraryFileActions.move(urls, from: source, to: destination) }.value
+                do {
+                    for (old, next) in zip(urls, targets) { try updateRelocatedReferences(from: old, to: next) }
+                } catch {
+                    for (old, next) in zip(urls, targets) {
+                        try? await Task.detached { try FileManager.default.moveItem(at: next, to: old) }.value
+                        try? updateRelocatedReferences(from: next, to: old)
+                    }
                     throw error
                 }
-                DownloadManagerService.shared.updateFileReference(from: file.url, to: target)
-                MediaSession.shared.updateFileReference(from: file.url, to: target)
-                if selected.remove(file.id) != nil { selected.insert(target.path) }
+                endSelection()
             } catch { self.error = error.localizedDescription }
         }
     }
@@ -521,9 +591,10 @@ struct LibraryFilesView: View {
                         .compactMap { url -> LocalFile? in
                             let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey, .contentModificationDateKey])
                             guard values.isSymbolicLink != true else { return nil }
+                            let presentation = FilePresentation.inspect(url)
                             return LocalFile(url: url,
-                                directory: values.isDirectory == true && url.pathExtension.lowercased() != "movpkg",
-                                info: FilePresentation.inspect(url), modifiedAt: values.contentModificationDate ?? .distantPast,
+                                directory: values.isDirectory == true && presentation.kind == .folder,
+                                info: presentation, modifiedAt: values.contentModificationDate ?? .distantPast,
                                 coverURL: covers[url.standardizedFileURL])
                         }.sorted { $0.url.lastPathComponent.localizedStandardCompare($1.url.lastPathComponent) == .orderedAscending }
                 }.value
@@ -547,6 +618,10 @@ struct LibraryFilesView: View {
                     self.error = error.localizedDescription
                 }
             }
+        } else if file.info.kind == .video || file.info.kind == .audio {
+            // The file list must use the same codec and partial-torrent checks
+            // as download previews; a .mp4 suffix does not guarantee native video.
+            preview = file
         } else if ["movpkg", OfflineHLSReference.fileExtension].contains(ext)
                     || (UTType(filenameExtension: ext).map { $0.conforms(to: .audio) || $0.conforms(to: .movie) } ?? false) {
             MediaSession.shared.open(url: file.url)
@@ -694,6 +769,8 @@ struct ArchiveBrowserView: View {
 /// A page of app-owned folders. The selection stays within Downloads and never follows symlinks.
 private struct FileDestinationView: View {
     @Binding var selection: URL?
+    var excluding: [URL] = []
+    var currentDirectory: URL?
     @Environment(\.dismiss) private var dismiss
     @State private var folders: [URL] = []
     @State private var error: String?
@@ -718,6 +795,7 @@ private struct FileDestinationView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             do {
+                let excluded = excluding, current = currentDirectory
                 folders = try await Task.detached {
                     var result = [BookLibrary.directory]
                     guard
@@ -732,10 +810,12 @@ private struct FileDestinationView: View {
                             enumerator.skipDescendants()
                             continue
                         }
+                        if ["movpkg", "soulohls", "hls", "m3u8"].contains(url.pathExtension.lowercased()) { enumerator.skipDescendants(); continue }
                         if values.isDirectory == true { result.append(url) }
                         if result.count >= 1000 { break }
                     }
-                    return result.sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
+                    return result.filter { $0.standardizedFileURL != current?.standardizedFileURL && !LibraryFileActions.contains($0, in: excluded) }
+                        .sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
                 }.value
             } catch { self.error = error.localizedDescription }
         }

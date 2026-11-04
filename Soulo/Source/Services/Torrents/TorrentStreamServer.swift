@@ -190,13 +190,24 @@ final class TorrentPlaybackLease: @unchecked Sendable {
     let server: TorrentStreamServer
     let id: UUID
     let worker: any TorrentEngine
+    private let lock = NSLock()
+    private var finishTask: Task<Void, Never>?
     var url: URL { server.url }
     init(server: TorrentStreamServer, id: UUID, worker: any TorrentEngine) {
         self.server = server; self.id = id; self.worker = worker
     }
+    private func cleanupTask() -> Task<Void, Never> {
+        lock.lock(); defer { lock.unlock() }
+        if let finishTask { return finishTask }
+        let server = server, worker = worker, id = id
+        let task = Task { server.stop(); await worker.endStreaming(id: id) }
+        finishTask = task
+        return task
+    }
+    func finish() async {
+        await cleanupTask().value
+    }
     deinit {
-        server.stop()
-        let worker = worker, id = id
-        Task { await worker.endStreaming(id: id) }
+        _ = cleanupTask()
     }
 }

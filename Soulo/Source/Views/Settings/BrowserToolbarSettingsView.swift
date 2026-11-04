@@ -194,8 +194,8 @@ struct BrowserToolbarSettingsView: View {
         } label: {
             ZStack {
                 if action != .none {
-                    Image(systemName: action.systemImage)
-                        .font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
+                    if action == .tabs { TabCountSymbol(count: 2) }
+                    else { Image(systemName: action.systemImage).font(.system(size: AppControlMetrics.iconSize, weight: .semibold)) }
                 }
             }
                 .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
@@ -224,7 +224,8 @@ struct BrowserToolbarSettingsView: View {
             }
             HapticsManager.selection()
         } label: {
-            ToolbarActionChoiceLabel(symbol: action.systemImage, title: action.localizedTitle, isSelected: isSelected)
+            ToolbarActionChoiceLabel(symbol: action.systemImage, title: action.localizedTitle, isSelected: isSelected,
+                tabCount: action == .tabs ? 2 : nil)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("browser-toolbar.action.\(action.rawValue)")
@@ -260,12 +261,14 @@ struct ToolbarActionChoiceLabel: View {
     let symbol: String
     let title: String
     let isSelected: Bool
+    var tabCount: Int?
     @ScaledMetric(relativeTo: .caption) private var titleHeight: CGFloat = 32
     var body: some View {
         VStack(spacing: 7) {
-            Image(systemName: symbol)
-                .font(.system(size: 17, weight: .semibold))
-                .frame(height: 22)
+            Group {
+                if let tabCount { TabCountSymbol(count: tabCount) }
+                else { Image(systemName: symbol).font(.system(size: 17, weight: .semibold)) }
+            }.frame(height: 22)
             Text(title)
                 .font(.caption.weight(.medium))
                 .multilineTextAlignment(.center)

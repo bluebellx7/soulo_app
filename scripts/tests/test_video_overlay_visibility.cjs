@@ -61,7 +61,7 @@ const overlay=fs.readFileSync(path.join(root,'Soulo/Resources/UserScripts/overla
  await page.locator('#v80').scrollIntoViewIfNeeded();
  await page.waitForFunction(()=>document.getElementById('v80').hasAttribute('data-soulo-media-id'));
  const id=await page.locator('#v80').getAttribute('data-soulo-media-id');
- await page.waitForFunction(id=>getComputedStyle([...document.querySelectorAll('[data-soulo-video-rotate]')].find(n=>n.dataset.souloMediaID===id)).display==='flex',id);
+ await page.waitForFunction(id=>{const controls=[...document.querySelectorAll('[data-soulo-video-rotate]')].find(n=>n.dataset.souloMediaID===id);return controls&&getComputedStyle(controls).display==='flex'},id);
  await page.evaluate(()=>document.getElementById('v80').remove());
  await page.waitForFunction(id=>![...document.querySelectorAll('[data-soulo-video-rotate]')].find(n=>n.dataset.souloMediaID===id),id);
  await page.evaluate(()=>{

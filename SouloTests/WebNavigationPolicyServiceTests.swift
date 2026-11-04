@@ -14,38 +14,6 @@ final class WebNavigationPolicyServiceTests: XCTestCase {
             XCTAssertNil(policy.universalAppScheme(for: try XCTUnwrap(URL(string: raw))))
         }
     }
-    func testMainFrameCrossSiteNavigationPreservesWebKitRequestAndHistory() {
-        let source = URL(string: "https://cn.bing.com/videos/search?q=eggs")!
-        let destination = URL(string: "https://www.bilibili.com/video/BV1example")!
-        for type in [WKNavigationType.other, .linkActivated] {
-            XCTAssertFalse(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
-                navigationType: type, targetsMainFrame: true, method: "GET", nativeRequest: false),
-                "Main-frame clicks and location.replace must not be canceled and reissued as app loads")
-        }
-        XCTAssertTrue(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
-            navigationType: .linkActivated, targetsMainFrame: nil, method: "GET", nativeRequest: false))
-        XCTAssertFalse(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
-            navigationType: .other, targetsMainFrame: true, method: "GET", nativeRequest: true),
-            "The app's replacement request must load once without a cancellation loop")
-    }
-
-    func testBrowserLinkRoutingPreservesFramesFormsHistoryAndFragments() {
-        let source = URL(string: "https://example.com/article")!
-        let destination = URL(string: "https://other.test/page")!
-        for type in [WKNavigationType.backForward, .reload] {
-            XCTAssertFalse(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
-                navigationType: type, targetsMainFrame: true, method: "GET", nativeRequest: false))
-        }
-        XCTAssertFalse(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
-            navigationType: .linkActivated, targetsMainFrame: false, method: "GET", nativeRequest: false))
-        XCTAssertFalse(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
-            navigationType: .formSubmitted, targetsMainFrame: nil, method: "POST", nativeRequest: false))
-        XCTAssertFalse(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination, sourceURL: source,
-            navigationType: .formSubmitted, targetsMainFrame: nil, method: "GET", nativeRequest: false))
-        XCTAssertFalse(BrowserWebLinkPolicy.shouldLoadInBrowser(url: URL(string: "https://example.com/article#part")!, sourceURL: source,
-            navigationType: .linkActivated, targetsMainFrame: true, method: "GET", nativeRequest: false))
-    }
-
     func testBaiduSDKAppHandoffResolvesToItsAppScheme() throws {
         let appURL = try XCTUnwrap(URL(string: "baiduboxapp://video/invokeVideoDetail?params=%7B%22name%22%3A%22a%2Bb%22%7D"))
         var wrapper = try XCTUnwrap(URLComponents(string: "https://boxer.baidu.com/scheme"))
@@ -203,25 +171,25 @@ final class WebNavigationPolicyServiceTests: XCTestCase {
         XCTAssertFalse(service.canUseSafariCompatibilityMode(for: nil))
     }
 
-    func testOnlyAuthenticationWindowsPreservePopupContext() {
+    func testAdFilterRecognizesAuthenticationWindows() {
         let webURL = URL(string: "https://accounts.example.com/oauth")!
-        XCTAssertTrue(BrowserPopupPolicy.shouldPreserveJavaScriptContext(
+        XCTAssertTrue(BrowserAdNavigationPolicy.isAuthenticationWindow(
             navigationType: .other,
             url: webURL
         ))
-        XCTAssertTrue(BrowserPopupPolicy.shouldPreserveJavaScriptContext(
+        XCTAssertFalse(BrowserAdNavigationPolicy.isAuthenticationWindow(
             navigationType: .linkActivated,
             url: URL(string: "about:blank")!
         ))
-        XCTAssertFalse(BrowserPopupPolicy.shouldPreserveJavaScriptContext(
+        XCTAssertFalse(BrowserAdNavigationPolicy.isAuthenticationWindow(
             navigationType: .linkActivated,
             url: URL(string: "https://example.com/article")!
         ))
-        XCTAssertFalse(BrowserPopupPolicy.shouldPreserveJavaScriptContext(
+        XCTAssertFalse(BrowserAdNavigationPolicy.isAuthenticationWindow(
             navigationType: .other,
             url: URL(string: "https://example.com/script-created-page")!
         ))
-        XCTAssertTrue(BrowserPopupPolicy.shouldPreserveJavaScriptContext(
+        XCTAssertTrue(BrowserAdNavigationPolicy.isAuthenticationWindow(
             navigationType: .linkActivated,
             url: URL(string: "https://accounts.google.com/o/oauth2/auth")!
         ))

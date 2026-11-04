@@ -4,10 +4,32 @@ enum WebVideoOrientationRuntime {
     static let world = WKContentWorld.world(name: "SouloVideoOrientation")
     static let handler = "souloVideoOrientation"
 
+    /// Route site-owned native video buttons into the same player as files.
+    /// The isolated listener must accept the request during a real user gesture;
+    /// otherwise the original WebKit method remains responsible for it.
+    static let fullscreenRequests = #"""
+    (()=>{
+      const prototype=HTMLVideoElement.prototype;
+      for(const name of ['webkitEnterFullscreen','webkitEnterFullScreen','requestFullscreen','webkitRequestFullscreen']) {
+        const original=prototype[name];
+        if(typeof original!=='function'||original.__souloUnifiedPlayer)continue;
+        const request=function(...args){
+          if(!this.mediaKeys) {
+            const accepted=!this.dispatchEvent(new CustomEvent('soulo-video-fullscreen-request',{bubbles:true,composed:true,cancelable:true}));
+            if(accepted)return /requestFullscreen/i.test(name)?Promise.resolve():undefined;
+          }
+          return original.apply(this,args);
+        };
+        request.__souloUnifiedPlayer=true;
+        try{Object.defineProperty(prototype,name,{configurable:true,writable:true,value:request});}catch(_){}
+      }
+    })();
+    """#
+
     @MainActor static func script() -> String {
-        let label = (try? JSONSerialization.data(withJSONObject: [ToolText.text("video_fullscreen"), ToolText.text("video_speed"), LanguageManager.shared.localizedString("download"), ToolText.text("video_tools"), ToolText.text("episodes"), ToolText.text("video_tools_collapse")]))
+        let label = (try? JSONSerialization.data(withJSONObject: [ToolText.text("video_fullscreen"), ToolText.text("video_speed"), LanguageManager.shared.localizedString("download"), ToolText.text("video_tools"), ToolText.text("episodes"), ToolText.text("video_tools_collapse"), LanguageManager.shared.localizedString("settings")]))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "[\"Fullscreen\"]"
-        return WebOverlayControlsRuntime.source + "\n" + source + WebVideoHoldSpeedRuntime.source + "\nwindow.__souloVideoOrientation.setLabels(\(label));"
+        return "window.__souloVideoToolsEnabled=\(VideoPlaybackPreferences.showsTools());\n" + WebOverlayControlsRuntime.source + "\n" + source + WebVideoHoldSpeedRuntime.source + "\nwindow.__souloVideoHoldSpeed.setRate(\(VideoPlaybackPreferences.holdSpeed()));\nwindow.__souloVideoOrientation.setLabels(\(label));\nwindow.__souloVideoOrientation.setToolsEnabled(\(VideoPlaybackPreferences.showsTools()));\nwindow.__souloVideoOrientation.setPrefersSoulo(\(!VideoPlaybackPreferences.usesSystemPlayer()));"
     }
 
     // Inject into every frame in an isolated world, so cross-origin embedded
@@ -16,18 +38,42 @@ enum WebVideoOrientationRuntime {
     (() => {
       if (window.__souloVideoOrientation) return;
       const controls = new Map(), roots = new Set(), pending = new Set(), videos = new Set(), visibleVideos = new Set();
-      const overlay = window.__souloOverlayControls;
-      let labels = ['Fullscreen', 'Speed', 'Download', 'Video tools', 'Episodes', 'Close'], frame = 0, scanTimer = 0, active = null, expandedGroup = null;
-      let bottomControls = {needed:false}, episodesAvailable = false;
+      const nativeFullscreenVideos = new WeakSet();
+      const overlay = window.__souloOverlayControls, controlSize = 40;
+      let labels = ['Fullscreen', 'Speed', 'Download', 'Video tools', 'Episodes', 'Close', 'Settings'], frame = 0, scanTimer = 0, active = null, expandedGroup = null, toolsEnabled = window.__souloVideoToolsEnabled !== false;
+      let bottomControls = {needed:false}, episodesAvailable = false, prefersSoulo = false;
       let reportedViewportScale = null;
-      const expandedWidth = () => (episodesAvailable ? 5 : 4) * overlay.size;
-      const observationOptions = {childList:true,subtree:true,attributes:true,attributeFilter:['class','style','hidden']};
+      let lastFullscreenGesture=0;
+      for(const type of ['pointerup','touchend','click'])window.addEventListener(type,event=>{
+        if(event.isTrusted)lastFullscreenGesture=performance.now();
+      },{capture:true,passive:true});
+      window.addEventListener('soulo-video-fullscreen-request',event=>{
+        const video=event.composedPath().find(node=>node instanceof HTMLVideoElement);
+        if(!video||!video.isConnected||video.mediaKeys||!lastFullscreenGesture||performance.now()-lastFullscreenGesture>1500)return;
+        if(!videos.has(video))add(video);
+        event.preventDefault();event.stopImmediatePropagation();
+        send('fullscreenPlayer',video.getAttribute('data-soulo-media-id')||'',
+          {landscape:!video.videoWidth||video.videoWidth>video.videoHeight,system:!prefersSoulo});
+      },true);
+      const expandedWidth = () => (episodesAvailable ? 6 : 5) * controlSize;
+      const observationOptions = () => toolsEnabled ? {childList:true,subtree:true,attributes:true,attributeFilter:['class','style','hidden']} : {childList:true,subtree:true};
       function send(action, token, details = {}) {
         try { window.webkit.messageHandlers.souloVideoOrientation.postMessage({action, token, ...details}); } catch (_) {}
       }
       function isFullscreen(video) {
-        return video.webkitDisplayingFullscreen || video.webkitPresentationMode === 'fullscreen'
-          || document.fullscreenElement === video || video.getRootNode()?.fullscreenElement === video;
+        const full=document.fullscreenElement || video.getRootNode()?.fullscreenElement;
+        let contained=false;
+        for(let node=video;full && node;node=node.parentElement || node.getRootNode()?.host) {
+          if(node===full){contained=true;break;}
+        }
+        return nativeFullscreenVideos.has(video) || video.webkitDisplayingFullscreen || video.webkitPresentationMode === 'fullscreen'
+          || contained;
+      }
+      function nativePlaying(video) { return !video.paused && !video.ended && video.readyState >= 3; }
+      function nativePlaybackChanged(event) {
+        const video=event.currentTarget;
+        if(isFullscreen(video)) send('nativePlayback',video.getAttribute('data-soulo-media-id'),
+          {playing:event.type!=='waiting' && nativePlaying(video),muted:video.muted,landscape:video.videoWidth>video.videoHeight});
       }
       function computed(node, styles) {
         if (!styles.has(node)) styles.set(node, getComputedStyle(node));
@@ -73,9 +119,41 @@ enum WebVideoOrientationRuntime {
         if (!active) return;
         clearTimeout(active.timeout);
         active.cleanup?.();
+        if(active.documentControls!==undefined)active.video.controls=active.documentControls;
         send(action, active.token); active = null; schedule();
       }
+      let documentFullscreenVideo = null;
       function fullscreenChanged(event) {
+        if(event && ['webkitbeginfullscreen','webkitendfullscreen','webkitpresentationmodechanged'].includes(event.type)
+            && !event.isTrusted)return;
+        const video = event?.target;
+        if(video instanceof HTMLVideoElement) {
+          if(event.type==='webkitbeginfullscreen')nativeFullscreenVideos.add(video);
+          if(event.type==='webkitendfullscreen')nativeFullscreenVideos.delete(video);
+        }
+        if(event?.type==='fullscreenchange' && !active) {
+          const current=[...videos].filter(video=>isFullscreen(video))
+            .sort((a,b)=>b.clientWidth*b.clientHeight-a.clientWidth*a.clientHeight)[0];
+          if(current) {
+            documentFullscreenVideo=current;
+            send('nativeFullscreen',current.getAttribute('data-soulo-media-id')||'',
+              {rate:current.playbackRate,playing:nativePlaying(current),landscape:!current.videoWidth || current.videoWidth>current.videoHeight});
+          } else if(documentFullscreenVideo) {
+            send('nativeFullscreenEnd',documentFullscreenVideo.getAttribute('data-soulo-media-id')||'');
+            documentFullscreenVideo=null;
+          }
+        }
+        if(active?.mode==='document') {
+          if(isFullscreen(active.video)) send('nativeFullscreen',active.video.getAttribute('data-soulo-media-id')||'',{rate:active.video.playbackRate,playing:nativePlaying(active.video),muted:active.video.muted,landscape:active.video.videoWidth>active.video.videoHeight});
+          else if(active.began) send('nativeFullscreenEnd',active.video.getAttribute('data-soulo-media-id')||'');
+        }
+        if (['webkitbeginfullscreen','webkitpresentationmodechanged'].includes(event?.type)
+            && video instanceof HTMLVideoElement && isFullscreen(video))
+          send('nativeFullscreen',video.getAttribute('data-soulo-media-id') || '', {rate:video.playbackRate,playing:nativePlaying(video),muted:video.muted,landscape:video.videoWidth>video.videoHeight});
+        if (event?.type === 'webkitendfullscreen' && video instanceof HTMLVideoElement)
+          send('nativeFullscreenEnd',video.getAttribute('data-soulo-media-id') || '');
+        if(event?.type==='webkitpresentationmodechanged' && video instanceof HTMLVideoElement && !isFullscreen(video))
+          send('nativeFullscreenEnd',video.getAttribute('data-soulo-media-id') || '');
         if (!active) return;
         if (active.mode === 'native') {
           // AVKit and document fullscreen have independent event streams.
@@ -104,18 +182,22 @@ enum WebVideoOrientationRuntime {
           // Transfer an actual decoded frame, never an empty AVKit surface.
           if (!playbackReady || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return;
           active.requested = true;
-          send('prepare', token, {landscape:video.videoWidth / video.videoHeight > 1.1});
           const documentFullscreen = () => {
             if (active?.token !== token) return;
             if (!document.fullscreenEnabled || typeof video.requestFullscreen !== 'function') { failed(); return; }
             active.mode = 'document';
+            active.documentControls=video.controls;video.controls=true;
+            send('prepare', token, {landscape:video.videoWidth / video.videoHeight > 1.1});
             try { Promise.resolve(video.requestFullscreen()).catch(failed); } catch (_) { failed(); }
           };
-          // Preserve the site's video geometry, source and player. Changing its
-          // inline size before AVKit entry can rebuild a responsive player.
+          // Enter native fullscreen first; the coordinator waits for AVKit's
+          // video transform to settle before applying the landscape preference.
           if (typeof video.webkitEnterFullscreen === 'function' && video.webkitSupportsFullscreen !== false) {
             active.mode = 'native';
-            try { video.webkitEnterFullscreen(); } catch (_) { documentFullscreen(); }
+            const landscape=video.videoWidth / video.videoHeight > 1.1;
+            const enter=()=>{try { video.webkitEnterFullscreen(); } catch (_) { documentFullscreen(); }};
+            send('prepare', token, {landscape,native:true});
+            enter();
           } else documentFullscreen();
         };
         const readyEvents = ['loadeddata','canplay','playing'];
@@ -146,11 +228,12 @@ enum WebVideoOrientationRuntime {
         for (const root of roots) if (root.host && !root.host.isConnected) { roots.delete(root); removedRoot = true; }
         if (removedRoot) {
           observer.disconnect();
-          roots.forEach(root => observer.observe(root, observationOptions));
+          roots.forEach(root => observer.observe(root, observationOptions()));
         }
       }
       function layout() {
         frame = 0;
+        if(!toolsEnabled){reportBottomControls(false);return;}
         prune();
         const viewport = overlay.metrics(), styles = new Map(), updates = [];
         let needsClearance = false;
@@ -160,13 +243,14 @@ enum WebVideoOrientationRuntime {
           const button = controls.get(video);
           if (!button) continue;
           const r = video.getBoundingClientRect();
-          const visible = !active?.began && r.width >= 100 && r.height >= 70 && r.right > 44 && r.bottom > 44
+          const videoVisible = !active?.began && r.width >= 100 && r.height >= 70 && r.right > 44 && r.bottom > 44
             && r.left < innerWidth - 44 && r.top < innerHeight - 44 && isVisible(video, styles);
-          if (visible) needsClearance ||= needsBottomClearance(video, r, styles);
-          const width = (button === expandedGroup ? expandedWidth() : overlay.size) * viewport.unit;
+          if (videoVisible) needsClearance ||= needsBottomClearance(video, r, styles);
+          const visible = toolsEnabled && videoVisible;
+          const width = (button === expandedGroup ? expandedWidth() : controlSize) * viewport.unit;
           updates.push({button, visible,
             left:Math.max(viewport.left+viewport.gap,Math.min(r.right-viewport.gap,viewport.left+viewport.width-viewport.gap)-width),
-            top:Math.max(viewport.top+viewport.gap,Math.min(r.top+viewport.gap,viewport.top+viewport.height-viewport.size-viewport.gap))});
+            top:Math.max(viewport.top+viewport.gap,Math.min(r.top+viewport.gap,viewport.top+viewport.height-controlSize*viewport.unit-viewport.gap))});
         }
         reportBottomControls(needsClearance);
         for (const {button,visible,left,top} of updates) {
@@ -174,7 +258,7 @@ enum WebVideoOrientationRuntime {
           setStyleIfChanged(button,'display',visible ? 'flex' : 'none');
           if (!visible) continue;
           overlay.apply(button,viewport);
-          setStyleIfChanged(button,'max-width',Math.max(overlay.size,viewport.width/viewport.unit-16)+'px');
+          setStyleIfChanged(button,'max-width',Math.max(controlSize,viewport.width/viewport.unit-16)+'px');
           setStyleIfChanged(button,'left',left+'px');
           setStyleIfChanged(button,'top',top+'px');
         }
@@ -182,12 +266,12 @@ enum WebVideoOrientationRuntime {
       function setStyleIfChanged(element,property,value) {
         if(element.style.getPropertyValue(property)!==value)element.style.setProperty(property,value,'important');
       }
-      function schedule() { if (!frame) frame = requestAnimationFrame(layout); }
+      function schedule() { if(toolsEnabled && !frame)frame=requestAnimationFrame(layout); }
       function collapse() {
         if (!expandedGroup) return;
         const group = expandedGroup; expandedGroup = null;
-        group.style.setProperty('width', overlay.size+'px', 'important');
-        group.style.setProperty('height', overlay.size+'px', 'important');
+        group.style.setProperty('width', controlSize+'px', 'important');
+        group.style.setProperty('height', controlSize+'px', 'important');
         group.querySelectorAll('[data-video-action]').forEach(el => showAction(el, false));
         const toggle = group.querySelector('[data-video-toggle]');
         setToggleState(toggle,false);
@@ -225,13 +309,13 @@ enum WebVideoOrientationRuntime {
         action.tabIndex = visible ? 0 : -1;
       }
       reducedMotion.addEventListener('change', () => controls.forEach(configureMotion));
-      const svg = content => '<svg width="23" height="23" style="width:23px!important;height:23px!important;min-width:23px!important;flex:0 0 23px!important;display:block!important" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + content + '</svg>';
+      const svg = content => '<svg width="20" height="20" style="width:20px!important;height:20px!important;min-width:20px!important;flex:0 0 20px!important;display:block!important" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + content + '</svg>';
       const toolsIcon = svg('<path d="M10 19H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6"/><path d="m8 7 5 3-5 3Z" fill="currentColor" stroke="none"/><path d="M14 16h2m3 0h3m-8 5h5"/><circle cx="17.5" cy="16" r="1.5"/><circle cx="20.5" cy="21" r="1.5"/>');
       const resize = new ResizeObserver(schedule);
       const intersection = new IntersectionObserver(entries => {
         for (const entry of entries) {
           const video = entry.target;
-          if (entry.isIntersecting) { visibleVideos.add(video); createControl(video); }
+          if (entry.isIntersecting) { visibleVideos.add(video); if(toolsEnabled)createControl(video); }
           else {
             visibleVideos.delete(video);
             const button = controls.get(video);
@@ -243,28 +327,33 @@ enum WebVideoOrientationRuntime {
       }, {rootMargin:'64px'});
       function add(video) {
         if (videos.has(video)) return;
+        if (!video.getAttribute('data-soulo-media-id'))
+          video.setAttribute('data-soulo-media-id',globalThis.crypto?.randomUUID?.() || Date.now().toString(36)+Math.random().toString(36));
+        for (const event of ['webkitbeginfullscreen','webkitendfullscreen','webkitpresentationmodechanged'])
+          video.addEventListener(event,fullscreenChanged);
+        for (const event of ['play','playing','pause','waiting','ended','volumechange']) video.addEventListener(event,nativePlaybackChanged);
         videos.add(video); intersection.observe(video);
+        // Media documents may enter AVKit before a video intersects the page
+        // or before our mutation scan runs. Recover the current native session.
+        if (isFullscreen(video)) send('nativeFullscreen',video.getAttribute('data-soulo-media-id'),{rate:video.playbackRate,playing:nativePlaying(video),muted:video.muted,landscape:video.videoWidth>video.videoHeight});
       }
       function createControl(video) {
         if (controls.has(video)) return;
         const button = document.createElement('div');
         button.setAttribute('data-soulo-video-rotate', '');
         button.setAttribute('role', 'group');
-        button.dataset.souloMediaID = globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36);
-        video.setAttribute('data-soulo-media-id', button.dataset.souloMediaID);
-        button.style.cssText = 'all:initial!important;position:fixed!important;z-index:2147483646!important;display:none!important;width:48px!important;max-width:calc(100vw - 16px)!important;height:48px!important;flex-direction:row!important;align-items:center!important;justify-content:flex-end!important;border-radius:14px!important;background:rgba(24,25,29,.7)!important;backdrop-filter:blur(16px) saturate(1.2)!important;-webkit-backdrop-filter:blur(16px) saturate(1.2)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 2px 8px rgba(0,0,0,.16)!important;color:rgba(255,255,255,.94)!important;pointer-events:auto!important;touch-action:manipulation!important;isolation:isolate!important;overflow:hidden!important;user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;';
-        const controlStyle = 'all:initial!important;box-sizing:border-box!important;width:48px!important;min-width:48px!important;min-height:48px!important;height:48px!important;display:flex!important;flex-direction:row!important;gap:0!important;padding:0!important;align-items:center!important;justify-content:center!important;border-radius:14px!important;color:rgba(255,255,255,.94)!important;cursor:pointer!important;user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;font:600 14px -apple-system,sans-serif!important;';
+        button.dataset.souloMediaID = video.getAttribute('data-soulo-media-id');
+        button.style.cssText = 'all:initial!important;position:fixed!important;z-index:2147483646!important;display:none!important;width:40px!important;max-width:calc(100vw - 16px)!important;height:40px!important;flex-direction:row!important;align-items:center!important;justify-content:flex-end!important;border-radius:12px!important;background:rgba(24,25,29,.7)!important;backdrop-filter:blur(16px) saturate(1.2)!important;-webkit-backdrop-filter:blur(16px) saturate(1.2)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 2px 8px rgba(0,0,0,.16)!important;color:rgba(255,255,255,.94)!important;pointer-events:auto!important;touch-action:manipulation!important;isolation:isolate!important;overflow:hidden!important;user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;';
+        const controlStyle = 'all:initial!important;box-sizing:border-box!important;width:40px!important;min-width:40px!important;min-height:40px!important;height:40px!important;display:flex!important;flex-direction:row!important;gap:0!important;padding:0!important;align-items:center!important;justify-content:center!important;border-radius:12px!important;color:rgba(255,255,255,.94)!important;cursor:pointer!important;user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;font:600 14px -apple-system,sans-serif!important;';
         const fullscreen = document.createElement('button'); fullscreen.type = 'button'; fullscreen.style.cssText = controlStyle;
         fullscreen.setAttribute('aria-label', labels[0]); fullscreen.title = labels[0];
         fullscreen.innerHTML = svg('<rect x="3" y="3" width="10" height="18" rx="2.5"/><path d="M6.5 6h3M16 12h2.5a2.5 2.5 0 0 1 2.5 2.5v4a2.5 2.5 0 0 1-2.5 2.5H16M16 3a7 7 0 0 1 5 6m-3-1 3 1 .5-3"/><circle cx="8" cy="17.5" r=".9"/>');
         fullscreen.__souloVideoAction = event => {
           event.preventDefault(); event.stopImmediatePropagation();
           if (!event.isTrusted || !video.isConnected) return;
-          collapse(); enterFullscreen(video);
+          collapse();
+          send('fullscreenPlayer',button.dataset.souloMediaID,{landscape:true,system:!prefersSoulo});
         };
-        for (const event of ['webkitbeginfullscreen', 'webkitendfullscreen', 'webkitpresentationmodechanged']) {
-          video.addEventListener(event, fullscreenChanged);
-        }
         const download = document.createElement('button'); download.type = 'button'; download.style.cssText = controlStyle;
         download.setAttribute('aria-label', labels[2]); download.title = labels[2];
         download.innerHTML = svg('<path d="M12 3v12m-4-4 4 4 4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/>');
@@ -291,8 +380,16 @@ enum WebVideoOrientationRuntime {
           if (!episodesAvailable) return;
           collapse(); send('episodes',button.dataset.souloMediaID);
         };
-        [download,speed,fullscreen,episodes].forEach((action,index) => setControlLabel(action,labels[[2,1,0,4][index]]));
-        for (const action of [download, speed, fullscreen, episodes]) {
+        const settings = document.createElement('button'); settings.type='button'; settings.style.cssText=controlStyle;
+        settings.setAttribute('data-video-settings','');
+        settings.innerHTML=svg('<path d="m9 3-.5 3-2.5 1-2.5-1-1.5 3 2 2v3l-2 2 1.5 3 2.5-1 2.5 1 .5 3h4l.5-3 2.5-1 2.5 1 1.5-3-2-2v-3l2-2-1.5-3-2.5 1-2.5-1-.5-3Z"/><circle cx="11" cy="12" r="3"/>');
+        settings.__souloVideoAction = event => {
+          event.preventDefault(); event.stopImmediatePropagation();
+          if (!event.isTrusted || !video.isConnected) return;
+          collapse(); send('settings',button.dataset.souloMediaID);
+        };
+        [download,speed,fullscreen,episodes,settings].forEach((action,index) => setControlLabel(action,labels[[2,1,0,4,6][index]]));
+        for (const action of [download, speed, fullscreen, episodes, settings]) {
           action.setAttribute('data-video-action', ''); showAction(action, false);
           action.addEventListener('pointerdown', () => action.style.setProperty('background','rgba(255,255,255,.14)','important'));
           for (const event of ['pointerup','pointercancel','pointerleave']) action.addEventListener(event, () => action.style.setProperty('background','transparent','important'));
@@ -307,22 +404,22 @@ enum WebVideoOrientationRuntime {
           event.preventDefault(); event.stopImmediatePropagation(); if (!event.isTrusted) return;
           const wasExpanded = expandedGroup === button; collapse(); if (wasExpanded) return;
           expandedGroup = button; button.style.setProperty('width',expandedWidth()+'px','important');
-          for (const action of [download, speed, fullscreen, episodes]) showAction(action, action !== episodes || episodesAvailable);
+          for (const action of [download, speed, fullscreen, episodes, settings]) showAction(action, action !== episodes || episodesAvailable);
           setToggleState(toggle,true); schedule();
         };
-        button.append(download, speed, fullscreen, episodes, toggle);
+        button.append(download, speed, fullscreen, episodes, settings, toggle);
         configureMotion(button);
         document.documentElement.append(button);
         controls.set(video, button); resize.observe(video);
       }
       function scan(root = document) {
         if ((root === document || root instanceof ShadowRoot) && !roots.has(root)) {
-          roots.add(root); observer.observe(root, observationOptions);
+          roots.add(root); observer.observe(root, observationOptions());
         }
         if (root instanceof Element && root.matches('video')) add(root);
         if (root instanceof Element && root.shadowRoot) scan(root.shadowRoot);
         root.querySelectorAll('video').forEach(add);
-        root.querySelectorAll('*').forEach(el => { if (el.shadowRoot) scan(el.shadowRoot); });
+        if(toolsEnabled)root.querySelectorAll('*').forEach(el => { if (el.shadowRoot) scan(el.shadowRoot); });
         schedule();
       }
       const observer = new MutationObserver(records => {
@@ -353,7 +450,23 @@ enum WebVideoOrientationRuntime {
           schedule();
         }, 150);
       });
-      window.__souloVideoOrientation = {setPageScale(value,zoom = 1) {
+      window.__souloVideoOrientation = {setPrefersSoulo(value){prefersSoulo=value===true;},landscape(token) {
+        const video=[...videos].find(video=>video.getAttribute('data-soulo-media-id')===token);
+        if(!video || active)return false;
+        if(!isFullscreen(video)){enterFullscreen(video);return true;}
+        const rotation=globalThis.crypto?.randomUUID?.() || Date.now().toString(36);
+        active={video,token:rotation,mode:'native',began:true};
+        send('prepare',rotation,{landscape:true,native:true,alreadyFullscreen:true});send('begin',rotation);
+        return true;
+      },setToolsEnabled(value) {
+        if (toolsEnabled === (value === true)) return;
+        toolsEnabled = value === true;
+        observer.disconnect();roots.forEach(root=>observer.observe(root,observationOptions()));
+        if (!toolsEnabled) {
+          collapse(); controls.forEach(button=>{resize.unobserve(button);button.remove()});controls.clear();
+          if(frame)cancelAnimationFrame(frame);frame=0;reportBottomControls(false);
+        } else { scan();visibleVideos.forEach(createControl);schedule(); }
+      },setPageScale(value,zoom = 1) {
         const scaleChanged=overlay.setPageScale(value),zoomChanged=overlay.setContentZoom(zoom);
         if(scaleChanged||zoomChanged)schedule();
       },setContentZoom(zoom) {
@@ -363,7 +476,7 @@ enum WebVideoOrientationRuntime {
         labels = value;
         controls.forEach(group => {
           const buttons = group.querySelectorAll(':scope > button');
-          [2,1,0,4,group === expandedGroup ? 5 : 3].forEach((index,i) => setControlLabel(buttons[i],labels[index]));
+          [2,1,0,4,6,group === expandedGroup ? 5 : 3].forEach((index,i) => setControlLabel(buttons[i],labels[index]));
         });
       }, setEpisodesAvailable(value) {
         if (episodesAvailable === (value === true)) return;
@@ -374,8 +487,24 @@ enum WebVideoOrientationRuntime {
         showAction(expandedGroup.querySelector('[data-video-episodes]'),episodesAvailable);
         expandedGroup.style.setProperty('width',expandedWidth()+'px','important');
         schedule();
+      },async exitForPlayer(token) {
+        for (const video of videos) if (video.getAttribute('data-soulo-media-id') === token && video.isConnected) {
+          const time = video.currentTime;
+          const playing=video.paused?0:1;
+          video.pause();
+          if (nativeFullscreenVideos.has(video) || video.webkitDisplayingFullscreen || video.webkitPresentationMode==='fullscreen') {
+            if(typeof video.webkitExitFullscreen==='function')video.webkitExitFullscreen();
+            else video.webkitSetPresentationMode?.('inline');
+          }
+          else if(isFullscreen(video)) {
+            if(document.exitFullscreen)await document.exitFullscreen();
+            else document.webkitExitFullscreen?.();
+          }
+          return {time:Number.isFinite(time) ? time : 0,playing};
+        }
+        return null;
       }, async setRate(token, rate) {
-        for (const [video, group] of controls) if (group.dataset.souloMediaID === token && video.isConnected) {
+        for (const video of videos) if (video.getAttribute('data-soulo-media-id') === token && video.isConnected) {
           if (![0.5,1,1.5,2,4,8,16].includes(rate)) return false;
           try {
             video.defaultPlaybackRate = rate; video.playbackRate = rate;

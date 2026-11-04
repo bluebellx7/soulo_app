@@ -71,7 +71,46 @@ enum WebAdOverlayCleanup {
 
     static let source = filteredModalCleanup + #"""
 
+    const playerAdClosers = new WeakMap();
+    function dismissFilteredPlayerAds() {
+      if (!/(^|\.)xgcartoon\.com$/.test(location.hostname)) return;
+      document.querySelectorAll('.xgct-static-ads--blocking .xgct-static-ad--modal:not([hidden])').forEach(modal => {
+        const close = modal.querySelector('button.xgct-static-ad__close');
+        if (!close || playerAdClosers.has(close)) return;
+        const attempt = () => {
+          if (!adBlockConfig().cosmeticEnabled || shouldDisableAdBlock() || !modal.isConnected || modal.hidden) return true;
+          // Use the player's own close handler so it clears its blocking state
+          // and resumes content. Merely hiding the ad leaves play intercepted.
+          const media = modal.closest('.xgct-static-ad-host')?.querySelector('video');
+          const preservePause = modal.dataset.slot === 'pause' && media?.paused;
+          const originalPlay = preservePause ? Object.getOwnPropertyDescriptor(media, 'play') : null;
+          if (preservePause) {
+            // Closing a pause ad normally calls play(). Preserve the user's
+            // pause while still letting the site's handler clear its ad state.
+            Object.defineProperty(media, 'play', {configurable:true,writable:true,value:() => Promise.resolve()});
+          }
+          try { close.dispatchEvent(new MouseEvent('click', {bubbles:true,cancelable:true})); }
+          finally {
+            if (preservePause) {
+              if (originalPlay) Object.defineProperty(media, 'play', originalPlay);
+              else delete media.play;
+            }
+          }
+          return modal.hidden || !modal.closest('.xgct-static-ads--blocking');
+        };
+        if (attempt()) return;
+        // Mid-roll ads can wait for an enabled close control. Observe that
+        // control only; do not poll the page or change its countdown state.
+        const observer = new MutationObserver(() => {
+          if (attempt()) { observer.disconnect(); playerAdClosers.delete(close); }
+        });
+        playerAdClosers.set(close, observer);
+        observer.observe(close, {attributes:true,attributeFilter:['disabled']});
+      });
+    }
+
     function cleanupAdOverlays() {
+      dismissFilteredPlayerAds();
       // Use the site's browser option to release its own React state. Never
       // invoke the app-opening or service-agreement acceptance actions.
       if(/(^|\.)mgtv\.com$/.test(location.hostname)){

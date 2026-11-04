@@ -227,6 +227,26 @@ final class WebViewScriptsTests: XCTestCase {
     }
 
     @MainActor
+    func testBlobPlayerResolvesItsSourceTagBeforeUnrelatedVideoOrNetworkEntries() async throws {
+        let capture = MediaFrameCapture(), configuration = WKWebViewConfiguration()
+        configuration.userContentController.add(capture, contentWorld: .defaultClient, name: "souloMediaFrame")
+        configuration.userContentController.addUserScript(WKUserScript(source: WebViewScripts.mediaFrameRegistration,
+            injectionTime: .atDocumentEnd, forMainFrameOnly: false, in: .defaultClient))
+        let web = WKWebView(frame: .zero, configuration: configuration)
+        web.loadHTMLString("""
+        <iframe srcdoc="&lt;video data-soulo-media-id='main'&gt;&lt;source src='https://cdn.example.com/show/playlist.m3u8' type='application/vnd.apple.mpegurl'&gt;&lt;/video&gt;&lt;video src='https://ads.example.com/ad.mp4'&gt;&lt;/video&gt;&lt;script&gt;Object.defineProperty(document.querySelector('video'),'currentSrc',{get(){return 'blob:https://example.com/stream';}});window.__souloObservedMediaResponses=[{url:'https://ads.example.com/ad.mp4',mime:'video/mp4'}];&lt;/script&gt;"></iframe>
+        """, baseURL: URL(string: "https://example.com/watch"))
+        for _ in 0..<100 { if !capture.frames.isEmpty { break }; try await Task.sleep(for: .milliseconds(25)) }
+        let frame = try XCTUnwrap(capture.frames.first)
+        let resource = await WebResourceInspectionService.currentVideoResource(webView: web, frame: frame, token: "main")
+        XCTAssertEqual(resource?.url.absoluteString, "https://cdn.example.com/show/playlist.m3u8")
+        XCTAssertEqual(resource?.delivery, .hls)
+        _ = try await web.evaluateJavaScript("document.querySelector('video source').remove();window.hls={media:document.querySelector('video'),currentLevel:0,url:'https://cdn.example.com/show/playlist.m3u8',levels:[{details:{url:'https://cdn.example.com/show/480/video.m3u8'}}]};true;", in: frame, contentWorld: .page)
+        let selected = await WebResourceInspectionService.currentVideoResource(webView: web, frame: frame, token: "main")
+        XCTAssertEqual(selected?.url.absoluteString, "https://cdn.example.com/show/480/video.m3u8")
+    }
+
+    @MainActor
     func testPlayerDownloadResolvesBlobBackedFrameConfiguration() async throws {
         let capture = MediaFrameCapture()
         let configuration = WKWebViewConfiguration()

@@ -73,6 +73,152 @@ final class AdBlockServiceTests: XCTestCase {
         XCTAssertNotEqual(result?["widgetDisplay"] as? String, "none")
     }
 
+    @MainActor
+    func testSiteAllowlistAlsoBypassesFilteringInsideCrossOriginPlayers() async throws {
+        let parsed = ParsedAdBlockRules(networkURLFilters: [], cosmeticSelectors: [".qa-overlay"],
+            networkRules: [AdBlockNetworkRule(urlFilter: "ad-probe", resourceTypes: ["script"])])
+        UserDefaults.standard.set(try JSONEncoder().encode(parsed), forKey: "soulo_ad_block_subscription_rules")
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/parent.html": Data("""
+            <script>addEventListener('message', e => window.childResult=e.data);</script>
+            <iframe id='player'></iframe><script>player.src=location.origin.replace('127.0.0.1','localhost')+'/child.html';</script>
+            """.utf8),
+            "/child.html": Data("""
+            <div class='qa-overlay'>Player overlay</div><script src='/ad-probe.js'></script>
+            <script>addEventListener('load',()=>setTimeout(()=>parent.postMessage({
+              loaded:window.advertLoaded===true,
+              visible:getComputedStyle(document.querySelector('.qa-overlay')).display!=='none'
+            },'*'),150));</script>
+            """.utf8),
+            "/ad-probe.js": Data("window.advertLoaded=true;".utf8)
+        ])
+        let root = try await server.start(); defer { server.stop() }
+        for allowlisted in [false, true] {
+            let hosts = allowlisted ? ["127.0.0.1"] : []
+            let compiled = await AdBlockService.compileRuleLists(allowlistedHosts: hosts)
+            let rules = try XCTUnwrap(compiled)
+            let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+            rules.forEach(config.userContentController.add)
+            config.userContentController.addUserScript(WKUserScript(
+                source: AdBlockService.adHidingScript(allowlistedHosts: hosts),
+                injectionTime: .atDocumentStart, forMainFrameOnly: false))
+            let web = WKWebView(frame: .zero, configuration: config)
+            web.load(URLRequest(url: root.appendingPathComponent("parent.html")))
+            for _ in 0..<200 {
+                if (try? await web.evaluateJavaScript("!!window.childResult")) as? Bool == true { break }
+                try await Task.sleep(for: .milliseconds(25))
+            }
+            let result = try await web.evaluateJavaScript("window.childResult") as? [String: Any]
+            XCTAssertEqual(result?["loaded"] as? Bool, allowlisted, "A site's ad switch must also control its embedded player's resources")
+            XCTAssertEqual(result?["visible"] as? Bool, allowlisted, "A site's ad switch must also control its embedded player's overlays")
+            web.stopLoading()
+        }
+    }
+
+    @MainActor
+    func testFilteredPlayerAdClosesItsOwnStateAndAllowsPlayback() async throws {
+        for midroll in [false, true] {
+            let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+            let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 300), configuration: config)
+            web.loadHTMLString("""
+            <div class="xgct-static-ads xgct-static-ads--blocking" id="ads">
+            <section class="xgct-static-ad xgct-static-ad--modal" id="modal">
+              <div class="xgct-static-ad__content"><div data-soulo-hidden-ad style="display:none">Filtered ad</div></div>
+              <button class="xgct-static-ad__close" id="close" disabled>Close</button>
+            </section></div>
+            <button id="play">Play video</button>
+            <script>
+            window.blocking=true; window.plays=0; const closeButton=document.getElementById('close');
+            closeButton.addEventListener('click',()=>{
+              if (\(midroll ? "true" : "false") && closeButton.disabled) return;
+              blocking=false; modal.hidden=true; ads.classList.remove('xgct-static-ads--blocking');
+            });
+            play.addEventListener('click',()=>{ if(!blocking) plays++; });
+            window.fixtureReady=true;
+            </script>
+            """, baseURL: URL(string: "https://pframe.xgcartoon.com/pframe/player.htm"))
+            for _ in 0..<200 {
+                if (try? await web.evaluateJavaScript("window.fixtureReady===true")) as? Bool == true { break }
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            let script = """
+            function adBlockConfig(){ return {cosmeticEnabled:true}; }
+            function shouldDisableAdBlock(){ return false; }
+            \(WebAdOverlayCleanup.source)
+            cleanupAdOverlays(); null
+            """
+            _ = try await web.evaluateJavaScript(script)
+            if midroll {
+                let waiting = try await web.evaluateJavaScript("blocking && closeButton.disabled") as? Bool
+                XCTAssertEqual(waiting, true, "Keep the player's own mid-roll close condition")
+                _ = try await web.evaluateJavaScript("closeButton.disabled=false; null")
+            }
+            for _ in 0..<100 {
+                if (try? await web.evaluateJavaScript("!blocking")) as? Bool == true { break }
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            let result = try await web.evaluateJavaScript("play.click(); ({closed:modal.hidden,plays:plays})") as? [String: Any]
+            XCTAssertEqual(result?["closed"] as? Bool, true)
+            XCTAssertEqual(result?["plays"] as? Int, 1, "Removing the ad must also release the player's playback lock")
+        }
+    }
+
+    @MainActor
+    func testClosingFilteredPauseAdPreservesPauseAndRestoresPlay() async throws {
+        let web = WKWebView()
+        web.loadHTMLString("""
+        <div class="xgct-static-ad-host"><video id="video"></video>
+        <div class="xgct-static-ads--blocking" id="ads"><section class="xgct-static-ad--modal" id="modal" data-slot="pause">
+        <button class="xgct-static-ad__close" id="ad-close">Continue</button></section></div></div>
+        <script>
+        window.playCalls=0;video.play=()=>{playCalls++;return Promise.resolve();};
+        window.originalPlay=video.play;
+        document.getElementById('ad-close').addEventListener('click',()=>{
+          modal.hidden=true;ads.classList.remove('xgct-static-ads--blocking');video.play();
+        });window.fixtureReady=true;
+        </script>
+        """, baseURL: URL(string: "https://pframe.xgcartoon.com/pframe/player.htm"))
+        for _ in 0..<200 {
+            if (try? await web.evaluateJavaScript("window.fixtureReady===true")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        _ = try await web.evaluateJavaScript("""
+        function adBlockConfig(){return {cosmeticEnabled:true};}
+        function shouldDisableAdBlock(){return false;}
+        \(WebAdOverlayCleanup.source)
+        cleanupAdOverlays();null
+        """)
+        let result = try await web.evaluateJavaScript("({closed:modal.hidden,plays:playCalls,restored:video.play===originalPlay})") as? [String: Any]
+        XCTAssertEqual(result?["closed"] as? Bool, true)
+        XCTAssertEqual(result?["plays"] as? Int, 0, "Ad cleanup must not undo the user's Pause")
+        XCTAssertEqual(result?["restored"] as? Bool, true)
+        _ = try await web.evaluateJavaScript("video.play();null")
+        let plays = try await web.evaluateJavaScript("playCalls") as? Int
+        XCTAssertEqual(plays, 1, "Subsequent user playback must use the original implementation")
+    }
+
+    @MainActor
+    func testDocumentStartFilteringWaitsForTheDocumentElement() async throws {
+        UserDefaults.standard.set(try JSONEncoder().encode(ParsedAdBlockRules(cosmeticSelectors: [".qa-late-ad"])), forKey: "soulo_ad_block_subscription_rules")
+        let web = WKWebView()
+        web.loadHTMLString("<p id='ready'>Document startup fixture</p>", baseURL: URL(string: "https://example.com/"))
+        for _ in 0..<200 {
+            if (try? await web.evaluateJavaScript("!!document.getElementById('ready')")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        _ = try await web.evaluateJavaScript("document.documentElement.remove(); null")
+        _ = try await web.evaluateJavaScript(AdBlockService.adHidingScript() + "\nnull")
+        _ = try await web.evaluateJavaScript("""
+        const root=document.createElement('html');root.innerHTML='<body><div class="qa-late-ad">Ad</div></body>';document.append(root);null
+        """)
+        for _ in 0..<100 {
+            if (try? await web.evaluateJavaScript("getComputedStyle(document.querySelector('.qa-late-ad')).display==='none'")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let installed = try await web.evaluateJavaScript("!!window.__souloAdBlockObserver && getComputedStyle(document.querySelector('.qa-late-ad')).display==='none'") as? Bool
+        XCTAssertEqual(installed, true, "Document-start timing must not abort the runtime before its observer is installed")
+    }
+
     func testNativeCosmeticFilteringOnlyRemovesSafeDuplicateWork() {
         let plain = AdBlockCosmeticRule(selector: ".advert-slot")
         let domain = AdBlockCosmeticRule(selector: ".sponsor", ifDomains: ["*example.com"])

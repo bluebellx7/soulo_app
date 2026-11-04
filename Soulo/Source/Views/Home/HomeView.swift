@@ -98,9 +98,14 @@ struct HomeView: View {
                         tabManager.switchToTab(at: index)
                         searchVM.isSearching = true
                     },
-                    onNewTab: {
-                        tabManager.createTab()
-                        searchVM.isSearching = true
+                    onGoHome: {
+                        var transaction = Transaction()
+                        transaction.disablesAnimations = true
+                        withTransaction(transaction) {
+                            showTabOverviewFromHome = false
+                            tabManager.showTabOverview = false
+                            searchVM.clearSearch()
+                        }
                     },
                     onDismiss: {
                         showTabOverviewFromHome = false
@@ -453,7 +458,8 @@ struct HomeView: View {
                                 Button { performHomeToolbarAction(action) } label: {
                                     HomeToolbarButtonFace(action: action, lightWallpaper: wallpaperManager.isCurrentWallpaperLight,
                                         isActive: action == .privateBrowsing && searchVM.isIncognito,
-                                        isLoading: action == .refreshWallpaper && wallpaperManager.networkLoading)
+                                        isLoading: action == .refreshWallpaper && wallpaperManager.networkLoading,
+                                        tabCount: tabManager.tabCount)
                                 }.buttonStyle(HomeToolbarButtonStyle(lightWallpaper: wallpaperManager.isCurrentWallpaperLight, showsBackground: homeToolbar.showsButtonBackground))
                                     .accessibilityLabel(action.title)
                                     .accessibilityIdentifier("home.toolbar.\(index)")
@@ -689,6 +695,16 @@ struct HomeView: View {
                     .accessibilityHint(
                         languageManager.localizedString("accessibility_open_bookmark_hint")
                     )
+                    .contextMenu {
+                        Button { librarySection = .bookmarks } label: {
+                            Label(languageManager.localizedString("my_favorites"), systemImage: "bookmark")
+                        }
+                        Button(role: .destructive) {
+                            BookmarkService.delete(bookmark, context: modelContext)
+                        } label: {
+                            Label(languageManager.localizedString("delete"), systemImage: "trash")
+                        }
+                    }
                 }
             }
             .frame(maxWidth: 600)
@@ -745,6 +761,8 @@ struct HomeView: View {
                 .accessibilityHint(
                     languageManager.localizedString("accessibility_tab_overview_hint")
                 )
+                .accessibilityIdentifier("home.tabs")
+                .accessibilityValue("\(tabManager.tabCount)")
             }
 
             Spacer()

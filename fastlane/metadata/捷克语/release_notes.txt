@@ -1,10 +1,7 @@
-1.2.7
+1.2.8
 
-• Stahování BT: importujte soubory .torrent nebo odkazy magnet, vyberte soubory, pozastavte a pokračujte. V iOS 26 může stahování běžet na pozadí, pokud to systém dovolí; starší verze uloží průběh a pozastaví jej.
-• Přehrávejte podporovaná BT média během stahování a otevírejte soubory MKV. Importujte odkazy ed2k/thunder. Stahování vyžaduje dostupné zdroje; přehrávání závisí na kodecích.
-• Optimalizace vyhledávání Baidu je ve výchozím nastavení zapnutá. Skript si můžete prohlédnout nebo vypnout v Rozšířeních.
-• Nastavte pět volitelných zkratek na úvodní stránce pro stahování, soubory, záložky, historii, tapety a další stránky. Lišta karet knihovny se při posouvání zmenší.
-• Vylepšena kompatibilita uživatelských skriptů včetně externích závislostí přes @require.
-• Opraveny případy zvuku po ztlumení videa nebo duplicitního přehrávání na některých stránkách.
-• Vylepšena navigace zpět a obnova stránek, aby se připravený obsah zobrazil dříve.
-• Ukazatel průběhu načítání je výraznější v modré barvě motivu aplikace.
+• Nový výchozí přehrávač místních a BT videí s výběrem dílů, rychlostí 0,5–4× a systémovou volbou pro kompatibilní formáty.
+• Ovládání celé obrazovky se automaticky skrývá; podržením dočasně zrychlíte na 2×, vlevo upravíte jas a vpravo hlasitost.
+• Opraveno přehrávání některých HEVC/MKV videí bez obrazu a přetrvávající ukazatel načítání.
+• Lepší kompatibilita vyskakovacích oken a filtrování reklam brání chybnému blokování a zbylým vrstvám přes video.
+• Opraveny konflikty mazání přejetím s přepínáním karet, zarovnání složek v obou zobrazeních a výška nedávných hledání při podržení.

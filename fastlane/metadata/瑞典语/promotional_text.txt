@@ -1,1 +1,1 @@
-BT- och magnet-nedladdningar med filval och återupptagning. Spela medier som stöds under nedladdning, öppna MKV och importera ed2k/thunder-länkar.
+Lokala videor och BT-videor med Soulo: avsnitt, 0,5–4× hastighet och systemspelare för kompatibla format.

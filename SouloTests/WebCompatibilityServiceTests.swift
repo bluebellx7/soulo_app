@@ -21,6 +21,8 @@ final class WebCompatibilityServiceTests: XCTestCase {
             XCTAssertFalse(expressions.contains { $0.firstMatch(in: address, range: NSRange(address.startIndex..., in: address)) != nil }, address)
         }
         XCTAssertTrue(WebCompatibilityService.isSensitiveChallengeURL(URL(string: "https://example.com/?__cf_chl_rt_tk=token")))
+        XCTAssertFalse(WebCompatibilityService.shouldBypassWebProtection(for: URL(string: "https://example.com/article?__cf_chl_rt_tk=token")), "A retained token must not lock tracking protection off")
+        XCTAssertFalse(WebCompatibilityService.isVerificationPageURL(URL(string: "https://example.com/article?__cf_chl_rt_tk=token")))
         XCTAssertFalse(WebCompatibilityService.isSensitiveChallengeURL(URL(string: "https://www.diyihuisuo.com/")), "An unmarked root URL requires response/DOM detection")
         XCTAssertFalse(WebCompatibilityService.shouldBypassWebProtection(for: URL(string: "https://brandverse.ai/user/login?refer=huski.ai")))
     }
@@ -118,13 +120,21 @@ final class WebCompatibilityServiceTests: XCTestCase {
     }
 
     @MainActor func testCloudflareDocumentDetectionDoesNotBypassOrdinaryJSDOrBrandverseAssets() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: ["/article": Data("<h1>Page</h1>".utf8)])
+        let root = try await server.start(); defer { server.stop() }
         let web = WKWebView()
-        web.loadHTMLString("<h1>Page</h1>", baseURL: URL(string: "https://example.com/"))
+        web.load(URLRequest(url: root.appendingPathComponent("article").appending(queryItems: [URLQueryItem(name: "__cf_chl_rt_tk", value: "token")])))
         for _ in 0..<100 {
             if (try? await web.evaluateJavaScript("document.readyState")) as? String == "complete" { break }
             try await Task.sleep(for: .milliseconds(20))
         }
         let detector = WebCompatibilityService.sensitiveChallengeDetectionScript + "\nisSensitiveChallengePage();"
+        let normalTokenPage = try await web.evaluateJavaScript(detector) as? Bool
+        XCTAssertEqual(normalTokenPage, false, "A normal page with a token must remain protected")
+        _ = try await web.evaluateJavaScript("window._cf_chl_opt={};null")
+        let activeChallenge = try await web.evaluateJavaScript(detector) as? Bool
+        XCTAssertEqual(activeChallenge, true)
+        _ = try await web.evaluateJavaScript("delete window._cf_chl_opt;null")
         for (markup, expected) in [
             ("<form id='challenge-form'>Verification</form>", false),
             ("<script type='application/json' src='/cdn-cgi/challenge-platform/h/g/orchestrate/chl_page/v1'></script>", true),

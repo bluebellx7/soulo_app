@@ -17,6 +17,17 @@ struct FollowLinkTranslation: Equatable {
     let startAfterPageRevision: Int
 }
 
+struct WebVideoPlaybackRequest: Identifiable {
+    let id = UUID()
+    let resource: WebMediaResource
+    let time: Double
+    var orientation: WebVideoFullscreenOrientation?
+    var playing = true
+    var systemPlayer = false
+    var showsEpisodes = false
+    var fullscreen = true
+}
+
 struct WebDomainNavigationConfirmation: Identifiable {
     let id = UUID()
     let sourceURL: URL
@@ -85,6 +96,8 @@ final class WebViewModel: ObservableObject {
     @Published var videoOrientationError: String?
     @Published var imagePreview: WebImagePreviewRequest?
     @Published var showMediaDownloads = false
+    @Published var webVideoPlayback: WebVideoPlaybackRequest?
+    @Published var showVideoSettings = false
     let mediaSession = WebMediaSession()
     var isWebViewRuntimeInstalled: Bool = false
     var hasInstalledWebViewScripts = false
@@ -95,6 +108,7 @@ final class WebViewModel: ObservableObject {
     var lastManualAdSignature = ""
     var installedManualAdScriptSignature = ""
     private var hasAppliedCustomPageZoom = false
+    private var pageZoomRequestID = UUID()
     let userScriptBridgeToken = UUID().uuidString
     let userScriptTabID = UUID().uuidString
     var isStreamingDownloadHandlerInstalled: Bool = false
@@ -281,17 +295,25 @@ final class WebViewModel: ObservableObject {
     /// contents. Native pageZoom alone can let the document root grow past the
     /// right edge on mobile pages, so compensate the root width inversely.
     func applyPageZoom(to webView: WKWebView) {
-        if webView.pageZoom != pageZoom {
-            webView.pageZoom = pageZoom
-        }
+        let requestID = UUID(); pageZoomRequestID = requestID
+        let zoom = pageZoom, documentURL = webView.url
         if pageZoom != 1 { hasAppliedCustomPageZoom = true }
         // Keep the compatibility reset after a user has zoomed, including
         // restored history documents. Ordinary 100% pages need no DOM writes.
-        guard hasAppliedCustomPageZoom else { return }
+        guard hasAppliedCustomPageZoom else {
+            if webView.pageZoom != 1 { webView.pageZoom = 1 }
+            return
+        }
         webView.evaluateJavaScript(
             WebViewScripts.compensatePageZoomWidth(scale: pageZoom),
-            completionHandler: nil
-        )
+            completionHandler: { [weak self, weak webView] result, _ in
+                guard let self, let webView, self.webView === webView,
+                      self.pageZoomRequestID == requestID, webView.url == documentURL else { return }
+                let nativeZoom: CGFloat = result as? Bool == true ? 1 : zoom
+                if webView.pageZoom != nativeZoom { webView.pageZoom = nativeZoom }
+                webView.evaluateJavaScript("window.__souloVideoOrientation?.setContentZoom(\(Double(zoom)));",
+                    in: nil, in: WebVideoOrientationRuntime.world, completionHandler: nil)
+            })
     }
 
     func loadCachedURL(_ url: URL) {
@@ -594,11 +616,17 @@ final class WebViewModel: ObservableObject {
         }
     }
 
+    func markDocumentCommitted() {
+        // WebKit owns progressive rendering from this point. A parser-blocking
+        // script must not keep the app's opaque loading canvas over the page.
+        if !hasPresentedContent { hasPresentedContent = true }
+    }
+
     func markPageContentVisible() {
         finishHistoryPreview()
         if showSnapshotWhileRestoring { showSnapshotWhileRestoring = false }
         guard !hasVisibleContent else { return }
-        if !hasPresentedContent { hasPresentedContent = true }
+        markDocumentCommitted()
         BrowserStartupTrace.mark("content_visible")
         hasVisibleContent = true
         // A visible page can keep loading ads/images indefinitely. Save its

@@ -56,7 +56,7 @@ enum WebCompatibilityService {
     \#(verificationContextDetectionScript)
     function isSensitiveChallengePage() {
       return isVerificationResourceContext()
-        || ['__cf_chl_tk','__cf_chl_rt_tk'].some(key=>!!new URL(location.href).searchParams.get(key))
+        || !!window._cf_chl_opt
         || !!document.documentElement?.hasAttribute('data-soulo-cloudflare-challenge')
         || !!document.querySelector('script[src*="/cdn-cgi/challenge-platform/"][src*="/orchestrate/chl_page/"]');
     }
@@ -82,7 +82,7 @@ enum WebCompatibilityService {
         if defaultProtectionBypassHosts.contains(where: { domainMatches(host: host, pattern: $0) }) {
             return true
         }
-        return isSensitiveChallengeURL(url)
+        return isVerificationPageURL(url)
     }
 
     static func requiresDesktopMode(for url: URL?, fallbackHost: String? = nil) -> Bool {
@@ -122,11 +122,20 @@ enum WebCompatibilityService {
         }
     }
 
-    static func isSensitiveChallengeURL(_ url: URL?) -> Bool {
+    /// Functional verification endpoints are exempt; a normal article may
+    /// retain a challenge token after verification and still needs protection.
+    static func isVerificationPageURL(_ url: URL?) -> Bool {
         if isVerificationResourceURL(url) { return true }
         guard let url, ["http", "https"].contains(url.scheme?.lowercased() ?? ""), url.host != nil else { return false }
         let path = url.path.lowercased()
-        if path == "/mp/wappoc_appmsgcaptcha" || path.hasPrefix("/mp/wappoc_appmsgcaptcha/") { return true }
+        return path == "/mp/wappoc_appmsgcaptcha" || path.hasPrefix("/mp/wappoc_appmsgcaptcha/")
+    }
+
+    /// Navigation transformations must preserve signed challenge URLs. This
+    /// hint alone does not disable filtering or lock the user's site controls.
+    static func isSensitiveChallengeURL(_ url: URL?) -> Bool {
+        if isVerificationPageURL(url) { return true }
+        guard let url, ["http", "https"].contains(url.scheme?.lowercased() ?? ""), url.host != nil else { return false }
         return URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.contains {
             ["__cf_chl_tk", "__cf_chl_rt_tk"].contains($0.name) && !($0.value ?? "").isEmpty
         } == true

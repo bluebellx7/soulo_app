@@ -268,6 +268,33 @@ final class CloudSyncSafetyTests: XCTestCase {
         XCTAssertEqual(try backups.values(for: original)["home_title"] as? String, "Original")
     }
 
+    func testDeletingOneBackupKeepsCurrentSettingsOtherBackupsAndCloudUntouched() throws {
+        let local = defaults(), cloud = TestCloudSettingsStore(), backups = backupStore()
+        local.set("Current title", forKey: "home_title")
+        let first = try backups.save(["home_title": "Earlier"], initial: true, date: early)
+        let second = try backups.save(["home_title": "Later"], date: later)
+        let sync = service(local, cloud: cloud, id: "delete", backups: backups)
+        let revision = sync.backupRevision
+        try sync.deleteBackup(second)
+        XCTAssertEqual(try backups.list().map(\.id), [first.id])
+        XCTAssertEqual(try backups.values(for: first)["home_title"] as? String, "Earlier")
+        XCTAssertEqual(local.string(forKey: "home_title"), "Current title")
+        XCTAssertTrue(cloud.writes.isEmpty)
+        XCTAssertGreaterThan(sync.backupRevision, revision)
+        try sync.deleteBackup(second) // A stale menu must remain safe.
+        try sync.deleteBackup(first)
+        XCTAssertTrue(try backups.list().isEmpty)
+    }
+
+    func testHoldSpeedIsIncludedInSettingsSyncAndBackups() throws {
+        let local = defaults()
+        local.set(1.75, forKey: VideoPlaybackPreferences.holdSpeedKey)
+        let values = CloudSettingsSyncEngine.snapshot(local)
+        XCTAssertEqual(values[VideoPlaybackPreferences.holdSpeedKey] as? Double, 1.75)
+        let backups = backupStore(), backup = try backups.save(values)
+        XCTAssertEqual(try backups.values(for: backup)[VideoPlaybackPreferences.holdSpeedKey] as? Double, 1.75)
+    }
+
     func testBackupFailurePreventsRemoteOverwriteAndUpload() throws {
         let local = defaults(), cloud = TestCloudSettingsStore()
         local.set("Local", forKey: "home_title")

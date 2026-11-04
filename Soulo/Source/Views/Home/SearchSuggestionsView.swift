@@ -69,30 +69,35 @@ private struct SuggestionChip: View {
     private var isLight: Bool { WallpaperManager.shared.isCurrentWallpaperLight }
 
     var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "clock")
-                .font(.system(size: 10))
-                .accessibilityHidden(true)
-
-            Text(text)
-                .font(.system(size: 12, weight: .medium))
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .frame(maxWidth: 150)
+        HStack(spacing: 0) {
+            HStack(spacing: 4) {
+                Image(systemName: "clock")
+                    .font(.system(size: 10))
+                    .accessibilityHidden(true)
+                Text(text)
+                    .font(.system(size: 12, weight: .medium))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: 150)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+            .onTapGesture(perform: onTap)
 
             if showDelete {
                 Button(action: onDelete) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 7, weight: .bold))
-                        .padding(2)
+                        .font(.system(size: 10, weight: .bold))
+                        .padding(.vertical, 6)
+                        .frame(width: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityHidden(true)
                 .transition(.scale.combined(with: .opacity))
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
         .background(isLight ? Color.black.opacity(0.04) : .white.opacity(0.06))
         .foregroundStyle(isLight ? Color(hex: "2E2A47").opacity(0.75) : .white.opacity(0.7))
         .clipShape(Capsule())
@@ -100,7 +105,6 @@ private struct SuggestionChip: View {
             Capsule().stroke(isLight ? Color(hex: "2E2A47").opacity(0.12) : .white.opacity(0.08), lineWidth: 0.5)
         )
         .contentShape(Capsule())
-        .onTapGesture(perform: onTap)
         .onLongPressGesture {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 showDelete.toggle()

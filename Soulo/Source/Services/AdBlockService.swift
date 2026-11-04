@@ -595,7 +595,7 @@ struct AdBlockService {
             .appendingPathComponent("AdBlock/merged-rules.json")
         let attributes = archive.flatMap { try? $0.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]) }
         let fields = [
-            "startup-cache-v8", startupBuildIdentity, String(nativeCosmeticFiltering),
+            "startup-cache-v10", startupBuildIdentity, String(nativeCosmeticFiltering),
             normalizedAllowlist(allowlistedHosts).joined(separator: ","),
             cosmetic.map(String.init) ?? "native", AdBlockSubscriptionService.rulesSignature(),
             BuiltInAdRuleStore.signature(),
@@ -700,9 +700,21 @@ struct AdBlockService {
 
             \(WebCompatibilityService.sensitiveChallengeDetectionScript)
 
+            // Cross-origin player frames share the top site's protection choice.
+            // Read WebKit's ancestor origins once; no frame messaging or DOM scan.
+            var souloTopPageHost = '';
+            try {
+                var ancestors = location.ancestorOrigins;
+                if (ancestors && ancestors.length) {
+                    souloTopPageHost = normalizedHost(new URL(ancestors.item(ancestors.length - 1)).hostname);
+                }
+            } catch (_) {}
+
             function isSouloAllowlisted() {
                 var host = normalizedHost(location.hostname);
-                return (adBlockConfig().allowlistedHosts || []).some(function(domain) { return domainMatches(domain, host); });
+                return (adBlockConfig().allowlistedHosts || []).some(function(domain) {
+                    return domainMatches(domain, host) || domainMatches(domain, souloTopPageHost);
+                });
             }
 
             function pageExceptionMatches(scopes) {
@@ -983,7 +995,8 @@ struct AdBlockService {
             }, true);
 
             function removeAds() {
-                if (document.documentElement) document.documentElement.toggleAttribute('data-soulo-native-ads-disabled', !adBlockConfig().cosmeticEnabled || shouldDisableAdBlock());
+                if (!document.documentElement) return;
+                document.documentElement.toggleAttribute('data-soulo-native-ads-disabled', !adBlockConfig().cosmeticEnabled || shouldDisableAdBlock());
                 applyStaticStyles();
                 restoreUnmatchedAds();
                 refreshMosaics();

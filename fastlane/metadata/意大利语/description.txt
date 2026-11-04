@@ -6,6 +6,8 @@ Le schede e i gruppi di siti usati di recente appaiono per primi e la vista si a
 
 Download BT: importa file .torrent o link magnet, scegli i file, metti in pausa e riprendi. Su iOS 26 possono continuare in background quando il sistema lo consente; le versioni precedenti salvano i progressi e li mettono in pausa. Riproduci i media BT compatibili durante il download e apri file MKV. Importa link ed2k/thunder. I download richiedono fonti disponibili; la riproduzione dipende dai codec.
 
+Video locali e BT con Soulo: episodi, velocità 0,5–4× e lettore di sistema per i formati compatibili.
+
 Scegli cinque scorciatoie facoltative nella home per download, file, segnalibri, cronologia, sfondi e altre pagine. La barra delle schede della libreria si compatta durante lo scorrimento.
 
 Trova informazioni, leggi articoli, riproduci contenuti e gestisci i download nello stesso browser.

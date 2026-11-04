@@ -143,7 +143,11 @@ enum WebViewScripts {
                     minWidth: root.style.getPropertyValue('min-width'),
                     minWidthPriority: root.style.getPropertyPriority('min-width'),
                     maxWidth: root.style.getPropertyValue('max-width'),
-                    maxWidthPriority: root.style.getPropertyPriority('max-width')
+                    maxWidthPriority: root.style.getPropertyPriority('max-width'),
+                    zoom: root.style.getPropertyValue('zoom'),
+                    zoomPriority: root.style.getPropertyPriority('zoom'),
+                    originalZoom: parseFloat(getComputedStyle(root).zoom) || 1,
+                    reflowZoom: false
                 };
                 window[stateKey] = state;
             }
@@ -157,13 +161,35 @@ enum WebViewScripts {
                 restore('width', state.width, state.widthPriority);
                 restore('min-width', state.minWidth, state.minWidthPriority);
                 restore('max-width', state.maxWidth, state.maxWidthPriority);
+                restore('zoom', state.zoom, state.zoomPriority);
                 delete window[stateKey];
-                return;
+                return false;
             }
 
+            // Native pageZoom scales fixed reading layers without updating
+            // their containing viewport, leaving a white strip below them.
+            // Reflow these text readers with CSS zoom. Ordinary documents and
+            // video pages retain the existing WebKit zoom path.
+            if (!state.reflowZoom && document.body) {
+                var node = document.elementFromPoint(innerWidth / 2, innerHeight / 2);
+                for (; node && node !== root; node = node.parentElement) {
+                    var rect = node.getBoundingClientRect();
+                    if (getComputedStyle(node).position === 'fixed' && rect.width >= innerWidth * 0.8
+                        && rect.height >= innerHeight * 0.8 && (node.innerText || '').length > 200
+                        && !node.querySelector('video')) { state.reflowZoom = true; break; }
+                }
+            }
+            if (state.reflowZoom) {
+                restore('width', state.width, state.widthPriority);
+                restore('min-width', state.minWidth, state.minWidthPriority);
+                restore('max-width', state.maxWidth, state.maxWidthPriority);
+                root.style.setProperty('zoom', String(scale * state.originalZoom), 'important');
+                return true;
+            }
             root.style.setProperty('width', (100 / scale).toFixed(5) + '%', 'important');
             root.style.setProperty('min-width', '0', 'important');
             root.style.setProperty('max-width', 'none', 'important');
+            return false;
         })();
         """
     }

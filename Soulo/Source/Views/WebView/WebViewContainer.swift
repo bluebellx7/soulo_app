@@ -220,6 +220,7 @@ struct WebViewContainer: View {
     @StateObject private var safariCompatibilityPresenter = SafariCompatibilityPresenter()
 
     @State private var isBookmarked: Bool = false
+    @State private var videoPlaybackOrientation: WebVideoFullscreenOrientation?
     @State private var sharePresentation: PageSharePresentation?
     @State private var showExternalConfirm: Bool = false
     @State private var showBookmarkToast: Bool = false
@@ -866,10 +867,33 @@ struct WebViewContainer: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $webViewModel.showVideoSettings) {
+            NavigationStack {
+                VideoSettingsView().toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(ToolText.text("done")) { webViewModel.showVideoSettings = false }
+                    }
+                }
+            }
+        }
         .fullScreenCover(isPresented: $showResourceInspector) {
             NavigationStack {
                 WebResourceInspectorView(webViewModel: webViewModel)
             }
+        }
+        .fullScreenCover(item: $webViewModel.webVideoPlayback, onDismiss: {
+            videoPlaybackOrientation?.end(); videoPlaybackOrientation = nil
+        }) { request in
+            WebResourceMediaPlayerView(resource: request.resource,
+                pageURL: request.resource.sourcePageURL ?? webViewModel.currentURL,
+                sourceWebView: webViewModel.webView,
+                assetProvider: { await WebResourceMediaService.asset(for: request.resource, webView: webViewModel.webView) },
+                downloadAction: {
+                    try? await WebResourceDownloadService.shared.download(request.resource,
+                        pageURL: request.resource.sourcePageURL, webView: webViewModel.webView)
+                }, souloStartAt: request.fullscreen ? request.time : nil, souloPlaying: request.playing, episodeList: webViewModel.episodeList,
+                systemPlayer: request.systemPlayer, showsEpisodes: request.showsEpisodes)
+                .onAppear { videoPlaybackOrientation = request.orientation }
         }
         .fullScreenCover(item: $webViewModel.imagePreview, onDismiss: {
             if showResourcesAfterImagePreview {

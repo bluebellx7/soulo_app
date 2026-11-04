@@ -1,10 +1,34 @@
 import XCTest
 import AVFoundation
 import WebKit
+import UIKit
 @testable import Soulo
 
 @MainActor
 final class DownloadPlaybackTests: XCTestCase {
+    func testSouloPlayerRetainsWebCookiesWhenSwitchingFromTheSystemPlayer() async throws {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let server = try DownloadPlaybackHTTPFixture(files: ["/clip.mp4": try Data(contentsOf: fixture)], requiredCookie: "soulo_transfer=allowed")
+        let base = try await server.start()
+        server.releaseDownloads()
+        defer { server.stop() }
+        let url = base.appendingPathComponent("clip.mp4")
+        let cookie = try XCTUnwrap(HTTPCookie(properties: [.domain: "127.0.0.1", .path: "/", .name: "soulo_transfer", .value: "allowed"]))
+        let context = VideoPlaybackRequestContext(url: url, referrer: base.appendingPathComponent("page.html"), userAgent: "SouloTransferQA", cookies: [cookie])
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
+        let controller = UIViewController()
+        window.rootViewController = controller; window.makeKeyAndVisible()
+        let playback = MatroskaPlayback()
+        playback.attach(controller.view)
+        defer { playback.stop(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        playback.open(url, requestContext: context)
+        try await waitFor("Authenticated video must decode through the Soulo player") {
+            playback.elapsed > 0.3 && (playback.player?.media?.statistics.displayedPictures ?? 0) > 0
+        }
+        XCTAssertNil(playback.error)
+        XCTAssertGreaterThan(playback.player?.videoSize.width ?? 0, 0)
+    }
     private func waitFor(_ message: String, _ condition: () -> Bool) async throws {
         for _ in 0..<250 {
             if condition() { return }

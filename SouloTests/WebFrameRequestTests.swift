@@ -28,9 +28,6 @@ import WebKit
         let frame = RequestFrameInfo.make(request: nil)
         let destination = URL(string: "https://example.com/article")!
         XCTAssertNil(frame.requestURL)
-        XCTAssertFalse(BrowserWebLinkPolicy.shouldLoadInBrowser(url: destination,
-            sourceURL: frame.requestURL, navigationType: .other,
-            targetsMainFrame: true, method: "GET", nativeRequest: false))
         XCTAssertTrue(BrowserAdNavigationPolicy.shouldBlock(url: destination,
             sourceURL: frame.requestURL, navigationType: .other,
             isNewWindow: true, sourceIsMainFrame: true, hasRecentGesture: false,

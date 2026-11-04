@@ -118,10 +118,11 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
         guard start >= 0, end >= start, start < file.count else { sendError(connection, code: 416); return }
         let body = file.subdata(in: start..<(end + 1))
         let ext = (path as NSString).pathExtension
-        let mime = ext == "mp4" ? "video/mp4" : ext == "ts" ? "video/mp2t" : ext == "m3u8" ? "application/vnd.apple.mpegurl" : "text/html; charset=utf-8"
+        let defaultMIME = ext == "mp4" ? "video/mp4" : ext == "ts" ? "video/mp2t" : ext == "m3u8" ? "application/vnd.apple.mpegurl" : "text/html; charset=utf-8"
+        let mime = responseHeaders[path]?.first { $0.key.lowercased() == "content-type" }?.value ?? defaultMIME
         var header = "HTTP/1.1 \(range == nil ? "200 OK" : "206 Partial Content")\r\nContent-Type: \(mime)\r\nContent-Length: \(body.count)\r\nAccept-Ranges: bytes\r\nCache-Control: no-store\r\nConnection: close\r\n"
         if range != nil { header += "Content-Range: bytes \(start)-\(end)/\(file.count)\r\n" }
-        for (name, value) in responseHeaders[path] ?? [:] { header += "\(name): \(value)\r\n" }
+        for (name, value) in responseHeaders[path] ?? [:] where name.lowercased() != "content-type" { header += "\(name): \(value)\r\n" }
         header += "\r\n"
         connection.send(content: Data(header.utf8), completion: .contentProcessed { [weak self] error in
             guard let self, error == nil, !isHead else { connection.cancel(); return }

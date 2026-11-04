@@ -6,6 +6,8 @@ Zuletzt verwendete Tabs und Website-Gruppen stehen zuerst, und die Übersicht ö
 
 BT-Downloads: Importiere .torrent-Dateien oder Magnet-Links, wähle Dateien, pausiere und setze fort. Unter iOS 26 können Downloads im Hintergrund weiterlaufen, wenn das System es zulässt; ältere Versionen speichern den Fortschritt und pausieren. Spiele unterstützte BT-Medien während des Downloads ab und öffne MKV-Dateien. Importiere ed2k/thunder-Links. Downloads brauchen verfügbare Quellen; die Wiedergabe hängt von Codecs ab.
 
+Lokale und BT-Videos mit Soulo: Folgenwahl, 0,5–4× Tempo und Systemplayer für kompatible Formate.
+
 Wähle fünf optionale Startseiten-Kurzbefehle für Downloads, Dateien, Lesezeichen, Verlauf, Hintergrundbilder und weitere Seiten. Die Tab-Leiste der Bibliothek wird beim Scrollen kompakter.
 
 Informationen finden, Artikel lesen, Medien abspielen und Downloads verwalten, alles in einem Browser.

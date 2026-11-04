@@ -67,7 +67,7 @@ enum BrowserToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .home: "house.fill"
         case .back: "chevron.left"
         case .forward: "chevron.right"
-        case .tabs: "square.on.square"
+        case .tabs: "square"
         case .more: "ellipsis"
         case .share: "square.and.arrow.up"
         case .bookmark: "bookmark"

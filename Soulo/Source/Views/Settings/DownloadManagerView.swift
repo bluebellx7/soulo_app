@@ -559,14 +559,19 @@ struct LocalDocumentContent: View {
                 }
             } else if ArchiveService.extensions.contains(url.pathExtension.lowercased()) {
                 ArchiveBrowserView(url: url, directory: url.deletingLastPathComponent())
-            } else if FilePresentation.textExtensions.contains(url.pathExtension.lowercased())
+            } else if fileKind != .video, fileKind != .audio,
+                      (FilePresentation.textExtensions.contains(url.pathExtension.lowercased())
                         || UTType(filenameExtension: url.pathExtension)?.conforms(to: .plainText) == true
-                        || UTType(filenameExtension: url.pathExtension)?.conforms(to: .sourceCode) == true {
+                        || UTType(filenameExtension: url.pathExtension)?.conforms(to: .sourceCode) == true) {
                 TextDocumentPreview(url: url)
             } else if let torrentTarget {
                 TorrentFilePlaybackView(id: torrentTarget.id, file: torrentTarget.file)
-            } else if url.pathExtension.lowercased() == "mkv" {
-                MatroskaPlayerView(url: url)
+            } else if fileKind == nil, isPlayableMedia {
+                // Resolve the file before mounting a player. Starting AVPlayer
+                // speculatively flashes the wrong engine and can overlap VLC.
+                ProgressView()
+            } else if fileKind == .video || fileKind == .audio {
+                FileMediaPlaybackView(url: url)
             } else if isPlayableMedia {
                 MediaPlaybackContent()
                     .task { MediaSession.shared.open(url: url, title: url.lastPathComponent) }

@@ -53,6 +53,7 @@ enum WebResourceInspectionService {
     private static let currentVideoScript = #"""
     return (() => {
         const webURL = value => {
+            if (typeof value !== 'string' || !value.trim()) return '';
             try {
                 const url = new URL(String(value || ''), document.baseURI);
                 return /^https?:$/.test(url.protocol) ? url.href : '';
@@ -102,11 +103,25 @@ enum WebResourceInspectionService {
         const video = Array.from(document.querySelectorAll('video'))
             .find(element => element.getAttribute('data-soulo-media-id') === token);
         if (!video || !video.isConnected) return null;
-        const currentURL = webURL(video.currentSrc || video.src);
+        const currentURL = webURL(video.currentSrc) || (video.getAttribute('src')?.trim() ? webURL(video.src) : '');
         if (currentURL) {
             const response = Array.from(window.__souloObservedMediaResponses || []).reverse()
                 .find(item => webURL(item?.url) === currentURL);
             return result(currentURL, response?.mime);
+        }
+        // Hls.js keeps a blob in currentSrc while the element's source and
+        // attached controller still identify the actual playlist. Resolve that
+        // exact element before considering unrelated network responses or ads.
+        const hls = window.hls;
+        if (hls && hls.media === video) {
+            const level = hls.levels?.[hls.currentLevel];
+            const selected = result(level?.details?.url || hls.url, 'application/vnd.apple.mpegurl');
+            if (selected) return selected;
+        }
+        for (const source of video.querySelectorAll('source[src]')) {
+            if (!source.getAttribute('src')?.trim()) continue;
+            const selected = result(source.src, source.type);
+            if (selected) return selected;
         }
         if (document.querySelectorAll('video').length > 1) return null;
         for (const config of [window.player_aaaa, window.player_bbbb,

@@ -1,7 +1,7 @@
 (() => {
   if (window.__souloEpisodes) return;
   const overlay = window.__souloOverlayControls;
-  let timer = 0, previous = '', enabled = true, dockFrame = 0, stateTimer = 0, lastStateRefresh = 0;
+  let timer = 0, previous = '', enabled = true, dockEnabled = true, watchChanges = true, observer = null, dockFrame = 0, stateTimer = 0, lastStateRefresh = 0;
   let pageSources = [], pageSignature = '', pageURL=location.href;
   const resourceListSelector = '.dy-collect-list,.vodplayinfo ul,.vodplayinfo ol';
   const listSelector = '.stui-content__playlist,.stui-play__list,.myui-content__list,.module-play-list,.module-play-list-content,.anthology-list-play,.playlist,.play-list,.episode-list,.episodes,[data-episode-list],' + resourceListSelector;
@@ -306,7 +306,7 @@
     dock.setAttribute('data-edge',edge);
   }
   function updateDock(){
-    if(!available||!enabled||visiblePlayer()){drag=null;dock?.remove();return}
+    if(!dockEnabled||!available||!enabled||visiblePlayer()){drag=null;dock?.remove();return}
     if(!dock){
       dock=document.createElement('div');dock.id='soulo-episode-dock';
       dock.style.cssText='all:initial!important;position:fixed!important;z-index:2147483646!important;width:48px!important;height:48px!important;touch-action:none!important;user-select:none!important;-webkit-user-select:none!important;';
@@ -340,7 +340,7 @@
   for(const name of ['touchstart','touchmove','touchend','touchcancel'])window.addEventListener(name,event=>{
     if(dock?.isConnected&&(event.composedPath?.()||[]).includes(dock))event.stopImmediatePropagation();
   },{capture:true,passive:true});
-  function scheduleDock(){if(!dockFrame)dockFrame=requestAnimationFrame(()=>{dockFrame=0;updateDock()})}
+  function scheduleDock(){if(!dockEnabled)return;if(!dockFrame)dockFrame=requestAnimationFrame(()=>{dockFrame=0;updateDock()})}
   for(const name of ['scroll','resize'])window.addEventListener(name,scheduleDock,{passive:true});
   visualViewport?.addEventListener('resize',scheduleDock);visualViewport?.addEventListener('scroll',scheduleDock);
   for(const name of ['loadedmetadata','play','emptied','fullscreenchange'])document.addEventListener(name,updateDock,true);
@@ -361,7 +361,7 @@
     const wait=Math.max(0,1000-(performance.now()-lastStateRefresh));
     stateTimer=setTimeout(()=>{stateTimer=0;lastStateRefresh=performance.now();send('refresh')},wait);
   }
-  function schedule() { if (!timer) timer = setTimeout(()=>refresh(true),300); }
+  function schedule() { if (watchChanges && !timer) timer = setTimeout(()=>refresh(true),300); }
   window.__souloEpisodes = {extract,refresh() {
     // Native state is reset when navigation starts, even when WebKit restores
     // this document and its unchanged DOM from the back-forward cache.
@@ -370,6 +370,12 @@
     overlay.setContentZoom(value);scheduleDock();
   },configure(value) {
     enabled = value.enabled !== false;
+    dockEnabled = value.dockEnabled !== false;
+    watchChanges = value.watchChanges !== false;
+    observer?.disconnect();
+    if(watchChanges && document.documentElement)observer?.observe(document.documentElement,observationOptions);
+    if(!dockEnabled){if(dockFrame)cancelAnimationFrame(dockFrame);dockFrame=0;drag=null;dock?.remove();}
+    if(!watchChanges){clearTimeout(timer);timer=0;clearTimeout(stateTimer);stateTimer=0;}
     if(typeof value.label==='string')label=value.label;
     if(['left','right'].includes(value.edge))edge=value.edge;
     if(Number.isFinite(value.fraction))fraction=Math.max(0,Math.min(1,value.fraction));
@@ -379,8 +385,9 @@
     if(signature===pageSignature)return;
     pageSignature=signature;pageSources=value;refresh();
   }};
+  const observationOptions={childList:true,subtree:true,attributes:true,attributeFilter:['href','data-url','data-href','aria-current','class','style','hidden']};
   function observe() {
-    new MutationObserver(records => {
+    observer = new MutationObserver(records => {
       if (records.some(record => {
         const target=record.target instanceof Element?record.target:record.target.parentElement;
         if(target?.hasAttribute('data-soulo-video-rotate')&&record.attributeName==='style')scheduleDock();
@@ -395,11 +402,12 @@
           || [...record.addedNodes,...record.removedNodes].some(node => node instanceof Element
             && (node.matches(linkSelector + ',' + listSelector + ',' + resourceTextSelector + ',' + stateSelector + ',li,tr,video,iframe') || node.querySelector(linkSelector + ',' + resourceTextSelector + ',' + stateSelector + ',li,tr,video,iframe')));
       })) schedule();
-    }).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['href','data-url','data-href','aria-current','class','style','hidden']});
+    });
+    if(watchChanges)observer.observe(document.documentElement,observationOptions);
     refresh();
   }
   if(document.documentElement)observe();else document.addEventListener('DOMContentLoaded',observe,{once:true});
   document.addEventListener('DOMContentLoaded',schedule,{once:true});
   document.addEventListener('input',event => {if(event.target instanceof HTMLTextAreaElement)schedule()},true);
-  for(const event of ['popstate','hashchange','pageshow'])window.addEventListener(event,() => {previous='';pageSources=[];pageSignature='';schedule()});
+  for(const event of ['popstate','hashchange','pageshow'])window.addEventListener(event,() => {previous='';pageSources=[];pageSignature='';if(watchChanges)schedule();else refresh()});
 })();

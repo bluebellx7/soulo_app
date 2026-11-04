@@ -28,27 +28,25 @@ struct AppVersionView: View {
                 NavigationLink {
                     SouloWebsiteView()
                 } label: {
-                    Label { Text(ToolText.text("soulo_website")) } icon: {
-                        IconBadge(systemName: "globe", color: iconColor)
-                    }
+                    SettingsNavigationLabel(icon: "globe", color: iconColor, title: ToolText.text("soulo_website"))
                 }
                 .accessibilityIdentifier("version.website")
+                Link(destination: URL(string: "https://t.me/soulobrowser")!) {
+                    HStack(spacing: 12) {
+                        SettingsNavigationLabel(icon: "paperplane.fill", color: iconColor, title: ToolText.text("feedback_telegram"))
+                        Image(systemName: "arrow.up.right").font(.system(size: 13, weight: .medium)).foregroundStyle(.secondary)
+                    }
+                }.accessibilityIdentifier("version.telegram")
             }.tint(.primary)
             Section {
                 NavigationLink(destination: PrivacyPolicyView()) {
-                    Label { Text(LanguageManager.shared.localizedString("settings_privacy_policy")) } icon: {
-                        IconBadge(systemName: "hand.raised.fill", color: iconColor)
-                    }
+                    SettingsNavigationLabel(icon: "hand.raised.fill", color: iconColor, title: LanguageManager.shared.localizedString("settings_privacy_policy"))
                 }.accessibilityIdentifier("version.privacy")
                 NavigationLink(destination: ReadingToolsLicensesView()) {
-                    Label { Text(ToolText.text("licenses")) } icon: {
-                        IconBadge(systemName: "text.book.closed", color: iconColor)
-                    }
+                    SettingsNavigationLabel(icon: "text.book.closed", color: iconColor, title: ToolText.text("licenses"))
                 }.accessibilityIdentifier("version.licenses")
                 NavigationLink(destination: TermsOfServiceView()) {
-                    Label { Text(LanguageManager.shared.localizedString("settings_terms")) } icon: {
-                        IconBadge(systemName: "doc.text.fill", color: iconColor)
-                    }
+                    SettingsNavigationLabel(icon: "doc.text.fill", color: iconColor, title: LanguageManager.shared.localizedString("settings_terms"))
                 }.accessibilityIdentifier("version.terms")
             }.tint(.primary)
         }

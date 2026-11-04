@@ -137,6 +137,10 @@ final class CloudSyncService: NSObject, ObservableObject {
         "ad_block_enabled",
         LiveActivityService.enabledKey,
         VideoScreenAwakeService.preferenceKey,
+        VideoPlaybackPreferences.showsToolsKey,
+        VideoPlaybackPreferences.defaultPlayerKey,
+        VideoPlaybackPreferences.holdSpeedKey,
+        VideoPlaybackPreferences.showsEpisodeDockKey,
         "privacy_https_upgrade_enabled",
         "privacy_strip_tracking_parameters",
         "privacy_gpc_enabled",
@@ -318,6 +322,11 @@ final class CloudSyncService: NSObject, ObservableObject {
     }
 
     func listBackups() throws -> [CloudSettingsBackup] { try backups.list() }
+
+    func deleteBackup(_ backup: CloudSettingsBackup) throws {
+        try backups.delete(backup)
+        backupRevision += 1
+    }
 
     func saveBackup() throws {
         try backups.save(CloudSettingsSyncEngine.snapshot(defaults), date: now())

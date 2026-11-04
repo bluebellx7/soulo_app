@@ -34,6 +34,9 @@ struct FilePresentation: Sendable, Hashable {
         if url.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
             return FilePresentation(kind: .video, fileExtension: OfflineHLSReference.fileExtension, size: FileStorageSize.bytes(at: url) ?? 0)
         }
+        if LocalHLSMedia.extensions.contains(url.pathExtension.lowercased()) {
+            return FilePresentation(kind: .video, fileExtension: url.pathExtension.lowercased(), size: FileStorageSize.bytes(at: url) ?? 0)
+        }
         if values?.isDirectory == true { return FilePresentation(kind: .folder, fileExtension: "", size: 0) }
         var ext = url.pathExtension.lowercased()
         // ImageIO identifies bytes, including extensionless JPEG/WebP/HEIF downloads.
@@ -61,20 +64,50 @@ struct FilePresentation: Sendable, Hashable {
     }
 }
 
+/// Portable HLS folders are media packages, not folders in the file browser.
+/// Resolve their playlist only when opening; directory listings do no scanning.
+enum LocalHLSMedia {
+    static let extensions: Set<String> = ["hls", "m3u8"]
+    static func playlistURL(for url: URL) throws -> URL {
+        let info = try url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+        guard info.isSymbolicLink != true else { throw ReadingToolError.unsafePath }
+        if info.isDirectory != true { return url }
+        let root = url.standardizedFileURL.resolvingSymlinksInPath()
+        let preferred = ["master.m3u8", "index.m3u8", "playlist.m3u8", "main.m3u8"].map { root.appendingPathComponent($0) }
+        let candidates = preferred + (try FileManager.default.contentsOfDirectory(at: root,
+            includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey], options: .skipsHiddenFiles))
+            .filter { $0.pathExtension.lowercased() == "m3u8" }
+            .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
+        for candidate in candidates {
+            guard let values = try? candidate.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey]),
+                  values.isRegularFile == true, values.isSymbolicLink != true,
+                  candidate.resolvingSymlinksInPath().path.hasPrefix(root.path + "/"),
+                  let file = try? FileHandle(forReadingFrom: candidate) else { continue }
+            let prefix = try? file.read(upToCount: 64); try? file.close()
+            if let prefix, String(decoding: prefix, as: UTF8.self)
+                .trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: "\u{FEFF}")))
+                .hasPrefix("#EXTM3U") { return candidate }
+        }
+        throw StreamingMediaDownloadError.unavailable
+    }
+}
+
 /// Logical file bytes, including the media behind an offline HLS reference.
 /// Call off the main thread: packages can contain thousands of fragments.
 enum FileStorageSize {
     static func bytes(at url: URL) -> Int64? {
         guard url.isFileURL else { return nil }
         let target: URL
-        if url.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
+        if url.pathExtension.lowercased() == OfflineHLSReference.fileExtension,
+           (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) != true {
             guard let package = try? OfflineHLSReference.packageURL(for: url) else { return nil }
             target = package
         } else { target = url }
         let keys: Set<URLResourceKey> = [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey]
         guard let values = try? target.resourceValues(forKeys: keys), values.isSymbolicLink != true else { return nil }
         if values.isRegularFile == true { return values.fileSize.map(Int64.init) }
-        guard values.isDirectory == true, target.pathExtension.lowercased() == "movpkg",
+        guard values.isDirectory == true,
+              (["movpkg", OfflineHLSReference.fileExtension].contains(target.pathExtension.lowercased()) || LocalHLSMedia.extensions.contains(target.pathExtension.lowercased())),
               let files = FileManager.default.enumerator(at: target, includingPropertiesForKeys: Array(keys)) else { return nil }
         var total: Int64 = 0
         for case let file as URL in files {
@@ -126,18 +159,60 @@ enum LibraryFileActions {
             throw ReadingToolError.unsafePath
         }
         let root = directory.standardizedFileURL.resolvingSymlinksInPath()
-        let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
-        guard values.isRegularFile == true, values.isSymbolicLink != true,
+        let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey, .isSymbolicLinkKey])
+        guard values.isRegularFile == true || values.isDirectory == true, values.isSymbolicLink != true,
               file.standardizedFileURL.deletingLastPathComponent().resolvingSymlinksInPath() == root else {
             throw ReadingToolError.unsafePath
         }
-        let filename = file.pathExtension.isEmpty ? name : name + "." + file.pathExtension
+        guard file.pathExtension.lowercased() != "movpkg" else { throw ReadingToolError.unsafePath }
+        let package = LocalHLSMedia.extensions.contains(file.pathExtension.lowercased())
+            || file.pathExtension.lowercased() == OfflineHLSReference.fileExtension
+        let filename = (values.isDirectory == true && !package) || file.pathExtension.isEmpty ? name : name + "." + file.pathExtension
         guard filename.utf8.count <= 255 else { throw ReadingToolError.limit }
         let target = directory.appendingPathComponent(filename)
         if target.standardizedFileURL == file.standardizedFileURL { return file }
         guard !FileManager.default.fileExists(atPath: target.path) else { throw ReadingToolError.conflict }
         try FileManager.default.moveItem(at: file, to: target)
         return target
+    }
+
+    static func relocated(_ url: URL, from source: URL, to target: URL) -> URL? {
+        let path = url.standardizedFileURL.resolvingSymlinksInPath().path, old = source.standardizedFileURL.resolvingSymlinksInPath().path
+        if path == old { return target }
+        guard path.hasPrefix(old + "/") else { return nil }
+        return target.appendingPathComponent(String(path.dropFirst(old.count + 1)))
+    }
+
+    /// Validate the entire selection before moving, never overwrite a name,
+    /// and roll back completed moves if a later filesystem operation fails.
+    static func move(_ files: [URL], from directory: URL, to destination: URL, root: URL = BookLibrary.directory) throws -> [URL] {
+        let manager = FileManager.default, parent = directory.resolvingSymlinksInPath().standardizedFileURL
+        let allowed = root.resolvingSymlinksInPath().standardizedFileURL
+        let targetRoot = destination.resolvingSymlinksInPath().standardizedFileURL
+        let targetInfo = try destination.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+        guard targetInfo.isDirectory == true, targetInfo.isSymbolicLink != true,
+              targetRoot == allowed || targetRoot.path.hasPrefix(allowed.path + "/"), targetRoot != parent else { throw ReadingToolError.unsafePath }
+        var destinations: [URL] = []
+        for file in files {
+            let info = try file.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey, .isSymbolicLinkKey])
+            let canonical = file.standardizedFileURL.resolvingSymlinksInPath()
+            guard file.isFileURL, info.isSymbolicLink != true,
+                  info.isDirectory == true || info.isRegularFile == true,
+                  canonical.deletingLastPathComponent().resolvingSymlinksInPath() == parent,
+                  !file.lastPathComponent.hasPrefix("."), file.pathExtension.lowercased() != "movpkg",
+                  targetRoot != canonical, !targetRoot.path.hasPrefix(canonical.path + "/") else { throw ReadingToolError.unsafePath }
+            let target = targetRoot.appendingPathComponent(file.lastPathComponent, isDirectory: info.isDirectory == true)
+            guard !manager.fileExists(atPath: target.path), !destinations.contains(target) else { throw ReadingToolError.conflict }
+            destinations.append(target)
+        }
+        var completed = 0
+        do {
+            for (file, target) in zip(files, destinations) { try manager.moveItem(at: file, to: target); completed += 1 }
+        } catch {
+            for index in (0..<completed).reversed() { try? manager.moveItem(at: destinations[index], to: files[index]) }
+            throw error
+        }
+        return destinations
     }
 
     static func delete(_ files: [URL], in directory: URL) throws {
@@ -194,7 +269,12 @@ enum ExternalDocumentImporter {
             result = Result {
                 let info = try readable.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
                 guard info.isRegularFile == true else { throw ReadingToolError.unsupported }
-                guard (info.fileSize ?? 0) <= 1024 * 1024 * 1024 else { throw ReadingToolError.limit }
+                // Movies routinely exceed 1 GB. FileManager copies on disk;
+                // the video is never loaded into memory as one Data value.
+                let isVideo = readable.pathExtension.lowercased() == "mkv"
+                    || UTType(filenameExtension: readable.pathExtension)?.conforms(to: .movie) == true
+                guard isVideo
+                        || (info.fileSize ?? 0) <= 1024 * 1024 * 1024 else { throw ReadingToolError.limit }
                 let target = FileSafety.availableURL(name: readable.lastPathComponent, directory: directory)
                 do { try FileManager.default.copyItem(at: readable, to: target) }
                 catch { try? FileManager.default.removeItem(at: target); throw error }

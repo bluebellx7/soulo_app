@@ -1,1 +1,1 @@
-BT- és magnet-letöltések fájlválasztással és folytatással. Támogatott média lejátszása letöltés közben, MKV-megnyitás és ed2k/thunder-importálás.
+Helyi és BT-videók Soulóval: epizódválasztás, 0,5–4× sebesség és rendszerlejátszó a kompatibilis formátumokhoz.

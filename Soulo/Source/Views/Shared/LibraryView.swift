@@ -304,6 +304,8 @@ private final class LibraryPagingGestures: NSObject, ObservableObject, UIGesture
     private weak var scroll: UIScrollView?
     private weak var back: UIGestureRecognizer?
     private var rows: [ObjectIdentifier: Region] = [:]
+    private let protectedPans = NSHashTable<UIGestureRecognizer>.weakObjects()
+    private let backProtectedPans = NSHashTable<UIGestureRecognizer>.weakObjects()
     private var observations: [NSKeyValueObservation] = []
     private var progressQueued = false
     private var lastProgress: CGFloat?
@@ -318,25 +320,49 @@ private final class LibraryPagingGestures: NSObject, ObservableObject, UIGesture
         gesture.delegate = self
         return gesture
     }()
+    // A closed trailing-action row can still consume a leading drag even though
+    // it has no action on that side. Let native paging recognize that direction.
+    private lazy var leadingSwipe: UIPanGestureRecognizer = {
+        let gesture = UIPanGestureRecognizer(target: self, action: #selector(handleRowSwipe))
+        gesture.maximumNumberOfTouches = 1
+        gesture.cancelsTouchesInView = false
+        gesture.delaysTouchesBegan = false
+        gesture.delaysTouchesEnded = false
+        gesture.delegate = self
+        return gesture
+    }()
 
     func connect(_ scroll: UIScrollView, back: UIGestureRecognizer?) {
         if self.scroll !== scroll {
             self.scroll?.removeGestureRecognizer(rowSwipe)
+            self.scroll?.removeGestureRecognizer(leadingSwipe)
             observations.forEach { $0.invalidate() }
             self.scroll = scroll
             lastProgress = nil
             observations = [
-                scroll.observe(\.contentOffset, options: [.initial, .new]) { [weak self] _, _ in self?.scheduleProgress() },
-                scroll.observe(\.bounds, options: [.new]) { [weak self] _, _ in self?.scheduleProgress() },
-                scroll.observe(\.contentSize, options: [.new]) { [weak self] _, _ in self?.scheduleProgress() }
+                scroll.observe(\.contentOffset, options: [.initial, .new]) { [weak self] _, _ in
+                    Task { @MainActor in self?.scheduleProgress() }
+                },
+                scroll.observe(\.bounds, options: [.new]) { [weak self] _, _ in
+                    Task { @MainActor in self?.scheduleProgress() }
+                },
+                scroll.observe(\.contentSize, options: [.new]) { [weak self] _, _ in
+                    Task { @MainActor in self?.scheduleProgress() }
+                }
             ]
             scroll.addGestureRecognizer(rowSwipe)
+            scroll.addGestureRecognizer(leadingSwipe)
             scroll.panGestureRecognizer.require(toFail: rowSwipe)
+            protectedPans.removeAllObjects()
         }
         if let back, self.back !== back {
             scroll.panGestureRecognizer.require(toFail: back)
+            rowSwipe.require(toFail: back)
+            leadingSwipe.require(toFail: back)
             self.back = back
+            backProtectedPans.removeAllObjects()
         }
+        for region in rows.values { if let view = region.view { protectRowPans(in: view) } }
         scheduleProgress()
     }
 
@@ -358,31 +384,77 @@ private final class LibraryPagingGestures: NSObject, ObservableObject, UIGesture
     func disconnect() {
         observations.forEach { $0.invalidate() }; observations.removeAll()
         scroll?.removeGestureRecognizer(rowSwipe)
+        scroll?.removeGestureRecognizer(leadingSwipe)
+        protectedPans.removeAllObjects(); backProtectedPans.removeAllObjects()
         scroll = nil; back = nil; lastProgress = nil
     }
 
-    func register(_ view: UIView) { rows[ObjectIdentifier(view)] = Region(view) }
+    func register(_ view: UIView) {
+        rows[ObjectIdentifier(view)] = Region(view)
+        protectRowPans(in: view)
+    }
     func unregister(_ view: UIView) { rows.removeValue(forKey: ObjectIdentifier(view)) }
+
+    private func protectRowPans(in view: UIView) {
+        guard let scroll else { return }
+        var ancestor = view.superview
+        while let current = ancestor, current !== scroll {
+            for pan in current.gestureRecognizers ?? [] where pan is UIPanGestureRecognizer {
+                if !protectedPans.contains(pan) {
+                    pan.require(toFail: leadingSwipe)
+                    protectedPans.add(pan)
+                }
+                if let back, !backProtectedPans.contains(pan) {
+                    pan.require(toFail: back)
+                    backProtectedPans.add(pan)
+                }
+            }
+            ancestor = current.superview
+        }
+    }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         guard let scroll else { return false }
         rows = rows.filter { $0.value.view != nil }
         let point = touch.location(in: scroll)
+        let distanceFromLeadingEdge = direction == .rightToLeft ? scroll.bounds.maxX - point.x : point.x - scroll.bounds.minX
+        if back?.isEnabled == true, distanceFromLeadingEdge < 28 { return false }
         return rows.values.contains { region in
             guard let view = region.view, view.window === scroll.window else { return false }
             return view.convert(view.bounds, to: scroll).contains(point)
         }
     }
 
+    private func hasExpandedSwipeActions() -> Bool {
+        guard let scroll else { return false }
+        for region in rows.values {
+            guard let view = region.view, view.window === scroll.window,
+                  view.convert(view.bounds, to: scroll).intersects(scroll.bounds) else { continue }
+            var ancestor = view.superview
+            while let current = ancestor, current !== scroll {
+                if let cell = current as? UICollectionViewCell, cell.configurationState.isSwiped { return true }
+                if let cell = current as? UITableViewCell, cell.showingDeleteConfirmation { return true }
+                ancestor = current.superview
+            }
+        }
+        return false
+    }
+
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        let velocity = rowSwipe.velocity(in: scroll)
+        guard let pan = gestureRecognizer as? UIPanGestureRecognizer else { return false }
+        let velocity = pan.velocity(in: scroll)
         guard abs(velocity.x) > abs(velocity.y) * 1.2 else { return false }
-        return direction == .rightToLeft ? velocity.x > 0 : velocity.x < 0
+        let trailing = direction == .rightToLeft ? velocity.x > 0 : velocity.x < 0
+        // UIKit owns closing an open action row. Reserve this first leading
+        // swipe for it, then let a subsequent swipe page the library normally.
+        let restoringRow = !trailing && hasExpandedSwipeActions()
+        return gestureRecognizer === rowSwipe ? (trailing || restoringRow) : (!trailing && !restoringRow)
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
-        other !== scroll?.panGestureRecognizer && other !== back
+        if gestureRecognizer === leadingSwipe { return other === scroll?.panGestureRecognizer }
+        return other !== scroll?.panGestureRecognizer && other !== back && other !== leadingSwipe
     }
 
     @objc private func handleRowSwipe(_ gesture: UIPanGestureRecognizer) {

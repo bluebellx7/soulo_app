@@ -6,6 +6,191 @@ import UniformTypeIdentifiers
 @testable import Soulo
 
 final class IncrementalFeatureTests: XCTestCase {
+    func testHoldSpeedDefaultsAndRejectsInvalidSavedValues() throws {
+        let suite = "HoldSpeed-\(UUID())", defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        XCTAssertEqual(VideoPlaybackPreferences.holdSpeed(in: defaults), 2)
+        for rate in VideoPlaybackPreferences.holdSpeeds {
+            defaults.set(rate, forKey: VideoPlaybackPreferences.holdSpeedKey)
+            XCTAssertEqual(VideoPlaybackPreferences.holdSpeed(in: defaults), rate)
+        }
+        for rate in [-1.0, 0, 0.5, 1, 8, Double.nan, Double.infinity] {
+            defaults.set(rate, forKey: VideoPlaybackPreferences.holdSpeedKey)
+            XCTAssertEqual(VideoPlaybackPreferences.holdSpeed(in: defaults), 2)
+        }
+    }
+
+    func testSeekKeepsTargetWhileBufferingAndReleasesOnArrivalOrTimeout() {
+        let start = ContinuousClock.now, seek = VideoPlaybackSeek(target: 120, started: start)
+        XCTAssertTrue(seek.isPending(actual: 8, now: start.advanced(by: .seconds(3))))
+        XCTAssertTrue(seek.isPending(actual: 35, now: start.advanced(by: .seconds(8))))
+        XCTAssertFalse(seek.isPending(actual: 120.3, now: start.advanced(by: .seconds(9))))
+        XCTAssertFalse(seek.isPending(actual: 8, now: start.advanced(by: .seconds(21))))
+    }
+    @MainActor func testDecoderSwitchKeepsOneFullscreenWindowAndSourceMounted() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
+        let root = UIViewController(); window.rootViewController = root; window.makeKeyAndVisible()
+        let firstOwner = UUID(), nextOwner = UUID()
+        var closed: [String] = []
+        defer {
+            SharedVideoFullscreenHost.current(in: window)?.dismiss(owner: nextOwner)
+            window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
+        }
+        let first = try XCTUnwrap(SharedVideoFullscreenHost.present(owner: firstOwner, in: window,
+            content: AnyView(Color.black), identifier: "media.fullscreen.player", landscape: false,
+            onClose: { closed.append("old") }))
+        try await wait { first.screen?.view.window === window }
+        let controller = try XCTUnwrap(first.screen)
+        XCTAssertTrue(root.view.window === window, "The destination decoder must be able to mount before the old player closes")
+        first.beginHandoff(owner: firstOwner)
+        first.release(owner: firstOwner)
+        XCTAssertTrue(root.presentedViewController === controller, "Retiring the old adapter must not dismiss the shared window")
+        let next = try XCTUnwrap(SharedVideoFullscreenHost.present(owner: nextOwner, in: window,
+            content: AnyView(Text("Soulo")), identifier: "media.mkv.fullscreen.player", landscape: false,
+            onClose: { closed.append("new") }))
+        XCTAssertTrue(next === first)
+        XCTAssertTrue(next.screen === controller)
+        first.release(owner: firstOwner)
+        XCTAssertTrue(root.presentedViewController === controller)
+        next.dismiss(owner: nextOwner)
+        try await wait { root.presentedViewController == nil }
+        XCTAssertEqual(closed, ["new"], "Only the active playback mode owns the close callback")
+    }
+
+    @MainActor func testTimelineResumesProgressAfterCancelledScrubbing() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.windows.first(where: \.isKeyWindow), window = UIWindow(windowScene: scene)
+        let controls = VideoControlsVisibility()
+        var seeks: [Double] = []
+        controls.update(enabled: true, playing: true, buffering: false, voiceOver: false)
+        let root = UIHostingController(rootView: VideoPlaybackTimeline(elapsed: 1, duration: 20,
+            identifier: "timeline.qa", seek: { seeks.append($0) }, interactionChanged: controls.interaction))
+        window.rootViewController = root; window.makeKeyAndVisible()
+        defer { controls.cancel(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        func find(_ view: UIView) -> UISlider? {
+            if let slider = view as? UISlider { return slider }
+            return view.subviews.lazy.compactMap { find($0) }.first
+        }
+        try await Task.sleep(for: .milliseconds(100))
+        let slider = try XCTUnwrap(find(root.view))
+        let scale = (slider.maximumValue - slider.minimumValue) / 20
+        XCTAssertEqual(slider.value, slider.minimumValue + scale, accuracy: 0.01)
+        slider.sendActions(for: .touchDown)
+        slider.value = slider.minimumValue + 9 * scale; slider.sendActions(for: .valueChanged)
+        slider.sendActions(for: .touchCancel)
+        XCTAssertTrue(seeks.isEmpty, "A cancelled drag must not seek")
+        root.rootView = VideoPlaybackTimeline(elapsed: 3.2, duration: 20,
+            identifier: "timeline.qa", seek: { seeks.append($0) }, interactionChanged: controls.interaction)
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(slider.value, slider.minimumValue + 3.2 * scale, accuracy: 0.01, "A cancelled drag must release the thumb back to the playback clock")
+        slider.sendActions(for: .touchDown)
+        slider.value = slider.minimumValue + 7 * scale; slider.sendActions(for: .valueChanged)
+        slider.sendActions(for: .touchUpInside)
+        slider.sendActions(for: .valueChanged)
+        XCTAssertEqual(seeks, [7], "A slider release must commit one seek, including UIKit's final valueChanged")
+        root.rootView = VideoPlaybackTimeline(elapsed: 7.5, duration: 20,
+            identifier: "timeline.qa", seek: { seeks.append($0) }, interactionChanged: controls.interaction)
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(slider.value, slider.minimumValue + 7.5 * scale, accuracy: 0.01, "A completed drag must resume following the playback clock")
+    }
+
+    @MainActor func testControlsAutoHideByDefaultAndWaitForInteraction() async throws {
+        let controls = VideoControlsVisibility(); defer { controls.cancel() }
+        controls.update(enabled: true, playing: true, buffering: false, voiceOver: false)
+        try await Task.sleep(for: .milliseconds(3150))
+        XCTAssertFalse(controls.visible)
+        controls.interaction(true)
+        try await Task.sleep(for: .milliseconds(3150))
+        XCTAssertTrue(controls.visible)
+        controls.interaction(false)
+        try await Task.sleep(for: .milliseconds(3150))
+        XCTAssertFalse(controls.visible)
+    }
+
+    @MainActor func testFullscreenFollowsBothDeviceSidesAndStopsFollowingAfterExit() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, original = scene.interfaceOrientation
+        let window = UIWindow(windowScene: scene), root = OrientationTestController()
+        window.rootViewController = root; window.makeKeyAndVisible()
+        var physical = UIDeviceOrientation.landscapeLeft
+        var errors: [String] = []
+        let rotation = WebVideoFullscreenOrientation(deviceOrientation: { physical })
+        defer {
+            rotation.end()
+            root.dismiss(animated: false)
+            window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
+            VideoOrientation.request(VideoOrientation.mask(for: original), in: scene) { _ in }
+        }
+        let pageOrientation = scene.interfaceOrientation
+        rotation.prepare(token: "sides-qa", scene: scene, prefersLandscape: true)
+        let fullscreen = OrientationTestController()
+        fullscreen.modalPresentationStyle = .fullScreen
+        root.present(fullscreen, animated: false)
+        rotation.begin(token: "sides-qa") { errors.append($0.localizedDescription) }
+        try await wait { scene.interfaceOrientation == .landscapeRight }
+        for direction in [UIDeviceOrientation.landscapeRight, .landscapeLeft, .landscapeRight] {
+            physical = direction
+            NotificationCenter.default.post(name: UIDevice.orientationDidChangeNotification, object: UIDevice.current)
+            let expected: UIInterfaceOrientation = direction == .landscapeLeft ? .landscapeRight : .landscapeLeft
+            try await wait { scene.interfaceOrientation == expected }
+        }
+        physical = .faceUp
+        NotificationCenter.default.post(name: UIDevice.orientationDidChangeNotification, object: UIDevice.current)
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertEqual(scene.interfaceOrientation, .landscapeLeft, "Laying the phone flat must keep the current side")
+        rotation.end()
+        fullscreen.dismiss(animated: false)
+        try await wait { scene.interfaceOrientation == pageOrientation }
+        physical = .landscapeLeft
+        NotificationCenter.default.post(name: UIDevice.orientationDidChangeNotification, object: UIDevice.current)
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(scene.interfaceOrientation, pageOrientation, "Late orientation events must not rotate the underlying page")
+        XCTAssertTrue(errors.isEmpty, errors.joined(separator: "\n"))
+    }
+    @MainActor func testAlreadyFullscreenRestoresBrowserInsteadOfNativeKeyWindow() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, original = scene.interfaceOrientation
+        let browser = UIWindow(windowScene: scene), page = OrientationTestController()
+        let native = UIWindow(windowScene: scene), fullscreen = OrientationTestController()
+        browser.rootViewController = page; browser.makeKeyAndVisible()
+        let rotation = WebVideoFullscreenOrientation(deviceOrientation: { .landscapeLeft })
+        defer {
+            rotation.end()
+            native.isHidden = true; native.rootViewController = nil
+            browser.isHidden = true; browser.rootViewController = nil; previous?.makeKeyAndVisible()
+            VideoOrientation.request(VideoOrientation.mask(for: original), in: scene) { _ in }
+        }
+        VideoOrientation.request(.portrait, in: scene) { _ in }
+        try await wait { scene.interfaceOrientation == .portrait }
+        // Direct media documents can already have made AVKit's window key
+        // when the user chooses Play in landscape.
+        native.rootViewController = fullscreen; native.makeKeyAndVisible()
+        rotation.prepare(token: "late-native", scene: scene, prefersLandscape: true,
+                         nativeWebKit: true, sourceView: page.view)
+        var errors: [String] = []
+        rotation.begin(token: "late-native") { errors.append($0.localizedDescription) }
+        try await wait { scene.interfaceOrientation == .landscapeRight }
+        rotation.nativeFullscreenEnded()
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertEqual(scene.interfaceOrientation, .landscapeRight, "Do not rotate the dismissing native window")
+        native.isHidden = true; browser.makeKeyAndVisible()
+        await VideoOrientation.waitForRestoration(in: scene)
+        XCTAssertEqual(scene.interfaceOrientation, .portrait, "The browser must recover its original orientation")
+        NotificationCenter.default.post(name: UIDevice.orientationDidChangeNotification, object: UIDevice.current)
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(scene.interfaceOrientation, .portrait)
+        XCTAssertTrue(errors.isEmpty, errors.joined(separator: "\n"))
+    }
+
+    @MainActor func testFullscreenLandscapeRespectsDeviceSideAndKeepsFlatOrientation() {
+        XCTAssertEqual(VideoOrientation.landscapeMask(device: .landscapeLeft, interface: .portrait), .landscapeRight)
+        XCTAssertEqual(VideoOrientation.landscapeMask(device: .landscapeRight, interface: .portrait), .landscapeLeft)
+        XCTAssertEqual(VideoOrientation.landscapeMask(device: .faceUp, interface: .landscapeRight), .landscapeRight)
+        XCTAssertEqual(VideoOrientation.landscapeMask(device: .faceDown, interface: .landscapeLeft), .landscapeLeft)
+        XCTAssertEqual(VideoOrientation.landscapeMask(device: .unknown, interface: .portrait), .landscape)
+        XCTAssertEqual(VideoOrientation.landscapeMask(device: .portrait, interface: .landscapeLeft), .landscapeLeft)
+    }
     func testHandoffDoesNotPublishPrivateOrLocalContent() {
         for address in ["file:///tmp/a", "http://127.0.0.1/", "http://192.168.1.2/", "http://[::1]/", "https://host.local/a", "https://user:pass@example.com/", "data:text/plain,secret", "https://localhost/"] {
             XCTAssertNil(BrowserHandoff.eligibleURL(URL(string: address), isPrivate: false), address)
@@ -88,11 +273,65 @@ final class IncrementalFeatureTests: XCTestCase {
         XCTAssertNotNil(pip.attach(id: mini, primary: false))
         pip.detach(id: mini)
     }
+    @MainActor func testNativeHoldSpeedAboveTwoAdvancesAtTheSelectedRateForMP4AndHLS() async throws {
+        let defaults = UserDefaults.standard, session = MediaSession.shared
+        let savedHold = defaults.object(forKey: VideoPlaybackPreferences.holdSpeedKey)
+        let savedRate = defaults.object(forKey: "media.rate"), oldRate = session.rate
+        defer {
+            session.stop(); session.setRate(oldRate)
+            defaults.set(savedHold, forKey: VideoPlaybackPreferences.holdSpeedKey)
+            defaults.set(savedRate, forKey: "media.rate")
+        }
+        let mp4 = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        var files: [String: Data] = [:]
+        var playlist = "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:3\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-PLAYLIST-TYPE:VOD\n"
+        for index in 0..<12 {
+            let part = index % 4
+            let segment = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "segment\(part)", withExtension: "ts", subdirectory: "ReadingFixtures/HLSFragments"))
+            files["/segment\(part).ts"] = try Data(contentsOf: segment)
+            if index > 0, part == 0 { playlist += "#EXT-X-DISCONTINUITY\n" }
+            playlist += "#EXTINF:2.022,\nsegment\(part).ts\n"
+        }
+        files["/video.m3u8"] = Data((playlist + "#EXT-X-ENDLIST\n").utf8)
+        let server = try DownloadPlaybackHTTPFixture(files: files)
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        defaults.set(2.5, forKey: VideoPlaybackPreferences.holdSpeedKey)
+        for url in [mp4, root.appendingPathComponent("video.m3u8")] {
+            session.stop(); session.setRate(1)
+            session.open(url: url, persistPosition: false, startAt: 0)
+            try await wait { session.hasVideo && session.player.currentTime().seconds > 1.5 && session.player.rate > 0 }
+            let capability = session.player.currentItem?.canPlayFastForward == true
+            session.beginTemporaryRate()
+            XCTAssertEqual(session.player.rate, 2.5, url.pathExtension)
+            XCTAssertEqual(session.temporaryRateFeedback, 2.5, url.pathExtension)
+            // Exclude the audio time-pitch pipeline's rate-change startup.
+            try await Task.sleep(for: .milliseconds(250))
+            let start = session.player.currentTime().seconds
+            let measuredAt = ContinuousClock.now
+            try await Task.sleep(for: .milliseconds(url.pathExtension == "m3u8" ? 2500 : 1200))
+            let advanced = session.player.currentTime().seconds - start
+            let wallTime = measuredAt.duration(to: .now).components
+            let seconds = Double(wallTime.seconds) + Double(wallTime.attoseconds) / 1e18
+            let observedRate = advanced / seconds
+            print("NATIVE_HOLD_RATE|type=\(url.pathExtension)|fastForward=\(capability)|rate=\(session.player.rate)|observed=\(observedRate)")
+            XCTAssertEqual(observedRate, 2.5, accuracy: 0.35, "The playback clock must follow the selected rate: \(url.pathExtension)")
+            session.endTemporaryRate()
+            XCTAssertEqual(session.player.rate, 1)
+            XCTAssertEqual(session.temporaryRateFeedback, 1)
+            XCTAssertEqual(defaults.float(forKey: "media.rate"), 1)
+            XCTAssertNil(session.error)
+        }
+    }
+
     @MainActor func testVideoBoostInterruptionAndCapture() async throws {
         let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
         let session = MediaSession.shared
-        let oldRate = session.rate
-        defer { session.setRate(oldRate); session.stop() }
+        let oldRate = session.rate, savedHold = UserDefaults.standard.object(forKey: VideoPlaybackPreferences.holdSpeedKey)
+        UserDefaults.standard.removeObject(forKey: VideoPlaybackPreferences.holdSpeedKey)
+        defer {
+            session.setRate(oldRate); session.stop()
+            UserDefaults.standard.set(savedHold, forKey: VideoPlaybackPreferences.holdSpeedKey)
+        }
         session.open(url: fixture)
         session.setRate(1.5)
         try await wait { session.hasVideo && session.player.rate > 0 && session.player.currentTime().seconds > 0.1 }
@@ -105,6 +344,12 @@ final class IncrementalFeatureTests: XCTestCase {
         session.endTemporaryRate()
         XCTAssertEqual(session.player.rate, 1.5)
         XCTAssertEqual(session.temporaryRateFeedback, 1.5)
+        UserDefaults.standard.set(1.75, forKey: VideoPlaybackPreferences.holdSpeedKey)
+        session.beginTemporaryRate()
+        XCTAssertEqual(session.player.rate, 1.75)
+        session.endTemporaryRate()
+        XCTAssertEqual(session.player.rate, 1.5)
+        UserDefaults.standard.removeObject(forKey: VideoPlaybackPreferences.holdSpeedKey)
         // AVKit's own controls can change the current rate independently of
         // the browser's saved preference; restore that actual prior rate.
         session.player.rate = 0.75
@@ -167,4 +412,9 @@ final class IncrementalFeatureTests: XCTestCase {
         while !predicate() && Date() < end { try await Task.sleep(for: .milliseconds(100)) }
         XCTAssertTrue(predicate())
     }
+}
+
+private final class OrientationTestController: UIViewController {
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask { .allButUpsideDown }
+    override var shouldAutorotate: Bool { true }
 }

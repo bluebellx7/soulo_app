@@ -123,7 +123,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
     }
 
     @MainActor
-    private func launch(incognito: Bool = false, confirmCrossDomain: Bool? = nil) -> XCUIApplication {
+    private func launch(incognito: Bool = false, confirmCrossDomain: Bool? = nil, player: String? = nil) -> XCUIApplication {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
@@ -133,6 +133,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         if let confirmCrossDomain {
             app.launchArguments += ["-ad_block_confirm_cross_domain", confirmCrossDomain ? "YES" : "NO"]
         }
+        if let player { app.launchArguments += ["-video.defaultPlayer", player] }
         if ProcessInfo.processInfo.environment["SOULO_LIVE_SEARCH_VIDEO_QA"] == "1" {
             app.launchArguments += ["-privacy_cookie_banner_enabled", "YES"]
             app.launchEnvironment["SOULO_BROWSER_TRACE"] = "1"
@@ -819,6 +820,65 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         app.buttons["Back"].firstMatch.tap()
         openEpisodes(app)
         XCTAssertTrue(app.scrollViews.buttons["第01集"].firstMatch.exists, app.debugDescription)
+    }
+
+    @MainActor
+    func testBothPlayersKeepFullscreenWhileSelectingWebEpisodes() async throws {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
+        let data = try Data(contentsOf: fixture)
+        let html = """
+        <meta name="viewport" content="width=device-width,initial-scale=1"><title>Episode player</title>
+        <div class="dy-collect-video"><div class="dy-collect-video-name">Main</div><ul class="dy-collect-list">
+        <li><span class="c-name">Episode 1</span><a href="/first.mp4">Stream</a></li>
+        <li><span class="c-name">Episode 2</span><a href="/second.mp4">Stream</a></li></ul></div>
+        <div class="dy-collect-video"><div class="dy-collect-video-name">Backup</div><ul class="dy-collect-list">
+        <li><span class="c-name">Episode 1</span><a href="/backup.mp4">Stream</a></li></ul></div>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: ["/detail.html": Data(html.utf8),
+            "/first.mp4": data, "/second.mp4": data, "/backup.mp4": data])
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        let app = launch(player: "soulo")
+        defer { XCUIDevice.shared.orientation = .portrait }
+        try open(root.appendingPathComponent("detail.html"), app: app)
+        openEpisodes(app)
+        app.scrollViews.buttons["Episode 1"].firstMatch.tap()
+        let expand = app.buttons["media.mkv.fullscreen"]
+        XCTAssertTrue(expand.waitForExistence(timeout: 15), app.debugDescription)
+        let inlinePlay = app.buttons["media.mkv.play"]
+        if inlinePlay.exists && inlinePlay.label == "Pause" { inlinePlay.tap() }
+        expand.tap()
+        XCUIDevice.shared.orientation = .landscapeLeft
+        let close = app.buttons["media.mkv.fullscreen.close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 5), app.debugDescription)
+        let episodes = app.buttons.matching(identifier: "media.file.episodes").firstMatch
+        episodes.tap()
+        let second = app.buttons["media.file.episode.\(root.appendingPathComponent("second.mp4").absoluteString)"]
+        XCTAssertTrue(second.waitForExistence(timeout: 4), app.debugDescription)
+        second.tap()
+        XCTAssertTrue(app.otherElements["media.file.episodes.drawer"].waitForNonExistence(timeout: 8))
+        XCTAssertTrue(app.otherElements["media.mkv.fullscreen.player"].firstMatch.exists)
+        XCTAssertGreaterThan(app.frame.width, app.frame.height)
+        let modePicker = app.buttons.matching(identifier: "media.file.player").firstMatch
+        if !modePicker.exists {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap()
+            guard modePicker.waitForExistence(timeout: 3) else { XCTFail(app.debugDescription); return }
+        }
+        modePicker.tap()
+        app.descendants(matching: .any)["media.file.engine.system"].firstMatch.tap()
+        let nativeClose = app.buttons["media.fullscreen.close"]
+        XCTAssertTrue(nativeClose.waitForExistence(timeout: 10), app.debugDescription)
+        episodes.tap()
+        let first = app.buttons["media.file.episode.\(root.appendingPathComponent("first.mp4").absoluteString)"]
+        XCTAssertTrue(first.waitForExistence(timeout: 4), app.debugDescription)
+        first.tap()
+        XCTAssertTrue(app.otherElements["media.file.episodes.drawer"].waitForNonExistence(timeout: 8))
+        XCTAssertTrue(app.otherElements["media.fullscreen.player"].firstMatch.exists)
+        XCTAssertGreaterThan(app.frame.width, app.frame.height)
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        shot.name = "Web episodes preserve fullscreen in both engines"; shot.lifetime = .keepAlways; add(shot)
+        if !nativeClose.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap() }
+        nativeClose.tap()
+        app.buttons["media.web.close"].tap()
     }
 
     @MainActor

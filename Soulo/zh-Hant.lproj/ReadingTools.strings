@@ -464,3 +464,42 @@
 "home_toolbar_browser_tools" = "瀏覽器工具列";
 "home_toolbar_home_tools" = "首頁工具列";
 "soulo_website" = "Soulo 網站";
+
+"file_folder" = "資料夾";
+"media_player" = "播放器";
+"media_player_system" = "系統";
+
+"media_airplay_mirroring_hint" = "此格式無法透過系統播放器直接投放。請開啟控制中心，選擇「螢幕鏡像輸出」，再選擇電視或 Mac。";
+
+"userscript_check_updates" = "檢查更新";
+"userscript_update_no_url" = "此腳本未提供更新網址，可重新匯入新版檔案。";
+"userscript_update_manual_hint" = "僅在點按時檢查更新，檢視新版內容後再更新。內建腳本隨 App 更新。";
+"userscript_update_latest" = "已是最新版本";
+"userscript_update_invalid" = "更新檔案無效、與原腳本不符，或版本不一致。";
+"userscript_update_changed" = "腳本已發生變更，請重新檢查更新。";
+
+"media_options" = "播放選項";
+"media_audio_tracks" = "音軌";
+"media_subtitles" = "字幕";
+"media_track_off" = "關閉";
+
+/* Video preferences */
+"video_settings" = "影片";
+"video_show_tools" = "顯示影片工具";
+"video_show_tools_desc" = "在網頁影片上顯示工具按鈕，可調整倍速、下載或進入全螢幕。";
+"video_default_player" = "預設播放器";
+"video_default_player_desc" = "用於下載、檔案和網頁資源中的影片。播放時可暫時切換播放器。";
+"video_hold_speed" = "長按倍速";
+"video_hold_speed_desc" = "影片播放時長按畫面暫時加速，放開恢復原速。可用倍速取決於媒體格式。";
+"video_soulo_player_desc" = "預設模式，支援更多影音格式，網頁、下載和檔案共用控制介面。子母畫面和 AirPlay 使用系統解碼，適用於系統支援的媒體格式。";
+"video_system_player_desc" = "使用 Apple 系統解碼，支援子母畫面和 AirPlay，格式支援取決於系統。兩種模式均可在左側上下滑調亮度，右側上下滑調音量。";
+"settings_backup_delete_message" = "刪除此備份？目前設定不會改變。";
+"media_pip_unavailable" = "暫時無法開啟子母畫面，請等待媒體載入後重試。";
+"feedback_telegram" = "Telegram 回饋群組";
+"feedback_telegram_desc" = "加入群組，交流問題與建議。";
+"settings_backup_intro" = "將目前設定備份到此裝置，方便日後還原。備份不包含瀏覽記錄、登入狀態和下載檔案。";
+"settings_backup_manage_hint" = "還原前會先備份目前設定，並關閉 iCloud 設定同步。向左滑動或長按備份可刪除，刪除不會改變目前設定。";
+"files_move" = "移動";
+"files_move_busy" = "請等待下載完成後再移動或重新命名這些項目。";
+"video_show_episode_dock" = "顯示選集浮標";
+"video_show_episode_dock_desc" = "網頁有集數時，在側邊顯示吸附按鈕。關閉後仍可在播放器中選集。";

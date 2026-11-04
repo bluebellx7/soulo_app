@@ -6,6 +6,8 @@ Naposledy použité karty a skupiny webov sa zobrazia ako prvé a prehľad sa ot
 
 Sťahovanie BT: importujte súbory .torrent alebo odkazy magnet, vyberte súbory, pozastavte a pokračujte. V iOS 26 môže sťahovanie pokračovať na pozadí, ak to systém dovolí; staršie verzie uložia priebeh a pozastavia ho. Prehrávajte podporované BT médiá počas sťahovania a otvárajte súbory MKV. Importujte odkazy ed2k/thunder. Sťahovanie vyžaduje dostupné zdroje; prehrávanie závisí od kodekov.
 
+Miestne a BT videá prehráva Soulo: výber dielov, rýchlosť 0,5–4× a systémový prehrávač pre kompatibilné formáty.
+
 Vyberte päť voliteľných skratiek na úvodnej stránke pre sťahovanie, súbory, záložky, históriu, tapety a ďalšie stránky. Lišta kariet knižnice sa pri posúvaní zmenší.
 
 Hľadajte informácie, čítajte články, prehrávajte médiá a spravujte sťahovanie v jednom prehliadači.
