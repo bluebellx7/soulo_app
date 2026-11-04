@@ -1,6 +1,6 @@
 # Soulo website context
 
-Updated: 2026-11-01
+Updated: 2026-11-02
 Canonical website: https://soulo.dkluge.com/
 
 ## What is Soulo?
@@ -20,7 +20,7 @@ The directory groups URL-based search templates into AI search, general search, 
 URL: https://soulo.dkluge.com/movies.html
 Data: https://soulo.dkluge.com/movies.json
 
-This is a classified directory of 86 external websites, not a hosted video catalog or streaming service. It provides website search, category filtering and local browser favorites. It does not require a Soulo account. Favorites are saved only in the visitor's browser and are lost when local website data is cleared.
+This is a classified directory of 85 external websites, not a hosted video catalog or streaming service. It provides website search, category filtering and local browser favorites. It does not require a Soulo account. Favorites are saved only in the visitor's browser and are lost when local website data is cleared.
 
 Categories and uses:
 
@@ -35,37 +35,36 @@ Categories and uses:
 - 纪录与直播: documentary directories, CCTV and sports information.
 - 影视工具: desktop players and media-resource directories.
 
-Descriptions summarize intended use and are not independent claims about content rights, access conditions, availability or streaming quality. The directory's editorial date is recorded in movies.json. External websites manage their own accounts, media and playback services. The 2026-11-01 review checked destination pages in Chrome, including redirects and page content. The directory has 86 entries. Failed, unrelated, duplicate and persistently verification-gated entries are omitted. Login-required entries are labeled. Site icons are served as local PNG assets. Availability can change with time, location and access conditions. Do not describe them as operated or endorsed by Soulo.
+Descriptions summarize intended use and are not independent claims about content rights, access conditions, availability or streaming quality. The directory's editorial date is recorded in movies.json. External websites manage their own accounts, media and playback services. The 2026-11-01 review checked destination pages in Chrome, including redirects and page content; the 2026-11-02 follow-up updated a migrated entry and removed one that redirected to an unrelated page. The directory has 85 entries. Login-required entries are labeled. Site icons are served as local PNG assets. Availability can change with time, location and access conditions. Do not describe them as operated or endorsed by Soulo.
 
 ## Soulo 磁力搜索 / magnet & BT directory
 
 URL: https://soulo.dkluge.com/magnets.html
 Data: https://soulo.dkluge.com/magnets.json
 
-This is a classified directory of 37 verified external magnet search engines, BT torrent websites and anime/international torrent indexes. It provides website search, category filtering and local browser favorites (`soulo-magnet-favorites`). Visitors can open magnet links (`magnet:?`) or `.torrent` files in the Soulo iOS browser to select files and manage downloads locally.
+This is a classified directory of 34 external magnet search engines, BT torrent websites and anime/international torrent indexes. It provides website search, category filtering and local browser favorites (`soulo-magnet-favorites`). Visitors can open magnet links (`magnet:?`) or `.torrent` files in the Soulo iOS browser to select files and manage downloads locally.
 
 Categories and uses:
 
-- 磁力引擎: DHT magnet search engines and multi-source torrent search portals (including 无极磁链, 磁力熊猫, 磁力炮, 磁力么, 磁力搜索, 找磁力, 磁力蜘蛛, 磁力王, 种子吧, 磁力虎, 磁力大大).
-- 影视种子: movie and series BT/magnet download directories and forums (including 6V 电影, 80s 电影, BT之家 1LOU, SeedHub, 飘花电影网, 迅雷电影天堂, 磁力熊, 比特大雄, 人人电影网).
-- 动漫追番: anime torrent trackers and seasonal magnet directories (including 蜜柑计划 Mikan, ACG.RIP, Anime Garden, Nyaa, 樱花动漫).
-- 国际种子: international torrent and TV release indexes (including EZTV, RuTracker, PirateProxy).
-- 磁力导航: magnet search navigation hubs and client tools (including BT蚂蚁磁力, 磁力搜索神器, 迅雷下载天堂).
+- 磁力引擎: DHT magnet search engines and multi-source torrent search portals (including 无极磁链, 磁力熊猫, 磁力炮, 磁力么, 磁力搜索, 磁力蜘蛛, 磁力王, 种子吧, 磁力虎, 磁力大大, 磁力猫, 磁力狗, 天天磁力).
+- 影视种子: movie and series BT/magnet download directories and forums (including 6V 电影, 80s 电影, BT之家 1LOU, SeedHub, 飘花电影网, 迅雷电影天堂, 磁力熊, 比特大雄).
+- 动漫追番: anime torrent trackers and seasonal magnet directories (including 蜜柑计划 Mikan, ACG.RIP, Anime Garden, Nyaa, 樱花动漫, Tokyo Toshokan).
+- 国际种子: international torrent and TV release indexes (including EZTV and RuTracker).
 
-Every destination URL was verified in headless Chrome on 2026-11-01; broken domains, empty SPAs and clipboard hijackers were excluded.
+The directory was audited on 2026-11-01; availability of individual sites can change.
 
 ## Soulo 网盘搜索 / cloud drive search directory
 
 URL: https://soulo.dkluge.com/pans.html
 Data: https://soulo.dkluge.com/pans.json
 
-This is a classified directory of 30 verified external cloud drive search engines, movie cloud-share communities, study & eBook cloud indexes, and official cloud drive web portals. It provides website search, category filtering and local browser favorites (`soulo-pan-favorites`).
+This is a classified directory of 28 verified external cloud drive search engines, movie cloud-share communities, study & eBook cloud indexes, and official cloud drive web portals. It provides website search, category filtering and local browser favorites (`soulo-pan-favorites`).
 
 Categories and uses:
 
 - 多盘聚合: multi-cloud search engines covering Quark, Baidu, AliPan, Xunlei, UC, 115, Lanzou and Tianyi cloud drives (including 千帆搜索, 盘搜Pro, 阿立盘搜, 搜盘鸭, 爱搜, 易搜, 影盘社, UP云搜, 盘了个盘, 小马盘, 小兔搜搜, Ai资源帮).
-- 影视网盘站: movie, series and documentary cloud-sharing communities and catalogs (including 云盘资源社区, 阿里小站, 团长资源, 影视搜, 人人电影网, SeedHub, 纪录片数据库).
-- 学习与专项: study materials, exam prep, eBook and 4K UHD cloud resource indexes (including 学霸盘, 会搜盘, 4K精品夸克资源, 资源收藏夹·网盘, 爱达杂货铺).
+- 影视网盘站: movie, series and documentary cloud-sharing communities and catalogs (including 云盘资源社区, 团长资源, 影视搜, 人人电影网, SeedHub, 纪录片数据库).
+- 学习与专项: study materials, exam prep, eBook and 4K UHD cloud resource indexes (including 学霸盘, 会搜盘, 4K精品夸克资源, 资源收藏夹·网盘).
 - 网盘工作台: official web consoles for Quark, AliPan, Baidu, Xunlei, 115 and Lanzou cloud drives.
 
 ## App privacy and website analytics
@@ -89,3 +88,22 @@ Crawler rules: https://soulo.dkluge.com/robots.txt
 Short context: https://soulo.dkluge.com/llms.txt
 
 Public pages do not require authentication. Main directory content is present in HTML. `movies.html`, `magnets.html`, and `pans.html` include CollectionPage, BreadcrumbList and ItemList JSON-LD matching the visible entries. Prefer the canonical page relevant to a claim when citing the site. This summary supplies context; it does not replace the pages or guarantee search inclusion.
+
+## Reading and music directories
+
+Reading: https://soulo.dkluge.com/reading.html
+Data: https://soulo.dkluge.com/reading.json
+
+The reading directory focuses on finding and downloading eBooks. It includes 10 entries covering iBooks, SoBooks, KGBook, book search engines, classical texts, open libraries, and reading tools.
+
+Music: https://soulo.dkluge.com/music.html
+Data: https://soulo.dkluge.com/music.json
+
+The music directory includes 8 entries covering song search, lossless resources, downloadable albums, background music, and sound effects. It includes Gequbao, HiFiBa, Bandcamp, and independent music collections. Access conditions are set by the destination services.
+
+Both pages provide Chinese/English text, search by name/domain/category, and isolated browser-local favorite lists. Static HTML includes every entry and matching CollectionPage, BreadcrumbList, and ItemList data. The current entry lists and editorial dates are recorded in the JSON files.
+
+Online tools: https://www.dkluge.com/zh/bag
+The navigation link opens the DKluge tool collection, which includes image, PDF, video, and format-conversion utilities. It is an external destination, not an additional Soulo-hosted tools page.
+
+The shared navigation has seven icon-labeled destinations. On compact screens an accessible Directory menu exposes the same links; without JavaScript, those links remain visible.

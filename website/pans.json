@@ -210,20 +210,6 @@
       "icon": "images/movie-icons/site-yunpan1-cc.png"
     },
     {
-      "id": "pan666",
-      "name": "阿里小站",
-      "url": "https://pan666.net/",
-      "category": "community",
-      "mark": "盘他",
-      "description": "活跃的阿里云盘与夸克网盘原盘电影、热门剧集与动漫交流论坛。",
-      "tags": [
-        "盘他社区",
-        "原盘影视",
-        "交流论坛"
-      ],
-      "icon": "images/movie-icons/pan666.png"
-    },
-    {
       "id": "tzfile",
       "name": "团长资源",
       "url": "https://t-rex.tzfile.com/",
@@ -348,20 +334,6 @@
         "精选索引"
       ],
       "icon": "images/movie-icons/pan-zyscj-disk.png"
-    },
-    {
-      "id": "adzhp",
-      "name": "爱达杂货铺",
-      "url": "https://adzhp.cc/",
-      "category": "special",
-      "mark": "爱达",
-      "description": "收录实用网盘检索器、直链解析工具、软件与学习资源的口碑导航站。",
-      "tags": [
-        "资源导航",
-        "盘搜收录",
-        "实用工具"
-      ],
-      "icon": "images/movie-icons/pan-adzhp.png"
     },
     {
       "id": "quark-pan",

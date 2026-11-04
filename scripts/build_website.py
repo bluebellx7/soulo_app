@@ -22,6 +22,7 @@ ICONS = {
     'heart': '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0l-1 1-1-1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>',
     'globe': '<circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/>',
     'tool': '<path d="m14 6 4 4M4 20l4-1L20 7l-3-3L5 16l-1 4Z"/>',
+    'wrench': '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94L14.7 6.3Z"/>',
     'grid': '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
     'arrow': '<path d="M5 12h14m-6-6 6 6-6 6"/>',
     'external': '<path d="M8 5h11v11M19 5 5 19"/>',
@@ -33,6 +34,10 @@ ICONS = {
     'image': '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1"/><path d="m3 17 6-6 4 4 3-3 5 5"/>',
     'book': '<path d="M12 5c-3-2-6-2-10-1v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-4-1-7-1-10 1Zm0 0v15"/>',
     'chevron': '<path d="m6 9 6 6 6-6"/>',
+    'magnet': '<path d="M3 4h4v8a5 5 0 0 0 10 0V4h4v8a9 9 0 0 1-18 0V4Z"/><path d="M3 8h4m10 0h4"/>',
+    'headphones': '<path d="M3 14v-3a9 9 0 0 1 18 0v3"/><rect x="3" y="12" width="5" height="9" rx="2"/><rect x="16" y="12" width="5" height="9" rx="2"/>',
+    'mic': '<rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2m-7 9v3m-4 0h8"/>',
+    'radio': '<rect x="3" y="8" width="18" height="13" rx="3"/><path d="m5 8 14-5M7 12h4M7 16h2"/><circle cx="16" cy="15" r="2"/>',
 }
 SOURCE_ICONS = {
     'search.yahoo.com': 'favicons/yahoo.co.jp.png',
@@ -68,15 +73,17 @@ def jsonld(value):
 
 def navigation(page):
     template = (ROOT/'scripts/templates/navigation.html').read_text().strip()
-    for key, file in [('home', 'index.html'), ('sources', 'sources.html'), ('movies', 'movies.html'), ('magnets', 'magnets.html'), ('pans', 'pans.html')]:
+    for key, file in [('home', 'index.html'), ('sources', 'sources.html'), ('movies', 'movies.html'), ('magnets', 'magnets.html'), ('pans', 'pans.html'), ('reading', 'reading.html'), ('music', 'music.html')]:
         template = template.replace('{{'+key+'_current}}', ' aria-current="page"' if page == file else '')
+    for name in ['search', 'play', 'magnet', 'cloud', 'book', 'headphones', 'wrench']:
+        template = template.replace('{{nav_'+name+'}}', icon(name))
     return template
 
 
 def movie_mark(site, css_class):
     style = ''
     if path := site.get('icon'):
-        assert re.fullmatch(r'images/movie-icons/[a-z0-9-]+\.png', path), path
+        assert re.fullmatch(r'images/(?:movie|reading|music)-icons/[a-z0-9-]+\.png', path), path
         assert (SITE/path).is_file(), f'Missing movie icon: {path}'
         content = f'<img src="{esc(path)}" width="32" height="32" alt="" loading="lazy" decoding="async" />'
         css_class += ' has-icon'
@@ -97,6 +104,20 @@ def version_assets(html_text):
     return re.sub(r'\b(href|src|data-src-(?:zh|en))="([A-Za-z0-9_.-]+\.(?:css|js)|images/web/[A-Za-z0-9_.-]+\.webp)(?:\?v=[^"]*)?"', repl, html_text)
 
 
+def finish_page(html_text, page):
+    footer = []
+    for key, name, href in [('sources', '搜索源', 'sources.html'), ('movies', '影视导航', 'movies.html'), ('magnets', '磁力搜索', 'magnets.html'), ('pans', '网盘搜索', 'pans.html'), ('reading', '阅读导航', 'reading.html'), ('music', '音乐资源', 'music.html'), ('tools', '在线工具', 'https://www.dkluge.com/zh/bag'), ('privacy', '隐私政策', 'privacy.html'), ('support', '技术支持', 'https://www.dkluge.com/contact-us')]:
+        current = ' aria-current="page"' if href == page else ''
+        external = ' target="_blank" rel="noopener noreferrer"' if key == 'tools' else ''
+        footer.append(f'<a href="{href}" data-i18n="{key}"{current}{external}>{name}</a>')
+    html_text = re.sub(r'(<div class="footer-links">).*?(</div>)', lambda m: m[1]+''.join(footer)+m[2], html_text, flags=re.S)
+    return version_assets(html_text)
+
+
+def bilingual(zh, en):
+    return f' data-text-zh="{esc(zh)}" data-text-en="{esc(en)}"' if en else ''
+
+
 def build_existing_page(file):
     source = (SITE/file).read_text()
     replacement = navigation(file)
@@ -108,10 +129,10 @@ def build_existing_page(file):
         source = re.sub(r'<div class="privacy-topbar">.*?</div>\s*<nav class="privacy-directory-links".*?</nav>', lambda _:replacement, source, count=1, flags=re.S)
     if 'href="navigation.css?' not in source:
         source = source.replace('</head>', '    <link rel="stylesheet" href="navigation.css?v=20261030b" />\n</head>')
-    return version_assets(source)
+    return finish_page(source, file)
 
 
-def build_directory(data_file, template_file, page_file, page_title, breadcrumb_name, list_name, summary_suffix):
+def build_directory(data_file, template_file, page_file, page_title, breadcrumb_name, list_name, summary_suffix, extra_tokens=None):
     data = json.loads((SITE / data_file).read_text())
     sites, categories = data['sites'], data['categories']
     ids, urls = set(), set()
@@ -129,10 +150,11 @@ def build_directory(data_file, template_file, page_file, page_title, breadcrumb_
         cards = []
         for site in items:
             domain = urlparse(site['url']).netloc.removeprefix('www.')
-            search = ' '.join([site['name'], domain, cid, name, site['description'], *site['tags']]).lower()
-            tags = ''.join(f'<span>{esc(tag)}</span>' for tag in site['tags'])
+            search = ' '.join([site['name'], site.get('name_en',''), domain, cid, name, category.get('name_en',''), site['description'], site.get('description_en',''), *site['tags'], *site.get('tags_en',[])]).lower()
+            tags = ''.join(f'<span{bilingual(tag, site.get("tags_en",[])[i] if i < len(site.get("tags_en",[])) else None)}>{esc(tag)}</span>' for i, tag in enumerate(site['tags']))
+            label = f' data-label-zh="打开{esc(site["name"])}（新标签页）" data-label-en="Open {esc(site["name_en"])} in a new tab"' if site.get('name_en') else ''
             cards.append(f'''<article class="movie-card" data-site="{site['id']}" data-search="{esc(search)}">
-              <a class="movie-card-link" href="{esc(site['url'])}" target="_blank" rel="noopener noreferrer" aria-label="打开{esc(site['name'])}（新标签页）"><div class="movie-card-heading">{movie_mark(site, 'site-mark')}<div><h3>{esc(site['name'])}</h3><span class="site-domain">{esc(domain)}</span></div>{icon('external')}</div><p title="{esc(site['description'])}">{esc(site['description'])}</p><div class="site-tags">{tags}</div></a>
+              <a class="movie-card-link" href="{esc(site['url'])}" target="_blank" rel="noopener noreferrer" aria-label="打开{esc(site['name'])}（新标签页）"{label}><div class="movie-card-heading">{movie_mark(site, 'site-mark')}<div><h3{bilingual(site['name'], site.get('name_en'))}>{esc(site['name'])}</h3><span class="site-domain">{esc(domain)}</span></div>{icon('external')}</div><p title="{esc(site['description'])}"{bilingual(site['description'], site.get('description_en'))}>{esc(site['description'])}</p><div class="site-tags">{tags}</div></a>
               <button class="favorite-button" type="button" data-favorite="{site['id']}" aria-label="收藏{esc(site['name'])}" aria-pressed="false" title="收藏{esc(site['name'])}">{icon('heart')}</button>
             </article>''')
         sections.append(f'''<section class="movie-category category-{cid}" id="{cid}" data-section="{cid}" aria-labelledby="heading-{cid}"><div class="movie-section-heading"><div>{icon(category['icon'])}<h2 id="heading-{cid}">{esc(name)}</h2><span class="section-count">{len(items)}</span></div><p>{esc(category['description'])}</p></div><div class="movie-grid">{''.join(cards)}</div></section>''')
@@ -146,11 +168,12 @@ def build_directory(data_file, template_file, page_file, page_title, breadcrumb_
     tokens = {'site_count':str(len(sites)), 'category_count':str(len(categories)), 'updated':data['updated'], 'structured_data':jsonld(graph), 'category_links':''.join(links), 'catalog':'\n'.join(sections), 'navigation':navigation(page_file)}
     tokens.update({f'{key}_icon': icon(key) for key in ICONS})
     tokens['arrow'] = icon('arrow')
+    tokens.update(extra_tokens or {})
     template = (ROOT/'scripts/templates'/template_file).read_text()
     for key, value in tokens.items():
         template = template.replace('{{'+key+'}}', value)
     assert not re.search(r'\{\{\w+\}\}', template), 'Unresolved template token'
-    return version_assets(template)
+    return finish_page(template, page_file)
 
 
 def build_movies():
@@ -163,6 +186,57 @@ def build_magnets():
 
 def build_pans():
     return build_directory('pans.json', 'pans.html', 'pans.html', 'Soulo 网盘搜索', '网盘搜索', '网盘资源搜索与社区目录', '可用网盘搜索与资源社区入口，涵盖多盘聚合搜索、影视网盘站、学习资料与官方云盘工作台')
+
+
+def build_content_directory(kind):
+    data = json.loads((SITE/(kind+'.json')).read_text())
+    reading = kind == 'reading'
+    name = '阅读导航' if reading else '音乐资源'
+    name_en = 'Reading' if reading else 'Music'
+    description = f'Soulo 阅读导航整理 {len(data["sites"])} 个找书与电子书资源入口，包括 iBooks、SoBooks、苦瓜书盘，以及古籍、公开书库和阅读工具，支持分类、搜索和本地收藏。' if reading else f'Soulo 音乐资源整理 {len(data["sites"])} 个音乐搜索、无损资源、数字专辑与配乐音效入口，包括歌曲宝、HiFiBa 和 Bandcamp，支持分类、搜索和本地收藏。'
+    en_description = 'Find eBooks with iBooks, SoBooks, book search engines, open libraries, and reading tools.' if reading else 'Find songs, lossless editions, downloadable albums, and background music.'
+    zh = {
+        'page.title': f'{name} - '+('找书搜索与电子书资源' if reading else '音乐搜索、无损下载与配乐')+' | Soulo',
+        'page.description': description,
+        'directory.name': name, 'directory.skip': '跳到'+name+'目录',
+        'directory.heroTitle': '想读的书，<br />从这里找。' if reading else '想听的歌，<br />在这里找。',
+        'directory.heroDesc': '电子书库、找书搜索与阅读工具。<br />从 iBooks、SoBooks 开始，找到想读的书。' if reading else '找歌、无损音乐、专辑与配乐。<br />把常用的音乐检索和下载入口收在一起。',
+        'directory.browse': '浏览目录', 'directory.search': '搜索网站、域名或资源类型',
+        'directory.all': '全部网站', 'directory.favorites': '我的收藏', 'directory.categories': '全部分类',
+        'directory.reset': '查看全部',
+        'directory.total': '共 {count} 个阅读网站' if reading else '共 {count} 个音乐网站',
+        'directory.emptyFavorites': '点击网站卡片上的爱心，建立自己的阅读收藏夹。' if reading else '点击网站卡片上的爱心，建立自己的音乐收藏夹。',
+        'directory.emptyDescription': '试试网站名称、域名，或“电子书”“EPUB”“古籍”等关键词。' if reading else '试试网站名称、域名，或“无损”“MP3”“配乐”等关键词。',
+        'directory.toolsPrompt': '还有文件需要处理？', 'directory.toolsLink': '打开在线工具',
+        'directory.aboutTitle': '把常用的找书入口，收在一起。' if reading else '把找歌和下载入口，放在顺手的地方。',
+        'directory.about': '从电子书库、找书搜索到阅读工具，按用途浏览并前往对应网站。点击爱心保存常用入口，收藏保存在当前浏览器。' if reading else '从音乐检索、无损资源到专辑和配乐，按用途浏览并前往对应网站。点击爱心保存常用入口，收藏保存在当前浏览器。',
+        'directory.faqTitle': '如何保存常用入口？',
+        'directory.faq': '点击卡片上的爱心即可收藏，在“我的收藏”中查看。收藏只保存在当前浏览器，清除网站数据后会丢失。',
+    }
+    en = {
+        'page.title': ('Reading Directory - Book Search & eBook Resources' if reading else 'Music Resources - Search, Lossless Downloads & Soundtracks')+' | Soulo',
+        'page.description': en_description,
+        'directory.name': name_en, 'directory.skip': 'Skip to the '+name_en.lower()+' directory',
+        'directory.heroTitle': 'Find the book<br />you want to read.' if reading else 'Find the music<br />you want to hear.',
+        'directory.heroDesc': 'eBook collections, book search, and reading tools.<br />Start with iBooks, SoBooks, and more.' if reading else 'Song search, lossless music, albums, and soundtracks.<br />Keep your favorite music resources together.',
+        'directory.browse': 'Browse directory', 'directory.search': 'Search websites, domains, or resource types',
+        'directory.all': 'All websites', 'directory.favorites': 'My favorites', 'directory.categories': 'All categories',
+        'directory.reset': 'View all',
+        'directory.total': '{count} reading websites' if reading else '{count} music & audio websites',
+        'directory.emptyFavoritesTitle': 'Save your go-to reading sites here' if reading else 'Save your go-to music sites here',
+        'directory.emptyFavorites': 'Use the heart icon on a card to build your reading list.' if reading else 'Use the heart icon on a card to build your listening list.',
+        'directory.emptyDescription': 'Try a website name, domain, or keywords like eBooks, EPUB, or Classics.' if reading else 'Try a website name, domain, or keywords like Lossless, MP3, or Soundtracks.',
+        'directory.toolsPrompt': 'Need to work with files?', 'directory.toolsLink': 'Open online tools',
+        'directory.aboutTitle': 'Keep your favorite book resources together.' if reading else 'Keep music search and downloads close.',
+        'directory.about': 'Browse eBook collections, book search engines, and reading tools by purpose. Use the heart to save your favorite resources in this browser.' if reading else 'Browse song search, lossless collections, albums, and soundtracks by purpose. Use the heart to save your favorite resources in this browser.',
+        'directory.faqTitle': 'How do I save a website?',
+        'directory.faq': 'Use the heart button on a card, then open My favorites. Favorites are stored in this browser and are removed when website data is cleared.',
+    }
+    locales = {'zh':zh, 'en':en, 'categories':{c['id']:{'zh':[c['name'], c['description']], 'en':[c['name_en'], c['description_en']]} for c in data['categories']}}
+    artwork = '<svg viewBox="0 0 400 280" fill="none"><rect x="68" y="34" width="225" height="188" rx="18" transform="rotate(-9 68 34)" fill="currentColor" opacity=".12"/><path d="M205 82c-42-26-88-26-136-11v140c48-15 94-15 136 11 42-26 88-26 136-11V71c-48-15-94-15-136 11Z" fill="var(--surface)" stroke="currentColor" stroke-width="2"/><path d="M205 82v140M97 105h71m-71 25h58m-58 25h66m71-50h78m-78 25h62m-62 25h69" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity=".55"/></svg>' if reading else '<svg viewBox="0 0 400 280" fill="none"><circle cx="204" cy="140" r="108" fill="currentColor" opacity=".1"/><path d="M115 152v-28a89 89 0 0 1 178 0v28" stroke="currentColor" stroke-width="14" stroke-linecap="round"/><rect x="102" y="140" width="43" height="77" rx="18" fill="var(--surface)" stroke="currentColor" stroke-width="3"/><rect x="263" y="140" width="43" height="77" rx="18" fill="var(--surface)" stroke="currentColor" stroke-width="3"/><path d="M174 130v29m20-48v65m20-56v47m20-30v17" stroke="currentColor" stroke-width="6" stroke-linecap="round"/></svg>'
+    extra = {'kind':kind, 'page_title':esc(zh['page.title']), 'page_description':esc(description), 'directory_name':name, 'hero_title':zh['directory.heroTitle'], 'hero_description':zh['directory.heroDesc'], 'artwork':artwork, 'page_locales':jsonld(locales), 'favorites_key':f'soulo-{kind}-favorites', 'about_title':zh['directory.aboutTitle'], 'about_description':zh['directory.about'], 'faq_title':zh['directory.faqTitle'], 'faq_description':zh['directory.faq']}
+    summary = '找书与电子书资源入口，涵盖 iBooks、SoBooks、古籍与阅读工具' if reading else '音乐资源入口，涵盖歌曲检索、无损资源、数字专辑与配乐音效'
+    return build_directory(kind+'.json', 'content-directory.html', kind+'.html', 'Soulo '+name, name, name+'目录', summary, extra)
 
 
 def build_sources():
@@ -206,7 +280,7 @@ def build_sources():
     for key, value in tokens.items():
         template = template.replace('{{'+key+'}}', value)
     assert not re.search(r'\{\{\w+\}\}', template), 'Unresolved source template token'
-    return version_assets(template)
+    return finish_page(template, 'sources.html')
 
 
 def main():
@@ -214,7 +288,7 @@ def main():
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     changed = []
-    for file, content in [('movies.html', build_movies()), ('magnets.html', build_magnets()), ('pans.html', build_pans()), ('sources.html', build_sources()), ('index.html', build_existing_page('index.html')), ('privacy.html', build_existing_page('privacy.html'))]:
+    for file, content in [('movies.html', build_movies()), ('magnets.html', build_magnets()), ('pans.html', build_pans()), ('reading.html', build_content_directory('reading')), ('music.html', build_content_directory('music')), ('sources.html', build_sources()), ('index.html', build_existing_page('index.html')), ('privacy.html', build_existing_page('privacy.html'))]:
         target = SITE/file
         if not target.exists() or target.read_text() != content:
             changed.append(file)
@@ -222,7 +296,7 @@ def main():
                 target.write_text(content)
     if args.check and changed:
         parser.exit(1, 'Out of date: '+', '.join(changed)+'. Run python3 scripts/build_website.py\n')
-    print('Website directories are up to date.' if args.check else 'Built crawlable directories and shared navigation on all six pages.')
+    print('Website directories are up to date.' if args.check else 'Built crawlable directories and shared navigation on all eight pages.')
 
 
 if __name__ == '__main__':

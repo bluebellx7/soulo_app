@@ -18,6 +18,11 @@
   const storageKey = document.body.dataset.favoritesKey || 'soulo-movie-favorites';
   const isMagnets = document.body.classList.contains('magnets-page');
   const isPans = document.body.classList.contains('pans-page');
+  let directoryLocales = null;
+  try {
+    const content = document.getElementById('directory-locales');
+    if (content) directoryLocales = JSON.parse(content.textContent);
+  } catch {}
   let favorites = new Set();
   let category = 'all';
   let favoritesOnly = false;
@@ -125,6 +130,14 @@
     } else {
       document.getElementById('empty-title').textContent = noFavorites ? '把喜欢的入口留在这里' : '没有找到匹配的网站';
       document.getElementById('empty-description').textContent = noFavorites ? (isMagnets ? '点击网站卡片上的爱心，建立自己的磁力收藏夹。' : isPans ? '点击网站卡片上的爱心，建立自己的网盘收藏夹。' : '点击网站卡片上的爱心，建立自己的观影收藏夹。') : (isMagnets ? '试试网站名称、域名，或“DHT”“4K”“动漫”等关键词。' : isPans ? '试试网站名称、域名，或“夸克”“百度”“阿里”“4K”等关键词。' : '试试网站名称、域名，或“动漫”“字幕”等分类。');
+    }
+    const extra = directoryLocales?.[isEn() ? 'en' : 'zh'];
+    if (extra) {
+      if (!favoritesOnly && !terms.length && category === 'all') {
+        meta.textContent = extra['directory.total'].replace('{count}', String(cards.length));
+      }
+      if (noFavorites && isEn()) document.getElementById('empty-title').textContent = extra['directory.emptyFavoritesTitle'];
+      document.getElementById('empty-description').textContent = extra[noFavorites ? 'directory.emptyFavorites' : 'directory.emptyDescription'];
     }
   }
   if (browseLink) {

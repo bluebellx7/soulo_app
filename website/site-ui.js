@@ -3,6 +3,11 @@
   const button = document.getElementById('theme-toggle');
   const languageButton = document.getElementById('language-toggle');
   const navigation = document.querySelector('[data-shared-nav]');
+  let directoryLocales = null;
+  try {
+    const content = document.getElementById('directory-locales');
+    if (content) directoryLocales = JSON.parse(content.textContent);
+  } catch {}
 
   const labels = {
     zh: {
@@ -10,6 +15,7 @@
       movies: '影视导航',
       magnets: '磁力搜索',
       pans: '网盘搜索',
+      reading: '阅读导航', music: '音乐资源', tools: '在线工具', menu: '目录',
       privacy: '隐私政策',
       support: '技术支持',
       navigation: '主导航',
@@ -22,6 +28,7 @@
       movies: 'Movies',
       magnets: 'Magnets',
       pans: 'Cloud',
+      reading: 'Reading', music: 'Music', tools: 'Tools', menu: 'Menu',
       privacy: 'Privacy',
       support: 'Support',
       navigation: 'Main navigation',
@@ -95,7 +102,7 @@
       'magnets.sidebarAction': '打开影视导航目录',
       'magnets.resetFilters': '查看全部网站',
       'magnets.aboutTitle': '一份经过连通性验证的磁力与种子索引。',
-      'magnets.aboutDesc': 'Soulo 磁力搜索收录 DHT 磁力搜索引擎、4K 与 1080P 影视种子站、新番动漫花园、国际 BitTorrent 社区与磁力导航。每个站点均经过可访问性检验，配合 Soulo 内置的磁力（magnet:）与 BT 种子（.torrent）下载能力，查找与下载一气呵成。',
+      'magnets.aboutDesc': 'Soulo 磁力搜索收录 DHT 磁力搜索引擎、4K 与 1080P 影视种子站、新番动漫花园、国际 BitTorrent 社区。站点可访问性可能变化，配合 Soulo 内置的磁力（magnet:）与 BT 种子（.torrent）下载能力，查找与下载一气呵成。',
       'magnets.faq1Q': '如何在 Soulo 中下载磁力链接或 BT 种子？',
       'magnets.faq1A': '在任意磁力站点点击或复制 magnet:?xt= 开头的磁力链接，或下载 .torrent 种子文件，Soulo 内置下载管理器即可直接解析文件列表、选择剧集并高速下载。',
       'magnets.faq2Q': '收藏的磁力网站保存在哪里？',
@@ -229,7 +236,7 @@
       'magnets.sidebarAction': 'Open Movies Directory',
       'magnets.resetFilters': 'Show All Sites',
       'magnets.aboutTitle': 'A verified directory of magnet & torrent search sites.',
-      'magnets.aboutDesc': 'Soulo Magnets curates accessible DHT magnet search engines, 4K & 1080P movie torrent sites, anime trackers, international BitTorrent indexes, and magnet directories. Paired with Soulo\'s built-in magnet: and .torrent download manager, finding and downloading torrents is seamless.',
+      'magnets.aboutDesc': 'Soulo Magnets curates accessible DHT magnet search engines, 4K & 1080P movie torrent sites, anime trackers, and international BitTorrent indexes. Paired with Soulo\'s built-in magnet: and .torrent download manager, finding and downloading torrents is seamless.',
       'magnets.faq1Q': 'How do I download magnet links or .torrent files in Soulo?',
       'magnets.faq1A': 'Tap or copy any magnet:?xt= link or download a .torrent file from any listed site — Soulo\'s built-in download manager parses the file list, lets you pick episodes, and downloads directly.',
       'magnets.faq2Q': 'Where are my favorite magnet sites stored?',
@@ -377,7 +384,6 @@
     movie: {zh: ['影视种子', '4K 原盘、蓝光 1080P 电影与热播剧集 BT 种子及磁力下载。'], en: ['Movie & TV Torrents', '4K UHD, 1080P Blu-ray movies, and series BT/magnet downloads.']},
     anime: {zh: ['动漫追番', '新番动画、字幕组发布与 ACG 磁力种子花园。'], en: ['Anime Torrents', 'Seasonal anime magnets, fansub releases, and ACG trackers.']},
     global: {zh: ['国际种子', '海外美剧、无损音乐与全球综合 BitTorrent 磁力索引。'], en: ['Global Torrents', 'International TV series, lossless music, and BitTorrent indexes.']},
-    nav: {zh: ['磁力导航', '多线路磁力搜索入口汇总与备用域名发布页。'], en: ['Magnet Directories', 'Multi-route magnet search portals and mirror directories.']}
   };
 
   const panCategories = {
@@ -447,12 +453,13 @@
       const key = el.dataset.i18n;
       if (labels[language][key]) el.textContent = labels[language][key];
     });
-    const dict = pageText[language];
+    const extra = directoryLocales?.[language] || {};
+    const dict = {...pageText[language], ...extra};
     document.querySelectorAll('[data-page-i18n]').forEach(el => {
       const val = dict[el.dataset.pageI18n];
       if (val !== undefined) el.textContent = val;
     });
-    const htmlDict = pageHtml[language];
+    const htmlDict = {...pageHtml[language], ...extra};
     document.querySelectorAll('[data-page-i18n-html]').forEach(el => {
       const val = htmlDict[el.dataset.pageI18nHtml];
       if (val !== undefined) el.innerHTML = val;
@@ -477,11 +484,11 @@
       }
     });
 
-    const activeCategories = document.body.classList.contains('magnets-page')
+    const activeCategories = directoryLocales?.categories || (document.body.classList.contains('magnets-page')
       ? magnetCategories
       : document.body.classList.contains('pans-page')
         ? panCategories
-        : movieCategories;
+        : movieCategories);
     Object.entries(activeCategories).forEach(([id, map]) => {
       const [name, desc] = map[language];
       document.querySelectorAll(`.category-link[data-category="${id}"] > span:first-of-type`).forEach(el => { el.textContent = name; });
@@ -494,11 +501,27 @@
       }
     });
 
+    document.querySelectorAll('[data-text-zh][data-text-en]').forEach(el => {
+      const text = language === 'en' ? el.dataset.textEn : el.dataset.textZh;
+      el.textContent = text;
+      if (el.hasAttribute('title')) el.title = text;
+    });
+    document.querySelectorAll('[data-label-zh][data-label-en]').forEach(el => {
+      el.setAttribute('aria-label', language === 'en' ? el.dataset.labelEn : el.dataset.labelZh);
+    });
+
     if (document.body.classList.contains('sources-page')) document.title = pageTitles[language].sources;
     else if (document.body.classList.contains('magnets-page')) document.title = pageTitles[language].magnets;
     else if (document.body.classList.contains('pans-page')) document.title = pageTitles[language].pans;
     else if (document.body.classList.contains('movies-page')) document.title = pageTitles[language].movies;
     else if (document.body.classList.contains('privacy-page')) document.title = pageTitles[language].privacy;
+    if (extra['page.title']) {
+      document.title = extra['page.title'];
+      document.querySelectorAll('meta[property="og:title"],meta[name="twitter:title"]').forEach(el => { el.content = extra['page.title']; });
+      document.querySelectorAll('meta[name="description"],meta[property="og:description"],meta[name="twitter:description"]').forEach(el => { el.content = extra['page.description']; });
+      const locale = document.querySelector('meta[property="og:locale"]');
+      if (locale) locale.content = language === 'en' ? 'en_US' : 'zh_CN';
+    }
 
     if (languageButton) {
       languageButton.textContent = language === 'zh' ? 'EN' : '中文';

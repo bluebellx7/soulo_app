@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-01",
+  "updated": "2026-11-02",
   "categories": [
     {
       "id": "streaming",
@@ -552,19 +552,6 @@
       ],
       "mark": "光",
       "icon": "images/movie-icons/site-4kzaixian-top.png"
-    },
-    {
-      "id": "site-dushe05-com",
-      "name": "毒舌电影",
-      "url": "https://www.dushe05.com/",
-      "category": "streaming",
-      "description": "电影、海外剧集与综艺作品目录。",
-      "tags": [
-        "电影",
-        "海外剧"
-      ],
-      "mark": "毒",
-      "icon": "images/movie-icons/site-dushe05-com.png"
     },
     {
       "id": "site-cupfox-lol",
@@ -1139,7 +1126,7 @@
     {
       "id": "czzy",
       "name": "厂长资源",
-      "url": "https://www.cz01.org/",
+      "url": "https://www.4kcz.com/",
       "category": "streaming",
       "description": "电影、海外剧集与动漫作品分类。",
       "tags": [

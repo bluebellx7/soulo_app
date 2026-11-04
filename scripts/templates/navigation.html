@@ -2,11 +2,13 @@
     <header class="site-header" data-shared-nav>
       <nav class="nav wrap" aria-label="主导航" data-label="navigation">
         <a class="brand" href="./" aria-label="Soulo 首页"{{home_current}}><img src="images/web/app-icon-108.webp" width="36" height="36" alt="" /><span>Soulo</span></a>
-        <div class="nav-links"><a href="sources.html" data-i18n="sources" data-nav-i18n="sources"{{sources_current}}>搜索源</a><a href="movies.html" data-i18n="movies" data-nav-i18n="movies"{{movies_current}}>影视导航</a><a href="magnets.html" data-i18n="magnets" data-nav-i18n="magnets"{{magnets_current}}>磁力搜索</a><a href="pans.html" data-i18n="pans" data-nav-i18n="pans"{{pans_current}}>网盘搜索</a></div>
+        <button class="nav-menu-toggle" type="button" aria-expanded="false" aria-controls="site-directory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span data-i18n="menu" data-nav-i18n="menu">目录</span></button>
+        <div class="nav-links" id="site-directory"><a href="sources.html"{{sources_current}}>{{nav_search}}<span data-i18n="sources" data-nav-i18n="sources">搜索源</span></a><a href="movies.html"{{movies_current}}>{{nav_play}}<span data-i18n="movies" data-nav-i18n="movies">影视导航</span></a><a href="magnets.html"{{magnets_current}}>{{nav_magnet}}<span data-i18n="magnets" data-nav-i18n="magnets">磁力搜索</span></a><a href="pans.html"{{pans_current}}>{{nav_cloud}}<span data-i18n="pans" data-nav-i18n="pans">网盘搜索</span></a><a href="reading.html"{{reading_current}}>{{nav_book}}<span data-i18n="reading" data-nav-i18n="reading">阅读导航</span></a><a href="music.html"{{music_current}}>{{nav_headphones}}<span data-i18n="music" data-nav-i18n="music">音乐资源</span></a><a class="nav-external" href="https://www.dkluge.com/zh/bag" target="_blank" rel="noopener noreferrer">{{nav_wrench}}<span data-i18n="tools" data-nav-i18n="tools">在线工具</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 5h11v11M19 5 5 19"/></svg></a></div>
         <div class="nav-tools">
           <button id="language-toggle" type="button" aria-label="Switch navigation to English" title="切换导航语言">EN</button>
           <button id="theme-toggle" type="button" aria-label="切换至深色外观" title="切换至深色外观"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20.4 14.3A8.7 8.7 0 0 1 9.7 3.6a8.7 8.7 0 1 0 10.7 10.7Z"/></svg></button>
         </div>
       </nav>
     </header>
+    <script src="navigation.js" defer></script>
     <!-- site-nav:end -->

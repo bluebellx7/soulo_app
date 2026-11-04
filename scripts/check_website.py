@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT/'website'
 BASE = 'https://soulo.dkluge.com/'
-PAGES = ['index.html', 'sources.html', 'movies.html', 'magnets.html', 'pans.html', 'privacy.html']
+PAGES = ['index.html', 'sources.html', 'movies.html', 'magnets.html', 'pans.html', 'reading.html', 'music.html', 'privacy.html']
 
 
 class Page(HTMLParser):
@@ -79,7 +79,7 @@ def check():
                     assert unquote(url.fragment) in ids, (file, value, 'missing anchor')
         print(f'{file}: metadata, JSON-LD, links, headings and analytics OK')
 
-    for page_name, json_name in [('movies.html', 'movies.json'), ('magnets.html', 'magnets.json'), ('pans.html', 'pans.json')]:
+    for page_name, json_name in [('movies.html', 'movies.json'), ('magnets.html', 'magnets.json'), ('pans.html', 'pans.json'), ('reading.html', 'reading.json'), ('music.html', 'music.json')]:
         data = json.loads((SITE/json_name).read_text())
         dir_page = pages[page_name]
         cards = [a for t,a in dir_page.tags if 'movie-card' in a.get('class','').split()]
@@ -104,6 +104,8 @@ def check():
         assert sum(a.get('id') == 'language-toggle' for t,a in page.tags) == 1
         assert sum(a.get('id') == 'theme-toggle' for t,a in page.tags) == 1
         assert any(t == 'link' and a.get('href','').startswith('navigation.css?') for t,a in page.tags)
+        assert sum(t == 'script' and a.get('src','').startswith('navigation.js?') for t,a in page.tags) == 1
+        assert any(t == 'a' and a.get('href') == 'https://www.dkluge.com/zh/bag' and a.get('target') == '_blank' and 'noopener' in a.get('rel','') for t,a in page.tags)
     assert not any(t == 'a' and a.get('href') == '#features' for t,a in pages['index.html'].tags)
     sitemap = ET.parse(SITE/'sitemap.xml')
     ns = {'s':'http://www.sitemaps.org/schemas/sitemap/0.9'}

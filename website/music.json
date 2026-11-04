@@ -1,0 +1,262 @@
+{
+  "updated": "2026-11-03",
+  "kind": "music",
+  "categories": [
+    {
+      "id": "search",
+      "name": "找歌与下载",
+      "name_en": "Search & downloads",
+      "icon": "search",
+      "description": "找歌、找无损版本，也找歌词和专辑资源。",
+      "description_en": "Find songs, lossless editions, lyrics, and albums."
+    },
+    {
+      "id": "albums",
+      "name": "数字专辑",
+      "name_en": "Digital albums",
+      "icon": "headphones",
+      "description": "独立音乐人与唱片厂牌的数字专辑。",
+      "description_en": "Digital albums from independent artists and record labels."
+    },
+    {
+      "id": "audio",
+      "name": "配乐与音效",
+      "name_en": "Soundtracks & effects",
+      "icon": "radio",
+      "description": "为视频、播客和创作项目查找背景音乐与声音素材。",
+      "description_en": "Find background music and sounds for videos, podcasts, and creative projects."
+    }
+  ],
+  "sites": [
+    {
+      "id": "gequbao",
+      "name": "歌曲宝",
+      "name_en": "Gequbao",
+      "url": "https://www.gequbao.com/",
+      "category": "search",
+      "description": "按歌名或歌手查找歌曲，提供试听与 MP3 下载入口。",
+      "description_en": "Find songs by title or artist, with previews and MP3 download links.",
+      "tags": [
+        "找歌",
+        "MP3",
+        "试听"
+      ],
+      "tags_en": [
+        "Song search",
+        "MP3",
+        "Preview"
+      ],
+      "mark": "歌",
+      "icon": "images/music-icons/gequbao.png"
+    },
+    {
+      "id": "flac-music-hi",
+      "name": "无损音乐下载",
+      "name_en": "Lossless Music Download",
+      "url": "https://flac.music.hi.cn/",
+      "category": "search",
+      "description": "提供无损音乐的搜索与下载链接解析。",
+      "description_en": "Search for lossless music and resolve download links.",
+      "tags": [
+        "无损",
+        "音乐搜索",
+        "下载"
+      ],
+      "tags_en": [
+        "Lossless",
+        "Music search",
+        "Downloads"
+      ],
+      "mark": "FL",
+      "icon": "images/music-icons/flac-music-hi.png"
+    },
+    {
+      "id": "gequhai",
+      "name": "歌曲海",
+      "name_en": "Gequhai",
+      "url": "https://www.gequhai.com/",
+      "category": "search",
+      "description": "搜索歌曲和歌手，浏览热门歌曲与 MP3 下载入口。",
+      "description_en": "Search songs and artists, browse popular tracks, and find MP3 download links.",
+      "tags": [
+        "找歌",
+        "MP3",
+        "热门歌曲"
+      ],
+      "tags_en": [
+        "Song search",
+        "MP3",
+        "Popular songs"
+      ],
+      "mark": "海",
+      "icon": "images/music-icons/gequhai.png"
+    },
+    {
+      "id": "txqq-music",
+      "name": "全网音乐免费下载",
+      "name_en": "Multi-source Music Search",
+      "url": "https://music.txqq.pro/",
+      "category": "search",
+      "description": "按名称、ID 或链接搜索多站音乐，提供试听与下载入口。",
+      "description_en": "Search multiple music sources by name, ID, or link, with preview and download links.",
+      "tags": [
+        "多站搜索",
+        "试听",
+        "下载"
+      ],
+      "tags_en": [
+        "Multi-source",
+        "Preview",
+        "Downloads"
+      ],
+      "mark": "音",
+      "icon": "images/music-icons/txqq-music.png"
+    },
+    {
+      "id": "fangpi",
+      "name": "放屁网",
+      "name_en": "Fangpi Music",
+      "url": "https://www.fangpiw.com/",
+      "category": "search",
+      "description": "歌曲检索与下载，可按歌名、歌手查找不同版本。",
+      "description_en": "Search and download music by title or artist to find different versions.",
+      "tags": [
+        "音乐搜索",
+        "MP3",
+        "下载"
+      ],
+      "tags_en": [
+        "Music search",
+        "MP3",
+        "Downloads"
+      ],
+      "mark": "F"
+    },
+    {
+      "id": "hifiba",
+      "name": "HiFiBa",
+      "name_en": "HiFiBa",
+      "url": "https://hifiba.com/",
+      "category": "search",
+      "description": "音乐资源交流社区，分享 FLAC、WAV 与高解析度版本。",
+      "description_en": "A music-sharing community for FLAC, WAV, and high-resolution editions.",
+      "tags": [
+        "无损",
+        "Hi-Res",
+        "资源社区"
+      ],
+      "tags_en": [
+        "Lossless",
+        "Hi-Res",
+        "Community"
+      ],
+      "mark": "Hi",
+      "icon": "images/music-icons/hifiba.png"
+    },
+    {
+      "id": "bandcamp",
+      "name": "Bandcamp",
+      "name_en": "Bandcamp",
+      "url": "https://bandcamp.com/",
+      "category": "albums",
+      "description": "独立音乐人与唱片厂牌的数字专辑，试听后可购买下载。",
+      "description_en": "Digital albums from independent artists and labels, with previews and paid downloads.",
+      "tags": [
+        "独立音乐",
+        "专辑",
+        "数字下载"
+      ],
+      "tags_en": [
+        "Independent",
+        "Albums",
+        "Downloads"
+      ],
+      "mark": "B",
+      "icon": "images/music-icons/bandcamp.png"
+    },
+    {
+      "id": "jamendo",
+      "name": "Jamendo",
+      "name_en": "Jamendo",
+      "url": "https://www.jamendo.com/start",
+      "category": "albums",
+      "description": "按曲风和心情查找独立音乐，提供个人聆听与下载。",
+      "description_en": "Discover independent music by genre and mood for personal listening and downloads.",
+      "tags": [
+        "独立音乐",
+        "分类曲库",
+        "下载"
+      ],
+      "tags_en": [
+        "Independent",
+        "Genres",
+        "Downloads"
+      ],
+      "mark": "J",
+      "icon": "images/music-icons/jamendo.png"
+    },
+    {
+      "id": "fma",
+      "name": "Free Music Archive",
+      "name_en": "Free Music Archive",
+      "url": "https://freemusicarchive.org/home",
+      "category": "albums",
+      "description": "独立音乐下载目录，可按风格与作品许可筛选。",
+      "description_en": "An independent music archive with genre and license filters.",
+      "tags": [
+        "独立音乐",
+        "音乐下载",
+        "分类检索"
+      ],
+      "tags_en": [
+        "Independent",
+        "Downloads",
+        "Genre search"
+      ],
+      "mark": "FMA",
+      "icon": "images/music-icons/fma.png"
+    },
+    {
+      "id": "freesound",
+      "name": "Freesound",
+      "name_en": "Freesound",
+      "url": "https://freesound.org/",
+      "category": "audio",
+      "description": "环境声、音效与采样素材社区，下载通常需要账号。",
+      "description_en": "A community for field recordings, effects, and samples; downloads usually require an account.",
+      "tags": [
+        "音效",
+        "采样",
+        "环境声"
+      ],
+      "tags_en": [
+        "Effects",
+        "Samples",
+        "Field recordings"
+      ],
+      "mark": "F",
+      "icon": "images/music-icons/freesound.png"
+    },
+    {
+      "id": "opentracks",
+      "name": "OpenTracks",
+      "name_en": "OpenTracks",
+      "url": "https://opentracks.com/",
+      "category": "audio",
+      "description": "原 DOVA-SYNDROME，按风格与乐器查找 BGM 和音效。",
+      "description_en": "Formerly DOVA-SYNDROME, with background music and effects by genre and instrument.",
+      "tags": [
+        "BGM",
+        "DOVA",
+        "日文"
+      ],
+      "tags_en": [
+        "BGM",
+        "DOVA",
+        "Japanese"
+      ],
+      "mark": "OT",
+      "icon": "images/music-icons/opentracks.png"
+    }
+  ]
+}

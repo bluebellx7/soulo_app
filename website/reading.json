@@ -1,0 +1,271 @@
+{
+  "updated": "2026-11-03",
+  "kind": "reading",
+  "categories": [
+    {
+      "id": "ebooks",
+      "name": "电子书资源",
+      "name_en": "eBook collections",
+      "icon": "book",
+      "description": "从常用书库里，查找想读的电子书。",
+      "description_en": "Find books in familiar eBook collections."
+    },
+    {
+      "id": "search",
+      "name": "找书搜索",
+      "name_en": "Book search",
+      "icon": "search",
+      "description": "按书名、作者或 ISBN 检索，找到更多版本。",
+      "description_en": "Search by title, author, or ISBN to find more editions."
+    },
+    {
+      "id": "public",
+      "name": "古籍与公开书库",
+      "name_en": "Classics & open libraries",
+      "icon": "academic",
+      "description": "古籍影像、经典文学与数字馆藏。",
+      "description_en": "Historical scans, classic literature, and digitized collections."
+    },
+    {
+      "id": "tools",
+      "name": "阅读工具",
+      "name_en": "Reading tools",
+      "icon": "tool",
+      "description": "整理书库、转换格式，解决阅读器的使用问题。",
+      "description_en": "Organize your library, convert formats, and get help with e-readers."
+    }
+  ],
+  "sites": [
+    {
+      "id": "z-library",
+      "name": "Z-Library",
+      "name_en": "Z-Library",
+      "url": "https://zh.z-library.sk/",
+      "category": "ebooks",
+      "description": "电子书与文章资源，可按书名或作者检索。",
+      "description_en": "Search eBooks and articles by title or author.",
+      "tags": [
+        "电子书",
+        "文章",
+        "书目搜索"
+      ],
+      "tags_en": [
+        "eBooks",
+        "Articles",
+        "Book search"
+      ],
+      "mark": "Z",
+      "icon": "images/reading-icons/z-library.png"
+    },
+    {
+      "id": "ibooks",
+      "name": "iBooks · 读书小站",
+      "name_en": "iBooks",
+      "url": "https://ibooks.org.cn/",
+      "category": "ebooks",
+      "description": "按主题整理的中文电子书，涵盖文学、社科与历史。",
+      "description_en": "Chinese eBook collections covering literature, social sciences, and history.",
+      "tags": [
+        "电子书",
+        "中文",
+        "分类书单"
+      ],
+      "tags_en": [
+        "eBooks",
+        "Chinese",
+        "Book lists"
+      ],
+      "mark": "iB",
+      "icon": "images/reading-icons/ibooks.png"
+    },
+    {
+      "id": "sobooks",
+      "name": "SoBooks",
+      "name_en": "SoBooks",
+      "url": "https://sobooks.cc/",
+      "category": "ebooks",
+      "description": "小说、人文与学习类电子书，按书名或分类查找。",
+      "description_en": "Find fiction, humanities, and study books by title or category.",
+      "tags": [
+        "EPUB",
+        "MOBI",
+        "PDF"
+      ],
+      "tags_en": [
+        "EPUB",
+        "MOBI",
+        "PDF"
+      ],
+      "mark": "S",
+      "icon": "images/reading-icons/sobooks.png"
+    },
+    {
+      "id": "kgbook",
+      "name": "苦瓜书盘",
+      "name_en": "KGBook",
+      "url": "https://kgbook.com/",
+      "category": "ebooks",
+      "description": "面向电子阅读器的中文书库，提供分类与书目检索。",
+      "description_en": "A Chinese eBook collection with categories and title search.",
+      "tags": [
+        "中文",
+        "Kindle",
+        "电子书"
+      ],
+      "tags_en": [
+        "Chinese",
+        "Kindle",
+        "eBooks"
+      ],
+      "mark": "苦",
+      "icon": "images/reading-icons/kgbook.png"
+    },
+    {
+      "id": "annas-archive",
+      "name": "安娜的档案",
+      "name_en": "Anna’s Archive",
+      "url": "https://annas-archive.gl/",
+      "category": "search",
+      "description": "聚合图书、论文与期刊索引，可按语言和格式筛选。",
+      "description_en": "Search books, papers, and periodicals with language and format filters.",
+      "tags": [
+        "图书搜索",
+        "论文",
+        "ISBN"
+      ],
+      "tags_en": [
+        "Book search",
+        "Papers",
+        "ISBN"
+      ],
+      "mark": "A",
+      "icon": "images/reading-icons/annas-archive.png"
+    },
+    {
+      "id": "jiumo",
+      "name": "鸠摩搜索",
+      "name_en": "Jiumo Search",
+      "url": "https://www.jiumodiary.com/",
+      "category": "search",
+      "description": "电子书与文档搜索，访问时可能需要微信验证。",
+      "description_en": "Search eBooks and documents; WeChat verification may be required.",
+      "tags": [
+        "电子书",
+        "文档",
+        "微信验证"
+      ],
+      "tags_en": [
+        "eBooks",
+        "Documents",
+        "WeChat verification"
+      ],
+      "mark": "鸠",
+      "icon": "images/reading-icons/jiumo.png"
+    },
+    {
+      "id": "shuge",
+      "name": "书格",
+      "name_en": "Shuge",
+      "url": "https://www.shuge.org/",
+      "category": "public",
+      "description": "古籍与艺术文献的高清影像，提供数字版本下载。",
+      "description_en": "High-resolution historical books and art documents with digital downloads.",
+      "tags": [
+        "古籍",
+        "PDF",
+        "高清扫描"
+      ],
+      "tags_en": [
+        "Classics",
+        "PDF",
+        "Scans"
+      ],
+      "mark": "书",
+      "icon": "images/reading-icons/shuge.png"
+    },
+    {
+      "id": "gutenberg",
+      "name": "古腾堡计划",
+      "name_en": "Project Gutenberg",
+      "url": "https://www.gutenberg.org/",
+      "category": "public",
+      "description": "经典文学电子书，可在线阅读或下载 EPUB 等格式。",
+      "description_en": "Read classic literature online or download EPUB and other formats.",
+      "tags": [
+        "英文",
+        "EPUB",
+        "经典文学"
+      ],
+      "tags_en": [
+        "English",
+        "EPUB",
+        "Classics"
+      ],
+      "mark": "G",
+      "icon": "images/reading-icons/gutenberg.png"
+    },
+    {
+      "id": "standard-ebooks",
+      "name": "Standard Ebooks",
+      "name_en": "Standard Ebooks",
+      "url": "https://standardebooks.org/",
+      "category": "public",
+      "description": "经过校对与排版的英文经典，适合电子阅读器。",
+      "description_en": "Proofread and carefully typeset English classics for e-readers.",
+      "tags": [
+        "英文",
+        "EPUB",
+        "精校排版"
+      ],
+      "tags_en": [
+        "English",
+        "EPUB",
+        "Typesetting"
+      ],
+      "mark": "S",
+      "icon": "images/reading-icons/standard-ebooks.png"
+    },
+    {
+      "id": "bookfere",
+      "name": "书伴",
+      "name_en": "Bookfere",
+      "url": "https://bookfere.com/",
+      "category": "tools",
+      "description": "Kindle 使用技巧、字典、书籍资源与格式处理教程。",
+      "description_en": "Kindle guides, dictionaries, book resources, and format tutorials.",
+      "tags": [
+        "Kindle",
+        "字典",
+        "阅读技巧"
+      ],
+      "tags_en": [
+        "Kindle",
+        "Dictionaries",
+        "Reading guides"
+      ],
+      "mark": "伴",
+      "icon": "images/reading-icons/bookfere.png"
+    },
+    {
+      "id": "calibre",
+      "name": "Calibre",
+      "name_en": "Calibre",
+      "url": "https://calibre-ebook.com/",
+      "category": "tools",
+      "description": "电子书管理与格式转换工具，支持整理封面和书籍信息。",
+      "description_en": "Manage eBooks, convert formats, and organize covers and metadata.",
+      "tags": [
+        "书库管理",
+        "格式转换",
+        "桌面工具"
+      ],
+      "tags_en": [
+        "Library manager",
+        "Conversion",
+        "Desktop app"
+      ],
+      "mark": "C",
+      "icon": "images/reading-icons/calibre.png"
+    }
+  ]
+}

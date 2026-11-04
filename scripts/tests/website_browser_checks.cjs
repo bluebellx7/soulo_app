@@ -6,6 +6,8 @@ const errors = [];
 const movieData = require('../../website/movies.json');
 const magnetData = require('../../website/magnets.json');
 const panData = require('../../website/pans.json');
+const readingData = require('../../website/reading.json');
+const musicData = require('../../website/music.json');
 
 async function main() {
   const options = {headless: true};
@@ -118,6 +120,54 @@ async function main() {
     assert.equal(await page.locator('#favorite-picks-grid .quick-pick').count(), 1);
     await page.locator('[data-favorite="pan-qianfan"]').click();
     assert.equal(await page.locator('#favorite-picks').isVisible(), false);
+    for (const [kind, data, domain, category, first] of [
+      ['reading', readingData, 'IBOOKS.ORG.CN', 'ebooks', 'ibooks'],
+      ['music', musicData, 'GEQUBAO.COM', 'search', 'gequbao'],
+    ]) {
+      await page.goto(base+'/'+kind+'.html');
+      assert.equal(await visible(), data.sites.length);
+      assert.match(await page.locator('#results-meta').innerText(), kind === 'reading' ? /阅读网站/ : /音乐网站/);
+      await page.evaluate(async () => {
+        const images = [...document.querySelectorAll('.site-mark img')];
+        images.forEach(image => { image.loading = 'eager'; });
+        await Promise.all(images.map(image => image.decode()));
+      });
+      await page.locator('#movie-search').fill(domain);
+      assert.equal(await visible(), 1);
+      await page.locator('[data-category="'+category+'"]').click();
+      assert.equal(await visible(), data.sites.filter(site => site.category === category).length);
+      await page.locator('[data-category="all"]').click();
+      await page.locator('[data-favorite="'+first+'"]').click();
+      await page.reload();
+      assert.equal(await page.locator('[data-favorite="'+first+'"]').getAttribute('aria-pressed'), 'true');
+      await page.locator('#show-favorites').click();
+      assert.equal(await visible(), 1);
+      await page.locator('#language-toggle').click();
+      assert.equal(await page.locator('.movie-card:visible h3').innerText(), data.sites.find(site => site.id === first).name_en);
+      assert.equal(await page.locator('.nav-links a > svg:first-child').count(), 7);
+      await page.locator('[data-favorite="'+first+'"]').click();
+      assert.equal(await visible(), 0);
+      assert.match(await page.locator('#empty-description').innerText(), kind === 'reading' ? /reading list/ : /listening list/);
+      await page.locator('#reset-filters').click();
+      assert.equal(await visible(), data.sites.length);
+      assert.match(await page.locator('#results-meta').innerText(), kind === 'reading' ? /reading websites/ : /music & audio websites/);
+      await page.locator('#movie-search').fill('no-such-website');
+      assert.equal(await visible(), 0);
+      assert.ok(await page.locator('#movie-empty').isVisible());
+      await page.locator('#reset-filters').click();
+      await page.locator('#language-toggle').click();
+    }
+    await page.goto(base+'/reading.html');
+    await page.locator('[data-favorite="ibooks"]').click();
+    await page.goto(base+'/music.html');
+    assert.equal(await page.locator('#favorite-count').innerText(), '0');
+    await page.locator('[data-favorite="gequbao"]').click();
+    await page.goto(base+'/reading.html');
+    assert.equal(await page.locator('[data-favorite="ibooks"]').getAttribute('aria-pressed'), 'true');
+    await page.locator('[data-favorite="ibooks"]').click();
+    await page.goto(base+'/music.html');
+    assert.equal(await page.locator('[data-favorite="gequbao"]').getAttribute('aria-pressed'), 'true');
+    await page.locator('[data-favorite="gequbao"]').click();
     await page.goto(base+'/');
     assert.equal(await page.locator('.nav-links a[href="#features"]').count(), 0);
     assert.equal(await page.locator('.nav-links a[href="movies.html"]').count(), 1);
@@ -159,10 +209,10 @@ async function main() {
     assert.ok(await page.locator('#copyVisibleButton').isDisabled());
     await page.locator('#source-reset').click();
     assert.equal(await page.locator('.source-card:visible').count(), sourceCount);
-    for (const width of [320, 360, 390, 768, 1280]) {
+    for (const width of [320, 360, 390, 768, 1024, 1081, 1280]) {
       await page.setViewportSize({width, height: 900});
       let homeNavigation;
-      for (const file of ['', 'movies.html', 'magnets.html', 'pans.html', 'sources.html', 'privacy.html']) {
+      for (const file of ['', 'movies.html', 'magnets.html', 'pans.html', 'reading.html', 'music.html', 'sources.html', 'privacy.html']) {
         await page.goto(base+'/'+file);
         const dimensions = await page.evaluate(() => ({viewport:innerWidth, content:document.documentElement.scrollWidth}));
         assert.ok(dimensions.content <= dimensions.viewport, `${file || 'index.html'} overflows at ${width}px: ${dimensions.content}`);
@@ -177,8 +227,28 @@ async function main() {
         });
         if (!file) homeNavigation = navigation;
         else assert.deepEqual(navigation, homeNavigation, `Navigation differs on ${file} at ${width}px`);
-        assert.deepEqual(await page.locator('[data-shared-nav] .nav-links a').allTextContents(), ['Sources','Movies','Magnets','Cloud']);
+        assert.deepEqual((await page.locator('[data-shared-nav] .nav-links a').allTextContents()).map(s => s.trim()), ['Sources','Movies','Magnets','Cloud','Reading','Music','Tools']);
         assert.equal(await page.locator('#language-toggle').innerText(), '中文');
+        assert.equal(await page.locator('.nav-links a > svg:first-child').count(), 7);
+        const tools = page.locator('.nav-links a[href="https://www.dkluge.com/zh/bag"]');
+        assert.equal(await tools.getAttribute('target'), '_blank');
+        assert.match(await tools.getAttribute('rel'), /noopener/);
+        const toggle = page.locator('.nav-menu-toggle');
+        if (width <= 1080) {
+          assert.equal(await page.locator('.nav-links').isVisible(), false);
+          await toggle.click();
+          assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
+          assert.ok(await page.locator('.nav-links a[href="reading.html"]').isVisible());
+          await page.keyboard.press('Escape');
+          assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
+          assert.equal(await toggle.evaluate(e => e === document.activeElement), true);
+          await toggle.click();
+          await page.locator('main h1').click();
+          assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
+        } else {
+          assert.equal(await toggle.isVisible(), false);
+          assert.ok(await tools.isVisible());
+        }
       }
     }
     const nojs = await browser.newContext({javaScriptEnabled: false, viewport: {width: 1280, height: 900}});
@@ -198,6 +268,13 @@ async function main() {
     await plain.goto(base+'/sources.html');
     assert.equal(await plain.locator('.source-card:visible').count(), sourceCount);
     assert.equal(await plain.locator('.source-copy:visible').count(), 0);
+    for (const [kind, data] of [['reading', readingData], ['music', musicData]]) {
+      await plain.setViewportSize({width: 390, height: 844});
+      await plain.goto(base+'/'+kind+'.html');
+      assert.equal(await plain.locator('.movie-card:visible').count(), data.sites.length);
+      assert.equal(await plain.locator('.nav-links a:visible').count(), 7);
+      assert.equal(await plain.locator('.nav-menu-toggle').isVisible(), false);
+    }
     const unavailableClipboard = await browser.newContext();
     await unavailableClipboard.route('https://hm.baidu.com/**', route => route.abort());
     await unavailableClipboard.addInitScript(() => {
@@ -226,7 +303,7 @@ async function main() {
     await privatePage.locator('#show-favorites').click();
     assert.equal(await privatePage.locator('.movie-card:visible').count(), 1);
     assert.deepEqual(errors, []);
-    console.log(`PASS: ${total} movie sites and ${sourceCount} sources; search, categories, favorites, clipboard and fallback, identical navigation at 5 widths, no-JS and blocked storage.`);
+    console.log(`PASS: existing directories, ${readingData.sites.length} reading and ${musicData.sites.length} music entries; bilingual search, isolated favorites, icons, tools link, responsive menus, identical navigation at 7 widths, clipboard, no-JS, and blocked storage.`);
   } finally {
     await browser.close();
   }

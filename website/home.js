@@ -2,7 +2,7 @@
   'use strict';
   const messages = {
     zh: {
-      skip: '跳到主要内容', navigation: '主导航', sources: '搜索源', movies: '影视导航', magnets: '磁力搜索', pans: '网盘搜索', browser: '浏览器',
+      skip: '跳到主要内容', navigation: '主导航', sources: '搜索源', movies: '影视导航', magnets: '磁力搜索', pans: '网盘搜索', reading: '阅读导航', music: '音乐资源', tools: '在线工具', menu: '目录', browser: '浏览器',
       moviesTitle: '下一部心头好，从这里找。', moviesIntro: '电影、追剧、动漫、字幕和片单，按用途整理的影视网站收藏夹。', exploreMovies: '探索影视导航',
       eyebrow: '为 iPhone 打造的多平台搜索浏览器', tagline: '一次输入，搜索更多。',
       intro: '在 40+ 搜索、视频、社区和 AI 平台间快速切换。\n广告拦截、BT 与资源下载、画中画播放、网页翻译与脚本扩展，一步即达。',
@@ -25,7 +25,7 @@
       metaDescription: 'Soulo 是一款 iPhone 多平台搜索浏览器。一次输入切换 40+ 搜索与 AI 平台，支持广告拦截、BT 与资源下载管理、画中画视频播放、电子书阅读、解压互传、网页翻译和脚本扩展。'
     },
     en: {
-      skip: 'Skip to content', navigation: 'Main navigation', sources: 'Sources', movies: 'Movies', magnets: 'Magnets', pans: 'Cloud', browser: 'Browser',
+      skip: 'Skip to content', navigation: 'Main navigation', sources: 'Sources', movies: 'Movies', magnets: 'Magnets', pans: 'Cloud', reading: 'Reading', music: 'Music', tools: 'Tools', menu: 'Menu', browser: 'Browser',
       moviesTitle: 'Find your next favorite story.', moviesIntro: 'Explore a Chinese-language directory of film, series, anime, subtitle, and watchlist websites.', exploreMovies: 'Explore the watch guide',
       eyebrow: 'Multi-platform search, made for iPhone', tagline: 'One query. More places to search.',
       intro: 'Switch between 40+ search, video, community, and AI platforms.\nAd blocking, BT & media downloads, PiP playback, translation, and extensions, all within reach.',

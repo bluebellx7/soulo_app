@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark" data-resolved-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{{page_title}}</title>
+    <meta name="description" content="{{page_description}}" />
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+    <meta name="theme-color" content="#111217" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)" />
+    <link rel="canonical" href="https://soulo.dkluge.com/{{kind}}.html" />
+    <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg?v=20261030" />
+    <link rel="apple-touch-icon" href="app-icon.png?v=1.1.4" />
+    <link rel="alternate" type="text/plain" href="llms.txt" title="Soulo 网站摘要" />
+    <meta property="og:site_name" content="Soulo" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:title" content="{{page_title}}" />
+    <meta property="og:description" content="{{page_description}}" />
+    <meta property="og:url" content="https://soulo.dkluge.com/{{kind}}.html" />
+    <meta property="og:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.4" />
+    <meta property="og:image:width" content="1024" />
+    <meta property="og:image:height" content="1024" />
+    <meta property="og:image:alt" content="Soulo 图标" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="{{page_title}}" />
+    <meta name="twitter:description" content="{{page_description}}" />
+    <meta name="twitter:image" content="https://soulo.dkluge.com/app-icon.png?v=1.1.4" />
+    <meta name="twitter:image:alt" content="Soulo 图标" />
+    <script>
+      (() => {
+        let theme = 'dark';
+        try { const saved = localStorage.getItem('soulo-theme'); if (saved === 'light' || saved === 'dark') theme = saved; } catch {}
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.resolvedTheme = theme;
+      })();
+    </script>
+    <link rel="stylesheet" href="home.css" />
+    <link rel="stylesheet" href="movies.css" />
+    <link rel="stylesheet" href="content-directories.css" />
+    <link rel="stylesheet" href="navigation.css" />
+    <script type="application/ld+json">{{structured_data}}</script>
+    <script id="directory-locales" type="application/json">{{page_locales}}</script>
+    <script src="site-ui.js" defer></script>
+    <script src="movies.js" defer></script>
+    <noscript><style>.favorite-button,.directory-toolbar,.favorite-picks{display:none!important}</style></noscript>
+    <script>
+      var _hmt = _hmt || [];
+      (function() {
+        var hm = document.createElement("script");
+        hm.src = "https://hm.baidu.com/hm.js?bdc8ea6c501e6ff0d7b16dc13b09b991";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+      })();
+    </script>
+  </head>
+  <body class="movies-page content-page {{kind}}-page" data-favorites-key="{{favorites_key}}">
+    <a class="skip-link" href="#directory" data-page-i18n="directory.skip">跳到{{directory_name}}目录</a>
+    {{navigation}}
+    <main class="wrap">
+      <nav class="breadcrumbs" aria-label="面包屑"><a href="./" data-page-i18n="breadcrumb.home">首页</a><span aria-hidden="true">/</span><span aria-current="page" data-page-i18n="directory.name">{{directory_name}}</span></nav>
+      <section class="cinema-hero" aria-labelledby="cinema-title"><div class="cinema-copy"><h1 id="cinema-title" data-page-i18n-html="directory.heroTitle">{{hero_title}}</h1><p data-page-i18n-html="directory.heroDesc">{{hero_description}}</p><a class="browse-link" href="#directory"><span data-page-i18n="directory.browse">浏览目录</span>{{arrow}}</a></div><div class="cinema-art" aria-hidden="true">{{artwork}}</div></section>
+      <section class="favorite-picks" id="favorite-picks" hidden aria-labelledby="favorite-picks-title"><div class="directory-intro"><p id="favorite-picks-title">我的收藏</p></div><div class="quick-picks" id="favorite-picks-grid"></div></section>
+      <section class="directory-toolbar" id="directory"><label class="movie-search">{{search_icon}}<span class="visually-hidden" data-page-i18n="directory.search">搜索网站、域名或资源类型</span><input type="search" id="movie-search" placeholder="搜索网站、域名或资源类型" data-page-i18n-placeholder="directory.search" autocomplete="off" /><kbd aria-hidden="true">/</kbd></label><div class="directory-tabs"><button id="show-all" type="button" aria-pressed="true"><span data-page-i18n="directory.all">全部网站</span></button><button id="show-favorites" type="button" aria-pressed="false">{{heart_icon}}<span data-page-i18n="directory.favorites">我的收藏</span><span id="favorite-count">0</span></button></div></section>
+      <div class="directory-layout"><aside class="category-sidebar"><nav aria-label="网站分类"><a class="category-link is-active" href="#directory" data-category="all" aria-current="true">{{grid_icon}}<span data-page-i18n="directory.categories">全部分类</span><span class="nav-count">{{site_count}}</span></a>{{category_links}}</nav><a class="sidebar-note" href="https://www.dkluge.com/zh/bag" target="_blank" rel="noopener noreferrer"><strong data-page-i18n="directory.toolsPrompt">还有文件需要处理？</strong><span><em data-page-i18n="directory.toolsLink">打开在线工具</em>{{external_icon}}</span></a></aside><div class="directory-results"><p class="results-meta" id="results-meta" role="status" aria-live="polite">共 {{site_count}} 个网站</p><div id="movie-catalog">{{catalog}}</div><div class="movie-empty" id="movie-empty" hidden><div>{{search_icon}}</div><h2 id="empty-title">没有找到匹配的网站</h2><p id="empty-description">试试名称、域名或分类。</p><button type="button" id="reset-filters" data-page-i18n="directory.reset">查看全部</button></div></div></div>
+      <section class="directory-about"><div><h2 data-page-i18n="directory.aboutTitle">{{about_title}}</h2><p data-page-i18n="directory.about">{{about_description}}</p></div><div class="directory-questions"><details><summary data-page-i18n="directory.faqTitle">{{faq_title}}</summary><p data-page-i18n="directory.faq">{{faq_description}}</p></details></div></section>
+    </main>
+    <footer class="site-footer wrap"><div><a class="footer-brand" href="./">Soulo</a><span>© 2026 DKluge</span></div><div class="footer-links"></div></footer>
+    <div class="movie-toast" id="movie-toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

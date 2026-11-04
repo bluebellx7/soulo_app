@@ -1,0 +1,17 @@
+.reading-page { --violet: #946324; --violet-soft: #f5eddf; --hero-panel: #f4efdf; }
+html[data-resolved-theme="dark"] .reading-page { --violet: #e6bf7a; --violet-soft: #382f20; --hero-panel: #2b271e; }
+.music-page { --violet: #aa426d; --violet-soft: #f8eaf0; --hero-panel: #f5eaf1; }
+html[data-resolved-theme="dark"] .music-page { --violet: #f3a4c4; --violet-soft: #3b2632; --hero-panel: #2d202c; }
+.content-page .movie-search input { font-size: 16px; }
+.content-page .sidebar-note em { font: inherit; }
+@media (max-width: 740px) {
+  .content-page main.wrap, .content-page footer.wrap { width: calc(100% - 36px); }
+  .content-page .cinema-art { display: none; }
+  .content-page .category-sidebar { margin-inline: -18px; }
+  .content-page .category-sidebar nav { padding-inline: 18px; }
+}
+@media (max-width: 420px) {
+  .content-page main.wrap, .content-page footer.wrap { width: calc(100% - 20px); }
+  .content-page .category-sidebar { margin-inline: -10px; }
+  .content-page .category-sidebar nav { padding-inline: 10px; }
+}

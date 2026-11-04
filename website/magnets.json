@@ -24,12 +24,6 @@
       "name": "国际种子",
       "description": "海外美剧、无损音乐与全球综合 BitTorrent 磁力索引。",
       "icon": "globe"
-    },
-    {
-      "id": "nav",
-      "name": "磁力导航",
-      "description": "多线路磁力搜索入口汇总与备用域名发布页。",
-      "icon": "grid"
     }
   ],
   "sites": [
@@ -114,19 +108,6 @@
       "icon": "images/movie-icons/magnet-cilisousuo.png"
     },
     {
-      "id": "zhaocili",
-      "name": "找磁力",
-      "url": "https://www.1000zhaocili.xyz/",
-      "category": "engine",
-      "description": "基于 DHT 网络自动匹配更新的磁力链接与种子任务搜索引擎。",
-      "tags": [
-        "DHT 匹配",
-        "磁力搜索"
-      ],
-      "mark": "找",
-      "icon": "images/movie-icons/magnet-zhaocili.png"
-    },
-    {
       "id": "btmovi",
       "name": "磁力蜘蛛",
       "url": "https://btmovi.cyou/",
@@ -190,6 +171,19 @@
       ],
       "mark": "大",
       "icon": "images/movie-icons/magnet-cilidada.png"
+    },
+    {
+      "id": "tiantian-cili",
+      "name": "天天磁力",
+      "url": "https://d2.ttbt.me/",
+      "category": "engine",
+      "description": "磁力搜索入口，通过页面加载搜索服务。",
+      "tags": [
+        "磁力搜索",
+        "种子搜索"
+      ],
+      "mark": "天",
+      "icon": "images/movie-icons/magnet-tiantian-cili.png"
     },
     {
       "id": "1lou",
@@ -323,19 +317,6 @@
       "icon": "images/movie-icons/site-yyets-click.png"
     },
     {
-      "id": "rrdynb",
-      "name": "人人电影网",
-      "url": "https://www.rrdynb.com/",
-      "category": "movie",
-      "description": "涵盖最新电影、电视剧、经典老片与动漫的影视下载目录。",
-      "tags": [
-        "电影下载",
-        "经典影视"
-      ],
-      "mark": "人",
-      "icon": "images/movie-icons/site-rrdynb-com.png"
-    },
-    {
       "id": "dianying4k",
       "name": "Ultra4K",
       "url": "https://dianying4k.com/",
@@ -347,19 +328,6 @@
       ],
       "mark": "4K",
       "icon": "images/movie-icons/site-dianying4k-com.png"
-    },
-    {
-      "id": "dyjie",
-      "name": "电影街",
-      "url": "https://dyjie.net/",
-      "category": "movie",
-      "description": "按画质与年份整理的高清电影与剧集 BT 下载目录（需登录）。",
-      "tags": [
-        "高清 BT",
-        "需登录"
-      ],
-      "mark": "街",
-      "icon": "images/movie-icons/site-dyjie-net.png"
     },
     {
       "id": "mikanani",
@@ -466,55 +434,40 @@
       "icon": "images/movie-icons/magnet-rutracker.png"
     },
     {
-      "id": "pirateproxy",
-      "name": "Pirate Proxy",
-      "url": "https://pirateproxy.tube/",
-      "category": "global",
-      "description": "The Pirate Bay（海盗湾）实时可用镜像检测与代理访问列表。",
+      "id": "cilimao",
+      "name": "磁力猫",
+      "url": "https://cdn.cilimao.fun:39520/?host=cilimao.de",
+      "category": "engine",
+      "description": "磁力资源搜索入口，可按关键词查找资源。",
       "tags": [
-        "海盗湾",
-        "镜像列表"
+        "磁力搜索",
+        "关键词"
       ],
-      "mark": "PB"
+      "mark": "猫"
     },
     {
-      "id": "btmayi",
-      "name": "BT蚂蚁磁力",
-      "url": "https://btmayi.cc/",
-      "category": "nav",
-      "description": "聚合磁力搜索框与多类型 BT 站点入口的磁力搜索导航网站。",
+      "id": "ciligou",
+      "name": "磁力狗",
+      "url": "https://cdn.ciligou.in:39520/?host=ciligou.de",
+      "category": "engine",
+      "description": "磁力资源搜索入口，可按关键词查找资源。",
       "tags": [
-        "磁力导航",
-        "聚合搜索"
+        "磁力搜索",
+        "关键词"
       ],
-      "mark": "蚁",
-      "icon": "images/movie-icons/magnet-btmayi.png"
+      "mark": "狗"
     },
     {
-      "id": "cilishenqi",
-      "name": "磁力搜索神器",
-      "url": "https://cilishenqi.me/",
-      "category": "nav",
-      "description": "BT 磁力搜索引擎网址目录与多源聚合检索入口。",
+      "id": "tokyotosho",
+      "name": "Tokyo Toshokan",
+      "url": "https://www.tokyotosho.info/",
+      "category": "anime",
+      "description": "以动漫等日本文化资源为主的种子目录，支持关键词检索。",
       "tags": [
-        "磁力目录",
-        "多源检索"
+        "动漫",
+        "种子目录"
       ],
-      "mark": "神",
-      "icon": "images/movie-icons/magnet-cilishenqi.png"
-    },
-    {
-      "id": "xunleis",
-      "name": "迅雷下载天堂",
-      "url": "https://xunleis.pro/",
-      "category": "nav",
-      "description": "汇总磁力搜索引擎、影视下载站与种子工具的资源导航。",
-      "tags": [
-        "下载导航",
-        "种子工具"
-      ],
-      "mark": "迅",
-      "icon": "images/movie-icons/magnet-xunleis.png"
+      "mark": "TT"
     }
   ]
 }
