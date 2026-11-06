@@ -89,7 +89,7 @@ struct DownloadManagerContentView: View {
             }
             if downloadManager.downloads.isEmpty && preparingEpisodes.isEmpty {
                 IllustratedToolEmptyState(
-                    scene: .files,
+                    scene: .downloads,
                     title: LanguageManager.shared.localizedString("downloads_empty"),
                     message: LanguageManager.shared.localizedString("downloads_empty_desc")
                 )

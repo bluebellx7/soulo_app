@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Yerel ve BT videoları için yeni varsayılan oynatıcı: bölüm seçimi, 0,5–4× hız ve uyumlu biçimler için sistem oynatıcısı seçeneği.
-• Otomatik gizlenen tam ekran kontrolleri, basılı tutarak geçici 2× hız ve sol tarafta parlaklık, sağ tarafta ses için kaydırma hareketleri.
-• Bazı HEVC/MKV videolarında görüntü olmadan yalnızca ses çalması ve yükleme göstergesinin oynatım sırasında kalması düzeltildi.
-• Yanlış engellenen pencereleri ve video üzerinde kalan katmanları önlemek için açılır pencere ve reklam filtresi uyumluluğu iyileştirildi.
-• Kitaplıkta kaydırarak silme ile sekme değiştirme çakışması, iki görünümdeki klasör hizalaması ve son aramaların basılı tutarken yükseklik değişimi düzeltildi.
+• Yer imi veya geçmiş kaydı açıldığında bazen mevcut sekmenin değiştirilmesine neden olan sorun düzeltildi.
+• Başlatma, sayfa yükleme ve ana ekran etkileşimleri iyileştirildi.
+• Tam ekran kontrolleri, ekran döndürme ve uygulama değiştirirken oynatma durumu iyileştirildi.
+• Kapatılan sekmeleri geri alma, dosya önizlemeleri ve arayüz ayrıntıları iyileştirildi.

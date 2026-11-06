@@ -7,6 +7,14 @@ struct ToolIllustration: View {
         case books = "IllustrationBooks"
         case transfer = "IllustrationTransfer"
         case pageQR = "IllustrationPageQR"
+        case downloads = "IllustrationDownloads"
+        case bookmarks = "IllustrationBookmarks"
+        case history = "IllustrationHistory"
+        case about = "IllustrationAbout"
+        case review = "IllustrationReview"
+        case quickActions = "IllustrationQuickActions"
+
+        var preservesLogoColors: Bool { self == .about || self == .review || self == .quickActions }
     }
 
     let scene: Scene
@@ -15,7 +23,7 @@ struct ToolIllustration: View {
 
     var body: some View {
         Group {
-            if colorScheme == .dark {
+            if colorScheme == .dark && !scene.preservesLogoColors {
                 artwork.saturation(0).colorInvert()
             } else {
                 artwork

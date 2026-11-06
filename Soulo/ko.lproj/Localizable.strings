@@ -907,3 +907,10 @@
 "extension_limit_commands" = "iOS에서는 확장 프로그램의 키보드 단축키를 사용할 수 없습니다.";
 "extension_limit_notifications" = "알림은 표시할 수 있지만 클릭 및 닫기 이벤트는 지원하지 않습니다.";
 "extension_limit_offscreen" = "오프스크린 문서는 오디오 재생만 지원합니다.";
+
+"review_support_message" = "Soulo를 응원해 주셔서 감사합니다. 여러분의 리뷰가 더 나은 앱을 만드는 데 도움이 됩니다.";
+"review_open_app_store" = "App Store에서 리뷰 작성";
+
+"quick_actions_explanation" = "홈 화면에서 Soulo 아이콘을 길게 누르면 여기서 설정한 단축 메뉴를 사용할 수 있습니다.";
+
+"ad_block_scope_hint" = "웹 광고, 홍보 오버레이 및 원치 않는 팝업을 필터링합니다. 사이트가 제대로 작동하지 않으면 해당 사이트만 필터링을 끌 수 있습니다.";

@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Nuevo reproductor predeterminado para videos locales y BT, con episodios, velocidad 0.5–4× y opción del sistema para formatos compatibles.
-• Controles de pantalla completa que se ocultan automáticamente, presión prolongada para 2× temporal y gestos de brillo a la izquierda y volumen a la derecha.
-• Corregidos videos HEVC/MKV con solo audio sin imagen y los indicadores de carga que permanecían visibles.
-• Mejor compatibilidad de ventanas emergentes y filtros de anuncios para evitar bloqueos incorrectos y capas residuales sobre los videos.
-• Corregidos conflictos entre deslizar para eliminar y cambiar de pestaña, alineadas las carpetas en ambas vistas y estabilizada la altura de las búsquedas recientes al mantener presionado.
+• Se corrigió un problema por el que abrir un favorito o una entrada del historial podía reemplazar una pestaña existente.
+• Mejoras en el inicio, la carga de páginas y las interacciones en la pantalla de inicio.
+• Mejoras en los controles de pantalla completa, la rotación y el estado de reproducción al cambiar de app.
+• Mejoras al restaurar pestañas cerradas, en las vistas previas y en los detalles de la interfaz.

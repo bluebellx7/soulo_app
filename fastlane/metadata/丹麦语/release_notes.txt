@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Ny standardafspiller til lokale videoer og BT-videoer med episodevalg, 0,5–4× hastighed og systemafspiller til kompatible formater.
-• Fuldskærmskontroller skjules automatisk. Hold for midlertidig 2× hastighed, og stryg på venstre side for lysstyrke eller højre side for lydstyrke.
-• Rettet video uden billede i visse HEVC/MKV-filer og indlæsningsindikatorer, der blev ved med at vises.
-• Forbedret kompatibilitet med pop op-vinduer og annoncefiltrering, så vinduer ikke blokeres forkert, og videolag fjernes korrekt.
-• Rettet konflikt mellem sletning med stryg og faneskift, justeret mapper i begge filvisninger og fastholdt højden på seneste søgninger ved langt tryk.
+• Rettet en fejl, hvor åbning af et bogmærke eller et element fra historikken kunne erstatte en eksisterende fane.
+• Forbedret opstart, sideindlæsning og betjening af hjemmeskærmen.
+• Forbedret fuldskærmsbetjening, rotation og afspilningstilstand ved skift mellem apps.
+• Forbedret gendannelse af lukkede faner, filvisninger og detaljer i grænsefladen.

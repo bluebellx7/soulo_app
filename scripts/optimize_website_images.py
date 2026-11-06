@@ -20,6 +20,11 @@ ASSETS = (
     ('images/soulo-home-light-zh.webp', 'images/web/soulo-home-light-zh-804.webp', 804, False),
     ('images/soulo-home-light-en.webp', 'images/web/soulo-home-light-en-804.webp', 804, False),
 )
+ILLUSTRATIONS = (
+    ('About', 'images/web/illustration-about.webp'),
+    ('Books', 'images/web/illustration-reading.webp'),
+    ('Bookmarks', 'images/web/illustration-bookmarks.webp'),
+)
 
 
 def main():
@@ -50,6 +55,22 @@ def main():
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(payload)
         print(f'{source}: {original.stat().st_size:,} -> {len(payload):,} bytes')
+    for scene, output in ILLUSTRATIONS:
+        original = ROOT / f'Soulo/Assets.xcassets/Illustration{scene}.imageset/illustration.png'
+        target = SITE / output
+        with Image.open(original) as source:
+            image = source.convert('RGBA')
+            image.thumbnail((720, 480), Image.Resampling.LANCZOS)
+            encoded = io.BytesIO()
+            image.save(encoded, format='WEBP', quality=90, method=6)
+            payload = encoded.getvalue()
+        assert len(payload) < original.stat().st_size, output
+        if not target.is_file() or target.read_bytes() != payload:
+            stale.append(output)
+            if not args.check:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(payload)
+        print(f'{scene} illustration: {original.stat().st_size:,} -> {len(payload):,} bytes')
     if args.check and stale:
         parser.exit(1, 'Out-of-date website images: ' + ', '.join(stale) + '\n')
 

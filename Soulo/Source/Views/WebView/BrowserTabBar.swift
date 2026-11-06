@@ -265,6 +265,13 @@ struct TabSwitcherOverlay: View {
 
     private var bottomDock: some View {
         HStack(spacing: 14) {
+            if let closed = tabManager.recentlyClosed.first {
+                iconButton("arrow.uturn.backward", label: "tab_restore_last", foreground: .orange) {
+                    HapticsManager.selection()
+                    tabManager.restoreClosedTab(closed)
+                }
+            }
+
             iconButton(showsDomainGroups ? "rectangle.stack" : "rectangle.3.group",
                        label: showsDomainGroups ? "tab_view_carousel" : "tab_view_grouped") {
                 HapticsManager.selection()
@@ -278,14 +285,6 @@ struct TabSwitcherOverlay: View {
             iconButton("plus", label: "browser_home") {
                 HapticsManager.light()
                 onGoHome()
-            }
-
-            if let closed = tabManager.recentlyClosed.first {
-                iconButton("arrow.uturn.backward", label: "tab_restore_last") {
-                    HapticsManager.selection()
-                    tabManager.restoreClosedTab(closed)
-                    dismiss()
-                }
             }
 
             Button { showTabOptions = true } label: {
@@ -420,12 +419,13 @@ struct TabSwitcherOverlay: View {
     private func iconButton(
         _ systemName: String,
         label: String,
+        foreground: Color = .white.opacity(0.9),
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(foreground)
                 .frame(width: 44, height: 44)
                 .background(.black.opacity(0.34), in: Circle())
                 .overlay(Circle().stroke(.white.opacity(0.14), lineWidth: 0.5))

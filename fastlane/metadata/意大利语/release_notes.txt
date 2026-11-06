@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Nuovo lettore predefinito per video locali e BT con scelta degli episodi, velocità 0,5–4× e lettore di sistema per i formati compatibili.
-• Comandi a schermo intero che si nascondono automaticamente, pressione prolungata per 2× temporaneo e gesti per luminosità a sinistra e volume a destra.
-• Corretti alcuni video HEVC/MKV con solo audio senza immagini e gli indicatori di caricamento che restavano visibili.
-• Migliore compatibilità tra finestre a comparsa e filtri pubblicitari per evitare blocchi errati e sovrapposizioni residue sui video.
-• Corretti i conflitti tra eliminazione con scorrimento e cambio scheda, allineate le cartelle nelle due viste e stabilizzata l’altezza delle ricerche recenti alla pressione prolungata.
+• Risolto un problema per cui l'apertura di un preferito o di una voce della cronologia poteva sostituire una scheda esistente.
+• Migliorati l'avvio, il caricamento delle pagine e le interazioni nella schermata iniziale.
+• Migliorati i controlli a schermo intero, la rotazione e lo stato di riproduzione quando si cambia app.
+• Migliorati il ripristino delle schede chiuse, le anteprime dei file e i dettagli dell'interfaccia.

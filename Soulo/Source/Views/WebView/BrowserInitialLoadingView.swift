@@ -11,11 +11,11 @@ struct BrowserInitialLoadingView: View {
         ZStack {
             (colorScheme == .dark ? Color.black : Color.white)
                 .ignoresSafeArea()
-            VStack(spacing: 9) {
+            VStack(spacing: 6) {
                 LoadingBrandMark()
                 Text(LanguageManager.shared.localizedString("loading"))
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(colorScheme == .dark ? Color(hex: "E9D6AA") : Color(hex: "B18B4D"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 24)
@@ -31,7 +31,7 @@ struct BrowserInitialLoadingView: View {
     }
 }
 
-/// Rotate the AppIcon's brushwork as a highlight travels through it.
+/// A compact brushwork spinner with a soft highlight and one rotation animation.
 /// The white matte is removed only when rendering this view; the source asset
 /// and other uses of the app logo remain unchanged.
 private struct LoadingBrandMark: View {
@@ -39,9 +39,7 @@ private struct LoadingBrandMark: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isVisible = false
-    @State private var flowing = false
     @State private var rotating = false
-    @State private var breathing = false
 
     private var shouldAnimate: Bool { isVisible && scenePhase == .active && !reduceMotion }
 
@@ -66,26 +64,21 @@ private struct LoadingBrandMark: View {
             AngularGradient(stops: [
                 .init(color: .clear, location: 0),
                 .init(color: .clear, location: 0.55),
-                .init(color: (colorScheme == .dark ? Color(hex: "FFF0CC") : Color(hex: "D4B57D")).opacity(0.9), location: 0.78),
+                .init(color: (colorScheme == .dark ? Color(hex: "FFF0CC") : Color(hex: "D4B57D")).opacity(0.55), location: 0.78),
                 .init(color: .clear, location: 1)
             ], center: .center)
-            .rotationEffect(.degrees(flowing ? 360 : 0))
-            .animation(shouldAnimate ? .linear(duration: 3).repeatForever(autoreverses: false) : nil, value: flowing)
             .mask { markMask }
         }
-        .frame(width: 128, height: 128)
+        .frame(width: 108, height: 108)
+        .opacity(0.9)
         .rotationEffect(.degrees(rotating ? 360 : 0))
-        .animation(shouldAnimate ? .linear(duration: 1.5).repeatForever(autoreverses: false) : nil, value: rotating)
-        .scaleEffect(shouldAnimate ? (breathing ? 1.01 : 0.99) : 1)
-        .animation(shouldAnimate ? .easeInOut(duration: 1.5).repeatForever(autoreverses: true) : nil, value: breathing)
-        .frame(width: 76, height: 76)
+        .animation(shouldAnimate ? .linear(duration: 0.8).repeatForever(autoreverses: false) : nil, value: rotating)
+        .frame(width: 64, height: 64)
         .clipped()
         .onAppear { isVisible = true }
         .onDisappear { isVisible = false }
         .onChange(of: shouldAnimate, initial: true) { _, animate in
-            flowing = animate
             rotating = animate
-            breathing = animate
         }
     }
 }

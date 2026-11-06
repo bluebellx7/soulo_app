@@ -1,1 +1,1 @@
-Local and BT videos use Soulo by default: episodes, 0.5–4× speed, and a system player for compatible formats.
+Smoother browsing, refined video controls and clearer file previews.

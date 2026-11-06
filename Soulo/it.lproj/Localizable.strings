@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Le scorciatoie da tastiera delle estensioni non sono disponibili su iOS.";
 "extension_limit_notifications" = "Le notifiche possono essere mostrate, ma gli eventi di clic e chiusura non sono supportati.";
 "extension_limit_offscreen" = "I documenti fuori schermo supportano solo la riproduzione audio.";
+
+"review_support_message" = "Grazie per il tuo sostegno a Soulo. Le tue recensioni ci aiutano a migliorare.";
+"review_open_app_store" = "Valuta su App Store";
+
+"quick_actions_explanation" = "Tieni premuta l’icona di Soulo nella schermata Home per usare le azioni rapide configurate qui.";
+
+"ad_block_scope_hint" = "Filtra pubblicità web, riquadri promozionali e popup indesiderati. Se un sito smette di funzionare, puoi disattivare il filtro solo per quel sito.";

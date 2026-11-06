@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Player implicit nou pentru videoclipuri locale și BT, cu episoade, viteză 0,5–4× și player de sistem pentru formate compatibile.
-• Comenzi pe tot ecranul cu ascundere automată, apăsare lungă pentru 2× temporar și gesturi pentru luminozitate în stânga și volum în dreapta.
-• Corectată redarea doar a sunetului la unele videoclipuri HEVC/MKV și indicatoarele de încărcare rămase vizibile.
-• Compatibilitate îmbunătățită între ferestrele pop-up și filtrele de reclame, fără blocări greșite și straturi rămase peste videoclipuri.
-• Corectate conflictele dintre ștergerea prin glisare și schimbarea filei, alinierea dosarelor în ambele vizualizări și înălțimea căutărilor recente la apăsare lungă.
+• Am remediat o problemă prin care deschiderea unui marcaj sau a unei intrări din istoric putea înlocui o filă existentă.
+• Am îmbunătățit pornirea, încărcarea paginilor și interacțiunile pe ecranul de pornire.
+• Am îmbunătățit comenzile pe tot ecranul, rotirea și starea redării la schimbarea aplicației.
+• Am îmbunătățit restaurarea filelor închise, previzualizările și detaliile interfeței.

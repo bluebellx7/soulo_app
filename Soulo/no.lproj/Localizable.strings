@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Tastatursnarveier for utvidelser er ikke tilgjengelige på iOS.";
 "extension_limit_notifications" = "Varsler kan vises, men klikk- og lukkehendelser støttes ikke.";
 "extension_limit_offscreen" = "Dokumenter utenfor skjermen støtter bare lydavspilling.";
+
+"review_support_message" = "Takk for at du støtter Soulo. Anmeldelsene dine hjelper oss å bli bedre.";
+"review_open_app_store" = "Vurder i App Store";
+
+"quick_actions_explanation" = "Trykk og hold på Soulo-symbolet på Hjem-skjermen for å bruke snarveiene som er satt opp her.";
+
+"ad_block_scope_hint" = "Filtrerer nettannonser, reklameoverlegg og uønskede sprettoppvinduer. Hvis et nettsted ikke fungerer, kan du slå av filtrering bare for det nettstedet.";

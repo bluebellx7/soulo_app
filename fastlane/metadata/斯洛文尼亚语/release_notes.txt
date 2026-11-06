@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Nov privzeti predvajalnik lokalnih in BT-videov z izbiro epizod, hitrostjo 0,5–4× in sistemsko možnostjo za združljive oblike.
-• Samodejno skrivanje celozaslonskih kontrol, začasna hitrost 2× ob držanju ter drsenje za svetlost na levi in glasnost na desni.
-• Odpravljeno predvajanje samo zvoka pri nekaterih videih HEVC/MKV in vztrajno prikazovanje nalaganja.
-• Izboljšana združljivost pojavnih oken in filtrov oglasov preprečuje napačno blokiranje in preostale plasti prek videa.
-• Odpravljeni spori med brisanjem s podrsanjem in menjavo zavihka, poravnava map v obeh pogledih ter spreminjanje višine nedavnih iskanj ob držanju.
+• Odpravljena je težava, pri kateri je odpiranje zaznamka ali vnosa iz zgodovine lahko zamenjalo obstoječi zavihek.
+• Izboljšani zagon, nalaganje strani in uporaba začetnega zaslona.
+• Izboljšani celozaslonski kontrolniki, obračanje zaslona in stanje predvajanja ob preklopu aplikacij.
+• Izboljšani obnovitev zaprtih zavihkov, predogledi datotek in podrobnosti vmesnika.

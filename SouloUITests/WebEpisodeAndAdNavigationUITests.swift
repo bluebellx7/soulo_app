@@ -123,12 +123,12 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
     }
 
     @MainActor
-    private func launch(incognito: Bool = false, confirmCrossDomain: Bool? = nil, player: String? = nil) -> XCUIApplication {
+    private func launch(incognito: Bool = false, confirmCrossDomain: Bool? = nil, player: String? = nil, filtering: Bool = true) -> XCUIApplication {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
         app.launchArguments = ["-app_language", "en-US", "-privacy_https_upgrade_enabled", "NO",
-            "-ad_block_enabled", "YES",
+            "-ad_block_enabled", filtering ? "YES" : "NO",
             "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-is_incognito", incognito ? "YES" : "NO"]
         if let confirmCrossDomain {
             app.launchArguments += ["-ad_block_confirm_cross_domain", confirmCrossDomain ? "YES" : "NO"]
@@ -146,10 +146,150 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
     }
 
     @MainActor
+    func testCustomScriptButtonWithFilteringDisabled() async throws {
+        try await checkCustomScriptButton(filtering: false)
+    }
+
+    @MainActor
+    func testCustomScriptButtonWithFilteringEnabled() async throws {
+        try await checkCustomScriptButton(filtering: true)
+    }
+
+    @MainActor
+    private func checkCustomScriptButton(filtering: Bool) async throws {
+        let html = #"""
+        <!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+        <body style="font:20px system-ui"><h1>Script entry fixture</h1>
+        <input aria-label="Entry note" onkeydown="if(event.key==='Enter'){this.blur();return false}">
+        <div id="entry" style="cursor:pointer;padding:24px;background:#eee"><span>Continue to chosen page</span></div>
+        <script>document.getElementById('entry').onclick=()=>window.open('/chosen.html','entry');</script>
+        </body></html>
+        """#
+        let server = try DownloadPlaybackHTTPFixture(files: ["/entry.html": Data(html.utf8),
+            "/chosen.html": Data("""
+                <!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+                <body style="font:20px system-ui">Script entry reached
+                <p id="opener">Checking opener</p><button onclick="window.close()">Close entry window</button>
+                <script>document.getElementById('opener').textContent=window.opener?'Opener preserved':'Missing opener';</script>
+                </body></html>
+                """.utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let app = launch(incognito: true, confirmCrossDomain: false, filtering: filtering)
+        defer { app.terminate() }
+        try open(root.appendingPathComponent("entry.html"), app: app)
+        let entry = app.webViews.staticTexts["Continue to chosen page"].firstMatch
+        XCTAssertTrue(entry.waitForExistence(timeout: 20), app.debugDescription)
+        let note = app.webViews.textFields["Entry note"].firstMatch
+        let savedNote = "Keep " + UUID().uuidString.prefix(6)
+        note.tap(); note.typeText(savedNote + "\n")
+        let tabs = app.buttons["browser.tabs"]
+        let count = try XCTUnwrap(Int(tabs.label.split(separator: " ").first.map(String.init) ?? ""))
+        entry.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Script entry reached"].firstMatch.waitForExistence(timeout: 10),
+            "A trusted click on a custom script button must remain usable with filtering enabled")
+        XCTAssertTrue(app.webViews.staticTexts["Opener preserved"].firstMatch.exists)
+        XCTAssertEqual(tabs.label, "\(count + 1) Tabs")
+        XCTAssertFalse(app.buttons["Open in Current Tab"].exists)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Script window in full browser tab filtering-\(filtering)"
+        screenshot.lifetime = .keepAlways; add(screenshot)
+        let close = app.webViews.buttons["Close entry window"].firstMatch
+        XCTAssertTrue(close.isEnabled)
+        XCTAssertTrue(app.frame.contains(CGPoint(x: close.frame.midX, y: close.frame.midY)))
+        // iOS 26.2 reports no accessibility hit point for script-created windows
+        // even in the isolated raw WKWebView control. Exercise a real touch and
+        // verify its effect instead of using a synthetic DOM click.
+        close.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        XCTAssertTrue(entry.waitForExistence(timeout: 10), "window.close must return to the original tab")
+        XCTAssertEqual(tabs.label, "\(count) Tabs")
+        XCTAssertEqual(note.value as? String, savedNote, "Opening and closing a script window must preserve the original document")
+    }
+
+    @MainActor
+    func testScriptControlsCanUseComputedCrossSiteURLs() async throws {
+        let html = #"""
+        <!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
+        <button id="replace">Continue in this tab</button>
+        <div role="button" id="window" style="padding:24px">Continue in a new tab</div>
+        <script>
+        const next=location.origin.replace('127.0.0.1','localhost')+'/chosen.html';
+        document.getElementById('replace').onclick=()=>location.href=next;
+        document.getElementById('window').onclick=()=>window.open(next);
+        </script>
+        """#
+        let server = try DownloadPlaybackHTTPFixture(files: ["/entry.html": Data(html.utf8),
+            "/chosen.html": Data("<body>Computed cross-site destination</body>".utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let app = launch(incognito: true, confirmCrossDomain: true); defer { app.terminate() }
+        for label in ["Continue in this tab", "Continue in a new tab"] {
+            try open(root.appendingPathComponent("entry.html"), app: app)
+            let control = app.webViews.buttons[label].firstMatch
+            XCTAssertTrue(control.waitForExistence(timeout: 15), app.debugDescription)
+            control.tap()
+            XCTAssertTrue(app.webViews.staticTexts["Computed cross-site destination"].firstMatch.waitForExistence(timeout: 10))
+            XCTAssertFalse(app.buttons["browser.domain-confirmation.continue"].exists)
+            XCTAssertFalse(app.buttons["Open in Current Tab"].exists)
+        }
+    }
+
+    @MainActor
+    func testLiveScriptEntryUsesNormalTabWithFilteringEnabled() throws {
+        guard let address = ProcessInfo.processInfo.environment["SOULO_LIVE_SCRIPT_ENTRY_URL"],
+              let url = URL(string: address) else { throw XCTSkip("Opt-in live script-entry check") }
+        let app = launch(incognito: true, confirmCrossDomain: false); defer { app.terminate() }
+        try open(url, app: app)
+        let entry = app.webViews.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "点此进入")).firstMatch
+        XCTAssertTrue(entry.waitForExistence(timeout: 60), app.debugDescription)
+        let tabs = app.buttons["browser.tabs"]
+        let count = try XCTUnwrap(Int(tabs.label.split(separator: " ").first.map(String.init) ?? ""))
+        entry.tap()
+        let opened = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "\(count + 1) Tabs"), object: tabs)
+        XCTAssertEqual(XCTWaiter.wait(for: [opened], timeout: 5), .completed)
+        XCTAssertEqual(tabs.label, "\(count + 1) Tabs", "The real entry must open a browser tab while filtering stays enabled")
+        XCTAssertFalse(app.buttons["Open in Current Tab"].exists)
+        app.buttons["Edit Address or Search"].firstMatch.tap()
+        let current = app.textFields["addressEditor.pageURL"]
+        XCTAssertTrue(current.waitForExistence(timeout: 5), app.debugDescription)
+        let destination = try XCTUnwrap(URL(string: try XCTUnwrap(current.value as? String)))
+        XCTAssertEqual(destination.host, url.host)
+        XCTAssertEqual(destination.path, "/home")
+    }
+
+    @MainActor
+    func testRawWebKitScriptWindowTouchBaseline() async throws {
+        guard ProcessInfo.processInfo.environment["SOULO_RAW_SCRIPT_WINDOW_QA"] == "1" else {
+            throw XCTSkip("Opt-in minimal WKWebView window control")
+        }
+        let viewport = "<meta name=viewport content='width=device-width,initial-scale=1'>"
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/entry.html": Data((viewport + "<button onclick=\"window.open('/child.html')\">Open raw window</button>").utf8),
+            "/child.html": Data((viewport + """
+                <p id="count">Count 0</p><button onclick="document.getElementById('count').textContent='Count 1'">Count touch</button>
+                <button onclick="window.close()">Close raw window</button>
+                """).utf8)
+        ])
+        let root = try await server.start(); defer { server.stop() }
+        let app = XCUIApplication(bundleIdentifier: "com.soulo.qa.RawScriptWindow")
+        app.launchArguments = ["-url", root.appendingPathComponent("entry.html").absoluteString]
+        app.launch(); defer { app.terminate() }
+        let entry = app.webViews.buttons["Open raw window"].firstMatch
+        XCTAssertTrue(entry.waitForExistence(timeout: 10)); entry.tap()
+        let count = app.webViews.buttons["Count touch"].firstMatch
+        XCTAssertTrue(count.waitForExistence(timeout: 10))
+        print("RAW_SCRIPT_WINDOW_COUNT_HITTABLE=\(count.isHittable) FRAME=\(count.frame)")
+        if count.isHittable { count.tap() } else { count.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap() }
+        XCTAssertTrue(app.webViews.staticTexts["Count 1"].firstMatch.waitForExistence(timeout: 5))
+        let close = app.webViews.buttons["Close raw window"].firstMatch
+        print("RAW_SCRIPT_WINDOW_CLOSE_HITTABLE=\(close.isHittable) FRAME=\(close.frame)")
+        if close.isHittable { close.tap() } else { close.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap() }
+        XCTAssertTrue(entry.waitForExistence(timeout: 5))
+    }
+
+    @MainActor
     func testPageClickAdsAreBlockedAndExplicitExternalLinkStillOpens() async throws {
         let html = #"""
         <html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-        <body style="font:20px system-ui"><h3>Navigation fixture</h3>
+        <body style="font:20px system-ui;cursor:pointer"><h3>Navigation fixture</h3>
         <p id="popup">Popup action</p><p id="replace">Replacement action</p>
         <p id="synthetic">Synthetic link action</p><p id="status">Waiting</p>
         <a id="external">Open chosen page</a>
@@ -456,6 +596,12 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
             app.buttons["browser.domain-confirmation.continue"].tap()
         }
         XCTAssertTrue(app.webViews.staticTexts["Form submitted"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        let submissions = server.receivedRequests.filter { $0.path == "/submit.html" }
+        XCTAssertEqual(submissions.count, 1, "The original form request must not be replayed")
+        let submission = try XCTUnwrap(submissions.first)
+        XCTAssertEqual(submission.method, "POST")
+        XCTAssertEqual(String(decoding: submission.body, as: UTF8.self), "query=chosen")
+        XCTAssertEqual(submission.headers["origin"], root.absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/")))
     }
 
     @MainActor

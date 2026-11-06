@@ -1,1 +1,1 @@
-Soulo par défaut : vidéos locales/BT, épisodes, vitesse 0,5–4×, lecteur système si compatible.
+Navigation plus fluide, commandes vidéo améliorées et aperçus de fichiers plus clairs.

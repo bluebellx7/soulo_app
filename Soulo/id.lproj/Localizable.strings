@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Pintasan keyboard ekstensi tidak tersedia di iOS.";
 "extension_limit_notifications" = "Notifikasi dapat ditampilkan, tetapi peristiwa klik dan tutup tidak didukung.";
 "extension_limit_offscreen" = "Dokumen di luar layar hanya mendukung pemutaran audio.";
+
+"review_support_message" = "Terima kasih telah mendukung Soulo. Ulasan Anda membantu kami terus berkembang.";
+"review_open_app_store" = "Tulis ulasan di App Store";
+
+"quick_actions_explanation" = "Sentuh dan tahan ikon Soulo di Layar Utama untuk memakai pintasan yang diatur di sini.";
+
+"ad_block_scope_hint" = "Memfilter iklan web, hamparan promosi, dan pop-up yang tidak diminta. Jika situs tidak berfungsi, Anda dapat mematikan filter hanya untuk situs tersebut.";

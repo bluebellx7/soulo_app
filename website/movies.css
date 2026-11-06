@@ -59,6 +59,7 @@ html[data-resolved-theme="dark"] .pans-page {
 .browse-link:hover svg { transform: translateX(4px); }
 .cinema-art { min-width: 0; color: var(--violet); margin: -24px -20px -24px 0; }
 .cinema-art > svg { display: block; width: 100%; max-height: 266px; }
+.cinema-art > .app-illustration { display: block; width: 100%; height: auto; max-height: 266px; object-fit: contain; }
 .favorite-picks { margin-top: 22px; scroll-margin-top: 24px; }
 .directory-intro { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 0 2px 14px; color: var(--soft-ink); font-size: 11px; }
 .quick-picks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; }
@@ -141,6 +142,9 @@ html[data-resolved-theme="dark"] :is(.quick-pick:hover, .quick-pick:focus-visibl
 .favorite-button[aria-pressed="true"] { color: var(--violet); }
 .favorite-button[aria-pressed="true"] svg { fill: currentColor; stroke-width: 0; }
 .movie-empty { padding: 80px 20px; text-align: center; }
+.movie-empty .empty-illustration { display: none; width: min(280px, 100%); height: auto; margin: 0 auto 20px; }
+.movie-empty[data-state="favorites"] .empty-illustration { display: block; }
+.movie-empty[data-state="favorites"] > div { display: none; }
 .movie-empty > div { display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 20px; background: var(--violet-soft); color: var(--violet); border-radius: 18px; }
 .movie-empty svg { width: 23px; height: 23px; }
 .movie-empty h2 { font-size: 19px; font-weight: 600; }

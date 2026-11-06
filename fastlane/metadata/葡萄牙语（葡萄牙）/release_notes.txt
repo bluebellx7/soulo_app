@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Novo leitor predefinido para vídeos locais e BT, com seleção de episódios, velocidade de 0,5–4× e leitor do sistema para formatos compatíveis.
-• Controlos de ecrã inteiro com ocultação automática, pressão prolongada para 2× temporário e gestos de brilho à esquerda e volume à direita.
-• Corrigidos vídeos HEVC/MKV que reproduziam apenas áudio e indicadores de carregamento que permaneciam visíveis.
-• Melhor compatibilidade de janelas emergentes e filtros de anúncios para evitar bloqueios incorretos e camadas residuais sobre os vídeos.
-• Corrigidos conflitos entre deslizar para apagar e mudar de separador, alinhamento das pastas nas duas vistas e altura das pesquisas recentes ao manter premido.
+• Corrigido um problema que podia substituir um separador existente ao abrir um favorito ou um item do histórico.
+• Melhorias no arranque, no carregamento de páginas e nas interações do ecrã inicial.
+• Melhorias nos controlos de ecrã completo, na rotação e no estado de reprodução ao mudar de app.
+• Melhorias no restauro de separadores fechados, nas pré-visualizações e nos detalhes da interface.

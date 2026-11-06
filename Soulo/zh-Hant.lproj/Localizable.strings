@@ -905,3 +905,10 @@
 "extension_limit_commands" = "iOS 不支援擴充功能鍵盤快速鍵。";
 "extension_limit_notifications" = "支援顯示通知，暫不支援通知點擊和關閉事件。";
 "extension_limit_offscreen" = "離屏文件僅支援音訊播放。";
+
+"review_support_message" = "謝謝你支持 Soulo，你的評價與建議會幫助我們持續改進。";
+"review_open_app_store" = "去 App Store 好評";
+
+"quick_actions_explanation" = "長按主畫面上的 Soulo 圖示，即可使用在這裡設定的快捷選單。";
+
+"ad_block_scope_hint" = "過濾網頁廣告、推廣浮層及非主動開啟的彈出視窗。網頁異常時，可只為該網站關閉過濾。";

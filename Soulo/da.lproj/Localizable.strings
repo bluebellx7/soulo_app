@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Tastaturgenveje til udvidelser er ikke tilgængelige på iOS.";
 "extension_limit_notifications" = "Notifikationer kan vises, men klik- og lukkehændelser understøttes ikke.";
 "extension_limit_offscreen" = "Dokumenter uden for skærmen understøtter kun lydafspilning.";
+
+"review_support_message" = "Tak for din støtte til Soulo. Dine anmeldelser hjælper os med at blive bedre.";
+"review_open_app_store" = "Bedøm i App Store";
+
+"quick_actions_explanation" = "Hold fingeren på Soulo-ikonet på hjemmeskærmen for at bruge de genveje, du indstiller her.";
+
+"ad_block_scope_hint" = "Filtrerer webannoncer, reklameoverlejringer og uønskede pop op-vinduer. Hvis et websted ikke virker, kan du slå filtrering fra for det websted.";

@@ -88,7 +88,20 @@ enum BrowserNavigationGesture {
         if (event.type === 'keydown' && !['Enter', ' '].includes(event.key)) return;
         const path = event.composedPath?.() || [event.target];
         const anchor = path.find(node => node instanceof Element && node.matches('a[href],area[href]'));
-        const control = path.find(node => node instanceof Element && node.matches('button,input[type=submit],input[type=button],[role=button]'));
+        const semanticControl = path.find(node => node instanceof Element && node.matches('button,input[type=submit],input[type=button],[role=button]') && !node.matches(':disabled,[aria-disabled=true]'));
+        // Frameworks often render buttons as div/span without a role or href.
+        // Recognize the boundary where the page deliberately sets a pointer,
+        // rather than inheriting that cursor from a whole-page click handler.
+        const cursors = new Map();
+        function cursor(node) {
+          if (!node) return '';
+          if (!cursors.has(node)) cursors.set(node, getComputedStyle(node).cursor);
+          return cursors.get(node);
+        }
+        const control = semanticControl || (!anchor && path.slice(0, 24).find(node =>
+          node instanceof HTMLElement && node !== document.body && node !== document.documentElement
+          && !node.matches(':disabled,[aria-disabled=true]')
+          && cursor(node) === 'pointer' && cursor(node.parentElement) !== 'pointer'));
         const form = control?.type === 'submit' ? control.form
           : event.type === 'keydown' && event.key === 'Enter' ? path.find(node => node instanceof HTMLFormElement) : null;
         const destinations = [];
@@ -126,10 +139,6 @@ enum BrowserNavigationGesture {
       window.addEventListener('keydown', interacted, {capture:true,passive:true});
     })();
     """
-}
-
-private enum EmbeddedBrowserPopupTag {
-    static let container = 0x534F554C
 }
 
 enum BrowserDirectMediaPolicy {
@@ -518,7 +527,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         if let existingWebView = viewModel.webView {
             let installInCurrentDocument = !viewModel.hasInstalledWebViewScripts && existingWebView.url != nil
-            installRuntimeIfNeeded(on: existingWebView, context: context)
+            installRuntimeIfNeeded(on: existingWebView, coordinator: context.coordinator)
             if installInCurrentDocument {
                 // A supplied WebView may already contain a document that never
                 // received our document-start scripts. Bootstrap it once; normal
@@ -534,7 +543,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                     ), completionHandler: nil)
                 }
             }
-            configureWebView(existingWebView, context: context)
+            configureWebView(existingWebView, coordinator: context.coordinator)
             context.coordinator.resyncVideoAwake(on: existingWebView)
             if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
                !isIncognito, #available(iOS 18.4, *) {
@@ -547,9 +556,9 @@ struct WebViewRepresentable: UIViewRepresentable {
         // Bind the current tab's scripts and bridges before its first request,
         // including when WebKit was already started by the spare-view pool.
         BrowserStartupTrace.mark("runtime_start")
-        installRuntimeIfNeeded(on: webView, context: context)
+        installRuntimeIfNeeded(on: webView, coordinator: context.coordinator)
         BrowserStartupTrace.mark("runtime_end")
-        configureWebView(webView, context: context)
+        configureWebView(webView, coordinator: context.coordinator)
         if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
            !isIncognito, #available(iOS 18.4, *) {
             NativeWebExtensionRuntime.shared.register(webView)
@@ -562,7 +571,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         return webView
     }
 
-    private func installRuntimeIfNeeded(on webView: WKWebView, context: Context) {
+    private func installRuntimeIfNeeded(on webView: WKWebView, coordinator: Coordinator) {
         let contentController = webView.configuration.userContentController
         // Streaming transfers continue inside the retained page even when SwiftUI
         // temporarily dismantles this wrapper. Keep their page-world bridge alive
@@ -579,24 +588,24 @@ struct WebViewRepresentable: UIViewRepresentable {
         // A rapid A → B → A switch can mount a new wrapper before the old
         // wrapper's transition finishes. Always bind bridges to the new owner.
         Self.removeRuntimeMessageHandlers(from: contentController)
-        contentController.add(context.coordinator, name: "souloAdBlocker")
-        contentController.add(context.coordinator, name: "souloPrivacy")
-        contentController.add(context.coordinator, contentWorld: .defaultClient, name: "souloContextResource")
-        contentController.add(context.coordinator, contentWorld: .defaultClient, name: "souloPageReady")
-        contentController.add(context.coordinator, contentWorld: .defaultClient, name: "souloMediaFrame")
-        contentController.add(context.coordinator, contentWorld: .defaultClient, name: "souloVideoAwake")
-        contentController.add(context.coordinator, contentWorld: BrowserNavigationGesture.world, name: BrowserNavigationGesture.handler)
-        contentController.add(context.coordinator, contentWorld: WebVideoOrientationRuntime.world, name: WebVideoOrientationRuntime.handler)
-        contentController.add(context.coordinator, contentWorld: WebEpisodeRuntime.world, name: WebEpisodeRuntime.handler)
-        contentController.add(context.coordinator, contentWorld: ManualAdBlockRuntime.world, name: ManualAdBlockRuntime.handler)
+        contentController.add(coordinator, name: "souloAdBlocker")
+        contentController.add(coordinator, name: "souloPrivacy")
+        contentController.add(coordinator, contentWorld: .defaultClient, name: "souloContextResource")
+        contentController.add(coordinator, contentWorld: .defaultClient, name: "souloPageReady")
+        contentController.add(coordinator, contentWorld: .defaultClient, name: "souloMediaFrame")
+        contentController.add(coordinator, contentWorld: .defaultClient, name: "souloVideoAwake")
+        contentController.add(coordinator, contentWorld: BrowserNavigationGesture.world, name: BrowserNavigationGesture.handler)
+        contentController.add(coordinator, contentWorld: WebVideoOrientationRuntime.world, name: WebVideoOrientationRuntime.handler)
+        contentController.add(coordinator, contentWorld: WebEpisodeRuntime.world, name: WebEpisodeRuntime.handler)
+        contentController.add(coordinator, contentWorld: ManualAdBlockRuntime.world, name: ManualAdBlockRuntime.handler)
         if !isIncognito {
-            contentController.addScriptMessageHandler(context.coordinator, contentWorld: .page, name: "souloUserScriptXHR")
-            contentController.addScriptMessageHandler(context.coordinator, contentWorld: .page, name: "souloUserScriptAPI")
+            contentController.addScriptMessageHandler(coordinator, contentWorld: .page, name: "souloUserScriptXHR")
+            contentController.addScriptMessageHandler(coordinator, contentWorld: .page, name: "souloUserScriptAPI")
         }
         if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled {
-            contentController.add(context.coordinator, name: "souloExtensionInstaller")
+            contentController.add(coordinator, name: "souloExtensionInstaller")
         }
-        contentController.addScriptMessageHandler(context.coordinator, contentWorld: .page, name: "souloDownload")
+        contentController.addScriptMessageHandler(coordinator, contentWorld: .page, name: "souloDownload")
         viewModel.isWebViewRuntimeInstalled = true
         // Warm tab remounts only reconnect delegates. Keep scripts, their bridge
         // identity and compiled filters attached to the retained page.
@@ -641,7 +650,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                     WKUserScript(
                         source: UserScriptRuntime.wrappedSource(
                             for: script,
-                            bridgeToken: context.coordinator.userScriptBridgeToken
+                            bridgeToken: coordinator.userScriptBridgeToken
                         ),
                         injectionTime: injectionTime,
                         forMainFrameOnly: true
@@ -760,12 +769,12 @@ struct WebViewRepresentable: UIViewRepresentable {
         viewModel.isWebViewRuntimeInstalled = true
     }
 
-    private func configureWebView(_ webView: WKWebView, context: Context) {
-        context.coordinator.synchronizeSiteOptimizations(on: webView)
-        context.coordinator.updateManualAdTap(on: webView)
-        context.coordinator.installImageLongPress(on: webView)
-        webView.navigationDelegate = context.coordinator
-        webView.uiDelegate = context.coordinator
+    private func configureWebView(_ webView: WKWebView, coordinator: Coordinator) {
+        coordinator.synchronizeSiteOptimizations(on: webView)
+        coordinator.updateManualAdTap(on: webView)
+        coordinator.installImageLongPress(on: webView)
+        webView.navigationDelegate = coordinator
+        webView.uiDelegate = coordinator
         // The native navigation policy applies the live user preference to pop-ups.
         webView.configuration.preferences.javaScriptCanOpenWindowsAutomatically = true
         webView.allowsBackForwardNavigationGestures = true
@@ -787,7 +796,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         // receiving didCommit/didFinish. Recheck once on mount; the page script
         // still skips DOM work when its own configuration is unchanged.
         webAppearance.apply(to: webView, force: true)
-        context.coordinator.applyPrivacyProtectionIfNeeded(on: webView, forceCurrentDocument: true)
+        coordinator.applyPrivacyProtectionIfNeeded(on: webView, forceCurrentDocument: true)
 
         if webView.url != nil, !viewModel.hasVisibleContent {
             if !webView.isLoading, webView.url == viewModel.currentURL, viewModel.errorMessage == nil {
@@ -809,18 +818,18 @@ struct WebViewRepresentable: UIViewRepresentable {
         }
 
         // KVO observations
-        context.coordinator.observe(webView: webView, viewModel: viewModel)
+        coordinator.observe(webView: webView, viewModel: viewModel)
 
         // Pull-to-refresh
         let refreshControl = (webView.scrollView.refreshControl as? BrowserRefreshControl) ?? BrowserRefreshControl()
         refreshControl.removeTarget(nil, action: #selector(Coordinator.handleRefresh(_:)), for: .valueChanged)
-        refreshControl.addTarget(context.coordinator, action: #selector(Coordinator.handleRefresh(_:)), for: .valueChanged)
+        refreshControl.addTarget(coordinator, action: #selector(Coordinator.handleRefresh(_:)), for: .valueChanged)
         if webView.scrollView.refreshControl !== refreshControl {
             webView.scrollView.refreshControl = refreshControl
         }
 
         // Scroll direction detection
-        webView.scrollView.delegate = context.coordinator
+        webView.scrollView.delegate = coordinator
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
@@ -1007,7 +1016,6 @@ struct WebViewRepresentable: UIViewRepresentable {
         coordinator.dismissNativeVideoSwitch()
         guard uiView.navigationDelegate === coordinator else { return }
         removeRuntimeMessageHandlers(from: uiView.configuration.userContentController)
-        coordinator.dismissEmbeddedPopups(in: uiView)
         coordinator.cancelManualAdPicker()
         coordinator.markRuntimeDismantled()
     }
@@ -1085,7 +1093,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         private var userInitiatedNavigationChain = false
         private var domainConfirmationID: UUID?
         private var domainConfirmationDecision: ((Bool) -> Void)?
-        private var popupDomainDelegates: [ObjectIdentifier: WebDomainPopupDelegate] = [:]
+        private var admittedWindowNavigationURL: URL?
         private var lastContentOffset: CGFloat = 0
         private var lastReportedScrollingUp: Bool?
         private var isUserZooming = false
@@ -2450,7 +2458,6 @@ struct WebViewRepresentable: UIViewRepresentable {
                 viewModel.beginPageNavigation()
                 videoFullscreenOrientation.end()
                 viewModel.cancelMarkingAdvertisement()
-                dismissEmbeddedPopups(in: webView)
             }
             navigationGeneration = UUID()
             resetScrollChromeState()
@@ -2918,7 +2925,12 @@ struct WebViewRepresentable: UIViewRepresentable {
                 return
             }
 
+            // The opener already checked this exact new-window action. Carry
+            // that decision into its first navigation without reissuing it.
+            let admittedWindowRequest = admittedWindowNavigationURL == url
+            if admittedWindowRequest { admittedWindowNavigationURL = nil }
             let nativeRequest = (webView as? AccessibleWebView)?.consumeNativeNavigation(to: url) == true
+                || admittedWindowRequest
             // Preserve WebKit's exact history item, page cache and interactive
             // transition. Never cancel/reissue a Back/Forward navigation.
             if navigationAction.navigationType == .backForward {
@@ -3087,6 +3099,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                   gesture.frameURL == action.sourceFrame.requestURL,
                   ProcessInfo.processInfo.systemUptime - gesture.time <= 3 else { return false }
             if gesture.isForm && [.formSubmitted, .formResubmitted].contains(action.navigationType) { return true }
+            if gesture.isControl && action.sourceFrame.isMainFrame && action.navigationType == .other { return true }
             return gesture.isLink && (action.navigationType == .linkActivated
                 || (action.targetFrame?.isMainFrame == true && action.navigationType == .other))
         }
@@ -3353,13 +3366,11 @@ struct WebViewRepresentable: UIViewRepresentable {
                     switch WebNavigationPolicyService.shared.decision(for: url) {
                     case .allow:
                         if openRequestedNewTab(navigationAction, in: webView) { return nil }
-                        // Preserve WebKit's window/opener relationship for every
-                        // admitted popup. Reissuing it on the parent breaks scripts,
-                        // form submissions and the parent's native back history.
-                        return makeEmbeddedPopup(
-                            in: webView,
-                            configuration: configuration,
-                            userInitiated: explicit
+                        // Keep WebKit's original window, opener and request body,
+                        // but present it as a complete browser tab.
+                        return makeBrowserWindow(
+                            in: webView, configuration: configuration,
+                            request: navigationAction.request, userInitiated: explicit
                         )
                     case .cancel:
                         break
@@ -3373,139 +3384,39 @@ struct WebViewRepresentable: UIViewRepresentable {
             return nil
         }
 
-        private func makeEmbeddedPopup(
+        private func makeBrowserWindow(
             in parentWebView: WKWebView,
             configuration: WKWebViewConfiguration,
+            request: URLRequest,
             userInitiated: Bool
         ) -> WKWebView {
-            BrowserStartupTrace.mark("embedded_popup_open")
-            // WebKit supplies a new-window configuration, but per-view settings
-            // such as the custom user agent are not copied automatically. Match
-            // the parent tab so iPad does not silently promote a mobile popup to
-            // desktop mode.
-            configuration.defaultWebpagePreferences.preferredContentMode = viewModel.isDesktopModeEnabled
-                ? .desktop
-                : .mobile
-
-            let container = UIView(frame: parentWebView.bounds)
-            container.tag = EmbeddedBrowserPopupTag.container
-            container.backgroundColor = .systemBackground
-            container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-
-            let popupWebView = WKWebView(frame: container.bounds, configuration: configuration)
-            let domainDelegate = WebDomainPopupDelegate()
-            domainDelegate.originURL = parentWebView.url
-            domainDelegate.userInitiatedNavigationChain = userInitiated
-            domainDelegate.decide = { [weak self, weak parentWebView, weak domainDelegate] popup, action, origin, decision in
-                guard let self, let parentWebView, let url = action.request.url else { decision(.cancel); return }
-                switch WebNavigationPolicyService.shared.decision(for: url) {
-                case .external(let externalURL):
-                    decision(.cancel)
-                    self.routeExternalURL(externalURL)
-                    return
-                case .cancel:
-                    decision(.cancel)
-                    return
-                case .allow:
-                    break
-                }
-                if domainDelegate?.userInitiatedNavigationChain != true,
-                   !self.isExplicitNavigation(action, in: popup),
-                   self.requestDomainConfirmation(to: url, from: origin, in: parentWebView, request: action.request, completion: { allowed in
-                    if allowed { domainDelegate?.userInitiatedNavigationChain = true }
-                    decision(allowed ? .allow : .cancel)
-                    if !allowed, domainDelegate?.hasCommittedDocument != true { self.dismissEmbeddedPopups(in: parentWebView) }
-                }) { return }
-                decision(.allow)
-            }
-            popupDomainDelegates[ObjectIdentifier(popupWebView)] = domainDelegate
-            popupWebView.navigationDelegate = domainDelegate
-            popupWebView.customUserAgent = parentWebView.customUserAgent
-            popupWebView.pageZoom = parentWebView.pageZoom
-            popupWebView.uiDelegate = self
-            popupWebView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            container.addSubview(popupWebView)
-
-            var openConfiguration = UIButton.Configuration.filled()
-            openConfiguration.image = UIImage(systemName: "arrow.right.square")
-            openConfiguration.imagePadding = 6
-            openConfiguration.title = LanguageManager.shared.localizedString("popup_open_current_tab")
-            openConfiguration.baseForegroundColor = .label
-            openConfiguration.baseBackgroundColor = .secondarySystemBackground
-            openConfiguration.cornerStyle = .capsule
-            let openInCurrentTabButton = UIButton(configuration: openConfiguration)
-            openInCurrentTabButton.translatesAutoresizingMaskIntoConstraints = false
-            openInCurrentTabButton.titleLabel?.lineBreakMode = .byTruncatingTail
-            openInCurrentTabButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-            openInCurrentTabButton.accessibilityLabel = LanguageManager.shared.localizedString("popup_open_current_tab")
-            openInCurrentTabButton.addTarget(
-                self,
-                action: #selector(openEmbeddedPopupInCurrentTab(_:)),
-                for: .touchUpInside
-            )
-            container.addSubview(openInCurrentTabButton)
-
-            var buttonConfiguration = UIButton.Configuration.filled()
-            buttonConfiguration.image = UIImage(systemName: "xmark")
-            buttonConfiguration.baseForegroundColor = .label
-            buttonConfiguration.baseBackgroundColor = .secondarySystemBackground
-            buttonConfiguration.cornerStyle = .capsule
-            let closeButton = UIButton(configuration: buttonConfiguration)
-            closeButton.translatesAutoresizingMaskIntoConstraints = false
-            closeButton.accessibilityLabel = LanguageManager.shared.localizedString("cancel")
-            closeButton.addTarget(self, action: #selector(closeEmbeddedPopup(_:)), for: .touchUpInside)
-            container.addSubview(closeButton)
-
-            NSLayoutConstraint.activate([
-                openInCurrentTabButton.topAnchor.constraint(equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 10),
-                openInCurrentTabButton.leadingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.leadingAnchor, constant: 12),
-                openInCurrentTabButton.trailingAnchor.constraint(lessThanOrEqualTo: closeButton.leadingAnchor, constant: -8),
-                openInCurrentTabButton.heightAnchor.constraint(equalToConstant: 44),
-                closeButton.topAnchor.constraint(equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 10),
-                closeButton.trailingAnchor.constraint(equalTo: container.safeAreaLayoutGuide.trailingAnchor, constant: -12),
-                closeButton.widthAnchor.constraint(equalToConstant: 44),
-                closeButton.heightAnchor.constraint(equalToConstant: 44)
-            ])
-            parentWebView.addSubview(container)
-            traceMedia(in: parentWebView, stage: "covered_parent")
-            traceMedia(in: popupWebView, stage: "popup")
-            return popupWebView
-        }
-
-        @objc private func openEmbeddedPopupInCurrentTab(_ sender: UIButton) {
-            guard let container = sender.superview,
-                  let popupWebView = container.subviews.compactMap({ $0 as? WKWebView }).first,
-                  let url = popupWebView.url else {
-                return
-            }
-            removeEmbeddedPopup(container)
-            viewModel.loadURL(url)
-        }
-
-        @objc private func closeEmbeddedPopup(_ sender: UIButton) {
-            if let container = sender.superview { removeEmbeddedPopup(container) }
-        }
-
-        private func removeEmbeddedPopup(_ container: UIView) {
-            BrowserStartupTrace.mark("embedded_popup_close")
-            cancelDomainConfirmation()
-            for popup in container.subviews.compactMap({ $0 as? WKWebView }) {
-                popup.stopLoading()
-                popup.navigationDelegate = nil
-                popupDomainDelegates.removeValue(forKey: ObjectIdentifier(popup))
-            }
-            container.removeFromSuperview()
-        }
-
-        func dismissEmbeddedPopups(in webView: WKWebView) {
-            webView.subviews
-                .filter { $0.tag == EmbeddedBrowserPopupTag.container }
-                .forEach { removeEmbeddedPopup($0) }
+            let model = WebViewModel()
+            model.setDesktopModeEnabled(viewModel.isDesktopModeEnabled)
+            model.isScriptOpenedWindow = true
+            // The WebKit-supplied configuration retains the opener/process/data
+            // store. Give each tab its own bridges; sharing the parent's content
+            // controller would detach its handlers when either tab remounts.
+            configuration.userContentController = WKUserContentController()
+            let window = AccessibleWebView(frame: parentWebView.bounds, configuration: configuration)
+            // Attach before publishing the URL so this does not replay the
+            // original navigation as a GET or lose a POST/streamed request body.
+            model.webView = window
+            model.currentURL = request.url
+            let representation = WebViewRepresentable(viewModel: model)
+            let coordinator = representation.makeCoordinator()
+            coordinator.navigationOriginURL = parentWebView.url
+            coordinator.userInitiatedNavigationChain = userInitiated
+            coordinator.admittedWindowNavigationURL = request.url
+            representation.installRuntimeIfNeeded(on: window, coordinator: coordinator)
+            representation.configureWebView(window, coordinator: coordinator)
+            NotificationCenter.default.post(name: .openInNewTab, object: viewModel,
+                userInfo: ["url": request.url ?? URL(string: "about:blank")!, "windowModel": model])
+            return window
         }
 
         func webViewDidClose(_ webView: WKWebView) {
-            guard webView !== viewModel.webView else { return }
-            if let container = webView.superview { removeEmbeddedPopup(container) }
+            guard webView === viewModel.webView, viewModel.isScriptOpenedWindow else { return }
+            NotificationCenter.default.post(name: .closeScriptOpenedTab, object: viewModel)
         }
 
         // MARK: WKUIDelegate — device permissions

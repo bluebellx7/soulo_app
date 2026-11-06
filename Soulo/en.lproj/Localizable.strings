@@ -996,3 +996,10 @@
 "extension_limit_commands" = "Keyboard shortcuts are unavailable on iOS.";
 "extension_limit_notifications" = "Notifications can be shown, but click and close events are unavailable.";
 "extension_limit_offscreen" = "Offscreen support is limited to audio playback.";
+
+"review_support_message" = "Thanks for supporting Soulo. Your reviews help us keep improving.";
+"review_open_app_store" = "Review on the App Store";
+
+"quick_actions_explanation" = "Touch and hold the Soulo icon on your Home Screen to use the shortcuts configured here.";
+
+"ad_block_scope_hint" = "Filters web ads, promotional overlays and unsolicited pop-ups. If a site stops working, you can turn off filtering for that site.";

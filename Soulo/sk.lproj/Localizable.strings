@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Klávesové skratky rozšírení nie sú v iOS dostupné.";
 "extension_limit_notifications" = "Upozornenia možno zobraziť, ale udalosti kliknutia a zatvorenia nie sú podporované.";
 "extension_limit_offscreen" = "Dokumenty mimo obrazovky podporujú iba prehrávanie zvuku.";
+
+"review_support_message" = "Ďakujeme za podporu Soulo. Vaše recenzie nám pomáhajú neustále sa zlepšovať.";
+"review_open_app_store" = "Hodnotiť v App Store";
+
+"quick_actions_explanation" = "Podržaním ikony Soulo na ploche použijete skratky nastavené tu.";
+
+"ad_block_scope_hint" = "Filtruje webové reklamy, propagačné prekrytia a nevyžiadané vyskakovacie okná. Ak web prestane fungovať, môžete filtrovanie vypnúť iba preň.";

@@ -301,6 +301,64 @@ final class TabManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testLibrarySelectionsPreserveOccupiedTabsAndPublishEveryRequest() throws {
+        UserDefaults.standard.set(true, forKey: "is_incognito")
+        let manager = TabManager()
+        let original = try XCTUnwrap(manager.activeTab)
+        let originalURL = URL(string: "https://example.com/original")!
+        original.webViewModel.loadURL(originalURL)
+        let search = SearchViewModel()
+        let savedURL = "https://example.com/saved"
+        var requests: [UUID] = []
+        for expectedCount in 2...3 {
+            XCTAssertTrue(search.openLibrarySelection(savedURL, tabManager: manager))
+            requests.append(try XCTUnwrap(search.externalSearchRequestID))
+            XCTAssertEqual(manager.tabCount, expectedCount)
+            XCTAssertEqual(search.externalSearchRequestID, search.searchID)
+            XCTAssertNotEqual(manager.activeTab?.id, original.id)
+            XCTAssertEqual(manager.activeTab?.keyword, savedURL)
+            XCTAssertEqual(original.webViewModel.currentURL, originalURL)
+        }
+        XCTAssertNotEqual(requests[0], requests[1], "Reopening the same record must still load its new tab")
+        XCTAssertNotEqual(manager.tabs[1].id, manager.tabs[2].id)
+    }
+
+    @MainActor
+    func testLibraryKeywordReusesAnExplicitBlankTabWithoutReplacingOtherPages() throws {
+        UserDefaults.standard.set(true, forKey: "is_incognito")
+        let manager = TabManager()
+        let originalURL = URL(string: "https://example.com/original")!
+        manager.activeWebViewModel?.loadURL(originalURL)
+        let blank = manager.createTab()
+        let search = SearchViewModel()
+        XCTAssertTrue(search.openLibrarySelection("saved search", tabManager: manager))
+        XCTAssertEqual(manager.tabCount, 2)
+        XCTAssertEqual(manager.activeTab?.id, blank.id)
+        XCTAssertEqual(search.currentKeyword, "saved search")
+        XCTAssertEqual(search.externalSearchRequestID, search.searchID)
+        XCTAssertEqual(manager.tabs[0].webViewModel.currentURL, originalURL)
+    }
+
+    @MainActor
+    func testEmptyLibrarySelectionLeavesTheActivePageAndRequestUnchanged() throws {
+        UserDefaults.standard.set(true, forKey: "is_incognito")
+        let manager = TabManager()
+        let originalURL = URL(string: "https://example.com/original")!
+        manager.activeWebViewModel?.loadURL(originalURL)
+        let search = SearchViewModel()
+        search.searchText = "unfinished input"
+        let searchID = search.searchID
+        let tabID = manager.activeTab?.id
+        XCTAssertFalse(search.openLibrarySelection(" \n\t ", tabManager: manager))
+        XCTAssertEqual(manager.tabCount, 1)
+        XCTAssertEqual(manager.activeTab?.id, tabID)
+        XCTAssertEqual(manager.activeWebViewModel?.currentURL, originalURL)
+        XCTAssertEqual(search.searchText, "unfinished input")
+        XCTAssertEqual(search.searchID, searchID)
+        XCTAssertNil(search.externalSearchRequestID)
+    }
+
+    @MainActor
     func testHomeSearchCreatesNewTabBeyondFormerLimitAndReusesBlankTab() throws {
         UserDefaults.standard.set(true, forKey: "is_incognito")
         let manager = TabManager()

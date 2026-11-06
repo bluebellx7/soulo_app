@@ -1,5 +1,6 @@
 import XCTest
 import AVFoundation
+import AVKit
 import SwiftUI
 import WebKit
 import UniformTypeIdentifiers
@@ -43,6 +44,9 @@ final class IncrementalFeatureTests: XCTestCase {
         try await wait { first.screen?.view.window === window }
         let controller = try XCTUnwrap(first.screen)
         XCTAssertTrue(root.view.window === window, "The destination decoder must be able to mount before the old player closes")
+        first.setLandscape(true)
+        try await wait { scene.interfaceOrientation.isLandscape }
+        XCTAssertEqual(controller.supportedInterfaceOrientations, .landscape)
         first.beginHandoff(owner: firstOwner)
         first.release(owner: firstOwner)
         XCTAssertTrue(root.presentedViewController === controller, "Retiring the old adapter must not dismiss the shared window")
@@ -51,11 +55,171 @@ final class IncrementalFeatureTests: XCTestCase {
             onClose: { closed.append("new") }))
         XCTAssertTrue(next === first)
         XCTAssertTrue(next.screen === controller)
+        XCTAssertEqual(controller.supportedInterfaceOrientations, .landscape, "A decoder change must keep the selected fullscreen direction")
         first.release(owner: firstOwner)
         XCTAssertTrue(root.presentedViewController === controller)
+        next.setLandscape(false)
+        try await wait { scene.interfaceOrientation == .portrait }
+        XCTAssertTrue(root.presentedViewController === controller, "Changing direction must not exit fullscreen")
+        XCTAssertEqual(controller.supportedInterfaceOrientations, .portrait)
         next.dismiss(owner: nextOwner)
         try await wait { root.presentedViewController == nil }
+        await VideoOrientation.waitForRestoration(in: scene)
         XCTAssertEqual(closed, ["new"], "Only the active playback mode owns the close callback")
+    }
+
+    @MainActor func testForegroundRestoresLandscapeWithoutDeviceRotationAndRespectsManualPortrait() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, original = scene.interfaceOrientation
+        let window = UIWindow(windowScene: scene), root = OrientationTestController()
+        window.rootViewController = root; window.makeKeyAndVisible()
+        let rotation = WebVideoFullscreenOrientation(deviceOrientation: { .portrait })
+        let fullscreen = OrientationTestController()
+        fullscreen.modalPresentationStyle = .fullScreen
+        defer {
+            rotation.end(); root.dismiss(animated: false)
+            window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
+            VideoOrientation.request(VideoOrientation.mask(for: original), in: scene) { _ in }
+        }
+        rotation.prepare(token: "foreground-qa", scene: scene, prefersLandscape: true)
+        root.present(fullscreen, animated: false)
+        rotation.begin(token: "foreground-qa") { XCTFail($0.localizedDescription) }
+        try await wait { scene.interfaceOrientation.isLandscape }
+
+        // Model UIKit restoring portrait while the physical phone stays upright.
+        // No UIDevice orientation notification is generated on return.
+        VideoOrientation.request(.portrait, in: scene) { XCTFail($0.localizedDescription) }
+        try await wait { scene.interfaceOrientation == .portrait }
+        NotificationCenter.default.post(name: UIScene.didActivateNotification, object: scene)
+        try await wait { scene.interfaceOrientation.isLandscape }
+
+        rotation.setFullscreenOrientation(false, in: scene, sourceView: nil) { XCTFail($0.localizedDescription) }
+        try await wait { scene.interfaceOrientation == .portrait }
+        NotificationCenter.default.post(name: UIScene.didActivateNotification, object: scene)
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertEqual(scene.interfaceOrientation, .portrait, "Returning must retain an explicit portrait selection")
+        rotation.end(); fullscreen.dismiss(animated: false)
+        await VideoOrientation.waitForRestoration(in: scene)
+        let restored = scene.interfaceOrientation
+        NotificationCenter.default.post(name: UIScene.didActivateNotification, object: scene)
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertEqual(scene.interfaceOrientation, restored, "After exit, foreground events must not rotate the page")
+    }
+
+    @MainActor func testBackgroundPausesNativeVideoAndRetainsPositionUntilManualResume() async throws {
+        let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let session = MediaSession.shared, oldRate = session.rate
+        session.stop(); session.setBackgrounded(false); session.setRate(1)
+        defer { session.setBackgrounded(false); session.stop(); session.setRate(oldRate) }
+        session.open(url: video, persistPosition: false)
+        try await wait { session.hasVideo && session.player.currentTime().seconds > 0.2 }
+        session.setBackgrounded(true)
+        XCTAssertFalse(session.isPlaybackRequested)
+        XCTAssertEqual(session.player.rate, 0)
+        session.play()
+        XCTAssertEqual(session.player.rate, 0, "A delayed play callback must not restart video in the background")
+        let paused = session.player.currentTime().seconds
+        try await Task.sleep(for: .milliseconds(450))
+        XCTAssertEqual(session.player.currentTime().seconds, paused, accuracy: 0.1)
+        session.setBackgrounded(false)
+        session.handleInterruption(began: false, shouldResume: true)
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(session.player.rate, 0, "Foreground and a late interruption-end event must not restart video")
+        session.play()
+        try await wait { session.player.currentTime().seconds > paused + 0.2 }
+    }
+
+    @MainActor func testNativeVideoBecomingReadyInBackgroundDoesNotAutoplay() async throws {
+        let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let session = MediaSession.shared
+        session.stop(); session.setBackgrounded(true)
+        defer { session.setBackgrounded(false); session.stop() }
+        session.open(url: video, persistPosition: false)
+        try await wait { session.hasVideo && session.player.currentItem?.status == .readyToPlay }
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertFalse(session.isPlaybackRequested)
+        XCTAssertEqual(session.player.rate, 0)
+        session.setBackgrounded(false)
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(session.player.rate, 0)
+    }
+
+    @MainActor func testBackgroundPausesSouloVideoBeforeMountAndDuringPlayback() async throws {
+        let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let session = MediaSession.shared, oldRate = session.rate
+        session.stop(); session.setBackgrounded(false); session.setRate(1)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene), root = UIViewController()
+        window.rootViewController = root; window.makeKeyAndVisible()
+        let playback = MatroskaPlayback()
+        defer {
+            session.setBackgrounded(false); session.stop(); session.setRate(oldRate)
+            window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
+        }
+        playback.open(video)
+        session.setBackgrounded(true)
+        playback.attach(root.view)
+        try await Task.sleep(for: .milliseconds(350))
+        XCTAssertFalse(playback.isPlaybackRequested)
+        XCTAssertFalse(playback.player?.isPlaying ?? true, "A late video surface must not restart the paused decoder")
+        session.setBackgrounded(false)
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertFalse(playback.isPlaybackRequested)
+        playback.play()
+        try await wait { playback.elapsed > 0.2 && playback.playing }
+        session.setBackgrounded(true)
+        XCTAssertFalse(playback.isPlaybackRequested)
+        XCTAssertFalse(session.playing)
+        playback.play()
+        XCTAssertFalse(playback.isPlaybackRequested)
+        let paused = playback.elapsed
+        try await Task.sleep(for: .milliseconds(600))
+        XCTAssertEqual(playback.elapsed, paused, accuracy: 0.3)
+    }
+
+    @MainActor func testLocalAudioContinuesInBackgroundInBothPlayerModes() async throws {
+        let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let audio = FileManager.default.temporaryDirectory.appendingPathComponent("background-audio-\(UUID()).m4a")
+        let export = try XCTUnwrap(AVAssetExportSession(asset: AVURLAsset(url: video), presetName: AVAssetExportPresetAppleM4A))
+        try await export.export(to: audio, as: .m4a)
+        let session = MediaSession.shared, oldRate = session.rate
+        session.stop(); session.setBackgrounded(false); session.setRate(1)
+        defer {
+            session.setBackgrounded(false); session.stop(); session.setRate(oldRate)
+            try? FileManager.default.removeItem(at: audio)
+        }
+        for soulo in [false, true] {
+            session.setBackgrounded(false); session.stop()
+            if soulo { MatroskaPlayback().open(audio) } else { session.open(url: audio, persistPosition: false) }
+            try await wait { session.elapsed > 0.1 && session.playing && !session.hasVideo }
+            session.setBackgrounded(true)
+            let start = session.elapsed
+            try await wait { session.elapsed > start + 0.3 }
+            XCTAssertTrue(session.isPlaybackRequested, "Background music must continue in both decoder modes")
+            XCTAssertTrue(session.playing)
+        }
+    }
+
+    @MainActor func testExplicitPictureInPictureContinuesUntilStoppedInBackground() async throws {
+        try XCTSkipUnless(AVPictureInPictureController.isPictureInPictureSupported(), "System PiP is unavailable on this test device; real PiP requires a supported device")
+        let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let session = MediaSession.shared, oldRate = session.rate
+        session.stop(); session.setBackgrounded(false); session.setRate(1)
+        defer { session.setBackgrounded(false); session.stop(); session.setRate(oldRate) }
+        session.open(url: video, persistPosition: false)
+        try await wait { session.hasVideo && session.player.currentTime().seconds > 0.2 }
+        let layer = AVPlayerLayer(player: session.player)
+        let controller = try XCTUnwrap(AVPictureInPictureController(playerLayer: layer))
+        let pip = session.pictureInPicture
+        pip.pictureInPictureControllerWillStartPictureInPicture(controller)
+        session.setBackgrounded(true)
+        XCTAssertTrue(session.isPlaybackRequested, "PiP startup must not be interrupted by backgrounding")
+        pip.pictureInPictureControllerDidStartPictureInPicture(controller)
+        let start = session.player.currentTime().seconds
+        try await wait { session.player.currentTime().seconds > start + 0.2 }
+        pip.pictureInPictureControllerDidStopPictureInPicture(controller)
+        XCTAssertFalse(session.isPlaybackRequested)
+        XCTAssertEqual(session.player.rate, 0, "Closing PiP in the background must not leave video audio playing")
     }
 
     @MainActor func testTimelineResumesProgressAfterCancelledScrubbing() async throws {
@@ -325,7 +489,9 @@ final class IncrementalFeatureTests: XCTestCase {
 
     @MainActor func testVideoBoostInterruptionAndCapture() async throws {
         let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
-        let session = MediaSession.shared
+        // Keep the native rate/interruption unit independent of the app's
+        // floating-player surface and the preceding shared decoder sessions.
+        let session = MediaSession()
         let oldRate = session.rate, savedHold = UserDefaults.standard.object(forKey: VideoPlaybackPreferences.holdSpeedKey)
         UserDefaults.standard.removeObject(forKey: VideoPlaybackPreferences.holdSpeedKey)
         defer {
@@ -358,6 +524,7 @@ final class IncrementalFeatureTests: XCTestCase {
         session.endTemporaryRate()
         XCTAssertEqual(session.player.rate, 0.75)
         session.setRate(1.5)
+        XCTAssertEqual(session.player.rate, 1.5)
         session.beginTemporaryRate()
         // UIKit also observes this system notification and requires delivery
         // on the main thread, just as during an actual app interruption.

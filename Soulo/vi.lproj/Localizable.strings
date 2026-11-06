@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Phím tắt của tiện ích không khả dụng trên iOS.";
 "extension_limit_notifications" = "Có thể hiển thị thông báo, nhưng không hỗ trợ sự kiện nhấp và đóng.";
 "extension_limit_offscreen" = "Tài liệu ngoài màn hình chỉ hỗ trợ phát âm thanh.";
+
+"review_support_message" = "Cảm ơn bạn đã ủng hộ Soulo. Các đánh giá của bạn giúp chúng tôi tiếp tục cải thiện.";
+"review_open_app_store" = "Viết đánh giá trên App Store";
+
+"quick_actions_explanation" = "Chạm và giữ biểu tượng Soulo trên Màn hình chính để dùng các phím tắt được thiết lập tại đây.";
+
+"ad_block_scope_hint" = "Lọc quảng cáo web, lớp phủ quảng bá và cửa sổ bật lên ngoài ý muốn. Nếu trang web không hoạt động, bạn có thể tắt lọc riêng cho trang đó.";

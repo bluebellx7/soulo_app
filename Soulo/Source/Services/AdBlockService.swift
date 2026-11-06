@@ -513,6 +513,15 @@ struct AdBlockService {
         return filter
     }
 
+    private static let contentBlockerRootPatterns = [
+        #"(?i)^\s*(html|body|main|article)\b"#,
+        #"(?i)^\s*#(app|root|__next|__nuxt|main|content|page|container)\b"#,
+        #"(?i)^\s*\[role=['"]?main['"]?\]"#
+    ].map { try! NSRegularExpression(pattern: $0) }
+    private static let dynamicAdSelectorPattern = try! NSRegularExpression(
+        pattern: "popup|overlay|modal|interstitial|float|sticky", options: .caseInsensitive
+    )
+
     static func sanitizedContentBlockerSelector(_ value: String) -> String? {
         let selector = value.trimmingCharacters(in: .whitespacesAndNewlines)
         let lowercased = selector.lowercased()
@@ -534,12 +543,8 @@ struct AdBlockService {
             return nil
         }
 
-        let rootPatterns = [
-            #"(?i)^\s*(html|body|main|article)\b"#,
-            #"(?i)^\s*#(app|root|__next|__nuxt|main|content|page|container)\b"#,
-            #"(?i)^\s*\[role=['"]?main['"]?\]"#
-        ]
-        guard !rootPatterns.contains(where: { selector.range(of: $0, options: .regularExpression) != nil }) else {
+        let range = NSRange(selector.startIndex..., in: selector)
+        guard !contentBlockerRootPatterns.contains(where: { $0.firstMatch(in: selector, range: range) != nil }) else {
             return nil
         }
         return selector
@@ -595,7 +600,7 @@ struct AdBlockService {
             .appendingPathComponent("AdBlock/merged-rules.json")
         let attributes = archive.flatMap { try? $0.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]) }
         let fields = [
-            "startup-cache-v10", startupBuildIdentity, String(nativeCosmeticFiltering),
+            "startup-cache-v11", startupBuildIdentity, String(nativeCosmeticFiltering),
             normalizedAllowlist(allowlistedHosts).joined(separator: ","),
             cosmetic.map(String.init) ?? "native", AdBlockSubscriptionService.rulesSignature(),
             BuiltInAdRuleStore.signature(),
@@ -619,15 +624,17 @@ struct AdBlockService {
                 || (!rule.ifDomains.isEmpty && !rule.unlessDomains.isEmpty)
                 || rule.ifDomains.contains { !$0.hasPrefix("*") }
                 || rule.unlessDomains.contains { !$0.hasPrefix("*") }
-                || rule.selector.range(of: "popup|overlay|modal|interstitial|float|sticky", options: [.caseInsensitive, .regularExpression]) != nil
+                || dynamicAdSelectorPattern.firstMatch(in: rule.selector,
+                    range: NSRange(rule.selector.startIndex..., in: rule.selector)) != nil
         }
     }
 
     static func adHidingScript(cosmetic: Bool = true, allowlistedHosts: [String] = [], nativeCosmeticFiltering: Bool = false) -> String {
         let persistentKey = startupCacheKey(allowlistedHosts: allowlistedHosts, cosmetic: cosmetic, nativeCosmeticFiltering: nativeCosmeticFiltering)
+        let cacheSlot: AdBlockStartupCache.Slot = nativeCosmeticFiltering ? .nativeCosmeticScript : .cosmeticScript
         if let persistentKey {
             if let cached = hidingScriptCache.object(forKey: persistentKey as NSString) { return cached as String }
-            if let cached = AdBlockStartupCache.shared.read(String.self, slot: .cosmeticScript, key: persistentKey) {
+            if let cached = AdBlockStartupCache.shared.read(String.self, slot: cacheSlot, key: persistentKey) {
                 hidingScriptCache.setObject(cached as NSString, forKey: persistentKey as NSString)
                 BrowserStartupTrace.mark("ad_script_disk_hit")
                 return cached
@@ -640,12 +647,14 @@ struct AdBlockService {
         let subscriptionRules = cachedRules.cosmeticRules.isEmpty
             ? cachedRules.cosmeticSelectors.map { AdBlockCosmeticRule(selector: $0) }
             : cachedRules.cosmeticRules
+        BrowserStartupTrace.mark("ad_script_rules_ready")
         let cosmeticRules = javaScriptCosmeticRules(
             subscriptionRules + builtInRules.filter { $0.kind == .cosmetic }.map(\.cosmeticRule),
             exceptions: cachedRules.cosmeticExceptions,
             hasGenericExceptions: cachedRules.networkRules.contains { $0.exceptionScope == "generichide" },
             nativeFiltering: nativeCosmeticFiltering
         )
+        BrowserStartupTrace.mark("ad_script_selection_ready")
         // Compact triples avoid repeating field names for tens of thousands of
         // subscription entries. JSON.parse also avoids compiling a huge nested
         // JavaScript object literal before the document can render.
@@ -654,6 +663,7 @@ struct AdBlockService {
         }
         let subscriptionCosmeticRulesJSON = (try? JSONSerialization.data(withJSONObject: cosmeticPayload))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
+        BrowserStartupTrace.mark("ad_script_payload_ready")
         let literalEncoder = JSONEncoder()
         literalEncoder.outputFormatting = .withoutEscapingSlashes
         let subscriptionCosmeticRulesLiteral = (try? literalEncoder.encode(subscriptionCosmeticRulesJSON))
@@ -990,8 +1000,15 @@ struct AdBlockService {
                 maskMosaics(window.__souloTiledBanners.all());
             }
             document.addEventListener('soulo-ad-picker-started', refreshMosaics);
+            function scheduleAdCleanup() {
+                clearTimeout(window.__souloAdBlockTimer);
+                window.__souloAdBlockTimer = setTimeout(function() {
+                    if (typeof window.__souloAdBlockRemoveAds === 'function') window.__souloAdBlockRemoveAds();
+                }, 100);
+            }
             document.addEventListener('load', function(event) {
                 if (event.target instanceof Element && event.target.matches('link[rel=stylesheet]')) refreshMosaics();
+                else if (event.target instanceof HTMLImageElement) scheduleAdCleanup();
             }, true);
 
             function removeAds() {
@@ -1057,12 +1074,7 @@ struct AdBlockService {
                         // Mutation callbacks run before paint. Mask new tiles
                         // immediately; ordinary cosmetic work stays debounced.
                         refreshMosaics();
-                        clearTimeout(window.__souloAdBlockTimer);
-                        window.__souloAdBlockTimer = setTimeout(function() {
-                            if (typeof window.__souloAdBlockRemoveAds === 'function') {
-                                window.__souloAdBlockRemoveAds();
-                            }
-                        }, 100);
+                        scheduleAdCleanup();
                     }
                 });
                 window.__souloAdBlockObserver.observe(document, { childList: true, subtree: true });
@@ -1074,7 +1086,7 @@ struct AdBlockService {
         """
         if let persistentKey, persistentKey == startupCacheKey(allowlistedHosts: allowlistedHosts, cosmetic: cosmetic, nativeCosmeticFiltering: nativeCosmeticFiltering) {
             hidingScriptCache.setObject(script as NSString, forKey: persistentKey as NSString)
-            AdBlockStartupCache.shared.write(script, slot: .cosmeticScript, key: persistentKey)
+            AdBlockStartupCache.shared.write(script, slot: cacheSlot, key: persistentKey)
         }
         return script
     }

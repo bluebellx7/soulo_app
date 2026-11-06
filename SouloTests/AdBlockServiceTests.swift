@@ -235,6 +235,22 @@ final class AdBlockServiceTests: XCTestCase {
             hasGenericExceptions: true, nativeFiltering: true).contains(plain))
     }
 
+    func testSelectorFilteringPreservesProtectedRootsUnicodeAndDynamicOverlays() {
+        let protected = ["html .ad", "BODY.ad", "main > .ad", "article.ad", "#ROOT .ad",
+                         "#__next .ad", "#content-ad", "[role='main'] .ad", "[ROLE=MAIN] .ad"]
+        for selector in protected {
+            XCTAssertNil(AdBlockService.sanitizedContentBlockerSelector(selector), selector)
+        }
+        let safe = [".advert", "div.ad", "htmlish.ad", "mainly.ad", "#rooted .ad", ".广告", "[title='广告']"]
+        for selector in safe {
+            XCTAssertEqual(AdBlockService.sanitizedContentBlockerSelector(selector), selector)
+        }
+        let dynamic = [".广告-🎬-MoDaL", ".popup-ad", ".OVERLAY-ad", ".sticky-ad"]
+        let rules = (safe + protected + dynamic).map { AdBlockCosmeticRule(selector: $0) }
+        XCTAssertEqual(AdBlockService.javaScriptCosmeticRules(rules, exceptions: [],
+            hasGenericExceptions: false, nativeFiltering: true).map(\.selector), protected + dynamic)
+    }
+
     func testNativeCosmeticFilteringReducesLargeSubscriptionPayload() throws {
         let rules = ParsedAdBlockRules(networkURLFilters: [], cosmeticSelectors: [],
             cosmeticRules: (0..<10_000).map { AdBlockCosmeticRule(selector: ".qa-ad-\($0)") })

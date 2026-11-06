@@ -61,9 +61,9 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
             XCTAssertTrue(panel.waitForNonExistence(timeout: 5), app.debugDescription)
         }
         tap(app.buttons["browser.tabs"])
-        let newTab = app.buttons["tabs.tab_new_tab"]
-        XCTAssertTrue(newTab.waitForExistence(timeout: 5), app.debugDescription)
-        tap(newTab)
+        let done = app.buttons["tabs.done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5), app.debugDescription)
+        tap(done)
         XCTAssertTrue(app.buttons["browser.tabs"].waitForExistence(timeout: 5))
     }
 
@@ -177,11 +177,17 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
 
     private func checkInitialLoading(appearance: String) throws {
         app.terminate()
-        app.launchArguments += ["-wallpaper_source", "bing", "-appearance", appearance]
+        // A restored document deliberately retains its existing content.
+        // Use a fresh private tab to exercise the first-document loader.
+        app.launchArguments += ["-wallpaper_source", "bing", "-appearance", appearance, "-is_incognito", "YES"]
         app.launch()
+        app.open(URL(string: "soulo://")!)
+        XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 5))
         let initialLoading = app.descendants(matching: .any).matching(identifier: "browser.initial-loading").firstMatch
         let navigationPreview = app.descendants(matching: .any).matching(identifier: "browser.navigation-preview").firstMatch
-        try open("blocked")
+        // Hold the response itself: a committed document can paint its dark
+        // background before its blocking script finishes, ending the loader.
+        try open("never-commits")
         XCTAssertTrue(initialLoading.waitForExistence(timeout: 20), app.debugDescription)
         let first = XCTAttachment(screenshot: app.screenshot())
         first.name = "first-load-\(appearance)-canvas"; first.lifetime = .keepAlways; add(first)

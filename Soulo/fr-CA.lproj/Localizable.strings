@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Les raccourcis clavier des extensions ne sont pas disponibles sur iOS.";
 "extension_limit_notifications" = "Les notifications peuvent être affichées, mais les événements de clic et de fermeture ne sont pas pris en charge.";
 "extension_limit_offscreen" = "Les documents hors écran prennent uniquement en charge la lecture audio.";
+
+"review_support_message" = "Merci de soutenir Soulo. Vos avis nous aident à continuer de nous améliorer.";
+"review_open_app_store" = "Noter sur l’App Store";
+
+"quick_actions_explanation" = "Touchez longuement l’icône Soulo sur l’écran d’accueil pour utiliser les raccourcis configurés ici.";
+
+"ad_block_scope_hint" = "Filtre les publicités Web, les encarts promotionnels et les fenêtres indésirables. Si un site ne fonctionne plus, vous pouvez désactiver le filtrage pour ce site uniquement.";

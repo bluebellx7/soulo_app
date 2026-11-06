@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Sneltoetsen voor extensies zijn niet beschikbaar op iOS.";
 "extension_limit_notifications" = "Meldingen kunnen worden weergegeven, maar klik- en sluitgebeurtenissen worden niet ondersteund.";
 "extension_limit_offscreen" = "Offscreen-documenten ondersteunen alleen het afspelen van audio.";
+
+"review_support_message" = "Bedankt voor je steun aan Soulo. Je recensies helpen ons steeds beter te worden.";
+"review_open_app_store" = "Beoordeel in de App Store";
+
+"quick_actions_explanation" = "Houd het Soulo-symbool op je beginscherm ingedrukt om de hier ingestelde snelkoppelingen te gebruiken.";
+
+"ad_block_scope_hint" = "Filtert webadvertenties, promotielagen en ongewenste pop-ups. Als een website niet werkt, kun je de filtering alleen voor die site uitschakelen.";

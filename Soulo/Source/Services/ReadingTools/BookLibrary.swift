@@ -94,7 +94,16 @@ struct LibraryBook: Codable, Identifiable, Hashable {
             books[index].hasCover = true; try save()
         } catch { /* A missing thumbnail must never block the reader. */ }
     }
-    func remove(_ id: String) { books.removeAll { $0.id == id }; try? save() }
+    func remove(_ id: String) {
+        let covers = books.filter { $0.id == id }.map(\.coverURL)
+        books.removeAll { $0.id == id }
+        // Only discard the derived cover after the updated index is persisted.
+        do { try save() } catch { return }
+        for cover in covers where cover.deletingLastPathComponent().standardizedFileURL
+            == Self.coverDirectory.standardizedFileURL {
+            try? FileManager.default.removeItem(at: cover)
+        }
+    }
     func updateFileReference(bookIDs: Set<String>, to url: URL) throws {
         guard !bookIDs.isEmpty else { return }
         guard url.standardizedFileURL.path.hasPrefix(Self.directory.standardizedFileURL.path + "/") else {

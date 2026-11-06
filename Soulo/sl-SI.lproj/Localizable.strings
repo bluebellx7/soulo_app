@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Bližnjice na tipkovnici za razširitve v sistemu iOS niso na voljo.";
 "extension_limit_notifications" = "Obvestila je mogoče prikazati, dogodki klika in zapiranja pa niso podprti.";
 "extension_limit_offscreen" = "Dokumenti zunaj zaslona podpirajo samo predvajanje zvoka.";
+
+"review_support_message" = "Hvala, ker podpirate Soulo. Vaše ocene nam pomagajo pri nadaljnjih izboljšavah.";
+"review_open_app_store" = "Oceni v App Store";
+
+"quick_actions_explanation" = "Pridržite ikono Soulo na začetnem zaslonu, da uporabite tukaj nastavljene bližnjice.";
+
+"ad_block_scope_hint" = "Filtrira spletne oglase, promocijske prekrivne elemente in neželena pojavna okna. Če stran ne deluje, lahko filtriranje izklopite samo zanjo.";

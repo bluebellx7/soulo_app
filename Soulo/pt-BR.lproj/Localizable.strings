@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Os atalhos de teclado de extensões não estão disponíveis no iOS.";
 "extension_limit_notifications" = "As notificações podem ser exibidas, mas os eventos de clique e fechamento não são compatíveis.";
 "extension_limit_offscreen" = "Documentos fora da tela só oferecem suporte à reprodução de áudio.";
+
+"review_support_message" = "Obrigado por apoiar o Soulo. Suas avaliações nos ajudam a melhorar cada vez mais.";
+"review_open_app_store" = "Avaliar na App Store";
+
+"quick_actions_explanation" = "Toque e segure o ícone do Soulo na Tela de Início para usar os atalhos configurados aqui.";
+
+"ad_block_scope_hint" = "Filtra anúncios da web, sobreposições promocionais e pop-ups indesejados. Se um site parar de funcionar, você pode desativar o filtro apenas para ele.";

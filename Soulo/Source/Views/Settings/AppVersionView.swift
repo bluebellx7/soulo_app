@@ -2,27 +2,17 @@ import SwiftUI
 
 struct AppVersionView: View {
     let version: String
-    @Environment(\.colorScheme) private var colorScheme
     private let iconColor = Color(uiColor: .secondaryLabel)
     var body: some View {
         List {
             Section {
                 VStack(spacing: 8) {
-                    Image("SouloLogo")
-                        .resizable().scaledToFit()
-                        .frame(width: 96, height: 96)
-                        .contrast(colorScheme == .light ? 1.3 : 1)
-                        .brightness(colorScheme == .light ? -0.035 : 0)
-                        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                                .stroke(Color.primary.opacity(0.10), lineWidth: 0.5)
-                        }
-                        .accessibilityLabel("Soulo Logo")
-                        .accessibilityIdentifier("version.logo")
+                    ToolIllustration(scene: .about, height: 180)
                     Text("Soulo").font(.title2.bold())
                     Text(version).font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
                 }.frame(maxWidth: .infinity).padding(.vertical, 20)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
             }
             Section {
                 NavigationLink {
@@ -51,6 +41,48 @@ struct AppVersionView: View {
             }.tint(.primary)
         }
         .navigationTitle(LanguageManager.shared.localizedString("settings_version"))
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// A settings destination the user opens deliberately. The App Store owns
+/// rating entry; this page never selects stars or presents a system prompt.
+struct AppReviewSupportView: View {
+    private let reviewURL = URL(string: "https://apps.apple.com/app/id6761165330?action=write-review")!
+
+    var body: some View {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 24) {
+                    ToolIllustration(scene: .review, height: 200)
+                    VStack(spacing: 12) {
+                        Text("Soulo").font(.title2.bold())
+                        Text(LanguageManager.shared.localizedString("review_support_message"))
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Link(destination: reviewURL) {
+                        Label(LanguageManager.shared.localizedString("review_open_app_store"), systemImage: "arrow.up.right")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity, minHeight: 50)
+                            .foregroundStyle(.white)
+                            .background(Color.themePrimary, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(LanguageManager.shared.localizedString("review_open_app_store"))
+                    .accessibilityIdentifier("review.write")
+                    .padding(.top, 4)
+                }
+                .frame(maxWidth: 340)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: max(0, geometry.size.height - 48))
+                .padding(24)
+            }
+        }
+        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
+        .navigationTitle(LanguageManager.shared.localizedString("settings_rate"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }

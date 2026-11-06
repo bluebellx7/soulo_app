@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Scurtăturile de tastatură ale extensiilor nu sunt disponibile pe iOS.";
 "extension_limit_notifications" = "Notificările pot fi afișate, dar evenimentele de clic și închidere nu sunt acceptate.";
 "extension_limit_offscreen" = "Documentele în afara ecranului acceptă doar redarea audio.";
+
+"review_support_message" = "Îți mulțumim că susții Soulo. Recenziile tale ne ajută să îmbunătățim aplicația.";
+"review_open_app_store" = "Recenzie în App Store";
+
+"quick_actions_explanation" = "Țineți apăsată pictograma Soulo pe ecranul principal pentru a folosi scurtăturile configurate aici.";
+
+"ad_block_scope_hint" = "Filtrează reclamele web, suprapunerile promoționale și ferestrele pop-up nedorite. Dacă un site nu mai funcționează, puteți dezactiva filtrarea doar pentru el.";

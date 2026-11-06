@@ -22,6 +22,10 @@ enum BrowserAdNavigationPolicy {
         if hasRecentGesture && sourceIsMainFrame {
             if gestureIsLink && (navigationType == .linkActivated || (!isNewWindow && navigationType == .other)) { return false }
             if gestureIsForm && (navigationType == .formSubmitted || navigationType == .formResubmitted) { return false }
+            // A trusted action on a real control may compute its URL in script.
+            // Requiring an href or a same-host destination silently breaks
+            // framework buttons, entry screens and cross-site navigation.
+            if gestureIsControl && navigationType == .other { return false }
         }
         if url.absoluteString == "about:blank" && hasRecentGesture && gestureIsControl { return false }
         let authentication = url.scheme?.lowercased() != "about"

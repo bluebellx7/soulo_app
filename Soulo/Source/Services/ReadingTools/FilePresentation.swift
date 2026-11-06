@@ -3,7 +3,9 @@ import ImageIO
 import UniformTypeIdentifiers
 
 struct FilePresentation: Sendable, Hashable {
-    enum Kind: String, Sendable { case folder, image, video, audio, pdf, book, archive, text, other }
+    enum Kind: String, Sendable {
+        case folder, image, video, audio, pdf, book, archive, text, document, spreadsheet, presentation, code, font, other
+    }
     static let textExtensions: Set<String> = ["txt", "md", "markdown", "log", "csv", "tsv", "json", "yaml", "yml", "xml", "html", "htm", "css", "js", "jsx", "ts", "tsx", "swift", "py", "java", "c", "h", "cpp", "hpp", "cs", "go", "rs", "sh", "sql", "ini", "cfg", "conf", "toml", "srt", "vtt", "ass", "lrc", "tex", "rst"]
     let kind: Kind
     let fileExtension: String
@@ -18,6 +20,11 @@ struct FilePresentation: Sendable, Hashable {
         case .book: "book.closed"
         case .archive: "doc.zipper"
         case .text: "doc.text"
+        case .document: "doc.richtext"
+        case .spreadsheet: "tablecells"
+        case .presentation: "rectangle.on.rectangle"
+        case .code: "chevron.left.forwardslash.chevron.right"
+        case .font: "textformat"
         case .other: "doc"
         }
     }
@@ -55,9 +62,17 @@ struct FilePresentation: Sendable, Hashable {
         let kind: Kind
         if ext == "pdf" { kind = .pdf }
         else if ["epub", "mobi", "azw", "azw3", "azw4", "prc", "pdb"].contains(ext) { kind = .book }
-        else if ["zip", "rar", "7z"].contains(ext) { kind = .archive }
-        else if type?.conforms(to: .audio) == true { kind = .audio }
-        else if ext == "mkv" || type?.conforms(to: .movie) == true { kind = .video }
+        else if ["zip", "rar", "7z", "tar", "gz", "gzip", "bz2", "xz", "tgz", "tbz", "tbz2", "zst", "lz4", "lzh", "cab", "iso", "dmg"].contains(ext) { kind = .archive }
+        else if ["doc", "docx", "odt", "pages", "rtf", "rtfd"].contains(ext) { kind = .document }
+        else if ["xls", "xlsx", "xlsm", "ods", "numbers", "csv", "tsv"].contains(ext) { kind = .spreadsheet }
+        else if ["ppt", "pptx", "pps", "ppsx", "odp", "key"].contains(ext) { kind = .presentation }
+        else if ["ttf", "otf", "ttc", "woff", "woff2"].contains(ext) || type?.conforms(to: .font) == true { kind = .font }
+        else if ["flac", "opus", "ogg", "oga", "ape", "wv", "mka", "ac3", "dts", "amr", "dsf", "dff"].contains(ext)
+                    || type?.conforms(to: .audio) == true { kind = .audio }
+        else if ["mkv", "webm", "flv", "f4v", "avi", "wmv", "rm", "rmvb", "asf", "m2ts", "mts", "vob", "ogv"].contains(ext)
+                    || type?.conforms(to: .movie) == true { kind = .video }
+        else if type?.conforms(to: .image) == true { kind = .image }
+        else if type?.conforms(to: .sourceCode) == true { kind = .code }
         else if Self.textExtensions.contains(ext) || type?.conforms(to: .text) == true { kind = .text }
         else { kind = .other }
         return FilePresentation(kind: kind, fileExtension: ext, size: Int64(values?.fileSize ?? 0))

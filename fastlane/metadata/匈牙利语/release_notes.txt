@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Új alapértelmezett lejátszó a helyi és BT-videókhoz: epizódválasztás, 0,5–4× sebesség és rendszerlejátszó a kompatibilis formátumokhoz.
-• Automatikusan eltűnő teljes képernyős vezérlők, átmeneti 2× sebesség nyomva tartással; bal oldalt fényerő, jobb oldalt hangerő állítható csúsztatással.
-• Javítottuk egyes HEVC/MKV-videók kép nélküli hangját és a lejátszás közben is látható betöltésjelzőket.
-• Jobb kompatibilitás az előugró ablakok és a reklámszűrés között, a téves blokkolások és a videón maradó fedőrétegek elkerülésére.
-• Javítottuk a csúsztatásos törlés és a lapváltás ütközését, a mappák igazítását és a legutóbbi keresések magasságváltozását hosszú érintéskor.
+• Javítottuk azt a hibát, amely miatt egy könyvjelző vagy előzményelem megnyitása felülírhatott egy meglévő lapot.
+• Javult az indítás, az oldalak betöltése és a kezdőképernyő kezelése.
+• Javult a teljes képernyős vezérlés, az elforgatás és a lejátszás állapota alkalmazásváltáskor.
+• Javult a bezárt lapok visszaállítása, a fájlok előnézete és a felület részletei.

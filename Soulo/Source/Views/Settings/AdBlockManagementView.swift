@@ -24,12 +24,16 @@ struct AdBlockManagementView: View {
 
     var body: some View {
         List {
-            Section(ToolText.text("ad_filter_settings")) {
+            Section {
                 Toggle(isOn: $adBlockEnabled) {
                     Label(LanguageManager.shared.localizedString("ad_block"), systemImage: "shield.checkered")
                 }
                 .tint(.green)
                 .accessibilityIdentifier("adBlock.enabled")
+            } header: {
+                Text(ToolText.text("ad_filter_settings"))
+            } footer: {
+                Text(LanguageManager.shared.localizedString("ad_block_scope_hint"))
             }
 
             Section {

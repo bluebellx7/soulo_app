@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Tastaturkurzbefehle für Erweiterungen sind unter iOS nicht verfügbar.";
 "extension_limit_notifications" = "Benachrichtigungen können angezeigt werden; Klick- und Schließereignisse werden nicht unterstützt.";
 "extension_limit_offscreen" = "Offscreen-Dokumente unterstützen nur die Audiowiedergabe.";
+
+"review_support_message" = "Danke, dass du Soulo unterstützt. Deine Bewertungen helfen uns, immer besser zu werden.";
+"review_open_app_store" = "Im App Store bewerten";
+
+"quick_actions_explanation" = "Halte das Soulo-Symbol auf dem Home-Bildschirm gedrückt, um die hier eingerichteten Kurzbefehle zu nutzen.";
+
+"ad_block_scope_hint" = "Filtert Webwerbung, Werbeeinblendungen und unerwünschte Pop-ups. Falls eine Website nicht funktioniert, kannst du die Filterung nur für diese Website ausschalten.";

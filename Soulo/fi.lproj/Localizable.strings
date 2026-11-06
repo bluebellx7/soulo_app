@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Laajennusten pikanäppäimet eivät ole käytettävissä iOS:ssä.";
 "extension_limit_notifications" = "Ilmoituksia voidaan näyttää, mutta napsautus- ja sulkemistapahtumia ei tueta.";
 "extension_limit_offscreen" = "Näytön ulkopuoliset dokumentit tukevat vain äänen toistoa.";
+
+"review_support_message" = "Kiitos, että tuet Souloa. Arvostelusi auttavat meitä kehittämään sovellusta.";
+"review_open_app_store" = "Arvioi App Storessa";
+
+"quick_actions_explanation" = "Käytä tässä määritettyjä pikatoimintoja pitämällä aloitusnäytön Soulo-kuvaketta painettuna.";
+
+"ad_block_scope_hint" = "Suodattaa verkkomainoksia, mainospeitteitä ja ei-toivottuja ponnahdusikkunoita. Jos sivusto ei toimi, voit poistaa suodatuksen käytöstä vain siinä.";

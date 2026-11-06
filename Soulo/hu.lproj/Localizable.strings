@@ -907,3 +907,10 @@
 "extension_limit_commands" = "A bővítmények billentyűparancsai nem érhetők el iOS-en.";
 "extension_limit_notifications" = "Az értesítések megjeleníthetők, de a kattintási és bezárási események nem támogatottak.";
 "extension_limit_offscreen" = "A képernyőn kívüli dokumentumok csak hanglejátszást támogatnak.";
+
+"review_support_message" = "Köszönjük, hogy támogatod a Soulót. Értékeléseid segítenek a folyamatos fejlődésben.";
+"review_open_app_store" = "Értékelés az App Store-ban";
+
+"quick_actions_explanation" = "Az itt beállított gyorsműveletekhez tartsa nyomva a Soulo ikonját a főképernyőn.";
+
+"ad_block_scope_hint" = "Szűri a webes hirdetéseket, promóciós fedvényeket és kéretlen felugró ablakokat. Ha egy webhely nem működik, csak azon a webhelyen is kikapcsolhatja a szűrést.";

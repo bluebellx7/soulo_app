@@ -116,6 +116,7 @@ final class MediaSession: ObservableObject {
     func ownsPreparation(_ token: UUID) -> Bool { preparation == token }
     private var lastSavedSecond = -1
     private var wantsPlayback = false
+    private var isInBackground = UIApplication.shared.applicationState == .background
     var isPlaybackRequested: Bool { soulo?.isPlaybackRequested ?? wantsPlayback }
     private var persistsPosition = true
     private weak var sourceWebView: WKWebView?
@@ -173,8 +174,11 @@ final class MediaSession: ObservableObject {
         NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification).receive(on: DispatchQueue.main).sink { [weak self] _ in
             self?.endTemporaryRate()
         }.store(in: &observations)
+        NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification).receive(on: DispatchQueue.main).sink { [weak self] _ in
+            self?.setBackgrounded(true)
+        }.store(in: &observations)
         NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification).receive(on: DispatchQueue.main).sink { [weak self] _ in
-            self?.updateScreenAwake()
+            self?.setBackgrounded(false)
         }.store(in: &observations)
         installRemoteControls()
     }
@@ -261,6 +265,7 @@ final class MediaSession: ObservableObject {
                 if width > 0, height > 0 {
                     self.videoIsLandscape = Self.prefersLandscape(width: width, height: height)
                     self.hasVideo = true
+                    self.pauseVideoIfBackgrounded()
                     self.updateScreenAwake()
                 }
             }
@@ -273,6 +278,7 @@ final class MediaSession: ObservableObject {
                     width: item.presentationSize.width, height: item.presentationSize.height
                 )
                 self.hasVideo = true
+                self.pauseVideoIfBackgrounded()
                 self.updateScreenAwake()
             }
         }
@@ -287,6 +293,7 @@ final class MediaSession: ObservableObject {
                     let saved = startAt ?? (self.persistsPosition ? UserDefaults.standard.double(forKey: Self.positionKey(url)) : 0)
                     if saved > 0, item.duration.seconds.isFinite, saved < item.duration.seconds - 2 { self.seek(saved) }
                     if self.rate > 2 && !item.canPlayFastForward { self.rate = 2 }
+                    self.pauseVideoIfBackgrounded()
                     if self.wantsPlayback && self.interruptedGeneration == nil { self.play() }
                 }
             }
@@ -297,6 +304,8 @@ final class MediaSession: ObservableObject {
         if let soulo { soulo.play(); return }
         guard player.currentItem != nil else { return }
         wantsPlayback = true
+        pauseVideoIfBackgrounded()
+        guard wantsPlayback else { return }
         interruptedGeneration = nil
         do {
             // Playback supports AirPlay implicitly. Explicit .allowAirPlay is
@@ -316,6 +325,19 @@ final class MediaSession: ObservableObject {
         wantsPlayback = false; interruptedGeneration = nil
         endTemporaryRate(); player.pause(); savePosition(); updateNowPlaying()
         updateScreenAwake()
+    }
+    func setBackgrounded(_ backgrounded: Bool) {
+        isInBackground = backgrounded
+        if backgrounded { pauseVideoIfBackgrounded() } else { updateScreenAwake() }
+    }
+    /// Background audio and an explicitly opened PiP/AirPlay session continue.
+    /// A normal video pause also clears playback intent so delayed readiness,
+    /// seek completion or an interruption cannot restart it offscreen.
+    func pauseVideoIfBackgrounded() {
+        guard isInBackground, hasVideo, isPlaybackRequested,
+              !pictureInPicture.keepsPlaybackInBackground,
+              !player.isExternalPlaybackActive else { return }
+        pause()
     }
     func handleInterruption(began: Bool, shouldResume: Bool) {
         if let soulo { soulo.handleInterruption(began: began, shouldResume: shouldResume); return }
@@ -554,6 +576,7 @@ final class MediaSession: ObservableObject {
         wantsPlayback = playback.isPlaybackRequested
         error = playback.error
         updateNowPlaying()
+        pauseVideoIfBackgrounded()
     }
     func releaseSoulo(_ playback: MatroskaPlayback) {
         guard soulo === playback else { return }

@@ -32,7 +32,7 @@ class SpeechRecognitionService: ObservableObject {
     private var recordingSessionID: UUID?
     private var hasInputTap = false
     private let authorize: (@escaping (SFSpeechRecognizerAuthorizationStatus) -> Void) -> Void
-    private let audioEngine = AVAudioEngine()
+    private lazy var audioEngine = AVAudioEngine()
 
     /// Domain vocabulary that boosts recognition accuracy (platform names, recent searches).
     var contextualStrings: [String] = []

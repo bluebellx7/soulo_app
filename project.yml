@@ -193,7 +193,7 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: Soulo/SouloBrowser.entitlements
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.2.8"
+        MARKETING_VERSION: "1.2.10"
         CURRENT_PROJECT_VERSION: 51
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
@@ -276,7 +276,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: SouloWidget/SouloWidget.entitlements
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.2.8"
+        MARKETING_VERSION: "1.2.10"
         CURRENT_PROJECT_VERSION: 51
         GENERATE_INFOPLIST_FILE: "YES"
         INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
@@ -316,7 +316,7 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: SouloShareExtension/SouloShareExtension.entitlements
         DEVELOPMENT_TEAM: 7S2LBJA9VA
-        MARKETING_VERSION: "1.2.8"
+        MARKETING_VERSION: "1.2.10"
         CURRENT_PROJECT_VERSION: 51
         SWIFT_OBJC_BRIDGING_HEADER: SouloShareExtension/ShareExtension-Bridging-Header.h
         SKIP_INSTALL: "YES"

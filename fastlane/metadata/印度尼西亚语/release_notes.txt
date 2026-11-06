@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Pemutar default baru untuk video lokal dan BT dengan pilihan episode, kecepatan 0,5–4×, serta pemutar sistem untuk format yang kompatibel.
-• Kontrol layar penuh tersembunyi otomatis. Tahan untuk 2× sementara; geser sisi kiri untuk kecerahan dan kanan untuk volume.
-• Memperbaiki video HEVC/MKV tertentu yang hanya bersuara tanpa gambar dan indikator memuat yang terus muncul saat diputar.
-• Meningkatkan kompatibilitas pop-up dan filter iklan agar jendela tidak salah diblokir dan lapisan sisa tidak menghalangi video.
-• Memperbaiki konflik geser untuk menghapus dan berpindah tab, meratakan folder di kedua tampilan, serta menjaga tinggi pencarian terbaru saat ditekan lama.
+• Memperbaiki masalah saat membuka bookmark atau entri riwayat yang terkadang menggantikan tab yang sudah ada.
+• Meningkatkan proses mulai, pemuatan halaman, dan interaksi layar utama.
+• Menyempurnakan kontrol layar penuh, rotasi, dan status pemutaran saat berganti aplikasi.
+• Memperbaiki pemulihan tab tertutup, pratinjau berkas, dan detail antarmuka.

@@ -56,7 +56,7 @@ struct ClipboardPromptView: View {
                         .background(Color(uiColor: .label).opacity(colorScheme == .dark ? 0.9 : 0.82), in: Capsule())
                         .opacity(searchVM.isReadingClipboard ? 0.5 : 1)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(HomePressButtonStyle())
                 .disabled(searchVM.isReadingClipboard)
 
                 // Dismiss
@@ -69,7 +69,7 @@ struct ClipboardPromptView: View {
                         .frame(width: 36, height: 36)
                         .background(Color(uiColor: .tertiarySystemFill), in: Circle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(HomePressButtonStyle())
                 .accessibilityLabel(languageManager.localizedString("cancel"))
             }
             .padding(14)

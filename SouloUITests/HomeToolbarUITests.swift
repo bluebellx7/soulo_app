@@ -2,6 +2,137 @@ import XCTest
 
 @MainActor
 final class HomeToolbarUITests: XCTestCase {
+    func testHomeTitleRecentSearchAndBookmarkKeepTapAndLongPressActions() async throws {
+        continueAfterFailure = false
+        let title = "Home press \(UUID().uuidString.prefix(6))"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/press": Data("<title>\(title)</title><h1>\(title)</h1>".utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let url = root.appendingPathComponent("press")
+        let query = "Press recent \(UUID().uuidString.prefix(6))"
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-home_title", "Soulo", "-is_incognito", "NO",
+            "-wallpaper_source", "gradient", "-icloud_sync_enabled", "NO", "-privacy_https_upgrade_enabled", "NO",
+            "-show_bookmarks_on_home", "YES", "-show_group_picker_on_home", "YES", "-show_recent_searches_on_home", "YES",
+            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO",
+            "-browser_toolbar_actions", "(home,bookmark,tabs,more)"]
+        app.launch(); defer { app.terminate() }
+        var route = URLComponents(); route.scheme = "soulo"; route.host = "open"
+        route.queryItems = [URLQueryItem(name: "url", value: url.absoluteString)]
+        app.open(try XCTUnwrap(route.url))
+        XCTAssertTrue(app.webViews.staticTexts[title].waitForExistence(timeout: 15))
+        app.buttons["Bookmarks"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["bookmark.fill"].waitForExistence(timeout: 5))
+        app.buttons["Home Screen"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 5))
+        app.buttons["Home title, Soulo"].tap()
+        XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 3))
+        app.alerts.buttons["Cancel"].tap()
+
+        let field = app.textFields["search.query"].firstMatch
+        field.tap(); field.typeText(query + "\n")
+        XCTAssertTrue(app.buttons["Edit Address or Search"].firstMatch.waitForExistence(timeout: 10))
+        app.open(URL(string: "soulo://")!)
+        XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 5))
+        let recent = app.buttons["Recent search, \(query)"]
+        XCTAssertTrue(recent.waitForExistence(timeout: 5))
+        recent.tap()
+        XCTAssertTrue(app.buttons["Edit Address or Search"].firstMatch.waitForExistence(timeout: 10), "A short tap must still search")
+        app.open(URL(string: "soulo://")!)
+        XCTAssertTrue(recent.waitForExistence(timeout: 5))
+        recent.press(forDuration: 1)
+        XCTAssertTrue(app.buttons["home.menu"].isHittable, "Long press must reveal deletion without starting a search")
+        recent.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 0.5))
+            .withOffset(CGVector(dx: -22, dy: 0)).tap()
+        XCTAssertTrue(recent.waitForNonExistence(timeout: 5), "The inline delete control must remain tappable")
+
+        let bookmark = app.buttons[title]
+        XCTAssertTrue(bookmark.waitForExistence(timeout: 5))
+        bookmark.press(forDuration: 1)
+        let remove = app.buttons["Delete"].firstMatch
+        XCTAssertTrue(remove.waitForExistence(timeout: 3), "Bookmark context menus must still open")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.18)).tap()
+        XCTAssertTrue(remove.waitForNonExistence(timeout: 3))
+        bookmark.tap()
+        XCTAssertTrue(app.webViews.staticTexts[title].waitForExistence(timeout: 15), "A regular bookmark tap must still open the page")
+        app.buttons["Bookmarks"].firstMatch.tap()
+    }
+
+    func testIllustratedReviewPageReturnsToSettingsAndVersionInBothAppearances() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        defer { app.terminate() }
+        for (appearance, language, settings) in [("light", "zh-Hans", "设置"), ("dark", "en-US", "Settings")] {
+            app.launchArguments = ["-app_language", language, "-appearance", appearance,
+                "-wallpaper_source", "gradient", "-icloud_sync_enabled", "NO"]
+            app.launch(); app.open(URL(string: "soulo://")!)
+            XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 10))
+            app.buttons["home.menu"].tap()
+            app.buttons[settings].firstMatch.tap()
+            let rate = app.buttons["settings.rate"]
+            reveal(rate, in: app); rate.tap()
+            let store = app.descendants(matching: .any)["review.write"].firstMatch
+            XCTAssertTrue(store.waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertTrue(store.isHittable, "The explicit App Store link must be reachable")
+            XCTAssertEqual(store.label, language == "zh-Hans" ? "去 App Store 好评" : "Review on the App Store")
+            let review = XCTAttachment(screenshot: app.screenshot())
+            review.name = "illustrated-review-\(appearance)"; review.lifetime = .keepAlways; add(review)
+            app.navigationBars.buttons.firstMatch.tap()
+            XCTAssertTrue(app.buttons["settings.rate"].waitForExistence(timeout: 5), "Back must return to Settings")
+            let version = app.buttons["settings.version"]
+            reveal(version, in: app); version.tap()
+            XCTAssertTrue(app.descendants(matching: .any)["version.website"].firstMatch.waitForExistence(timeout: 5))
+            let about = XCTAttachment(screenshot: app.screenshot())
+            about.name = "illustrated-version-\(appearance)"; about.lifetime = .keepAlways; add(about)
+            app.terminate()
+        }
+    }
+
+    func testUndoIsFirstAndRestoresWithoutLeavingEitherOverviewLayout() async throws {
+        continueAfterFailure = false
+        let prefix = "Undo \(UUID().uuidString)"
+        let pages = ["grouped", "carousel"]
+        let server = try DownloadPlaybackHTTPFixture(files: Dictionary(uniqueKeysWithValues: pages.map { page in
+            ("/undo-\(page)", Data("<title>\(prefix) \(page)</title><h1>\(prefix) \(page)</h1>".utf8))
+        }))
+        let root = try await server.start(); defer { server.stop() }
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        defer { app.terminate() }
+        for grouped in [true, false] {
+            let page = grouped ? "grouped" : "carousel"
+            let title = "\(prefix) \(page)"
+            app.launchArguments = ["-app_language", "en-US", "-browser_toolbar_hidden", "NO",
+                "-keep_fullscreen_browsing", "NO", "-privacy_https_upgrade_enabled", "NO",
+                "-icloud_sync_enabled", "NO", "-wallpaper_source", "gradient",
+                "-tab_overview_grouped", grouped ? "YES" : "NO"]
+            app.open(root.appendingPathComponent("undo-\(page)"))
+            XCTAssertTrue(app.webViews.staticTexts[title].firstMatch.waitForExistence(timeout: 20), app.debugDescription)
+            app.buttons["browser.tabs"].tap()
+            XCTAssertTrue(app.buttons["tabs.done"].waitForExistence(timeout: 5))
+            let card = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label BEGINSWITH %@",
+                "tabs.card.", title)).firstMatch
+            XCTAssertTrue(card.waitForExistence(timeout: 5), app.debugDescription)
+            // The top tab strip and recent history also expose "Close Tab" /
+            // the page title. Tap the actual card's close control, in both layouts.
+            card.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 0))
+                .withOffset(CGVector(dx: -22, dy: 22)).tap()
+            XCTAssertTrue(card.waitForNonExistence(timeout: 5))
+            let undo = app.buttons["tabs.tab_restore_last"]
+            let mode = app.buttons["tabs.view-mode"]
+            XCTAssertTrue(undo.waitForExistence(timeout: 5))
+            XCTAssertLessThan(undo.frame.midX, mode.frame.midX)
+            XCTAssertEqual(undo.frame.midY, mode.frame.midY, accuracy: 1)
+            let shot = XCTAttachment(screenshot: app.screenshot())
+            shot.name = grouped ? "grouped-undo-first-orange" : "carousel-undo-first-orange"
+            shot.lifetime = .keepAlways; add(shot)
+            undo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            XCTAssertTrue(app.buttons["tabs.done"].isHittable, "Undo must leave tab management open")
+            XCTAssertTrue(card.waitForExistence(timeout: 5), "Restored tab must reappear in the overview")
+            app.buttons["tabs.done"].tap()
+            XCTAssertTrue(app.webViews.staticTexts[title].firstMatch.waitForExistence(timeout: 20))
+            app.terminate()
+        }
+    }
+
     func testHiddenToolbarLockOpensTheSharedSitePanel() async throws {
         continueAfterFailure = false
         let server = try DownloadPlaybackHTTPFixture(files: ["/page": Data("<meta name='viewport' content='width=device-width,initial-scale=1'><h1>Site panel fixture</h1>".utf8)])
@@ -101,6 +232,105 @@ final class HomeToolbarUITests: XCTestCase {
         XCTAssertTrue(app.buttons["home.menu"].isHittable, app.debugDescription)
         let homeTabs = app.descendants(matching: .any)["home.tabs"].firstMatch
         XCTAssertEqual(homeTabs.value as? String, countLabel.split(separator: " ").first.map(String.init), app.debugDescription)
+    }
+
+    func testBookmarkFromHomeOpensNewTabWithoutReplacingTheOriginalPage() async throws {
+        try await checkLibrarySelectionUsesSeparateTab(section: "bookmarks", returnHome: true)
+    }
+
+    func testHistoryFromBrowserOpensNewTabWithoutReplacingTheOriginalPage() async throws {
+        try await checkLibrarySelectionUsesSeparateTab(section: "history", returnHome: false)
+    }
+
+    func testBookmarkFromHomeReusesTheExplicitBlankTab() async throws {
+        try await checkLibrarySelectionUsesSeparateTab(section: "bookmarks", returnHome: true, createBlank: true)
+    }
+
+    private func checkLibrarySelectionUsesSeparateTab(section: String, returnHome: Bool, createBlank: Bool = false) async throws {
+        continueAfterFailure = false
+        let token = UUID().uuidString.prefix(8)
+        let savedTitle = "Saved \(token)"
+        let originalTitle = "Original \(token)"
+        let state = "Keep state \(token)"
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/saved.html": Data("<title>\(savedTitle)</title><h1>\(savedTitle)</h1>".utf8),
+            "/original.html": Data("""
+                <title>\(originalTitle)</title><h1>\(originalTitle)</h1>
+                <input aria-label="Original note" onkeydown="if(event.key==='Enter'){this.blur();return false}">
+                """.utf8)
+        ])
+        let root = try await server.start(); defer { server.stop() }
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-is_incognito", "NO",
+            "-soulo_primary_browser_window_id", UUID().uuidString,
+            "-wallpaper_source", "gradient", "-icloud_sync_enabled", "NO", "-privacy_https_upgrade_enabled", "NO",
+            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-show_top_tab_bar", "YES",
+            "-show_top_search_bar", "NO", "-browser_toolbar_actions", "(home,bookmark,library,tabs)"]
+        if createBlank { app.launchArguments += ["-home_toolbar_actions", "(newTab)"] }
+        app.launch(); defer { app.terminate() }
+        var route = URLComponents(); route.scheme = "soulo"; route.host = "open"
+        route.queryItems = [URLQueryItem(name: "url", value: root.appendingPathComponent("saved.html").absoluteString)]
+        app.open(try XCTUnwrap(route.url))
+        XCTAssertTrue(app.webViews.staticTexts[savedTitle].waitForExistence(timeout: 15), app.debugDescription)
+        let tabs = app.buttons["browser.tabs"]
+        if section == "bookmarks" {
+            app.buttons["Bookmarks"].firstMatch.tap()
+            XCTAssertTrue(app.buttons["bookmark.fill"].waitForExistence(timeout: 5))
+        }
+        app.buttons["Edit Address or Search"].firstMatch.tap()
+        let address = app.textFields["addressEditor.query"].firstMatch
+        XCTAssertTrue(address.waitForExistence(timeout: 5))
+        app.buttons["addressEditor.clearQuery"].tap()
+        address.tap(); address.typeText(root.appendingPathComponent("original.html").absoluteString + "\n")
+        let note = app.webViews.textFields["Original note"].firstMatch
+        XCTAssertTrue(note.waitForExistence(timeout: 15), app.debugDescription)
+        note.tap(); note.typeText(state + "\n")
+        // Restored simulator sessions can contain earlier tabs. Measure from the
+        // occupied original document rather than assuming a single-tab session.
+        let initialCount = try XCTUnwrap(Int(tabs.label.split(separator: " ").first.map(String.init) ?? ""))
+        let expectedCount = initialCount + 1
+        if createBlank {
+            app.buttons["Home Screen"].firstMatch.tap()
+            let newTab = app.buttons["home.toolbar.0"]
+            XCTAssertTrue(newTab.waitForExistence(timeout: 5), app.debugDescription)
+            newTab.tap()
+            XCTAssertTrue(tabs.waitForExistence(timeout: 5))
+            XCTAssertEqual(tabs.label, "\(expectedCount) Tabs")
+        }
+        if returnHome {
+            tabs.tap()
+            app.buttons["tabs.browser_home"].tap()
+            XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 5))
+            app.buttons["home.menu"].tap()
+            let favorites = app.buttons["My Favorites"].firstMatch
+            XCTAssertTrue(favorites.waitForExistence(timeout: 5), app.debugDescription)
+            favorites.tap()
+        } else {
+            app.buttons["Library"].firstMatch.tap()
+            let history = app.buttons["library.section.history"]
+            XCTAssertTrue(history.waitForExistence(timeout: 5))
+            history.tap()
+        }
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", savedTitle)).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10), app.debugDescription)
+        row.tap()
+        XCTAssertTrue(app.webViews.staticTexts[savedTitle].waitForExistence(timeout: 15), app.debugDescription)
+        // Clean only the bookmark created by this fixture, including on the pre-fix failure.
+        if section == "bookmarks", app.buttons["bookmark.fill"].exists { app.buttons["Bookmarks"].firstMatch.tap() }
+        XCTAssertEqual(tabs.label, "\(expectedCount) Tabs", "A library selection must preserve the occupied tab and reuse an explicit blank tab")
+        guard tabs.label == "\(expectedCount) Tabs" else { return }
+        let original = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", originalTitle + ", tab ")).firstMatch
+        XCTAssertTrue(original.waitForExistence(timeout: 5), app.debugDescription)
+        original.tap()
+        XCTAssertTrue(note.waitForExistence(timeout: 10))
+        XCTAssertEqual(note.value as? String, state, "The original document must retain its live form state")
+        app.buttons["Edit Address or Search"].firstMatch.tap()
+        let pageURL = app.textFields["addressEditor.pageURL"]
+        XCTAssertTrue(pageURL.waitForExistence(timeout: 5))
+        XCTAssertEqual(pageURL.value as? String, root.appendingPathComponent("original.html").absoluteString)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Library preserves original \(section) blank-\(createBlank)"
+        screenshot.lifetime = .keepAlways; add(screenshot)
     }
 
     private func openSettings(_ app: XCUIApplication) {

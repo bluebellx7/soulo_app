@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Novi zadani reproduktor lokalnih i BT videozapisa s odabirom epizoda, brzinom 0,5–4× i sistemskim reproduktorom za kompatibilne formate.
-• Kontrole cijelog zaslona automatski se skrivaju; držite za privremenih 2×, kliznite lijevo za svjetlinu ili desno za glasnoću.
-• Ispravljena reprodukcija samo zvuka nekih HEVC/MKV videozapisa i trajni prikaz učitavanja.
-• Poboljšana kompatibilnost skočnih prozora i filtriranja oglasa radi sprječavanja pogrešnih blokiranja i zaostalih slojeva preko videa.
-• Ispravljeni sukobi brisanja klizanjem i promjene kartice, poravnanje mapa u oba prikaza te promjena visine nedavnih pretraga pri držanju.
+• Ispravljen je problem zbog kojeg je otvaranje oznake ili stavke povijesti moglo zamijeniti postojeću karticu.
+• Poboljšani pokretanje, učitavanje stranica i interakcije na početnom zaslonu.
+• Poboljšane kontrole cijelog zaslona, rotacija i stanje reprodukcije pri promjeni aplikacija.
+• Poboljšani vraćanje zatvorenih kartica, pretpregledi datoteka i detalji sučelja.

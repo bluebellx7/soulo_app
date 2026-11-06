@@ -187,6 +187,21 @@ class SearchViewModel: ObservableObject {
         return true
     }
 
+    /// Saved entries start a separate browsing task, reusing only a genuinely
+    /// empty tab. Publish an explicit request so an already-mounted browser also
+    /// loads the selection when its keyword matches the previous search.
+    @discardableResult
+    func openLibrarySelection(_ value: String, tabManager: TabManager, context: ModelContext? = nil) -> Bool {
+        let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return false }
+        let group = PlatformDataStore.shared.customGroups.first { $0.id == selectedGroupID }
+        searchText = value
+        guard performHomeSearch(tabManager: tabManager, preferredRegion: selectedRegion,
+            customGroup: group, context: context) else { return false }
+        externalSearchRequestID = searchID
+        return true
+    }
+
     func performSearch(context: ModelContext? = nil) {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }

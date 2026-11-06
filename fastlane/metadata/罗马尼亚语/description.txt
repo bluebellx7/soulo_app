@@ -6,7 +6,7 @@ Filele și grupurile de site-uri folosite recent apar primele, iar lista se desc
 
 Descărcări BT: importă fișiere .torrent sau linkuri magnet, alege fișiere, pune pe pauză și reia. În iOS 26 pot continua în fundal când sistemul permite; versiunile anterioare salvează progresul și le pun pe pauză. Redă conținut BT compatibil în timpul descărcării și deschide fișiere MKV. Importă linkuri ed2k/thunder. Descărcările necesită surse disponibile; redarea depinde de codecuri.
 
-Videoclipuri locale și BT cu Soulo: episoade, viteză 0,5–4× și player de sistem pentru formate compatibile.
+Navigare mai fluentă, comenzi video îmbunătățite și previzualizări mai clare ale fișierelor.
 
 Alege cinci scurtături opționale pe ecranul principal pentru descărcări, fișiere, semne de carte, istoric, imagini de fundal și alte pagini. Bara de file a bibliotecii devine compactă la derulare.
 

@@ -85,8 +85,9 @@ extension EnvironmentValues {
         private var playerInsets = EdgeInsets()
         var closed: (() -> Void)?
         var openingOrientation: UIInterfaceOrientation = .portrait
+        var allowedOrientations: UIInterfaceOrientationMask = .allButUpsideDown
         override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation { openingOrientation }
-        override var supportedInterfaceOrientations: UIInterfaceOrientationMask { .allButUpsideDown }
+        override var supportedInterfaceOrientations: UIInterfaceOrientationMask { allowedOrientations }
         override var prefersStatusBarHidden: Bool { true }
         func setContent(_ content: AnyView, initialInsets: UIEdgeInsets? = nil) {
             playerContent = content
@@ -147,6 +148,9 @@ extension EnvironmentValues {
         screen.setContent(content, initialInsets: window.safeAreaInsets)
         screen.modalPresentationCapturesStatusBarAppearance = true
         screen.openingOrientation = landscape ? VideoOrientation.landscapePresentation(in: scene) : .portrait
+        // Keep an explicitly landscape player landscape while iOS rebuilds
+        // foreground geometry, even when the phone is held upright.
+        screen.allowedOrientations = landscape ? .landscape : .allButUpsideDown
         // Keep the source mounted so the destination decoder can start while
         // this same fullscreen controller remains visible during a handoff.
         screen.modalPresentationStyle = .overFullScreen; screen.view.backgroundColor = .black
@@ -166,6 +170,13 @@ extension EnvironmentValues {
         guard self.owner == owner else { return }
         handoffTask?.cancel(); handoffTask = nil; handingOff = false
         screen?.setContent(content)
+    }
+    func setLandscape(_ landscape: Bool) {
+        guard let screen, !screen.isBeingDismissed, let scene = screen.view.window?.windowScene else { return }
+        screen.openingOrientation = landscape ? VideoOrientation.landscapePresentation(in: scene) : .portrait
+        screen.allowedOrientations = landscape ? .landscape : .portrait
+        screen.setNeedsUpdateOfSupportedInterfaceOrientations()
+        orientation.setFullscreenOrientation(landscape, in: scene, sourceView: nil, onError: { _ in })
     }
     func beginHandoff(owner: UUID) {
         guard self.owner == owner else { return }
@@ -274,6 +285,9 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
                                 .frame(width: 44, height: 44).background(.black.opacity(0.45), in: Circle())
                             Text(title).font(.subheadline.weight(.medium)).lineLimit(1).truncationMode(.middle)
                             Spacer(minLength: 0)
+                            if geometry.size.width > geometry.size.height {
+                                VideoFullscreenClock()
+                            }
                             if let options { MediaPlayerMenu(options: options, playbackState: { (elapsed, playing) }, interactionChanged: visibility.interaction) }
                             Button { morePresented.toggle() } label: {
                                 Image(systemName: "ellipsis").font(.system(size: 18)).frame(width: 44, height: 44)
@@ -350,6 +364,15 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
                                     AirPlayRoutePicker(prioritizesVideoDevices: true, presentRequested: options?.airPlayPresentation)
                                         .frame(width: 44, height: 44)
                                 }
+                                let landscape = geometry.size.width > geometry.size.height
+                                VideoPlayerIconButton(symbol: landscape ? "iphone" : "iphone.landscape",
+                                    label: ToolText.text(landscape ? "media_portrait" : "media_landscape"),
+                                    identifier: "media.fullscreen.rotate") {
+                                        guard let window = playbackWindow.window else { return }
+                                        SharedVideoFullscreenHost.current(in: window)?.setLandscape(!landscape)
+                                        visibility.show()
+                                    }
+                                    .frame(width: 44, height: 44)
                             }
                             if let error { Text(error).font(.footnote).lineLimit(3) }
                         }
@@ -375,6 +398,17 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
             NavigationStack { VideoSettingsView().toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button(ToolText.text("done")) { settingsVisible = false } }
             } }
+        }
+    }
+}
+
+private struct VideoFullscreenClock: View {
+    var body: some View {
+        TimelineView(.everyMinute) { context in
+            Text(context.date, format: .dateTime.hour().minute())
+                .font(.subheadline.weight(.medium).monospacedDigit())
+                .fixedSize()
+                .accessibilityIdentifier("media.fullscreen.clock")
         }
     }
 }

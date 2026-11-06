@@ -86,7 +86,7 @@ struct SearchAutocompleteView: View {
                 .padding(.vertical, 11)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(HomePressButtonStyle(scale: 0.98, enabled: darkVariant))
             .accessibilityLabel(suggestion)
             .accessibilityHint(
                 LanguageManager.shared.localizedString("accessibility_search_suggestion_hint")
@@ -102,7 +102,7 @@ struct SearchAutocompleteView: View {
                     .frame(width: 36, height: 42)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(HomePressButtonStyle(enabled: darkVariant))
             .accessibilityLabel(
                 AppAccessibility.formatted("accessibility_fill_search", suggestion)
             )

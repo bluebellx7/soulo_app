@@ -231,6 +231,44 @@ final class DownloadPlaybackUITests: XCTestCase {
             XCTAssertTrue(closeButton(soulo).waitForExistence(timeout: 12), app.debugDescription)
             XCTAssertGreaterThan(app.frame.width, app.frame.height)
         }
+        func checkRotationAndForeground(_ soulo: Bool) async {
+            reveal(soulo)
+            let play = app.buttons[soulo ? "media.mkv.play" : "media.native.play"]
+            if play.label == "Pause" { play.tap() }
+            let rotate = app.buttons["media.fullscreen.rotate"]
+            XCTAssertTrue(rotate.waitForExistence(timeout: 3))
+            let clock = app.staticTexts["media.fullscreen.clock"]
+            XCTAssertTrue(clock.waitForExistence(timeout: 3))
+            XCTAssertFalse(clock.label.isEmpty)
+            XCTAssertEqual(clock.frame.midY, closeButton(soulo).frame.midY, accuracy: 2)
+            XCTAssertLessThanOrEqual(clock.frame.maxX, app.buttons["media.file.player"].firstMatch.frame.minX)
+            rotate.tap()
+            await fulfillment(of: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                app.frame.height > app.frame.width
+            }, object: nil)], timeout: 4)
+            XCTAssertTrue(closeButton(soulo).isHittable, "Portrait must remain in the same fullscreen session")
+            XCTAssertTrue(rotate.isHittable, "Fullscreen must offer rotation in portrait too")
+            rotate.tap()
+            await fulfillment(of: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                app.frame.width > app.frame.height
+            }, object: nil)], timeout: 4)
+            // Leave while actually playing, rather than masking a missing
+            // background pause by pausing the fixture before switching apps.
+            if play.label == "Play" { play.tap() }
+            await fulfillment(of: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                play.label == "Pause"
+            }, object: nil)], timeout: 4)
+            XCUIDevice.shared.press(.home)
+            let settings = XCUIApplication(bundleIdentifier: "com.apple.Preferences")
+            settings.launch()
+            XCUIDevice.shared.orientation = .portrait
+            app.activate()
+            XCTAssertGreaterThan(app.frame.width, app.frame.height, "Returning from another app must retain landscape")
+            reveal(soulo)
+            XCTAssertEqual(play.label, "Play", "Ordinary video must pause in the background and stay paused on return")
+            XCTAssertTrue(rotate.isHittable)
+            XCTAssertTrue(clock.waitForExistence(timeout: 3))
+        }
         XCTAssertTrue(closeButton(preferSoulo).waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertGreaterThan(app.frame.width, app.frame.height)
         XCTAssertFalse(app.buttons["media.web.fullscreen.player"].exists, "Web fullscreen must use the shared component")
@@ -246,6 +284,7 @@ final class DownloadPlaybackUITests: XCTestCase {
         reveal(true)
         try choose(false)
         reveal(false)
+        await checkRotationAndForeground(false)
         XCTAssertEqual(picker.frame.midY, closeButton(false).frame.midY, accuracy: 2)
         let nativeShot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         nativeShot.name = "Shared fullscreen controls in system mode"; nativeShot.lifetime = .keepAlways; add(nativeShot)
@@ -255,12 +294,14 @@ final class DownloadPlaybackUITests: XCTestCase {
         }, object: nil)], timeout: 8)
         XCTAssertTrue(app.progressIndicators["media.mkv.buffering"].waitForNonExistence(timeout: 8))
         reveal(true)
+        await checkRotationAndForeground(true)
         // Pause so the three-second auto-hide cannot race the UI test's
         // separate accessibility snapshots while checking an explicit tap.
         let souloPlay = app.buttons["media.mkv.play"]
         if souloPlay.label == "Pause" { souloPlay.tap() }
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap()
         XCTAssertTrue(closeButton(true).waitForNonExistence(timeout: 2))
+        XCTAssertFalse(app.staticTexts["media.fullscreen.clock"].exists, "Time must hide with the controls")
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         XCTAssertTrue(closeButton(true).waitForExistence(timeout: 3), "A center tap must reveal the shared controls")
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())

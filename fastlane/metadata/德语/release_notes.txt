@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Neuer Standardplayer für lokale und BT-Videos mit Folgenwahl, 0,5–4× Tempo und Systemplayer für kompatible Formate.
-• Vollbildsteuerung mit automatischem Ausblenden, vorübergehend 2× per Gedrückthalten und Wischgesten für Helligkeit links sowie Lautstärke rechts.
-• Behoben: Ton ohne Bild bei einigen HEVC/MKV-Videos und dauerhaft eingeblendete Ladeanzeigen.
-• Verbesserte Kompatibilität von Pop-ups und Werbefiltern verhindert falsch blockierte Fenster und zurückbleibende Videoüberlagerungen.
-• Konflikte zwischen Wischlöschen und Tabwechsel behoben, Ordner in beiden Ansichten ausgerichtet und die Höhe letzter Suchen beim Gedrückthalten stabilisiert.
+• Ein Fehler wurde behoben, durch den Lesezeichen oder Verlaufseinträge beim Öffnen einen bestehenden Tab ersetzen konnten.
+• Start, Seitenladen und Bedienung der Startseite verbessert.
+• Vollbildsteuerung, Bildschirmdrehung und Wiedergabestatus beim App-Wechsel verbessert.
+• Wiederherstellen geschlossener Tabs, Dateivorschauen und Oberflächendetails verbessert.

@@ -198,6 +198,8 @@ final class CloudSyncService: NSObject, ObservableObject {
 
     func startIfEnabled() {
         guard isEnabled, !isStarted else { return }
+        BrowserStartupTrace.mark("cloud_sync_start")
+        defer { BrowserStartupTrace.mark("cloud_sync_end") }
         do {
             lastObserved = CloudSettingsSyncEngine.snapshot(defaults)
             try backups.save(lastObserved, initial: true, date: now())

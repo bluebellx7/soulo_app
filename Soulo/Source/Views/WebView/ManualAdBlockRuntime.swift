@@ -133,8 +133,124 @@ enum ManualAdBlockRuntime {
     })();
     (() => {
       if (window.__souloImageBanners) return;
+      // Some renderers decode images into data/blob URLs and randomize all CSS
+      // classes. Use explicit advertising telemetry in their component, never
+      // the image appearance alone. Read metadata only; do not invoke handlers.
+      const rendererCache = new WeakMap();
+      const ownValue = (value, key) => {
+        if (!value || (typeof value !== 'object' && typeof value !== 'function')) return undefined;
+        try { return Object.getOwnPropertyDescriptor(value, key)?.value; } catch (_) { return undefined; }
+      };
+      function isAdvertisingRenderer(fn) {
+        if (typeof fn !== 'function') return false;
+        if (rendererCache.has(fn)) return rendererCache.get(fn);
+        let matches = false;
+        try {
+          const source = Function.prototype.toString.call(fn);
+          if (source.length < 50000) {
+            const adMetric = /["'`](?:[^"'`\s]*\/)?(?:countads|adclick|adview|ad[_-](?:click|view)|track[_-]ad)["'`]/i.test(source);
+            const bannerMetric = /["'`](?:[^"'`\s]*\/)?countbanner["'`]/i.test(source);
+            const categories = Array.from(source.matchAll(/\bcategory\s*:\s*["'`]([a-z0-9_-]{1,64})["'`]/gi), m => m[1]);
+            matches = adMetric || (bannerMetric && categories.some(category =>
+              /(?:^|[_-])(?:ad|ads|advert|banner|sponsor|interstitial)(?:[_-]|$)/i.test(category)));
+          }
+        } catch (_) {}
+        rendererCache.set(fn, matches);
+        return matches;
+      }
+      function rendererRoots(fiber) {
+        const roots = [], pending = [ownValue(fiber, 'child')];
+        let visits = 0;
+        while (pending.length && visits++ < 128) {
+          const child = pending.pop();
+          if (!child) continue;
+          const sibling = ownValue(child, 'sibling');
+          if (sibling) pending.push(sibling);
+          const element = ownValue(child, 'stateNode');
+          if (element instanceof HTMLElement) roots.push(element);
+          else {
+            const nested = ownValue(child, 'child');
+            if (nested) pending.push(nested);
+          }
+        }
+        return pending.length ? [] : roots;
+      }
+      const protectedBannerContent = 'html,body,main,article,nav,header,footer,form,input,textarea,select,video,audio,iframe,[role="main"],[role="navigation"],[role="toolbar"],[contenteditable="true"]';
+      function safeRendererRoots(roots) {
+        if (!roots.length || roots.length > 12) return false;
+        let images = 0, text = 0;
+        for (const root of roots) {
+          if (!root.isConnected || root.matches(protectedBannerContent) || root.querySelector(protectedBannerContent)) return false;
+          images += Number(root instanceof HTMLImageElement) + root.querySelectorAll('img').length;
+          text += String(root.textContent || '').trim().length;
+        }
+        return images > 0 && images <= 80 && text < 160;
+      }
+      function rendererBanners() {
+        const groups = [], seen = new Set();
+        for (const image of Array.from(document.images).slice(0, 400)) {
+          let key;
+          try { key = Object.getOwnPropertyNames(image).find(k => k.startsWith('__reactFiber$')); } catch (_) { continue; }
+          let fiber = key ? ownValue(image, key) : null;
+          for (let depth = 0; fiber && depth < 24; depth++, fiber = ownValue(fiber, 'return')) {
+            const type = ownValue(fiber, 'type'), fn = typeof type === 'function' ? type : ownValue(type, 'render');
+            if (!isAdvertisingRenderer(fn)) continue;
+            if (seen.has(fiber)) break;
+            seen.add(fiber);
+            const roots = rendererRoots(fiber);
+            if (safeRendererRoots(roots)) groups.push({slot:'renderer', elements:roots,
+              bounds:roots[0].getBoundingClientRect(), renderer:true,
+              selector:'[data-soulo-image-banner="renderer"]'});
+            break;
+          }
+        }
+        return groups;
+      }
+      function isCloseImage(image) {
+        const labels = [image.getAttribute('aria-label'), image.alt, image.title];
+        if (labels.some(label => /^(?:close|dismiss|关闭|關閉|×|✕)$/i.test(String(label || '').trim()))) return true;
+        const sources = [image.getAttribute('src')];
+        let key;
+        try { key = Object.getOwnPropertyNames(image).find(k => k.startsWith('__reactFiber$')); } catch (_) {}
+        let fiber = key ? ownValue(image, key) : null;
+        // A decoded image may retain its original close-icon URL in the image
+        // component's props. Do not inspect arbitrary application state.
+        for (let depth = 0; fiber && depth < 4; depth++, fiber = ownValue(fiber, 'return')) {
+          sources.push(ownValue(ownValue(fiber, 'memoizedProps'), 'src'));
+        }
+        return sources.some(source => typeof source === 'string' && source.length < 2048
+          && /(?:^|[\/_-])(?:close|dismiss)(?:[_.-]|$)/i.test(source.split('?')[0]));
+      }
+      function dismissibleImageBanners() {
+        const groups = [], seen = new Set();
+        for (const image of Array.from(document.images).slice(0, 400)) {
+          const r = image.getBoundingClientRect();
+          if (r.width < innerWidth * .6 || r.height < 30 || r.height > Math.min(180, innerHeight * .22)
+            || r.width / r.height < 3) continue;
+          let root = image.parentElement;
+          for (let depth = 0; root && depth < 7; depth++, root = root.parentElement) {
+            if (getComputedStyle(root).position !== 'fixed') continue;
+            if (seen.has(root)) break;
+            seen.add(root);
+            if (root.matches(protectedBannerContent + ',[role="dialog"]') || root.querySelector(protectedBannerContent)
+              || String(root.textContent || '').trim().length > 40) break;
+            const bounds = root.getBoundingClientRect(), images = Array.from(root.querySelectorAll('img'));
+            if (images.length < 2 || images.length > 3 || bounds.height > 200
+              || bounds.width < innerWidth * .6 || Math.min(Math.abs(bounds.top), Math.abs(innerHeight - bounds.bottom)) > 24) break;
+            const close = images.find(candidate => {
+              const c = candidate.getBoundingClientRect();
+              return candidate !== image && c.width >= 12 && c.width <= 40 && c.height >= 12 && c.height <= 40
+                && c.left >= bounds.right - 56 && c.top <= bounds.top + 40 && isCloseImage(candidate);
+            });
+            if (close) groups.push({slot:'dismissible', elements:[root], bounds, renderer:true,
+              selector:'[data-soulo-image-banner="dismissible"]'});
+            break;
+          }
+        }
+        return groups;
+      }
       function all() {
-        const groups = [];
+        const groups = rendererBanners().concat(dismissibleImageBanners());
         for (const el of document.querySelectorAll('div[id^="_s_"]')) {
           // Confirm the renderer's slot/runtime ID, image and both handlers.
           // A fixed image or a similarly named ordinary element is insufficient.
@@ -157,10 +273,24 @@ enum ManualAdBlockRuntime {
             && Number(mask.style.zIndex) === Number(el.style.zIndex)-1) elements.push(mask);
           groups.push({slot:match[1], elements, bounds:el.getBoundingClientRect(), selector:'[data-soulo-image-banner="'+match[1]+'"]'});
         }
+        const rendererElements = new Set(groups.filter(group => group.slot === 'renderer').flatMap(group => group.elements));
+        document.querySelectorAll('[data-soulo-image-banner="renderer"]').forEach(element => {
+          if (!rendererElements.has(element)) element.removeAttribute('data-soulo-image-banner');
+        });
+        document.querySelectorAll('[data-soulo-image-banner="dismissible"]').forEach(element => {
+          const images = Array.from(element.querySelectorAll('img'));
+          if (getComputedStyle(element).position !== 'fixed' || element.matches(protectedBannerContent + ',[role="dialog"]')
+            || element.querySelector(protectedBannerContent) || String(element.textContent || '').trim().length > 40
+            || images.length < 2 || images.length > 3 || !images.some(isCloseImage)) {
+            element.removeAttribute('data-soulo-image-banner');
+          }
+        });
         return groups;
       }
       function mark(group) {
-        if (group.elements[0]?.style.position === 'fixed') window.__souloBannerInteractions.remember(group);
+        // A removed component has no delegated click layer. Do not suppress
+        // controls underneath the space it previously occupied.
+        if (!group.renderer && group.elements[0]?.style.position === 'fixed') window.__souloBannerInteractions.remember(group);
         group.elements.forEach(e => {
           if (e.getAttribute('data-soulo-image-banner') !== group.slot) e.setAttribute('data-soulo-image-banner', group.slot);
         });

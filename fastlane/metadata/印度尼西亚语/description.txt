@@ -6,7 +6,7 @@ Tab dan grup situs yang baru digunakan tampil lebih dulu, dan tampilan tab dibuk
 
 Unduhan BT: impor file .torrent atau tautan magnet, pilih file, jeda dan lanjutkan. Di iOS 26, unduhan dapat berlanjut di latar belakang jika sistem mengizinkan; versi sebelumnya menyimpan progres dan menjeda. Putar media BT yang didukung saat diunduh dan buka file MKV. Impor tautan ed2k/thunder. Unduhan memerlukan sumber yang tersedia; pemutaran bergantung pada codec.
 
-Video lokal dan BT memakai Soulo: pilihan episode, kecepatan 0,5–4×, dan pemutar sistem untuk format yang kompatibel.
+Penjelajahan lebih lancar, kontrol video yang lebih baik, dan pratinjau berkas yang lebih jelas.
 
 Pilih lima pintasan opsional di beranda untuk unduhan, file, penanda, riwayat, wallpaper, dan halaman lainnya. Bilah tab pustaka menjadi ringkas saat digulir.
 

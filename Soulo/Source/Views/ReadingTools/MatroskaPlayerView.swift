@@ -131,10 +131,10 @@ import UniformTypeIdentifiers
             try requestContext?.apply(to: media)
             player.media = media
             player.rate = rate
+            waitingForSurface = true
             MediaSession.shared.adoptSoulo(self, url: originalURL ?? url, title: title,
                 source: (resourceLease as? SouloMediaPlaybackSource)?.native,
                 pageURL: requestContext?.referrer, systemAvailable: systemAvailable)
-            waitingForSurface = true
             startWhenVisible()
             updates = Task { [weak self] in
                 var stoppedSince: ContinuousClock.Instant?
@@ -218,6 +218,8 @@ import UniformTypeIdentifiers
     }
     func play() {
         endTemporaryRate(); wantsPlayback = true; resumeAfterInterruption = false
+        MediaSession.shared.pauseVideoIfBackgrounded()
+        guard wantsPlayback else { return }
         if reportedEnd, let sourceURL {
             // libvlc's ended input cannot reliably be restarted with play().
             // Reopen it while retaining credentials and the user's mode.
@@ -230,8 +232,11 @@ import UniformTypeIdentifiers
     }
     func pause() {
         endTemporaryRate(); wantsPlayback = false; resumeAfterInterruption = false
+        waitingForSurface = false
+        playing = false; buffering = false
         if let pending = pendingStart { pendingStart = (pending.seconds, false) }
         player?.pause(); savePosition()
+        MediaSession.shared.updateSouloState(self)
     }
     func handleInterruption(began: Bool, shouldResume: Bool) {
         if began {

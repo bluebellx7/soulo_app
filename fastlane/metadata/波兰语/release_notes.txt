@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Nowy domyślny odtwarzacz lokalnych filmów i BT z wyborem odcinków, szybkością 0,5–4× i opcją systemową dla zgodnych formatów.
-• Automatycznie ukrywane sterowanie pełnoekranowe, chwilowe 2× po przytrzymaniu oraz gesty jasności po lewej i głośności po prawej.
-• Naprawiono odtwarzanie samego dźwięku w niektórych filmach HEVC/MKV i wskaźniki ładowania pozostające podczas odtwarzania.
-• Lepsza zgodność wyskakujących okien i filtrów reklam zapobiega błędnemu blokowaniu oraz pozostawaniu nakładek na filmach.
-• Naprawiono konflikt usuwania przesunięciem ze zmianą karty, wyrównanie folderów w obu widokach i zmianę wysokości ostatnich wyszukiwań przy przytrzymaniu.
+• Naprawiono błąd, przez który otwarcie zakładki lub wpisu z historii mogło zastąpić istniejącą kartę.
+• Ulepszono uruchamianie, wczytywanie stron i obsługę ekranu głównego.
+• Ulepszono sterowanie na pełnym ekranie, obracanie ekranu i stan odtwarzania przy zmianie aplikacji.
+• Ulepszono przywracanie zamkniętych kart, podglądy plików i szczegóły interfejsu.

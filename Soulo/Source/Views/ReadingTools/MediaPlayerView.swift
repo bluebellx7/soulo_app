@@ -220,6 +220,7 @@ struct VideoOrientationErrorAlert: ViewModifier {
     private var transition: Task<Void, Never>?
     private var tracksDeviceOrientation = false
     private var orientationObserver: NSObjectProtocol?
+    private var activationObserver: NSObjectProtocol?
     private var orientationError: ((Error) -> Void)?
     private weak var fullscreenController: UIViewController?
     private weak var fullscreenWindow: UIWindow?
@@ -261,6 +262,8 @@ struct VideoOrientationErrorAlert: ViewModifier {
         transition?.cancel()
         if let orientationObserver { NotificationCenter.default.removeObserver(orientationObserver) }
         orientationObserver = nil
+        if let activationObserver { NotificationCenter.default.removeObserver(activationObserver) }
+        activationObserver = nil
     }
     func rebaseSource(on view: UIView) {
         guard let scene, view.window?.windowScene === scene else { return }
@@ -273,6 +276,8 @@ struct VideoOrientationErrorAlert: ViewModifier {
         if token == nil { prepare(token: "native-tools", scene: scene, prefersLandscape: landscape, nativeWebKit: true, sourceView: sourceView) }
         transition?.cancel()
         if let orientationObserver { NotificationCenter.default.removeObserver(orientationObserver) }
+        if let activationObserver { NotificationCenter.default.removeObserver(activationObserver) }
+        activationObserver = nil
         orientationObserver = nil; fullscreenController = nil; fullscreenWindow = nil
         prefersLandscape = landscape; began = false
         if let token { begin(token: token, onError: onError) }
@@ -291,6 +296,15 @@ struct VideoOrientationErrorAlert: ViewModifier {
                 guard let self, self.token == token, self.began else { return }
                 let direction = self.deviceOrientation()
                 guard direction == .landscapeLeft || direction == .landscapeRight else { return }
+                self.alignFullscreen(token: token)
+            }
+        }
+        activationObserver = NotificationCenter.default.addObserver(
+            forName: UIScene.didActivateNotification, object: scene, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.token == token, self.began, !self.handingOff,
+                      self.scene?.activationState == .foregroundActive else { return }
                 self.alignFullscreen(token: token)
             }
         }
@@ -349,6 +363,8 @@ struct VideoOrientationErrorAlert: ViewModifier {
         guard self.token != nil, token == nil || self.token == token else { return }
         transition?.cancel()
         if let orientationObserver { NotificationCenter.default.removeObserver(orientationObserver) }
+        if let activationObserver { NotificationCenter.default.removeObserver(activationObserver) }
+        activationObserver = nil
         orientationObserver = nil; orientationError = nil
         fullscreenController = nil; fullscreenWindow = nil
         if tracksDeviceOrientation { UIDevice.current.endGeneratingDeviceOrientationNotifications() }
@@ -369,6 +385,7 @@ struct VideoOrientationErrorAlert: ViewModifier {
     deinit {
         transition?.cancel()
         if let orientationObserver { NotificationCenter.default.removeObserver(orientationObserver) }
+        if let activationObserver { NotificationCenter.default.removeObserver(activationObserver) }
         if tracksDeviceOrientation {
             Task { @MainActor in UIDevice.current.endGeneratingDeviceOrientationNotifications() }
         }

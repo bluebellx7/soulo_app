@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Uzantı klavye kısayolları iOS’te kullanılamaz.";
 "extension_limit_notifications" = "Bildirimler gösterilebilir, ancak tıklama ve kapatma olayları desteklenmez.";
 "extension_limit_offscreen" = "Ekran dışı belgeler yalnızca ses oynatmayı destekler.";
+
+"review_support_message" = "Soulo’yu desteklediğiniz için teşekkürler. Yorumlarınız gelişmemize yardımcı oluyor.";
+"review_open_app_store" = "App Store'da değerlendirin";
+
+"quick_actions_explanation" = "Burada ayarlanan kestirmeleri kullanmak için Ana Ekran’daki Soulo simgesine basılı tutun.";
+
+"ad_block_scope_hint" = "Web reklamlarını, tanıtım katmanlarını ve istenmeyen açılır pencereleri filtreler. Bir site çalışmazsa yalnızca o site için filtrelemeyi kapatabilirsiniz.";

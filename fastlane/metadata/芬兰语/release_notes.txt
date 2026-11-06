@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Uusi oletussoitin paikallisille ja BT-videoille: jakson valinta, nopeus 0,5–4× ja järjestelmäsoitin yhteensopiville muodoille.
-• Koko näytön säätimet piiloutuvat automaattisesti. Pidä painettuna tilapäistä 2× nopeutta varten; säädä kirkkautta vasemmalta ja ääntä oikealta.
-• Korjattu eräiden HEVC/MKV-videoiden pelkkä ääni ilman kuvaa sekä toiston aikana näkyviin jäävä latausilmaisin.
-• Parannettu ponnahdusikkunoiden ja mainossuodatuksen yhteensopivuutta, jotta ikkunoita ei estetä virheellisesti eikä videon päälle jää peitteitä.
-• Korjattu pyyhkäisypoiston ja välilehtien vaihdon ristiriita, kansioiden tasaus sekä viime hakujen korkeuden muuttuminen pitkällä painalluksella.
+• Korjattu ongelma, jossa kirjanmerkin tai historiasivun avaaminen saattoi korvata olemassa olevan välilehden.
+• Parannettu käynnistystä, sivujen lataamista ja aloitusnäytön käyttöä.
+• Parannettu koko näytön säätimiä, näytön kääntämistä ja toiston tilaa sovelluksia vaihdettaessa.
+• Parannettu suljettujen välilehtien palautusta, tiedostojen esikatselua ja käyttöliittymän yksityiskohtia.

@@ -3,7 +3,9 @@ import Foundation
 /// Derived output only. Exact input keys and atomic replacement allow concurrent
 /// preparation; a missing, stale or damaged entry always falls back to generation.
 struct AdBlockStartupCache {
-    enum Slot: String { case cosmeticScript, contentRuleIdentifiers }
+    // The fallback and native-filtering scripts are both used during startup.
+    // Keep separate bounded slots so they cannot evict each other on every launch.
+    enum Slot: String { case cosmeticScript, nativeCosmeticScript, contentRuleIdentifiers }
 
     private struct Entry<Value: Codable>: Codable {
         let key: String

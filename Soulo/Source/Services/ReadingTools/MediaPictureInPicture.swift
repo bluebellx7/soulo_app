@@ -20,6 +20,7 @@ final class MediaPictureInPicture: NSObject, ObservableObject, @preconcurrency A
     private var attachmentIsPrimary = false
     private var starting = false
     private var requested = false
+    var keepsPlaybackInBackground: Bool { active || starting || requested }
     private var startTimeout: Task<Void, Never>?
     private var restoration: ((Bool) -> Void)?
     private var restorationTimeout: Task<Void, Never>?
@@ -41,7 +42,9 @@ final class MediaPictureInPicture: NSObject, ObservableObject, @preconcurrency A
         if supported {
             let pip = AVPictureInPictureController(playerLayer: view.playerLayer)
             pip?.delegate = self
-            pip?.canStartPictureInPictureAutomaticallyFromInline = true
+            // Switching apps pauses ordinary video. PiP is a deliberate action
+            // from the player's floating-window control.
+            pip?.canStartPictureInPictureAutomaticallyFromInline = false
             controller = pip
             observation = pip?.observe(\.isPictureInPicturePossible, options: [.initial, .new]) { [weak self] pip, _ in
                 let possible = pip.isPictureInPicturePossible
@@ -87,6 +90,7 @@ final class MediaPictureInPicture: NSObject, ObservableObject, @preconcurrency A
             do { try await Task.sleep(for: .seconds(10)) } catch { return }
             guard let self, self.requested else { return }
             self.requested = false
+            MediaSession.shared.pauseVideoIfBackgrounded()
             MediaSession.shared.error = ToolText.text("media_pip_unavailable")
         }
         startIfReady()
@@ -131,6 +135,7 @@ final class MediaPictureInPicture: NSObject, ObservableObject, @preconcurrency A
                                    failedToStartPictureInPictureWithError error: Error) {
         starting = false
         active = false
+        MediaSession.shared.pauseVideoIfBackgrounded()
         MediaSession.shared.error = error.localizedDescription
         if !attached { releaseSurface() }
     }
@@ -138,6 +143,7 @@ final class MediaPictureInPicture: NSObject, ObservableObject, @preconcurrency A
     func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         starting = false
         active = false
+        MediaSession.shared.pauseVideoIfBackgrounded()
         if !attached { releaseSurface() }
     }
 

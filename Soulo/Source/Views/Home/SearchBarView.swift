@@ -19,8 +19,10 @@ struct SearchBarView: View {
 
     @ObservedObject var wallpaperManager = WallpaperManager.shared
     @ObservedObject private var platformStore = PlatformDataStore.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var isFocused = false
+    @State private var focusFeedback = 0
     @State private var focusRequest = 0
     @State private var animateGlow = false
     @State private var showSearchActions = false
@@ -186,7 +188,16 @@ struct SearchBarView: View {
                 .shadow(color: isLight ? .black.opacity(0.04) : .black.opacity(0.2), radius: 16, x: 0, y: 4)
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: isFocused)
+        .keyframeAnimator(initialValue: CGFloat(1), trigger: focusFeedback) { [reduceMotion, isCompact] content, scale in
+            content.scaleEffect(reduceMotion || isCompact ? 1 : scale)
+        } keyframes: { _ in
+            CubicKeyframe(0.975, duration: 0.07)
+            SpringKeyframe(1, duration: 0.2, spring: .snappy)
+        }
+        .onChange(of: isFocused) { _, focused in
+            if focused && !isCompact && !reduceMotion { focusFeedback &+= 1 }
+        }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: isFocused)
     }
 
     private func searchActionsPanel(
@@ -206,7 +217,7 @@ struct SearchBarView: View {
                         .padding(.horizontal, 16)
                         .frame(height: 46)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(HomePressButtonStyle(enabled: !isCompact))
             }
 
             if let onScanTap {
@@ -221,7 +232,7 @@ struct SearchBarView: View {
                         .padding(.horizontal, 16)
                         .frame(height: 46)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(HomePressButtonStyle(enabled: !isCompact))
                 .accessibilityIdentifier("search.scan")
             }
 
@@ -266,7 +277,7 @@ struct SearchBarView: View {
                             .padding(.horizontal, 16)
                             .frame(height: 46)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(HomePressButtonStyle(enabled: !isCompact))
                 }
             }
         }
@@ -288,6 +299,6 @@ struct SearchBarView: View {
             .frame(height: 46)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(HomePressButtonStyle(enabled: !isCompact))
     }
 }

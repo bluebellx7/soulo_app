@@ -905,3 +905,10 @@
 "extension_limit_commands" = "iOS 不支持扩展键盘快捷键。";
 "extension_limit_notifications" = "支持显示通知，暂不支持通知点击和关闭事件。";
 "extension_limit_offscreen" = "离屏文档仅支持音频播放。";
+
+"review_support_message" = "谢谢你支持 Soulo，你的评价与建议会帮助我们持续改进。";
+"review_open_app_store" = "去 App Store 好评";
+
+"quick_actions_explanation" = "长按主屏幕上的 Soulo 图标，即可使用在这里设置的快捷菜单。";
+
+"ad_block_scope_hint" = "过滤网页广告、推广浮层和非主动打开的弹窗。网页异常时，可仅为该网站关闭过滤。";

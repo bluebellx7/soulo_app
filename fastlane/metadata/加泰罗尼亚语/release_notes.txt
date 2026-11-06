@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Nou reproductor predeterminat per a vídeos locals i BT, amb episodis, velocitat de 0,5–4× i opció del sistema per a formats compatibles.
-• Controls de pantalla completa amb ocultació automàtica, pulsació llarga per a 2× temporal i gestos de brillantor a l’esquerra i volum a la dreta.
-• Corregida la reproducció només amb àudio d’alguns vídeos HEVC/MKV i els indicadors de càrrega persistents.
-• Millor compatibilitat de finestres emergents i filtratge d’anuncis per evitar bloquejos incorrectes i capes que tapaven els vídeos.
-• Corregits els conflictes entre eliminar lliscant i canviar de pestanya, l’alineació de carpetes i l’alçada de les cerques recents en mantenir-les premudes.
+• S'ha corregit un problema que podia substituir una pestanya existent en obrir un marcador o un element de l'historial.
+• Millores en l'inici, la càrrega de pàgines i la interacció amb la pantalla d'inici.
+• Millores en els controls de pantalla completa, la rotació i l'estat de reproducció en canviar d'app.
+• Millores en la recuperació de pestanyes tancades, les previsualitzacions i els detalls de la interfície.

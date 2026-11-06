@@ -124,6 +124,7 @@
     }
     empty.hidden = count !== 0;
     const noFavorites = favoritesOnly && favorites.size === 0;
+    empty.dataset.state = noFavorites ? 'favorites' : 'search';
     if (isEn()) {
       document.getElementById('empty-title').textContent = noFavorites ? (isMagnets ? 'Save your go-to magnet sites here' : isPans ? 'Save your go-to cloud search sites here' : 'Save your go-to watch sites here') : 'No matching websites found';
       document.getElementById('empty-description').textContent = noFavorites ? (isMagnets ? 'Click the heart icon on any card to build your personal magnet directory.' : isPans ? 'Click the heart icon on any card to build your personal cloud drive directory.' : 'Click the heart icon on any card to build your personal watchlist.') : (isMagnets ? 'Try searching by site name, domain, or keywords like DHT, 4K, or Anime.' : isPans ? 'Try searching by site name, domain, or keywords like Quark, Baidu, AliPan, or 4K.' : 'Try searching by site name, domain, or categories like Anime or Subtitles.');

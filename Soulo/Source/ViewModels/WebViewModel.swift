@@ -101,6 +101,7 @@ final class WebViewModel: ObservableObject {
     let mediaSession = WebMediaSession()
     var isWebViewRuntimeInstalled: Bool = false
     var hasInstalledWebViewScripts = false
+    var isScriptOpenedWindow = false
     var lastAdHidingSignature = ""
     var installedPrivacyProtectionSource = ""
     var adHidingNeedsBootstrap = false

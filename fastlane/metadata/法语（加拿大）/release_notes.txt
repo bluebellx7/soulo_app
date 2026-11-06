@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Nouveau lecteur par défaut pour les vidéos locales et BT : épisodes, vitesse 0,5–4× et lecteur système pour les formats compatibles.
-• Commandes plein écran masquées automatiquement, appui long pour un passage temporaire à 2× et gestes de luminosité à gauche et de volume à droite.
-• Correction de vidéos HEVC/MKV avec du son sans image et des indicateurs de chargement restant affichés pendant la lecture.
-• Meilleure compatibilité des fenêtres surgissantes et du filtrage publicitaire pour éviter les blocages incorrects et les calques résiduels sur les vidéos.
-• Correction des conflits entre suppression par balayage et changement d’onglet, alignement des dossiers dans les deux vues et hauteur stable des recherches récentes lors d’un appui long.
+• Correction d'un problème où l'ouverture d'un favori ou d'une entrée de l'historique pouvait remplacer un onglet existant.
+• Amélioration du démarrage, du chargement des pages et des interactions sur l'écran d'accueil.
+• Amélioration des commandes en plein écran, de la rotation et de l'état de lecture lors du changement d'app.
+• Amélioration de la restauration des onglets fermés, des aperçus de fichiers et des détails de l'interface.

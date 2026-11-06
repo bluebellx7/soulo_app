@@ -42,6 +42,7 @@ struct SouloApp: App {
 
     init() {
         BrowserStartupTrace.mark("app_init")
+        BrowserStartupTrace.startResponsivenessProbe()
         UserDefaults.standard.register(defaults: [AppConstants.StorageKeys.appearance: "dark"])
         let savedLanguage = UserDefaults.standard.string(
             forKey: AppConstants.StorageKeys.selectedLanguage

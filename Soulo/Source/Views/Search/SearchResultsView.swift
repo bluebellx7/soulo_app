@@ -72,6 +72,140 @@ struct SearchResultsView: View {
     }
 
     var body: some View {
+        browserSurface
+        .onChange(of: tabManager.activeTab?.id) { _, _ in
+            cancelAIInteraction()
+            if let vm = tabManager.activeWebViewModel {
+                pageReady = vm.hasVisibleContent || vm.estimatedProgress >= 0.98 || (!vm.isLoading && vm.currentURL != nil)
+            }
+        }
+        // Handle "open in new tab" from WebView (target="_blank" links)
+        .onReceive(NotificationCenter.default.publisher(for: .openInNewTab), perform: openRequestedBrowserTab)
+        .onReceive(NotificationCenter.default.publisher(for: .closeScriptOpenedTab), perform: closeScriptOpenedTab)
+        .onReceive(NotificationCenter.default.publisher(for: .closeUserScriptTab)) { notification in
+            guard let scriptTabID = notification.userInfo?["userScriptTabID"] as? String,
+                  let tabID = userScriptOpenedTabs.removeValue(forKey: scriptTabID) else { return }
+            tabManager.closeTab(id: tabID)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .closeUserScriptCurrentTab)) { notification in
+            guard let source = notification.object as? WebViewModel,
+                  let tab = tabManager.tabs.first(where: { $0.webViewModel === source }) else { return }
+            tabManager.closeTab(id: tab.id)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .focusUserScriptCurrentTab)) { notification in
+            guard let source = notification.object as? WebViewModel,
+                  let index = tabManager.tabs.firstIndex(where: { $0.webViewModel === source }) else { return }
+            tabManager.switchToTab(at: index)
+        }
+        .sheet(isPresented: $showVoiceInput) {
+            VoiceInputView(
+                speechService: speechService,
+                onConfirm: { text in
+                    searchVM.searchText = text
+                    showVoiceInput = false
+                    searchVM.performSearch(context: modelContext)
+                    loadCurrentPlatformURL()
+                },
+                onDismiss: { showVoiceInput = false }
+            )
+        }
+        .sheet(isPresented: $showPlatformManagement) {
+            NavigationStack {
+                PlatformManagementView()
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(languageManager.localizedString("done")) {
+                                showPlatformManagement = false
+                            }
+                        }
+                    }
+            }
+        }
+        .onAppear {
+            if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
+               !searchVM.isIncognito, #available(iOS 18.4, *) {
+                NativeWebExtensionRuntime.shared.attach(tabManager: tabManager)
+            }
+            if PersistentFullscreenBehavior.shouldEnter(
+                enabled: keepFullscreenBrowsing,
+                hasSearch: !searchVM.currentKeyword.isEmpty,
+                voiceOverEnabled: voiceOverEnabled
+            ) {
+                isFullscreen = true
+            }
+
+            // Selection search already created and loaded its own tab before
+            // this navigation stack appeared. Restoring the saved group here
+            // would replace that request with another platform (and cancel the
+            // first navigation). Keep the chosen engine and its pending load.
+            if searchVM.isSelectionSearch {
+                lastSearchID = searchVM.searchID
+                if let group = platformStore.customGroups.first(where: { $0.id.uuidString == lastGroupID }),
+                   platformStore.platformsForGroup(group).contains(where: { $0.id == searchVM.selectedPlatform?.id }) {
+                    searchVM.selectedGroupID = group.id
+                }
+                return
+            }
+
+            // Restore last selected group and select first platform
+            if !lastGroupID.isEmpty,
+               let group = platformStore.customGroups.first(where: { $0.id.uuidString == lastGroupID }) {
+                if searchVM.selectedGroupID != group.id { searchVM.selectCustomGroup(group) }
+                else { synchronizeSelectedPlatformAfterStoreChange() }
+            } else if !lastRegion.isEmpty, let region = PlatformRegion(rawValue: lastRegion) {
+                searchVM.selectRegion(region)
+            }
+
+            if searchVM.searchID != lastSearchID && !searchVM.currentKeyword.isEmpty {
+                // New search or bookmark click — load in active tab
+                lastSearchID = searchVM.searchID
+                loadCurrentPlatformURL()
+            } else if tabManager.activeWebViewModel?.currentURL == nil {
+                // Empty tab with no content — try loading
+                if !searchVM.currentKeyword.isEmpty {
+                    loadCurrentPlatformURL()
+                }
+            }
+            // Otherwise: returning to existing tabs, keep as-is
+        }
+        .onDisappear { cancelAIInteraction() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background { cancelAIInteraction() }
+        }
+        .onChange(of: searchVM.externalSearchRequestID) { _, requestID in
+            guard requestID != nil, searchVM.searchID != lastSearchID,
+                  !searchVM.currentKeyword.isEmpty else { return }
+            lastSearchID = searchVM.searchID
+            loadCurrentPlatformURL()
+        }
+        .onChange(of: keepFullscreenBrowsing) { _, enabled in
+            guard PersistentFullscreenBehavior.shouldEnter(
+                enabled: enabled,
+                hasSearch: !searchVM.currentKeyword.isEmpty,
+                voiceOverEnabled: voiceOverEnabled
+            ) else { return }
+            withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                isFullscreen = true
+            }
+        }
+        .onChange(of: defaultSearch.overrides) { _, _ in synchronizeSelectedPlatformAfterStoreChange() }
+        .onChange(of: platformStore.customGroups) { _, _ in synchronizeSelectedPlatformAfterStoreChange() }
+        .onChange(of: platformStore.platforms) { _, _ in
+            synchronizeSelectedPlatformAfterStoreChange()
+        }
+        .background {
+            DeviceShakeDetector(
+                isEnabled: BrowserShakeAction(rawValue: shakeAction) != BrowserShakeAction.none,
+                intensity: BrowserShakeIntensity(rawValue: shakeIntensity) ?? .standard
+            ) {
+                handleShakeAction()
+            }
+            .frame(width: 1, height: 1)
+            .allowsHitTesting(false)
+        }
+    }
+
+    private var browserSurface: some View {
         GeometryReader { geo in
             VStack(spacing: 0) {
                 if !isFullscreen {
@@ -263,151 +397,6 @@ struct SearchResultsView: View {
                     }
                 }
             }
-        }
-        .onChange(of: tabManager.activeTab?.id) { _, _ in
-            cancelAIInteraction()
-            if let vm = tabManager.activeWebViewModel {
-                pageReady = vm.hasVisibleContent || vm.estimatedProgress >= 0.98 || (!vm.isLoading && vm.currentURL != nil)
-            }
-        }
-        // Handle "open in new tab" from WebView (target="_blank" links)
-        .onReceive(NotificationCenter.default.publisher(for: .openInNewTab)) { notification in
-            if let url = notification.userInfo?["url"] as? URL {
-                let tab = tabManager.createTab(
-                    url: notification.userInfo?["request"] is URLRequest ? nil : url,
-                    keyword: searchVM.currentKeyword,
-                    platform: searchVM.selectedPlatform,
-                    switchTo: notification.userInfo?["switchTo"] as? Bool ?? true
-                )
-                if let request = notification.userInfo?["request"] as? URLRequest {
-                    tab.webViewModel.loadRequest(request)
-                }
-                if let scriptTabID = notification.userInfo?["userScriptTabID"] as? String,
-                   !scriptTabID.isEmpty {
-                    userScriptOpenedTabs[scriptTabID] = tab.id
-                }
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .closeUserScriptTab)) { notification in
-            guard let scriptTabID = notification.userInfo?["userScriptTabID"] as? String,
-                  let tabID = userScriptOpenedTabs.removeValue(forKey: scriptTabID) else { return }
-            tabManager.closeTab(id: tabID)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .closeUserScriptCurrentTab)) { notification in
-            guard let source = notification.object as? WebViewModel,
-                  let tab = tabManager.tabs.first(where: { $0.webViewModel === source }) else { return }
-            tabManager.closeTab(id: tab.id)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .focusUserScriptCurrentTab)) { notification in
-            guard let source = notification.object as? WebViewModel,
-                  let index = tabManager.tabs.firstIndex(where: { $0.webViewModel === source }) else { return }
-            tabManager.switchToTab(at: index)
-        }
-        .sheet(isPresented: $showVoiceInput) {
-            VoiceInputView(
-                speechService: speechService,
-                onConfirm: { text in
-                    searchVM.searchText = text
-                    showVoiceInput = false
-                    searchVM.performSearch(context: modelContext)
-                    loadCurrentPlatformURL()
-                },
-                onDismiss: { showVoiceInput = false }
-            )
-        }
-        .sheet(isPresented: $showPlatformManagement) {
-            NavigationStack {
-                PlatformManagementView()
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button(languageManager.localizedString("done")) {
-                                showPlatformManagement = false
-                            }
-                        }
-                    }
-            }
-        }
-        .onAppear {
-            if BrowserExtensionFeatureAvailability.standardWebExtensionsEnabled,
-               !searchVM.isIncognito, #available(iOS 18.4, *) {
-                NativeWebExtensionRuntime.shared.attach(tabManager: tabManager)
-            }
-            if PersistentFullscreenBehavior.shouldEnter(
-                enabled: keepFullscreenBrowsing,
-                hasSearch: !searchVM.currentKeyword.isEmpty,
-                voiceOverEnabled: voiceOverEnabled
-            ) {
-                isFullscreen = true
-            }
-
-            // Selection search already created and loaded its own tab before
-            // this navigation stack appeared. Restoring the saved group here
-            // would replace that request with another platform (and cancel the
-            // first navigation). Keep the chosen engine and its pending load.
-            if searchVM.isSelectionSearch {
-                lastSearchID = searchVM.searchID
-                if let group = platformStore.customGroups.first(where: { $0.id.uuidString == lastGroupID }),
-                   platformStore.platformsForGroup(group).contains(where: { $0.id == searchVM.selectedPlatform?.id }) {
-                    searchVM.selectedGroupID = group.id
-                }
-                return
-            }
-
-            // Restore last selected group and select first platform
-            if !lastGroupID.isEmpty,
-               let group = platformStore.customGroups.first(where: { $0.id.uuidString == lastGroupID }) {
-                if searchVM.selectedGroupID != group.id { searchVM.selectCustomGroup(group) }
-                else { synchronizeSelectedPlatformAfterStoreChange() }
-            } else if !lastRegion.isEmpty, let region = PlatformRegion(rawValue: lastRegion) {
-                searchVM.selectRegion(region)
-            }
-
-            if searchVM.searchID != lastSearchID && !searchVM.currentKeyword.isEmpty {
-                // New search or bookmark click — load in active tab
-                lastSearchID = searchVM.searchID
-                loadCurrentPlatformURL()
-            } else if tabManager.activeWebViewModel?.currentURL == nil {
-                // Empty tab with no content — try loading
-                if !searchVM.currentKeyword.isEmpty {
-                    loadCurrentPlatformURL()
-                }
-            }
-            // Otherwise: returning to existing tabs, keep as-is
-        }
-        .onDisappear { cancelAIInteraction() }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .background { cancelAIInteraction() }
-        }
-        .onChange(of: searchVM.externalSearchRequestID) { _, requestID in
-            guard requestID != nil, searchVM.searchID != lastSearchID,
-                  !searchVM.currentKeyword.isEmpty else { return }
-            lastSearchID = searchVM.searchID
-            loadCurrentPlatformURL()
-        }
-        .onChange(of: keepFullscreenBrowsing) { _, enabled in
-            guard PersistentFullscreenBehavior.shouldEnter(
-                enabled: enabled,
-                hasSearch: !searchVM.currentKeyword.isEmpty,
-                voiceOverEnabled: voiceOverEnabled
-            ) else { return }
-            withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
-                isFullscreen = true
-            }
-        }
-        .onChange(of: defaultSearch.overrides) { _, _ in synchronizeSelectedPlatformAfterStoreChange() }
-        .onChange(of: platformStore.customGroups) { _, _ in synchronizeSelectedPlatformAfterStoreChange() }
-        .onChange(of: platformStore.platforms) { _, _ in
-            synchronizeSelectedPlatformAfterStoreChange()
-        }
-        .background {
-            DeviceShakeDetector(
-                isEnabled: BrowserShakeAction(rawValue: shakeAction) != BrowserShakeAction.none,
-                intensity: BrowserShakeIntensity(rawValue: shakeIntensity) ?? .standard
-            ) {
-                handleShakeAction()
-            }
-            .frame(width: 1, height: 1)
-            .allowsHitTesting(false)
         }
     }
 
@@ -875,6 +864,33 @@ struct SearchResultsView: View {
                 }
             }
         }
+    }
+
+    private func openRequestedBrowserTab(_ notification: Notification) {
+        guard let url = notification.userInfo?["url"] as? URL else { return }
+        let suppliedModel = notification.userInfo?["windowModel"] as? WebViewModel
+        if suppliedModel != nil {
+            guard let opener = notification.object as? WebViewModel,
+                  tabManager.tabs.contains(where: { $0.webViewModel === opener }) else { return }
+        }
+        let request = notification.userInfo?["request"] as? URLRequest
+        let tab = tabManager.createTab(
+            url: suppliedModel == nil && request == nil ? url : nil,
+            keyword: searchVM.currentKeyword,
+            platform: searchVM.selectedPlatform,
+            switchTo: notification.userInfo?["switchTo"] as? Bool ?? true,
+            webViewModel: suppliedModel
+        )
+        if suppliedModel == nil, let request { tab.webViewModel.loadRequest(request) }
+        if let scriptTabID = notification.userInfo?["userScriptTabID"] as? String, !scriptTabID.isEmpty {
+            userScriptOpenedTabs[scriptTabID] = tab.id
+        }
+    }
+
+    private func closeScriptOpenedTab(_ notification: Notification) {
+        guard let source = notification.object as? WebViewModel, source.isScriptOpenedWindow,
+              let tab = tabManager.tabs.first(where: { $0.webViewModel === source }) else { return }
+        tabManager.closeTab(id: tab.id)
     }
 
     private func toggleBookmark() {

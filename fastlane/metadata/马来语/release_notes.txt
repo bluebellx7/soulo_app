@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Pemain lalai baharu untuk video setempat dan BT, dengan pilihan episod, kelajuan 0.5–4× dan pemain sistem untuk format yang serasi.
-• Kawalan skrin penuh disembunyikan secara automatik; tahan untuk 2× sementara, leret di kiri untuk kecerahan dan di kanan untuk kelantangan.
-• Membetulkan video HEVC/MKV tertentu yang hanya mengeluarkan audio tanpa gambar dan penunjuk pemuatan yang kekal dipaparkan.
-• Keserasian tetingkap timbul dan penapisan iklan dipertingkat untuk mengelakkan sekatan salah serta lapisan yang menghalang video.
-• Membetulkan konflik leret untuk padam dengan pertukaran tab, penjajaran folder dalam kedua-dua paparan dan perubahan tinggi carian terkini apabila ditekan lama.
+• Membaiki masalah apabila membuka penanda buku atau entri sejarah yang kadangkala menggantikan tab sedia ada.
+• Menambah baik permulaan, pemuatan halaman dan interaksi skrin utama.
+• Menambah baik kawalan skrin penuh, putaran dan keadaan main balik semasa bertukar aplikasi.
+• Menambah baik pemulihan tab tertutup, pratonton fail dan butiran antara muka.

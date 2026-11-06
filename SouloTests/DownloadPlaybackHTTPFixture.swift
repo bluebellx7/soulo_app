@@ -4,6 +4,12 @@ import Network
 /// Range reads are fast; the separate full-file download is deliberately slow.
 /// HLS can hold its final segment to prove playback starts before completion.
 final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
+    struct ReceivedRequest: Sendable {
+        let method: String
+        let path: String
+        let headers: [String: String]
+        let body: Data
+    }
     private let listener: NWListener
     private let queue = DispatchQueue(label: "soulo.download-playback.fixture")
     private let files: [String: Data]
@@ -17,9 +23,11 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
     private var started = false
     private var fullFileBytes = 0
     private var ranges = 0
+    private var requests: [ReceivedRequest] = []
 
     var downloadedBytes: Int { queue.sync { fullFileBytes } }
     var rangeRequests: Int { queue.sync { ranges } }
+    var receivedRequests: [ReceivedRequest] { queue.sync { requests } }
 
     init(files: [String: Data], heldPaths: Set<String> = [], requiredCookie: String? = nil,
          responseHeaders: [String: [String: String]] = [:],
@@ -65,12 +73,12 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
             guard let self else { connection.cancel(); return }
             var bytes = buffered; if let data { bytes.append(data) }
             guard bytes.count < 65536 else { connection.cancel(); return }
-            guard bytes.range(of: Data("\r\n\r\n".utf8)) != nil else {
+            guard let headerEnd = bytes.range(of: Data("\r\n\r\n".utf8)) else {
                 if done || error != nil { connection.cancel() }
                 else { self.receive(connection, buffered: bytes) }
                 return
             }
-            let lines = String(decoding: bytes, as: UTF8.self).components(separatedBy: "\r\n")
+            let lines = String(decoding: bytes[..<headerEnd.lowerBound], as: UTF8.self).components(separatedBy: "\r\n")
             let parts = lines[0].split(separator: " ")
             guard parts.count >= 2 else { connection.cancel(); return }
             var headers: [String: String] = [:]
@@ -79,6 +87,14 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
                 headers[String(line[..<colon]).lowercased()] = line[line.index(after: colon)...].trimmingCharacters(in: .whitespaces)
             }
             let path = String(parts[1]).components(separatedBy: "?")[0]
+            let bodyLength = max(0, Int(headers["content-length"] ?? "0") ?? 0)
+            guard bytes.count - headerEnd.upperBound >= bodyLength else {
+                if done || error != nil { connection.cancel() }
+                else { self.receive(connection, buffered: bytes) }
+                return
+            }
+            self.requests.append(ReceivedRequest(method: String(parts[0]), path: path, headers: headers,
+                body: Data(bytes[headerEnd.upperBound..<(headerEnd.upperBound + bodyLength)])))
             if let cookie = self.requiredCookie, headers["cookie"]?.contains(cookie) != true {
                 self.sendError(connection, code: 403); return
             }

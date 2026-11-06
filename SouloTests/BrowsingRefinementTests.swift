@@ -32,12 +32,65 @@ final class BrowsingRefinementTests: XCTestCase {
         }
     }
     func testFileTypesAndOriginalPreviewLifetime() throws {
-        for (ext,kind) in [("mp4",FilePresentation.Kind.video),("mp3",.audio),("pdf",.pdf),("epub",.book),("7z",.archive),("txt",.text),("bin",.other),("soulohls",.video)] {
+        for (ext,kind) in [("mp4",FilePresentation.Kind.video),("mp3",.audio),("pdf",.pdf),("epub",.book),("7z",.archive),
+                           ("txt",.text),("bin",.other),("soulohls",.video),("docx",.document),("odt",.document),
+                           ("xlsx",.spreadsheet),("csv",.spreadsheet),("pptx",.presentation),("key",.presentation),
+                           ("swift",.code),("otf",.font),("tar",.archive),("xz",.archive),("ape",.audio),("rmvb",.video)] {
             let url = root.appendingPathComponent("sample." + ext); try Data().write(to: url)
             XCTAssertEqual(FilePresentation.inspect(url).kind, kind)
             let preview = try PreparedFilePreview.prepare(url); XCTAssertNil(preview.temporaryDirectory)
             preview.removeTemporaryFile(); XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
         }
+    }
+
+    @MainActor func testRemovingBookDeletesOnlyItsCoverAndPreservesOriginalFile() throws {
+        let removed = LibraryBook(id: UUID().uuidString, name: "Removed",
+            fileName: "cover-cleanup-\(UUID().uuidString).txt")
+        let retained = LibraryBook(id: UUID().uuidString, name: "Retained", fileName: "retained.txt")
+        let metadata = root.appendingPathComponent("books.json")
+        try JSONEncoder().encode([removed, retained]).write(to: metadata)
+        try FileManager.default.createDirectory(at: BookLibrary.directory, withIntermediateDirectories: true)
+        let original = Data("Keep the original book".utf8)
+        try original.write(to: removed.url)
+        defer {
+            for url in [removed.url, removed.coverURL, retained.coverURL] {
+                try? FileManager.default.removeItem(at: url)
+            }
+        }
+        let library = BookLibrary(metadata: metadata)
+        library.storeCover(removed.id, data: Data("Removed cover".utf8))
+        library.storeCover(retained.id, data: Data("Retained cover".utf8))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: removed.coverURL.path))
+        library.remove(removed.id)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: removed.coverURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: retained.coverURL.path))
+        XCTAssertEqual(try Data(contentsOf: removed.url), original)
+        XCTAssertEqual(BookLibrary(metadata: metadata).books.map(\.id), [retained.id])
+    }
+
+    @MainActor func testRemovingBookDoesNotDeleteCoverOutsideOwnedDirectory() throws {
+        let book = LibraryBook(id: "../outside-cover-\(UUID().uuidString)",
+            name: "Invalid cover location", fileName: "unused.txt")
+        let metadata = root.appendingPathComponent("books.json")
+        try JSONEncoder().encode([book]).write(to: metadata)
+        let outside = book.coverURL.standardizedFileURL
+        let sentinel = Data("Preserve this unrelated file".utf8)
+        try FileManager.default.createDirectory(at: outside.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try sentinel.write(to: outside)
+        defer { try? FileManager.default.removeItem(at: outside) }
+        BookLibrary(metadata: metadata).remove(book.id)
+        XCTAssertEqual(try Data(contentsOf: outside), sentinel)
+    }
+
+    func testSharedFileThumbnailGeneratesABoundedVideoPoster() async throws {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let original = try Data(contentsOf: fixture)
+        let file = LocalFile(url: fixture, directory: false, info: FilePresentation.inspect(fixture))
+        let image = await FileThumbnailCache().thumbnail(file)
+        let bitmap = try XCTUnwrap(image?.cgImage)
+        XCTAssertLessThanOrEqual(max(bitmap.width, bitmap.height), 420)
+        XCTAssertGreaterThan(min(bitmap.width, bitmap.height), 0)
+        XCTAssertEqual(try Data(contentsOf: fixture), original, "A preview must not modify the downloaded file")
     }
     func testOfflineHLSReferenceKeepsPackageAtSystemLocationAndDeletesBothFiles() throws {
         let packageFolder = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)

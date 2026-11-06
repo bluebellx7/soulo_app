@@ -7,6 +7,39 @@ import JavaScriptCore
 
 @MainActor
 final class ResourceEfficiencyTests: XCTestCase {
+    func testCachedWallpaperLoadsAfterConstructionAndCannotReplaceANewSource() async throws {
+        let defaults = UserDefaults.standard
+        let keys = ["wallpaper_source", "wallpaper_refresh_interval", "wallpaper_current_cache_file",
+                    "wallpaper_current_cache_id", "wallpaper_current_cache_url"]
+        let saved = keys.map { defaults.object(forKey: $0) }
+        let name = "startup-\(UUID()).jpg"
+        let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("CurrentWallpaper", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let file = directory.appendingPathComponent(name)
+        try jpeg(width: 6000, height: 4000).write(to: file)
+        defer {
+            for (key, value) in zip(keys, saved) { defaults.set(value, forKey: key) }
+            try? FileManager.default.removeItem(at: file)
+        }
+        defaults.set("bing", forKey: "wallpaper_source")
+        defaults.set(0, forKey: "wallpaper_refresh_interval")
+        defaults.set(name, forKey: "wallpaper_current_cache_file")
+        defaults.set(name, forKey: "wallpaper_current_cache_id")
+        let manager = WallpaperManager()
+        defer { manager.suspendAutomaticRefresh() }
+        XCTAssertNil(manager.currentImage, "Constructing home state must return before disk decoding")
+        try await wait { manager.currentImage != nil }
+        XCTAssertEqual(manager.currentImageID, name)
+
+        let switched = WallpaperManager()
+        defer { switched.suspendAutomaticRefresh() }
+        switched.source = .gradient
+        try await Task.sleep(for: .milliseconds(300))
+        XCTAssertNil(switched.currentImage, "A canceled cache restore cannot overwrite the selected gradient")
+        XCTAssertNotEqual(switched.currentImageID, name)
+    }
+
     private func jpeg(width: Int, height: Int, orientation: Int = 1) throws -> Data {
         try autoreleasepool {
             let context = try XCTUnwrap(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,

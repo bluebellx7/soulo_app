@@ -105,12 +105,11 @@ struct HomeToolbarButtonFace: View {
 struct HomeToolbarButtonStyle: ButtonStyle {
     var lightWallpaper = false
     var showsBackground = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .modifier(HomeToolbarButtonSurface(visible: showsBackground || configuration.isPressed,
                 lightWallpaper: lightWallpaper))
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.94 : 1)
+            .modifier(HomePressFeedback(isPressed: configuration.isPressed))
     }
 }
 

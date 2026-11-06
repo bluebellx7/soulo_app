@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Ny standardspelare för lokala videor och BT-videor med avsnittsval, 0,5–4× hastighet och systemspelare för kompatibla format.
-• Helskärmskontroller döljs automatiskt. Håll för tillfällig 2× hastighet och svep på vänster sida för ljusstyrka eller höger sida för volym.
-• Åtgärdat vissa HEVC/MKV-videor med ljud utan bild och laddningsindikatorer som blev kvar under uppspelning.
-• Bättre kompatibilitet mellan popupfönster och annonsfilter förhindrar felaktig blockering och kvarvarande lager över videon.
-• Åtgärdat konflikt mellan svep för radering och flikbyte, justerat mappar i båda vyerna och stabiliserat höjden på senaste sökningar vid långt tryck.
+• Åtgärdade ett fel där ett bokmärke eller en historikpost ibland ersatte en befintlig flik när den öppnades.
+• Förbättrad start, sidladdning och användning av hemskärmen.
+• Förbättrade helskärmskontroller, rotation och uppspelningsstatus vid appbyte.
+• Förbättrad återställning av stängda flikar, filförhandsvisning och gränssnittsdetaljer.

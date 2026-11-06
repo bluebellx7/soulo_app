@@ -116,6 +116,7 @@ final class BrowserWebViewPool: NSObject, WKNavigationDelegate {
                   self.preparedWebView == nil else { return }
             BrowserStartupTrace.mark("warmup_start")
             let webView = AccessibleWebView(frame: .zero, configuration: Self.configuration(isIncognito: self.isIncognito, for: nil))
+            BrowserStartupTrace.mark("warmup_constructed")
             self.preparedWebView = webView
             webView.navigationDelegate = self
             // Start WebKit without a navigation: no network request, synthetic

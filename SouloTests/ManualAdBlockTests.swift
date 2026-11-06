@@ -475,6 +475,180 @@ final class ManualAdBlockTests: XCTestCase {
         XCTAssertEqual(visible as? Bool, true)
     }
 
+    private func addDecodedRendererFixture(_ web: WKWebView) async throws {
+        // React's host/component links are the regression fixture. Rendering
+        // callbacks must never execute: some include navigation or telemetry.
+        try await web.evaluateJavaScript(#"""
+        (() => {
+          window.rendererInvocations = 0;
+          function promotion() { window.rendererInvocations++; request('index/countads', {category:'ads_index'}); }
+          function carousel() { window.rendererInvocations++; request('index/countbanner', {category:'banner'}); }
+          function gallery() { request('index/countbanner', {category:'gallery'}); }
+          window.replaceRenderer = (root, render) => {
+            const component = {type:render, child:{stateNode:root}}, host = {stateNode:root, return:component};
+            root.querySelectorAll('img').forEach(image => {
+              image.__reactFiber$fixture = {stateNode:image, return:host};
+            });
+          };
+          const make = (id, tag, count, render, extra='') => {
+            const root = document.createElement(tag); root.id=id;
+            root.style.cssText='width:100%;min-height:60px';
+            root.innerHTML = '<img style="width:100%;height:60px" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">'.repeat(count)+extra;
+            document.body.append(root); window.replaceRenderer(root,render); return root;
+          };
+          make('decoded-carousel','div',4,carousel);
+          make('decoded-inline','div',30,promotion);
+          make('ordinary-gallery','div',4,gallery);
+          make('ordinary-navigation','nav',6,promotion);
+          make('ordinary-player','div',1,promotion,'<video controls></video>');
+          make('ordinary-login','div',1,promotion,'<form><input type="password"></form>');
+          const control=document.createElement('div');control.id='custom-control';control.style.cssText='cursor:pointer;height:44px';
+          control.textContent='Open content';control.onclick=()=>window.controlClicked=true;document.body.append(control);
+          window.controlClicked=false;
+        })(); null
+        """#)
+    }
+
+    func testDecodedPromotionsHideWithoutRemovingNavigationFormsOrVideo() async throws {
+        let web = try await fixture()
+        try await addDecodedRendererFixture(web)
+        try await web.evaluateJavaScript(AdBlockService.adHidingScript(cosmetic: true) + "\nnull")
+        let state = try await web.evaluateJavaScript("""
+        (() => {
+          const hidden=id=>getComputedStyle(document.getElementById(id)).display==='none';
+          document.getElementById('custom-control').click();
+          return {promotions:['decoded-carousel','decoded-inline'].every(hidden),
+            content:['ordinary-gallery','ordinary-navigation','ordinary-player','ordinary-login','custom-control'].every(id=>!hidden(id)),
+            invoked:window.rendererInvocations, control:window.controlClicked};
+        })()
+        """) as? [String:Any]
+        XCTAssertEqual(state?["promotions"] as? Bool, true)
+        XCTAssertEqual(state?["content"] as? Bool, true)
+        XCTAssertEqual(state?["invoked"] as? Int, 0)
+        XCTAssertEqual(state?["control"] as? Bool, true)
+        // Reusing a previously promotional DOM node for ordinary content must
+        // remove the marker rather than permanently hiding that component.
+        try await web.evaluateJavaScript("window.replaceRenderer(document.getElementById('decoded-carousel'), function gallery(){return 'photos'}); window.__souloAdBlockRemoveAds(); null")
+        let restored = try await web.evaluateJavaScript("getComputedStyle(document.getElementById('decoded-carousel')).display!=='none'")
+        XCTAssertEqual(restored as? Bool, true)
+    }
+
+    func testDecodedPromotionsRespectFilteringOffAndSiteExceptions() async throws {
+        for (cosmetic, allowlist) in [(false,[String]()), (true,["example.com"])] {
+            let web = try await fixture()
+            try await addDecodedRendererFixture(web)
+            try await web.evaluateJavaScript(AdBlockService.adHidingScript(cosmetic: cosmetic, allowlistedHosts: allowlist) + "\nnull")
+            let visible = try await web.evaluateJavaScript("['decoded-carousel','decoded-inline'].every(id=>getComputedStyle(document.getElementById(id)).display!=='none')")
+            XCTAssertEqual(visible as? Bool, true)
+        }
+    }
+
+    func testDecodedPromotionsRespectDisabledBuiltInImageRule() async throws {
+        var rule = try XCTUnwrap(BuiltInAdRuleStore.effectiveRules().first { $0.id == "paired-image-banner" })
+        rule.isEnabled = false
+        UserDefaults.standard.set(try JSONEncoder().encode([rule.id:rule]), forKey: BuiltInAdRuleStore.storageKey)
+        let web = try await fixture()
+        try await addDecodedRendererFixture(web)
+        try await web.evaluateJavaScript(AdBlockService.adHidingScript(cosmetic: true) + "\nnull")
+        let visible = try await web.evaluateJavaScript("['decoded-carousel','decoded-inline'].every(id=>getComputedStyle(document.getElementById(id)).display!=='none')")
+        XCTAssertEqual(visible as? Bool, true)
+    }
+
+    @MainActor private final class LiveImageNavigation: NSObject, WKNavigationDelegate {
+        var committed = false
+        var error: NSError?
+        func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) { committed = true }
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            self.error = error as NSError
+        }
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            self.error = error as NSError
+        }
+    }
+
+    func testLiveDecodedImagePromotions() async throws {
+        guard ProcessInfo.processInfo.environment["SOULO_LIVE_IMAGE_AD_QA"] == "1" else {
+            throw XCTSkip("Opt-in external-site image-ad verification")
+        }
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .nonPersistent()
+        let filtering = ProcessInfo.processInfo.environment["SOULO_LIVE_IMAGE_AD_FILTERING"] != "0"
+        if filtering {
+            configuration.userContentController.addUserScript(WKUserScript(
+                source: AdBlockService.adHidingScript(cosmetic: true), injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+        }
+        let web = WKWebView(frame: CGRect(x:0,y:0,width:402,height:874), configuration:configuration)
+        let navigation = LiveImageNavigation()
+        web.navigationDelegate = navigation
+        web.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+        web.load(URLRequest(url: try XCTUnwrap(URL(string:"https://ggbgb.na42u.cc/home"))))
+        defer { web.stopLoading() }
+        for _ in 0..<150 {
+            if navigation.error != nil { break }
+            if (try? await web.evaluateJavaScript("document.images.length>100 && (\(filtering ? "false" : "true") || document.querySelectorAll('[data-soulo-image-banner=renderer]').length>=2)")) as? Bool == true { break }
+            try await Task.sleep(for:.milliseconds(300))
+        }
+        let result = try await web.evaluateJavaScript(#"""
+        (() => {
+          const visible=el=>{for(let n=el;n;n=n.parentElement){if(getComputedStyle(n).display==='none'||getComputedStyle(n).visibility==='hidden')return false;}return true;};
+          const promotions=[...document.querySelectorAll('[data-soulo-image-banner]')];
+          const menus=[...document.images].filter(image=>{
+            const key=Object.getOwnPropertyNames(image).find(k=>k.startsWith('__reactFiber$'));let f=key&&image[key];
+            for(let i=0;f&&i<4;i++,f=f.return)if(String(f.memoizedProps?.src||'').includes('/images/menu/menu-'))return true;
+            return false;
+          });
+          return {images:document.images.length,renderers:promotions.filter(el=>el.dataset.souloImageBanner==='renderer').length,
+            dismissible:promotions.filter(el=>el.dataset.souloImageBanner==='dismissible').length,
+            hidden:promotions.every(el=>!visible(el)),menus:menus.length,visibleMenus:menus.filter(visible).length,
+            bodyVisible:visible(document.body),readyState:document.readyState,htmlLength:document.documentElement.outerHTML.length,
+            scriptInstalled:typeof window.__souloAdBlockRemoveAds==='function'};
+        })()
+        """#) as? [String:Any]
+        print("LIVE_IMAGE_AD_QA filtering=\(filtering) committed=\(navigation.committed) url=\(web.url?.absoluteString ?? "nil") error=\(navigation.error?.domain ?? "none"):\(navigation.error?.code ?? 0) state=\(result ?? [:])")
+        XCTAssertNil(navigation.error)
+        XCTAssertGreaterThan(result?["images"] as? Int ?? 0, 100, "The page must load before the filtering result is evaluated")
+        if filtering {
+            XCTAssertGreaterThanOrEqual(result?["renderers"] as? Int ?? 0, 2)
+            XCTAssertGreaterThanOrEqual(result?["dismissible"] as? Int ?? 0, 1)
+        } else {
+            XCTAssertEqual(result?["renderers"] as? Int, 0)
+            XCTAssertEqual(result?["dismissible"] as? Int, 0)
+        }
+        XCTAssertEqual(result?["scriptInstalled"] as? Bool, filtering)
+        XCTAssertEqual(result?["hidden"] as? Bool, true)
+        XCTAssertGreaterThanOrEqual(result?["visibleMenus"] as? Int ?? 0, 6)
+        XCTAssertEqual(result?["bodyVisible"] as? Bool, true)
+    }
+
+    func testDismissibleImagePromotionKeepsOrdinaryFixedImagesAndDialogs() async throws {
+        let web = try await fixture()
+        try await web.evaluateJavaScript(#"""
+        (() => {
+          const image='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+          for (const [id, close, dialog] of [['image-promotion',true,false],['ordinary-fixed',false,false],['domain-notice',true,true]]) {
+            const root=document.createElement('div');root.id=id;
+            root.style.cssText='position:fixed;bottom:0;left:0;width:100%;height:60px';
+            if(dialog)root.setAttribute('role','dialog');
+            root.innerHTML='<img src="'+image+'" style="width:calc(100% - 25px);height:60px"><img src="'+image+'" style="position:absolute;right:0;top:0;width:20px;height:20px">';
+            const icon=root.lastElementChild;
+            const props={src:close?'/assets/icons/close.png':'/assets/icons/next.png'};
+            icon.__reactFiber$fixture={return:{memoizedProps:props}};
+            document.body.append(root);
+          }
+        })();null
+        """#)
+        try await web.evaluateJavaScript(AdBlockService.adHidingScript(cosmetic: true) + "\nnull")
+        let state = try await web.evaluateJavaScript("""
+        ({promotion:getComputedStyle(document.getElementById('image-promotion')).display==='none',
+          preserved:['ordinary-fixed','domain-notice'].every(id=>getComputedStyle(document.getElementById(id)).display!=='none')})
+        """) as? [String:Any]
+        XCTAssertEqual(state?["promotion"] as? Bool, true)
+        XCTAssertEqual(state?["preserved"] as? Bool, true)
+        try await web.evaluateJavaScript("document.getElementById('image-promotion').innerHTML='<video controls></video>'; window.__souloAdBlockRemoveAds(); null")
+        let reused = try await web.evaluateJavaScript("getComputedStyle(document.getElementById('image-promotion')).display!=='none'")
+        XCTAssertEqual(reused as? Bool, true, "A reused promotion container must not hide a normal player")
+    }
+
     private func addRandomBottomMosaic(_ web: WKWebView, tag: String) async throws {
         try await js("""
         for (let row = 0; row < 4; row++) for (let col = 0; col < 10; col++) {

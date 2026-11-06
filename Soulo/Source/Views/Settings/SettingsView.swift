@@ -1,7 +1,6 @@
 import SwiftUI
 import SwiftData
 import PhotosUI
-import StoreKit
 
 struct SettingsView: View {
     private let neutralIconColor = Color(uiColor: .secondaryLabel)
@@ -37,7 +36,6 @@ struct SettingsView: View {
     @State private var clearingCache = false
     @State private var cacheCleared = false
     @State private var cacheSizeText: String?
-    @Environment(\.requestReview) private var requestReview
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -372,14 +370,14 @@ struct SettingsView: View {
 
                     // MARK: - About & Support
                     Section {
-                        Button { requestReview() } label: {
-                            SettingsActionLabel(
+                        NavigationLink(value: Destination.review) {
+                            SettingsNavigationLabel(
                                 icon: "star.bubble.fill",
                                 color: neutralIconColor,
                                 title: LanguageManager.shared.localizedString("settings_rate")
                             )
                         }
-                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("settings.rate")
 
                         Button { showFeedback = true } label: {
                             SettingsActionLabel(
@@ -471,7 +469,7 @@ struct SettingsView: View {
     // is actually opened, instead of constructing every destination at once.
     private enum Destination: Hashable {
         case platforms, language, wallpaper, webAppearance, video, shake, toolbar, homeToolbar
-        case adBlock, privacy, extensions, backups, quickActions, urlSchemes, version
+        case adBlock, privacy, extensions, backups, quickActions, urlSchemes, version, review
     }
 
     @ViewBuilder
@@ -497,6 +495,7 @@ struct SettingsView: View {
         case .quickActions: AppQuickActionSettingsView()
         case .urlSchemes: URLSchemeGuideView()
         case .version: AppVersionView(version: appVersion)
+        case .review: AppReviewSupportView()
         }
     }
 
@@ -543,7 +542,7 @@ struct IconBadge: View {
                 .foregroundStyle(color)
                 .frame(width: 18, height: 18, alignment: .center)
         }
-        .frame(width: 32, height: 32, alignment: .top)
+        .frame(width: 32, height: 32)
     }
 }
 
@@ -623,9 +622,10 @@ struct SettingsRowLabel: View {
     let color: Color
     let title: String
     var description: String? = nil
+    private var hasDescription: Bool { description?.isEmpty == false }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: hasDescription ? .top : .center, spacing: 12) {
             IconBadge(systemName: icon, color: color)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
@@ -635,7 +635,7 @@ struct SettingsRowLabel: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .padding(.top, 2)
+            .padding(.top, hasDescription ? 2 : 0)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.vertical, 2)

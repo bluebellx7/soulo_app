@@ -31,7 +31,8 @@ for file in index.html home.css home.js site.css site-ui.js navigation.css sourc
     images/soulo-home-zh.webp images/soulo-home-en.webp \
     images/soulo-home-light-zh.webp images/soulo-home-light-en.webp images/app-store-qr.svg \
     images/web/app-icon-108.webp images/web/search-home.webp \
-    images/web/soulo-home-light-zh-804.webp images/web/soulo-home-light-en-804.webp; do
+    images/web/soulo-home-light-zh-804.webp images/web/soulo-home-light-en-804.webp \
+    images/web/illustration-about.webp images/web/illustration-reading.webp images/web/illustration-bookmarks.webp; do
     if [[ ! -f "$LOCAL_DIR/$file" ]]; then
         echo "❌ 缺少网站文件：$LOCAL_DIR/$file" >&2
         exit 1
@@ -97,6 +98,9 @@ check_content_type "images/web/app-icon-108.webp" "image/webp"
 check_content_type "images/web/search-home.webp" "image/webp"
 check_content_type "images/web/soulo-home-light-zh-804.webp" "image/webp"
 check_content_type "images/web/soulo-home-light-en-804.webp" "image/webp"
+check_content_type "images/web/illustration-about.webp" "image/webp"
+check_content_type "images/web/illustration-reading.webp" "image/webp"
+check_content_type "images/web/illustration-bookmarks.webp" "image/webp"
 check_content_type "movies.html" "text/html"
 check_content_type "magnets.html" "text/html"
 check_content_type "pans.html" "text/html"

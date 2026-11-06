@@ -267,6 +267,7 @@ struct HomeView: View {
             Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
         }
         .onAppear {
+            BrowserStartupTrace.mark("home_appear")
             ReviewPromptPolicy.recordUse()
             editingTitle = homeTitle
             editingSubtitle = homeSubtitle
@@ -480,6 +481,7 @@ struct HomeView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 8)
         }
+        .buttonStyle(HomePressButtonStyle())
     }
 
     private var homeHeading: some View {
@@ -487,38 +489,37 @@ struct HomeView: View {
             if !displayedHomeTitle.isEmpty || !displayedHomeSubtitle.isEmpty {
                 VStack(spacing: 6) {
                     if !displayedHomeTitle.isEmpty {
-                        Text(displayedHomeTitle)
-                            .font(.system(size: 38, weight: .bold, design: .rounded))
-                            .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47") : .white)
-                            .shadow(color: wallpaperManager.isCurrentWallpaperLight ? .black.opacity(0.05) : .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                            .onTapGesture { showTitleEditor = true }
-                            .accessibilityLabel(
-                                AppAccessibility.formatted("accessibility_home_title", displayedHomeTitle)
-                            )
-                            .accessibilityHint(
-                                languageManager.localizedString("accessibility_edit_title_hint")
-                            )
-                            .accessibilityAddTraits([.isHeader, .isButton])
-                            .accessibilityAction { showTitleEditor = true }
+                        Button { showTitleEditor = true } label: {
+                            Text(displayedHomeTitle)
+                                .font(.system(size: 38, weight: .bold, design: .rounded))
+                                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47") : .white)
+                                .shadow(color: wallpaperManager.isCurrentWallpaperLight ? .black.opacity(0.05) : .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                        }
+                        .accessibilityLabel(
+                            AppAccessibility.formatted("accessibility_home_title", displayedHomeTitle)
+                        )
+                        .accessibilityHint(
+                            languageManager.localizedString("accessibility_edit_title_hint")
+                        )
+                        .accessibilityAddTraits(.isHeader)
                     }
 
                     if !displayedHomeSubtitle.isEmpty {
-                        Text(displayedHomeSubtitle)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.6) : .white.opacity(0.4))
-                            .tracking(1.5)
-                            .onTapGesture { showSubtitleEditor = true }
-                            .accessibilityLabel(
-                                AppAccessibility.formatted(
-                                    "accessibility_home_subtitle",
-                                    displayedHomeSubtitle
-                                )
+                        Button { showSubtitleEditor = true } label: {
+                            Text(displayedHomeSubtitle)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.6) : .white.opacity(0.4))
+                                .tracking(1.5)
+                        }
+                        .accessibilityLabel(
+                            AppAccessibility.formatted(
+                                "accessibility_home_subtitle",
+                                displayedHomeSubtitle
                             )
-                            .accessibilityHint(
-                                languageManager.localizedString("accessibility_edit_subtitle_hint")
-                            )
-                            .accessibilityAddTraits(.isButton)
-                            .accessibilityAction { showSubtitleEditor = true }
+                        )
+                        .accessibilityHint(
+                            languageManager.localizedString("accessibility_edit_subtitle_hint")
+                        )
                     }
                 }
             }

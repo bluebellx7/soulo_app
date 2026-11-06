@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Ny standardspiller for lokale videoer og BT-videoer med episodevalg, 0,5–4× hastighet og systemspiller for kompatible formater.
-• Fullskjermkontroller skjules automatisk. Hold for midlertidig 2× hastighet, og sveip på venstre side for lysstyrke eller høyre side for volum.
-• Rettet enkelte HEVC/MKV-videoer med lyd uten bilde og lasteindikatorer som ble værende under avspilling.
-• Bedre samspill mellom sprettoppvinduer og annonsefiltrering hindrer feil blokkering og gjenværende lag over videoen.
-• Rettet konflikt mellom sveip for å slette og fanebytte, justert mapper i begge visninger og stabilisert høyden på nylige søk ved langt trykk.
+• Rettet en feil der åpning av et bokmerke eller en oppføring i historikken kunne erstatte en eksisterende fane.
+• Forbedret oppstart, sidelasting og betjening av startskjermen.
+• Forbedret fullskjermkontroll, rotasjon og avspillingsstatus ved bytte mellom apper.
+• Forbedret gjenoppretting av lukkede faner, filforhåndsvisning og detaljer i grensesnittet.

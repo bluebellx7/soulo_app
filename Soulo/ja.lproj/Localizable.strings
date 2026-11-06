@@ -907,3 +907,10 @@
 "extension_limit_commands" = "iOS では拡張機能のキーボードショートカットを利用できません。";
 "extension_limit_notifications" = "通知の表示は可能ですが、クリックと終了のイベントには対応していません。";
 "extension_limit_offscreen" = "オフスクリーンドキュメントは音声再生のみに対応しています。";
+
+"review_support_message" = "Soulo を応援していただきありがとうございます。皆さまのレビューが改善の励みになります。";
+"review_open_app_store" = "App Storeでレビューを書く";
+
+"quick_actions_explanation" = "ホーム画面の Soulo アイコンを長押しすると、ここで設定したショートカットを使えます。";
+
+"ad_block_scope_hint" = "Web広告、宣伝用オーバーレイ、意図せず開くポップアップを除去します。サイトが正常に動作しない場合は、そのサイトだけフィルタリングをオフにできます。";

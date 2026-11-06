@@ -59,7 +59,7 @@ struct BookmarksContentView: View {
             }
             if visibleFolders.isEmpty && visibleBookmarks.isEmpty {
                 Section {
-                    IllustratedToolEmptyState(scene: .books,
+                    IllustratedToolEmptyState(scene: .bookmarks,
                         title: LanguageManager.shared.localizedString("no_bookmarks"),
                         message: ToolText.text("favorites_empty"))
                 }

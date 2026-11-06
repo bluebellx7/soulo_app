@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Novo player padrão para vídeos locais e BT, com seleção de episódios, velocidade de 0,5–4× e player do sistema para formatos compatíveis.
-• Controles em tela cheia com ocultação automática, toque longo para 2× temporário e gestos de brilho à esquerda e volume à direita.
-• Corrigidos vídeos HEVC/MKV que reproduziam apenas áudio e indicadores de carregamento que permaneciam visíveis.
-• Melhor compatibilidade de pop-ups e filtros de anúncios para evitar bloqueios incorretos e camadas restantes sobre os vídeos.
-• Corrigidos conflitos entre deslizar para excluir e trocar de aba, alinhamento de pastas nas duas visualizações e altura das buscas recentes ao manter pressionado.
+• Corrigido um problema que podia substituir uma aba existente ao abrir um favorito ou um item do histórico.
+• Melhorias na inicialização, no carregamento de páginas e nas interações da tela inicial.
+• Melhorias nos controles de tela cheia, na rotação e no estado de reprodução ao trocar de app.
+• Melhorias na restauração de abas fechadas, nas prévias de arquivos e nos detalhes da interface.

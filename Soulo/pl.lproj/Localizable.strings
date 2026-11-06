@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Skróty klawiszowe rozszerzeń są niedostępne w iOS.";
 "extension_limit_notifications" = "Powiadomienia mogą być wyświetlane, ale zdarzenia kliknięcia i zamknięcia nie są obsługiwane.";
 "extension_limit_offscreen" = "Dokumenty poza ekranem obsługują tylko odtwarzanie dźwięku.";
+
+"review_support_message" = "Dziękujemy za wsparcie Soulo. Twoje recenzje pomagają nam stale ulepszać aplikację.";
+"review_open_app_store" = "Oceń w App Store";
+
+"quick_actions_explanation" = "Przytrzymaj ikonę Soulo na ekranie początkowym, aby użyć skonfigurowanych tutaj skrótów.";
+
+"ad_block_scope_hint" = "Filtruje reklamy internetowe, nakładki promocyjne i niechciane wyskakujące okna. Jeśli witryna nie działa, możesz wyłączyć filtrowanie tylko dla niej.";

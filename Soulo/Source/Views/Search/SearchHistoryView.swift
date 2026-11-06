@@ -104,7 +104,7 @@ struct SearchHistoryContentView: View {
 
             if visibleHistory.isEmpty {
                 IllustratedToolEmptyState(
-                    scene: .files,
+                    scene: .history,
                     title: LanguageManager.shared.localizedString("no_history"),
                     message: LanguageManager.shared.localizedString("no_history_desc")
                 )

@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Les dreceres de teclat de les extensions no estan disponibles a iOS.";
 "extension_limit_notifications" = "Es poden mostrar notificacions, però no s’admeten els esdeveniments de clic i tancament.";
 "extension_limit_offscreen" = "Els documents fora de pantalla només admeten reproducció d’àudio.";
+
+"review_support_message" = "Gràcies per donar suport a Soulo. Les teves ressenyes ens ajuden a continuar millorant.";
+"review_open_app_store" = "Valora a l’App Store";
+
+"quick_actions_explanation" = "Mantén premuda la icona de Soulo a la pantalla d’inici per fer servir les dreceres configurades aquí.";
+
+"ad_block_scope_hint" = "Filtra anuncis web, capes promocionals i finestres emergents no sol·licitades. Si un lloc deixa de funcionar, pots desactivar el filtre només per a aquell lloc.";

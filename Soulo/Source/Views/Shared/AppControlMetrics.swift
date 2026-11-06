@@ -7,6 +7,29 @@ enum AppControlMetrics {
     static let actionHeight: CGFloat = 44
 }
 
+/// One restrained press response for home controls, with no layout changes.
+struct HomePressFeedback: ViewModifier {
+    let isPressed: Bool
+    var scale: CGFloat = 0.94
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isPressed && !reduceMotion ? scale : 1)
+            .animation(reduceMotion ? nil : (isPressed
+                ? .easeOut(duration: 0.07)
+                : .spring(response: 0.22, dampingFraction: 0.8)), value: isPressed)
+    }
+}
+
+struct HomePressButtonStyle: ButtonStyle {
+    var scale: CGFloat = 0.94
+    var enabled = true
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.modifier(HomePressFeedback(isPressed: enabled && configuration.isPressed, scale: scale))
+    }
+}
+
 /// Standard actions share shape, typography, state feedback and the inherited tint.
 struct CompactActionButtonStyle: ButtonStyle {
     var prominent = false

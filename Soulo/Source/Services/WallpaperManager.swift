@@ -12,6 +12,7 @@ class WallpaperManager: ObservableObject {
         didSet {
             UserDefaults.standard.set(source.rawValue, forKey: "wallpaper_source")
             resetPreloadedWallpaper()
+            cachedImageLoadTask?.cancel()
             imageLoadRevision = UUID()
             if source == .photo {
                 if customImage == nil { loadCustomImage() }
@@ -95,6 +96,8 @@ class WallpaperManager: ObservableObject {
     private var preloadedImage: UIImage?
     private var preloadedImageData: Data?
     private var imageLoadRevision = UUID()
+    private var cachedImageLoadTask: Task<Void, Never>?
+    private var cachedImageLoadID = UUID()
     private var automaticRefreshActive = true
     private let resources: BrowserResourcePolicy
     private var resourceObservers = Set<AnyCancellable>()
@@ -178,7 +181,11 @@ class WallpaperManager: ObservableObject {
         let src = source
         guard src == .pexels || src == .pixabay || src == .bing else { return }
         guard candidateWallpapers.isEmpty || currentImage == nil else { return }
-        Task { await initialFetch() }
+        Task {
+            await cachedImageLoadTask?.value
+            guard source == src, !networkLoading else { return }
+            await initialFetch()
+        }
     }
 
     func refreshRandom() async {
@@ -694,6 +701,8 @@ class WallpaperManager: ObservableObject {
     private func saveBlocked() { UserDefaults.standard.set(Array(blockedIDs), forKey: "wallpaper_blocked") }
     private func loadBlocked() { let arr = UserDefaults.standard.stringArray(forKey: "wallpaper_blocked") ?? []; blockedIDs = Set(arr) }
     func saveCustomImage(_ image: UIImage) {
+        cachedImageLoadTask?.cancel()
+        imageLoadRevision = UUID()
         currentImageID = "custom_\(Date().timeIntervalSince1970)"
         if let data = image.jpegData(compressionQuality: 0.8) {
             try? data.write(to: Self.customImageURL)
@@ -705,14 +714,7 @@ class WallpaperManager: ObservableObject {
     }
     private func loadCustomImage() {
         guard source == .photo else { return }
-        if let bitmap = WallpaperImageDecoder.decode(file: Self.customImageURL, targetPixels: Self.backgroundPixels) {
-            let image = UIImage(cgImage: bitmap)
-            customImage = image
-            if source == .photo {
-                currentImage = image
-                currentImageID = "custom_local"
-            }
-        }
+        loadCachedImage(at: Self.customImageURL, imageID: "custom_local", custom: true)
     }
     private static var customImageURL: URL { FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("custom_wallpaper.jpg") }
     func saveToAlbum(image: UIImage) { UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil) }
@@ -734,8 +736,7 @@ class WallpaperManager: ObservableObject {
         return directory
     }
 
-    /// Loads the last successfully displayed remote wallpaper synchronously so
-    /// the first rendered frame never has to wait for the network.
+    /// Restore the last wallpaper from disk without blocking the first frame or touches.
     private func loadPersistedRemoteWallpaper() {
         guard source.isRemote else { return }
 
@@ -746,14 +747,36 @@ class WallpaperManager: ObservableObject {
         }
 
         let fileURL = Self.currentWallpaperCacheDirectory.appendingPathComponent(fileName)
-        guard let image = WallpaperImageDecoder.decode(file: fileURL, targetPixels: Self.backgroundPixels) else {
-            removePersistedRemoteWallpaper()
-            return
-        }
+        loadCachedImage(at: fileURL, imageID: imageID,
+                        remoteURL: defaults.string(forKey: Self.currentWallpaperURLKey))
+    }
 
-        currentImage = UIImage(cgImage: image)
-        currentImageID = imageID
-        currentImageURLString = defaults.string(forKey: Self.currentWallpaperURLKey)
+    private func loadCachedImage(at file: URL, imageID: String, custom: Bool = false, remoteURL: String? = nil) {
+        cachedImageLoadTask?.cancel()
+        let loadID = UUID(); cachedImageLoadID = loadID
+        let revision = imageLoadRevision
+        let expectedSource = source
+        let pixels = Self.backgroundPixels
+        cachedImageLoadTask = Task { @MainActor [weak self] in
+            let work = Task.detached(priority: .userInitiated) {
+                BrowserStartupTrace.markThread("wallpaper_cache_decode_start")
+                defer { BrowserStartupTrace.mark("wallpaper_cache_decode_end") }
+                guard !Task.isCancelled else { return nil as UIImage? }
+                return WallpaperImageDecoder.decode(file: file, targetPixels: pixels).map { UIImage(cgImage: $0) }
+            }
+            let image = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+            guard let self else { return }
+            defer { if self.cachedImageLoadID == loadID { self.cachedImageLoadTask = nil } }
+            guard !Task.isCancelled, self.imageLoadRevision == revision, self.source == expectedSource else { return }
+            guard let image else {
+                if !custom { self.removePersistedRemoteWallpaper() }
+                return
+            }
+            if custom { self.customImage = image }
+            self.currentImage = image
+            self.currentImageID = imageID
+            self.currentImageURLString = remoteURL
+        }
     }
 
     /// Uses a unique file for each write so overlapping downloads cannot
@@ -793,6 +816,8 @@ class WallpaperManager: ObservableObject {
     }
 
     private func removePersistedRemoteWallpaper() {
+        cachedImageLoadTask?.cancel()
+        imageLoadRevision = UUID()
         let defaults = UserDefaults.standard
         if let fileName = defaults.string(forKey: Self.currentWallpaperFileKey) {
             let fileURL = Self.currentWallpaperCacheDirectory.appendingPathComponent(fileName)

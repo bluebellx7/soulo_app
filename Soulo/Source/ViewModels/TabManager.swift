@@ -15,9 +15,9 @@ struct BrowserTab: Identifiable, Equatable {
     var suspendedURL: URL?
     var lastAccessedAt = Date()
 
-    init(id: UUID = UUID(), keyword: String? = nil, platform: SearchPlatform? = nil) {
+    init(id: UUID = UUID(), keyword: String? = nil, platform: SearchPlatform? = nil, webViewModel: WebViewModel? = nil) {
         self.id = id
-        let webViewModel = WebViewModel()
+        let webViewModel = webViewModel ?? WebViewModel()
         webViewModel.configureSnapshotPersistence(id: id)
         self.webViewModel = webViewModel
         self.keyword = keyword
@@ -199,8 +199,8 @@ final class TabManager: ObservableObject {
     }
 
     @discardableResult
-    func createTab(url: URL? = nil, keyword: String? = nil, platform: SearchPlatform? = nil, switchTo: Bool = true) -> BrowserTab {
-        var tab = BrowserTab(keyword: keyword, platform: platform)
+    func createTab(url: URL? = nil, keyword: String? = nil, platform: SearchPlatform? = nil, switchTo: Bool = true, webViewModel: WebViewModel? = nil) -> BrowserTab {
+        var tab = BrowserTab(keyword: keyword, platform: platform, webViewModel: webViewModel)
         if switchTo {
             activeWebViewModel?.takeSnapshot()
             dismissFindInPage()
@@ -751,6 +751,7 @@ extension String {
 extension Notification.Name {
     static let souloDesktopModeChanged = Notification.Name("souloDesktopModeChanged")
     static let openInNewTab = Notification.Name("soulo.openInNewTab")
+    static let closeScriptOpenedTab = Notification.Name("soulo.closeScriptOpenedTab")
     static let closeUserScriptTab = Notification.Name("soulo.closeUserScriptTab")
     static let closeUserScriptCurrentTab = Notification.Name("soulo.closeUserScriptCurrentTab")
     static let focusUserScriptCurrentTab = Notification.Name("soulo.focusUserScriptCurrentTab")

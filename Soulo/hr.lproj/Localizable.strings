@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Tipkovnički prečaci proširenja nisu dostupni na iOS-u.";
 "extension_limit_notifications" = "Obavijesti se mogu prikazivati, ali događaji klika i zatvaranja nisu podržani.";
 "extension_limit_offscreen" = "Dokumenti izvan zaslona podržavaju samo reprodukciju zvuka.";
+
+"review_support_message" = "Hvala što podržavate Soulo. Vaše recenzije pomažu nam da budemo još bolji.";
+"review_open_app_store" = "Ocijenite u App Storeu";
+
+"quick_actions_explanation" = "Dodirnite i držite ikonu Soulo na početnom zaslonu za uporabu ovdje postavljenih prečaca.";
+
+"ad_block_scope_hint" = "Filtrira web-oglase, promotivne slojeve i neželjene skočne prozore. Ako stranica prestane raditi, filtriranje možete isključiti samo za nju.";

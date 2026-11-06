@@ -69,6 +69,23 @@ final class AdBlockStartupCacheTests: XCTestCase {
         AdBlockStartupCache(directory: nil).write("ignored", slot: .cosmeticScript, key: "key")
     }
 
+    func testFallbackAndNativeScriptsSurviveAlternatingStartupRequests() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let cache = AdBlockStartupCache(directory: directory)
+        cache.write("full fallback", slot: .cosmeticScript, key: "fallback-v1")
+        cache.write("native supplement", slot: .nativeCosmeticScript, key: "native-v1")
+        let reopened = AdBlockStartupCache(directory: directory)
+        XCTAssertEqual(reopened.read(String.self, slot: .cosmeticScript, key: "fallback-v1"), "full fallback")
+        XCTAssertEqual(reopened.read(String.self, slot: .nativeCosmeticScript, key: "native-v1"), "native supplement")
+        // An update must invalidate that mode without accepting the other mode's output.
+        XCTAssertNil(reopened.read(String.self, slot: .nativeCosmeticScript, key: "fallback-v1"))
+        cache.write("new fallback", slot: .cosmeticScript, key: "fallback-v2")
+        XCTAssertNil(reopened.read(String.self, slot: .cosmeticScript, key: "fallback-v1"))
+        XCTAssertEqual(reopened.read(String.self, slot: .nativeCosmeticScript, key: "native-v1"), "native supplement")
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: directory.path).count, 2)
+    }
+
     func testCacheIdentityTracksAllowlistRulesAndDirectOverrides() throws {
         let defaults = UserDefaults.standard
         let keys = ["soulo_ad_block_subscription_rules", "soulo_ad_block_subscription_rules_version",

@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Nový predvolený prehrávač miestnych a BT videí s výberom dielov, rýchlosťou 0,5–4× a systémovou voľbou pre kompatibilné formáty.
-• Ovládanie celej obrazovky sa automaticky skrýva; podržaním dočasne zrýchlite na 2×, vľavo upravíte jas a vpravo hlasitosť.
-• Opravené prehrávanie niektorých HEVC/MKV videí bez obrazu a pretrvávajúci indikátor načítavania.
-• Lepšia kompatibilita vyskakovacích okien a filtrovania reklám zabraňuje chybnému blokovaniu a zvyšným vrstvám cez video.
-• Opravené konflikty mazania potiahnutím s prepínaním kariet, zarovnanie priečinkov v oboch zobrazeniach a výška nedávnych hľadaní pri podržaní.
+• Opravená chyba, pri ktorej otvorenie záložky alebo položky histórie mohlo prepísať existujúcu kartu.
+• Vylepšené spúšťanie, načítavanie stránok a ovládanie domovskej obrazovky.
+• Vylepšené ovládanie na celej obrazovke, otáčanie a stav prehrávania pri prepínaní aplikácií.
+• Vylepšené obnovenie zatvorených kariet, náhľady súborov a detaily rozhrania.

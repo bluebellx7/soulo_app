@@ -816,14 +816,7 @@ struct WebViewContainer: View {
         .navigationDestination(item: $librarySection) { section in
             LibraryView(
                 initialSection: section,
-                searchVM: searchVM,
-                onOpen: { value in
-                    if let onAddressSearch {
-                        onAddressSearch(value)
-                    } else if value.isValidURL, let url = value.asURL {
-                        webViewModel.loadURL(url)
-                    }
-                }
+                searchVM: searchVM
             )
         }
         .sheet(isPresented: $showExtensionCenter) {

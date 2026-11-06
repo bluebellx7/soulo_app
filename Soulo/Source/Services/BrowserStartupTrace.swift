@@ -8,12 +8,35 @@ enum BrowserStartupTrace {
     private static var traceHandle: FileHandle?
     private static var traceSize = 0
     @MainActor private static var submittedBenchmark = false
+    @MainActor private static var startedResponsivenessProbe = false
     #endif
     static var disablesWarmup: Bool {
         #if DEBUG
         ProcessInfo.processInfo.environment["SOULO_DISABLE_WEBVIEW_WARMUP"] == "1"
         #else
         false
+        #endif
+    }
+
+    /// Measure delayed main-actor scheduling without polling or logging in release builds.
+    @MainActor static func startResponsivenessProbe() {
+        #if DEBUG
+        guard !startedResponsivenessProbe,
+              ProcessInfo.processInfo.environment["SOULO_BROWSER_TRACE"] == "1" else { return }
+        startedResponsivenessProbe = true
+        let started = ProcessInfo.processInfo.systemUptime
+        Task { @MainActor in
+            var previous = started
+            while ProcessInfo.processInfo.systemUptime - started < 15 {
+                do { try await Task.sleep(for: .milliseconds(50)) } catch { return }
+                let current = ProcessInfo.processInfo.systemUptime
+                if current - previous > 0.15 {
+                    mark("main_actor_delay", detail: String(format: "%.0fms", (current - previous) * 1_000))
+                }
+                previous = current
+            }
+            mark("responsiveness_probe_end")
+        }
         #endif
     }
 
@@ -57,6 +80,12 @@ enum BrowserStartupTrace {
             try? traceHandle?.write(contentsOf: data)
             traceSize += data.count
         }
+        #endif
+    }
+
+    static func markThread(_ event: String) {
+        #if DEBUG
+        mark(event, detail: "main=\(Thread.isMainThread)")
         #endif
     }
 }

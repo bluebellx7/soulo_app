@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Trình phát mặc định mới cho video cục bộ và BT: chọn tập, tốc độ 0,5–4× và trình phát hệ thống cho định dạng tương thích.
-• Điều khiển toàn màn hình tự ẩn, nhấn giữ để tăng tạm lên 2×, vuốt bên trái chỉnh độ sáng và bên phải chỉnh âm lượng.
-• Sửa lỗi một số video HEVC/MKV chỉ có tiếng không có hình và chỉ báo tải vẫn hiện khi đang phát.
-• Cải thiện khả năng tương thích cửa sổ bật lên và bộ lọc quảng cáo, tránh chặn nhầm và lớp phủ còn sót che video.
-• Sửa xung đột giữa vuốt xóa và chuyển thẻ, căn chỉnh thư mục trong hai chế độ xem và giữ nguyên chiều cao tìm kiếm gần đây khi nhấn giữ.
+• Đã sửa lỗi đôi khi thay thế thẻ hiện có khi mở dấu trang hoặc mục trong lịch sử.
+• Cải thiện khởi động, tải trang và thao tác trên màn hình chính.
+• Cải thiện điều khiển toàn màn hình, xoay màn hình và trạng thái phát khi chuyển ứng dụng.
+• Cải thiện khôi phục thẻ đã đóng, xem trước tệp và các chi tiết giao diện.

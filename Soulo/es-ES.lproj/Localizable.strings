@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Los atajos de teclado de las extensiones no están disponibles en iOS.";
 "extension_limit_notifications" = "Se pueden mostrar notificaciones, pero no se admiten los eventos de clic y cierre.";
 "extension_limit_offscreen" = "Los documentos fuera de pantalla solo admiten reproducción de audio.";
+
+"review_support_message" = "Gracias por apoyar a Soulo. Tus reseñas nos ayudan a seguir mejorando.";
+"review_open_app_store" = "Valorar en el App Store";
+
+"quick_actions_explanation" = "Mantén pulsado el icono de Soulo en la pantalla de inicio para usar los accesos directos configurados aquí.";
+
+"ad_block_scope_hint" = "Filtra anuncios web, capas promocionales y ventanas emergentes no solicitadas. Si un sitio deja de funcionar, puedes desactivar el filtrado solo para ese sitio.";

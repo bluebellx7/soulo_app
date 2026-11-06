@@ -121,7 +121,7 @@ struct BrowserToolbarSettingsView: View {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 9, weight: .semibold))
                         .foregroundStyle(.secondary)
-                    Text("soulo.app")
+                    Text("soulo.dkluge.com")
                         .font(.caption.weight(.medium))
                         .lineLimit(1)
                     Spacer(minLength: 0)

@@ -31,20 +31,18 @@ enum LibrarySection: String, CaseIterable, Identifiable {
 struct LibraryView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var tabManager: TabManager
     @ObservedObject var searchVM: SearchViewModel
     @State private var selectedSection: LibrarySection
     @State private var compactSections: Set<LibrarySection> = []
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pageProgress: CGFloat
-    private let onOpen: ((String) -> Void)?
 
     init(
         initialSection: LibrarySection = .bookmarks,
-        searchVM: SearchViewModel,
-        onOpen: ((String) -> Void)? = nil
+        searchVM: SearchViewModel
     ) {
         self.searchVM = searchVM
-        self.onOpen = onOpen
         _selectedSection = State(initialValue: initialSection)
         _pageProgress = State(initialValue: CGFloat(LibrarySection.allCases.firstIndex(of: initialSection) ?? 0))
     }
@@ -88,14 +86,12 @@ struct LibraryView: View {
     }
 
     private func openSelection(_ value: String) {
+        let tabs = tabManager
+        let model = searchVM
+        let context = modelContext
         dismiss()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
-            if let onOpen {
-                onOpen(value)
-            } else {
-                searchVM.searchText = value
-                searchVM.performSearch(context: modelContext)
-            }
+            model.openLibrarySelection(value, tabManager: tabs, context: context)
         }
     }
 

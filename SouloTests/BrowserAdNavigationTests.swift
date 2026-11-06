@@ -81,6 +81,23 @@ final class BrowserAdNavigationTests: XCTestCase {
             "An unrelated script popup is not the link the user chose")
     }
 
+    func testTrustedScriptControlsMayOpenComputedDestinationsAcrossSites() {
+        for newWindow in [true, false] {
+            XCTAssertFalse(BrowserAdNavigationPolicy.shouldBlock(url: ad, sourceURL: page, navigationType: .other,
+                isNewWindow: newWindow, sourceIsMainFrame: true, hasRecentGesture: true,
+                gestureDestination: nil, gestureIsControl: true))
+            XCTAssertTrue(BrowserAdNavigationPolicy.shouldBlock(url: ad, sourceURL: page, navigationType: .other,
+                isNewWindow: newWindow, sourceIsMainFrame: true, hasRecentGesture: true,
+                gestureDestination: nil, gestureIsControl: false))
+            XCTAssertTrue(BrowserAdNavigationPolicy.shouldBlock(url: ad, sourceURL: page, navigationType: .other,
+                isNewWindow: newWindow, sourceIsMainFrame: false, hasRecentGesture: true,
+                gestureDestination: nil, gestureIsControl: true))
+        }
+        XCTAssertTrue(BrowserAdNavigationPolicy.shouldBlock(url: ad, sourceURL: page, navigationType: .other,
+            isNewWindow: true, sourceIsMainFrame: true, hasRecentGesture: false,
+            gestureDestination: nil, gestureIsControl: true))
+    }
+
     func testVerifiedLoaderRuleDoesNotMatchPlayerOrOtherSites() throws {
         let rule = try XCTUnwrap(AdBlockService.defaultBuiltInRules.first { $0.id == "pbpbw-click-ad-loader" })
         let expression = try NSRegularExpression(pattern: rule.pattern)

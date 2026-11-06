@@ -1,7 +1,6 @@
-1.2.8
+1.2.10
 
-• Nieuwe standaardspeler voor lokale en BT-video’s, met afleveringen, 0,5–4× snelheid en een systeemspeler voor geschikte formaten.
-• Bediening op volledig scherm verdwijnt automatisch. Houd vast voor tijdelijk 2×; veeg aan de linkerkant voor helderheid of aan de rechterkant voor volume.
-• Opgelost: alleen geluid bij sommige HEVC/MKV-video’s en laadindicatoren die tijdens het afspelen zichtbaar bleven.
-• Betere compatibiliteit van pop-ups en advertentiefilters voorkomt onterecht geblokkeerde vensters en achtergebleven videolagen.
-• Conflicten tussen vegen om te wissen en tabwissels opgelost, mappen uitgelijnd in beide bestandsweergaven en vaste hoogte voor ingedrukte recente zoekopdrachten.
+• Een probleem verholpen waarbij een bladwijzer of geschiedenisitem bij het openen soms een bestaand tabblad verving.
+• Opstarten, pagina's laden en interacties op het startscherm verbeterd.
+• Bediening op volledig scherm, draaien en de afspeelstatus bij wisselen van app verbeterd.
+• Het terughalen van gesloten tabbladen, bestandsvoorbeelden en interfacedetails verbeterd.

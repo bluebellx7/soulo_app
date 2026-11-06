@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Pintasan papan kekunci sambungan tidak tersedia pada iOS.";
 "extension_limit_notifications" = "Pemberitahuan boleh dipaparkan, tetapi peristiwa klik dan tutup tidak disokong.";
 "extension_limit_offscreen" = "Dokumen luar skrin hanya menyokong main balik audio.";
+
+"review_support_message" = "Terima kasih kerana menyokong Soulo. Ulasan anda membantu kami terus menambah baik aplikasi.";
+"review_open_app_store" = "Tulis ulasan di App Store";
+
+"quick_actions_explanation" = "Sentuh dan tahan ikon Soulo pada Skrin Utama untuk menggunakan pintasan yang ditetapkan di sini.";
+
+"ad_block_scope_hint" = "Menapis iklan web, tindanan promosi dan tetingkap timbul yang tidak diminta. Jika laman tidak berfungsi, anda boleh mematikan penapisan untuk laman itu sahaja.";

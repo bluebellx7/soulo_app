@@ -907,3 +907,10 @@
 "extension_limit_commands" = "Tangentbordsgenvägar för tillägg är inte tillgängliga i iOS.";
 "extension_limit_notifications" = "Notiser kan visas, men klick- och stängningshändelser stöds inte.";
 "extension_limit_offscreen" = "Dokument utanför skärmen stöder endast ljuduppspelning.";
+
+"review_support_message" = "Tack för att du stöder Soulo. Dina recensioner hjälper oss att bli bättre.";
+"review_open_app_store" = "Betygsätt i App Store";
+
+"quick_actions_explanation" = "Tryck och håll på Soulo-symbolen på hemskärmen för att använda genvägarna som ställs in här.";
+
+"ad_block_scope_hint" = "Filtrerar webbannonser, reklamöverlägg och oönskade popupfönster. Om en webbplats slutar fungera kan du stänga av filtrering bara för den webbplatsen.";
