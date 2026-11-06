@@ -308,6 +308,7 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
                                         .accessibilityIdentifier("media.picture-in-picture")
                                     }
                                     more()
+                                    PlaybackSleepTimerMenu()
                                     if let download = options?.download {
                                         Button { morePresented = false; download() } label: {
                                             Label(LanguageManager.shared.localizedString("download"), systemImage: "arrow.down.circle")
@@ -322,6 +323,7 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
                                         Label(LanguageManager.shared.localizedString("settings"), systemImage: "gearshape")
                                             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                                     }
+                                    .accessibilityIdentifier("media.fullscreen.settings")
                                 }
                                 .padding(16).frame(width: 280).buttonStyle(.plain)
                                 .presentationCompactAdaptation(.popover)

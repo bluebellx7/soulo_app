@@ -27,8 +27,19 @@ struct HelpCenterView: View {
                         guideRow(icon: "shield.checkered", title: lm.localizedString("help_adblock_title"), desc: lm.localizedString("help_adblock_desc"))
                     }
 
+                    guideSection(title: FeatureText.text("Playback, files and backups"), icon: "play.rectangle", color: Color.themePrimary) {
+                        guideRow(icon: "play.rectangle", title: ToolText.text("media_player"), desc: FeatureText.text("Soulo uses shared controls and supports additional media formats. System mode uses Apple's player and supported system playback features. Long-press speed applies to both modes."))
+                        guideRow(icon: "moon.zzz", title: FeatureText.text("Sleep timer"), desc: FeatureText.text("Choose a duration or stop after the current item from the player menu. Local audio can continue in the background and advance through files in the same folder."))
+                        guideRow(icon: "text.book.closed", title: FeatureText.text("Reading list"), desc: FeatureText.text("Save an article from reader mode to read it offline. The reading list keeps loaded text; linked pages and images are not downloaded."))
+                        guideRow(icon: "clock.arrow.circlepath", title: LanguageManager.shared.localizedString("settings_backups"), desc: FeatureText.text("Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list."))
+                        guideRow(icon: "keyboard", title: FeatureText.text("Keyboard shortcuts"), desc: FeatureText.text("Command-L edits the address, Command-T opens a tab, Command-W closes it, Command-Shift-T restores it, Command-R reloads, and Command-F finds text. On iPad, Command-N opens an independent window."))
+                    }
+
                     guideSection(title: lm.localizedString("help_contact"), icon: "envelope.fill", color: .green) {
                         guideRow(icon: "envelope", title: lm.localizedString("help_email_title"), desc: "contact@dkluge.com")
+                        Link(destination: URL(string: "https://t.me/soulobrowser")!) {
+                            guideRow(icon: "paperplane", title: "Telegram", desc: "@soulobrowser")
+                        }
                     }
                 }
                 .padding(.vertical)

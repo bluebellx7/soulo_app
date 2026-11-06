@@ -10,7 +10,12 @@ class WallpaperManager: ObservableObject {
 
     @Published var source: WallpaperSource {
         didSet {
+            guard source != oldValue else { return }
             UserDefaults.standard.set(source.rawValue, forKey: "wallpaper_source")
+            remoteRequestID = UUID()
+            networkLoading = false
+            candidateWallpapers = []
+            clearRemoteErrorIfNeeded()
             resetPreloadedWallpaper()
             cachedImageLoadTask?.cancel()
             imageLoadRevision = UUID()
@@ -59,6 +64,7 @@ class WallpaperManager: ObservableObject {
     }
     @Published var onlyUseFavoriteWallpapers: Bool {
         didSet {
+            if onlyUseFavoriteWallpapers && favorites.isEmpty { onlyUseFavoriteWallpapers = false }
             UserDefaults.standard.set(onlyUseFavoriteWallpapers, forKey: "wallpaper_only_favorites")
             resetPreloadedWallpaper()
         }
@@ -75,6 +81,12 @@ class WallpaperManager: ObservableObject {
     @Published var favorites: [RemoteWallpaper] = [] {
         didSet {
             saveFavorites()
+            favoriteStorageRevision += 1
+            let ids = Set(favorites.map(\.id))
+            let removed = Set(oldValue.map(\.id)).subtracting(ids)
+            let revision = favoriteStorageRevision
+            Task { await favoriteImageStorage.reconcile(favoriteIDs: ids, removingIDs: removed, revision: revision) }
+            if favorites.isEmpty && onlyUseFavoriteWallpapers { onlyUseFavoriteWallpapers = false }
             if onlyUseFavoriteWallpapers {
                 resetPreloadedWallpaper()
             }
@@ -99,19 +111,26 @@ class WallpaperManager: ObservableObject {
     private var cachedImageLoadTask: Task<Void, Never>?
     private var cachedImageLoadID = UUID()
     private var automaticRefreshActive = true
+    private var remoteRequestID = UUID()
+    private let session: URLSession
+    private let favoriteImageStorage: FavoriteWallpaperImageStore
+    private var favoriteStorageRevision: UInt64 = 0
     private let resources: BrowserResourcePolicy
     private var resourceObservers = Set<AnyCancellable>()
 
     var hasAutomaticRefreshWork: Bool { autoRefreshTimer != nil || preloadTimer != nil || preloadTask != nil || autoRefreshTask != nil }
 
-    init(resources: BrowserResourcePolicy? = nil) {
+    init(resources: BrowserResourcePolicy? = nil, session: URLSession = .shared,
+         favoriteImageStorage: FavoriteWallpaperImageStore? = nil) {
+        self.session = session
+        self.favoriteImageStorage = favoriteImageStorage ?? FavoriteWallpaperImageStore()
         let resources = resources ?? .shared
         self.resources = resources
         self.source = BrowserInitialPreferences.wallpaperSource(in: .standard)
         self.selectedGradientId = UserDefaults.standard.string(forKey: "wallpaper_gradient_id") ?? "aurora"
         self.solidColor = UserDefaults.standard.string(forKey: "wallpaper_solid_color") ?? "#FFFFFF"
         self.searchTopic = BrowserInitialPreferences.wallpaperTopic(in: .standard)
-        self.vibeTags = UserDefaults.standard.stringArray(forKey: "wallpaper_vibe_tags") ?? ["Nature", "Ocean", "Forest", "Night Sky", "Mountains", "Minimal", "Cyberpunk"]
+        self.vibeTags = BrowserInitialPreferences.wallpaperVibeTags(in: .standard)
         let savedInterval = UserDefaults.standard.object(forKey: "wallpaper_refresh_interval") as? Int
         self.autoRefreshInterval = WallpaperRefreshInterval(rawValue: savedInterval ?? WallpaperRefreshInterval.none.rawValue) ?? .none
         self.autoRandomizeRemoteSources = UserDefaults.standard.object(forKey: "wallpaper_auto_random_sources") as? Bool ?? true
@@ -140,7 +159,7 @@ class WallpaperManager: ObservableObject {
         let nextGradientID = defaults.string(forKey: "wallpaper_gradient_id") ?? "aurora"
         let nextSolidColor = defaults.string(forKey: "wallpaper_solid_color") ?? "#FFFFFF"
         let nextTopic = BrowserInitialPreferences.wallpaperTopic(in: defaults)
-        let nextVibeTags = defaults.stringArray(forKey: "wallpaper_vibe_tags") ?? ["Nature", "Ocean", "Forest", "Night Sky", "Mountains", "Minimal", "Cyberpunk"]
+        let nextVibeTags = BrowserInitialPreferences.wallpaperVibeTags(in: defaults)
         let savedInterval = defaults.object(forKey: "wallpaper_refresh_interval") as? Int
         let nextInterval = WallpaperRefreshInterval(rawValue: savedInterval ?? WallpaperRefreshInterval.none.rawValue) ?? .none
         let nextRandomSources = defaults.object(forKey: "wallpaper_auto_random_sources") as? Bool ?? true
@@ -148,7 +167,9 @@ class WallpaperManager: ObservableObject {
         let remoteSources = savedSources.compactMap(WallpaperSource.init(rawValue:)).filter(\.isRemote)
         let nextSources = Set(remoteSources.isEmpty ? [.pexels, .pixabay, .bing] : remoteSources)
         let nextRandomTopics = defaults.object(forKey: "wallpaper_auto_random_topics") as? Bool ?? true
-        let nextOnlyFavorites = defaults.object(forKey: "wallpaper_only_favorites") as? Bool ?? false
+        let requestedOnlyFavorites = defaults.object(forKey: "wallpaper_only_favorites") as? Bool ?? false
+        let nextOnlyFavorites = requestedOnlyFavorites && !favorites.isEmpty
+        if requestedOnlyFavorites && !nextOnlyFavorites { defaults.set(false, forKey: "wallpaper_only_favorites") }
 
         if source != nextSource { source = nextSource }
         if selectedGradientId != nextGradientID { selectedGradientId = nextGradientID }
@@ -160,6 +181,16 @@ class WallpaperManager: ObservableObject {
         if autoRemoteSources != nextSources { autoRemoteSources = nextSources }
         if autoRandomizeTopics != nextRandomTopics { autoRandomizeTopics = nextRandomTopics }
         if onlyUseFavoriteWallpapers != nextOnlyFavorites { onlyUseFavoriteWallpapers = nextOnlyFavorites }
+    }
+
+    func selectSource(_ selected: WallpaperSource) async {
+        let changed = source != selected
+        source = selected
+        if selected != .bing, searchTopic == "Bing Daily" {
+            searchTopic = BrowserInitialPreferences.defaultWallpaperTopic
+        }
+        guard selected.isRemote, changed || currentImage == nil || candidateWallpapers.isEmpty else { return }
+        await initialFetch()
     }
 
     private func initialFetch() async {
@@ -421,6 +452,7 @@ class WallpaperManager: ObservableObject {
     }
 
     private func fetchNewCandidatesInBackground() async {
+        let expectedSource = source
         let query = searchTopic
         let newCandidates: [RemoteWallpaper]
         if source == .pexels {
@@ -430,7 +462,7 @@ class WallpaperManager: ObservableObject {
         } else {
             newCandidates = []
         }
-        if !newCandidates.isEmpty {
+        if !Task.isCancelled, source == expectedSource, searchTopic == query, !newCandidates.isEmpty {
             candidateWallpapers = newCandidates
         }
     }
@@ -440,7 +472,7 @@ class WallpaperManager: ObservableObject {
         guard let url = URL(string: "https://api.pexels.com/v1/search?query=\(encoded)&page=\(page)&per_page=15&orientation=portrait") else { return [] }
         var request = URLRequest(url: url)
         request.setValue(pexelsKey, forHTTPHeaderField: "Authorization")
-        guard let (data, _) = try? await URLSession.shared.data(for: request),
+        guard let (data, _) = try? await session.data(for: request),
               let res = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let photos = res["photos"] as? [[String: Any]] else { return [] }
 
@@ -455,7 +487,7 @@ class WallpaperManager: ObservableObject {
     private func fetchPixabayCandidates(query: String, page: Int) async -> [RemoteWallpaper] {
         let encoded = SearchQueryEncoding.encode(query) ?? "nature"
         guard let url = URL(string: "https://pixabay.com/api/?key=\(pixabayKey)&q=\(encoded)&page=\(page)&per_page=15&safesearch=true&image_type=photo&orientation=vertical") else { return [] }
-        guard let (data, _) = try? await URLSession.shared.data(from: url),
+        guard let (data, _) = try? await session.data(from: url),
               let res = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let hits = res["hits"] as? [[String: Any]] else { return [] }
 
@@ -469,7 +501,7 @@ class WallpaperManager: ObservableObject {
     private func fetchBingCandidate(random: Bool) async -> RemoteWallpaper? {
         let idx = random ? Int.random(in: 0...7) : 0
         guard let url = URL(string: "https://www.bing.com/HPImageArchive.aspx?format=js&idx=\(idx)&n=1&mkt=en-US") else { return nil }
-        guard let (data, _) = try? await URLSession.shared.data(from: url),
+        guard let (data, _) = try? await session.data(from: url),
               let res = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let images = res["images"] as? [[String: Any]],
               let first = images.first,
@@ -530,14 +562,18 @@ class WallpaperManager: ObservableObject {
 
     // MARK: - Search Logic
     func searchPexels(query: String) async {
+        guard source == .pexels else { return }
         addVibeTag(query)
-        networkLoading = true
-        defer { networkLoading = false }
+        let requestID = beginRemoteRequest()
+        defer { finishRemoteRequest(requestID) }
         let encoded = SearchQueryEncoding.encode(query) ?? "nature"
         guard let url = URL(string: "https://api.pexels.com/v1/search?query=\(encoded)&page=\(Int.random(in: 1...10))&per_page=15&orientation=portrait") else { return }
         var request = URLRequest(url: url); request.setValue(pexelsKey, forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = 15
         do {
-            let (data, _) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await session.data(for: request)
+            guard isCurrentRemoteRequest(requestID, source: .pexels) else { return }
+            try validateRemoteResponse(response)
             let res = try JSONSerialization.jsonObject(with: data) as? [String: Any]
             let photos = res?["photos"] as? [[String: Any]] ?? []
             self.candidateWallpapers = photos.compactMap { p in
@@ -552,18 +588,24 @@ class WallpaperManager: ObservableObject {
                 await applyWallpaper(first)
             }
         } catch {
+            guard isCurrentRemoteRequest(requestID, source: .pexels) else { return }
             recordRemoteError(source: .pexels, error: error)
         }
     }
 
     func searchPixabay(query: String) async {
+        guard source == .pixabay else { return }
         addVibeTag(query)
-        networkLoading = true
-        defer { networkLoading = false }
+        let requestID = beginRemoteRequest()
+        defer { finishRemoteRequest(requestID) }
         let encoded = SearchQueryEncoding.encode(query) ?? "nature"
         guard let url = URL(string: "https://pixabay.com/api/?key=\(pixabayKey)&q=\(encoded)&page=\(Int.random(in: 1...5))&per_page=15&safesearch=true&image_type=photo&orientation=vertical") else { return }
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 15
+            let (data, response) = try await session.data(for: request)
+            guard isCurrentRemoteRequest(requestID, source: .pixabay) else { return }
+            try validateRemoteResponse(response)
             let res = try JSONSerialization.jsonObject(with: data) as? [String: Any]
             let hits = res?["hits"] as? [[String: Any]] ?? []
             self.candidateWallpapers = hits.compactMap { h in
@@ -577,18 +619,24 @@ class WallpaperManager: ObservableObject {
                 await applyWallpaper(first)
             }
         } catch {
+            guard isCurrentRemoteRequest(requestID, source: .pixabay) else { return }
             recordRemoteError(source: .pixabay, error: error)
         }
     }
 
     func fetchBingWallpaper(random: Bool = false) async {
+        guard source == .bing else { return }
         searchTopic = "Bing Daily"
-        networkLoading = true
-        defer { networkLoading = false }
+        let requestID = beginRemoteRequest()
+        defer { finishRemoteRequest(requestID) }
         let idx = random ? Int.random(in: 0...7) : 0
         guard let url = URL(string: "https://www.bing.com/HPImageArchive.aspx?format=js&idx=\(idx)&n=1&mkt=en-US") else { return }
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 15
+            let (data, response) = try await session.data(for: request)
+            guard isCurrentRemoteRequest(requestID, source: .bing) else { return }
+            try validateRemoteResponse(response)
             let res = try JSONSerialization.jsonObject(with: data) as? [String: Any]
             let images = res?["images"] as? [[String: Any]] ?? []
             if let first = images.first, let urlBase = first["url"] as? String {
@@ -602,6 +650,7 @@ class WallpaperManager: ObservableObject {
                 }
             }
         } catch {
+            guard isCurrentRemoteRequest(requestID, source: .bing) else { return }
             recordRemoteError(source: .bing, error: error)
         }
     }
@@ -621,6 +670,29 @@ class WallpaperManager: ObservableObject {
         await persistRemoteWallpaper(imageData, wallpaper: wallpaper)
     }
 
+    private func beginRemoteRequest() -> UUID {
+        let id = UUID()
+        remoteRequestID = id
+        imageLoadRevision = UUID()
+        cachedImageLoadTask?.cancel()
+        networkLoading = true
+        return id
+    }
+
+    private func isCurrentRemoteRequest(_ id: UUID, source expected: WallpaperSource) -> Bool {
+        !Task.isCancelled && remoteRequestID == id && source == expected
+    }
+
+    private func finishRemoteRequest(_ id: UUID) {
+        if remoteRequestID == id { networkLoading = false }
+    }
+
+    private func validateRemoteResponse(_ response: URLResponse) throws {
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            throw URLError(.badServerResponse)
+        }
+    }
+
     private static var backgroundPixels: CGSize { UIScreen.main.nativeBounds.size }
 
     private func decodedBackground(_ data: Data) async -> UIImage? {
@@ -631,11 +703,8 @@ class WallpaperManager: ObservableObject {
     }
 
     private func imageData(for wallpaper: RemoteWallpaper) async -> Data? {
-        let cacheURL = hdCacheURL(for: wallpaper.id)
         if favorites.contains(where: { $0.id == wallpaper.id }),
-           let cached = await Task.detached(priority: .utility, operation: {
-               try? Data(contentsOf: cacheURL)
-           }).value {
+           let cached = await favoriteImageStorage.cachedData(for: wallpaper.id) {
             return cached
         }
 
@@ -648,7 +717,7 @@ class WallpaperManager: ObservableObject {
         do {
             var request = URLRequest(url: url)
             request.timeoutInterval = 20
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await session.data(for: request)
             try Task.checkCancellation()
             guard (response as? HTTPURLResponse).map({ (200..<300).contains($0.statusCode) }) ?? true else { return nil }
             return data
@@ -828,49 +897,34 @@ class WallpaperManager: ObservableObject {
         defaults.removeObject(forKey: Self.currentWallpaperURLKey)
     }
 
-    // MARK: - HD Image Cache
-
-    private static var hdCacheDir: URL {
-        let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("wallpaper_hd", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir
-    }
-
-    private func hdCacheURL(for id: String) -> URL {
-        Self.hdCacheDir.appendingPathComponent("\(id).jpg")
-    }
+    // MARK: - Favorite Originals
 
     /// Cache HD image to disk when user favorites a wallpaper.
     func cacheHDImage(for wallpaper: RemoteWallpaper) async {
-        let cacheURL = hdCacheURL(for: wallpaper.id)
-        guard !FileManager.default.fileExists(atPath: cacheURL.path) else { return }
-        // Try original URL first, fallback to preview
-        let urlString = wallpaper.url.isEmpty ? wallpaper.previewURL : wallpaper.url
-        guard let url = URL(string: urlString) else { return }
-        do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            try data.write(to: cacheURL)
-        } catch {
-            // Fallback: cache preview if HD fails
-            if let previewURL = URL(string: wallpaper.previewURL) {
-                if let (data, _) = try? await URLSession.shared.data(from: previewURL) {
-                    try? data.write(to: cacheURL)
-                }
-            }
+        guard favorites.contains(where: { $0.id == wallpaper.id }) else { return }
+        if await favoriteImageStorage.cachedData(for: wallpaper.id) != nil { return }
+        let original = wallpaper.url.isEmpty ? wallpaper.previewURL : wallpaper.url
+        for candidate in [original, wallpaper.previewURL] {
+            guard !Task.isCancelled, favorites.contains(where: { $0.id == wallpaper.id }) else { return }
+            guard let url = URL(string: candidate), let data = await downloadImageData(from: url) else { continue }
+            guard favorites.contains(where: { $0.id == wallpaper.id }) else { return }
+            let ids = Set(favorites.map(\.id)), revision = favoriteStorageRevision
+            if await favoriteImageStorage.saveImage(data, for: wallpaper.id, favoriteIDs: ids, revision: revision) { return }
         }
     }
 
     /// Remove cached HD image when user removes from favorites.
     func removeHDCache(for id: String) {
-        let url = hdCacheURL(for: id)
-        try? FileManager.default.removeItem(at: url)
+        guard !favorites.contains(where: { $0.id == id }) else { return }
+        let ids = Set(favorites.map(\.id)), revision = favoriteStorageRevision
+        Task { await favoriteImageStorage.reconcile(favoriteIDs: ids, removingIDs: [id], revision: revision) }
     }
 
     /// Get cached HD image for a wallpaper (if available).
     func cachedHDImage(for id: String) -> UIImage? {
-        let url = hdCacheURL(for: id)
-        guard let data = try? Data(contentsOf: url) else { return nil }
-        return UIImage(data: data)
+        for url in favoriteImageStorage.imageURLs(for: id) {
+            if let data = try? Data(contentsOf: url), let image = UIImage(data: data) { return image }
+        }
+        return nil
     }
 }

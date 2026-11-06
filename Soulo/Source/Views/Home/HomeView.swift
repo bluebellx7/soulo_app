@@ -14,8 +14,10 @@ struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.requestReview) private var requestReview
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openWindow) private var openWindow
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var keyboardVisible = false
+    @StateObject private var keyboardContext = BrowserKeyboardContext()
     @State private var reviewTask: Task<Void, Never>?
     @Namespace private var searchBarNamespace
 
@@ -61,12 +63,36 @@ struct HomeView: View {
         showTabOverviewFromHome || tabManager.showTabOverview
     }
 
+    private var keyboardCommandsEnabled: Bool {
+        scenePhase == .active && !showSettings && librarySection == nil && !showExtensionCenter
+            && !showScanner && !showPlatformManagement && !showVoiceInput && !showAppShareSheet
+            && !showTitleEditor && !showSubtitleEditor && !showsTabOverview && homeToolbarDestination == nil
+            && downloadCreation == nil && incomingDocument == nil && scannedContent == nil
+    }
+
     var body: some View {
         NavigationStack {
             homeSurface
                 .toolbar(.hidden, for: .navigationBar)
                 .mediaPlayerNavigation()
         }
+        .background { BrowserKeyboardWindowReader(context: keyboardContext).frame(width: 0, height: 0).allowsHitTesting(false) }
+        .focusedSceneValue(\.souloBrowserKeyboardActions,
+            BrowserKeyboardActions(enabled: keyboardCommandsEnabled,
+                canPerform: { keyboardContext.canPerform },
+                focus: {
+                    if searchVM.isSearching, let model = tabManager.activeWebViewModel {
+                        NotificationCenter.default.post(name: .focusSouloBrowserAddress, object: model)
+                    } else { NotificationCenter.default.post(name: .focusHomeSearch, object: tabManager) }
+                },
+                newTab: { tabManager.createTab(); searchVM.isSearching = true },
+                closeTab: { tabManager.closeTab(at: tabManager.activeTabIndex) },
+                restoreTab: { tabManager.restoreLastClosedTab(); searchVM.isSearching = true },
+                reload: { tabManager.activeWebViewModel?.reload() },
+                back: { tabManager.activeWebViewModel?.goBack() },
+                forward: { tabManager.activeWebViewModel?.goForward() },
+                find: { tabManager.startFindInPage() },
+                newWindow: { openWindow(value: BrowserWindowConfiguration()) }))
         .tabOverviewScale(isActive: showsTabOverview)
         .animation(.easeInOut(duration: 0.22), value: showsTabOverview)
         .id(navigationSession)
@@ -775,6 +801,11 @@ struct HomeView: View {
 
     private var homeMenu: some View {
         Menu {
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                Button { openWindow(value: BrowserWindowConfiguration()) } label: {
+                    Label(FeatureText.text("New window"), systemImage: "rectangle.badge.plus")
+                }
+            }
             Button {
                 librarySection = .bookmarks
             } label: {

@@ -29,6 +29,57 @@ final class AdBlockSettingsServiceTests: XCTestCase {
         XCTAssertFalse(service.isAllowlisted("other.com"))
     }
 
+    func testTemporaryExceptionsAffectQueriesWithoutEnteringPreferencesOrSettingsSnapshots() {
+        let service = AdBlockSettingsService(userDefaults: defaults)
+        service.temporarilyDisableFiltering(for: "www.example.com")
+        XCTAssertEqual(service.allowlistedHosts, ["example.com"])
+        XCTAssertTrue(service.permanentAllowlistedHosts.isEmpty)
+        XCTAssertTrue(service.isTemporarilyAllowlisted("video.example.com"))
+        XCTAssertTrue(AdBlockSettingsService.isHostAllowlisted("video.example.com", userDefaults: defaults))
+        XCTAssertFalse(AdBlockSettingsService.isHostAllowlisted("notexample.com", userDefaults: defaults))
+        XCTAssertNil(defaults.object(forKey: "soulo_ad_block_allowlisted_hosts"))
+        XCTAssertNil(CloudSettingsSyncEngine.snapshot(defaults)["soulo_ad_block_allowlisted_hosts"])
+        service.reloadFromDefaults() // Reloading settings is not a new app session.
+        XCTAssertTrue(service.isAllowlisted("example.com"))
+        service.clearTemporaryException(for: "video.example.com")
+        XCTAssertFalse(service.isAllowlisted("video.example.com"))
+        XCTAssertFalse(AdBlockSettingsService.isHostAllowlisted("video.example.com", userDefaults: defaults))
+    }
+
+    func testTemporaryExceptionsEndWithTheirSessionAndDoNotAffectOtherDefaults() {
+        var service: AdBlockSettingsService? = AdBlockSettingsService(userDefaults: defaults)
+        weak var retired = service
+        service?.addAllowlistedHost("permanent.example")
+        service?.temporarilyDisableFiltering(for: "temporary.example")
+        let anotherSuite = "TemporaryFilteringOther-\(UUID())"
+        let anotherDefaults = UserDefaults(suiteName: anotherSuite)!
+        defer { anotherDefaults.removePersistentDomain(forName: anotherSuite) }
+        XCTAssertFalse(AdBlockSettingsService.isHostAllowlisted("temporary.example", userDefaults: anotherDefaults))
+        service = nil
+        XCTAssertNil(retired)
+        XCTAssertFalse(AdBlockSettingsService.isHostAllowlisted("temporary.example", userDefaults: defaults))
+        let nextSession = AdBlockSettingsService(userDefaults: defaults)
+        XCTAssertFalse(nextSession.isAllowlisted("temporary.example"))
+        XCTAssertTrue(nextSession.isAllowlisted("permanent.example"))
+        nextSession.temporarilyDisableFiltering(for: "another.example")
+        nextSession.clearTemporaryExceptions()
+        XCTAssertEqual(nextSession.allowlistedHosts, ["permanent.example"])
+    }
+
+    func testReenablingClearsInheritedTemporaryExceptionAndPermanentChoicePromotesIt() {
+        let service = AdBlockSettingsService(userDefaults: defaults)
+        service.addAllowlistedHost("other.example")
+        service.temporarilyDisableFiltering(for: "example.com")
+        service.setFilteringEnabled(true, for: "login.example.com")
+        XCTAssertFalse(service.isAllowlisted("login.example.com"))
+        XCTAssertTrue(service.isAllowlisted("other.example"))
+        service.temporarilyDisableFiltering(for: "new.example")
+        service.setFilteringEnabled(false, for: "new.example")
+        XCTAssertFalse(service.isTemporarilyAllowlisted("new.example"))
+        XCTAssertTrue(service.temporaryAllowlistedHosts.isEmpty)
+        XCTAssertEqual(AdBlockSettingsService(userDefaults: defaults).permanentAllowlistedHosts, ["new.example", "other.example"])
+    }
+
     func testSiteFilteringSwitchCanRestoreAnInheritedExceptionAndPersists() {
         let service = AdBlockSettingsService(userDefaults: defaults)
         service.addAllowlistedHost("example.com")

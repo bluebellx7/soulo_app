@@ -273,7 +273,9 @@ enum AdBlockRuleParser {
 
 @MainActor
 final class AdBlockSubscriptionService: ObservableObject {
-    static let shared = AdBlockSubscriptionService()
+    // Opening the app must not decode the entire subscription archive on the
+    // main actor. The merged rules remain available to WebKit independently.
+    static let shared = AdBlockSubscriptionService(loadStoredRulesAtInitialization: false)
 
     @Published private(set) var subscriptions: [AdBlockSubscription] = []
     @Published private(set) var isUpdating = false
@@ -297,7 +299,8 @@ final class AdBlockSubscriptionService: ObservableObject {
         autoUpdateCheckKey: String = "soulo_ad_block_subscription_auto_update_check",
         userDefaults: UserDefaults = .standard,
         session: URLSession = .shared,
-        rulesArchiveURL: URL? = nil
+        rulesArchiveURL: URL? = nil,
+        loadStoredRulesAtInitialization: Bool = true
     ) {
         self.subscriptionsKey = subscriptionsKey
         self.cachedRulesKey = cachedRulesKey
@@ -311,8 +314,17 @@ final class AdBlockSubscriptionService: ObservableObject {
         // Move the large per-subscription archive before any preference writes.
         // Keeping several MB here exceeds CFPreferences' supported size and can
         // lose unrelated settings or freshly saved manual advertisement rules.
-        let storedRules = storedParsedRulesByID()
-        load()
+        let storedRules = loadStoredRulesAtInitialization ? storedParsedRulesByID() : [:]
+        load(rebuildForNewSubscriptions: loadStoredRulesAtInitialization,
+             persistChanges: loadStoredRulesAtInitialization)
+        guard loadStoredRulesAtInitialization else { return }
+        repairOutdatedRuleMetadata(storedRules)
+        if !storedRules.isEmpty {
+            rebuildCacheFrom(parsedByID: storedRules)
+        }
+    }
+
+    private func repairOutdatedRuleMetadata(_ storedRules: [String: ParsedAdBlockRules]) {
         if storedRules.values.contains(where: { $0.parserVersion != AdBlockRuleParser.version }) {
             userDefaults.removeObject(forKey: autoUpdateCheckKey)
             for index in subscriptions.indices {
@@ -323,9 +335,6 @@ final class AdBlockSubscriptionService: ObservableObject {
                 }
             }
             saveSubscriptions()
-        }
-        if !storedRules.isEmpty {
-            rebuildCacheFrom(parsedByID: storedRules)
         }
     }
 
@@ -339,9 +348,10 @@ final class AdBlockSubscriptionService: ObservableObject {
 
     func setEnabled(_ enabled: Bool, for subscription: AdBlockSubscription) {
         guard let index = subscriptions.firstIndex(where: { $0.id == subscription.id }) else { return }
+        let storedRules = storedParsedRulesByID()
         subscriptions[index].isEnabled = enabled
         saveSubscriptions()
-        rebuildCacheFromStoredSubscriptions()
+        rebuildCacheFrom(parsedByID: storedRules)
     }
 
     nonisolated static func needsAutomaticUpdateCheck() -> Bool {
@@ -351,15 +361,18 @@ final class AdBlockSubscriptionService: ObservableObject {
 
     func updateEnabledSubscriptionsIfNeeded() async {
         guard enabledSubscriptionCount > 0, !isUpdating else { return }
+        let defaults = userDefaults, key = cachedRulesKey
+        let rules = await Task.detached(priority: .utility) {
+            Self.cachedRules(userDefaults: defaults, key: key)
+        }.value
+        guard !Task.isCancelled, enabledSubscriptionCount > 0, !isUpdating else { return }
         let lastCheck = userDefaults.double(forKey: autoUpdateCheckKey)
-        let rules = enabledRuleSummary
         let hasCachedRules = rules.parserVersion == AdBlockRuleParser.version && (!rules.networkRules.isEmpty || !rules.cosmeticRules.isEmpty)
         guard !hasCachedRules || Date().timeIntervalSince1970 - lastCheck >= autoUpdateInterval else { return }
-        userDefaults.set(Date().timeIntervalSince1970, forKey: autoUpdateCheckKey)
-        await updateEnabledSubscriptions(reportErrors: false)
+        await updateEnabledSubscriptions(reportErrors: false, recordAutomaticCheck: true)
     }
 
-    func updateEnabledSubscriptions(reportErrors: Bool = true) async {
+    func updateEnabledSubscriptions(reportErrors: Bool = true, recordAutomaticCheck: Bool = false) async {
         guard !isUpdating else { return }
         let candidates = subscriptions.filter(\.isEnabled)
         completedUpdates = 0; totalUpdates = candidates.count
@@ -369,7 +382,21 @@ final class AdBlockSubscriptionService: ObservableObject {
         }
         defer { isUpdating = false }
 
-        var parsedByID = storedParsedRulesByID()
+        let archiveURL = rulesArchiveURL
+        let legacy = userDefaults.data(forKey: "\(cachedRulesKey)_by_id")
+        let stored = await Task.detached(priority: .utility) {
+            Self.readStoredRules(archiveURL: archiveURL, legacy: legacy)
+        }.value
+        finishArchiveMigration(stored)
+        repairOutdatedRuleMetadata(stored.rules)
+        // Recover a missing/stale merged cache before waiting for the network.
+        // This preserves offline filtering from the per-subscription archive.
+        await saveUpdatedRulesInBackground(stored.rules, saveArchive: false)
+        if recordAutomaticCheck {
+            userDefaults.set(Date().timeIntervalSince1970, forKey: autoUpdateCheckKey)
+        }
+        var parsedByID = stored.rules
+        var receivedRules = false
 
         for candidate in candidates {
             guard !Task.isCancelled else { break }
@@ -403,6 +430,7 @@ final class AdBlockSubscriptionService: ObservableObject {
                     $0.id == candidate.id && $0.urlString == candidate.urlString
                 }) else { continue }
                 parsedByID[candidate.id] = parsed
+                receivedRules = true
                 subscriptions[index].networkRuleCount = parsed.networkRules.count
                 subscriptions[index].cosmeticRuleCount = parsed.cosmeticRules.count
                 subscriptions[index].lastUpdatedAt = Date()
@@ -419,35 +447,40 @@ final class AdBlockSubscriptionService: ObservableObject {
             }
         }
 
-        saveSubscriptions()
-        saveParsedRulesByID(parsedByID)
-        rebuildCacheFrom(parsedByID: parsedByID)
-    }
-
-    func resetToDefaults() {
-        subscriptions = Self.defaultSubscriptions()
-        saveSubscriptions()
-        rebuildCacheFromStoredSubscriptions()
-    }
-
-    private func load() {
-        if let data = userDefaults.data(forKey: subscriptionsKey),
-           let decoded = try? JSONDecoder().decode([AdBlockSubscription].self, from: data),
-           !decoded.isEmpty {
-            subscriptions = decoded
-            mergeMissingDefaultSubscriptions()
+        if receivedRules {
+            await saveUpdatedRulesInBackground(parsedByID, saveArchive: true)
         } else {
-            subscriptions = Self.defaultSubscriptions()
             saveSubscriptions()
         }
     }
 
-    func reloadFromDefaults() {
-        load()
-        rebuildCacheFromStoredSubscriptions()
+    func resetToDefaults() {
+        let storedRules = storedParsedRulesByID()
+        subscriptions = Self.defaultSubscriptions()
+        saveSubscriptions()
+        rebuildCacheFrom(parsedByID: storedRules)
     }
 
-    private func mergeMissingDefaultSubscriptions() {
+    private func load(rebuildForNewSubscriptions: Bool = true, persistChanges: Bool = true) {
+        if let data = userDefaults.data(forKey: subscriptionsKey),
+           let decoded = try? JSONDecoder().decode([AdBlockSubscription].self, from: data),
+           !decoded.isEmpty {
+            subscriptions = decoded
+            mergeMissingDefaultSubscriptions(rebuildRules: rebuildForNewSubscriptions, persistChanges: persistChanges)
+        } else {
+            subscriptions = Self.defaultSubscriptions()
+            if persistChanges { saveSubscriptions() }
+        }
+    }
+
+    func reloadFromDefaults() {
+        let storedRules = storedParsedRulesByID()
+        load(rebuildForNewSubscriptions: false)
+        repairOutdatedRuleMetadata(storedRules)
+        rebuildCacheFrom(parsedByID: storedRules)
+    }
+
+    private func mergeMissingDefaultSubscriptions(rebuildRules: Bool = true, persistChanges: Bool = true) {
         let defaults = Self.defaultSubscriptions()
         var changed = false
         for subscription in defaults where !subscriptions.contains(where: { $0.id == subscription.id }) {
@@ -455,8 +488,8 @@ final class AdBlockSubscriptionService: ObservableObject {
             changed = true
         }
         if changed {
-            saveSubscriptions()
-            rebuildCacheFromStoredSubscriptions()
+            if persistChanges { saveSubscriptions() }
+            if rebuildRules { rebuildCacheFromStoredSubscriptions() }
         }
     }
 
@@ -466,24 +499,42 @@ final class AdBlockSubscriptionService: ObservableObject {
         }
     }
 
-    private func storedParsedRulesByID() -> [String: ParsedAdBlockRules] {
-        let key = "\(cachedRulesKey)_by_id"
-        if let rulesArchiveURL, let data = try? Data(contentsOf: rulesArchiveURL),
-           let decoded = try? JSONDecoder().decode([String: ParsedAdBlockRules].self, from: data) {
-            userDefaults.removeObject(forKey: key)
-            return decoded
-        }
-        guard let data = userDefaults.data(forKey: key),
-              let decoded = try? JSONDecoder().decode([String: ParsedAdBlockRules].self, from: data)
-        else { return [:] }
-        if rulesArchiveURL != nil && writeRulesArchive(data) {
-            userDefaults.removeObject(forKey: key)
-        }
-        return decoded
+    private struct StoredRules {
+        let rules: [String: ParsedAdBlockRules]
+        let legacyToMigrate: Data?
+        let archiveWasRead: Bool
     }
 
-    private func saveParsedRulesByID(_ rules: [String: ParsedAdBlockRules]) {
-        guard let data = try? JSONEncoder().encode(rules) else { return }
+    nonisolated private static func readStoredRules(archiveURL: URL?, legacy: Data?) -> StoredRules {
+        BrowserStartupTrace.markThread("subscription_archive_read_start")
+        defer { BrowserStartupTrace.markThread("subscription_archive_read_end") }
+        if let archiveURL, let data = try? Data(contentsOf: archiveURL),
+           let decoded = try? JSONDecoder().decode([String: ParsedAdBlockRules].self, from: data) {
+            return StoredRules(rules: decoded, legacyToMigrate: nil, archiveWasRead: true)
+        }
+        guard let data = legacy,
+              let decoded = try? JSONDecoder().decode([String: ParsedAdBlockRules].self, from: data)
+        else { return StoredRules(rules: [:], legacyToMigrate: nil, archiveWasRead: false) }
+        return StoredRules(rules: decoded, legacyToMigrate: data, archiveWasRead: false)
+    }
+
+    private func finishArchiveMigration(_ stored: StoredRules) {
+        let key = "\(cachedRulesKey)_by_id"
+        if stored.archiveWasRead {
+            userDefaults.removeObject(forKey: key)
+        } else if let data = stored.legacyToMigrate, rulesArchiveURL != nil && writeRulesArchive(data) {
+            userDefaults.removeObject(forKey: key)
+        }
+    }
+
+    private func storedParsedRulesByID() -> [String: ParsedAdBlockRules] {
+        let stored = Self.readStoredRules(archiveURL: rulesArchiveURL,
+                                        legacy: userDefaults.data(forKey: "\(cachedRulesKey)_by_id"))
+        finishArchiveMigration(stored)
+        return stored.rules
+    }
+
+    private func saveParsedRulesArchive(_ data: Data) {
         let key = "\(cachedRulesKey)_by_id"
         if rulesArchiveURL != nil {
             if writeRulesArchive(data) { userDefaults.removeObject(forKey: key) }
@@ -509,6 +560,21 @@ final class AdBlockSubscriptionService: ObservableObject {
     }
 
     private func rebuildCacheFrom(parsedByID: [String: ParsedAdBlockRules]) {
+        let merged = Self.mergeRules(parsedByID: parsedByID, subscriptions: subscriptions)
+        // Starting the service must not invalidate compiled WebKit rules when
+        // the enabled rule content is unchanged.
+        if Self.cachedRules(userDefaults: userDefaults, key: cachedRulesKey) == merged,
+           userDefaults.object(forKey: versionKey) != nil {
+            recordValidatedAutomaticUpdateCache(merged)
+            return
+        }
+        guard let data = try? JSONEncoder().encode(merged) else { return }
+        persistMergedRules(merged, data: data)
+    }
+
+    nonisolated private static func mergeRules(
+        parsedByID: [String: ParsedAdBlockRules], subscriptions: [AdBlockSubscription]
+    ) -> ParsedAdBlockRules {
         var network = OrderedStringSet(limit: .max)
         var cosmetic = OrderedStringSet(limit: .max)
         var structuredNetwork = OrderedNetworkRuleSet(limit: .max)
@@ -524,27 +590,52 @@ final class AdBlockSubscriptionService: ObservableObject {
             parsed.cosmeticExceptions.forEach { cosmeticExceptions.insert($0) }
         }
 
-        let merged = ParsedAdBlockRules(
+        return ParsedAdBlockRules(
             networkURLFilters: network.values,
             cosmeticSelectors: cosmetic.values,
             networkRules: structuredNetwork.values,
             cosmeticRules: structuredCosmetic.values,
             cosmeticExceptions: cosmeticExceptions.values
         )
-        // Starting the service must not invalidate compiled WebKit rules when
-        // the enabled rule content is unchanged.
-        if Self.cachedRules(userDefaults: userDefaults, key: cachedRulesKey) == merged,
-           userDefaults.object(forKey: versionKey) != nil {
-            recordValidatedAutomaticUpdateCache(merged)
+    }
+
+    private func saveUpdatedRulesInBackground(_ parsedByID: [String: ParsedAdBlockRules], saveArchive: Bool) async {
+        let archiveData = saveArchive ? await Task.detached(priority: .utility) {
+            try? JSONEncoder().encode(parsedByID)
+        }.value : nil
+        // A toggle or iCloud refresh can arrive while the worker is preparing
+        // the cache. Retry with the current subscriptions before committing.
+        while true {
+            let snapshot = subscriptions
+            let revision = userDefaults.double(forKey: versionKey)
+            let hasVersion = userDefaults.object(forKey: versionKey) != nil
+            let defaults = userDefaults, key = cachedRulesKey
+            let prepared = await Task.detached(priority: .utility) {
+                BrowserStartupTrace.markThread("subscription_merge_start")
+                defer { BrowserStartupTrace.markThread("subscription_merge_end") }
+                let merged = Self.mergeRules(parsedByID: parsedByID, subscriptions: snapshot)
+                let unchanged = Self.cachedRules(userDefaults: defaults, key: key) == merged
+                return (merged, unchanged, unchanged && hasVersion ? nil : try? JSONEncoder().encode(merged))
+            }.value
+            guard snapshot == subscriptions, revision == userDefaults.double(forKey: versionKey) else { continue }
+            saveSubscriptions()
+            if let archiveData { saveParsedRulesArchive(archiveData) }
+            if prepared.1, userDefaults.object(forKey: versionKey) != nil {
+                recordValidatedAutomaticUpdateCache(prepared.0)
+            } else if let data = prepared.2 {
+                persistMergedRules(prepared.0, data: data)
+            }
             return
         }
-        guard let data = try? JSONEncoder().encode(merged) else { return }
+    }
+
+    private func persistMergedRules(_ merged: ParsedAdBlockRules, data: Data) {
         if let url = Self.mergedArchiveURL(userDefaults: userDefaults, key: cachedRulesKey) {
             do {
                 try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
                 try data.write(to: url, options: .atomic)
                 userDefaults.removeObject(forKey: cachedRulesKey)
-                Self.decodedCache.removeAllObjects()
+                Self.decodedCache.setObject(RuleBox(merged), forKey: url.path as NSString, cost: data.count)
             } catch {
                 lastError = error.localizedDescription
                 return

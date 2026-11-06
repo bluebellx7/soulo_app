@@ -48,6 +48,8 @@ struct EditPlatformView: View {
                         .font(.caption)
                 }
 
+                Section { PlatformTrialSearch(template: searchURL) }
+
                 if let errorMessage {
                     Section {
                         Label(errorMessage, systemImage: "exclamationmark.triangle")

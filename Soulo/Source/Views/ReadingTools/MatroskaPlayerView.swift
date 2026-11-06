@@ -41,7 +41,7 @@ import UniformTypeIdentifiers
     private var reportedEnd = false
     private(set) var persistsPosition = false
     private var lastSavedSecond = -1
-    private var pendingStart: (seconds: Double, autoplay: Bool)?
+    private var pendingStart: (seconds: Double, autoplay: Bool, explicit: Bool)?
     private var pendingSeek: VideoPlaybackSeek?
     private var videoPresentationSize = CGSize.zero
     private var reportedVideoSize = CGSize.zero
@@ -111,8 +111,9 @@ import UniformTypeIdentifiers
         self.requestContext = requestContext
         persistsPosition = persistPosition
         lastSavedSecond = -1
-        let saved = startAt ?? (persistPosition ? UserDefaults.standard.double(forKey: MediaSession.positionKey(url)) : 0)
-        pendingStart = saved > 0 || !autoplay ? (saved, autoplay) : nil
+        let requested = startAt ?? (persistPosition ? UserDefaults.standard.double(forKey: MediaSession.positionKey(url)) : 0)
+        let saved = requested.isFinite ? max(0, requested) : 0
+        pendingStart = saved > 0 || !autoplay ? (saved, autoplay, startAt != nil) : nil
         wantsPlayback = autoplay
         reportedEnd = false
         error = nil; elapsed = 0; duration = 0; buffering = true
@@ -162,7 +163,9 @@ import UniformTypeIdentifiers
                     }
                     if let pending = self.pendingStart, self.duration > 0, player.isSeekable {
                         self.pendingStart = nil
-                        if pending.seconds > 0, pending.seconds < self.duration - 2 { self.seek(pending.seconds) }
+                        if pending.seconds > 0, pending.explicit || pending.seconds < self.duration - 2 {
+                            self.seek(min(pending.seconds, max(0, self.duration - 0.1)))
+                        }
                         if !pending.autoplay { player.pause() }
                     }
                     let second = Int(self.elapsed)
@@ -198,7 +201,7 @@ import UniformTypeIdentifiers
         guard let player else { return }
         if reportedEnd { play(); return }
         wantsPlayback = !(pendingStart?.autoplay ?? player.isPlaying)
-        if let pending = pendingStart { pendingStart = (pending.seconds, wantsPlayback) }
+        if let pending = pendingStart { pendingStart = (pending.seconds, wantsPlayback, pending.explicit) }
         if wantsPlayback { play() } else { pause() }
     }
     nonisolated func mediaPlayerStateChanged(_ notification: Notification) {
@@ -220,6 +223,7 @@ import UniformTypeIdentifiers
         endTemporaryRate(); wantsPlayback = true; resumeAfterInterruption = false
         MediaSession.shared.pauseVideoIfBackgrounded()
         guard wantsPlayback else { return }
+        if let pending = pendingStart { pendingStart = (pending.seconds, true, pending.explicit) }
         if reportedEnd, let sourceURL {
             // libvlc's ended input cannot reliably be restarted with play().
             // Reopen it while retaining credentials and the user's mode.
@@ -234,7 +238,7 @@ import UniformTypeIdentifiers
         endTemporaryRate(); wantsPlayback = false; resumeAfterInterruption = false
         waitingForSurface = false
         playing = false; buffering = false
-        if let pending = pendingStart { pendingStart = (pending.seconds, false) }
+        if let pending = pendingStart { pendingStart = (pending.seconds, false, pending.explicit) }
         player?.pause(); savePosition()
         MediaSession.shared.updateSouloState(self)
     }
@@ -307,7 +311,7 @@ import UniformTypeIdentifiers
         pendingSeek = VideoPlaybackSeek(target: target)
         elapsed = target
         guard player?.isSeekable == true else {
-            pendingStart = (target, wantsPlayback)
+            pendingStart = (target, wantsPlayback, true)
             return
         }
         player?.time = VLCTime(int: Int32(target * 1000))
@@ -338,7 +342,9 @@ import UniformTypeIdentifiers
     }
     private func savePosition() {
         guard persistsPosition, let sourceURL, elapsed.isFinite, elapsed > 0 else { return }
+        guard !sourceURL.isFileURL || FileManager.default.fileExists(atPath: sourceURL.path) else { return }
         UserDefaults.standard.set(elapsed, forKey: MediaSession.positionKey(sourceURL))
+        if !UserDefaults.standard.bool(forKey: "is_incognito") { RecentLocalPlaybackStore.shared.record(url: sourceURL, title: MediaSession.shared.title) }
     }
     deinit { updates?.cancel(); feedbackDismissal?.cancel() }
 }
@@ -675,6 +681,7 @@ struct MatroskaPlayerView: View {
             ToolbarItem(placement: .primaryAction) {
                 if !expanded, let options = playbackOptions {
                     Menu {
+                        PlaybackSleepTimerMenu()
                         if let request = options.requestPictureInPicture {
                             Button { request(playback.elapsed, playback.playing) } label: {
                                 Label(ToolText.text("media_pip"), systemImage: "pip.enter")

@@ -58,6 +58,14 @@ struct FilePresentation: Sendable, Hashable {
             if header.starts(with: Data("%PDF-".utf8)) { ext = "pdf" }
             else if ext.isEmpty, header.starts(with: [0x50, 0x4b, 0x03, 0x04]) { ext = "zip" }
         }
+        return FilePresentation(kind: kind(forFileExtension: ext), fileExtension: ext, size: Int64(values?.fileSize ?? 0))
+    }
+
+    /// Filename-only classification for filtering lists without touching disk.
+    /// Callers with a content-sniffed presentation should prefer its actual kind.
+    static func kind(forFileExtension fileExtension: String) -> Kind {
+        let ext = fileExtension.lowercased()
+        if ext == "movpkg" || ext == OfflineHLSReference.fileExtension || LocalHLSMedia.extensions.contains(ext) { return .video }
         let type = UTType(filenameExtension: ext)
         let kind: Kind
         if ext == "pdf" { kind = .pdf }
@@ -75,7 +83,7 @@ struct FilePresentation: Sendable, Hashable {
         else if type?.conforms(to: .sourceCode) == true { kind = .code }
         else if Self.textExtensions.contains(ext) || type?.conforms(to: .text) == true { kind = .text }
         else { kind = .other }
-        return FilePresentation(kind: kind, fileExtension: ext, size: Int64(values?.fileSize ?? 0))
+        return kind
     }
 }
 
@@ -206,6 +214,7 @@ enum LibraryFileActions {
         let targetRoot = destination.resolvingSymlinksInPath().standardizedFileURL
         let targetInfo = try destination.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
         guard targetInfo.isDirectory == true, targetInfo.isSymbolicLink != true,
+              parent == allowed || parent.path.hasPrefix(allowed.path + "/"),
               targetRoot == allowed || targetRoot.path.hasPrefix(allowed.path + "/"), targetRoot != parent else { throw ReadingToolError.unsafePath }
         var destinations: [URL] = []
         for file in files {

@@ -62,7 +62,7 @@ struct AddCustomPlatformView: View {
 
     private var isValid: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        searchURLTemplate.contains("%@")
+        SearchPlatformURLInput.searchTemplate(searchURLTemplate) != nil
     }
 
     var body: some View {
@@ -246,6 +246,9 @@ struct AddCustomPlatformView: View {
                             }
                         }
                         .padding(.horizontal, 20)
+
+                        FormFieldCard { PlatformTrialSearch(template: searchURLTemplate) }
+                            .padding(.horizontal, 20)
 
                         // MARK: - Save Button
                         Button {

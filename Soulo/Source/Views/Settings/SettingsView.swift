@@ -31,6 +31,7 @@ struct SettingsView: View {
     @State private var showHomeSubtitleEdit = false
     @State private var editingHomeTitle = ""
     @State private var editingHomeSubtitle = ""
+    @State private var settingsQuery = ""
     @State private var showFeedback = false
     @State private var showClearCacheAlert = false
     @State private var clearingCache = false
@@ -59,7 +60,20 @@ struct SettingsView: View {
                 Color.themeGroupedBg.ignoresSafeArea()
 
                 List {
+                    if isSearchingSettings && !searchEntries.isEmpty {
+                        Section {
+                            ForEach(searchEntries) { entry in
+                                NavigationLink(value: entry.destination) {
+                                    SettingsNavigationLabel(icon: entry.icon, color: neutralIconColor, title: settingsTitle(entry.key))
+                                }.accessibilityIdentifier("settings." + String(describing: entry.destination))
+                            }
+                        }
+                    }
+                    if isSearchingSettings && !matchesSettings(Self.sectionSearchKeys.flatMap { $0 }) {
+                        ContentUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
+                    }
                     // MARK: - Platform Management
+                    if matchesSettings(Self.sectionSearchKeys[0]) && (!isSearchingSettings || searchEntries.isEmpty) {
                     Section {
                         NavigationLink(value: Destination.platforms) {
                             SettingsNavigationLabel(icon: "square.grid.2x2.fill", color: neutralIconColor, title: LanguageManager.shared.localizedString("settings_platforms"))
@@ -68,7 +82,10 @@ struct SettingsView: View {
                         SectionHeader(title: LanguageManager.shared.localizedString("settings_section_platforms"))
                     }
 
+                    }
+
                     // MARK: - Appearance, Language & Background
+                    if matchesSettings(Self.sectionSearchKeys[1]) && (!isSearchingSettings || searchEntries.isEmpty || matchesSettings(["settings_section_appearance", "settings_appearance", "screen_keep_awake"])) {
                     Section {
                         HStack(spacing: 12) {
                             SettingsNavigationLabel(icon: "paintbrush.fill", color: neutralIconColor, title: LanguageManager.shared.localizedString("settings_appearance"))
@@ -105,6 +122,7 @@ struct SettingsView: View {
                         NavigationLink(value: Destination.wallpaper) {
                             SettingsNavigationLabel(icon: HomeToolbarAction.wallpaper.listSymbol, color: neutralIconColor, title: LanguageManager.shared.localizedString("settings_wallpaper"))
                         }
+                        .accessibilityIdentifier("settings.wallpaper")
 
                         Toggle(isOn: $keepScreenAwake) {
                             SettingsDescriptionLabel(icon: "sun.max.fill",
@@ -121,7 +139,10 @@ struct SettingsView: View {
                         SectionHeader(title: LanguageManager.shared.localizedString("settings_section_appearance"))
                     }
 
+                    }
+
                     // MARK: - Home
+                    if matchesSettings(Self.sectionSearchKeys[2]) && (!isSearchingSettings || searchEntries.isEmpty || matchesSettings(["home_screen", "edit_title", "edit_subtitle", "show_bookmarks_home", "show_group_picker_home", "show_recent_searches_home", "live_activity"])) {
                     Section {
                         Button { showHomeTitleEdit = true } label: {
                             SettingsDetailActionLabel(
@@ -204,7 +225,10 @@ struct SettingsView: View {
                         SectionHeader(title: LanguageManager.shared.localizedString("home_screen"))
                     }
 
+                    }
+
                     // MARK: - Browsing
+                    if matchesSettings(Self.sectionSearchKeys[3]) && (!isSearchingSettings || searchEntries.isEmpty || matchesSettings(["browsing", "settings_default_browser", "show_top_search_bar", "keep_fullscreen_browsing", "privacy_clear_cache"])) {
                     Section {
                         Button {
                             if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -305,6 +329,10 @@ struct SettingsView: View {
                             )
                         }
 
+                        NavigationLink(value: Destination.storage) {
+                            SettingsNavigationLabel(icon: "internaldrive", color: neutralIconColor, title: FeatureText.text("Storage"))
+                        }.accessibilityIdentifier("settings.storage")
+
                         CacheActionRow(
                             icon: "internaldrive.fill",
                             title: LanguageManager.shared.localizedString("privacy_clear_cache"),
@@ -334,7 +362,10 @@ struct SettingsView: View {
                         SectionHeader(title: LanguageManager.shared.localizedString("browsing"))
                     }
 
+                    }
+
                     // MARK: - Other
+                    if matchesSettings(Self.sectionSearchKeys[4]) && (!isSearchingSettings || searchEntries.isEmpty || matchesSettings(["settings_other", "icloud_settings_sync"])) {
                     Section {
                         Toggle(isOn: $iCloudSyncEnabled) {
                             SettingsDescriptionLabel(
@@ -368,8 +399,14 @@ struct SettingsView: View {
                         SectionHeader(title: ToolText.text("settings_other"))
                     }
 
+                    }
+
                     // MARK: - About & Support
+                    if matchesSettings(Self.sectionSearchKeys[5]) && (!isSearchingSettings || searchEntries.isEmpty || matchesSettings(["settings_section_about_support", "settings_feedback"])) {
                     Section {
+                        NavigationLink(value: Destination.help) {
+                            SettingsNavigationLabel(icon: "questionmark.circle", color: neutralIconColor, title: LanguageManager.shared.localizedString("help_title"))
+                        }
                         NavigationLink(value: Destination.review) {
                             SettingsNavigationLabel(
                                 icon: "star.bubble.fill",
@@ -422,13 +459,16 @@ struct SettingsView: View {
                             Spacer()
                         }
                         .padding(.top, 8)
-                    }
+                    }                    }
+
+
                 }
                 .listStyle(.insetGrouped)
                 .scrollContentBackground(.hidden)
             }
             .navigationTitle(LanguageManager.shared.localizedString("settings_title"))
             .navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $settingsQuery, prompt: LanguageManager.shared.localizedString("search"))
             .navigationDestination(for: Destination.self) { destination in
                 destinationView(destination)
             }
@@ -465,11 +505,64 @@ struct SettingsView: View {
         }
     }
 
+    private struct SearchEntry: Identifiable {
+        let destination: Destination
+        let key: String
+        let icon: String
+        var id: Destination { destination }
+    }
+    private static let searchableEntries: [SearchEntry] = [
+        .init(destination: .platforms, key: "settings_platforms", icon: "square.grid.2x2.fill"),
+        .init(destination: .language, key: "settings_language", icon: "globe"),
+        .init(destination: .wallpaper, key: "settings_wallpaper", icon: "photo"),
+        .init(destination: .webAppearance, key: "web_appearance", icon: "circle.lefthalf.filled"),
+        .init(destination: .video, key: "video_settings", icon: "play.rectangle"),
+        .init(destination: .shake, key: "shake_action", icon: "iphone.radiowaves.left.and.right"),
+        .init(destination: .toolbar, key: "toolbar_customize", icon: "slider.horizontal.3"),
+        .init(destination: .homeToolbar, key: "home_toolbar_customize", icon: "rectangle.split.2x2"),
+        .init(destination: .adBlock, key: "ad_block_management", icon: "shield.lefthalf.filled"),
+        .init(destination: .privacy, key: "settings_privacy", icon: "hand.raised.fill"),
+        .init(destination: .extensions, key: "userscripts", icon: "puzzlepiece.extension"),
+        .init(destination: .backups, key: "settings_backups", icon: "clock.arrow.circlepath"),
+        .init(destination: .quickActions, key: "quick_actions_title", icon: "hand.tap"),
+        .init(destination: .urlSchemes, key: "URL Scheme", icon: "link"),
+        .init(destination: .version, key: "settings_version", icon: "info.circle.fill"),
+        .init(destination: .review, key: "settings_rate", icon: "star.bubble.fill"),
+        .init(destination: .storage, key: "Storage", icon: "internaldrive"),
+        .init(destination: .help, key: "help_title", icon: "questionmark.circle")
+    ]
+    private var isSearchingSettings: Bool { !settingsQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    private var searchEntries: [SearchEntry] { Self.searchableEntries.filter { matchesSettings([$0.key]) } }
+    private func settingsTitle(_ key: String) -> String {
+        let primary = LanguageManager.shared.localizedString(key)
+        if primary != key { return primary }
+        let tool = ToolText.text(key)
+        return tool == key ? FeatureText.text(key) : tool
+    }
+
+    private static let sectionSearchKeys: [[String]] = [
+        ["settings_platforms"],
+        ["settings_section_appearance", "settings_appearance", "settings_language", "settings_wallpaper", "screen_keep_awake"],
+        ["home_screen", "edit_title", "edit_subtitle", "home_toolbar_customize", "show_bookmarks_home", "show_group_picker_home", "show_recent_searches_home", "live_activity"],
+        ["browsing", "settings_default_browser", "show_top_search_bar", "keep_fullscreen_browsing", "video_settings", "web_appearance", "shake_action", "toolbar_customize", "ad_block_management", "settings_privacy", "userscripts", "privacy_clear_cache", "Storage"],
+        ["settings_other", "icloud_settings_sync", "settings_backups", "quick_actions_title"],
+        ["settings_section_about_support", "settings_rate", "settings_feedback", "settings_version", "URL Scheme", "help_title"],
+    ]
+
+    private func matchesSettings(_ keys: [String]) -> Bool {
+        let query = settingsQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        return query.isEmpty || keys.contains { key in
+            LanguageManager.shared.localizedString(key).localizedCaseInsensitiveContains(query)
+                || ToolText.text(key).localizedCaseInsensitiveContains(query)
+                || FeatureText.text(key).localizedCaseInsensitiveContains(query)
+        }
+    }
+
     // Value-based links defer service/archive initialization until a subpage
     // is actually opened, instead of constructing every destination at once.
     private enum Destination: Hashable {
         case platforms, language, wallpaper, webAppearance, video, shake, toolbar, homeToolbar
-        case adBlock, privacy, extensions, backups, quickActions, urlSchemes, version, review
+        case adBlock, privacy, extensions, backups, quickActions, urlSchemes, version, review, storage, help
     }
 
     @ViewBuilder
@@ -496,6 +589,8 @@ struct SettingsView: View {
         case .urlSchemes: URLSchemeGuideView()
         case .version: AppVersionView(version: appVersion)
         case .review: AppReviewSupportView()
+        case .storage: StorageUsageView()
+        case .help: HelpCenterView()
         }
     }
 

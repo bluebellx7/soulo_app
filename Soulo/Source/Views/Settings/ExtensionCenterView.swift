@@ -333,6 +333,8 @@ struct ExtensionCenterView: View {
                 if let error = service.webExtensionErrors[item.id] {
                     Text(error).font(.caption).foregroundStyle(.red).lineLimit(3)
                 }
+                Text(FeatureText.text(service.loadingWebExtensions.contains(item.id) ? "Loading" : item.isEnabled ? "Enabled" : "Disabled"))
+                    .font(.caption2).foregroundStyle(.secondary)
                 Text(webExtensionDetail(item))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -365,6 +367,7 @@ struct ExtensionCenterView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                Text(FeatureText.text(script.isEnabled ? "Enabled" : "Disabled")).font(.caption2).foregroundStyle(.secondary)
                 Text((BuiltInUserScripts.displayDescription(for: script)
                     .flatMap { $0.isEmpty ? nil : $0 })
                     ?? script.matchPatterns.prefix(2).joined(separator: ", "))

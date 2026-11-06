@@ -9,6 +9,7 @@ struct ArticleReaderView: View {
     @AppStorage("reader.lineHeight") private var line = 1.6
     @AppStorage("reader.theme") private var theme = "paper"
     @State private var appearance = false
+    @State private var saveNotice: String?
     @AppStorage("reader.font") private var font = "serif"
     @State private var progress = 0.0
     @State private var contents = false
@@ -71,12 +72,29 @@ struct ArticleReaderView: View {
                     }
                     ToolbarItem(placement: .primaryAction) {
                         Button {
+                            Task {
+                            do {
+                                guard let article = reader.articles.first else { return }
+                                try await ReadingListStore.shared.save(url: article.url, title: article.title,
+                                    text: reader.articles.map { $0.title + "\n\n" + $0.text }.joined(separator: "\n\n"))
+                                saveNotice = FeatureText.text("Saved for offline reading")
+                            } catch { saveNotice = error.localizedDescription }
+                            }
+                        } label: { Image(systemName: "text.badge.plus") }
+                        .disabled(reader.articles.isEmpty || reader.loading)
+                        .accessibilityLabel(FeatureText.text("Save to reading list"))
+                    }
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
                             appearance = true
                         } label: {
                             Image(systemName: "textformat.size").font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
                         }
                     }
                 }
+                .alert(FeatureText.text("Reading list"), isPresented: Binding(get: { saveNotice != nil }, set: { if !$0 { saveNotice = nil } })) {
+                    Button(ToolText.text("done")) { saveNotice = nil }
+                } message: { Text(saveNotice ?? "") }
                 .sheet(isPresented: $appearance) {
                     NavigationStack {
                         Form {

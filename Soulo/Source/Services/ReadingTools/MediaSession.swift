@@ -116,6 +116,7 @@ final class MediaSession: ObservableObject {
     func ownsPreparation(_ token: UUID) -> Bool { preparation == token }
     private var lastSavedSecond = -1
     private var wantsPlayback = false
+    private(set) var playbackIntentRevision = 0
     private var isInBackground = UIApplication.shared.applicationState == .background
     var isPlaybackRequested: Bool { soulo?.isPlaybackRequested ?? wantsPlayback }
     private var persistsPosition = true
@@ -135,6 +136,7 @@ final class MediaSession: ObservableObject {
         return true
     }
     private let screenAwakeOwner = UUID()
+    lazy var sleepTimer = PlaybackSleepTimerService(pause: { [weak self] in self?.pause() })
 
     init() {
         let saved = UserDefaults.standard.float(forKey: "media.rate")
@@ -157,6 +159,7 @@ final class MediaSession: ObservableObject {
         NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime).receive(on: DispatchQueue.main).sink { [weak self] event in
             guard let self, event.object as? AVPlayerItem === self.player.currentItem else { return }
             self.endTemporaryRate()
+            if self.sleepTimer.playbackEnded() { self.seek(0); return }
             if !self.loop, self.advanceLocalAudio(by: 1) { return }
             self.seek(0)
             if self.loop { self.play() } else { self.pause() }
@@ -178,6 +181,7 @@ final class MediaSession: ObservableObject {
             self?.setBackgrounded(true)
         }.store(in: &observations)
         NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification).receive(on: DispatchQueue.main).sink { [weak self] _ in
+            self?.sleepTimer.refresh()
             self?.setBackgrounded(false)
         }.store(in: &observations)
         installRemoteControls()
@@ -291,7 +295,12 @@ final class MediaSession: ObservableObject {
                 } else if item.status == .readyToPlay {
                     self.updateTime(self.player.currentTime())
                     let saved = startAt ?? (self.persistsPosition ? UserDefaults.standard.double(forKey: Self.positionKey(url)) : 0)
-                    if saved > 0, item.duration.seconds.isFinite, saved < item.duration.seconds - 2 { self.seek(saved) }
+                    if saved.isFinite, saved > 0, item.duration.seconds.isFinite,
+                       startAt != nil || saved < item.duration.seconds - 2 {
+                        // A decoder handoff is an explicit position, including
+                        // the final seconds. Only saved history restarts there.
+                        self.seek(min(saved, max(0, item.duration.seconds - 0.1)))
+                    }
                     if self.rate > 2 && !item.canPlayFastForward { self.rate = 2 }
                     self.pauseVideoIfBackgrounded()
                     if self.wantsPlayback && self.interruptedGeneration == nil { self.play() }
@@ -301,6 +310,7 @@ final class MediaSession: ObservableObject {
     }
 
     func play() {
+        playbackIntentRevision &+= 1
         if let soulo { soulo.play(); return }
         guard player.currentItem != nil else { return }
         wantsPlayback = true
@@ -321,6 +331,7 @@ final class MediaSession: ObservableObject {
         } catch { self.error = error.localizedDescription }
     }
     func pause() {
+        playbackIntentRevision &+= 1
         if let soulo { soulo.pause(); return }
         wantsPlayback = false; interruptedGeneration = nil
         endTemporaryRate(); player.pause(); savePosition(); updateNowPlaying()
@@ -429,11 +440,16 @@ final class MediaSession: ObservableObject {
         }
     }
 
-    func toggle() { playing ? pause() : play() }
+    func toggle() {
+        if let soulo { playbackIntentRevision &+= 1; soulo.togglePlayback(); return }
+        // A requested AVPlayer rate stays nonzero while buffering, before the
+        // published playing flag catches up. A second tap must cancel it.
+        player.rate > 0 ? pause() : play()
+    }
     func stop() { stop(deactivateAudioSession: true) }
     func stop(deactivateAudioSession: Bool) {
         if let extended = soulo { soulo = nil; extended.stop(deactivateAudioSession: false) }
-        if deactivateAudioSession { setLocalAudioPlaylist([]) }
+        if deactivateAudioSession { setLocalAudioPlaylist([]); sleepTimer.cancel() }
         pause(); generation = UUID(); preparation = UUID(); itemObservation = nil; presentationSizeObservation = nil
         clearTemporaryRateFeedback()
         pictureInPicture.stop()
@@ -509,7 +525,9 @@ final class MediaSession: ObservableObject {
     }
     private func savePosition() {
         guard persistsPosition, let url, elapsed.isFinite else { return }
+        guard !url.isFileURL || FileManager.default.fileExists(atPath: url.path) else { return }
         UserDefaults.standard.set(elapsed, forKey: Self.positionKey(url))
+        if !UserDefaults.standard.bool(forKey: "is_incognito") { RecentLocalPlaybackStore.shared.record(url: url, title: title) }
     }
     private func updateTime(_ time: CMTime) {
         guard soulo == nil else { return }
@@ -603,6 +621,7 @@ final class MediaSession: ObservableObject {
     }
     func souloEnded(_ playback: MatroskaPlayback) {
         guard soulo === playback else { return }
+        if sleepTimer.playbackEnded() { return }
         if loop { playback.seek(0); playback.play() }
         else { _ = advanceLocalAudio(by: 1) }
     }

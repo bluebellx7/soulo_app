@@ -129,11 +129,14 @@ final class DownloadManagerService: ObservableObject {
     static let shared = DownloadManagerService()
 
     @Published private(set) var downloads: [BrowserDownloadItem] = []
+    @Published private(set) var hasUnreadableHistory = false
     let didFinishDownload = PassthroughSubject<BrowserDownloadItem, Never>()
 
     private let userDefaults: UserDefaults
     private let storageKey: String
     private let storageDirectory: URL
+    private let recentPlaybackStore: RecentLocalPlaybackStore
+    private let removeLocalFile: (URL) throws -> Void
     private let progressPersistence = DeferredPersistence()
     private var playbackSources: [UUID: DownloadPlaybackSource] = [:]
 
@@ -151,11 +154,15 @@ final class DownloadManagerService: ObservableObject {
     init(
         userDefaults: UserDefaults = .standard,
         storageKey: String = "soulo_browser_downloads",
-        storageDirectory: URL? = nil
+        storageDirectory: URL? = nil,
+        recentPlaybackStore: RecentLocalPlaybackStore? = nil,
+        fileRemover: ((URL) throws -> Void)? = nil
     ) {
         self.userDefaults = userDefaults
         self.storageKey = storageKey
         self.storageDirectory = storageDirectory ?? Self.downloadsDirectory
+        self.recentPlaybackStore = recentPlaybackStore ?? .shared
+        self.removeLocalFile = fileRemover ?? { try FileManager.default.removeItem(at: $0) }
         try? FileManager.default.createDirectory(at: self.storageDirectory, withIntermediateDirectories: true)
         load()
     }
@@ -315,6 +322,7 @@ final class DownloadManagerService: ObservableObject {
         } else if current.transport == .ed2k {
             ED2KDownloadService.shared.remove(current.id, deleteFiles: current.status != .finished)
         } else if [.inProgress, .paused].contains(current.status) {
+            let existedBeforeCancellation = FileManager.default.fileExists(atPath: current.localPath)
             switch current.transport {
             case .torrent, .ed2k: break
             case .background:
@@ -330,13 +338,40 @@ final class DownloadManagerService: ObservableObject {
                     userInfo: ["id": current.id]
                 )
             }
-            try? FileManager.default.removeItem(at: current.localURL)
+            try? removeLocalFile(current.localURL)
+            // A synchronous cancellation can already have removed the file.
+            // An error or transport ownership that leaves it present cannot
+            // discard the continuation or the remembered position.
+            if existedBeforeCancellation && !FileManager.default.fileExists(atPath: current.localPath) {
+                didDeleteLocalFile(at: current.localURL)
+            }
         }
         // Completed files belong to Files; removing download history keeps them.
         removeResumeData(id: item.id)
         playbackSources.removeValue(forKey: item.id)
         downloads.removeAll { $0.id == item.id }
         save()
+    }
+
+    /// Invoke only after confirmed filesystem deletion, including a native
+    /// transport's async completion. Stop affected playback before this call.
+    /// Removing a history row while retaining its file is not a deletion event.
+    @discardableResult
+    func didDeleteLocalFile(at url: URL) -> Bool {
+        let canonical = url.standardizedFileURL.resolvingSymlinksInPath()
+        let root = storageDirectory.standardizedFileURL.resolvingSymlinksInPath()
+        guard url.isFileURL, canonical.path.hasPrefix(root.path + "/"),
+              !FileManager.default.fileExists(atPath: url.path) else { return false }
+        var deletedURLs = Set([url, canonical])
+        if let recent = recentPlaybackStore.latestURL, LibraryFileActions.contains(recent, in: [canonical]) {
+            deletedURLs.insert(recent)
+            if recent.path != canonical.path {
+                deletedURLs.insert(url.appendingPathComponent(String(recent.path.dropFirst(canonical.path.count + 1))))
+            }
+        }
+        recentPlaybackStore.clearIfContained(in: [url])
+        for deleted in deletedURLs { userDefaults.removeObject(forKey: MediaSession.positionKey(deleted)) }
+        return true
     }
 
     func clearFinished() {
@@ -352,6 +387,7 @@ final class DownloadManagerService: ObservableObject {
     }
 
     func removeMissingFiles() {
+        guard !hasUnreadableHistory else { return }
         downloads.removeAll { item in
             guard item.status == .finished else { return false }
             if item.localURL.pathExtension.lowercased() == OfflineHLSReference.fileExtension,
@@ -365,9 +401,13 @@ final class DownloadManagerService: ObservableObject {
     }
 
     func updateFileReference(from oldURL: URL, to newURL: URL) {
-        for index in downloads.indices where downloads[index].localURL.standardizedFileURL == oldURL.standardizedFileURL {
-            downloads[index].localPath = newURL.path
-            downloads[index].fileName = newURL.lastPathComponent
+        for index in downloads.indices {
+            let previousURL = downloads[index].localURL
+            guard let target = LibraryFileActions.relocated(previousURL, from: oldURL, to: newURL) else { continue }
+            downloads[index].localPath = target.path
+            if downloads[index].transport != .torrent || target.lastPathComponent != previousURL.lastPathComponent {
+                downloads[index].fileName = target.lastPathComponent
+            }
         }
         save()
     }
@@ -426,8 +466,13 @@ final class DownloadManagerService: ObservableObject {
     }
 
     private func load() {
-        if let data = userDefaults.data(forKey: storageKey),
-           let decoded = try? JSONDecoder().decode([BrowserDownloadItem].self, from: data) {
+        if let data = userDefaults.data(forKey: storageKey) {
+            guard let decoded = try? JSONDecoder().decode([BrowserDownloadItem].self, from: data) else {
+                // Do not let the normal missing-file reconciliation replace a
+                // damaged or newer-format archive with an empty history.
+                hasUnreadableHistory = true
+                return
+            }
             downloads = decoded
         }
         // iOS can relocate the data container during an update. Resolve only
@@ -439,11 +484,9 @@ final class DownloadManagerService: ObservableObject {
             // its download folder keeps the original reserved name.
             let storedName = item.transport == .torrent ? item.localURL.lastPathComponent : item.fileName
             guard !FileManager.default.fileExists(atPath: item.localPath),
-                  Array(item.localURL.pathComponents.suffix(3)) == ["Documents", "Downloads", storedName] else { continue }
-            let relocated = storageDirectory.appendingPathComponent(storedName)
-            if FileManager.default.fileExists(atPath: relocated.path) {
-                downloads[index].localPath = relocated.path
-            }
+                  let relocated = relocatedDownloadURL(item.localURL, storedName: storedName),
+                  FileManager.default.fileExists(atPath: relocated.path) else { continue }
+            downloads[index].localPath = relocated.path
         }
         var restoredInterruptedDownload = false
         // WebKit downloads are owned by the web view process and cannot continue after
@@ -459,6 +502,19 @@ final class DownloadManagerService: ObservableObject {
             save()
         }
         removeMissingFiles()
+    }
+
+    private func relocatedDownloadURL(_ original: URL, storedName: String) -> URL? {
+        let components = original.standardizedFileURL.pathComponents
+        guard components.last == storedName,
+              let anchor = components.indices.first(where: {
+                  components[$0] == "Documents" && $0 + 1 < components.count && components[$0 + 1] == "Downloads"
+              }), anchor + 2 < components.count else { return nil }
+        let relative = components.dropFirst(anchor + 2)
+        let target = relative.reduce(storageDirectory) { $0.appendingPathComponent($1) }
+        let root = storageDirectory.standardizedFileURL.resolvingSymlinksInPath().path
+        guard target.standardizedFileURL.resolvingSymlinksInPath().path.hasPrefix(root + "/") else { return nil }
+        return target
     }
 
     private func shouldCancelInterruptedDownload(_ item: BrowserDownloadItem) -> Bool {
@@ -510,6 +566,7 @@ final class DownloadManagerService: ObservableObject {
         progressPersistence.cancel()
         if let data = try? JSONEncoder().encode(downloads) {
             userDefaults.set(data, forKey: storageKey)
+            hasUnreadableHistory = false
         }
     }
 

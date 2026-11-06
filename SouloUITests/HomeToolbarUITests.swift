@@ -2,6 +2,102 @@ import XCTest
 
 @MainActor
 final class HomeToolbarUITests: XCTestCase {
+    func testWallpaperSettingsSwitchSourcesAndApplyGradient() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-wallpaper_source", "gradient",
+            "-wallpaper_gradient_id", "aurora", "-wallpaper_refresh_interval", "0",
+            "-icloud_sync_enabled", "NO", "-review.requestedOnce", "YES"]
+        app.launch(); defer { app.terminate() }
+        let menu = app.buttons["home.menu"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 10))
+        menu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        app.buttons["Settings"].firstMatch.tap()
+        let entry = app.buttons["settings.wallpaper"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 5)); entry.tap()
+        let sources = app.scrollViews["wallpaper.sources"]
+        XCTAssertTrue(sources.waitForExistence(timeout: 5))
+        sources.swipeLeft()
+        let solid = app.buttons["wallpaper.source.solid"]
+        XCTAssertTrue(solid.isHittable); solid.tap()
+        XCTAssertTrue(solid.isSelected)
+        let gradient = app.buttons["wallpaper.source.gradient"]
+        gradient.tap(); XCTAssertTrue(gradient.isSelected)
+        let forest = app.buttons["wallpaper.gradient.forest"]
+        if !forest.isHittable { app.swipeUp() }
+        XCTAssertTrue(forest.waitForExistence(timeout: 5)); forest.tap()
+        XCTAssertTrue(forest.isSelected)
+        app.navigationBars.buttons.firstMatch.tap()
+        app.buttons["Done"].firstMatch.tap()
+        XCTAssertTrue(menu.waitForExistence(timeout: 5))
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "wallpaper-local-source-and-forest-applied"; shot.lifetime = .keepAlways; add(shot)
+    }
+
+    func testStartupAndForegroundKeepHomeMenuAndSearchResponsive() async throws {
+        continueAfterFailure = false
+        let title = "Startup interaction \(UUID().uuidString.prefix(6))"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/startup": Data("<meta name='viewport' content='width=device-width,initial-scale=1'><title>\(title)</title><h1>\(title)</h1>".utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        defer { app.terminate() }
+        app.launchEnvironment["SOULO_BROWSER_TRACE"] = "1"
+        for wallpaper in ["gradient", "bing"] {
+            app.launchArguments = ["-app_language", "en-US", "-is_incognito", "NO",
+                "-wallpaper_source", wallpaper, "-wallpaper_refresh_interval", "0", "-icloud_sync_enabled", "NO",
+                "-review.requestedOnce", "YES",
+                "-soulo_ad_block_subscription_auto_update_check", "0", "-privacy_https_upgrade_enabled", "NO",
+                "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO"]
+            app.launch()
+            let menu = app.buttons["home.menu"]
+            XCTAssertTrue(menu.waitForExistence(timeout: 10), app.debugDescription)
+            menu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            let settings = app.buttons["Settings"].firstMatch
+            XCTAssertTrue(settings.waitForExistence(timeout: 3), "The first home menu tap must work")
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.25)).tap()
+            XCTAssertTrue(settings.waitForNonExistence(timeout: 3))
+            let field = app.textFields["search.query"].firstMatch
+            field.tap()
+            if app.buttons["search.clear"].exists { app.buttons["search.clear"].tap(); field.tap() }
+            let url = root.appendingPathComponent("startup").absoluteString
+            field.typeText(url)
+            XCTAssertEqual(field.value as? String, url, "Startup work must not lose the first typed query")
+            field.typeText("\n")
+            XCTAssertTrue(app.webViews.staticTexts[title].firstMatch.waitForExistence(timeout: 15))
+            app.buttons["Home Screen"].firstMatch.tap()
+            XCTAssertTrue(menu.waitForExistence(timeout: 5))
+            XCUIDevice.shared.press(.home)
+            app.activate()
+            XCTAssertTrue(app.wait(for: .runningForeground, timeout: 5))
+            // runningForeground precedes the SpringBoard activation animation.
+            // Its transient AX frames can still be scaled to the app preview.
+            let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                menu.isHittable && menu.frame.width >= 40
+            }, object: nil)
+            guard XCTWaiter.wait(for: [ready], timeout: 3) == .completed else {
+                XCTFail("Home controls must become ready after the system activation transition")
+                return
+            }
+            XCTAssertLessThan(menu.frame.maxY, app.frame.height * 0.25)
+            // Native tap() can attempt to scroll this fixed button after a
+            // scene transition and choose a point below its visible frame.
+            menu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            XCTAssertTrue(settings.waitForExistence(timeout: 3), "Returning from the background must preserve home hit testing")
+            settings.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            let settingsBar = app.navigationBars["Settings"]
+            XCTAssertTrue(settingsBar.waitForExistence(timeout: 5), "The menu action must actually open Settings")
+            let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            shot.name = "startup-responsive-\(wallpaper)"; shot.lifetime = .keepAlways; add(shot)
+            settingsBar.buttons["Done"].tap()
+            XCTAssertTrue(menu.waitForExistence(timeout: 5))
+            field.tap()
+            if app.buttons["search.clear"].exists { app.buttons["search.clear"].tap(); field.tap() }
+            field.typeText("Foreground query")
+            XCTAssertEqual(field.value as? String, "Foreground query", "Search must accept input after returning to the foreground")
+            app.terminate()
+        }
+    }
+
     func testHomeTitleRecentSearchAndBookmarkKeepTapAndLongPressActions() async throws {
         continueAfterFailure = false
         let title = "Home press \(UUID().uuidString.prefix(6))"
@@ -284,7 +380,19 @@ final class HomeToolbarUITests: XCTestCase {
         address.tap(); address.typeText(root.appendingPathComponent("original.html").absoluteString + "\n")
         let note = app.webViews.textFields["Original note"].firstMatch
         XCTAssertTrue(note.waitForExistence(timeout: 15), app.debugDescription)
-        note.tap(); note.typeText(state + "\n")
+        // Finish typing before sending the page's blur-on-Enter action, then
+        // verify that the keyboard no longer covers the bottom toolbar.
+        note.tap(); note.typeText(state)
+        let returnKey = app.keyboards.buttons["Return"]
+        guard returnKey.waitForExistence(timeout: 3) else {
+            XCTFail("The page input must have its return key available")
+            return
+        }
+        returnKey.tap()
+        guard app.keyboards.firstMatch.waitForNonExistence(timeout: 5) else {
+            XCTFail("Finish page input before tapping browser toolbar controls")
+            return
+        }
         // Restored simulator sessions can contain earlier tabs. Measure from the
         // occupied original document rather than assuming a single-tab session.
         let initialCount = try XCTUnwrap(Int(tabs.label.split(separator: " ").first.map(String.init) ?? ""))
@@ -292,7 +400,10 @@ final class HomeToolbarUITests: XCTestCase {
         if createBlank {
             app.buttons["Home Screen"].firstMatch.tap()
             let newTab = app.buttons["home.toolbar.0"]
-            XCTAssertTrue(newTab.waitForExistence(timeout: 5), app.debugDescription)
+            guard newTab.waitForExistence(timeout: 5) else {
+                XCTFail("The configured home New Tab control must be visible: \(app.debugDescription)")
+                return
+            }
             newTab.tap()
             XCTAssertTrue(tabs.waitForExistence(timeout: 5))
             XCTAssertEqual(tabs.label, "\(expectedCount) Tabs")
@@ -308,7 +419,10 @@ final class HomeToolbarUITests: XCTestCase {
         } else {
             app.buttons["Library"].firstMatch.tap()
             let history = app.buttons["library.section.history"]
-            XCTAssertTrue(history.waitForExistence(timeout: 5))
+            guard history.waitForExistence(timeout: 5) else {
+                XCTFail("Opening Library must reveal its History section: \(app.debugDescription)")
+                return
+            }
             history.tap()
         }
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", savedTitle)).firstMatch

@@ -120,7 +120,7 @@ struct AdBlockManagementView: View {
                 NavigationLink {
                     AdBlockAllowedSitesView(onChanged: onChanged)
                 } label: {
-                    ruleRow(LanguageManager.shared.localizedString("ad_block_allowlist"), icon: "shield.slash", count: service.allowlistedHosts.count)
+                    ruleRow(LanguageManager.shared.localizedString("ad_block_allowlist"), icon: "shield.slash", count: service.permanentAllowlistedHosts.count)
                 }
                 .accessibilityIdentifier("adBlock.allowedSites")
             }
@@ -317,7 +317,7 @@ private struct AdBlockAllowedSitesView: View {
     var body: some View {
         List {
                 Section {
-                    ForEach(service.allowlistedHosts, id: \.self) { host in
+                    ForEach(service.permanentAllowlistedHosts, id: \.self) { host in
                         HStack {
                             Label(host, systemImage: "shield.slash")
                             Spacer()
@@ -330,7 +330,7 @@ private struct AdBlockAllowedSitesView: View {
                         }
                     }
                     .onDelete { offsets in
-                        offsets.map { service.allowlistedHosts[$0] }.forEach(service.removeAllowlistedHost)
+                        offsets.map { service.permanentAllowlistedHosts[$0] }.forEach(service.removeAllowlistedHost)
                         onChanged?()
                     }
                 } header: {
@@ -338,7 +338,7 @@ private struct AdBlockAllowedSitesView: View {
                 }
         }
         .overlay {
-            if service.allowlistedHosts.isEmpty {
+            if service.permanentAllowlistedHosts.isEmpty {
                 ContentUnavailableView(ToolText.text("ad_allowlist_empty"), systemImage: "shield.checkered")
             }
         }

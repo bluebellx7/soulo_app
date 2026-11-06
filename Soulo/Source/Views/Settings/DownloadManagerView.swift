@@ -43,6 +43,15 @@ struct DownloadManagerContentView: View {
     @State private var hlsExportProgress: FileOperationProgress?
     @State private var fileError: String?
     @State private var fileSizes: [UUID: Int64] = [:]
+    @State private var fileKinds: [UUID: FilePresentation.Kind] = [:]
+    @State private var search = ""
+    @State private var status: DownloadStatusFilter = .all
+    @State private var kind: LibraryFileFilter = .all
+    @State private var sort: LibraryListSort = .newest
+
+    private var visibleDownloads: [BrowserDownloadItem] {
+        DownloadListQuery.apply(downloadManager.downloads, search: search, status: status, kind: kind, sort: sort, sizes: fileSizes, kinds: fileKinds)
+    }
 
     private struct SizeRequest: Equatable, Sendable {
         let id: UUID
@@ -67,6 +76,9 @@ struct DownloadManagerContentView: View {
 
     var body: some View {
         List {
+            Section {
+                LibraryQueryControls(search: $search, kind: $kind, sort: $sort, status: $status)
+            }
             if !embeddedInLibrary {
                 Section {
                     NavigationLink { LibraryFilesView() } label: { Label(ToolText.text("files_tools"), systemImage: "folder.badge.gearshape") }
@@ -94,8 +106,11 @@ struct DownloadManagerContentView: View {
                     message: LanguageManager.shared.localizedString("downloads_empty_desc")
                 )
             } else {
+                if visibleDownloads.isEmpty {
+                    ContentUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
+                }
                 Section {
-                    ForEach(downloadManager.downloads) { item in
+                    ForEach(visibleDownloads) { item in
                         if item.transport == .torrent { TorrentDownloadRow(item: item) }
                         else { downloadRow(item) }
                     }
@@ -192,15 +207,17 @@ struct DownloadManagerContentView: View {
             let requests = sizeRequests
             let work = Task.detached(priority: .utility) {
                 var sizes: [UUID: Int64] = [:]
+                var kinds: [UUID: FilePresentation.Kind] = [:]
                 for request in requests {
                     guard !Task.isCancelled else { break }
                     if let size = FileStorageSize.bytes(at: request.url) { sizes[request.id] = size }
+                    kinds[request.id] = FilePresentation.inspect(request.url).kind
                 }
-                return sizes
+                return (sizes, kinds)
             }
-            let sizes = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+            let result = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
             guard !Task.isCancelled else { return }
-            fileSizes = sizes
+            fileSizes = result.0; fileKinds = result.1
         }
     }
 
@@ -418,8 +435,8 @@ struct DownloadManagerContentView: View {
     private func deleteDownloads(at offsets: IndexSet) {
         offsets
             .compactMap { index in
-                guard downloadManager.downloads.indices.contains(index) else { return nil }
-                return downloadManager.downloads[index]
+                guard visibleDownloads.indices.contains(index) else { return nil }
+                return visibleDownloads[index]
             }
             .forEach(downloadManager.delete)
     }
@@ -720,36 +737,38 @@ private struct SelectableDocumentText: UIViewRepresentable {
 struct DownloadCompletionToast: View {
     let onOpenDownloads: () -> Void
     @State private var completed: BrowserDownloadItem?
+    @State private var opening: BrowserDownloadItem?
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
 
     var body: some View {
         Group {
             if let completed {
-                Button {
-                    self.completed = nil
-                    onOpenDownloads()
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(LanguageManager.shared.localizedString("resource_download_complete"))
-                                .font(.subheadline.weight(.semibold))
-                            Text(completed.fileName)
-                                .font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                        }
-                        Spacer(minLength: 4)
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    Button {
+                        opening = completed
+                        self.completed = nil
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(LanguageManager.shared.localizedString("resource_download_complete"))
+                                    .font(.subheadline.weight(.semibold))
+                                Text(completed.fileName).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                            }
+                            Spacer(minLength: 4)
+                        }.contentShape(Rectangle())
                     }
-                    .padding(14)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
-                    .contentShape(Rectangle())
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("downloads.completion-toast")
+                    Button { self.completed = nil; onOpenDownloads() } label: { Image(systemName: "list.bullet").frame(width: 44, height: 44) }
+                        .accessibilityLabel(LanguageManager.shared.localizedString("downloads"))
+                    ShareLink(item: completed.localURL) { Image(systemName: "square.and.arrow.up").frame(width: 44, height: 44) }
+                        .accessibilityLabel(ToolText.text("share"))
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("downloads.completion-toast")
-                .accessibilityHint(LanguageManager.shared.localizedString("downloads"))
+                .padding(14)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
                 .padding(.horizontal, 16)
                 .padding(.top, 10)
                 .transition(.move(edge: .top).combined(with: .opacity))
@@ -759,6 +778,14 @@ struct DownloadCompletionToast: View {
                     guard self.completed?.id == completed.id else { return }
                     self.completed = nil
                 }
+            }
+        }
+        .sheet(item: $opening) { item in
+            NavigationStack {
+                DownloadContentPreview(item: item)
+                    .toolbar { ToolbarItem(placement: .confirmationAction) {
+                        Button(LanguageManager.shared.localizedString("done")) { opening = nil }
+                    } }
             }
         }
         .animation(.easeOut(duration: 0.2), value: completed?.id)

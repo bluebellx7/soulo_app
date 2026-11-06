@@ -8,7 +8,8 @@ final class RetiredStorageCleanupTests: XCTestCase {
         let old = root.appendingPathComponent("SouloLocalAI/Models/model.gguf")
         let preserved = root.appendingPathComponent("Downloads/article.pdf")
         let otherModels = root.appendingPathComponent("Models/keep.gguf")
-        for file in [old, preserved, otherModels] {
+        let favorite = root.appendingPathComponent("WallpaperFavorites/keep.jpg")
+        for file in [old, preserved, otherModels, favorite] {
             try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
             try Data("fixture".utf8).write(to: file)
         }
@@ -21,6 +22,7 @@ final class RetiredStorageCleanupTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("SouloLocalAI").path))
         XCTAssertEqual(try Data(contentsOf: preserved), Data("fixture".utf8))
         XCTAssertEqual(try Data(contentsOf: otherModels), Data("fixture".utf8))
+        XCTAssertEqual(try Data(contentsOf: favorite), Data("fixture".utf8))
     }
 
     func testNoLegacyDataSkipsSessionCreationButPreferencesCancelPendingTransfers() throws {

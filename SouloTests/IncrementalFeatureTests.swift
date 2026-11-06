@@ -28,6 +28,80 @@ final class IncrementalFeatureTests: XCTestCase {
         XCTAssertFalse(seek.isPending(actual: 120.3, now: start.advanced(by: .seconds(9))))
         XCTAssertFalse(seek.isPending(actual: 8, now: start.advanced(by: .seconds(21))))
     }
+
+    @MainActor func testNativePlayerHandoffKeepsPausedPositionNearTheEnd() async throws {
+        let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let session = MediaSession.shared, defaults = UserDefaults.standard
+        let oldRate = defaults.object(forKey: "media.rate"), previousRate = session.rate, key = MediaSession.positionKey(video)
+        let oldPosition = defaults.object(forKey: key)
+        session.stop(); session.setBackgrounded(false); session.setRate(1)
+        defer {
+            session.setRate(previousRate); session.stop(); defaults.set(oldRate, forKey: "media.rate")
+            defaults.set(oldPosition, forKey: key)
+        }
+        let duration = try await AVURLAsset(url: video).load(.duration).seconds
+        let target = duration - 1.2
+        session.open(url: video, persistPosition: false, startAt: target, autoplay: false)
+        try await wait { session.player.currentItem?.status == .readyToPlay }
+        try await Task.sleep(for: .milliseconds(600))
+        XCTAssertEqual(session.player.currentTime().seconds, target, accuracy: 0.15,
+                       "An explicit decoder handoff must retain even the last two seconds")
+        XCTAssertEqual(session.elapsed, target, accuracy: 0.2)
+        XCTAssertFalse(session.isPlaybackRequested)
+        XCTAssertEqual(session.player.rate, 0)
+        session.play()
+        try await wait { session.player.currentTime().seconds > target + 0.2 }
+        session.pause()
+
+        // A normal reopen still restarts an almost-finished saved video.
+        defaults.set(target, forKey: key)
+        session.open(url: video, persistPosition: true, autoplay: false)
+        try await wait { session.player.currentItem?.status == .readyToPlay }
+        try await Task.sleep(for: .milliseconds(300))
+        XCTAssertEqual(session.player.currentTime().seconds, 0, accuracy: 0.15)
+    }
+
+    @MainActor func testSouloPlayerHandoffKeepsPausedPositionNearTheEndAndReturnsToSystem() async throws {
+        let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let session = MediaSession.shared, defaults = UserDefaults.standard
+        let oldRate = defaults.object(forKey: "media.rate"), previousRate = session.rate, oldLoop = session.loop
+        session.stop(); session.setBackgrounded(false); session.setRate(1); session.loop = false
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene), root = UIViewController()
+        window.rootViewController = root; window.makeKeyAndVisible()
+        let playback = MatroskaPlayback(); playback.attach(root.view)
+        defer {
+            session.setRate(previousRate); playback.stop(); session.stop(); session.loop = oldLoop
+            defaults.set(oldRate, forKey: "media.rate")
+            window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
+        }
+        let duration = try await AVURLAsset(url: video).load(.duration).seconds
+        let target = duration - 1.2
+        playback.open(video, startAt: target, autoplay: false)
+        try await wait {
+            playback.duration > 0 && playback.player?.isPlaying == false
+                && abs(Double(playback.player?.time.intValue ?? 0) / 1000 - target) < 0.35
+        }
+        let paused = Double(playback.player?.time.intValue ?? 0) / 1000
+        try await Task.sleep(for: .milliseconds(350))
+        XCTAssertEqual(Double(playback.player?.time.intValue ?? 0) / 1000, target, accuracy: 0.35,
+                       "Verify the decoder clock, not just the optimistic progress label")
+        XCTAssertEqual(Double(playback.player?.time.intValue ?? 0) / 1000, paused, accuracy: 0.1,
+                       "The transferred video must remain paused")
+        XCTAssertFalse(playback.isPlaybackRequested)
+        XCTAssertFalse(playback.playing)
+        session.restoreSystemFromSoulo()
+        try await wait { session.player.currentItem?.status == .readyToPlay }
+        try await Task.sleep(for: .milliseconds(600))
+        XCTAssertNil(session.soulo)
+        XCTAssertEqual(session.player.currentTime().seconds, target, accuracy: 0.35)
+        XCTAssertFalse(session.isPlaybackRequested)
+        XCTAssertEqual(session.player.rate, 0)
+        session.play()
+        try await wait { session.player.currentTime().seconds > target + 0.2 }
+        session.pause()
+    }
+
     @MainActor func testDecoderSwitchKeepsOneFullscreenWindowAndSourceMounted() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
         let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
@@ -257,6 +331,71 @@ final class IncrementalFeatureTests: XCTestCase {
             identifier: "timeline.qa", seek: { seeks.append($0) }, interactionChanged: controls.interaction)
         try await Task.sleep(for: .milliseconds(100))
         XCTAssertEqual(slider.value, slider.minimumValue + 7.5 * scale, accuracy: 0.01, "A completed drag must resume following the playback clock")
+    }
+
+    @MainActor func testSharedControlsDuringPreparationKeepTheLatestPlaybackIntentInBothModes() async throws {
+        let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let session = MediaSession.shared, defaults = UserDefaults.standard
+        let savedRate = defaults.object(forKey: "media.rate"), previousRate = session.rate
+        session.stop(); session.setBackgrounded(false); session.setRate(1)
+        defer { session.setRate(previousRate); session.stop(); defaults.set(savedRate, forKey: "media.rate") }
+        for usesSoulo in [false, true] {
+            for (actions, shouldPlay) in [(["play"], true), (["toggle"], true), (["play", "pause"], false), (["toggle", "toggle"], false)] {
+                let scenario = "\(usesSoulo ? "Soulo" : "System"): \(actions)"
+                let server = try DownloadPlaybackHTTPFixture(files: ["/clip.mp4": Data(contentsOf: video)], heldPaths: ["/clip.mp4"])
+                let root = try await server.start(); defer { server.stop() }
+                let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+                let previous = scene.keyWindow, window = UIWindow(windowScene: scene), host = UIViewController()
+                window.rootViewController = host; window.makeKeyAndVisible()
+                let playback = MatroskaPlayback(); playback.attach(host.view)
+                defer {
+                    playback.stop(); session.stop(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
+                }
+                let url = root.appendingPathComponent("clip.mp4")
+                if usesSoulo { playback.open(url, startAt: 2, autoplay: false) }
+                else { session.open(url: url, persistPosition: false, startAt: 2, autoplay: false) }
+                func actualTime() -> Double {
+                    usesSoulo ? Double(playback.player?.time.intValue ?? 0) / 1000 : session.player.currentTime().seconds
+                }
+                for _ in 0..<100 where server.receivedRequests.isEmpty { try await Task.sleep(for: .milliseconds(20)) }
+                XCTAssertFalse(server.receivedRequests.isEmpty, "Hold the actual decoder request before pressing Play")
+                // The mini player and remote controls dispatch through this shared
+                // action even before the new decoder has received its metadata.
+                for action in actions {
+                    if action == "play" { session.play() }
+                    else if action == "pause" { session.pause() }
+                    else { session.toggle() }
+                }
+                XCTAssertEqual(session.isPlaybackRequested, shouldPlay, scenario)
+                server.releaseDownloads()
+                if shouldPlay {
+                    for _ in 0..<80 {
+                        if session.playing && actualTime() > 2.2 { break }
+                        try await Task.sleep(for: .milliseconds(50))
+                    }
+                } else {
+                    // Pausing while VLC opens a stream can also pause metadata
+                    // loading. The seek may wait until the next explicit Play.
+                    try await Task.sleep(for: .milliseconds(700))
+                }
+                let actual = actualTime()
+                XCTAssertNil(session.error, scenario)
+                XCTAssertEqual(session.isPlaybackRequested, shouldPlay, scenario)
+                XCTAssertEqual(session.playing, shouldPlay, "Initial autoplay=false must not override newer controls: \(scenario)")
+                if !shouldPlay {
+                    try await Task.sleep(for: .milliseconds(300))
+                    XCTAssertEqual(actualTime(), actual, accuracy: 0.1,
+                                   "A later Pause must override the pending Play action: \(scenario)")
+                    session.play()
+                    for _ in 0..<80 {
+                        if session.playing && actualTime() > 2.2 { break }
+                        try await Task.sleep(for: .milliseconds(50))
+                    }
+                    XCTAssertTrue(session.playing, "Manual resume must unblock the paused decoder: \(scenario)")
+                    XCTAssertGreaterThan(actualTime(), 2.2, "Resume must apply the pending position: \(scenario)")
+                } else { XCTAssertGreaterThan(actual, 2.2, "Check the actual decoder clock: \(scenario)") }
+            }
+        }
     }
 
     @MainActor func testControlsAutoHideByDefaultAndWaitForInteraction() async throws {

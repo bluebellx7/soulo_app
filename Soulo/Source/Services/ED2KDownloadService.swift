@@ -135,7 +135,10 @@ final class ED2KDownloadService: ObservableObject {
             catch { manager.markResumed(id: id); manager.markFailed(id: id, error: error) }
             if remove {
                 try? FileManager.default.removeItem(at: resumeURL(id))
-                if let deleteFile { try? FileManager.default.removeItem(at: deleteFile) }
+                if let deleteFile {
+                    try? FileManager.default.removeItem(at: deleteFile)
+                    manager.didDeleteLocalFile(at: deleteFile)
+                }
             }
         }
         operations[id] = work

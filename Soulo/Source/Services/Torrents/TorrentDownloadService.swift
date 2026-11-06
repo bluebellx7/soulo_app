@@ -263,6 +263,7 @@ final class TorrentDownloadService: ObservableObject {
             await checkpoint?.value
             let nativeOwned = await worker.remove(id: id, deleteFiles: deleteFiles)
             if deleteFiles && !nativeOwned, let existing { try? FileManager.default.removeItem(atPath: existing.directory) }
+            if deleteFiles, let existing { manager.didDeleteLocalFile(at: URL(fileURLWithPath: existing.directory)) }
             try? FileManager.default.removeItem(at: dataURL(id, "torrent"))
             try? FileManager.default.removeItem(at: dataURL(id, "resume"))
             pump(); workChanged()

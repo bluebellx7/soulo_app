@@ -1172,6 +1172,7 @@ struct MediaPlaybackContent: View {
     private func startPendingSouloPlayback() {
         guard isVisible || transfer != nil || preserveFullscreen, let request = pendingSouloPlayback else { return }
         guard switchTask == nil, let source = initialSouloSource ?? session.playbackTransferSource() else { return }
+        let intentRevision = session.playbackIntentRevision
         let explicitSource = initialSouloSource != nil, item = session.player.currentItem
         guard explicitSource || item != nil else { return }
         let originalURL = explicitSource ? source.asset.url : (session.url ?? source.asset.url)
@@ -1193,7 +1194,8 @@ struct MediaPlaybackContent: View {
                 // Keep the asset/cache/authentication context alive before the
                 // native session releases it, including private playback leases.
                 let next = ExtendedMediaTransfer(source: source, originalURL: originalURL, title: title,
-                                                  context: context, prepared: prepared, time: request.time, playing: request.playing)
+                                                  context: context, prepared: prepared, time: request.time,
+                                                  playing: session.playbackIntentRevision == intentRevision ? request.playing : session.isPlaybackRequested)
                 session.stop(deactivateAudioSession: false)
                 pendingSouloPlayback = nil
                 transfer = next
@@ -1301,6 +1303,7 @@ struct MediaPlaybackContent: View {
             ToolbarItem(placement: .primaryAction) {
                 if transfer == nil {
                     Menu {
+                        PlaybackSleepTimerMenu()
                         if let request = options?.requestPictureInPicture {
                             Button { request(session.elapsed, session.playing) } label: {
                                 ToolMenuLabel(key: "media_pip", symbol: "pip.enter")

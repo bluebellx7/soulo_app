@@ -73,6 +73,87 @@ final class SearchVideoNavigationTests: XCTestCase {
         XCTAssertNil(BrowserDirectMediaPolicy.audioResource(for: hls))
     }
 
+    func testReloadAfterStoppingAnUncommittedResponseReloadsTheDisplayedAddress() async throws {
+        UserDefaults.standard.set(false, forKey: "ad_block_enabled")
+        for hasPreviousDocument in [false, true] {
+            let server = try DownloadPlaybackHTTPFixture(files: [
+                "/first.html": Data("<h1>Previous document</h1>".utf8),
+                "/held.html": Data("<h1>Held response ready</h1>".utf8)
+            ], heldPaths: ["/held.html"])
+            let root = try await server.start(); defer { server.stop() }
+            let model = WebViewModel(), (window, previous) = try host(model)
+            defer { window.isHidden = true; window.rootViewController = nil; model.releaseWebViewRuntime(); previous?.makeKeyAndVisible() }
+            func eventually(_ condition: () async -> Bool) async throws {
+                for _ in 0..<300 {
+                    if await condition() { return }
+                    try await Task.sleep(for: .milliseconds(40))
+                }
+                XCTFail("Stopped navigation did not reach the expected state; previous document: \(hasPreviousDocument)")
+                throw URLError(.timedOut)
+            }
+            if hasPreviousDocument {
+                model.loadURL(root.appendingPathComponent("first.html"))
+                try await eventually {
+                    (try? await model.webView?.evaluateJavaScript("document.body.textContent.includes('Previous document')")) as? Bool == true
+                }
+                _ = try await model.webView?.evaluateJavaScript("window.__stoppedReloadMarker = true")
+            }
+            let requested = root.appendingPathComponent("held.html")
+            model.loadURL(requested)
+            try await eventually {
+                model.webView != nil && model.isLoading && server.receivedRequests.contains { $0.path == "/held.html" }
+            }
+            model.reload() // Toolbar Stop, before any response headers arrive.
+            try await Task.sleep(for: .milliseconds(150))
+            XCTAssertFalse(model.isLoading)
+            let displayed = try XCTUnwrap(model.currentURL)
+            let countBeforeRetry = server.receivedRequests.filter { $0.path == displayed.path }.count
+            print("STOP_RELOAD previous=\(hasPreviousDocument) displayed=\(displayed.path) requested=\(requested.path) web=\(model.webView?.url?.path ?? "nil")")
+            server.releaseDownloads()
+            model.reload() // Toolbar Reload must retry the displayed address.
+            let text = displayed == requested ? "Held response ready" : "Previous document"
+            try await eventually {
+                guard server.receivedRequests.filter({ $0.path == displayed.path }).count > countBeforeRetry else { return false }
+                guard !model.isLoading else { return false }
+                return (try? await model.webView?.evaluateJavaScript("document.body.textContent.includes('\(text)') && window.__stoppedReloadMarker !== true")) as? Bool == true
+            }
+            XCTAssertGreaterThan(server.receivedRequests.filter { $0.path == displayed.path }.count, countBeforeRetry)
+            XCTAssertEqual(model.currentURL, displayed)
+            XCTAssertNil(model.errorMessage)
+        }
+    }
+
+    func testStoppingBeforeRuntimeAttachmentDoesNotStartTheRequestUntilRetry() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: [
+            "/prepared.html": Data("<h1 id='ready'>Retry after preparation</h1>".utf8)
+        ])
+        let root = try await server.start(); defer { server.stop() }
+        let model = WebViewModel(), requested = root.appendingPathComponent("prepared.html")
+        model.loadURL(requested)
+        XCTAssertNil(model.webView)
+        XCTAssertTrue(model.isLoading)
+        model.reload() // Stop while the protection script is still being prepared.
+        XCTAssertFalse(model.isLoading)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow), window = UIWindow(windowScene: scene)
+        let host = UIViewController(), web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 650))
+        window.rootViewController = host; host.view.addSubview(web); window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true; window.rootViewController = nil; model.releaseWebViewRuntime()
+            previous?.makeKeyAndVisible()
+        }
+        model.webView = web // Preparation finishes after the user has stopped.
+        try await Task.sleep(for: .milliseconds(300))
+        XCTAssertTrue(server.receivedRequests.isEmpty, "Late attachment must not revive a stopped initial navigation")
+        XCTAssertNil(web.url)
+        XCTAssertFalse(model.isLoading)
+        XCTAssertEqual(model.currentURL, requested)
+        model.reload() // Retry the same displayed address once explicitly requested.
+        try await wait(web, for: "document.getElementById('ready')?.textContent==='Retry after preparation'")
+        XCTAssertEqual(server.receivedRequests.filter { $0.path == "/prepared.html" }.count, 1)
+        XCTAssertEqual(web.url, requested)
+    }
+
     func testClickedNoOpenerLinkOpensNewTabAndKeepsParentDocument() async throws {
         let server = try DownloadPlaybackHTTPFixture(files: [
             "/music": Data("<h1 id='ready'>Music</h1><a id='card' target='_blank' rel='noopener noreferrer' href='/songs'>Songs</a>".utf8),
@@ -506,35 +587,44 @@ final class SearchVideoNavigationTests: XCTestCase {
         }
     }
 
-    func testCancellingVideoDetailRestoresTheReleasedPreview() async throws {
-        let server = try fixture()
-        let root = try await server.start()
-        defer { server.stop() }
-        let model = WebViewModel()
-        let (window, previous) = try host(model)
-        defer { window.isHidden = true; window.rootViewController = nil; model.releaseWebViewRuntime(); previous?.makeKeyAndVisible() }
-        model.loadURL(root.appendingPathComponent("preview.html"))
-        for _ in 0..<100 where model.webView == nil { try await Task.sleep(for: .milliseconds(20)) }
-        let web = try XCTUnwrap(model.webView)
-        try await wait(web, for: "document.getElementById('v')?.readyState>=2 && !v.paused")
-        let target = root.appendingPathComponent("detail.html")
-        let handoff = try XCTUnwrap(WebMediaPlaybackHandoff(target: target,
-            values: ["time": 0.0, "duration": 0.0, "volume": 1.0, "muted": false, "playing": true]))
-        model.loadVideoDetail(target, mediaHandoff: handoff)
-        try await wait(web, for: "v.readyState===0 && !v.getAttribute('src')")
-        for _ in 0..<100 where !web.isLoading || model.estimatedProgress <= 0 || web.url?.path != "/detail.html" {
-            try await Task.sleep(for: .milliseconds(20))
+    func testCancellingVideoDetailPreservesThePreviewSourcePositionAndPlaybackIntent() async throws {
+        for playing in [true, false] {
+            let server = try fixture()
+            let root = try await server.start()
+            defer { server.stop() }
+            let model = WebViewModel()
+            let (window, previous) = try host(model)
+            defer { window.isHidden = true; window.rootViewController = nil; model.releaseWebViewRuntime(); previous?.makeKeyAndVisible() }
+            model.loadURL(root.appendingPathComponent("preview.html"))
+            for _ in 0..<100 where model.webView == nil { try await Task.sleep(for: .milliseconds(20)) }
+            let web = try XCTUnwrap(model.webView)
+            try await wait(web, for: "document.getElementById('v')?.readyState>=2 && !v.paused")
+            _ = try await web.callAsyncJavaScript("v.currentTime=2;if(playing){await v.play();}else{v.pause();}return true",
+                                                 arguments: ["playing": playing], in: nil, contentWorld: .defaultClient)
+            try await wait(web, for: "v.currentTime>=2 && v.paused===\(!playing)")
+            let target = root.appendingPathComponent("detail.html")
+            let handoff = try XCTUnwrap(WebMediaPlaybackHandoff(target: target,
+                values: ["time": 2.0, "duration": 8.0, "volume": 1.0, "muted": true, "playing": playing]))
+            model.loadVideoDetail(target, mediaHandoff: handoff)
+            // WebKit owns provisional navigation and BFCache. Releasing src here
+            // would destroy the preview that Stop must keep available.
+            for _ in 0..<300 where !server.receivedRequests.contains(where: { $0.path == "/detail.html" }) {
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            XCTAssertTrue(server.receivedRequests.contains { $0.path == "/detail.html" })
+            XCTAssertTrue(model.isLoading)
+            model.reload() // Stop the held response.
+            try await wait(web, for: "location.pathname==='/preview.html' && v.readyState>=2 && v.currentSrc.endsWith('/clip.mp4') && v.paused===\(!playing)")
+            let startValue = try await web.evaluateJavaScript("v.currentTime")
+            let start = try XCTUnwrap(startValue as? Double)
+            XCTAssertGreaterThanOrEqual(start, 1.9, "Cancelling must not reset the preview's position")
+            try await Task.sleep(for: .milliseconds(350))
+            let endValue = try await web.evaluateJavaScript("v.currentTime")
+            let end = try XCTUnwrap(endValue as? Double)
+            if playing { XCTAssertGreaterThan(end, start + 0.15) }
+            else { XCTAssertEqual(end, start, accuracy: 0.1) }
+            XCTAssertFalse(model.isLoading)
         }
-        XCTAssertEqual(web.url?.path, "/detail.html")
-        XCTAssertGreaterThan(model.estimatedProgress, 0)
-        XCTAssertTrue(model.isLoading)
-        model.reload() // Stop the held response.
-        try await Task.sleep(for: .milliseconds(100))
-        let playback: WKMediaPlaybackState = await withCheckedContinuation { continuation in
-            web.requestMediaPlaybackState { continuation.resume(returning: $0) }
-        }
-        print("CANCEL_MEDIA_STATE \(playback.rawValue), \(try await web.evaluateJavaScript("({paused:v.paused,ready:v.readyState,source:!!v.getAttribute('src')})"))")
-        try await wait(web, for: "v.readyState>=2 && !v.paused && !!v.getAttribute('src')")
     }
 
     func testLiveBaiduDocumentMediaHandoffAndSound() async throws {

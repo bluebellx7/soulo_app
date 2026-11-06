@@ -395,9 +395,11 @@ struct SitePrivacyPanelView: View {
     @Environment(\.dismiss) private var dismiss
 
     let currentURL: URL?
+    var websiteDataStore: WKWebsiteDataStore? = nil
     var onChanged: (() -> Void)? = nil
 
     @State private var siteDataCleared = false
+    @State private var confirmSiteDataRemoval = false
     @State private var requestsExpanded = false
 
     private var host: String {
@@ -476,6 +478,16 @@ struct SitePrivacyPanelView: View {
                 }
                 .disabled(host.isEmpty || usesCompatibilityBypass)
                 .tint(.green)
+                Button {
+                    if adBlockService.isTemporarilyAllowlisted(host) { adBlockService.clearTemporaryException(for: host) }
+                    else { adBlockService.temporarilyDisableFiltering(for: host) }
+                    onChanged?()
+                } label: {
+                    Label(FeatureText.text(adBlockService.isTemporarilyAllowlisted(host) ? "End temporary exception" : "Temporarily allow this site"), systemImage: "clock.badge.checkmark")
+                }
+                .disabled(host.isEmpty || usesCompatibilityBypass)
+                Text(FeatureText.text("The temporary exception ends when Soulo is restarted. Other sites keep their filtering settings."))
+                    .font(.footnote).foregroundStyle(.secondary)
             } footer: {
                 Text(LanguageManager.shared.localizedString("site_protection_explanation"))
             }
@@ -530,7 +542,7 @@ struct SitePrivacyPanelView: View {
 
             Section {
                 Button {
-                    clearCurrentSiteData()
+                    confirmSiteDataRemoval = true
                 } label: {
                     Label(
                         siteDataCleared
@@ -539,8 +551,13 @@ struct SitePrivacyPanelView: View {
                         systemImage: siteDataCleared ? "checkmark.circle.fill" : "trash"
                     )
                 }
-                .disabled(host.isEmpty)
+                .disabled(host.isEmpty || websiteDataStore == nil)
             }
+        }
+        .confirmationDialog(LanguageManager.shared.localizedString("site_clear_data"), isPresented: $confirmSiteDataRemoval, titleVisibility: .visible) {
+            Button(LanguageManager.shared.localizedString("site_clear_data"), role: .destructive) { clearCurrentSiteData() }
+        } message: {
+            Text(FeatureText.text("Clearing this site's data may sign you out. Sites sharing the same domain can be affected."))
         }
         .navigationTitle(LanguageManager.shared.localizedString("site_privacy_details"))
         .navigationBarTitleDisplayMode(.inline)
@@ -568,12 +585,13 @@ struct SitePrivacyPanelView: View {
 
     private func clearCurrentSiteData() {
         guard !host.isEmpty else { return }
-        WKWebsiteDataStore.default().fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { records in
+        guard let dataStore = websiteDataStore else { return }
+        dataStore.fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { records in
             let matching = records.filter { record in
                 let recordHost = PrivacyProtectionService.normalizedHost(record.displayName)
                 return recordHost == host || recordHost.hasSuffix(".\(host)") || host.hasSuffix(".\(recordHost)")
             }
-            WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: matching) {
+            dataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), for: matching) {
                 DispatchQueue.main.async {
                     siteDataCleared = true
                     onChanged?()

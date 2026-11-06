@@ -22,6 +22,10 @@ struct LibraryFilesView: View {
     @AppStorage("files.gridView") private var showsGrid = false
     @State private var files: [LocalFile] = []
     @State private var hasLoaded = false
+    @ObservedObject private var recentPlayback = RecentLocalPlaybackStore.shared
+    @ObservedObject private var bookLibrary = BookLibrary.shared
+    @State private var recentMedia: LocalFile?
+    @State private var recentBook: LibraryBook?
     @State private var selected = Set<String>()
     @State private var isSelecting = false
     @State private var importing = false
@@ -51,6 +55,44 @@ struct LibraryFilesView: View {
     @State private var movingURLs: [URL] = []
     @State private var moveDestination: URL?
     @State private var choosingMoveDestination = false
+    @State private var search = ""
+    @State private var kind: LibraryFileFilter = .all
+    @State private var sort: LibraryListSort = .nameAscending
+
+    private var visibleFiles: [LocalFile] {
+        LibraryFileQuery.apply(files, search: search, kind: kind, sort: sort,
+            url: { $0.url }, presentation: { $0.info }, modifiedAt: { $0.modifiedAt })
+    }
+    private var recentBookCandidate: LibraryBook? {
+        bookLibrary.books.filter { $0.fraction > 0 && $0.fraction < 0.99 }.max { $0.openedAt < $1.openedAt }
+    }
+    private var continuationRevision: String {
+        [directory.path, String(libraryPageIsActive), recentPlayback.latestURL?.path ?? "", recentBookCandidate?.id ?? "",
+         String(recentBookCandidate?.openedAt.timeIntervalSince1970 ?? 0)].joined(separator: "|")
+    }
+    @ViewBuilder private var continueActions: some View {
+        if directory.standardizedFileURL == BookLibrary.directory.standardizedFileURL && search.isEmpty && !isSelecting {
+            if let recentMedia {
+                Button { open(recentMedia) } label: {
+                    Label { VStack(alignment: .leading, spacing: 3) {
+                        Text(FeatureText.text("Continue playing")).font(.subheadline.weight(.semibold))
+                        Text(recentPlayback.title ?? recentMedia.url.lastPathComponent).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    } } icon: { Image(systemName: "play.circle") }
+                }.buttonStyle(.plain).frame(minHeight: 44)
+            }
+            if let recentBook {
+                Button { book = recentBook } label: {
+                    Label { VStack(alignment: .leading, spacing: 3) {
+                        Text(FeatureText.text("Continue reading")).font(.subheadline.weight(.semibold))
+                        Text(recentBook.name).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    } } icon: { Image(systemName: "book") }
+                }.buttonStyle(.plain).frame(minHeight: 44)
+            }
+        }
+    }
+    private var queryControls: some View {
+        LibraryQueryControls(search: $search, kind: $kind, sort: $sort)
+    }
     var body: some View {
         Group {
             if showsGrid { gridContent } else { listContent }
@@ -98,6 +140,23 @@ struct LibraryFilesView: View {
                     .disabled(busy || (!isSelecting && files.isEmpty))
                 }
             }
+        }
+        .task(id: continuationRevision) {
+            guard libraryPageIsActive else { return }
+            guard directory.standardizedFileURL == BookLibrary.directory.standardizedFileURL else { return }
+            let mediaURL = recentPlayback.latestURL
+            let lastBook = recentBookCandidate
+            let result = await Task.detached { () -> (LocalFile?, LibraryBook?) in
+                var media: LocalFile?
+                if let mediaURL, FileManager.default.fileExists(atPath: mediaURL.path) {
+                    let info = FilePresentation.inspect(mediaURL)
+                    if [.video, .audio].contains(info.kind) { media = LocalFile(url: mediaURL, directory: false, info: info) }
+                }
+                let readable = lastBook.flatMap { FileManager.default.fileExists(atPath: $0.url.path) ? $0 : nil }
+                return (media, readable)
+            }.value
+            guard !Task.isCancelled else { return }
+            recentMedia = result.0; recentBook = result.1
         }
         .onAppear { if libraryPageIsActive { reload() } }
         .onChange(of: libraryPageIsActive) { _, active in
@@ -237,10 +296,15 @@ struct LibraryFilesView: View {
     }
     private var listContent: some View {
         List {
+            queryControls
+            continueActions
+            if hasLoaded && !files.isEmpty && visibleFiles.isEmpty {
+                ContentUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
+            }
             if hasLoaded && files.isEmpty {
                 IllustratedToolEmptyState(scene: .files, title: ToolText.text("files_empty"))
             }
-            ForEach(files) { file in
+            ForEach(visibleFiles) { file in
                 HStack(spacing: 8) {
                     if file.directory && !isSelecting {
                         NavigationLink { LibraryFilesView(directory: file.url) } label: { fileLabel(file) }
@@ -314,13 +378,18 @@ struct LibraryFilesView: View {
     private var gridContent: some View {
         GeometryReader { geometry in
             ScrollView {
+                queryControls.padding(.horizontal, 20)
+                VStack(alignment: .leading, spacing: 12) { continueActions }.padding(.horizontal, 20)
+                if hasLoaded && !files.isEmpty && visibleFiles.isEmpty {
+                    ContentUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
+                }
                 if hasLoaded && files.isEmpty {
                     IllustratedToolEmptyState(scene: .files, title: ToolText.text("files_empty"))
                         .frame(maxWidth: .infinity, minHeight: geometry.size.height * 0.7)
                 } else {
                     let count = geometry.size.width < 600 ? 3 : max(3, Int(geometry.size.width / 160))
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 18), count: count), alignment: .leading, spacing: 24) {
-                        ForEach(files) { file in
+                        ForEach(visibleFiles) { file in
                             VStack(alignment: .leading, spacing: 8) {
                                 if file.directory && !isSelecting {
                                     NavigationLink { LibraryFilesView(directory: file.url) } label: { gridLabel(file) }
@@ -516,6 +585,7 @@ struct LibraryFilesView: View {
                 DownloadManagerService.shared.updateFileReference(from: old, to: next)
             }
         }
+        RecentLocalPlaybackStore.shared.relocate(from: source, to: target)
         MediaSession.shared.updateFileReference(from: source, to: target)
     }
     private func rename(_ file: LocalFile, to name: String) {
@@ -569,9 +639,10 @@ struct LibraryFilesView: View {
         Task {
             do {
                 try await Task.detached { try LibraryFileActions.delete(targets, in: directory) }.value
+                if playingTarget { MediaSession.shared.stop() }
+                targets.forEach { manager.didDeleteLocalFile(at: $0) }
                 relatedDownloads.forEach { manager.delete($0) }
                 manager.removeMissingFiles()
-                if playingTarget { MediaSession.shared.stop() }
                 for id in bookIDs { BookLibrary.shared.remove(id) }
             } catch { self.error = error.localizedDescription }
             busy = false; reload()

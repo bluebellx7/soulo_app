@@ -27,6 +27,7 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         fixture = try ToolbarHTTPFixture()
         root = try fixture.start()
         app.launchArguments = ["-app_language", "en-US", "-AppleLanguages", "(en)", "-AppleLocale", "en_US", "-is_incognito", "NO", "-privacy_https_upgrade_enabled", "NO",
+            "-icloud_sync_enabled", "NO", "-review.requestedOnce", "YES", "-wallpaper_source", "gradient", "-wallpaper_refresh_interval", "0",
             "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO"]
         app.launch()
     }
@@ -162,6 +163,11 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
     func testBottomToolbarRespondsBeforeBlockedDocumentFinishes() throws {
         try open("blocked")
         XCTAssertTrue(app.buttons["browser.tabs"].waitForExistence(timeout: 20))
+        let pending = XCTNSPredicateExpectation(predicate: NSPredicate { [weak self] _, _ in
+            self?.fixture.hasPendingSlowResource == true
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [pending], timeout: 10), .completed,
+            "The browser toolbar can appear before WebKit has requested the blocked resource")
         XCTAssertFalse(app.webViews.staticTexts["Interactive page"].firstMatch.exists)
         XCTAssertTrue(fixture.hasPendingSlowResource)
         checkMoreAndTabs()
@@ -458,6 +464,37 @@ final class BrowserToolbarResponsivenessUITests: XCTestCase {
         tap(app.buttons["tabs.done"])
     }
 
+    func testFailedPageRetriesTheSameEncodedAddressAndBecomesInteractive() throws {
+        let url = try XCTUnwrap(URL(string: root.absoluteString + "/retryable?query=%E4%B8%AD%E6%96%87%20notes&sort=newest#section%202"))
+        try open(url: url)
+        let address = app.staticTexts["browser.error.url"]
+        guard address.waitForExistence(timeout: 20) else {
+            XCTFail("The disconnected response must show a recoverable error: \(app.debugDescription)")
+            return
+        }
+        XCTAssertEqual(address.label, url.absoluteString)
+        XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "browser.initial-loading").firstMatch.exists)
+        let failed = XCTAttachment(screenshot: app.screenshot())
+        failed.name = "local-error-preserves-encoded-address"; failed.lifetime = .keepAlways; add(failed)
+        fixture.allowRecovery()
+        let retry = app.buttons["browser.error.retry"]
+        if !retry.isHittable { app.scrollViews.firstMatch.swipeUp() }
+        tap(retry)
+        let recovered = app.webViews.staticTexts["Recovered page"].firstMatch
+        guard recovered.waitForExistence(timeout: 15) else {
+            XCTFail("Retry must load the recovered response: \(app.debugDescription)")
+            return
+        }
+        XCTAssertTrue(address.waitForNonExistence(timeout: 5))
+        tap(app.webViews.buttons["Verify recovered page"].firstMatch)
+        XCTAssertTrue(app.webViews.staticTexts["Recovered interaction works"].firstMatch.waitForExistence(timeout: 3))
+        XCTAssertGreaterThanOrEqual(fixture.recoveryRequests.count, 2)
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        XCTAssertEqual(fixture.recoveryRequests.last, components.percentEncodedPath + "?" + (components.percentEncodedQuery ?? ""))
+        let ready = XCTAttachment(screenshot: app.screenshot())
+        ready.name = "local-error-retry-content-interactive"; ready.lifetime = .keepAlways; add(ready)
+    }
+
     func testFailedPageShowsFullAddressCopiesAndRetries() throws {
         let url = try XCTUnwrap(URL(string: "https://dkluge.shop/library/articles/reading-notes?query=%E4%B8%AD%E6%96%87&section=browser#full-address"))
         try open(url: url)
@@ -740,7 +777,12 @@ private final class ToolbarHTTPFixture: @unchecked Sendable {
     private var connections: [NWConnection] = []
     private var slowRequests = 0
     private var completedSlowRequests = 0
+    private var recoveryEnabled = false
+    private var receivedRecoveryTargets: [String] = []
     var hasPendingSlowResource: Bool { queue.sync { slowRequests > completedSlowRequests } }
+    var recoveryRequests: [String] { queue.sync { receivedRecoveryTargets } }
+
+    func allowRecovery() { queue.sync { recoveryEnabled = true } }
 
     init() throws { listener = try NWListener(using: .tcp, on: .any) }
 
@@ -754,9 +796,19 @@ private final class ToolbarHTTPFixture: @unchecked Sendable {
             connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, _, _ in
                 guard let self, let data else { connection.cancel(); return }
                 let path = String(decoding: data, as: UTF8.self).split(separator: " ").dropFirst().first.map(String.init) ?? "/"
+                if path.hasPrefix("/retryable?") {
+                    self.receivedRecoveryTargets.append(path)
+                    if !self.recoveryEnabled { connection.cancel(); return }
+                }
                 if path == "/disconnect" { connection.cancel(); return }
                 let body: String
                 if path == "/slow.js" { body = "window.slowResourceFinished=true;" }
+                else if path.hasPrefix("/retryable?") { body = """
+                    <meta name='viewport' content='width=device-width,initial-scale=1'><title>Recovered page</title>
+                    <body style='font:22px system-ui;padding:24px'><h1>Recovered page</h1>
+                    <button style='font:22px system-ui;padding:16px' onclick="document.getElementById('status').textContent='Recovered interaction works'">Verify recovered page</button>
+                    <p id='status'>Ready</p></body>
+                    """ }
                 else if path == "/second" { body = "<html><body><p>Second page</p></body></html>" }
                 else if path == "/interactive-source" { body = """
                     <meta name='viewport' content='width=device-width,initial-scale=1'>

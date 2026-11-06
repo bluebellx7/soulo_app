@@ -91,9 +91,34 @@ final class BuiltInAdRuleStore: ObservableObject {
     }
 }
 
+/// Nonisolated filtering queries can read session exceptions without accessing
+/// the main-actor settings object. Each service owns only its own contribution.
+private final class TemporaryAdBlockExceptions: @unchecked Sendable {
+    struct Context: Hashable, Sendable {
+        let defaults: ObjectIdentifier
+        let key: String
+    }
+    private let lock = NSLock()
+    private var entries: [Context: [UUID: [String]]] = [:]
+
+    func replace(_ hosts: [String], owner: UUID, context: Context) {
+        lock.lock(); defer { lock.unlock() }
+        if hosts.isEmpty {
+            entries[context]?[owner] = nil
+            if entries[context]?.isEmpty == true { entries[context] = nil }
+        } else { entries[context, default: [:]][owner] = hosts }
+    }
+
+    func hosts(in context: Context) -> [String] {
+        lock.lock(); defer { lock.unlock() }
+        return entries[context]?.values.flatMap { $0 } ?? []
+    }
+}
+
 @MainActor
 final class AdBlockSettingsService: ObservableObject {
     static let shared = AdBlockSettingsService()
+    nonisolated private static let temporaryExceptions = TemporaryAdBlockExceptions()
 
     /// Match AppStorage/UserDefaults boolean semantics, including argument-domain
     /// strings. Casting "NO" to Bool would incorrectly fall back to enabled.
@@ -102,11 +127,16 @@ final class AdBlockSettingsService: ObservableObject {
     }
 
     @Published private(set) var allowlistedHosts: [String] = []
+    @Published private(set) var temporaryAllowlistedHosts: [String] = []
     @Published private(set) var hiddenElementCountByHost: [String: Int] = [:]
+    var permanentAllowlistedHosts: [String] { persistentHosts }
 
+    private var persistentHosts: [String] = []
     private let allowlistKey: String
     private let statsKey: String
     private let userDefaults: UserDefaults
+    private let temporaryOwner = UUID()
+    private let temporaryContext: TemporaryAdBlockExceptions.Context
     private let statisticsPersistence = DeferredPersistence()
 
     init(
@@ -117,8 +147,11 @@ final class AdBlockSettingsService: ObservableObject {
         self.allowlistKey = allowlistKey
         self.statsKey = statsKey
         self.userDefaults = userDefaults
+        self.temporaryContext = .init(defaults: ObjectIdentifier(userDefaults), key: allowlistKey)
         load()
     }
+
+    deinit { Self.temporaryExceptions.replace([], owner: temporaryOwner, context: temporaryContext) }
 
     func isAllowlisted(_ host: String?) -> Bool {
         Self.isHostAllowlisted(host, allowlistedHosts: allowlistedHosts)
@@ -126,15 +159,16 @@ final class AdBlockSettingsService: ObservableObject {
 
     func addAllowlistedHost(_ host: String) {
         let cleanHost = normalizedHost(host)
-        guard !cleanHost.isEmpty, !allowlistedHosts.contains(cleanHost) else { return }
-        allowlistedHosts.append(cleanHost)
-        allowlistedHosts.sort()
+        guard !cleanHost.isEmpty else { return }
+        if !persistentHosts.contains(cleanHost) { persistentHosts.append(cleanHost); persistentHosts.sort() }
+        temporaryAllowlistedHosts.removeAll { Self.isHostAllowlisted($0, allowlistedHosts: [cleanHost]) }
         saveAllowlist()
     }
 
     func removeAllowlistedHost(_ host: String) {
         let cleanHost = normalizedHost(host)
-        allowlistedHosts.removeAll { $0 == cleanHost }
+        persistentHosts.removeAll { $0 == cleanHost }
+        temporaryAllowlistedHosts.removeAll { $0 == cleanHost }
         saveAllowlist()
     }
 
@@ -144,11 +178,40 @@ final class AdBlockSettingsService: ObservableObject {
         if enabled {
             // Restore the matching site exception, including one inherited
             // from its parent domain, so the switch can actually turn on.
-            allowlistedHosts.removeAll { Self.isHostAllowlisted(cleanHost, allowlistedHosts: [$0]) }
+            persistentHosts.removeAll { Self.isHostAllowlisted(cleanHost, allowlistedHosts: [$0]) }
+            temporaryAllowlistedHosts.removeAll { Self.isHostAllowlisted(cleanHost, allowlistedHosts: [$0]) }
             saveAllowlist()
         } else {
             addAllowlistedHost(cleanHost)
         }
+    }
+
+    /// Applies across this app session, including background/foreground moves.
+    /// Nothing is written to preferences, settings backups or iCloud.
+    func temporarilyDisableFiltering(for host: String) {
+        let cleanHost = normalizedHost(host)
+        guard !cleanHost.isEmpty,
+              !Self.isHostAllowlisted(cleanHost, allowlistedHosts: persistentHosts),
+              !temporaryAllowlistedHosts.contains(cleanHost) else { return }
+        temporaryAllowlistedHosts.append(cleanHost)
+        temporaryAllowlistedHosts.sort()
+        publishAllowlist()
+    }
+
+    func isTemporarilyAllowlisted(_ host: String?) -> Bool {
+        !Self.isHostAllowlisted(host, allowlistedHosts: persistentHosts)
+            && Self.isHostAllowlisted(host, allowlistedHosts: temporaryAllowlistedHosts)
+    }
+
+    func clearTemporaryException(for host: String) {
+        let cleanHost = normalizedHost(host)
+        temporaryAllowlistedHosts.removeAll { Self.isHostAllowlisted(cleanHost, allowlistedHosts: [$0]) }
+        publishAllowlist()
+    }
+
+    func clearTemporaryExceptions() {
+        temporaryAllowlistedHosts = []
+        publishAllowlist()
     }
 
     func toggleAllowlist(for host: String?) {
@@ -192,7 +255,10 @@ final class AdBlockSettingsService: ObservableObject {
     }
 
     nonisolated static func isHostAllowlisted(_ host: String?, userDefaults: UserDefaults = .standard) -> Bool {
-        isHostAllowlisted(host, allowlistedHosts: userDefaults.stringArray(forKey: "soulo_ad_block_allowlisted_hosts") ?? [])
+        let key = "soulo_ad_block_allowlisted_hosts"
+        let temporary = temporaryExceptions.hosts(in: .init(defaults: ObjectIdentifier(userDefaults), key: key))
+        return isHostAllowlisted(host, allowlistedHosts: normalizedAllowlistedHosts(
+            (userDefaults.stringArray(forKey: key) ?? []) + temporary))
     }
 
     nonisolated static func isHostAllowlisted(_ host: String?, allowlistedHosts: [String]) -> Bool {
@@ -212,7 +278,8 @@ final class AdBlockSettingsService: ObservableObject {
     }
 
     private func load() {
-        allowlistedHosts = userDefaults.stringArray(forKey: allowlistKey) ?? []
+        persistentHosts = Self.normalizedAllowlistedHosts(userDefaults.stringArray(forKey: allowlistKey) ?? [])
+        publishAllowlist()
         if let data = userDefaults.data(forKey: statsKey),
            let decoded = try? JSONDecoder().decode([String: Int].self, from: data) {
             hiddenElementCountByHost = decoded
@@ -227,7 +294,13 @@ final class AdBlockSettingsService: ObservableObject {
     func flushPendingStatistics() { statisticsPersistence.flush() }
 
     private func saveAllowlist() {
-        userDefaults.set(allowlistedHosts, forKey: allowlistKey)
+        publishAllowlist()
+        userDefaults.set(persistentHosts, forKey: allowlistKey)
+    }
+
+    private func publishAllowlist() {
+        Self.temporaryExceptions.replace(temporaryAllowlistedHosts, owner: temporaryOwner, context: temporaryContext)
+        allowlistedHosts = Self.normalizedAllowlistedHosts(persistentHosts + temporaryAllowlistedHosts)
     }
 
     private func saveStats() {

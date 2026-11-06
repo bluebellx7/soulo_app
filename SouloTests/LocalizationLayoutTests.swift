@@ -30,8 +30,42 @@ final class LocalizationLayoutTests: XCTestCase {
         XCTAssertEqual(ToolText.text("bookshelf", language: "fr-FR"), "Livres")
         XCTAssertEqual(ToolText.text("cancel", language: "ja-JP"), "キャンセル")
         XCTAssertEqual(ToolText.text("line_height", language: "zh-Hant-TW"), "行間距")
-        XCTAssertEqual(ToolText.text("wifi_hint", language: "de-DE"), ToolText.text("wifi_hint", language: "en-US"))
+        XCTAssertNotEqual(ToolText.text("wifi_hint", language: "de-DE"), ToolText.text("wifi_hint", language: "en-US"))
         XCTAssertEqual(UserDefaults.standard.object(forKey: "app_language") as? String, saved)
+    }
+
+    func testReadingToolTablesAreIncludedForEverySupportedLanguage() throws {
+        func table(_ language: String) throws -> [String: String] {
+            let folder = try XCTUnwrap(Bundle.main.path(forResource: language, ofType: "lproj"), language)
+            let data = try Data(contentsOf: URL(fileURLWithPath: folder).appendingPathComponent("ReadingTools.strings"))
+            return try XCTUnwrap(PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: String], language)
+        }
+        let source = try table("en-US")
+        XCTAssertGreaterThan(source.count, 400)
+        for language in AppConstants.supportedLanguages {
+            let values = try table(language.code)
+            XCTAssertEqual(Set(values.keys), Set(source.keys), language.code)
+            XCTAssertTrue(values.values.allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }, language.code)
+        }
+    }
+
+    func testFeatureTablesAreIncludedForEverySupportedLanguageAndPreserveCountFormats() throws {
+        func table(_ language: String) throws -> [String: String] {
+            let folder = try XCTUnwrap(Bundle.main.path(forResource: language, ofType: "lproj"), language)
+            let data = try Data(contentsOf: URL(fileURLWithPath: folder).appendingPathComponent("FeatureImprovements.strings"))
+            return try XCTUnwrap(PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: String], language)
+        }
+        let source = try table("en-US")
+        XCTAssertGreaterThan(source.count, 80)
+        for language in AppConstants.supportedLanguages {
+            let values = try table(language.code)
+            XCTAssertEqual(Set(values.keys), Set(source.keys), language.code)
+            XCTAssertTrue(values.values.allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }, language.code)
+            let confirmation = try XCTUnwrap(values["Delete %lld selected bookmarks?"], language.code)
+            XCTAssertFalse(String(format: confirmation, Int64(3)).contains("%lld"), language.code)
+        }
+        XCTAssertEqual(try table("zh-Hans")["Show duplicates"], "仅显示重复项")
+        XCTAssertEqual(try table("zh-Hant")["New window"], "新增視窗")
     }
 
     @MainActor

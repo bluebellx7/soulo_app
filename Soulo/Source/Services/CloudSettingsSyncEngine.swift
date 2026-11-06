@@ -397,7 +397,7 @@ enum CloudSettingsSyncEngine {
          "soulo_external_navigation_blocked_hosts": [String](), "soulo_external_navigation_suppress_prompts": false,
          ExternalNavigationService.promptEnabledKey: true,
          "wallpaper_source": "pixabay", "wallpaper_gradient_id": "aurora", "wallpaper_solid_color": "#FFFFFF",
-         "wallpaper_topic": "Nature", "wallpaper_vibe_tags": ["Nature", "Ocean", "Forest", "Night Sky", "Mountains", "Minimal", "Cyberpunk"],
+         "wallpaper_topic": "Nature", "wallpaper_vibe_tags": ["Nature"],
          "wallpaper_refresh_interval": 0, "wallpaper_auto_random_sources": true, "wallpaper_auto_sources": [String](),
          "wallpaper_auto_random_topics": true, "wallpaper_only_favorites": false, "last_selected_region": "", "last_selected_group_id": ""]
             .merging(SiteOptimizationRules.preferenceDefaults) { _, ruleDefault in ruleDefault }

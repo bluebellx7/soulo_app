@@ -69,6 +69,7 @@ struct SouloApp: App {
         } defaultValue: {
             BrowserWindowConfiguration.defaultWindow()
         }
+        .commands { BrowserKeyboardCommands() }
         .modelContainer(for: [SearchHistoryItem.self, BookmarkItem.self, BookmarkFolder.self])
     }
 }

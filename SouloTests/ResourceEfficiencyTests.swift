@@ -7,6 +7,114 @@ import JavaScriptCore
 
 @MainActor
 final class ResourceEfficiencyTests: XCTestCase {
+    func testWallpaperSourceSelectionLoadsProviderAndDefaultsToNature() async throws {
+        try await withWallpaperSession { manager, image in
+            WallpaperSwitchProtocol.setHandler { stub in
+                if stub.request.url?.host == "api.pexels.com" {
+                    let query = URLComponents(url: stub.request.url!, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "query" }?.value
+                    XCTAssertEqual(query, "Nature")
+                    stub.respond(json: #"{"photos":[{"id":"test-pexels","src":{"original":"https://wallpaper.test/pexels.jpg"}}]}"#)
+                } else if stub.request.url?.host == "pixabay.com" {
+                    let query = URLComponents(url: stub.request.url!, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "q" }?.value
+                    XCTAssertEqual(query, "Nature")
+                    stub.respond(json: #"{"hits":[{"id":"test-pixabay","largeImageURL":"https://wallpaper.test/pixabay.jpg"}]}"#)
+                } else { stub.respond(data: image, mime: "image/jpeg") }
+            }
+            XCTAssertEqual(manager.vibeTags, ["Nature"])
+            await manager.selectSource(.pexels)
+            XCTAssertEqual(manager.currentImageID, "test-pexels")
+            XCTAssertNotNil(manager.currentImage)
+            manager.searchTopic = "Bing Daily"
+            await manager.selectSource(.pixabay)
+            XCTAssertEqual(manager.searchTopic, "Nature")
+            XCTAssertEqual(manager.currentImageID, "test-pixabay")
+            XCTAssertEqual(manager.candidateWallpapers.map(\.source), ["pixabay"])
+            XCTAssertFalse(manager.networkLoading)
+        }
+    }
+
+    func testLateWallpaperResponseCannotReplaceNewSourceOrEndItsLoadingState() async throws {
+        try await withWallpaperSession { manager, image in
+            let held = WallpaperHeldRequests()
+            let oldStarted = expectation(description: "Old source started")
+            let newStarted = expectation(description: "New source started")
+            WallpaperSwitchProtocol.setHandler { stub in
+                if stub.request.url?.host == "api.pexels.com" {
+                    held.store(stub, host: "pexels"); oldStarted.fulfill()
+                } else if stub.request.url?.host == "pixabay.com" {
+                    held.store(stub, host: "pixabay"); newStarted.fulfill()
+                } else { stub.respond(data: image, mime: "image/jpeg") }
+            }
+            let old = Task { await manager.selectSource(.pexels) }
+            await fulfillment(of: [oldStarted], timeout: 3)
+            let new = Task { await manager.selectSource(.pixabay) }
+            await fulfillment(of: [newStarted], timeout: 3)
+            try XCTUnwrap(held.request(host: "pexels")).respond(json: #"{"photos":[{"id":"late","src":{"original":"https://wallpaper.test/old.jpg"}}]}"#)
+            await old.value
+            XCTAssertEqual(manager.source, .pixabay)
+            XCTAssertTrue(manager.networkLoading)
+            XCTAssertTrue(manager.candidateWallpapers.isEmpty)
+            try XCTUnwrap(held.request(host: "pixabay")).respond(json: #"{"hits":[{"id":"latest","largeImageURL":"https://wallpaper.test/new.jpg"}]}"#)
+            await new.value
+            XCTAssertEqual(manager.currentImageID, "latest")
+            XCTAssertFalse(manager.networkLoading)
+            await manager.selectSource(.solid)
+            XCTAssertNil(manager.currentImage)
+            XCTAssertTrue(manager.candidateWallpapers.isEmpty)
+        }
+    }
+
+    func testWallpaperHTTPErrorIsVisibleAndChangingSourceRecovers() async throws {
+        try await withWallpaperSession { manager, image in
+            WallpaperSwitchProtocol.setHandler { stub in
+                if stub.request.url?.host == "pixabay.com" {
+                    stub.respond(data: Data("Forbidden".utf8), status: 403, mime: "text/plain")
+                } else if stub.request.url?.path == "/HPImageArchive.aspx" {
+                    stub.respond(json: #"{"images":[{"startdate":"test-bing","url":"/test-wallpaper.jpg"}]}"#)
+                } else { stub.respond(data: image, mime: "image/jpeg") }
+            }
+            await manager.selectSource(.pixabay)
+            XCTAssertFalse(manager.lastRemoteError.isEmpty)
+            XCTAssertFalse(manager.networkLoading)
+            await manager.selectSource(.bing)
+            XCTAssertEqual(manager.currentImageID, "test-bing")
+            XCTAssertNotNil(manager.currentImage)
+            XCTAssertTrue(manager.lastRemoteError.isEmpty)
+            XCTAssertFalse(manager.networkLoading)
+        }
+    }
+
+    private func withWallpaperSession(_ check: (WallpaperManager, Data) async throws -> Void) async throws {
+        let defaults = UserDefaults.standard
+        let keys = ["wallpaper_source", "wallpaper_topic", "wallpaper_vibe_tags", "wallpaper_refresh_interval",
+                    "wallpaper_only_favorites", "wallpaper_favorites", "wallpaper_blocked",
+                    "wallpaper_current_cache_file", "wallpaper_current_cache_id", "wallpaper_current_cache_url"]
+        let saved = keys.map { defaults.object(forKey: $0) }
+        defaults.set("gradient", forKey: "wallpaper_source")
+        defaults.set(0, forKey: "wallpaper_refresh_interval")
+        defaults.set(false, forKey: "wallpaper_only_favorites")
+        for key in keys where !["wallpaper_source", "wallpaper_refresh_interval", "wallpaper_only_favorites"].contains(key) {
+            defaults.removeObject(forKey: key)
+        }
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [WallpaperSwitchProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let resources = BrowserResourcePolicy(readAllowance: { false })
+        let manager = WallpaperManager(resources: resources, session: session)
+        defer {
+            manager.suspendAutomaticRefresh()
+            session.invalidateAndCancel()
+            WallpaperSwitchProtocol.setHandler(nil)
+            if let name = defaults.string(forKey: "wallpaper_current_cache_file") {
+                let file = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+                    .appendingPathComponent("CurrentWallpaper").appendingPathComponent(name)
+                try? FileManager.default.removeItem(at: file)
+            }
+            for (key, value) in zip(keys, saved) { defaults.set(value, forKey: key) }
+        }
+        try await check(manager, jpeg(width: 32, height: 64))
+    }
+
     func testCachedWallpaperLoadsAfterConstructionAndCannotReplaceANewSource() async throws {
         let defaults = UserDefaults.standard
         let keys = ["wallpaper_source", "wallpaper_refresh_interval", "wallpaper_current_cache_file",
@@ -198,5 +306,33 @@ final class ResourceEfficiencyTests: XCTestCase {
         }
         XCTFail("Resource policy condition timed out")
         throw CancellationError()
+    }
+}
+
+private final class WallpaperHeldRequests: @unchecked Sendable {
+    private let lock = NSLock()
+    private var requests: [String: WallpaperSwitchProtocol] = [:]
+    func store(_ request: WallpaperSwitchProtocol, host: String) { lock.withLock { requests[host] = request } }
+    func request(host: String) -> WallpaperSwitchProtocol? { lock.withLock { requests[host] } }
+}
+
+private final class WallpaperSwitchProtocol: URLProtocol {
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var handler: ((WallpaperSwitchProtocol) -> Void)?
+    static func setHandler(_ value: ((WallpaperSwitchProtocol) -> Void)?) { lock.withLock { handler = value } }
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        let handler = Self.lock.withLock { Self.handler }
+        handler?(self)
+    }
+    override func stopLoading() {}
+    func respond(json: String) { respond(data: Data(json.utf8), mime: "application/json") }
+    func respond(data: Data, status: Int = 200, mime: String) {
+        guard let url = request.url, let response = HTTPURLResponse(url: url, statusCode: status,
+            httpVersion: "HTTP/1.1", headerFields: ["Content-Type": mime]) else { return }
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: data)
+        client?.urlProtocolDidFinishLoading(self)
     }
 }

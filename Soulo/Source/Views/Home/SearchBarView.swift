@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SearchBarView: View {
     @ObservedObject var input: SearchInputState
+    @EnvironmentObject private var tabManager: TabManager
     var isCompact: Bool = false
     var isIncognito: Bool = false
     var isRecording: Bool = false
@@ -103,7 +104,8 @@ struct SearchBarView: View {
                     isIncognito ? "privacy_search_placeholder" : "search_placeholder"
                 )
             )
-            .onReceive(NotificationCenter.default.publisher(for: .focusHomeSearch)) { _ in
+            .onReceive(NotificationCenter.default.publisher(for: .focusHomeSearch)) { notification in
+                if let target = notification.object as? TabManager, target !== tabManager { return }
                 guard respondsToHomeFocus && !isCompact else { return }
                 isFocused = true
                 focusRequest &+= 1

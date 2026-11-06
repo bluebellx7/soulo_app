@@ -640,7 +640,7 @@ struct AdBlockService {
                 return cached
             }
         }
-        BrowserStartupTrace.mark("ad_script_build_start", detail: "main=\(Thread.isMainThread)")
+        BrowserStartupTrace.mark("ad_script_build_start", detail: "main=\(Thread.isMainThread) native=\(nativeCosmeticFiltering)")
         defer { BrowserStartupTrace.mark("ad_script_build_end") }
         let cachedRules = AdBlockSubscriptionService.cachedRules()
         let builtInRules = BuiltInAdRuleStore.effectiveRules().filter(\.isEnabled)

@@ -71,6 +71,12 @@ private struct SavedState: Codable {
     let savedAt: Date?
 }
 
+private struct SavedOverviewGroupPreferences: Codable {
+    var version = 1
+    let names: [String: String]
+    let pinnedIDs: [String]
+}
+
 // MARK: - TabManager
 
 @MainActor
@@ -84,6 +90,8 @@ final class TabManager: ObservableObject {
     @Published var activeTabIndex: Int = 0
     @Published var showTabOverview: Bool = false
     @Published var recentlyClosed: [RecentlyClosedTab] = []
+    @Published private(set) var overviewGroupNames: [String: String] = [:]
+    @Published private(set) var pinnedOverviewGroupIDs: Set<String> = []
 
     private weak var findWebView: WKWebView?
 
@@ -104,12 +112,14 @@ final class TabManager: ObservableObject {
 
     private let storageKey: String
     private let desktopModeStorageKey: String
+    private let overviewGroupPreferencesStorageKey: String
     private var isPrivateSession = UserDefaults.standard.bool(forKey: "is_incognito")
 
     // MARK: - Init
 
     init(storageKey: String = "soulo_saved_tabs") {
         self.storageKey = storageKey
+        overviewGroupPreferencesStorageKey = "\(storageKey).overview_groups"
         desktopModeStorageKey = storageKey.hasPrefix("soulo_saved_tabs")
             ? "soulo_desktop_mode"
             : "\(storageKey).desktop_mode"
@@ -135,6 +145,7 @@ final class TabManager: ObservableObject {
                     self?.saveToDisk()
                 }
             }
+        restoreOverviewGroupPreferences()
         restoreFromDisk()
         if tabs.isEmpty {
             createTab()
@@ -171,6 +182,54 @@ final class TabManager: ObservableObject {
 
     var isDesktopMode: Bool {
         activeWebViewModel?.isDesktopModeEnabled ?? prefersDesktopMode
+    }
+
+    // MARK: - Site Group Preferences
+
+    /// These preferences decorate existing site groups only. They do not create
+    /// groups, move tabs, alter recent visits or instantiate webpage runtimes.
+    func renameOverviewGroup(_ id: String, to name: String) {
+        synchronizePrivacyMode()
+        guard TabOverviewDomainGroup.make(from: tabs).contains(where: { $0.id == id }) else { return }
+        let trimmed = String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(80))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let replacement = trimmed.isEmpty ? nil : trimmed
+        guard overviewGroupNames[id] != replacement else { return }
+        overviewGroupNames[id] = replacement
+        persistOverviewGroupPreferences()
+    }
+
+    func togglePinnedOverviewGroup(_ id: String) {
+        synchronizePrivacyMode()
+        guard TabOverviewDomainGroup.make(from: tabs).contains(where: { $0.id == id }) else { return }
+        if !pinnedOverviewGroupIDs.insert(id).inserted { pinnedOverviewGroupIDs.remove(id) }
+        persistOverviewGroupPreferences()
+    }
+
+    private func restoreOverviewGroupPreferences() {
+        overviewGroupNames = [:]
+        pinnedOverviewGroupIDs = []
+        guard !isPrivateSession, !UserDefaults.standard.bool(forKey: "is_incognito"),
+              let data = UserDefaults.standard.data(forKey: overviewGroupPreferencesStorageKey),
+              let saved = try? JSONDecoder().decode(SavedOverviewGroupPreferences.self, from: data),
+              saved.version == 1 else { return }
+        overviewGroupNames = saved.names.reduce(into: [:]) { names, entry in
+            let name = String(entry.value.trimmingCharacters(in: .whitespacesAndNewlines).prefix(80))
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !name.isEmpty { names[entry.key] = name }
+        }
+        pinnedOverviewGroupIDs = Set(saved.pinnedIDs)
+    }
+
+    private func persistOverviewGroupPreferences() {
+        // The shared mode can change in another window before this window has
+        // reconciled its tabs. Never let that transition write private choices.
+        guard !isPrivateSession, !UserDefaults.standard.bool(forKey: "is_incognito") else { return }
+        let saved = SavedOverviewGroupPreferences(names: overviewGroupNames,
+            pinnedIDs: pinnedOverviewGroupIDs.sorted())
+        if let data = try? JSONEncoder().encode(saved) {
+            UserDefaults.standard.set(data, forKey: overviewGroupPreferencesStorageKey)
+        }
     }
 
     // MARK: - Snapshots
@@ -339,6 +398,7 @@ final class TabManager: ObservableObject {
 
     func resetTabsForPrivacy() {
         isPrivateSession = UserDefaults.standard.bool(forKey: "is_incognito")
+        restoreOverviewGroupPreferences()
         closeAllTabs(addingToRecentlyClosed: false)
         recentlyClosed.removeAll()
         WebViewModel.deleteAllPersistedSnapshots()

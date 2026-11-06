@@ -22,35 +22,44 @@ def main():
     args = parser.parse_args()
     english = load(RESOURCES/'en.lproj/Localizable.strings')
     tool_english = load(RESOURCES/'en-US.lproj/ReadingTools.strings')
+    feature_english = load(RESOURCES/'en-US.lproj/FeatureImprovements.strings')
     swift = (RESOURCES/'Source/Services/ReadingTools/ToolText.swift').read_text()
     mapping_source = swift.split('static let sharedKeys = [', 1)[1].split(']', 1)[0]
     shared_keys = dict(re.findall(r'"([^"]+)"\s*:\s*"([^"]+)"', mapping_source))
     rows, english_candidates, long_labels = [], [], []
+    complete_tools, complete_features, fallback_keys = [], [], []
     for locale, name in APP_STORE_LOCALE_NAMES.items():
         values = load(RESOURCES/f'{locale}.lproj/Localizable.strings')
         tools = load(RESOURCES/f'{locale}.lproj/ReadingTools.strings')
+        features = load(RESOURCES/f'{locale}.lproj/FeatureImprovements.strings')
         missing_tools = [key for key in tool_english if key not in tools and shared_keys.get(key) not in values]
+        if set(tools) == set(tool_english): complete_tools.append(locale)
+        if set(features) == set(feature_english): complete_features.append(locale)
+        if missing_tools: fallback_keys.append((locale, len(missing_tools)))
         candidates = [] if locale.startswith('en') else [
             key for key, value in values.items()
             if value == english.get(key) and ' ' in value and re.search('[A-Za-z]', value)
             and not key.startswith('platform_') and key not in SHARED_TERMS
         ]
         long = [key for key in COMPACT_KEYS if len(values[key]) > 18]
-        rows.append(f'| {name} `{locale}` | {len(values)}/{len(english)} | {len(tool_english)-len(missing_tools)}/{len(tool_english)} | {len(candidates)} | {len(long)} |')
+        rows.append(f'| {name} `{locale}` | {len(values)}/{len(english)} | {len(tool_english)-len(missing_tools)}/{len(tool_english)} | {len(features)}/{len(feature_english)} | {len(candidates)} | {len(long)} |')
         english_candidates.extend((locale, key, values[key]) for key in candidates)
         long_labels.extend((locale, key, values[key]) for key in long)
     lines = [
         '# 翻译与长度检查', '',
         '生成命令：`python3 scripts/audit_localization.py`。', '',
         '## 检查范围与结论', '',
-        '- 覆盖全部 50 种语言的主文案，以及阅读工具独立文案表。商店字段长度由 `check_localization.py --strict` 单独验证。',
+        '- 覆盖全部 50 种语言的主文案、阅读工具与新增功能独立文案表。商店字段长度由 `check_localization.py --strict` 单独验证。',
         '- 主文案键齐全不代表已完成语言校对；下表同时列出英文候选和工具英文回退。品牌名不按漏译计算。',
-        f'- 新增工具只有简体中文、繁体中文和美国英语具有完整独立表。其余 44 种非英语语言各复用 {len(shared_keys)} 个已本地化的通用操作和资料库标签，另外 {len(tool_english) - len(shared_keys)} 项仍回退英文；不能算作完整翻译。其他 3 个英语地区回退英文属于正常显示。',
+        f'- 阅读工具独立表共 {len(tool_english)} 项，{len(complete_tools)}/{len(APP_STORE_LOCALE_NAMES)} 种语言具有完整独立表。'
+        + (f'其余 {len(fallback_keys)} 种语言仍存在英文回退，详见下表；不能算作完整翻译。' if fallback_keys else '全部支持语言均具备独立表；英语地区使用对应的英语文案。'),
+        '- 阅读工具补全采用机器辅助翻译，保留已有简繁中文和美国英语，复用已本地化的通用操作。品牌、文件格式和 printf 占位符保持原样；新译文仍需结合真实界面进行母语审校，不能仅凭键数宣称语言质量已验收。',
+        f'- 新增功能表共 {len(feature_english)} 项，{len(complete_features)}/{len(APP_STORE_LOCALE_NAMES)} 种语言键齐全。中英源按当前界面编写，其余语言采用机器辅助翻译；播放、分组、排序等歧义标签补充语境，德、法、西、日、韩、葡的部分短标签另做校正。严格检查还比对源码中的静态调用、字典与条件分支，防止新增入口漏键。',
         '- 紧凑标签超过 18 个 Unicode 码位仅提示复核。阿拉伯文、印度文字、组合字符与拉丁字母的实际宽度不同，不能用字符数直接断言截断。',
         '- 本次修正资料库短标签、过滤列表标题、明显的动词/名词误译，以及隐私与批量导入的英文遗漏；未宣称对 50 种语言的所有长段落完成母语审校。', '',
         '## 覆盖情况', '',
-        '| 语言 | 主表键 | 工具表或同义复用 | 英文候选 | 长标签候选 |',
-        '| --- | ---: | ---: | ---: | ---: |', *rows, '',
+        '| 语言 | 主表键 | 工具表或同义复用 | 新功能表 | 主表英文候选 | 长标签候选 |',
+        '| --- | ---: | ---: | ---: | ---: | ---: |', *rows, '',
         '## 尚需复核的英文候选', '',
         '荷兰语的 `Open downloads in Soulo.` 同时也是正确的荷兰语表达，属于已确认的同形文案，保留作为检查器的可见候选。', '',
     ]
@@ -68,7 +77,7 @@ def main():
               '2. 打开自定义浏览器工具栏及全屏下拉面板，检查长名称可完整换行，按钮不互相遮挡。',
               '3. 在系统中放大文字，重复检查；阿拉伯语同时检查从右向左顺序，网址和配对码仍应清晰。',
               '4. 检查广告过滤与隐私页的标题、状态、清除确认；确认文案与实际操作对应。',
-              '5. 新增工具其余语言的长段落、专有术语和错误提示仍需完整翻译及母语复核；不要把英文回退当作已验收。', '']
+              '5. 阅读工具的新译文、长段落、专有术语和错误提示仍需母语复核；检查英文相同项是否属于品牌、格式或明确的术语，不把机器翻译键齐全当作语言质量已验收。', '']
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text('\n'.join(lines), encoding='utf-8')
     print(f'50 locales; {len(english_candidates)} English candidates; {len(long_labels)} compact-label review candidates')

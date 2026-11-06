@@ -4,6 +4,84 @@ import WebKit
 
 final class AdBlockSubscriptionServiceTests: XCTestCase {
     @MainActor
+    func testDeferredStartupKeepsRulesAfterFailedRefreshAndMigratesOnlyWhenNeeded() async throws {
+        let suite = "DeferredSubscriptions.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(suite)
+        let archive = directory.appendingPathComponent("rules.json")
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SubscriptionTestProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer {
+            SubscriptionTestProtocol.handler = nil
+            session.invalidateAndCancel()
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: directory)
+        }
+        var subscriptions = AdBlockSubscriptionService.defaultSubscriptions()
+        for index in subscriptions.indices { subscriptions[index].isEnabled = subscriptions[index].id == "easylist" }
+        defaults.set(try JSONEncoder().encode(subscriptions), forKey: "soulo_ad_block_subscriptions")
+        let rules = AdBlockRuleParser.parse("||ads.example.com^\nexample.com##.advert")
+        let legacy = try JSONEncoder().encode(["easylist": rules])
+        let legacyKey = "soulo_ad_block_subscription_rules_by_id"
+        defaults.set(legacy, forKey: legacyKey)
+        defaults.set(false, forKey: "ad_block_enabled")
+        let service = AdBlockSubscriptionService(userDefaults: defaults, session: session,
+            rulesArchiveURL: archive, loadStoredRulesAtInitialization: false)
+        XCTAssertEqual(defaults.data(forKey: legacyKey), legacy, "Constructing startup state must not read or migrate the large archive")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: archive.path))
+        SubscriptionTestProtocol.handler = { request in
+            Task { @MainActor in
+                XCTAssertEqual(service.enabledRuleSummary, rules, "Offline rules must be restored before waiting for a refresh response")
+                request.respond(body: "<html>Unavailable</html>", mimeType: "text/html")
+            }
+        }
+        await service.updateEnabledSubscriptionsIfNeeded()
+        XCTAssertEqual(service.enabledRuleSummary, rules, "A failed refresh must retain the last valid subscription")
+        XCTAssertNil(defaults.data(forKey: legacyKey))
+        XCTAssertEqual(try JSONDecoder().decode([String: ParsedAdBlockRules].self, from: Data(contentsOf: archive))["easylist"], rules)
+        XCTAssertFalse(defaults.bool(forKey: "ad_block_enabled"))
+        let revision = AdBlockSubscriptionService.rulesSignature(userDefaults: defaults)
+        SubscriptionTestProtocol.handler = { _ in XCTFail("Valid rules must not be fetched again within the update interval") }
+        await service.updateEnabledSubscriptionsIfNeeded()
+        XCTAssertEqual(AdBlockSubscriptionService.rulesSignature(userDefaults: defaults), revision)
+        XCTAssertFalse(service.isUpdating)
+    }
+
+    @MainActor
+    func testDeferredUpdateRepairsOutdatedMetadataWithoutReactivatingOldRules() async throws {
+        let suite = "DeferredOutdatedSubscriptions.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SubscriptionTestProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer {
+            SubscriptionTestProtocol.handler = nil
+            session.invalidateAndCancel()
+            defaults.removePersistentDomain(forName: suite)
+        }
+        var subscriptions = AdBlockSubscriptionService.defaultSubscriptions()
+        for index in subscriptions.indices {
+            subscriptions[index].isEnabled = subscriptions[index].id == "easylist"
+            subscriptions[index].networkRuleCount = 123
+            subscriptions[index].lastUpdatedAt = Date()
+        }
+        defaults.set(try JSONEncoder().encode(subscriptions), forKey: "soulo_ad_block_subscriptions")
+        var old = AdBlockRuleParser.parse("||outdated.example.com^")
+        old.parserVersion = AdBlockRuleParser.version - 1
+        defaults.set(try JSONEncoder().encode(["easylist": old]), forKey: "soulo_ad_block_subscription_rules_by_id")
+        let service = AdBlockSubscriptionService(userDefaults: defaults, session: session,
+            loadStoredRulesAtInitialization: false)
+        SubscriptionTestProtocol.handler = { $0.respond(body: "<html>Unavailable</html>", mimeType: "text/html") }
+        await service.updateEnabledSubscriptionsIfNeeded()
+        let easylist = try XCTUnwrap(service.subscriptions.first { $0.id == "easylist" })
+        XCTAssertEqual(easylist.networkRuleCount, 0)
+        XCTAssertNil(easylist.lastUpdatedAt)
+        XCTAssertEqual(service.enabledRuleSummary, .empty)
+        XCTAssertNotNil(defaults.object(forKey: "soulo_ad_block_subscription_rules_version"))
+    }
+
+    @MainActor
     func testLargeSubscriptionArchiveMigratesWithoutLosingRulesOrSettings() throws {
         let suite = "SubscriptionArchive.\(UUID())"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

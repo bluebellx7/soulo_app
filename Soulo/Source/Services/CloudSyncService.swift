@@ -325,6 +325,14 @@ final class CloudSyncService: NSObject, ObservableObject {
 
     func listBackups() throws -> [CloudSettingsBackup] { try backups.list() }
 
+    func exportBackup(_ backup: CloudSettingsBackup) throws -> Data { try backups.exportData(for: backup) }
+
+    @discardableResult func importBackup(_ data: Data) throws -> CloudSettingsBackup {
+        let backup = try backups.importData(data, preserving: CloudSettingsSyncEngine.snapshot(defaults), date: now())
+        backupRevision += 1
+        return backup
+    }
+
     func deleteBackup(_ backup: CloudSettingsBackup) throws {
         try backups.delete(backup)
         backupRevision += 1

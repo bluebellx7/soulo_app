@@ -29,6 +29,7 @@ struct BookmarksContentView: View {
     var onOpen: ((String) -> Void)? = nil
     @State private var path: [UUID] = []
     @State private var importing = false
+    @State private var showReadingList = false
     @State private var exporting = false
     @State private var busy = false
     @State private var document: BookmarkHTMLDocument?
@@ -38,70 +39,37 @@ struct BookmarksContentView: View {
     @State private var folderPrompt = false
     @State private var removingFolder: BookmarkFolder?
     @State private var moving: BookmarkMoveTarget?
+    @State private var search = ""
+    @State private var selecting = false
+    @State private var selectedIDs = Set<UUID>()
+    @State private var onlyDuplicates = false
+    @State private var confirmDeletion = false
+    @EnvironmentObject private var tabManager: TabManager
+
+    private var duplicateIDs: Set<UUID> {
+        var seen = Set<String>()
+        return Set(bookmarks.reversed().compactMap { item in
+            let key = (item.folderID?.uuidString ?? "root") + "\n" + item.urlString
+            return seen.insert(key).inserted ? nil : item.id
+        })
+    }
 
     private var parentID: UUID? { path.last }
-    private var visibleFolders: [BookmarkFolder] { folders.filter { $0.parentID == parentID } }
-    private var visibleBookmarks: [BookmarkItem] { bookmarks.filter { $0.folderID == parentID } }
+    private var visibleFolders: [BookmarkFolder] {
+        guard !onlyDuplicates else { return [] }
+        return folders.filter { search.isEmpty ? $0.parentID == parentID : $0.title.localizedCaseInsensitiveContains(search) }
+    }
+    private var visibleBookmarks: [BookmarkItem] {
+        let duplicates = onlyDuplicates ? duplicateIDs : []
+        return bookmarks.filter { item in
+            let matches = search.isEmpty ? item.folderID == parentID : item.title.localizedCaseInsensitiveContains(search) || item.urlString.localizedCaseInsensitiveContains(search)
+            return matches && (!onlyDuplicates || duplicates.contains(item.id))
+        }
+    }
 
     var body: some View {
-        let counts = Dictionary(grouping: bookmarks, by: \.folderID).mapValues(\.count)
-        let childCounts = Dictionary(grouping: folders, by: \.parentID).mapValues(\.count)
-        List {
-            if let id = parentID, let folder = folders.first(where: { $0.id == id }) {
-                Section {
-                    Button { path.removeLast() } label: {
-                        Label(folder.title, systemImage: "chevron.left")
-                            .font(.subheadline.weight(.semibold)).lineLimit(1)
-                    }
-                    .accessibilityLabel(ToolText.text("favorites_parent") + " · " + folder.title)
-                    .accessibilityIdentifier("favorites.parent")
-                }
-            }
-            if visibleFolders.isEmpty && visibleBookmarks.isEmpty {
-                Section {
-                    IllustratedToolEmptyState(scene: .bookmarks,
-                        title: LanguageManager.shared.localizedString("no_bookmarks"),
-                        message: ToolText.text("favorites_empty"))
-                }
-            } else {
-                Section {
-                    ForEach(visibleFolders) { folder in folderRow(folder, count: (counts[folder.id] ?? 0) + (childCounts[folder.id] ?? 0)) }
-                    ForEach(visibleBookmarks) { item in bookmarkRow(item) }
-                }
-            }
-            Section {
-                Text(ToolText.text("favorites_format")).font(.footnote).foregroundStyle(.secondary)
-            }.listRowBackground(Color.clear)
-        }
-        .listStyle(.insetGrouped)
-        .disabled(busy)
-        .overlay {
-            if busy {
-                ProgressView(ToolText.text("favorites_processing"))
-                    .padding(24).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
-            }
-        }
-        .toolbar {
-            if libraryPageIsActive {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button { editingFolder = nil; folderName = ""; folderPrompt = true } label: {
-                            Label(ToolText.text("favorites_new_folder"), systemImage: "folder.badge.plus")
-                        }
-                        Divider()
-                        Button { importing = true } label: {
-                            Label(ToolText.text("favorites_import"), systemImage: "square.and.arrow.down")
-                        }
-                        Button { exportBookmarks() } label: {
-                            Label(ToolText.text("favorites_export"), systemImage: "square.and.arrow.up")
-                        }.disabled(bookmarks.isEmpty && folders.isEmpty)
-                    } label: { Image(systemName: "ellipsis").frame(minWidth: 44, minHeight: 44) }
-                    .tint(.primary).disabled(busy)
-                    .accessibilityLabel(ToolText.text("favorites_manage"))
-                    .accessibilityIdentifier("favorites.manage")
-                }
-            }
-        }
+        managedList
+        .navigationDestination(isPresented: $showReadingList) { ReadingListView() }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.html], allowsMultipleSelection: false) { result in
             switch result {
             case .success(let urls): if let url = urls.first { importBookmarks(url) }
@@ -154,8 +122,113 @@ struct BookmarksContentView: View {
         }
     }
 
+    private var bookmarksList: some View {
+        let counts = Dictionary(grouping: bookmarks, by: \.folderID).mapValues(\.count)
+        let childCounts = Dictionary(grouping: folders, by: \.parentID).mapValues(\.count)
+        return List {
+            Section {
+                HStack {
+                    Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                    TextField(LanguageManager.shared.localizedString("search"), text: $search)
+                        .autocorrectionDisabled().textInputAutocapitalization(.never)
+                        .accessibilityIdentifier("favorites.search")
+                    if !search.isEmpty { Button { search = "" } label: { Image(systemName: "xmark.circle.fill") }.buttonStyle(.borderless) }
+                }
+            }
+            if let id = parentID, let folder = folders.first(where: { $0.id == id }) {
+                Section {
+                    Button { path.removeLast(); search = "" } label: {
+                        Label(folder.title, systemImage: "chevron.left")
+                            .font(.subheadline.weight(.semibold)).lineLimit(1)
+                    }
+                    .accessibilityLabel(ToolText.text("favorites_parent") + " · " + folder.title)
+                    .accessibilityIdentifier("favorites.parent")
+                }
+            }
+            if visibleFolders.isEmpty && visibleBookmarks.isEmpty {
+                Section {
+                    IllustratedToolEmptyState(scene: .bookmarks,
+                        title: LanguageManager.shared.localizedString("no_bookmarks"),
+                        message: ToolText.text("favorites_empty"))
+                }
+            } else {
+                Section {
+                    ForEach(visibleFolders) { folder in folderRow(folder, count: (counts[folder.id] ?? 0) + (childCounts[folder.id] ?? 0)) }
+                    ForEach(visibleBookmarks) { item in bookmarkRow(item) }
+                }
+            }
+            Section {
+                Text(ToolText.text("favorites_format")).font(.footnote).foregroundStyle(.secondary)
+            }.listRowBackground(Color.clear)
+        }
+        .listStyle(.insetGrouped)
+
+    }
+
+    private var managedList: some View {
+        bookmarksList
+        .disabled(busy)
+        .overlay {
+            if busy {
+                ProgressView(ToolText.text("favorites_processing"))
+                    .padding(24).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+            }
+        }
+        .toolbar {
+            if libraryPageIsActive {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button { showReadingList = true } label: {
+                            Label(FeatureText.text("Reading list"), systemImage: "text.book.closed")
+                        }
+                        Button { editingFolder = nil; folderName = ""; folderPrompt = true } label: {
+                            Label(ToolText.text("favorites_new_folder"), systemImage: "folder.badge.plus")
+                        }
+                        Button { selecting.toggle(); if !selecting { selectedIDs.removeAll() } } label: {
+                            Label(ToolText.text(selecting ? "done" : "select"), systemImage: "checkmark.circle")
+                        }
+                        Toggle(FeatureText.text("Show duplicates"), isOn: $onlyDuplicates)
+                        Divider()
+                        Button { importing = true } label: {
+                            Label(ToolText.text("favorites_import"), systemImage: "square.and.arrow.down")
+                        }
+                        Button { exportBookmarks() } label: {
+                            Label(ToolText.text("favorites_export"), systemImage: "square.and.arrow.up")
+                        }.disabled(bookmarks.isEmpty && folders.isEmpty)
+                    } label: { Image(systemName: "ellipsis").frame(minWidth: 44, minHeight: 44) }
+                    .tint(.primary).disabled(busy)
+                    .accessibilityLabel(ToolText.text("favorites_manage"))
+                    .accessibilityIdentifier("favorites.manage")
+                }
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if selecting {
+                HStack {
+                    Button(FeatureText.text("Select visible")) { selectedIDs.formUnion(visibleBookmarks.map(\.id)) }
+                    Spacer()
+                    Text("\(selectedIDs.count)").monospacedDigit()
+                    Button(role: .destructive) { confirmDeletion = true } label: { Image(systemName: "trash").frame(width: 44, height: 44) }
+                        .disabled(selectedIDs.isEmpty)
+                    Button(ToolText.text("done")) { selecting = false; selectedIDs.removeAll() }
+                }.padding(.horizontal).background(.regularMaterial)
+            }
+        }
+        .confirmationDialog(LanguageManager.shared.localizedString("delete"), isPresented: $confirmDeletion, titleVisibility: .visible) {
+            Button(LanguageManager.shared.localizedString("delete"), role: .destructive) {
+                do {
+                    try modelContext.save()
+                    for item in bookmarks where selectedIDs.contains(item.id) { modelContext.delete(item) }
+                    try modelContext.save(); selectedIDs.removeAll()
+                } catch { modelContext.rollback(); notice = error.localizedDescription }
+            }
+        } message: { Text(String(format: FeatureText.text("Delete %lld selected bookmarks?"), Int64(selectedIDs.count))) }
+        .onChange(of: bookmarks.map(\.id)) { _, ids in selectedIDs.formIntersection(Set(ids)) }
+
+    }
+
     private func folderRow(_ folder: BookmarkFolder, count: Int) -> some View {
-        Button { path.append(folder.id) } label: {
+        Button { path.append(folder.id); search = "" } label: {
             HStack(spacing: 12) {
                 Image(systemName: "folder.fill").font(.title2).foregroundStyle(Color.themePrimary).frame(width: 28)
                 Text(folder.title).font(.system(size: 15, weight: .medium)).foregroundStyle(.primary).lineLimit(1)
@@ -188,12 +261,17 @@ struct BookmarksContentView: View {
 
     private func bookmarkRow(_ item: BookmarkItem) -> some View {
         Button {
+            if selecting {
+                if !selectedIDs.insert(item.id).inserted { selectedIDs.remove(item.id) }
+                return
+            }
             if let onOpen { onOpen(item.urlString); return }
             searchVM.searchText = item.urlString
             dismiss()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { searchVM.performSearch(context: modelContext) }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { searchVM.openLibrarySelection(item.urlString, tabManager: tabManager, context: modelContext) }
         } label: {
             HStack(spacing: 12) {
+                if selecting { Image(systemName: selectedIDs.contains(item.id) ? "checkmark.circle.fill" : "circle").foregroundStyle(Color.themePrimary) }
                 BookmarkFaviconView(urlString: item.urlString, size: 28)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(item.title).font(.system(size: 15, weight: .medium)).foregroundStyle(.primary).lineLimit(1)

@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsBackupsView: View {
     @ObservedObject private var sync = CloudSyncService.shared
@@ -6,6 +7,10 @@ struct SettingsBackupsView: View {
     @State private var selectedBackup: CloudSettingsBackup?
     @State private var deletingBackup: CloudSettingsBackup?
     @State private var showError = false
+    @State private var importing = false
+    @State private var exporting = false
+    @State private var exportDocument = SettingsBackupDocument(data: Data())
+    @State private var importNotice = false
 
     var body: some View {
         List {
@@ -33,6 +38,10 @@ struct SettingsBackupsView: View {
                         }
                     }
                     .contextMenu {
+                        Button {
+                            do { exportDocument = SettingsBackupDocument(data: try sync.exportBackup(backup)); exporting = true }
+                            catch { showError = true }
+                        } label: { Label(FeatureText.text("Export backup"), systemImage: "square.and.arrow.up") }
                         Button(role: .destructive) { deletingBackup = backup } label: {
                             Label(LanguageManager.shared.localizedString("delete"), systemImage: "trash")
                         }
@@ -46,6 +55,28 @@ struct SettingsBackupsView: View {
             }
         }
         .navigationTitle(LanguageManager.shared.localizedString("settings_backups"))
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button { importing = true } label: { Label(FeatureText.text("Import backup"), systemImage: "square.and.arrow.down") }
+            }
+        }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
+            do {
+                let url = try result.get()
+                let access = url.startAccessingSecurityScopedResource()
+                defer { if access { url.stopAccessingSecurityScopedResource() } }
+                let values = try url.resourceValues(forKeys: [.fileSizeKey])
+                guard (values.fileSize ?? Int.max) <= 16 * 1_024 * 1_024 else { throw ReadingToolError.limit }
+                _ = try sync.importBackup(Data(contentsOf: url))
+                load(); importNotice = true
+            } catch { showError = true }
+        }
+        .fileExporter(isPresented: $exporting, document: exportDocument, contentType: .json, defaultFilename: "Soulo-Settings") { result in
+            if case .failure = result { showError = true }
+        }
+        .alert(FeatureText.text("Import backup"), isPresented: $importNotice) {
+            Button(ToolText.text("done")) {}
+        } message: { Text(FeatureText.text("The imported backup has been added to the list. Choose Restore to apply it. Current settings have not changed.")) }
         .onAppear(perform: load)
         .onChange(of: sync.backupRevision) { _, _ in load() }
         .alert(LanguageManager.shared.localizedString("delete"), isPresented: Binding(
@@ -79,4 +110,12 @@ struct SettingsBackupsView: View {
         do { backups = try sync.listBackups() }
         catch { showError = true }
     }
+}
+
+private struct SettingsBackupDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.json] }
+    let data: Data
+    init(data: Data) { self.data = data }
+    init(configuration: ReadConfiguration) throws { data = configuration.file.regularFileContents ?? Data() }
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper { FileWrapper(regularFileWithContents: data) }
 }

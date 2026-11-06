@@ -161,12 +161,13 @@ final class WebViewModel: ObservableObject {
                 isStreamingDownloadHandlerInstalled = false
             }
             guard let webView else { mediaSession.detach(); return }
+            let cancelledBeforeAttachment = mediaSession.navigationWasCancelled
             mediaSession.webView = webView
             applyWebPreferences(to: webView)
             if let request = pendingRequest {
                 pendingRequest = nil
                 webView.load(request)
-            } else if let url = currentURL {
+            } else if let url = currentURL, !cancelledBeforeAttachment {
                 isLoading = true
                 estimatedProgress = 0.0
                 let request = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad, timeoutInterval: 30)
@@ -399,7 +400,13 @@ final class WebViewModel: ObservableObject {
             updateLoading(false)
         } else {
             mediaSession.allowUserNavigation()
-            webView?.reload()
+            // Stopping the first provisional response leaves WebKit without
+            // a document to reload. Retry the address still shown by the tab.
+            if webView?.url == nil {
+                retryCurrentPage()
+            } else {
+                webView?.reload()
+            }
         }
     }
 

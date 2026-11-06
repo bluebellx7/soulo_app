@@ -1,229 +1,60 @@
 # 搜罗 Soulo
 
-多平台搜索浏览器 - 一次输入，快速切换 40+ 搜索与 AI 平台
+Soulo 是一款 iOS 多平台搜索浏览器。输入一次关键词，即可在搜索引擎、视频、社区和第三方 AI 平台之间切换；平台各自提供结果，Soulo 不生成或合并答案。
 
-## 项目概述
+[官网与导航](https://soulo.dkluge.com/) · [App Store](https://apps.apple.com/app/id6761165330) · [使用说明](docs/USER_GUIDE.md) · [反馈群组](https://t.me/soulobrowser)
 
-搜罗是一款多平台搜索浏览器。用户输入一次关键词，即可在抖音、B站、Google、YouTube、DeepSeek、通义千问等 40+ 搜索与 AI 平台之间快速切换。Soulo 不生成或合并第三方平台的答案；搜索历史和配置默认保存在本地设备。
+## 当前功能
 
-## 技术栈
+- 搜索、语音输入、网址访问、历史和收藏；按地区或自定义分组组织平台，导入、导出和管理搜索模板。
+- 多标签浏览、网站自动分组的重命名与置顶、标签缩略图、恢复关闭标签、桌面模式和无痕浏览；iPad 多窗口分别保存标签会话。
+- 广告过滤订阅、手动标记广告、站点开关、跟踪保护与网站权限管理。
+- HTTP、流媒体、BT 和 ED2K 下载；本地文件管理、压缩包处理、Wi-Fi 传输和分享。
+- 网页、下载和本地媒体共用播放会话，可切换 Soulo 和系统播放器；支持倍速、选集、画中画与投屏，具体能力取决于媒体格式和设备。
+- 电子书与网页阅读、网页翻译、长截图、PDF 导出、图片文字识别、用户脚本和 WebExtension 扩展。
+- 壁纸、工具栏、首页和快捷操作设置；可选 iCloud **设置**同步与本地设置备份。
 
-- SwiftUI + WKWebView
-- SwiftData (搜索历史、收藏)
-- UserDefaults JSON (平台配置)
-- iOS Speech 框架 (语音输入)
-- NSUbiquitousKeyValueStore (iCloud 同步)
-- 最低支持 iOS 17.0
+主界面、阅读工具与新增功能表均覆盖 50 种语言。独立文案表的覆盖与校对边界见[本地化检查](docs/LOCALIZATION_AUDIT.md)；键完整性检查不能代替语言校对。
 
-## 项目结构
+历史、收藏、登录数据和下载默认保存在设备上。iCloud 设置同步不包含历史、收藏、缓存、登录数据或下载文件；收藏可通过 HTML 文件单独导入导出。详见[数据范围说明](docs/USER_GUIDE.md#数据同步备份与清除)。
 
-```
-Soulo/
-├── Soulo.xcodeproj/
-├── Info.plist
-└── Soulo/
-    ├── Source/
-    │   ├── App/
-    │   │   └── SouloApp.swift                  # App 入口，ModelContainer 配置，环境注入
-    │   │
-    │   ├── Models/
-    │   │   ├── SearchPlatform.swift             # 搜索平台数据模型
-    │   │   ├── PlatformRegion.swift             # 地区枚举 (中国/国际/日本/俄罗斯)
-    │   │   ├── SearchHistoryItem.swift          # 搜索历史 SwiftData Model
-    │   │   ├── BookmarkItem.swift               # 收藏书签 SwiftData Model
-    │   │   └── AppSettings.swift                # 设置项 Key 文档
-    │   │
-    │   ├── ViewModels/
-    │   │   ├── SearchViewModel.swift            # 搜索状态管理，核心协调器
-    │   │   ├── WebViewModel.swift               # WKWebView 状态绑定
-    │   │   ├── PlatformManagerViewModel.swift   # 平台排序/显隐/自定义管理
-    │   │   ├── BookmarkViewModel.swift          # 收藏状态管理
-    │   │   └── SettingsViewModel.swift          # 设置页状态管理
-    │   │
-    │   ├── Views/
-    │   │   ├── Home/
-    │   │   │   ├── HomeView.swift               # 首页根视图，搜索框居中 → 顶部动画
-    │   │   │   ├── SearchBarView.swift          # 搜索栏组件 (文字 + 语音)
-    │   │   │   ├── SearchSuggestionsView.swift  # 热搜/历史建议胶囊
-    │   │   │   └── ClipboardPromptView.swift    # 剪贴板检测提示横幅
-    │   │   │
-    │   │   ├── Search/
-    │   │   │   ├── SearchResultsView.swift      # 搜索结果页主布局
-    │   │   │   ├── RegionTabBar.swift           # 地区分组 Tab (中国/国际/日本/俄罗斯)
-    │   │   │   ├── PlatformTabBar.swift         # 平台 Tab (抖音/B站/...)
-    │   │   │   └── SearchHistoryView.swift      # 搜索历史列表
-    │   │   │
-    │   │   ├── WebView/
-    │   │   │   ├── WebViewContainer.swift       # WebView 装饰外框容器
-    │   │   │   ├── WebViewRepresentable.swift   # WKWebView UIViewRepresentable
-    │   │   │   ├── WebViewToolbar.swift         # 底部工具栏 (前进/后退/刷新/收藏/分享)
-    │   │   │   └── WebViewProgressBar.swift     # 加载进度条
-    │   │   │
-    │   │   ├── Settings/
-    │   │   │   ├── SettingsView.swift           # 设置主页
-    │   │   │   ├── PlatformManagementView.swift # 平台管理 (排序/显隐/添加)
-    │   │   │   ├── AddCustomPlatformView.swift  # 添加自定义平台表单
-    │   │   │   ├── LanguageSettingsView.swift   # 语言切换
-    │   │   │   └── PrivacySettingsView.swift    # 隐私设置 (无痕/清除数据)
-    │   │   │
-    │   │   ├── Bookmarks/
-    │   │   │   └── BookmarksView.swift          # 收藏列表
-    │   │   │
-    │   │   └── Shared/
-    │   │       ├── SharedComponents.swift       # 通用组件 (Logo, CapsuleTag 等)
-    │   │       └── PlatformIconView.swift       # 平台图标渲染
-    │   │
-    │   ├── Services/
-    │   │   ├── PlatformDataStore.swift          # 平台数据层，内置 22 个平台及 URL 模板
-    │   │   ├── SearchHistoryService.swift       # 搜索历史 CRUD
-    │   │   ├── BookmarkService.swift            # 收藏 CRUD
-    │   │   ├── ClipboardService.swift           # 剪贴板检测
-    │   │   ├── SpeechRecognitionService.swift   # 语音识别服务
-    │   │   └── CloudSyncService.swift           # iCloud KVS 同步
-    │   │
-    │   ├── Utils/
-    │   │   ├── LanguageManager.swift            # 多语言管理 (复用 IDPhotoApp 模式)
-    │   │   ├── ThemeManager.swift               # 主题/外观管理
-    │   │   └── Constants.swift                  # 全局常量
-    │   │
-    │   └── Extensions/
-    │       ├── Color+Theme.swift                # 主题颜色扩展
-    │       ├── String+URL.swift                 # URL 校验和编码
-    │       └── View+Modifiers.swift             # 自定义 ViewModifier
-    │
-    ├── Assets.xcassets/                         # App 图标 + 平台图标
-    │
-    ├── en.lproj/                               # 英语
-    ├── zh-Hans.lproj/                          # 简体中文
-    ├── ja.lproj/                               # 日语
-    ├── ko.lproj/                               # 韩语
-    ├── fr.lproj/                               # 法语
-    ├── de.lproj/                               # 德语
-    ├── es.lproj/                               # 西班牙语
-    └── vi.lproj/                               # 越南语
+## 开发
+
+- SwiftUI、WKWebView、SwiftData；最低 iOS 17.0。
+- `project.yml` 是工程配置源文件。使用 XcodeGen 重新生成 `Soulo.xcodeproj`，不要只改生成的工程设置。
+- 第三方播放和下载依赖位于 `ThirdParty/`；使用和构建说明见各目录 README，许可证见 App 内与资源声明。
+
+```sh
+xcodegen generate
+python3 scripts/check_localization.py --strict
+python3 scripts/export_metadata_json.py --check
 ```
 
-## 功能清单
+在 Xcode 中选择 `Soulo` scheme 和所需模拟器运行。原生测试位于 `SouloTests/`，界面测试位于 `SouloUITests/`；同一模拟器上的构建和测试应串行执行。历史验证记录保存在 `docs/qa/`。
 
-### 搜索
-- [x] 搜索框输入关键词
-- [x] 搜索框动画 (居中 → 顶部)
-- [x] 搜索历史记录
-- [x] 语音输入 (iOS Speech 框架)
-- [x] 剪贴板检测 (打开 app 提示"搜索 xxx?")
-- [x] 搜索建议/热搜词
-- [x] 支持直接输入网址
+## 项目目录
 
-### 结果展示 & WebView
-- [x] 国家/地区分组 Tab (中国/国际/日本/俄罗斯)
-- [x] 平台 Tab (按地区筛选)
-- [x] 内嵌 WebView 展示搜索结果
-- [x] WebView 装饰外框
-- [x] WebView 导航栏 (前进/后退/刷新)
-- [x] 加载进度条
-- [x] 长按图片可保存
-- [x] 网页内可修改搜索词
+| 目录 | 内容 |
+| --- | --- |
+| `Soulo/Source/App` | App、窗口与场景生命周期 |
+| `Soulo/Source/Models` | 搜索、收藏、标签和设置模型 |
+| `Soulo/Source/Services` | 浏览、下载、同步、隐私、媒体和阅读服务 |
+| `Soulo/Source/ViewModels` | 首页、搜索、网页和设置状态 |
+| `Soulo/Source/Views` | 首页、浏览、资料库、阅读播放与设置界面 |
+| `Soulo/*.lproj` | App 界面与权限本地化 |
+| `SouloShareExtension`、`SouloWidget` | 分享扩展和小组件 |
+| `fastlane/metadata` | 50 种语言的 App Store 文案源文件 |
+| `website` | 官网静态页面与导航目录，见[网站维护说明](website/README.md) |
+| `scripts` | 工程依赖准备、本地化、元数据和网站生成与检查 |
 
-### 平台管理
-- [x] 用户排序平台
-- [x] 用户显示/隐藏平台
-- [x] 用户添加自定义平台 (名称 + URL 模板)
-- [x] 按使用频率自动排序
+## 发布与维护
 
-### 收藏 & 分享
-- [x] 收藏当前网页
-- [x] 分享搜索结果
-- [x] 收藏列表管理
+商店文案以 `fastlane/metadata/<语言名>/` 为准。版本或商店内容变更后，同步全部语言，再生成 Chrome 扩展使用的 JSON：
 
-### 隐私
-- [x] 无痕搜索模式
-- [x] 一键清除历史
-- [x] 清除 WebView 缓存/Cookie
-
-### 个性化
-- [x] 深色/浅色/跟随系统
-- [x] 多语言（15 种）
-- [x] iCloud 设置同步（外观、首页、浏览、隐私、壁纸偏好、平台配置与站点规则；不含历史、缓存、登录态和下载）
-
-## 内置平台 (22 个)
-
-### 中国 (9 个)
-| 平台 | 搜索 URL 模板 |
-|------|---------------|
-| 抖音 | `https://www.douyin.com/search/%@` |
-| B站 | `https://search.bilibili.com/all?keyword=%@` |
-| 小红书 | `https://www.xiaohongshu.com/search_result?keyword=%@` |
-| 微博 | `https://s.weibo.com/weibo?q=%@` |
-| 知乎 | `https://www.zhihu.com/search?type=content&q=%@` |
-| 百度 | `https://www.baidu.com/s?wd=%@` |
-| 淘宝 | `https://s.taobao.com/search?q=%@` |
-| 京东 | `https://search.jd.com/Search?keyword=%@` |
-| 微信搜一搜 | `https://weixin.sogou.com/weixin?query=%@` |
-
-### 国际 (6 个)
-| 平台 | 搜索 URL 模板 |
-|------|---------------|
-| Google | `https://www.google.com/search?q=%@` |
-| YouTube | `https://www.youtube.com/results?search_query=%@` |
-| Twitter/X | `https://x.com/search?q=%@` |
-| Reddit | `https://www.reddit.com/search/?q=%@` |
-| Amazon | `https://www.amazon.com/s?k=%@` |
-| TikTok | `https://www.tiktok.com/search?q=%@` |
-
-### 日本 (4 个)
-| 平台 | 搜索 URL 模板 |
-|------|---------------|
-| Yahoo Japan | `https://search.yahoo.co.jp/search?p=%@` |
-| Google JP | `https://www.google.co.jp/search?q=%@` |
-| Twitter/X JP | `https://x.com/search?q=%@&lang=ja` |
-| YouTube JP | `https://www.youtube.com/results?search_query=%@&gl=JP` |
-
-### 俄罗斯 (2 个)
-| 平台 | 搜索 URL 模板 |
-|------|---------------|
-| Yandex | `https://yandex.ru/search/?text=%@` |
-| VK | `https://vk.com/search?c%5Bq%5D=%@` |
-
-> URL 模板中 `%@` 为关键词占位符，运行时替换为 percent-encoded 的搜索词。
-
-## 实现阶段
-
-### Phase 1: 基础骨架
-App 入口、模型定义、平台数据层、语言/主题管理、首页基础布局
-
-### Phase 2: 核心搜索流程
-搜索栏、WebView 封装、地区/平台 Tab、搜索结果页、进度条、导航栏
-
-### Phase 3: 历史 & 收藏
-SwiftData 持久化、搜索历史、收藏书签、首页建议
-
-### Phase 4: 语音 & 智能输入
-语音识别、剪贴板检测、URL 直接输入
-
-### Phase 5: 平台管理
-排序、显隐、自定义平台、使用频率排序
-
-### Phase 6: 设置 & 隐私
-完整设置页、语言切换、外观切换、无痕模式、数据清除
-
-### Phase 7: iCloud 同步 & 精打磨
-iCloud KVS 同步、动画细节、长按保存图片、15 种语言翻译、边界处理
-
-## 存储策略
-
-| 数据 | 存储方式 | 原因 |
-|------|----------|------|
-| 平台配置 | UserDefaults JSON | 数据量小，需快速读取，便于 iCloud KVS 同步 |
-| 搜索历史 | SwiftData | 无限增长集合，需查询/排序/去重 |
-| 收藏书签 | SwiftData | 同上 |
-| 用户偏好 | @AppStorage | 简单键值对 |
-| iCloud 同步 | NSUbiquitousKeyValueStore | 数据小于 1MB，比 CloudKit 简单 |
-
-## Info.plist 权限
-
-```xml
-NSSpeechRecognitionUsageDescription - 语音搜索
-NSMicrophoneUsageDescription - 语音搜索，以及用户允许后的网页通话或录音
-NSCameraUsageDescription - 用户允许后的网页视频通话、扫码或拍照
-NSPhotoLibraryAddUsageDescription - 保存网页图片到相册
+```sh
+python3 scripts/export_metadata_json.py
+python3 scripts/export_metadata_json.py --check
+python3 scripts/check_localization.py --strict
 ```
+
+不要直接修改生成的 `fastlane/app_store_metadata.json`。商店字段限制和版本流程见 [fastlane/README.md](fastlane/README.md) 与 [AGENTS.md](AGENTS.md)。官网发布使用 `bash website/upload.sh`，Git push 与网站部署是两个独立步骤。

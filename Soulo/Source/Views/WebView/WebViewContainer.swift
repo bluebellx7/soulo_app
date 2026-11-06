@@ -302,7 +302,7 @@ struct WebViewContainer: View {
                 }
 
                 ZStack {
-                    WebViewRepresentable(
+                    AdBlockPreparedWebView(
                         viewModel: webViewModel,
                         onAccessibilityPlatformPage: onAccessibilityPlatformPage,
                         obscuredBottomInset: webViewObscuredBottomInset
@@ -543,6 +543,10 @@ struct WebViewContainer: View {
         }
         .animation(.easeOut(duration: 0.18), value: webViewModel.showSnapshotWhileRestoring)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: webViewModel.videoHoldSpeed)
+        .onReceive(NotificationCenter.default.publisher(for: .focusSouloBrowserAddress)) { notification in
+            guard let target = notification.object as? WebViewModel, target === webViewModel else { return }
+            presentAddressEditor()
+        }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             webViewModel.clearVideoHoldSpeed()
         }
@@ -808,7 +812,12 @@ struct WebViewContainer: View {
         }
         .sheet(isPresented: $showPrivacyPanel) {
             NavigationStack {
-                SitePrivacyPanelView(currentURL: webViewModel.currentURL) {
+                SitePrivacyPanelView(currentURL: webViewModel.currentURL, websiteDataStore: webViewModel.webView?.configuration.websiteDataStore) {
+                    if let webView = webViewModel.webView {
+                        WebViewRepresentable.synchronizeAdProtection(on: webView, model: webViewModel,
+                            enabled: UserDefaults.standard.object(forKey: "ad_block_enabled") as? Bool ?? true,
+                            allowlist: AdBlockSettingsService.shared.allowlistedHosts)
+                    }
                     webViewModel.reload()
                 }
             }

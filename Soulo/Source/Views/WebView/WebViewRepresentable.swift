@@ -459,11 +459,67 @@ final class AccessibleWebView: WKWebView {
 
 // MARK: - WebViewRepresentable
 
+struct AdBlockScriptConfiguration: Hashable, Sendable {
+    let allowlistedHosts: [String]
+    let rulesSignature: String
+    let nativeCosmeticFiltering: Bool
+    let includesCurrentDocumentFallback: Bool
+}
+
+struct PreparedAdBlockScript: Sendable {
+    let configuration: AdBlockScriptConfiguration
+    let source: String
+    let fallbackSource: String?
+}
+
+/// Keep initial rule decoding outside UIKit's synchronous view construction.
+/// The first request still waits for its document-start protection script.
+struct AdBlockPreparedWebView: View {
+    @ObservedObject var viewModel: WebViewModel
+    var onAccessibilityPlatformPage: ((AccessibilityPlatformPagingDirection) -> Bool)?
+    var obscuredBottomInset: CGFloat = 0
+    @AppStorage("ad_block_enabled") private var adBlockEnabled = true
+    @AppStorage("soulo_ad_block_subscription_rules_version") private var rulesRevision = 0.0
+    @ObservedObject private var adBlockSettings = AdBlockSettingsService.shared
+    @ObservedObject private var builtInRules = BuiltInAdRuleStore.shared
+    @State private var preparedScript: PreparedAdBlockScript?
+
+    var body: some View {
+        let _ = rulesRevision
+        let _ = builtInRules.revision
+        let configuration = WebViewRepresentable.adScriptConfiguration(allowlist: adBlockSettings.allowlistedHosts,
+            host: viewModel.currentURL?.host,
+            includesCurrentDocumentFallback: !viewModel.hasInstalledWebViewScripts && viewModel.webView?.url != nil)
+        let needsPreparation = adBlockEnabled && !viewModel.hasInstalledWebViewScripts
+            && preparedScript?.configuration != configuration
+        Group {
+            if needsPreparation {
+                Color.clear.accessibilityHidden(true)
+            } else {
+                WebViewRepresentable(viewModel: viewModel, onAccessibilityPlatformPage: onAccessibilityPlatformPage,
+                    obscuredBottomInset: obscuredBottomInset, preparedAdScript: preparedScript)
+            }
+        }
+        .task(id: adBlockEnabled ? configuration : nil) {
+            guard adBlockEnabled, !viewModel.hasInstalledWebViewScripts,
+                  preparedScript?.configuration != configuration else { return }
+            let fallback = configuration.includesCurrentDocumentFallback && configuration.nativeCosmeticFiltering
+                ? await WebViewRepresentable.prepareAdHidingScript(allowlist: configuration.allowlistedHosts) : nil
+            guard !Task.isCancelled else { return }
+            let source = await WebViewRepresentable.prepareAdHidingScript(allowlist: configuration.allowlistedHosts,
+                nativeCosmeticFiltering: configuration.nativeCosmeticFiltering, priority: .userInitiated)
+            guard !Task.isCancelled else { return }
+            preparedScript = PreparedAdBlockScript(configuration: configuration, source: source, fallbackSource: fallback)
+        }
+    }
+}
+
 struct WebViewRepresentable: UIViewRepresentable {
 
     @ObservedObject var viewModel: WebViewModel
     var onAccessibilityPlatformPage: ((AccessibilityPlatformPagingDirection) -> Bool)?
     var obscuredBottomInset: CGFloat = 0
+    var preparedAdScript: PreparedAdBlockScript?
     @AppStorage("ad_block_enabled") private var adBlockEnabled: Bool = true
     @AppStorage("is_incognito") private var isIncognito: Bool = false
     @AppStorage(VideoPlaybackPreferences.showsToolsKey) private var showsVideoTools = true
@@ -486,6 +542,23 @@ struct WebViewRepresentable: UIViewRepresentable {
     private static var cachedAdBlockAllowlistSignature: String?
     private static var compilingAdBlockAllowlistSignature: String?
     private static var installedContentRuleSignatures: [ObjectIdentifier: String] = [:]
+    @MainActor private static var preparingAdScripts: [AdBlockScriptConfiguration: Task<String, Never>] = [:]
+
+    @MainActor fileprivate static func prepareAdHidingScript(allowlist: [String], nativeCosmeticFiltering: Bool = false,
+                                                            priority: TaskPriority = .utility) async -> String {
+        let allowlist = AdBlockSettingsService.normalizedAllowlistedHosts(allowlist)
+        let configuration = AdBlockScriptConfiguration(allowlistedHosts: allowlist,
+            rulesSignature: allowlistSignature(for: allowlist), nativeCosmeticFiltering: nativeCosmeticFiltering,
+            includesCurrentDocumentFallback: false)
+        if let existing = preparingAdScripts[configuration] { return await existing.value }
+        let task = Task.detached(priority: priority) {
+            AdBlockService.adHidingScript(allowlistedHosts: allowlist, nativeCosmeticFiltering: nativeCosmeticFiltering)
+        }
+        preparingAdScripts[configuration] = task
+        let source = await task.value
+        preparingAdScripts.removeValue(forKey: configuration)
+        return source
+    }
 
     /// Call once at app launch to pre-compile ad blocking rules
     static func preWarm() {
@@ -508,14 +581,12 @@ struct WebViewRepresentable: UIViewRepresentable {
             compilingAdBlockAllowlistSignature = signature
             cachedAdBlockAllowlistSignature = signature
             cachedAdBlockRules = nil
-            let rules = await Task.detached(priority: .utility) {
-                // The first archive decode and cosmetic JSON generation must
-                // not hold the main actor while a user opens the first page.
-                _ = AdBlockService.adHidingScript(allowlistedHosts: allowlist)
-                return await AdBlockService.compileRuleLists(allowlistedHosts: allowlist)
-            }.value
+            _ = await prepareAdHidingScript(allowlist: allowlist)
+            _ = await prepareAdHidingScript(allowlist: allowlist, nativeCosmeticFiltering: true)
+            let rules = await AdBlockService.compileRuleLists(allowlistedHosts: allowlist)
             // A newer allowlist may have started compiling while this task waited.
-            if cachedAdBlockAllowlistSignature == signature {
+            if cachedAdBlockAllowlistSignature == signature,
+               signature == allowlistSignature(for: AdBlockSettingsService.shared.allowlistedHosts) {
                 cachedAdBlockRules = rules
             }
             if compilingAdBlockAllowlistSignature == signature {
@@ -538,7 +609,7 @@ struct WebViewRepresentable: UIViewRepresentable {
                     in: nil, in: ManualAdBlockRuntime.world, completionHandler: nil
                 )
                 if adBlockEnabled {
-                    existingWebView.evaluateJavaScript(AdBlockService.adHidingScript(
+                    existingWebView.evaluateJavaScript(adHidingSource(
                         allowlistedHosts: AdBlockSettingsService.normalizedAllowlistedHosts(adBlockSettings.allowlistedHosts)
                     ), completionHandler: nil)
                 }
@@ -746,7 +817,7 @@ struct WebViewRepresentable: UIViewRepresentable {
         // on an allowlisted site, instead of sending the large payload at commit.
         if adBlockEnabled {
             let adScript = WKUserScript(
-                source: AdBlockService.adHidingScript(
+                source: adHidingSource(
                     cosmetic: true,
                     allowlistedHosts: protectionBypassHosts,
                     nativeCosmeticFiltering: nativeFiltering
@@ -878,6 +949,13 @@ struct WebViewRepresentable: UIViewRepresentable {
 
     static func synchronizeAdProtection(on webView: WKWebView, model: WebViewModel, enabled: Bool, allowlist: [String]) {
         if enabled {
+            // A newly allowed site may reload before replacement rules finish
+            // compiling. Remove the previous blocking list for that document
+            // immediately; asynchronous installation still validates the list.
+            if AdBlockSettingsService.isHostAllowlisted(model.currentURL?.host ?? webView.url?.host, allowlistedHosts: allowlist) {
+                webView.configuration.userContentController.removeAllContentRuleLists()
+                installedContentRuleSignatures.removeValue(forKey: ObjectIdentifier(webView))
+            }
             ensureCurrentContentRules(on: webView, allowlist: allowlist, model: model)
         } else {
             webView.configuration.userContentController.removeAllContentRuleLists()
@@ -915,10 +993,13 @@ struct WebViewRepresentable: UIViewRepresentable {
         compilingAdBlockAllowlistSignature = signature
         Task { [weak webView, weak model] in
             let ruleList = await AdBlockService.compileRuleLists(allowlistedHosts: allowlist)
+            _ = await prepareAdHidingScript(allowlist: allowlist)
+            _ = await prepareAdHidingScript(allowlist: allowlist, nativeCosmeticFiltering: true)
             if compilingAdBlockAllowlistSignature == signature {
                 compilingAdBlockAllowlistSignature = nil
             }
-            guard cachedAdBlockAllowlistSignature == signature else { return }
+            guard cachedAdBlockAllowlistSignature == signature,
+                  signature == allowlistSignature(for: AdBlockSettingsService.shared.allowlistedHosts) else { return }
             cachedAdBlockRules = ruleList
             // Do not restore rules into a closed or suspended tab. A remounted
             // instance of the same live WebView can use the current rules.
@@ -960,6 +1041,27 @@ struct WebViewRepresentable: UIViewRepresentable {
         return "\(hosts)|rules:\(AdBlockSubscriptionService.rulesSignature())|legacy:\(legacy)|builtIn:\(BuiltInAdRuleStore.signature())"
     }
 
+    static func adScriptConfiguration(allowlist: [String], host: String? = nil,
+                                      includesCurrentDocumentFallback: Bool = false) -> AdBlockScriptConfiguration {
+        let allowlist = AdBlockSettingsService.normalizedAllowlistedHosts(allowlist)
+        let signature = allowlistSignature(for: allowlist)
+        return AdBlockScriptConfiguration(allowlistedHosts: allowlist, rulesSignature: signature,
+            nativeCosmeticFiltering: cachedAdBlockAllowlistSignature == signature && cachedAdBlockRules != nil
+                && !AdBlockSettingsService.isHostAllowlisted(host, allowlistedHosts: allowlist),
+            includesCurrentDocumentFallback: includesCurrentDocumentFallback)
+    }
+
+    private func adHidingSource(cosmetic: Bool = true, allowlistedHosts: [String], nativeCosmeticFiltering: Bool = false) -> String {
+        if cosmetic, let preparedAdScript,
+           preparedAdScript.configuration.allowlistedHosts == AdBlockSettingsService.normalizedAllowlistedHosts(allowlistedHosts),
+           preparedAdScript.configuration.rulesSignature == Self.allowlistSignature(for: allowlistedHosts) {
+            if preparedAdScript.configuration.nativeCosmeticFiltering == nativeCosmeticFiltering { return preparedAdScript.source }
+            if !nativeCosmeticFiltering, let fallback = preparedAdScript.fallbackSource { return fallback }
+        }
+        return AdBlockService.adHidingScript(cosmetic: cosmetic, allowlistedHosts: allowlistedHosts,
+            nativeCosmeticFiltering: nativeCosmeticFiltering)
+    }
+
     private static func adHidingConfigurationSignature(enabled: Bool, cosmetic: Bool, allowlist: [String], nativeCosmeticFiltering: Bool = false) -> String {
         "\(enabled)|\(cosmetic)|\(allowlistSignature(for: allowlist))|native:\(nativeCosmeticFiltering)"
     }
@@ -974,6 +1076,8 @@ struct WebViewRepresentable: UIViewRepresentable {
         let signature = allowlistSignature(for: allowlist)
         Task { @MainActor [weak webView, weak model] in
             let rules = await AdBlockService.compileRuleLists(allowlistedHosts: allowlist)
+            _ = await prepareAdHidingScript(allowlist: allowlist)
+            _ = await prepareAdHidingScript(allowlist: allowlist, nativeCosmeticFiltering: true)
             guard let webView, let model, model.webView === webView,
                   signature == allowlistSignature(for: AdBlockSettingsService.normalizedAllowlistedHosts(AdBlockSettingsService.shared.allowlistedHosts)) else { return }
             cachedAdBlockAllowlistSignature = signature

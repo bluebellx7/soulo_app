@@ -22,6 +22,14 @@ struct BrowserToolbarSettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                Menu {
+                    Button(FeatureText.text("Standard")) { applyPreset([.home, .back, .tabs, .more], address: .darkMode) }
+                    Button(FeatureText.text("Browsing")) { applyPreset([.back, .forward, .tabs, .more], address: .reload) }
+                    Button(FeatureText.text("Reading")) { applyPreset([.back, .readerMode, .bookmark, .more], address: .darkMode) }
+                    Button(FeatureText.text("Media")) { applyPreset([.back, .resources, .downloads, .more], address: .reload) }
+                } label: { Label(FeatureText.text("Toolbar presets"), systemImage: "rectangle.3.group") }
+                .accessibilityIdentifier("browser-toolbar.presets")
+
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Text(LanguageManager.shared.localizedString("toolbar_replace_action"))
@@ -94,6 +102,11 @@ struct BrowserToolbarSettingsView: View {
         .padding(.vertical, 12)
         .background(.regularMaterial)
         .overlay(alignment: .top) { Divider() }
+    }
+
+    private func applyPreset(_ actions: [BrowserToolbarAction], address: BrowserToolbarAction) {
+        draftActions = actions; draftAddressAction = address; selectedSlot = 0
+        HapticsManager.selection()
     }
 
     private func restoreDefaults() {

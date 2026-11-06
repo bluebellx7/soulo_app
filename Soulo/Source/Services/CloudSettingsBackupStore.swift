@@ -1,4 +1,5 @@
 import Foundation
+import CoreFoundation
 
 struct CloudSettingsBackup: Codable, Identifiable {
     let id: UUID
@@ -10,6 +11,17 @@ struct CloudSettingsBackup: Codable, Identifiable {
 
 @MainActor
 final class CloudSettingsBackupStore {
+    static let maximumPortableBackupSize = 16 * 1024 * 1024
+    private struct PortableBackup: Codable {
+        let format: String
+        let version: Int
+        let scope: String
+        let createdAt: Date
+        let exportedByVersion: String?
+        let includedKeys: [String]
+        let propertyList: Data
+    }
+    private static let portableFormat = "com.dkluge.Soulo.settings-backup"
     let directory: URL
     private let fileManager: FileManager
 
@@ -56,10 +68,72 @@ final class CloudSettingsBackupStore {
         return values
     }
 
+    /// Only settings in the documented sync scope can leave the device through
+    /// this format; bookmarks and browser/private session data are separate.
+    func exportData(for backup: CloudSettingsBackup) throws -> Data {
+        let allowed = Set(CloudSyncService.syncedKeys)
+        let values = try values(for: backup).filter { allowed.contains($0.key) }
+        try validatePortableValues(values)
+        let portable = PortableBackup(format: Self.portableFormat, version: 1, scope: "settings",
+            createdAt: backup.createdAt,
+            exportedByVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
+            includedKeys: allowed.sorted(), propertyList: try CloudSettingsSyncEngine.propertyList(values))
+        let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
+        let data = try encoder.encode(portable)
+        guard data.count <= Self.maximumPortableBackupSize else { throw CocoaError(.fileReadTooLarge) }
+        return data
+    }
+
+    /// Import creates a local backup for review; it does not modify current
+    /// preferences, enable sync or upload anything. Missing keys only reset
+    /// settings the exporting version explicitly included in its scope.
+    @discardableResult
+    func importData(_ data: Data, preserving currentValues: CloudSettingsSyncEngine.Values,
+                    date: Date = Date()) throws -> CloudSettingsBackup {
+        guard data.count <= Self.maximumPortableBackupSize else { throw CocoaError(.fileReadTooLarge) }
+        let portable = try JSONDecoder().decode(PortableBackup.self, from: data)
+        let allowed = Set(CloudSyncService.syncedKeys), included = Set(portable.includedKeys)
+        guard portable.format == Self.portableFormat, portable.version == 1, portable.scope == "settings",
+              portable.createdAt.timeIntervalSince1970.isFinite, !included.isEmpty,
+              included.count == portable.includedKeys.count, included.isSubset(of: allowed) else {
+            throw CocoaError(.coderReadCorrupt)
+        }
+        let incoming = try CloudSettingsSyncEngine.values(portable.propertyList)
+        guard Set(incoming.keys).isSubset(of: included) else { throw CocoaError(.coderReadCorrupt) }
+        try validatePortableValues(incoming)
+        var restored = currentValues.filter { allowed.contains($0.key) }
+        for key in included { restored[key] = incoming[key] }
+        // Validate the resulting snapshot. A valid backup must still be able
+        // to replace a corrupt current value inside its declared scope.
+        try validatePortableValues(restored)
+        // Full validation precedes the first write. A corrupt or newer format
+        // cannot replace an existing local backup or partially change settings.
+        return try save(restored, date: date)
+    }
+
     func delete(_ backup: CloudSettingsBackup) throws {
         let file = url(for: backup)
         guard fileManager.fileExists(atPath: file.path) else { return }
         try fileManager.removeItem(at: file)
+    }
+
+    private func validatePortableValues(_ values: CloudSettingsSyncEngine.Values) throws {
+        _ = try CloudSettingsSyncEngine.flattened(values)
+        // Property lists permit NaN/infinity, but imported preferences must be
+        // usable by the numeric controls that consume them.
+        func hasFiniteNumbers(_ value: Any) -> Bool {
+            if let number = value as? NSNumber { return number.doubleValue.isFinite }
+            if let array = value as? [Any] { return array.allSatisfy(hasFiniteNumbers) }
+            if let dictionary = value as? [String: Any] { return dictionary.values.allSatisfy(hasFiniteNumbers) }
+            return true
+        }
+        guard values.values.allSatisfy(hasFiniteNumbers) else { throw CocoaError(.coderReadCorrupt) }
+        if let value = values[VideoPlaybackPreferences.holdSpeedKey] {
+            guard let number = value as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID(),
+                  VideoPlaybackPreferences.holdSpeeds.contains(number.doubleValue) else {
+                throw CocoaError(.coderReadCorrupt)
+            }
+        }
     }
 
     private func url(for backup: CloudSettingsBackup) -> URL {

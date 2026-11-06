@@ -184,6 +184,7 @@ struct TabSwitcherOverlay: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showTabOptions = false
     @State private var orderedTabIDs: [UUID] = []
+    @State private var search = ""
     @ObservedObject var tabManager: TabManager
     let onSelectTab: (Int) -> Void
     let onGoHome: () -> Void
@@ -193,10 +194,16 @@ struct TabSwitcherOverlay: View {
     @State private var expandingIndex: Int? = nil
 
     private var orderedTabs: [BrowserTab] {
-        guard !orderedTabIDs.isEmpty else { return tabManager.tabsForOverview }
         let byID = Dictionary(uniqueKeysWithValues: tabManager.tabs.map { ($0.id, $0) })
         let known = Set(orderedTabIDs)
-        return tabManager.tabs.filter { !known.contains($0.id) } + orderedTabIDs.compactMap { byID[$0] }
+        let ordered = orderedTabIDs.isEmpty ? tabManager.tabsForOverview
+            : tabManager.tabs.filter { !known.contains($0.id) } + orderedTabIDs.compactMap { byID[$0] }
+        let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
+        return query.isEmpty ? ordered : ordered.filter {
+            $0.displayTitle.localizedCaseInsensitiveContains(query)
+                || ($0.webViewModel.currentURL ?? $0.suspendedURL)?.absoluteString.localizedCaseInsensitiveContains(query) == true
+                || $0.keyword?.localizedCaseInsensitiveContains(query) == true
+        }
     }
 
     var body: some View {
@@ -216,7 +223,20 @@ struct TabSwitcherOverlay: View {
                     .accessibilityHidden(true)
 
                 VStack(spacing: 0) {
-                    if showsDomainGroups && !tabManager.tabs.isEmpty {
+                    HStack(spacing: 10) {
+                        Image(systemName: "magnifyingglass").accessibilityHidden(true)
+                        TextField(LanguageManager.shared.localizedString("search"), text: $search)
+                            .autocorrectionDisabled().textInputAutocapitalization(.never)
+                            .accessibilityIdentifier("tabs.search")
+                        if !search.isEmpty { Button { search = "" } label: { Image(systemName: "xmark.circle.fill") } }
+                    }
+                    .foregroundStyle(.primary).padding(.horizontal, 16).frame(minHeight: 44)
+                    .background(Color.primary.opacity(0.10), in: Capsule())
+                    .padding(.horizontal, 24).padding(.top, max(geo.safeAreaInsets.top, 12))
+                    if orderedTabs.isEmpty && !tabManager.tabs.isEmpty {
+                        ContentUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
+                            .foregroundStyle(.primary).frame(maxHeight: .infinity)
+                    } else if showsDomainGroups && !tabManager.tabs.isEmpty {
                         TabSwitcherDomainGroups(tabManager: tabManager, tabs: orderedTabs, onSelect: selectTab, onClose: closeTab)
                             .padding(.top, 12)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -235,6 +255,7 @@ struct TabSwitcherOverlay: View {
                                     onSelect: selectTab,
                                     onClose: closeTab
                                 )
+                                .id(search)
                                 .frame(height: carouselHeight(in: geo))
                                 .offset(y: -16)
                             }
@@ -512,6 +533,8 @@ private struct TabSwitcherDomainGroups: View {
     var body: some View {
         GeometryReader { geometry in
             let groups = TabOverviewDomainGroup.make(from: tabs, preservingGroupOrder: orderedGroupIDs)
+                .map { TabOverviewDomainGroup(id: $0.id, title: tabManager.overviewGroupNames[$0.id] ?? $0.title, tabs: $0.tabs) }
+                .sorted { tabManager.pinnedOverviewGroupIDs.contains($0.id) && !tabManager.pinnedOverviewGroupIDs.contains($1.id) }
             let positions = Dictionary(uniqueKeysWithValues: tabs.enumerated().map { ($0.element.id, $0.offset + 1) })
             let preferredColumns = dynamicTypeSize.isAccessibilitySize ? 2 : 3
             let fittingColumns = max(1, Int((geometry.size.width - 36) / 102))
@@ -569,30 +592,47 @@ private struct TabDomainGroupRow: View {
     let onClose: (Int) -> Void
     let onCloseGroup: (TabOverviewDomainGroup) -> Void
     @State private var pendingClose: TabOverviewDomainGroup?
+    @State private var renaming = false
+    @State private var groupName = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 HStack(spacing: 8) {
+                    if tabManager.pinnedOverviewGroupIDs.contains(group.id) { Image(systemName: "pin.fill").font(.caption).foregroundStyle(Color.primary.opacity(0.8)) }
                     Text(group.title)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.94))
+                        .foregroundStyle(Color.primary.opacity(0.94))
                         .lineLimit(1)
                     Text("\(group.tabs.count)")
                         .font(.caption2.monospacedDigit().weight(.medium))
-                        .foregroundStyle(.white.opacity(0.65))
+                        .foregroundStyle(Color.primary.opacity(0.65))
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
-                        .background(.white.opacity(0.08), in: Capsule())
+                        .background(Color.primary.opacity(0.08), in: Capsule())
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier("tabs.group.\(group.id)")
                 Spacer(minLength: 0)
+                Menu {
+                    Button(FeatureText.text(tabManager.pinnedOverviewGroupIDs.contains(group.id) ? "Unpin group" : "Pin group")) { tabManager.togglePinnedOverviewGroup(group.id) }
+                    Button(FeatureText.text("Rename group")) { groupName = group.title; renaming = true }
+                    if tabManager.overviewGroupNames[group.id] != nil {
+                        Button(FeatureText.text("Use website name")) { tabManager.renameOverviewGroup(group.id, to: "") }
+                    }
+                } label: { Image(systemName: "ellipsis").foregroundStyle(Color.primary.opacity(0.8)).frame(width: 44, height: 44) }
+                .accessibilityLabel(LanguageManager.shared.localizedString("show_more"))
+                .accessibilityIdentifier("tabs.group.options.\(group.id)")
+                .alert(FeatureText.text("Rename group"), isPresented: $renaming) {
+                    TextField(LanguageManager.shared.localizedString("group_name"), text: $groupName)
+                    Button(LanguageManager.shared.localizedString("save")) { tabManager.renameOverviewGroup(group.id, to: groupName) }
+                    Button(ToolText.text("cancel"), role: .cancel) {}
+                }
                 Button(role: .destructive) { pendingClose = group } label: {
                     Image(systemName: "trash")
                         .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(Color.primary.opacity(0.8))
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
@@ -1175,7 +1215,7 @@ private struct TabOverviewCard: View {
                     }
                 Text(displayTitle)
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(.white.opacity(isActive ? 1 : 0.78))
+                    .foregroundStyle(Color.primary.opacity(isActive ? 1 : 0.78))
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, minHeight: compactTitleHeight, maxHeight: compactTitleHeight, alignment: .topLeading)

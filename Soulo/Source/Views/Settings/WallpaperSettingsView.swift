@@ -24,7 +24,8 @@ struct WallpaperSettingsView: View {
                     HStack(spacing: 12) {
                         ForEach(WallpaperSource.allCases, id: \.self) { src in sourceTile(src) }
                     }.padding(.vertical, 10).padding(.horizontal, 4)
-                }.listRowBackground(Color.clear).listRowInsets(EdgeInsets())
+                }.accessibilityIdentifier("wallpaper.sources")
+                .listRowBackground(Color.clear).listRowInsets(EdgeInsets())
             } header: { Label(LText("wallpaper_source"), systemImage: HomeToolbarAction.wallpaper.listSymbol) }
 
             // 2. Auto Refresh
@@ -39,10 +40,8 @@ struct WallpaperSettingsView: View {
                     LText("wallpaper_only_favorites"),
                     isOn: $wallpaperManager.onlyUseFavoriteWallpapers
                 )
-                .disabled(
-                    wallpaperManager.favorites.isEmpty
-                        && !wallpaperManager.onlyUseFavoriteWallpapers
-                )
+                .disabled(wallpaperManager.favorites.isEmpty)
+                .accessibilityIdentifier("wallpaper.only-favorites")
                 Text(LText("wallpaper_only_favorites_desc"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -174,7 +173,10 @@ struct WallpaperSettingsView: View {
 
     private func sourceTile(_ src: WallpaperSource) -> some View {
         let selected = wallpaperManager.source == src
-        return Button { wallpaperManager.source = src; HapticsManager.selection() } label: {
+        return Button {
+            HapticsManager.selection()
+            Task { await wallpaperManager.selectSource(src) }
+        } label: {
             VStack(spacing: 8) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12).fill(selected ? Color.themePrimary.opacity(0.15) : Color(uiColor: .secondarySystemFill)).frame(width: 80, height: 60)
@@ -184,6 +186,8 @@ struct WallpaperSettingsView: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("wallpaper.source.\(src.rawValue)")
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     @ViewBuilder

@@ -31,9 +31,11 @@ struct SearchHistoryContentView: View {
     @ObservedObject private var platformStore = PlatformDataStore.shared
     @State private var filterText = ""
     @State private var showClearAlert = false
+    @State private var kind = "all"
+    @State private var groupByPlatform = false
 
     private var visibleHistory: [SearchHistoryItem] {
-        allHistory.filter { SearchHistoryService.isVisibleInHistory($0) }
+        allHistory.filter { SearchHistoryService.isVisibleInHistory($0) && (kind == "all" || (kind == "pages" ? $0.isWebVisit : !$0.isWebVisit)) }
     }
 
     private var deduped: [SearchHistoryItem] {
@@ -47,7 +49,7 @@ struct SearchHistoryContentView: View {
             }
         for item in source {
             let key = item.visitedURLString.map { "url:\($0)" }
-                ?? "search:\(item.keyword.lowercased())"
+                ?? "search:\(item.platformID?.uuidString ?? "all"):\(item.keyword.lowercased())"
             if !seen.contains(key) {
                 seen.insert(key)
                 result.append(item)
@@ -57,6 +59,14 @@ struct SearchHistoryContentView: View {
     }
 
     private var grouped: [(title: String, items: [SearchHistoryItem])] {
+        if groupByPlatform {
+            let platforms = Dictionary(uniqueKeysWithValues: platformStore.platforms.map { ($0.id, $0) })
+            return Dictionary(grouping: deduped, by: { $0.platformID }).map { id, items in
+                let title = id.flatMap { platforms[$0] }.map { $0.isBuiltIn ? LanguageManager.shared.localizedString($0.name) : $0.name }
+                    ?? FeatureText.text("Other")
+                return (title: title, items: items)
+            }.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+        }
         let calendar = Calendar.current
         let todayStart = calendar.startOfDay(for: Date())
         let yesterdayStart = calendar.date(byAdding: .day, value: -1, to: todayStart)!
@@ -135,6 +145,17 @@ struct SearchHistoryContentView: View {
         }
         .toolbar {
             if libraryPageIsActive {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Picker(FeatureText.text("History type"), selection: $kind) {
+                            Text(FeatureText.text("All history")).tag("all")
+                            Text(FeatureText.text("Searches")).tag("searches")
+                            Text(FeatureText.text("Visited pages")).tag("pages")
+                        }
+                        Toggle(FeatureText.text("Group by platform"), isOn: $groupByPlatform)
+                    } label: { Image(systemName: "line.3.horizontal.decrease.circle") }
+                    .accessibilityLabel(FeatureText.text("Filter history"))
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button(role: .destructive) { showClearAlert = true } label: {
                         Image(systemName: "trash").font(.system(size: AppControlMetrics.iconSize, weight: .semibold))

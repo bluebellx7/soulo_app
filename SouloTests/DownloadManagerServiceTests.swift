@@ -5,6 +5,157 @@ import XCTest
 
 @MainActor
 final class DownloadManagerServiceTests: XCTestCase {
+    func testDeletingPartialMediaClearsItsRecentEntryAndPositionAfterRemoval() throws {
+        let recent = RecentLocalPlaybackStore(userDefaults: defaults, rootURL: directory)
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory, recentPlaybackStore: recent)
+        let (item, url) = service.beginDownload(suggestedFilename: "partial.mp4", sourceURL: nil)
+        try Data("partial media".utf8).write(to: url)
+        recent.record(url: url, title: "Partial")
+        defaults.set(25.0, forKey: MediaSession.positionKey(url))
+        let unrelated = directory.appendingPathComponent("other.mp4")
+        defaults.set(99.0, forKey: MediaSession.positionKey(unrelated))
+        service.delete(item)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+        XCTAssertNil(recent.latestURL)
+        XCTAssertNil(defaults.object(forKey: MediaSession.positionKey(url)))
+        XCTAssertEqual(defaults.double(forKey: MediaSession.positionKey(unrelated)), 99)
+    }
+
+    func testDeletingOnlyAFinishedRecordPreservesRecentPlaybackAndPosition() throws {
+        let recent = RecentLocalPlaybackStore(userDefaults: defaults, rootURL: directory)
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory, recentPlaybackStore: recent)
+        let (stale, url) = service.beginDownload(suggestedFilename: "completed.mp4", sourceURL: nil)
+        let bytes = Data("saved media".utf8)
+        try bytes.write(to: url)
+        service.markFinished(id: stale.id)
+        recent.record(url: url, title: "Keep")
+        defaults.set(100.0, forKey: MediaSession.positionKey(url))
+        service.delete(stale)
+        XCTAssertEqual(try Data(contentsOf: url), bytes)
+        XCTAssertEqual(recent.latestURL?.path, url.resolvingSymlinksInPath().path)
+        XCTAssertEqual(recent.title, "Keep")
+        XCTAssertEqual(defaults.double(forKey: MediaSession.positionKey(url)), 100)
+    }
+
+    func testFailedFileRemovalDoesNotDiscardRecentPlaybackOrItsPosition() throws {
+        let recent = RecentLocalPlaybackStore(userDefaults: defaults, rootURL: directory)
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory, recentPlaybackStore: recent,
+            fileRemover: { _ in throw CocoaError(.fileWriteNoPermission) })
+        let (item, url) = service.beginDownload(suggestedFilename: "keep.mp4", sourceURL: nil)
+        let bytes = Data("cannot remove this media".utf8)
+        try bytes.write(to: url)
+        recent.record(url: url, title: "Keep")
+        defaults.set(75.0, forKey: MediaSession.positionKey(url))
+        service.delete(item)
+        XCTAssertEqual(try Data(contentsOf: url), bytes)
+        XCTAssertEqual(recent.latestURL?.path, url.resolvingSymlinksInPath().path)
+        XCTAssertEqual(defaults.double(forKey: MediaSession.positionKey(url)), 75)
+    }
+
+    func testARemoverThatLeavesTheFileDoesNotClearPlaybackMetadata() throws {
+        let recent = RecentLocalPlaybackStore(userDefaults: defaults, rootURL: directory)
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory, recentPlaybackStore: recent, fileRemover: { _ in })
+        let (item, url) = service.beginDownload(suggestedFilename: "owned.mp4", sourceURL: nil)
+        try Data("still owned".utf8).write(to: url)
+        recent.record(url: url, title: "Keep")
+        defaults.set(15.0, forKey: MediaSession.positionKey(url))
+        service.delete(item)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
+        XCTAssertNotNil(recent.latestURL)
+        XCTAssertEqual(defaults.double(forKey: MediaSession.positionKey(url)), 15)
+    }
+
+    func testDeletingADirectoryAlsoClearsTheRecentDescendantPosition() throws {
+        let recent = RecentLocalPlaybackStore(userDefaults: defaults, rootURL: directory)
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory, recentPlaybackStore: recent)
+        let (item, folder) = service.beginDownload(suggestedFilename: "PartialFolder", sourceURL: nil)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let child = folder.appendingPathComponent("episode.mp4")
+        try Data("partial episode".utf8).write(to: child)
+        recent.record(url: child, title: "Episode")
+        defaults.set(35.0, forKey: MediaSession.positionKey(child.resolvingSymlinksInPath()))
+        service.delete(item)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: folder.path))
+        XCTAssertNil(recent.latestURL)
+        XCTAssertNil(defaults.object(forKey: MediaSession.positionKey(child.resolvingSymlinksInPath())))
+    }
+
+    func testConfirmedDeletionHookRejectsRetainedFilesAndCleansOnlyAfterNativeOrFileRemoval() throws {
+        let recent = RecentLocalPlaybackStore(userDefaults: defaults, rootURL: directory)
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory, recentPlaybackStore: recent)
+        let (item, url) = service.beginDownload(suggestedFilename: "complete.mp4", sourceURL: nil)
+        try Data("retained media".utf8).write(to: url)
+        service.markFinished(id: item.id)
+        recent.record(url: url, title: "Keep")
+        defaults.set(50.0, forKey: MediaSession.positionKey(url))
+        XCTAssertFalse(service.didDeleteLocalFile(at: url))
+        XCTAssertFalse(service.didDeleteLocalFile(at: directory.deletingLastPathComponent().appendingPathComponent("external.mp4")))
+        XCTAssertNotNil(recent.latestURL)
+        XCTAssertEqual(defaults.double(forKey: MediaSession.positionKey(url)), 50)
+        service.delete(item)
+        XCTAssertNotNil(recent.latestURL, "Removing the completed row retains the file and its continuation")
+        try FileManager.default.removeItem(at: url)
+        XCTAssertTrue(service.didDeleteLocalFile(at: url))
+        XCTAssertNil(recent.latestURL)
+        XCTAssertNil(defaults.object(forKey: MediaSession.positionKey(url)))
+    }
+
+    func testNestedFinishedDownloadSurvivesRelocatedAppContainer() throws {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let (item, original) = service.beginDownload(suggestedFilename: "episode.mp4", sourceURL: nil)
+        let bytes = Data("nested downloaded video".utf8)
+        try bytes.write(to: original); service.markFinished(id: item.id)
+        let folder = directory.appendingPathComponent("Series/Season 1")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let target = folder.appendingPathComponent(original.lastPathComponent)
+        try FileManager.default.moveItem(at: original, to: target)
+        service.updateFileReference(from: original, to: target)
+        var saved = try JSONDecoder().decode([BrowserDownloadItem].self, from: XCTUnwrap(defaults.data(forKey: "soulo_browser_downloads")))
+        saved[0].localPath = "/old-container/Documents/Downloads/Series/Season 1/episode.mp4"
+        defaults.set(try JSONEncoder().encode(saved), forKey: "soulo_browser_downloads")
+        let restored = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        XCTAssertEqual(restored.downloads.count, 1)
+        XCTAssertEqual(restored.downloads.first?.id, item.id)
+        XCTAssertEqual(restored.downloads.first?.localURL, target)
+        XCTAssertEqual(try Data(contentsOf: target), bytes)
+    }
+
+    func testMovingParentFolderUpdatesNestedDownloadReferencesAndPreservesTorrentTitle() throws {
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        let parent = directory.appendingPathComponent("before")
+        let target = directory.appendingPathComponent("after")
+        try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+        let (file, fileURL) = service.beginDownload(suggestedFilename: "notes.txt", sourceURL: nil)
+        try Data("notes".utf8).write(to: fileURL)
+        let nestedFile = parent.appendingPathComponent("notes.txt")
+        try FileManager.default.moveItem(at: fileURL, to: nestedFile)
+        service.updateFileReference(from: fileURL, to: nestedFile); service.markFinished(id: file.id)
+        let (torrent, torrentURL) = service.beginDownload(suggestedFilename: "reserved-torrent", sourceURL: nil, transport: .torrent)
+        try FileManager.default.createDirectory(at: torrentURL, withIntermediateDirectories: true)
+        let nestedTorrent = parent.appendingPathComponent("reserved-torrent")
+        try FileManager.default.moveItem(at: torrentURL, to: nestedTorrent)
+        service.updateFileReference(from: torrentURL, to: nestedTorrent)
+        service.renameTorrent(id: torrent.id, name: "Movie metadata title")
+        try FileManager.default.moveItem(at: parent, to: target)
+        service.updateFileReference(from: parent, to: target)
+        XCTAssertEqual(service.downloads.first(where: { $0.id == file.id })?.localURL, target.appendingPathComponent("notes.txt"))
+        XCTAssertEqual(service.downloads.first(where: { $0.id == torrent.id })?.localURL, target.appendingPathComponent("reserved-torrent"))
+        XCTAssertEqual(service.downloads.first(where: { $0.id == torrent.id })?.fileName, "Movie metadata title")
+    }
+
+    func testUnreadableHistoryIsNotAutomaticallyOverwrittenOnStartup() {
+        let original = Data("{broken download history".utf8)
+        defaults.set(original, forKey: "soulo_browser_downloads")
+        let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
+        XCTAssertTrue(service.hasUnreadableHistory)
+        XCTAssertTrue(service.downloads.isEmpty)
+        service.removeMissingFiles()
+        service.reconcileBackgroundDownloads(activeIDs: [])
+        service.reconcileHLSDownloads(activeIDs: [])
+        XCTAssertTrue(service.hasUnreadableHistory)
+        XCTAssertEqual(defaults.data(forKey: "soulo_browser_downloads"), original)
+    }
+
     func testSavedDownloadsSurviveRelocatedAppContainerWithoutAdoptingUnrelatedFiles() throws {
         let service = DownloadManagerService(userDefaults: defaults, storageDirectory: directory)
         let (item, url) = service.beginDownload(suggestedFilename: "episode.mp4", sourceURL: nil)
