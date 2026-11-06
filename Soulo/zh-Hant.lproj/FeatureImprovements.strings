@@ -62,7 +62,6 @@
 "Select visible" = "全選目前結果";
 "Settings backups" = "設定備份";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "設定備份包含外觀、首頁、瀏覽、隱私和平台偏好，不含書籤、歷史記錄、登入狀態和下載檔案。書籤可在書籤清單中透過 HTML 檔案單獨匯入匯出。";
-"Show duplicates" = "只顯示重複項目";
 "Sleep timer" = "睡眠定時";
 "Smallest first" = "由小到大";
 "Sort" = "排序";

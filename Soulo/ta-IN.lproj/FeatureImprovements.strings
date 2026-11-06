@@ -62,7 +62,6 @@
 "Select visible" = "அனைத்து முடிவுகளையும் தேர்ந்தெடுக்கவும்";
 "Settings backups" = "அமைப்புகள் காப்புப்பிரதிகள்";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "அமைப்புகளின் காப்புப்பிரதிகளில் தோற்றம், வீடு, உலாவல், தனியுரிமை மற்றும் இயங்குதள விருப்பத்தேர்வுகள் உள்ளன. அவை புக்மார்க்குகள், வரலாறு, உள்நுழைவுகள் மற்றும் பதிவிறக்கம் செய்யப்பட்ட கோப்புகளை விலக்குகின்றன. புக்மார்க் இறக்குமதி மற்றும் ஏற்றுமதியை புக்மார்க் பட்டியலில் HTML பயன்படுத்தவும்.";
-"Show duplicates" = "நகல்களை மட்டும் காட்டு";
 "Sleep timer" = "ஸ்லீப் டைமர்";
 "Smallest first" = "முதலில் சிறியது";
 "Sort" = "வரிசைப்படுத்து";

@@ -62,7 +62,6 @@
 "Select visible" = "حدد كافة النتائج";
 "Settings backups" = "النسخ الاحتياطية للإعدادات";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "تحتوي النسخ الاحتياطية للإعدادات على تفضيلات المظهر والمنزل والتصفح والخصوصية والنظام الأساسي. وهي تستبعد الإشارات المرجعية والسجل وتسجيلات الدخول والملفات التي تم تنزيلها. يستخدم استيراد وتصدير الإشارات المرجعية HTML في قائمة الإشارات المرجعية.";
-"Show duplicates" = "إظهار التكرارات فقط";
 "Sleep timer" = "توقيت النوم";
 "Smallest first" = "الأصغر أولاً";
 "Sort" = "فرز";

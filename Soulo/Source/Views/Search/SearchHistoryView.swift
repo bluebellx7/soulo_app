@@ -109,6 +109,7 @@ struct SearchHistoryContentView: View {
                         )
                     }
                 }
+                .preservesKeyboardFocusOnTap()
                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
             }
 
@@ -135,14 +136,6 @@ struct SearchHistoryContentView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .onTapGesture {
-            UIApplication.shared.sendAction(
-                #selector(UIResponder.resignFirstResponder),
-                to: nil,
-                from: nil,
-                for: nil
-            )
-        }
         .toolbar {
             if libraryPageIsActive {
                 ToolbarItem(placement: .primaryAction) {

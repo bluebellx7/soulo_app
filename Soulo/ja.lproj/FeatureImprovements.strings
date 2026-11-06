@@ -62,7 +62,6 @@
 "Select visible" = "表示中をすべて選択";
 "Settings backups" = "設定のバックアップ";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "設定のバックアップには、外観、ホーム、ブラウジング、プライバシー、プラットフォームの設定が含まれます。ブックマーク、履歴、ログイン、ダウンロードされたファイルは除外されます。ブックマークのインポートとエクスポートでは、ブックマーク リストの HTML を使用します。";
-"Show duplicates" = "重複のみ表示";
 "Sleep timer" = "スリープタイマー";
 "Smallest first" = "小さいものから順";
 "Sort" = "並べ替え";

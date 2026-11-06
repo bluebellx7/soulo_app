@@ -62,7 +62,6 @@
 "Select visible" = "표시 항목 모두 선택";
 "Settings backups" = "설정 백업";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "설정 백업에는 외모, 홈, 탐색, 개인 정보 보호 및 플랫폼 기본 설정이 포함됩니다. 북마크, 기록, 로그인 및 다운로드한 파일은 제외됩니다. 북마크 가져오기 및 내보내기는 북마크 목록의 HTML을 사용합니다.";
-"Show duplicates" = "중복 항목만 표시";
 "Sleep timer" = "취침 타이머";
 "Smallest first" = "작은 것부터";
 "Sort" = "정렬";

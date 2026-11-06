@@ -205,9 +205,6 @@ struct HomeView: View {
             Color(red: 0.05, green: 0.07, blue: 0.16)
                 .ignoresSafeArea()
         }
-        .onTapGesture {
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-        }
         .sheet(item: $homeToolbarDestination) { HomeToolbarDestinationView(action: $0) }
         .sheet(item: $downloadCreation) { NewDownloadTaskView(initialURL: $0.url) }
         .sheet(isPresented: $showSettings) {

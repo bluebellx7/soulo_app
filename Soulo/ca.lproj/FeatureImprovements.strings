@@ -62,7 +62,6 @@
 "Select visible" = "Seleccioneu tots els resultats";
 "Settings backups" = "Còpies de seguretat de configuració";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "Les còpies de seguretat de la configuració contenen l'aparença, la llar, la navegació, la privadesa i les preferències de plataforma. Exclouen les adreces d'interès, l'historial, els inicis de sessió i els fitxers baixats. La importació i exportació d'adreces d'interès utilitza HTML a la llista d'adreces d'interès.";
-"Show duplicates" = "Mostra només els duplicats";
 "Sleep timer" = "Temporitzador de son";
 "Smallest first" = "El més petit primer";
 "Sort" = "Ordena";

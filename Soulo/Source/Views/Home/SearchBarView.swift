@@ -123,6 +123,7 @@ struct SearchBarView: View {
                 .transition(.scale.combined(with: .opacity))
                 .accessibilityIdentifier("search.clear")
                 .accessibilityLabel(LanguageManager.shared.localizedString("accessibility_clear_search"))
+                .preservesKeyboardFocusOnTap()
             }
 
             if let onMicTap {

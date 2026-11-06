@@ -62,7 +62,6 @@
 "Select visible" = "Valitse kaikki tulokset";
 "Settings backups" = "Asetusten varmuuskopiot";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "Asetusten varmuuskopiot sisältävät ulkoasun, kodin, selailun, yksityisyyden ja alustan asetukset. Ne eivät sisällä kirjanmerkkejä, historiaa, kirjautumisia ja ladattuja tiedostoja. Kirjanmerkkien tuonti ja vienti käytä HTML kirjanmerkkiluettelossa.";
-"Show duplicates" = "Näytä vain kaksoiskappaleet";
 "Sleep timer" = "Uniajastin";
 "Smallest first" = "Pienin ensin";
 "Sort" = "Lajittele";

@@ -94,6 +94,7 @@ private struct SouloWindowRoot: View {
 
     var body: some View {
         HomeView()
+            .dismissKeyboardOnBackgroundTap()
             .environmentObject(searchVM)
             .environmentObject(tabManager)
             .task {

@@ -62,7 +62,6 @@
 "Select visible" = "Välj alla resultat";
 "Settings backups" = "Säkerhetskopiering av inställningar";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "Säkerhetskopieringar av inställningar innehåller utseende, hem, surfning, integritet och plattformsinställningar. De exkluderar bokmärken, historik, inloggningar och nedladdade filer. Importera och exportera bokmärken använd HTML i bokmärkeslistan.";
-"Show duplicates" = "Visa endast dubbletter";
 "Sleep timer" = "Insomningstimer";
 "Smallest first" = "Minsta först";
 "Sort" = "Sortera";

@@ -62,7 +62,6 @@
 "Select visible" = "Vyberte všetky výsledky";
 "Settings backups" = "Zálohy nastavení";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "Zálohy nastavení obsahujú vzhľad, domov, prehliadanie, súkromie a preferencie platformy. Nezahŕňajú záložky, históriu, prihlásenia a stiahnuté súbory. Import a export záložiek použite HTML v zozname záložiek.";
-"Show duplicates" = "Zobraziť iba duplikáty";
 "Sleep timer" = "Časovač spánku";
 "Smallest first" = "Najprv najmenší";
 "Sort" = "Triediť";

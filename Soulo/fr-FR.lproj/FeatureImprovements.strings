@@ -62,7 +62,6 @@
 "Select visible" = "Tout sélectionner";
 "Settings backups" = "Sauvegardes des paramètres";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "Les sauvegardes des paramètres contiennent les préférences d’apparence, d’accueil, de navigation, de confidentialité et de plate-forme. Ils excluent les signets, l'historique, les connexions et les fichiers téléchargés. L'importation et l'exportation de signets utilisent HTML dans la liste des signets.";
-"Show duplicates" = "Doublons uniquement";
 "Sleep timer" = "Minuterie de mise en veille";
 "Smallest first" = "Le plus petit en premier";
 "Sort" = "Trier";

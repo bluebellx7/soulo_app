@@ -62,7 +62,6 @@
 "Select visible" = "Chọn tất cả kết quả";
 "Settings backups" = "Sao lưu cài đặt";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "Bản sao lưu cài đặt bao gồm các tùy chọn về giao diện, trang chủ, trình duyệt, quyền riêng tư và nền tảng. Chúng loại trừ dấu trang, lịch sử, thông tin đăng nhập và tệp đã tải xuống. Nhập và xuất dấu trang sử dụng HTML trong danh sách dấu trang.";
-"Show duplicates" = "Chỉ hiển thị các bản sao";
 "Sleep timer" = "Hẹn giờ ngủ";
 "Smallest first" = "Nhỏ nhất đầu tiên";
 "Sort" = "Sắp xếp";

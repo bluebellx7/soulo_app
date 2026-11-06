@@ -62,7 +62,6 @@
 "Select visible" = "Izberite vse rezultate";
 "Settings backups" = "Varnostne kopije nastavitev";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "Varnostne kopije nastavitev vsebujejo nastavitve videza, doma, brskanja, zasebnosti in platforme. Izključujejo zaznamke, zgodovino, prijave in prenesene datoteke. Za uvoz in izvoz zaznamkov uporabite HTML na seznamu zaznamkov.";
-"Show duplicates" = "Prikaži samo dvojnike";
 "Sleep timer" = "Časovnik za spanje";
 "Smallest first" = "Najprej najmanjši";
 "Sort" = "Razvrsti";

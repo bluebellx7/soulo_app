@@ -44,6 +44,9 @@ struct LibraryQueryControls: View {
             .accessibilityLabel(FeatureText.text("Filter and sort"))
             .accessibilityIdentifier("library.filter-sort")
         }
+        .frame(minHeight: AppControlMetrics.minimumHitSize)
+        .preservesKeyboardFocusOnTap()
+        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 8))
     }
 }
 

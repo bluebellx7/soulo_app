@@ -62,7 +62,6 @@
 "Select visible" = "Tüm sonuçları seç";
 "Settings backups" = "Ayarlar yedeklemeleri";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "Ayarlar yedeklemeleri görünüm, giriş, göz atma, gizlilik ve platform tercihlerini içerir. Yer imlerini, geçmişi, oturum açma bilgilerini ve indirilen dosyaları hariç tutarlar. Yer imi içe ve dışa aktarma, yer imi listesinde HTML kullanın.";
-"Show duplicates" = "Yalnızca kopyaları göster";
 "Sleep timer" = "Uyku zamanlayıcısı";
 "Smallest first" = "Önce en küçük";
 "Sort" = "Sırala";

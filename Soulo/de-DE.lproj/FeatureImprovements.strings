@@ -62,7 +62,6 @@
 "Select visible" = "Sichtbare auswählen";
 "Settings backups" = "Backups der Einstellungen";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "Einstellungssicherungen enthalten Darstellungs-, Startseiten-, Browsing-, Datenschutz- und Plattformpräferenzen. Sie schließen Lesezeichen, Verlauf, Anmeldungen und heruntergeladene Dateien aus. Beim Import und Export von Lesezeichen wird HTML in der Lesezeichenliste verwendet.";
-"Show duplicates" = "Nur Duplikate";
 "Sleep timer" = "Sleep-Timer";
 "Smallest first" = "Das Kleinste zuerst";
 "Sort" = "Sortieren";

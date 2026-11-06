@@ -62,7 +62,6 @@
 "Select visible" = "सभी परिणाम चुनें";
 "Settings backups" = "सेटिंग्स बैकअप";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "सेटिंग्स बैकअप में उपस्थिति, घर, ब्राउज़िंग, गोपनीयता और प्लेटफ़ॉर्म प्राथमिकताएँ शामिल होती हैं। उनमें बुकमार्क, इतिहास, लॉगिन और डाउनलोड की गई फ़ाइलें शामिल नहीं हैं। बुकमार्क आयात और निर्यात बुकमार्क सूची में HTML का उपयोग करें।";
-"Show duplicates" = "केवल डुप्लिकेट दिखाएँ";
 "Sleep timer" = "नींद का टाइमर";
 "Smallest first" = "सबसे पहले सबसे छोटा";
 "Sort" = "क्रमबद्ध करें";

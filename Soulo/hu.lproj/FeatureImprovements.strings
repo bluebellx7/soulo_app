@@ -62,7 +62,6 @@
 "Select visible" = "Válassza ki az összes eredményt";
 "Settings backups" = "Beállítások biztonsági mentései";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "A beállítások biztonsági mentései a megjelenés, az otthon, a böngészés, az adatvédelem és a platform beállításait tartalmazzák. Nem tartalmazzák a könyvjelzőket, az előzményeket, a bejelentkezéseket és a letöltött fájlokat. A könyvjelzők importálása és exportálása használja a HTML elemet a könyvjelzőlistában.";
-"Show duplicates" = "Csak a duplikátumok megjelenítése";
 "Sleep timer" = "Elalváskapcsoló";
 "Smallest first" = "Először a legkisebb";
 "Sort" = "Rendezés";

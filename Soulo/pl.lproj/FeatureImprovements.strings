@@ -62,7 +62,6 @@
 "Select visible" = "Wybierz wszystkie wyniki";
 "Settings backups" = "Ustawienia kopii zapasowych";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "Kopie zapasowe ustawień obejmują preferencje dotyczące wyglądu, strony głównej, przeglądania, prywatności i platformy. Nie obejmują zakładek, historii, loginów i pobranych plików. Import i eksport zakładek Użyj HTML na liście zakładek.";
-"Show duplicates" = "Pokaż tylko duplikaty";
 "Sleep timer" = "Timer uśpienia";
 "Smallest first" = "Najpierw najmniejszy";
 "Sort" = "Sortuj";

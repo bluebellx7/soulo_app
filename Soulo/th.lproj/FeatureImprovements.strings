@@ -62,7 +62,6 @@
 "Select visible" = "เลือกผลลัพธ์ทั้งหมด";
 "Settings backups" = "การสำรองข้อมูลการตั้งค่า";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "การสำรองข้อมูลการตั้งค่าประกอบด้วยลักษณะที่ปรากฏ หน้าแรก การเรียกดู ความเป็นส่วนตัว และการตั้งค่าแพลตฟอร์ม โดยไม่รวมบุ๊กมาร์ก ประวัติ การเข้าสู่ระบบ และไฟล์ที่ดาวน์โหลด บุ๊กมาร์กนำเข้าและส่งออกใช้ HTML ในรายการบุ๊กมาร์ก";
-"Show duplicates" = "แสดงเฉพาะรายการที่ซ้ำกัน";
 "Sleep timer" = "ตั้งเวลาปิดเครื่อง";
 "Smallest first" = "เล็กที่สุดก่อน";
 "Sort" = "จัดเรียง";

@@ -42,28 +42,17 @@ struct BookmarksContentView: View {
     @State private var search = ""
     @State private var selecting = false
     @State private var selectedIDs = Set<UUID>()
-    @State private var onlyDuplicates = false
     @State private var confirmDeletion = false
     @EnvironmentObject private var tabManager: TabManager
 
-    private var duplicateIDs: Set<UUID> {
-        var seen = Set<String>()
-        return Set(bookmarks.reversed().compactMap { item in
-            let key = (item.folderID?.uuidString ?? "root") + "\n" + item.urlString
-            return seen.insert(key).inserted ? nil : item.id
-        })
-    }
-
     private var parentID: UUID? { path.last }
     private var visibleFolders: [BookmarkFolder] {
-        guard !onlyDuplicates else { return [] }
         return folders.filter { search.isEmpty ? $0.parentID == parentID : $0.title.localizedCaseInsensitiveContains(search) }
     }
     private var visibleBookmarks: [BookmarkItem] {
-        let duplicates = onlyDuplicates ? duplicateIDs : []
         return bookmarks.filter { item in
             let matches = search.isEmpty ? item.folderID == parentID : item.title.localizedCaseInsensitiveContains(search) || item.urlString.localizedCaseInsensitiveContains(search)
-            return matches && (!onlyDuplicates || duplicates.contains(item.id))
+            return matches
         }
     }
 
@@ -134,6 +123,7 @@ struct BookmarksContentView: View {
                         .accessibilityIdentifier("favorites.search")
                     if !search.isEmpty { Button { search = "" } label: { Image(systemName: "xmark.circle.fill") }.buttonStyle(.borderless) }
                 }
+                .preservesKeyboardFocusOnTap()
             }
             if let id = parentID, let folder = folders.first(where: { $0.id == id }) {
                 Section {
@@ -187,7 +177,6 @@ struct BookmarksContentView: View {
                         Button { selecting.toggle(); if !selecting { selectedIDs.removeAll() } } label: {
                             Label(ToolText.text(selecting ? "done" : "select"), systemImage: "checkmark.circle")
                         }
-                        Toggle(FeatureText.text("Show duplicates"), isOn: $onlyDuplicates)
                         Divider()
                         Button { importing = true } label: {
                             Label(ToolText.text("favorites_import"), systemImage: "square.and.arrow.down")

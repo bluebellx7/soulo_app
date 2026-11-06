@@ -64,7 +64,7 @@ final class LocalizationLayoutTests: XCTestCase {
             let confirmation = try XCTUnwrap(values["Delete %lld selected bookmarks?"], language.code)
             XCTAssertFalse(String(format: confirmation, Int64(3)).contains("%lld"), language.code)
         }
-        XCTAssertEqual(try table("zh-Hans")["Show duplicates"], "仅显示重复项")
+        XCTAssertEqual(try table("zh-Hans")["Reading list"], "阅读列表")
         XCTAssertEqual(try table("zh-Hant")["New window"], "新增視窗")
     }
 

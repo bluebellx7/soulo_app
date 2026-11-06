@@ -62,7 +62,6 @@
 "Select visible" = "全选当前结果";
 "Settings backups" = "设置备份";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "设置备份包含外观、首页、浏览、隐私和平台偏好，不含书签、历史记录、登录状态和下载文件。书签可在书签列表中通过 HTML 文件单独导入导出。";
-"Show duplicates" = "仅显示重复项";
 "Sleep timer" = "睡眠定时";
 "Smallest first" = "从小到大";
 "Sort" = "排序";

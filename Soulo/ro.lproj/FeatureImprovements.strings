@@ -62,7 +62,6 @@
 "Select visible" = "Selectați toate rezultatele";
 "Settings backups" = "Backup-uri pentru setări";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "Backup-urile setărilor conțin aspectul, acasă, navigarea, confidențialitatea și preferințele platformei. Acestea exclud marcajele, istoricul, datele de conectare și fișierele descărcate. Importul și exportul marcajelor utilizați HTML în lista de marcaje.";
-"Show duplicates" = "Afișați numai duplicatele";
 "Sleep timer" = "Cronometru de somn";
 "Smallest first" = "Cel mai mic mai întâi";
 "Sort" = "Sortează";

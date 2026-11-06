@@ -62,7 +62,6 @@
 "Select visible" = "Выбрать все результаты";
 "Settings backups" = "Резервные копии настроек";
 "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list." = "Резервные копии настроек содержат настройки внешнего вида, дома, просмотра, конфиденциальности и платформы. Они исключают закладки, историю, логины и загруженные файлы. Для импорта и экспорта закладок используйте HTML в списке закладок.";
-"Show duplicates" = "Показать только дубликаты";
 "Sleep timer" = "Таймер сна";
 "Smallest first" = "Сначала самый маленький";
 "Sort" = "Сортировать";
