@@ -52,12 +52,13 @@ final class NativeInputUITests: XCTestCase {
     }
 
     func testDownloadSearchRowMatchesBookmarksAndBlankTapsDismissLibraryKeyboards() throws {
-        let app = launch(); defer { app.terminate() }
+        let app = launch(extra: ["-files.gridView", "NO"]); defer { app.terminate() }
         app.open(try XCTUnwrap(URL(string: "soulo://downloads")))
         let field = app.textFields["library.search"].firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         let downloadRow = app.cells.containing(.textField, identifier: "library.search").firstMatch
         let downloadHeight = downloadRow.frame.height
+        let downloadLeft = downloadRow.frame.minX
         capture(app, name: "compact-download-search")
         field.tap(); field.typeText("NoMatching-QA")
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 3))
@@ -76,6 +77,16 @@ final class NativeInputUITests: XCTestCase {
         measurement.name = "search-row-heights"; measurement.lifetime = .keepAlways; add(measurement)
         bookmark.tap(); bookmark.typeText("Bookmark-QA")
         tapBlankBesideContent(app)
+        app.buttons["library.section.files"].tap()
+        let fileSearch = app.textFields["library.search"].firstMatch
+        XCTAssertTrue(fileSearch.waitForExistence(timeout: 5))
+        let fileSearchRow = app.cells.containing(.textField, identifier: "library.search").firstMatch
+        XCTAssertEqual(fileSearchRow.frame.height, bookmarkHeight, accuracy: 1)
+        XCTAssertEqual(fileSearchRow.frame.minX, downloadLeft, accuracy: 1)
+        capture(app, name: "aligned-files-search-and-continuation")
+        fileSearch.tap(); fileSearch.typeText("File-QA")
+        tapBlankBesideContent(app)
+        app.buttons["library.section.bookmarks"].tap()
         app.buttons["favorites.manage"].tap()
         XCTAssertTrue(app.buttons["Reading list"].firstMatch.waitForExistence(timeout: 3))
         XCTAssertFalse(app.buttons["Show duplicates"].exists)

@@ -144,6 +144,8 @@ struct DownloadManagerContentView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .listSectionSpacing(12)
+        .contentMargins(.top, 8, for: .scrollContent)
         .toolbar {
             if libraryPageIsActive {
                 ToolbarItem(placement: .primaryAction) {

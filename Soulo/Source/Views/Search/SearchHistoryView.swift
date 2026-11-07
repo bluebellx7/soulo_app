@@ -94,12 +94,12 @@ struct SearchHistoryContentView: View {
             if !visibleHistory.isEmpty {
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.tertiary)
-                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
                     TextField(LanguageManager.shared.localizedString("search_placeholder"), text: $filterText)
-                        .font(.system(size: 14))
                         .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .accessibilityIdentifier("history.search")
                     if !filterText.isEmpty {
                         Button { filterText = "" } label: {
                             Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
@@ -109,8 +109,9 @@ struct SearchHistoryContentView: View {
                         )
                     }
                 }
+                .frame(minHeight: AppControlMetrics.minimumHitSize)
                 .preservesKeyboardFocusOnTap()
-                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
             }
 
             if visibleHistory.isEmpty {
@@ -136,6 +137,8 @@ struct SearchHistoryContentView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .listSectionSpacing(12)
+        .contentMargins(.top, 8, for: .scrollContent)
         .toolbar {
             if libraryPageIsActive {
                 ToolbarItem(placement: .primaryAction) {

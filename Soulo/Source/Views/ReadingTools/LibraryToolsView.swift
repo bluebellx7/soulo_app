@@ -75,11 +75,17 @@ struct LibraryFilesView: View {
             if let recentMedia {
                 HStack(spacing: 12) {
                     Button { open(recentMedia) } label: {
-                        Label { VStack(alignment: .leading, spacing: 3) {
-                            Text(FeatureText.text("Continue playing")).font(.subheadline.weight(.semibold))
-                            Text(recentPlayback.title ?? recentMedia.url.lastPathComponent).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                        } } icon: { Image(systemName: "play.circle") }
+                        HStack(spacing: 12) {
+                            Image(systemName: "play.circle")
+                                .font(.system(size: 22))
+                                .frame(width: 48, height: 48)
+                                .accessibilityHidden(true)
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(FeatureText.text("Continue playing")).font(.subheadline.weight(.semibold))
+                                Text(recentPlayback.title ?? recentMedia.url.lastPathComponent).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                            }
                             .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }.buttonStyle(.plain).frame(minHeight: 44)
                         .accessibilityIdentifier("files.continue-playing")
                     Button {
@@ -96,14 +102,27 @@ struct LibraryFilesView: View {
                     .accessibilityLabel(LanguageManager.shared.localizedString("delete") + " · " + FeatureText.text("Continue playing"))
                     .accessibilityIdentifier("files.dismiss-continue-playing")
                 }
+                .padding(.vertical, 12)
+                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 8))
+                .alignmentGuide(.listRowSeparatorLeading) { _ in 56 }
             }
             if let recentBook {
                 Button { book = recentBook } label: {
-                    Label { VStack(alignment: .leading, spacing: 3) {
-                        Text(FeatureText.text("Continue reading")).font(.subheadline.weight(.semibold))
-                        Text(recentBook.name).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    } } icon: { Image(systemName: "book") }
+                    HStack(spacing: 12) {
+                        Image(systemName: "book")
+                            .font(.system(size: 22))
+                            .frame(width: 48, height: 48)
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(FeatureText.text("Continue reading")).font(.subheadline.weight(.semibold))
+                            Text(recentBook.name).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }.buttonStyle(.plain).frame(minHeight: 44)
+                    .padding(.vertical, 12)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 8))
+                    .alignmentGuide(.listRowSeparatorLeading) { _ in 56 }
             }
         }
     }
@@ -313,89 +332,94 @@ struct LibraryFilesView: View {
     }
     private var listContent: some View {
         List {
-            queryControls
-            continueActions
-            if hasLoaded && !files.isEmpty && visibleFiles.isEmpty {
-                ContentUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
-            }
-            if hasLoaded && files.isEmpty {
-                IllustratedToolEmptyState(scene: .files, title: ToolText.text("files_empty"))
-            }
-            ForEach(visibleFiles) { file in
-                HStack(spacing: 8) {
-                    if file.directory && !isSelecting {
-                        NavigationLink { LibraryFilesView(directory: file.url) } label: { fileLabel(file) }
-                    } else {
-                        Button { open(file) } label: { fileLabel(file) }
-                            .buttonStyle(.plain)
-                        if isSelecting {
-                            Button {
-                                if !selected.insert(file.id).inserted { selected.remove(file.id) }
-                            } label: {
-                                Image(systemName: selected.contains(file.id) ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 19, weight: .regular))
-                                    .foregroundStyle(selected.contains(file.id) ? Color.themePrimary : Color.secondary.opacity(0.45))
-                                    .frame(width: 44, height: 44)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.borderless)
-                            .accessibilityLabel(ToolText.text("select") + " " + file.url.lastPathComponent)
-                            .accessibilityIdentifier("files.select.\(file.url.lastPathComponent)")
-                            .accessibilityAddTraits(selected.contains(file.id) ? .isSelected : [])
-                        }
-                    }
+            Section { queryControls }
+            Section {
+                continueActions
+                if hasLoaded && !files.isEmpty && visibleFiles.isEmpty {
+                    ContentUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
                 }
-                .padding(.vertical, 12)
-                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 8))
-                .listRowBackground(selected.contains(file.id) ? Color.themePrimary.opacity(0.07) : Color.clear)
-                .listRowSeparatorTint(Color.primary.opacity(0.08))
-                .alignmentGuide(.listRowSeparatorLeading) { _ in 56 }
-                .modifier(LibraryFileDragModifier(url: file.url, enabled: !file.directory && !isSelecting && !busy
-                    && !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased())))
-                .contextMenu {
-                    if !file.directory {
-                        if !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased()) {
-                            Button { plainTextFile = file } label: { ToolMenuLabel(key: "open_as_text", symbol: "doc.text") }
-                        }
-                        if file.url.pathExtension.lowercased() != "movpkg" { renameAction(file) }
-                        if !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased()) {
-                            ShareLink(item: file.url) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
-                        }
-                        if file.url.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
-                            Button {
-                                exportHLS(file)
-                            } label: {
-                                Label(LanguageManager.shared.localizedString("save") + " HLS", systemImage: "square.and.arrow.down")
+                if hasLoaded && files.isEmpty {
+                    IllustratedToolEmptyState(scene: .files, title: ToolText.text("files_empty"))
+                }
+                ForEach(visibleFiles) { file in
+                    HStack(spacing: 8) {
+                        if file.directory && !isSelecting {
+                            NavigationLink { LibraryFilesView(directory: file.url) } label: { fileLabel(file) }
+                        } else {
+                            Button { open(file) } label: { fileLabel(file) }
+                                .buttonStyle(.plain)
+                            if isSelecting {
+                                Button {
+                                    if !selected.insert(file.id).inserted { selected.remove(file.id) }
+                                } label: {
+                                    Image(systemName: selected.contains(file.id) ? "checkmark.circle.fill" : "circle")
+                                        .font(.system(size: 19, weight: .regular))
+                                        .foregroundStyle(selected.contains(file.id) ? Color.themePrimary : Color.secondary.opacity(0.45))
+                                        .frame(width: 44, height: 44)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.borderless)
+                                .accessibilityLabel(ToolText.text("select") + " " + file.url.lastPathComponent)
+                                .accessibilityIdentifier("files.select.\(file.url.lastPathComponent)")
+                                .accessibilityAddTraits(selected.contains(file.id) ? .isSelected : [])
                             }
                         }
                     }
-                    if file.directory { renameAction(file) }
-                    if file.url.pathExtension.lowercased() != "movpkg" { moveAction([file.url]) }
-                    Button(ToolText.text("delete_files"), systemImage: "trash", role: .destructive) {
-                        pendingDeletion = [file.url]; deletionAnchor = file.id
+                    .padding(.vertical, 12)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 8))
+                    .listRowBackground(selected.contains(file.id) ? Color.themePrimary.opacity(0.07) : Color(uiColor: .secondarySystemGroupedBackground))
+                    .listRowSeparatorTint(Color.primary.opacity(0.08))
+                    .alignmentGuide(.listRowSeparatorLeading) { _ in 56 }
+                    .modifier(LibraryFileDragModifier(url: file.url, enabled: !file.directory && !isSelecting && !busy
+                        && !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased())))
+                    .contextMenu {
+                        if !file.directory {
+                            if !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased()) {
+                                Button { plainTextFile = file } label: { ToolMenuLabel(key: "open_as_text", symbol: "doc.text") }
+                            }
+                            if file.url.pathExtension.lowercased() != "movpkg" { renameAction(file) }
+                            if !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased()) {
+                                ShareLink(item: file.url) { Label(ToolText.text("share"), systemImage: "square.and.arrow.up") }
+                            }
+                            if file.url.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
+                                Button {
+                                    exportHLS(file)
+                                } label: {
+                                    Label(LanguageManager.shared.localizedString("save") + " HLS", systemImage: "square.and.arrow.down")
+                                }
+                            }
+                        }
+                        if file.directory { renameAction(file) }
+                        if file.url.pathExtension.lowercased() != "movpkg" { moveAction([file.url]) }
+                        Button(ToolText.text("delete_files"), systemImage: "trash", role: .destructive) {
+                            pendingDeletion = [file.url]; deletionAnchor = file.id
+                        }
                     }
+                    .swipeActions(edge: .trailing) {
+                        // Keep the row and its confirmation presenter visible until confirmed.
+                        Button {
+                            pendingDeletion = [file.url]; deletionAnchor = file.id
+                        } label: { Label(ToolText.text("delete_files"), systemImage: "trash") }
+                        .tint(.red)
+                    }
+                    .background(LibrarySwipeActionsRegion())
+                    .fileDeletionConfirmation(isPresented: deletionBinding(file.id), count: pendingDeletion.count, includesFolders: deletionIncludesFolders, confirm: deleteSelectedFiles)
                 }
-                .swipeActions(edge: .trailing) {
-                    // Keep the row and its confirmation presenter visible until confirmed.
-                    Button {
-                        pendingDeletion = [file.url]; deletionAnchor = file.id
-                    } label: { Label(ToolText.text("delete_files"), systemImage: "trash") }
-                    .tint(.red)
-                }
-                .background(LibrarySwipeActionsRegion())
-                .fileDeletionConfirmation(isPresented: deletionBinding(file.id), count: pendingDeletion.count, includesFolders: deletionIncludesFolders, confirm: deleteSelectedFiles)
             }
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .contentMargins(.top, 4, for: .scrollContent)
+        .listStyle(.insetGrouped)
+        .listSectionSpacing(12)
+        .contentMargins(.top, 8, for: .scrollContent)
         .accessibilityIdentifier("files.list")
     }
 
     private var gridContent: some View {
         GeometryReader { geometry in
             ScrollView {
-                queryControls.padding(.horizontal, 20)
+                queryControls
+                    .padding(.horizontal, 16)
+                    .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 26))
+                    .padding(.horizontal, 20)
                 VStack(alignment: .leading, spacing: 12) { continueActions }.padding(.horizontal, 20)
                 if hasLoaded && !files.isEmpty && visibleFiles.isEmpty {
                     ContentUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
@@ -466,6 +490,8 @@ struct LibraryFilesView: View {
                     .padding(.horizontal, 20).padding(.vertical, 18)
                 }
             }
+            .contentMargins(.top, 8, for: .scrollContent)
+            .background(Color(uiColor: .systemGroupedBackground))
             .accessibilityIdentifier("files.grid")
         }
     }

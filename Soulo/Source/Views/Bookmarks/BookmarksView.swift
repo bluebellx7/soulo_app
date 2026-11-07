@@ -123,7 +123,9 @@ struct BookmarksContentView: View {
                         .accessibilityIdentifier("favorites.search")
                     if !search.isEmpty { Button { search = "" } label: { Image(systemName: "xmark.circle.fill") }.buttonStyle(.borderless) }
                 }
+                .frame(minHeight: AppControlMetrics.minimumHitSize)
                 .preservesKeyboardFocusOnTap()
+                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
             }
             if let id = parentID, let folder = folders.first(where: { $0.id == id }) {
                 Section {
@@ -152,6 +154,8 @@ struct BookmarksContentView: View {
             }.listRowBackground(Color.clear)
         }
         .listStyle(.insetGrouped)
+        .listSectionSpacing(12)
+        .contentMargins(.top, 8, for: .scrollContent)
 
     }
 
