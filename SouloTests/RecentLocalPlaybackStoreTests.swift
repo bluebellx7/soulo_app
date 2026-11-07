@@ -59,6 +59,34 @@ final class RecentLocalPlaybackStoreTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(restored.latestURL).path))
     }
 
+    func testDismissingContinuationKeepsFileAndPositionAndIgnoresLatePlayerTicks() throws {
+        let file = try write("keep.mp4")
+        let store = RecentLocalPlaybackStore(userDefaults: defaults, rootURL: downloads)
+        store.record(url: file, title: "Keep")
+        defaults.set(125.0, forKey: MediaSession.positionKey(file))
+        store.dismissLatest()
+        for _ in 0..<20 { store.record(url: file, title: "Keep") }
+        XCTAssertNil(store.latestURL)
+        XCTAssertNil(defaults.data(forKey: RecentLocalPlaybackStore.storageKey))
+        XCTAssertNil(RecentLocalPlaybackStore(userDefaults: defaults, rootURL: downloads).latestURL)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: file.path))
+        XCTAssertEqual(defaults.double(forKey: MediaSession.positionKey(file)), 125)
+    }
+
+    func testExplicitPlaybackCanRestoreDismissedContinuationButPrivatePlaybackCannot() throws {
+        let file = try write("again.mp4")
+        let store = RecentLocalPlaybackStore(userDefaults: defaults, rootURL: downloads)
+        store.record(url: file, title: "Again")
+        store.dismissLatest()
+        store.beginPlayback(url: file, persistPosition: false)
+        store.record(url: file, title: "Again", persistPosition: false)
+        store.record(url: file, title: "Late ordinary callback")
+        XCTAssertNil(store.latestURL)
+        store.beginPlayback(url: file)
+        store.record(url: file, title: "Again")
+        XCTAssertEqual(store.latestURL?.path, file.resolvingSymlinksInPath().path)
+    }
+
     func testExternalURLsAndEscapingPathsLeaveThePreviousEntryUnchanged() throws {
         let file = try write("keep.mp3")
         let store = RecentLocalPlaybackStore(userDefaults: defaults, rootURL: downloads)

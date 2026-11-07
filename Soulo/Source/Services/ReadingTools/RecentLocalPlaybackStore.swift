@@ -17,6 +17,7 @@ final class RecentLocalPlaybackStore: ObservableObject {
     @Published private var entry: Entry?
     private let userDefaults: UserDefaults
     private let rootURL: URL
+    private var dismissedRelativePath: String?
 
     /// Existence is checked by the file list when presenting the continuation
     /// action. Resolving again here also rejects a newly introduced symlink.
@@ -40,12 +41,27 @@ final class RecentLocalPlaybackStore: ObservableObject {
         guard persistPosition, let file = containedURL(url),
               file.path != rootURL.path, FileManager.default.fileExists(atPath: file.path) else { return }
         let relative = String(file.path.dropFirst(rootURL.path.count + 1))
-        guard safeURL(relativePath: relative) != nil else { return }
+        guard safeURL(relativePath: relative) != nil, relative != dismissedRelativePath else { return }
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let value = Entry(relativePath: relative, title: String((trimmedTitle.isEmpty ? file.lastPathComponent : trimmedTitle).prefix(400)))
         guard value != entry, let data = try? JSONEncoder().encode(value) else { return }
         userDefaults.set(data, forKey: Self.storageKey)
         entry = value
+    }
+
+    /// Removing the shortcut must not delete the file or its saved position.
+    /// Ignore subsequent ticks from the already-running player until a new open.
+    func dismissLatest() {
+        dismissedRelativePath = entry?.relativePath ?? dismissedRelativePath
+        userDefaults.removeObject(forKey: Self.storageKey)
+        entry = nil
+    }
+
+    func beginPlayback(url: URL, persistPosition: Bool = true) {
+        guard persistPosition, let file = containedURL(url), file.path != rootURL.path,
+              FileManager.default.fileExists(atPath: file.path) else { return }
+        let relative = String(file.path.dropFirst(rootURL.path.count + 1))
+        if relative == dismissedRelativePath { dismissedRelativePath = nil }
     }
 
     /// Call after a confirmed deletion. Matching uses a path boundary so

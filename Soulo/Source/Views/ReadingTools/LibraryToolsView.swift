@@ -73,12 +73,29 @@ struct LibraryFilesView: View {
     @ViewBuilder private var continueActions: some View {
         if directory.standardizedFileURL == BookLibrary.directory.standardizedFileURL && search.isEmpty && !isSelecting {
             if let recentMedia {
-                Button { open(recentMedia) } label: {
-                    Label { VStack(alignment: .leading, spacing: 3) {
-                        Text(FeatureText.text("Continue playing")).font(.subheadline.weight(.semibold))
-                        Text(recentPlayback.title ?? recentMedia.url.lastPathComponent).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    } } icon: { Image(systemName: "play.circle") }
-                }.buttonStyle(.plain).frame(minHeight: 44)
+                HStack(spacing: 12) {
+                    Button { open(recentMedia) } label: {
+                        Label { VStack(alignment: .leading, spacing: 3) {
+                            Text(FeatureText.text("Continue playing")).font(.subheadline.weight(.semibold))
+                            Text(recentPlayback.title ?? recentMedia.url.lastPathComponent).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        } } icon: { Image(systemName: "play.circle") }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }.buttonStyle(.plain).frame(minHeight: 44)
+                        .accessibilityIdentifier("files.continue-playing")
+                    Button {
+                        recentPlayback.dismissLatest()
+                        self.recentMedia = nil
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(LanguageManager.shared.localizedString("delete") + " · " + FeatureText.text("Continue playing"))
+                    .accessibilityIdentifier("files.dismiss-continue-playing")
+                }
             }
             if let recentBook {
                 Button { book = recentBook } label: {

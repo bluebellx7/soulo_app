@@ -212,6 +212,8 @@ final class MediaSession: ObservableObject {
         webView?.evaluateJavaScript("document.querySelectorAll('audio,video').forEach(e=>e.pause()); true;", completionHandler: nil)
         self.url = url
         self.title = title?.isEmpty == false ? title! : url.lastPathComponent
+        RecentLocalPlaybackStore.shared.beginPlayback(url: url,
+            persistPosition: persistsPosition && !UserDefaults.standard.bool(forKey: "is_incognito"))
         self.pageURL = pageURL
         let savedRate = UserDefaults.standard.float(forKey: "media.rate")
         if Self.validRate(savedRate) { rate = savedRate }
