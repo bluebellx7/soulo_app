@@ -111,7 +111,7 @@ struct WallpaperSettingsView: View {
         }
         .navigationTitle(LText("settings_wallpaper"))
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { wallpaperManager.ensureLoaded() }
+        .task(id: wallpaperManager.source) { await wallpaperManager.ensureCandidatesLoaded() }
         .fullScreenCover(item: $fullScreenContext) { ctx in
             FullScreenWallpaperView(
                 wallpapers: ctx.wallpapers,
@@ -220,6 +220,12 @@ struct WallpaperSettingsView: View {
                 Label(wallpaperManager.lastRemoteError, systemImage: "exclamationmark.triangle")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+            if !wallpaperManager.networkLoading && wallpaperManager.lastRemoteError.isEmpty
+                && wallpaperManager.candidateWallpapers.isEmpty {
+                Text(LText("no_results"))
+                    .font(.footnote).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 80)
             }
             LazyVGrid(columns: columns, spacing: 12) { ForEach(wallpaperManager.candidateWallpapers) { wall in wallpaperTile(wall) } }.padding(.vertical, 8)
         }

@@ -55,3 +55,23 @@ Use case: illustration-story. Asset type: decorative illustration inside the Sou
 生成提示词：
 
 Create a new sibling illustration by transforming the first reference's visual style into a clear instructional scene about iOS Home Screen app-icon quick actions. Match the first reference exactly in visual family: warm dark graphite pencil outlines, visible hand-drawn grain, restrained cream and pale lavender watercolor fills, small soft golden accents, gentle friendly proportions. The second reference is interaction reference only: long-pressing the Soulo app icon on the iPhone Home Screen reveals a four-action quick menu. Do not reproduce its forest wallpaper, other app brands, red markup, widgets, or readable text. Composition: a close, easy-to-understand illustrated iPhone Home Screen and a gently drawn hand with one index fingertip holding the white rounded-square Soulo icon with its distinctive pale golden open circular brushstroke logo. Make this icon clearly recognizable and prominent. One subtle lavender press pulse indicates press-and-hold. A separate rounded cream/lavender menu expands beneath the selected icon with exactly four orderly horizontal rows, each with a small simple graphite outline pictogram on the left (QR scan, cache/trash, privacy eye, search magnifier) and short neutral gray strokes as label placeholders. Keep the depiction schematic and handmade, not a glossy screen mockup. No letters, numerals, slogans, watermarks or labels anywhere. Landscape 3:2 composition, centered and compact, generous transparent negative space, large enough main elements to remain clear at 180-220px display height. Isolated artwork on genuinely transparent background; no colored canvas or checkerboard painted into the image, no large shadow/glow halo.
+
+## 功能页说明（2026-11-07）
+
+移除独立帮助中心，视频设置、设置备份和阅读列表使用与长按快捷操作相同的 `IllustratedFeatureIntro`。说明位于对应功能页面，不额外创建帮助弹窗。备份复用文件整理插画，阅读列表复用阅读插画；文字沿用现有 50 种语言的翻译。
+
+视频设置的新插画使用 imagegen 技能和内置 `image_gen` 工具生成，参考 `IllustrationDownloads` 的画风与角色。保留透明通道，将原图等比例缩至 840 × 560，PNG 无损保存为 595,927 字节，足够页面 280 pt 宽度的三倍屏显示；不在首页预加载。
+
+资源：`Soulo/Assets.xcassets/IllustrationPlayback.imageset/illustration.png`。
+
+生成原图：`/Users/shunfei.z/.codex/generated_images/01a18c0b-4ab3-7e91-8ad0-4b994a55121c/exec-8ec2f024-176a-41e5-9d05-ddfb26408db8.png`。
+
+生成提示词：
+
+Use case: illustration-story
+Asset type: small decorative illustration for the video settings page of Soulo, an iOS browser.
+Input image: reference image only for matching the existing illustration style and character; it is not an edit target.
+Primary request: Create one new illustration in the same hand-drawn colored-pencil style as the reference. A relaxed young woman with dark hair in a loose bun, an ivory knit sweater and muted lavender trousers sits comfortably on the floor watching a landscape tablet propped beside her. The tablet has a simple pale lavender screen containing a clear triangular play symbol and a short progress bar, with one small music note nearby to suggest both video and audio. One very small lavender-leaf plant balances the composition.
+Style/medium: delicate dark pencil outlines, visible fine paper-grain shading within the drawing, restrained cream and lavender color fills. Match the existing friendly adult character and quiet mood. Avoid a glossy, 3D or vector-icon appearance.
+Composition/framing: single coherent wide 3:2 composition, full character and tablet visible, compact silhouette with clean outer edges and enough empty margin for use at 160 pt tall. Transparent background, no halo, no background rectangle, no ground shadow extending outside the drawing.
+Text: no words, labels, logo, watermark or UI text.

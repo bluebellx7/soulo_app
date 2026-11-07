@@ -9,6 +9,11 @@ struct VideoSettingsView: View {
     var body: some View {
         List {
             Section {
+                IllustratedFeatureIntro(scene: .playback,
+                    message: ToolText.text("video_default_player_desc"),
+                    accessibilityID: "video-settings.explanation")
+            }
+            Section {
                 Toggle(ToolText.text("video_show_tools"), isOn: $showsTools)
                     .accessibilityIdentifier("video-settings.tools")
             } footer: {
@@ -26,8 +31,6 @@ struct VideoSettingsView: View {
                     Text(ToolText.text("media_player_system")).tag("system")
                 }
                 .accessibilityIdentifier("video-settings.player")
-            } footer: {
-                Text(ToolText.text("video_default_player_desc"))
             }
             Section {
                 Picker(ToolText.text("video_hold_speed"), selection: $holdSpeed) {
@@ -48,6 +51,14 @@ struct VideoSettingsView: View {
                     Text(ToolText.text("media_player_system")).font(.headline)
                     Text(ToolText.text("video_system_player_desc")).font(.subheadline).foregroundStyle(.secondary)
                 }.padding(.vertical, 4)
+            }
+            Section {
+                Text(FeatureText.text("Choose a duration or stop after the current item from the player menu. Local audio can continue in the background and advance through files in the same folder."))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } header: {
+                Text(FeatureText.text("Sleep timer"))
             }
         }
         .tint(Color.themePrimary)

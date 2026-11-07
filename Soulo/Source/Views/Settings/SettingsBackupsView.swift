@@ -11,9 +11,15 @@ struct SettingsBackupsView: View {
     @State private var exporting = false
     @State private var exportDocument = SettingsBackupDocument(data: Data())
     @State private var importNotice = false
+    @State private var clearNotice = false
 
     var body: some View {
         List {
+            Section {
+                IllustratedFeatureIntro(scene: .files,
+                    message: FeatureText.text("Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list."),
+                    accessibilityID: "settings.backups.explanation")
+            }
             Section {
                 Button {
                     do { try sync.saveBackup(); load() }
@@ -47,18 +53,34 @@ struct SettingsBackupsView: View {
                         }
                     }
                 }
-            } header: {
-                Text(ToolText.text("settings_backup_intro"))
-                    .textCase(nil)
             } footer: {
-                Text(ToolText.text("settings_backup_manage_hint"))
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(String(format: FeatureText.text("iCloud sync saves a backup before settings change. Keeps the latest %lld backups plus the initial copy."), Int64(CloudSettingsBackupStore.maximumRecentBackups)))
+                        .accessibilityIdentifier("settings.backups.retention")
+                    Text(ToolText.text("settings_backup_manage_hint"))
+                }
             }
         }
         .navigationTitle(LanguageManager.shared.localizedString("settings_backups"))
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItemGroup(placement: .primaryAction) {
                 Button { importing = true } label: { Label(FeatureText.text("Import backup"), systemImage: "square.and.arrow.down") }
+                Button(role: .destructive) { clearNotice = true } label: {
+                    Label(FeatureText.text("Clear backups"), systemImage: "trash")
+                }
+                .disabled(backups.isEmpty)
+                .accessibilityIdentifier("settings.backups.clear")
             }
+        }
+        .confirmationDialog(FeatureText.text("Clear backups"), isPresented: $clearNotice, titleVisibility: .visible) {
+            Button(FeatureText.text("Clear backups"), role: .destructive) {
+                do { try sync.clearBackups(); load() }
+                catch { load(); showError = true }
+            }
+            .accessibilityIdentifier("settings.backups.confirm-clear")
+            Button(LanguageManager.shared.localizedString("cancel"), role: .cancel) {}
+        } message: {
+            Text(FeatureText.text("All local settings backups will be deleted. Your current settings will stay the same."))
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
             do {

@@ -286,6 +286,25 @@ final class CloudSyncSafetyTests: XCTestCase {
         XCTAssertTrue(try backups.list().isEmpty)
     }
 
+    func testClearingBackupsRemovesInitialAndRecentCopiesWithoutChangingSettingsOrCloud() throws {
+        let local = defaults(), cloud = TestCloudSettingsStore(), backups = backupStore()
+        local.set("Current title", forKey: "home_title")
+        local.set(true, forKey: AppConstants.StorageKeys.iCloudSyncEnabled)
+        try backups.save(["home_title": "Initial"], initial: true, date: early)
+        try backups.save(["home_title": "Recent"], date: later)
+        let sync = service(local, cloud: cloud, id: "clear", backups: backups)
+        let revision = sync.backupRevision
+        try sync.clearBackups()
+        XCTAssertTrue(try backups.list().isEmpty)
+        XCTAssertEqual(local.string(forKey: "home_title"), "Current title")
+        XCTAssertTrue(local.bool(forKey: AppConstants.StorageKeys.iCloudSyncEnabled))
+        XCTAssertTrue(cloud.writes.isEmpty)
+        XCTAssertGreaterThan(sync.backupRevision, revision)
+        try sync.clearBackups()
+        try sync.saveBackup()
+        XCTAssertEqual(try backups.list().count, 1, "Clearing must not disable later manual backups")
+    }
+
     func testHoldSpeedIsIncludedInSettingsSyncAndBackups() throws {
         let local = defaults()
         local.set(1.75, forKey: VideoPlaybackPreferences.holdSpeedKey)

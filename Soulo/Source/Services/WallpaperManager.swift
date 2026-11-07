@@ -219,6 +219,26 @@ class WallpaperManager: ObservableObject {
         }
     }
 
+    /// The settings gallery needs candidates even when Home uses only favorites.
+    /// Wait for an in-flight wallpaper operation instead of dropping page entry.
+    func ensureCandidatesLoaded() async {
+        let expectedSource = source
+        guard expectedSource.isRemote else { return }
+        await cachedImageLoadTask?.value
+        while networkLoading {
+            guard !Task.isCancelled, source == expectedSource else { return }
+            do { try await Task.sleep(for: .milliseconds(100)) }
+            catch { return }
+        }
+        guard !Task.isCancelled, source == expectedSource, candidateWallpapers.isEmpty else { return }
+        switch expectedSource {
+        case .pexels: await searchPexels(query: searchTopic)
+        case .pixabay: await searchPixabay(query: searchTopic)
+        case .bing: await fetchBingWallpaper()
+        default: break
+        }
+    }
+
     func refreshRandom() async {
         guard !networkLoading else { return }
 

@@ -1,7 +1,7 @@
 import XCTest
 
 @MainActor
-final class InputAndHelpUITests: XCTestCase {
+final class NativeInputUITests: XCTestCase {
     private func launch(extra: [String] = []) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
@@ -116,30 +116,4 @@ final class InputAndHelpUITests: XCTestCase {
         XCTAssertTrue(app.buttons["downloads.new"].waitForExistence(timeout: 5))
     }
 
-    func testHelpOpensFromSettingsAndReturnsToSettings() {
-        let app = launch(); defer { app.terminate() }
-        openSettings(app)
-        let search = app.searchFields.firstMatch
-        if !search.isHittable { app.swipeDown() }
-        search.tap(); search.typeText("Help")
-        let help = app.buttons["Help Center"].firstMatch
-        XCTAssertTrue(help.waitForExistence(timeout: 5)); help.tap()
-        XCTAssertTrue(app.staticTexts["How can we help?"].waitForExistence(timeout: 5), app.debugDescription)
-        capture(app, name: "help-opened-from-settings")
-        app.navigationBars.buttons.firstMatch.tap()
-        XCTAssertTrue(app.buttons["settings.help"].waitForExistence(timeout: 5), app.debugDescription)
-    }
-
-    func testHelpOpensFromHomeToolbarAndDoneClosesIt() {
-        let app = launch(extra: ["-home_toolbar_actions", "(help)"])
-        defer { app.terminate() }
-        let help = app.buttons["home.toolbar.0"]
-        XCTAssertTrue(help.waitForExistence(timeout: 10)); help.tap()
-        XCTAssertTrue(app.staticTexts["How can we help?"].waitForExistence(timeout: 5))
-        let done = app.navigationBars.buttons.matching(identifier: "Done")
-        XCTAssertEqual(done.count, 1, "The help page must expose one unambiguous close action")
-        capture(app, name: "help-opened-from-home")
-        done.firstMatch.tap()
-        XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 5))
-    }
 }

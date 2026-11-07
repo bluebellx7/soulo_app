@@ -7,6 +7,45 @@ import JavaScriptCore
 
 @MainActor
 final class ResourceEfficiencyTests: XCTestCase {
+    func testWallpaperGalleryWaitsForCurrentWorkAndLoadsWithoutManualRefresh() async throws {
+        try await withWallpaperSession { manager, image in
+            WallpaperSwitchProtocol.setHandler { stub in
+                if stub.request.url?.host == "api.pexels.com" {
+                    stub.respond(json: #"{"photos":[{"id":"gallery-loaded","src":{"original":"https://wallpaper.test/gallery.jpg"}}]}"#)
+                } else { stub.respond(data: image, mime: "image/jpeg") }
+            }
+            manager.source = .pexels
+            manager.networkLoading = true
+            let loading = Task { await manager.ensureCandidatesLoaded() }
+            await Task.yield()
+            XCTAssertTrue(manager.candidateWallpapers.isEmpty)
+            manager.networkLoading = false
+            await loading.value
+            XCTAssertEqual(manager.candidateWallpapers.map(\.id), ["gallery-loaded"])
+            XCTAssertFalse(manager.networkLoading)
+        }
+    }
+
+    func testFavoriteOnlyModeStillLoadsGalleryWithoutReplacingFavorite() async throws {
+        try await withWallpaperSession { manager, image in
+            WallpaperSwitchProtocol.setHandler { stub in
+                if stub.request.url?.host == "api.pexels.com" {
+                    stub.respond(json: #"{"photos":[{"id":"gallery-candidate","src":{"original":"https://wallpaper.test/gallery.jpg"}}]}"#)
+                } else { stub.respond(data: image, mime: "image/jpeg") }
+            }
+            manager.source = .pexels
+            manager.favorites = [RemoteWallpaper(id: "favorite-metadata-only", url: "", previewURL: "", source: "pexels")]
+            manager.onlyUseFavoriteWallpapers = true
+            let previousID = manager.currentImageID
+            await manager.ensureCandidatesLoaded()
+            XCTAssertEqual(manager.candidateWallpapers.map(\.id), ["gallery-candidate"])
+            XCTAssertEqual(manager.currentImageID, previousID)
+            XCTAssertTrue(manager.onlyUseFavoriteWallpapers)
+            await manager.ensureCandidatesLoaded()
+            XCTAssertEqual(manager.candidateWallpapers.map(\.id), ["gallery-candidate"])
+        }
+    }
+
     func testWallpaperSourceSelectionLoadsProviderAndDefaultsToNature() async throws {
         try await withWallpaperSession { manager, image in
             WallpaperSwitchProtocol.setHandler { stub in

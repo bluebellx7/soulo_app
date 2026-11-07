@@ -242,34 +242,37 @@ struct TabSwitcherOverlay: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .transition(.opacity)
                     } else {
-                        VStack(spacing: 0) {
-                            Spacer(minLength: max(geo.safeAreaInsets.top, 12) + 36)
-                            if tabManager.tabs.isEmpty {
-                                emptyState
-                            } else {
-                                TabSwitcherCarousel(
-                                    tabManager: tabManager,
-                                    tabs: orderedTabs,
-                                    isExpanding: $isExpanding,
-                                    expandingIndex: $expandingIndex,
-                                    onSelect: selectTab,
-                                    onClose: closeTab
-                                )
-                                .id(search)
-                                .frame(height: carouselHeight(in: geo))
-                                .offset(y: -16)
+                        GeometryReader { available in
+                            VStack(spacing: 0) {
+                                Spacer(minLength: 0)
+                                if tabManager.tabs.isEmpty {
+                                    emptyState
+                                } else {
+                                    TabSwitcherCarousel(
+                                        tabManager: tabManager,
+                                        tabs: orderedTabs,
+                                        isExpanding: $isExpanding,
+                                        expandingIndex: $expandingIndex,
+                                        onSelect: selectTab,
+                                        onClose: closeTab
+                                    )
+                                    .id(search)
+                                    .frame(height: max(0, min(available.size.height * 0.84, 600)))
+                                }
+                                Spacer(minLength: 0)
                             }
-                            Spacer(minLength: 18)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .transition(.opacity)
                     }
-
+                }
+                .safeAreaInset(edge: .bottom, spacing: 0) {
                     bottomDock
                         .opacity(isExpanding ? 0 : 1)
                         .scaleEffect(isExpanding ? 0.9 : 1.0)
-                        .padding(.top, 16)
-                        .padding(.bottom, 22)
+                        .padding(.top, 12)
+                        .padding(.bottom, 12)
                 }
             }
         }
@@ -463,9 +466,6 @@ struct TabSwitcherOverlay: View {
         }
     }
 
-    private func carouselHeight(in geo: GeometryProxy) -> CGFloat {
-        min(max(geo.size.height * 0.70, 440), max(geo.size.height - 130, 360))
-    }
 }
 
 // MARK: - Domain Groups
@@ -1449,14 +1449,13 @@ struct TabCountBadge: View {
 // MARK: - View Extension for Tab Overview Scale
 
 extension View {
-    func tabOverviewScale(isActive: Bool) -> some View {
+    func tabOverviewBackground(isActive: Bool) -> some View {
         // Preserve structural identity: branching here dismantles and reattaches
         // the live WKWebView while WebKit is presenting its text-selection menu.
         // Keep layout and safe-area geometry unchanged during presentation.
         // Extending safe areas only while active moves both browser toolbars,
         // causing visible jumps beneath the full-screen backdrop.
         self
-            .scaleEffect(isActive ? 0.96 : 1)
             .opacity(isActive ? 0.45 : 1)
             .allowsHitTesting(!isActive)
             .accessibilityHidden(isActive)

@@ -17,7 +17,6 @@ struct HomeToolbarDestinationView: View {
     @ViewBuilder private var destination: some View {
         switch action {
         case .wallpaper: WallpaperSettingsView()
-        case .help: HelpCenterView()
         case .language: LanguageSettingsView()
         case .webAppearance: WebAppearanceSettingsView()
         case .browserToolbar: BrowserToolbarSettingsView()

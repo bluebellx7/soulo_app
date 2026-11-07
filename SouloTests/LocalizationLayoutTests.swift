@@ -56,7 +56,13 @@ final class LocalizationLayoutTests: XCTestCase {
             return try XCTUnwrap(PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: String], language)
         }
         let source = try table("en-US")
-        XCTAssertGreaterThan(source.count, 80)
+        for key in [
+            "Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list.",
+            "Save an article from reader mode to read it offline.",
+            "Choose a duration or stop after the current item from the player menu. Local audio can continue in the background and advance through files in the same folder."
+        ] {
+            XCTAssertNotNil(source[key], "Feature descriptions must remain available after retiring the help page")
+        }
         for language in AppConstants.supportedLanguages {
             let values = try table(language.code)
             XCTAssertEqual(Set(values.keys), Set(source.keys), language.code)
@@ -66,6 +72,29 @@ final class LocalizationLayoutTests: XCTestCase {
         }
         XCTAssertEqual(try table("zh-Hans")["Reading list"], "阅读列表")
         XCTAssertEqual(try table("zh-Hant")["New window"], "新增視窗")
+    }
+
+    @MainActor
+    func testIllustratedDescriptionKeepsLongTextReadableAtLargeSizes() async throws {
+        let manager = LanguageManager.shared
+        let original = manager.currentLanguage
+        defer { manager.currentLanguage = original }
+        for code in ["de-DE", "ar-SA"] {
+            manager.currentLanguage = code
+            let view = IllustratedFeatureIntro(scene: .files,
+                message: FeatureText.text("Settings backups contain appearance, home, browsing, privacy and platform preferences. They exclude bookmarks, history, logins and downloaded files. Bookmark import and export use HTML in the bookmark list."),
+                accessibilityID: "backup-description")
+                .padding(.horizontal, 16)
+                .frame(width: 320)
+                .environment(\.colorScheme, .dark)
+                .environment(\.layoutDirection, code == "ar-SA" ? .rightToLeft : .leftToRight)
+            let standard = try await snapshot(view.environment(\.dynamicTypeSize, .large))
+            let accessible = try await snapshot(view.environment(\.dynamicTypeSize, .accessibility3))
+            XCTAssertEqual(accessible.size.width, 320, accuracy: 0.5)
+            XCTAssertGreaterThan(accessible.size.height, standard.size.height)
+            let attachment = XCTAttachment(image: accessible)
+            attachment.name = "feature-description-accessibility-\(code)"; attachment.lifetime = .keepAlways; add(attachment)
+        }
     }
 
     @MainActor

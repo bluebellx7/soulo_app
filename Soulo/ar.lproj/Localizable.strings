@@ -446,23 +446,6 @@
 "feedback_error" = "خطأ";
 
 /* Help Center */
-"help_title" = "مركز المساعدة";
-"help_welcome_title" = "كيف يمكننا مساعدتك؟";
-"help_welcome_subtitle" = "إليك كل ما تحتاج لمعرفته عن Soulo.";
-"help_getting_started" = "البدء";
-"help_search_title" = "البحث";
-"help_search_desc" = "ابحث عبر منصات متعددة في وقت واحد. اسحب بين النتائج.";
-"help_platforms_title" = "المنصات";
-"help_platforms_desc" = "خصّص محركات البحث وأدوات الذكاء الاصطناعي المراد استخدامها.";
-"help_features" = "الميزات";
-"help_bookmarks_title" = "الإشارات المرجعية";
-"help_bookmarks_desc" = "احفظ صفحاتك المفضلة للوصول السريع.";
-"help_wallpaper_title" = "الخلفية";
-"help_wallpaper_desc" = "خلفيات جميلة من Pexels وPixabay وBing.";
-"help_adblock_title" = "حاجب الإعلانات";
-"help_adblock_desc" = "حجب الإعلانات والنوافذ المنبثقة لتجربة تصفح أنظف.";
-"help_contact" = "تواصل معنا";
-"help_email_title" = "البريد الإلكتروني";
 "theme_system" = "النظام";
 "theme_light" = "فاتح";
 "theme_dark" = "داكن";

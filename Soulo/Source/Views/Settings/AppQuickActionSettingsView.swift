@@ -7,20 +7,9 @@ struct AppQuickActionSettingsView: View {
     var body: some View {
         List {
             Section {
-                VStack(spacing: 12) {
-                    ToolIllustration(scene: .quickActions, height: 180)
-                    Text(LanguageManager.shared.localizedString("quick_actions_explanation"))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: 420)
-                        .accessibilityIdentifier("quick-actions.explanation")
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 4)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
+                IllustratedFeatureIntro(scene: .quickActions,
+                    message: LanguageManager.shared.localizedString("quick_actions_explanation"),
+                    accessibilityID: "quick-actions.explanation", height: 180)
             }
             Section {
                 if actions.isEmpty {

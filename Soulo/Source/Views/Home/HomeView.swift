@@ -93,7 +93,7 @@ struct HomeView: View {
                 forward: { tabManager.activeWebViewModel?.goForward() },
                 find: { tabManager.startFindInPage() },
                 newWindow: { openWindow(value: BrowserWindowConfiguration()) }))
-        .tabOverviewScale(isActive: showsTabOverview)
+        .tabOverviewBackground(isActive: showsTabOverview)
         .animation(.easeInOut(duration: 0.22), value: showsTabOverview)
         .id(navigationSession)
         .task(id: urlRouteID) {

@@ -92,7 +92,8 @@ private struct SouloWebsiteView: View {
     @StateObject private var bookmarks = BookmarkViewModel()
     @State private var fullscreen = false
     var body: some View {
-        WebViewContainer(webViewModel: model, bookmarkViewModel: bookmarks, isFullscreen: $fullscreen)
+        WebViewContainer(webViewModel: model, bookmarkViewModel: bookmarks, isFullscreen: $fullscreen,
+                         extendsPageUnderBottomSafeArea: true)
             .navigationTitle(ToolText.text("soulo_website"))
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {

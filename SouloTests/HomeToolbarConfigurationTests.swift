@@ -32,6 +32,20 @@ final class HomeToolbarConfigurationTests: XCTestCase {
                        [.downloads, .none, .wallpaper, .files, .settings])
         XCTAssertEqual(HomeToolbarConfigurationService.resolve(["history"]), [.history, .none, .none, .none, .none])
     }
+    func testRetiredHelpEntryLeavesOtherSavedSlotsAndSettingsIntact() {
+        let name = "HomeToolbarTests." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        defaults.set(["help", "backups", "quickActions", "files", "settings"], forKey: HomeToolbarConfigurationService.storageKey)
+        defaults.set(false, forKey: HomeToolbarConfigurationService.backgroundKey)
+        let service = HomeToolbarConfigurationService(defaults: defaults)
+        XCTAssertNil(HomeToolbarAction(rawValue: "help"))
+        XCTAssertEqual(service.actions, [.none, .backups, .quickActions, .files, .settings])
+        XCTAssertFalse(service.showsButtonBackground)
+        service.save(service.actions)
+        XCTAssertEqual(defaults.stringArray(forKey: HomeToolbarConfigurationService.storageKey),
+                       ["none", "backups", "quickActions", "files", "settings"])
+    }
     func testFourSlotUpgradeKeepsExistingChoicesAndRejectsASixthSlot() {
         XCTAssertEqual(HomeToolbarConfigurationService.resolve(["downloads", "files", "bookmarks", "history"]),
                        [.downloads, .files, .bookmarks, .history, .none])

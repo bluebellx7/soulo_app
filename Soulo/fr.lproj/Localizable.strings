@@ -415,23 +415,6 @@ Dites-nous :
 "feedback_error" = "Erreur";
 
 /* Help Center */
-"help_title" = "Centre d'aide";
-"help_welcome_title" = "Comment pouvons-nous vous aider ?";
-"help_welcome_subtitle" = "Tout ce que vous devez savoir sur Soulo.";
-"help_getting_started" = "Pour commencer";
-"help_search_title" = "Recherche";
-"help_search_desc" = "Recherchez sur plusieurs plateformes a la fois.";
-"help_platforms_title" = "Plateformes";
-"help_platforms_desc" = "Personnalisez les moteurs de recherche et outils IA.";
-"help_features" = "Fonctions";
-"help_bookmarks_title" = "Signets";
-"help_bookmarks_desc" = "Enregistrez vos pages favorites pour un acces rapide.";
-"help_wallpaper_title" = "Fond d'ecran";
-"help_wallpaper_desc" = "Beaux fonds d'ecran de Pexels, Pixabay et Bing.";
-"help_adblock_title" = "Bloqueur de pubs";
-"help_adblock_desc" = "Bloquez les publicites et popups.";
-"help_contact" = "Contact";
-"help_email_title" = "Courriel";
 "theme_system" = "Systeme";
 "theme_light" = "Clair";
 "theme_dark" = "Sombre";

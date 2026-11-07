@@ -197,6 +197,7 @@ struct WebViewContainer: View {
     @ObservedObject var webViewModel: WebViewModel
     @ObservedObject var bookmarkViewModel: BookmarkViewModel
     @Binding var isFullscreen: Bool
+    var extendsPageUnderBottomSafeArea = false
     var tabManager: TabManager? = nil
     var toolbarManuallyHiddenBinding: Binding<Bool>? = nil
     var isActiveTab: Bool = true
@@ -309,6 +310,7 @@ struct WebViewContainer: View {
                     )
                         .id(webViewModel.runtimeRevision)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .ignoresSafeArea(.container, edges: extendsPageUnderBottomSafeArea ? .bottom : [])
                         .opacity(isShowingNewTabPage ? 0 : 1)
                         .allowsHitTesting(!isShowingNewTabPage)
                         .overlay {

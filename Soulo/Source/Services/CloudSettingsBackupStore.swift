@@ -11,6 +11,7 @@ struct CloudSettingsBackup: Codable, Identifiable {
 
 @MainActor
 final class CloudSettingsBackupStore {
+    static let maximumRecentBackups = 20
     static let maximumPortableBackupSize = 16 * 1024 * 1024
     private struct PortableBackup: Codable {
         let format: String
@@ -54,7 +55,7 @@ final class CloudSettingsBackupStore {
         try JSONEncoder().encode(backup).write(to: url(for: backup), options: .atomic)
         // Pin the pre-migration copy indefinitely. Retain the 20 most recent
         // additional copies, so repeated sync traffic cannot rotate it away.
-        for old in existing.filter({ !$0.isInitial }).dropFirst(19) {
+        for old in existing.filter({ !$0.isInitial }).dropFirst(Self.maximumRecentBackups - 1) {
             try? fileManager.removeItem(at: url(for: old))
         }
         return backup
@@ -115,6 +116,10 @@ final class CloudSettingsBackupStore {
         let file = url(for: backup)
         guard fileManager.fileExists(atPath: file.path) else { return }
         try fileManager.removeItem(at: file)
+    }
+
+    func deleteAll() throws {
+        for backup in try list() { try delete(backup) }
     }
 
     private func validatePortableValues(_ values: CloudSettingsSyncEngine.Values) throws {

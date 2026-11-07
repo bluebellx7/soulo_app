@@ -11,11 +11,14 @@ struct ReadingListView: View {
 
     var body: some View {
         List {
-            Section { Text(FeatureText.text("Saved articles contain the text loaded in reader mode. Images and linked pages are not downloaded."))
-                .font(.footnote).foregroundStyle(.secondary) }
-            if visibleItems.isEmpty {
-                ContentUnavailableView(FeatureText.text("Reading list"), systemImage: "text.book.closed",
-                    description: Text(FeatureText.text("Save an article from reader mode to read it offline.")))
+            Section {
+                IllustratedFeatureIntro(scene: .books,
+                    message: FeatureText.text("Save an article from reader mode to read it offline.") + "\n"
+                        + FeatureText.text("Saved articles contain the text loaded in reader mode. Images and linked pages are not downloaded."),
+                    accessibilityID: "reading-list.explanation")
+            }
+            if !search.isEmpty && visibleItems.isEmpty {
+                ContentUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
             }
             ForEach(visibleItems) { item in
                 NavigationLink { SavedArticleView(item: item) } label: {

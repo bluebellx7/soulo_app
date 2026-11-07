@@ -338,6 +338,11 @@ final class CloudSyncService: NSObject, ObservableObject {
         backupRevision += 1
     }
 
+    func clearBackups() throws {
+        defer { backupRevision += 1 }
+        try backups.deleteAll()
+    }
+
     func saveBackup() throws {
         try backups.save(CloudSettingsSyncEngine.snapshot(defaults), date: now())
         backupRevision += 1

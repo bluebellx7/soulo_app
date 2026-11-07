@@ -424,7 +424,7 @@ import Vision
     }
     private struct Screen: View {
         @ObservedObject var state: State
-        var body: some View { Page(state: state).tabOverviewScale(isActive: state.isOverview) }
+        var body: some View { Page(state: state).tabOverviewBackground(isActive: state.isOverview) }
     }
 
     private struct SafeAreaScreen: View {
@@ -434,7 +434,7 @@ import Vision
                 Color.blue.ignoresSafeArea()
                 VStack { Color.red }
                     .ignoresSafeArea(.container, edges: fullscreen ? .all : .bottom)
-                    .tabOverviewScale(isActive: false)
+                    .tabOverviewBackground(isActive: false)
             }
         }
     }
@@ -488,6 +488,7 @@ import Vision
         let parent = try XCTUnwrap(state.web.superview)
         let originalBounds = state.web.bounds
         let originalSafeArea = state.web.safeAreaInsets
+        let originalWindowFrame = state.web.convert(state.web.bounds, to: window)
         for _ in 0..<3 {
             for showing in [true, false] {
                 withAnimation(.easeInOut(duration: 0.05)) { state.isOverview = showing }
@@ -498,6 +499,8 @@ import Vision
                 XCTAssertTrue(state.web.window === window)
                 XCTAssertEqual(state.web.bounds, originalBounds, "Overview animation must not resize the page or shift its toolbars")
                 XCTAssertEqual(state.web.safeAreaInsets, originalSafeArea, "Safe-area geometry stays stable throughout presentation")
+                XCTAssertEqual(state.web.convert(state.web.bounds, to: window), originalWindowFrame,
+                               "Opening tab management must not shrink the live page")
             }
         }
         let selection = try await state.web.evaluateJavaScript("getSelection().toString()") as? String

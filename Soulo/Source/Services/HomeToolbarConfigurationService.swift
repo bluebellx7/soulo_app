@@ -5,7 +5,7 @@ enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
     case none, downloads, files, bookmarks, history, wallpaper, refreshWallpaper, platforms, extensions, settings
     case newDownload, wifiTransfer, scanner, tabs, language, webAppearance, browserToolbar, homeToolbar
     case adBlock, privacy, backups, quickActions, urlSchemes, shake, feedback, version
-    case search, newTab, privateBrowsing, shareApp, help
+    case search, newTab, privateBrowsing, shareApp
     var id: String { rawValue }
     var symbol: String {
         switch self {
@@ -20,7 +20,6 @@ enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .newTab: "plus.square"
         case .privateBrowsing: "eye.slash"
         case .shareApp: "square.and.arrow.up"
-        case .help: "questionmark.circle"
         case .platforms: "square.grid.2x2"
         case .extensions: "puzzlepiece.extension"
         case .settings: "gearshape"
@@ -67,7 +66,6 @@ enum HomeToolbarAction: String, Codable, CaseIterable, Identifiable {
         case .newTab: LanguageManager.shared.localizedString("tab_new_tab")
         case .privateBrowsing: LanguageManager.shared.localizedString("privacy_incognito")
         case .shareApp: LanguageManager.shared.localizedString("quick_action_share_app")
-        case .help: LanguageManager.shared.localizedString("help_title")
         case .platforms: LanguageManager.shared.localizedString("settings_platforms")
         case .extensions: LanguageManager.shared.localizedString("userscripts")
         case .settings: LanguageManager.shared.localizedString("settings")

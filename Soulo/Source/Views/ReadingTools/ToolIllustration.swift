@@ -13,6 +13,7 @@ struct ToolIllustration: View {
         case about = "IllustrationAbout"
         case review = "IllustrationReview"
         case quickActions = "IllustrationQuickActions"
+        case playback = "IllustrationPlayback"
 
         var preservesLogoColors: Bool { self == .about || self == .review || self == .quickActions }
     }
@@ -40,6 +41,32 @@ struct ToolIllustration: View {
             .scaledToFit()
             .frame(maxWidth: 280)
             .frame(height: height)
+    }
+}
+
+/// Explain a feature where it is configured, using the same quiet layout as
+/// Home Screen quick actions. The artwork is decorative; the text remains accessible.
+struct IllustratedFeatureIntro: View {
+    let scene: ToolIllustration.Scene
+    let message: String
+    let accessibilityID: String
+    var height: CGFloat = 160
+
+    var body: some View {
+        VStack(spacing: 12) {
+            ToolIllustration(scene: scene, height: height)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 420)
+                .accessibilityIdentifier(accessibilityID)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 4)
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
     }
 }
 

@@ -404,9 +404,6 @@ struct SettingsView: View {
                     // MARK: - About & Support
                     if matchesSettings(Self.sectionSearchKeys[5]) && (!isSearchingSettings || searchEntries.isEmpty || matchesSettings(["settings_section_about_support", "settings_feedback"])) {
                     Section {
-                        NavigationLink(value: Destination.help) {
-                            SettingsNavigationLabel(icon: "questionmark.circle", color: neutralIconColor, title: LanguageManager.shared.localizedString("help_title"))
-                        }
                         NavigationLink(value: Destination.review) {
                             SettingsNavigationLabel(
                                 icon: "star.bubble.fill",
@@ -528,8 +525,7 @@ struct SettingsView: View {
         .init(destination: .urlSchemes, key: "URL Scheme", icon: "link"),
         .init(destination: .version, key: "settings_version", icon: "info.circle.fill"),
         .init(destination: .review, key: "settings_rate", icon: "star.bubble.fill"),
-        .init(destination: .storage, key: "Storage", icon: "internaldrive"),
-        .init(destination: .help, key: "help_title", icon: "questionmark.circle")
+        .init(destination: .storage, key: "Storage", icon: "internaldrive")
     ]
     private var isSearchingSettings: Bool { !settingsQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     private var searchEntries: [SearchEntry] { Self.searchableEntries.filter { matchesSettings([$0.key]) } }
@@ -546,7 +542,7 @@ struct SettingsView: View {
         ["home_screen", "edit_title", "edit_subtitle", "home_toolbar_customize", "show_bookmarks_home", "show_group_picker_home", "show_recent_searches_home", "live_activity"],
         ["browsing", "settings_default_browser", "show_top_search_bar", "keep_fullscreen_browsing", "video_settings", "web_appearance", "shake_action", "toolbar_customize", "ad_block_management", "settings_privacy", "userscripts", "privacy_clear_cache", "Storage"],
         ["settings_other", "icloud_settings_sync", "settings_backups", "quick_actions_title"],
-        ["settings_section_about_support", "settings_rate", "settings_feedback", "settings_version", "URL Scheme", "help_title"],
+        ["settings_section_about_support", "settings_rate", "settings_feedback", "settings_version", "URL Scheme"],
     ]
 
     private func matchesSettings(_ keys: [String]) -> Bool {
@@ -562,7 +558,7 @@ struct SettingsView: View {
     // is actually opened, instead of constructing every destination at once.
     private enum Destination: Hashable {
         case platforms, language, wallpaper, webAppearance, video, shake, toolbar, homeToolbar
-        case adBlock, privacy, extensions, backups, quickActions, urlSchemes, version, review, storage, help
+        case adBlock, privacy, extensions, backups, quickActions, urlSchemes, version, review, storage
     }
 
     @ViewBuilder
@@ -590,7 +586,6 @@ struct SettingsView: View {
         case .version: AppVersionView(version: appVersion)
         case .review: AppReviewSupportView()
         case .storage: StorageUsageView()
-        case .help: HelpCenterView()
         }
     }
 
