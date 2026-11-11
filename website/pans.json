@@ -1,29 +1,37 @@
 {
-  "updated": "2026-11-01",
+  "updated": "2026-11-11",
   "categories": [
     {
       "id": "engine",
       "name": "多盘聚合",
       "icon": "search",
-      "description": "一次输入关键词，同时检索夸克、百度、阿里、迅雷、UC 与 115 等多网盘分享链接。"
+      "description": "一次输入关键词，同时检索夸克、百度、阿里、迅雷、UC 与 115 等多网盘分享链接。",
+      "name_en": "Multi-Cloud Search",
+      "description_en": "Search Quark, Baidu, AliPan, Xunlei, UC, and 115 shared links with a single query."
     },
     {
       "id": "community",
       "name": "影视网盘站",
       "icon": "film",
-      "description": "按海报、片单或社区帖子整理的夸克、阿里与百度网盘高清影视资源站。"
+      "description": "按海报、片单或社区帖子整理的夸克、阿里与百度网盘高清影视资源站。",
+      "name_en": "Movie Cloud Communities",
+      "description_en": "HD movies, series, and anime organized by posters and community threads on Quark & AliPan."
     },
     {
       "id": "special",
       "name": "学习与专项",
       "icon": "book",
-      "description": "针对电子书、公开课、考公考研题库、4K 原盘片单与实用软件的专项网盘索引。"
+      "description": "针对电子书、公开课、考公考研题库、4K 原盘片单与实用软件的专项网盘索引。",
+      "name_en": "Study & Specialized",
+      "description_en": "Dedicated cloud indexes for eBooks, courses, exam prep, 4K UHD lists, and software."
     },
     {
       "id": "official",
       "name": "网盘工作台",
       "icon": "cloud",
-      "description": "主流云盘官方网页版入口，方便直接管理转存文件、云端解压与原画在线播放。"
+      "description": "主流云盘官方网页版入口，方便直接管理转存文件、云端解压与原画在线播放。",
+      "name_en": "Official Web Drives",
+      "description_en": "Official web consoles for managing saved files, cloud extraction, and original-quality playback."
     }
   ],
   "sites": [

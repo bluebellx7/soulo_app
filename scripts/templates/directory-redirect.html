@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>资源搜索 | Soulo</title>
+    <link rel="canonical" href="https://soulo.dkluge.com/resources.html" />
+    <script>
+      const destination = new URL('resources.html', location.href);
+      destination.search = location.search;
+      destination.hash = '{{group}}' === 'cloud' && location.hash === '#engine'
+        ? 'cloud-engine' : location.hash || '{{group}}';
+      location.replace(destination);
+    </script>
+    <noscript><meta http-equiv="refresh" content="0;url=resources.html#{{fallback}}" /></noscript>
+  </head>
+  <body><main><p><a href="resources.html#{{fallback}}">前往资源搜索 / Open Resource Search</a></p></main></body>
+</html>

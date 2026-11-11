@@ -1,29 +1,37 @@
 {
-  "updated": "2026-11-01",
+  "updated": "2026-11-11",
   "categories": [
     {
       "id": "engine",
       "name": "磁力引擎",
       "description": "输入片名、番号或关键词，直接检索 DHT 磁力链与种子元数据。",
-      "icon": "search"
+      "icon": "search",
+      "name_en": "Magnet Engines",
+      "description_en": "Search DHT magnet links and torrent metadata by title or keyword."
     },
     {
       "id": "movie",
       "name": "影视种子",
       "description": "4K 原盘、蓝光 1080P 电影与热播剧集 BT 种子及磁力下载。",
-      "icon": "film"
+      "icon": "film",
+      "name_en": "Movie & TV Torrents",
+      "description_en": "4K UHD, 1080P Blu-ray movies, and series BT/magnet downloads."
     },
     {
       "id": "anime",
       "name": "动漫追番",
       "description": "新番动画、字幕组发布与 ACG 磁力种子花园。",
-      "icon": "spark"
+      "icon": "spark",
+      "name_en": "Anime Torrents",
+      "description_en": "Seasonal anime magnets, fansub releases, and ACG trackers."
     },
     {
       "id": "global",
       "name": "国际种子",
       "description": "海外美剧、无损音乐与全球综合 BitTorrent 磁力索引。",
-      "icon": "globe"
+      "icon": "globe",
+      "name_en": "Global Torrents",
+      "description_en": "International TV series, lossless music, and BitTorrent indexes."
     }
   ],
   "sites": [

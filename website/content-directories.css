@@ -4,11 +4,21 @@ html[data-resolved-theme="dark"] .reading-page { --violet: #e6bf7a; --violet-sof
 html[data-resolved-theme="dark"] .music-page { --violet: #f3a4c4; --violet-soft: #3b2632; --hero-panel: #2d202c; }
 .content-page .movie-search input { font-size: 16px; }
 .content-page .sidebar-note em { font: inherit; }
+.search-directory-intro { padding: 14px 0 4px; }
+.search-directory-intro p { max-width: 58ch; margin-top: 8px; }
+.search-directory-page .directory-toolbar { gap: 12px; margin-top: 22px; }
+.resource-types { margin-left: 0; }
+@media (min-width: 741px) {
+  .search-directory-page .category-link > span:first-of-type { white-space: normal; }
+}
 @media (max-width: 740px) {
   .content-page main.wrap, .content-page footer.wrap { width: calc(100% - 36px); }
   .content-page .cinema-art { display: none; }
   .content-page .category-sidebar { margin-inline: -18px; }
   .content-page .category-sidebar nav { padding-inline: 18px; }
+  .search-directory-intro { max-width: none; padding: 4px 0 0; }
+  .search-directory-intro p { max-width: none; }
+  .resources-page .directory-toolbar .directory-tabs:last-child { margin-left: auto; }
 }
 @media (max-width: 420px) {
   .content-page main.wrap, .content-page footer.wrap { width: calc(100% - 20px); }

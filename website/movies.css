@@ -24,26 +24,6 @@ html[data-resolved-theme="dark"] .movies-page {
   --hero-panel: #232231;
   --tag: #262732;
 }
-.magnets-page {
-  --violet: #1e6de0;
-  --violet-soft: #e7f0fe;
-  --hero-panel: #eaf2fc;
-}
-html[data-resolved-theme="dark"] .magnets-page {
-  --violet: #70b8ff;
-  --violet-soft: #1d314d;
-  --hero-panel: #172232;
-}
-.pans-page {
-  --violet: #0f8a65;
-  --violet-soft: #e3f6ef;
-  --hero-panel: #e7f5f0;
-}
-html[data-resolved-theme="dark"] .pans-page {
-  --violet: #5eead4;
-  --violet-soft: #183632;
-  --hero-panel: #162826;
-}
 .movies-page .site-header { background: var(--page); }
 .movies-page .nav { border-color: var(--stroke); }
 .movies-page .nav-links a[aria-current="page"] { color: var(--violet); background: var(--violet-soft); }

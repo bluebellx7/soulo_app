@@ -6,6 +6,7 @@ const errors = [];
 const movieData = require('../../website/movies.json');
 const magnetData = require('../../website/magnets.json');
 const panData = require('../../website/pans.json');
+const stockData = require('../../website/stocks.json');
 const readingData = require('../../website/reading.json');
 const musicData = require('../../website/music.json');
 
@@ -78,48 +79,81 @@ async function main() {
     assert.equal(await page.locator('html').getAttribute('data-resolved-theme'), 'dark');
     const cardBackground = await page.locator('.movie-card').first().evaluate(e => getComputedStyle(e).backgroundColor);
     assert.equal(cardBackground, 'rgb(27, 28, 36)');
+    const magnetUrls = new Set(magnetData.sites.map(site => site.url));
+    const resourceTotal = new Set([...magnetData.sites, ...panData.sites].map(site => site.url)).size;
+    await page.evaluate(() => {
+      localStorage.setItem('soulo-magnet-favorites', JSON.stringify(['wuji', 'seedhub']));
+      localStorage.setItem('soulo-pan-favorites', JSON.stringify(['pan-qianfan', 'seedhub-pan']));
+    });
     await page.goto(base+'/magnets.html');
-    const magnetTotal = await page.locator('.movie-card').count();
-    assert.equal(magnetTotal, magnetData.sites.length);
-    const brokenIcons = await page.locator('.movie-card .movie-icon img').evaluateAll(imgs =>
-      imgs.filter(img => !img.complete || img.naturalWidth === 0).map(img => img.getAttribute('src'))
-    );
-    assert.deepEqual(brokenIcons, []);
+    await page.waitForURL('**/resources.html#magnet');
+    assert.equal(await page.locator('[data-resource-group="magnet"]').getAttribute('aria-pressed'), 'true');
+    assert.equal(await visible(), magnetData.sites.length);
+    assert.equal(await page.locator('[data-category="official"]').isVisible(), false);
+    await page.goto(base+'/pans.html');
+    await page.waitForURL('**/resources.html#cloud');
+    assert.equal(await page.locator('[data-resource-group="cloud"]').getAttribute('aria-pressed'), 'true');
+    assert.equal(await visible(), resourceTotal - magnetUrls.size);
+    await page.goto(base+'/pans.html#engine');
+    await page.waitForURL('**/resources.html#cloud-engine');
+    await page.goto(base+'/resources.html');
+    assert.equal(await visible(), resourceTotal);
     await page.locator('#movie-search').fill('wuji.me');
     assert.equal(await visible(), 1);
     assert.match(await page.locator('.movie-card:visible h3').innerText(), /无极磁链/);
-    await page.locator('#movie-search').fill('无极磁链');
-    assert.equal(await visible(), 2);
-    await page.locator('#movie-search').fill('this-magnet-does-not-exist');
-    assert.equal(await visible(), 0);
-    await page.locator('#reset-filters').click();
-    assert.equal(await visible(), magnetTotal);
-    await page.locator('[data-category="anime"]').click();
-    assert.equal(await visible(), magnetData.sites.filter(site => site.category === 'anime').length);
-    await page.locator('[data-category="all"]').click();
-    await page.locator('[data-favorite="wuji"]').click();
-    assert.equal(await page.locator('#favorite-picks').isVisible(), true);
-    assert.equal(await page.locator('#favorite-picks-grid .quick-pick').count(), 1);
-    await page.locator('[data-favorite="wuji"]').click();
-    assert.equal(await page.locator('#favorite-picks').isVisible(), false);
-    await page.goto(base+'/pans.html');
-    const panTotal = await page.locator('.movie-card').count();
-    assert.equal(panTotal, panData.sites.length);
     await page.locator('#movie-search').fill('qianfan.app');
     assert.equal(await visible(), 1);
     assert.match(await page.locator('.movie-card:visible h3').innerText(), /千帆搜索/);
-    await page.locator('#movie-search').fill('this-pan-does-not-exist');
+    await page.locator('[data-resource-group="magnet"]').click();
     assert.equal(await visible(), 0);
-    await page.locator('#reset-filters').click();
-    assert.equal(await visible(), panTotal);
+    await page.locator('[data-resource-group="cloud"]').click();
+    assert.equal(await visible(), 1);
     await page.locator('[data-category="official"]').click();
     assert.equal(await visible(), panData.sites.filter(site => site.category === 'official').length);
-    await page.locator('[data-category="all"]').click();
-    await page.locator('[data-favorite="pan-qianfan"]').click();
-    assert.equal(await page.locator('#favorite-picks').isVisible(), true);
-    assert.equal(await page.locator('#favorite-picks-grid .quick-pick').count(), 1);
-    await page.locator('[data-favorite="pan-qianfan"]').click();
-    assert.equal(await page.locator('#favorite-picks').isVisible(), false);
+    await page.locator('[data-resource-group="magnet"]').click();
+    await page.locator('[data-category="anime"]').click();
+    assert.equal(await visible(), magnetData.sites.filter(site => site.category === 'anime').length);
+    await page.locator('#show-favorites').click();
+    assert.equal(await visible(), 3);
+    assert.equal(await page.locator('#favorite-picks-grid .quick-pick').count(), 3);
+    await page.locator('#show-favorites').click();
+    assert.equal(await visible(), resourceTotal);
+    await page.locator('[data-favorite="seedhub"]').click();
+    await page.reload();
+    assert.equal(await page.locator('[data-favorite="seedhub"]').getAttribute('aria-pressed'), 'false');
+    assert.equal(await page.locator('#favorite-count').innerText(), '2');
+    await page.locator('#movie-search').fill('SeedHub 夸克');
+    assert.equal(await visible(), 1);
+    await page.locator('#movie-search').fill('this-resource-does-not-exist');
+    assert.equal(await visible(), 0);
+    await page.locator('#reset-filters').click();
+    assert.equal(await visible(), resourceTotal);
+    await page.goto(base+'/stocks.html');
+    assert.equal(await visible(), stockData.sites.length);
+    assert.equal(await page.locator('.movie-card h3').first().innerText(), 'StockClaw');
+    assert.equal(await page.locator('.movie-card-link').first().getAttribute('href'), 'https://stockclaw.dkluge.com/');
+    assert.equal(await page.locator('.movie-card .site-mark img').count(), stockData.sites.length);
+    const stockIcons = await page.locator('.movie-card .site-mark img').evaluateAll(async images => {
+      for (const image of images) image.loading = 'eager';
+      await Promise.all(images.map(image => image.decode()));
+      return images.map(image => ({src: image.getAttribute('src'), width: image.naturalWidth, height: image.naturalHeight}));
+    });
+    assert.ok(stockIcons.every(image => image.width > 0 && image.height > 0 && image.src.startsWith('images/stock-icons/')));
+    await page.locator('[data-category="public-data"]').click();
+    assert.equal(await visible(), stockData.sites.filter(site => site.category === 'public-data').length);
+    assert.equal(await page.locator('.movie-category:visible h2').innerText(), '公共数据');
+    await page.locator('#movie-search').fill('FRED 利率');
+    assert.equal(await visible(), 1);
+    assert.equal(await page.locator('.movie-card:visible h3').innerText(), 'FRED 经济数据');
+    await page.locator('#language-toggle').click();
+    assert.equal(await page.locator('main h1').innerText(), 'Stocks');
+    assert.equal(await page.locator('#movie-search').getAttribute('placeholder'), 'Search sites, domains, or keywords');
+    await page.locator('#language-toggle').click();
+    await page.locator('[data-favorite="fred"]').click();
+    await page.reload();
+    await page.locator('#show-favorites').click();
+    assert.equal(await visible(), 1);
+    assert.equal(await page.locator('.movie-card:visible h3').innerText(), 'FRED 经济数据');
     for (const [kind, data, domain, category, first] of [
       ['reading', readingData, 'IBOOKS.ORG.CN', 'ebooks', 'ibooks'],
       ['music', musicData, 'GEQUBAO.COM', 'search', 'gequbao'],
@@ -171,13 +205,14 @@ async function main() {
     await page.goto(base+'/');
     assert.equal(await page.locator('.nav-links a[href="#features"]').count(), 0);
     assert.equal(await page.locator('.nav-links a[href="movies.html"]').count(), 1);
-    assert.equal(await page.locator('.nav-links a[href="magnets.html"]').count(), 1);
-    assert.equal(await page.locator('.nav-links a[href="pans.html"]').count(), 1);
+    assert.equal(await page.locator('.nav-links a[href="resources.html"]').count(), 1);
+    assert.equal(await page.locator('.nav-links a[href="stocks.html"]').count(), 1);
+    assert.equal(await page.locator('.nav-links a[href="magnets.html"], .nav-links a[href="pans.html"]').count(), 0);
     await page.locator('#language-toggle').click();
     assert.equal(await page.locator('html').getAttribute('lang'), 'en');
     assert.equal(await page.locator('.nav-links a[href="movies.html"]').innerText(), 'Movies');
-    assert.equal(await page.locator('.nav-links a[href="magnets.html"]').innerText(), 'Magnets');
-    assert.equal(await page.locator('.nav-links a[href="pans.html"]').innerText(), 'Cloud');
+    assert.equal(await page.locator('.nav-links a[href="resources.html"]').innerText(), 'Resources');
+    assert.equal(await page.locator('.nav-links a[href="stocks.html"]').innerText(), 'Stocks');
     await page.goto(base+'/sources.html');
     const sourceCount = await page.locator('.source-card').count();
     assert.equal(sourceCount, 85);
@@ -212,7 +247,7 @@ async function main() {
     for (const width of [320, 360, 390, 768, 1024, 1081, 1280]) {
       await page.setViewportSize({width, height: 900});
       let homeNavigation;
-      for (const file of ['', 'movies.html', 'magnets.html', 'pans.html', 'reading.html', 'music.html', 'sources.html', 'privacy.html']) {
+      for (const file of ['', 'movies.html', 'resources.html', 'stocks.html', 'reading.html', 'music.html', 'sources.html', 'privacy.html']) {
         await page.goto(base+'/'+file);
         const dimensions = await page.evaluate(() => ({viewport:innerWidth, content:document.documentElement.scrollWidth}));
         assert.ok(dimensions.content <= dimensions.viewport, `${file || 'index.html'} overflows at ${width}px: ${dimensions.content}`);
@@ -227,7 +262,7 @@ async function main() {
         });
         if (!file) homeNavigation = navigation;
         else assert.deepEqual(navigation, homeNavigation, `Navigation differs on ${file} at ${width}px`);
-        assert.deepEqual((await page.locator('[data-shared-nav] .nav-links a').allTextContents()).map(s => s.trim()), ['Sources','Movies','Magnets','Cloud','Reading','Music','Tools']);
+        assert.deepEqual((await page.locator('[data-shared-nav] .nav-links a').allTextContents()).map(s => s.trim()), ['Sources','Movies','Resources','Reading','Music','Stocks','Tools']);
         assert.equal(await page.locator('#language-toggle').innerText(), '中文');
         assert.equal(await page.locator('.nav-links a > svg:first-child').count(), 7);
         const tools = page.locator('.nav-links a[href="https://www.dkluge.com/zh/bag"]');
@@ -257,13 +292,13 @@ async function main() {
     assert.equal(await plain.locator('.movie-card:visible').count(), total);
     assert.equal(await plain.locator('.movie-category:visible').count(), movieData.categories.length);
     assert.equal(await plain.locator('.favorite-button:visible').count(), 0);
-    await plain.goto(base+'/magnets.html');
-    assert.equal(await plain.locator('.movie-card:visible').count(), magnetTotal);
-    assert.equal(await plain.locator('.movie-category:visible').count(), magnetData.categories.length);
-    assert.equal(await plain.locator('.favorite-button:visible').count(), 0);
     await plain.goto(base+'/pans.html');
-    assert.equal(await plain.locator('.movie-card:visible').count(), panTotal);
-    assert.equal(await plain.locator('.movie-category:visible').count(), panData.categories.length);
+    await plain.waitForURL('**/resources.html#cloud-engine');
+    assert.equal(await plain.locator('.movie-card:visible').count(), resourceTotal);
+    assert.equal(await plain.locator('.movie-category:visible').count(), magnetData.categories.length + panData.categories.length);
+    assert.equal(await plain.locator('.favorite-button:visible').count(), 0);
+    await plain.goto(base+'/stocks.html');
+    assert.equal(await plain.locator('.movie-card:visible').count(), stockData.sites.length);
     assert.equal(await plain.locator('.favorite-button:visible').count(), 0);
     await plain.goto(base+'/sources.html');
     assert.equal(await plain.locator('.source-card:visible').count(), sourceCount);
@@ -303,7 +338,7 @@ async function main() {
     await privatePage.locator('#show-favorites').click();
     assert.equal(await privatePage.locator('.movie-card:visible').count(), 1);
     assert.deepEqual(errors, []);
-    console.log(`PASS: existing directories, ${readingData.sites.length} reading and ${musicData.sites.length} music entries; bilingual search, isolated favorites, icons, tools link, responsive menus, identical navigation at 7 widths, clipboard, no-JS, and blocked storage.`);
+    console.log(`PASS: merged resources and legacy favorites, stock navigation, ${readingData.sites.length} reading and ${musicData.sites.length} music entries; bilingual search, isolated favorites, icons, tools link, responsive menus, identical navigation at 7 widths, clipboard, no-JS, and blocked storage.`);
   } finally {
     await browser.close();
   }

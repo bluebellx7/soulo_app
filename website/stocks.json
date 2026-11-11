@@ -1,0 +1,430 @@
+{
+  "updated": "2026-11-11",
+  "categories": [
+    {
+      "id": "mainland",
+      "name": "A 股行情与复盘",
+      "name_en": "A-share Quotes & Reviews",
+      "description": "查看个股、板块和市场复盘。",
+      "description_en": "Browse mainland Chinese stocks, sectors, and market reviews.",
+      "icon": "chart"
+    },
+    {
+      "id": "global",
+      "name": "全球行情与图表",
+      "name_en": "Global Quotes & Charts",
+      "description": "查看全球市场指数、股票报价和走势。",
+      "description_en": "Follow global market indexes, stock quotes, and price charts.",
+      "icon": "globe"
+    },
+    {
+      "id": "public-data",
+      "name": "公共数据",
+      "name_en": "Public Data",
+      "description": "查询证券、债券、利率、期货与宏观经济数据。",
+      "description_en": "Explore securities, bonds, interest rates, futures, and macroeconomic data.",
+      "icon": "grid"
+    }
+  ],
+  "sites": [
+    {
+      "id": "stockclaw",
+      "name": "StockClaw",
+      "name_en": "StockClaw",
+      "url": "https://stockclaw.dkluge.com/",
+      "category": "mainland",
+      "description": "A 股看盘与复盘，查看竞价、涨停、题材热度和个股 K 线。",
+      "description_en": "Follow A-share auctions, limit-up stocks, active themes, and candlestick charts.",
+      "tags": [
+        "A 股",
+        "涨停复盘",
+        "题材"
+      ],
+      "tags_en": [
+        "A-shares",
+        "Market review",
+        "Themes"
+      ],
+      "mark": "SC",
+      "icon": "images/stock-icons/stockclaw.png"
+    },
+    {
+      "id": "eastmoney",
+      "name": "东方财富行情中心",
+      "name_en": "East Money Quotes",
+      "url": "https://quote.eastmoney.com/center/",
+      "category": "mainland",
+      "description": "查看 A 股、港股和美股行情，浏览指数、板块和涨跌排行。",
+      "description_en": "Browse mainland, Hong Kong, and US stock quotes, indexes, sectors, and movers.",
+      "tags": [
+        "A 股",
+        "港股",
+        "板块"
+      ],
+      "tags_en": [
+        "A-shares",
+        "Hong Kong",
+        "Sectors"
+      ],
+      "mark": "东财",
+      "icon": "images/stock-icons/eastmoney.png"
+    },
+    {
+      "id": "tonghuashun",
+      "name": "同花顺行情中心",
+      "name_en": "10jqka Quotes",
+      "url": "https://q.10jqka.com.cn/",
+      "category": "mainland",
+      "description": "查看 A 股涨跌分布、个股行情和行业板块。",
+      "description_en": "Browse A-share market breadth, individual quotes, and industry sectors.",
+      "tags": [
+        "A 股",
+        "涨跌排行",
+        "行业"
+      ],
+      "tags_en": [
+        "A-shares",
+        "Movers",
+        "Industries"
+      ],
+      "mark": "同花",
+      "icon": "images/stock-icons/tonghuashun.png"
+    },
+    {
+      "id": "tradingview",
+      "name": "TradingView",
+      "name_en": "TradingView",
+      "url": "https://www.tradingview.com/markets/stocks-usa/",
+      "category": "global",
+      "description": "从美股市场概览进入个股图表，查看行业表现与财报日历。",
+      "description_en": "Open stock charts from the US market overview and browse sector performance and the earnings calendar.",
+      "tags": [
+        "美股",
+        "图表",
+        "财报日历"
+      ],
+      "tags_en": [
+        "US stocks",
+        "Charts",
+        "Earnings calendar"
+      ],
+      "mark": "TV",
+      "icon": "images/stock-icons/tradingview.png"
+    },
+    {
+      "id": "google-finance",
+      "name": "Google 财经",
+      "name_en": "Google Finance",
+      "url": "https://www.google.com/finance/",
+      "category": "global",
+      "description": "查询全球主要指数、股票报价和相关财经新闻。",
+      "description_en": "Look up global market indexes, stock quotes, and related financial news.",
+      "tags": [
+        "全球行情",
+        "指数",
+        "新闻"
+      ],
+      "tags_en": [
+        "Global quotes",
+        "Indexes",
+        "News"
+      ],
+      "mark": "G",
+      "icon": "images/stock-icons/google-finance.png"
+    },
+    {
+      "id": "stats-china",
+      "name": "国家统计局数据发布",
+      "name_en": "NBS Data Releases",
+      "url": "https://www.stats.gov.cn/sj/zxfb/",
+      "category": "public-data",
+      "description": "查看 GDP、CPI、工业和消费等指标的最新发布数据。",
+      "description_en": "Read the latest releases for GDP, CPI, industrial output, and retail sales.",
+      "tags": [
+        "宏观数据",
+        "GDP",
+        "CPI"
+      ],
+      "tags_en": [
+        "Macroeconomics",
+        "GDP",
+        "CPI"
+      ],
+      "mark": "国家",
+      "icon": "images/stock-icons/stats-china.png"
+    },
+    {
+      "id": "sse",
+      "name": "上交所股票数据",
+      "name_en": "SSE Stock Statistics",
+      "url": "https://www.sse.com.cn/market/stockdata/statistic/",
+      "category": "public-data",
+      "description": "查询沪市股票数量、股本、市值和平均市盈率等统计数据。",
+      "description_en": "View Shanghai stock counts, share capital, market capitalization, and average price-to-earnings ratios.",
+      "tags": [
+        "沪市",
+        "市场统计",
+        "市盈率"
+      ],
+      "tags_en": [
+        "Shanghai",
+        "Market statistics",
+        "P/E ratios"
+      ],
+      "mark": "SSE",
+      "icon": "images/stock-icons/sse.png"
+    },
+    {
+      "id": "szse",
+      "name": "深交所市场总貌",
+      "name_en": "SZSE Market Overview",
+      "url": "https://www.szse.cn/market/overview/index.html",
+      "category": "public-data",
+      "description": "查看深市市场总貌，进入股票、基金和债券成交统计。",
+      "description_en": "Explore the Shenzhen market overview and trading statistics for stocks, funds, and bonds.",
+      "tags": [
+        "深市",
+        "市场统计",
+        "成交数据"
+      ],
+      "tags_en": [
+        "Shenzhen",
+        "Market statistics",
+        "Trading data"
+      ],
+      "mark": "SZSE",
+      "icon": "images/stock-icons/szse.png"
+    },
+    {
+      "id": "hkex-data",
+      "name": "港交所市场统计",
+      "name_en": "HKEX Market Statistics",
+      "url": "https://www.hkex.com.hk/Market-Data/Statistics/Consolidated-Reports/HKEX-Monthly-Market-Highlights?sc_lang=zh-HK",
+      "category": "public-data",
+      "description": "查看港股市场月度概况、成交金额、市值和上市公司统计。",
+      "description_en": "Browse Hong Kong monthly market highlights, turnover, market capitalization, and listing statistics.",
+      "tags": [
+        "港股",
+        "市场统计",
+        "月度数据"
+      ],
+      "tags_en": [
+        "Hong Kong",
+        "Market statistics",
+        "Monthly data"
+      ],
+      "mark": "HK",
+      "icon": "images/stock-icons/hkex.png"
+    },
+    {
+      "id": "fred",
+      "name": "FRED 经济数据",
+      "name_en": "FRED Economic Data",
+      "url": "https://fred.stlouisfed.org/",
+      "category": "public-data",
+      "description": "搜索利率、通胀、就业和 GDP 等经济时间序列，查看图表与下载数据。",
+      "description_en": "Search economic time series such as interest rates, inflation, employment, and GDP, with charts and downloads.",
+      "tags": [
+        "经济数据",
+        "利率",
+        "通胀"
+      ],
+      "tags_en": [
+        "Economic data",
+        "Interest rates",
+        "Inflation"
+      ],
+      "mark": "FRED",
+      "icon": "images/stock-icons/fred.png"
+    },
+    {
+      "id": "eastmoney-data",
+      "name": "东方财富数据中心",
+      "name_en": "East Money Data Center",
+      "url": "https://data.eastmoney.com/",
+      "category": "public-data",
+      "description": "查询龙虎榜、机构持仓、股东变化、融资融券和财务指标。",
+      "description_en": "Browse trading disclosures, institutional holdings, shareholders, margin trading, and financial metrics.",
+      "tags": [
+        "龙虎榜",
+        "股东",
+        "资金数据"
+      ],
+      "tags_en": [
+        "Trading disclosures",
+        "Shareholders",
+        "Capital flows"
+      ],
+      "mark": "东财",
+      "icon": "images/stock-icons/eastmoney.png"
+    },
+    {
+      "id": "csi",
+      "name": "中证指数数据",
+      "name_en": "CSI Index Data",
+      "url": "https://www.csindex.com.cn/#/indices/family/list",
+      "category": "public-data",
+      "description": "查询指数资料、编制方案、样本信息和指数单张。",
+      "description_en": "Browse index profiles, methodologies, constituent information, and factsheets.",
+      "tags": [
+        "指数",
+        "ETF",
+        "指数样本"
+      ],
+      "tags_en": [
+        "Indexes",
+        "ETFs",
+        "Constituents"
+      ],
+      "mark": "中证",
+      "icon": "images/stock-icons/csi.png"
+    },
+    {
+      "id": "chinamoney",
+      "name": "中国货币网",
+      "name_en": "ChinaMoney Shibor",
+      "url": "https://www.chinamoney.com.cn/chinese/bkshibor/",
+      "category": "public-data",
+      "description": "查看 Shibor 各期限报价、走势图和历史数据。",
+      "description_en": "View Shibor rates by tenor, charts, and historical data.",
+      "tags": [
+        "Shibor",
+        "利率",
+        "资金面"
+      ],
+      "tags_en": [
+        "Shibor",
+        "Interest rates",
+        "Money markets"
+      ],
+      "mark": "货币",
+      "icon": "images/stock-icons/chinamoney.png"
+    },
+    {
+      "id": "chinabond",
+      "name": "中债收益率曲线",
+      "name_en": "ChinaBond Yield Curves",
+      "url": "https://yield.chinabond.com.cn/cbweb-mn/yield_main?locale=zh_cN",
+      "category": "public-data",
+      "description": "查询国债和信用债的收益率曲线与期限结构。",
+      "description_en": "Explore yield curves and term structures for Chinese government and credit bonds.",
+      "tags": [
+        "债券",
+        "收益率",
+        "期限结构"
+      ],
+      "tags_en": [
+        "Bonds",
+        "Yields",
+        "Term structure"
+      ],
+      "mark": "中债",
+      "icon": "images/stock-icons/chinabond.png"
+    },
+    {
+      "id": "shfe",
+      "name": "上期所交易数据",
+      "name_en": "SHFE Trading Data",
+      "url": "https://www.shfe.com.cn/reports/tradedata/dailyandweeklydata/",
+      "category": "public-data",
+      "description": "查询期货成交、持仓排名、仓单和库存的日周统计。",
+      "description_en": "Browse daily and weekly futures trading, position rankings, warehouse receipts, and inventory statistics.",
+      "tags": [
+        "期货",
+        "持仓",
+        "库存"
+      ],
+      "tags_en": [
+        "Futures",
+        "Positions",
+        "Inventory"
+      ],
+      "mark": "SHFE",
+      "icon": "images/stock-icons/shfe.png"
+    },
+    {
+      "id": "cftc",
+      "name": "CFTC 持仓报告",
+      "name_en": "CFTC Commitments of Traders",
+      "url": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm",
+      "category": "public-data",
+      "description": "查看期货及期权交易者分类持仓报告与历史数据。",
+      "description_en": "Read trader-category position reports and historical data for futures and options markets.",
+      "tags": [
+        "COT",
+        "期货",
+        "分类持仓"
+      ],
+      "tags_en": [
+        "COT",
+        "Futures",
+        "Trader positions"
+      ],
+      "mark": "CFTC",
+      "icon": "images/stock-icons/cftc.png"
+    },
+    {
+      "id": "bis",
+      "name": "BIS 国际金融数据",
+      "name_en": "BIS Data Portal",
+      "url": "https://data.bis.org/",
+      "category": "public-data",
+      "description": "查询跨境银行、信贷、债务证券和汇率等国际金融统计。",
+      "description_en": "Explore international statistics on cross-border banking, credit, debt securities, and exchange rates.",
+      "tags": [
+        "跨境银行",
+        "信贷",
+        "汇率"
+      ],
+      "tags_en": [
+        "Cross-border banking",
+        "Credit",
+        "Exchange rates"
+      ],
+      "mark": "BIS",
+      "icon": "images/stock-icons/bis.png"
+    },
+    {
+      "id": "imf",
+      "name": "IMF 数据库",
+      "name_en": "IMF Data",
+      "url": "https://data.imf.org/en",
+      "category": "public-data",
+      "description": "查询世界经济展望、国际收支、财政和汇率等经济金融数据。",
+      "description_en": "Explore World Economic Outlook, balance of payments, fiscal, and exchange rate data.",
+      "tags": [
+        "WEO",
+        "国际收支",
+        "宏观数据"
+      ],
+      "tags_en": [
+        "WEO",
+        "Balance of payments",
+        "Macroeconomics"
+      ],
+      "mark": "IMF",
+      "icon": "images/stock-icons/imf.png"
+    },
+    {
+      "id": "worldbank",
+      "name": "世界银行开放数据",
+      "name_en": "World Bank Open Data",
+      "url": "https://data.worldbank.org/",
+      "category": "public-data",
+      "description": "按国家和指标查询 GDP、人口、贸易和发展统计。",
+      "description_en": "Explore GDP, population, trade, and development statistics by economy and indicator.",
+      "tags": [
+        "国家比较",
+        "发展指标",
+        "GDP"
+      ],
+      "tags_en": [
+        "Country comparisons",
+        "Development indicators",
+        "GDP"
+      ],
+      "mark": "世行",
+      "icon": "images/stock-icons/worldbank.png"
+    }
+  ]
+}

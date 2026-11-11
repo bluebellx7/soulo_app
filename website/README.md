@@ -4,11 +4,11 @@
 
 ## 页面与设计
 
-- `index.html`：产品首页，导航包含搜索源、影视导航、磁力搜索、网盘搜索、阅读导航、音乐资源与在线工具；支持中英文切换。
+- `index.html`：产品首页，导航包含搜索源、影视导航、资源搜索、阅读导航、音乐资源、股票导航与在线工具；支持中英文切换。
 - `sources.html`：85 个搜索模板、9 个分类，支持分类筛选、搜索及单项 / 分类 / 当前结果复制。
 - `movies.html`：85 个影视网站、10 个分类，支持筛选、搜索和浏览器本地收藏。
-- `magnets.html`：34 个磁力搜索网站、4 个分类，支持筛选、搜索和浏览器本地收藏。
-- `pans.html`：28 个网盘搜索网站、4 个分类，支持筛选、搜索和浏览器本地收藏。
+- `resources.html`：合并磁力与网盘搜索，包含 61 个去重入口与 8 个分类。原 `magnets.html`、`pans.html` 会转到资源搜索，已有收藏可以继续使用。
+- `stocks.html`：StockClaw、行情图表与公共数据，共 19 个入口，支持分类、搜索与本地收藏。
 - `reading.html`：iBooks、SoBooks 等 10 个电子书资源、找书搜索与阅读工具；支持搜索、分类和本地收藏。
 - `music.html`：歌曲搜索、无损资源、数字专辑与配乐音效，共 8 个入口；支持搜索、分类和本地收藏。
 - `privacy.html`：App 隐私政策。
@@ -23,7 +23,7 @@
 
 ## 更新目录
 
-影视、磁力与网盘目录源数据分别在 `website/movies.json`、`website/magnets.json` 与 `website/pans.json`，页面模板在 `scripts/templates/movies.html`、`scripts/templates/magnets.html` 与 `scripts/templates/pans.html`。新增网站时维护唯一 ID、名称、HTTPS 地址、分类、用途简介、标签与图标文字；可选的 `icon` 指向 `images/movie-icons/`、`images/magnet-icons/` 或 `images/pan-icons/` 下的本地 PNG。`updated` 是整理日期，不能解释为全部站点的可用性保证。
+影视、磁力与网盘目录源数据分别在 `website/movies.json`、`website/magnets.json` 与 `website/pans.json`，股票导航源数据在 `website/stocks.json`，所有条目均使用 `images/stock-icons/` 下的网站真实图标。影视使用 `scripts/templates/movies.html`，资源与股票导航共用 `scripts/templates/search-directory.html`。新增网站时维护唯一 ID、名称、HTTPS 地址、分类、用途简介、标签与图标文字；可选的 `icon` 指向 `images/movie-icons/` 或 `images/stock-icons/` 下的本地 PNG。`updated` 是整理日期，不能解释为全部站点的可用性保证。
 
 搜索源数据在 `website/sources.json`，页面模板在 `scripts/templates/sources.html`，样式和交互分别在 `sources.css` 与 `sources.js`。生成器将目录及客户端数据直接写入 HTML；页面 JavaScript 只负责筛选和复制，不发起数据或图标字体请求。复制成功后保留浏览位置，配置预览按需展开；剪贴板不可用时展开预览供手动复制。
 
@@ -35,7 +35,7 @@ python3 scripts/build_website.py --check
 python3 scripts/check_website.py
 ```
 
-生成文件 `movies.html`、`magnets.html`、`pans.html`、`reading.html`、`music.html` 和 `sources.html` 随源文件一并提交。分类、名称、简介、链接和结构化数据在原始 HTML 中存在，不依赖 JavaScript 执行。禁用 JavaScript 时隐藏收藏和筛选控件，目录链接仍可使用。
+生成文件 `movies.html`、`resources.html`、`stocks.html`、`magnets.html`、`pans.html`、`reading.html`、`music.html` 和 `sources.html` 随源文件一并提交。分类、名称、简介、链接和结构化数据在原始 HTML 中存在，不依赖 JavaScript 执行。禁用 JavaScript 时隐藏收藏和筛选控件，目录链接仍可使用。
 
 ## SEO 与 AI 搜索
 

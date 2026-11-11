@@ -27,7 +27,7 @@ trap cleanup EXIT INT TERM
 echo "========== 上传 Soulo 静态网站 =========="
 
 for file in index.html home.css home.js site.css site-ui.js navigation.css sources.html sources.css sources.js sources.json privacy.html \
-    movies.html movies.css movies.js movies.json magnets.html magnets.json pans.html pans.json reading.html reading.json music.html music.json content-directories.css navigation.js favicon.svg robots.txt sitemap.xml llms.txt llms-full.txt \
+    movies.html movies.css movies.js movies.json resources.html magnets.html magnets.json pans.html pans.json stocks.html stocks.json reading.html reading.json music.html music.json content-directories.css navigation.js favicon.svg robots.txt sitemap.xml llms.txt llms-full.txt \
     images/soulo-home-zh.webp images/soulo-home-en.webp \
     images/soulo-home-light-zh.webp images/soulo-home-light-en.webp images/app-store-qr.svg \
     images/web/app-icon-108.webp images/web/search-home.webp \
@@ -102,6 +102,9 @@ check_content_type "images/web/illustration-about.webp" "image/webp"
 check_content_type "images/web/illustration-reading.webp" "image/webp"
 check_content_type "images/web/illustration-bookmarks.webp" "image/webp"
 check_content_type "movies.html" "text/html"
+check_content_type "resources.html" "text/html"
+check_content_type "stocks.html" "text/html"
+check_content_type "stocks.json" "application/json"
 check_content_type "magnets.html" "text/html"
 check_content_type "pans.html" "text/html"
 check_content_type "reading.html" "text/html"

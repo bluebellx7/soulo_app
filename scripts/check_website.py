@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT/'website'
 BASE = 'https://soulo.dkluge.com/'
-PAGES = ['index.html', 'sources.html', 'movies.html', 'magnets.html', 'pans.html', 'reading.html', 'music.html', 'privacy.html']
+PAGES = ['index.html', 'sources.html', 'movies.html', 'resources.html', 'stocks.html', 'reading.html', 'music.html', 'privacy.html']
 
 
 class Page(HTMLParser):
@@ -79,8 +79,12 @@ def check():
                     assert unquote(url.fragment) in ids, (file, value, 'missing anchor')
         print(f'{file}: metadata, JSON-LD, links, headings and analytics OK')
 
-    for page_name, json_name in [('movies.html', 'movies.json'), ('magnets.html', 'magnets.json'), ('pans.html', 'pans.json'), ('reading.html', 'reading.json'), ('music.html', 'music.json')]:
-        data = json.loads((SITE/json_name).read_text())
+    directories = {name: json.loads((SITE/(name+'.json')).read_text()) for name in ('movies', 'stocks', 'reading', 'music')}
+    magnets, pans = (json.loads((SITE/(name+'.json')).read_text()) for name in ('magnets', 'pans'))
+    resources = {site['url']: site for site in reversed([*magnets['sites'], *pans['sites']])}
+    directories['resources'] = {'sites': list(resources.values()), 'categories': magnets['categories'] + pans['categories']}
+    for name, data in directories.items():
+        page_name = name+'.html'
         dir_page = pages[page_name]
         cards = [a for t,a in dir_page.tags if 'movie-card' in a.get('class','').split()]
         assert len(cards) == len(data['sites']) == len({s['url'] for s in data['sites']}), (page_name, 'card count or duplicate URL')
@@ -88,7 +92,7 @@ def check():
         links = {a.get('href') for t,a in dir_page.tags if t == 'a'}
         assert {s['url'] for s in data['sites']} <= links, (page_name, 'links')
         card_urls = {a['href'] for t,a in dir_page.tags if t == 'a' and 'movie-card-link' in a.get('class','').split()}
-        assert card_urls == {s['url'] for s in data['sites']}, f'{page_name} must match {json_name}'
+        assert card_urls == {s['url'] for s in data['sites']}, f'{page_name} must match its source data'
         graph = dir_page.schema[0]['@graph']
         directory = next(n for n in graph if n['@type'] == 'ItemList')
         assert directory['numberOfItems'] == len(data['sites'])
@@ -116,7 +120,7 @@ def check():
     for file in ['llms.txt','llms-full.txt']:
         text = (SITE/file).read_text()
         assert all(BASE + ('' if p == 'index.html' else p) in text for p in PAGES)
-    print(f'Directory: {len(cards)} sites, {len(data["categories"])} categories; sitemap and GEO summaries OK')
+    print('Directory data, sitemap and site summaries OK')
 
 
 if __name__ == '__main__':
