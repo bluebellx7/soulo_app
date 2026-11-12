@@ -18,6 +18,11 @@ enum WebResourceInspectionError: LocalizedError {
 }
 
 enum WebResourceInspectionService {
+    struct VideoFallbackInspection {
+        let target: (resource: WebMediaResource, token: String)?
+        let hasInlineVideo: Bool
+    }
+
     static func delivery(for url: URL) -> WebMediaResource.Delivery {
         let fileExtension = url.pathExtension.lowercased()
         let format = URLComponents(url: url, resolvingAgainstBaseURL: false)?
@@ -33,25 +38,64 @@ enum WebResourceInspectionService {
     /// expose a blob URL even though its player configuration or recent network
     /// requests still contain the downloadable stream URL.
     @MainActor
-    static func currentVideoResource(webView: WKWebView, frame: WKFrameInfo, token: String) async -> WebMediaResource? {
+    static func currentVideoResource(webView: WKWebView, frame: WKFrameInfo?, token: String) async -> WebMediaResource? {
+        (await videoTarget(webView: webView, frame: frame, token: token))?.resource
+    }
+
+    /// A native entry is available when a page has a known player configuration
+    /// or exactly one media element whose own toolbar cannot be displayed.
+    @MainActor
+    static func fallbackVideoTarget(webView: WKWebView, frame: WKFrameInfo?) async -> (resource: WebMediaResource, token: String)? {
+        (await inspectVideoFallback(webView: webView, frame: frame)).target
+    }
+
+    @MainActor
+    static func inspectVideoFallback(webView: WKWebView, frame: WKFrameInfo?) async -> VideoFallbackInspection {
+        await inspectVideoTarget(webView: webView, frame: frame, token: "__soulo_fallback")
+    }
+
+    @MainActor
+    private static func videoTarget(webView: WKWebView, frame: WKFrameInfo?, token: String) async -> (resource: WebMediaResource, token: String)? {
+        (await inspectVideoTarget(webView: webView, frame: frame, token: token)).target
+    }
+
+    @MainActor
+    private static func inspectVideoTarget(webView: WKWebView, frame: WKFrameInfo?, token: String) async -> VideoFallbackInspection {
         guard let result = try? await webView.callAsyncJavaScript(
             currentVideoScript, arguments: ["token": token], in: frame, contentWorld: .page
-        ) as? [String: String],
-              let raw = result["url"],
+        ) as? [String: String] else { return .init(target: nil, hasInlineVideo: false) }
+        if result["inlineVideo"] == "true" { return .init(target: nil, hasInlineVideo: true) }
+        guard let raw = result["url"],
               let url = URL(string: raw),
-              ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return nil }
+              ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return .init(target: nil, hasInlineVideo: false) }
         let delivery = WebMediaResource.Delivery(rawValue: result["delivery"] ?? "") ?? .direct
-        let frameURL = frame.requestURL
+        let frameURL = frame?.requestURL
         let sourcePageURL = ["http", "https"].contains(frameURL?.scheme?.lowercased() ?? "")
             ? frameURL : webView.url
-        return WebMediaResource(
+        return .init(target: (WebMediaResource(
             kind: .video, url: url, title: webView.title ?? "", posterURL: nil,
             delivery: delivery, sourcePageURL: sourcePageURL
-        )
+        ), result["token"] ?? token), hasInlineVideo: false)
     }
+
+    private static let mediaDOMQuery = #"""
+        var mediaRootsCache = null;
+        function mediaElements(selector) {
+            if (!mediaRootsCache) {
+                mediaRootsCache = [document];
+                for (var index = 0; index < mediaRootsCache.length && index < 64; index++) {
+                    Array.from(mediaRootsCache[index].querySelectorAll('*')).forEach(function(node) {
+                        if (node.shadowRoot && mediaRootsCache.indexOf(node.shadowRoot) < 0) mediaRootsCache.push(node.shadowRoot);
+                    });
+                }
+            }
+            return mediaRootsCache.flatMap(function(root) { return Array.from(root.querySelectorAll(selector)); });
+        }
+    """#
 
     private static let currentVideoScript = #"""
     return (() => {
+        \#(mediaDOMQuery)
         const webURL = value => {
             if (typeof value !== 'string' || !value.trim()) return '';
             try {
@@ -59,6 +103,7 @@ enum WebResourceInspectionService {
                 return /^https?:$/.test(url.protocol) ? url.href : '';
             } catch (_) { return ''; }
         };
+        let resolvedToken = token;
         const result = (value, mime) => {
             const url = webURL(value);
             if (!url) return null;
@@ -67,7 +112,7 @@ enum WebResourceInspectionService {
             const delivery = /\.m3u8$/i.test(parsed.pathname) || /(?:m3u8|hls|mpegurl)/i.test(format + ' ' + String(mime || ''))
                 ? 'hls' : /\.mpd$/i.test(parsed.pathname) || /(?:mpd|dash)/i.test(format + ' ' + String(mime || ''))
                 ? 'dash' : 'direct';
-            return { url, delivery };
+            return { url, delivery, token: resolvedToken };
         };
         const mediaURL = (value, encoding) => {
             let raw = String(value || '').trim();
@@ -100,10 +145,62 @@ enum WebResourceInspectionService {
             }
             return '';
         };
-        const video = Array.from(document.querySelectorAll('video'))
-            .find(element => element.getAttribute('data-soulo-media-id') === token);
+        const configuredVideo = () => {
+            for (const config of [window.player_aaaa, window.player_bbbb,
+                                  window.player_config, window.__PLAYER_CONFIG__, window.videoInfo]) {
+                if (!config || typeof config !== 'object') continue;
+                const url = mediaURL(config.url || config.playUrl || config.play_url || config.src, config.encrypt);
+                if (url) return result(url);
+            }
+            return null;
+        };
+        // This explicit native action only uses the page's current player config.
+        // Network observations alone must not turn an unrelated ad into a fallback.
+        if (token === '__soulo_configured') return configuredVideo();
+        const allVideos = mediaElements('video');
+        if (token === '__soulo_fallback') {
+            // A rendered player keeps its own tools, even while paused or below
+            // the fold. It must never promote an unrelated hidden frame's URL
+            // into a page-corner play button.
+            const hasBox = element => {
+                const rect = element.getBoundingClientRect();
+                if (rect.width <= 1 || rect.height <= 1) return false;
+                for (let node = element; node; node = node.parentElement || node.getRootNode()?.host) {
+                    const style = node.ownerDocument.defaultView.getComputedStyle(node);
+                    if (style.display === 'none' || style.visibility === 'hidden'
+                        || style.visibility === 'collapse' || Number(style.opacity) === 0) return false;
+                }
+                return true;
+            };
+            const frameVisible = () => {
+                let context = window;
+                while (context !== context.top) {
+                    let frame;
+                    try { frame = context.frameElement; } catch (_) { return false; }
+                    // Cross-origin frame visibility is reported by its isolated
+                    // IntersectionObserver; do not guess from its inner size.
+                    if (!frame) return false;
+                    if (!hasBox(frame)) return false;
+                    context = context.parent;
+                }
+                return true;
+            };
+            if (frameVisible() && allVideos.some(video => video.isConnected && hasBox(video)))
+                return {inlineVideo: 'true'};
+            resolvedToken = '__soulo_configured';
+            const configured = configuredVideo();
+            if (configured) return configured;
+            if (allVideos.length !== 1 || allVideos[0].mediaKeys) return null;
+            resolvedToken = allVideos[0].getAttribute('data-soulo-media-id');
+            if (!resolvedToken) return null;
+        }
+        const video = allVideos
+            .find(element => element.getAttribute('data-soulo-media-id') === resolvedToken);
         if (!video || !video.isConnected) return null;
-        const currentURL = webURL(video.currentSrc) || (video.getAttribute('src')?.trim() ? webURL(video.src) : '');
+        const rawSource = video.getAttribute('src');
+        const declaredSource = !!rawSource?.trim() || Array.from(video.querySelectorAll('source[src]')).some(source => !!source.getAttribute('src')?.trim());
+        const documentPlaceholder = !declaredSource && video.currentSrc === document.URL;
+        const currentURL = (documentPlaceholder ? '' : webURL(video.currentSrc)) || (rawSource?.trim() ? webURL(video.src) : '');
         if (currentURL) {
             const response = Array.from(window.__souloObservedMediaResponses || []).reverse()
                 .find(item => webURL(item?.url) === currentURL);
@@ -123,13 +220,9 @@ enum WebResourceInspectionService {
             const selected = result(source.src, source.type);
             if (selected) return selected;
         }
-        if (document.querySelectorAll('video').length > 1) return null;
-        for (const config of [window.player_aaaa, window.player_bbbb,
-                              window.player_config, window.__PLAYER_CONFIG__, window.videoInfo]) {
-            if (!config || typeof config !== 'object') continue;
-            const url = mediaURL(config.url || config.playUrl || config.play_url || config.src, config.encrypt);
-            if (url) return result(url);
-        }
+        if (allVideos.length > 1) return null;
+        const configured = configuredVideo();
+        if (configured) return configured;
         const responses = Array.from(window.__souloObservedMediaResponses || []).reverse();
         for (const response of responses) {
             const mime = String(response?.mime || '').toLowerCase();
@@ -137,9 +230,12 @@ enum WebResourceInspectionService {
             if (url && (/mpegurl|video\/(?:mp4|webm|quicktime)/.test(mime)
                 || /\.(?:m3u8|mp4|m4v|mov|webm)(?:$|[?#])/i.test(url))) return result(url, mime);
         }
-        const entries = performance.getEntriesByType('resource').slice().reverse();
+        // Some players clear Resource Timing or receive a generic response
+        // MIME type. The request observer still retains their manifest URL.
+        const entries = [...(window.__souloObservedResourceURLs || []),
+                         ...performance.getEntriesByType('resource').map(entry => entry.name)].reverse();
         for (const entry of entries) {
-            const url = webURL(entry.name);
+            const url = webURL(entry);
             if (url && /\.(?:m3u8|mp4|m4v|mov|webm|mpd)(?:$|[?#])/i.test(url)) return result(url);
         }
         return null;
@@ -172,7 +268,7 @@ enum WebResourceInspectionService {
         }
         var snapshot = WebResourceSnapshot(dictionary: dictionary)
         for frame in frames.prefix(16) {
-            guard let value = try? await webView.evaluateJavaScript(
+            guard let value = try? await webView.evaluateCompatibleJavaScript(
                 extractionScript,
                 in: frame,
                 contentWorld: .page
@@ -184,6 +280,7 @@ enum WebResourceInspectionService {
 
     static let extractionScript = #"""
     (function() {
+        \#(mediaDOMQuery)
         function absoluteWebURL(value) {
             if (!value) return '';
             try {
@@ -324,10 +421,13 @@ enum WebResourceInspectionService {
         }
 
         function collectMedia(selector) {
-            Array.from(document.querySelectorAll(selector)).forEach(function(element) {
-                var values = [element.currentSrc, element.src];
+            mediaElements(selector).forEach(function(element) {
+                var raw = element.getAttribute('src');
+                var emptySource = raw !== null && !raw.trim();
+                var values = [emptySource ? '' : element.currentSrc, raw && raw.trim() ? element.src : ''];
                 Array.from(element.querySelectorAll('source')).forEach(function(source) {
-                    values.push(source.src || source.getAttribute('src'));
+                    var rawSource = source.getAttribute('src');
+                    if (rawSource && rawSource.trim()) values.push(source.src);
                 });
                 values.forEach(function(value) {
                     addMedia(
@@ -887,26 +987,34 @@ enum WebResourceMediaService {
                 return AVURLAsset(url: downloaded.localURL)
             }
         }
+        let options = await networkAssetOptions(for: resource, webView: webView)
+        return AVURLAsset(url: resource.url, options: options)
+    }
+
+    /// Snapshot credentials once so independent download/player assets use the
+    /// same request context without persisting cookies in download history.
+    @MainActor
+    static func networkAssetOptions(for resource: WebMediaResource, webView: WKWebView?) async -> [String: Any] {
+        await networkAssetOptions(for: resource,
+                                  cookieStore: webView?.configuration.websiteDataStore.httpCookieStore,
+                                  userAgent: webView?.customUserAgent)
+    }
+
+    @MainActor
+    static func networkAssetOptions(for resource: WebMediaResource, cookieStore: WKHTTPCookieStore?,
+                                    userAgent: String? = nil) async -> [String: Any] {
         var options = assetOptions(for: resource)
-        guard let webView else {
-            return AVURLAsset(url: resource.url, options: options)
-        }
-        if let userAgent = webView.customUserAgent, !userAgent.isEmpty {
+        if let userAgent, !userAgent.isEmpty {
             options[AVURLAssetHTTPUserAgentKey] = userAgent
         }
-        let cookies: [HTTPCookie] = await withCheckedContinuation { continuation in
-            webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { cookies in
-                continuation.resume(returning: cookies)
+        if let cookieStore {
+            let cookies: [HTTPCookie] = await withCheckedContinuation { continuation in
+                cookieStore.getAllCookies { continuation.resume(returning: $0) }
             }
+            let matching = WebResourceDownloadService.matchingCookies(from: cookies, for: resource.url)
+            if !matching.isEmpty { options[AVURLAssetHTTPCookiesKey] = matching }
         }
-        let matchingCookies = WebResourceDownloadService.matchingCookies(
-            from: cookies,
-            for: resource.url
-        )
-        if !matchingCookies.isEmpty {
-            options[AVURLAssetHTTPCookiesKey] = matchingCookies
-        }
-        return AVURLAsset(url: resource.url, options: options)
+        return options
     }
 
     static func assetOptions(for resource: WebMediaResource) -> [String: Any] {
@@ -916,7 +1024,9 @@ enum WebResourceMediaService {
         switch resource.delivery {
         case .hls:
             // An MP4 override makes AVFoundation ignore the playlist format.
-            options[AVURLAssetOverrideMIMETypeKey] = "application/vnd.apple.mpegurl"
+            if #available(iOS 17.0, *) {
+                options[AVURLAssetOverrideMIMETypeKey] = "application/vnd.apple.mpegurl"
+            }
         case .direct:
             // Use the server's actual MIME type for MP4, WebM, MOV and
             // extensionless streams. Forcing MP4 can produce audio without video.

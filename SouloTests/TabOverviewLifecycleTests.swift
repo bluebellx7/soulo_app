@@ -112,14 +112,21 @@ import Vision
             let request = VNRecognizeTextRequest()
             request.recognitionLevel = .accurate
             request.recognitionLanguages = ["en-US"]
+            // Full-image OCR can miss the header among repeated thumbnail
+            // text. This assertion concerns the top header.
+            let headerRegion = CGRect(x: 0, y: 0.7, width: 1, height: 0.3)
+            request.regionOfInterest = headerRegion
             try VNImageRequestHandler(cgImage: XCTUnwrap(image.cgImage), options: [:]).perform([request])
             // The same domain is also printed inside every preview. Vision's
             // reading order can put a thumbnail before the actual section header.
             let header = request.results?.filter {
-                $0.topCandidates(1).first?.string.lowercased().contains("developer.apple.com") == true
+                $0.topCandidates(1).first?.string.lowercased().contains("developer.") == true
             }.max { $0.boundingBox.midY < $1.boundingBox.midY }
             XCTAssertNotNil(header, "The newest domain group must be visible on opening: \(code)")
-            if let header { XCTAssertGreaterThan(header.boundingBox.midY, 0.70, "The newest domain starts at the top: \(code), \(size)") }
+            if let header {
+                let imageMidY = headerRegion.minY + header.boundingBox.midY * headerRegion.height
+                XCTAssertGreaterThan(imageMidY, 0.70, "The newest domain starts at the top: \(code), \(size)")
+            }
             let attachment = XCTAttachment(image: image)
             attachment.name = "grouped-tabs-\(code)-\(Int(size.width))"; attachment.lifetime = .keepAlways; add(attachment)
             XCTAssertTrue(manager.tabs.allSatisfy { $0.webViewModel.webView == nil }, "Previews cannot activate WebKit")
@@ -203,7 +210,8 @@ import Vision
         restored.configureSnapshotPersistence(id: id)
         await restored.loadSnapshotIfNeeded()
         XCTAssertNotNil(restored.snapshot, "A suspended or restarted tab must recover its screenshot without loading the website")
-        XCTAssertLessThanOrEqual(restored.snapshot?.size.width ?? 1_000, 640)
+        XCTAssertLessThanOrEqual(restored.snapshot?.size.width ?? 10_000,
+            UIDevice.current.userInterfaceIdiom == .pad ? 1440 : 640)
         let cg = try XCTUnwrap(restored.snapshot?.cgImage)
         var pixels = [UInt8](repeating: 0, count: cg.width * cg.height * 4)
         let context = try XCTUnwrap(CGContext(data: &pixels, width: cg.width, height: cg.height,
@@ -523,4 +531,73 @@ private final class SnapshotFixtureSchemeHandler: NSObject, WKURLSchemeHandler {
         urlSchemeTask.didFinish()
     }
     func webView(_ webView: WKWebView, stop urlSchemeTask: any WKURLSchemeTask) {}
+}
+
+
+extension TabOverviewLifecycleTests {
+    func testIPadSnapshotKeepsRetinaDetailAndRefreshesViewportWithoutReload() async throws {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("iPad preview budget") }
+        let fixture = try await snapshotFixture(id: UUID(), privateMode: true)
+        let (model, web, _, _) = fixture
+        defer { closeSnapshotFixture(fixture); model.deletePersistedSnapshot() }
+        _ = try await web.evaluateJavaScript("document.body.insertAdjacentHTML('beforeend',`<input id='draft' value='Unsubmitted draft'>`);window.pageMarker=42;null")
+        web.frame.size = CGSize(width: 1024, height: 1366)
+        try await Task.sleep(for: .milliseconds(200))
+        await model.captureSnapshot(afterScreenUpdates: true)
+        let tall = try XCTUnwrap(model.snapshot)
+        XCTAssertGreaterThanOrEqual(tall.cgImage?.width ?? 0, 1400, "iPad covers must have Retina detail at large card sizes")
+        XCTAssertLessThanOrEqual(tall.cgImage?.height ?? 10_000, 2048)
+        XCTAssertLessThan(tall.size.width, tall.size.height)
+        let portrait = XCTAttachment(image: tall); portrait.name = "iPad high-resolution portrait preview"; portrait.lifetime = .keepAlways; add(portrait)
+        web.frame.size = CGSize(width: 1366, height: 1024)
+        await model.prepareOverviewSnapshot(viewport: web.bounds.size)
+        let wide = try XCTUnwrap(model.snapshot)
+        XCTAssertGreaterThan(wide.size.width, wide.size.height)
+        XCTAssertGreaterThanOrEqual(wide.cgImage?.width ?? 0, 1400)
+        let draft = try await web.evaluateJavaScript("document.getElementById('draft').value") as? String
+        let marker = try await web.evaluateJavaScript("window.pageMarker") as? Int
+        XCTAssertEqual(draft, "Unsubmitted draft"); XCTAssertEqual(marker, 42)
+        let landscape = XCTAttachment(image: wide); landscape.name = "iPad high-resolution landscape preview"; landscape.lifetime = .keepAlways; add(landscape)
+    }
+    func testSnapshotQualityAndIPadGeometryIgnoreStalePortraitCache() {
+        let tall = CGSize(width: 1024, height: 1366), wide = CGSize(width: 1366, height: 1024)
+        XCTAssertEqual(TabPreviewLayout.aspect(isPad: true, snapshot: tall, viewport: wide), 1366.0 / 1024, accuracy: 0.001)
+        XCTAssertEqual(TabPreviewLayout.aspect(isPad: true, snapshot: wide, viewport: tall), 1024.0 / 1366, accuracy: 0.001)
+        XCTAssertEqual(TabPreviewLayout.aspect(isPad: false, snapshot: tall, viewport: wide), 0.56)
+        let bounded = TabSnapshotQuality.pixelSize(CGSize(width: 3000, height: 4000), isPad: true)
+        XCTAssertLessThanOrEqual(bounded.width, 1440); XCTAssertLessThanOrEqual(bounded.height, 2048)
+        XCTAssertLessThanOrEqual(bounded.width * bounded.height, 1440 * 2048)
+        XCTAssertEqual(TabSnapshotQuality.pixelSize(CGSize(width: 3000, height: 4000), isPad: false).width, 640)
+    }
+}
+
+extension TabOverviewLifecycleTests {
+    func testSnapshotPreviewPreservesBothEdgesAcrossOppositeOrientations() throws {
+        for portrait in [false, true] {
+            let size = portrait ? CGSize(width: 120, height: 240) : CGSize(width: 240, height: 120)
+            let format = UIGraphicsImageRendererFormat(); format.scale = 1
+            let source = UIGraphicsImageRenderer(size: size, format: format).image { context in
+                UIColor.white.setFill(); context.fill(CGRect(origin: .zero, size: size))
+                UIColor.red.setFill(); context.fill(CGRect(x: 0, y: 0, width: size.width / 8, height: size.height))
+                UIColor.blue.setFill(); context.fill(CGRect(x: size.width * 7 / 8, y: 0, width: size.width / 8, height: size.height))
+            }
+            let output = portrait ? CGSize(width: 240, height: 120) : CGSize(width: 120, height: 240)
+            let renderer = ImageRenderer(content: TabSnapshotPreview(image: source).frame(width: output.width, height: output.height))
+            renderer.scale = 1
+            let rendered = try XCTUnwrap(renderer.uiImage), cg = try XCTUnwrap(rendered.cgImage)
+            var pixels = [UInt8](repeating: 0, count: cg.width * cg.height * 4)
+            let context = try XCTUnwrap(CGContext(data: &pixels, width: cg.width, height: cg.height,
+                bitsPerComponent: 8, bytesPerRow: cg.width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+            context.draw(cg, in: CGRect(x: 0, y: 0, width: cg.width, height: cg.height))
+            let left = portrait ? 93 : 5, right = portrait ? 147 : 115, y = cg.height / 2
+            XCTAssertGreaterThan(pixels[(y * cg.width + left) * 4], 240, "The left edge must remain visible")
+            XCTAssertLessThan(pixels[(y * cg.width + left) * 4 + 2], 30)
+            XCTAssertGreaterThan(pixels[(y * cg.width + right) * 4 + 2], 240, "The right edge must remain visible")
+            XCTAssertLessThan(pixels[(y * cg.width + right) * 4], 30)
+            let shot = XCTAttachment(image: rendered)
+            shot.name = portrait ? "portrait-page-in-landscape-card" : "landscape-page-in-portrait-card"
+            shot.lifetime = .keepAlways; add(shot)
+        }
+    }
 }

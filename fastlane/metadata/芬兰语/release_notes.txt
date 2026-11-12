@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Korjattu ongelma, jossa kirjanmerkin tai historiasivun avaaminen saattoi korvata olemassa olevan välilehden.
-• Parannettu käynnistystä, sivujen lataamista ja aloitusnäytön käyttöä.
-• Parannettu koko näytön säätimiä, näytön kääntämistä ja toiston tilaa sovelluksia vaihdettaessa.
-• Parannettu suljettujen välilehtien palautusta, tiedostojen esikatselua ja käyttöliittymän yksityiskohtia.
+• Erilliset taustat vaalealle ja tummalle ulkoasulle sekä kuvan peittokerroksen kytkin.
+• Aloitussivun värejä parannettiin; taustan esikatselu seuraa sovelluksen teemaa.
+• Esikatsele ja jaa taustoja sekä tallenna niitä Kuviin.
+• Ylävälilehtien asetukset, uusi välilehti ja alustapalkin valinnainen piilotus siirtymisen jälkeen.

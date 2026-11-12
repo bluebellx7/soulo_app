@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• S'ha corregit un problema que podia substituir una pestanya existent en obrir un marcador o un element de l'historial.
-• Millores en l'inici, la càrrega de pàgines i la interacció amb la pantalla d'inici.
-• Millores en els controls de pantalla completa, la rotació i l'estat de reproducció en canviar d'app.
-• Millores en la recuperació de pestanyes tancades, les previsualitzacions i els detalls de la interfície.
+• Fons separats per als modes clar i fosc i un interruptor per a la capa de la imatge.
+• Colors d’inici millorats; la previsualització del fons segueix el tema de l’app.
+• Previsualitza, comparteix i desa fons a Fotos.
+• Configuració de pestanyes superior amb pestanya nova i ocultació opcional de la barra de plataformes en navegar.

@@ -1,0 +1,105 @@
+{
+  "date": "2026-11-12",
+  "version": "1.2.13",
+  "build": 53,
+  "scope": [
+    "light_black_image_overlay",
+    "adjustable_image_blur",
+    "white_black_solid_defaults",
+    "translucent_top_tabs",
+    "full_row_tab_actions",
+    "top_tab_recovery_guide",
+    "platform_auto_hide_explanation_and_animation",
+    "full_snapshot_with_blurred_fill",
+    "larger_horizontal_seek",
+    "double_tap_play_pause",
+    "independent_playback_status",
+    "inline_video_fallback_lifecycle"
+  ],
+  "implemented": {
+    "wallpaper": {
+      "light_overlay": "black at 24%, with black edge scrim",
+      "dark_overlay": "black at 30%",
+      "blur": "independent switch, default off, strength 0–100%, radius 0–30 points, image sources only",
+      "solid_defaults": {
+        "light": "#FFFFFF",
+        "dark": "#000000"
+      },
+      "custom_colors": "preserved"
+    },
+    "top_tabs": {
+      "material_opacity": {
+        "active": 0.62,
+        "inactive": 0.4
+      },
+      "actions": "44-point whole-row labels with rectangular hit areas",
+      "hide_guide": "illustrates bottom tabs button → … → show top tab bar; root-owned presentation"
+    },
+    "platform_bar": {
+      "default_auto_hide": false,
+      "manual_enable_explanation": true,
+      "transition_seconds": 0.25,
+      "reduce_motion_respected": true,
+      "restores_on": [
+        "back to search root",
+        "new search"
+      ]
+    },
+    "tab_previews": "sharp foreground scaled to fit, full background copy blurred at 14 points; no new touch handlers",
+    "video": {
+      "horizontal_full_width_seconds": 300,
+      "clamps_to_duration": true,
+      "double_tap": "system and Soulo, inline and fullscreen; fullscreen owns one recognizer pair",
+      "pause_measured_seconds": {
+        "system": [
+          0.083052,
+          0.07173,
+          0.071018
+        ],
+        "soulo": [
+          0.075873,
+          0.080888,
+          0.070472
+        ]
+      },
+      "unsupported_status": "separate layout row outside transport and loading layers",
+      "late_source": "task keyed by source identity prevents empty native preview during asynchronous Soulo preparation"
+    },
+    "stray_play_button": "rendered/offscreen inline video blocks page-corner fallback; visibility remembered per document; hidden/config-only fallback retained"
+  },
+  "validation": {
+    "unit": {
+      "result": "Passed",
+      "total_passed": 50,
+      "failed": 0,
+      "functional_regressions": 49,
+      "capability_probe": 1,
+      "probe_note": "Tampermonkey API probe passing does not certify Tampermonkey functionality",
+      "bundle": "/tmp/soulo-extension-compatibility-20261112/capability-and-final-unit.xcresult"
+    },
+    "ui_final_evidence": {
+      "top_menu_whole_rows_and_auto_hide": "/tmp/soulo-inline-play-overlay-20261112/clean-ipad-home-ui.xcresult",
+      "recovery_guide": "/tmp/soulo-inline-play-overlay-20261112/clean-ipad-recovery-ui.xcresult",
+      "config_hidden_player_fallback_inline_absence_and_warning": "/tmp/soulo-inline-play-overlay-20261112/clean-ipad-player-ui.xcresult",
+      "double_tap_fullscreen_inline_and_immediate_pause": "/tmp/soulo-inline-play-overlay-20261112/double-tap-routing-ui.xcresult",
+      "ios16_4_both_engines_config_and_hidden_source": "/tmp/soulo-inline-play-overlay-20261112/ios16-final-handoff.xcresult",
+      "wallpaper_mask_blur_persistence_and_source_gating": "/tmp/soulo-inline-play-overlay-20261112/iphone-ui.xcresult"
+    },
+    "earlier_failed_attempts": "Retained in result bundles. Old iPadOS 26.2 QA profile had SpringBoard/test-runner failures; clean profile was used. Recovery initially had an accessibility identifier inherited by its Done button, corrected and retested. Initial double-tap routing interfered with single taps; failure dependency was removed and duplicate handling guarded, then both engines passed. iOS 16 late source handoff now passes after source-identity task change.",
+    "rendered_image_checks": [
+      "iOS 16.0 raw / light black mask / blur / dark screenshots",
+      "portrait image in landscape card and landscape image in portrait card retain both colored edges"
+    ],
+    "builds": [
+      "build-for-testing succeeded",
+      "generic iOS device build succeeded"
+    ],
+    "localization": "476 ReadingTools keys × 50 locales; strict validation passed",
+    "app_store_metadata": "version 1.2.13, generated JSON check passed; no version bump in this follow-up"
+  },
+  "limits": [
+    "Local controlled video fixtures verify interactions; this does not certify every third-party website or codec.",
+    "No real-device interaction was used in this follow-up; current UI evidence is from simulators."
+  ],
+  "artifacts": "/tmp/soulo-inline-play-overlay-20261112"
+}

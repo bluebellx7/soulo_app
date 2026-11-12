@@ -47,7 +47,7 @@ struct PlatformTabBar: View {
                 .padding(.trailing, 12)
                 .padding(.vertical, 6)
             }
-            .onChange(of: selectedPlatform) { _, newValue in
+            .onCompatibleChange(of: selectedPlatform) { _, newValue in
                 if let id = newValue?.id {
                     withAnimation(.easeInOut(duration: 0.3)) {
                         proxy.scrollTo(id, anchor: .center)

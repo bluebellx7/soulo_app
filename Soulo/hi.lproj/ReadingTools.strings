@@ -436,3 +436,65 @@
 "files_move_busy" = "इन आइटमों को स्थानांतरित करने या उनका नाम बदलने से पहले डाउनलोड समाप्त होने तक प्रतीक्षा करें।";
 "video_show_episode_dock" = "एपिसोड डॉक दिखाएँ";
 "video_show_episode_dock_desc" = "एपिसोड वाले वेब पेजों पर डॉक किया गया एपिसोड बटन दिखाएं। एपिसोड प्लेयर के अंदर उपलब्ध रहते हैं।";
+
+// Webpage share preview
+"page_share_image" = "चित्र साझा करें";
+"page_share_link" = "लिंक साझा करें";
+"page_share_preview" = "दिखाई देने वाले क्षेत्र का पूर्वावलोकन";
+"page_share_brand" = "Soulo: मल्टी-सर्च ब्राउज़र";
+
+"video_export_mp4" = "MP4 निर्यात करें";
+"video_export_failed" = "यह वीडियो MP4 के रूप में निर्यात नहीं हो सका। मूल फ़ाइल सुरक्षित रखी गई है।";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "दो उँगलियों के इशारे";
+"gesture_hint" = "दो उँगलियाँ एक साथ बगल में चलाएँ। संकेत उँगलियों के साथ चलता है; रद्द करने के लिए वापस लाएँ। एक उँगली से नेविगेशन और पिंच ज़ूम उपलब्ध हैं।";
+"gesture_swipe_right" = "दाएँ स्वाइप करें";
+"gesture_swipe_left" = "बाएँ स्वाइप करें";
+"gesture_show_toolbar" = "टूलबार दिखाएँ";
+"gesture_quick_menu" = "त्वरित मेनू";
+"gesture_preview" = "इशारा देखें";
+"zoom_remember" = "वेबसाइट ज़ूम याद रखें";
+"zoom_hint" = "पेज मेनू का ज़ूम हर डोमेन के लिए सहेजा जाता है। निजी टैब में किए बदलाव नहीं सहेजे जाते।";
+"zoom_empty" = "कोई सहेजा गया ज़ूम नहीं";
+"zoom_reset_all" = "सभी को 100% पर रीसेट करें";
+
+"shake_direction" = "दिशा";
+"shake_direction_horizontal" = "बाएँ और दाएँ";
+"shake_direction_vertical" = "ऊपर और नीचे";
+"shake_direction_any" = "कोई भी दिशा";
+
+"gesture_settings_title" = "वेबपेज इशारे";
+"gesture_no_history" = "जब पीछे नहीं जा सकते";
+"gesture_no_history_hint" = "पिछला पेज न होने पर क्रिया दिखाने के लिए बाएँ किनारे से दाएँ स्वाइप करें। रद्द करने के लिए वापस लाएँ। बंद करने के लिए कोई नहीं चुनें।";
+
+"gesture_execution" = "क्रिया चलाएँ";
+
+"gesture_execute_release" = "छोड़ने पर";
+
+"gesture_execute_tap" = "टैप करने पर";
+
+"gesture_feedback" = "कार्रवाई की प्रतिक्रिया";
+
+"gesture_haptics" = "कंपन";
+
+"gesture_sound" = "ध्वनि";
+
+"gesture_feedback_preview" = "प्रतिक्रिया का प्रीव्यू";
+
+"media_start_timeout" = "प्लेबैक शुरू नहीं हुआ। नेटवर्क जाँचें या प्लेयर बदलें।";
+
+"wallpaper_appearance_hint" = "हल्के और गहरे रंग के लिए अलग पृष्ठभूमि चुनें। ऐप की थीम बदलने पर ये अपने आप बदल जाएँगी।";
+
+"wallpaper_image_overlay" = "चित्र की परत";
+
+"auto_hide_platform_bar" = "प्लैटफ़ॉर्म बार अपने आप छिपाएँ";
+
+"top_tab_bar_hidden_title" = "ऊपरी टैब बार छिपा दिया गया";
+
+"top_tab_bar_reopen_hint" = "फिर दिखाने के लिए नीचे टैब बटन पर टैप करें, … मेनू खोलें और ऊपरी टैब बार दिखाने का विकल्प चालू करें।";
+
+"wallpaper_image_blur" = "धुंधला काँच";
+"wallpaper_blur_amount" = "धुंधलेपन की तीव्रता";
+
+"auto_hide_platform_bar_hint" = "खोज का परिणाम खोलने पर प्लेटफ़ॉर्म बार छिप जाएगा। परिणामों पर लौटने या नई खोज करने पर यह फिर दिखेगा। इस मेनू में इसे बंद कर सकते हैं।";

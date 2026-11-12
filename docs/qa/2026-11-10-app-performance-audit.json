@@ -1,0 +1,1211 @@
+{
+  "date": "2026-11-10",
+  "version": "1.2.11 (51)",
+  "base_commit": "973e97e",
+  "working_tree": "dirty; includes existing user changes",
+  "environment": {
+    "host": "Apple M1 Max, 32 GiB",
+    "native": "Release / iPhone 17 simulator / iOS 26.2 / 402 pt",
+    "native_limit": "fresh UIHostingController and NavigationStack synchronous layout; not GPU presentation or tap-to-visible",
+    "physical": "iPhone 17 / iOS 26.6.1 / installed 1.2.11 (51); configuration not verified",
+    "network": "real WKWebView versus AdBlockPreparedWebView; private session; caches not globally purged; native total polls at 100 ms"
+  },
+  "layout_sample_count": 373,
+  "network_sample_count": 46,
+  "audit_test_sha256": "0a6cb00f75ae53dc8dda5ae8800487e8f466d0b27c4697f593688c2667f15418",
+  "pages": [
+    {
+      "page": "home",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 114.96,
+      "repeated_layout_median_ms": 41.22,
+      "maximum_display_callback_interval_ms": 314.84,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "settings",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 406.37,
+      "repeated_layout_median_ms": 104.13,
+      "maximum_display_callback_interval_ms": 432.76,
+      "maximum_main_queue_delay_ms": 410.74
+    },
+    {
+      "page": "platforms",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 292.64,
+      "repeated_layout_median_ms": 98.55,
+      "maximum_display_callback_interval_ms": 298.18,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "platform_add",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 157.94,
+      "repeated_layout_median_ms": 53.68,
+      "maximum_display_callback_interval_ms": 169.62,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "platform_edit",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 105.18,
+      "repeated_layout_median_ms": 61.63,
+      "maximum_display_callback_interval_ms": 106.37,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "platform_batch_import",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 101.07,
+      "repeated_layout_median_ms": 50.49,
+      "maximum_display_callback_interval_ms": 102.98,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "platform_url_help",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 45.95,
+      "repeated_layout_median_ms": 30.08,
+      "maximum_display_callback_interval_ms": 46.95,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "groups",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 66.51,
+      "repeated_layout_median_ms": 35.11,
+      "maximum_display_callback_interval_ms": 67.32,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "group_edit",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 96.12,
+      "repeated_layout_median_ms": 78.34,
+      "maximum_display_callback_interval_ms": 100.75,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "language",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 153.52,
+      "repeated_layout_median_ms": 54.5,
+      "maximum_display_callback_interval_ms": 169.86,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "wallpaper",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 198.22,
+      "repeated_layout_median_ms": 82.11,
+      "maximum_display_callback_interval_ms": 198.95,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "wallpaper_editor",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 38.25,
+      "repeated_layout_median_ms": 14.64,
+      "maximum_display_callback_interval_ms": 38.89,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "web_appearance",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 116.48,
+      "repeated_layout_median_ms": 64.19,
+      "maximum_display_callback_interval_ms": 117.16,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "video_settings",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 80.33,
+      "repeated_layout_median_ms": 51.59,
+      "maximum_display_callback_interval_ms": 81.04,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "shake",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 119.29,
+      "repeated_layout_median_ms": 52.57,
+      "maximum_display_callback_interval_ms": 129.71,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "gestures",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 144.96,
+      "repeated_layout_median_ms": 59.35,
+      "maximum_display_callback_interval_ms": 145.83,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "website_zoom",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 57.43,
+      "repeated_layout_median_ms": 47.54,
+      "maximum_display_callback_interval_ms": 58.15,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "toolbar",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 230.72,
+      "repeated_layout_median_ms": 65.07,
+      "maximum_display_callback_interval_ms": 232.52,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "home_toolbar",
+      "samples": 5,
+      "run": "isolated",
+      "first_layout_ms": 260.51,
+      "repeated_layout_median_ms": 95.23,
+      "maximum_display_callback_interval_ms": 113.03,
+      "maximum_main_queue_delay_ms": 743.38
+    },
+    {
+      "page": "adblock",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 211.43,
+      "repeated_layout_median_ms": 66.97,
+      "maximum_display_callback_interval_ms": 218.5,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "privacy",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 98.65,
+      "repeated_layout_median_ms": 71.47,
+      "maximum_display_callback_interval_ms": 99.33,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "external_navigation",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 49.41,
+      "repeated_layout_median_ms": 43.26,
+      "maximum_display_callback_interval_ms": 53.93,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "extensions",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 215.81,
+      "repeated_layout_median_ms": 81.77,
+      "maximum_display_callback_interval_ms": 216.59,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "extension_install",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 104.07,
+      "repeated_layout_median_ms": 57.42,
+      "maximum_display_callback_interval_ms": 105.54,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "script_editor",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 147.35,
+      "repeated_layout_median_ms": 65.04,
+      "maximum_display_callback_interval_ms": 163.45,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "script_updates",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 35.55,
+      "repeated_layout_median_ms": 46.32,
+      "maximum_display_callback_interval_ms": 48.08,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "script_docs",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 91.11,
+      "repeated_layout_median_ms": 60.87,
+      "maximum_display_callback_interval_ms": 92.16,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "backups",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 86.71,
+      "repeated_layout_median_ms": 56.04,
+      "maximum_display_callback_interval_ms": 87.7,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "quick_actions",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 124.86,
+      "repeated_layout_median_ms": 64.74,
+      "maximum_display_callback_interval_ms": 126.35,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "url_schemes",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 69.23,
+      "repeated_layout_median_ms": 57.53,
+      "maximum_display_callback_interval_ms": 70.3,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "version",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 98.34,
+      "repeated_layout_median_ms": 37.16,
+      "maximum_display_callback_interval_ms": 99.08,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "review",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 43.57,
+      "repeated_layout_median_ms": 33.88,
+      "maximum_display_callback_interval_ms": 48.21,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "feedback",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 134.35,
+      "repeated_layout_median_ms": 67.3,
+      "maximum_display_callback_interval_ms": 135.62,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "storage",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 40.12,
+      "repeated_layout_median_ms": 26.84,
+      "maximum_display_callback_interval_ms": 49.68,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "library_bookmarks",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 394.43,
+      "repeated_layout_median_ms": 100.05,
+      "maximum_display_callback_interval_ms": 410.66,
+      "maximum_main_queue_delay_ms": 395.16
+    },
+    {
+      "page": "library_history",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 121.88,
+      "repeated_layout_median_ms": 101.48,
+      "maximum_display_callback_interval_ms": 132.7,
+      "maximum_main_queue_delay_ms": 121.71
+    },
+    {
+      "page": "library_downloads",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 132.43,
+      "repeated_layout_median_ms": 105.16,
+      "maximum_display_callback_interval_ms": 135.46,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "library_files",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 149.42,
+      "repeated_layout_median_ms": 125.8,
+      "maximum_display_callback_interval_ms": 159.58,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "bookmarks",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 69.16,
+      "repeated_layout_median_ms": 65.58,
+      "maximum_display_callback_interval_ms": 85.77,
+      "maximum_main_queue_delay_ms": 70.55
+    },
+    {
+      "page": "history",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 55.72,
+      "repeated_layout_median_ms": 59.93,
+      "maximum_display_callback_interval_ms": 75.01,
+      "maximum_main_queue_delay_ms": 59.13
+    },
+    {
+      "page": "downloads",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 85.3,
+      "repeated_layout_median_ms": 65.49,
+      "maximum_display_callback_interval_ms": 86.91,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "new_download",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 116.1,
+      "repeated_layout_median_ms": 57.05,
+      "maximum_display_callback_interval_ms": 132.31,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "files",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 71.46,
+      "repeated_layout_median_ms": 61.46,
+      "maximum_display_callback_interval_ms": 74.97,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "reading_list",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 53.06,
+      "repeated_layout_median_ms": 54.03,
+      "maximum_display_callback_interval_ms": 69.99,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "book_reader",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 51.62,
+      "repeated_layout_median_ms": 16.16,
+      "maximum_display_callback_interval_ms": 56.15,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "image_preview",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 19.62,
+      "repeated_layout_median_ms": 21.5,
+      "maximum_display_callback_interval_ms": 27.92,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "wifi_transfer",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 62.37,
+      "repeated_layout_median_ms": 41.08,
+      "maximum_display_callback_interval_ms": 63.15,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "licenses",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 36.26,
+      "repeated_layout_median_ms": 17.24,
+      "maximum_display_callback_interval_ms": 1047.91,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "media_player_shell",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 188.51,
+      "repeated_layout_median_ms": 53.43,
+      "maximum_display_callback_interval_ms": 203.88,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "new_tab",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 51.37,
+      "repeated_layout_median_ms": 38.44,
+      "maximum_display_callback_interval_ms": 52.74,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "tabs_carousel_24",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 134.45,
+      "repeated_layout_median_ms": 58.07,
+      "maximum_display_callback_interval_ms": 135.41,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "tabs_grouped_24",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 158.2,
+      "repeated_layout_median_ms": 85.59,
+      "maximum_display_callback_interval_ms": 159.34,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "web_loading",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 28.73,
+      "repeated_layout_median_ms": 20.94,
+      "maximum_display_callback_interval_ms": 32.82,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "web_error",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 62.75,
+      "repeated_layout_median_ms": 30.82,
+      "maximum_display_callback_interval_ms": 63.44,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "web_share",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 80.55,
+      "repeated_layout_median_ms": 50.23,
+      "maximum_display_callback_interval_ms": 81.29,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "web_qrcode",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 64.1,
+      "repeated_layout_median_ms": 45.43,
+      "maximum_display_callback_interval_ms": 65.34,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "web_certificate",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 60.56,
+      "repeated_layout_median_ms": 40.96,
+      "maximum_display_callback_interval_ms": 61.62,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "web_site_info",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 101.65,
+      "repeated_layout_median_ms": 44.37,
+      "maximum_display_callback_interval_ms": 103.3,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "web_resources",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 98.7,
+      "repeated_layout_median_ms": 42.26,
+      "maximum_display_callback_interval_ms": 99.55,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "web_episodes",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 83.73,
+      "repeated_layout_median_ms": 44.04,
+      "maximum_display_callback_interval_ms": 101.0,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "article_reader",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 108.48,
+      "repeated_layout_median_ms": 50.72,
+      "maximum_display_callback_interval_ms": 110.22,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "web_summary_shell",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 20.22,
+      "repeated_layout_median_ms": 27.31,
+      "maximum_display_callback_interval_ms": 42.45,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "capture_preview",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 128.46,
+      "repeated_layout_median_ms": 62.44,
+      "maximum_display_callback_interval_ms": 129.5,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "pdf_preview",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 64.69,
+      "repeated_layout_median_ms": 42.77,
+      "maximum_display_callback_interval_ms": 65.82,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "privacy_policy",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 75.82,
+      "repeated_layout_median_ms": 69.84,
+      "maximum_display_callback_interval_ms": 77.24,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "terms",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 30.36,
+      "repeated_layout_median_ms": 42.72,
+      "maximum_display_callback_interval_ms": 43.55,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "group_search",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 96.38,
+      "repeated_layout_median_ms": 61.57,
+      "maximum_display_callback_interval_ms": 116.02,
+      "maximum_main_queue_delay_ms": 96.75
+    },
+    {
+      "page": "group_add_platform",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 95.33,
+      "repeated_layout_median_ms": 72.25,
+      "maximum_display_callback_interval_ms": 116.04,
+      "maximum_main_queue_delay_ms": 95.1
+    },
+    {
+      "page": "platform_move",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 82.38,
+      "repeated_layout_median_ms": 79.05,
+      "maximum_display_callback_interval_ms": 100.02,
+      "maximum_main_queue_delay_ms": 84.97
+    },
+    {
+      "page": "platform_trial",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 34.8,
+      "repeated_layout_median_ms": 27.55,
+      "maximum_display_callback_interval_ms": 41.87,
+      "maximum_main_queue_delay_ms": 35.8
+    },
+    {
+      "page": "web_privacy_panel",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 123.93,
+      "repeated_layout_median_ms": 66.59,
+      "maximum_display_callback_interval_ms": 141.19,
+      "maximum_main_queue_delay_ms": 125.36
+    },
+    {
+      "page": "web_address",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 72.13,
+      "repeated_layout_median_ms": 35.72,
+      "maximum_display_callback_interval_ms": 376.47,
+      "maximum_main_queue_delay_ms": 370.17
+    },
+    {
+      "page": "web_fullscreen_menu",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 238.29,
+      "repeated_layout_median_ms": 121.47,
+      "maximum_display_callback_interval_ms": 243.37,
+      "maximum_main_queue_delay_ms": 241.64
+    },
+    {
+      "page": "web_translation_shell",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 100.44,
+      "repeated_layout_median_ms": 44.81,
+      "maximum_display_callback_interval_ms": 105.25,
+      "maximum_main_queue_delay_ms": 100.65
+    },
+    {
+      "page": "image_text_result",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 61.67,
+      "repeated_layout_median_ms": 38.42,
+      "maximum_display_callback_interval_ms": 73.07,
+      "maximum_main_queue_delay_ms": 62.11
+    },
+    {
+      "page": "scan_result",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 79.26,
+      "repeated_layout_median_ms": 36.79,
+      "maximum_display_callback_interval_ms": 84.38,
+      "maximum_main_queue_delay_ms": 78.93
+    },
+    {
+      "page": "archive_browser",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 71.2,
+      "repeated_layout_median_ms": 44.18,
+      "maximum_display_callback_interval_ms": 86.66,
+      "maximum_main_queue_delay_ms": 60.45
+    },
+    {
+      "page": "text_document",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 52.81,
+      "repeated_layout_median_ms": 41.29,
+      "maximum_display_callback_interval_ms": 63.79,
+      "maximum_main_queue_delay_ms": 54.72
+    },
+    {
+      "page": "web_container",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 247.89,
+      "repeated_layout_median_ms": 50.83,
+      "maximum_display_callback_interval_ms": 250.74,
+      "maximum_main_queue_delay_ms": 246.86
+    },
+    {
+      "page": "video_soulo",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 193.67,
+      "repeated_layout_median_ms": 65.99,
+      "maximum_display_callback_interval_ms": 208.6,
+      "maximum_main_queue_delay_ms": 221.28
+    },
+    {
+      "page": "video_system",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 37.38,
+      "repeated_layout_median_ms": 28.45,
+      "maximum_display_callback_interval_ms": 92.06,
+      "maximum_main_queue_delay_ms": 106.01
+    }
+  ],
+  "data_scaling": [
+    {
+      "page": "bookmarks_rows100",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 198.11,
+      "repeated_layout_median_ms": 120.26,
+      "maximum_display_callback_interval_ms": 208.04,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "bookmarks_rows1000",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 142.71,
+      "repeated_layout_median_ms": 136.06,
+      "maximum_display_callback_interval_ms": 152.9,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "bookmarks_rows5000",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 345.55,
+      "repeated_layout_median_ms": 311.1,
+      "maximum_display_callback_interval_ms": 365.76,
+      "maximum_main_queue_delay_ms": 346.15
+    },
+    {
+      "page": "history_rows100",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 158.61,
+      "repeated_layout_median_ms": 109.14,
+      "maximum_display_callback_interval_ms": 159.66,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "history_rows1000",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 222.96,
+      "repeated_layout_median_ms": 200.81,
+      "maximum_display_callback_interval_ms": 223.94,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "history_rows5000",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 591.54,
+      "repeated_layout_median_ms": 580.42,
+      "maximum_display_callback_interval_ms": 617.1,
+      "maximum_main_queue_delay_ms": 607.15
+    },
+    {
+      "page": "home_rows100",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 111.05,
+      "repeated_layout_median_ms": 54.34,
+      "maximum_display_callback_interval_ms": 112.59,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "home_rows1000",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 49.18,
+      "repeated_layout_median_ms": 55.84,
+      "maximum_display_callback_interval_ms": 85.25,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "home_rows5000",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 56.73,
+      "repeated_layout_median_ms": 60.4,
+      "maximum_display_callback_interval_ms": 92.52,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "library_bookmarks_rows100",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 229.39,
+      "repeated_layout_median_ms": 224.67,
+      "maximum_display_callback_interval_ms": 261.24,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "library_bookmarks_rows1000",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 323.96,
+      "repeated_layout_median_ms": 334.85,
+      "maximum_display_callback_interval_ms": 370.36,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "library_bookmarks_rows5000",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 938.85,
+      "repeated_layout_median_ms": 955.05,
+      "maximum_display_callback_interval_ms": 1004.57,
+      "maximum_main_queue_delay_ms": 972.49
+    },
+    {
+      "page": "library_history_rows100",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 245.49,
+      "repeated_layout_median_ms": 211.07,
+      "maximum_display_callback_interval_ms": 262.51,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "library_history_rows1000",
+      "samples": 3,
+      "run": "initial",
+      "first_layout_ms": 350.86,
+      "repeated_layout_median_ms": 375.65,
+      "maximum_display_callback_interval_ms": 388.12,
+      "maximum_main_queue_delay_ms": null
+    },
+    {
+      "page": "library_history_rows5000",
+      "samples": 5,
+      "run": "targeted",
+      "first_layout_ms": 1041.03,
+      "repeated_layout_median_ms": 1028.67,
+      "maximum_display_callback_interval_ms": 1076.89,
+      "maximum_main_queue_delay_ms": 1043.93
+    }
+  ],
+  "networks": {
+    "public": [
+      {
+        "url": "https://www.baidu.com/",
+        "mode": "webkit",
+        "samples": 2,
+        "native_total_median_ms": 1565.63,
+        "errors": 0,
+        "body_characters": [
+          501,
+          533
+        ],
+        "ttfb_median_ms": 254.5,
+        "document_median_ms": 606.5,
+        "load_median_ms": 833.5,
+        "response_median_ms": 35.5
+      },
+      {
+        "url": "https://www.baidu.com/",
+        "mode": "soulo_ads_on",
+        "samples": 2,
+        "native_total_median_ms": 2566.69,
+        "errors": 0,
+        "body_characters": [
+          496,
+          586
+        ],
+        "ttfb_median_ms": 252.5,
+        "document_median_ms": 1034.5,
+        "load_median_ms": 1258.5,
+        "response_median_ms": 36.0
+      },
+      {
+        "url": "https://stockclaw.dkluge.com/",
+        "mode": "webkit",
+        "samples": 2,
+        "native_total_median_ms": 2380.89,
+        "errors": 0,
+        "body_characters": [
+          1182,
+          1182
+        ],
+        "ttfb_median_ms": 52.0,
+        "document_median_ms": 371.5,
+        "load_median_ms": 1967.0,
+        "response_median_ms": 5.0
+      },
+      {
+        "url": "https://stockclaw.dkluge.com/",
+        "mode": "soulo_ads_on",
+        "samples": 2,
+        "native_total_median_ms": 1959.78,
+        "errors": 0,
+        "body_characters": [
+          734,
+          734
+        ],
+        "ttfb_median_ms": 106.0,
+        "document_median_ms": 1310.0,
+        "load_median_ms": 1472.5,
+        "response_median_ms": 0.5
+      },
+      {
+        "url": "https://platform.deepseek.com/usage",
+        "mode": "webkit",
+        "samples": 2,
+        "native_total_median_ms": 1091.75,
+        "errors": 0,
+        "body_characters": [
+          189,
+          189
+        ],
+        "ttfb_median_ms": 48.5,
+        "document_median_ms": 138.5,
+        "load_median_ms": 672.5,
+        "response_median_ms": 3.0
+      },
+      {
+        "url": "https://platform.deepseek.com/usage",
+        "mode": "soulo_ads_on",
+        "samples": 2,
+        "native_total_median_ms": 1191.48,
+        "errors": 0,
+        "body_characters": [
+          189,
+          101
+        ],
+        "ttfb_median_ms": 53.5,
+        "document_median_ms": 254.5,
+        "load_median_ms": 643.5,
+        "response_median_ms": 2.5
+      },
+      {
+        "url": "https://www.apple.com.cn/",
+        "mode": "webkit",
+        "samples": 2,
+        "native_total_median_ms": 1250.91,
+        "errors": 0,
+        "body_characters": [
+          1209,
+          1183
+        ],
+        "ttfb_median_ms": 16.0,
+        "document_median_ms": 594.5,
+        "load_median_ms": 757.0,
+        "response_median_ms": 26.0
+      },
+      {
+        "url": "https://www.apple.com.cn/",
+        "mode": "soulo_ads_on",
+        "samples": 2,
+        "native_total_median_ms": 3006.15,
+        "errors": 0,
+        "body_characters": [
+          1209,
+          1209
+        ],
+        "ttfb_median_ms": 16.0,
+        "document_median_ms": 2265.0,
+        "load_median_ms": 2384.5,
+        "response_median_ms": 28.0
+      }
+    ],
+    "local_fixed_html": [
+      {
+        "url": "http://127.0.0.1:18783/audit",
+        "mode": "webkit",
+        "samples": 5,
+        "native_total_median_ms": 423.81,
+        "errors": 0,
+        "body_characters": [
+          88997,
+          88997,
+          88997,
+          88997,
+          88997
+        ],
+        "ttfb_median_ms": 0,
+        "document_median_ms": 7,
+        "load_median_ms": 13.0,
+        "response_median_ms": 1
+      },
+      {
+        "url": "http://127.0.0.1:18783/audit",
+        "mode": "soulo_ads_off",
+        "samples": 5,
+        "native_total_median_ms": 433.7,
+        "errors": 0,
+        "body_characters": [
+          88997,
+          88997,
+          88997,
+          88997,
+          88997
+        ],
+        "ttfb_median_ms": 0,
+        "document_median_ms": 62,
+        "load_median_ms": 69,
+        "response_median_ms": 1
+      },
+      {
+        "url": "http://127.0.0.1:18783/audit",
+        "mode": "soulo_ads_on",
+        "samples": 5,
+        "native_total_median_ms": 516.53,
+        "errors": 0,
+        "body_characters": [
+          88997,
+          88997,
+          88997,
+          88997,
+          88997
+        ],
+        "ttfb_median_ms": 0,
+        "document_median_ms": 107,
+        "load_median_ms": 113,
+        "response_median_ms": 1
+      }
+    ],
+    "apple_control": [
+      {
+        "url": "https://www.apple.com.cn/",
+        "mode": "webkit",
+        "samples": 5,
+        "native_total_median_ms": 937.1,
+        "errors": 0,
+        "body_characters": [
+          1209,
+          1209,
+          1183,
+          1183,
+          1183
+        ],
+        "ttfb_median_ms": 11,
+        "document_median_ms": 369,
+        "load_median_ms": 458,
+        "response_median_ms": 7.0
+      },
+      {
+        "url": "https://www.apple.com.cn/",
+        "mode": "soulo_ads_off",
+        "samples": 5,
+        "native_total_median_ms": 837.73,
+        "errors": 0,
+        "body_characters": [
+          1183,
+          1209,
+          1183,
+          1209,
+          1183
+        ],
+        "ttfb_median_ms": 10,
+        "document_median_ms": 287.0,
+        "load_median_ms": 382,
+        "response_median_ms": 6
+      },
+      {
+        "url": "https://www.apple.com.cn/",
+        "mode": "soulo_ads_on",
+        "samples": 5,
+        "native_total_median_ms": 2902.46,
+        "errors": 0,
+        "body_characters": [
+          1209,
+          1209,
+          1209,
+          1209,
+          1209
+        ],
+        "ttfb_median_ms": 13,
+        "document_median_ms": 2203,
+        "load_median_ms": 2343,
+        "response_median_ms": 6
+      }
+    ]
+  },
+  "startup_debug": [
+    {
+      "delay": 0.1,
+      "warm": false,
+      "runs": 3,
+      "visible_samples": 3,
+      "medians": {
+        "acquire_ms": 41.0,
+        "app_init_to_activation_ms": 633.6,
+        "attached_to_commit_ms": 688.7,
+        "runtime_ms": 28.8,
+        "submit_to_attached_ms": 576.1,
+        "submit_to_commit_ms": 1261.8,
+        "submit_to_finish_ms": 1288.4,
+        "submit_to_visible_ms": 1286.0
+      }
+    },
+    {
+      "delay": 0.1,
+      "warm": true,
+      "runs": 3,
+      "visible_samples": 3,
+      "medians": {
+        "acquire_ms": 0.2,
+        "app_init_to_activation_ms": 624.5,
+        "attached_to_commit_ms": 623.6,
+        "runtime_ms": 28.6,
+        "submit_to_attached_ms": 587.2,
+        "submit_to_commit_ms": 1210.8,
+        "submit_to_finish_ms": 1236.4,
+        "submit_to_visible_ms": 1234.2
+      }
+    },
+    {
+      "delay": 2.5,
+      "warm": false,
+      "runs": 3,
+      "visible_samples": 3,
+      "medians": {
+        "acquire_ms": 39.7,
+        "app_init_to_activation_ms": 617.6,
+        "attached_to_commit_ms": 541.1,
+        "runtime_ms": 15.6,
+        "submit_to_attached_ms": 450.9,
+        "submit_to_commit_ms": 992.0,
+        "submit_to_finish_ms": 1022.6,
+        "submit_to_visible_ms": 1019.9
+      }
+    },
+    {
+      "delay": 2.5,
+      "warm": true,
+      "runs": 3,
+      "visible_samples": 3,
+      "medians": {
+        "acquire_ms": 0.2,
+        "app_init_to_activation_ms": 615.9,
+        "attached_to_commit_ms": 123.9,
+        "runtime_ms": 15.7,
+        "submit_to_attached_ms": 411.4,
+        "submit_to_commit_ms": 535.2,
+        "submit_to_finish_ms": 566.5,
+        "submit_to_visible_ms": 564.1,
+        "warmup_ms": 432.6
+      }
+    }
+  ],
+  "physical_launch": {
+    "samples": 1,
+    "initial_frame_rendering_ms": 228.86,
+    "foreground_active_from_trace_origin_ms": 1063.988,
+    "process_creation_ms": 721.23,
+    "full_trace_duration_ms": 15760.051,
+    "limitation": "instrumented launch; installed build configuration unverified; overlapping lifecycle intervals must not be added"
+  },
+  "regression": {
+    "tests_passed": 13,
+    "history_5000_write_median_ms": 1.762,
+    "download_1000_progress_burst_ms": 2.809,
+    "download_burst_writes": 1,
+    "download_burst_publications": 1003,
+    "privacy_500_burst_ms": 16.147,
+    "privacy_burst_writes": 1
+  },
+  "limitations": [
+    "No physical-device web/scroll timing: XCTest driver disconnected before any test ran.",
+    "No iPad runtime page audit in this round.",
+    "No authenticated website/API performance measurements.",
+    "Camera, microphone, Photos, system share/pickers, installed-extension update states, active torrent tasks, large imported books/videos and cloud sync need separate representative workloads.",
+    "Initial maximum runloop-gap field contains display callback intervals; only follow-ups include a separate main-queue scheduling probe."
+  ]
+}

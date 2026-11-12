@@ -68,7 +68,7 @@
 "platform_list_view" = "リスト表示に切り替え";
 "platform_not_found" = "使いたいプラットフォームがない";
 "platform_request_feedback_template" = "プラットフォーム追加の要望：\n\n名前：\nURL：\n利用目的：";
-"resource_inspector_title" = "Webリソース検出";
+"resource_inspector_title" = "Webリソース";
 "resource_rescan" = "再スキャン";
 "resource_images" = "画像";
 "resource_videos" = "動画";
@@ -609,27 +609,27 @@
 "extensions_reload_note" = "拡張機能またはスクリプトが変更された後、開いているページがリロードされ、新しい状態が有効になります。";
 "web_extensions" = "ウェブ拡張機能";
 "userscripts" = "スクリプトと拡張機能";
-"userscripts_installed" = "私のスクリプト";
-"userscripts_install" = "インストールスクリプト";
+"userscripts_installed" = "インストール済み";
+"userscripts_install" = "追加";
 "userscripts_empty" = "UserScript はありません";
 "userscripts_empty_desc" = ".user.js ファイルをインストールするか、ここで表示するスクリプトを作成します。";
 "userscripts_reload_note" = "スクリプトがインストール、編集、有効化、無効化、または削除された後、開いているページがリロードされます。";
 "userscript_experimental_badge" = "互換性";
 "userscript_experimental_title" = "UserScript 互換性";
-"userscript_experimental_desc" = "サイト ルール、ドキュメントの開始/終了、広範な GM ストレージとページ API、スクリプト コマンド、通知、タブ、ダウンロード、Cookie、リソース、および権限スコープのリクエストをサポートします。インストールする前にすべてのスクリプトを確認してください。";
+"userscript_experimental_desc" = "ユーザースクリプトは対象サイトを読み取り・変更し、許可された API を利用できます。互換性はスクリプトごとに異なります。信頼できるものだけをインストールしてください。";
 "extension_choose_file" = "ファイル・フォルダを選択…";
 "extension_installing" = "拡張機能を確認してインストールしています…";
 "extension_install_failed" = "拡張機能をインストールできませんでした";
 "extension_permissions_summary" = "%d 権限 · %d ウェブサイト ルール";
 "extension_untitled" = "無題の拡張機能";
-"web_extension_install_footer" = "ソース行の任意の場所をタップして、現在の Soulo タブで開きます。 Soulo は CRX、XPI、ZIP、およびサポートされているストア インストール アクションを認識し、インストール前に質問します。一部のデスクトップ専用 API は利用できない場合があります。";
+"web_extension_install_footer" = "対応するストアのリンクからインストールするか、CRX、XPI、ZIP、拡張機能フォルダを読み込めます。権限と互換性を確認してください。一部のデスクトップ機能は利用できません。";
 "web_extension_install_store_link" = "ストアリンクからインストール…";
 "web_extension_browse_sources" = "拡張機能ストアを参照する";
 "web_extension_browse_sources_footer" = "Store Get ボタンは、独自のデスクトップ ブラウザーのみをサポートします。拡張機能の詳細ページのリンクをコピーし、Soulo のストア リンクからインストールを使用します。";
 "web_extension_store_install_title" = "ストア拡張機能をインストールする";
 "extension_page_banner_title" = "Soulo でインストールします";
-"extension_page_banner_desc" = "Soulo は、この拡張機能を直接インストールできます。";
-"web_extension_store_install_desc" = "Chrome Web ストア、Microsoft Edge アドオン、または Firefox アドオンの詳細ページのリンクを貼り付けます。 Soulo はパッケージ自体をダウンロードするため、ストアの互換性のない [取得] ボタンは使用されません。";
+"extension_page_banner_desc" = "互換性と権限を確認してインストールします。";
+"web_extension_store_install_desc" = "Chrome、Edge、Firefox の拡張機能詳細ページのリンクを貼り付け、互換性と権限を確認してからインストールしてください。";
 "web_extension_store_link_placeholder" = "拡張機能ページのリンクまたは Chrome 拡張機能 ID";
 "web_extension_store_invalid_link" = "Chrome、Edge、Firefox の拡張機能の詳細ページのリンク、Chrome 拡張機能 ID、または CRX、XPI、または ZIP の直接リンクを貼り付けます。";
 "web_extension_store_https_required" = "拡張パッケージは安全な HTTPS リンクを使用する必要があります。";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "メディアストリームから無効なセグメント、または順序が正しくないセグメントが返されました。";
 "resource_stream_download_missing_track" = "ダウンロードしたストリームに、再生可能な映像と音声のトラックが含まれていませんでした。";
 "resource_stream_download_export_failed" = "ダウンロードした映像と音声を Soulo で結合できませんでした。";
-"resource_stream_playback_download_first" = "この保護されたストリームは一時 URL からプレビューできません。先にダウンロードして、ローカルファイルを再生してください。";
+"resource_stream_playback_download_first" = "このストリームは現在、直接プレビューできません。";
 "platform_invalid_web_url" = "http:// または https:// で始まる有効なウェブアドレスを入力してください。";
 
 "library_history_tab" = "履歴";
@@ -889,8 +889,7 @@
 "extension_review_access" = "この拡張機能に許可する権限とウェブサイトを選択してください。";
 "extension_limit_commands" = "iOS では拡張機能のキーボードショートカットを利用できません。";
 "extension_limit_notifications" = "通知の表示は可能ですが、クリックと終了のイベントには対応していません。";
-"extension_limit_offscreen" = "オフスクリーンドキュメントは音声再生のみに対応しています。";
-
+"extension_limit_offscreen" = "オフスクリーンドキュメントにはiOSの制限が適用され、一部の機能が利用できない場合があります。";
 "review_support_message" = "Soulo を応援していただきありがとうございます。皆さまのレビューが改善の励みになります。";
 "review_open_app_store" = "App Storeでレビューを書く";
 

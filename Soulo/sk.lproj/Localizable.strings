@@ -609,27 +609,27 @@
 "extensions_reload_note" = "Otvorené stránky sa znova načítajú po zmene rozšírenia alebo skriptu, aby sa nový stav prejavil.";
 "web_extensions" = "Webové rozšírenia";
 "userscripts" = "Skripty a rozšírenia";
-"userscripts_installed" = "Moje skripty";
-"userscripts_install" = "Nainštalujte skripty";
+"userscripts_installed" = "Nainštalované";
+"userscripts_install" = "Pridať";
 "userscripts_empty" = "Žiadne UserScripts";
 "userscripts_empty_desc" = "Nainštalujte súbor .user.js alebo vytvorte skript, aby ste ho mohli vidieť tu.";
 "userscripts_reload_note" = "Otvorené stránky sa znova načítajú po nainštalovaní, úprave, povolení, zakázaní alebo odstránení skriptu.";
 "userscript_experimental_badge" = "Kompatibilita";
 "userscript_experimental_title" = "UserScript kompatibilita";
-"userscript_experimental_desc" = "Podporuje pravidlá lokality, spustenie/ukončenie dokumentu, rozsiahle úložisko GM a rozhrania API stránok, príkazy skriptov, upozornenia, karty, sťahovanie, súbory cookie, zdroje a požiadavky v rozsahu povolení. Pred inštaláciou skontrolujte každý skript.";
+"userscript_experimental_desc" = "Používateľské skripty môžu čítať alebo meniť zodpovedajúce weby a používať povolené API. Kompatibilita závisí od skriptu. Inštalujte len dôveryhodné skripty.";
 "extension_choose_file" = "Vybrať súbor alebo priečinok…";
 "extension_installing" = "Kontrola a inštalácia rozšírenia…";
 "extension_install_failed" = "Rozšírenie sa nepodarilo nainštalovať";
 "extension_permissions_summary" = "%d povolenia · %d pravidlá webu";
 "extension_untitled" = "Rozšírenie bez názvu";
-"web_extension_install_footer" = "Klepnutím kdekoľvek na zdrojový riadok ho otvoríte na aktuálnej karte Soulo. Soulo rozpoznáva CRX, XPI, ZIP a podporované akcie inštalácie z obchodu a pred inštaláciou sa opýta. Niektoré rozhrania API iba pre počítače môžu byť nedostupné.";
+"web_extension_install_footer" = "Kompatibilné rozšírenia inštalujte z odkazu na obchod alebo importujte CRX, XPI, ZIP či priečinok rozšírenia. Skontrolujte povolenia a kompatibilitu; niektoré funkcie pre počítače nie sú dostupné.";
 "web_extension_install_store_link" = "Inštalovať z odkazu obchodu…";
 "web_extension_browse_sources" = "Prehľadávať obchody s rozšíreniami";
 "web_extension_browse_sources_footer" = "Tlačidlá Store Get podporujú iba ich vlastné prehliadače pre počítače. Skopírujte odkaz na stránku s podrobnosťami rozšírenia a potom použite odkaz Inštalovať z obchodu v Soulo.";
 "web_extension_store_install_title" = "Nainštalujte si rozšírenie obchodu";
 "extension_page_banner_title" = "Nainštalujte pomocou Soulo";
-"extension_page_banner_desc" = "Soulo môže toto rozšírenie nainštalovať priamo.";
-"web_extension_store_install_desc" = "Prilepte odkaz na stránku s podrobnosťami o doplnkoch Chrome Web Store, Microsoft Edge Add-ons alebo Firefox Addons. Soulo stiahne samotný balík, takže nekompatibilné tlačidlo Získať v obchode sa nepoužíva.";
+"extension_page_banner_desc" = "Pred inštaláciou skontrolujte kompatibilitu a povolenia.";
+"web_extension_store_install_desc" = "Vložte odkaz na stránku rozšírenia pre Chrome, Edge alebo Firefox a pred potvrdením inštalácie skontrolujte kompatibilitu a povolenia.";
 "web_extension_store_link_placeholder" = "Odkaz na stránku rozšírenia alebo ID rozšírenia Chrome";
 "web_extension_store_invalid_link" = "Prilepte odkaz na stránku s podrobnosťami rozšírenia z prehliadača Chrome, Edge alebo Firefox, ID rozšírenia prehliadača Chrome alebo priamy odkaz CRX, XPI alebo ZIP.";
 "web_extension_store_https_required" = "Balíky rozšírení musia používať zabezpečené prepojenie HTTPS.";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "Mediálny stream vrátil neplatný segment alebo segment v nesprávnom poradí.";
 "resource_stream_download_missing_track" = "Stiahnutý stream neobsahoval prehrateľné obrazové a zvukové stopy.";
 "resource_stream_download_export_failed" = "Soulo nedokázalo spojiť stiahnuté video a zvuk.";
-"resource_stream_playback_download_first" = "Tento chránený stream nemožno zobraziť z dočasnej adresy URL. Najprv ho stiahnite a prehrajte miestny súbor.";
+"resource_stream_playback_download_first" = "Tento stream sa momentálne nedá priamo zobraziť v náhľade.";
 "platform_invalid_web_url" = "Zadajte platnú webovú adresu začínajúcu na http:// alebo https://.";
 
 "library_history_tab" = "História";
@@ -889,8 +889,7 @@
 "extension_review_access" = "Vyberte oprávnenia a weby, ku ktorým má toto rozšírenie prístup.";
 "extension_limit_commands" = "Klávesové skratky rozšírení nie sú v iOS dostupné.";
 "extension_limit_notifications" = "Upozornenia možno zobraziť, ale udalosti kliknutia a zatvorenia nie sú podporované.";
-"extension_limit_offscreen" = "Dokumenty mimo obrazovky podporujú iba prehrávanie zvuku.";
-
+"extension_limit_offscreen" = "Dokumenty mimo obrazovky podliehajú obmedzeniam iOS; niektoré funkcie nemusia byť dostupné.";
 "review_support_message" = "Ďakujeme za podporu Soulo. Vaše recenzie nám pomáhajú neustále sa zlepšovať.";
 "review_open_app_store" = "Hodnotiť v App Store";
 

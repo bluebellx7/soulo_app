@@ -6,13 +6,11 @@ Recently used tabs and website groups appear first, and the overview opens at th
 
 BT downloads: import .torrent files or magnet links, choose files, pause and resume. On iOS 26, downloads can continue in the background while the system permits; earlier versions pause and save progress. Play supported BT media while downloading and open MKV files. Import ed2k/thunder links. Downloads need available sources; playback depends on codecs.
 
-Smoother browsing, refined video controls and clearer file previews.
-
 Choose up to five optional home shortcuts to open Downloads, Files, Bookmarks, History, Wallpaper and other pages. The Library tab bar becomes compact as you scroll.
 
 Find information, read articles, play media and manage downloads in one browser.
 
-Keep your place with multiple tabs, voice search, search history and platform groups. Switch platforms from the home screen, and continue translating after following a page link. Resource detection finds common video, audio and image files on webpages; save supported files and manage their progress in Downloads. Desktop and mobile site modes, pull to refresh, sharing and links from other apps make everyday browsing easier.
+Keep your place with multiple tabs, voice search, search history and platform groups. Switch platforms from the home screen, and continue translating after following a page link. Use Web Resources to find common video, audio and image files on webpages, save supported files and manage their progress in Downloads. Desktop and mobile site modes, pull to refresh, sharing and links from other apps make everyday browsing easier.
 
 • Search your way: Switch among search, social, video, shopping, knowledge and AI platforms. Add or hide platforms, organise groups and reorder them. Search selected text in a new tab, use voice input or return to search history.
 • Ads and privacy: Filter ads, subscribe to third-party rules and mark unwanted ads yourself. Manage filtering and tracking protection by site. Private browsing does not save history; you can also clear browsing data.
@@ -20,11 +18,11 @@ Keep your place with multiple tabs, voice search, search history and platform gr
 • Downloads and files: Find images, audio, video and documents on webpages, and save files when the site permits. Save images in batches, check download progress and organize files. Browse in a list or cover grid, rename files, import from Photos and transfer over Wi-Fi.
 • Archives: Extract ZIP, RAR and 7z files. Create ZIP and 7z archives with optional password protection.
 • Books and reading: Read TXT, PDF, EPUB and supported DRM-free MOBI, AZW and AZW3 books. Adjust reading fonts, text size, line spacing and backgrounds. Reflowable books support simplified/traditional Chinese display conversion; webpage reading mode extracts articles and lets you continue to the next page.
-• Extensions: Import, edit and run JavaScript userscripts, manage site matching and permissions, and install compatible WebExtensions.
+• Scripts and extensions: Import, edit and run JavaScript userscripts. Compatible WebExtensions require iOS 18.4 or later; support varies by extension.
 • Web tools: Page translation that continues after following links, find in page, full-page screenshots, image text recognition, desktop/mobile modes, custom user agent and site certificate details.
 • Bookmarks and sharing: Organise bookmarks in folders and import or export HTML bookmarks used by Chrome, Edge and other browsers. Create webpage QR codes with the site's icon, then share, save or copy them.
-• Make it yours: Choose a light or dark appearance; customise wallpapers, the toolbar and app icon quick actions. Reach common tools through widgets, Shortcuts and URL schemes. Optionally sync settings with iCloud.
+• Make it yours: Choose a light or dark appearance; customise wallpapers, the toolbar and app icon quick actions. Reach common tools through widgets, Shortcuts and URL schemes. Optionally sync settings with iCloud. Set separate light and dark backgrounds, with an image overlay switch.
 
-Media, ebook and extension availability depends on file formats, website restrictions and system version. Protected or restricted media may not be detected, played or downloaded.
+Media, books and extensions depend on formats, site restrictions and system version. Before downloading, confirm that the source permits saving.
 
 Support: contact@dkluge.com

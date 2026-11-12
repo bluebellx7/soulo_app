@@ -1,5 +1,23 @@
 import * as CFI from './epubcfi.js'
 
+// Keep the native implementation when available; older WebKit lacks groupBy.
+const groupBy = Object.groupBy ?? ((items, key) => {
+    const groups = Object.create(null)
+    let index = 0
+    for (const item of items) (groups[key(item, index++)] ??= []).push(item)
+    return groups
+})
+const groupMap = Map.groupBy ?? ((items, key) => {
+    const groups = new Map()
+    let index = 0
+    for (const item of items) {
+        const id = key(item, index++)
+        if (!groups.has(id)) groups.set(id, [])
+        groups.get(id).push(item)
+    }
+    return groups
+})
+
 const NS = {
     CONTAINER: 'urn:oasis:names:tc:opendocument:xmlns:container',
     XHTML: 'http://www.w3.org/1999/xhtml',
@@ -175,7 +193,7 @@ const getMetadata = opf => {
     const $metadata = $(opf.documentElement, 'metadata')
 
     // first pass: convert to JS objects
-    const els = Object.groupBy($metadata.children, el =>
+    const els = groupBy($metadata.children, el =>
         el.namespaceURI === NS.DC ? 'dc'
         : el.namespaceURI === NS.OPF && el.localName === 'meta' ?
             (el.hasAttribute('name') ? 'legacyMeta' : 'meta') : '')
@@ -197,13 +215,13 @@ const getMetadata = opf => {
                 .map(attr => [attr.localName, attr.value])),
         }
     }
-    const refines = Map.groupBy(els.meta ?? [], el => el.getAttribute('refines'))
+    const refines = groupMap(els.meta ?? [], el => el.getAttribute('refines'))
     const getProperties = el => {
         const els = refines.get(el ? '#' + el.getAttribute('id') : null)
         if (!els) return null
-        return Object.groupBy(els.map(parse), x => x.property)
+        return groupBy(els.map(parse), x => x.property)
     }
-    const dc = Object.fromEntries(Object.entries(Object.groupBy(els.dc, el => el.localName))
+    const dc = Object.fromEntries(Object.entries(groupBy(els.dc, el => el.localName))
         .map(([name, els]) => [name, els.map(parse)]))
     const properties = getProperties() ?? {}
     const legacyMeta = Object.fromEntries(els.legacyMeta?.map(el =>
@@ -255,7 +273,7 @@ const getMetadata = opf => {
         }
         return value
     }
-    const belongsTo = Object.groupBy(properties['belongs-to-collection'] ?? [],
+    const belongsTo = groupBy(properties['belongs-to-collection'] ?? [],
         x => prop(x, 'collection-type') === 'series' ? 'series' : 'collection')
     const mainTitle = dc.title?.find(x => prop(x, 'title-type') === 'main') ?? dc.title?.[0]
     const metadata = {

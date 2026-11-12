@@ -1,4 +1,5 @@
 import XCTest
+import AVFoundation
 import WebKit
 import UIKit
 @testable import Soulo
@@ -10,6 +11,47 @@ final class WebEpisodeTests: XCTestCase {
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             if let body = message.body as? [String: Any] { bodies.append(body) }
         }
+    }
+
+    func testEpisodeContextSurvivesMiniPlayerAndDecoderHandoffsButNotAnotherVideo() throws {
+        let mediaURL = try XCTUnwrap(URL(string: "https://example.com/episode-2.mp4"))
+        let resource = WebMediaResource(kind: .video, url: mediaURL, title: "Episode 2", posterURL: nil)
+        let episode = WebEpisode(title: "Episode 2", url: mediaURL)
+        let list = WebEpisodeList(pageURL: mediaURL, sources: [.init(title: "Main", episodes: [episode])])
+        let context = WebMediaPlaybackContext(resource: resource, pageURL: list.pageURL, sourceWebView: nil, episodeList: list)
+        context.selectedEpisodeID = episode.id; context.selectedSourceID = list.sources[0].id
+        context.updateEpisodeList(nil)
+        context.updateEpisodeList(WebEpisodeList(pageURL: URL(string: "https://other.example/another-show")!, sources: []))
+        XCTAssertEqual(context.episodeList, list, "Navigation away must not clear or replace the playing video's episodes")
+        let file = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let source = DownloadPlaybackSource(asset: AVURLAsset(url: file), pageURL: nil, webView: nil, persistPosition: false)
+        source.webMediaContext = context
+        let session = MediaSession.shared
+        defer { session.stop() }
+        session.open(url: mediaURL, asset: source.asset, downloadSource: source, autoplay: false)
+        let item = session.player.currentItem
+        XCTAssertTrue(session.webMediaContext === context)
+        XCTAssertEqual(session.webMediaContext?.selectedEpisodeID, episode.id)
+        XCTAssertEqual(session.webMediaContext?.episodeList?.sources[0].episodes.count, 1)
+        let transferred = try XCTUnwrap(session.playbackTransferSource())
+        XCTAssertTrue(transferred.webMediaContext === context)
+        XCTAssertTrue(session.player.currentItem === item, "Reading navigation metadata must not restart playback")
+        session.stop(deactivateAudioSession: false)
+        XCTAssertTrue(session.webMediaContext === context)
+        session.adoptSoulo(MatroskaPlayback(), url: mediaURL, title: resource.title, source: transferred,
+                           pageURL: list.pageURL, systemAvailable: true)
+        XCTAssertTrue(session.webMediaContext === context)
+        session.restoreSystemFromSoulo()
+        XCTAssertTrue(session.webMediaContext === context)
+        session.open(url: file, asset: AVURLAsset(url: file), autoplay: false)
+        XCTAssertNil(session.webMediaContext, "An unrelated video must not inherit the previous website's episodes")
+        session.open(url: mediaURL, asset: source.asset, downloadSource: source, autoplay: false)
+        session.stop()
+        XCTAssertNil(session.webMediaContext, "Stopping playback must release the in-memory episode context")
+        let audio = WebMediaResource(kind: .audio, url: URL(string: "https://example.com/song.mp3")!, title: "Audio", posterURL: nil)
+        source.webMediaContext = WebMediaPlaybackContext(resource: audio, pageURL: nil, sourceWebView: nil, episodeList: list)
+        session.open(url: audio.url, asset: source.asset, downloadSource: source, autoplay: false)
+        XCTAssertNil(session.webMediaContext, "Reopening audio must not enter the webpage video fullscreen flow")
     }
 
     private func page(_ html: String, url: String = "https://www.pbpbw.com/player/68351-1-2.html") async throws -> (WKWebView, Capture) {
@@ -29,7 +71,7 @@ final class WebEpisodeTests: XCTestCase {
 
     func testDisablingEpisodeDockStopsAutomaticScansButKeepsManualSelection() async throws {
         let (web, capture) = try await page("<ul class='episode-list'><li><a href='/player/68351-1-1.html'>EP1</a></li><li><a href='/player/68351-1-2.html'>EP2</a></li></ul>")
-        _ = try await web.evaluateJavaScript("window.__souloEpisodes.configure({dockEnabled:false,watchChanges:false});null", in: nil, contentWorld: WebEpisodeRuntime.world)
+        _ = try await web.evaluateCompatibleJavaScript("window.__souloEpisodes.configure({dockEnabled:false,watchChanges:false});null", in: nil, contentWorld: WebEpisodeRuntime.world)
         try await Task.sleep(for: .milliseconds(100))
         let hidden = try await web.evaluateJavaScript("!document.getElementById('soulo-episode-dock')")
         XCTAssertEqual(hidden as? Bool, true)
@@ -37,11 +79,11 @@ final class WebEpisodeTests: XCTestCase {
         _ = try await web.evaluateJavaScript("document.querySelector('ul').insertAdjacentHTML('beforeend',`<li><a href='/player/68351-1-3.html'>EP3</a></li>`);null")
         try await Task.sleep(for: .milliseconds(450))
         XCTAssertEqual(capture.bodies.count, count)
-        _ = try await web.evaluateJavaScript("window.__souloEpisodes.refresh();null", in: nil, contentWorld: WebEpisodeRuntime.world)
+        _ = try await web.evaluateCompatibleJavaScript("window.__souloEpisodes.refresh();null", in: nil, contentWorld: WebEpisodeRuntime.world)
         try await Task.sleep(for: .milliseconds(100))
         let list = try XCTUnwrap(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last), pageURL: try XCTUnwrap(web.url)))
         XCTAssertEqual(list.currentSource?.episodes.count, 3)
-        _ = try await web.evaluateJavaScript("window.__souloEpisodes.configure({dockEnabled:true,watchChanges:true});null", in: nil, contentWorld: WebEpisodeRuntime.world)
+        _ = try await web.evaluateCompatibleJavaScript("window.__souloEpisodes.configure({dockEnabled:true,watchChanges:true});null", in: nil, contentWorld: WebEpisodeRuntime.world)
         let visible = try await web.evaluateJavaScript("!!document.getElementById('soulo-episode-dock')")
         XCTAssertEqual(visible as? Bool, true)
     }
@@ -359,7 +401,7 @@ final class WebEpisodeTests: XCTestCase {
         let (web, capture) = try await page("<ul class='episode-list'><li><a href='/watch/1'>EP1</a></li><li><a href='/watch/2'>EP2</a></li></ul>")
         try await Task.sleep(for: .milliseconds(500))
         capture.bodies.removeAll()
-        let value = try await web.evaluateJavaScript("window.__souloEpisodes.refresh()", in: nil, contentWorld: WebEpisodeRuntime.world)
+        let value = try await web.evaluateCompatibleJavaScript("window.__souloEpisodes.refresh()", in: nil, contentWorld: WebEpisodeRuntime.world)
         let list = try XCTUnwrap(WebEpisodeList.parse(try XCTUnwrap(value as? [String: Any]), pageURL: try XCTUnwrap(web.url)))
         XCTAssertEqual(list.sources.flatMap(\.episodes).map(\.title), ["EP1", "EP2"])
         for _ in 0..<100 where !capture.bodies.contains(where: { $0["sources"] != nil }) {
@@ -393,7 +435,7 @@ final class WebEpisodeTests: XCTestCase {
         XCTAssertNil(model.episodeList)
         // Exercise the isolated video bridge after native state was cleared,
         // while the restored document still knows about its episode list.
-        _ = try await web.evaluateJavaScript("window.webkit.messageHandlers.souloVideoOrientation.postMessage({action:'episodes',token:'restored-player'});null",
+        _ = try await web.evaluateCompatibleJavaScript("window.webkit.messageHandlers.souloVideoOrientation.postMessage({action:'episodes',token:'restored-player'});null",
             in: nil, contentWorld: WebVideoOrientationRuntime.world)
         for _ in 0..<100 where !model.showEpisodes { try await Task.sleep(for: .milliseconds(25)) }
         XCTAssertTrue(model.showEpisodes)
@@ -491,7 +533,7 @@ final class WebEpisodeTests: XCTestCase {
             web.loadHTMLString(list, baseURL: URL(string: "https://example.com/detail"))
             for _ in 0..<100 where capture.bodies.isEmpty { try await Task.sleep(for: .milliseconds(20)) }
             XCTAssertFalse(capture.bodies.isEmpty, "The production episode runtime must have started")
-            let blockers = try await web.evaluateJavaScript("__rootTouchListeners.filter(listener=>!listener.passive).map(listener=>listener.type)",
+            let blockers = try await web.evaluateCompatibleJavaScript("__rootTouchListeners.filter(listener=>!listener.passive).map(listener=>listener.type)",
                 in: nil, contentWorld: WebEpisodeRuntime.world) as? [String]
             XCTAssertEqual(blockers, [], "Touch scrolling must remain asynchronous, whether or not the dock is available")
             let dock = try await web.evaluateJavaScript("!!document.getElementById('soulo-episode-dock')") as? Bool
@@ -588,7 +630,7 @@ final class WebEpisodeTests: XCTestCase {
         window.rootViewController?.view.addSubview(web)
         window.makeKeyAndVisible()
         defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
-        _ = try await web.evaluateJavaScript(WebVideoOrientationRuntime.script(), in:nil, contentWorld:WebVideoOrientationRuntime.world)
+        _ = try await web.evaluateCompatibleJavaScript(WebVideoOrientationRuntime.script(), in:nil, contentWorld:WebVideoOrientationRuntime.world)
         for (opacity, expected) in [("1", false), ("0", true), ("1", false)] {
             _ = try await web.evaluateJavaScript("document.getElementById('player').style.opacity='\(opacity)';null")
             try await Task.sleep(for:.milliseconds(400))
@@ -599,5 +641,20 @@ final class WebEpisodeTests: XCTestCase {
         try await Task.sleep(for:.milliseconds(400))
         let restored=try await web.evaluateJavaScript("!!document.getElementById('soulo-episode-dock')")
         XCTAssertEqual(restored as? Bool,true)
+    }
+}
+
+
+extension WebEpisodeTests {
+    func testQueryBasedPlayerKeepsCurrentSeriesAndExcludesRecommendedShows() async throws {
+        let (web, capture) = try await page("""
+        <ul class='episode-list'><li><a href='/video/?217629-1-0.html'>第1集</a></li><li><a href='/video/?217629-1-1.html'>第2集</a></li></ul>
+        <ul class='playlist'><li><a href='/video/?217629-0-0.html'>HD</a></li></ul>
+        <ul><li><a href='/detail/?4829.html'>第99集</a></li><li><a href='/video/?4829-1-0.html'>第100集</a></li></ul>
+        """, url: "https://video.example/video/?217629-1-0.html")
+        let list = try XCTUnwrap(WebEpisodeList.parse(try XCTUnwrap(capture.bodies.last), pageURL: try XCTUnwrap(web.url)))
+        XCTAssertEqual(list.sources.count, 2)
+        XCTAssertEqual(list.sources.flatMap(\.episodes).count, 3)
+        XCTAssertTrue(list.sources.flatMap(\.episodes).allSatisfy { $0.url.query?.hasPrefix("217629-") == true })
     }
 }

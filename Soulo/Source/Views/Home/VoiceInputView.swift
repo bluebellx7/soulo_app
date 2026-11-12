@@ -110,7 +110,7 @@ struct VoiceInputView: View {
         }
         .presentationDetents([.medium])
         .presentationDragIndicator(.hidden)
-        .presentationBackground(.clear)
+        .compatiblePresentationBackground(.clear)
         .onAppear {
             speechService.recognizedText = ""
             speechService.startRecording(locale: automaticSpeechLocaleIdentifier, contextualStrings: contextualVocabulary)
@@ -119,7 +119,7 @@ struct VoiceInputView: View {
         .onDisappear {
             speechService.stopRecording()
         }
-        .onChange(of: scenePhase) { _, phase in
+        .onCompatibleChange(of: scenePhase) { _, phase in
             if phase == .background { speechService.stopRecording() }
         }
     }

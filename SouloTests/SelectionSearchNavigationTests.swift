@@ -1,6 +1,6 @@
 import XCTest
 import SwiftUI
-import SwiftData
+import CoreData
 import WebKit
 @testable import Soulo
 
@@ -61,14 +61,13 @@ import WebKit
         let search = SearchViewModel()
         search.selectedRegion = .international
         search.selectedPlatform = platform
-        let container = try ModelContainer(for: SearchHistoryItem.self, BookmarkItem.self,
-            configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let container = try LibraryStore(inMemory: true)
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
         window.rootViewController = UIHostingController(rootView: ResultsHost(onlyWhenSearching: true)
             .environmentObject(search).environmentObject(tabs)
-            .environmentObject(LanguageManager.shared).modelContainer(container))
+            .environmentObject(LanguageManager.shared).environment(\.managedObjectContext, (container).mainContext))
         window.makeKeyAndVisible()
         defer {
             window.isHidden = true; window.rootViewController = nil
@@ -145,8 +144,7 @@ import WebKit
         let target = try XCTUnwrap(platform.searchURL(for: search.currentKeyword))
         let tab = tabs.createTab(url: target, keyword: search.currentKeyword, platform: platform)
 
-        let container = try ModelContainer(for: SearchHistoryItem.self, BookmarkItem.self,
-            configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let container = try LibraryStore(inMemory: true)
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
@@ -164,7 +162,7 @@ import WebKit
             .environmentObject(search).environmentObject(tabs)
             .environmentObject(LanguageManager.shared)
             .environmentObject(ThemeManager.shared)
-            .environmentObject(WallpaperManager.shared).modelContainer(container))
+            .environmentObject(WallpaperManager.shared).environment(\.managedObjectContext, (container).mainContext))
         window.makeKeyAndVisible()
         for _ in 0..<600 {
             if tab.webViewModel.isWebViewRuntimeInstalled,

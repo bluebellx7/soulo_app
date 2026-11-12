@@ -1,5 +1,5 @@
 import Foundation
-import SwiftData
+import CoreData
 
 @MainActor
 enum BookmarkLibraryService {
@@ -14,10 +14,10 @@ enum BookmarkLibraryService {
         let value: String
     }
 
-    static func importArchive(_ archive: BookmarkArchive, into parentID: UUID?, context: ModelContext) throws -> ImportResult {
+    static func importArchive(_ archive: BookmarkArchive, into parentID: UUID?, context: NSManagedObjectContext) throws -> ImportResult {
         try context.save()
-        let existingFolders = try context.fetch(FetchDescriptor<BookmarkFolder>())
-        let existingLinks = try context.fetch(FetchDescriptor<BookmarkItem>())
+        let existingFolders = try context.fetch(BookmarkFolderRecord.request())
+        let existingLinks = try context.fetch(BookmarkRecord.request())
         var foldersByLocation: [Location: UUID] = [:]
         for folder in existingFolders { foldersByLocation[.init(parent: folder.parentID, value: folder.title)] = folder.id }
         var links = Set(existingLinks.map { Location(parent: $0.folderID, value: $0.urlString) })
@@ -29,7 +29,7 @@ enum BookmarkLibraryService {
                 let location = Location(parent: parent, value: folder.title)
                 if let existing = foldersByLocation[location] { mappedIDs[folder.id] = existing }
                 else {
-                    let item = BookmarkFolder(title: folder.title, parentID: parent)
+                    let item = BookmarkFolderRecord(title: folder.title, parentID: parent)
                     item.dateAdded = folder.dateAdded
                     context.insert(item)
                     mappedIDs[folder.id] = item.id
@@ -43,7 +43,7 @@ enum BookmarkLibraryService {
                     result.duplicates += 1
                     continue
                 }
-                let item = BookmarkItem(title: link.title, urlString: link.url)
+                let item = BookmarkRecord(title: link.title, urlString: link.url)
                 item.folderID = folderID
                 item.dateAdded = link.dateAdded
                 context.insert(item)
@@ -54,19 +54,19 @@ enum BookmarkLibraryService {
         } catch { context.rollback(); throw error }
     }
 
-    static func archive(context: ModelContext) throws -> BookmarkArchive {
-        let folders = try context.fetch(FetchDescriptor<BookmarkFolder>(sortBy: [SortDescriptor(\.dateAdded)]))
-        let items = try context.fetch(FetchDescriptor<BookmarkItem>(sortBy: [SortDescriptor(\.dateAdded)]))
+    static func archive(context: NSManagedObjectContext) throws -> BookmarkArchive {
+        let folders = try context.fetch(BookmarkFolderRecord.request(sortBy: [NSSortDescriptor(key: "dateAdded", ascending: true)]))
+        let items = try context.fetch(BookmarkRecord.request(sortBy: [NSSortDescriptor(key: "dateAdded", ascending: true)]))
         return BookmarkArchive(folders: folders.map { .init(id: $0.id, parentID: $0.parentID, title: $0.title, dateAdded: $0.dateAdded) },
             links: items.map { .init(folderID: $0.folderID, title: $0.title, url: $0.urlString, dateAdded: $0.dateAdded) })
     }
 
     /// Removing a folder keeps its contents in the parent folder, including nested folders.
-    static func removeFolder(_ folder: BookmarkFolder, context: ModelContext) throws {
+    static func removeFolder(_ folder: BookmarkFolderRecord, context: NSManagedObjectContext) throws {
         try context.save()
         do {
-            for item in try context.fetch(FetchDescriptor<BookmarkItem>()) where item.folderID == folder.id { item.folderID = folder.parentID }
-            for child in try context.fetch(FetchDescriptor<BookmarkFolder>()) where child.parentID == folder.id { child.parentID = folder.parentID }
+            for item in try context.fetch(BookmarkRecord.request()) where item.folderID == folder.id { item.folderID = folder.parentID }
+            for child in try context.fetch(BookmarkFolderRecord.request()) where child.parentID == folder.id { child.parentID = folder.parentID }
             context.delete(folder)
             try context.save()
         } catch { context.rollback(); throw error }

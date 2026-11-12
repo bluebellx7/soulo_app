@@ -5,7 +5,7 @@ import SwiftUI
 struct SouloWidgetBundle: WidgetBundle {
     var body: some Widget {
         SouloFilesWidget()
-        SouloLiveActivity()
+        if #available(iOSApplicationExtension 16.1, *) { SouloLiveActivity() }
         if #available(iOSApplicationExtension 18.0, *) {
             SouloSearchControl()
             SouloPrivateSearchControl()
@@ -30,7 +30,7 @@ struct SouloFilesWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: FilesProvider()) { _ in
             FilesWidgetView()
-                .containerBackground(for: .widget) { FilesGlassBackground() }
+                .modifier(FilesWidgetBackground())
                 .widgetURL(URL(string: "soulo://files"))
         }
         .configurationDisplayName("library_files_tab")
@@ -100,6 +100,16 @@ private struct FilesGlassBackground: View {
                 ContainerRelativeShape()
                     .strokeBorder(.white.opacity(colorScheme == .dark ? 0.18 : 0.5), lineWidth: 0.75)
             }
+        }
+    }
+}
+
+private struct FilesWidgetBackground: ViewModifier {
+    @ViewBuilder func body(content: Content) -> some View {
+        if #available(iOSApplicationExtension 17.0, *) {
+            content.containerBackground(for: .widget) { FilesGlassBackground() }
+        } else {
+            content.background(FilesGlassBackground())
         }
     }
 }

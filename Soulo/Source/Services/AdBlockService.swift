@@ -958,8 +958,14 @@ struct AdBlockService {
             var mosaicSheet = null, mosaicCSS = '';
             function maskMosaics(groups) {
                 if (!mosaicSheet) {
-                    mosaicSheet = new CSSStyleSheet();
-                    document.adoptedStyleSheets = document.adoptedStyleSheets.concat([mosaicSheet]);
+                    if ('adoptedStyleSheets' in document) {
+                        mosaicSheet = new CSSStyleSheet();
+                        document.adoptedStyleSheets = document.adoptedStyleSheets.concat([mosaicSheet]);
+                    } else {
+                        var mosaicStyle = document.createElement('style');
+                        (document.head || document.documentElement).appendChild(mosaicStyle);
+                        mosaicSheet = { replaceSync: function(css) { mosaicStyle.textContent = css; } };
+                    }
                 }
                 var selectors = [];
                 groups.forEach(function(group) {

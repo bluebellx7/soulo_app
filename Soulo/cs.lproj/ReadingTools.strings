@@ -436,3 +436,65 @@
 "files_move_busy" = "Před přesunem nebo přejmenováním těchto položek počkejte na dokončení stahování.";
 "video_show_episode_dock" = "Zobrazit dok epizody";
 "video_show_episode_dock_desc" = "Zobrazit tlačítko ukotvené epizody na webových stránkách s epizodami. Epizody zůstávají dostupné v přehrávači.";
+
+// Webpage share preview
+"page_share_image" = "Sdílet obrázek";
+"page_share_link" = "Sdílet odkaz";
+"page_share_preview" = "Náhled viditelné oblasti";
+"page_share_brand" = "Soulo: Webový prohlížeč";
+
+"video_export_mp4" = "Exportovat MP4";
+"video_export_failed" = "Toto video se nepodařilo exportovat jako MP4. Původní soubor byl zachován.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Gesta dvěma prsty";
+"gesture_hint" = "Pohybujte dvěma prsty společně do strany. Nápověda sleduje prsty; pohybem zpět zrušíte. Navigace jedním prstem i přiblížení sevřením zůstávají dostupné.";
+"gesture_swipe_right" = "Přejet doprava";
+"gesture_swipe_left" = "Přejet doleva";
+"gesture_show_toolbar" = "Zobrazit panel nástrojů";
+"gesture_quick_menu" = "Rychlá nabídka";
+"gesture_preview" = "Náhled gesta";
+"zoom_remember" = "Pamatovat přiblížení webů";
+"zoom_hint" = "Přiblížení z nabídky stránky se ukládá pro každou doménu. Změny v anonymních panelech se neukládají.";
+"zoom_empty" = "Žádná uložená přiblížení";
+"zoom_reset_all" = "Obnovit vše na 100%";
+
+"shake_direction" = "Směr";
+"shake_direction_horizontal" = "Vlevo a vpravo";
+"shake_direction_vertical" = "Nahoru a dolů";
+"shake_direction_any" = "Libovolný směr";
+
+"gesture_settings_title" = "Gesta webových stránek";
+"gesture_no_history" = "Když se nelze vrátit";
+"gesture_no_history_hint" = "Bez předchozí stránky přejeďte od levého okraje doprava pro zobrazení akce. Pohybem zpět zrušíte. Volbou Žádná vypnete.";
+
+"gesture_execution" = "Provést akci";
+
+"gesture_execute_release" = "Při uvolnění";
+
+"gesture_execute_tap" = "Při klepnutí";
+
+"gesture_feedback" = "Odezva akce";
+
+"gesture_haptics" = "Vibrace";
+
+"gesture_sound" = "Zvuk";
+
+"gesture_feedback_preview" = "Vyzkoušet odezvu";
+
+"media_start_timeout" = "Přehrávání nezačalo. Zkontrolujte síť nebo změňte přehrávač.";
+
+"wallpaper_appearance_hint" = "Nastavte pozadí zvlášť pro světlý a tmavý vzhled. Mění se automaticky podle aplikace.";
+
+"wallpaper_image_overlay" = "Vrstva přes obrázek";
+
+"auto_hide_platform_bar" = "Automaticky skrývat lištu platforem";
+
+"top_tab_bar_hidden_title" = "Horní lišta panelů je skrytá";
+
+"top_tab_bar_reopen_hint" = "Pro opětovné zobrazení klepněte dole na tlačítko panelů, otevřete nabídku … a zapněte zobrazení horní lišty panelů.";
+
+"wallpaper_image_blur" = "Matné sklo";
+"wallpaper_blur_amount" = "Intenzita rozostření";
+
+"auto_hide_platform_bar_hint" = "Panel platforem se skryje po otevření výsledku hledání. Znovu se zobrazí po návratu k výsledkům nebo při novém hledání. V této nabídce lze funkci vypnout.";

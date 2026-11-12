@@ -436,3 +436,65 @@
 "files_move_busy" = "Đợi quá trình tải xuống hoàn tất trước khi di chuyển hoặc đổi tên các mục này.";
 "video_show_episode_dock" = "Hiển thị dock tập";
 "video_show_episode_dock_desc" = "Hiển thị nút tập được gắn cố định trên các trang web có tập. Các tập vẫn có sẵn bên trong trình phát.";
+
+// Webpage share preview
+"page_share_image" = "Chia sẻ ảnh";
+"page_share_link" = "Chia sẻ liên kết";
+"page_share_preview" = "Xem trước vùng hiển thị";
+"page_share_brand" = "Soulo: Trình duyệt đa tìm kiếm";
+
+"video_export_mp4" = "Xuất MP4";
+"video_export_failed" = "Không thể xuất video này dưới dạng MP4. Tệp gốc vẫn được giữ lại.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Cử chỉ hai ngón tay";
+"gesture_hint" = "Di chuyển hai ngón tay cùng sang ngang. Gợi ý đi theo ngón tay; đưa trở lại để hủy. Điều hướng một ngón và chụm để thu phóng vẫn dùng được.";
+"gesture_swipe_right" = "Vuốt sang phải";
+"gesture_swipe_left" = "Vuốt sang trái";
+"gesture_show_toolbar" = "Hiện thanh công cụ";
+"gesture_quick_menu" = "Menu nhanh";
+"gesture_preview" = "Xem trước cử chỉ";
+"zoom_remember" = "Nhớ mức thu phóng trang";
+"zoom_hint" = "Mức thu phóng trong menu trang được lưu theo tên miền. Thay đổi trong tab riêng tư không được lưu.";
+"zoom_empty" = "Chưa có mức thu phóng đã lưu";
+"zoom_reset_all" = "Đặt lại tất cả về 100%";
+
+"shake_direction" = "Hướng";
+"shake_direction_horizontal" = "Trái và phải";
+"shake_direction_vertical" = "Lên và xuống";
+"shake_direction_any" = "Mọi hướng";
+
+"gesture_settings_title" = "Cử chỉ trang web";
+"gesture_no_history" = "Khi không thể quay lại";
+"gesture_no_history_hint" = "Khi không có trang trước, vuốt sang phải từ mép trái để hiện thao tác. Đưa ngón tay trở lại để hủy. Chọn Không để tắt.";
+
+"gesture_execution" = "Thực hiện thao tác";
+
+"gesture_execute_release" = "Khi thả tay";
+
+"gesture_execute_tap" = "Khi chạm";
+
+"gesture_feedback" = "Phản hồi thao tác";
+
+"gesture_haptics" = "Rung";
+
+"gesture_sound" = "Âm thanh";
+
+"gesture_feedback_preview" = "Thử phản hồi";
+
+"media_start_timeout" = "Chưa bắt đầu phát. Hãy kiểm tra mạng hoặc đổi trình phát.";
+
+"wallpaper_appearance_hint" = "Đặt nền riêng cho giao diện sáng và tối. Nền tự động thay đổi theo giao diện ứng dụng.";
+
+"wallpaper_image_overlay" = "Lớp phủ ảnh";
+
+"auto_hide_platform_bar" = "Tự ẩn thanh nền tảng";
+
+"top_tab_bar_hidden_title" = "Đã ẩn thanh tab trên cùng";
+
+"top_tab_bar_reopen_hint" = "Để hiện lại, chạm nút tab ở dưới, mở menu … rồi bật hiển thị thanh tab trên cùng.";
+
+"wallpaper_image_blur" = "Kính mờ";
+"wallpaper_blur_amount" = "Mức độ làm mờ";
+
+"auto_hide_platform_bar_hint" = "Thanh nền tảng sẽ ẩn khi bạn mở kết quả tìm kiếm. Quay lại kết quả hoặc tìm kiếm mới để hiện lại. Bạn có thể tắt tùy chọn này trong menu này.";

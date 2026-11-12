@@ -254,10 +254,10 @@ struct WebResourceInspectorView: View {
             stopInlineAudio()
             imageBatchSaver.cancel()
         }
-        .onChange(of: filteredImages.map(\.id)) { _, ids in
+        .onCompatibleChange(of: filteredImages.map(\.id)) { _, ids in
             selectedImageIDs.formIntersection(ids)
         }
-        .onChange(of: selectedSection) { _, section in
+        .onCompatibleChange(of: selectedSection) { _, section in
             if section != .images && !imageBatchSaver.isSaving {
                 isSelectingImages = false
                 selectedImageIDs.removeAll()
@@ -354,7 +354,7 @@ struct WebResourceInspectorView: View {
                         }
                     }.padding(.horizontal, 16).padding(.vertical, 10)
                 }.scrollIndicators(.hidden)
-                .onChange(of: selectedSection) { _, section in
+                .onCompatibleChange(of: selectedSection) { _, section in
                     withAnimation { proxy.scrollTo(section, anchor: .center) }
                 }
             }
@@ -386,7 +386,7 @@ struct WebResourceInspectorView: View {
                 }.padding(18)
             }.id(selectedSection)
         }.background(Color(uiColor: .systemBackground))
-        .onChange(of: availableSections, initial: true) { _, sections in
+        .onCompatibleChange(of: availableSections, initial: true) { _, sections in
             if !sections.contains(selectedSection) {
                 selectedSection = sections.first ?? .images
                 stopInlineAudio()
@@ -975,7 +975,7 @@ struct WebResourceInspectorView: View {
     }
 
     private var loadingView: some View {
-        ContentUnavailableView {
+        CompatibleUnavailableView {
             ProgressView()
         } description: {
             Text(LanguageManager.shared.localizedString("resource_scanning"))
@@ -983,7 +983,7 @@ struct WebResourceInspectorView: View {
     }
 
     private var emptyView: some View {
-        ContentUnavailableView(
+        CompatibleUnavailableView(
             LanguageManager.shared.localizedString("resource_none_found"),
             systemImage: "doc.text.magnifyingglass",
             description: Text(LanguageManager.shared.localizedString("resource_none_found_desc"))
@@ -991,7 +991,7 @@ struct WebResourceInspectorView: View {
     }
 
     private var errorView: some View {
-        ContentUnavailableView {
+        CompatibleUnavailableView {
             Label(
                 LanguageManager.shared.localizedString("resource_scan_failed"),
                 systemImage: "exclamationmark.triangle"
@@ -1409,6 +1409,9 @@ struct WebResourceMediaPlayerView: View {
     var systemPlayer = false
     var showsEpisodes = false
     private var player: AVPlayer { MediaSession.shared.player }
+    private let restoringPlayback: Bool
+    private let embedded: Bool
+    @State private var playbackContext: WebMediaPlaybackContext
     @State private var isDownloading = false
     @State private var isPreparing = true
     @State private var isPlaying = false
@@ -1437,7 +1440,9 @@ struct WebResourceMediaPlayerView: View {
         souloPlaying: Bool = true,
         episodeList: WebEpisodeList? = nil,
         systemPlayer: Bool = false,
-        showsEpisodes: Bool = false
+        showsEpisodes: Bool = false,
+        restoredContext: WebMediaPlaybackContext? = nil,
+        embedded: Bool = false
     ) {
         self.resource = resource
         self.pageURL = pageURL
@@ -1449,10 +1454,21 @@ struct WebResourceMediaPlayerView: View {
         self.episodeList = episodeList
         self.systemPlayer = systemPlayer
         self.showsEpisodes = showsEpisodes
+        self.restoringPlayback = restoredContext != nil
+        self.embedded = embedded
+        _playbackContext = State(initialValue: restoredContext ?? WebMediaPlaybackContext(
+            resource: resource, pageURL: pageURL, sourceWebView: sourceWebView, episodeList: episodeList))
+        _selectedEpisodeID = State(initialValue: restoredContext?.selectedEpisodeID)
+        _selectedSourceID = State(initialValue: restoredContext?.selectedSourceID)
+        _isPreparing = State(initialValue: restoredContext == nil)
     }
 
-    var body: some View {
-        NavigationStack {
+    @ViewBuilder var body: some View {
+        if embedded { playerContent }
+        else { NavigationStack { playerContent } }
+    }
+
+    private var playerContent: some View {
             VStack(spacing: 0) {
                 ZStack {
                     if useYouTubeWebPlayback, let youtubeEmbedURL {
@@ -1468,11 +1484,13 @@ struct WebResourceMediaPlayerView: View {
                         MediaPlaybackContent(initialSouloPlayback: directSouloSource != nil
                                                 ? (time: selectedEpisodeID == nil ? (souloStartAt ?? 0) : 0,
                                                    playing: selectedEpisodeID == nil ? souloPlaying : true) : nil,
-                                             initialSouloSource: directSouloSource, initialFullscreen: souloStartAt != nil,
+                                             initialSouloSource: directSouloSource,
+                                             restoredSoulo: restoringPlayback ? MediaSession.shared.soulo : nil,
+                                             initialFullscreen: souloStartAt != nil,
                                              initialSystemPlayer: systemPlayer, initialEpisodes: showsEpisodes,
                                              initialTitle: currentResource.title, ownsExplicitSource: true, externalPlaylist: videoPlaylist,
                                              playerSelection: $usingSystem,
-                                             onFullscreenClose: souloStartAt != nil ? { episodeTask?.cancel(); dismiss() } : nil,
+                                             onFullscreenClose: { episodeTask?.cancel(); dismiss() },
                                              downloadAction: { downloadCurrentMedia() })
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .background(.black)
@@ -1593,8 +1611,13 @@ struct WebResourceMediaPlayerView: View {
                         .accessibilityIdentifier("media.web.close")
                 }
             }
-            .task { await prepareAndPlay() }
-            .onDisappear { playbackRequestID = UUID() }
+            .task {
+                if restoringPlayback { storePlaybackContext() }
+                else { await prepareAndPlay() }
+            }
+            .onDisappear { storePlaybackContext(); playbackRequestID = UUID(); episodeTask?.cancel() }
+            .onCompatibleChange(of: selectedSourceID) { _, _ in storePlaybackContext() }
+            .onCompatibleChange(of: episodeList) { _, _ in storePlaybackContext() }
             .onReceive(player.publisher(for: \.timeControlStatus)) { status in
                 isPlaying = status == .playing
             }
@@ -1626,11 +1649,24 @@ struct WebResourceMediaPlayerView: View {
             .navigationDestination(isPresented: Binding(get: { selectedDownloadedItem != nil }, set: { if !$0 { selectedDownloadedItem = nil } })) {
                 if let item = selectedDownloadedItem { DownloadManagerContentView(highlightedItemID: item.id).navigationTitle(LanguageManager.shared.localizedString("downloads")) }
             }
-        }
+    }
+
+    private func storePlaybackContext() {
+        playbackContext.resource = currentResource
+        playbackContext.updateEpisodeList(episodeList)
+        playbackContext.selectedEpisodeID = selectedEpisodeID
+        playbackContext.selectedSourceID = selectedSourceID
+    }
+
+    private func sourceForPlayback(asset: AVURLAsset, pageURL: URL?) -> DownloadPlaybackSource {
+        storePlaybackContext()
+        let source = DownloadPlaybackSource(asset: asset, pageURL: pageURL, webView: sourceWebView)
+        source.webMediaContext = playbackContext
+        return source
     }
 
     private var videoPlaylist: FileVideoPlaylist? {
-        guard let list = episodeList,
+        guard let list = episodeList.flatMap({ playbackContext.accepts($0) ? $0 : nil }) ?? playbackContext.episodeList,
               let source = list.sources.first(where: { $0.id == selectedSourceID })
                 ?? list.sources.first(where: { group in group.episodes.contains { episode in
                     WebEpisodeList.matches(episode.url, currentResource.url)
@@ -1661,19 +1697,20 @@ struct WebResourceMediaPlayerView: View {
                 try Task.checkCancellation()
                 let asset = await WebResourceMediaService.asset(for: media, webView: sourceWebView)
                 try Task.checkCancellation()
-                if usingSystem {
+                if MediaSession.shared.soulo == nil {
                     MediaSession.shared.open(url: media.url, title: episode.title,
-                        pageURL: media.sourcePageURL ?? episode.url, asset: asset, webView: sourceWebView, startAt: 0)
+                        pageURL: media.sourcePageURL ?? episode.url, asset: asset, webView: sourceWebView,
+                        downloadSource: sourceForPlayback(asset: asset, pageURL: media.sourcePageURL ?? episode.url), startAt: 0)
                     directSouloSource = nil
                 } else {
-                    directSouloSource = DownloadPlaybackSource(asset: asset, pageURL: media.sourcePageURL ?? episode.url,
-                                                              webView: sourceWebView)
+                    directSouloSource = sourceForPlayback(asset: asset, pageURL: media.sourcePageURL ?? episode.url)
                 }
                 selectedResource = WebMediaResource(kind: media.kind, url: media.url, title: episode.title,
                     posterURL: media.posterURL, delivery: media.delivery, companionAudioURL: media.companionAudioURL,
                     sourcePageURL: media.sourcePageURL ?? episode.url)
                 selectedEpisodeID = episode.id
                 downloadedPlaybackURL = nil; playbackError = ""
+                storePlaybackContext()
             } catch is CancellationError { }
             catch { episodeFailure = error.localizedDescription }
         }
@@ -1714,7 +1751,7 @@ struct WebResourceMediaPlayerView: View {
         if !systemPlayer, souloStartAt != nil || !VideoPlaybackPreferences.usesSystemPlayer() {
             // An explicit WebKit handoff starts the chosen decoder directly.
             // Warming AVPlayer first duplicates HLS setup and delays switching.
-            directSouloSource = DownloadPlaybackSource(asset: asset, pageURL: pageURL, webView: sourceWebView)
+            directSouloSource = sourceForPlayback(asset: asset, pageURL: pageURL)
             isPreparing = false
             return
         }
@@ -1722,7 +1759,8 @@ struct WebResourceMediaPlayerView: View {
         // AVPlayerItem resolves the asset during playback. A separate isPlayable
         // load duplicates remote HLS setup and delays the first frame.
         MediaSession.shared.open(url: resolvedLocalURL ?? currentResource.url, title: currentResource.title, pageURL: pageURL,
-            asset: asset, webView: sourceWebView, reservation: reservation, startAt: souloStartAt,
+            asset: asset, webView: sourceWebView, reservation: reservation,
+            downloadSource: sourceForPlayback(asset: asset, pageURL: pageURL), startAt: souloStartAt,
             autoplay: souloStartAt == nil ? true : souloPlaying)
         if !useYouTubeWebPlayback {
             isPreparing = false

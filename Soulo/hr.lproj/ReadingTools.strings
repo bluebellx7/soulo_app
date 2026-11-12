@@ -436,3 +436,65 @@
 "files_move_busy" = "Pričekajte da se preuzimanja završe prije premještanja ili preimenovanja ovih stavki.";
 "video_show_episode_dock" = "Prikaži dock za epizodu";
 "video_show_episode_dock_desc" = "Prikaži gumb za usidrenu epizodu na web stranicama s epizodama. Epizode ostaju dostupne unutar playera.";
+
+// Webpage share preview
+"page_share_image" = "Podijeli sliku";
+"page_share_link" = "Podijeli poveznicu";
+"page_share_preview" = "Pregled vidljivog područja";
+"page_share_brand" = "Soulo: Web preglednik";
+
+"video_export_mp4" = "Izvezi MP4";
+"video_export_failed" = "Ovaj videozapis nije moguće izvesti kao MP4. Izvorna datoteka je sačuvana.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Geste s dva prsta";
+"gesture_hint" = "Pomičite dva prsta zajedno u stranu. Uputa prati prste; vratite ih za odustajanje. Navigacija jednim prstom i zumiranje štipanjem i dalje rade.";
+"gesture_swipe_right" = "Prijeđi udesno";
+"gesture_swipe_left" = "Prijeđi ulijevo";
+"gesture_show_toolbar" = "Prikaži alatnu traku";
+"gesture_quick_menu" = "Brzi izbornik";
+"gesture_preview" = "Pregled geste";
+"zoom_remember" = "Zapamti zum web-mjesta";
+"zoom_hint" = "Zum iz izbornika stranice sprema se po domeni. Promjene u privatnim karticama ne spremaju se.";
+"zoom_empty" = "Nema spremljenih razina zuma";
+"zoom_reset_all" = "Vrati sve na 100%";
+
+"shake_direction" = "Smjer";
+"shake_direction_horizontal" = "Lijevo i desno";
+"shake_direction_vertical" = "Gore i dolje";
+"shake_direction_any" = "Bilo koji smjer";
+
+"gesture_settings_title" = "Geste web-stranica";
+"gesture_no_history" = "Kad povratak nije moguć";
+"gesture_no_history_hint" = "Bez prethodne stranice prijeđite od lijevog ruba udesno za prikaz radnje. Vratite pokret za odustajanje. Odaberite Ništa za isključivanje.";
+
+"gesture_execution" = "Izvrši radnju";
+
+"gesture_execute_release" = "Pri otpuštanju";
+
+"gesture_execute_tap" = "Pri dodiru";
+
+"gesture_feedback" = "Povratna informacija";
+
+"gesture_haptics" = "Vibracija";
+
+"gesture_sound" = "Zvuk";
+
+"gesture_feedback_preview" = "Isprobaj povratnu informaciju";
+
+"media_start_timeout" = "Reprodukcija nije započela. Provjerite mrežu ili promijenite reproduktor.";
+
+"wallpaper_appearance_hint" = "Postavite zasebne pozadine za svijetli i tamni izgled. Automatski se mijenjaju s aplikacijom.";
+
+"wallpaper_image_overlay" = "Sloj preko slike";
+
+"auto_hide_platform_bar" = "Automatski sakrij traku platformi";
+
+"top_tab_bar_hidden_title" = "Gornja traka kartica je skrivena";
+
+"top_tab_bar_reopen_hint" = "Za ponovni prikaz dodirnite gumb kartica pri dnu, otvorite izbornik … i uključite prikaz gornje trake kartica.";
+
+"wallpaper_image_blur" = "Mutno staklo";
+"wallpaper_blur_amount" = "Jačina zamućenja";
+
+"auto_hide_platform_bar_hint" = "Traka platformi skriva se kada otvorite rezultat pretraživanja. Vratite se na rezultate ili pokrenite novo pretraživanje da se ponovno prikaže. To možete isključiti u ovom izborniku.";

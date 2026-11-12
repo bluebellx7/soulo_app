@@ -436,3 +436,65 @@
 "files_move_busy" = "|\nଏହି ଆଇଟମଗୁଡିକ ଘୁଞ୍ଚାଇବା କିମ୍ବା ନାମ ପରିବର୍ତ୍ତନ କରିବା ପୂର୍ବରୁ ଡାଉନଲୋଡ୍ ସମାପ୍ତ ହେବା ପାଇଁ ଅପେକ୍ଷା କରନ୍ତୁ |";
 "video_show_episode_dock" = "|\nଏପିସୋଡ୍ ଡକ୍ ଦେଖାନ୍ତୁ |";
 "video_show_episode_dock_desc" = "|\nଏପିସୋଡ୍ ସହିତ ୱେବ୍ ପୃଷ୍ଠାଗୁଡ଼ିକରେ ଏକ ଡକ୍ ହୋଇଥିବା ଏପିସୋଡ୍ ବଟନ୍ ଦେଖାନ୍ତୁ | ପ୍ଲେୟାର୍ ଭିତରେ ଏପିସୋଡ୍ ଉପଲବ୍ଧ |";
+
+// Webpage share preview
+"page_share_image" = "ଛବି ସେୟାର କରନ୍ତୁ";
+"page_share_link" = "ଲିଙ୍କ୍ ସେୟାର କରନ୍ତୁ";
+"page_share_preview" = "ଦୃଶ୍ୟମାନ ଅଂଶର ପୂର୍ବାବଲୋକନ";
+"page_share_brand" = "Soulo: ବହୁ-ସର୍ଚ୍ଚ ବ୍ରାଉଜର";
+
+"video_export_mp4" = "MP4 ରପ୍ତାନି କରନ୍ତୁ";
+"video_export_failed" = "ଏହି ଭିଡିଓକୁ MP4 ଭାବରେ ରପ୍ତାନି କରାଯାଇପାରିଲା ନାହିଁ। ମୂଳ ଫାଇଲ୍ ରଖାଯାଇଛି।";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "ଦୁଇ ଆଙ୍ଗୁଠି ଅଙ୍ଗଭଙ୍ଗୀ";
+"gesture_hint" = "ଦୁଇ ଆଙ୍ଗୁଠିକୁ ଏକାଠି ପାର୍ଶ୍ୱକୁ ଘୁଞ୍ଚାନ୍ତୁ। ସୂଚନା ଆଙ୍ଗୁଠିକୁ ଅନୁସରେ; ବାତିଲ ପାଇଁ ପଛକୁ ଆଣନ୍ତୁ। ଏକ ଆଙ୍ଗୁଠି ନେଭିଗେସନ୍ ଓ ପିଞ୍ଚ୍ ଜୁମ୍ ଉପଲବ୍ଧ ରହେ।";
+"gesture_swipe_right" = "ଡାହାଣକୁ ସ୍ୱାଇପ୍";
+"gesture_swipe_left" = "ବାମକୁ ସ୍ୱାଇପ୍";
+"gesture_show_toolbar" = "ଟୁଲ୍‌ବାର୍ ଦେଖାନ୍ତୁ";
+"gesture_quick_menu" = "ଦ୍ରୁତ ମେନୁ";
+"gesture_preview" = "ଅଙ୍ଗଭଙ୍ଗୀ ପୂର୍ବାବଲୋକନ";
+"zoom_remember" = "ୱେବସାଇଟ୍ ଜୁମ୍ ମନେରଖନ୍ତୁ";
+"zoom_hint" = "ପୃଷ୍ଠା ମେନୁର ଜୁମ୍ ପ୍ରତି ଡୋମେନ୍ ପାଇଁ ସଞ୍ଚୟ ହୁଏ। ବ୍ୟକ୍ତିଗତ ଟ୍ୟାବ୍ ପରିବର୍ତ୍ତନ ସଞ୍ଚୟ ହୁଏ ନାହିଁ।";
+"zoom_empty" = "କୌଣସି ସଞ୍ଚିତ ଜୁମ୍ ନାହିଁ";
+"zoom_reset_all" = "ସବୁକୁ 100% କରନ୍ତୁ";
+
+"shake_direction" = "ଦିଗ";
+"shake_direction_horizontal" = "ବାମ ଓ ଡାହାଣ";
+"shake_direction_vertical" = "ଉପର ଓ ତଳ";
+"shake_direction_any" = "ଯେକୌଣସି ଦିଗ";
+
+"gesture_settings_title" = "ୱେବପୃଷ୍ଠା ଅଙ୍ଗଭଙ୍ଗୀ";
+"gesture_no_history" = "ପଛକୁ ଯାଇ ନପାରିଲେ";
+"gesture_no_history_hint" = "ପୂର୍ବ ପୃଷ୍ଠା ନଥିଲେ କାର୍ଯ୍ୟ ଦେଖିବାକୁ ବାମ ଧାରରୁ ଡାହାଣକୁ ସ୍ୱାଇପ୍ କରନ୍ତୁ। ବାତିଲ ପାଇଁ ପଛକୁ ଆଣନ୍ତୁ। ବନ୍ଦ ପାଇଁ କିଛି ନୁହେଁ ବାଛନ୍ତୁ।";
+
+"gesture_execution" = "କାର୍ଯ୍ୟ ଚଳାନ୍ତୁ";
+
+"gesture_execute_release" = "ଛାଡ଼ିବା ବେଳେ";
+
+"gesture_execute_tap" = "ଟ୍ୟାପ୍ କଲେ";
+
+"gesture_feedback" = "କାର୍ଯ୍ୟ ପ୍ରତିକ୍ରିୟା";
+
+"gesture_haptics" = "କମ୍ପନ";
+
+"gesture_sound" = "ଶବ୍ଦ";
+
+"gesture_feedback_preview" = "ପ୍ରତିକ୍ରିୟା ପୂର୍ବାବଲୋକନ";
+
+"media_start_timeout" = "ପ୍ଲେବ୍ୟାକ୍ ଆରମ୍ଭ ହୋଇନାହିଁ। ନେଟୱର୍କ ଯାଞ୍ଚ କରନ୍ତୁ କିମ୍ବା ପ୍ଲେୟାର ବଦଳାନ୍ତୁ।";
+
+"wallpaper_appearance_hint" = "ହାଲୁକା ଏବଂ ଗାଢ଼ ରୂପ ପାଇଁ ଅଲଗା ପୃଷ୍ଠଭୂମି ସେଟ୍ କରନ୍ତୁ। ଆପ୍‌ର ରୂପ ସହିତ ସେଗୁଡ଼ିକ ଆପେ ବଦଳିବ।";
+
+"wallpaper_image_overlay" = "ଛବି ଆବରଣ";
+
+"auto_hide_platform_bar" = "ପ୍ଲାଟଫର୍ମ ବାର୍ ଆପେ ଲୁଚାନ୍ତୁ";
+
+"top_tab_bar_hidden_title" = "ଉପର ଟ୍ୟାବ୍ ବାର୍ ଲୁଚାଗଲା";
+
+"top_tab_bar_reopen_hint" = "ପୁଣି ଦେଖାଇବାକୁ ତଳର ଟ୍ୟାବ୍ ବଟନ୍ ଟ୍ୟାପ୍ କରନ୍ତୁ, … ମେନୁ ଖୋଲନ୍ତୁ ଓ ଉପର ଟ୍ୟାବ୍ ବାର୍ ଦେଖାଇବା ବିକଳ୍ପ ଚାଲୁ କରନ୍ତୁ।";
+
+"wallpaper_image_blur" = "ଝାପ୍ସା କାଚ";
+"wallpaper_blur_amount" = "ଝାପ୍ସାର ତୀବ୍ରତା";
+
+"auto_hide_platform_bar_hint" = "ସନ୍ଧାନ ଫଳାଫଳ ଖୋଲିଲେ ପ୍ଲାଟଫର୍ମ ବାର୍ ଲୁଚିଯାଏ। ଫଳାଫଳକୁ ଫେରିଲେ କିମ୍ବା ନୂଆ ସନ୍ଧାନ କଲେ ଏହା ପୁଣି ଦେଖାଯିବ। ଏହି ମେନୁରେ ଏହା ବନ୍ଦ କରିପାରିବେ।";

@@ -1,5 +1,5 @@
 import Foundation
-import SwiftData
+import CoreData
 import WebKit
 
 enum FireButtonService {
@@ -38,7 +38,7 @@ enum BrowserCacheService {
     /// deliberately preserving cookies, local storage, bookmarks, search terms,
     /// and downloads.
     @MainActor
-    static func clear(tabManager: TabManager?, historyContext: ModelContext? = nil) async {
+    static func clear(tabManager: TabManager?, historyContext: NSManagedObjectContext? = nil) async {
         URLCache.shared.removeAllCachedResponses()
         WebsiteFaviconService.shared.clear()
         tabManager?.tabs.forEach { $0.webViewModel.clearSnapshotCache() }

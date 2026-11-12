@@ -14,7 +14,7 @@ enum AppConstants {
         ("bn-BD", "বাংলা", "🇧🇩"),
         ("ca", "Català", "🇪🇸"),
         ("zh-Hans", "简体中文", "🇨🇳"),
-        ("zh-Hant", "繁體中文", "🇹🇼"),
+        ("zh-Hant", "繁體中文", "🇨🇳"),
         ("hr", "Hrvatski", "🇭🇷"),
         ("cs", "Čeština", "🇨🇿"),
         ("da", "Dansk", "🇩🇰"),

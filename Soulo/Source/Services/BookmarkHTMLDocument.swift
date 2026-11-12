@@ -84,11 +84,12 @@ enum BookmarkHTML {
                     title: title.isEmpty ? ToolText.text("favorites_untitled") : title, dateAdded: date(value.attrs))
                 archive.folders.append(folder)
                 pendingFolder = folder.id
-            } else if let href = value.attrs["href"], let url = URL(string: href),
+            } else if let href = value.attrs["href"],
+                      let usableURL = bookmarkURLString(href), let url = URL(string: usableURL),
                       ["https", "http", "ftp"].contains(url.scheme?.lowercased() ?? ""),
                       let host = url.host, !host.isEmpty {
                 archive.links.append(.init(folderID: stack.last ?? nil,
-                    title: title.isEmpty ? href : title, url: href, dateAdded: date(value.attrs)))
+                    title: title.isEmpty ? href : title, url: usableURL, dateAdded: date(value.attrs)))
             } else { archive.skipped += 1 }
         }
         tokens.enumerateMatches(in: html, range: NSRange(html.startIndex..., in: html)) { match, _, stop in
@@ -135,6 +136,16 @@ enum BookmarkHTML {
         guard archive.links.count + archive.folders.count + archive.skipped <= maximumEntries else { throw Failure.tooLarge }
         guard sawList else { throw Failure.invalid }
         return archive
+    }
+
+    private static func bookmarkURLString(_ value: String) -> String? {
+        if URL(string: value) != nil { return value }
+        // URL's automatic encoding of invalid characters arrived in iOS 17.
+        // Encode only the fallback, preserving existing escapes and delimiters.
+        let allowed = CharacterSet.urlFragmentAllowed.union(CharacterSet(charactersIn: "#%[]"))
+        guard let encoded = value.addingPercentEncoding(withAllowedCharacters: allowed),
+              URL(string: encoded) != nil else { return nil }
+        return encoded
     }
 
     static func encode(_ archive: BookmarkArchive) -> Data {

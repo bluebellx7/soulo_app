@@ -107,7 +107,7 @@ struct DownloadManagerContentView: View {
                 )
             } else {
                 if visibleDownloads.isEmpty {
-                    ContentUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
+                    CompatibleUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
                 }
                 Section {
                     ForEach(visibleDownloads) { item in
@@ -144,8 +144,9 @@ struct DownloadManagerContentView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .listSectionSpacing(12)
-        .contentMargins(.top, 8, for: .scrollContent)
+        .mediaPlayerNavigation()
+        .compatibleListSectionSpacing(20)
+        .compatibleScrollTopMargin(24)
         .toolbar {
             if libraryPageIsActive {
                 ToolbarItem(placement: .primaryAction) {
@@ -170,15 +171,11 @@ struct DownloadManagerContentView: View {
         .sheet(item: $shareItem) { item in
             DownloadShareSheet(items: [item.localURL])
         }
-        .navigationDestination(isPresented: Binding(get: { previewItem != nil }, set: { if !$0 { previewItem = nil } })) {
-            if let item = previewItem { DownloadContentPreview(item: item) }
-        }
-        .navigationDestination(isPresented: Binding(get: { playingDownload != nil }, set: { if !$0 { playingDownload = nil } })) {
-            if let item = playingDownload {
-                MediaPlaybackContent()
-                    .navigationTitle(item.fileName)
-                    .navigationBarTitleDisplayMode(.inline)
-            }
+        .compatibleNavigationDestination(item: $previewItem) { item in DownloadContentPreview(item: item) }
+        .compatibleNavigationDestination(item: $playingDownload) { item in
+            MediaPlaybackContent()
+                .navigationTitle(item.fileName)
+                .navigationBarTitleDisplayMode(.inline)
         }
         .fileImporter(isPresented: $showDownloadsFolder, allowedContentTypes: [.data]) { result in
             Task {
@@ -190,8 +187,8 @@ struct DownloadManagerContentView: View {
                 } catch { fileError = error.localizedDescription }
             }
         }
-        .navigationDestination(item: $systemFile) { LocalDocumentContent(url: $0) }
-        .navigationDestination(item: $exportedHLSFolder) { LibraryFilesView(directory: $0) }
+        .compatibleNavigationDestination(item: $systemFile) { LocalDocumentContent(url: $0) }
+        .compatibleNavigationDestination(item: $exportedHLSFolder) { LibraryFilesView(directory: $0) }
         .disabled(hlsExportProgress != nil)
         .overlay {
             if let progress = hlsExportProgress { FileOperationOverlay(operation: progress) }
@@ -202,7 +199,7 @@ struct DownloadManagerContentView: View {
         .onAppear {
             if libraryPageIsActive { downloadManager.removeMissingFiles() }
         }
-        .onChange(of: libraryPageIsActive) { _, active in
+        .onCompatibleChange(of: libraryPageIsActive) { _, active in
             if active { downloadManager.removeMissingFiles() }
         }
         .task(id: sizeRequests) {
@@ -239,14 +236,23 @@ struct DownloadManagerContentView: View {
                 downloadSummary(item)
             }
 
-            if item.status == .finished,
-               item.localURL.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
-                Button { exportHLS(item) } label: {
+            if item.status == .finished, OfflineVideoConversionService.supports(item.localURL) {
+                Menu {
+                    Button { exportMP4(item) } label: {
+                        Label(ToolText.text("video_export_mp4"), systemImage: "film")
+                    }.accessibilityIdentifier("downloads.export-mp4.\(item.id)")
+                    if item.localURL.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
+                        Button { exportHLS(item) } label: {
+                            Label(LanguageManager.shared.localizedString("save") + " HLS", systemImage: "square.and.arrow.down")
+                        }
+                    }
+                } label: {
                     Image(systemName: "square.and.arrow.down")
                         .frame(minWidth: 44, minHeight: 44)
                 }
                 .buttonStyle(.borderless)
-                .accessibilityLabel(LanguageManager.shared.localizedString("save") + " HLS")
+                .accessibilityLabel(ToolText.text("favorites_export"))
+                .accessibilityIdentifier("downloads.export.\(item.id)")
             } else if item.status == .finished
                 && item.localURL.pathExtension.lowercased() != "movpkg" {
                 Button {
@@ -317,6 +323,9 @@ struct DownloadManagerContentView: View {
         }
         .background(LibrarySwipeActionsRegion())
         .contextMenu {
+            if item.status == .finished, OfflineVideoConversionService.supports(item.localURL) {
+                Button { exportMP4(item) } label: { Label(ToolText.text("video_export_mp4"), systemImage: "film") }
+            }
             if item.status == .finished,
                item.localURL.pathExtension.lowercased() == OfflineHLSReference.fileExtension {
                 Button { exportHLS(item) } label: {
@@ -329,6 +338,23 @@ struct DownloadManagerContentView: View {
                 ? Color.themePrimary.opacity(0.12)
                 : Color(uiColor: .secondarySystemGroupedBackground)
         )
+    }
+
+    private func exportMP4(_ item: BrowserDownloadItem) {
+        guard hlsExportProgress == nil else { return }
+        let progress = FileOperationProgress()
+        hlsExportProgress = progress
+        Task {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent("SouloMP4Export-\(UUID())")
+            defer { hlsExportProgress = nil; try? FileManager.default.removeItem(at: directory) }
+            do {
+                let output = try await OfflineVideoConversionService.exportMP4(from: item.localURL, into: directory, operation: progress)
+                try progress.check()
+                shareItem = try downloadManager.addConvertedVideo(from: output, original: item)
+            } catch ReadingToolError.canceled { }
+            catch is CancellationError { }
+            catch { fileError = error.localizedDescription }
+        }
     }
 
     private func exportHLS(_ item: BrowserDownloadItem) {
@@ -558,7 +584,7 @@ struct LocalDocumentContent: View {
     private var isBook: Bool { BookFormat.extensions.contains(url.pathExtension.lowercased()) }
 
     var body: some View {
-        Group {
+        ZStack {
             if url.pathExtension.lowercased() == "torrent" {
                 TorrentDocumentContent(url: url)
             } else if fileKind == .image {
@@ -569,7 +595,7 @@ struct LocalDocumentContent: View {
                 if let book {
                     BookReaderView(book: book)
                 } else if let error {
-                    ContentUnavailableView(ToolText.text("reading_failed"), systemImage: "book.closed", description: Text(error))
+                    CompatibleUnavailableView(ToolText.text("reading_failed"), systemImage: "book.closed", description: Text(error))
                 } else {
                     ProgressView().task {
                         do { book = try await BookLibrary.shared.add(url) }
@@ -661,7 +687,7 @@ struct ExternalDocumentView: View {
     var body: some View {
         Group {
             if let localURL { LocalDocumentContent(url: localURL) }
-            else if let error { ContentUnavailableView(ToolText.text("reading_failed"), systemImage: "doc", description: Text(error)) }
+            else if let error { CompatibleUnavailableView(ToolText.text("reading_failed"), systemImage: "doc", description: Text(error)) }
             else { ProgressView() }
         }
         .task(id: source) {
@@ -684,7 +710,7 @@ struct TextDocumentPreview: View {
     var body: some View {
         Group {
             if let text { SelectableDocumentText(text: text) }
-            else if let error { ContentUnavailableView(ToolText.text("reading_failed"), systemImage: "doc.text", description: Text(error)) }
+            else if let error { CompatibleUnavailableView(ToolText.text("reading_failed"), systemImage: "doc.text", description: Text(error)) }
             else { ProgressView() }
         }
         .task(id: url.absoluteString + encoding) {
@@ -796,7 +822,7 @@ struct DownloadCompletionToast: View {
             completed = item
             AppAccessibility.announce(LanguageManager.shared.localizedString("resource_download_complete") + ", " + item.fileName)
         }
-        .onChange(of: scenePhase) { _, phase in
+        .onCompatibleChange(of: scenePhase) { _, phase in
             if phase != .active { completed = nil }
         }
     }

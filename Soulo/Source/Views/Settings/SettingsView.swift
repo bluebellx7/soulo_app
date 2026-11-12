@@ -1,5 +1,5 @@
 import SwiftUI
-import SwiftData
+import CoreData
 import PhotosUI
 
 struct SettingsView: View {
@@ -11,7 +11,7 @@ struct SettingsView: View {
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject var tabManager: TabManager
     @EnvironmentObject var searchVM: SearchViewModel
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.managedObjectContext) private var modelContext
 
     @State private var selectedAppearance: String = ThemeManager.shared.appearance
     @AppStorage("show_top_search_bar") private var showTopSearchBar = BrowserInitialPreferences.showTopSearchBar
@@ -70,7 +70,7 @@ struct SettingsView: View {
                         }
                     }
                     if isSearchingSettings && !matchesSettings(Self.sectionSearchKeys.flatMap { $0 }) {
-                        ContentUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
+                        CompatibleUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
                     }
                     // MARK: - Platform Management
                     if matchesSettings(Self.sectionSearchKeys[0]) && (!isSearchingSettings || searchEntries.isEmpty) {
@@ -131,7 +131,7 @@ struct SettingsView: View {
                         }
                         .tint(Color.themePrimary)
                         .accessibilityIdentifier("settings.keepScreenAwake")
-                        .onChange(of: keepScreenAwake) { _, _ in
+                        .onCompatibleChange(of: keepScreenAwake) { _, _ in
                             VideoScreenAwakeService.shared.reloadUserPreference()
                         }
 
@@ -217,7 +217,7 @@ struct SettingsView: View {
                             )
                         }
                         .tint(Color.themePrimary)
-                        .onChange(of: liveActivityEnabled) { _, enabled in
+                        .onCompatibleChange(of: liveActivityEnabled) { _, enabled in
                             LiveActivityService.shared.setEnabled(enabled)
                         }
 
@@ -296,6 +296,14 @@ struct SettingsView: View {
                                 description: LanguageManager.shared.localizedString(
                                     BrowserShakeAction(rawValue: shakeAction)?.titleKey ?? BrowserShakeAction.none.titleKey))
                         }
+
+                        NavigationLink(value: Destination.gestures) {
+                            SettingsNavigationLabel(icon: "hand.draw", color: neutralIconColor, title: ToolText.text("gesture_settings_title"))
+                        }.accessibilityIdentifier("settings.gestures")
+
+                        NavigationLink(value: Destination.websiteZoom) {
+                            SettingsNavigationLabel(icon: "text.magnifyingglass", color: neutralIconColor, title: ToolText.text("page_zoom"))
+                        }.accessibilityIdentifier("settings.websiteZoom")
 
                         NavigationLink(value: Destination.toolbar) {
                             SettingsNavigationLabel(
@@ -376,7 +384,7 @@ struct SettingsView: View {
                             )
                         }
                         .tint(Color.themePrimary)
-                        .onChange(of: iCloudSyncEnabled) { _, enabled in
+                        .onCompatibleChange(of: iCloudSyncEnabled) { _, enabled in
                             CloudSyncService.shared.setEnabled(enabled)
                         }
                         .accessibilityIdentifier("settings.icloud-sync")
@@ -515,6 +523,8 @@ struct SettingsView: View {
         .init(destination: .webAppearance, key: "web_appearance", icon: "circle.lefthalf.filled"),
         .init(destination: .video, key: "video_settings", icon: "play.rectangle"),
         .init(destination: .shake, key: "shake_action", icon: "iphone.radiowaves.left.and.right"),
+        .init(destination: .gestures, key: "gesture_settings_title", icon: "hand.draw"),
+        .init(destination: .websiteZoom, key: "page_zoom", icon: "text.magnifyingglass"),
         .init(destination: .toolbar, key: "toolbar_customize", icon: "slider.horizontal.3"),
         .init(destination: .homeToolbar, key: "home_toolbar_customize", icon: "rectangle.split.2x2"),
         .init(destination: .adBlock, key: "ad_block_management", icon: "shield.lefthalf.filled"),
@@ -528,7 +538,9 @@ struct SettingsView: View {
         .init(destination: .storage, key: "Storage", icon: "internaldrive")
     ]
     private var isSearchingSettings: Bool { !settingsQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-    private var searchEntries: [SearchEntry] { Self.searchableEntries.filter { matchesSettings([$0.key]) } }
+    private var searchEntries: [SearchEntry] {
+        Self.searchableEntries.filter { matchesSettings([$0.key] + ($0.destination == .gestures ? ["gesture_title"] : [])) }
+    }
     private func settingsTitle(_ key: String) -> String {
         let primary = LanguageManager.shared.localizedString(key)
         if primary != key { return primary }
@@ -540,7 +552,7 @@ struct SettingsView: View {
         ["settings_platforms"],
         ["settings_section_appearance", "settings_appearance", "settings_language", "settings_wallpaper", "screen_keep_awake"],
         ["home_screen", "edit_title", "edit_subtitle", "home_toolbar_customize", "show_bookmarks_home", "show_group_picker_home", "show_recent_searches_home", "live_activity"],
-        ["browsing", "settings_default_browser", "show_top_search_bar", "keep_fullscreen_browsing", "video_settings", "web_appearance", "shake_action", "toolbar_customize", "ad_block_management", "settings_privacy", "userscripts", "privacy_clear_cache", "Storage"],
+        ["browsing", "settings_default_browser", "show_top_search_bar", "keep_fullscreen_browsing", "video_settings", "web_appearance", "shake_action", "gesture_title", "gesture_settings_title", "page_zoom", "toolbar_customize", "ad_block_management", "settings_privacy", "userscripts", "privacy_clear_cache", "Storage"],
         ["settings_other", "icloud_settings_sync", "settings_backups", "quick_actions_title"],
         ["settings_section_about_support", "settings_rate", "settings_feedback", "settings_version", "URL Scheme"],
     ]
@@ -558,6 +570,7 @@ struct SettingsView: View {
     // is actually opened, instead of constructing every destination at once.
     private enum Destination: Hashable {
         case platforms, language, wallpaper, webAppearance, video, shake, toolbar, homeToolbar
+        case gestures, websiteZoom
         case adBlock, privacy, extensions, backups, quickActions, urlSchemes, version, review, storage
     }
 
@@ -570,6 +583,8 @@ struct SettingsView: View {
         case .webAppearance: WebAppearanceSettingsView()
         case .video: VideoSettingsView()
         case .shake: ShakeActionSettingsView()
+        case .gestures: BrowserGestureSettingsView()
+        case .websiteZoom: WebsiteZoomSettingsView()
         case .toolbar: BrowserToolbarSettingsView()
         case .homeToolbar: HomeToolbarSettingsView()
         case .adBlock: AdBlockManagementView(currentHost: nil)

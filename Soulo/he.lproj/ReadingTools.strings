@@ -436,3 +436,65 @@
 "files_move_busy" = "המתן לסיום ההורדות לפני העברת או שינוי שמות של פריטים אלה.";
 "video_show_episode_dock" = "הצג רציף פרק";
 "video_show_episode_dock_desc" = "הצג לחצן פרק מעוגן בדפי אינטרנט עם פרקים. פרקים נשארים זמינים בתוך הנגן.";
+
+// Webpage share preview
+"page_share_image" = "שיתוף תמונה";
+"page_share_link" = "שיתוף קישור";
+"page_share_preview" = "תצוגה מקדימה של האזור הגלוי";
+"page_share_brand" = "Soulo: דפדפן ריבוי חיפושים";
+
+"video_export_mp4" = "ייצוא MP4";
+"video_export_failed" = "לא ניתן לייצא את הסרטון הזה כ-MP4. הקובץ המקורי נשמר.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "מחוות בשתי אצבעות";
+"gesture_hint" = "הזיזו שתי אצבעות יחד הצדה. הרמז עוקב אחרי האצבעות; החזירו אותן לביטול. ניווט באצבע אחת ושינוי גודל בצביטה נשארים זמינים.";
+"gesture_swipe_right" = "החלקה ימינה";
+"gesture_swipe_left" = "החלקה שמאלה";
+"gesture_show_toolbar" = "הצגת סרגל כלים";
+"gesture_quick_menu" = "תפריט מהיר";
+"gesture_preview" = "תצוגה מקדימה";
+"zoom_remember" = "זכירת גודל אתרים";
+"zoom_hint" = "הגודל מתפריט הדף נשמר לכל דומיין. שינויים בלשוניות פרטיות לא נשמרים.";
+"zoom_empty" = "אין גדלים שמורים";
+"zoom_reset_all" = "איפוס הכול ל־100%";
+
+"shake_direction" = "כיוון";
+"shake_direction_horizontal" = "ימינה ושמאלה";
+"shake_direction_vertical" = "למעלה ולמטה";
+"shake_direction_any" = "כל כיוון";
+
+"gesture_settings_title" = "מחוות דפי אינטרנט";
+"gesture_no_history" = "כשאי אפשר לחזור";
+"gesture_no_history_hint" = "כשאין דף קודם, החליקו ימינה מהקצה השמאלי להצגת הפעולה. החזירו את האצבע לביטול. בחרו ללא להשבתה.";
+
+"gesture_execution" = "ביצוע הפעולה";
+
+"gesture_execute_release" = "בשחרור";
+
+"gesture_execute_tap" = "בהקשה";
+
+"gesture_feedback" = "משוב פעולה";
+
+"gesture_haptics" = "רטט";
+
+"gesture_sound" = "צליל";
+
+"gesture_feedback_preview" = "תצוגה מקדימה של משוב";
+
+"media_start_timeout" = "הניגון לא התחיל. בדקו את הרשת או החליפו נגן.";
+
+"wallpaper_appearance_hint" = "אפשר להגדיר רקע נפרד למראה בהיר וכהה. הרקעים מתחלפים אוטומטית עם מראה האפליקציה.";
+
+"wallpaper_image_overlay" = "שכבה מעל התמונה";
+
+"auto_hide_platform_bar" = "הסתרת סרגל פלטפורמות אוטומטית";
+
+"top_tab_bar_hidden_title" = "סרגל הכרטיסיות העליון הוסתר";
+
+"top_tab_bar_reopen_hint" = "כדי להציגו שוב, הקישו על כפתור הכרטיסיות בתחתית, פתחו את תפריט … והפעילו את הצגת סרגל הכרטיסיות העליון.";
+
+"wallpaper_image_blur" = "זכוכית חלבית";
+"wallpaper_blur_amount" = "עוצמת הטשטוש";
+
+"auto_hide_platform_bar_hint" = "סרגל הפלטפורמות מוסתר כשפותחים תוצאת חיפוש. חזרה לתוצאות או חיפוש חדש יציגו אותו שוב. אפשר לכבות זאת בתפריט זה.";

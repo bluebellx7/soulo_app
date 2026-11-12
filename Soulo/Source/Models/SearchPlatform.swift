@@ -4,7 +4,7 @@ enum SearchPlatformURLInput {
     static func webURL(from value: String) -> URL? {
         let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.contains(where: \.isWhitespace),
-              let url = URL(string: value),
+              let url = URL(string: value) ?? URLComponents(string: value)?.url,
               let scheme = url.scheme?.lowercased(),
               ["http", "https"].contains(scheme),
               let host = url.host, !host.isEmpty else { return nil }
@@ -100,7 +100,7 @@ struct SearchPlatform: Codable, Identifiable, Hashable {
             return nil
         }
         let urlString = searchURLTemplate.replacingOccurrences(of: "%@", with: encoded)
-        return URL(string: urlString)
+        return URL(string: urlString) ?? URLComponents(string: urlString)?.url
     }
 
     mutating func recordUse() {
@@ -109,7 +109,7 @@ struct SearchPlatform: Codable, Identifiable, Hashable {
     }
 
     var homePageURL: URL? {
-        URL(string: homeURL)
+        URL(string: homeURL) ?? URLComponents(string: homeURL)?.url
     }
 
     /// Xiaohongshu's web search and authentication flows require a desktop

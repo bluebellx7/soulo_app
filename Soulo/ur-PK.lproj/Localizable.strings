@@ -609,27 +609,27 @@
 "extensions_reload_note" = "ایکسٹینشن یا اسکرپٹ تبدیل ہونے کے بعد اوپن پیجز دوبارہ لوڈ ہوتے ہیں تاکہ نئی حالت نافذ ہو جائے۔";
 "web_extensions" = "ویب ایکسٹینشنز";
 "userscripts" = "اسکرپٹس اور ایکسٹینشنز";
-"userscripts_installed" = "میری اسکرپٹس";
-"userscripts_install" = "اسکرپٹس انسٹال کریں۔";
+"userscripts_installed" = "نصب شدہ";
+"userscripts_install" = "شامل کریں";
 "userscripts_empty" = "کوئی UserScripts نہیں۔";
 "userscripts_empty_desc" = ".user.js فائل انسٹال کریں یا اسے یہاں دیکھنے کے لیے اسکرپٹ بنائیں۔";
 "userscripts_reload_note" = "اسکرپٹ کے انسٹال، ترمیم، فعال، غیر فعال، یا ہٹائے جانے کے بعد کھلے صفحات دوبارہ لوڈ ہوتے ہیں۔";
 "userscript_experimental_badge" = "مطابقت";
 "userscript_experimental_title" = "UserScript مطابقت";
-"userscript_experimental_desc" = "سائٹ کے قوانین، دستاویز شروع/اختتام، وسیع GM اسٹوریج اور صفحہ APIs، اسکرپٹ کمانڈز، اطلاعات، ٹیبز، ڈاؤن لوڈ، کوکیز، وسائل اور اجازت کے دائرہ کار کی درخواستوں کی حمایت کرتا ہے۔ انسٹال کرنے سے پہلے ہر اسکرپٹ کا جائزہ لیں.";
+"userscript_experimental_desc" = "صارف اسکرپٹ مماثل سائٹس پڑھ یا بدل سکتی ہیں اور مجاز API استعمال کر سکتی ہیں۔ مطابقت اسکرپٹ کے مطابق بدلتی ہے۔ صرف قابل اعتماد اسکرپٹ نصب کریں۔";
 "extension_choose_file" = "فائل یا فولڈر منتخب کریں…";
 "extension_installing" = "ایکسٹینشن کو چیک اور انسٹال کیا جا رہا ہے…";
 "extension_install_failed" = "ایکسٹینشن انسٹال نہیں ہو سکی";
 "extension_permissions_summary" = "%d اجازتیں · %d ویب سائٹ کے قواعد";
 "extension_untitled" = "بلا عنوان توسیع";
-"web_extension_install_footer" = "موجودہ Soulo ٹیب میں اسے کھولنے کے لیے سورس قطار پر کہیں بھی تھپتھپائیں۔ Soulo CRX, XPI, ZIP اور معاون اسٹور انسٹال ایکشنز کو پہچانتا ہے، پھر انسٹال کرنے سے پہلے پوچھتا ہے۔ کچھ صرف ڈیسک ٹاپ APIs دستیاب نہیں ہوسکتے ہیں۔";
+"web_extension_install_footer" = "مطابقت رکھنے والی اسٹور لنک سے ایکسٹینشن نصب کریں یا CRX، XPI، ZIP یا ایکسٹینشن فولڈر درآمد کریں۔ پہلے اجازتیں اور مطابقت دیکھیں؛ کچھ ڈیسک ٹاپ خصوصیات دستیاب نہیں۔";
 "web_extension_install_store_link" = "اسٹور لنک سے انسٹال کریں…";
 "web_extension_browse_sources" = "ایکسٹینشن اسٹورز کو براؤز کریں۔";
 "web_extension_browse_sources_footer" = "اسٹور گیٹ بٹن صرف ان کے اپنے ڈیسک ٹاپ براؤزرز کو سپورٹ کرتے ہیں۔ ایکسٹینشن کی تفصیل والے صفحہ کا لنک کاپی کریں، پھر Soulo میں اسٹور لنک سے انسٹال کا استعمال کریں۔";
 "web_extension_store_install_title" = "اسٹور ایکسٹینشن انسٹال کریں۔";
 "extension_page_banner_title" = "Soulo کے ساتھ انسٹال کریں۔";
-"extension_page_banner_desc" = "Soulo اس ایکسٹینشن کو براہ راست انسٹال کر سکتا ہے۔";
-"web_extension_store_install_desc" = "Chrome ویب اسٹور، Microsoft Edge Add-ons، یا Firefox Add-ons تفصیلی صفحہ کا لنک چسپاں کریں۔ Soulo پیکیج کو خود ہی ڈاؤن لوڈ کرتا ہے، اس لیے اسٹور کا غیر مطابقت پذیر گیٹ بٹن استعمال نہیں ہوتا ہے۔";
+"extension_page_banner_desc" = "نصب کرنے سے پہلے مطابقت اور اجازتیں دیکھیں۔";
+"web_extension_store_install_desc" = "Chrome، Edge یا Firefox ایکسٹینشن کے تفصیلی صفحے کی لنک پیسٹ کریں اور تنصیب کی تصدیق سے پہلے مطابقت اور اجازتیں دیکھیں۔";
 "web_extension_store_link_placeholder" = "ایکسٹینشن پیج کا لنک یا کروم ایکسٹینشن ID";
 "web_extension_store_invalid_link" = "کروم، ایج، یا فائر فاکس، ایک کروم ایکسٹینشن ID، یا براہ راست CRX، XPI، یا ZIP لنک سے ایکسٹینشن ڈیٹیل پیج کا لنک چسپاں کریں۔";
 "web_extension_store_https_required" = "ایکسٹینشن پیکجز کو ایک محفوظ HTTPS لنک استعمال کرنا چاہیے۔";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "میڈیا اسٹریم نے ایک نامعتبر یا غلط ترتیب والا حصہ واپس کیا۔";
 "resource_stream_download_missing_track" = "ڈاؤن لوڈ کی گئی اسٹریم میں چلنے کے قابل ویڈیو اور آڈیو ٹریک نہیں تھے۔";
 "resource_stream_download_export_failed" = "Soulo ڈاؤن لوڈ کردہ ویڈیو اور آڈیو کو یکجا نہیں کر سکا۔";
-"resource_stream_playback_download_first" = "اس محفوظ اسٹریم کے عارضی URL سے پیش منظر نہیں دیکھا جا سکتا۔ مقامی فائل چلانے کے لیے پہلے اسے ڈاؤن لوڈ کریں۔";
+"resource_stream_playback_download_first" = "فی الحال اس اسٹریم کا براہ راست پیش منظر نہیں دیکھا جا سکتا۔";
 "platform_invalid_web_url" = "http:// یا https:// سے شروع ہونے والا درست ویب پتا درج کریں۔";
 
 "library_history_tab" = "سرگزشت";
@@ -889,8 +889,7 @@
 "extension_review_access" = "منتخب کریں کہ یہ ایکسٹینشن کون سی اجازتیں اور ویب سائٹس استعمال کر سکتی ہے۔";
 "extension_limit_commands" = "iOS پر ایکسٹینشن کے کی بورڈ شارٹ کٹس دستیاب نہیں ہیں۔";
 "extension_limit_notifications" = "اطلاعات دکھائی جا سکتی ہیں، لیکن کلک اور بند کرنے کے ایونٹس کی معاونت نہیں ہے۔";
-"extension_limit_offscreen" = "آف اسکرین دستاویزات صرف آڈیو پلے بیک کی معاونت کرتی ہیں۔";
-
+"extension_limit_offscreen" = "آف اسکرین دستاویزات iOS کی حدود کے تابع ہیں؛ کچھ خصوصیات دستیاب نہیں ہو سکتیں۔";
 "review_support_message" = "Soulo کی حمایت کا شکریہ۔ آپ کے جائزے ہمیں مسلسل بہتری لانے میں مدد دیتے ہیں۔";
 "review_open_app_store" = "App Store پر جائزہ لکھیں";
 

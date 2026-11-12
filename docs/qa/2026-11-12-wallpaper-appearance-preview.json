@@ -1,0 +1,57 @@
+{
+  "date": "2026-11-12",
+  "version": "1.2.12",
+  "scope": [
+    "Wallpaper export preview with share and confirmed Photos save",
+    "Separate light/dark presets for gradients, photos and solid backgrounds",
+    "Hide and suspend remote refresh for local backgrounds",
+    "Adapt home title, group controls, menu, search field and suggestions to background contrast"
+  ],
+  "unit_coverage": [
+    "Persisted appearance presets and legacy fallbacks",
+    "Original photo bytes retained separately for each appearance",
+    "Cancelled and invalid selections cannot overwrite an original",
+    "Editing the inactive appearance leaves the displayed photo intact",
+    "Local sources cannot restart remote refresh or switch to remote sources",
+    "Export snapshot keeps original bytes after the wallpaper changes",
+    "Permission failure is not reported as save success; retry and duplicate-save guards",
+    "Image-based contrast and saturated solid colors",
+    "Cloud settings and portable backup regressions"
+  ],
+  "tests": {
+    "final-unit": {
+      "passed": 54,
+      "failed": 0,
+      "skipped": 0,
+      "result_bundle": "/tmp/soulo-wallpaper-preview-20261112/final-unit.xcresult"
+    },
+    "iphone-verified-ui": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "result_bundle": "/tmp/soulo-wallpaper-preview-20261112/iphone-verified-ui.xcresult"
+    },
+    "ipad-verified-ui": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "result_bundle": "/tmp/soulo-wallpaper-preview-20261112/ipad-verified-ui.xcresult"
+    }
+  },
+  "ui_checks": {
+    "iphone_ipad": "iOS/iPadOS 26.2: preview, confirmed Photos save, native image share sheet with original PNG caption, light/dark editor selection, local sources without remote refresh settings",
+    "contrast_matrix": "White and dark-blue backgrounds in both app appearances; dark photo in light app appearance. Reviewed exported screenshots.",
+    "ios16": "iOS 16.0: app installation, launch and screenshots for a dark background in light appearance and a white background in dark appearance. Smoke checks only; UI test runner target is iOS 16.4."
+  },
+  "checks": {
+    "simulator_build": "passed",
+    "ios_device_build_without_signing": "passed",
+    "strict_runtime_localization": "passed: all 50 locales",
+    "strings_plutil_lint": "passed: 50 ReadingTools.strings files",
+    "generated_app_store_metadata_check": "passed; version unchanged",
+    "git_diff_check_task_files": "passed"
+  },
+  "artifacts": "/tmp/soulo-wallpaper-preview-20261112",
+  "network": "QA used local image fixtures and URLProtocol mocks. No live Pexels/Pixabay API calls or paid services.",
+  "dependencies_added": false
+}

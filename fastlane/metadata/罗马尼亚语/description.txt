@@ -6,8 +6,6 @@ Filele și grupurile de site-uri folosite recent apar primele, iar lista se desc
 
 Descărcări BT: importă fișiere .torrent sau linkuri magnet, alege fișiere, pune pe pauză și reia. În iOS 26 pot continua în fundal când sistemul permite; versiunile anterioare salvează progresul și le pun pe pauză. Redă conținut BT compatibil în timpul descărcării și deschide fișiere MKV. Importă linkuri ed2k/thunder. Descărcările necesită surse disponibile; redarea depinde de codecuri.
 
-Navigare mai fluentă, comenzi video îmbunătățite și previzualizări mai clare ale fișierelor.
-
 Alege cinci scurtături opționale pe ecranul principal pentru descărcări, fișiere, semne de carte, istoric, imagini de fundal și alte pagini. Bara de file a bibliotecii devine compactă la derulare.
 
 Găsește informații, citește articole, redă conținut și gestionează descărcările într-un singur browser.
@@ -20,11 +18,11 @@ Păstrează paginile în mai multe file și folosește căutarea vocală, istori
 • Fișiere: găsește imagini, audio, videoclipuri și documente în pagini și salvează imagini în lot. Listă sau grilă de coperte, redenumire, import din Poze și transfer Wi-Fi.
 • Arhive: extrage ZIP, RAR și 7z. Creează ZIP și 7z cu protecție opțională prin parolă.
 • Lectură: TXT, PDF, EPUB și cărți MOBI, AZW, AZW3 compatibile fără DRM. Ajustează fontul, mărimea, spațierea și fundalul. Cărțile cu aspect adaptabil permit afișare în chineză simplificată sau tradițională. Modul de lectură extrage articolul și permite continuarea pe pagina următoare.
-• Extensii: importă, editează și rulează scripturi JavaScript, gestionează site-urile și permisiunile și instalează WebExtensions compatibile.
+• Scripturi și extensii: importă, editează și rulează scripturi JavaScript. WebExtensions compatibile necesită iOS 18.4 sau ulterior; funcțiile acceptate diferă în funcție de extensie.
 • Instrumente web: traducere, căutare în pagină, capturi ale întregii pagini, recunoașterea textului din imagini, mod desktop/mobil, agent utilizator personalizat și certificatele site-urilor.
 • Marcaje: dosare și import/export de marcaje HTML pentru Chrome, Edge și alte browsere. Creează coduri QR ale paginilor cu pictograma site-ului, apoi distribuie, salvează sau copiază.
-• Personalizare: fundaluri, bară de instrumente și acțiuni rapide ale pictogramei aplicației. Acces prin widgeturi, Scurtături și scheme URL. Sincronizare opțională a configurărilor cu iCloud.
+• Personalizare: fundaluri, bară de instrumente și acțiuni rapide ale pictogramei aplicației. Acces prin widgeturi, Scurtături și scheme URL. Sincronizare opțională a configurărilor cu iCloud. Fundaluri separate pentru aspectul luminos și întunecat și un comutator pentru stratul imaginii.
 
-Disponibilitatea conținutului, cărților și extensiilor depinde de format, restricțiile site-ului și versiunea sistemului.
+Fișierele media, cărțile și extensiile depind de formate, restricțiile site-ului și versiunea sistemului. Înainte de descărcare, verifică dacă sursa permite salvarea conținutului.
 
 Asistență: contact@dkluge.com

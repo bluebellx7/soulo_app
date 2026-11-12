@@ -1,4 +1,5 @@
 import XCTest
+import CoreData
 import SwiftData
 @testable import Soulo
 
@@ -46,8 +47,10 @@ final class BookmarkImportExportTests: XCTestCase {
         for data in [Data(edge.utf8), try XCTUnwrap(edge.data(using: .utf16))] {
             let archive = try BookmarkHTML.parse(data)
             XCTAssertEqual(archive.links.count, 1)
-            XCTAssertEqual(archive.links[0].title, "A \"B\" &amp;")
-            XCTAssertEqual(archive.links[0].folderID, archive.folders.first?.id)
+            let link = try XCTUnwrap(archive.links.first)
+            XCTAssertEqual(link.title, "A \"B\" &amp;")
+            XCTAssertEqual(link.folderID, archive.folders.first?.id)
+            XCTAssertNotNil(URL(string: link.url))
         }
     }
 
@@ -93,10 +96,9 @@ final class BookmarkImportExportTests: XCTestCase {
 
     @MainActor
     func testImportMergeDeduplicationAndFolderRemovalPreserveContents() throws {
-        let container = try ModelContainer(for: BookmarkItem.self, BookmarkFolder.self,
-            configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let container = try LibraryStore(inMemory: true)
         let context = container.mainContext
-        let existing = BookmarkItem(title: "Existing", urlString: "https://existing.example")
+        let existing = BookmarkRecord(title: "Existing", urlString: "https://existing.example")
         context.insert(existing)
         let source = try BookmarkHTML.parse(Data(chrome.utf8))
         let first = try BookmarkLibraryService.importArchive(source, into: nil, context: context)
@@ -106,37 +108,37 @@ final class BookmarkImportExportTests: XCTestCase {
         XCTAssertEqual(again.added, 0)
         XCTAssertEqual(again.folders, 0)
         XCTAssertEqual(again.duplicates, 2)
-        XCTAssertEqual(try context.fetchCount(FetchDescriptor<BookmarkItem>()), 3)
-        let folders = try context.fetch(FetchDescriptor<BookmarkFolder>())
+        XCTAssertEqual(try context.count(for: BookmarkRecord.request()), 3)
+        let folders = try context.fetch(BookmarkFolderRecord.request())
         let bar = try XCTUnwrap(folders.first { $0.title == "Bookmarks bar" })
         try BookmarkLibraryService.removeFolder(bar, context: context)
-        XCTAssertEqual(try context.fetchCount(FetchDescriptor<BookmarkItem>()), 3)
-        XCTAssertTrue(try context.fetch(FetchDescriptor<BookmarkFolder>()).allSatisfy { $0.parentID == nil })
+        XCTAssertEqual(try context.count(for: BookmarkRecord.request()), 3)
+        XCTAssertTrue(try context.fetch(BookmarkFolderRecord.request()).allSatisfy { $0.parentID == nil })
         XCTAssertEqual(existing.title, "Existing")
         let exported = try BookmarkLibraryService.archive(context: context)
         XCTAssertEqual(try BookmarkHTML.parse(BookmarkHTML.encode(exported)).links.count, 3)
         try BookmarkService.clearAll(in: context)
-        XCTAssertEqual(try context.fetchCount(FetchDescriptor<BookmarkItem>()), 0)
-        XCTAssertEqual(try context.fetchCount(FetchDescriptor<BookmarkFolder>()), 0)
+        XCTAssertEqual(try context.count(for: BookmarkRecord.request()), 0)
+        XCTAssertEqual(try context.count(for: BookmarkFolderRecord.request()), 0)
     }
 
     @MainActor
     func testImportIntoSelectedFolderAndSameURLInDifferentFolders() throws {
-        let container = try ModelContainer(for: BookmarkItem.self, BookmarkFolder.self,
-            configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let container = try LibraryStore(inMemory: true)
         let context = container.mainContext
-        let destination = BookmarkFolder(title: "Imported")
+        let destination = BookmarkFolderRecord(title: "Imported")
         context.insert(destination)
         let source = try BookmarkHTML.parse(Data(chrome.utf8))
         _ = try BookmarkLibraryService.importArchive(source, into: nil, context: context)
         let result = try BookmarkLibraryService.importArchive(source, into: destination.id, context: context)
         XCTAssertEqual(result.added, 2)
         XCTAssertEqual(result.duplicates, 0)
-        XCTAssertEqual(try context.fetch(FetchDescriptor<BookmarkItem>()).filter { $0.folderID == destination.id }.count, 1)
+        XCTAssertEqual(try context.fetch(BookmarkRecord.request()).filter { $0.folderID == destination.id }.count, 1)
     }
 
     @MainActor
     func testExistingOnDiskBookmarksMigrateWithoutLosingData() throws {
+        guard #available(iOS 17.0, *) else { throw XCTSkip("Legacy SwiftData libraries require iOS 17") }
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -152,9 +154,8 @@ final class BookmarkImportExportTests: XCTestCase {
             old.mainContext.insert(item)
             try old.mainContext.save()
         }
-        let updated = try ModelContainer(for: BookmarkItem.self, BookmarkFolder.self,
-            configurations: ModelConfiguration(url: url))
-        let items = try updated.mainContext.fetch(FetchDescriptor<BookmarkItem>())
+        let updated = try LibraryStore(url: directory.appendingPathComponent("library.sqlite"), legacyURL: url)
+        let items = try updated.mainContext.fetch(BookmarkRecord.request())
         let saved = try XCTUnwrap(items.first)
         XCTAssertEqual(items.count, 1)
         XCTAssertEqual(saved.id, id)
@@ -163,9 +164,14 @@ final class BookmarkImportExportTests: XCTestCase {
         XCTAssertEqual(saved.platformName, "Example")
         XCTAssertEqual(saved.faviconData, Data([1, 2, 3]))
         XCTAssertNil(saved.folderID)
+        updated.mainContext.reset()
+        for store in updated.container.persistentStoreCoordinator.persistentStores {
+            try updated.container.persistentStoreCoordinator.remove(store)
+        }
     }
 }
 
+@available(iOS 17.0, *)
 private enum LegacyBookmarks {
     @Model final class BookmarkItem {
         var id: UUID

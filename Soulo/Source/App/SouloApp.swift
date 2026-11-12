@@ -1,5 +1,5 @@
 import CoreSpotlight
-import SwiftData
+import CoreData
 import SwiftUI
 
 struct BrowserWindowConfiguration: Codable, Hashable {
@@ -40,7 +40,11 @@ struct SouloApp: App {
     @StateObject private var themeManager: ThemeManager
     @StateObject private var wallpaperManager = WallpaperManager.shared
 
+    private let libraryStore: LibraryStore
+
     init() {
+        do { libraryStore = try LibraryStore() }
+        catch { fatalError("Could not open the Soulo library: \(error)") }
         BrowserStartupTrace.mark("app_init")
         BrowserStartupTrace.startResponsivenessProbe()
         UserDefaults.standard.register(defaults: [AppConstants.StorageKeys.appearance: "dark"])
@@ -59,6 +63,7 @@ struct SouloApp: App {
     var body: some Scene {
         WindowGroup(for: BrowserWindowConfiguration.self) { configuration in
             SouloWindowRoot(windowID: configuration.wrappedValue.id)
+                .environment(\.managedObjectContext, libraryStore.mainContext)
                 .environmentObject(languageManager)
                 .environmentObject(themeManager)
                 .environmentObject(wallpaperManager)
@@ -70,7 +75,6 @@ struct SouloApp: App {
             BrowserWindowConfiguration.defaultWindow()
         }
         .commands { BrowserKeyboardCommands() }
-        .modelContainer(for: [SearchHistoryItem.self, BookmarkItem.self, BookmarkFolder.self])
     }
 }
 
@@ -101,7 +105,7 @@ private struct SouloWindowRoot: View {
                 VideoScreenAwakeService.shared.reloadUserPreference()
                 CloudSyncService.shared.startIfEnabled()
             }
-            .onChange(of: scenePhase, initial: true) { _, newPhase in
+            .onCompatibleChange(of: scenePhase, initial: true) { _, newPhase in
                 if newPhase == .active {
                     CloudSyncService.shared.refresh()
                     tabManager.synchronizeDesktopMode()
@@ -115,7 +119,7 @@ private struct SouloWindowRoot: View {
                     tabManager.saveToDisk()
                 }
             }
-            .onChange(of: isIncognito) { _, _ in
+            .onCompatibleChange(of: isIncognito) { _, _ in
                 if scenePhase == .active, NSClassFromString("XCTestCase") == nil {
                     BrowserWebViewPool.shared.activate(isIncognito: isIncognito)
                 }
@@ -125,7 +129,7 @@ private struct SouloWindowRoot: View {
                     searchVM.showClipboardPrompt = false
                 }
             }
-            .onChange(of: themeManager.appearance) { _, _ in
+            .onCompatibleChange(of: themeManager.appearance) { _, _ in
                 applyWebAppearanceToOpenTabs()
             }
             .onOpenURL { url in

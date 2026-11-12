@@ -6,8 +6,6 @@ Son kullanılan sekmeler ve site grupları önce gösterilir, sekme görünümü
 
 BT indirmeleri: .torrent dosyaları veya magnet bağlantıları içe aktarın, dosyaları seçin, duraklatın ve sürdürün. iOS 26’da sistem izin verdiğinde arka planda devam edebilir; önceki sürümler ilerlemeyi kaydedip duraklatır. Desteklenen BT medyasını indirirken oynatın ve MKV dosyalarını açın. ed2k/thunder bağlantılarını içe aktarın. İndirmeler kullanılabilir kaynaklar gerektirir; oynatma kodeklere bağlıdır.
 
-Daha akıcı gezinme, geliştirilmiş video kontrolleri ve daha net dosya önizlemeleri.
-
 Ana sayfada indirmeler, dosyalar, yer imleri, geçmiş, duvar kâğıtları ve diğer sayfalara beş isteğe bağlı kısayol seçin. Kitaplık sekme çubuğu kaydırırken daralır.
 
 Bilgi bulun, makale okuyun, medya oynatın ve indirmelerinizi tek tarayıcıda yönetin.
@@ -20,11 +18,11 @@ Birden çok sekme, sesli arama, arama geçmişi ve platform gruplarıyla gezinin
 • Dosyalar: sayfalardaki resim, ses, video ve belgeleri bulun; resimleri topluca kaydedin. Liste veya kapak ızgarası, yeniden adlandırma, Fotoğraflar’dan içe aktarma ve Wi-Fi aktarımı.
 • Arşivler: ZIP, RAR ve 7z açın. İsteğe bağlı parola korumalı ZIP ve 7z arşivleri oluşturun.
 • Okuma: TXT, PDF, EPUB ve desteklenen DRM’siz MOBI, AZW, AZW3 kitaplar. Yazı tipi, boyut, satır aralığı ve arka planı ayarlayın. Akışkan düzenli kitaplarda basitleştirilmiş/geleneksel Çince görünümü seçin. Okuma modu makale metnini çıkarır ve sonraki sayfada devam etmenizi sağlar.
-• Uzantılar: JavaScript kullanıcı betiklerini içe aktarın, düzenleyin ve çalıştırın; site eşleştirmelerini ve izinleri yönetin, uyumlu WebExtensions yükleyin.
+• Betikler ve uzantılar: JavaScript kullanıcı betiklerini içe aktarın, düzenleyin ve çalıştırın. Uyumlu WebExtensions için iOS 18.4 veya sonrası gerekir; destek uzantıya göre değişir.
 • Web araçları: çeviri, sayfada bul, tam sayfa ekran görüntüsü, resimden metin tanıma, masaüstü/mobil mod, özel kullanıcı aracısı ve site sertifikaları.
 • Yer imleri: klasörler ve Chrome, Edge gibi tarayıcıların HTML yer imlerini içe/dışa aktarma. Site simgeli sayfa QR kodları oluşturun, paylaşın, kaydedin veya kopyalayın.
-• Kişiselleştirme: duvar kâğıdı, araç çubuğu ve uygulama simgesi hızlı eylemleri. Araç takımları, Kestirmeler ve URL şemalarıyla erişim. İsteğe bağlı iCloud ayar eşzamanlama.
+• Kişiselleştirme: duvar kâğıdı, araç çubuğu ve uygulama simgesi hızlı eylemleri. Araç takımları, Kestirmeler ve URL şemalarıyla erişim. İsteğe bağlı iCloud ayar eşzamanlama. Açık ve koyu görünüm için ayrı arka planlar ve görüntü katmanı anahtarı.
 
-Medya, kitap ve uzantı kullanılabilirliği dosya biçimine, site kısıtlamalarına ve sistem sürümüne bağlıdır.
+Medya, kitap ve uzantıların kullanılabilirliği biçimlere, site kısıtlamalarına ve sistem sürümüne bağlıdır. İndirmeden önce kaynağın kaydetmeye izin verdiğini doğrulayın.
 
 Destek: contact@dkluge.com

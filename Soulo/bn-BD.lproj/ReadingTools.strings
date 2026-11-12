@@ -436,3 +436,65 @@
 "files_move_busy" = "এই আইটেমগুলি সরানো বা পুনঃনামকরণ করার আগে ডাউনলোডগুলি শেষ হওয়ার জন্য অপেক্ষা করুন৷";
 "video_show_episode_dock" = "এপিসোড ডক দেখান";
 "video_show_episode_dock_desc" = "এপিসোড সহ ওয়েব পৃষ্ঠাগুলিতে একটি ডক করা পর্ব বোতাম দেখান৷ এপিসোডগুলি প্লেয়ারের ভিতরে উপলব্ধ থাকে।";
+
+// Webpage share preview
+"page_share_image" = "ছবি শেয়ার";
+"page_share_link" = "লিঙ্ক শেয়ার";
+"page_share_preview" = "দৃশ্যমান অংশের প্রিভিউ";
+"page_share_brand" = "Soulo: মাল্টি-সার্চ ব্রাউজার";
+
+"video_export_mp4" = "MP4 রপ্তানি";
+"video_export_failed" = "এই ভিডিওটি MP4 হিসেবে রপ্তানি করা যায়নি। মূল ফাইলটি রাখা হয়েছে।";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "দুই আঙুলের অঙ্গভঙ্গি";
+"gesture_hint" = "দুই আঙুল একসঙ্গে পাশে সরান। ইঙ্গিত আঙুল অনুসরণ করে; বাতিল করতে ফিরিয়ে আনুন। এক আঙুলে নেভিগেশন ও পিঞ্চ জুম চালু থাকে।";
+"gesture_swipe_right" = "ডানে সোয়াইপ";
+"gesture_swipe_left" = "বাঁয়ে সোয়াইপ";
+"gesture_show_toolbar" = "টুলবার দেখান";
+"gesture_quick_menu" = "দ্রুত মেনু";
+"gesture_preview" = "অঙ্গভঙ্গির পূর্বরূপ";
+"zoom_remember" = "ওয়েবসাইটের জুম মনে রাখুন";
+"zoom_hint" = "পাতার মেনুর জুম প্রতি ডোমেনে সংরক্ষণ করা হয়। ব্যক্তিগত ট্যাবের পরিবর্তন সংরক্ষণ করা হয় না।";
+"zoom_empty" = "কোনো জুম সংরক্ষিত নেই";
+"zoom_reset_all" = "সব 100%-এ ফেরান";
+
+"shake_direction" = "দিক";
+"shake_direction_horizontal" = "বাঁয়ে ও ডানে";
+"shake_direction_vertical" = "উপরে ও নিচে";
+"shake_direction_any" = "যেকোনো দিক";
+
+"gesture_settings_title" = "ওয়েবপাতার অঙ্গভঙ্গি";
+"gesture_no_history" = "যখন পেছনে যাওয়া যায় না";
+"gesture_no_history_hint" = "আগের পাতা না থাকলে কাজ দেখাতে বাঁ প্রান্ত থেকে ডানে সোয়াইপ করুন। বাতিল করতে ফিরিয়ে আনুন। বন্ধ করতে কিছুই নয় বেছে নিন।";
+
+"gesture_execution" = "কাজ চালান";
+
+"gesture_execute_release" = "ছেড়ে দিলে";
+
+"gesture_execute_tap" = "ট্যাপ করলে";
+
+"gesture_feedback" = "কাজের প্রতিক্রিয়া";
+
+"gesture_haptics" = "কম্পন";
+
+"gesture_sound" = "শব্দ";
+
+"gesture_feedback_preview" = "প্রতিক্রিয়া প্রিভিউ";
+
+"media_start_timeout" = "প্লেব্যাক শুরু হয়নি। নেটওয়ার্ক পরীক্ষা করুন বা প্লেয়ার বদলান।";
+
+"wallpaper_appearance_hint" = "হালকা ও গাঢ় থিমের জন্য আলাদা পটভূমি ঠিক করুন। অ্যাপের থিম বদলালে এগুলিও বদলাবে।";
+
+"wallpaper_image_overlay" = "ছবির আবরণ";
+
+"auto_hide_platform_bar" = "প্ল্যাটফর্ম বার স্বয়ংক্রিয়ভাবে লুকান";
+
+"top_tab_bar_hidden_title" = "ওপরের ট্যাব বার লুকানো হয়েছে";
+
+"top_tab_bar_reopen_hint" = "আবার দেখাতে নিচের ট্যাব বোতামে চাপুন, … মেনু খুলুন, তারপর ওপরের ট্যাব বার দেখানোর বিকল্পটি চালু করুন।";
+
+"wallpaper_image_blur" = "ঝাপসা কাচ";
+"wallpaper_blur_amount" = "ঝাপসার মাত্রা";
+
+"auto_hide_platform_bar_hint" = "সার্চের ফলাফল খুললে প্ল্যাটফর্ম বার লুকিয়ে যাবে। ফলাফলে ফিরে গেলে বা নতুন সার্চ করলে আবার দেখা যাবে। এই মেনু থেকে এটি বন্ধ করতে পারবেন।";

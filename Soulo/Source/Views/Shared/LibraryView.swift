@@ -30,7 +30,7 @@ enum LibrarySection: String, CaseIterable, Identifiable {
 
 struct LibraryView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.managedObjectContext) private var modelContext
     @EnvironmentObject private var tabManager: TabManager
     @ObservedObject var searchVM: SearchViewModel
     @State private var selectedSection: LibrarySection
@@ -51,6 +51,19 @@ struct LibraryView: View {
         VStack(spacing: 0) {
             LibrarySectionSwitcher(selectedSection: $selectedSection, progress: pageProgress, compact: compactSections.contains(selectedSection))
 
+            libraryPager
+        }
+        .navigationTitle(LanguageManager.shared.localizedString("library"))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
+        .mediaPlayerNavigation()
+        .onReceive(NotificationCenter.default.publisher(for: .openSouloFiles)) { _ in
+            selectedSection = .files
+        }
+    }
+
+    @ViewBuilder private var libraryPager: some View {
+        if #available(iOS 17.0, *) {
             LibraryPager(selectedSection: $selectedSection, progress: $pageProgress) { section in
                 page(section)
                     .background {
@@ -65,13 +78,20 @@ struct LibraryView: View {
                         }.allowsHitTesting(false)
                     }
             }
-        }
-        .navigationTitle(LanguageManager.shared.localizedString("library"))
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.visible, for: .navigationBar)
-        .mediaPlayerNavigation()
-        .onReceive(NotificationCenter.default.publisher(for: .openSouloFiles)) { _ in
-            selectedSection = .files
+        } else {
+            // Capturing LibraryView also captures its dismiss environment. Old
+            // SwiftUI can recursively invalidate navigation on player return.
+            let onOpen: (String) -> Void = { [dismiss, tabManager, searchVM, modelContext] value in
+                dismiss()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                    searchVM.openLibrarySelection(value, tabManager: tabManager, context: modelContext)
+                }
+            }
+            LibraryPager(selectedSection: $selectedSection, progress: $pageProgress) {
+                [searchVM, selection = $selectedSection, compact = $compactSections, onOpen] section in
+                LegacyLibraryPage(section: section, selection: selection, compactSections: compact,
+                                  searchVM: searchVM, onOpen: onOpen)
+            }
         }
     }
 
@@ -97,6 +117,38 @@ struct LibraryView: View {
 
 }
 
+private struct LegacyLibraryPage: View {
+    let section: LibrarySection
+    @Binding var selection: LibrarySection
+    @Binding var compactSections: Set<LibrarySection>
+    let searchVM: SearchViewModel
+    let onOpen: (String) -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        page.background {
+            LibraryScrollCollapseObserver(active: selection == section) { offset in
+                let compact = compactSections.contains(section)
+                if (!compact && offset > 48) || (compact && offset < 8) {
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                        if offset > 48 { compactSections.insert(section) }
+                        else { compactSections.remove(section) }
+                    }
+                }
+            }.allowsHitTesting(false)
+        }
+    }
+
+    @ViewBuilder private var page: some View {
+        switch section {
+        case .bookmarks: BookmarksContentView(searchVM: searchVM, onOpen: onOpen)
+        case .history: SearchHistoryContentView(searchVM: searchVM, onOpen: onOpen)
+        case .downloads: DownloadManagerContentView(embeddedInLibrary: true)
+        case .files: LibraryFilesView(embeddedInLibrary: true)
+        }
+    }
+}
+
 struct LibraryPager<Content: View>: View {
     @Binding var selectedSection: LibrarySection
     @Binding var progress: CGFloat
@@ -104,7 +156,35 @@ struct LibraryPager<Content: View>: View {
     @StateObject private var gestures = LibraryPagingGestures()
     @ViewBuilder let content: (LibrarySection) -> Content
 
-    var body: some View {
+    @ViewBuilder var body: some View {
+        if #available(iOS 17.0, *) {
+            modernPager
+        } else {
+            // iOS 16's NavigationStack repeatedly invalidates destinations in
+            // sibling pages hosted in one horizontal ScrollView. PageTabView
+            // gives each page its own hosting boundary while retaining state.
+            TabView(selection: $selectedSection) {
+                ForEach(LibrarySection.allCases) { section in
+                    content(section)
+                        .environment(\.libraryPageIsActive, selectedSection == section)
+                        .accessibilityHidden(selectedSection != section)
+                        .tag(section)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .background(LibraryPagingGesturePriority(gestures: gestures, direction: layoutDirection,
+                progress: $progress, usesPageController: true))
+            .environment(\.libraryPagingGestures, gestures)
+            .accessibilityIdentifier("library.pages")
+            .onAppear { progress = CGFloat(LibrarySection.allCases.firstIndex(of: selectedSection) ?? 0) }
+            .onCompatibleChange(of: selectedSection) { _, section in
+                progress = CGFloat(LibrarySection.allCases.firstIndex(of: section) ?? 0)
+            }
+        }
+    }
+
+    @available(iOS 17.0, *)
+    private var modernPager: some View {
         GeometryReader { viewport in
             ScrollViewReader { proxy in
                 ScrollView(.horizontal) {
@@ -130,7 +210,7 @@ struct LibraryPager<Content: View>: View {
                 .environment(\.libraryPagingGestures, gestures)
                 .accessibilityIdentifier("library.pages")
                 .onAppear { proxy.scrollTo(selectedSection, anchor: .center) }
-                .onChange(of: viewport.size.width) { _, width in
+                .onCompatibleChange(of: viewport.size.width) { _, width in
                     guard width > 0 else { return }
                     proxy.scrollTo(selectedSection, anchor: .center)
                 }
@@ -156,7 +236,7 @@ struct LibrarySectionSwitcher: View {
                 .accessibilityIdentifier("library.tabs")
                 .fixedSize(horizontal: false, vertical: true)
                 .onAppear { proxy.scrollTo(selectedSection, anchor: .center) }
-                .onChange(of: selectedSection) { _, section in
+                .onCompatibleChange(of: selectedSection) { _, section in
                     withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { proxy.scrollTo(section, anchor: .center) }
                 }
             }
@@ -307,6 +387,7 @@ private final class LibraryPagingGestures: NSObject, ObservableObject, UIGesture
     private var lastProgress: CGFloat?
     var onProgress: ((CGFloat) -> Void)?
     var direction: LayoutDirection = .leftToRight
+    var isDragging: Bool { scroll?.isDragging == true || scroll?.isTracking == true }
     private lazy var rowSwipe: UIPanGestureRecognizer = {
         let gesture = UIPanGestureRecognizer(target: self, action: #selector(handleRowSwipe))
         gesture.maximumNumberOfTouches = 1
@@ -329,6 +410,7 @@ private final class LibraryPagingGestures: NSObject, ObservableObject, UIGesture
     }()
 
     func connect(_ scroll: UIScrollView, back: UIGestureRecognizer?) {
+        if #unavailable(iOS 17.0) { scroll.isPagingEnabled = true }
         if self.scroll !== scroll {
             self.scroll?.removeGestureRecognizer(rowSwipe)
             self.scroll?.removeGestureRecognizer(leadingSwipe)
@@ -489,16 +571,26 @@ private struct LibraryPagingGesturePriority: UIViewRepresentable {
     let gestures: LibraryPagingGestures
     let direction: LayoutDirection
     @Binding var progress: CGFloat
+    var legacySelection: Binding<LibrarySection>? = nil
+    var usesPageController = false
     func makeUIView(context: Context) -> Host { Host(gestures: gestures) }
     func updateUIView(_ view: Host, context: Context) {
         gestures.direction = direction
+        view.usesPageController = usesPageController
         let binding = $progress
-        gestures.onProgress = { value in
+        gestures.onProgress = usesPageController ? nil : { value in
             // Native contentOffset also changes between SwiftUI layout passes.
             // Use it directly, without a second animation lagging the finger.
             var transaction = Transaction()
             transaction.animation = nil
             withTransaction(transaction) { binding.wrappedValue = value }
+            let index = Int(value.rounded())
+            if let legacySelection, !gestures.isDragging,
+               abs(value - value.rounded()) < 0.001,
+               LibrarySection.allCases.indices.contains(index),
+               legacySelection.wrappedValue != LibrarySection.allCases[index] {
+                legacySelection.wrappedValue = LibrarySection.allCases[index]
+            }
         }
         view.setNeedsLayout()
     }
@@ -508,6 +600,7 @@ private struct LibraryPagingGesturePriority: UIViewRepresentable {
 
     final class Host: UIView {
         let gestures: LibraryPagingGestures
+        var usesPageController = false
         init(gestures: LibraryPagingGestures) {
             self.gestures = gestures
             super.init(frame: .zero)
@@ -522,8 +615,20 @@ private struct LibraryPagingGesturePriority: UIViewRepresentable {
             super.layoutSubviews()
             guard window != nil else { return }
             var ancestor = superview
-            while let view = ancestor, !(view is UIScrollView) { ancestor = view.superview }
-            guard let scroll = ancestor as? UIScrollView else { return }
+            var target: UIScrollView?
+            if usesPageController {
+                // PageTabView's paging scroll is a descendant of the marker's
+                // host, unlike the iOS 17 horizontal ScrollView. Its offsets are
+                // relative to the current page, so do not use them as selection.
+                while let view = ancestor {
+                    if let scroll = pagingScroll(in: view) { target = scroll; break }
+                    ancestor = view.superview
+                }
+            } else {
+                while let view = ancestor, !(view is UIScrollView) { ancestor = view.superview }
+                target = ancestor as? UIScrollView
+            }
+            guard let scroll = target else { return }
             var responder: UIResponder? = self
             var back: UIGestureRecognizer?
             while let current = responder {
@@ -534,6 +639,20 @@ private struct LibraryPagingGesturePriority: UIViewRepresentable {
                 responder = current.next
             }
             gestures.connect(scroll, back: back)
+        }
+
+        private func pagingScroll(in view: UIView) -> UIScrollView? {
+            if let scroll = view as? UIScrollView, scroll.isPagingEnabled,
+               scroll.bounds.width > 0, scroll.contentSize.width > scroll.bounds.width + 1 {
+                let own = convert(bounds, to: window), candidate = scroll.convert(scroll.bounds, to: window)
+                if own.width > 0, own.height > 0,
+                   own.intersection(candidate).width >= own.width * 0.8,
+                   own.intersection(candidate).height >= own.height * 0.7 { return scroll }
+            }
+            for child in view.subviews {
+                if let scroll = pagingScroll(in: child) { return scroll }
+            }
+            return nil
         }
     }
 }

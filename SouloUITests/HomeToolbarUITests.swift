@@ -2,6 +2,235 @@ import XCTest
 
 @MainActor
 final class HomeToolbarUITests: XCTestCase {
+    func testWallpaperAppearanceOutlinesRemainVisibleOnBothCards() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-appearance", "light", "-wallpaper_source", "gradient",
+            "-wallpaper_refresh_interval", "0", "-icloud_sync_enabled", "NO", "-review.requestedOnce", "YES"]
+        app.launch(); defer { app.terminate() }
+        let menu = app.buttons["home.menu"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 10)); menu.tap()
+        app.buttons["Settings"].firstMatch.tap()
+        let entry = app.buttons["settings.wallpaper"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 5)); entry.tap()
+        for appearance in ["light", "dark"] {
+            let card = app.buttons["wallpaper.appearance." + appearance]
+            for _ in 0..<3 where !card.isHittable { app.swipeUp() }
+            XCTAssertTrue(card.waitForExistence(timeout: 5)); card.tap()
+            XCTAssertTrue(card.isSelected)
+            let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            shot.name = "wallpaper-outline-" + appearance; shot.lifetime = .keepAlways; add(shot)
+        }
+    }
+
+    func testLocalWallpaperPreviewAndAppearanceSettings() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-wallpaper_source", "photo", "-appearance", "light",
+            "-wallpaper_refresh_interval", "60", "-icloud_sync_enabled", "NO", "-review.requestedOnce", "YES",
+            "-show_recent_searches_on_home", "NO", "-show_bookmarks_on_home", "NO", "-show_group_picker_on_home", "YES",
+            "-home_title", "Soulo", "-home_subtitle", ""]
+        app.launch(); defer { app.terminate() }
+        let menu = app.buttons["home.menu"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.staticTexts["home.wallpaper.topic"].exists)
+        let home = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        home.name = "dark-photo-light-appearance-contrast"; home.lifetime = .keepAlways; add(home)
+        menu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        let download = app.buttons["home.wallpaper.download"]
+        XCTAssertTrue(download.waitForExistence(timeout: 5)); download.tap()
+        let share = app.buttons["wallpaper.export.share"], save = app.buttons["wallpaper.export.save"]
+        XCTAssertTrue(share.waitForExistence(timeout: 5))
+        XCTAssertTrue(save.exists)
+        XCTAssertTrue(NSPredicate(format: "enabled == true").evaluate(with: save) ||
+            XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: save)], timeout: 10) == .completed)
+        XCTAssertFalse(app.buttons["wallpaper.export.saved"].exists, "Previewing does not save automatically")
+        let preview = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        preview.name = "wallpaper-export-preview-two-actions"; preview.lifetime = .keepAlways; add(preview)
+        save.tap()
+        XCTAssertTrue(app.otherElements["wallpaper.export.saved"].exists || app.staticTexts["Wallpaper saved to Photos"].waitForExistence(timeout: 10), app.debugDescription)
+        share.tap()
+        let activity = app.otherElements["ActivityListView"]
+        XCTAssertTrue(activity.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(app.otherElements["LP.CaptionBar.TopCaption"].label, "Wallpaper")
+        let systemShare = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        systemShare.name = "wallpaper-original-system-share"; systemShare.lifetime = .keepAlways; add(systemShare)
+        XCTAssertFalse(app.alerts.firstMatch.exists)
+        // Relaunch dismisses the system activity sheet without depending on its language.
+        app.terminate()
+        let appearanceIndex = try XCTUnwrap(app.launchArguments.firstIndex(of: "-appearance"))
+        app.launchArguments[appearanceIndex + 1] = "dark"
+        app.launch()
+        XCTAssertTrue(menu.waitForExistence(timeout: 10))
+        menu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        app.buttons["home.wallpaper.download"].tap()
+        XCTAssertTrue(app.buttons["wallpaper.export.share"].waitForExistence(timeout: 5))
+        let darkPreview = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        darkPreview.name = "wallpaper-preview-follows-dark-theme"; darkPreview.lifetime = .keepAlways; add(darkPreview)
+        app.buttons["wallpaper.export.close"].tap()
+        menu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        app.buttons["Settings"].firstMatch.tap()
+        let entry = app.buttons["settings.wallpaper"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 5)); entry.tap()
+        let sources = app.scrollViews["wallpaper.sources"]
+        XCTAssertTrue(sources.waitForExistence(timeout: 5)); sources.swipeLeft()
+        for source in ["solid", "gradient", "photo"] {
+            let tile = app.buttons["wallpaper.source." + source]
+            XCTAssertTrue(tile.isHittable); tile.tap()
+            XCTAssertFalse(app.switches["wallpaper.randomSources"].exists)
+            let light = app.buttons["wallpaper.appearance.light"], dark = app.buttons["wallpaper.appearance.dark"]
+            XCTAssertTrue(light.exists); XCTAssertTrue(dark.exists)
+            dark.tap(); XCTAssertTrue(dark.isSelected)
+            light.tap(); XCTAssertTrue(light.isSelected)
+        }
+        let editor = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        editor.name = "wallpaper-separate-light-dark-photo-editor"; editor.lifetime = .keepAlways; add(editor)
+    }
+
+    func testWallpaperContrastAcrossAppearances() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        defer { app.terminate() }
+        for appearance in ["light", "dark"] {
+            for color in ["#FFFFFF", "#18243E"] {
+                app.launchArguments = ["-app_language", "en-US", "-wallpaper_source", "solid", "-appearance", appearance,
+                    "-wallpaper_solid_color_light", color, "-wallpaper_solid_color_dark", color,
+                    "-wallpaper_refresh_interval", "0", "-icloud_sync_enabled", "NO", "-review.requestedOnce", "YES",
+                    "-show_recent_searches_on_home", "NO", "-show_group_picker_on_home", "YES", "-home_title", "Soulo"]
+                app.launch()
+                let menu = app.buttons["home.menu"]
+                XCTAssertTrue(menu.waitForExistence(timeout: 10))
+                XCTAssertTrue(app.textFields["search.query"].exists)
+                let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                shot.name = "wallpaper-contrast-" + appearance + "-" + color.dropFirst()
+                shot.lifetime = .keepAlways; add(shot)
+                menu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+                XCTAssertTrue(app.buttons["Settings"].firstMatch.waitForExistence(timeout: 3))
+                app.terminate()
+            }
+        }
+    }
+
+    func testTopTabOptionsCreateHideAndCloseTabs() async throws {
+        continueAfterFailure = false
+        let html = "<meta name='viewport' content='width=device-width,initial-scale=1'><h1>Tab options fixture</h1>"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/one": Data(html.utf8), "/two": Data(html.utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-wallpaper_source", "solid", "-icloud_sync_enabled", "NO",
+            "-show_top_tab_bar", "YES", "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-privacy_https_upgrade_enabled", "NO"]
+        app.launch(); defer { app.terminate() }
+        func open(_ path: String) throws {
+            var route = URLComponents(); route.scheme = "soulo"; route.host = "open"
+            route.queryItems = [URLQueryItem(name: "url", value: root.appendingPathComponent(path).absoluteString)]
+            app.open(try XCTUnwrap(route.url))
+            XCTAssertTrue(app.webViews.staticTexts["Tab options fixture"].waitForExistence(timeout: 15))
+        }
+        try open("one")
+        let tabs = app.buttons["browser.tabs"]
+        tabs.tap(); app.buttons["tabs.options"].tap()
+        let closeOthers = app.buttons["tabs.close-others"]
+        if closeOthers.exists { closeOthers.tap() }
+        else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.18)).tap() }
+        app.buttons["tabs.done"].tap()
+        try open("two")
+        let options = app.buttons["browser.top-tab-options"]
+        XCTAssertTrue(options.waitForExistence(timeout: 5)); options.tap()
+        XCTAssertEqual(tabs.label, "2 Tabs", "Opening settings must not create a tab")
+        XCTAssertTrue(app.switches["tabs.show-top-bar"].exists)
+        XCTAssertTrue(app.buttons["tabs.close-others"].exists)
+        XCTAssertTrue(app.buttons["tabs.close-all"].exists)
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        shot.name = "top-tab-settings-with-new-tab"; shot.lifetime = .keepAlways; add(shot)
+        app.buttons["tabs.new-tab"].coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        XCTAssertEqual(tabs.label, "3 Tabs")
+        options.tap(); app.buttons["tabs.close-others"].coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        XCTAssertEqual(tabs.label, "1 Tabs")
+        XCTAssertFalse(options.exists)
+        tabs.tap(); app.buttons["tabs.options"].tap(); app.buttons["tabs.new-tab"].coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        XCTAssertEqual(tabs.label, "2 Tabs")
+        options.tap(); app.buttons["tabs.close-all"].coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        XCTAssertEqual(tabs.label, "1 Tabs")
+        XCTAssertTrue(app.staticTexts["New Tab"].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertFalse(options.exists)
+    }
+
+    func testHidingTopTabBarExplainsAndRestoresTheSettingsRoute() async throws {
+        continueAfterFailure = false
+        let html = "<meta name='viewport' content='width=device-width,initial-scale=1'><h1>Recovery guide fixture</h1>"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/one": Data(html.utf8), "/two": Data(html.utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-wallpaper_source", "solid", "-icloud_sync_enabled", "NO", "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-privacy_https_upgrade_enabled", "NO"]
+        app.launch(); defer { app.terminate() }
+        func open(_ path: String) throws {
+            var route = URLComponents(); route.scheme = "soulo"; route.host = "open"
+            route.queryItems = [URLQueryItem(name: "url", value: root.appendingPathComponent(path).absoluteString)]
+            app.open(try XCTUnwrap(route.url))
+            XCTAssertTrue(app.webViews.staticTexts["Recovery guide fixture"].waitForExistence(timeout: 15))
+        }
+        try open("one"); try open("two")
+        let tabs = app.buttons["browser.tabs"]
+        tabs.tap(); app.buttons["tabs.options"].tap()
+        let toggle = app.switches["tabs.show-top-bar"]
+        if toggle.value as? String == "0" { toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.2)).tap()
+        app.buttons["tabs.done"].tap()
+        let options = app.buttons["browser.top-tab-options"]
+        XCTAssertTrue(options.waitForExistence(timeout: 5)); options.tap()
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        let done = app.buttons["tabs.recovery.dismiss"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertFalse(options.exists)
+        XCTAssertTrue(app.staticTexts["Top Tab Bar Hidden"].exists)
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        shot.name = "top-tab-bar-reopen-illustration"; shot.lifetime = .keepAlways; add(shot)
+        done.tap()
+        tabs.tap(); app.buttons["tabs.options"].tap()
+        XCTAssertEqual(toggle.value as? String, "0")
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.2)).tap()
+        app.buttons["tabs.done"].tap()
+        XCTAssertTrue(options.waitForExistence(timeout: 5))
+    }
+
+    func testWallpaperImageOverlayPersistsAndIsOnlyOfferedForImages() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-wallpaper_source", "photo", "-wallpaper_refresh_interval", "0", "-icloud_sync_enabled", "NO", "-review.requestedOnce", "YES"]
+        func settings() {
+            let menu = app.buttons["home.menu"]
+            XCTAssertTrue(menu.waitForExistence(timeout: 10)); menu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            app.buttons["Settings"].firstMatch.tap()
+            let entry = app.buttons["settings.wallpaper"]
+            XCTAssertTrue(entry.waitForExistence(timeout: 5)); entry.tap()
+        }
+        app.launch(); defer { app.terminate() }; settings()
+        let overlay = app.switches["wallpaper.image-overlay"], blur = app.switches["wallpaper.image-blur"]
+        XCTAssertTrue(overlay.waitForExistence(timeout: 5)); XCTAssertTrue(blur.exists)
+        let initial = overlay.value as? String, originalBlur = blur.value as? String
+        overlay.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        let changed = overlay.value as? String
+        XCTAssertNotEqual(initial, changed)
+        if originalBlur == "0" { blur.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
+        let slider = app.sliders["wallpaper.blur-amount"]
+        XCTAssertTrue(slider.waitForExistence(timeout: 5)); slider.adjust(toNormalizedSliderPosition: 0.75)
+        let amount = slider.value as? String
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        shot.name = "wallpaper-mask-and-adjustable-frosted-glass"; shot.lifetime = .keepAlways; add(shot)
+        app.terminate(); app.launch(); settings()
+        XCTAssertEqual(overlay.value as? String, changed)
+        XCTAssertEqual(blur.value as? String, "1")
+        XCTAssertEqual(slider.value as? String, amount)
+        overlay.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        if originalBlur == "0" { blur.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
+        app.scrollViews["wallpaper.sources"].swipeLeft()
+        app.buttons["wallpaper.source.solid"].tap()
+        XCTAssertFalse(overlay.exists); XCTAssertFalse(blur.exists); XCTAssertFalse(slider.exists)
+        app.buttons["wallpaper.source.gradient"].tap()
+        XCTAssertFalse(overlay.exists); XCTAssertFalse(blur.exists); XCTAssertFalse(slider.exists)
+    }
+
     func testWallpaperSettingsSwitchSourcesAndApplyGradient() throws {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")

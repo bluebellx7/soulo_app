@@ -1,8 +1,12 @@
 import SwiftUI
-import SwiftData
+import CoreData
 import StoreKit
 
 struct HomeView: View {
+    @Environment(\.colorScheme) private var homeColorScheme
+    private var usesLightWallpaperContent: Bool {
+        wallpaperManager.prefersDarkForeground(for: WallpaperAppearance(homeColorScheme))
+    }
     @EnvironmentObject var searchVM: SearchViewModel
     @EnvironmentObject var languageManager: LanguageManager
     @EnvironmentObject var tabManager: TabManager
@@ -11,7 +15,7 @@ struct HomeView: View {
     @ObservedObject private var platformStore = PlatformDataStore.shared
     @ObservedObject var wallpaperManager = WallpaperManager.shared
     @StateObject private var speechService = SpeechRecognitionService()
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.managedObjectContext) private var modelContext
     @Environment(\.requestReview) private var requestReview
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.openWindow) private var openWindow
@@ -37,6 +41,7 @@ struct HomeView: View {
     @State private var scannedContent: ScannedContent?
     @State private var showVoiceInput = false
     @State private var showAppShareSheet = false
+    @State private var wallpaperPreview: WallpaperExportPreviewModel?
     @State private var showTabOverviewFromHome = false
     @State private var showTitleEditor = false
     @State private var showSubtitleEditor = false
@@ -48,7 +53,7 @@ struct HomeView: View {
     @AppStorage("show_bookmarks_on_home") private var showBookmarksOnHome: Bool = false
     @AppStorage("show_group_picker_on_home") private var showGroupPickerOnHome: Bool = false
     @AppStorage("show_recent_searches_on_home") private var showRecentSearchesOnHome: Bool = true
-    @Query(sort: \BookmarkItem.dateAdded, order: .reverse) private var bookmarks: [BookmarkItem]
+    @FetchRequest(sortDescriptors: [NSSortDescriptor(key: "dateAdded", ascending: false)]) private var bookmarks: FetchedResults<BookmarkRecord>
     @State private var dynamicTheme: DynamicTheme = DynamicTheme(rawValue: UserDefaults.standard.string(forKey: "dynamic_theme") ?? "midnight") ?? .midnight
 
     private var displayedHomeTitle: String {
@@ -65,7 +70,7 @@ struct HomeView: View {
 
     private var keyboardCommandsEnabled: Bool {
         scenePhase == .active && !showSettings && librarySection == nil && !showExtensionCenter
-            && !showScanner && !showPlatformManagement && !showVoiceInput && !showAppShareSheet
+            && !showScanner && !showPlatformManagement && !showVoiceInput && !showAppShareSheet && wallpaperPreview == nil
             && !showTitleEditor && !showSubtitleEditor && !showsTabOverview && homeToolbarDestination == nil
             && downloadCreation == nil && incomingDocument == nil && scannedContent == nil
     }
@@ -148,7 +153,7 @@ struct HomeView: View {
             // transform. Scaling the wallpaper with the page exposes the hosting
             // controller's default background around the safe-area edges.
             WallpaperBackground(isAnimating: !searchVM.isSearching && !showsTabOverview
-                && !keyboardVisible && !showSettings && librarySection == nil)
+                && !keyboardVisible && !showSettings && librarySection == nil && wallpaperPreview == nil)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea()
 
@@ -172,31 +177,7 @@ struct HomeView: View {
                         .zIndex(100)
                 }
 
-                // Saved toast
-                if showSavedToast {
-                    VStack {
-                        Spacer()
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                            Text(LanguageManager.shared.localizedString("wallpaper_saved"))
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(.white)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(.black.opacity(0.6), in: Capsule())
-                        .padding(.bottom, 80)
-                    }
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .zIndex(100)
-                    .accessibilityElement(children: .combine)
-                    .onAppear {
-                        AppAccessibility.announce(
-                            LanguageManager.shared.localizedString("wallpaper_saved")
-                        )
-                    }
-                }
+
             }
         }
         .background {
@@ -240,10 +221,10 @@ struct HomeView: View {
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
-        .navigationDestination(item: $librarySection) { section in
+        .compatibleNavigationDestination(item: $librarySection) { section in
             LibraryView(initialSection: section, searchVM: searchVM)
         }
-        .navigationDestination(item: $incomingDocument) { document in
+        .compatibleNavigationDestination(item: $incomingDocument) { document in
             ExternalDocumentView(source: document.url)
         }
         .sheet(isPresented: $showScanner, onDismiss: {
@@ -257,7 +238,7 @@ struct HomeView: View {
         }) {
             QRCodeScannerView { value in pendingScan = value; showScanner = false }
         }
-        .navigationDestination(item: $scannedContent) { content in LocalScanResultView(content: content) }
+        .compatibleNavigationDestination(item: $scannedContent) { content in LocalScanResultView(content: content) }
         .sheet(isPresented: $showVoiceInput) {
             VoiceInputView(
                 speechService: speechService,
@@ -269,6 +250,7 @@ struct HomeView: View {
                 onDismiss: { showVoiceInput = false }
             )
         }
+        .sheet(item: $wallpaperPreview) { WallpaperExportPreview(model: $0) }
         .sheet(isPresented: $showAppShareSheet) {
             HomeActivityView(items: [
                 LanguageManager.shared.localizedString("share_app_message"),
@@ -313,7 +295,7 @@ struct HomeView: View {
             reviewTask?.cancel()
             wallpaperLoadTask?.cancel()
         }
-        .onChange(of: searchVM.isSearching) { _, isSearching in
+        .onCompatibleChange(of: searchVM.isSearching) { _, isSearching in
             reviewTask?.cancel()
             if !isSearching {
                 searchVM.loadRecentSearches(context: modelContext)
@@ -321,7 +303,7 @@ struct HomeView: View {
                     try? await Task.sleep(for: .seconds(2))
                     guard !Task.isCancelled, !searchVM.isSearching, !keyboardVisible, scenePhase == .active,
                           !showSettings, !showExtensionCenter, librarySection == nil,
-                          !showVoiceInput, !showAppShareSheet, !showTabOverviewFromHome,
+                          !showVoiceInput, !showAppShareSheet, wallpaperPreview == nil, !showTabOverviewFromHome,
                           !showTitleEditor, !showSubtitleEditor, !MediaSession.shared.expanded else { return }
                     if ReviewPromptPolicy.consumeIfEligible() { requestReview() }
                 }
@@ -448,6 +430,7 @@ struct HomeView: View {
         showVoiceInput = false
         showTabOverviewFromHome = false
         showAppShareSheet = false
+        wallpaperPreview = nil
         if recreateStack { navigationSession = UUID() }
     }
 
@@ -480,11 +463,11 @@ struct HomeView: View {
                         ForEach(Array(homeToolbar.actions.enumerated()), id: \.offset) { index, action in
                             if action != .none {
                                 Button { performHomeToolbarAction(action) } label: {
-                                    HomeToolbarButtonFace(action: action, lightWallpaper: wallpaperManager.isCurrentWallpaperLight,
+                                    HomeToolbarButtonFace(action: action, lightWallpaper: usesLightWallpaperContent,
                                         isActive: action == .privateBrowsing && searchVM.isIncognito,
                                         isLoading: action == .refreshWallpaper && wallpaperManager.networkLoading,
                                         tabCount: tabManager.tabCount)
-                                }.buttonStyle(HomeToolbarButtonStyle(lightWallpaper: wallpaperManager.isCurrentWallpaperLight, showsBackground: homeToolbar.showsButtonBackground))
+                                }.buttonStyle(HomeToolbarButtonStyle(lightWallpaper: usesLightWallpaperContent, showsBackground: homeToolbar.showsButtonBackground))
                                     .accessibilityLabel(action.title)
                                     .accessibilityIdentifier("home.toolbar.\(index)")
                                     .accessibilityAddTraits(action == .privateBrowsing && searchVM.isIncognito ? .isSelected : [])
@@ -496,13 +479,15 @@ struct HomeView: View {
                 .frame(maxWidth: 420).frame(height: 48)
                 .padding(.horizontal, 32).padding(.top, 8).padding(.bottom, 20)
             }
-            // Wallpaper attribution remains below the optional shortcuts.
-            Text(wallpaperManager.source == .bing ? "Bing Daily" : wallpaperManager.searchTopic)
-                .font(.system(size: 8, weight: .medium))
-                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.28) : .white.opacity(0.16))
-                .lineLimit(1)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 8)
+            if wallpaperManager.source.isRemote {
+                Text(wallpaperManager.source == .bing ? "Bing Daily" : wallpaperManager.searchTopic)
+                    .font(.system(size: 8, weight: .medium))
+                    .foregroundStyle(usesLightWallpaperContent ? Color(hex: "2E2A47").opacity(0.75) : .white.opacity(0.7))
+                    .lineLimit(1)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 8)
+                    .accessibilityIdentifier("home.wallpaper.topic")
+            }
         }
         .buttonStyle(HomePressButtonStyle())
     }
@@ -515,8 +500,8 @@ struct HomeView: View {
                         Button { showTitleEditor = true } label: {
                             Text(displayedHomeTitle)
                                 .font(.system(size: 38, weight: .bold, design: .rounded))
-                                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47") : .white)
-                                .shadow(color: wallpaperManager.isCurrentWallpaperLight ? .black.opacity(0.05) : .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                .foregroundStyle(usesLightWallpaperContent ? Color(hex: "2E2A47") : .white)
+                                .shadow(color: usesLightWallpaperContent ? .black.opacity(0.05) : .black.opacity(0.2), radius: 4, x: 0, y: 2)
                         }
                         .accessibilityLabel(
                             AppAccessibility.formatted("accessibility_home_title", displayedHomeTitle)
@@ -531,7 +516,7 @@ struct HomeView: View {
                         Button { showSubtitleEditor = true } label: {
                             Text(displayedHomeSubtitle)
                                 .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.6) : .white.opacity(0.4))
+                                .foregroundStyle(usesLightWallpaperContent ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.8))
                                 .tracking(1.5)
                         }
                         .accessibilityLabel(
@@ -642,15 +627,15 @@ struct HomeView: View {
                             .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
                             .foregroundStyle(
                                 isSelected
-                                    ? (wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47") : .white)
-                                    : (wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.55) : .white.opacity(0.5))
+                                    ? (usesLightWallpaperContent ? Color(hex: "2E2A47") : .white)
+                                    : (usesLightWallpaperContent ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.8))
                             )
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(
                                 isSelected
-                                    ? Capsule().fill(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.12) : .white.opacity(0.2))
-                                    : Capsule().fill(wallpaperManager.isCurrentWallpaperLight ? Color.black.opacity(0.04) : .white.opacity(0.06))
+                                    ? Capsule().fill(usesLightWallpaperContent ? Color(hex: "2E2A47").opacity(0.12) : .white.opacity(0.2))
+                                    : Capsule().fill(usesLightWallpaperContent ? Color.black.opacity(0.04) : .white.opacity(0.06))
                             )
                     }
                     .accessibilityAddTraits(isSelected ? .isSelected : [])
@@ -670,15 +655,15 @@ struct HomeView: View {
                             .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
                             .foregroundStyle(
                                 isSelected
-                                    ? (wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47") : .white)
-                                    : (wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.55) : .white.opacity(0.5))
+                                    ? (usesLightWallpaperContent ? Color(hex: "2E2A47") : .white)
+                                    : (usesLightWallpaperContent ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.8))
                             )
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(
                                 isSelected
-                                    ? Capsule().fill(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.12) : .white.opacity(0.2))
-                                    : Capsule().fill(wallpaperManager.isCurrentWallpaperLight ? Color.black.opacity(0.04) : .white.opacity(0.06))
+                                    ? Capsule().fill(usesLightWallpaperContent ? Color(hex: "2E2A47").opacity(0.12) : .white.opacity(0.2))
+                                    : Capsule().fill(usesLightWallpaperContent ? Color.black.opacity(0.04) : .white.opacity(0.06))
                             )
                     }
                     .accessibilityAddTraits(isSelected ? .isSelected : [])
@@ -708,7 +693,7 @@ struct HomeView: View {
                             BookmarkFaviconView(urlString: bookmark.urlString, size: 24)
                             Text(bookmark.title)
                                 .font(.system(size: 9))
-                                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.7) : .white.opacity(0.6))
+                                .foregroundStyle(usesLightWallpaperContent ? Color(hex: "2E2A47").opacity(0.7) : .white.opacity(0.6))
                                 .lineLimit(1)
                                 .frame(width: 38)
                         }
@@ -758,23 +743,23 @@ struct HomeView: View {
                     HStack(spacing: 5) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                .stroke(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.6), lineWidth: 1.2)
+                                .stroke(usesLightWallpaperContent ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.6), lineWidth: 1.2)
                                 .frame(width: 16, height: 16)
                             Text("\(tabManager.tabCount)")
                                 .font(.system(size: 10, weight: .bold, design: .rounded))
-                                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.7))
+                                .foregroundStyle(usesLightWallpaperContent ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.7))
                         }
                         Text(LanguageManager.shared.localizedString("tab_tabs"))
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.6) : .white.opacity(0.4))
+                            .foregroundStyle(usesLightWallpaperContent ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.8))
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
                     .background {
-                        if wallpaperManager.isCurrentWallpaperLight {
+                        if usesLightWallpaperContent {
                             Capsule().fill(Color.black.opacity(0.04))
                         } else {
-                            Capsule().fill(.ultraThinMaterial.opacity(0.3))
+                            Capsule().fill(.ultraThinMaterial).environment(\.colorScheme, .dark)
                         }
                     }
                 }
@@ -829,12 +814,14 @@ struct HomeView: View {
                 homeMenuLabel("wallpaper_refresh", systemImage: "sparkles")
             }
 
-            if wallpaperManager.currentImage != nil || wallpaperManager.customImage != nil {
+            if wallpaperManager.canPreviewCurrentWallpaper {
                 Button {
-                    saveWallpaperToPhotos()
+                    wallpaperPreview = wallpaperManager.exportPreview()
+                    HapticsManager.light()
                 } label: {
                     homeMenuLabel("wallpaper_download", systemImage: "square.and.arrow.down")
                 }
+                .accessibilityIdentifier("home.wallpaper.download")
             }
 
             Divider()
@@ -853,13 +840,13 @@ struct HomeView: View {
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
-                .foregroundStyle(wallpaperManager.isCurrentWallpaperLight ? Color(hex: "2E2A47").opacity(0.78) : .white.opacity(0.68))
+                .foregroundStyle(usesLightWallpaperContent ? Color(hex: "2E2A47").opacity(0.9) : .white.opacity(0.9))
                 .frame(width: AppControlMetrics.iconDiameter, height: AppControlMetrics.iconDiameter)
                 .background {
-                    if wallpaperManager.isCurrentWallpaperLight {
+                    if usesLightWallpaperContent {
                         Circle().fill(Color.black.opacity(0.04))
                     } else {
-                        Circle().fill(.ultraThinMaterial.opacity(0.3))
+                        Circle().fill(.ultraThinMaterial).environment(\.colorScheme, .dark)
                     }
                 }
                 .frame(width: AppControlMetrics.minimumHitSize, height: AppControlMetrics.minimumHitSize)
@@ -908,23 +895,7 @@ struct HomeView: View {
 
     // MARK: - Actions
 
-    @State private var showSavedToast = false
     @State private var showSwitchToBing = false
-
-    private func saveWallpaperToPhotos() {
-        if let image = wallpaperManager.currentImage {
-            wallpaperManager.saveToAlbum(image: image)
-        } else if let image = wallpaperManager.customImage {
-            wallpaperManager.saveToAlbum(image: image)
-        }
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-            showSavedToast = true
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            withAnimation { showSavedToast = false }
-        }
-    }
 
     private func performSearch() {
         let selectedGroup = lastGroupID.isEmpty

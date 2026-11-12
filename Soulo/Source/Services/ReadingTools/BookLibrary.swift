@@ -176,11 +176,11 @@ enum FileSafety {
               !parts.contains(".."), !parts.contains("."), path.utf8.count < 4096 else { throw ReadingToolError.unsafePath }
         return path
     }
-    static func availableURL(name: String, directory: URL) -> URL {
+    static func availableURL(name: String, directory: URL, excluding reserved: Set<String> = []) -> URL {
         let safe = DownloadFilenameSanitizer.sanitize(name)
         var result = directory.appendingPathComponent(safe)
         var n = 2
-        while FileManager.default.fileExists(atPath: result.path) {
+        while reserved.contains(result.lastPathComponent) || FileManager.default.fileExists(atPath: result.path) {
             result = directory.appendingPathComponent((safe as NSString).deletingPathExtension + " (\(n))").appendingPathExtension((safe as NSString).pathExtension)
             n += 1
         }

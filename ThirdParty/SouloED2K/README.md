@@ -2,7 +2,7 @@
 
 The MIT-licensed [goed2k](https://github.com/monkeyWie/goed2k) library is pinned to `f2a71d599deeb1b60595d71aa662d48b205699ed`. `Bridge/go.sum` records the authenticated upstream module; `upstream.json` records original source hashes. The library-only snapshot is vendored in `Source/goed2k`, without the terminal UI. Its `connection.go` and the new `connection_dial.go` use cancellable, timeout-bounded asynchronous TCP dialing, handing socket ownership back to the serial protocol loop. Only the protocol library and Go standard library are linked. License texts ship in `ED2KThirdPartyNotices.txt` and appear in the app's licenses page.
 
-Rebuild all iOS 17+ slices with:
+Rebuild all iOS 16+ slices with:
 
 ```sh
 python3 scripts/ed2k/build_engine.py

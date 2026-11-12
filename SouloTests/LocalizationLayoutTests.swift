@@ -184,7 +184,7 @@ final class LocalizationLayoutTests: XCTestCase {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let host = UIHostingController(rootView: content)
-        host.safeAreaRegions = []
+        if #available(iOS 16.4, *) { host.safeAreaRegions = [] }
         let size = host.sizeThatFits(in: CGSize(width: 320, height: 1200))
         let window = UIWindow(windowScene: scene)
         window.frame = CGRect(origin: .zero, size: size)

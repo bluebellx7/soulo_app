@@ -337,12 +337,18 @@ enum ManualAdBlockRuntime {
       }
       function makeStyle() {
         // Constructed stylesheets work on pages that disallow inline <style>
-        // elements through CSP. Supported throughout Soulo's iOS 17+ baseline.
-        const css = new CSSStyleSheet();
-        document.adoptedStyleSheets = [...document.adoptedStyleSheets, css];
-        return { sheet: css, remove() {
-          document.adoptedStyleSheets = document.adoptedStyleSheets.filter(s => s !== css);
-        }};
+        // elements through CSP. Earlier WebKit uses a regular stylesheet.
+        if ('adoptedStyleSheets' in document) {
+          const css = new CSSStyleSheet();
+          document.adoptedStyleSheets = [...document.adoptedStyleSheets, css];
+          return { sheet: css, remove() {
+            document.adoptedStyleSheets = document.adoptedStyleSheets.filter(s => s !== css);
+          }};
+        }
+        const style = document.createElement('style');
+        (document.head || document.documentElement).append(style);
+        return { sheet: style.sheet || { insertRule() {} }, inlineFallback: !style.sheet,
+          remove() { style.remove(); } };
       }
       function restoreInline(el, old) {
         if (el.style.getPropertyValue('display') !== 'none' || el.style.getPropertyPriority('display') !== 'important') return;
@@ -351,8 +357,10 @@ enum ManualAdBlockRuntime {
       }
       function forceInlineIfNeeded(el) {
         if (el.matches(protectedSelector) || el.closest('form,[contenteditable="true"]')) return;
-        if (el.style.getPropertyPriority('display') !== 'important' || el.style.getPropertyValue('display') === 'none') return;
-        inlineOriginals.set(el, { value: el.style.getPropertyValue('display'), priority: 'important' });
+        const priority = el.style.getPropertyPriority('display'), value = el.style.getPropertyValue('display');
+        if (value === 'none' && priority === 'important') return;
+        if (!sheet?.inlineFallback && (priority !== 'important' || value === 'none')) return;
+        inlineOriginals.set(el, { value, priority });
         el.style.setProperty('display', 'none', 'important');
       }
       function inspectRoot(root) {

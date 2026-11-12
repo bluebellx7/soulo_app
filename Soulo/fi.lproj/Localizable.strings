@@ -609,27 +609,27 @@
 "extensions_reload_note" = "Avoimet sivut latautuvat uudelleen, kun laajennusta tai komentosarjaa on muutettu, jotta uusi tila tulee voimaan.";
 "web_extensions" = "Web-laajennukset";
 "userscripts" = "Skriptit ja laajennukset";
-"userscripts_installed" = "Omat skriptit";
-"userscripts_install" = "Asenna skriptit";
+"userscripts_installed" = "Asennetut";
+"userscripts_install" = "Lisää";
 "userscripts_empty" = "Ei UserScripts";
 "userscripts_empty_desc" = "Asenna .user.js-tiedosto tai luo komentosarja nähdäksesi sen täällä.";
 "userscripts_reload_note" = "Avoimet sivut latautuvat uudelleen, kun komentosarja on asennettu, muokattu, otettu käyttöön, poistettu käytöstä tai poistettu.";
 "userscript_experimental_badge" = "Yhteensopivuus";
 "userscript_experimental_title" = "UserScript yhteensopivuus";
-"userscript_experimental_desc" = "Tukee sivustosääntöjä, asiakirjan alkua/loppua, laajaa GM-tallennustilaa ja sivujen sovellusliittymiä, komentosarjakomentoja, ilmoituksia, välilehtiä, latauksia, evästeitä, resursseja ja käyttöoikeuslaajuisia pyyntöjä. Tarkista jokainen komentosarja ennen asennusta.";
+"userscript_experimental_desc" = "Käyttäjäskriptit voivat lukea tai muuttaa vastaavia sivustoja ja käyttää sallittuja rajapintoja. Yhteensopivuus vaihtelee. Asenna vain luotettuja skriptejä.";
 "extension_choose_file" = "Valitse tiedosto tai kansio…";
 "extension_installing" = "Tarkistetaan ja asennetaan laajennusta…";
 "extension_install_failed" = "Laajennusta ei voitu asentaa";
 "extension_permissions_summary" = "%d käyttöoikeudet · %d verkkosivustosäännöt";
 "extension_untitled" = "Nimetön laajennus";
-"web_extension_install_footer" = "Napauta mitä tahansa lähderivin kohtaa avataksesi sen nykyisellä Soulo-välilehdellä. Soulo tunnistaa CRX:n, XPI:n, ZIP:n ja tuetut kaupan asennustoiminnot ja kysyy sitten ennen asennusta. Jotkut vain työpöytäsovellusliittymät eivät ehkä ole käytettävissä.";
+"web_extension_install_footer" = "Asenna yhteensopivia laajennuksia kauppalinkistä tai tuo CRX, XPI, ZIP tai laajennuskansio. Tarkista oikeudet ja yhteensopivuus; kaikki työpöytätoiminnot eivät ole saatavilla.";
 "web_extension_install_store_link" = "Asenna kauppalinkistä…";
 "web_extension_browse_sources" = "Selaa laajennuskauppoja";
 "web_extension_browse_sources_footer" = "Store Get -painikkeet tukevat vain omia työpöytäselaimiaan. Kopioi laajennuksen tietosivun linkki ja käytä sitten Asenna kaupasta -linkkiä kohdassa Soulo.";
 "web_extension_store_install_title" = "Asenna myymälälaajennus";
 "extension_page_banner_title" = "Asenna Soulo";
-"extension_page_banner_desc" = "Soulo voi asentaa tämän laajennuksen suoraan.";
-"web_extension_store_install_desc" = "Liitä Chrome Web Storen, Microsoft Edge -lisäosien tai Firefoxin lisäosien lisätietosivun linkki. Soulo lataa itse paketin, joten kaupan yhteensopimatonta Get-painiketta ei käytetä.";
+"extension_page_banner_desc" = "Tarkista yhteensopivuus ja oikeudet ennen asennusta.";
+"web_extension_store_install_desc" = "Liitä Chrome-, Edge- tai Firefox-laajennuksen tietosivun linkki ja tarkista yhteensopivuus ja oikeudet ennen asennuksen vahvistamista.";
 "web_extension_store_link_placeholder" = "Laajennussivun linkki tai Chrome-laajennuksen tunnus";
 "web_extension_store_invalid_link" = "Liitä laajennuksen tietosivun linkki Chromesta, Edgestä tai Firefoxista, Chrome-laajennuksen tunnus tai suora CRX-, XPI- tai ZIP-linkki.";
 "web_extension_store_https_required" = "Laajennuspakettien on käytettävä suojattua HTTPS-linkkiä.";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "Mediavirta palautti virheellisen tai väärässä järjestyksessä olevan osan.";
 "resource_stream_download_missing_track" = "Ladattu suoratoisto ei sisältänyt toistettavia video- ja ääniraitoja.";
 "resource_stream_download_export_failed" = "Soulo ei voinut yhdistää ladattua videota ja ääntä.";
-"resource_stream_playback_download_first" = "Tätä suojattua suoratoistoa ei voi esikatsella väliaikaisesta URL-osoitteesta. Lataa se ensin ja toista paikallinen tiedosto.";
+"resource_stream_playback_download_first" = "Tätä virtaa ei voi juuri nyt esikatsella suoraan.";
 "platform_invalid_web_url" = "Anna kelvollinen verkko-osoite, joka alkaa http:// tai https://.";
 
 "library_history_tab" = "Historia";
@@ -889,8 +889,7 @@
 "extension_review_access" = "Valitse oikeudet ja sivustot, joita tämä laajennus saa käyttää.";
 "extension_limit_commands" = "Laajennusten pikanäppäimet eivät ole käytettävissä iOS:ssä.";
 "extension_limit_notifications" = "Ilmoituksia voidaan näyttää, mutta napsautus- ja sulkemistapahtumia ei tueta.";
-"extension_limit_offscreen" = "Näytön ulkopuoliset dokumentit tukevat vain äänen toistoa.";
-
+"extension_limit_offscreen" = "Näytön ulkopuolisia dokumentteja koskevat iOS:n rajoitukset; osa ominaisuuksista ei ehkä ole käytettävissä.";
 "review_support_message" = "Kiitos, että tuet Souloa. Arvostelusi auttavat meitä kehittämään sovellusta.";
 "review_open_app_store" = "Arvioi App Storessa";
 

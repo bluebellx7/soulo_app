@@ -6,8 +6,6 @@ Naposledy použité karty a skupiny webov sa zobrazia ako prvé a prehľad sa ot
 
 Sťahovanie BT: importujte súbory .torrent alebo odkazy magnet, vyberte súbory, pozastavte a pokračujte. V iOS 26 môže sťahovanie pokračovať na pozadí, ak to systém dovolí; staršie verzie uložia priebeh a pozastavia ho. Prehrávajte podporované BT médiá počas sťahovania a otvárajte súbory MKV. Importujte odkazy ed2k/thunder. Sťahovanie vyžaduje dostupné zdroje; prehrávanie závisí od kodekov.
 
-Plynulejšie prehliadanie, lepšie ovládanie videa a prehľadnejšie náhľady súborov.
-
 Vyberte päť voliteľných skratiek na úvodnej stránke pre sťahovanie, súbory, záložky, históriu, tapety a ďalšie stránky. Lišta kariet knižnice sa pri posúvaní zmenší.
 
 Hľadajte informácie, čítajte články, prehrávajte médiá a spravujte sťahovanie v jednom prehliadači.
@@ -20,11 +18,11 @@ Majte stránky na viacerých kartách a používajte hlasové hľadanie, histór
 • Súbory: nájdite obrázky, zvuk, video a dokumenty na stránkach a ukladajte obrázky hromadne. Zoznam či mriežka obálok, premenovanie, import z Fotiek a prenos cez Wi-Fi.
 • Archívy: rozbalenie ZIP, RAR a 7z; vytváranie ZIP a 7z s voliteľným heslom.
 • Čítanie: TXT, PDF, EPUB a podporované MOBI, AZW a AZW3 bez DRM. Upravte písmo, veľkosť, riadkovanie a pozadie. Knihy s prispôsobivým rozložením umožňujú zjednodušené alebo tradičné čínske zobrazenie. Režim čítania získa text článku a umožní pokračovať na ďalšej stránke.
-• Rozšírenia: importujte, upravujte a spúšťajte používateľské skripty JavaScript, spravujte weby a povolenia a inštalujte kompatibilné WebExtensions.
+• Skripty a rozšírenia: importujte, upravujte a spúšťajte používateľské skripty JavaScript. Kompatibilné WebExtensions vyžadujú iOS 18.4 alebo novší; podpora závisí od rozšírenia.
 • Webové nástroje: preklad, hľadanie na stránke, snímky celých stránok, rozpoznávanie textu v obrázkoch, počítačový/mobilný režim, vlastný user agent a certifikáty webov.
 • Záložky: priečinky a import/export HTML záložiek pre Chrome, Edge a ďalšie prehliadače. Vytvorte QR kód stránky s ikonou webu, zdieľajte, ukladajte a kopírujte ho.
-• Prispôsobenie: tapety, panel nástrojov a rýchle akcie ikony aplikácie. Prístup cez widgety, Skratky a URL schémy. Voliteľná synchronizácia nastavení cez iCloud.
+• Prispôsobenie: tapety, panel nástrojov a rýchle akcie ikony aplikácie. Prístup cez widgety, Skratky a URL schémy. Voliteľná synchronizácia nastavení cez iCloud. Samostatné pozadia pre svetlý a tmavý vzhľad a prepínač vrstvy cez obrázok.
 
-Dostupnosť médií, kníh a rozšírení závisí od formátu, obmedzení webu a verzie systému.
+Médiá, knihy a rozšírenia závisia od formátov, obmedzení webov a verzie systému. Pred stiahnutím overte, či zdroj povoľuje uloženie obsahu.
 
 Podpora: contact@dkluge.com

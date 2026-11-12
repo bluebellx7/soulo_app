@@ -6,6 +6,12 @@ struct WallpaperSettingsView: View {
     @ObservedObject var wallpaperManager = WallpaperManager.shared
     @AppStorage("fav_section_collapsed") private var isFavCollapsed = false
     
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var editingAppearance: WallpaperAppearance = .light
+    @State private var photoPreviews: [WallpaperAppearance: UIImage] = [:]
+    @State private var photoTask: Task<Void, Never>?
+    @State private var photoError: String?
+    @State private var isSavingPhoto = false
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var searchText = ""
 
@@ -28,6 +34,29 @@ struct WallpaperSettingsView: View {
                 .listRowBackground(Color.clear).listRowInsets(EdgeInsets())
             } header: { Label(LText("wallpaper_source"), systemImage: HomeToolbarAction.wallpaper.listSymbol) }
 
+            if wallpaperManager.source.isRemote || wallpaperManager.source == .photo {
+                Section {
+                    Toggle(ToolText.text("wallpaper_image_overlay"), isOn: $wallpaperManager.imageOverlayEnabled)
+                        .accessibilityIdentifier("wallpaper.image-overlay")
+                    Toggle(ToolText.text("wallpaper_image_blur"), isOn: $wallpaperManager.imageBlurEnabled)
+                        .accessibilityIdentifier("wallpaper.image-blur")
+                    if wallpaperManager.imageBlurEnabled {
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Text(ToolText.text("wallpaper_blur_amount"))
+                                Spacer()
+                                Text(wallpaperManager.imageBlurAmount, format: .percent.precision(.fractionLength(0)))
+                                    .foregroundStyle(.secondary).monospacedDigit()
+                            }
+                            Slider(value: $wallpaperManager.imageBlurAmount, in: 0...1)
+                                .accessibilityLabel(ToolText.text("wallpaper_blur_amount"))
+                                .accessibilityIdentifier("wallpaper.blur-amount")
+                        }.padding(.vertical, 4)
+                    }
+                }
+            }
+
+            if wallpaperManager.source.isRemote {
             // 2. Auto Refresh
             Section {
                 Picker(LText("wallpaper_auto_refresh"), selection: $wallpaperManager.autoRefreshInterval) {
@@ -69,6 +98,10 @@ struct WallpaperSettingsView: View {
                     .foregroundStyle(.secondary)
             } header: { Label(LText("wallpaper_auto_refresh_header"), systemImage: "clock.arrow.2.circlepath") }
 
+            } else {
+                appearanceSection
+            }
+
             // 3. Search & Tags
             if wallpaperManager.source == .pexels || wallpaperManager.source == .pixabay {
                 Section {
@@ -80,7 +113,7 @@ struct WallpaperSettingsView: View {
             }
 
             // 3. Favorites (Collapsible)
-            if !wallpaperManager.favorites.isEmpty {
+            if wallpaperManager.source.isRemote && !wallpaperManager.favorites.isEmpty {
                 Section {
                     if !isFavCollapsed {
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -111,7 +144,20 @@ struct WallpaperSettingsView: View {
         }
         .navigationTitle(LText("settings_wallpaper"))
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear { editingAppearance = WallpaperAppearance(colorScheme) }
         .task(id: wallpaperManager.source) { await wallpaperManager.ensureCandidatesLoaded() }
+        .task(id: "\(wallpaperManager.source.rawValue)-\(wallpaperManager.customPhotoRevision)") {
+            guard wallpaperManager.source == .photo else { return }
+            for appearance in WallpaperAppearance.allCases {
+                let image = await wallpaperManager.customPhotoPreview(for: appearance)
+                guard !Task.isCancelled else { return }
+                photoPreviews[appearance] = image
+            }
+        }
+        .onDisappear { photoTask?.cancel() }
+        .alert(LText("wallpaper_load_error"), isPresented: Binding(
+            get: { photoError != nil }, set: { if !$0 { photoError = nil } }
+        )) { Button(ToolText.text("done")) { photoError = nil } } message: { Text(photoError ?? "") }
         .fullScreenCover(item: $fullScreenContext) { ctx in
             FullScreenWallpaperView(
                 wallpapers: ctx.wallpapers,
@@ -248,42 +294,131 @@ struct WallpaperSettingsView: View {
         }
     }
 
+    private var appearanceSection: some View {
+        Section {
+            HStack(spacing: 12) {
+                ForEach(WallpaperAppearance.allCases) { appearance in
+                    Button {
+                        editingAppearance = appearance
+                        selectedPhoto = nil
+                        HapticsManager.selection()
+                    } label: {
+                        VStack(alignment: .leading, spacing: 10) {
+                            appearanceSample(appearance)
+                                .frame(height: 76)
+                                .frame(maxWidth: .infinity)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                            HStack(spacing: 6) {
+                                Label(appearance.localizedName, systemImage: appearance == .light ? "sun.max" : "moon")
+                                Spacer(minLength: 0)
+                                if editingAppearance == appearance { Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.themePrimary) }
+                            }
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.primary)
+                        }
+                        .padding(12)
+                        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+                        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(editingAppearance == appearance ? Color.themePrimary : Color.primary.opacity(0.1), lineWidth: editingAppearance == appearance ? 2 : 1))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("wallpaper.appearance." + appearance.rawValue)
+                    .accessibilityAddTraits(editingAppearance == appearance ? .isSelected : [])
+                }
+            }
+            .listRowInsets(EdgeInsets(top: 6, leading: 2, bottom: 6, trailing: 2))
+            .listRowBackground(Color.clear)
+        } header: { Text(LText("appearance")) }
+        footer: { Text(ToolText.text("wallpaper_appearance_hint")) }
+    }
+
+    @ViewBuilder
+    private func appearanceSample(_ appearance: WallpaperAppearance) -> some View {
+        switch wallpaperManager.source {
+        case .solid:
+            Color(hex: wallpaperManager.solidColor(for: appearance))
+        case .gradient:
+            let preset = wallpaperManager.gradient(for: appearance)
+            LinearGradient(colors: preset.colors, startPoint: preset.startPoint, endPoint: preset.endPoint)
+        default:
+            GeometryReader { geometry in
+                ZStack {
+                    Color(uiColor: .tertiarySystemFill)
+                    if let image = photoPreviews[appearance] {
+                        Image(uiImage: image).resizable().scaledToFill()
+                    } else { Image(systemName: "photo").foregroundStyle(.secondary) }
+                }
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .clipped()
+            }
+        }
+    }
+
     private var gradientSection: some View {
         Section {
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(GradientPreset.presets) { preset in
-                    Button { wallpaperManager.selectedGradientId = preset.id; HapticsManager.light() } label: {
+                    let selected = wallpaperManager.gradientID(for: editingAppearance) == preset.id
+                    Button { wallpaperManager.setGradient(preset.id, for: editingAppearance); HapticsManager.light() } label: {
                         ZStack {
-                            LinearGradient(colors: preset.colors, startPoint: preset.startPoint, endPoint: preset.endPoint).frame(height: 80).clipShape(RoundedRectangle(cornerRadius: 12)).overlay(RoundedRectangle(cornerRadius: 12).stroke(wallpaperManager.selectedGradientId == preset.id ? Color.themePrimary : .clear, lineWidth: 3))
-                            if wallpaperManager.selectedGradientId == preset.id { Image(systemName: "checkmark.circle.fill").foregroundStyle(.white).font(.headline) }
+                            LinearGradient(colors: preset.colors, startPoint: preset.startPoint, endPoint: preset.endPoint)
+                                .frame(height: 80).clipShape(RoundedRectangle(cornerRadius: 12))
+                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(selected ? Color.themePrimary : .clear, lineWidth: 3))
+                            if selected { Image(systemName: "checkmark.circle.fill").foregroundStyle(.white).font(.headline) }
                         }
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("wallpaper.gradient.\(preset.id)")
-                    .accessibilityAddTraits(wallpaperManager.selectedGradientId == preset.id ? .isSelected : [])
+                    .accessibilityLabel(preset.id)
+                    .accessibilityAddTraits(selected ? .isSelected : [])
                 }
             }.padding(.vertical, 4)
-        }
+        } header: { Text(editingAppearance.localizedName) }
     }
 
     private var photoSection: some View {
         let choosePhotoTitle = LText("wallpaper_choose_photo")
+        let savingPhoto = isSavingPhoto
         return Section {
             PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                Label(choosePhotoTitle, systemImage: "photo.on.rectangle")
+                HStack {
+                    Label(choosePhotoTitle, systemImage: "photo.on.rectangle")
+                    Spacer()
+                    if savingPhoto { ProgressView() }
+                }
             }
-            .onChange(of: selectedPhoto) { _, item in Task { if let data = try? await item?.loadTransferable(type: Data.self), let image = UIImage(data: data) { wallpaperManager.saveCustomImage(image) } } }
-            if let image = wallpaperManager.customImage { Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 200).clipShape(RoundedRectangle(cornerRadius: 12)) }
-        }
+            .disabled(isSavingPhoto)
+            .onCompatibleChange(of: selectedPhoto) { _, item in
+                guard let item else { return }
+                let appearance = editingAppearance
+                photoTask?.cancel()
+                isSavingPhoto = true
+                photoTask = Task {
+                    defer { isSavingPhoto = false }
+                    do {
+                        guard let data = try await item.loadTransferable(type: Data.self) else { throw WebResourceDownloadError.invalidImage }
+                        try Task.checkCancellation()
+                        try await wallpaperManager.saveCustomPhoto(data, for: appearance)
+                    } catch is CancellationError { }
+                    catch { photoError = error.localizedDescription }
+                }
+            }
+            if let image = photoPreviews[editingAppearance] {
+                Image(uiImage: image).resizable().scaledToFit().frame(maxWidth: .infinity, maxHeight: 280)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+        } header: { Text(editingAppearance.localizedName) }
     }
 
     private var solidSection: some View {
         Section {
-            ColorPicker(LText("wallpaper_color"), selection: Binding(get: { Color(hex: wallpaperManager.solidColor) }, set: { c in
-                let uic = UIColor(c); var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0; uic.getRed(&r, green: &g, blue: &b, alpha: nil)
-                wallpaperManager.solidColor = String(format: "#%02X%02X%02X", Int(r*255), Int(g*255), Int(b*255))
-            }))
-        }
+            ColorPicker(LText("wallpaper_color"), selection: Binding(get: { Color(hex: wallpaperManager.solidColor(for: editingAppearance)) }, set: { color in
+                let uiColor = UIColor(color)
+                var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0
+                guard uiColor.getRed(&r, green: &g, blue: &b, alpha: nil) else { return }
+                wallpaperManager.setSolidColor(String(format: "#%02X%02X%02X", Int((r*255).rounded()), Int((g*255).rounded()), Int((b*255).rounded())), for: editingAppearance)
+            }), supportsOpacity: false)
+            .accessibilityIdentifier("wallpaper.color")
+        } header: { Text(editingAppearance.localizedName) }
     }
 
     private func wallpaperTile(_ wall: RemoteWallpaper, isLarge: Bool = false) -> some View {
@@ -438,8 +573,7 @@ struct FullScreenWallpaperView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var selection: String = ""
-    @State private var isDownloading = false
-    @State private var downloadSuccess = false
+    @State private var exportPreview: WallpaperExportPreviewModel?
 
     private var currentWall: RemoteWallpaper? {
         wallpapers.first { $0.id == selection }
@@ -447,7 +581,7 @@ struct FullScreenWallpaperView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color(uiColor: .systemBackground).ignoresSafeArea()
 
             TabView(selection: $selection) {
                 ForEach(wallpapers) { wall in
@@ -490,23 +624,22 @@ struct FullScreenWallpaperView: View {
                     // Download
                     Button {
                         guard let wall = currentWall else { return }
-                        downloadAndSave(wall: wall)
+                        exportPreview = wallpaperManager.exportPreview(for: wall)
                     } label: {
-                        if isDownloading {
-                            ProgressView().tint(.white).frame(width: 50, height: 50)
-                        } else {
-                            Image(systemName: downloadSuccess ? "checkmark.seal.fill" : "arrow.down.to.line.circle.fill")
-                                .font(.system(size: 50))
-                                .foregroundStyle(.white, downloadSuccess ? .green : .black.opacity(0.5))
-                                .shadow(radius: 4)
-                        }
+                        Image(systemName: "arrow.down.to.line.circle.fill")
+                            .font(.system(size: 50))
+                            .foregroundStyle(.white, .black.opacity(0.5))
+                            .shadow(radius: 4)
                     }
-                    .disabled(isDownloading || currentWall == nil)
+                    .disabled(currentWall == nil)
+                    .accessibilityLabel(LText("wallpaper_download"))
+                    .accessibilityIdentifier("wallpaper.download")
                 }
                 .padding(.bottom, 50)
                 .opacity(currentWall != nil ? 1 : 0)
             }
         }
+        .sheet(item: $exportPreview) { WallpaperExportPreview(model: $0) }
         .onAppear {
             selection = initialSelection
             // Fallback if initialSelection not found in array
@@ -516,35 +649,6 @@ struct FullScreenWallpaperView: View {
         }
     }
 
-    private func downloadAndSave(wall: RemoteWallpaper) {
-        isDownloading = true
-        downloadSuccess = false
-        Task {
-            // Try HD cache first, then URL download
-            if let cached = wallpaperManager.cachedHDImage(for: wall.id) {
-                wallpaperManager.saveToAlbum(image: cached)
-                await MainActor.run { HapticsManager.success(); isDownloading = false; downloadSuccess = true }
-            } else {
-                let urlString = wall.url.isEmpty ? wall.previewURL : wall.url
-                guard let url = URL(string: urlString) else { await MainActor.run { isDownloading = false }; return }
-                do {
-                    let (data, _) = try await URLSession.shared.data(from: url)
-                    if let image = UIImage(data: data) {
-                        wallpaperManager.saveToAlbum(image: image)
-                        await MainActor.run { HapticsManager.success(); isDownloading = false; downloadSuccess = true }
-                    } else {
-                        await MainActor.run { isDownloading = false }
-                    }
-                } catch {
-                    await MainActor.run { isDownloading = false }
-                }
-            }
-            if downloadSuccess {
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
-                await MainActor.run { downloadSuccess = false }
-            }
-        }
-    }
 }
 
 // MARK: - Single Wallpaper Full Image (uses HD cache → preview fallback)
@@ -564,7 +668,7 @@ private struct WallpaperFullImage: View {
                     if let img = phase.image {
                         ZoomableImageSurface(image: img, onDismiss: onDismiss)
                     } else {
-                        ProgressView().tint(.white)
+                        ProgressView()
                     }
                 }
             }
@@ -585,4 +689,112 @@ private struct WallpaperFullImage: View {
             // If HD fails, preview AsyncImage stays visible — no error shown
         }
     }
+}
+
+
+@MainActor
+struct WallpaperExportPreview: View {
+    @ObservedObject var model: WallpaperExportPreviewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var sharing = false
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color(uiColor: .systemBackground).ignoresSafeArea()
+                if let image = model.image {
+                    Image(uiImage: image).resizable().scaledToFit()
+                        .padding(16)
+                        .frame(maxWidth: 900, maxHeight: .infinity)
+                        .accessibilityLabel(LText("accessibility_wallpaper_preview"))
+                        .accessibilityIdentifier("wallpaper.export.image")
+                }
+                if model.isLoading { ProgressView().padding(16).background(.ultraThinMaterial, in: Circle()) }
+                if model.loadFailed {
+                    VStack(spacing: 16) {
+                        Label(LText("wallpaper_load_error"), systemImage: "photo.badge.exclamationmark")
+                        Button(ToolText.text("retry")) { Task { await model.prepare() } }.buttonStyle(.borderedProminent)
+                    }.foregroundStyle(.primary)
+                }
+            }
+            .toolbarBackground(Color(uiColor: .systemBackground), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .safeAreaInset(edge: .bottom, spacing: 0) { actions }
+            .navigationTitle(LText("accessibility_wallpaper_preview"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(ToolText.text("done")) { dismiss() }.disabled(model.isSaving)
+                        .accessibilityIdentifier("wallpaper.export.close")
+                }
+            }
+            .sheet(isPresented: $sharing) {
+                if let file = model.file { WallpaperExportActivitySheet(file: file) }
+            }
+            .alert(LText("save_image"), isPresented: Binding(
+                get: { model.saveError != nil }, set: { if !$0 { model.saveError = nil } }
+            )) { Button(ToolText.text("done")) { model.saveError = nil } } message: { Text(model.saveError ?? "") }
+        }
+        .task { await model.prepare() }
+        .interactiveDismissDisabled(model.isSaving)
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private var actions: some View {
+        VStack(spacing: 12) {
+            if model.saved {
+                Label(LText("wallpaper_saved"), systemImage: "checkmark.circle.fill")
+                    .font(.subheadline).foregroundStyle(.green)
+                    .accessibilityIdentifier("wallpaper.export.saved")
+            }
+            HStack(spacing: 12) {
+                Button { sharing = true } label: {
+                    Label(LText("share"), systemImage: "square.and.arrow.up")
+                        .frame(maxWidth: .infinity, minHeight: 52)
+                        .background(Color(uiColor: .tertiarySystemFill), in: Capsule())
+                }
+                .accessibilityIdentifier("wallpaper.export.share")
+                Button { Task { await model.saveToPhotos() } } label: {
+                    HStack(spacing: 8) {
+                        if model.isSaving { ProgressView().tint(.white) }
+                        else { Image(systemName: model.saved ? "checkmark" : "square.and.arrow.down") }
+                        Text(LText("save_image"))
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 52)
+                    .foregroundStyle(.white)
+                    .background(Color.themePrimary, in: Capsule())
+                }
+                .disabled(model.isSaving || model.saved)
+                .accessibilityIdentifier("wallpaper.export.save")
+            }
+            .font(.body.weight(.semibold))
+            .buttonStyle(.plain)
+            .disabled(model.file == nil || model.isSaving)
+        }
+        .padding(.horizontal, 20).padding(.top, 16).padding(.bottom, 12)
+        .frame(maxWidth: 640)
+        .frame(maxWidth: .infinity)
+        .background(.regularMaterial)
+    }
+}
+
+/// The controller keeps the temporary original alive even if its parent preview closes.
+private struct WallpaperExportActivitySheet: UIViewControllerRepresentable {
+    let file: WallpaperExportFile
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = RetainedWallpaperActivityController(file: file)
+        controller.modalPresentationStyle = .pageSheet
+        return controller
+    }
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) { }
+}
+
+private final class RetainedWallpaperActivityController: UIActivityViewController {
+    private let file: WallpaperExportFile
+    init(file: WallpaperExportFile) {
+        self.file = file
+        super.init(activityItems: [file.url], applicationActivities: nil)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }

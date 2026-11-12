@@ -6,6 +6,46 @@ final class GroupDefaultSearchUITests: XCTestCase {
         let data = try JSONSerialization.data(withJSONObject: value)
         return "<" + data.map { String(format: "%02x", $0) }.joined() + ">"
     }
+    func testOptionalPlatformBarHidesAfterNavigationAndReturnsOnBackAndNewSearch() async throws {
+        continueAfterFailure = false
+        let search = "<meta name='viewport' content='width=device-width,initial-scale=1'><h1>Search fixture</h1><a href='/detail'>Open result</a>"
+        let detail = "<meta name='viewport' content='width=device-width,initial-scale=1'><h1>Result fixture</h1><button onclick='history.back()'>Return to results</button>"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/search": Data(search.utf8), "/detail": Data(detail.utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let platform: [String: Any] = ["id": UUID().uuidString, "name": "Fixture", "iconName": "icon_google", "searchURLTemplate": root.appendingPathComponent("search").absoluteString + "?q=%@", "homeURL": root.absoluteString, "region": "international", "isBuiltIn": false, "isVisible": true, "sortOrder": 0, "usageCount": 0, "isCustom": true]
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-wallpaper_source", "solid", "-icloud_sync_enabled", "NO", "-privacy_https_upgrade_enabled", "NO", "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-platform_config", try argumentData([platform]), "-platform_config_version", "43", "-last_selected_region", "international", "-last_selected_group_id", ""]
+        app.launch(); defer { app.terminate() }
+        app.open(URL(string: "soulo://")!)
+        let query = app.textFields["search.query"].firstMatch
+        XCTAssertTrue(query.waitForExistence(timeout: 10)); query.tap(); query.typeText("first query\n")
+        XCTAssertTrue(app.webViews.staticTexts["Search fixture"].waitForExistence(timeout: 15))
+        let picker = app.buttons["search.group-picker"]
+        XCTAssertTrue(picker.exists); picker.tap()
+        let toggle = app.switches["search.auto-hide-platforms"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        if toggle.value as? String == "1" { toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap() }
+        XCTAssertEqual(toggle.value as? String, "0")
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        let hint = app.alerts["Auto-hide Platform Bar"]
+        XCTAssertTrue(hint.waitForExistence(timeout: 5))
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        shot.name = "auto-hide-platform-bar-explanation"; shot.lifetime = .keepAlways; add(shot)
+        hint.buttons["Done"].tap()
+        app.webViews.links["Open result"].tap()
+        XCTAssertTrue(app.webViews.staticTexts["Result fixture"].waitForExistence(timeout: 10))
+        guard picker.waitForNonExistence(timeout: 5) else { XCTFail(app.debugDescription); return }
+        app.webViews.buttons["Return to results"].tap()
+        XCTAssertTrue(app.webViews.staticTexts["Search fixture"].waitForExistence(timeout: 10))
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        app.webViews.links["Open result"].tap()
+        guard picker.waitForNonExistence(timeout: 5) else { XCTFail(app.debugDescription); return }
+        app.buttons["Home Screen"].firstMatch.tap()
+        XCTAssertTrue(query.waitForExistence(timeout: 5)); query.tap(); query.typeText("second query\n")
+        XCTAssertTrue(app.webViews.staticTexts["Search fixture"].waitForExistence(timeout: 10))
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+    }
+
     func testAllPlatformsDisabledHomeNewTabAndBookmarkWorkAfterRestart() async throws {
         continueAfterFailure = false
         let title = "FallbackBookmark-" + UUID().uuidString.prefix(6)
@@ -28,7 +68,8 @@ final class GroupDefaultSearchUITests: XCTestCase {
         let hiddenRow = XCTAttachment(screenshot: app.screenshot())
         hiddenRow.name = "search-without-platform-row"; hiddenRow.lifetime = .keepAlways; add(hiddenRow)
         app.buttons["browser.tabs"].tap()
-        let newTab = app.buttons["tabs.tab_new_tab"]
+        app.buttons["tabs.options"].tap()
+        let newTab = app.buttons["tabs.new-tab"]
         XCTAssertTrue(newTab.waitForExistence(timeout:5),app.debugDescription); newTab.tap()
         let newField = app.textFields["search.query"].firstMatch
         XCTAssertTrue(newField.waitForExistence(timeout:5),app.debugDescription)
@@ -111,4 +152,38 @@ final class GroupDefaultSearchUITests: XCTestCase {
         app.buttons["Cancel"].firstMatch.tap()
     }
 
+}
+
+extension GroupDefaultSearchUITests {
+    @MainActor func testPlatformGridLongPressReordersAndPersists() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-platform_management_layout", "grid", "-icloud_sync_enabled", "NO"]
+        func openManagement() {
+            app.launch(); app.open(URL(string: "soulo://")!)
+            XCTAssertTrue(app.buttons["home.menu"].waitForExistence(timeout: 10)); app.buttons["home.menu"].tap()
+            app.buttons["Settings"].firstMatch.tap()
+            let platforms = app.buttons["Platforms"].firstMatch
+            XCTAssertTrue(platforms.waitForExistence(timeout: 5)); platforms.tap()
+            XCTAssertTrue(app.buttons["platform.layout"].waitForExistence(timeout: 5))
+        }
+        openManagement()
+        let cards = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "platform.grid."))
+        XCTAssertTrue(cards.firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+        let visible = cards.allElementsBoundByIndex.filter { $0.isHittable }.sorted {
+            abs($0.frame.minY - $1.frame.minY) > 10 ? $0.frame.minY < $1.frame.minY : $0.frame.minX < $1.frame.minX
+        }
+        XCTAssertGreaterThanOrEqual(visible.count, 3)
+        let firstID = visible[0].identifier, targetID = visible[2].identifier
+        func card(_ id: String) -> XCUIElement { app.descendants(matching: .any).matching(identifier: id).firstMatch }
+        card(firstID).press(forDuration: 0.8, thenDragTo: card(targetID), withVelocity: .slow, thenHoldForDuration: 0.5)
+        let reordered = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in card(firstID).frame.midX > card(targetID).frame.midX }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [reordered], timeout: 3), .completed, app.debugDescription)
+        XCTAssertFalse(app.textFields["platform.name"].exists, "Dragging must not open the editor")
+        app.terminate(); openManagement()
+        XCTAssertGreaterThan(card(firstID).frame.midX, card(targetID).frame.midX, "Grid order must persist after restart")
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); shot.name = "platform-grid-drag-order"; shot.lifetime = .keepAlways; add(shot)
+        card(firstID).press(forDuration: 0.8, thenDragTo: visible[1], withVelocity: .slow, thenHoldForDuration: 0.3)
+        app.terminate()
+    }
 }

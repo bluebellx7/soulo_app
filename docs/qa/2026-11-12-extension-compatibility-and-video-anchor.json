@@ -1,0 +1,128 @@
+{
+  "date": "2026-11-12",
+  "scope": "Tampermonkey Chrome 5.5.1 functional compatibility and video-box auxiliary Play",
+  "package": {
+    "name": "Tampermonkey",
+    "version": "5.5.1",
+    "channel": "free official Chrome package",
+    "crxSHA256": "b5167937817e636adeba462ed9bf9b32ff01c2888f78a9afc6aa4f8e655fe872",
+    "originalBackgroundSHA256": "7377109daee3340f6f1f89d06f8099e92583229231b25d0f950653a63fb7dd32",
+    "paidAPIsUsed": false,
+    "thirdPartyPackageCommitted": false
+  },
+  "implementation": [
+    "Real extension-origin WKWebView offscreen document with one-document enforcement, validated bundled HTML paths, permission checks and shutdown cleanup.",
+    "Private bounded structured-message transport for Blob, ArrayBuffer and typed arrays; actual document DOM and message handler execute.",
+    "Publisher Content Script mode for the exact verified Tampermonkey background hash; static page/content bootstrap uses WebKit extension isolation and host grants.",
+    "Native extension URL scheme, startup listener timing, conservative host-permission query normalization and finite DNR alternative expansion.",
+    "Persist extension-instance installation lifecycle so duplicate WebKit install events do not quarantine previously installed scripts; first install, version updates and uninstall remain distinct.",
+    "Retain the original background source; preparation is idempotent and preserves subsequent unknown source edits.",
+    "Auxiliary Play shares the original 40-point video tool surface, corner radius, icon dimensions and translucent styling; tracks a known player box and hides when it scrolls out of view.",
+    "Normal video tools and auxiliary Play are mutually exclusive; placement generations reject stale frame messages. A page-corner fallback remains only when no video box is identifiable."
+  ],
+  "tampermonkeyFunctional": {
+    "disabledStopsInjection": true,
+    "gmNetwork": true,
+    "gmValuesAfterPageReload": true,
+    "injected": true,
+    "installed": true,
+    "originalDashboard": true,
+    "package": "Tampermonkey Chrome 5.5.1",
+    "permissionRestoration": true,
+    "permissionRevocation": true,
+    "valuesRestoredAfterContextReload": true,
+    "webKitUserScriptsAPIEmulated": false
+  },
+  "offscreenTests": [
+    "DOM execution",
+    "extension runtime messaging",
+    "Blob and binary round trip",
+    "duplicate document rejection",
+    "path traversal and remote URL rejection",
+    "close on offscreen permission revocation"
+  ],
+  "regression": {
+    "result": "Passed",
+    "totalTestCount": 69,
+    "passedTests": 68,
+    "failedTests": 0,
+    "skippedTests": 1
+  },
+  "skippedTest": {
+    "name": "WebMediaPlaybackBridgeTests/testLiveMovieDirectoryCompatibilityAudit",
+    "reason": "Opt-in public movie directory audit is outside this change and was not enabled."
+  },
+  "modernVideoUI": {
+    "result": "Passed",
+    "totalTestCount": 1,
+    "passedTests": 1,
+    "failedTests": 0,
+    "skippedTests": 0,
+    "device": "iPad Air 13-inch M3 simulator",
+    "system": "iPadOS 26.2",
+    "players": [
+      "system",
+      "soulo"
+    ]
+  },
+  "ios16VideoUI": {
+    "result": "Passed",
+    "totalTestCount": 3,
+    "passedTests": 3,
+    "failedTests": 0,
+    "skippedTests": 0,
+    "device": "iPhone 14 Pro simulator",
+    "system": "iOS 16.4",
+    "scenarios": [
+      "video-box button opens both players",
+      "configuration-only and hidden-video fallback preserves episodes",
+      "normal inline video does not gain a page-corner button after playback, scroll or removal"
+    ]
+  },
+  "builds": {
+    "simulatorBuildForTesting": "passed",
+    "genericIOSDeviceBuild": "passed",
+    "codeSigning": "disabled for compile validation",
+    "physicalDeviceTestingThisChange": false
+  },
+  "checks": {
+    "localization": "881 Localizable + 476 ReadingTools + 81 FeatureImprovements keys across 50 supported locales passed",
+    "metadataJSON": "50 locales verified; existing version 1.2.13 unchanged",
+    "diffWhitespace": "passed"
+  },
+  "limits": [
+    "Native WebExtensions still require iOS 18.4 or later. Built-in userscripts are a separate existing runtime.",
+    "This does not implement the complete Chrome userScripts API. The verified Tampermonkey port uses the publisher Content Script path, not a fake API success shim.",
+    "The adapter recognizes the exact official Chrome 5.5.1 background hash; other versions and Firefox/Safari packages have not been functionally certified.",
+    "runtime.getContexts compatibility enumerates explicit OFFSCREEN_DOCUMENT queries only. Desktop-only offscreen reasons and unrestricted background execution are not supplied.",
+    "Structured offscreen messages have a 16 MiB payload limit, depth and complexity bounds; circular objects and unsupported structured values reject.",
+    "The user-specific failing script and package version were not supplied; arbitrary GM APIs, every script and external-site behavior are not certified.",
+    "Storage restoration is checked after the script manager commits its backing store; terminating an in-flight write is not treated as a committed save."
+  ],
+  "supersedes": "The native API matrix in 2026-11-12-webextension-tampermonkey-capability.json remains a historical native-surface probe. Its pre-change fake-offscreen and no-functional-test conclusions are superseded by this report.",
+  "evidence": {
+    "units": "/tmp/soulo-webextension-implementation-20261112/final-unit-2.xcresult",
+    "modernVideoUI": "/tmp/soulo-webextension-implementation-20261112/auxiliary-ui-1.xcresult",
+    "ios16VideoUI": "/tmp/soulo-webextension-implementation-20261112/ios16-video-ui.xcresult",
+    "deviceBuild": "/tmp/soulo-webextension-implementation-20261112/device-build-final.log",
+    "functional": "/tmp/soulo-webextension-implementation-20261112/functional-verified.json",
+    "screenshots": "/tmp/soulo-webextension-implementation-20261112/auxiliary-ui-attachments"
+  },
+  "references": [
+    "https://www.tampermonkey.net/index.php?browser=chrome",
+    "https://www.tampermonkey.net/documentation.php?ext=d2&q=content_script_api",
+    "https://developer.chrome.com/docs/extensions/reference/api/offscreen",
+    "https://developer.chrome.com/docs/extensions/develop/concepts/match-patterns"
+  ],
+  "cleanup": {
+    "optInCRXRemovedFromQASimulator": true,
+    "testExtensionsUninstalledByTestTeardown": true,
+    "realDeviceProfileModified": false,
+    "commitOrPushPerformed": false
+  },
+  "additionalLifecycleEdgeCheck": {
+    "result": "passed",
+    "scenario": "Browser-update events do not consume a pending extension version update.",
+    "evidence": "/tmp/soulo-webextension-implementation-20261112/lifecycle-final.xcresult"
+  }
+}

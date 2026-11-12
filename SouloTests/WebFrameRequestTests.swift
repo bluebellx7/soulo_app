@@ -28,10 +28,12 @@ import WebKit
         let frame = RequestFrameInfo.make(request: nil)
         let destination = URL(string: "https://example.com/article")!
         XCTAssertNil(frame.requestURL)
-        XCTAssertTrue(BrowserAdNavigationPolicy.shouldBlock(url: destination,
-            sourceURL: frame.requestURL, navigationType: .other,
-            isNewWindow: true, sourceIsMainFrame: true, hasRecentGesture: false,
-            gestureDestination: nil, gestureIsControl: false))
+        let suite = UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(true, forKey: BrowserDomainNavigationPolicy.preferenceKey)
+        XCTAssertFalse(BrowserDomainNavigationPolicy.requiresConfirmation(
+            from: frame.requestURL, to: destination, defaults: defaults))
     }
 
     func testTypedNavigationWithMissingSourceRequestStillCompletesPolicy() {

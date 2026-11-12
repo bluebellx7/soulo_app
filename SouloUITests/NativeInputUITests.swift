@@ -84,6 +84,13 @@ final class NativeInputUITests: XCTestCase {
         XCTAssertEqual(fileSearchRow.frame.height, bookmarkHeight, accuracy: 1)
         XCTAssertEqual(fileSearchRow.frame.minX, downloadLeft, accuracy: 1)
         capture(app, name: "aligned-files-search-and-continuation")
+        let folder = app.buttons["files.item.Move-QA"]
+        if folder.exists {
+            folder.tap()
+            XCTAssertTrue(app.navigationBars["Move-QA"].waitForExistence(timeout: 5))
+            app.navigationBars["Move-QA"].buttons.firstMatch.tap()
+            XCTAssertTrue(app.buttons["files.item.Move-QA"].waitForExistence(timeout: 5))
+        }
         fileSearch.tap(); fileSearch.typeText("File-QA")
         tapBlankBesideContent(app)
         app.buttons["library.section.bookmarks"].tap()

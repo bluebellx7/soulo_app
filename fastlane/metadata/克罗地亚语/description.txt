@@ -6,8 +6,6 @@ Nedavno korištene kartice i grupe web-mjesta prikazuju se prve, a pregled se ot
 
 BT preuzimanja: uvezite .torrent datoteke ili magnet poveznice, odaberite datoteke, pauzirajte i nastavite. U sustavu iOS 26 preuzimanja mogu raditi u pozadini kada sustav dopusti; starije verzije spremaju napredak i pauziraju. Reproducirajte podržane BT medije tijekom preuzimanja i otvorite MKV datoteke. Uvezite ed2k/thunder poveznice. Preuzimanje traži dostupne izvore; reprodukcija ovisi o kodecima.
 
-Glatko pregledavanje, poboljšane videokontrole i jasniji pretpregledi datoteka.
-
 Odaberite pet neobaveznih prečaca na početnoj stranici za preuzimanja, datoteke, oznake, povijest, pozadine i druge stranice. Traka kartica biblioteke smanjuje se tijekom pomicanja.
 
 Pronađite informacije, čitajte članke, reproducirajte medije i upravljajte preuzimanjima u jednom pregledniku.
@@ -20,11 +18,11 @@ Pregledavajte u više kartica uz glasovno pretraživanje, povijest i grupe platf
 • Datoteke: pronađite slike, zvuk, video i dokumente na stranicama te skupno spremite slike. Popis ili mreža naslovnica, preimenovanje, uvoz iz Fotografija i prijenos putem Wi-Fi veze.
 • Arhive: raspakirajte ZIP, RAR i 7z. Izradite ZIP i 7z arhive uz neobaveznu zaštitu lozinkom.
 • Čitanje: TXT, PDF, EPUB i podržani MOBI, AZW i AZW3 bez DRM-a. Podesite font, veličinu, prored i pozadinu. Knjige prilagodljivog rasporeda omogućuju prikaz na pojednostavljenom ili tradicionalnom kineskom. Način čitanja izdvaja članak i omogućuje nastavak na sljedećoj stranici.
-• Proširenja: uvezite, uredite i pokrenite korisničke JavaScript skripte, upravljajte web-mjestima i dozvolama te instalirajte kompatibilne WebExtensions.
+• Skripte i proširenja: uvozite, uređujte i pokrećite korisničke JavaScript skripte. Kompatibilna proširenja WebExtension zahtijevaju iOS 18.4 ili noviji; podrška ovisi o proširenju.
 • Web-alati: prijevod, pretraga stranice, snimke cijelih stranica, prepoznavanje teksta na slikama, računalni/mobilni način, prilagođeni korisnički agent i certifikati web-mjesta.
 • Oznake: mape te uvoz/izvoz HTML oznaka za Chrome, Edge i druge preglednike. Izradite QR kodove stranica s ikonom web-mjesta i dijelite, spremajte ili kopirajte ih.
-• Prilagodba: pozadine, alatna traka i brze radnje ikone aplikacije. Pristup putem widgeta, Prečaca i URL shema. Po želji sinkronizirajte postavke putem iClouda.
+• Prilagodba: pozadine, alatna traka i brze radnje ikone aplikacije. Pristup putem widgeta, Prečaca i URL shema. Po želji sinkronizirajte postavke putem iClouda. Zasebne pozadine za svijetli i tamni izgled uz prekidač za sloj preko slike.
 
-Dostupnost medija, knjiga i proširenja ovisi o formatu, ograničenjima web-mjesta i verziji sustava.
+Mediji, knjige i proširenja ovise o formatima, ograničenjima web-mjesta i verziji sustava. Prije preuzimanja provjerite dopušta li izvor spremanje sadržaja.
 
 Podrška: contact@dkluge.com

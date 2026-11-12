@@ -436,3 +436,65 @@
 "files_move_busy" = "انتظر حتى تنتهي التنزيلات قبل نقل هذه العناصر أو إعادة تسميتها.";
 "video_show_episode_dock" = "عرض قفص الاتهام الحلقة";
 "video_show_episode_dock_desc" = "إظهار زر الحلقة المثبتة على صفحات الويب التي تحتوي على الحلقات. تظل الحلقات متاحة داخل المشغل.";
+
+// Webpage share preview
+"page_share_image" = "مشاركة صورة";
+"page_share_link" = "مشاركة الرابط";
+"page_share_preview" = "معاينة الجزء المرئي";
+"page_share_brand" = "Soulo: متصفح متعدد البحث";
+
+"video_export_mp4" = "تصدير MP4";
+"video_export_failed" = "تعذّر تصدير هذا الفيديو بصيغة MP4. تم الاحتفاظ بالملف الأصلي.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "إيماءات بإصبعين";
+"gesture_hint" = "حرّك إصبعين معاً جانبياً. يتبع التلميح إصبعيك؛ أعدهما للإلغاء. يظل التنقل بإصبع واحد والتكبير بالقرص متاحين.";
+"gesture_swipe_right" = "سحب لليمين";
+"gesture_swipe_left" = "سحب لليسار";
+"gesture_show_toolbar" = "إظهار شريط الأدوات";
+"gesture_quick_menu" = "قائمة سريعة";
+"gesture_preview" = "معاينة الإيماءة";
+"zoom_remember" = "تذكر تكبير المواقع";
+"zoom_hint" = "يُحفظ التكبير من قائمة الصفحة لكل نطاق. لا تُحفظ التغييرات في علامات التبويب الخاصة.";
+"zoom_empty" = "لا توجد مستويات تكبير محفوظة";
+"zoom_reset_all" = "إعادة الكل إلى 100%";
+
+"shake_direction" = "الاتجاه";
+"shake_direction_horizontal" = "يميناً ويساراً";
+"shake_direction_vertical" = "أعلى وأسفل";
+"shake_direction_any" = "أي اتجاه";
+
+"gesture_settings_title" = "إيماءات صفحات الويب";
+"gesture_no_history" = "عند تعذر الرجوع";
+"gesture_no_history_hint" = "عند عدم وجود صفحة سابقة، اسحب يميناً من الحافة اليسرى لإظهار الإجراء. أعد إصبعك للإلغاء. اختر بلا للتعطيل.";
+
+"gesture_execution" = "تنفيذ الإجراء";
+
+"gesture_execute_release" = "عند الإفلات";
+
+"gesture_execute_tap" = "عند الضغط";
+
+"gesture_feedback" = "استجابة الإجراء";
+
+"gesture_haptics" = "اهتزاز";
+
+"gesture_sound" = "صوت";
+
+"gesture_feedback_preview" = "معاينة الاستجابة";
+
+"media_start_timeout" = "لم يبدأ التشغيل. تحقق من الشبكة أو بدّل المشغّل.";
+
+"wallpaper_appearance_hint" = "عيّن خلفية منفصلة للمظهر الفاتح والداكن. تتبدّل تلقائيًا مع مظهر التطبيق.";
+
+"wallpaper_image_overlay" = "طبقة فوق الصورة";
+
+"auto_hide_platform_bar" = "إخفاء شريط المنصات تلقائيًا";
+
+"top_tab_bar_hidden_title" = "تم إخفاء شريط علامات التبويب العلوي";
+
+"top_tab_bar_reopen_hint" = "لإظهاره مجددًا، اضغط زر علامات التبويب في الأسفل، وافتح قائمة … ثم فعّل إظهار شريط علامات التبويب العلوي.";
+
+"wallpaper_image_blur" = "زجاج ضبابي";
+"wallpaper_blur_amount" = "قوة التمويه";
+
+"auto_hide_platform_bar_hint" = "يختفي شريط المنصات عند فتح نتيجة بحث. عُد إلى النتائج أو ابدأ بحثًا جديدًا لإظهاره مجددًا. يمكنك إيقاف ذلك من هذه القائمة.";

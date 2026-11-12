@@ -29,7 +29,7 @@ final class WebViewScriptsTests: XCTestCase {
         web.loadHTMLString("<main style='height:300px'>Restored search results</main>",baseURL:URL(string:"https://example.test/results"))
         for _ in 0..<100 where capture.count == 0 { try await Task.sleep(for:.milliseconds(20)) }
         XCTAssertEqual(capture.count,1)
-        _ = try await web.evaluateJavaScript("window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));",in:nil,contentWorld:.defaultClient)
+        _ = try await web.evaluateCompatibleJavaScript("window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));",in:nil,contentWorld:.defaultClient)
         for _ in 0..<100 where capture.count < 2 { try await Task.sleep(for:.milliseconds(20)) }
         XCTAssertEqual(capture.count,2,"Cached runtimes must send readiness again instead of waiting for a new load event")
     }
@@ -73,7 +73,7 @@ final class WebViewScriptsTests: XCTestCase {
             if (try? await web.evaluateJavaScript("!!document.querySelector('video')")) as? Bool == true { break }
             try await Task.sleep(for: .milliseconds(20))
         }
-        _ = try await web.evaluateJavaScript("""
+        _ = try await web.evaluateCompatibleJavaScript("""
             const video=document.querySelector('video');
             Object.defineProperty(video,'paused',{value:false,configurable:true});
             Object.defineProperty(video,'readyState',{value:4,configurable:true});
@@ -81,7 +81,7 @@ final class WebViewScriptsTests: XCTestCase {
         """, in: nil, contentWorld: .defaultClient)
         for _ in 0..<50 where capture.states.last != true { try await Task.sleep(for: .milliseconds(20)) }
         XCTAssertEqual(capture.states.last, true)
-        _ = try await web.evaluateJavaScript("""
+        _ = try await web.evaluateCompatibleJavaScript("""
             Object.defineProperty(document.querySelector('video'),'paused',{value:true,configurable:true});
             document.querySelector('video').dispatchEvent(new Event('pause')); true
         """, in: nil, contentWorld: .defaultClient)
@@ -99,7 +99,11 @@ final class WebViewScriptsTests: XCTestCase {
             delivery: .hls
         )
         let options = WebResourceMediaService.assetOptions(for: resource)
-        XCTAssertEqual(options[AVURLAssetOverrideMIMETypeKey] as? String, "application/vnd.apple.mpegurl")
+        if #available(iOS 17.0, *) {
+            XCTAssertEqual(options[AVURLAssetOverrideMIMETypeKey] as? String, "application/vnd.apple.mpegurl")
+        } else {
+            XCTAssertEqual(options.count, 1)
+        }
     }
 
     @MainActor
@@ -110,7 +114,9 @@ final class WebViewScriptsTests: XCTestCase {
             title: "Fixture",
             posterURL: nil
         )
-        XCTAssertNil(WebResourceMediaService.assetOptions(for: resource)[AVURLAssetOverrideMIMETypeKey])
+        if #available(iOS 17.0, *) {
+            XCTAssertNil(WebResourceMediaService.assetOptions(for: resource)[AVURLAssetOverrideMIMETypeKey])
+        }
 
         let webView = WKWebView()
         webView.customUserAgent = "Soulo desktop fixture"
@@ -241,7 +247,7 @@ final class WebViewScriptsTests: XCTestCase {
         let resource = await WebResourceInspectionService.currentVideoResource(webView: web, frame: frame, token: "main")
         XCTAssertEqual(resource?.url.absoluteString, "https://cdn.example.com/show/playlist.m3u8")
         XCTAssertEqual(resource?.delivery, .hls)
-        _ = try await web.evaluateJavaScript("document.querySelector('video source').remove();window.hls={media:document.querySelector('video'),currentLevel:0,url:'https://cdn.example.com/show/playlist.m3u8',levels:[{details:{url:'https://cdn.example.com/show/480/video.m3u8'}}]};true;", in: frame, contentWorld: .page)
+        _ = try await web.evaluateCompatibleJavaScript("document.querySelector('video source').remove();window.hls={media:document.querySelector('video'),currentLevel:0,url:'https://cdn.example.com/show/playlist.m3u8',levels:[{details:{url:'https://cdn.example.com/show/480/video.m3u8'}}]};true;", in: frame, contentWorld: .page)
         let selected = await WebResourceInspectionService.currentVideoResource(webView: web, frame: frame, token: "main")
         XCTAssertEqual(selected?.url.absoluteString, "https://cdn.example.com/show/480/video.m3u8")
     }
@@ -1340,11 +1346,10 @@ final class WebViewScriptsTests: XCTestCase {
         XCTAssertNil(service.webExtensionAction(for: record.id))
     }
 
-    func testAdHidingScriptPublishesHiddenElementStats() {
+    func testAdHidingScriptPublishesTrackerHosts() {
         let script = AdBlockService.adHidingScript(cosmetic: true)
 
         XCTAssertTrue(script.contains("souloAdBlocker"))
-        XCTAssertTrue(script.contains("hiddenCount"))
         XCTAssertTrue(script.contains("trackerHosts"))
         XCTAssertTrue(script.contains("location.hostname"))
         XCTAssertTrue(script.contains("__souloAdBlockInstalled"))

@@ -596,7 +596,7 @@
 "resource_stream_download_invalid_chunk" = "أعاد بث الوسائط مقطعًا غير صالح أو بترتيب غير صحيح.";
 "resource_stream_download_missing_track" = "لم يتضمن البث الذي تم تنزيله مسارات فيديو وصوت قابلة للتشغيل.";
 "resource_stream_download_export_failed" = "تعذر على Soulo دمج الفيديو والصوت اللذين تم تنزيلهما.";
-"resource_stream_playback_download_first" = "لا يمكن معاينة هذا البث المحمي من رابطه المؤقت. نزّله أولًا لتشغيل الملف المحلي.";
+"resource_stream_playback_download_first" = "لا يمكن معاينة هذا البث مباشرة في الوقت الحالي.";
 "platform_invalid_web_url" = "أدخل عنوان موقع صالحًا يبدأ بـ http:// أو https://.";
 
 "library_history_tab" = "السجل";
@@ -637,8 +637,7 @@
 "extension_review_access" = "اختر الأذونات والمواقع التي يمكن لهذه الإضافة الوصول إليها.";
 "extension_limit_commands" = "اختصارات لوحة المفاتيح للإضافات غير متاحة على iOS.";
 "extension_limit_notifications" = "يمكن عرض الإشعارات، لكن أحداث النقر والإغلاق غير مدعومة.";
-"extension_limit_offscreen" = "يقتصر دعم المستندات خارج الشاشة على تشغيل الصوت.";
-
+"extension_limit_offscreen" = "تخضع المستندات خارج الشاشة لقيود iOS؛ وقد لا تتوفر بعض الميزات.";
 "review_support_message" = "شكرًا لدعمك Soulo. تساعدنا مراجعاتك على مواصلة التحسين.";
 "review_open_app_store" = "تقييم في App Store";
 

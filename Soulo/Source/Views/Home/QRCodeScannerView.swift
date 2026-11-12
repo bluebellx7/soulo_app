@@ -38,7 +38,12 @@ struct ScannedContent: Identifiable, Hashable {
         // valid linear codes; revision 2 retains its working CPU detector.
         let revisions = [2]
         #else
-        let revisions = [VNDetectBarcodesRequestRevision4, VNDetectBarcodesRequestRevision3]
+        let revisions: [Int]
+        if #available(iOS 17.0, *) {
+            revisions = [VNDetectBarcodesRequestRevision4, VNDetectBarcodesRequestRevision3]
+        } else {
+            revisions = [VNDetectBarcodesRequestRevision3, VNDetectBarcodesRequestRevision2]
+        }
         #endif
         for revision in revisions {
             try Task.checkCancellation()

@@ -125,7 +125,7 @@ struct BookReaderView: View {
         .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: controller.controlsVisible)
         .accessibilityAction(named: Text(ToolText.text("appearance"))) { controller.controlsVisible.toggle() }
         .accessibilityAction(.escape) { dismiss() }
-        .onChange(of: controller.fraction) { _, fraction in if !isSeeking { seekPosition = fraction } }
+        .onCompatibleChange(of: controller.fraction) { _, fraction in if !isSeeking { seekPosition = fraction } }
         .sheet(item: $contentsPresentation) { mode in
             ReaderContentsSheet(controller: controller, query: $query, mode: mode)
         }
@@ -135,7 +135,7 @@ struct BookReaderView: View {
                     if isPDF {
                         LabeledContent(ToolText.text("page_zoom"), value: pdfZoom.formatted(.percent.precision(.fractionLength(0))))
                         Slider(value: $pdfZoom, in: 1...3, step: 0.1) { Text(ToolText.text("page_zoom")) }
-                            .onChange(of: pdfZoom) { _, value in
+                            .onCompatibleChange(of: pdfZoom) { _, value in
                                 guard let view = controller.pdfView else { return }
                                 view.autoScales = false
                                 view.scaleFactor = view.scaleFactorForSizeToFit * value
@@ -180,7 +180,7 @@ struct BookReaderView: View {
                     Image(systemName: "sun.min")
                     Slider(value: $brightness, in: 0.05...1)
                         .accessibilityLabel(ToolText.text("appearance"))
-                        .onChange(of: brightness) { _, value in brightnessScreen?.brightness = value }
+                        .onCompatibleChange(of: brightness) { _, value in brightnessScreen?.brightness = value }
                     Image(systemName: "sun.max")
                 }
                 themePicker
@@ -189,11 +189,11 @@ struct BookReaderView: View {
             .presentationDetents([.height(190)])
             .presentationDragIndicator(.visible)
         }
-        .onChange(of: chineseDisplay) { _, _ in updateStyle() }
-        .onChange(of: font) { _, _ in updateStyle() }
-        .onChange(of: fontSize) { _, _ in updateStyle() }
-        .onChange(of: lineHeight) { _, _ in updateStyle() }
-        .onChange(of: theme) { _, _ in updateStyle() }
+        .onCompatibleChange(of: chineseDisplay) { _, _ in updateStyle() }
+        .onCompatibleChange(of: font) { _, _ in updateStyle() }
+        .onCompatibleChange(of: fontSize) { _, _ in updateStyle() }
+        .onCompatibleChange(of: lineHeight) { _, _ in updateStyle() }
+        .onCompatibleChange(of: theme) { _, _ in updateStyle() }
         .sheet(isPresented: $showFileInfo) { fileInfoSheet }
         .onAppear {
             let action = dismiss
@@ -207,7 +207,7 @@ struct BookReaderView: View {
     @ViewBuilder private var readerContent: some View {
         Group {
             if let error = controller.error {
-                ContentUnavailableView {
+                CompatibleUnavailableView {
                     Label(ToolText.text("reading_failed"), systemImage: "book.closed")
                 } description: {
                     Text(error)

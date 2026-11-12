@@ -436,3 +436,65 @@
 "files_move_busy" = "Wacht tot het downloaden is voltooid voordat u deze items verplaatst of hernoemt.";
 "video_show_episode_dock" = "Afleveringsdock weergeven";
 "video_show_episode_dock_desc" = "Een gekoppelde afleveringsknop weergeven op webpagina's met afleveringen. Afleveringen blijven beschikbaar in de speler.";
+
+// Webpage share preview
+"page_share_image" = "Afbeelding delen";
+"page_share_link" = "Link delen";
+"page_share_preview" = "Voorbeeld van zichtbaar gebied";
+"page_share_brand" = "Soulo: Multi-zoekbrowser";
+
+"video_export_mp4" = "MP4 exporteren";
+"video_export_failed" = "Deze video kon niet als MP4 worden geëxporteerd. Het oorspronkelijke bestand is behouden.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Gebaren met twee vingers";
+"gesture_hint" = "Beweeg twee vingers samen opzij. De aanwijzing volgt je vingers; beweeg terug om te annuleren. Navigeren met één vinger en knijpen om te zoomen blijven beschikbaar.";
+"gesture_swipe_right" = "Veeg naar rechts";
+"gesture_swipe_left" = "Veeg naar links";
+"gesture_show_toolbar" = "Toon werkbalk";
+"gesture_quick_menu" = "Snelmenu";
+"gesture_preview" = "Gebaar bekijken";
+"zoom_remember" = "Websitezoom onthouden";
+"zoom_hint" = "Zoom uit het paginamenu wordt per domein opgeslagen. Wijzigingen in privétabbladen worden niet opgeslagen.";
+"zoom_empty" = "Geen zoomniveaus opgeslagen";
+"zoom_reset_all" = "Alles terug naar 100%";
+
+"shake_direction" = "Richting";
+"shake_direction_horizontal" = "Links en rechts";
+"shake_direction_vertical" = "Omhoog en omlaag";
+"shake_direction_any" = "Elke richting";
+
+"gesture_settings_title" = "Webpaginagebaren";
+"gesture_no_history" = "Als teruggaan niet kan";
+"gesture_no_history_hint" = "Veeg zonder eerdere pagina vanaf de linkerrand naar rechts om de actie te tonen. Beweeg terug om te annuleren. Kies Geen om uit te schakelen.";
+
+"gesture_execution" = "Actie uitvoeren";
+
+"gesture_execute_release" = "Bij loslaten";
+
+"gesture_execute_tap" = "Bij tikken";
+
+"gesture_feedback" = "Actiefeedback";
+
+"gesture_haptics" = "Trillen";
+
+"gesture_sound" = "Geluid";
+
+"gesture_feedback_preview" = "Feedback proberen";
+
+"media_start_timeout" = "Het afspelen is niet gestart. Controleer het netwerk of wissel van speler.";
+
+"wallpaper_appearance_hint" = "Kies aparte achtergronden voor de lichte en donkere weergave. Ze wisselen automatisch met de app.";
+
+"wallpaper_image_overlay" = "Laag over afbeelding";
+
+"auto_hide_platform_bar" = "Platformbalk automatisch verbergen";
+
+"top_tab_bar_hidden_title" = "Bovenste tabbladenbalk verborgen";
+
+"top_tab_bar_reopen_hint" = "Tik onderaan op de tabbladenknop, open het menu … en schakel de bovenste tabbladenbalk weer in.";
+
+"wallpaper_image_blur" = "Matglas";
+"wallpaper_blur_amount" = "Vervagingssterkte";
+
+"auto_hide_platform_bar_hint" = "De platformbalk wordt verborgen als je een zoekresultaat opent. Ga terug naar de resultaten of start een nieuwe zoekopdracht om de balk weer te tonen. Je kunt dit in dit menu uitschakelen.";

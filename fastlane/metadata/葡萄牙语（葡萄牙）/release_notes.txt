@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Corrigido um problema que podia substituir um separador existente ao abrir um favorito ou um item do histórico.
-• Melhorias no arranque, no carregamento de páginas e nas interações do ecrã inicial.
-• Melhorias nos controlos de ecrã completo, na rotação e no estado de reprodução ao mudar de app.
-• Melhorias no restauro de separadores fechados, nas pré-visualizações e nos detalhes da interface.
+• Fundos separados para os modos claro e escuro e opção de camada sobre a imagem.
+• Cores da página inicial melhoradas; a pré-visualização do fundo segue o tema da app.
+• Pré-visualize, partilhe e guarde fundos em Fotografias.
+• Definições dos separadores superiores com novo separador e opção de ocultar a barra de plataformas após navegar.

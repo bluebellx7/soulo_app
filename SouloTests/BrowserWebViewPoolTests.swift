@@ -242,7 +242,7 @@ final class BrowserWebViewPoolTests: XCTestCase {
         XCTAssertFalse(web.configuration.userContentController.userScripts.isEmpty)
         let runtime = try await web.evaluateJavaScript("window.firstDocumentRuntime") as? Bool
         XCTAssertEqual(runtime, true, "Document-start runtime must precede the pending first request")
-        let selectionRuntime = try await web.evaluateJavaScript("window.__souloTextSelection === true", in: nil, contentWorld: .defaultClient) as? Bool
+        let selectionRuntime = try await web.evaluateCompatibleJavaScript("window.__souloTextSelection === true", in: nil, contentWorld: .defaultClient) as? Bool
         XCTAssertEqual(selectionRuntime, true)
         let pageHasSelectionGlobal = try await web.evaluateJavaScript("window.__souloTextSelection === true") as? Bool
         XCTAssertEqual(pageHasSelectionGlobal, false, "Keep native script globals isolated from page code")

@@ -6,8 +6,6 @@ Le schede e i gruppi di siti usati di recente appaiono per primi e la vista si a
 
 Download BT: importa file .torrent o link magnet, scegli i file, metti in pausa e riprendi. Su iOS 26 possono continuare in background quando il sistema lo consente; le versioni precedenti salvano i progressi e li mettono in pausa. Riproduci i media BT compatibili durante il download e apri file MKV. Importa link ed2k/thunder. I download richiedono fonti disponibili; la riproduzione dipende dai codec.
 
-Navigazione più fluida, controlli video migliorati e anteprime dei file più chiare.
-
 Scegli cinque scorciatoie facoltative nella home per download, file, segnalibri, cronologia, sfondi e altre pagine. La barra delle schede della libreria si compatta durante lo scorrimento.
 
 Trova informazioni, leggi articoli, riproduci contenuti e gestisci i download nello stesso browser.
@@ -20,11 +18,11 @@ Organizza la navigazione con più schede, ricerca vocale, cronologia e gruppi di
 • File: trova immagini, audio, video e documenti nelle pagine e salva più immagini insieme. Sfoglia i file in elenco o nella griglia delle copertine, rinominali, importa da Foto e trasferisci via Wi-Fi.
 • Archivi: estrai ZIP, RAR e 7z. Crea archivi ZIP e 7z con protezione facoltativa tramite password.
 • Lettura: TXT, PDF, EPUB e libri MOBI, AZW e AZW3 senza DRM compatibili. Regola font, dimensioni, interlinea e sfondo. Nei libri con testo adattabile puoi alternare cinese semplificato e tradizionale. La modalità lettura estrae gli articoli e consente di proseguire alla pagina successiva.
-• Estensioni: importa, modifica ed esegui script JavaScript, gestisci siti e autorizzazioni e installa WebExtension compatibili.
+• Script ed estensioni: importa, modifica ed esegui script JavaScript. Le WebExtension compatibili richiedono iOS 18.4 o successivo; il supporto varia in base all’estensione.
 • Strumenti web: traduzione, ricerca nella pagina, screenshot a pagina intera, riconoscimento del testo nelle immagini, modalità desktop/mobile, user agent personalizzato e certificati dei siti.
 • Preferiti: cartelle e importazione/esportazione di segnalibri HTML usati da Chrome, Edge e altri browser. Crea codici QR delle pagine con l’icona del sito per condividerli, salvarli o copiarli.
-• Personalizzazione: sfondi, barra degli strumenti e azioni rapide dell’icona dell’app. Accedi agli strumenti con widget, Comandi Rapidi e schemi URL. Sincronizza facoltativamente le impostazioni con iCloud.
+• Personalizzazione: sfondi, barra degli strumenti e azioni rapide dell’icona dell’app. Accedi agli strumenti con widget, Comandi Rapidi e schemi URL. Sincronizza facoltativamente le impostazioni con iCloud. Sfondi separati per l’aspetto chiaro e scuro, con interruttore del velo sull’immagine.
 
-La disponibilità di contenuti multimediali, libri ed estensioni dipende da formati, limiti dei siti e versione del sistema.
+Media, libri ed estensioni dipendono da formati, restrizioni dei siti e versione del sistema. Prima di scaricare, verifica che la fonte consenta il salvataggio.
 
 Assistenza: contact@dkluge.com

@@ -436,3 +436,65 @@
 "files_move_busy" = "Espereu que acabin les baixades abans de moure o canviar el nom d'aquests elements.";
 "video_show_episode_dock" = "Mostra el moll d'episodis";
 "video_show_episode_dock_desc" = "Mostra un botó d'episodi acoblat a pàgines web amb episodis. Els episodis romanen disponibles dins del reproductor.";
+
+// Webpage share preview
+"page_share_image" = "Comparteix imatge";
+"page_share_link" = "Comparteix l’enllaç";
+"page_share_preview" = "Previsualització de l’àrea visible";
+"page_share_brand" = "Soulo: Cercador web";
+
+"video_export_mp4" = "Exporta MP4";
+"video_export_failed" = "No s’ha pogut exportar aquest vídeo com a MP4. S’ha conservat el fitxer original.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Gestos amb dos dits";
+"gesture_hint" = "Mou dos dits junts de costat. La indicació segueix els dits; torna enrere per cancel·lar. La navegació amb un dit i el zoom amb pinça continuen disponibles.";
+"gesture_swipe_right" = "Llisca a la dreta";
+"gesture_swipe_left" = "Llisca a l’esquerra";
+"gesture_show_toolbar" = "Mostra la barra d’eines";
+"gesture_quick_menu" = "Menú ràpid";
+"gesture_preview" = "Previsualitza el gest";
+"zoom_remember" = "Recorda el zoom dels llocs";
+"zoom_hint" = "El zoom del menú de la pàgina es desa per domini. Els canvis en pestanyes privades no es desen.";
+"zoom_empty" = "No hi ha nivells de zoom desats";
+"zoom_reset_all" = "Restableix-ho tot al 100%";
+
+"shake_direction" = "Direcció";
+"shake_direction_horizontal" = "Esquerra i dreta";
+"shake_direction_vertical" = "Amunt i avall";
+"shake_direction_any" = "Qualsevol direcció";
+
+"gesture_settings_title" = "Gestos de pàgines web";
+"gesture_no_history" = "Si no es pot retrocedir";
+"gesture_no_history_hint" = "Sense cap pàgina anterior, llisca a la dreta des de la vora esquerra per mostrar l’acció. Torna enrere per cancel·lar. Tria Cap per desactivar-la.";
+
+"gesture_execution" = "Executa l’acció";
+
+"gesture_execute_release" = "En deixar anar";
+
+"gesture_execute_tap" = "En tocar";
+
+"gesture_feedback" = "Resposta de l’acció";
+
+"gesture_haptics" = "Vibració";
+
+"gesture_sound" = "So";
+
+"gesture_feedback_preview" = "Previsualitza la resposta";
+
+"media_start_timeout" = "La reproducció no ha començat. Comprova la xarxa o canvia de reproductor.";
+
+"wallpaper_appearance_hint" = "Tria un fons per a l’aspecte clar i un altre per al fosc. Canvien automàticament amb l’app.";
+
+"wallpaper_image_overlay" = "Capa sobre la imatge";
+
+"auto_hide_platform_bar" = "Amaga la barra de plataformes";
+
+"top_tab_bar_hidden_title" = "Barra de pestanyes superior amagada";
+
+"top_tab_bar_reopen_hint" = "Per tornar-la a mostrar, toca el botó de pestanyes de sota, obre el menú … i activa la barra de pestanyes superior.";
+
+"wallpaper_image_blur" = "Vidre esmerilat";
+"wallpaper_blur_amount" = "Intensitat del desenfocament";
+
+"auto_hide_platform_bar_hint" = "La barra de plataformes s'amaga en obrir un resultat de cerca. Torna als resultats o inicia una cerca nova per mostrar-la. Pots desactivar-ho en aquest menú.";

@@ -211,6 +211,7 @@
     if (pageSources.length) return {pageURL:location.href,sources:pageSources};
     const resourceGroups = discoverResourceGroups();
     const groups = new Set([...document.querySelectorAll(listSelector),...resourceGroups.keys()]);
+    const currentQuery = location.search.match(/^\?(\d+)-(\d+)-(\d+)\.html$/i);
     const current = location.pathname.match(playPath), videoPage = !!document.querySelector('video,iframe[src*="player"],iframe[src*="play/"]');
     // Fall back to repeated, labelled links instead of any site's class names.
     // Require playback context so numeric pagination and catalog cards stay out.
@@ -264,6 +265,10 @@
         if (link.closest('.pagination,.pager,.related,.recommend,.recommendations,[data-recommendations]')) continue;
         const url = destination(link);
         if (!url) continue;
+        if (currentQuery) {
+          const query = url.search.match(/^\?(\d+)-(\d+)-(\d+)\.html$/i);
+          if (url.pathname !== location.pathname || !query || query[1] !== currentQuery[1]) continue;
+        }
         const title = clean(link.textContent || link.getAttribute('title') || link.getAttribute('aria-label'));
         const match = url.pathname.match(playPath);
         if (!title || !(match || episodeLabel(title) || (known && /^(?:HD|BD|正片|全集)/i.test(title)))) continue;

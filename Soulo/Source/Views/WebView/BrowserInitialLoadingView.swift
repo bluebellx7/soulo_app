@@ -77,7 +77,7 @@ private struct LoadingBrandMark: View {
         .clipped()
         .onAppear { isVisible = true }
         .onDisappear { isVisible = false }
-        .onChange(of: shouldAnimate, initial: true) { _, animate in
+        .onCompatibleChange(of: shouldAnimate, initial: true) { _, animate in
             rotating = animate
         }
     }

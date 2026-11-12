@@ -436,3 +436,65 @@
 "files_move_busy" = "Tunggu hingga pengunduhan selesai sebelum memindahkan atau mengganti nama item ini.";
 "video_show_episode_dock" = "Tampilkan dok episode";
 "video_show_episode_dock_desc" = "Tampilkan tombol episode yang dipasang di halaman web dengan episode. Episode tetap tersedia di dalam pemutar.";
+
+// Webpage share preview
+"page_share_image" = "Bagikan gambar";
+"page_share_link" = "Bagikan tautan";
+"page_share_preview" = "Pratinjau area terlihat";
+"page_share_brand" = "Soulo: Browser Multi-Pencarian";
+
+"video_export_mp4" = "Ekspor MP4";
+"video_export_failed" = "Video ini tidak dapat diekspor sebagai MP4. File asli tetap disimpan.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Gestur Dua Jari";
+"gesture_hint" = "Gerakkan dua jari bersama ke samping. Petunjuk mengikuti jari; geser kembali untuk membatalkan. Navigasi satu jari dan zoom cubit tetap tersedia.";
+"gesture_swipe_right" = "Geser ke Kanan";
+"gesture_swipe_left" = "Geser ke Kiri";
+"gesture_show_toolbar" = "Tampilkan Bilah Alat";
+"gesture_quick_menu" = "Menu Cepat";
+"gesture_preview" = "Pratinjau Gestur";
+"zoom_remember" = "Ingat Zoom Situs";
+"zoom_hint" = "Zoom dari menu halaman disimpan per domain. Perubahan di tab pribadi tidak disimpan.";
+"zoom_empty" = "Belum Ada Zoom Tersimpan";
+"zoom_reset_all" = "Atur Ulang Semua ke 100%";
+
+"shake_direction" = "Arah";
+"shake_direction_horizontal" = "Kiri dan Kanan";
+"shake_direction_vertical" = "Atas dan Bawah";
+"shake_direction_any" = "Semua Arah";
+
+"gesture_settings_title" = "Gestur Halaman Web";
+"gesture_no_history" = "Saat Tidak Bisa Kembali";
+"gesture_no_history_hint" = "Jika tidak ada halaman sebelumnya, geser ke kanan dari tepi kiri untuk melihat tindakan. Geser kembali untuk membatalkan. Pilih Tidak Ada untuk menonaktifkan.";
+
+"gesture_execution" = "Jalankan Tindakan";
+
+"gesture_execute_release" = "Saat Dilepas";
+
+"gesture_execute_tap" = "Saat Diketuk";
+
+"gesture_feedback" = "Umpan Balik Tindakan";
+
+"gesture_haptics" = "Getaran";
+
+"gesture_sound" = "Suara";
+
+"gesture_feedback_preview" = "Pratinjau Umpan Balik";
+
+"media_start_timeout" = "Pemutaran belum dimulai. Periksa jaringan atau ganti pemutar.";
+
+"wallpaper_appearance_hint" = "Atur latar terpisah untuk tampilan terang dan gelap. Latar berganti otomatis mengikuti aplikasi.";
+
+"wallpaper_image_overlay" = "Lapisan Gambar";
+
+"auto_hide_platform_bar" = "Sembunyikan Bar Platform Otomatis";
+
+"top_tab_bar_hidden_title" = "Bar Tab Atas Disembunyikan";
+
+"top_tab_bar_reopen_hint" = "Untuk menampilkannya lagi, ketuk tombol tab di bawah, buka menu … lalu aktifkan bar tab atas.";
+
+"wallpaper_image_blur" = "Kaca Buram";
+"wallpaper_blur_amount" = "Kekuatan Buram";
+
+"auto_hide_platform_bar_hint" = "Bilah platform disembunyikan saat membuka hasil pencarian. Kembali ke hasil atau mulai pencarian baru untuk menampilkannya lagi. Anda dapat mematikannya di menu ini.";

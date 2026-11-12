@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 private enum PlatformManagementLayout: String {
     case list
@@ -8,6 +9,8 @@ private enum PlatformManagementLayout: String {
 struct PlatformManagementView: View {
     @ObservedObject private var defaultSearch = GroupDefaultSearchService.shared
     @State private var searchGroup: GroupSection?
+    @State private var draggedPlatform: UUID?
+    @State private var draggedSection: String?
     @ObservedObject private var store = PlatformDataStore.shared
     @State private var showAddGroup = false
     @State private var newGroupName = ""
@@ -89,6 +92,7 @@ struct PlatformManagementView: View {
                 } label: {
                     Image(systemName: layout == .list ? "square.grid.2x2" : "list.bullet")
                 }
+                .accessibilityIdentifier("platform.layout")
                 .accessibilityLabel(
                     LanguageManager.shared.localizedString(
                         layout == .list ? "platform_grid_view" : "platform_list_view"
@@ -204,6 +208,23 @@ struct PlatformManagementView: View {
         .listStyle(.insetGrouped)
     }
 
+    private func moveGridPlatform(_ source: UUID, over target: UUID, in section: GroupSection) {
+        let ordered: [SearchPlatform]
+        if let region = section.region { ordered = store.platforms(for: region) }
+        else if let group = store.customGroups.first(where: { $0.id == section.customGroup?.id }) {
+            ordered = store.platformsForGroup(group)
+        } else { return }
+        guard let from = ordered.firstIndex(where: { $0.id == source }),
+              let to = ordered.firstIndex(where: { $0.id == target }), from != to else { return }
+        withAnimation(.easeInOut(duration: 0.18)) {
+            if let region = section.region {
+                store.movePlatform(from: IndexSet(integer: from), to: to > from ? to + 1 : to, within: region)
+            } else if let group = section.customGroup {
+                store.movePlatform(from: IndexSet(integer: from), to: to > from ? to + 1 : to, withinGroup: group.id)
+            }
+        }
+    }
+
     private var gridContent: some View {
         ScrollView {
             LazyVStack(spacing: 22) {
@@ -228,6 +249,15 @@ struct PlatformManagementView: View {
                                         onEdit: { editingPlatform = platform },
                                         onToggleVisibility: { store.toggleVisibility(for: platform.id) }
                                     )
+                                    .accessibilityIdentifier("platform.grid.\(platform.id.uuidString)")
+                                    .onDrag {
+                                        draggedPlatform = platform.id; draggedSection = section.id
+                                        return NSItemProvider(object: platform.id.uuidString as NSString)
+                                    }
+                                    .onDrop(of: [UTType.text], delegate: PlatformGridDropDelegate(
+                                        target: platform.id, section: section.id,
+                                        dragged: $draggedPlatform, draggedSection: $draggedSection,
+                                        move: { source, target in moveGridPlatform(source, over: target, in: section) }))
                                 }
                             }
                         }
@@ -693,4 +723,25 @@ struct MovePlatformToRegionSheet: View {
 struct RegionWrapper: Identifiable {
     let id = UUID()
     let region: PlatformRegion
+}
+
+private struct PlatformGridDropDelegate: DropDelegate {
+    let target: UUID
+    let section: String
+    @Binding var dragged: UUID?
+    @Binding var draggedSection: String?
+    let move: (UUID, UUID) -> Void
+    func validateDrop(info: DropInfo) -> Bool { dragged != nil && draggedSection == section }
+    func dropEntered(info: DropInfo) {
+        guard validateDrop(info: info), let dragged, dragged != target else { return }
+        move(dragged, target)
+    }
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: validateDrop(info: info) ? .move : .forbidden)
+    }
+    func performDrop(info: DropInfo) -> Bool {
+        guard validateDrop(info: info) else { return false }
+        dragged = nil; draggedSection = nil
+        return true
+    }
 }

@@ -2,36 +2,46 @@ import SwiftUI
 
 struct WallpaperBackground: View {
     var isAnimating = true
+    @Environment(\.colorScheme) private var colorScheme
     @ObservedObject var wallpaperManager = WallpaperManager.shared
 
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                Color(red: 0.05, green: 0.07, blue: 0.16)
+                Color(uiColor: .systemBackground)
                 wallpaperLayer(size: geo.size)
-                scrimLayer
+                // Keep a chosen solid color exact in both appearances. The
+                // readability scrim is only needed for images and gradients.
+                if wallpaperManager.showsWallpaperOverlay {
+                    scrimLayer
+                }
             }
         }
         .ignoresSafeArea()
         .accessibilityHidden(true)
+        .onAppear { wallpaperManager.setDisplayAppearance(WallpaperAppearance(colorScheme)) }
+        .onCompatibleChange(of: colorScheme) { _, scheme in wallpaperManager.setDisplayAppearance(WallpaperAppearance(scheme)) }
     }
 
     @ViewBuilder
     private func wallpaperLayer(size: CGSize) -> some View {
         switch wallpaperManager.source {
         case .gradient:
-            let p = wallpaperManager.currentGradient
+            let p = wallpaperManager.gradient(for: WallpaperAppearance(colorScheme))
             DynamicGradientView(colors: p.colors, isPaused: !isAnimating)
 
         case .solid:
-            Color(hex: wallpaperManager.solidColor)
+            Color(hex: wallpaperManager.solidColor(for: WallpaperAppearance(colorScheme)))
 
         case .photo:
             if let img = wallpaperManager.customImage {
                 photoImage(img, size: size)
                     .id(wallpaperManager.currentImageID)
                     .transition(.opacity.animation(.easeInOut(duration: 0.8)))
-                Color.black.opacity(0.3)
+                if wallpaperManager.imageOverlayEnabled {
+                    Color.black
+                        .opacity(colorScheme == .light ? WallpaperContrast.lightOverlayOpacity : WallpaperContrast.darkOverlayOpacity)
+                }
             } else {
                 DynamicGradientView.fallback(isPaused: !isAnimating)
             }
@@ -41,7 +51,10 @@ struct WallpaperBackground: View {
                 photoImage(img, size: size)
                     .id(wallpaperManager.currentImageID)
                     .transition(.opacity.animation(.easeInOut(duration: 0.8)))
-                Color.black.opacity(0.3)
+                if wallpaperManager.imageOverlayEnabled {
+                    Color.black
+                        .opacity(colorScheme == .light ? WallpaperContrast.lightOverlayOpacity : WallpaperContrast.darkOverlayOpacity)
+                }
             } else {
                 DynamicGradientView.fallback(isPaused: !isAnimating)
             }
@@ -49,16 +62,28 @@ struct WallpaperBackground: View {
     }
 
     private func photoImage(_ img: UIImage, size: CGSize) -> some View {
-        Image(uiImage: img)
+        let radius = wallpaperManager.imageBlurRadius
+        return Image(uiImage: img)
             .resizable()
             .scaledToFill()
+            .frame(width: size.width, height: size.height)
+            .clipped()
+            // Extend the image beyond the crop so blur cannot fade its edges.
+            .scaleEffect(radius > 0 ? 1 + radius * 4 / max(1, min(size.width, size.height)) : 1)
+            .blur(radius: radius, opaque: true)
             .frame(width: size.width, height: size.height)
             .clipped()
     }
 
     private var scrimLayer: some View {
         ZStack {
-            if wallpaperManager.isCurrentWallpaperLight {
+            if colorScheme == .light && wallpaperManager.source != .gradient {
+                LinearGradient(colors: [.black.opacity(0.08), .clear, .clear, .black.opacity(0.12)],
+                               startPoint: .top, endPoint: .bottom)
+            } else if colorScheme == .light {
+                LinearGradient(colors: [.white.opacity(0.16), .clear, .clear, .white.opacity(0.22)],
+                               startPoint: .top, endPoint: .bottom)
+            } else if wallpaperManager.isCurrentWallpaperLight {
                 LinearGradient(
                     colors: [
                         .black.opacity(0.06),

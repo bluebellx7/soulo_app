@@ -34,12 +34,7 @@ private struct NativeVideoHoldSpeedFeedback: View {
         .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: session.temporaryRateFeedback)
         .overlay {
             if let feedback = session.gestureFeedback {
-                Label(feedback.text, systemImage: feedback.symbol)
-                    .font(.system(size: 16, weight: .semibold)).monospacedDigit()
-                    .foregroundStyle(.white.opacity(0.92))
-                    .padding(.horizontal, 18).padding(.vertical, 12)
-                    .background(.black.opacity(0.65), in: Capsule())
-                    .accessibilityIdentifier("media.native.gesture.feedback")
+                VideoGestureFeedbackView(feedback: feedback, identifier: "media.native.gesture.feedback")
             }
         }
         .allowsHitTesting(false)
@@ -58,6 +53,13 @@ struct VideoOrientationErrorAlert: ViewModifier {
 }
 
 @MainActor enum VideoOrientation {
+    static func fullscreenLandscape(video: Bool, scene: UIWindowScene?) -> Bool {
+        fullscreenLandscape(video: video, isPad: UIDevice.current.userInterfaceIdiom == .pad,
+                            currentLandscape: scene?.interfaceOrientation.isLandscape == true)
+    }
+    static func fullscreenLandscape(video: Bool, isPad: Bool, currentLandscape: Bool) -> Bool {
+        isPad ? currentLandscape : video || currentLandscape
+    }
     private struct Restoration {
         let id: UUID
         let orientation: UIInterfaceOrientation
@@ -222,6 +224,7 @@ struct VideoOrientationErrorAlert: ViewModifier {
     private var orientationObserver: NSObjectProtocol?
     private var activationObserver: NSObjectProtocol?
     private var orientationError: ((Error) -> Void)?
+    private weak var explicitFullscreenController: UIViewController?
     private weak var fullscreenController: UIViewController?
     private weak var fullscreenWindow: UIWindow?
     private let deviceOrientation: @MainActor () -> UIDeviceOrientation
@@ -272,13 +275,14 @@ struct VideoOrientationErrorAlert: ViewModifier {
         let owner = VideoOrientation.capture(in: scene, sourceView: view)
         sourceWindow = owner.1; sourceController = owner.2
     }
-    func setFullscreenOrientation(_ landscape: Bool, in scene: UIWindowScene, sourceView: UIView?, onError: @escaping (Error) -> Void) {
+    func setFullscreenOrientation(_ landscape: Bool, in scene: UIWindowScene, sourceView: UIView?, fullscreenController: UIViewController? = nil, onError: @escaping (Error) -> Void) {
+        explicitFullscreenController = fullscreenController
         if token == nil { prepare(token: "native-tools", scene: scene, prefersLandscape: landscape, nativeWebKit: true, sourceView: sourceView) }
         transition?.cancel()
         if let orientationObserver { NotificationCenter.default.removeObserver(orientationObserver) }
         if let activationObserver { NotificationCenter.default.removeObserver(activationObserver) }
         activationObserver = nil
-        orientationObserver = nil; fullscreenController = nil; fullscreenWindow = nil
+        orientationObserver = nil; self.fullscreenController = nil; fullscreenWindow = nil
         prefersLandscape = landscape; began = false
         if let token { begin(token: token, onError: onError) }
         if !landscape { VideoOrientation.request(.portrait, in: scene, onError: onError) }
@@ -325,9 +329,11 @@ struct VideoOrientationErrorAlert: ViewModifier {
             // for the fullscreen controller's actual supported orientations.
             for _ in 0..<60 {
                 guard !Task.isCancelled, let self, self.token == token, let scene = self.scene else { return }
-                let window = scene.keyWindow
-                var controller = window?.rootViewController
-                while let presented = controller?.presentedViewController { controller = presented }
+                let window = self.explicitFullscreenController?.viewIfLoaded?.window ?? scene.keyWindow
+                var controller = self.explicitFullscreenController ?? window?.rootViewController
+                if self.explicitFullscreenController == nil {
+                    while let presented = controller?.presentedViewController { controller = presented }
+                }
                 let fullscreenPresented = window !== self.sourceWindow
                     || controller !== self.sourceController
                 if fullscreenPresented, let controller,
@@ -366,7 +372,7 @@ struct VideoOrientationErrorAlert: ViewModifier {
         if let activationObserver { NotificationCenter.default.removeObserver(activationObserver) }
         activationObserver = nil
         orientationObserver = nil; orientationError = nil
-        fullscreenController = nil; fullscreenWindow = nil
+        fullscreenController = nil; fullscreenWindow = nil; explicitFullscreenController = nil
         if tracksDeviceOrientation { UIDevice.current.endGeneratingDeviceOrientationNotifications() }
         tracksDeviceOrientation = false
         let scene = scene, source = sourceWindow, controller = sourceController, orientation = original,
@@ -517,8 +523,8 @@ private struct SessionPlayerController: UIViewControllerRepresentable {
             handingOff = false
             sharedHost = SharedVideoFullscreenHost.present(owner: ownerID, in: window, content: AnyView(content()),
                 identifier: "media.fullscreen.player",
-                landscape: MediaSession.shared.videoIsLandscape || window.windowScene?.interfaceOrientation.isLandscape == true,
-                onClose: { [weak self] in self?.finish() })
+                landscape: VideoOrientation.fullscreenLandscape(video: MediaSession.shared.videoIsLandscape, scene: window.windowScene),
+                onClose: { [weak self] reason in self?.finish(reason: reason) })
             if sharedHost == nil {
                 if presentationRetry == nil {
                     presentationRetry = Task { @MainActor [weak self, weak host] in
@@ -553,7 +559,9 @@ private struct SessionPlayerController: UIViewControllerRepresentable {
                 }
             }
             return NativeFullscreenContent(options: actions, close: { [weak self] in
-                guard let self else { return }; self.sharedHost?.dismiss(owner: self.ownerID)
+                guard let self else { return }; self.sharedHost?.dismiss(owner: self.ownerID, reason: .closePlayback)
+            }, exitFullscreen: { [weak self] in
+                guard let self else { return }; self.sharedHost?.dismiss(owner: self.ownerID, reason: .exitFullscreen)
             })
         }
         func dismiss() {
@@ -561,12 +569,12 @@ private struct SessionPlayerController: UIViewControllerRepresentable {
             guard !handingOff else { return }
             sharedHost?.release(owner: ownerID)
         }
-        private func finish() {
+        private func finish(reason: VideoFullscreenDismissal) {
             sharedHost = nil; presentedOptions = nil; handingOff = false
             MediaSession.shared.endTemporaryRate()
             options?.fullscreenChanged?(false)
             selection?.wrappedValue = false; onDismiss?()
-            options?.closePlayback?()
+            if reason == .closePlayback { options?.closePlayback?() }
         }
     }
 }
@@ -574,6 +582,7 @@ private struct SessionPlayerController: UIViewControllerRepresentable {
 private struct NativeFullscreenContent: View {
     var options: FileVideoOptions?
     let close: () -> Void
+    let exitFullscreen: () -> Void
     @ObservedObject private var session = MediaSession.shared
     @ObservedObject private var pip = MediaSession.shared.pictureInPicture
     @StateObject private var controls = VideoControlsVisibility()
@@ -587,10 +596,10 @@ private struct NativeFullscreenContent: View {
         MediaPlaybackSurface()
             .overlay { NativeVideoHoldSpeedFeedback() }
             .modifier(VideoFullscreenChrome(visibility: controls, title: session.title,
-                elapsed: session.elapsed, duration: session.duration, rate: session.rate,
-                playing: session.playing, buffering: buffering, error: session.error,
+                elapsed: session.seekPreview ?? session.elapsed, duration: session.duration, rate: session.rate,
+                playing: session.playing, buffering: buffering && session.isPlaybackRequested, error: session.error ?? session.startupWarning,
                 identifier: "media.native", closeIdentifier: "media.fullscreen.close", options: options,
-                close: close, toggle: session.toggle, seek: session.seek, setRate: { _ = session.setRate($0) },
+                close: close, exitFullscreen: exitFullscreen, toggle: session.toggle, seek: session.seek, setRate: { _ = session.setRate($0) },
                 holdBegan: session.beginTemporaryRate, holdEnded: session.endTemporaryRate) {
                     if let audioGroup { trackMenu(audioGroup, title: ToolText.text("media_audio_tracks"), selected: $selectedAudio) }
                     if let subtitleGroup { trackMenu(subtitleGroup, title: ToolText.text("media_subtitles"), selected: $selectedSubtitle) }
@@ -601,7 +610,7 @@ private struct NativeFullscreenContent: View {
             let waiting = status == .waitingToPlayAtSpecifiedRate
             if buffering != waiting { buffering = waiting }
         }
-        .onChange(of: pip.active) { _, active in if active { close() } }
+        .onCompatibleChange(of: pip.active) { _, active in if active { close() } }
         .task(id: session.player.currentItem.map(ObjectIdentifier.init)) {
             audioGroup = nil; subtitleGroup = nil; selectedAudio = nil; selectedSubtitle = nil
             guard let item = session.player.currentItem else { return }
@@ -728,7 +737,7 @@ struct MediaControls: View {
             }
             .buttonStyle(.borderless)
             .frame(minHeight: 44)
-            if let error = session.error {
+            if let error = session.error ?? session.startupWarning {
                 Text(error).font(.footnote).foregroundStyle(.secondary).textSelection(.enabled)
             }
         }.padding()
@@ -741,13 +750,22 @@ struct MediaControls: View {
 
 struct MediaPlayerPage: View {
     @ObservedObject var session = MediaSession.shared
+    @Environment(\.dismiss) private var dismiss
     var body: some View {
         Group {
-            if let url = session.url, url.isFileURL {
+            if let context = session.webMediaContext {
+                WebResourceMediaPlayerView(resource: context.resource, pageURL: context.pageURL,
+                    sourceWebView: context.sourceWebView,
+                    assetProvider: { await WebResourceMediaService.asset(for: context.resource, webView: context.sourceWebView) },
+                    downloadAction: { try? await WebResourceDownloadService.shared.download(context.resource,
+                        pageURL: context.resource.sourcePageURL ?? context.pageURL, webView: context.sourceWebView) },
+                    souloStartAt: session.elapsed, souloPlaying: session.isPlaybackRequested, episodeList: context.episodeList,
+                    systemPlayer: session.soulo == nil, restoredContext: context, embedded: true)
+            } else if let url = session.url, url.isFileURL {
                 FileMediaPlaybackView(url: url, initialSystemPlayer: session.soulo == nil)
             } else if let playback = session.soulo, let source = playback.sourceURL {
                 MatroskaPlayerView(url: source, title: session.title, options: restoredOptions)
-            } else { MediaPlaybackContent(initialSystemPlayer: true) }
+            } else { MediaPlaybackContent(initialSystemPlayer: true, onFullscreenClose: { dismiss() }) }
         }
         .navigationTitle(session.title)
         .navigationBarTitleDisplayMode(.inline)
@@ -757,6 +775,7 @@ struct MediaPlayerPage: View {
             if system { session.restoreSystemFromSoulo() }
         }
         result.shareURL = session.url
+        result.closePlayback = { dismiss() }
         if session.hasVideo, session.pictureInPicture.supported {
             result.requestPictureInPicture = { _, _ in session.restoreSystemFromSoulo(pictureInPicture: true) }
         }
@@ -792,7 +811,7 @@ struct MediaMiniPlayer: View {
                     : (trailing ? geometry.size.width - width / 2 - 12 : width / 2 + 12)
                 Group {
                     if docked {
-                        Button { withAnimation(.snappy) { docked = false } } label: {
+                        Button { withAnimation(.compatibleSnappy) { docked = false } } label: {
                             Image(systemName: trailing ? "chevron.left" : "chevron.right")
                                 .font(.system(size: AppControlMetrics.iconSize, weight: .semibold))
                                 .foregroundStyle(.primary)
@@ -803,20 +822,26 @@ struct MediaMiniPlayer: View {
                         }.buttonStyle(.plain).accessibilityLabel(ToolText.text("expand_player"))
                     } else {
                         HStack(spacing: 6) {
-                            Button { withAnimation(.snappy) { docked = true } } label: {
+                            Button { withAnimation(.compatibleSnappy) { docked = true } } label: {
                                 Image(systemName: trailing ? "chevron.right" : "chevron.left")
                                     .font(.system(size: 11, weight: .semibold))
                                     .foregroundStyle(.secondary).frame(width: 44, height: 44)
                             }.buttonStyle(.plain).accessibilityLabel(ToolText.text("dock_player"))
                             if session.hasVideo {
-                                Group {
-                                    if let playback = session.soulo { MatroskaSurface(playback: playback, primary: false) }
-                                    else { InlineVideoSurface(countsAsPlayerSurface: false) }
-                                }
+                                Button { session.expanded = true } label: {
+                                    Group {
+                                        if let playback = session.soulo { MatroskaSurface(playback: playback, primary: false) }
+                                        else { InlineVideoSurface(countsAsPlayerSurface: false) }
+                                    }
+                                    .allowsHitTesting(false)
                                     .frame(width: 52, height: 38)
                                     .clipShape(RoundedRectangle(cornerRadius: 7))
+                                    .frame(height: 44)
                                     .contentShape(Rectangle())
-                                    .onTapGesture { session.expanded = true }
+                                }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(ToolText.text("expand_player"))
+                                    .accessibilityIdentifier("media.mini.open")
                                     .highPriorityGesture(
                                         DragGesture(minimumDistance: 12)
                                             .onChanged { value in
@@ -854,9 +879,13 @@ struct MediaMiniPlayer: View {
                                     if session.soulo != nil { session.restoreSystemFromSoulo(pictureInPicture: true) }
                                     else { pip.requestStart() }
                                 } label: {
-                                    Image(systemName: "pip.enter").font(.system(size: 17)).frame(width: 44, height: 44)
+                                    Group {
+                                        if session.souloSystemAvailabilityPending { ProgressView().controlSize(.small) }
+                                        else { Image(systemName: "pip.enter").font(.system(size: 17)) }
+                                    }.frame(width: 44, height: 44)
                                 }.buttonStyle(.plain)
                                     .accessibilityLabel(ToolText.text("media_pip"))
+                                    .accessibilityValue(session.souloSystemAvailabilityPending ? ToolText.text("loading") : "")
                                     .accessibilityIdentifier("media.mini.picture-in-picture")
                                     .disabled(session.soulo != nil && !session.souloSystemAvailable)
                             }
@@ -890,7 +919,7 @@ struct MediaMiniPlayer: View {
                 .gesture(DragGesture(minimumDistance: 12)
                     .updating($drag) { value, state, _ in state = value.translation }
                     .onEnded { value in
-                        withAnimation(.snappy) {
+                        withAnimation(.compatibleSnappy) {
                             let end = center + value.translation.width
                             trailing = end > geometry.size.width / 2
                             docked = MiniPlayerDocking.shouldDock(center: end, width: geometry.size.width)
@@ -898,7 +927,7 @@ struct MediaMiniPlayer: View {
                         }
                     })
                 .accessibilityAction(named: ToolText.text(docked ? "expand_player" : "dock_player")) {
-                    withAnimation(.snappy) { docked.toggle() }
+                    withAnimation(.compatibleSnappy) { docked.toggle() }
                 }
             }
         }
@@ -999,24 +1028,102 @@ struct AirPlayRoutePicker: UIViewRepresentable {
 private struct MediaPlayerNavigation: ViewModifier {
     @Environment(\.libraryPageIsActive) private var libraryPageIsActive
     @ObservedObject private var session = MediaSession.shared
-    @State private var visible = false
+    @StateObject private var presentation = MediaPlayerNavigationContext()
     @State private var showingPlayer = false
     func body(content: Content) -> some View {
         content
-            .onAppear { visible = true }
-            .onDisappear { visible = false }
-            .onChange(of: session.expanded) { _, requested in
-                guard requested, visible, libraryPageIsActive, !showingPlayer else { return }
-                session.expanded = false
-                showingPlayer = true
+            .background { MediaPlayerNavigationAnchor(context: presentation).allowsHitTesting(false) }
+            .task(id: session.expanded && libraryPageIsActive) {
+                guard session.expanded, libraryPageIsActive else { return }
+                // Retained pager content does not reliably receive another
+                // onAppear after a destination is popped. Use the actual top
+                // navigation controller, and allow an in-flight pop to finish.
+                for _ in 0..<80 {
+                    guard !Task.isCancelled, session.expanded else { return }
+                    if !showingPlayer, presentation.canPresent {
+                        if #unavailable(iOS 17.0) {
+                            if presentation.presentLegacyPlayer() { session.expanded = false }
+                            return
+                        }
+                        // Only the active page may consume the shared request.
+                        session.expanded = false
+                        showingPlayer = true
+                        return
+                    }
+                    do { try await Task.sleep(for: .milliseconds(25)) } catch { return }
+                }
             }
-            .navigationDestination(isPresented: $showingPlayer) {
-                MediaPlayerPage().toolbar(.visible, for: .navigationBar)
-            }
+            .modifier(NativePlayerDestination(isPresented: $showingPlayer))
     }
 }
+
+@MainActor private final class MediaPlayerNavigationContext: ObservableObject {
+    weak var anchor: UIView?
+    private var navigation: UINavigationController? {
+        var responder: UIResponder? = anchor
+        while let current = responder {
+            if let controller = current as? UIViewController, let navigation = controller.navigationController { return navigation }
+            responder = current.next
+        }
+        return nil
+    }
+    func presentLegacyPlayer() -> Bool {
+        guard canPresent, let navigation else { return false }
+        navigation.pushViewController(UIHostingController(rootView: LegacyPlayerPage()), animated: true)
+        return true
+    }
+    var canPresent: Bool {
+        guard let anchor, anchor.window?.isKeyWindow == true else { return false }
+        var responder: UIResponder? = anchor
+        while let current = responder {
+            if let controller = current as? UIViewController, let navigation = controller.navigationController {
+                guard let top = navigation.topViewController, navigation.transitionCoordinator == nil,
+                      !top.isBeingDismissed, top.presentedViewController == nil,
+                      let visibleView = top.viewIfLoaded else { return false }
+                return anchor.isDescendant(of: visibleView)
+            }
+            responder = current.next
+        }
+        return false
+    }
+}
+
+private struct MediaPlayerNavigationAnchor: UIViewRepresentable {
+    let context: MediaPlayerNavigationContext
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(); view.isUserInteractionEnabled = false
+        self.context.anchor = view
+        return view
+    }
+    func updateUIView(_ view: UIView, context: Context) { self.context.anchor = view }
+}
+
 extension View {
     func mediaPlayerNavigation() -> some View { modifier(MediaPlayerNavigation()) }
+}
+
+private struct NativePlayerDestination: ViewModifier {
+    @Binding var isPresented: Bool
+    @ViewBuilder func body(content: Content) -> some View {
+        if #available(iOS 17.0, *) {
+            content.navigationDestination(isPresented: $isPresented) {
+                MediaPlayerPage().toolbar(.visible, for: .navigationBar)
+            }
+        } else { content }
+    }
+}
+
+private struct LegacyPlayerPage: View {
+    @ObservedObject private var language = LanguageManager.shared
+    @ObservedObject private var theme = ThemeManager.shared
+    var body: some View {
+        MediaPlayerPage().toolbar(.visible, for: .navigationBar)
+            .environmentObject(language).environmentObject(theme)
+            .environment(\.locale, language.locale)
+            .environment(\.layoutDirection, language.locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
+            .tint(Color.themePrimary)
+            .accentColor(Color.themePrimary)
+    }
 }
 
 private struct InlineVideoSurface: UIViewRepresentable {
@@ -1027,13 +1134,21 @@ private struct InlineVideoSurface: UIViewRepresentable {
         let attachment = UUID()
         var countsAsPlayerSurface = true
         var onTap: (() -> Void)?
+        var doubleTap: UITapGestureRecognizer?
+        private var lastDoubleTap: CFTimeInterval = 0
         weak var video: MediaPictureInPicture.Surface?
         var verticalGesture: VideoVerticalGestureHandler?
         @objc func handleHold(_ gesture: UILongPressGestureRecognizer) {
             if gesture.state == .began { MediaSession.shared.beginTemporaryRate() }
             else if [.ended, .cancelled, .failed].contains(gesture.state) { MediaSession.shared.endTemporaryRate() }
         }
-        @objc func handleTap() { onTap?() }
+        @objc func handleTap() {
+            if CACurrentMediaTime() - lastDoubleTap > 0.25 { onTap?() }
+        }
+        @objc func handleDoubleTap() {
+            lastDoubleTap = CACurrentMediaTime()
+            MediaSession.shared.toggle()
+        }
         override func layoutSubviews() {
             super.layoutSubviews()
             video?.transform = .identity
@@ -1058,18 +1173,26 @@ private struct InlineVideoSurface: UIViewRepresentable {
                 enabled: { MediaSession.shared.hasVideo },
                 brightness: { MediaSession.shared.adjustBrightness($0, screen: $1) },
                 feedback: { MediaSession.shared.showAdjustment($0, value: $1) },
+                position: { (MediaSession.shared.elapsed, MediaSession.shared.duration) },
+                previewSeek: { MediaSession.shared.showSeekPreview($0, start: $1) },
+                seek: { MediaSession.shared.seek($0) },
                 ended: { MediaSession.shared.finishAdjustment() })
             let hold = UILongPressGestureRecognizer(target: host, action: #selector(Host.handleHold(_:)))
             hold.minimumPressDuration = 0.4
             host.addGestureRecognizer(hold)
             let tap = UITapGestureRecognizer(target: host, action: #selector(Host.handleTap))
             tap.require(toFail: hold)
+            let doubleTap = UITapGestureRecognizer(target: host, action: #selector(Host.handleDoubleTap))
+            doubleTap.numberOfTapsRequired = 2
+            doubleTap.name = "SouloInlinePlaybackDoubleTap"
+            doubleTap.isEnabled = onTap != nil
+            host.doubleTap = doubleTap; host.addGestureRecognizer(doubleTap)
             host.addGestureRecognizer(tap)
             Task { @MainActor in MediaSession.shared.playerSurfaces += 1 }
         }
         return host
     }
-    func updateUIView(_ view: Host, context: Context) { view.onTap = onTap; view.setNeedsLayout() }
+    func updateUIView(_ view: Host, context: Context) { view.onTap = onTap; view.doubleTap?.isEnabled = onTap != nil; view.setNeedsLayout() }
     static func dismantleUIView(_ view: Host, coordinator: Void) {
         // The session keeps the source layer alive while system PiP is active.
         if view.video?.superview === view { view.video?.removeFromSuperview() }
@@ -1107,6 +1230,7 @@ struct MediaPlaybackContent: View {
     var airPlayRequested: Binding<Bool>?
     var initialSouloPlayback: (time: Double, playing: Bool)?
     var initialSouloSource: DownloadPlaybackSource?
+    var restoredSoulo: MatroskaPlayback?
     var initialFullscreen = false
     var initialSystemPlayer = false
     var initialEpisodes = false
@@ -1136,6 +1260,18 @@ struct MediaPlaybackContent: View {
     @State private var capturing = false
     @State private var captureTask: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss
+    private func restoreExistingSouloPlayback() {
+        guard !appliedInitialPlayer, let playback = restoredSoulo,
+              let prepared = playback.preparedPlaybackSource else { return }
+        let source = prepared.native
+        transfer = ExtendedMediaTransfer(source: source, originalURL: session.url ?? prepared.url,
+            title: session.title,
+            context: playback.playbackRequestContext ?? VideoPlaybackRequestContext(
+                url: prepared.url, referrer: source.pageURL, userAgent: AppConstants.mobileWebViewUserAgent, cookies: []),
+            prepared: prepared, time: playback.elapsed, playing: playback.isPlaybackRequested)
+        appliedInitialPlayer = true
+    }
+
     private func fullscreen() {
         showingFullScreen = true
     }
@@ -1262,7 +1398,7 @@ struct MediaPlaybackContent: View {
                 playing: session.playing, identifier: "media.native", options: options,
                 showEpisodes: showEpisodes ?? { episodesVisible = true }, expand: fullscreen,
                 interactionChanged: controls.interaction, seek: session.seek, setRate: { _ = session.setRate($0) })
-            if let error = session.error { Text(error).font(.footnote).foregroundStyle(.secondary) }
+            if let error = session.error ?? session.startupWarning { VideoPlaybackStatus(message: error, identifier: "media.native.status").foregroundStyle(.secondary) }
         }.padding(20).background(Color(UIColor.secondarySystemGroupedBackground))
     }
 
@@ -1357,6 +1493,7 @@ struct MediaPlaybackContent: View {
             if !isVisible { session.playerPages += 1 }
             isVisible = true
             if !appliedInitialPlayer && initialFullscreen { preserveFullscreen = true }
+            restoreExistingSouloPlayback()
             if initialSystemPlayer, initialFullscreen, !appliedInitialPlayer {
                 appliedInitialPlayer = true; fullscreen()
             }
@@ -1364,10 +1501,10 @@ struct MediaPlaybackContent: View {
             applyPreferredPlayer()
             startPendingSouloPlayback()
         }
-        .onChange(of: transfer != nil, initial: true) { _, soulo in playerSelection?.wrappedValue = !soulo }
-        .onChange(of: initialSouloSource.map(ObjectIdentifier.init)) { _, _ in applyExplicitSouloSource() }
-        .onChange(of: session.url) { _, _ in if isVisible { applyPreferredPlayer() } }
-        .onChange(of: session.hasVideo, initial: true) { _, hasVideo in
+        .onCompatibleChange(of: transfer != nil, initial: true) { _, soulo in playerSelection?.wrappedValue = !soulo }
+        .task(id: initialSouloSource.map(ObjectIdentifier.init)) { applyExplicitSouloSource() }
+        .onCompatibleChange(of: session.url) { _, _ in if isVisible { applyPreferredPlayer() } }
+        .onCompatibleChange(of: session.hasVideo, initial: true) { _, hasVideo in
             guard hasVideo, (isVisible || showingFullScreen || preserveFullscreen), !appliedInitialPlayer else { return }
             guard !ownsExplicitSource || initialSouloSource != nil else { return }
             if initialSystemPlayer {

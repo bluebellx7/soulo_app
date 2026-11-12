@@ -212,3 +212,19 @@ import XCTest
         }
     }
 }
+
+extension WebDomainNavigationTests {
+    func testPendingConfirmationKeepsSourceURLUntilDecisionAndCommit() throws {
+        let model = WebViewModel(), source = URL(string: "https://source.example/watch")!, destination = URL(string: "https://other.example/video")!
+        model.currentURL = destination
+        var decision: Bool?
+        let id = try XCTUnwrap(model.requestDomainNavigationConfirmation(from: source, to: destination) { decision = $0 })
+        model.updateCurrentURL(destination, fromObservation: true)
+        XCTAssertEqual(model.currentURL, source)
+        XCTAssertNil(decision)
+        model.resolveDomainNavigationConfirmation(id: id, allowed: true)
+        XCTAssertEqual(decision, true)
+        model.updateCurrentURL(destination)
+        XCTAssertEqual(model.currentURL, destination)
+    }
+}

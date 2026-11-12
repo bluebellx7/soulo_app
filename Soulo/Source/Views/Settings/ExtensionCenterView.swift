@@ -197,7 +197,7 @@ struct ExtensionCenterView: View {
             }
 
             if service.userScripts.isEmpty && SiteOptimizationRules.all.isEmpty {
-                ContentUnavailableView(
+                CompatibleUnavailableView(
                     LanguageManager.shared.localizedString("userscripts_empty"),
                     systemImage: "puzzlepiece.extension",
                     description: Text(LanguageManager.shared.localizedString("userscripts_empty_desc"))

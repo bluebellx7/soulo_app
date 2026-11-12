@@ -503,3 +503,65 @@
 "files_move_busy" = "Wait for downloads to finish before moving or renaming these items.";
 "video_show_episode_dock" = "Show episode dock";
 "video_show_episode_dock_desc" = "Show a docked episode button on web pages with episodes. Episodes remain available inside the player.";
+
+// Webpage share preview
+"page_share_image" = "Share Image";
+"page_share_link" = "Share Link";
+"page_share_preview" = "Visible Area Preview";
+"page_share_brand" = "Soulo: Multi-Search Browser";
+
+"video_export_mp4" = "Export MP4";
+"video_export_failed" = "This video couldn’t be exported as MP4. The original file was kept.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Two-Finger Gestures";
+"gesture_hint" = "Move two fingers sideways together. The hint follows your fingers; move back to cancel. One-finger navigation and pinch zoom remain available.";
+"gesture_swipe_right" = "Swipe Right";
+"gesture_swipe_left" = "Swipe Left";
+"gesture_show_toolbar" = "Show Toolbar";
+"gesture_quick_menu" = "Quick Menu";
+"gesture_preview" = "Preview Gesture";
+"zoom_remember" = "Remember Website Zoom";
+"zoom_hint" = "Zoom from the webpage menu is saved for each domain. Changes in private tabs are not saved.";
+"zoom_empty" = "No Saved Zoom Levels";
+"zoom_reset_all" = "Reset All to 100%";
+
+"shake_direction" = "Direction";
+"shake_direction_horizontal" = "Left and Right";
+"shake_direction_vertical" = "Up and Down";
+"shake_direction_any" = "Any Direction";
+
+"gesture_settings_title" = "Webpage Gestures";
+"gesture_no_history" = "When Back Is Unavailable";
+"gesture_no_history_hint" = "With no back history, swipe right from the left edge to reveal this action. Move back to cancel. Choose None to disable.";
+
+"gesture_execution" = "Execute Action";
+
+"gesture_execute_release" = "On Release";
+
+"gesture_execute_tap" = "On Tap";
+
+"gesture_feedback" = "Action Feedback";
+
+"gesture_haptics" = "Haptics";
+
+"gesture_sound" = "Sound";
+
+"gesture_feedback_preview" = "Preview Feedback";
+
+"media_start_timeout" = "Playback has not started. Check your network or switch players.";
+
+"wallpaper_appearance_hint" = "Set backgrounds separately for light and dark appearance. They switch automatically with the app.";
+
+"wallpaper_image_overlay" = "Image Overlay";
+
+"auto_hide_platform_bar" = "Auto-hide Platform Bar";
+
+"top_tab_bar_hidden_title" = "Top Tab Bar Hidden";
+
+"top_tab_bar_reopen_hint" = "To show it again, tap the tabs button at the bottom, open the … menu, then turn on Show Top Tab Bar.";
+
+"wallpaper_image_blur" = "Frosted Glass";
+"wallpaper_blur_amount" = "Blur Strength";
+
+"auto_hide_platform_bar_hint" = "The platform bar hides when you open a search result. Go back to the results or start a new search to show it again. You can turn this off in this menu.";

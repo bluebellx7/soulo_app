@@ -1,0 +1,285 @@
+{
+  "checked_at": "2026-11-02T10:17:50.197236+00:00",
+  "scope": "New reading and music entries, online tools, HTTP scan of existing directories, and browser follow-up of flagged directory links.",
+  "http_scan": {
+    "total_entries": 263,
+    "distinct_urls": 243,
+    "notes": "HTTP restrictions alone were not treated as proof of a dead website. Existing search sources may require login or human verification."
+  },
+  "changes": [
+    {
+      "id": "annas-archive",
+      "url": "https://annas-archive.gl/"
+    },
+    {
+      "id": "shuge",
+      "url": "https://www.shuge.org/"
+    },
+    {
+      "id": "jamendo",
+      "url": "https://www.jamendo.com/start"
+    },
+    {
+      "id": "fma",
+      "url": "https://freemusicarchive.org/home"
+    },
+    {
+      "id": "czzy",
+      "url": "https://www.4kcz.com/"
+    }
+  ],
+  "deferred_entries": [
+    {
+      "directory": "reading",
+      "entry": {
+        "id": "z-library",
+        "name": "Z-Library",
+        "name_en": "Z-Library",
+        "url": "https://zh.z-library.sk/",
+        "category": "ebooks",
+        "description": "按书名、作者或 ISBN 查找中外文电子书。",
+        "description_en": "Search for eBooks by title, author, or ISBN.",
+        "tags": [
+          "电子书",
+          "中外文",
+          "书库"
+        ],
+        "tags_en": [
+          "eBooks",
+          "Multilingual",
+          "Library"
+        ],
+        "mark": "Z",
+        "icon": "images/reading-icons/z-library.png"
+      },
+      "reason": "Official entry and published alternatives could not be reached in the test networks."
+    },
+    {
+      "directory": "reading",
+      "entry": {
+        "id": "internet-archive",
+        "name": "互联网档案馆",
+        "name_en": "Internet Archive",
+        "url": "https://archive.org/details/texts",
+        "category": "public",
+        "description": "数字图书、期刊与历史文献，部分借阅需要账号。",
+        "description_en": "Digitized books, periodicals, and historical documents; borrowing may require an account.",
+        "tags": [
+          "数字馆藏",
+          "图书",
+          "期刊"
+        ],
+        "tags_en": [
+          "Digital archives",
+          "Books",
+          "Periodicals"
+        ],
+        "mark": "IA",
+        "icon": "images/reading-icons/internet-archive.png"
+      },
+      "reason": "Collection shell opened, but the catalog did not finish loading during browser checks."
+    },
+    {
+      "directory": "music",
+      "entry": {
+        "id": "91flac",
+        "name": "91FLAC",
+        "name_en": "91FLAC",
+        "url": "https://www.91flac.com/",
+        "category": "search",
+        "description": "按歌曲、歌手和榜单查找无损音源与 MP3 版本。",
+        "description_en": "Find lossless and MP3 editions by song, artist, or chart.",
+        "tags": [
+          "无损音乐",
+          "FLAC",
+          "榜单"
+        ],
+        "tags_en": [
+          "Lossless",
+          "FLAC",
+          "Charts"
+        ],
+        "mark": "91"
+      },
+      "reason": "Persistently stopped at Cloudflare verification in browser and server checks."
+    },
+    {
+      "directory": "music",
+      "entry": {
+        "id": "live-music-archive",
+        "name": "现场音乐档案",
+        "name_en": "Live Music Archive",
+        "url": "https://archive.org/details/etree",
+        "category": "albums",
+        "description": "现场演出录音合集，按艺人和演出日期查找可下载音源。",
+        "description_en": "Browse downloadable concert recordings by artist and performance date.",
+        "tags": [
+          "现场",
+          "演唱会",
+          "录音"
+        ],
+        "tags_en": [
+          "Live",
+          "Concerts",
+          "Recordings"
+        ],
+        "mark": "IA",
+        "icon": "images/reading-icons/internet-archive.png"
+      },
+      "reason": "Collection shell opened, but the catalog did not finish loading during browser checks."
+    },
+    {
+      "directory": "music",
+      "entry": {
+        "id": "pixabay-music",
+        "name": "Pixabay Music",
+        "name_en": "Pixabay Music",
+        "url": "https://pixabay.com/music/",
+        "category": "audio",
+        "description": "按氛围、风格和时长筛选视频配乐，提供试听与下载。",
+        "description_en": "Find downloadable background music by mood, genre, and duration.",
+        "tags": [
+          "视频配乐",
+          "背景音乐",
+          "试听"
+        ],
+        "tags_en": [
+          "Soundtracks",
+          "Background music",
+          "Preview"
+        ],
+        "mark": "P",
+        "icon": "images/music-icons/pixabay-music.png"
+      },
+      "reason": "Persistently stopped at Cloudflare verification in browser and server checks."
+    },
+    {
+      "directory": "movies",
+      "entry": {
+        "id": "site-dushe05-com",
+        "name": "毒舌电影",
+        "url": "https://www.dushe05.com/",
+        "category": "streaming",
+        "description": "电影、海外剧集与综艺作品目录。",
+        "tags": [
+          "电影",
+          "海外剧"
+        ],
+        "mark": "毒",
+        "icon": "images/movie-icons/site-dushe05-com.png"
+      },
+      "reason": "Browser navigation redirected to Baidu instead of the listed film catalog."
+    }
+  ],
+  "test_artifacts": "/tmp/soulo-deploy-audit-20261102",
+  "limitations": "Point-in-time navigation checks, not guarantees for every region, account state, search result, or media download.",
+  "published_new_resources": [
+    {
+      "directory": "reading",
+      "id": "ibooks",
+      "url": "https://ibooks.org.cn/"
+    },
+    {
+      "directory": "reading",
+      "id": "sobooks",
+      "url": "https://sobooks.cc/"
+    },
+    {
+      "directory": "reading",
+      "id": "kgbook",
+      "url": "https://kgbook.com/"
+    },
+    {
+      "directory": "reading",
+      "id": "annas-archive",
+      "url": "https://annas-archive.gl/"
+    },
+    {
+      "directory": "reading",
+      "id": "jiumo",
+      "url": "https://www.jiumodiary.com/"
+    },
+    {
+      "directory": "reading",
+      "id": "shuge",
+      "url": "https://www.shuge.org/"
+    },
+    {
+      "directory": "reading",
+      "id": "gutenberg",
+      "url": "https://www.gutenberg.org/"
+    },
+    {
+      "directory": "reading",
+      "id": "standard-ebooks",
+      "url": "https://standardebooks.org/"
+    },
+    {
+      "directory": "reading",
+      "id": "bookfere",
+      "url": "https://bookfere.com/"
+    },
+    {
+      "directory": "reading",
+      "id": "calibre",
+      "url": "https://calibre-ebook.com/"
+    },
+    {
+      "directory": "music",
+      "id": "gd-music",
+      "url": "https://music.gdstudio.org/"
+    },
+    {
+      "directory": "music",
+      "id": "gequbao",
+      "url": "https://www.gequbao.com/"
+    },
+    {
+      "directory": "music",
+      "id": "fangpi",
+      "url": "https://www.fangpiw.com/"
+    },
+    {
+      "directory": "music",
+      "id": "hifiba",
+      "url": "https://hifiba.com/"
+    },
+    {
+      "directory": "music",
+      "id": "bandcamp",
+      "url": "https://bandcamp.com/"
+    },
+    {
+      "directory": "music",
+      "id": "jamendo",
+      "url": "https://www.jamendo.com/start"
+    },
+    {
+      "directory": "music",
+      "id": "fma",
+      "url": "https://freemusicarchive.org/home"
+    },
+    {
+      "directory": "music",
+      "id": "freesound",
+      "url": "https://freesound.org/"
+    },
+    {
+      "directory": "music",
+      "id": "opentracks",
+      "url": "https://opentracks.com/"
+    }
+  ],
+  "published_new_count": 19,
+  "deployment": {
+    "verified_at": "2026-11-02T10:23:19.765201+00:00",
+    "url": "https://soulo.dkluge.com/",
+    "matching_production_files": 51,
+    "smoke_test_pages": 8,
+    "viewports": [
+      1280,
+      390
+    ],
+    "backup": "/root/app-websites/backups/soulo-before-reading-music-20261102-102000.tar.gz"
+  }
+}

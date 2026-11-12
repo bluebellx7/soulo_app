@@ -609,27 +609,27 @@
 "extensions_reload_note" = "একটি এক্সটেনশন বা স্ক্রিপ্ট পরিবর্তন করার পরে খোলা পৃষ্ঠাগুলি পুনরায় লোড হয় যাতে নতুন অবস্থা কার্যকর হয়৷";
 "web_extensions" = "ওয়েব এক্সটেনশন";
 "userscripts" = "স্ক্রিপ্ট এবং এক্সটেনশন";
-"userscripts_installed" = "আমার স্ক্রিপ্ট";
-"userscripts_install" = "স্ক্রিপ্ট ইনস্টল করুন";
+"userscripts_installed" = "ইনস্টল করা";
+"userscripts_install" = "যোগ করুন";
 "userscripts_empty" = "না UserScripts";
 "userscripts_empty_desc" = "একটি .user.js ফাইল ইনস্টল করুন বা এটি এখানে দেখতে একটি স্ক্রিপ্ট তৈরি করুন৷";
 "userscripts_reload_note" = "একটি স্ক্রিপ্ট ইনস্টল, সম্পাদনা, সক্ষম, নিষ্ক্রিয় বা সরানোর পরে খোলা পৃষ্ঠাগুলি পুনরায় লোড হয়।";
 "userscript_experimental_badge" = "সামঞ্জস্য";
 "userscript_experimental_title" = "UserScript সামঞ্জস্য";
-"userscript_experimental_desc" = "সাইটের নিয়ম, নথি-শুরু/শেষ, বিস্তৃত GM স্টোরেজ এবং পৃষ্ঠা API, স্ক্রিপ্ট কমান্ড, বিজ্ঞপ্তি, ট্যাব, ডাউনলোড, কুকি, সংস্থান এবং অনুমতি-স্কোপড অনুরোধ সমর্থন করে। ইনস্টল করার আগে প্রতিটি স্ক্রিপ্ট পর্যালোচনা করুন।";
+"userscript_experimental_desc" = "ইউজারস্ক্রিপ্ট মিলে যাওয়া সাইট পড়তে বা বদলাতে এবং অনুমোদিত API ব্যবহার করতে পারে। সামঞ্জস্য স্ক্রিপ্টভেদে আলাদা। শুধু বিশ্বস্ত স্ক্রিপ্ট ইনস্টল করুন।";
 "extension_choose_file" = "ফাইল বা ফোল্ডার বাছুন…";
 "extension_installing" = "এক্সটেনশন চেক এবং ইনস্টল করা হচ্ছে...";
 "extension_install_failed" = "এক্সটেনশন ইনস্টল করা যায়নি";
 "extension_permissions_summary" = "%d অনুমতি · %d ওয়েবসাইটের নিয়ম";
 "extension_untitled" = "শিরোনামহীন এক্সটেনশন";
-"web_extension_install_footer" = "বর্তমান Soulo ট্যাবে এটি খুলতে উৎস সারির যে কোনো জায়গায় আলতো চাপুন। Soulo CRX, XPI, ZIP এবং সমর্থিত স্টোর ইন্সটল অ্যাকশন চিনতে পারে, তারপর ইনস্টল করার আগে জিজ্ঞাসা করে। কিছু ডেস্কটপ-শুধু API অনুপলব্ধ হতে পারে।";
+"web_extension_install_footer" = "সামঞ্জস্যপূর্ণ স্টোর লিংক থেকে এক্সটেনশন ইনস্টল করুন, অথবা CRX, XPI, ZIP বা এক্সটেনশন ফোল্ডার আমদানি করুন। আগে অনুমতি ও সামঞ্জস্য যাচাই করুন; কিছু ডেস্কটপ ফিচার নেই।";
 "web_extension_install_store_link" = "স্টোর লিঙ্ক থেকে ইনস্টল করুন...";
 "web_extension_browse_sources" = "এক্সটেনশন স্টোর ব্রাউজ করুন";
 "web_extension_browse_sources_footer" = "স্টোর গেট বোতাম শুধুমাত্র তাদের নিজস্ব ডেস্কটপ ব্রাউজার সমর্থন করে। একটি এক্সটেনশন বিস্তারিত পৃষ্ঠার লিঙ্ক কপি করুন, তারপর Soulo-এ স্টোর লিঙ্ক থেকে ইনস্টল করুন।";
 "web_extension_store_install_title" = "একটি স্টোর এক্সটেনশন ইনস্টল করুন";
 "extension_page_banner_title" = "Soulo দিয়ে ইনস্টল করুন";
-"extension_page_banner_desc" = "Soulo এই এক্সটেনশনটি সরাসরি ইনস্টল করতে পারে।";
-"web_extension_store_install_desc" = "একটি ক্রোম ওয়েব স্টোর, মাইক্রোসফ্ট এজ অ্যাড-অন, বা ফায়ারফক্স অ্যাড-অন বিশদ পৃষ্ঠা লিঙ্ক আটকান। Soulo নিজেই প্যাকেজটি ডাউনলোড করে, তাই স্টোরের বেমানান গেট বোতামটি ব্যবহার করা হয় না।";
+"extension_page_banner_desc" = "ইনস্টলের আগে সামঞ্জস্য ও অনুমতি যাচাই করুন।";
+"web_extension_store_install_desc" = "Chrome, Edge বা Firefox এক্সটেনশনের বিস্তারিত পাতার লিংক পেস্ট করুন এবং ইনস্টল নিশ্চিত করার আগে সামঞ্জস্য ও অনুমতি যাচাই করুন।";
 "web_extension_store_link_placeholder" = "এক্সটেনশন পৃষ্ঠা লিঙ্ক বা Chrome এক্সটেনশন আইডি";
 "web_extension_store_invalid_link" = "ক্রোম, এজ, বা ফায়ারফক্স, একটি ক্রোম এক্সটেনশন আইডি, বা একটি সরাসরি CRX, XPI, বা ZIP লিঙ্ক থেকে একটি এক্সটেনশন বিস্তারিত পৃষ্ঠার লিঙ্ক আটকান৷";
 "web_extension_store_https_required" = "এক্সটেনশন প্যাকেজ অবশ্যই একটি নিরাপদ HTTPS লিঙ্ক ব্যবহার করবে।";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "মিডিয়া স্ট্রিমটি একটি অবৈধ বা ভুল ক্রমের খণ্ড ফেরত দিয়েছে।";
 "resource_stream_download_missing_track" = "ডাউনলোড করা স্ট্রিমে চালানো যায় এমন ভিডিও ও অডিও ট্র্যাক ছিল না।";
 "resource_stream_download_export_failed" = "Soulo ডাউনলোড করা ভিডিও ও অডিও একত্র করতে পারেনি।";
-"resource_stream_playback_download_first" = "এই সুরক্ষিত স্ট্রিমের অস্থায়ী লিঙ্ক থেকে প্রিভিউ দেখা যায় না। স্থানীয় ফাইল চালাতে আগে ডাউনলোড করুন।";
+"resource_stream_playback_download_first" = "এই স্ট্রিমটি এখন সরাসরি প্রিভিউ করা যাচ্ছে না।";
 "platform_invalid_web_url" = "http:// বা https:// দিয়ে শুরু হওয়া একটি বৈধ ওয়েব ঠিকানা লিখুন।";
 
 "library_history_tab" = "ইতিহাস";
@@ -889,8 +889,7 @@
 "extension_review_access" = "এই এক্সটেনশন কোন অনুমতি ও ওয়েবসাইট ব্যবহার করতে পারবে তা বেছে নিন।";
 "extension_limit_commands" = "iOS-এ এক্সটেনশনের কীবোর্ড শর্টকাট উপলব্ধ নয়।";
 "extension_limit_notifications" = "বিজ্ঞপ্তি দেখানো যায়, তবে ক্লিক ও বন্ধ করার ইভেন্ট সমর্থিত নয়।";
-"extension_limit_offscreen" = "অফস্ক্রিন নথি শুধু অডিও চালানো সমর্থন করে।";
-
+"extension_limit_offscreen" = "অফস্ক্রিন ডকুমেন্ট iOS-এর সীমাবদ্ধতার অধীন; কিছু বৈশিষ্ট্য অনুপলব্ধ হতে পারে।";
 "review_support_message" = "Soulo-কে সমর্থন করার জন্য ধন্যবাদ। আপনার মতামত আমাদের আরও উন্নতি করতে সাহায্য করে।";
 "review_open_app_store" = "App Store-এ রিভিউ দিন";
 

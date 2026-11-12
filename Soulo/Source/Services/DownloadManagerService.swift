@@ -7,12 +7,15 @@ import WebKit
 @MainActor
 final class DownloadPlaybackSource {
     let asset: AVURLAsset
+    /// Native download owner, kept separate from the AVPlayer resource.
+    let downloadAsset: AVURLAsset?
     let pageURL: URL?
     let persistsPosition: Bool
     weak var webView: WKWebView?
     private var packageToRemove: URL?
     /// Keeps a playback-scoped local resource alive after its sheet is closed.
     var resourceLease: AnyObject?
+    var webMediaContext: WebMediaPlaybackContext?
 
     func removePackageWhenReleased(_ url: URL) { packageToRemove = url }
 
@@ -24,8 +27,9 @@ final class DownloadPlaybackSource {
         }
     }
 
-    init(asset: AVURLAsset, pageURL: URL?, webView: WKWebView?, persistPosition: Bool? = nil) {
+    init(asset: AVURLAsset, pageURL: URL?, webView: WKWebView?, persistPosition: Bool? = nil, downloadAsset: AVURLAsset? = nil) {
         self.asset = asset
+        self.downloadAsset = downloadAsset
         self.pageURL = pageURL
         self.webView = webView
         persistsPosition = persistPosition ?? webView?.configuration.websiteDataStore.isPersistent ?? true
@@ -140,10 +144,13 @@ final class DownloadManagerService: ObservableObject {
     private let progressPersistence = DeferredPersistence()
     private var playbackSources: [UUID: DownloadPlaybackSource] = [:]
 
-    func registerPlaybackSource(id: UUID, asset: AVURLAsset, pageURL: URL? = nil, webView: WKWebView? = nil, persistPosition: Bool? = nil) {
+    func registerPlaybackSource(id: UUID, asset: AVURLAsset, pageURL: URL? = nil, webView: WKWebView? = nil, persistPosition: Bool? = nil, downloadAsset: AVURLAsset? = nil, resourceLease: AnyObject? = nil) {
         guard downloads.contains(where: { $0.id == id && [.inProgress, .paused].contains($0.status) }) else { return }
         objectWillChange.send()
-        playbackSources[id] = DownloadPlaybackSource(asset: asset, pageURL: pageURL, webView: webView, persistPosition: persistPosition)
+        let source = DownloadPlaybackSource(asset: asset, pageURL: pageURL, webView: webView,
+                                            persistPosition: persistPosition, downloadAsset: downloadAsset)
+        source.resourceLease = resourceLease
+        playbackSources[id] = source
     }
 
     func playbackSource(for id: UUID) -> DownloadPlaybackSource? {
@@ -171,7 +178,8 @@ final class DownloadManagerService: ObservableObject {
         suggestedFilename: String,
         sourceURL: URL?,
         transport: BrowserDownloadItem.Transport = .webKit,
-        userScriptPolicy: UserScriptDownloadPolicy? = nil
+        userScriptPolicy: UserScriptDownloadPolicy? = nil,
+        hlsUsesPersistentCookies: Bool? = nil
     ) -> (BrowserDownloadItem, URL) {
         let fileName = uniqueFilename(for: DownloadFilenameSanitizer.sanitize(suggestedFilename))
         let destination = storageDirectory.appendingPathComponent(fileName)
@@ -190,7 +198,8 @@ final class DownloadManagerService: ObservableObject {
             receivedBytes: 0,
             expectedBytes: 0,
             transport: transport,
-            userScriptPolicy: userScriptPolicy
+            userScriptPolicy: userScriptPolicy,
+            hlsUsesPersistentCookies: hlsUsesPersistentCookies
         )
         downloads.insert(item, at: 0)
         save()
@@ -213,6 +222,26 @@ final class DownloadManagerService: ObservableObject {
         downloads[index].progress = 1
         save()
         didFinishDownload.send(downloads[index])
+    }
+
+    /// Adopt a validated conversion as a separate file and record. Original
+    /// downloads, their references and their resume positions remain untouched.
+    func addConvertedVideo(from temporaryURL: URL, original: BrowserDownloadItem) throws -> BrowserDownloadItem {
+        let info = try temporaryURL.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])
+        guard temporaryURL.isFileURL, temporaryURL.pathExtension.lowercased() == "mp4",
+              info.isRegularFile == true, info.isSymbolicLink != true, let size = info.fileSize, size > 0 else {
+            throw ReadingToolError.invalid
+        }
+        let name = uniqueFilename(for: DownloadFilenameSanitizer.sanitize(original.localURL.deletingPathExtension().lastPathComponent + ".mp4"))
+        let target = storageDirectory.appendingPathComponent(name)
+        try FileManager.default.moveItem(at: temporaryURL, to: target)
+        let item = BrowserDownloadItem(id: UUID(), fileName: name, sourceURLString: original.sourceURLString,
+            localPath: target.path, startedAt: Date(), completedAt: Date(), status: .finished, errorMessage: "",
+            progress: 1, receivedBytes: Int64(size), expectedBytes: Int64(size), transport: .streaming)
+        downloads.insert(item, at: 0)
+        save()
+        didFinishDownload.send(item)
+        return item
     }
 
     func updateProgress(id: UUID, completed: Int64, total: Int64) {

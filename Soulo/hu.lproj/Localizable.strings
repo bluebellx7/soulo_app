@@ -609,27 +609,27 @@
 "extensions_reload_note" = "A megnyitott oldalak újratöltése után egy bővítmény vagy szkript megváltozott, így az új állapot életbe lép.";
 "web_extensions" = "Web bővítmények";
 "userscripts" = "Szkriptek és bővítmények";
-"userscripts_installed" = "Saját szkriptek";
-"userscripts_install" = "Szkriptek telepítése";
+"userscripts_installed" = "Telepítve";
+"userscripts_install" = "Hozzáadás";
 "userscripts_empty" = "Nincs UserScripts";
 "userscripts_empty_desc" = "Telepítsen egy .user.js fájlt, vagy hozzon létre egy szkriptet, hogy itt megtekinthesse.";
 "userscripts_reload_note" = "A megnyitott oldalak újratöltődnek egy szkript telepítése, szerkesztése, engedélyezése, letiltása vagy eltávolítása után.";
 "userscript_experimental_badge" = "Kompatibilitás";
 "userscript_experimental_title" = "UserScript kompatibilitás";
-"userscript_experimental_desc" = "Támogatja a webhelyszabályokat, a dokumentum kezdetét/végét, kiterjedt GM-tárhely- és oldal API-kat, szkriptparancsokat, értesítéseket, lapokat, letöltéseket, cookie-kat, erőforrásokat és engedély-hatókörű kéréseket. Telepítés előtt nézzen át minden szkriptet.";
+"userscript_experimental_desc" = "A felhasználói szkriptek olvashatják vagy módosíthatják az illeszkedő webhelyeket, és használhatják az engedélyezett API-kat. A kompatibilitás szkriptenként eltér. Csak megbízható szkripteket telepítsen.";
 "extension_choose_file" = "Fájl vagy mappa kiválasztása…";
 "extension_installing" = "Bővítmény ellenőrzése és telepítése…";
 "extension_install_failed" = "A bővítményt nem sikerült telepíteni";
 "extension_permissions_summary" = "%d engedélyek · %d webhelyszabályok";
 "extension_untitled" = "Névtelen kiterjesztés";
-"web_extension_install_footer" = "Érintse meg a forrássor tetszőleges részét, hogy megnyissa az aktuális Soulo lapon. A Soulo felismeri a CRX, XPI, ZIP és a támogatott bolti telepítési műveleteket, majd rákérdez a telepítés előtt. Előfordulhat, hogy néhány csak asztali alkalmazás API-k nem érhetők el.";
+"web_extension_install_footer" = "Telepítsen kompatibilis bővítményeket áruházlinkről, vagy importáljon CRX-, XPI-, ZIP-fájlt vagy bővítménymappát. Ellenőrizze a jogosultságokat és a kompatibilitást; egyes asztali funkciók nem érhetők el.";
 "web_extension_install_store_link" = "Telepítés az Áruház linkjéről…";
 "web_extension_browse_sources" = "Böngésszen a bővítményboltok között";
 "web_extension_browse_sources_footer" = "A Store Get gombok csak a saját asztali böngészőjüket támogatják. Másolja ki a bővítmény részletes oldalának linkjét, majd használja a Telepítés az áruházból hivatkozást itt: Soulo.";
 "web_extension_store_install_title" = "Telepítsen egy boltbővítményt";
 "extension_page_banner_title" = "Telepítse a következővel: Soulo";
-"extension_page_banner_desc" = "A Soulo közvetlenül telepítheti ezt a bővítményt.";
-"web_extension_store_install_desc" = "Illesszen be egy Chrome Internetes áruház, a Microsoft Edge-bővítmények vagy a Firefox-bővítmények részletes oldalának hivatkozását. A Soulo magát a csomagot tölti le, így az áruház nem kompatibilis Get gombja nem kerül felhasználásra.";
+"extension_page_banner_desc" = "Telepítés előtt ellenőrizze a kompatibilitást és a jogosultságokat.";
+"web_extension_store_install_desc" = "Illessze be egy Chrome-, Edge- vagy Firefox-bővítmény adatlapjának linkjét, és a telepítés megerősítése előtt ellenőrizze a kompatibilitást és a jogosultságokat.";
 "web_extension_store_link_placeholder" = "Bővítményoldal linkje vagy Chrome-bővítményazonosítója";
 "web_extension_store_invalid_link" = "Illesszen be egy bővítmény részletes oldalának linkjét a Chrome-ból, az Edge-ből vagy a Firefoxból, egy Chrome-bővítményazonosítót vagy egy közvetlen CRX-, XPI- vagy ZIP-linket.";
 "web_extension_store_https_required" = "A bővítménycsomagoknak biztonságos HTTPS-hivatkozást kell használniuk.";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "A médiafolyam érvénytelen vagy nem megfelelő sorrendű szegmenst adott vissza.";
 "resource_stream_download_missing_track" = "A letöltött stream nem tartalmazott lejátszható video- és hangsávokat.";
 "resource_stream_download_export_failed" = "A Soulo nem tudta egyesíteni a letöltött videót és hangot.";
-"resource_stream_playback_download_first" = "Ez a védett stream nem tekinthető meg az ideiglenes URL-ről. Először töltse le a helyi fájl lejátszásához.";
+"resource_stream_playback_download_first" = "Ez az adatfolyam jelenleg nem tekinthető meg közvetlenül.";
 "platform_invalid_web_url" = "Adjon meg egy érvényes, http:// vagy https:// kezdetű webcímet.";
 
 "library_history_tab" = "Előzmények";
@@ -889,8 +889,7 @@
 "extension_review_access" = "Válassza ki a bővítmény által használható engedélyeket és webhelyeket.";
 "extension_limit_commands" = "A bővítmények billentyűparancsai nem érhetők el iOS-en.";
 "extension_limit_notifications" = "Az értesítések megjeleníthetők, de a kattintási és bezárási események nem támogatottak.";
-"extension_limit_offscreen" = "A képernyőn kívüli dokumentumok csak hanglejátszást támogatnak.";
-
+"extension_limit_offscreen" = "A képernyőn kívüli dokumentumokra az iOS korlátozásai vonatkoznak; egyes funkciók nem feltétlenül érhetők el.";
 "review_support_message" = "Köszönjük, hogy támogatod a Soulót. Értékeléseid segítenek a folyamatos fejlődésben.";
 "review_open_app_store" = "Értékelés az App Store-ban";
 

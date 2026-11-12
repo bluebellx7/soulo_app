@@ -35,6 +35,7 @@ struct LibraryFilesView: View {
     @State private var archive: LocalFile?
     @State private var book: LibraryBook?
     @State private var preview: LocalFile?
+    @State private var openedDirectory: LocalFile?
     @State private var showTransfer = false
     @State private var showMedia = false
     @State private var password = ""
@@ -195,7 +196,7 @@ struct LibraryFilesView: View {
             recentMedia = result.0; recentBook = result.1
         }
         .onAppear { if libraryPageIsActive { reload() } }
-        .onChange(of: libraryPageIsActive) { _, active in
+        .onCompatibleChange(of: libraryPageIsActive) { _, active in
             if active { reload() } else { reloadTask?.cancel() }
         }
         .onDisappear { reloadTask?.cancel() }
@@ -243,7 +244,7 @@ struct LibraryFilesView: View {
             }
         }
         .photosPicker(isPresented: $importingPhotos, selection: $photos, maxSelectionCount: 100, matching: .any(of: [.images, .videos]), preferredItemEncoding: .current)
-        .onChange(of: photos) { _, items in
+        .onCompatibleChange(of: photos) { _, items in
             guard !items.isEmpty else { return }
             busy = true
             completedImports = 0; totalImports = items.count
@@ -258,16 +259,19 @@ struct LibraryFilesView: View {
                 } catch { self.error = error.localizedDescription }
             }
         }
-        .navigationDestination(item: $plainTextFile) { file in
+        .compatibleNavigationDestination(item: $plainTextFile) { file in
             TextDocumentPreview(url: file.url).navigationTitle(file.url.lastPathComponent)
         }
-        .navigationDestination(item: $book) { BookReaderView(book: $0) }
-        .navigationDestination(item: $preview) { file in
+        .compatibleNavigationDestination(item: $book) { BookReaderView(book: $0) }
+        .compatibleNavigationDestination(item: $preview) { file in
             LocalDocumentContent(url: file.url)
         }
-        .navigationDestination(item: $archive) { file in ArchiveBrowserView(url: file.url, directory: directory) }
+        .compatibleNavigationDestination(item: $openedDirectory) { folder in
+            LibraryFilesView(directory: folder.url)
+        }
+        .compatibleNavigationDestination(item: $archive) { [directory] file in ArchiveBrowserView(url: file.url, directory: directory) }
         .navigationDestination(isPresented: $showMedia) { MediaPlayerPage() }
-        .navigationDestination(isPresented: $showTransfer) { WiFiTransferView(directory: directory) }
+        .navigationDestination(isPresented: $showTransfer) { [directory] in WiFiTransferView(directory: directory) }
         .navigationDestination(isPresented: $compressing) {
 
             Form {
@@ -336,7 +340,7 @@ struct LibraryFilesView: View {
             Section {
                 continueActions
                 if hasLoaded && !files.isEmpty && visibleFiles.isEmpty {
-                    ContentUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
+                    CompatibleUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
                 }
                 if hasLoaded && files.isEmpty {
                     IllustratedToolEmptyState(scene: .files, title: ToolText.text("files_empty"))
@@ -344,7 +348,18 @@ struct LibraryFilesView: View {
                 ForEach(visibleFiles) { file in
                     HStack(spacing: 8) {
                         if file.directory && !isSelecting {
-                            NavigationLink { LibraryFilesView(directory: file.url) } label: { fileLabel(file) }
+                            Button { openedDirectory = file } label: {
+                                HStack(spacing: 8) {
+                                    fileLabel(file)
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.tertiary)
+                                        .frame(width: 44, height: 44)
+                                        .accessibilityHidden(true)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("files.item.\(file.url.lastPathComponent)")
                         } else {
                             Button { open(file) } label: { fileLabel(file) }
                                 .buttonStyle(.plain)
@@ -373,6 +388,10 @@ struct LibraryFilesView: View {
                     .modifier(LibraryFileDragModifier(url: file.url, enabled: !file.directory && !isSelecting && !busy
                         && !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased())))
                     .contextMenu {
+                        if OfflineVideoConversionService.supports(file.url) {
+                            Button { exportMP4(file) } label: { Label(ToolText.text("video_export_mp4"), systemImage: "film") }
+                                .accessibilityIdentifier("files.export-mp4")
+                        }
                         if !file.directory {
                             if !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased()) {
                                 Button { plainTextFile = file } label: { ToolMenuLabel(key: "open_as_text", symbol: "doc.text") }
@@ -408,8 +427,8 @@ struct LibraryFilesView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .listSectionSpacing(12)
-        .contentMargins(.top, 8, for: .scrollContent)
+        .compatibleListSectionSpacing(20)
+        .compatibleScrollTopMargin(24)
         .accessibilityIdentifier("files.list")
     }
 
@@ -420,9 +439,10 @@ struct LibraryFilesView: View {
                     .padding(.horizontal, 16)
                     .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 26))
                     .padding(.horizontal, 20)
+                    .padding(.bottom, 8)
                 VStack(alignment: .leading, spacing: 12) { continueActions }.padding(.horizontal, 20)
                 if hasLoaded && !files.isEmpty && visibleFiles.isEmpty {
-                    ContentUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
+                    CompatibleUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
                 }
                 if hasLoaded && files.isEmpty {
                     IllustratedToolEmptyState(scene: .files, title: ToolText.text("files_empty"))
@@ -462,6 +482,10 @@ struct LibraryFilesView: View {
                             .modifier(LibraryFileDragModifier(url: file.url, enabled: !file.directory && !isSelecting && !busy
                                 && !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased())))
                             .contextMenu {
+                                if OfflineVideoConversionService.supports(file.url) {
+                                    Button { exportMP4(file) } label: { Label(ToolText.text("video_export_mp4"), systemImage: "film") }
+                                        .accessibilityIdentifier("files.export-mp4")
+                                }
                                 if !file.directory {
                                     if !["movpkg", OfflineHLSReference.fileExtension].contains(file.url.pathExtension.lowercased()) {
                                         Button { plainTextFile = file } label: { ToolMenuLabel(key: "open_as_text", symbol: "doc.text") }
@@ -490,7 +514,7 @@ struct LibraryFilesView: View {
                     .padding(.horizontal, 20).padding(.vertical, 18)
                 }
             }
-            .contentMargins(.top, 8, for: .scrollContent)
+            .compatibleScrollTopMargin(24)
             .background(Color(uiColor: .systemGroupedBackground))
             .accessibilityIdentifier("files.grid")
         }
@@ -744,6 +768,20 @@ struct LibraryFilesView: View {
             preview = file
         }
     }
+    private func exportMP4(_ file: LocalFile) {
+        guard !busy else { return }
+        let progress = FileOperationProgress()
+        operation = progress; archiveRunning = true; busy = true
+        Task {
+            defer { busy = false; archiveRunning = false; reload() }
+            do {
+                _ = try await OfflineVideoConversionService.exportMP4(from: file.url, into: directory, operation: progress)
+            } catch ReadingToolError.canceled { }
+            catch is CancellationError { }
+            catch { self.error = error.localizedDescription }
+        }
+    }
+
     private func exportHLS(_ file: LocalFile) {
         let referenceURL = file.url
         let sourceURL = DownloadManagerService.shared.downloads

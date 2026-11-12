@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Correction d'un problème où l'ouverture d'un favori ou d'une entrée de l'historique pouvait remplacer un onglet existant.
-• Amélioration du démarrage, du chargement des pages et des interactions sur l'écran d'accueil.
-• Amélioration des commandes en plein écran, de la rotation et de l'état de lecture lors du changement d'app.
-• Amélioration de la restauration des onglets fermés, des aperçus de fichiers et des détails de l'interface.
+• Fonds clairs et sombres distincts et interrupteur du voile sur l’image.
+• Couleurs d’accueil améliorées ; l’aperçu du fond suit le thème de l’app.
+• Prévisualisez, partagez et enregistrez les fonds dans Photos.
+• Réglages des onglets en haut avec nouvel onglet et masquage facultatif de la barre des plateformes après navigation.

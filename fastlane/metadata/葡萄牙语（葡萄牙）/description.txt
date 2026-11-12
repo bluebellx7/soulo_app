@@ -6,8 +6,6 @@ Os separadores e grupos de sites usados recentemente aparecem primeiro, e a vist
 
 Transferências BT: importe ficheiros .torrent ou ligações magnet, escolha ficheiros, pause e retome. No iOS 26 podem continuar em segundo plano quando o sistema permite; as versões anteriores guardam o progresso e pausam. Reproduza conteúdos BT compatíveis durante a transferência e abra ficheiros MKV. Importe ligações ed2k/thunder. As transferências exigem fontes disponíveis; a reprodução depende dos codecs.
 
-Navegação mais fluida, melhores controlos de vídeo e pré-visualizações de ficheiros mais claras.
-
 Escolha cinco atalhos opcionais no ecrã inicial para transferências, ficheiros, marcadores, histórico, fundos e outras páginas. A barra de separadores da biblioteca fica mais compacta ao deslocar.
 
 Encontre informação, leia artigos, reproduza conteúdos e faça a gestão das descargas no mesmo navegador.
@@ -20,11 +18,11 @@ Organize a navegação com vários separadores, pesquisa por voz, histórico e g
 • Ficheiros: encontre imagens, áudio, vídeos e documentos nas páginas e guarde imagens em lote. Use a lista ou grelha de capas, mude nomes, importe de Fotografias e transfira por Wi-Fi.
 • Compressão: extraia ZIP, RAR e 7z. Crie arquivos ZIP e 7z com proteção opcional por palavra-passe.
 • Leitura: TXT, PDF, EPUB e livros MOBI, AZW e AZW3 compatíveis sem DRM. Ajuste tipo e tamanho de letra, entrelinha e fundo. Livros com disposição adaptável permitem alternar entre chinês simplificado e tradicional. O modo de leitura extrai artigos e permite continuar na página seguinte.
-• Extensões: importe, edite e execute scripts JavaScript, gira sites e permissões e instale WebExtensions compatíveis.
+• Scripts e extensões: importe, edite e execute scripts JavaScript. As WebExtensions compatíveis requerem iOS 18.4 ou posterior; o suporte varia por extensão.
 • Ferramentas web: tradução, pesquisa na página, captura de página inteira, reconhecimento de texto em imagens, modos computador/telemóvel, agente de utilizador personalizado e certificados dos sites.
 • Marcadores: organize em pastas e importe ou exporte marcadores HTML usados pelo Chrome, Edge e outros navegadores. Crie códigos QR de páginas com o ícone do site para partilhar, guardar ou copiar.
-• Personalização: fundos, barra de ferramentas e ações rápidas do ícone da app. Aceda através de widgets, Atalhos e esquemas de URL. Sincronize as definições com iCloud se desejar.
+• Personalização: fundos, barra de ferramentas e ações rápidas do ícone da app. Aceda através de widgets, Atalhos e esquemas de URL. Sincronize as definições com iCloud se desejar. Fundos separados para os modos claro e escuro e opção de camada sobre a imagem.
 
-A disponibilidade de conteúdos, livros e extensões depende do formato, das restrições do site e da versão do sistema.
+Os conteúdos, livros e extensões dependem dos formatos, restrições do site e versão do sistema. Antes de descarregar, confirme que a origem permite guardar o conteúdo.
 
 Apoio: contact@dkluge.com

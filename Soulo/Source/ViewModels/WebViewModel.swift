@@ -50,6 +50,37 @@ final class WebViewModel: ObservableObject {
 
     // MARK: - Published State
 
+    @Published private(set) var hasNavigatedFromPlatformSearch = false
+    private var tracksPlatformSearch = false
+    private var platformSearchRootURL: URL?
+
+    func beginPlatformSearchTracking() {
+        tracksPlatformSearch = true
+        platformSearchRootURL = nil
+        hasNavigatedFromPlatformSearch = false
+    }
+
+    func resetPlatformSearchTracking() {
+        tracksPlatformSearch = false
+        platformSearchRootURL = nil
+        hasNavigatedFromPlatformSearch = false
+    }
+
+    private func updatePlatformSearchNavigation(finished: Bool = false) {
+        guard tracksPlatformSearch, let currentURL else { return }
+        func documentURL(_ url: URL) -> URL? {
+            var parts = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            parts?.fragment = nil
+            return parts?.url
+        }
+        if platformSearchRootURL == nil {
+            guard finished else { return }
+            platformSearchRootURL = documentURL(currentURL)
+        }
+        let leftRoot = documentURL(currentURL) != platformSearchRootURL
+        if hasNavigatedFromPlatformSearch != leftRoot { hasNavigatedFromPlatformSearch = leftRoot }
+    }
+
     @Published var currentURL: URL?
     @Published private(set) var userAgentOverride: String?
     @Published var pageTitle: String = ""
@@ -70,6 +101,8 @@ final class WebViewModel: ObservableObject {
     @Published private(set) var videoHoldSpeed: Double?
     private var videoHoldSpeedToken: String?
     private var videoHoldSpeedDismissal: Task<Void, Never>?
+    @Published var configuredVideo: WebMediaResource?
+    @Published var configuredVideoUsesInlineControl = false
     @Published var episodeList: WebEpisodeList?
     @Published var showEpisodes = false
     @Published private(set) var domainNavigationConfirmation: WebDomainNavigationConfirmation?
@@ -98,10 +131,14 @@ final class WebViewModel: ObservableObject {
     @Published var showMediaDownloads = false
     @Published var webVideoPlayback: WebVideoPlaybackRequest?
     @Published var showVideoSettings = false
+    @Published var swipeActionRequest: BrowserSwipeRequest?
     let mediaSession = WebMediaSession()
     var isWebViewRuntimeInstalled: Bool = false
     var hasInstalledWebViewScripts = false
     var isScriptOpenedWindow = false
+    // The content controller retains this bootstrap coordinator until the
+    // first SwiftUI mount adopts it, including any pending navigation choice.
+    weak var pendingScriptWindowCoordinator: WebViewRepresentable.Coordinator?
     var lastAdHidingSignature = ""
     var installedPrivacyProtectionSource = ""
     var adHidingNeedsBootstrap = false
@@ -110,6 +147,10 @@ final class WebViewModel: ObservableObject {
     var installedManualAdScriptSignature = ""
     private var hasAppliedCustomPageZoom = false
     private var pageZoomRequestID = UUID()
+    private let zoomStore: WebsiteZoomStore
+    private var zoomPreferenceObserver: AnyCancellable?
+    private var pageZoomHost: String?
+    private var privatePageZooms: [String: CGFloat] = [:]
     let userScriptBridgeToken = UUID().uuidString
     let userScriptTabID = UUID().uuidString
     var isStreamingDownloadHandlerInstalled: Bool = false
@@ -121,12 +162,22 @@ final class WebViewModel: ObservableObject {
     private var isLoadingSnapshot = false
     private var isCapturingSnapshot = false
     private var snapshotNeedsRefresh = false
+    private var snapshotWaitsForScreenUpdates = false
+    private var overviewSnapshotViewport: CGSize?
     private var scheduledSnapshotTask: Task<Void, Never>?
     private var snapshotCompletions: [() -> Void] = []
     private var snapshotDocumentGeneration = UUID()
     private var allowsSnapshotPersistence = false
     private var memorySnapshotData: Data?
     private var pageLanguageDetectionID = UUID()
+
+    init(zoomStore: WebsiteZoomStore? = nil) {
+        let zoomStore = zoomStore ?? .shared
+        self.zoomStore = zoomStore
+        zoomPreferenceObserver = zoomStore.objectWillChange.sink { [weak self] _ in
+            Task { @MainActor in self?.restorePageZoom(for: self?.currentURL, force: true) }
+        }
+    }
 
     // Download state
     @Published var isDownloading: Bool = false
@@ -155,14 +206,21 @@ final class WebViewModel: ObservableObject {
             // SwiftUI, WebKit presentations or downloads can retain a retired
             // runtime after the model drops it. stopLoading() does not stop
             // media, and a one-off pause lets page scripts start it again.
-            oldValue?.setAllMediaPlaybackSuspended(true, completionHandler: nil)
-            oldValue?.closeAllMediaPresentations(completionHandler: nil)
+            if #available(iOS 17.0, *) {
+                oldValue?.setAllMediaPlaybackSuspended(true, completionHandler: nil)
+                oldValue?.closeAllMediaPresentations(completionHandler: nil)
+            } else {
+                // Older WebKit may invoke the optional block unconditionally.
+                oldValue?.setAllMediaPlaybackSuspended(true, completionHandler: {})
+                oldValue?.closeAllMediaPresentations(completionHandler: {})
+            }
             if webView == nil {
                 isStreamingDownloadHandlerInstalled = false
             }
             guard let webView else { mediaSession.detach(); return }
             let cancelledBeforeAttachment = mediaSession.navigationWasCancelled
             mediaSession.webView = webView
+            restorePageZoom(for: currentURL, force: true)
             applyWebPreferences(to: webView)
             if let request = pendingRequest {
                 pendingRequest = nil
@@ -226,6 +284,8 @@ final class WebViewModel: ObservableObject {
         guard domainNavigationConfirmation == nil else { return nil }
         let request = WebDomainNavigationConfirmation(sourceURL: source, destinationURL: destination, originalRequest: originalRequest)
         domainNavigationDecision = decision
+        // Keep the source in browser chrome while WebKit holds a provisional destination.
+        currentURL = source
         domainNavigationConfirmation = request
         return request.id
     }
@@ -285,12 +345,32 @@ final class WebViewModel: ObservableObject {
     }
 
     func setPageZoom(_ value: CGFloat) {
-        let normalized = min(max((value * 10).rounded() / 10, 0.5), 2)
+        guard let result = WebsiteZoomStore.normalized(Double(value)) else { return }
+        let normalized = CGFloat(result)
+        if let host = WebsiteZoomStore.host(for: currentURL) {
+            pageZoomHost = host
+            if usesPrivatePageZoom { privatePageZooms[host] = normalized }
+            else { zoomStore.set(result, for: currentURL) }
+        }
         pageZoom = normalized
         if let webView {
             applyPageZoom(to: webView)
         }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
+    private var usesPrivatePageZoom: Bool {
+        webView.map { !$0.configuration.websiteDataStore.isPersistent } ?? UserDefaults.standard.bool(forKey: "is_incognito")
+    }
+
+    private func restorePageZoom(for url: URL?, force: Bool = false) {
+        let host = WebsiteZoomStore.host(for: url)
+        guard force || host != pageZoomHost else { return }
+        pageZoomHost = host
+        let value = (usesPrivatePageZoom ? host.flatMap { privatePageZooms[$0] } : nil) ?? CGFloat(zoomStore.zoom(for: url))
+        guard pageZoom != value else { return }
+        pageZoom = value
+        if let webView, WebsiteZoomStore.host(for: webView.url) == host { applyPageZoom(to: webView) }
     }
 
     /// Preserve the web view's physical viewport width while scaling its
@@ -306,14 +386,14 @@ final class WebViewModel: ObservableObject {
             if webView.pageZoom != 1 { webView.pageZoom = 1 }
             return
         }
-        webView.evaluateJavaScript(
+        webView.evaluateCompatibleJavaScript(
             WebViewScripts.compensatePageZoomWidth(scale: pageZoom),
             completionHandler: { [weak self, weak webView] result, _ in
                 guard let self, let webView, self.webView === webView,
                       self.pageZoomRequestID == requestID, webView.url == documentURL else { return }
                 let nativeZoom: CGFloat = result as? Bool == true ? 1 : zoom
                 if webView.pageZoom != nativeZoom { webView.pageZoom = nativeZoom }
-                webView.evaluateJavaScript("window.__souloVideoOrientation?.setContentZoom(\(Double(zoom)));",
+                webView.evaluateCompatibleJavaScript("window.__souloVideoOrientation?.setContentZoom(\(Double(zoom)));",
                     in: nil, in: WebVideoOrientationRuntime.world, completionHandler: nil)
             })
     }
@@ -429,6 +509,7 @@ final class WebViewModel: ObservableObject {
     /// Releases the expensive WebKit runtime while preserving the tab URL and snapshot.
     /// The view is recreated lazily the next time the tab becomes active.
     func releaseWebViewRuntime() {
+        pendingScriptWindowCoordinator = nil
         hasPresentedContent = false
         clearVideoHoldSpeed()
         cancelScheduledSnapshot()
@@ -648,11 +729,13 @@ final class WebViewModel: ObservableObject {
     }
 
     func updateCurrentURL(_ url: URL?, fromObservation: Bool = false) {
-        guard let url = url else { return }
+        guard domainNavigationConfirmation == nil, let url else { return }
         if errorMessage != nil, let failedNavigationURL, url != failedNavigationURL { return }
         if fromObservation, isLoading, let requestedNavigationURL, url != requestedNavigationURL { return }
+        restorePageZoom(for: url)
         if currentURL != url { currentURL = url }
         lastURLString = url.absoluteString
+        if !isLoading { updatePlatformSearchNavigation() }
         if !isLoading, errorMessage == nil {
             requestedNavigationURL = url
             if failedNavigationURL != nil { failedNavigationURL = nil }
@@ -660,6 +743,7 @@ final class WebViewModel: ObservableObject {
     }
 
     func recordNavigationRequest(_ url: URL) {
+        restorePageZoom(for: url)
         requestedNavigationURL = url
         if failedNavigationURL != nil { failedNavigationURL = nil }
         if errorMessage != nil { errorMessage = nil }
@@ -678,6 +762,7 @@ final class WebViewModel: ObservableObject {
     }
 
     func pageDidFinishLoading() {
+        updatePlatformSearchNavigation(finished: true)
         pageRevision += 1
     }
 
@@ -840,9 +925,31 @@ final class WebViewModel: ObservableObject {
         // Evicting the decoded bitmap must not cancel the only copy of a tab.
     }
 
-    func captureSnapshot() async {
+    func captureSnapshot(afterScreenUpdates: Bool = false) async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            takeSnapshot { continuation.resume() }
+            takeSnapshot(afterScreenUpdates: afterScreenUpdates) { continuation.resume() }
+        }
+    }
+
+    func webViewViewportDidChange(_ webView: WKWebView) {
+        guard self.webView === webView, UIDevice.current.userInterfaceIdiom == .pad else { return }
+        scheduleSnapshotCapture()
+    }
+
+    /// Only visible cards decode cached images. Existing foreground content can
+    /// refresh after rotation without activating or reloading suspended tabs.
+    func prepareOverviewSnapshot(viewport: CGSize) async {
+        await loadSnapshotIfNeeded()
+        guard UIDevice.current.userInterfaceIdiom == .pad, !Task.isCancelled else { return }
+        overviewSnapshotViewport = viewport
+        guard errorMessage != nil || webView?.window != nil else { return }
+        do { try await Task.sleep(for: .milliseconds(350)) } catch { return }
+        guard !Task.isCancelled else { return }
+        let actual = webView?.window != nil ? webView?.bounds.size : viewport
+        guard let actual, actual.width > 1, actual.height > 1 else { return }
+        let scale = webView?.window?.screen.scale ?? UIScreen.main.scale
+        if TabSnapshotQuality.needsRefresh(snapshot, viewport: actual, displayScale: scale, isPad: true) {
+            await captureSnapshot(afterScreenUpdates: true)
         }
     }
 
@@ -863,23 +970,28 @@ final class WebViewModel: ObservableObject {
         scheduledSnapshotTask = nil
     }
 
-    func takeSnapshot(completion: (() -> Void)? = nil) {
+    func takeSnapshot(afterScreenUpdates: Bool = false, completion: (() -> Void)? = nil) {
         cancelScheduledSnapshot()
         if let completion { snapshotCompletions.append(completion) }
-        guard !isCapturingSnapshot else { snapshotNeedsRefresh = true; return }
+        guard !isCapturingSnapshot else {
+            snapshotNeedsRefresh = true
+            snapshotWaitsForScreenUpdates = snapshotWaitsForScreenUpdates || afterScreenUpdates
+            return
+        }
         if let errorMessage, !errorMessage.isEmpty, currentURL != nil {
             let size = webView.flatMap { $0.bounds.width > 1 && $0.bounds.height > 1 ? $0.bounds.size : nil }
-                ?? CGSize(width: 390, height: 700)
+                ?? overviewSnapshotViewport ?? CGSize(width: 390, height: 700)
             let renderer = ImageRenderer(content: BrowserLoadErrorView(
                 message: errorMessage, url: errorPageURL, onRetry: {}, onGoHome: nil, onOpenCompatibility: nil)
                 .content
                 .frame(width: size.width, height: size.height)
                 .background(Color(uiColor: .systemBackground))
                 .environment(\.colorScheme, webView?.traitCollection.userInterfaceStyle == .dark ? .dark : .light))
-            renderer.scale = 1
+            renderer.scale = UIDevice.current.userInterfaceIdiom == .pad
+                ? (webView?.window?.screen.scale ?? UIScreen.main.scale) : 1
             guard let image = renderer.uiImage else { finishSnapshotCapture(); return }
             isCapturingSnapshot = true
-            saveCapturedSnapshot(image, from: webView, generation: snapshotGeneration, error: errorMessage, warm: false)
+            saveCapturedSnapshot(image, from: webView, generation: snapshotGeneration, error: errorMessage, warm: false, viewport: size)
             return
         }
         guard let webView, webView.window != nil, webView.bounds.width > 1, webView.bounds.height > 1,
@@ -895,9 +1007,11 @@ final class WebViewModel: ObservableObject {
         let pageURL = currentURL
         let persistenceID = snapshotPersistenceID
         let warm = WebAppearanceService.hasWarmOverlay(on: webView)
+        let viewport = webView.bounds.size
         config.rect = webView.bounds
-        config.snapshotWidth = NSNumber(value: 430)
-        config.afterScreenUpdates = false
+        config.snapshotWidth = NSNumber(value: Double(TabSnapshotQuality.captureWidth(viewport: viewport,
+            isPad: UIDevice.current.userInterfaceIdiom == .pad)))
+        config.afterScreenUpdates = afterScreenUpdates
         // Request pixels synchronously, before switching detaches this WebView.
         webView.takeSnapshot(with: config) { [weak self, weak webView] image, _ in
             Task { @MainActor in
@@ -908,25 +1022,34 @@ final class WebViewModel: ObservableObject {
                       self.errorMessage == nil else {
                     self.finishSnapshotCapture(); return
                 }
-                self.saveCapturedSnapshot(image, from: webView, generation: generation, error: nil, warm: warm)
+                guard TabSnapshotQuality.matches(viewport, webView.bounds.size) else {
+                    self.snapshotNeedsRefresh = true; self.snapshotWaitsForScreenUpdates = true
+                    self.finishSnapshotCapture(); return
+                }
+                self.saveCapturedSnapshot(image, from: webView, generation: generation, error: nil, warm: warm, viewport: viewport)
             }
         }
     }
 
-    private func saveCapturedSnapshot(_ image: UIImage, from webView: WKWebView?, generation: UUID, error: String?, warm: Bool) {
+    private func saveCapturedSnapshot(_ image: UIImage, from webView: WKWebView?, generation: UUID, error: String?, warm: Bool, viewport: CGSize) {
         let document = snapshotDocumentGeneration
         let url = currentURL
         let id = snapshotPersistenceID
         let canPersist = allowsSnapshotPersistence && (webView?.configuration.websiteDataStore.isPersistent ?? true)
+        let isPad = UIDevice.current.userInterfaceIdiom == .pad
         Task { @MainActor [weak self, weak webView] in
             let data = await withCheckedContinuation { continuation in
                 Self.snapshotWriteQueue.async {
-                    continuation.resume(returning: Self.previewData(image, warm: warm))
+                    continuation.resume(returning: Self.previewData(image, warm: warm, isPad: isPad))
                 }
             }
             guard let self else { return }
             guard let data, self.webView === webView, self.snapshotDocumentGeneration == document,
                   self.currentURL == url, self.snapshotPersistenceID == id, self.errorMessage == error else {
+                self.finishSnapshotCapture(); return
+            }
+            if let webView, !TabSnapshotQuality.matches(viewport, webView.bounds.size) {
+                self.snapshotNeedsRefresh = true; self.snapshotWaitsForScreenUpdates = true
                 self.finishSnapshotCapture(); return
             }
             if !canPersist { self.memorySnapshotData = data }
@@ -941,7 +1064,9 @@ final class WebViewModel: ObservableObject {
         isCapturingSnapshot = false
         if snapshotNeedsRefresh {
             snapshotNeedsRefresh = false
-            takeSnapshot()
+            let afterUpdates = snapshotWaitsForScreenUpdates
+            snapshotWaitsForScreenUpdates = false
+            takeSnapshot(afterScreenUpdates: afterUpdates)
             return
         }
         let completions = snapshotCompletions
@@ -1005,12 +1130,11 @@ final class WebViewModel: ObservableObject {
         }
     }
 
-    nonisolated private static func previewData(_ image: UIImage, warm: Bool) -> Data? {
+    nonisolated private static func previewData(_ image: UIImage, warm: Bool, isPad: Bool) -> Data? {
         autoreleasepool {
             let width = image.size.width * image.scale
             let height = image.size.height * image.scale
-            let scale = min(1, 640 / max(1, width), 1_600 / max(1, height))
-            let size = CGSize(width: width * scale, height: height * scale)
+            let size = TabSnapshotQuality.pixelSize(CGSize(width: width, height: height), isPad: isPad)
             let format = UIGraphicsImageRendererFormat()
             format.scale = 1
             format.opaque = true
@@ -1022,7 +1146,7 @@ final class WebViewModel: ObservableObject {
                     context.fill(CGRect(origin: .zero, size: size))
                 }
             }
-            return preview.jpegData(compressionQuality: 0.82)
+            return preview.jpegData(compressionQuality: isPad ? 0.9 : 0.82)
         }
     }
 
@@ -1056,5 +1180,29 @@ final class WebViewModel: ObservableObject {
 
     nonisolated private static func snapshotURL(id: String) -> URL {
         snapshotDirectory.appendingPathComponent("\(id).jpg")
+    }
+}
+
+
+/// Bound decoded memory while providing Retina pixels for 720-point iPad cards.
+enum TabSnapshotQuality {
+    static func captureWidth(viewport: CGSize, isPad: Bool) -> CGFloat {
+        isPad ? min(720, max(1, viewport.width)) : 430
+    }
+    static func pixelSize(_ size: CGSize, isPad: Bool) -> CGSize {
+        let limit = isPad ? CGSize(width: 1440, height: 2048) : CGSize(width: 640, height: 1600)
+        let ratio = min(1, limit.width / max(1, size.width), limit.height / max(1, size.height))
+        return CGSize(width: floor(size.width * ratio), height: floor(size.height * ratio))
+    }
+    static func matches(_ lhs: CGSize, _ rhs: CGSize) -> Bool {
+        abs(lhs.width - rhs.width) < 1 && abs(lhs.height - rhs.height) < 1
+    }
+    static func needsRefresh(_ image: UIImage?, viewport: CGSize, displayScale: CGFloat, isPad: Bool) -> Bool {
+        guard let image, viewport.width > 1, viewport.height > 1 else { return true }
+        let width = image.size.width * image.scale, height = image.size.height * image.scale
+        guard width > 1, height > 1 else { return true }
+        let expectedWidth = captureWidth(viewport: viewport, isPad: isPad) * displayScale
+        let expected = pixelSize(CGSize(width: expectedWidth, height: expectedWidth * viewport.height / viewport.width), isPad: isPad)
+        return abs(width / height - viewport.width / viewport.height) > 0.02 || width < expected.width * 0.95
     }
 }

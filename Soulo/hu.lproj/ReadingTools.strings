@@ -436,3 +436,65 @@
 "files_move_busy" = "Mielőtt áthelyezné vagy átnevezné ezeket az elemeket, várja meg, amíg a letöltés befejeződik.";
 "video_show_episode_dock" = "Epizóddokkoló megjelenítése";
 "video_show_episode_dock_desc" = "Dokkolt epizód gomb megjelenítése az epizódokat tartalmazó weboldalakon. Az epizódok elérhetők maradnak a lejátszón belül.";
+
+// Webpage share preview
+"page_share_image" = "Kép megosztása";
+"page_share_link" = "Hivatkozás megosztása";
+"page_share_preview" = "Látható terület előnézete";
+"page_share_brand" = "Soulo: Többkeresős böngésző";
+
+"video_export_mp4" = "MP4 exportálása";
+"video_export_failed" = "A videót nem sikerült MP4-ként exportálni. Az eredeti fájl megmaradt.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Kétujjas gesztusok";
+"gesture_hint" = "Mozgassa két ujját együtt oldalra. A jelzés követi az ujjakat; a megszakításhoz húzza vissza őket. Az egyujjas navigáció és a csippentéses nagyítás elérhető marad.";
+"gesture_swipe_right" = "Húzás jobbra";
+"gesture_swipe_left" = "Húzás balra";
+"gesture_show_toolbar" = "Eszköztár megjelenítése";
+"gesture_quick_menu" = "Gyorsmenü";
+"gesture_preview" = "Gesztus előnézete";
+"zoom_remember" = "Webhelyek nagyításának megjegyzése";
+"zoom_hint" = "Az oldalmenüben beállított nagyítást tartományonként menti. A privát lapok módosításait nem menti.";
+"zoom_empty" = "Nincs mentett nagyítás";
+"zoom_reset_all" = "Minden visszaállítása 100%-ra";
+
+"shake_direction" = "Irány";
+"shake_direction_horizontal" = "Balra és jobbra";
+"shake_direction_vertical" = "Fel és le";
+"shake_direction_any" = "Bármely irány";
+
+"gesture_settings_title" = "Weboldalgesztusok";
+"gesture_no_history" = "Ha nem lehet visszalépni";
+"gesture_no_history_hint" = "Ha nincs előző oldal, húzzon a bal széltől jobbra a művelet megjelenítéséhez. A megszakításhoz húzza vissza. A Nincs választással kikapcsolható.";
+
+"gesture_execution" = "Művelet végrehajtása";
+
+"gesture_execute_release" = "Elengedéskor";
+
+"gesture_execute_tap" = "Koppintáskor";
+
+"gesture_feedback" = "Műveleti visszajelzés";
+
+"gesture_haptics" = "Rezgés";
+
+"gesture_sound" = "Hang";
+
+"gesture_feedback_preview" = "Visszajelzés kipróbálása";
+
+"media_start_timeout" = "A lejátszás nem indult el. Ellenőrizze a hálózatot, vagy váltson lejátszót.";
+
+"wallpaper_appearance_hint" = "Állítson be külön hátteret a világos és a sötét megjelenéshez. A hátterek automatikusan követik az alkalmazás megjelenését.";
+
+"wallpaper_image_overlay" = "Képfedő réteg";
+
+"auto_hide_platform_bar" = "Platformsáv automatikus elrejtése";
+
+"top_tab_bar_hidden_title" = "A felső lapsáv elrejtve";
+
+"top_tab_bar_reopen_hint" = "Az újbóli megjelenítéshez koppintson alul a lapok gombjára, nyissa meg a … menüt, és kapcsolja be a felső lapsávot.";
+
+"wallpaper_image_blur" = "Matt üveg";
+"wallpaper_blur_amount" = "Elmosás erőssége";
+
+"auto_hide_platform_bar_hint" = "A platformsáv elrejtőzik egy keresési találat megnyitásakor. A találatokhoz visszatérve vagy új kereséskor ismét megjelenik. Ebben a menüben kikapcsolhatod.";

@@ -6,8 +6,6 @@ Tab dan kumpulan laman yang baru digunakan dipaparkan dahulu dan paparan tab dib
 
 Muat turun BT: import fail .torrent atau pautan magnet, pilih fail, jeda dan sambung semula. Pada iOS 26, muat turun boleh diteruskan di latar belakang jika sistem membenarkan; versi terdahulu menyimpan kemajuan dan menjeda. Mainkan media BT yang disokong semasa muat turun dan buka fail MKV. Import pautan ed2k/thunder. Muat turun memerlukan sumber tersedia; main balik bergantung pada codec.
 
-Pelayaran lebih lancar, kawalan video yang lebih baik dan pratonton fail yang lebih jelas.
-
 Pilih lima pintasan pilihan pada halaman utama untuk muat turun, fail, penanda buku, sejarah, kertas dinding dan halaman lain. Bar tab pustaka menjadi padat semasa menatal.
 
 Cari maklumat, baca artikel, mainkan media dan urus muat turun dalam satu pelayar.
@@ -20,11 +18,11 @@ Layari dengan berbilang tab, carian suara, sejarah dan kumpulan platform. Tukar 
 • Fail: cari imej, audio, video dan dokumen pada halaman serta simpan imej secara kelompok. Paparan senarai atau grid kulit buku, penamaan semula, import daripada Foto dan pemindahan Wi-Fi.
 • Arkib: ekstrak ZIP, RAR dan 7z. Cipta ZIP dan 7z dengan perlindungan kata laluan pilihan.
 • Membaca: TXT, PDF, EPUB serta buku MOBI, AZW dan AZW3 tanpa DRM yang disokong. Laraskan fon, saiz, jarak baris dan latar. Buku susun atur fleksibel menyokong paparan Cina ringkas atau tradisional. Mod bacaan mengekstrak artikel dan membolehkan sambungan ke halaman seterusnya.
-• Sambungan: import, sunting dan jalankan skrip pengguna JavaScript, urus padanan laman serta kebenaran, dan pasang WebExtension yang serasi.
+• Skrip dan sambungan: import, sunting dan jalankan skrip pengguna JavaScript. WebExtension yang serasi memerlukan iOS 18.4 atau lebih baharu; sokongan berbeza mengikut sambungan.
 • Alat web: terjemahan, cari dalam halaman, tangkapan skrin seluruh halaman, pengecaman teks dalam imej, mod desktop/mudah alih, ejen pengguna tersuai dan sijil laman.
 • Penanda buku: folder serta import/eksport penanda HTML untuk Chrome, Edge dan pelayar lain. Cipta kod QR halaman dengan ikon laman untuk dikongsi, disimpan atau disalin.
-• Pemperibadian: kertas dinding, bar alat dan tindakan pantas ikon app. Akses melalui widget, Pintasan dan skema URL. Segerakkan tetapan dengan iCloud jika mahu.
+• Pemperibadian: kertas dinding, bar alat dan tindakan pantas ikon app. Akses melalui widget, Pintasan dan skema URL. Segerakkan tetapan dengan iCloud jika mahu. Latar berasingan untuk penampilan cerah dan gelap dengan suis lapisan imej.
 
-Ketersediaan media, buku dan sambungan bergantung pada format fail, sekatan laman dan versi sistem.
+Media, buku dan sambungan bergantung pada format, sekatan laman dan versi sistem. Sebelum memuat turun, pastikan sumber membenarkan kandungan disimpan.
 
 Sokongan: contact@dkluge.com

@@ -1,0 +1,149 @@
+{
+  "date": "2026-11-12",
+  "version": "1.2.12",
+  "scope": [
+    "两种播放器支持单指横向拖动预览进度，松手执行跳转；保留纵向亮度、音量和长按倍速",
+    "实体音量键变化在视频中显示百分比反馈，提示避开中央播放按钮",
+    "平台管理网格长按拖动排序，保存组内顺序",
+    "约 5 秒未开始播放时提示；恢复出帧后自动消除，暂停和后台时间不计入",
+    "网页工具使用播放图标，点击主动开始全屏播放；iPad 保持窗口方向，iPhone 自动横屏",
+    "iPad 标签管理按截图和窗口比例显示更大的预览，适配窄窗口"
+  ],
+  "validation": {
+    "pure_unit": {
+      "log": "/tmp/soulo-player-improvements-20261112/first-tests.log",
+      "passed": true,
+      "cases": [
+        {
+          "name": "SouloTests.IncrementalFeatureTests testHorizontalVideoSeekBoundsAndInvalidStreams",
+          "status": "passed",
+          "seconds": 0.002
+        },
+        {
+          "name": "SouloTests.IncrementalFeatureTests testIPadPreviewFitsWindowAndFullscreenDoesNotForceRotation",
+          "status": "passed",
+          "seconds": 0.002
+        },
+        {
+          "name": "SouloTests.IncrementalFeatureTests testPlatformReorderingKeepsRegionAndCustomGroupIndependent",
+          "status": "passed",
+          "seconds": 0.025
+        },
+        {
+          "name": "SouloTests.IncrementalFeatureTests testStartupWarningIgnoresPauseAndRecoversAfterFirstFrame",
+          "status": "passed",
+          "seconds": 0.001
+        }
+      ]
+    },
+    "platform_grid_ui": {
+      "log": "/tmp/soulo-player-improvements-20261112/first-tests.log",
+      "passed": true,
+      "cases": [
+        {
+          "name": "SouloUITests.GroupDefaultSearchUITests testPlatformGridLongPressReordersAndPersists",
+          "status": "passed",
+          "seconds": 48.838
+        }
+      ]
+    },
+    "ipad_simulator": {
+      "log": "/tmp/soulo-player-improvements-20261112/verified-sim.log",
+      "passed": true,
+      "cases": [
+        {
+          "name": "SouloTests.IncrementalFeatureTests testBothDecodersWarnForStalledStartupAndRecoverWithoutReopening",
+          "status": "passed",
+          "seconds": 12.279
+        },
+        {
+          "name": "SouloTests.WebMediaPlaybackBridgeTests testNativeFullscreenRecoversBeforeAnInlineControlIsVisible",
+          "status": "passed",
+          "seconds": 1.106
+        },
+        {
+          "name": "SouloTests.WebMediaPlaybackBridgeTests testVideoToolsStayCompactAcrossPageViewports",
+          "status": "passed",
+          "seconds": 5.936
+        },
+        {
+          "name": "SouloUITests.WebEpisodeAndAdNavigationUITests testBothFullscreenPlayersSupportHorizontalSeekingAndIPadPreview",
+          "status": "passed",
+          "seconds": 104.64
+        }
+      ]
+    },
+    "player_exit_and_episode_regression": {
+      "log": "/tmp/soulo-player-improvements-20261112/final-sim.log",
+      "passed": true,
+      "cases": [
+        {
+          "name": "SouloUITests.WebEpisodeAndAdNavigationUITests testLandscapeMiniPlayerRestoresWebEpisodesAndClosesInOneStep",
+          "status": "passed",
+          "seconds": 96.26
+        }
+      ]
+    },
+    "iphone_simulator_web_play": {
+      "log": "/tmp/soulo-player-improvements-20261112/accepted-phone.log",
+      "passed": true,
+      "cases": [
+        {
+          "name": "SouloUITests.WebEpisodeAndAdNavigationUITests testWebPlayButtonStartsPausedVideoFullscreenWithoutRotatingIPad",
+          "status": "passed",
+          "seconds": 34.979
+        }
+      ]
+    },
+    "ipad_air_m3_physical_web_play": {
+      "log": "/tmp/soulo-player-improvements-20261112/accepted-device.log",
+      "passed": true,
+      "cases": [
+        {
+          "name": "SouloUITests.WebEpisodeAndAdNavigationUITests testWebPlayButtonStartsPausedVideoFullscreenWithoutRotatingIPad",
+          "status": "passed",
+          "seconds": 21.582
+        }
+      ]
+    },
+    "ipad_air_m3_physical_controls": {
+      "log": "/tmp/soulo-feedback-20261112/physical-both-players.log",
+      "passed": true,
+      "cases": [
+        {
+          "name": "SouloUITests.WebEpisodeAndAdNavigationUITests testBothFullscreenPlayersSupportHorizontalSeekingAndIPadPreview",
+          "status": "passed",
+          "seconds": 110.252
+        }
+      ]
+    },
+    "simulator_build": {
+      "passed": true,
+      "log": "/tmp/soulo-feedback-20261112/observed-stream-build-sim.log"
+    },
+    "device_build": {
+      "passed": true,
+      "log": "/tmp/soulo-feedback-20261112/observed-stream-build-device.log"
+    },
+    "localization": {
+      "passed": true,
+      "locales": 50,
+      "log": "/tmp/soulo-feedback-20261112/localization-final.log"
+    },
+    "app_store_metadata": {
+      "passed": true,
+      "version": "1.2.12",
+      "log": "/tmp/soulo-feedback-20261112/metadata-final.log"
+    }
+  },
+  "notes": [
+    "实体设备为 iPad Air 11-inch (M3)，iPadOS 26.6.1；iPhone 为 iOS 26.2 模拟器。",
+    "真机按键必须在应用内产生不同的音量百分比反馈，反向按键恢复音量；兼容动态方向及音量边界。UI 测试进程缓存的音量值不能用于断言应用内音量。Soulo 暂停释放音频会话导致无反馈的问题已修复，并在两个解码器的完整真机操作测试中通过。",
+    "使用本地 HTTP 断流样本验证两种解码器的 5 秒提示与自动恢复；未将慢连接判为永久失败。",
+    "网页播放样本由系统 AVFoundation 无损拼接为 64 秒，避免 8 秒样本在自动化定位控件前结束。",
+    "早期 UI 失败记录保留在临时目录：已修正提示辅助功能标签、重叠位置，以及自动化的无效坐标和按键边界假设。",
+    "项目最低 iOS 16.0 和版本号保持现有设置，未新增第三方依赖。"
+  ],
+  "hardware_volume_reference": "https://support.apple.com/en-sg/102354",
+  "artifacts": "/tmp/soulo-player-improvements-20261112"
+}

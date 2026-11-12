@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Yer imi veya geçmiş kaydı açıldığında bazen mevcut sekmenin değiştirilmesine neden olan sorun düzeltildi.
-• Başlatma, sayfa yükleme ve ana ekran etkileşimleri iyileştirildi.
-• Tam ekran kontrolleri, ekran döndürme ve uygulama değiştirirken oynatma durumu iyileştirildi.
-• Kapatılan sekmeleri geri alma, dosya önizlemeleri ve arayüz ayrıntıları iyileştirildi.
+• Açık ve koyu görünüm için ayrı arka planlar ve görüntü katmanı anahtarı.
+• Ana sayfa renkleri iyileştirildi; duvar kâğıdı önizlemesi uygulama temasını izler.
+• Duvar kâğıtlarını önizleyin, paylaşın ve Fotoğraflar’a kaydedin.
+• Üst sekme ayarlarına yeni sekme ve gezinme sonrası platform çubuğunu gizleme seçeneği eklendi.

@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Naprawiono błąd, przez który otwarcie zakładki lub wpisu z historii mogło zastąpić istniejącą kartę.
-• Ulepszono uruchamianie, wczytywanie stron i obsługę ekranu głównego.
-• Ulepszono sterowanie na pełnym ekranie, obracanie ekranu i stan odtwarzania przy zmianie aplikacji.
-• Ulepszono przywracanie zamkniętych kart, podglądy plików i szczegóły interfejsu.
+• Osobne tła dla jasnego i ciemnego wyglądu oraz przełącznik warstwy na obrazie.
+• Poprawione kolory strony głównej; podgląd tapety odpowiada motywowi aplikacji.
+• Przeglądaj, udostępniaj i zapisuj tapety w Zdjęciach.
+• Ustawienia górnych kart z nową kartą i opcjonalnym ukrywaniem paska platform po nawigacji.

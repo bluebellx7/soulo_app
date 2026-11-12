@@ -6,8 +6,6 @@ Nedávno použité karty a skupiny webů se zobrazují první a přehled se otev
 
 Stahování BT: importujte soubory .torrent nebo odkazy magnet, vyberte soubory, pozastavte a pokračujte. V iOS 26 může stahování běžet na pozadí, pokud to systém dovolí; starší verze uloží průběh a pozastaví jej. Přehrávejte podporovaná BT média během stahování a otevírejte soubory MKV. Importujte odkazy ed2k/thunder. Stahování vyžaduje dostupné zdroje; přehrávání závisí na kodecích.
 
-Plynulejší prohlížení, lepší ovládání videa a přehlednější náhledy souborů.
-
 Nastavte pět volitelných zkratek na úvodní stránce pro stahování, soubory, záložky, historii, tapety a další stránky. Lišta karet knihovny se při posouvání zmenší.
 
 Hledejte informace, čtěte články, přehrávejte média a spravujte stahování v jednom prohlížeči.
@@ -20,11 +18,11 @@ Mějte stránky na více kartách a používejte hlasové hledání, historii a 
 • Soubory: najděte obrázky, zvuk, video a dokumenty na stránkách a ukládejte obrázky hromadně. Seznam či mřížka obálek, přejmenování, import z Fotek a přenos přes Wi-Fi.
 • Archivy: rozbalení ZIP, RAR a 7z; vytváření ZIP a 7z s volitelným heslem.
 • Čtení: TXT, PDF, EPUB a podporované MOBI, AZW a AZW3 bez DRM. Upravte písmo, velikost, řádkování a pozadí. Knihy s přizpůsobivým rozvržením umožňují zjednodušené či tradiční čínské zobrazení. Režim čtení získá text článku a umožní pokračovat na další stránce.
-• Rozšíření: importujte, upravujte a spouštějte uživatelské skripty JavaScript, spravujte weby a oprávnění a instalujte kompatibilní WebExtensions.
+• Skripty a rozšíření: importujte, upravujte a spouštějte uživatelské skripty JavaScript. Kompatibilní WebExtensions vyžadují iOS 18.4 nebo novější; podpora se liší podle rozšíření.
 • Webové nástroje: překlad, hledání na stránce, snímky celých stránek, rozpoznávání textu v obrázcích, počítačový/mobilní režim, vlastní user agent a certifikáty webů.
 • Záložky: složky a import/export HTML záložek pro Chrome, Edge a další prohlížeče. Vytvářejte QR kódy stránek s ikonou webu, sdílejte, ukládejte a kopírujte je.
-• Přizpůsobení: tapety, nástrojová lišta a rychlé akce ikony aplikace. Přístup přes widgety, Zkratky a URL schémata. Volitelná synchronizace nastavení přes iCloud.
+• Přizpůsobení: tapety, nástrojová lišta a rychlé akce ikony aplikace. Přístup přes widgety, Zkratky a URL schémata. Volitelná synchronizace nastavení přes iCloud. Samostatná pozadí pro světlý a tmavý vzhled a přepínač vrstvy přes obrázek.
 
-Dostupnost médií, knih a rozšíření závisí na formátu, omezeních webu a verzi systému.
+Média, knihy a rozšíření závisejí na formátech, omezeních webu a verzi systému. Před stažením ověřte, zda zdroj povoluje uložení obsahu.
 
 Podpora: contact@dkluge.com

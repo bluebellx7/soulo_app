@@ -34,8 +34,10 @@ final class BrowserRefreshControl: UIRefreshControl {
         arc.lineCap = .round
         indicator.layer.addSublayer(arc)
         updateColors()
-        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (control: BrowserRefreshControl, _: UITraitCollection) in
-            control.updateColors()
+        if #available(iOS 17.0, *) {
+            registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (control: BrowserRefreshControl, _: UITraitCollection) in
+                control.updateColors()
+            }
         }
 
         addTarget(self, action: #selector(refreshStarted), for: .valueChanged)
@@ -48,6 +50,11 @@ final class BrowserRefreshControl: UIRefreshControl {
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if #unavailable(iOS 17.0) { updateColors() }
+    }
 
     override func layoutSubviews() {
         super.layoutSubviews()

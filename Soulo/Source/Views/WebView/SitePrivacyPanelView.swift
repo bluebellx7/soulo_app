@@ -168,10 +168,10 @@ struct SiteInformationPopoverView: View {
         .fixedSize(horizontal: false, vertical: true)
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { panelHeight = $0 }
         }
-        .scrollBounceBehavior(.basedOnSize)
+        .compatibleSizeBasedBounce()
         .frame(idealWidth: 350, maxWidth: 350)
         .frame(height: min(panelHeight, verticalSizeClass == .compact ? 250 : 580))
-        .presentationCompactAdaptation(.popover)
+        .compatiblePopoverAdaptation()
         .sheet(isPresented: $showQRCode) {
             if let currentURL {
                 WebPageQRCodeView(url: currentURL, title: webViewModel.pageTitle)

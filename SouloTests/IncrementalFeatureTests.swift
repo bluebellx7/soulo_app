@@ -108,13 +108,14 @@ final class IncrementalFeatureTests: XCTestCase {
         let root = UIViewController(); window.rootViewController = root; window.makeKeyAndVisible()
         let firstOwner = UUID(), nextOwner = UUID()
         var closed: [String] = []
+        var reasons: [VideoFullscreenDismissal] = []
         defer {
             SharedVideoFullscreenHost.current(in: window)?.dismiss(owner: nextOwner)
             window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
         }
         let first = try XCTUnwrap(SharedVideoFullscreenHost.present(owner: firstOwner, in: window,
             content: AnyView(Color.black), identifier: "media.fullscreen.player", landscape: false,
-            onClose: { closed.append("old") }))
+            onClose: { _ in closed.append("old") }))
         try await wait { first.screen?.view.window === window }
         let controller = try XCTUnwrap(first.screen)
         XCTAssertTrue(root.view.window === window, "The destination decoder must be able to mount before the old player closes")
@@ -126,7 +127,7 @@ final class IncrementalFeatureTests: XCTestCase {
         XCTAssertTrue(root.presentedViewController === controller, "Retiring the old adapter must not dismiss the shared window")
         let next = try XCTUnwrap(SharedVideoFullscreenHost.present(owner: nextOwner, in: window,
             content: AnyView(Text("Soulo")), identifier: "media.mkv.fullscreen.player", landscape: false,
-            onClose: { closed.append("new") }))
+            onClose: { reason in closed.append("new"); reasons.append(reason) }))
         XCTAssertTrue(next === first)
         XCTAssertTrue(next.screen === controller)
         XCTAssertEqual(controller.supportedInterfaceOrientations, .landscape, "A decoder change must keep the selected fullscreen direction")
@@ -140,6 +141,16 @@ final class IncrementalFeatureTests: XCTestCase {
         try await wait { root.presentedViewController == nil }
         await VideoOrientation.waitForRestoration(in: scene)
         XCTAssertEqual(closed, ["new"], "Only the active playback mode owns the close callback")
+        XCTAssertEqual(reasons, [.exitFullscreen])
+        let closeOwner = UUID()
+        let closing = try XCTUnwrap(SharedVideoFullscreenHost.present(owner: closeOwner, in: window,
+            content: AnyView(Color.black), identifier: "media.fullscreen.player", landscape: false,
+            onClose: { reasons.append($0) }))
+        try await wait { closing.screen?.view.window === window }
+        closing.dismiss(owner: closeOwner, reason: .closePlayback)
+        try await wait { root.presentedViewController == nil }
+        XCTAssertEqual(reasons, [.exitFullscreen, .closePlayback], "Closing playback and shrinking video are separate actions")
+
     }
 
     @MainActor func testForegroundRestoresLandscapeWithoutDeviceRotationAndRespectsManualPortrait() async throws {
@@ -274,6 +285,57 @@ final class IncrementalFeatureTests: XCTestCase {
         }
     }
 
+    @MainActor func testLateNativeCompatibilityUpdatesTheMiniPlayerWithoutRestartingSoulo() async throws {
+        final class Compatibility: ObservableObject { @Published var available = false }
+        struct Harness: View {
+            @ObservedObject var compatibility: Compatibility
+            let url: URL
+            var body: some View {
+                MatroskaPlayerView(url: url, persistPosition: false, autoplay: false,
+                    options: FileVideoOptions(usesSystem: false, systemAvailable: compatibility.available, selectPlayer: { _, _, _ in }))
+            }
+        }
+        let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.windows.first(where: \.isKeyWindow), window = UIWindow(windowScene: scene)
+        let compatibility = Compatibility(), session = MediaSession.shared
+        session.stop(); session.setBackgrounded(false)
+        window.rootViewController = UIHostingController(rootView: Harness(compatibility: compatibility, url: video))
+        window.makeKeyAndVisible()
+        defer { session.stop(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        try await wait { session.soulo != nil }
+        let playback = try XCTUnwrap(session.soulo)
+        XCTAssertFalse(session.souloSystemAvailable)
+        compatibility.available = true
+        try await wait { session.souloSystemAvailable }
+        XCTAssertTrue(session.soulo === playback, "Resolving native compatibility must not restart the active decoder")
+        session.updateSouloSystemAvailability(false, for: MatroskaPlayback())
+        XCTAssertTrue(session.souloSystemAvailable, "A retired player's result cannot disable the current PiP action")
+        compatibility.available = false
+        try await wait { !session.souloSystemAvailable }
+        XCTAssertTrue(session.soulo === playback)
+    }
+
+    @MainActor func testPendingLocalCompatibilityFinishesWithoutTheFilePageAndRejectsUnsupportedMP4() async throws {
+        let session = MediaSession.shared
+        session.stop(); session.setBackgrounded(false)
+        defer { session.stop() }
+        for (name, expected) in [("playback-h264-aac", true), ("playback-hevc-hev1", false)] {
+            session.stop()
+            let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: name, withExtension: "mp4", subdirectory: "ReadingFixtures"))
+            let playback = MatroskaPlayback()
+            playback.open(video, persistPosition: false, autoplay: false, systemAvailable: false, systemAvailabilityPending: true)
+            XCTAssertTrue(session.souloSystemAvailabilityPending)
+            try await wait { !session.souloSystemAvailabilityPending }
+            XCTAssertEqual(session.souloSystemAvailable, expected, "Native compatibility must reflect the codecs, not just the MP4 suffix: \(name)")
+            XCTAssertTrue(session.soulo === playback)
+            session.stop()
+            session.updateSouloSystemAvailability(!expected, for: playback)
+            XCTAssertNil(session.soulo)
+            XCTAssertFalse(session.souloSystemAvailabilityPending)
+        }
+    }
+
     @MainActor func testExplicitPictureInPictureContinuesUntilStoppedInBackground() async throws {
         try XCTSkipUnless(AVPictureInPictureController.isPictureInPictureSupported(), "System PiP is unavailable on this test device; real PiP requires a supported device")
         let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
@@ -312,10 +374,16 @@ final class IncrementalFeatureTests: XCTestCase {
         }
         try await Task.sleep(for: .milliseconds(100))
         let slider = try XCTUnwrap(find(root.view))
+        XCTAssertTrue(slider.isEnabled && slider.isUserInteractionEnabled, "The native adjustable control must remain enabled")
         let scale = (slider.maximumValue - slider.minimumValue) / 20
         XCTAssertEqual(slider.value, slider.minimumValue + scale, accuracy: 0.01)
         slider.sendActions(for: .touchDown)
         slider.value = slider.minimumValue + 9 * scale; slider.sendActions(for: .valueChanged)
+        root.rootView = VideoPlaybackTimeline(elapsed: 2, duration: 20,
+            identifier: "timeline.qa", seek: { seeks.append($0) }, interactionChanged: controls.interaction)
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(slider.value, slider.minimumValue + 9 * scale, accuracy: 0.01,
+            "Clock updates must not reset a drag before UIKit delivers release or cancellation")
         slider.sendActions(for: .touchCancel)
         XCTAssertTrue(seeks.isEmpty, "A cancelled drag must not seek")
         root.rootView = VideoPlaybackTimeline(elapsed: 3.2, duration: 20,
@@ -713,14 +781,231 @@ final class IncrementalFeatureTests: XCTestCase {
             XCTAssertTrue(text.contains("😀 Original"))
         }
     }
-    @MainActor private func wait(_ predicate: () -> Bool) async throws {
+    @MainActor private func wait(file: StaticString = #filePath, line: UInt = #line, _ predicate: () -> Bool) async throws {
         let end = Date().addingTimeInterval(15)
         while !predicate() && Date() < end { try await Task.sleep(for: .milliseconds(100)) }
-        XCTAssertTrue(predicate())
+        XCTAssertTrue(predicate(), file: file, line: line)
     }
 }
 
 private final class OrientationTestController: UIViewController {
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask { .allButUpsideDown }
     override var shouldAutorotate: Bool { true }
+}
+
+extension IncrementalFeatureTests {
+    func testHorizontalVideoSeekBoundsAndInvalidStreams() {
+        XCTAssertEqual(VideoSeekGesture.target(start: 50, duration: 600, translation: 100, width: 400), 125)
+        XCTAssertEqual(VideoSeekGesture.target(start: 50, duration: 600, translation: -100, width: 400), 0)
+        XCTAssertEqual(VideoSeekGesture.target(start: 2, duration: 10, translation: 100, width: 400), 4.5)
+        XCTAssertEqual(VideoSeekGesture.target(start: 2, duration: 10, translation: -400, width: 400), 0)
+        XCTAssertEqual(VideoSeekGesture.target(start: 598, duration: 600, translation: 400, width: 400), 600)
+        for duration in [0.0, -1, .nan, .infinity] {
+            XCTAssertNil(VideoSeekGesture.target(start: 2, duration: duration, translation: 100, width: 400))
+        }
+        XCTAssertNil(VideoSeekGesture.target(start: .nan, duration: 60, translation: 100, width: 400))
+        XCTAssertNil(VideoSeekGesture.target(start: 2, duration: 60, translation: 100, width: 0))
+        XCTAssertEqual(VideoGestureFeedback(kind: .seek, value: 125, delta: -20).text, "2:05  −0:20")
+    }
+    func testStartupWarningIgnoresPauseAndRecoversAfterFirstFrame() {
+        var watch = VideoStartupWatch()
+        XCTAssertFalse(watch.update(now: 0, requested: true, ready: false))
+        XCTAssertFalse(watch.update(now: 4.9, requested: true, ready: false))
+        XCTAssertTrue(watch.update(now: 5, requested: true, ready: false))
+        XCTAssertFalse(watch.update(now: 6, requested: false, ready: false))
+        XCTAssertFalse(watch.update(now: 30, requested: true, ready: false))
+        XCTAssertFalse(watch.update(now: 34.9, requested: true, ready: false))
+        XCTAssertTrue(watch.update(now: 35, requested: true, ready: false))
+        XCTAssertFalse(watch.update(now: 36, requested: true, ready: true))
+        XCTAssertFalse(watch.update(now: 60, requested: true, ready: false), "Buffering after playback starts is not a startup failure")
+    }
+    @MainActor func testIPadPreviewFitsWindowAndFullscreenDoesNotForceRotation() {
+        XCTAssertFalse(VideoOrientation.fullscreenLandscape(video: true, isPad: true, currentLandscape: false))
+        XCTAssertTrue(VideoOrientation.fullscreenLandscape(video: false, isPad: true, currentLandscape: true))
+        XCTAssertTrue(VideoOrientation.fullscreenLandscape(video: true, isPad: false, currentLandscape: false))
+        let landscape = CGSize(width: 1366, height: 900)
+        let aspect = TabPreviewLayout.aspect(isPad: true, snapshot: landscape, viewport: .zero)
+        XCTAssertEqual(aspect, 1366.0 / 900, accuracy: 0.01)
+        XCTAssertGreaterThan(TabPreviewLayout.width(viewport: landscape, aspect: aspect, isPad: true), 340)
+        let split = CGSize(width: 390, height: 600)
+        let width = TabPreviewLayout.width(viewport: split, aspect: 0.6, isPad: true)
+        XCTAssertLessThanOrEqual(width / 0.6 + 54, split.height)
+        XCTAssertLessThan(width, split.width)
+        XCTAssertEqual(TabPreviewLayout.aspect(isPad: false, snapshot: landscape, viewport: landscape), 0.56)
+        XCTAssertEqual(TabPreviewLayout.width(viewport: CGSize(width: 390, height: 800), aspect: 0.56, isPad: false), 249.6, accuracy: 0.1)
+    }
+    @MainActor func testPlatformReorderingKeepsRegionAndCustomGroupIndependent() throws {
+        let store = PlatformDataStore.shared, original = store.platforms, groups = store.customGroups
+        defer { store.platforms = original; store.customGroups = groups; store.savePlatforms(); store.saveGroups() }
+        let china = store.platforms(for: .china), other = store.platforms(for: .international)
+        XCTAssertGreaterThan(china.count, 2)
+        let group = CustomGroup(name: "Drag QA", platformIDs: Array(china.prefix(3)).map(\.id))
+        store.customGroups.append(group)
+        store.movePlatform(from: IndexSet(integer: 0), to: 3, within: .china)
+        XCTAssertEqual(Array(store.platforms(for: .china).prefix(3)).map(\.id), [china[1].id, china[2].id, china[0].id])
+        XCTAssertEqual(store.platforms(for: .international).map(\.id), other.map(\.id))
+        XCTAssertEqual(store.platformsForGroup(group).map(\.id), group.platformIDs)
+        store.movePlatform(from: IndexSet(integer: 2), to: 0, withinGroup: group.id)
+        let moved = try XCTUnwrap(store.customGroups.first { $0.id == group.id })
+        XCTAssertEqual(store.platformsForGroup(moved).map(\.id), [china[2].id, china[0].id, china[1].id])
+        let saved = try JSONDecoder().decode([CustomGroup].self, from: XCTUnwrap(UserDefaults.standard.data(forKey: "custom_groups")))
+        XCTAssertEqual(saved.first { $0.id == group.id }?.platformIDs, moved.platformIDs)
+        XCTAssertEqual(store.platforms(for: .china)[0].id, china[1].id)
+    }
+    @MainActor func testBothDecodersWarnForStalledStartupAndRecoverWithoutReopening() async throws {
+        let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let data = try Data(contentsOf: video)
+        let session = MediaSession.shared, oldRate = session.rate
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene), root = UIViewController()
+        window.rootViewController = root; window.makeKeyAndVisible()
+        defer { session.stop(); session.setRate(oldRate); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        for extended in [false, true] {
+            session.stop(); session.setRate(1)
+            let server = try DownloadPlaybackHTTPFixture(files: ["/held.mp4": data], heldPaths: ["/held.mp4"])
+            let url = try await server.start().appendingPathComponent("held.mp4")
+            defer { server.stop() }
+            let playback = MatroskaPlayback(), attachment = UUID()
+            if extended {
+                playback.attach(root.view); playback.open(url, persistPosition: false)
+            } else {
+                let surface = try XCTUnwrap(session.pictureInPicture.attach(id: attachment, primary: true))
+                root.view.addSubview(surface); surface.frame = root.view.bounds
+                session.playerSurfaces += 1
+                session.open(url: url, persistPosition: false)
+            }
+            try await wait { extended ? playback.startupWarning != nil : session.startupWarning != nil }
+            XCTAssertNil(extended ? playback.error : session.error, "A slow connection must remain recoverable")
+            server.releaseDownloads()
+            try await wait {
+                extended ? (playback.player?.media?.statistics.displayedPictures ?? 0) > 0 : session.pictureInPicture.surface?.playerLayer.isReadyForDisplay == true
+            }
+            try await wait { extended ? playback.startupWarning == nil : session.startupWarning == nil }
+            session.outputVolumeChanged(0.42)
+            XCTAssertEqual((extended ? playback.gestureFeedback : session.gestureFeedback)?.text, "42%")
+            if !extended { session.pictureInPicture.detach(id: attachment); session.playerSurfaces -= 1 }
+            playback.stop(); session.stop()
+            session.outputVolumeChanged(0.8)
+            XCTAssertNil(session.gestureFeedback, "Closed/background audio must not get a video HUD")
+        }
+    }
+}
+
+
+extension IncrementalFeatureTests {
+    @MainActor func testPauseImmediatelyClearsIntentAndStopsTheActualVideoClockInBothModes() async throws {
+        let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let session = MediaSession.shared, oldRate = session.rate
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene), root = UIViewController()
+        window.rootViewController = root; window.makeKeyAndVisible()
+        defer { session.stop(); session.setRate(oldRate); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        for extended in [false, true] {
+            session.stop(); session.setBackgrounded(false); session.setRate(1)
+            let server = try DownloadPlaybackHTTPFixture(files: ["/clip.mp4": Data(contentsOf: video)])
+            let url = try await server.start().appendingPathComponent("clip.mp4")
+            defer { server.stop() }
+            let playback = MatroskaPlayback(), attachment = UUID()
+            if extended { playback.attach(root.view); playback.open(url) }
+            else {
+                let surface = try XCTUnwrap(session.pictureInPicture.attach(id: attachment, primary: true))
+                root.view.addSubview(surface); surface.frame = root.view.bounds
+                session.playerSurfaces += 1
+                session.open(url: url, persistPosition: false)
+            }
+            defer {
+                playback.stop(); session.stop()
+                if !extended { session.pictureInPicture.detach(id: attachment); session.playerSurfaces -= 1 }
+            }
+            func clock() -> Double { extended ? Double(playback.player?.time.intValue ?? 0) / 1000 : session.player.currentTime().seconds }
+            try await wait { session.playing && clock() > 0.4 }
+            for attempt in 0..<3 {
+                // Exercise both the normal and temporary-speed pause paths.
+                if attempt == 1 { if extended { playback.beginTemporaryRate() } else { session.beginTemporaryRate() } }
+                let before = clock(), start = ContinuousClock.now
+                session.toggle()
+                let commandTime = start.duration(to: .now)
+                XCTAssertLessThan(commandTime, .milliseconds(150), "Pause must not block the main thread")
+                XCTAssertFalse(session.isPlaybackRequested)
+                XCTAssertFalse(session.playing, "Update the control during the same action, without waiting for a decoder callback")
+                try await Task.sleep(for: .milliseconds(250))
+                let stopped = clock()
+                let displayedPictures = playback.player?.media?.statistics.displayedPictures ?? 0
+                if extended { XCTAssertFalse(playback.player?.isPlaying ?? true) }
+                else { XCTAssertEqual(session.player.timeControlStatus, .paused) }
+                XCTAssertLessThan(stopped - before, 0.45, "Decoded video must stop promptly in \(extended ? "Soulo" : "System")")
+                try await Task.sleep(for: .milliseconds(650))
+                XCTAssertEqual(clock(), stopped, accuracy: 0.1, "Check the decoder clock rather than the displayed timeline")
+                XCTAssertFalse(session.playing)
+                if extended {
+                    XCTAssertLessThanOrEqual((playback.player?.media?.statistics.displayedPictures ?? 0) - displayedPictures, 1,
+                        "Rendered frames must stop too; a frozen clock label alone is insufficient")
+                }
+                print("PAUSE QA extended=\(extended) attempt=\(attempt) command=\(commandTime) clockAdvance=\(stopped-before)")
+                session.toggle()
+                try await wait { session.playing && clock() > stopped + 0.25 }
+            }
+        }
+    }
+
+    @MainActor func testPauseDuringInitialBufferingCancelsAutoplayInBothModes() async throws {
+        let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let session = MediaSession.shared, oldRate = session.rate
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene), root = UIViewController()
+        window.rootViewController = root; window.makeKeyAndVisible()
+        defer { session.stop(); session.setRate(oldRate); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        for extended in [false, true] {
+            session.stop(); session.setBackgrounded(false); session.setRate(1)
+            let server = try DownloadPlaybackHTTPFixture(files: ["/clip.mp4": Data(contentsOf: video)], heldPaths: ["/clip.mp4"])
+            let url = try await server.start().appendingPathComponent("clip.mp4")
+            defer { server.stop() }
+            let playback = MatroskaPlayback(); playback.attach(root.view)
+            defer { playback.stop(); session.stop() }
+            if extended { playback.open(url) } else { session.open(url: url, persistPosition: false) }
+            try await wait { !server.receivedRequests.isEmpty }
+            XCTAssertTrue(session.isPlaybackRequested)
+            session.toggle()
+            XCTAssertFalse(session.isPlaybackRequested, "A stopped decoder clock during buffering does not mean the user's intent was paused")
+            XCTAssertFalse(session.playing)
+            server.releaseDownloads()
+            try await Task.sleep(for: .milliseconds(900))
+            let clock = extended ? Double(playback.player?.time.intValue ?? 0) / 1000 : session.player.currentTime().seconds
+            try await Task.sleep(for: .milliseconds(300))
+            XCTAssertEqual(extended ? Double(playback.player?.time.intValue ?? 0) / 1000 : session.player.currentTime().seconds, clock, accuracy: 0.1)
+            XCTAssertFalse(session.isPlaybackRequested); XCTAssertFalse(session.playing)
+            if extended { XCTAssertFalse(playback.buffering) }
+            session.toggle()
+            try await wait { session.playing }
+        }
+    }
+}
+
+
+extension IncrementalFeatureTests {
+    @MainActor func testLateExplicitWebSourceStartsSouloWithoutWarmingNativePlayer() async throws {
+        final class LateSource: ObservableObject { @Published var source: DownloadPlaybackSource? }
+        struct Harness: View {
+            @ObservedObject var state: LateSource
+            var body: some View {
+                MediaPlaybackContent(initialSouloPlayback: state.source == nil ? nil : (time: 0, playing: false),
+                    initialSouloSource: state.source, ownsExplicitSource: true)
+            }
+        }
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4", subdirectory: "ReadingFixtures"))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
+        let state = LateSource(), session = MediaSession.shared
+        session.stop(); session.setBackgrounded(false)
+        window.rootViewController = UIHostingController(rootView: Harness(state: state))
+        window.makeKeyAndVisible()
+        defer { session.stop(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        try await Task.sleep(for: .milliseconds(150))
+        let webView = WKWebView(); webView.loadHTMLString("<p>Cookie source</p>", baseURL: URL(string: "https://media.test/"))
+        try await wait { !webView.isLoading }
+        state.source = DownloadPlaybackSource(asset: AVURLAsset(url: url), pageURL: URL(string: "https://media.test/"), webView: webView, persistPosition: false)
+        try await wait { session.soulo != nil }
+        XCTAssertEqual(session.soulo?.sourceURL, url)
+        XCTAssertNil(session.player.currentItem)
+    }
 }

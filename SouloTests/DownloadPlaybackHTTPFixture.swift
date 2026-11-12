@@ -15,6 +15,7 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
     private let files: [String: Data]
     private let requiredCookie: String?
     private let heldPaths: Set<String>
+    private let holdAfterRequestCount: [String: Int]
     private let responseHeaders: [String: [String: String]]
     private let redirects: [String: (host: String, path: String)]
     private let slowChunkSize: Int
@@ -32,9 +33,10 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
     init(files: [String: Data], heldPaths: Set<String> = [], requiredCookie: String? = nil,
          responseHeaders: [String: [String: String]] = [:],
          redirects: [String: (host: String, path: String)] = [:],
-         slowChunkSize: Int = 1024) throws {
+         slowChunkSize: Int = 1024, holdAfterRequestCount: [String: Int] = [:]) throws {
         precondition(slowChunkSize > 0)
         self.files = files; self.heldPaths = heldPaths; self.requiredCookie = requiredCookie
+        self.holdAfterRequestCount = holdAfterRequestCount
         self.responseHeaders = responseHeaders
         self.redirects = redirects
         self.slowChunkSize = slowChunkSize
@@ -98,7 +100,10 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
             if let cookie = self.requiredCookie, headers["cookie"]?.contains(cookie) != true {
                 self.sendError(connection, code: 403); return
             }
-            self.respond(connection, path: path, range: headers["range"], isHead: parts[0] == "HEAD")
+            let hold = self.heldPaths.contains(path) || self.holdAfterRequestCount[path].map { threshold in
+                self.requests.filter { $0.path == path }.count >= threshold
+            } == true
+            self.respond(connection, path: path, range: headers["range"], isHead: parts[0] == "HEAD", held: hold)
         }
     }
 
@@ -107,7 +112,7 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
             completion: .contentProcessed { _ in connection.cancel() })
     }
 
-    private func respond(_ connection: NWConnection, path: String, range: String?, isHead: Bool) {
+    private func respond(_ connection: NWConnection, path: String, range: String?, isHead: Bool, held: Bool) {
         if let target = redirects[path], let port = listener.port {
             var url = URLComponents()
             url.scheme = "http"; url.host = target.host; url.port = Int(port.rawValue); url.path = target.path
@@ -116,10 +121,10 @@ final class DownloadPlaybackHTTPFixture: @unchecked Sendable {
             return
         }
         guard let file = files[path], !file.isEmpty else { sendError(connection, code: 404); return }
-        if heldPaths.contains(path), !released {
+        if held, !released {
             queue.asyncAfter(deadline: .now() + 0.25) { [weak self] in
                 guard let self, !self.connections.isEmpty else { return }
-                self.respond(connection, path: path, range: range, isHead: isHead)
+                self.respond(connection, path: path, range: range, isHead: isHead, held: held)
             }
             return
         }

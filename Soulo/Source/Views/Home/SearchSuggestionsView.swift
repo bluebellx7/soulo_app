@@ -7,9 +7,10 @@ struct SearchSuggestionsView: View {
 
     @EnvironmentObject var languageManager: LanguageManager
     @ObservedObject var wallpaperManager = WallpaperManager.shared
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showAll = false
 
-    private var isLight: Bool { wallpaperManager.isCurrentWallpaperLight }
+    private var isLight: Bool { wallpaperManager.prefersDarkForeground(for: WallpaperAppearance(colorScheme)) }
 
     var body: some View {
         if !recentSearches.isEmpty {
@@ -18,7 +19,7 @@ struct SearchSuggestionsView: View {
                 HStack {
                     Text(languageManager.localizedString("recent_searches"))
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(isLight ? Color(hex: "2E2A47").opacity(0.55) : .white.opacity(0.5))
+                        .foregroundStyle(isLight ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.8))
 
                     Spacer()
 
@@ -30,7 +31,7 @@ struct SearchSuggestionsView: View {
                         } label: {
                             Text(languageManager.localizedString(showAll ? "show_less" : "show_more"))
                                 .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(isLight ? Color(hex: "2E2A47").opacity(0.5) : .white.opacity(0.4))
+                                .foregroundStyle(isLight ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.8))
                         }
                     }
                 }
@@ -66,7 +67,9 @@ private struct SuggestionChip: View {
 
     @State private var showDelete = false
 
-    private var isLight: Bool { WallpaperManager.shared.isCurrentWallpaperLight }
+    @ObservedObject private var wallpaperManager = WallpaperManager.shared
+    @Environment(\.colorScheme) private var colorScheme
+    private var isLight: Bool { wallpaperManager.prefersDarkForeground(for: WallpaperAppearance(colorScheme)) }
 
     var body: some View {
         ZStack(alignment: .trailing) {

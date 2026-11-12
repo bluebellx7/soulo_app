@@ -39,19 +39,19 @@ def main():
  for slice in args.slices:
   sim=slice.startswith('sim');arch=slice.split('-')[-1];sdk='iphonesimulator' if sim else 'iphoneos'
   sdkpath=subprocess.check_output(['xcrun','--sdk',sdk,'--show-sdk-path'],text=True).strip()
-  work=cache/('build-'+slice);work.mkdir(exist_ok=True);ssl=work/'ssl-install';ssl.mkdir(exist_ok=True);sslbuild=work/'ssl';sslbuild.mkdir(exist_ok=True)
+  work=cache/('build-ios16-'+slice);work.mkdir(exist_ok=True);ssl=work/'ssl-install';ssl.mkdir(exist_ok=True);sslbuild=work/'ssl';sslbuild.mkdir(exist_ok=True)
   env=dict(os.environ,SDKROOT=sdkpath,CROSS_TOP=str(pathlib.Path(sdkpath).parents[1]),CROSS_SDK=pathlib.Path(sdkpath).name)
   if not (ssl/'lib/libssl.a').exists():
-   cfg=['perl',deps['openssl']/'Configure',('iossimulator-'+arch+'-xcrun') if sim else 'ios64-xcrun','no-shared','no-tests','no-module','no-dso','no-asm','--prefix='+str(ssl),('-mios-simulator-version-min=17.0' if sim else '-miphoneos-version-min=17.0')]
+   cfg=['perl',deps['openssl']/'Configure',('iossimulator-'+arch+'-xcrun') if sim else 'ios64-xcrun','no-shared','no-tests','no-module','no-dso','no-asm','--prefix='+str(ssl),('-mios-simulator-version-min=16.0' if sim else '-miphoneos-version-min=16.0')]
    run(cfg,cwd=sslbuild,env=env);run(['make','-j'+args.jobs,'build_libs'],cwd=sslbuild,env=env);run(['make','install_dev'],cwd=sslbuild,env=env)
   build=work/'engine'
-  run(['cmake','-S',ROOT/'scripts/torrent','-B',build,'-DCMAKE_BUILD_TYPE=MinSizeRel','-DCMAKE_SYSTEM_NAME=iOS','-DCMAKE_OSX_SYSROOT='+sdkpath,'-DCMAKE_OSX_ARCHITECTURES='+arch,'-DCMAKE_OSX_DEPLOYMENT_TARGET=17.0','-DCMAKE_CXX_FLAGS=-DTORRENT_HAVE_MMAP=0','-DCMAKE_POLICY_VERSION_MINIMUM=3.5','-DLIBTORRENT_SOURCE='+str(deps['libtorrent']),'-DBRIDGE_SOURCE='+str(ROOT/'ThirdParty/SouloTorrent/Bridge'),'-DBoost_INCLUDE_DIR='+str(deps['boost']),'-DBoost_NO_BOOST_CMAKE=ON','-DOPENSSL_ROOT_DIR='+str(ssl),'-DOPENSSL_INCLUDE_DIR='+str(ssl/'include'),'-DOPENSSL_SSL_LIBRARY='+str(ssl/'lib/libssl.a'),'-DOPENSSL_CRYPTO_LIBRARY='+str(ssl/'lib/libcrypto.a'),'-DBUILD_SHARED_LIBS=OFF','-Ddeprecated-functions=OFF','-Dlogging=OFF','-Di2p=OFF'])
+  run(['cmake','-S',ROOT/'scripts/torrent','-B',build,'-DCMAKE_BUILD_TYPE=MinSizeRel','-DCMAKE_SYSTEM_NAME=iOS','-DCMAKE_OSX_SYSROOT='+sdkpath,'-DCMAKE_OSX_ARCHITECTURES='+arch,'-DCMAKE_OSX_DEPLOYMENT_TARGET=16.0','-DCMAKE_CXX_FLAGS=-DTORRENT_HAVE_MMAP=0','-DCMAKE_POLICY_VERSION_MINIMUM=3.5','-DLIBTORRENT_SOURCE='+str(deps['libtorrent']),'-DBRIDGE_SOURCE='+str(ROOT/'ThirdParty/SouloTorrent/Bridge'),'-DBoost_INCLUDE_DIR='+str(deps['boost']),'-DBoost_NO_BOOST_CMAKE=ON','-DOPENSSL_ROOT_DIR='+str(ssl),'-DOPENSSL_INCLUDE_DIR='+str(ssl/'include'),'-DOPENSSL_SSL_LIBRARY='+str(ssl/'lib/libssl.a'),'-DOPENSSL_CRYPTO_LIBRARY='+str(ssl/'lib/libcrypto.a'),'-DBUILD_SHARED_LIBS=OFF','-Ddeprecated-functions=OFF','-Dlogging=OFF','-Di2p=OFF'])
   run(['cmake','--build',build,'-j',args.jobs])
   run(['xcrun','libtool','-static','-o',work/'libSouloTorrent.a',build/'libSouloTorrentBridge.a',build/'libtorrent/libtorrent-rasterbar.a',ssl/'lib/libssl.a',ssl/'lib/libcrypto.a'])
  if args.package:
   sim=cache/'sim';sim.mkdir(exist_ok=True)
-  run(['xcrun','lipo','-create',cache/'build-sim-arm64/libSouloTorrent.a',cache/'build-sim-x86_64/libSouloTorrent.a','-output',sim/'libSouloTorrent.a'])
+  run(['xcrun','lipo','-create',cache/'build-ios16-sim-arm64/libSouloTorrent.a',cache/'build-ios16-sim-x86_64/libSouloTorrent.a','-output',sim/'libSouloTorrent.a'])
   output=ROOT/'ThirdParty/SouloTorrent/Artifacts/SouloTorrent.xcframework'
   if output.exists():shutil.rmtree(output)
-  run(['xcodebuild','-create-xcframework','-library',cache/'build-device-arm64/libSouloTorrent.a','-headers',ROOT/'ThirdParty/SouloTorrent/Bridge/include','-library',sim/'libSouloTorrent.a','-headers',ROOT/'ThirdParty/SouloTorrent/Bridge/include','-output',output])
+  run(['xcodebuild','-create-xcframework','-library',cache/'build-ios16-device-arm64/libSouloTorrent.a','-headers',ROOT/'ThirdParty/SouloTorrent/Bridge/include','-library',sim/'libSouloTorrent.a','-headers',ROOT/'ThirdParty/SouloTorrent/Bridge/include','-output',output])
 if __name__=='__main__': main()

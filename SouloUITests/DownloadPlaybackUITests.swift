@@ -3,6 +3,122 @@ import AVKit
 
 final class DownloadPlaybackUITests: XCTestCase {
     @MainActor
+    func testMP4MiniPlayerReopensAndTimelineAcceptsFingerDraggingInBothPlayers() async throws {
+        continueAfterFailure = false
+        let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
+        let existingFile = ProcessInfo.processInfo.environment["SOULO_MINI_PLAYER_FILE"]
+        let duration = Double(ProcessInfo.processInfo.environment["SOULO_MINI_PLAYER_DURATION"] ?? "8") ?? 8
+        let name = existingFile ?? ("FloatingPlayer-" + UUID().uuidString + ".mp4")
+        let server = try DownloadPlaybackHTTPFixture(files: ["/" + name: Data(contentsOf: video)])
+        let root = try await server.start(); defer { server.stop() }; server.releaseDownloads()
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        defer { app.terminate() }
+        func waitFor(_ message: String, _ condition: () -> Bool) async throws {
+            for _ in 0..<50 {
+                if condition() { return }
+                try await Task.sleep(for: .milliseconds(100))
+            }
+            let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = message; shot.lifetime = .keepAlways; add(shot)
+            XCTFail(message + "; " + app.debugDescription)
+            throw URLError(.timedOut)
+        }
+        for engine in ["system", "soulo"] {
+            app.launchArguments = ["-app_language", "en-US", "-appearance", "light", "-video.defaultPlayer", engine,
+                "-icloud_sync_enabled", "NO", "-review.requestedOnce", "YES", "-is_incognito", "NO",
+                "-wallpaper_source", "gradient", "-wallpaper_refresh_interval", "0"]
+            app.launchEnvironment["SOULO_BROWSER_TRACE"] = "1"
+            app.launch()
+            if engine == "system", existingFile == nil {
+                var route = URLComponents(); route.scheme = "soulo"; route.host = "download"
+                route.queryItems = [URLQueryItem(name: "url", value: root.appendingPathComponent(name).absoluteString)]
+                app.open(try XCTUnwrap(route.url))
+            }
+            app.open(URL(string: existingFile == nil ? "soulo://downloads" : "soulo://files")!)
+            let download = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", existingFile == nil ? "downloads.open." : "files.item.", name)).firstMatch
+            XCTAssertTrue(download.waitForExistence(timeout: 15), app.debugDescription)
+            download.tap()
+            let prefix = engine == "system" ? "media.native" : "media.mkv"
+            let slider = app.sliders[prefix + ".timeline"]
+            XCTAssertTrue(slider.waitForExistence(timeout: 15), app.debugDescription)
+            try await waitFor("Timeline must become seekable: " + engine) { slider.isEnabled }
+            let play = app.buttons[prefix + ".play"]
+            if play.label == "Pause" { play.tap() }
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            let files = app.buttons["library.section.files"]
+            XCTAssertTrue(files.waitForExistence(timeout: 5)); files.tap()
+            let mini = app.descendants(matching: .any)["media.mini-player"].firstMatch
+            XCTAssertTrue(mini.waitForExistence(timeout: 8), app.debugDescription)
+            if AVPictureInPictureController.isPictureInPictureSupported() {
+                let pip = app.buttons.matching(NSPredicate(format: "label == %@", "Picture in Picture")).firstMatch
+                XCTAssertTrue(pip.waitForExistence(timeout: 5), app.debugDescription)
+                try await waitFor("Compatible MP4 must enable the mini-player PiP action: " + engine) { pip.isEnabled }
+            }
+            app.buttons.matching(NSPredicate(format: "label == %@", "Expand player")).firstMatch.tap()
+            XCTAssertTrue(slider.waitForExistence(timeout: 10), "Tapping the MP4 thumbnail must reopen the player: \(engine); \(app.debugDescription)")
+            if play.label == "Pause" { play.tap() }
+            func seconds() -> Double {
+                let parts = app.staticTexts[prefix + ".timeline.elapsed"].label.split(separator: ":").compactMap { Double($0) }
+                return parts.reduce(0) { $0 * 60 + $1 }
+            }
+            slider.coordinate(withNormalizedOffset: CGVector(dx: 0.04, dy: 0.5)).tap()
+            try await waitFor("Seek to the beginning: " + engine) { seconds() <= max(1, duration * 0.02) }
+            // Exercise actual touch tracking, rather than only accessibility adjustment.
+            slider.coordinate(withNormalizedOffset: CGVector(dx: 0.04, dy: 0.5)).press(forDuration: 0.05,
+                thenDragTo: slider.coordinate(withNormalizedOffset: CGVector(dx: 0.7, dy: 0.5)))
+            try await waitFor("Drag the thumb: " + engine) { seconds() >= duration * 0.5 }
+            slider.coordinate(withNormalizedOffset: CGVector(dx: 0.04, dy: 0.5)).tap()
+            try await waitFor("Seek back to the beginning: " + engine) { seconds() <= max(1, duration * 0.02) }
+            // A video timeline must also allow grabbing the track away from its small thumb.
+            slider.coordinate(withNormalizedOffset: CGVector(dx: 0.45, dy: 0.5)).press(forDuration: 0.05,
+                thenDragTo: slider.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.5)))
+            try await waitFor("Drag from the track: " + engine) { seconds() >= duration * 0.6 }
+            slider.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.5)).tap()
+            try await waitFor("Prepare resumed playback: " + engine) { abs(seconds() - duration * 0.25) <= max(1.5, duration * 0.05) }
+            let afterSeek = seconds()
+            if play.label == "Play" { play.tap() }
+            try await waitFor("Playback clock must advance after the seek: " + engine) { seconds() > afterSeek + 1 }
+            if play.label == "Pause" { play.tap() }
+            let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "MP4 mini-player reopened and scrubbed · " + engine
+            shot.lifetime = .keepAlways; add(shot)
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            app.buttons["library.section.downloads"].tap()
+            XCTAssertTrue(mini.waitForExistence(timeout: 5))
+            app.buttons.matching(NSPredicate(format: "label == %@", "Expand player")).firstMatch.tap()
+            XCTAssertTrue(slider.waitForExistence(timeout: 10), "The Downloads section must also consume expansion: \(engine)")
+            app.terminate()
+        }
+    }
+
+    @MainActor
+    func testExistingDownloadedHLSExportsMP4FromItsMenuAndKeepsOriginal() async throws {
+        continueAfterFailure = false
+        let name = "MP4ExportUIQA"
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-appearance", "light", "-privacy_https_upgrade_enabled", "NO",
+            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-video.defaultPlayer", "system"]
+        app.launch(); defer { app.terminate() }
+        app.open(try XCTUnwrap(URL(string: "soulo://downloads")))
+        let original = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@ AND label CONTAINS %@", "downloads.open.", name, ".soulohls")).firstMatch
+        guard original.waitForExistence(timeout: 10) else { XCTFail(app.debugDescription); return }
+        let export = app.buttons[original.identifier.replacingOccurrences(of: "downloads.open.", with: "downloads.export.")]
+        guard export.waitForExistence(timeout: 10) else { XCTFail(app.debugDescription); return }
+        export.tap()
+        let mp4 = app.buttons["Export MP4"].firstMatch
+        XCTAssertTrue(mp4.waitForExistence(timeout: 5), app.debugDescription)
+        let menuShot = XCTAttachment(screenshot: app.screenshot()); menuShot.name = "HLS export menu"; menuShot.lifetime = .keepAlways; add(menuShot)
+        mp4.tap()
+        let share = app.otherElements["ActivityListView"].firstMatch
+        guard share.waitForExistence(timeout: 10) else { XCTFail(app.debugDescription); return }
+        let shareShot = XCTAttachment(screenshot: app.screenshot()); shareShot.name = "Converted MP4 share preview"; shareShot.lifetime = .keepAlways; add(shareShot)
+        app.buttons["header.closeButton"].firstMatch.tap()
+        XCTAssertTrue(original.waitForExistence(timeout: 5), "The original HLS remains in Downloads")
+        let converted = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@ AND label CONTAINS %@", "downloads.open.", name, ".mp4")).firstMatch
+        XCTAssertTrue(converted.waitForExistence(timeout: 5), app.debugDescription)
+        converted.tap()
+        XCTAssertTrue(app.otherElements["media.preview"].waitForExistence(timeout: 10), app.debugDescription)
+        let playerShot = XCTAttachment(screenshot: app.screenshot()); playerShot.name = "Exported MP4 plays offline"; playerShot.lifetime = .keepAlways; add(playerShot)
+    }
+    @MainActor
     func testFilteredFirstPageLoadsAndRespondsBeforeOpeningThePlayer() async throws {
         continueAfterFailure = false
         let video = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))

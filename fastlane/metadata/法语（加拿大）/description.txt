@@ -6,8 +6,6 @@ Les onglets et groupes de sites récents apparaissent en premier, et la vue s'ou
 
 Téléchargements BT : importez des fichiers .torrent ou des liens magnet, choisissez les fichiers, mettez en pause et reprenez. Sous iOS 26, ils peuvent continuer en arrière-plan si le système le permet ; les versions antérieures enregistrent la progression et les mettent en pause. Lisez les médias BT compatibles pendant le téléchargement et ouvrez les MKV. Importez les liens ed2k/thunder. Le téléchargement exige des sources disponibles ; la lecture dépend des codecs.
 
-Navigation plus fluide, commandes vidéo améliorées et aperçus de fichiers plus clairs.
-
 Configurez cinq raccourcis facultatifs sur l’accueil vers les téléchargements, fichiers, signets, historique, fonds d’écran et autres pages. La barre d’onglets de la bibliothèque se réduit lors du défilement.
 
 Recherchez, lisez, regardez des vidéos et gérez vos téléchargements au même endroit.
@@ -20,11 +18,11 @@ Gardez vos pages dans plusieurs onglets et utilisez la recherche vocale, l’his
 • Fichiers : détectez images, sons, vidéos et documents sur les pages. Enregistrez plusieurs images à la fois. Affichez vos fichiers en liste ou en grille de couvertures, renommez-les, importez depuis Photos et transférez par Wi-Fi.
 • Archives : extraction ZIP, RAR et 7z ; création d’archives ZIP et 7z avec protection par mot de passe en option.
 • Lecture : TXT, PDF, EPUB et livres MOBI, AZW et AZW3 sans DRM compatibles. Réglez police, taille, interligne et fond. Les livres à mise en page adaptable permettent l’affichage en chinois simplifié ou traditionnel. Le mode lecture extrait les articles et permet de poursuivre à la page suivante.
-• Extensions : importez, modifiez et exécutez des scripts JavaScript, gérez leurs sites et autorisations, et installez des WebExtensions compatibles.
+• Scripts et extensions : importez, modifiez et exécutez des scripts JavaScript. Les WebExtensions compatibles nécessitent iOS 18.4 ou ultérieur ; leur prise en charge varie.
 • Outils web : traduction, recherche dans la page, capture pleine page, reconnaissance de texte dans les images, modes ordinateur/mobile, agent utilisateur personnalisé et certificats des sites.
 • Favoris : dossiers et import/export de favoris HTML utilisés par Chrome, Edge et d’autres navigateurs. Créez des codes QR de pages avec l’icône du site pour les partager, les enregistrer ou les copier.
-• Personnalisation : fonds d’écran, barre d’outils et actions rapides de l’icône de l’app. Accédez aux outils via widgets, Raccourcis et schémas d’URL. Synchronisation des réglages iCloud facultative.
+• Personnalisation : fonds, barre d’outils, actions rapides, widgets, Raccourcis, URL et réglages iCloud en option. Fonds clairs et sombres distincts et interrupteur du voile sur l’image.
 
-La disponibilité des médias, livres et extensions dépend des formats, des restrictions des sites et de la version du système.
+Les médias, livres et extensions dépendent des formats, des restrictions des sites et de la version du système. Avant de télécharger, vérifiez que la source autorise l’enregistrement.
 
 Soutien : contact@dkluge.com

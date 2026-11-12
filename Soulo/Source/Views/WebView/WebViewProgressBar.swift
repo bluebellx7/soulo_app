@@ -45,7 +45,7 @@ struct WebViewProgressBar: View {
         .opacity(opacity)
         .accessibilityIdentifier("browser.load-progress")
         .onAppear { opacity = isLoading ? 1 : 0 }
-        .onChange(of: isLoading) { _, loading in
+        .onCompatibleChange(of: isLoading) { _, loading in
             if loading {
                 // Appear instantly
                 withAnimation(.easeIn(duration: 0.15)) {
@@ -58,7 +58,7 @@ struct WebViewProgressBar: View {
                 }
             }
         }
-        .onChange(of: progress) { _, _ in
+        .onCompatibleChange(of: progress) { _, _ in
             if isLoading && opacity < 1 {
                 withAnimation(.easeIn(duration: 0.15)) {
                     opacity = 1

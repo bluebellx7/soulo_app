@@ -436,3 +436,65 @@
 "files_move_busy" = "Vänta tills nedladdningarna är klara innan du flyttar eller byter namn på dessa objekt.";
 "video_show_episode_dock" = "Visa avsnittsdocka";
 "video_show_episode_dock_desc" = "Visa en dockad avsnittsknapp på webbsidor med avsnitt. Avsnitt förblir tillgängliga i spelaren.";
+
+// Webpage share preview
+"page_share_image" = "Dela bild";
+"page_share_link" = "Dela länk";
+"page_share_preview" = "Förhandsvisning av synligt område";
+"page_share_brand" = "Soulo: Flersökningswebbläsare";
+
+"video_export_mp4" = "Exportera MP4";
+"video_export_failed" = "Videon kunde inte exporteras som MP4. Originalfilen har behållits.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Gester med två fingrar";
+"gesture_hint" = "Flytta två fingrar åt sidan tillsammans. Ledtråden följer fingrarna; flytta tillbaka för att avbryta. Navigering med ett finger och nypzoom fungerar fortfarande.";
+"gesture_swipe_right" = "Svep åt höger";
+"gesture_swipe_left" = "Svep åt vänster";
+"gesture_show_toolbar" = "Visa verktygsfält";
+"gesture_quick_menu" = "Snabbmeny";
+"gesture_preview" = "Förhandsvisa gest";
+"zoom_remember" = "Kom ihåg webbplatszoom";
+"zoom_hint" = "Zoom från sidmenyn sparas per domän. Ändringar i privata flikar sparas inte.";
+"zoom_empty" = "Inga sparade zoomnivåer";
+"zoom_reset_all" = "Återställ allt till 100%";
+
+"shake_direction" = "Riktning";
+"shake_direction_horizontal" = "Vänster och höger";
+"shake_direction_vertical" = "Upp och ner";
+"shake_direction_any" = "Valfri riktning";
+
+"gesture_settings_title" = "Webbsidesgester";
+"gesture_no_history" = "När det inte går att gå tillbaka";
+"gesture_no_history_hint" = "Utan tidigare sidor sveper du åt höger från vänster kant för att visa åtgärden. Flytta tillbaka för att avbryta. Välj Ingen för att stänga av.";
+
+"gesture_execution" = "Utför åtgärd";
+
+"gesture_execute_release" = "När du släpper";
+
+"gesture_execute_tap" = "När du trycker";
+
+"gesture_feedback" = "Åtgärdsrespons";
+
+"gesture_haptics" = "Vibration";
+
+"gesture_sound" = "Ljud";
+
+"gesture_feedback_preview" = "Prova respons";
+
+"media_start_timeout" = "Uppspelningen har inte startat. Kontrollera nätverket eller byt spelare.";
+
+"wallpaper_appearance_hint" = "Välj separata bakgrunder för ljust och mörkt utseende. De växlar automatiskt med appen.";
+
+"wallpaper_image_overlay" = "Bildlager";
+
+"auto_hide_platform_bar" = "Dölj plattformsfältet automatiskt";
+
+"top_tab_bar_hidden_title" = "Övre flikfältet är dolt";
+
+"top_tab_bar_reopen_hint" = "Tryck på flikknappen längst ned, öppna menyn … och aktivera det övre flikfältet för att visa det igen.";
+
+"wallpaper_image_blur" = "Frostat glas";
+"wallpaper_blur_amount" = "Oskärpans styrka";
+
+"auto_hide_platform_bar_hint" = "Plattformsfältet döljs när du öppnar ett sökresultat. Gå tillbaka till resultaten eller börja en ny sökning för att visa det igen. Du kan stänga av detta i den här menyn.";

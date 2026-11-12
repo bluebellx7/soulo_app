@@ -25,7 +25,7 @@ struct WallpaperEditorView: View {
                     .scaleEffect(scale)
                     .offset(offset)
                     .clipped()
-                    .onChange(of: geo.size, initial: true) { _, size in canvasSize = size }
+                    .onCompatibleChange(of: geo.size, initial: true) { _, size in canvasSize = size }
                     .gesture(
                         DragGesture()
                             .onChanged { v in

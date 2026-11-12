@@ -436,3 +436,65 @@
 "files_move_busy" = "Przed przeniesieniem lub zmianą nazwy tych elementów poczekaj na zakończenie pobierania.";
 "video_show_episode_dock" = "Pokaż stację dokującą z odcinkami";
 "video_show_episode_dock_desc" = "Pokazuj zadokowany przycisk odcinka na stronach internetowych z odcinkami. Odcinki pozostają dostępne w odtwarzaczu.";
+
+// Webpage share preview
+"page_share_image" = "Udostępnij obraz";
+"page_share_link" = "Udostępnij link";
+"page_share_preview" = "Podgląd widocznego obszaru";
+"page_share_brand" = "Soulo: Wyszukiwarka i sieć";
+
+"video_export_mp4" = "Eksportuj MP4";
+"video_export_failed" = "Nie udało się wyeksportować tego filmu jako MP4. Oryginalny plik został zachowany.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Gesty dwoma palcami";
+"gesture_hint" = "Przesuń dwa palce razem w bok. Wskazówka podąża za palcami; cofnij ruch, aby anulować. Nawigacja jednym palcem i zoom szczypaniem nadal działają.";
+"gesture_swipe_right" = "Przesuń w prawo";
+"gesture_swipe_left" = "Przesuń w lewo";
+"gesture_show_toolbar" = "Pokaż pasek narzędzi";
+"gesture_quick_menu" = "Szybkie menu";
+"gesture_preview" = "Podgląd gestu";
+"zoom_remember" = "Zapamiętaj zoom witryn";
+"zoom_hint" = "Zoom z menu strony jest zapisywany dla każdej domeny. Zmiany w kartach prywatnych nie są zapisywane.";
+"zoom_empty" = "Brak zapisanego zoomu";
+"zoom_reset_all" = "Przywróć wszystko do 100%";
+
+"shake_direction" = "Kierunek";
+"shake_direction_horizontal" = "W lewo i w prawo";
+"shake_direction_vertical" = "W górę i w dół";
+"shake_direction_any" = "Dowolny kierunek";
+
+"gesture_settings_title" = "Gesty stron internetowych";
+"gesture_no_history" = "Gdy nie można wrócić";
+"gesture_no_history_hint" = "Bez wcześniejszej strony przesuń od lewej krawędzi w prawo, aby pokazać czynność. Cofnij ruch, aby anulować. Wybierz Brak, aby wyłączyć.";
+
+"gesture_execution" = "Wykonaj czynność";
+
+"gesture_execute_release" = "Po puszczeniu";
+
+"gesture_execute_tap" = "Po stuknięciu";
+
+"gesture_feedback" = "Informacja o działaniu";
+
+"gesture_haptics" = "Wibracje";
+
+"gesture_sound" = "Dźwięk";
+
+"gesture_feedback_preview" = "Wypróbuj informację zwrotną";
+
+"media_start_timeout" = "Odtwarzanie nie rozpoczęło się. Sprawdź sieć lub zmień odtwarzacz.";
+
+"wallpaper_appearance_hint" = "Ustaw osobne tła dla jasnego i ciemnego wyglądu. Będą zmieniać się automatycznie wraz z aplikacją.";
+
+"wallpaper_image_overlay" = "Warstwa na obrazie";
+
+"auto_hide_platform_bar" = "Automatycznie ukrywaj pasek platform";
+
+"top_tab_bar_hidden_title" = "Górny pasek kart ukryty";
+
+"top_tab_bar_reopen_hint" = "Aby go przywrócić, stuknij przycisk kart na dole, otwórz menu … i włącz wyświetlanie górnego paska kart.";
+
+"wallpaper_image_blur" = "Matowe szkło";
+"wallpaper_blur_amount" = "Siła rozmycia";
+
+"auto_hide_platform_bar_hint" = "Pasek platform ukrywa się po otwarciu wyniku wyszukiwania. Wróć do wyników lub rozpocznij nowe wyszukiwanie, aby go przywrócić. Możesz to wyłączyć w tym menu.";

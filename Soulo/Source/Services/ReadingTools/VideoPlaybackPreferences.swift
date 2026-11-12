@@ -32,3 +32,23 @@ struct VideoPlaybackSeek {
         abs(actual - target) > 1.5 && started.duration(to: now) < .seconds(20)
     }
 }
+
+/// A full-width swipe covers up to five minutes, with bounds shared by both decoders.
+enum VideoSeekGesture {
+    static func target(start: Double, duration: Double, translation: CGFloat, width: CGFloat) -> Double? {
+        guard start.isFinite, duration.isFinite, duration > 0, translation.isFinite, width.isFinite, width > 0 else { return nil }
+        return min(duration, max(0, start + Double(translation / width) * min(duration, 300)))
+    }
+}
+
+/// Startup warnings are recoverable. Pauses/background time never count as a failed start.
+struct VideoStartupWatch {
+    private var since: TimeInterval?
+    private(set) var completed = false
+    mutating func update(now: TimeInterval, requested: Bool, ready: Bool) -> Bool {
+        if ready { completed = true; since = nil }
+        guard !completed, requested else { since = nil; return false }
+        if since == nil { since = now }
+        return now - (since ?? now) >= 5
+    }
+}

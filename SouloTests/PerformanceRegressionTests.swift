@@ -1,6 +1,6 @@
 import XCTest
 import Combine
-import SwiftData
+import CoreData
 @testable import Soulo
 
 private final class CountingDefaults: UserDefaults {
@@ -68,17 +68,17 @@ private final class PerformanceClipboard: ClipboardReading {
     }
 
     func testRecentSearchKeywordsPagePastDuplicatesAndExcludeWebVisits() throws {
-        let container = try ModelContainer(for: SearchHistoryItem.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
-        let context = ModelContext(container)
+        let container = try LibraryStore(inMemory: true)
+        let context = container.makeContext()
         for index in 0..<200 {
-            context.insert(SearchHistoryItem(keyword: "Page \(index)", timestamp: Date(timeIntervalSince1970: Double(index + 1_000)),
+            context.insert(SearchHistoryRecord(keyword: "Page \(index)", timestamp: Date(timeIntervalSince1970: Double(index + 1_000)),
                 visitedURLString: "https://example.com/\(index)"))
         }
         for index in 0..<90 {
-            context.insert(SearchHistoryItem(keyword: "duplicate", timestamp: Date(timeIntervalSince1970: Double(index + 100))))
+            context.insert(SearchHistoryRecord(keyword: "duplicate", timestamp: Date(timeIntervalSince1970: Double(index + 100))))
         }
         for index in 0..<20 {
-            context.insert(SearchHistoryItem(keyword: "query \(index)", timestamp: Date(timeIntervalSince1970: Double(index))))
+            context.insert(SearchHistoryRecord(keyword: "query \(index)", timestamp: Date(timeIntervalSince1970: Double(index))))
         }
         try context.save()
         let expected = ["duplicate"] + (1...19).reversed().map { "query \($0)" }
@@ -140,20 +140,19 @@ private final class PerformanceClipboard: ClipboardReading {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("history-performance-\(UUID())")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let container = try ModelContainer(for: SearchHistoryItem.self,
-            configurations: ModelConfiguration(url: directory.appendingPathComponent("history.sqlite")))
-        let seed = ModelContext(container)
+        let container = try LibraryStore(url: directory.appendingPathComponent("history.sqlite"))
+        let seed = container.makeContext()
         let now = Date()
         for index in 0..<5_000 {
-            seed.insert(SearchHistoryItem(keyword: "Page \(index)", timestamp: now.addingTimeInterval(-Double(index)),
+            seed.insert(SearchHistoryRecord(keyword: "Page \(index)", timestamp: now.addingTimeInterval(-Double(index)),
                 visitedURLString: "https://example.com/articles/\(index)?topic=reading"))
         }
-        seed.insert(SearchHistoryItem(keyword: "Expired page",
+        seed.insert(SearchHistoryRecord(keyword: "Expired page",
             timestamp: now.addingTimeInterval(-SearchHistoryService.browsingHistoryLifetime - 1),
             visitedURLString: "https://expired.example.com"))
-        seed.insert(SearchHistoryItem(keyword: "Preserved search", timestamp: .distantPast))
+        seed.insert(SearchHistoryRecord(keyword: "Preserved search", timestamp: .distantPast))
         try seed.save()
-        let context = ModelContext(container)
+        let context = container.makeContext()
         var durations: [Double] = []
         for index in 0..<5 {
             let start = CFAbsoluteTimeGetCurrent()
@@ -162,7 +161,7 @@ private final class PerformanceClipboard: ClipboardReading {
             durations.append((CFAbsoluteTimeGetCurrent() - start) * 1_000)
         }
         print("PERF history 5000: median_ms=\(durations.sorted()[2]), samples_ms=\(durations)")
-        XCTAssertEqual(try context.fetchCount(FetchDescriptor<SearchHistoryItem>()), 5_006)
+        XCTAssertEqual(try context.count(for: SearchHistoryRecord.request()), 5_006)
         XCTAssertEqual(SearchHistoryService.fetchRecent(limit: 1, context: context).first?.timestamp, now)
     }
 
@@ -232,10 +231,10 @@ private final class PerformanceClipboard: ClipboardReading {
     }
 
     func testRecentHistoryLimitsResultsAndPreservesDuplicateRules() throws {
-        let container = try ModelContainer(for: SearchHistoryItem.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let container = try LibraryStore(inMemory: true)
         let context = container.mainContext
         for index in 0..<1000 {
-            context.insert(SearchHistoryItem(keyword: "query \(index)", timestamp: Date(timeIntervalSince1970: Double(index))))
+            context.insert(SearchHistoryRecord(keyword: "query \(index)", timestamp: Date(timeIntervalSince1970: Double(index))))
         }
         try context.save()
         XCTAssertEqual(SearchHistoryService.fetchRecent(limit: 3, context: context).map(\.keyword), ["query 999", "query 998", "query 997"])

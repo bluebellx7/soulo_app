@@ -436,3 +436,65 @@
 "files_move_busy" = "આ આઇટમ્સને ખસેડતા અથવા તેનું નામ બદલતા પહેલા ડાઉનલોડ્સ સમાપ્ત થાય ત્યાં સુધી રાહ જુઓ.";
 "video_show_episode_dock" = "એપિસોડ ડોક બતાવો";
 "video_show_episode_dock_desc" = "એપિસોડ સાથે વેબ પૃષ્ઠો પર ડોક કરેલ એપિસોડ બટન બતાવો. એપિસોડ્સ પ્લેયરની અંદર ઉપલબ્ધ રહે છે.";
+
+// Webpage share preview
+"page_share_image" = "છબી શેર કરો";
+"page_share_link" = "લિંક શેર કરો";
+"page_share_preview" = "દેખાતા વિસ્તારનું પૂર્વાવલોકન";
+"page_share_brand" = "Soulo: મલ્ટી-સર્ચ બ્રાઉઝર";
+
+"video_export_mp4" = "MP4 નિકાસ કરો";
+"video_export_failed" = "આ વિડિયો MP4 તરીકે નિકાસ થઈ શક્યો નથી. મૂળ ફાઇલ રાખવામાં આવી છે.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "બે આંગળીના હાવભાવ";
+"gesture_hint" = "બે આંગળીઓને એકસાથે બાજુમાં ખસેડો. સંકેત આંગળીઓને અનુસરે છે; રદ કરવા પાછા લાવો. એક આંગળીથી નેવિગેશન અને પિંચ ઝૂમ ઉપલબ્ધ રહે છે.";
+"gesture_swipe_right" = "જમણે સ્વાઇપ";
+"gesture_swipe_left" = "ડાબે સ્વાઇપ";
+"gesture_show_toolbar" = "ટૂલબાર બતાવો";
+"gesture_quick_menu" = "ઝડપી મેનુ";
+"gesture_preview" = "હાવભાવ પૂર્વાવલોકન";
+"zoom_remember" = "વેબસાઇટ ઝૂમ યાદ રાખો";
+"zoom_hint" = "પેજ મેનુનું ઝૂમ દરેક ડોમેન માટે સચવાય છે. ખાનગી ટૅબના ફેરફારો સચવાતા નથી.";
+"zoom_empty" = "કોઈ ઝૂમ સચવાયેલ નથી";
+"zoom_reset_all" = "બધું 100% પર રીસેટ કરો";
+
+"shake_direction" = "દિશા";
+"shake_direction_horizontal" = "ડાબે અને જમણે";
+"shake_direction_vertical" = "ઉપર અને નીચે";
+"shake_direction_any" = "કોઈપણ દિશા";
+
+"gesture_settings_title" = "વેબપેજ હાવભાવ";
+"gesture_no_history" = "પાછા ન જઈ શકાય ત્યારે";
+"gesture_no_history_hint" = "પહેલાનું પેજ ન હોય ત્યારે ક્રિયા જોવા ડાબી ધારથી જમણે સ્વાઇપ કરો. રદ કરવા પાછા લાવો. બંધ કરવા કોઈ નહીં પસંદ કરો.";
+
+"gesture_execution" = "ક્રિયા ચલાવો";
+
+"gesture_execute_release" = "છોડવા પર";
+
+"gesture_execute_tap" = "ટૅપ કરવા પર";
+
+"gesture_feedback" = "ક્રિયાનો પ્રતિસાદ";
+
+"gesture_haptics" = "કંપન";
+
+"gesture_sound" = "અવાજ";
+
+"gesture_feedback_preview" = "પ્રતિસાદ પૂર્વાવલોકન";
+
+"media_start_timeout" = "પ્લેબૅક શરૂ થયું નથી. નેટવર્ક તપાસો અથવા પ્લેયર બદલો.";
+
+"wallpaper_appearance_hint" = "લાઇટ અને ડાર્ક દેખાવ માટે અલગ પૃષ્ઠભૂમિ સેટ કરો. તે ઍપના દેખાવ સાથે આપમેળે બદલાશે.";
+
+"wallpaper_image_overlay" = "છબીનું આવરણ";
+
+"auto_hide_platform_bar" = "પ્લેટફોર્મ બાર આપમેળે છુપાવો";
+
+"top_tab_bar_hidden_title" = "ઉપરનો ટૅબ બાર છુપાવ્યો";
+
+"top_tab_bar_reopen_hint" = "ફરી બતાવવા માટે નીચેના ટૅબ બટનને ટૅપ કરો, … મેનૂ ખોલો અને ઉપરનો ટૅબ બાર બતાવવાનો વિકલ્પ ચાલુ કરો.";
+
+"wallpaper_image_blur" = "ધૂંધળો કાચ";
+"wallpaper_blur_amount" = "ધૂંધળાપાની તીવ્રતા";
+
+"auto_hide_platform_bar_hint" = "શોધનું પરિણામ ખોલતાં પ્લેટફોર્મ બાર છુપાય છે. પરિણામો પર પાછા જાઓ અથવા નવી શોધ કરો તો તે ફરી દેખાશે. આ મેનૂમાં તેને બંધ કરી શકો છો.";

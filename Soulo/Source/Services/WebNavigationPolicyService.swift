@@ -60,7 +60,7 @@ struct WebNavigationPolicyService {
 
     /// Baidu's share-page SDK wraps its app scheme in an HTTPS Universal Link.
     /// Resolve only that specific SDK link shape, so ordinary cross-site pages
-    /// continue through the browser's ad-navigation checks.
+    /// continue through the browser's normal navigation confirmation flow.
     private func baiduAppHandoffURL(for url: URL) -> URL? {
         guard url.scheme?.lowercased() == "https",
               url.host?.lowercased() == "boxer.baidu.com",

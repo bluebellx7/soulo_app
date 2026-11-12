@@ -4,6 +4,7 @@ import WidgetKit
 
 // MARK: - Lock Screen Banner
 
+@available(iOSApplicationExtension 16.1, *)
 struct SouloLiveActivityView: View {
     let context: ActivityViewContext<SouloLiveActivityAttributes>
 
@@ -38,6 +39,7 @@ struct SouloLiveActivityView: View {
 
 // MARK: - Compact Views
 
+@available(iOSApplicationExtension 16.1, *)
 struct SouloLiveActivityCompactLeadingView: View {
     let context: ActivityViewContext<SouloLiveActivityAttributes>
 
@@ -49,6 +51,7 @@ struct SouloLiveActivityCompactLeadingView: View {
     }
 }
 
+@available(iOSApplicationExtension 16.1, *)
 struct SouloLiveActivityCompactTrailingView: View {
     let context: ActivityViewContext<SouloLiveActivityAttributes>
 
@@ -62,6 +65,7 @@ struct SouloLiveActivityCompactTrailingView: View {
     }
 }
 
+@available(iOSApplicationExtension 16.1, *)
 struct SouloLiveActivityMinimalView: View {
     let context: ActivityViewContext<SouloLiveActivityAttributes>
 
@@ -74,6 +78,7 @@ struct SouloLiveActivityMinimalView: View {
 
 // MARK: - Widget
 
+@available(iOSApplicationExtension 16.1, *)
 struct SouloLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: SouloLiveActivityAttributes.self) { context in

@@ -135,7 +135,7 @@ struct AdBlockManagementView: View {
                 }
             }
         }
-        .onChange(of: adBlockEnabled) { _, _ in onChanged?() }
+        .onCompatibleChange(of: adBlockEnabled) { _, _ in onChanged?() }
         .navigationDestination(isPresented: $showsDomainAllowlist) {
             BrowserDomainAllowlistView()
         }
@@ -339,7 +339,7 @@ private struct AdBlockAllowedSitesView: View {
         }
         .overlay {
             if service.permanentAllowlistedHosts.isEmpty {
-                ContentUnavailableView(ToolText.text("ad_allowlist_empty"), systemImage: "shield.checkered")
+                CompatibleUnavailableView(ToolText.text("ad_allowlist_empty"), systemImage: "shield.checkered")
             }
         }
         .navigationTitle(LanguageManager.shared.localizedString("ad_block_allowlist"))
@@ -556,10 +556,10 @@ private struct ManualAdRulesView: View {
         .searchable(text: $searchText, prompt: Text(ToolText.text("manual_ad_search")))
         .overlay {
             if service.rules.isEmpty {
-                ContentUnavailableView(ToolText.text("manual_ad_empty"), systemImage: "eye.slash",
+                CompatibleUnavailableView(ToolText.text("manual_ad_empty"), systemImage: "eye.slash",
                     description: Text(ToolText.text("manual_ad_empty_hint")))
             } else if groupedRules.isEmpty {
-                ContentUnavailableView.search(text: searchText)
+                CompatibleUnavailableView.search(text: searchText)
             }
         }
         .safeAreaInset(edge: .bottom) {

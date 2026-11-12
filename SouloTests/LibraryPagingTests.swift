@@ -30,12 +30,13 @@ final class LibraryPagingTests: XCTestCase {
 
     @MainActor
     func testNativePagerReportsFractionalOffsetAndKeepsSelectionAfterResize() async throws {
+        guard #available(iOS 17.0, *) else { throw XCTSkip("Exercises the iOS 17 scroll-position API") }
         for direction in [LayoutDirection.leftToRight, .rightToLeft] {
             let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
             let previous = scene.windows.first(where: \.isKeyWindow)
             let state = PagingState()
             let host = UIHostingController(rootView: PagingFixture(state: state).environment(\.layoutDirection, direction))
-            host.safeAreaRegions = []
+            if #available(iOS 16.4, *) { host.safeAreaRegions = [] }
             let window = UIWindow(windowScene: scene)
             window.frame = CGRect(x: 0, y: 0, width: 390, height: 600)
             window.rootViewController = host; window.makeKeyAndVisible()
@@ -90,13 +91,14 @@ final class LibraryPagingTests: XCTestCase {
 
     @MainActor
     func testNativePagerPositionsEveryInitialSectionInBothDirections() async throws {
+        guard #available(iOS 17.0, *) else { throw XCTSkip("Exercises the iOS 17 scroll-position API") }
         for direction in [LayoutDirection.leftToRight, .rightToLeft] {
             for (index, section) in LibrarySection.allCases.enumerated() {
                 let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
                 let previous = scene.windows.first(where: \.isKeyWindow)
                 let state = PagingState(section: section)
                 let host = UIHostingController(rootView: PagingFixture(state: state).environment(\.layoutDirection, direction))
-                host.safeAreaRegions = []
+                if #available(iOS 16.4, *) { host.safeAreaRegions = [] }
                 let window = UIWindow(windowScene: scene)
                 window.frame = CGRect(x: 0, y: 0, width: 390, height: 600)
                 window.rootViewController = host; window.makeKeyAndVisible()
@@ -137,7 +139,7 @@ final class LibraryPagingTests: XCTestCase {
         let originalLanguage = manager.currentLanguage
         manager.currentLanguage = "en-US"
         let host = UIHostingController(rootView: LibrarySectionSwitcher(selectedSection: .constant(.bookmarks), progress: 0))
-        host.safeAreaRegions = []
+        if #available(iOS 16.4, *) { host.safeAreaRegions = [] }
         let window = UIWindow(windowScene: scene)
         window.frame = CGRect(x: 0, y: 0, width: 390, height: 80)
         window.rootViewController = host

@@ -185,13 +185,13 @@ final class SiteOptimizationController: NSObject, WKScriptMessageHandler {
             }
             applied[rule.id] = signature
             if webView.url != nil {
-                webView.evaluateJavaScript(source, in: nil, in: rule.world, completionHandler: nil)
+                webView.evaluateCompatibleJavaScript(source, in: nil, in: rule.world, completionHandler: nil)
             }
         }
     }
     func finishNavigation() {
         for rule in rules where pending.contains(rule.id) {
-            webView?.evaluateJavaScript("globalThis.__souloSiteOptimization?.finishNavigation();", in: nil, in: rule.world, completionHandler: nil)
+            webView?.evaluateCompatibleJavaScript("globalThis.__souloSiteOptimization?.finishNavigation();", in: nil, in: rule.world, completionHandler: nil)
         }
         pending.removeAll()
     }
@@ -207,7 +207,7 @@ final class SiteOptimizationController: NSObject, WKScriptMessageHandler {
               let source = message.frameInfo.requestURL, rule.matches(source),
               let body = message.body as? [String: Any] else { return }
         if body["action"] as? String == "ready" {
-            webView?.evaluateJavaScript(rule.configurationCall(enabled: settings.isEnabled(rule), navigationEnabled: navigationEnabled),
+            webView?.evaluateCompatibleJavaScript(rule.configurationCall(enabled: settings.isEnabled(rule), navigationEnabled: navigationEnabled),
                 in: nil, in: rule.world, completionHandler: nil)
             return
         }

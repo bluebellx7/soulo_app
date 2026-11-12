@@ -114,7 +114,7 @@ struct FileVideoEpisodeDrawer: ViewModifier {
                     }.padding(10)
                 }
                 .onAppear { reader.scrollTo(playlist.selectedID, anchor: .center) }
-                .onChange(of: playlist.selectedID) { _, _ in if playlist.asynchronous { isPresented = false } }
+                .onCompatibleChange(of: playlist.selectedID) { _, _ in if playlist.asynchronous { isPresented = false } }
             }
             .frame(maxHeight: .infinity, alignment: .top)
         }

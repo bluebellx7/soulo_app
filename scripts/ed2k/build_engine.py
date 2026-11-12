@@ -30,7 +30,7 @@ def main():
         sdk = 'iphonesimulator' if simulator else 'iphoneos'
         sdkpath = subprocess.check_output(['xcrun','--sdk',sdk,'--show-sdk-path'], text=True).strip()
         cc = subprocess.check_output(['xcrun','--sdk',sdk,'--find','clang'], text=True).strip()
-        target = f'{arch}-apple-ios17.0' + ('-simulator' if simulator else '')
+        target = f'{arch}-apple-ios16.0' + ('-simulator' if simulator else '')
         flags = f'-isysroot {sdkpath} -target {target}'
         directory = cache / name
         directory.mkdir(exist_ok=True)

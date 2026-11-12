@@ -6,8 +6,6 @@ Tab dan grup situs yang baru digunakan tampil lebih dulu, dan tampilan tab dibuk
 
 Unduhan BT: impor file .torrent atau tautan magnet, pilih file, jeda dan lanjutkan. Di iOS 26, unduhan dapat berlanjut di latar belakang jika sistem mengizinkan; versi sebelumnya menyimpan progres dan menjeda. Putar media BT yang didukung saat diunduh dan buka file MKV. Impor tautan ed2k/thunder. Unduhan memerlukan sumber yang tersedia; pemutaran bergantung pada codec.
 
-Penjelajahan lebih lancar, kontrol video yang lebih baik, dan pratinjau berkas yang lebih jelas.
-
 Pilih lima pintasan opsional di beranda untuk unduhan, file, penanda, riwayat, wallpaper, dan halaman lainnya. Bilah tab pustaka menjadi ringkas saat digulir.
 
 Cari informasi, baca artikel, putar media, dan kelola unduhan dalam satu browser.
@@ -20,11 +18,11 @@ Jelajahi dengan banyak tab, pencarian suara, riwayat, dan grup platform. Ganti p
 • File: temukan gambar, audio, video, dan dokumen di halaman, lalu simpan gambar secara massal. Tampilan daftar atau kisi sampul, ubah nama, impor dari Foto, dan transfer melalui Wi-Fi.
 • Arsip: ekstrak ZIP, RAR, dan 7z. Buat ZIP dan 7z dengan perlindungan kata sandi opsional.
 • Membaca: TXT, PDF, EPUB, serta buku MOBI, AZW, dan AZW3 tanpa DRM yang didukung. Atur font, ukuran, spasi baris, dan latar. Buku bertata letak fleksibel mendukung tampilan Mandarin sederhana atau tradisional. Mode baca mengekstrak artikel dan memungkinkan lanjut ke halaman berikutnya.
-• Ekstensi: impor, edit, dan jalankan skrip pengguna JavaScript, kelola kecocokan situs serta izin, dan pasang WebExtension yang kompatibel.
+• Skrip dan ekstensi: impor, edit, dan jalankan skrip pengguna JavaScript. WebExtension kompatibel memerlukan iOS 18.4 atau lebih baru; dukungan berbeda per ekstensi.
 • Alat web: terjemahan, cari di halaman, tangkapan layar seluruh halaman, pengenalan teks pada gambar, mode desktop/seluler, agen pengguna khusus, dan sertifikat situs.
 • Penanda: folder serta impor/ekspor penanda HTML untuk Chrome, Edge, dan browser lain. Buat kode QR halaman dengan ikon situs, lalu bagikan, simpan, atau salin.
-• Personalisasi: wallpaper, bar alat, dan tindakan cepat ikon aplikasi. Akses lewat widget, Pintasan, dan skema URL. Sinkronkan pengaturan melalui iCloud jika diinginkan.
+• Personalisasi: wallpaper, bar alat, dan tindakan cepat ikon aplikasi. Akses lewat widget, Pintasan, dan skema URL. Sinkronkan pengaturan melalui iCloud jika diinginkan. Latar terpisah untuk tampilan terang dan gelap, dengan sakelar lapisan gambar.
 
-Ketersediaan media, buku, dan ekstensi bergantung pada format file, batasan situs, dan versi sistem.
+Media, buku, dan ekstensi bergantung pada format, batasan situs, dan versi sistem. Sebelum mengunduh, pastikan sumber mengizinkan penyimpanan konten.
 
 Dukungan: contact@dkluge.com

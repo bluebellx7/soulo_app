@@ -609,27 +609,27 @@
 "extensions_reload_note" = "Otvorene stranice ponovno se učitavaju nakon promjene proširenja ili skripte kako bi novo stanje stupilo na snagu.";
 "web_extensions" = "Web proširenja";
 "userscripts" = "Skripte i proširenja";
-"userscripts_installed" = "Moje skripte";
-"userscripts_install" = "Instalirajte skripte";
+"userscripts_installed" = "Instalirano";
+"userscripts_install" = "Dodaj";
 "userscripts_empty" = "Nema UserScripts";
 "userscripts_empty_desc" = "Instalirajte datoteku .user.js ili izradite skriptu da biste je vidjeli ovdje.";
 "userscripts_reload_note" = "Otvorene stranice ponovno se učitavaju nakon što se skripta instalira, uredi, omogući, onemogući ili ukloni.";
 "userscript_experimental_badge" = "Kompatibilnost";
 "userscript_experimental_title" = "UserScript kompatibilnost";
-"userscript_experimental_desc" = "Podržava pravila web mjesta, početak/kraj dokumenta, opsežnu GM pohranu i API-je stranica, naredbe skripte, obavijesti, kartice, preuzimanja, kolačiće, resurse i zahtjeve s opsegom dopuštenja. Pregledajte svaku skriptu prije instalacije.";
+"userscript_experimental_desc" = "Korisničke skripte mogu čitati ili mijenjati odgovarajuća web-mjesta i koristiti dopuštene API-je. Kompatibilnost ovisi o skripti. Instalirajte samo pouzdane skripte.";
 "extension_choose_file" = "Odaberi datoteku ili mapu…";
 "extension_installing" = "Provjera i instaliranje proširenja…";
 "extension_install_failed" = "Nije moguće instalirati proširenje";
 "extension_permissions_summary" = "%d dopuštenja · %d pravila web stranice";
 "extension_untitled" = "Proširenje bez naslova";
-"web_extension_install_footer" = "Dodirnite bilo gdje na izvornom retku da biste ga otvorili u trenutnoj kartici Soulo. Soulo prepoznaje CRX, XPI, ZIP i radnje instalacije podržane trgovine, a zatim pita prije instalacije. Neki API-ji samo za stolna računala možda neće biti dostupni.";
+"web_extension_install_footer" = "Instalirajte kompatibilna proširenja putem poveznice trgovine ili uvezite CRX, XPI, ZIP ili mapu proširenja. Provjerite dozvole i kompatibilnost; neke funkcije za računala nisu dostupne.";
 "web_extension_install_store_link" = "Instaliraj iz trgovine Link…";
 "web_extension_browse_sources" = "Pregledajte trgovine proširenja";
 "web_extension_browse_sources_footer" = "Gumbi Store Get podržavaju samo vlastite preglednike stolnih računala. Kopirajte vezu na stranicu s pojedinostima proširenja, a zatim upotrijebite vezu Instaliraj iz trgovine u Soulo.";
 "web_extension_store_install_title" = "Instalirajte proširenje trgovine";
 "extension_page_banner_title" = "Instaliraj s Soulo";
-"extension_page_banner_desc" = "Soulo može izravno instalirati ovo proširenje.";
-"web_extension_store_install_desc" = "Zalijepite vezu na stranicu s pojedinostima o Chrome web-trgovini, dodacima za Microsoft Edge ili dodacima za Firefox. Soulo preuzima sam paket, tako da se nekompatibilni gumb Preuzmi u trgovini ne koristi.";
+"extension_page_banner_desc" = "Prije instalacije provjerite kompatibilnost i dozvole.";
+"web_extension_store_install_desc" = "Zalijepite poveznicu na stranicu proširenja za Chrome, Edge ili Firefox te provjerite kompatibilnost i dozvole prije potvrde instalacije.";
 "web_extension_store_link_placeholder" = "Veza na stranicu s proširenjem ili ID proširenja za Chrome";
 "web_extension_store_invalid_link" = "Zalijepite vezu stranice s pojedinostima proširenja iz Chromea, Edgea ili Firefoxa, ID Chrome proširenja ili izravnu CRX, XPI ili ZIP vezu.";
 "web_extension_store_https_required" = "Paketi proširenja moraju koristiti sigurnu HTTPS vezu.";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "Medijski tok vratio je neispravan segment ili segment izvan redoslijeda.";
 "resource_stream_download_missing_track" = "Preuzeti tok nije sadržavao videozapise i zvučne zapise koji se mogu reproducirati.";
 "resource_stream_download_export_failed" = "Soulo nije mogao spojiti preuzeti video i zvuk.";
-"resource_stream_playback_download_first" = "Ovaj zaštićeni tok nije moguće pregledati putem privremenog URL-a. Najprije ga preuzmite da biste reproducirali lokalnu datoteku.";
+"resource_stream_playback_download_first" = "Ovaj se tok trenutačno ne može izravno pregledati.";
 "platform_invalid_web_url" = "Unesite valjanu web-adresu koja počinje s http:// ili https://.";
 
 "library_history_tab" = "Povijest";
@@ -889,8 +889,7 @@
 "extension_review_access" = "Odaberite dopuštenja i web-stranice kojima ovo proširenje može pristupiti.";
 "extension_limit_commands" = "Tipkovnički prečaci proširenja nisu dostupni na iOS-u.";
 "extension_limit_notifications" = "Obavijesti se mogu prikazivati, ali događaji klika i zatvaranja nisu podržani.";
-"extension_limit_offscreen" = "Dokumenti izvan zaslona podržavaju samo reprodukciju zvuka.";
-
+"extension_limit_offscreen" = "Dokumenti izvan zaslona podliježu ograničenjima iOS-a; neke značajke možda neće biti dostupne.";
 "review_support_message" = "Hvala što podržavate Soulo. Vaše recenzije pomažu nam da budemo još bolji.";
 "review_open_app_store" = "Ocijenite u App Storeu";
 

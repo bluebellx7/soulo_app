@@ -1,6 +1,7 @@
 import XCTest
 import JavaScriptCore
 import WebKit
+import UIKit
 @testable import Soulo
 
 @MainActor
@@ -464,4 +465,315 @@ private final class AuditResourceProtocol: URLProtocol {
         client?.urlProtocolDidFinishLoading(self)
     }
     override func stopLoading() {}
+}
+
+extension ExtensionAuditTests {
+    /// Opt-in functional test using the official, freely downloaded Chrome package.
+    func testTampermonkeyScriptLifecycleWithLocalPackage() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Native WebExtensions require iOS 18.4") }
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let package = documents.appendingPathComponent("tampermonkey-compatibility-qa.crx")
+        guard FileManager.default.fileExists(atPath: package.path) else { throw XCTSkip("Opt-in real Tampermonkey package") }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("tm-lifecycle-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = BrowserExtensionService(extensionRoot: root)
+        let preview = try await service.previewWebExtension(from: package)
+        defer { service.discardWebExtensionPreview(preview) }
+        let pathPrefix = "tm-" + UUID().uuidString.lowercased()
+        let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: preview.resourceURL.appendingPathComponent("manifest.json"))) as? [String: Any])
+        XCTAssertFalse((manifest["permissions"] as? [String] ?? []).contains("userScripts"))
+        XCTAssertEqual((manifest["content_scripts"] as? [[String: Any]])?.filter { $0["js"] as? [String] == ["page.js", "content.js"] }.count, 1)
+        let worker = preview.resourceURL.appendingPathComponent("background.js")
+        let source = try String(contentsOf: worker, encoding: .utf8)
+        XCTAssertTrue(source.contains("globalThis.__souloAddInstallationListener(e)"))
+        try WebExtensionPackagePreparer.installCompatibilityLayer(in: preview.resourceURL)
+        XCTAssertEqual(try String(contentsOf: worker, encoding: .utf8), source, "Preparing an installed extension again must be idempotent")
+        let logger = """
+        (()=>{const messages=[]; const save=(...args)=>{messages.push(args.map(x=>{try{return typeof x==='string'?x:(x?.message ? x.message+' '+(x.stack||''):JSON.stringify(x))}catch(_){return String(x)}}).join(' '));chrome.storage.local.set({__souloQALog:messages.slice(-100)});};
+        for(const level of ['log','warn','error','debug']){const original=console[level];console[level]=function(...args){save(level,...args);return original.apply(console,args);};}
+        addEventListener('error',e=>save('UNCAUGHT',e.message,e.filename,e.lineno));addEventListener('unhandledrejection',e=>save('REJECT',String(e.reason),e.reason?.stack));})();
+        """
+        try Data((logger + source).utf8).write(to: worker)
+        // Use the real options origin and its normal background authorization.
+        try Data("<html><head><script src='/__soulo_webextension_compatibility.js'></script></head><body id='ready'>Local lifecycle test</body></html>".utf8)
+            .write(to: preview.resourceURL.appendingPathComponent("__soulo_tm_lifecycle.html"))
+        var access = preview.access; access.sites = ["http://127.0.0.1/*": .distantFuture]
+        let record = try await service.installWebExtension(preview, access: access)
+        defer { service.deleteWebExtension(record.id) }
+        let context = try XCTUnwrap(NativeWebExtensionRuntime.shared.controller.extensionContexts.first { $0.uniqueIdentifier == record.id.uuidString })
+        let page = WKWebView(frame: CGRect(x: 0, y: 0, width: 600, height: 600), configuration: try XCTUnwrap(context.webViewConfiguration))
+        page.load(URLRequest(url: context.baseURL.appendingPathComponent("__soulo_tm_lifecycle.html")))
+        for _ in 0..<100 {
+            if (try? await page.evaluateJavaScript("!!document.getElementById('ready') && typeof chrome !== 'undefined'")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        defer {
+            // The actual log is attached below before assertions, including unsuccessful experiments.
+            page.stopLoading()
+        }
+        try await Task.sleep(for: .seconds(3))
+        let script = """
+        // ==UserScript==
+        // @name Soulo Tampermonkey lifecycle
+        // @namespace soulo.local.qa
+        // @version 1.0
+        // @match http://127.0.0.1/\(pathPrefix)/*
+        // @grant GM_getValue
+        // @grant GM.setValue
+        // @grant GM_xmlhttpRequest
+        // @connect 127.0.0.1
+        // @run-at document-end
+        // ==/UserScript==
+        (async()=>{
+        const count=GM_getValue('visits',0)+1; await GM.setValue('visits',count);
+        document.documentElement.setAttribute('data-tm-visits',String(count));
+        try { document.documentElement.setAttribute('data-tm-xhr-type',typeof GM_xmlhttpRequest);
+        GM_xmlhttpRequest({method:'GET',url:location.origin+'/data.json',onload:response=>{
+          document.documentElement.setAttribute('data-tm-network',JSON.parse(response.responseText).answer);
+        },onerror:error=>document.documentElement.setAttribute('data-tm-error',String(error.error||error))});
+        } catch(error) { document.documentElement.setAttribute('data-tm-error',String(error)+' '+error.stack); }
+        })();
+        """
+        let result = try await page.callAsyncJavaScript("""
+        const request={method:'saveScript',uuid:'qa-new',new_script:true,code:script,reload:false,origin:'options'};
+        let reply,error;
+        try{reply=await Promise.race([chrome.runtime.sendMessage(request),new Promise((_,reject)=>setTimeout(()=>reject(Error('Background request timed out')),8000))]);}catch(e){error=String(e);}
+        return {reply:reply||null,error:error||null,log:(await chrome.storage.local.get('__souloQALog')).__souloQALog||[]};
+        """, arguments: ["script": script], in: nil, contentWorld: .page) as? [String: Any] ?? [:]
+        let data = try JSONSerialization.data(withJSONObject: result, options: [.prettyPrinted, .sortedKeys])
+        try data.write(to: documents.appendingPathComponent("tampermonkey-lifecycle-qa.json"))
+        let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.json"); attachment.lifetime = .keepAlways; add(attachment)
+        print("TAMPERMONKEY LIFECYCLE " + String(decoding: data, as: UTF8.self))
+        XCTAssertNil(result["error"] as? String)
+        XCTAssertEqual((result["reply"] as? [String: Any])?["installed"] as? Bool, true)
+        guard (result["reply"] as? [String: Any])?["installed"] as? Bool == true else { return }
+        let pageData = Data("<html><body>Local Tampermonkey fixture</body></html>".utf8)
+        let fixture = try DownloadPlaybackHTTPFixture(files: ["/\(pathPrefix)/page.html": pageData, "/\(pathPrefix)/denied.html": pageData, "/\(pathPrefix)/restored.html": pageData, "/\(pathPrefix)/disabled.html": pageData, "/\(pathPrefix)/enabled.html": pageData,
+            "/data.json": Data(#"{"answer":"network-ok"}"#.utf8)])
+        let address = try await fixture.start().appendingPathComponent(pathPrefix); defer { fixture.stop() }
+        let permissionsProbe = try await page.callAsyncJavaScript("""
+        const result={};for(const pattern of ['*://*/*','http://127.0.0.1/*',origin+'/']) {
+          try{result[pattern]=await chrome.permissions.contains({origins:[pattern]});}catch(error){result[pattern]=String(error);}
+        }return result;
+        """, arguments: ["origin": address.absoluteString], in: nil, contentWorld: .page)
+        print("TAMPERMONKEY PERMISSIONS " + String(describing: permissionsProbe))
+        _ = try await page.callAsyncJavaScript("return await chrome.runtime.sendMessage({method:'setOption',name:'logLevel',value:100,origin:'options'});", in: nil, contentWorld: .page)
+        let configuration = WKWebViewConfiguration(); NativeWebExtensionRuntime.shared.apply(to: configuration)
+        var tab = WKWebView(frame: CGRect(x: 0, y: 0, width: 700, height: 600), configuration: configuration)
+        NativeWebExtensionRuntime.shared.register(tab)
+        defer { NativeWebExtensionRuntime.shared.unregister(tab); tab.stopLoading() }
+        tab.load(URLRequest(url: address.appendingPathComponent("page.html")))
+        var visits: String?
+        for _ in 0..<150 {
+            visits = (try? await tab.evaluateJavaScript("document.documentElement.getAttribute('data-tm-visits')")) as? String
+            if visits != nil { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        let finalLog = try await page.callAsyncJavaScript("return {log:(await chrome.storage.local.get('__souloQALog')).__souloQALog||[]};", in: nil, contentWorld: .page)
+        print("TAMPERMONKEY INJECTION " + String(describing: finalLog) + " visits=" + String(describing: visits))
+        XCTAssertEqual(visits, "1")
+        let injected = visits == "1"
+        var network: String?
+        for _ in 0..<100 {
+            network = (try? await tab.evaluateJavaScript("document.documentElement.getAttribute('data-tm-network')")) as? String
+            if network != nil { break }; try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertEqual(network, "network-ok", "Use Tampermonkey's real GM network implementation")
+        let networkLog = try await page.callAsyncJavaScript("return {log:(await chrome.storage.local.get('__souloQALog')).__souloQALog||[]};", in: nil, contentWorld: .page)
+        let scriptState = try await tab.evaluateJavaScript("Object.fromEntries(Array.from(document.documentElement.attributes).map(a=>[a.name,a.value]))")
+        print("TAMPERMONKEY NETWORK " + String(describing: scriptState) + " log=" + String(describing: networkLog) + " paths=" + String(describing: fixture.receivedRequests.map(\.path)))
+        tab.reload()
+        for _ in 0..<100 {
+            visits = (try? await tab.evaluateJavaScript("document.documentElement.getAttribute('data-tm-visits')")) as? String
+            if visits == "2" { break }; try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertEqual(visits, "2", "GM values must survive a page reload")
+        let dashboard = WKWebView(frame: CGRect(x: 0, y: 0, width: 900, height: 700), configuration: try XCTUnwrap(context.webViewConfiguration))
+        dashboard.configuration.userContentController.addUserScript(WKUserScript(source: "window.__souloDashboardErrors=[];addEventListener('error',e=>__souloDashboardErrors.push(String(e.message)));addEventListener('unhandledrejection',e=>__souloDashboardErrors.push(String(e.reason)));", injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previousWindow = scene.windows.first(where: \.isKeyWindow), dashboardWindow = UIWindow(windowScene: scene)
+        dashboardWindow.rootViewController = UIViewController()
+        dashboardWindow.rootViewController?.view.addSubview(dashboard); dashboardWindow.makeKeyAndVisible()
+        defer { dashboardWindow.isHidden = true; dashboardWindow.rootViewController = nil; previousWindow?.makeKeyAndVisible() }
+        dashboard.load(URLRequest(url: try XCTUnwrap(URL(string: "options.html#nav=dashboard", relativeTo: context.baseURL)?.absoluteURL)))
+        var dashboardReady = false
+        for _ in 0..<150 {
+            dashboardReady = (try? await dashboard.evaluateJavaScript("document.body.innerText.includes('Soulo Tampermonkey lifecycle')")) as? Bool == true
+            if dashboardReady { break }; try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertTrue(dashboardReady, "The publisher's original dashboard must list the installed script")
+        let dashboardState = try await dashboard.evaluateJavaScript("({url:location.href,title:document.title,text:document.body.innerText.slice(0,6000),errors:window.__souloDashboardErrors})")
+        print("TAMPERMONKEY DASHBOARD " + String(describing: dashboardState))
+        dashboard.stopLoading()
+        dashboardWindow.isHidden = true; dashboardWindow.rootViewController = nil; previousWindow?.makeKeyAndVisible()
+
+        func load(_ path: String, expected: String?) async throws -> Bool {
+            tab.load(URLRequest(url: address.appendingPathComponent(path)))
+            for _ in 0..<150 {
+                let state = try? await tab.evaluateJavaScript("({path:location.pathname,ready:document.readyState,visits:document.documentElement.getAttribute('data-tm-visits')})") as? [String: Any]
+                if state?["path"] as? String == "/" + pathPrefix + "/" + path, state?["ready"] as? String == "complete",
+                   expected == nil || state?["visits"] as? String == expected { break }
+                try await Task.sleep(for: .milliseconds(100))
+            }
+            if expected == nil { try await Task.sleep(for: .milliseconds(650)) }
+            let value = try await tab.evaluateJavaScript("document.documentElement.getAttribute('data-tm-visits')") as? String
+            let loadedPath = try await tab.evaluateJavaScript("location.pathname") as? String
+            XCTAssertEqual(loadedPath, "/" + pathPrefix + "/" + path)
+            XCTAssertEqual(value, expected)
+            return loadedPath == "/" + pathPrefix + "/" + path && value == expected
+        }
+        var withheld = access; withheld.sites = [:]; withheld.deniedSites = ["http://127.0.0.1/*": .distantFuture]
+        try service.setWebExtensionAccess(withheld, id: record.id)
+        let denied = try await load("denied.html", expected: nil)
+        // Granting a host can inject immediately into the currently open page.
+        // Navigate away so the visit counter measures the next test page only.
+        tab.load(URLRequest(url: URL(string: "about:blank")!))
+        for _ in 0..<100 {
+            if (try? await tab.evaluateJavaScript("location.href==='about:blank' && document.readyState==='complete'")) as? Bool == true { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        try service.setWebExtensionAccess(access, id: record.id)
+        let restored = try await load("restored.html", expected: "3")
+        // The manager batches its backing-store writes after acknowledging the
+        // script's local value. Check the actual backing store before unload.
+        let storageID = try XCTUnwrap((result["reply"] as? [String: Any])?["uuid"] as? String)
+        var committed = false
+        for _ in 0..<60 {
+            let state = try await page.callAsyncJavaScript("""
+            const values=await chrome.storage.local.get('!extdb.@st#'+id);
+            const value=values['!extdb.@st#'+id];
+            function containsVisit(value){
+              if(typeof value==='string') {try{return containsVisit(JSON.parse(value));}catch(_){return value.includes('"visits":"n3"')||value.includes('"visits":3');}}
+              if(!value||typeof value!=='object')return false;
+              if(value.visits==='n3'||value.visits===3)return true;
+              return Object.values(value).some(containsVisit);
+            }
+            return {committed:containsVisit(value),value};
+            """, arguments: ["id": storageID], in: nil, contentWorld: .page) as? [String: Any]
+            committed = state?["committed"] as? Bool == true
+            if committed { break }
+            if !committed { print("TAMPERMONKEY PERSIST " + String(describing: state)) }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertTrue(committed, "Verify the manager's backing store, not just its DOM counter")
+        service.setWebExtensionEnabled(record.id, enabled: false)
+        let disabled = try await load("disabled.html", expected: nil)
+        NativeWebExtensionRuntime.shared.unregister(tab); tab.stopLoading()
+        // WebViewContainer rebuilds loaded views after browserExtensionsChanged.
+        // Recreate this unmanaged test view through the same runtime configuration.
+        service.setWebExtensionEnabled(record.id, enabled: true)
+        for _ in 0..<150 {
+            if service.loadingWebExtensions.isEmpty,
+               NativeWebExtensionRuntime.shared.controller.extensionContexts.contains(where: { $0.uniqueIdentifier == record.id.uuidString }) { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        print("TAMPERMONKEY REENABLE errors=" + String(describing: service.webExtensionErrors[record.id]) + " diagnostics=" + String(describing: service.webExtensionDiagnostics(record.id)))
+        if let reopenedContext = NativeWebExtensionRuntime.shared.controller.extensionContexts.first(where: { $0.uniqueIdentifier == record.id.uuidString }) {
+            print("TAMPERMONKEY REENABLE ACCESS allowed=" + String(reopenedContext.hasAccess(to: address)) + " stored=" + String(describing: service.webExtensionAccess(record.id)))
+            let debugPage = WKWebView(frame: CGRect(x: 0, y: 0, width: 600, height: 600), configuration: try XCTUnwrap(reopenedContext.webViewConfiguration))
+            debugPage.load(URLRequest(url: reopenedContext.baseURL.appendingPathComponent("__soulo_tm_lifecycle.html")))
+            for _ in 0..<100 {
+                if (try? await debugPage.evaluateJavaScript("!!document.getElementById('ready')")) as? Bool == true { break }
+                try await Task.sleep(for: .milliseconds(50))
+            }
+            let reopenedState = try await debugPage.callAsyncJavaScript("const all=await chrome.storage.local.get(null);return {keys:Object.keys(all),config:all['#config'],log:all.__souloQALog};", in: nil, contentWorld: .page)
+            print("TAMPERMONKEY REENABLE STATE " + String(describing: reopenedState))
+            debugPage.stopLoading()
+        }
+        let reopenedConfiguration = WKWebViewConfiguration(); NativeWebExtensionRuntime.shared.apply(to: reopenedConfiguration)
+        tab = WKWebView(frame: CGRect(x: 0, y: 0, width: 700, height: 600), configuration: reopenedConfiguration)
+        NativeWebExtensionRuntime.shared.register(tab)
+        let enabled = try await load("enabled.html", expected: "4")
+        let verified: [String: Any] = ["package": "Tampermonkey Chrome 5.5.1", "installed": (result["reply"] as? [String: Any])?["installed"] as? Bool == true,
+            "injected": injected, "gmNetwork": network == "network-ok", "gmValuesAfterPageReload": visits == "2",
+            "originalDashboard": dashboardReady, "permissionRevocation": denied, "permissionRestoration": restored,
+            "disabledStopsInjection": disabled, "valuesRestoredAfterContextReload": enabled, "webKitUserScriptsAPIEmulated": false]
+        let verifiedData = try JSONSerialization.data(withJSONObject: verified, options: [.prettyPrinted, .sortedKeys])
+        try verifiedData.write(to: documents.appendingPathComponent("tampermonkey-functional-qa.json"))
+        let verifiedAttachment = XCTAttachment(data: verifiedData, uniformTypeIdentifier: "public.json"); verifiedAttachment.lifetime = .keepAlways; add(verifiedAttachment)
+    }
+
+    func testTampermonkeyRuleAlternativesPreserveMatchingAndCompileInWebKit() async throws {
+        let js = try XCTUnwrap(JSContext())
+        js.evaluateScript(WebExtensionTampermonkeyAdapter.javaScript)
+        js.evaluateScript(#"""
+        var pattern='^(?:https?|ftp)://[^\\#\\?]+/[^\\#\\?]+\\.(?:user|tamper)\\.js[^/]*$';
+        var next=100;
+        var rules=__souloExpandTampermonkeyRules([{id:1,condition:{regexFilter:pattern},action:{type:'redirect',redirect:{regexSubstitution:'https://example.com/#url=\\0'}}}],()=>next++);
+        var samples=['https://example.com/a.user.js','http://a.test/b.tamper.js?query=1','ftp://x.test/a.user.js','https://x.test/a.js','https://x.test/a.user.js/path'];
+        var equivalent=samples.every(url=>new RegExp(pattern).test(url)===rules.some(rule=>new RegExp(rule.condition.regexFilter).test(url)));
+        """#)
+        XCTAssertNil(js.exception)
+        XCTAssertEqual(js.evaluateScript("equivalent")?.toBool(), true)
+        let patterns = try XCTUnwrap(js.evaluateScript("rules.map(rule=>rule.condition.regexFilter)")?.toArray() as? [String])
+        XCTAssertEqual(patterns.count, 4)
+        XCTAssertEqual(js.evaluateScript("new Set(rules.map(rule=>rule.id)).size")?.toInt32(), 4)
+        let store = try XCTUnwrap(WKContentRuleListStore.default())
+        for pattern in patterns {
+            let id = "soulo-extension-rule-" + UUID().uuidString
+            let encoded = String(decoding: try JSONSerialization.data(withJSONObject: [["trigger": ["url-filter": pattern], "action": ["type": "block"]]]), as: UTF8.self)
+            _ = try await store.compileContentRuleList(forIdentifier: id, encodedContentRuleList: encoded)
+            try await store.removeContentRuleList(forIdentifier: id)
+        }
+    }
+
+    func testTampermonkeyCapabilityAuditWithLocalPackage() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Native WebExtensions require iOS 18.4") }
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let package = documents.appendingPathComponent("tampermonkey-compatibility-qa.crx")
+        guard FileManager.default.fileExists(atPath: package.path) else { throw XCTSkip("Opt-in local Tampermonkey package audit") }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("extension-capability-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let service = BrowserExtensionService(extensionRoot: root)
+        let preview = try await service.previewWebExtension(from: package)
+        defer { service.discardWebExtensionPreview(preview) }
+        let probe = "__soulo_capability_audit.html"
+        try Data("<html><head><title>Extension capability audit</title></head><body id='soulo-api-probe'>Local API probe</body></html>".utf8)
+            .write(to: preview.resourceURL.appendingPathComponent(probe))
+        var access = preview.access
+        access.sites = ["http://127.0.0.1/*": .distantFuture]
+        let record = try await service.installWebExtension(preview, access: access)
+        defer { service.deleteWebExtension(record.id) }
+        let context = try XCTUnwrap(NativeWebExtensionRuntime.shared.controller.extensionContexts.first { $0.uniqueIdentifier == record.id.uuidString })
+        let configuration = try XCTUnwrap(context.webViewConfiguration)
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 400, height: 600), configuration: configuration)
+        defer { web.stopLoading() }
+        web.load(URLRequest(url: context.baseURL.appendingPathComponent(probe)))
+        var ready = false
+        for _ in 0..<100 {
+            ready = (try? await web.evaluateJavaScript("!!document.getElementById('soulo-api-probe') && typeof chrome !== 'undefined'")) as? Bool == true
+            if ready { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertTrue(ready, "The probe must run in a real extension origin")
+        let matrix = try await web.callAsyncJavaScript("""
+        const api = globalThis.chrome || globalThis.browser || {};
+        return {
+          runtime: typeof api.runtime?.sendMessage,
+          scriptingExecute: typeof api.scripting?.executeScript,
+          scriptingRegister: typeof api.scripting?.registerContentScripts,
+          userScripts: typeof api.userScripts,
+          userScriptsRegister: typeof api.userScripts?.register,
+          userScriptsWorld: typeof api.userScripts?.configureWorld,
+          offscreen: typeof api.offscreen?.createDocument,
+          runtimeContexts: typeof api.runtime?.getContexts,
+          webRequestBlocking: typeof api.webRequest?.onBeforeRequest?.addListener,
+          storage: typeof api.storage?.local?.get,
+          cookies: typeof api.cookies?.getAll,
+          debugger: typeof api.debugger,
+          identity: typeof api.identity,
+          downloads: typeof api.downloads
+        };
+        """, arguments: [:], in: nil, contentWorld: .page)
+        let report: [String: Any] = ["kind": "capability_probe_not_functional_certification", "name": record.name, "version": record.version,
+            "system": UIDevice.current.systemVersion, "matrix": matrix, "previewWarnings": preview.warnings,
+            "runtimeDiagnostics": service.webExtensionDiagnostics(record.id),
+            "externalHostAccess": false, "probeIncludesCompatibilityShim": false,
+            "offscreenDOMVerificationTest": "ExtensionManagementTests/testOffscreenDocumentRunsDOMMessagingAndClosesOnPermissionRevocation"]
+        let data = try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])
+        try data.write(to: documents.appendingPathComponent("tampermonkey-capability-audit.json"), options: .atomic)
+        let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.json")
+        attachment.name = "tampermonkey-capability-audit"; attachment.lifetime = .keepAlways; add(attachment)
+        print("TAMPERMONKEY CAPABILITY AUDIT " + String(decoding: data, as: UTF8.self))
+    }
 }

@@ -52,6 +52,7 @@ final class TorrentStreamServer: @unchecked Sendable {
     private let contentType: String
     private let reader: Reader
     private let path: String
+    private var localFiles: [String: URL] = [:]
     private(set) var url: URL!
 
     private init(size: Int64, name: String, reader: @escaping Reader) throws {
@@ -68,6 +69,41 @@ final class TorrentStreamServer: @unchecked Sendable {
 
     static func start(size: Int64, name: String, reader: @escaping Reader) async throws -> TorrentStreamServer {
         let server = try TorrentStreamServer(size: size, name: name, reader: reader)
+        return try await server.start()
+    }
+
+    /// Serve only the files in an app-generated offline HLS bundle. AVPlayer
+    /// needs HTTP HLS URLs even though every byte is already on this device.
+    static func startHLS(directory: URL, playlist: String) async throws -> TorrentStreamServer {
+        let entry = directory.appendingPathComponent(playlist)
+        let size = try entry.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        let server = try TorrentStreamServer(size: Int64(size), name: playlist, reader: fileReader(entry))
+        let files = try FileManager.default.contentsOfDirectory(at: directory,
+            includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+        guard files.count <= 10_002 else { throw TorrentTaskError.invalid }
+        let prefix = String(server.path.prefix(through: server.path.lastIndex(of: "/")!))
+        for file in files {
+            let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+            guard values.isRegularFile == true, values.isSymbolicLink != true,
+                  ["m3u8", "ts", "bin"].contains(file.pathExtension.lowercased()) else { continue }
+            var path = URLComponents(); path.path = prefix + file.lastPathComponent
+            server.localFiles[path.percentEncodedPath] = file
+        }
+        guard server.localFiles[server.path] != nil else { throw TorrentTaskError.invalid }
+        return try await server.start()
+    }
+
+    private static func fileReader(_ file: URL) -> Reader {
+        { offset, count in
+            let handle = try FileHandle(forReadingFrom: file)
+            defer { try? handle.close() }
+            try handle.seek(toOffset: UInt64(offset))
+            return try handle.read(upToCount: count)
+        }
+    }
+
+    private func start() async throws -> TorrentStreamServer {
+        let server = self
         server.listener.newConnectionHandler = { [weak server] connection in server?.accept(connection) }
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             server.listener.stateUpdateHandler = { state in
@@ -155,7 +191,20 @@ final class TorrentStreamServer: @unchecked Sendable {
         guard let text = String(data: header, encoding: .utf8) else { return }
         let lines = text.components(separatedBy: "\r\n")
         let request = (lines.first ?? "").split(separator: " ")
-        guard request.count == 3, request[1] == Substring(path) else { try await reject("404 Not Found", connection: connection); return }
+        guard request.count == 3 else { try await reject("400 Bad Request", connection: connection); return }
+        let size: Int64, contentType: String, reader: Reader
+        if let file = localFiles[String(request[1])] {
+            size = Int64(try file.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0)
+            switch file.pathExtension.lowercased() {
+            case "m3u8": contentType = "application/vnd.apple.mpegurl"
+            case "ts": contentType = "video/mp2t"
+            default: contentType = "application/octet-stream"
+            }
+            reader = Self.fileReader(file)
+        } else {
+            guard localFiles.isEmpty, request[1] == Substring(path) else { try await reject("404 Not Found", connection: connection); return }
+            size = self.size; contentType = self.contentType; reader = self.reader
+        }
         guard request[0] == "GET" || request[0] == "HEAD" else { try await reject("405 Method Not Allowed", connection: connection); return }
         let rangeHeaders = lines.dropFirst().filter { $0.lowercased().hasPrefix("range:") }
         guard rangeHeaders.count < 2 else { try await reject("400 Bad Request", connection: connection); return }

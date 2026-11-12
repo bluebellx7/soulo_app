@@ -6,8 +6,6 @@ Senast använda flikar och webbplatsgrupper visas först och översikten öppnas
 
 BT-hämtningar: Importera .torrent-filer eller magnetlänkar, välj filer, pausa och återuppta. På iOS 26 kan hämtningar fortsätta i bakgrunden när systemet tillåter det; äldre versioner sparar förloppet och pausar. Spela upp BT-medier som stöds under nedladdning och öppna MKV-filer. Importera ed2k/thunder-länkar. Nedladdningar kräver tillgängliga källor; uppspelning beror på kodekar.
 
-Smidigare surfning, förbättrade videokontroller och tydligare filförhandsvisningar.
-
 Välj fem valfria genvägar på startsidan till hämtningar, filer, bokmärken, historik, bakgrunder och andra sidor. Bibliotekets flikrad blir kompakt när du rullar.
 
 Hitta information, läs artiklar, spela upp media och hantera hämtningar i samma webbläsare.
@@ -20,11 +18,11 @@ Behåll dina sidor med flera flikar, röstsökning, sökhistorik och grupper av 
 • Filer: hitta bilder, ljud, video och dokument på webbsidor och spara flera bilder samtidigt. Visa filer som lista eller omslagsrutnät, byt namn, importera från Bilder och överför via wifi.
 • Arkiv: packa upp ZIP, RAR och 7z. Skapa ZIP- och 7z-arkiv med valfritt lösenordsskydd.
 • Läsning: TXT, PDF, EPUB och kompatibla DRM-fria MOBI-, AZW- och AZW3-böcker. Justera typsnitt, storlek, radavstånd och bakgrund. Böcker med flödande layout kan visas på förenklad eller traditionell kinesiska. Läsläget extraherar artiklar och låter dig fortsätta till nästa sida.
-• Tillägg: importera, redigera och kör JavaScript-användarskript, hantera webbplatser och behörigheter samt installera kompatibla WebExtensions.
+• Skript och tillägg: Importera, redigera och kör JavaScript-användarskript. Kompatibla WebExtensions kräver iOS 18.4 eller senare; stödet varierar mellan tillägg.
 • Webbverktyg: översättning, sökning på sidan, helsidesskärmbilder, textigenkänning i bilder, dator-/mobilläge, egen användaragent och webbplatscertifikat.
 • Bokmärken: mappar och import/export av HTML-bokmärken för Chrome, Edge och andra webbläsare. Skapa QR-koder med webbplatsens ikon och dela, spara eller kopiera dem.
-• Anpassning: bakgrunder, verktygsfält och snabbåtgärder på appikonen. Öppna verktyg via widgetar, Genvägar och URL-scheman. Synkronisera inställningar med iCloud om du vill.
+• Anpassning: bakgrunder, verktygsfält och snabbåtgärder på appikonen. Öppna verktyg via widgetar, Genvägar och URL-scheman. Synkronisera inställningar med iCloud om du vill. Separata bakgrunder för ljust och mörkt utseende och en brytare för bildlagret.
 
-Tillgången till media, böcker och tillägg beror på filformat, webbplatsbegränsningar och systemversion.
+Medier, böcker och tillägg beror på format, webbplatsbegränsningar och systemversion. Kontrollera före hämtning att källan tillåter att innehållet sparas.
 
 Support: contact@dkluge.com

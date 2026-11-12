@@ -436,3 +436,65 @@
 "files_move_busy" = "हे आयटम हलवण्यापूर्वी किंवा पुनर्नामित करण्यापूर्वी डाउनलोड पूर्ण होण्याची प्रतीक्षा करा.";
 "video_show_episode_dock" = "भाग डॉक दाखवा";
 "video_show_episode_dock_desc" = "एपिसोडसह वेब पृष्ठांवर डॉक केलेला भाग बटण दर्शवा. भाग प्लेअरमध्ये उपलब्ध राहतात.";
+
+// Webpage share preview
+"page_share_image" = "प्रतिमा शेअर करा";
+"page_share_link" = "लिंक शेअर करा";
+"page_share_preview" = "दृश्यमान भागाचे पूर्वावलोकन";
+"page_share_brand" = "Soulo: मल्टी-सर्च ब्राउझर";
+
+"video_export_mp4" = "MP4 निर्यात करा";
+"video_export_failed" = "हा व्हिडिओ MP4 म्हणून निर्यात करता आला नाही. मूळ फाइल जतन केली आहे.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "दोन बोटांचे हावभाव";
+"gesture_hint" = "दोन बोटे एकत्र बाजूला हलवा. सूचना बोटांसोबत हलते; रद्द करण्यासाठी मागे आणा. एका बोटाने नेव्हिगेशन आणि पिंच झूम उपलब्ध राहतात.";
+"gesture_swipe_right" = "उजवीकडे स्वाइप";
+"gesture_swipe_left" = "डावीकडे स्वाइप";
+"gesture_show_toolbar" = "टूलबार दाखवा";
+"gesture_quick_menu" = "द्रुत मेनू";
+"gesture_preview" = "हावभावाचे पूर्वावलोकन";
+"zoom_remember" = "वेबसाइट झूम लक्षात ठेवा";
+"zoom_hint" = "पानाच्या मेनूतील झूम प्रत्येक डोमेनसाठी जतन होते. खाजगी टॅबमधील बदल जतन होत नाहीत.";
+"zoom_empty" = "जतन केलेला झूम नाही";
+"zoom_reset_all" = "सर्व 100% वर रीसेट करा";
+
+"shake_direction" = "दिशा";
+"shake_direction_horizontal" = "डावीकडे आणि उजवीकडे";
+"shake_direction_vertical" = "वर आणि खाली";
+"shake_direction_any" = "कोणतीही दिशा";
+
+"gesture_settings_title" = "वेबपान हावभाव";
+"gesture_no_history" = "मागे जाता येत नसताना";
+"gesture_no_history_hint" = "मागील पान नसल्यास कृती दाखवण्यासाठी डाव्या कडेकडून उजवीकडे स्वाइप करा. रद्द करण्यासाठी मागे आणा. बंद करण्यासाठी काहीही नाही निवडा.";
+
+"gesture_execution" = "कृती चालवा";
+
+"gesture_execute_release" = "सोडल्यावर";
+
+"gesture_execute_tap" = "टॅप केल्यावर";
+
+"gesture_feedback" = "कृतीचा प्रतिसाद";
+
+"gesture_haptics" = "कंपन";
+
+"gesture_sound" = "आवाज";
+
+"gesture_feedback_preview" = "प्रतिसादाचे पूर्वावलोकन";
+
+"media_start_timeout" = "प्लेबॅक सुरू झाले नाही. नेटवर्क तपासा किंवा प्लेयर बदला.";
+
+"wallpaper_appearance_hint" = "हलके आणि गडद स्वरूप यांसाठी स्वतंत्र पार्श्वभूमी निवडा. अॅपच्या स्वरूपानुसार त्या आपोआप बदलतील.";
+
+"wallpaper_image_overlay" = "प्रतिमेचा थर";
+
+"auto_hide_platform_bar" = "प्लॅटफॉर्म बार आपोआप लपवा";
+
+"top_tab_bar_hidden_title" = "वरचा टॅब बार लपवला";
+
+"top_tab_bar_reopen_hint" = "पुन्हा दाखवण्यासाठी खालील टॅब बटणावर टॅप करा, … मेनू उघडा आणि वरचा टॅब बार दाखवण्याचा पर्याय सुरू करा.";
+
+"wallpaper_image_blur" = "धूसर काच";
+"wallpaper_blur_amount" = "धूसरपणाची तीव्रता";
+
+"auto_hide_platform_bar_hint" = "शोधातील निकाल उघडल्यावर प्लॅटफॉर्म बार लपेल. निकालांवर परतल्यावर किंवा नवीन शोध घेतल्यावर तो पुन्हा दिसेल. या मेनूमध्ये हे बंद करता येईल.";

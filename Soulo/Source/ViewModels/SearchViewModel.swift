@@ -1,5 +1,5 @@
 import SwiftUI
-import SwiftData
+import CoreData
 import UIKit
 import CoreSpotlight
 import Combine
@@ -171,7 +171,7 @@ class SearchViewModel: ObservableObject {
         tabManager: TabManager,
         preferredRegion: PlatformRegion?,
         customGroup: CustomGroup?,
-        context: ModelContext? = nil
+        context: NSManagedObjectContext? = nil
     ) -> Bool {
         guard !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               let tab = tabManager.prepareTabForHomeSearch() else { return false }
@@ -191,7 +191,7 @@ class SearchViewModel: ObservableObject {
     /// empty tab. Publish an explicit request so an already-mounted browser also
     /// loads the selection when its keyword matches the previous search.
     @discardableResult
-    func openLibrarySelection(_ value: String, tabManager: TabManager, context: ModelContext? = nil) -> Bool {
+    func openLibrarySelection(_ value: String, tabManager: TabManager, context: NSManagedObjectContext? = nil) -> Bool {
         let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else { return false }
         let group = PlatformDataStore.shared.customGroups.first { $0.id == selectedGroupID }
@@ -202,7 +202,7 @@ class SearchViewModel: ObservableObject {
         return true
     }
 
-    func performSearch(context: ModelContext? = nil) {
+    func performSearch(context: NSManagedObjectContext? = nil) {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
@@ -239,7 +239,7 @@ class SearchViewModel: ObservableObject {
 
     // MARK: - F1: Siri Intent Search
 
-    func performIntentSearch(query: String, platformName: String?, context: ModelContext? = nil) {
+    func performIntentSearch(query: String, platformName: String?, context: NSManagedObjectContext? = nil) {
         searchText = query
 
         // Try to find platform by localized name
@@ -382,12 +382,12 @@ class SearchViewModel: ObservableObject {
 
     // MARK: - History
 
-    func loadRecentSearches(context: ModelContext) {
+    func loadRecentSearches(context: NSManagedObjectContext) {
         recentSearches = SearchHistoryService.recentSearchKeywords(context: context)
     }
 
-    func deleteHistoryItem(keyword: String, context: ModelContext) {
-        let descriptor = FetchDescriptor<SearchHistoryItem>()
+    func deleteHistoryItem(keyword: String, context: NSManagedObjectContext) {
+        let descriptor = SearchHistoryRecord.request()
         do {
             let items = try context.fetch(descriptor).filter {
                 !$0.isWebVisit && $0.keyword == keyword
@@ -402,8 +402,8 @@ class SearchViewModel: ObservableObject {
         } catch {}
     }
 
-    func clearAllHistory(context: ModelContext) {
-        let descriptor = FetchDescriptor<SearchHistoryItem>()
+    func clearAllHistory(context: NSManagedObjectContext) {
+        let descriptor = SearchHistoryRecord.request()
         do {
             let items = try context.fetch(descriptor)
             for item in items { context.delete(item) }
@@ -416,8 +416,8 @@ class SearchViewModel: ObservableObject {
 
     // MARK: - Private Helpers
 
-    private func recordHistory(keyword: String, context: ModelContext) {
-        let item = SearchHistoryItem(keyword: keyword)
+    private func recordHistory(keyword: String, context: NSManagedObjectContext) {
+        let item = SearchHistoryRecord(keyword: keyword)
         context.insert(item)
         do {
             try context.save()

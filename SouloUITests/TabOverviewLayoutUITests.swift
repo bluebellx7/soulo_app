@@ -2,6 +2,33 @@ import XCTest
 
 @MainActor
 final class TabOverviewLayoutUITests: XCTestCase {
+    func testLayoutSwitchUpdatesImmediatelyAndPersistsWhenReopened() async throws {
+        continueAfterFailure = false
+        let server = try DownloadPlaybackHTTPFixture(files: ["/mode": Data("<title>Tab mode QA</title><h1>Tab mode QA</h1>".utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
+        app.launchArguments = ["-app_language", "en-US", "-is_incognito", "NO", "-icloud_sync_enabled", "NO",
+            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-privacy_https_upgrade_enabled", "NO"]
+        app.launch(); defer { app.terminate() }
+        app.open(root.appendingPathComponent("mode"))
+        XCTAssertTrue(app.webViews.staticTexts["Tab mode QA"].firstMatch.waitForExistence(timeout: 15))
+        app.buttons["browser.tabs"].tap()
+        let mode = app.buttons["tabs.view-mode"], groups = app.descendants(matching: .any)["tabs.groups"].firstMatch
+        XCTAssertTrue(mode.waitForExistence(timeout: 5))
+        let initial = groups.exists
+        func expectGrouped(_ expected: Bool) {
+            let predicate = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in groups.exists == expected }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [predicate], timeout: 1.5), .completed, "The visible layout must change on the first tap")
+        }
+        mode.tap(); expectGrouped(!initial)
+        capture(app, "tab-layout-first-tap")
+        mode.tap(); expectGrouped(initial)
+        mode.tap(); expectGrouped(!initial)
+        app.buttons["tabs.done"].tap()
+        app.buttons["browser.tabs"].tap(); expectGrouped(!initial)
+        mode.tap(); expectGrouped(initial)
+    }
+
     private func capture(_ app: XCUIApplication, _ name: String) {
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         shot.name = name; shot.lifetime = .keepAlways; add(shot)

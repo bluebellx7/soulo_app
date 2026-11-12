@@ -609,27 +609,27 @@
 "extensions_reload_note" = "Mở các trang tải lại sau khi phần mở rộng hoặc tập lệnh được thay đổi để trạng thái mới có hiệu lực.";
 "web_extensions" = "Tiện ích mở rộng web";
 "userscripts" = "Tập lệnh & Tiện ích mở rộng";
-"userscripts_installed" = "Tập lệnh của tôi";
-"userscripts_install" = "Cài đặt tập lệnh";
+"userscripts_installed" = "Đã cài";
+"userscripts_install" = "Thêm";
 "userscripts_empty" = "Không có UserScripts";
 "userscripts_empty_desc" = "Cài đặt tệp .user.js hoặc tạo tập lệnh để xem tệp tại đây.";
 "userscripts_reload_note" = "Mở các trang tải lại sau khi tập lệnh được cài đặt, chỉnh sửa, bật, tắt hoặc xóa.";
 "userscript_experimental_badge" = "Khả năng tương thích";
 "userscript_experimental_title" = "Khả năng tương thích UserScript";
-"userscript_experimental_desc" = "Hỗ trợ các quy tắc trang web, bắt đầu/kết thúc tài liệu, API trang và lưu trữ GM mở rộng, lệnh tập lệnh, thông báo, tab, tải xuống, cookie, tài nguyên và các yêu cầu trong phạm vi quyền. Xem lại mọi tập lệnh trước khi cài đặt.";
+"userscript_experimental_desc" = "Tập lệnh người dùng có thể đọc hoặc thay đổi trang phù hợp và dùng API được cho phép. Khả năng tương thích tùy tập lệnh. Chỉ cài tập lệnh bạn tin cậy.";
 "extension_choose_file" = "Chọn tệp hoặc thư mục…";
 "extension_installing" = "Đang kiểm tra và cài đặt tiện ích mở rộng…";
 "extension_install_failed" = "Không thể cài đặt tiện ích mở rộng";
 "extension_permissions_summary" = "%d quyền · %d quy tắc trang web";
 "extension_untitled" = "Tiện ích mở rộng không có tiêu đề";
-"web_extension_install_footer" = "Nhấn vào bất kỳ đâu trên hàng nguồn để mở nó trong tab Soulo hiện tại. Soulo nhận dạng CRX, XPI, ZIP và các hành động cài đặt cửa hàng được hỗ trợ, sau đó hỏi trước khi cài đặt. Một số API chỉ dành cho máy tính để bàn có thể không có sẵn.";
+"web_extension_install_footer" = "Cài tiện ích tương thích từ liên kết cửa hàng hoặc nhập CRX, XPI, ZIP hay thư mục tiện ích. Kiểm tra quyền và khả năng tương thích; một số tính năng máy tính không khả dụng.";
 "web_extension_install_store_link" = "Cài đặt từ Liên kết cửa hàng…";
 "web_extension_browse_sources" = "Duyệt qua các cửa hàng tiện ích mở rộng";
 "web_extension_browse_sources_footer" = "Nút Store Get chỉ hỗ trợ các trình duyệt trên máy tính để bàn của riêng họ. Sao chép liên kết trang chi tiết tiện ích mở rộng, sau đó sử dụng Cài đặt từ Liên kết cửa hàng trong Soulo.";
 "web_extension_store_install_title" = "Cài đặt tiện ích mở rộng cửa hàng";
 "extension_page_banner_title" = "Cài đặt với Soulo";
-"extension_page_banner_desc" = "Soulo có thể cài đặt trực tiếp tiện ích mở rộng này.";
-"web_extension_store_install_desc" = "Dán liên kết trang chi tiết về Tiện ích bổ sung của Chrome, Cửa hàng Chrome trực tuyến, Tiện ích bổ sung của Microsoft Edge hoặc Tiện ích Firefox. Soulo tự tải xuống gói nên nút Nhận không tương thích của cửa hàng sẽ không được sử dụng.";
+"extension_page_banner_desc" = "Kiểm tra khả năng tương thích và quyền trước khi cài.";
+"web_extension_store_install_desc" = "Dán liên kết trang chi tiết tiện ích Chrome, Edge hoặc Firefox, rồi kiểm tra khả năng tương thích và quyền trước khi xác nhận cài đặt.";
 "web_extension_store_link_placeholder" = "Liên kết trang tiện ích mở rộng hoặc ID tiện ích mở rộng của Chrome";
 "web_extension_store_invalid_link" = "Dán liên kết trang chi tiết tiện ích mở rộng từ Chrome, Edge hoặc Firefox, ID tiện ích mở rộng Chrome hoặc liên kết CRX, XPI hoặc ZIP trực tiếp.";
 "web_extension_store_https_required" = "Các gói tiện ích mở rộng phải sử dụng liên kết HTTPS an toàn.";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "Luồng phương tiện trả về một phân đoạn không hợp lệ hoặc sai thứ tự.";
 "resource_stream_download_missing_track" = "Luồng đã tải xuống không có các bản video và âm thanh có thể phát.";
 "resource_stream_download_export_failed" = "Soulo không thể ghép video và âm thanh đã tải xuống.";
-"resource_stream_playback_download_first" = "Không thể xem trước luồng được bảo vệ này từ URL tạm thời. Hãy tải xuống trước để phát tệp trên thiết bị.";
+"resource_stream_playback_download_first" = "Hiện chưa thể xem trước trực tiếp luồng này.";
 "platform_invalid_web_url" = "Nhập địa chỉ web hợp lệ bắt đầu bằng http:// hoặc https://.";
 
 "library_history_tab" = "Lịch sử";
@@ -889,8 +889,7 @@
 "extension_review_access" = "Chọn quyền và trang web mà tiện ích này có thể truy cập.";
 "extension_limit_commands" = "Phím tắt của tiện ích không khả dụng trên iOS.";
 "extension_limit_notifications" = "Có thể hiển thị thông báo, nhưng không hỗ trợ sự kiện nhấp và đóng.";
-"extension_limit_offscreen" = "Tài liệu ngoài màn hình chỉ hỗ trợ phát âm thanh.";
-
+"extension_limit_offscreen" = "Tài liệu ngoài màn hình chịu các giới hạn của iOS; một số tính năng có thể không khả dụng.";
 "review_support_message" = "Cảm ơn bạn đã ủng hộ Soulo. Các đánh giá của bạn giúp chúng tôi tiếp tục cải thiện.";
 "review_open_app_store" = "Viết đánh giá trên App Store";
 

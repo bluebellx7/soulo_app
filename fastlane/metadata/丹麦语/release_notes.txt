@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Rettet en fejl, hvor åbning af et bogmærke eller et element fra historikken kunne erstatte en eksisterende fane.
-• Forbedret opstart, sideindlæsning og betjening af hjemmeskærmen.
-• Forbedret fuldskærmsbetjening, rotation og afspilningstilstand ved skift mellem apps.
-• Forbedret gendannelse af lukkede faner, filvisninger og detaljer i grænsefladen.
+• Separate baggrunde til lyst og mørkt udseende og en kontakt til billedlaget.
+• Forbedrede farver på startsiden; baggrundsvisning følger appens tema.
+• Se, del og gem baggrunde i Fotos.
+• Indstillinger for øverste faner med ny fane og valgfri skjulning af platformslinjen efter navigation.

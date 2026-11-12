@@ -583,7 +583,7 @@ Cuentanos:
 "resource_stream_download_invalid_chunk" = "La transmisión multimedia ha devuelto un segmento no válido o fuera de orden.";
 "resource_stream_download_missing_track" = "La transmisión descargada no contenía pistas de vídeo y audio reproducibles.";
 "resource_stream_download_export_failed" = "Soulo no ha podido combinar el vídeo y el audio descargados.";
-"resource_stream_playback_download_first" = "No se puede previsualizar esta transmisión protegida desde su URL temporal. Descárgala primero para reproducir el archivo local.";
+"resource_stream_playback_download_first" = "Este flujo no se puede previsualizar directamente por ahora.";
 "platform_invalid_web_url" = "Introduce una dirección web válida que empiece por http:// o https://.";
 
 "library_history_tab" = "Historial";
@@ -624,8 +624,7 @@ Cuentanos:
 "extension_review_access" = "Elige los permisos y sitios web a los que puede acceder esta extensión.";
 "extension_limit_commands" = "Los atajos de teclado de las extensiones no están disponibles en iOS.";
 "extension_limit_notifications" = "Se pueden mostrar notificaciones, pero no se admiten los eventos de clic y cierre.";
-"extension_limit_offscreen" = "Los documentos fuera de pantalla solo admiten reproducción de audio.";
-
+"extension_limit_offscreen" = "Los documentos fuera de pantalla están sujetos a los límites de iOS; algunas funciones podrían no estar disponibles.";
 "review_support_message" = "Gracias por apoyar a Soulo. Tus reseñas nos ayudan a seguir mejorando.";
 "review_open_app_store" = "Valorar en el App Store";
 

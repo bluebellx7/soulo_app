@@ -106,7 +106,13 @@ final class RefinementUITests: XCTestCase {
 
     func testTabSearchAndSiteGroupRenameAndPinKeepTheOverviewOpen() async throws {
         let title = "TabQuery-\(UUID().uuidString.prefix(6))"
-        let server = try DownloadPlaybackHTTPFixture(files: ["/tab": Data("<title>\(title)</title><h1>\(title)</h1>".utf8)])
+        let home = Data("<head><title>\(title)</title><link rel='manifest' href='/site.webmanifest'></head><h1>\(title)</h1>".utf8)
+        let icon = UIGraphicsImageRenderer(size: CGSize(width: 64, height: 64)).pngData { context in
+            UIColor.systemOrange.setFill(); context.fill(CGRect(x: 0, y: 0, width: 64, height: 64))
+        }
+        let server = try DownloadPlaybackHTTPFixture(files: ["/tab": home, "/": home,
+            "/site.webmanifest": Data(#"{"icons":[{"src":"/site-icon.png","type":"image/png"}]}"#.utf8),
+            "/site-icon.png": icon], responseHeaders: ["/site-icon.png": ["Content-Type": "image/png"]])
         let root = try await server.start(); defer { server.stop() }
         let app = launch(extra: ["-tab_overview_grouped", "YES"]); defer { app.terminate() }
         var route = URLComponents(); route.scheme = "soulo"; route.host = "open"
@@ -114,6 +120,9 @@ final class RefinementUITests: XCTestCase {
         app.open(try XCTUnwrap(route.url))
         XCTAssertTrue(app.webViews.staticTexts[title].waitForExistence(timeout: 20))
         app.buttons["browser.tabs"].firstMatch.tap()
+        await fulfillment(of: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            server.receivedRequests.contains { $0.path == "/site-icon.png" }
+        }, object: nil)], timeout: 8)
         let search = app.textFields["tabs.search"]
         XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText(title)
         let options = app.buttons["tabs.group.options.host:127.0.0.1"]

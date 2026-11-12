@@ -609,27 +609,27 @@
 "extensions_reload_note" = "การเปิดหน้าเว็บจะโหลดซ้ำหลังจากส่วนขยายหรือสคริปต์มีการเปลี่ยนแปลง เพื่อให้สถานะใหม่มีผล";
 "web_extensions" = "ส่วนขยายของเว็บ";
 "userscripts" = "สคริปต์และส่วนขยาย";
-"userscripts_installed" = "สคริปต์ของฉัน";
-"userscripts_install" = "ติดตั้งสคริปต์";
+"userscripts_installed" = "ติดตั้งแล้ว";
+"userscripts_install" = "เพิ่ม";
 "userscripts_empty" = "ไม่มี UserScripts";
 "userscripts_empty_desc" = "ติดตั้งไฟล์ .user.js หรือสร้างสคริปต์เพื่อดูที่นี่";
 "userscripts_reload_note" = "เปิดหน้าโหลดซ้ำหลังจากติดตั้ง แก้ไข เปิดใช้งาน ปิดใช้งาน หรือลบสคริปต์แล้ว";
 "userscript_experimental_badge" = "ความเข้ากันได้";
 "userscript_experimental_title" = "UserScript ความเข้ากันได้";
-"userscript_experimental_desc" = "รองรับกฎของไซต์, การเริ่ม/สิ้นสุดเอกสาร, พื้นที่จัดเก็บ GM ที่กว้างขวางและ API ของเพจ, คำสั่งสคริปต์, การแจ้งเตือน, แท็บ, การดาวน์โหลด, คุกกี้, ทรัพยากร และคำขอที่กำหนดขอบเขตสิทธิ์ ตรวจสอบทุกสคริปต์ก่อนการติดตั้ง";
+"userscript_experimental_desc" = "สคริปต์ผู้ใช้สามารถอ่านหรือแก้ไขเว็บไซต์ที่ตรงกันและใช้ API ที่ได้รับอนุญาต ความเข้ากันได้แตกต่างกันตามสคริปต์ โปรดติดตั้งเฉพาะสคริปต์ที่เชื่อถือ";
 "extension_choose_file" = "เลือกไฟล์หรือโฟลเดอร์…";
 "extension_installing" = "กำลังตรวจสอบและติดตั้งส่วนขยาย...";
 "extension_install_failed" = "ไม่สามารถติดตั้งส่วนขยายได้";
 "extension_permissions_summary" = "%d สิทธิ์ · %d กฎของเว็บไซต์";
 "extension_untitled" = "ส่วนขยายที่ไม่มีชื่อ";
-"web_extension_install_footer" = "แตะที่ใดก็ได้บนแถวแหล่งที่มาเพื่อเปิดในแท็บ Soulo ปัจจุบัน Soulo จดจำ CRX, XPI, ZIP และการดำเนินการติดตั้งร้านค้าที่รองรับ จากนั้นถามก่อนทำการติดตั้ง API เฉพาะเดสก์ท็อปบางตัวอาจไม่พร้อมใช้งาน";
+"web_extension_install_footer" = "ติดตั้งส่วนขยายที่เข้ากันได้จากลิงก์ร้านค้าหรือนำเข้า CRX, XPI, ZIP หรือโฟลเดอร์ส่วนขยาย ตรวจสอบสิทธิ์และความเข้ากันได้ก่อนติดตั้ง บางฟังก์ชันเดสก์ท็อปอาจใช้ไม่ได้";
 "web_extension_install_store_link" = "ติดตั้งจากลิงก์ร้านค้า...";
 "web_extension_browse_sources" = "เรียกดูร้านค้าส่วนขยาย";
 "web_extension_browse_sources_footer" = "ปุ่ม Store Get รองรับเฉพาะเบราว์เซอร์เดสก์ท็อปของตัวเองเท่านั้น คัดลอกลิงก์หน้ารายละเอียดส่วนขยาย จากนั้นใช้ติดตั้งจากลิงก์ร้านค้าใน Soulo";
 "web_extension_store_install_title" = "ติดตั้งส่วนขยายร้านค้า";
 "extension_page_banner_title" = "ติดตั้งด้วย Soulo";
-"extension_page_banner_desc" = "Soulo สามารถติดตั้งส่วนขยายนี้ได้โดยตรง";
-"web_extension_store_install_desc" = "วางลิงก์หน้ารายละเอียด Chrome Web Store, Microsoft Edge Add-ons หรือ Firefox Add-ons Soulo ดาวน์โหลดแพ็คเกจเอง ดังนั้นจึงไม่ได้ใช้ปุ่มรับที่เข้ากันไม่ได้ของร้านค้า";
+"extension_page_banner_desc" = "ตรวจสอบความเข้ากันได้และสิทธิ์ก่อนติดตั้ง";
+"web_extension_store_install_desc" = "วางลิงก์หน้ารายละเอียดส่วนขยาย Chrome, Edge หรือ Firefox แล้วตรวจสอบความเข้ากันได้และสิทธิ์ก่อนยืนยันการติดตั้ง";
 "web_extension_store_link_placeholder" = "ลิงก์หน้าส่วนขยายหรือรหัสส่วนขยาย Chrome";
 "web_extension_store_invalid_link" = "วางลิงก์หน้ารายละเอียดส่วนขยายจาก Chrome, Edge หรือ Firefox, รหัสส่วนขยาย Chrome หรือลิงก์ CRX, XPI หรือ ZIP โดยตรง";
 "web_extension_store_https_required" = "แพ็คเกจส่วนขยายต้องใช้ลิงก์ HTTPS ที่ปลอดภัย";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "สตรีมสื่อส่งกลับส่วนข้อมูลที่ไม่ถูกต้องหรือผิดลำดับ";
 "resource_stream_download_missing_track" = "สตรีมที่ดาวน์โหลดไม่มีแทร็กวิดีโอและเสียงที่เล่นได้";
 "resource_stream_download_export_failed" = "Soulo ไม่สามารถรวมวิดีโอและเสียงที่ดาวน์โหลดได้";
-"resource_stream_playback_download_first" = "ไม่สามารถดูตัวอย่างสตรีมที่มีการป้องกันนี้จาก URL ชั่วคราวได้ โปรดดาวน์โหลดก่อนเพื่อเล่นไฟล์ในเครื่อง";
+"resource_stream_playback_download_first" = "ขณะนี้ยังไม่สามารถดูตัวอย่างสตรีมนี้โดยตรงได้";
 "platform_invalid_web_url" = "ป้อนที่อยู่เว็บที่ถูกต้องซึ่งขึ้นต้นด้วย http:// หรือ https://";
 
 "library_history_tab" = "ประวัติ";
@@ -889,8 +889,7 @@
 "extension_review_access" = "เลือกสิทธิ์และเว็บไซต์ที่ส่วนขยายนี้เข้าถึงได้";
 "extension_limit_commands" = "แป้นพิมพ์ลัดของส่วนขยายไม่พร้อมใช้งานบน iOS";
 "extension_limit_notifications" = "แสดงการแจ้งเตือนได้ แต่ไม่รองรับเหตุการณ์คลิกและปิด";
-"extension_limit_offscreen" = "เอกสารนอกหน้าจอรองรับเฉพาะการเล่นเสียง";
-
+"extension_limit_offscreen" = "เอกสารนอกหน้าจออยู่ภายใต้ข้อจำกัดของ iOS บางฟีเจอร์อาจไม่พร้อมใช้งาน";
 "review_support_message" = "ขอบคุณที่สนับสนุน Soulo รีวิวของคุณช่วยให้เราปรับปรุงแอปให้ดียิ่งขึ้น";
 "review_open_app_store" = "เขียนรีวิวบน App Store";
 

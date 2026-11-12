@@ -1,7 +1,9 @@
 import AVFoundation
+import CryptoKit
 import Foundation
 import QuartzCore
 import WebKit
+import UIKit
 
 private struct StreamingUncheckedSendable<Value>: @unchecked Sendable {
     let value: Value
@@ -129,19 +131,25 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         let continuation: CheckedContinuation<URL, Error>?
         var downloadedAssetURL: URL?
         var isCanceled = false
+        var requestContext: VideoPlaybackRequestContext?
+        var keyLoader: HLSKeyResourceLoader?
+        var finalizationTask: Task<Void, Never>?
+        var backgroundAssertion: UIBackgroundTaskIdentifier = .invalid
 
         init(
             itemID: UUID,
             sourceURL: URL?,
             destinationURL: URL,
             stagingDirectoryURL: URL,
-            continuation: CheckedContinuation<URL, Error>?
+            continuation: CheckedContinuation<URL, Error>?,
+            requestContext: VideoPlaybackRequestContext? = nil
         ) {
             self.itemID = itemID
             self.sourceURL = sourceURL
             self.destinationURL = destinationURL
             self.stagingDirectoryURL = stagingDirectoryURL
             self.continuation = continuation
+            self.requestContext = requestContext
         }
     }
 
@@ -238,7 +246,11 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         window.__souloNativeFetchBridgeInstalled = true;
     })();
     """#
-    var backgroundEventsCompletionHandler: (() -> Void)?
+    private var finishedHLSEvents = false
+    var hasPendingHLSFinalization: Bool { hlsTransfers.values.contains { $0.finalizationTask != nil } }
+    var backgroundEventsCompletionHandler: (() -> Void)? {
+        didSet { finishHLSEventsIfPossible() }
+    }
     private lazy var hlsSession: AVAssetDownloadURLSession = {
         let configuration = URLSessionConfiguration.background(
             withIdentifier: Self.hlsSessionIdentifier
@@ -277,7 +289,8 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                 let manager = DownloadManagerService.shared
                 for task in tasks {
                     guard let itemID = task.taskDescription.flatMap(UUID.init(uuidString:)),
-                          let item = manager.downloads.first(where: { $0.id == itemID }) else { continue }
+                          let item = manager.downloads.first(where: { $0.id == itemID }),
+                          self.hlsTransfers[task.taskIdentifier] == nil else { continue }
                     let stagingDirectory = FileManager.default.temporaryDirectory
                         .appendingPathComponent("SouloHLSDownloads", isDirectory: true)
                         .appendingPathComponent(itemID.uuidString, isDirectory: true)
@@ -290,13 +303,33 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                         continuation: nil
                     )
                     if let assetTask = task as? AVAssetDownloadTask {
-                        manager.registerPlaybackSource(id: itemID, asset: assetTask.urlAsset, persistPosition: false)
+                        let resource = WebMediaResource(kind: .video, url: assetTask.urlAsset.url,
+                                                        title: item.fileName, posterURL: nil, delivery: .hls)
+                        // Never borrow regular browsing cookies for private or
+                        // legacy downloads whose browsing context is unknown.
+                        let store = item.hlsUsesPersistentCookies == true
+                            ? WKWebsiteDataStore.default().httpCookieStore : nil
+                        let options = await WebResourceMediaService.networkAssetOptions(for: resource, cookieStore: store)
+                        let context = VideoPlaybackRequestContext(
+                            url: resource.url, referrer: nil,
+                            userAgent: options[AVURLAssetHTTPUserAgentKey] as? String ?? AppConstants.mobileWebViewUserAgent,
+                            cookies: options[AVURLAssetHTTPCookiesKey] as? [HTTPCookie] ?? [])
+                        let playback = AVURLAsset(url: resource.url, options: options)
+                        let loader = HLSKeyResourceLoader(context: context)
+                        assetTask.urlAsset.resourceLoader.setDelegate(loader, queue: .main)
+                        playback.resourceLoader.setDelegate(loader, queue: .main)
+                        self.hlsTransfers[task.taskIdentifier]?.requestContext = context
+                        self.hlsTransfers[task.taskIdentifier]?.keyLoader = loader
+                        manager.registerPlaybackSource(id: itemID, asset: playback,
+                                                       persistPosition: false, downloadAsset: assetTask.urlAsset,
+                                                       resourceLease: loader)
                     }
-                    if item.status == .inProgress && task.state == .suspended {
+                    if manager.downloads.first(where: { $0.id == itemID })?.status == .inProgress,
+                       task.state == .suspended {
                         task.resume()
                     }
                 }
-                manager.reconcileHLSDownloads(activeIDs: activeIDs)
+                manager.reconcileHLSDownloads(activeIDs: activeIDs.union(self.hlsTransfers.values.map(\.itemID)))
             }
         }
     }
@@ -463,13 +496,19 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         let (item, destinationURL) = manager.beginDownload(
             suggestedFilename: filename,
             sourceURL: resource.url,
-            transport: .hls
+            transport: .hls,
+            hlsUsesPersistentCookies: webView.configuration.websiteDataStore.isPersistent
         )
-        let asset = await WebResourceMediaService.asset(
-            for: resource,
-            webView: webView,
-            preferDownloadedCopy: false
-        )
+        let options = await WebResourceMediaService.networkAssetOptions(for: resource, webView: webView)
+        let asset = AVURLAsset(url: resource.url, options: options)
+        let playbackAsset = AVURLAsset(url: resource.url, options: options)
+        let requestContext = VideoPlaybackRequestContext(
+            url: resource.url, referrer: pageURL,
+            userAgent: options[AVURLAssetHTTPUserAgentKey] as? String ?? AppConstants.mobileWebViewUserAgent,
+            cookies: options[AVURLAssetHTTPCookiesKey] as? [HTTPCookie] ?? [])
+        let keyLoader = HLSKeyResourceLoader(context: requestContext)
+        asset.resourceLoader.setDelegate(keyLoader, queue: .main)
+        playbackAsset.resourceLoader.setDelegate(keyLoader, queue: .main)
         guard let initialStatus = manager.downloads.first(where: { $0.id == item.id })?.status,
               initialStatus == .inProgress || initialStatus == .paused else {
             throw CancellationError()
@@ -497,16 +536,20 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                 return
             }
             task.taskDescription = item.id.uuidString
-            // AVFoundation reads downloaded HLS segments during playback only
-            // when the player reuses this exact asset (including its cookies).
-            manager.registerPlaybackSource(id: item.id, asset: task.urlAsset, pageURL: pageURL, webView: webView)
+            task.urlAsset.resourceLoader.setDelegate(keyLoader, queue: .main)
+            // Sharing task.urlAsset with AVPlayer can stall the native download
+            // at 25–50%. Separate objects retain the same UA/cookie snapshot.
+            manager.registerPlaybackSource(id: item.id, asset: playbackAsset, pageURL: pageURL,
+                                           webView: webView, downloadAsset: task.urlAsset, resourceLease: keyLoader)
             hlsTransfers[task.taskIdentifier] = HLSTransfer(
                 itemID: item.id,
                 sourceURL: resource.url,
                 destinationURL: destinationURL,
                 stagingDirectoryURL: stagingDirectory,
-                continuation: continuation
+                continuation: continuation,
+                requestContext: requestContext
             )
+            hlsTransfers[task.taskIdentifier]?.keyLoader = keyLoader
             if initialStatus == .inProgress { task.resume() }
         }
     }
@@ -521,6 +564,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
     }
 
     func pause(itemID: UUID) {
+        guard hlsTransfers.values.first(where: { $0.itemID == itemID })?.finalizationTask == nil else { return }
         if let identifier = identifiersByItemID[itemID],
            let transfer = transfers[identifier],
            !transfer.isCanceled,
@@ -623,7 +667,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         task: URLSessionTask,
         didCompleteWithError error: Error?
     ) {
-        guard let transfer = hlsTransfers.removeValue(forKey: task.taskIdentifier) else { return }
+        guard let transfer = hlsTransfers[task.taskIdentifier], transfer.finalizationTask == nil else { return }
         let playbackAsset = (task as? AVAssetDownloadTask)?.urlAsset
         if transfer.isCanceled {
             transfer.continuation?.resume(throwing: CancellationError())
@@ -645,8 +689,14 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
             cleanupHLSTransfer(transfer)
             return
         }
-        Task { @MainActor in
+        transfer.backgroundAssertion = UIApplication.shared.beginBackgroundTask(withName: "Finish HLS download") {
+            Task { @MainActor in transfer.finalizationTask?.cancel() }
+        }
+        transfer.finalizationTask = Task { @MainActor in
+            defer { cleanupHLSTransfer(transfer) }
+            var retainedReference: URL?
             do {
+                try Task.checkCancellation()
                 let managedAssetURL = try OfflineHLSReference.canonicalPackageURL(for: downloadedAssetURL)
                 let completedURL: URL
                 do {
@@ -661,30 +711,49 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
                     }
                     completedURL = transfer.destinationURL
                 } catch {
+                    try Task.checkCancellation()
                     let asset = AVURLAsset(url: managedAssetURL)
+                    asset.resourceLoader.setDelegate(transfer.keyLoader, queue: .main)
                     guard asset.assetCache?.isPlayableOffline == true,
                           try await asset.load(.isPlayable),
                           await offlineHLSHasVideo(asset) else {
                         throw error
                     }
                     let referenceURL = uniqueHLSReferenceURL(for: transfer.destinationURL)
-                    try? FileManager.default.removeItem(at: transfer.destinationURL)
                     try OfflineHLSReference.write(
                         packageURL: managedAssetURL, sourceURL: transfer.sourceURL, to: referenceURL
                     )
+                    retainedReference = referenceURL
                     DownloadManagerService.shared.updateFileReference(
                         from: transfer.destinationURL, to: referenceURL
                     )
+                    try? FileManager.default.removeItem(at: transfer.destinationURL)
+                    // Do not advertise an encrypted download as complete until
+                    // its player material is on disk. Retain downloaded bytes if
+                    // the origin disappears during this final preparation.
+                    if let encryption = try await PortableHLSBundle.encryptionMaterial(
+                        packageURL: managedAssetURL, sourceURL: transfer.sourceURL,
+                        requestContext: transfer.requestContext
+                    ) {
+                        try OfflineHLSReference.storeEncryption(encryption, for: referenceURL)
+                    }
                     completedURL = referenceURL
                 }
+                try Task.checkCancellation()
                 DownloadManagerService.shared.markFinished(id: transfer.itemID)
                 transfer.continuation?.resume(returning: completedURL)
             } catch {
-                DownloadManagerService.shared.markFailed(id: transfer.itemID, error: error)
-                transfer.continuation?.resume(throwing: error)
-                removeHLSCache(at: downloadedAssetURL, playbackAsset: playbackAsset)
+                if transfer.isCanceled {
+                    try? FileManager.default.removeItem(at: transfer.destinationURL)
+                    if let retainedReference { try? FileManager.default.removeItem(at: retainedReference) }
+                    removeHLSCache(at: downloadedAssetURL, playbackAsset: playbackAsset)
+                    transfer.continuation?.resume(throwing: CancellationError())
+                } else {
+                    DownloadManagerService.shared.markFailed(id: transfer.itemID, error: error)
+                    transfer.continuation?.resume(throwing: error)
+                    if retainedReference == nil { removeHLSCache(at: downloadedAssetURL, playbackAsset: playbackAsset) }
+                }
             }
-            cleanupHLSTransfer(transfer)
         }
     }
 
@@ -695,8 +764,15 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
     }
 
     func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
-        backgroundEventsCompletionHandler?()
+        finishedHLSEvents = true
+        finishHLSEventsIfPossible()
+    }
+
+    private func finishHLSEventsIfPossible() {
+        guard finishedHLSEvents, !hasPendingHLSFinalization, let handler = backgroundEventsCompletionHandler else { return }
+        finishedHLSEvents = false
         backgroundEventsCompletionHandler = nil
+        handler()
     }
 
     nonisolated func userContentController(
@@ -1020,6 +1096,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         if let transfer = hlsTransfers.values.first(where: { $0.itemID == itemID }) {
             guard !transfer.isCanceled else { return }
             transfer.isCanceled = true
+            transfer.finalizationTask?.cancel()
         }
         DownloadManagerService.shared.markCanceled(id: itemID)
         hlsSession.getAllTasks { tasks in
@@ -1028,7 +1105,14 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
     }
 
     private func cleanupHLSTransfer(_ transfer: HLSTransfer) {
+        if let key = hlsTransfers.first(where: { $0.value === transfer })?.key { hlsTransfers.removeValue(forKey: key) }
+        transfer.finalizationTask = nil
+        if transfer.backgroundAssertion != .invalid {
+            UIApplication.shared.endBackgroundTask(transfer.backgroundAssertion)
+            transfer.backgroundAssertion = .invalid
+        }
         try? FileManager.default.removeItem(at: transfer.stagingDirectoryURL)
+        finishHLSEventsIfPossible()
     }
 
     private func uniqueHLSReferenceURL(for destinationURL: URL) -> URL {
@@ -1054,6 +1138,7 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         player.play()
         defer { player.pause() }
         for _ in 0..<50 {
+            if Task.isCancelled { return false }
             if item.status == .failed { return false }
             let time = output.itemTime(forHostTime: CACurrentMediaTime())
             if output.copyPixelBuffer(forItemTime: time, itemTimeForDisplay: nil) != nil { return true }
@@ -1078,21 +1163,23 @@ final class StreamingMediaDownloadService: NSObject, WKScriptMessageHandlerWithR
         exporter.outputFileType = .mp4
         exporter.shouldOptimizeForNetworkUse = true
         let exporterBox = StreamingUncheckedSendable(value: exporter)
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            exporter.exportAsynchronously {
-                let exporter = exporterBox.value
-                switch exporter.status {
-                case .completed:
-                    continuation.resume()
-                case .cancelled:
-                    continuation.resume(throwing: CancellationError())
-                default:
-                    continuation.resume(
-                        throwing: exporter.error ?? StreamingMediaDownloadError.exportFailed("")
-                    )
+        try Task.checkCancellation()
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                exporter.exportAsynchronously {
+                    let exporter = exporterBox.value
+                    switch exporter.status {
+                    case .completed:
+                        continuation.resume()
+                    case .cancelled:
+                        continuation.resume(throwing: CancellationError())
+                    default:
+                        continuation.resume(throwing: exporter.error ?? StreamingMediaDownloadError.exportFailed(""))
+                    }
                 }
             }
-        }
+        } onCancel: { exporterBox.value.cancelExport() }
+        try Task.checkCancellation()
         let output = AVURLAsset(url: destinationURL)
         let size = (try? destinationURL.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
         guard try await output.load(.isPlayable),
@@ -1229,14 +1316,16 @@ enum OfflineHLSReference {
     private struct Record: Codable {
         let relativePackagePath: String
         let sourceURLString: String?
+        var encryption: PortableHLSBundle.EncryptionMaterial?
     }
 
-    static func write(packageURL: URL, sourceURL: URL? = nil, to referenceURL: URL) throws {
+    static func write(packageURL: URL, sourceURL: URL? = nil,
+                      encryption: PortableHLSBundle.EncryptionMaterial? = nil, to referenceURL: URL) throws {
         let package = try canonicalPackageURL(for: packageURL)
         let home = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true).standardizedFileURL
         let relativePath = String(package.path.dropFirst(home.path.count + 1))
         let data = try JSONEncoder().encode(Record(
-            relativePackagePath: relativePath, sourceURLString: sourceURL?.absoluteString
+            relativePackagePath: relativePath, sourceURLString: sourceURL?.absoluteString, encryption: encryption
         ))
         try data.write(to: referenceURL, options: .atomic)
     }
@@ -1246,6 +1335,16 @@ enum OfflineHLSReference {
               let record = try? JSONDecoder().decode(Record.self, from: data),
               let value = record.sourceURLString else { return nil }
         return URL(string: value)
+    }
+
+    static func encryptionMaterial(for referenceURL: URL) throws -> PortableHLSBundle.EncryptionMaterial? {
+        try JSONDecoder().decode(Record.self, from: Data(contentsOf: referenceURL)).encryption
+    }
+
+    static func storeEncryption(_ encryption: PortableHLSBundle.EncryptionMaterial, for referenceURL: URL) throws {
+        var record = try JSONDecoder().decode(Record.self, from: Data(contentsOf: referenceURL))
+        record.encryption = encryption
+        try JSONEncoder().encode(record).write(to: referenceURL, options: .atomic)
     }
 
     static func canonicalPackageURL(for callbackURL: URL) throws -> URL {
@@ -1312,6 +1411,12 @@ enum OfflineHLSReference {
 /// Exports a verified, single-rendition transport-stream package as standard
 /// HLS files. The system-owned package remains in place for in-app playback.
 enum PortableHLSBundle {
+    struct EncryptionMaterial: Codable {
+        let playlistDigest: Data
+        let key: Data
+        let iv: String?
+    }
+
     private struct Fragment {
         let start: Double
         let part: Int
@@ -1327,13 +1432,15 @@ enum PortableHLSBundle {
             name: referenceURL.deletingPathExtension().lastPathComponent,
             into: directory,
             sourceURL: sourceURL ?? OfflineHLSReference.sourceURL(for: referenceURL),
-            session: session, operation: operation
+            session: session, operation: operation,
+            encryption: try OfflineHLSReference.encryptionMaterial(for: referenceURL)
         )
     }
 
     static func export(packageURL: URL, name: String, into directory: URL,
                        sourceURL: URL? = nil, session: URLSession = .shared,
-                       operation: FileOperationProgress? = nil, linkFragments: Bool = false) async throws -> URL {
+                       operation: FileOperationProgress? = nil, linkFragments: Bool = false,
+                       encryption: EncryptionMaterial? = nil) async throws -> URL {
         try operation?.check()
         let manager = FileManager.default
         guard let enumerator = manager.enumerator(at: packageURL, includingPropertiesForKeys: [
@@ -1383,11 +1490,7 @@ enum PortableHLSBundle {
         }
 
         guard let renditionDirectory else { throw StreamingMediaDownloadError.unsupportedManifest }
-        let innerPlaylists = try manager.contentsOfDirectory(at: renditionDirectory, includingPropertiesForKeys: nil)
-            .filter { $0.pathExtension.lowercased() == "m3u8" }
-        guard innerPlaylists.count == 1 else { throw StreamingMediaDownloadError.unsupportedManifest }
-        let mediaPlaylist = try String(contentsOf: innerPlaylists[0], encoding: .utf8)
-            .replacingOccurrences(of: "\0", with: "")
+        let mediaPlaylist = try renditionPlaylist(in: renditionDirectory)
         let mediaLines = mediaPlaylist.components(separatedBy: .newlines)
         var discontinuities = Set<Int>(), segmentIndex = 0
         for line in mediaLines {
@@ -1404,10 +1507,8 @@ enum PortableHLSBundle {
         guard keyLines.count <= 1 else { throw StreamingMediaDownloadError.unsupportedManifest }
         let keyLine = keyLines.first
         let encrypted = keyLine != nil
-        let keyURI = keyLine.flatMap { capture(#"URI="([^"]+)""#, in: $0) }
-        let iv = keyLine.flatMap { capture(#"IV=(0x[0-9A-Fa-f]{32})"#, in: $0) }
         if let keyLine {
-            guard keyLine.contains("METHOD=AES-128"), keyURI != nil,
+            guard keyLine.contains("METHOD=AES-128"), capture(#"URI="([^"]+)""#, in: keyLine) != nil,
                   !keyLine.contains("KEYFORMAT=") || keyLine.contains("KEYFORMAT=\"identity\"") else {
                 throw StreamingMediaDownloadError.unsupportedManifest
             }
@@ -1429,37 +1530,9 @@ enum PortableHLSBundle {
                 }
             }
         }
-        let keyData: Data?
-        var exportedIV = iv
-        if keyURI != nil {
-            guard let sourceURL else { throw StreamingMediaDownloadError.unsupportedManifest }
-            let (mediaURL, remoteManifest) = try await self.mediaPlaylist(
-                from: sourceURL, renditionDirectory: renditionDirectory, session: session
-            )
-            let remoteKeyLines = remoteManifest.components(separatedBy: .newlines)
-                .filter { $0.hasPrefix("#EXT-X-KEY:") }
-            let remoteSequence = remoteManifest.components(separatedBy: .newlines)
-                .first(where: { $0.hasPrefix("#EXT-X-MEDIA-SEQUENCE:") })
-                .flatMap { Int($0.dropFirst("#EXT-X-MEDIA-SEQUENCE:".count)) } ?? 0
-            guard remoteKeyLines.count == 1,
-                  remoteKeyLines[0].contains("METHOD=AES-128"),
-                  remoteSequence == mediaSequence,
-                  let remoteKeyURI = capture(#"URI="([^"]+)""#, in: remoteKeyLines[0]),
-                  let remoteKeyURL = URL(string: remoteKeyURI, relativeTo: mediaURL)?.absoluteURL,
-                  ["http", "https"].contains(remoteKeyURL.scheme?.lowercased() ?? "") else {
-                throw StreamingMediaDownloadError.unsupportedManifest
-            }
-            let remoteIV = capture(#"IV=(0x[0-9A-Fa-f]{32})"#, in: remoteKeyLines[0])
-            if let iv, let remoteIV, iv.caseInsensitiveCompare(remoteIV) != .orderedSame {
-                throw StreamingMediaDownloadError.unsupportedManifest
-            }
-            exportedIV = iv ?? remoteIV
-            let data = try await fetch(remoteKeyURL, referrer: sourceURL, session: session)
-            guard data.count == 16 else { throw StreamingMediaDownloadError.unsupportedManifest }
-            keyData = data
-        } else {
-            keyData = nil
-        }
+        let material = try await resolveEncryption(mediaPlaylist: mediaPlaylist, renditionDirectory: renditionDirectory,
+            sourceURL: sourceURL, stored: encryption, session: session)
+        let keyData = material?.key, exportedIV = material?.iv
 
         try manager.createDirectory(at: directory, withIntermediateDirectories: true)
         let safeName = DownloadFilenameSanitizer.sanitize(name + ".hls", preferredExtension: "hls")
@@ -1508,6 +1581,86 @@ enum PortableHLSBundle {
         }
     }
 
+    /// Save ordinary AES-128 playback material while the download still has network access.
+    /// The system-owned package stays untouched; the small reference owns these bytes.
+    static func encryptionMaterial(packageURL: URL, sourceURL: URL?, session: URLSession = .shared,
+                                   requestContext: VideoPlaybackRequestContext? = nil) async throws -> EncryptionMaterial? {
+        let manager = FileManager.default
+        guard let files = manager.enumerator(at: packageURL, includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey]) else {
+            throw StreamingMediaDownloadError.unsupportedManifest
+        }
+        var renditions = Set<URL>()
+        for case let file as URL in files where file.pathExtension.lowercased() == "frag" {
+            try Task.checkCancellation()
+            let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+            guard values.isRegularFile == true, values.isSymbolicLink != true else { continue }
+            renditions.insert(file.deletingLastPathComponent().standardizedFileURL)
+        }
+        // AVFoundation also stores a master copy under Data/. A direct media
+        // playlist can therefore appear twice without representing two tracks.
+        // Match the exporter: use the playlist beside the downloaded fragments.
+        guard renditions.count == 1, let rendition = renditions.first else {
+            throw StreamingMediaDownloadError.unsupportedManifest
+        }
+        let playlist = try renditionPlaylist(in: rendition)
+        return try await resolveEncryption(mediaPlaylist: playlist, renditionDirectory: rendition,
+            sourceURL: sourceURL, stored: nil, session: session, requestContext: requestContext)
+    }
+
+    private static func renditionPlaylist(in directory: URL) throws -> String {
+        let files = try FileManager.default.contentsOfDirectory(at: directory,
+            includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+            .filter { $0.pathExtension.lowercased() == "m3u8" }
+        guard files.count == 1, let file = files.first else { throw StreamingMediaDownloadError.unsupportedManifest }
+        let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+        guard values.isRegularFile == true, values.isSymbolicLink != true else { throw StreamingMediaDownloadError.unsupportedManifest }
+        return try String(contentsOf: file, encoding: .utf8).replacingOccurrences(of: "\0", with: "")
+    }
+
+    private static func resolveEncryption(mediaPlaylist: String, renditionDirectory: URL, sourceURL: URL?,
+                                          stored: EncryptionMaterial?, session: URLSession,
+                                          requestContext: VideoPlaybackRequestContext? = nil) async throws -> EncryptionMaterial? {
+        let lines = mediaPlaylist.components(separatedBy: .newlines)
+        let keys = lines.filter { $0.hasPrefix("#EXT-X-KEY:") }
+        guard !keys.isEmpty else { return nil }
+        guard keys.count == 1, let key = keys.first, key.contains("METHOD=AES-128"),
+              capture(#"URI="([^"]+)""#, in: key) != nil,
+              !key.contains("KEYFORMAT=") || key.contains("KEYFORMAT=\"identity\"") else {
+            throw StreamingMediaDownloadError.unsupportedManifest
+        }
+        let digest = Data(SHA256.hash(data: Data(mediaPlaylist.utf8)))
+        let iv = capture(#"IV=(0x[0-9A-Fa-f]{32})"#, in: key)
+        if let stored {
+            guard stored.playlistDigest == digest, stored.key.count == 16,
+                  stored.iv == nil || stored.iv.flatMap({ capture(#"^(0x[0-9A-Fa-f]{32})$"#, in: $0) }) != nil,
+                  iv == nil || iv?.lowercased() == stored.iv?.lowercased() else {
+                throw StreamingMediaDownloadError.unsupportedManifest
+            }
+            return stored
+        }
+        guard let sourceURL else { throw StreamingMediaDownloadError.unsupportedManifest }
+        let sequence = lines.first(where: { $0.hasPrefix("#EXT-X-MEDIA-SEQUENCE:") })
+            .flatMap { Int($0.dropFirst("#EXT-X-MEDIA-SEQUENCE:".count)) } ?? 0
+        let (mediaURL, manifest) = try await self.mediaPlaylist(from: sourceURL, renditionDirectory: renditionDirectory, session: session, requestContext: requestContext)
+        let remoteLines = manifest.components(separatedBy: .newlines)
+        let remoteKeys = remoteLines.filter { $0.hasPrefix("#EXT-X-KEY:") }
+        let remoteSequence = remoteLines.first(where: { $0.hasPrefix("#EXT-X-MEDIA-SEQUENCE:") })
+            .flatMap { Int($0.dropFirst("#EXT-X-MEDIA-SEQUENCE:".count)) } ?? 0
+        guard remoteKeys.count == 1, remoteKeys[0].contains("METHOD=AES-128"), remoteSequence == sequence,
+              let remoteURI = capture(#"URI="([^"]+)""#, in: remoteKeys[0]),
+              let remoteURL = URL(string: remoteURI, relativeTo: mediaURL)?.absoluteURL,
+              ["http", "https"].contains(remoteURL.scheme?.lowercased() ?? "") else {
+            throw StreamingMediaDownloadError.unsupportedManifest
+        }
+        let remoteIV = capture(#"IV=(0x[0-9A-Fa-f]{32})"#, in: remoteKeys[0])
+        if let iv, let remoteIV, iv.caseInsensitiveCompare(remoteIV) != .orderedSame {
+            throw StreamingMediaDownloadError.unsupportedManifest
+        }
+        let data = try await fetch(remoteURL, referrer: sourceURL, session: session, requestContext: requestContext)
+        guard data.count == 16 else { throw StreamingMediaDownloadError.unsupportedManifest }
+        return EncryptionMaterial(playlistDigest: digest, key: data, iv: iv ?? remoteIV)
+    }
+
     private static func capture(_ expression: String, in value: String) -> String? {
         guard let regex = try? NSRegularExpression(pattern: expression),
               let match = regex.firstMatch(in: value, range: NSRange(value.startIndex..<value.endIndex, in: value)),
@@ -1516,8 +1669,8 @@ enum PortableHLSBundle {
     }
 
     private static func mediaPlaylist(from sourceURL: URL, renditionDirectory: URL,
-                                      session: URLSession) async throws -> (URL, String) {
-        let data = try await fetch(sourceURL, referrer: sourceURL, session: session)
+                                      session: URLSession, requestContext: VideoPlaybackRequestContext?) async throws -> (URL, String) {
+        let data = try await fetch(sourceURL, referrer: sourceURL, session: session, requestContext: requestContext)
         guard data.count <= 1_000_000,
               let manifest = String(data: data, encoding: .utf8),
               manifest.hasPrefix("#EXTM3U") else {
@@ -1543,7 +1696,7 @@ enum PortableHLSBundle {
             guard variants.count == 1 else { throw StreamingMediaDownloadError.unsupportedManifest }
             variantURL = variants[0].url
         }
-        let variantData = try await fetch(variantURL, referrer: sourceURL, session: session)
+        let variantData = try await fetch(variantURL, referrer: sourceURL, session: session, requestContext: requestContext)
         guard let variantManifest = String(data: variantData, encoding: .utf8),
               variantManifest.hasPrefix("#EXTM3U"), variantManifest.contains("#EXTINF:") else {
             throw StreamingMediaDownloadError.unsupportedManifest
@@ -1551,11 +1704,16 @@ enum PortableHLSBundle {
         return (variantURL, variantManifest)
     }
 
-    private static func fetch(_ url: URL, referrer: URL, session: URLSession) async throws -> Data {
-        let request = await WebResourceDownloadService.shared.resourceRequest(
-            url, pageURL: referrer, webView: nil
-        )
-        let (data, response) = try await session.data(for: request)
+    private static func fetch(_ url: URL, referrer: URL, session: URLSession,
+                              requestContext: VideoPlaybackRequestContext? = nil) async throws -> Data {
+        let data: Data, response: URLResponse
+        if let requestContext {
+            (data, response) = try await requestContext.data(for: url, referrer: referrer, session: session)
+        } else {
+            var request = await WebResourceDownloadService.shared.resourceRequest(url, pageURL: referrer, webView: nil)
+            request.httpShouldHandleCookies = false
+            (data, response) = try await session.data(for: request)
+        }
         guard let response = response as? HTTPURLResponse,
               (200...299).contains(response.statusCode),
               data.count <= 1_000_000 else {

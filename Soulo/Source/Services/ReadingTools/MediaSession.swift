@@ -74,6 +74,23 @@ final class MediaSession: ObservableObject {
     static let shared = MediaSession()
     lazy var player = AVPlayer()
     private var configured = false
+    #if DEBUG
+    @Published private(set) var volumeObservationEvents = 0
+    @Published private(set) var pauseInputLatency: TimeInterval?
+    private var lastControlTouch: TimeInterval?
+    func recordVideoControlTouch(timestamp: TimeInterval) {
+        guard ProcessInfo.processInfo.environment["SOULO_VIDEO_VOLUME_TRACE"] == "1" else { return }
+        lastControlTouch = timestamp
+    }
+    func recordVideoPauseInput() {
+        guard let lastControlTouch else { pauseInputLatency = nil; return }
+        let delay = ProcessInfo.processInfo.systemUptime - lastControlTouch
+        pauseInputLatency = (0..<5).contains(delay) ? delay : nil
+        self.lastControlTouch = nil
+    }
+    #endif
+    private var startupTask: Task<Void, Never>?
+    @Published private(set) var startupWarning: String?
     @Published var retainedPiPController: AVPlayerViewController?
     var retainedPiPDelegate: AnyObject?
     let pictureInPicture = MediaPictureInPicture()
@@ -90,8 +107,11 @@ final class MediaSession: ObservableObject {
     @Published private(set) var videoIsLandscape = false
     @Published var playerSurfaces = 0
     @Published var playerPages = 0
+    @Published private(set) var webMediaContext: WebMediaPlaybackContext?
     @Published private(set) var soulo: MatroskaPlayback?
-    private(set) var souloSystemAvailable = true
+    @Published private(set) var souloSystemAvailable = true
+    @Published private(set) var souloSystemAvailabilityPending = false
+    private var souloCompatibilityTask: Task<Void, Never>?
     private var localAudioPlaylist: [URL] = []
     private var remoteControlsInstalled = false
     @Published var loop = false
@@ -102,6 +122,7 @@ final class MediaSession: ObservableObject {
     private var rateFeedbackDismissal: Task<Void, Never>?
     private var rateBeforeTemporary: Float?
     @Published private(set) var gestureFeedback: VideoGestureFeedback?
+    @Published private(set) var seekPreview: Double?
     private var gestureFeedbackDismissal: Task<Void, Never>?
     private weak var adjustedScreen: UIScreen?
     private var originalBrightness: CGFloat?
@@ -126,12 +147,15 @@ final class MediaSession: ObservableObject {
     func playbackTransferSource() -> DownloadPlaybackSource? {
         guard let asset = player.currentItem?.asset as? AVURLAsset else { return nil }
         if let retainedDownloadSource, retainedDownloadSource.asset === asset { return retainedDownloadSource }
-        return DownloadPlaybackSource(asset: asset, pageURL: pageURL, webView: sourceWebView, persistPosition: persistsPosition)
+        let source = DownloadPlaybackSource(asset: asset, pageURL: pageURL, webView: sourceWebView, persistPosition: persistsPosition)
+        source.webMediaContext = webMediaContext
+        return source
     }
 
     func deferDownloadPackageRemoval(for asset: AVURLAsset, at url: URL) -> Bool {
-        guard let source = retainedDownloadSource, source.asset === asset,
-              player.currentItem?.asset === asset else { return false }
+        guard let source = retainedDownloadSource,
+              source.asset === asset || source.downloadAsset === asset,
+              player.currentItem?.asset === source.asset else { return false }
         source.removePackageWhenReleased(url)
         return true
     }
@@ -147,12 +171,19 @@ final class MediaSession: ObservableObject {
         guard !configured else { return }
         configured = true
         player.allowsExternalPlayback = true
+        AVAudioSession.sharedInstance().publisher(for: \.outputVolume).dropFirst()
+            .receive(on: DispatchQueue.main).sink { [weak self] value in
+                #if DEBUG
+                self?.volumeObservationEvents += 1
+                #endif
+                self?.outputVolumeChanged(Double(value))
+            }.store(in: &observations)
         timer = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 0.5, preferredTimescale: 600), queue: .main) { [weak self] time in
             Task { @MainActor in self?.updateTime(time) }
         }
         player.publisher(for: \.timeControlStatus).receive(on: DispatchQueue.main).sink { [weak self] _ in
             guard let self, self.soulo == nil else { return }
-            self.playing = self.player.timeControlStatus == .playing && self.player.currentItem != nil
+            self.playing = self.wantsPlayback && self.player.timeControlStatus == .playing && self.player.currentItem != nil
             self.updateScreenAwake()
             self.updateNowPlaying()
         }.store(in: &observations)
@@ -195,6 +226,8 @@ final class MediaSession: ObservableObject {
 
     func open(url: URL, title: String? = nil, pageURL: URL? = nil, asset: AVURLAsset? = nil, webView: WKWebView? = nil, reservation: UUID? = nil, persistPosition: Bool? = nil, downloadSource: DownloadPlaybackSource? = nil, startAt: Double? = nil, autoplay: Bool = true) {
         if let reservation, !ownsPreparation(reservation) { return }
+        webMediaContext = downloadSource?.webMediaContext.flatMap { $0.resource.kind == .video ? $0 : nil }
+        cancelSouloCompatibilityCheck()
         if let extended = soulo { soulo = nil; extended.stop(deactivateAudioSession: false) }
         if !localAudioPlaylist.contains(where: { $0.resolvingSymlinksInPath() == url.resolvingSymlinksInPath() }) { setLocalAudioPlaylist([]) }
         preparation = UUID()
@@ -203,6 +236,7 @@ final class MediaSession: ObservableObject {
         endTemporaryRate()
         clearTemporaryRateFeedback()
         interruptedGeneration = nil
+        startupTask?.cancel(); startupWarning = nil
         generation = UUID()
         player.pause()
         sourceWebView = webView
@@ -254,6 +288,24 @@ final class MediaSession: ObservableObject {
         player.replaceCurrentItem(with: item)
         retainedDownloadSource = downloadSource
         let token = generation
+        startupTask = Task { @MainActor [weak self, weak item] in
+            var watch = VideoStartupWatch()
+            while !Task.isCancelled {
+                guard let self, let item, self.generation == token, self.player.currentItem === item, self.soulo == nil else { return }
+                let frameReady = item.status == .readyToPlay && self.hasVideo
+                    && self.pictureInPicture.surface?.playerLayer.isReadyForDisplay == true
+                let audioReady = !self.hasVideo && self.webMediaContext?.resource.kind != .video
+                    && item.status == .readyToPlay && self.playing && self.elapsed > 0.1
+                let active = UIApplication.shared.applicationState == .active
+                    && (self.playerSurfaces > 0 || self.playerPages > 0)
+                let warning = watch.update(now: Date.timeIntervalSinceReferenceDate,
+                    requested: self.wantsPlayback && active && self.interruptedGeneration == nil, ready: frameReady || audioReady || self.player.isExternalPlaybackActive)
+                let message = warning ? ToolText.text("media_start_timeout") : nil
+                if self.startupWarning != message { self.startupWarning = message }
+                if watch.completed { return }
+                do { try await Task.sleep(for: .milliseconds(250)) } catch { return }
+            }
+        }
         Task {
             let tracks = try? await item.asset.loadTracks(withMediaType: .video)
             guard self.generation == token else { return }
@@ -335,8 +387,12 @@ final class MediaSession: ObservableObject {
     func pause() {
         playbackIntentRevision &+= 1
         if let soulo { soulo.pause(); return }
+        #if DEBUG
+        recordVideoPauseInput()
+        #endif
         wantsPlayback = false; interruptedGeneration = nil
-        endTemporaryRate(); player.pause(); savePosition(); updateNowPlaying()
+        player.pause(); playing = false
+        endTemporaryRate(); savePosition(); updateNowPlaying()
         updateScreenAwake()
     }
     func setBackgrounded(_ backgrounded: Bool) {
@@ -368,7 +424,7 @@ final class MediaSession: ObservableObject {
         // HLS can report no fast-forward support while still accepting 2.5×.
         // Apply the shared setting and read back AVPlayer's rate for feedback.
         let target = Float(VideoPlaybackPreferences.holdSpeed())
-        guard !temporaryRate, hasVideo, wantsPlayback, player.rate > 0, player.rate < target else { return }
+        guard gestureFeedback?.kind != .seek, !temporaryRate, hasVideo, wantsPlayback, player.rate > 0, player.rate < target else { return }
         rateBeforeTemporary = player.rate
         temporaryRate = true
         player.rate = target
@@ -405,10 +461,27 @@ final class MediaSession: ObservableObject {
         gestureFeedbackDismissal?.cancel()
         gestureFeedback = VideoGestureFeedback(kind: kind, value: min(1, max(0, value)))
     }
-    func finishAdjustment() {
+    func showSeekPreview(_ target: Double, start: Double) {
+        endTemporaryRate(); gestureFeedbackDismissal?.cancel()
+        seekPreview = target
+        gestureFeedback = VideoGestureFeedback(kind: .seek, value: target, delta: target - start)
+    }
+    func outputVolumeChanged(_ value: Double) {
+        guard value.isFinite, UIApplication.shared.applicationState == .active else { return }
+        if let soulo {
+            guard soulo.hasVideo, soulo.hasVisibleSurface else { return }
+            soulo.showAdjustment(.volume, value: value); soulo.finishAdjustment(after: .milliseconds(2200))
+        } else if hasVideo, playerSurfaces > 0 || playerPages > 0 {
+            gestureFeedbackDismissal?.cancel()
+            gestureFeedback = VideoGestureFeedback(kind: .volume, value: min(1, max(0, value)))
+            finishAdjustment(after: .milliseconds(2200))
+        }
+    }
+    func finishAdjustment(after delay: Duration = .milliseconds(1500)) {
+        seekPreview = nil
         gestureFeedbackDismissal?.cancel()
         gestureFeedbackDismissal = Task { @MainActor [weak self] in
-            do { try await Task.sleep(for: .milliseconds(1500)) } catch { return }
+            do { try await Task.sleep(for: delay) } catch { return }
             self?.gestureFeedback = nil
         }
     }
@@ -444,18 +517,20 @@ final class MediaSession: ObservableObject {
 
     func toggle() {
         if let soulo { playbackIntentRevision &+= 1; soulo.togglePlayback(); return }
-        // A requested AVPlayer rate stays nonzero while buffering, before the
-        // published playing flag catches up. A second tap must cancel it.
-        player.rate > 0 ? pause() : play()
+        // Intent is authoritative even while readiness, interruption or a seek
+        // leaves the decoder clock stopped. A second tap cancels that Play.
+        wantsPlayback ? pause() : play()
     }
     func stop() { stop(deactivateAudioSession: true) }
     func stop(deactivateAudioSession: Bool) {
+        startupTask?.cancel(); startupTask = nil; startupWarning = nil
+        cancelSouloCompatibilityCheck()
         if let extended = soulo { soulo = nil; extended.stop(deactivateAudioSession: false) }
-        if deactivateAudioSession { setLocalAudioPlaylist([]); sleepTimer.cancel() }
+        if deactivateAudioSession { setLocalAudioPlaylist([]); sleepTimer.cancel(); webMediaContext = nil }
         pause(); generation = UUID(); preparation = UUID(); itemObservation = nil; presentationSizeObservation = nil
         clearTemporaryRateFeedback()
         pictureInPicture.stop()
-        gestureFeedbackDismissal?.cancel(); gestureFeedbackDismissal = nil; gestureFeedback = nil
+        gestureFeedbackDismissal?.cancel(); gestureFeedbackDismissal = nil; gestureFeedback = nil; seekPreview = nil
         if let originalBrightness { adjustedScreen?.brightness = originalBrightness }
         adjustedScreen = nil; originalBrightness = nil
         retainedPiPController?.player = nil; retainedPiPController = nil; retainedPiPDelegate = nil
@@ -578,16 +653,43 @@ final class MediaSession: ObservableObject {
     /// Both decoders publish to one session, so navigation away, the mini player
     /// and lock-screen controls retain the same source and playback clock.
     func adoptSoulo(_ playback: MatroskaPlayback, url: URL, title: String?, source: DownloadPlaybackSource?,
-                    pageURL: URL?, systemAvailable: Bool) {
+                    pageURL: URL?, systemAvailable: Bool, systemAvailabilityPending: Bool = false) {
+        cancelSouloCompatibilityCheck()
         configureIfNeeded()
         if let old = soulo, old !== playback { soulo = nil; old.stop(deactivateAudioSession: false) }
+        startupTask?.cancel(); startupTask = nil; startupWarning = nil
         soulo = playback; self.url = url
+        webMediaContext = source?.webMediaContext.flatMap { $0.resource.kind == .video ? $0 : nil }
         persistsPosition = playback.persistsPosition
         self.title = title?.isEmpty == false ? title! : url.lastPathComponent
         self.pageURL = pageURL; retainedDownloadSource = source
         souloSystemAvailable = systemAvailable
+        // A file can begin playing before the page finishes its native-decoder
+        // check. Keep this local check with the session, so leaving the page
+        // cannot freeze the mini-player's capability at its initial false value.
+        if systemAvailabilityPending, url.isFileURL, let sourceURL = playback.sourceURL, sourceURL.isFileURL {
+            souloSystemAvailabilityPending = true
+            let asset = AVURLAsset(url: sourceURL)
+            souloCompatibilityTask = Task { @MainActor [weak self, weak playback] in
+                do {
+                    let extended = try await TorrentFileDecoder.prefersExtended(asset, path: sourceURL.path)
+                    try Task.checkCancellation()
+                    guard let self, let playback, self.soulo === playback else { return }
+                    self.updateSouloSystemAvailability(!extended, for: playback)
+                } catch { }
+            }
+        }
         if !localAudioPlaylist.contains(where: { $0.resolvingSymlinksInPath() == url.resolvingSymlinksInPath() }) { setLocalAudioPlaylist([]) }
         updateSouloState(playback)
+    }
+    func updateSouloSystemAvailability(_ available: Bool, for playback: MatroskaPlayback) {
+        guard soulo === playback else { return }
+        cancelSouloCompatibilityCheck()
+        if souloSystemAvailable != available { souloSystemAvailable = available }
+    }
+    private func cancelSouloCompatibilityCheck() {
+        souloCompatibilityTask?.cancel(); souloCompatibilityTask = nil
+        if souloSystemAvailabilityPending { souloSystemAvailabilityPending = false }
     }
     func updateSouloState(_ playback: MatroskaPlayback) {
         guard soulo === playback else { return }
@@ -600,6 +702,7 @@ final class MediaSession: ObservableObject {
     }
     func releaseSoulo(_ playback: MatroskaPlayback) {
         guard soulo === playback else { return }
+        cancelSouloCompatibilityCheck()
         soulo = nil; url = nil; playing = false; hasVideo = false; elapsed = 0; duration = 0
         retainedDownloadSource = nil
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil

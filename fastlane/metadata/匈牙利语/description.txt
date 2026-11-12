@@ -6,8 +6,6 @@ A legutóbb használt lapok és webhelycsoportok kerülnek előre, az áttekint�
 
 BT-letöltések: importálj .torrent-fájlokat vagy magnet-hivatkozásokat, válassz fájlokat, szüneteltesd és folytasd. iOS 26-on a letöltés a háttérben is folytatódhat, ha a rendszer engedi; a korábbi verziók mentik az állapotot és szüneteltetik. Játssz le támogatott BT-médiát letöltés közben, és nyiss meg MKV-fájlokat. Importálj ed2k/thunder-linkeket. A letöltéshez elérhető források kellenek; a lejátszás a kodekektől függ.
 
-Gördülékenyebb böngészés, jobb videóvezérlés és áttekinthetőbb fájlelőnézetek.
-
 Válassz öt opcionális kezdőlapi parancsikont a letöltésekhez, fájlokhoz, könyvjelzőkhöz, előzményekhez, háttérképekhez és más oldalakhoz. Görgetéskor a könyvtár lapsávja összébb húzódik.
 
 Keressen információt, olvasson cikkeket, játsszon le médiát és kezelje letöltéseit egy böngészőben.
@@ -20,11 +18,11 @@ Használjon több lapot, hangalapú keresést, keresési előzményeket és plat
 • Fájlok: keressen képeket, hangot, videót és dokumentumokat az oldalakon, és mentsen több képet egyszerre. Lista vagy borítórács, átnevezés, importálás a Fotókból és Wi-Fi-átvitel.
 • Tömörítés: ZIP, RAR és 7z kibontása; ZIP és 7z létrehozása választható jelszóvédelemmel.
 • Olvasás: TXT, PDF, EPUB és támogatott, DRM-mentes MOBI-, AZW- és AZW3-könyvek. Állítsa be a betűtípust, méretet, sorközt és hátteret. Az áttördelhető könyvek egyszerűsített vagy hagyományos kínai megjelenítést is kínálnak. Az olvasómód kiemeli a cikket, és lehetővé teszi a folytatást a következő oldalon.
-• Bővítmények: JavaScript-felhasználói szkriptek importálása, szerkesztése és futtatása, webhelyek és engedélyek kezelése, kompatibilis WebExtensions telepítése.
+• Szkriptek és bővítmények: importáljon, szerkesszen és futtasson JavaScript-szkripteket. A kompatibilis WebExtensions bővítményekhez iOS 18.4 vagy újabb kell; a támogatás bővítményenként eltér.
 • Webes eszközök: fordítás, keresés az oldalon, teljes oldalas képernyőkép, képek szövegfelismerése, asztali/mobil mód, egyéni user agent és webhelytanúsítványok.
 • Könyvjelzők: mappák és a Chrome, Edge vagy más böngészők HTML-könyvjelzőinek importálása/exportálása. Készítsen QR-kódot a webhely ikonjával, majd ossza meg, mentse vagy másolja.
-• Testreszabás: háttérképek, eszközsor és az appikon gyorsműveletei. Elérés widgetekkel, Parancsokkal és URL-sémákkal. Választható iCloud-beállításszinkronizálás.
+• Testreszabás: háttérképek, eszközsor és az appikon gyorsműveletei. Elérés widgetekkel, Parancsokkal és URL-sémákkal. Választható iCloud-beállításszinkronizálás. Külön háttér a világos és sötét megjelenéshez, kapcsolható képfedő réteggel.
 
-A média, könyvek és bővítmények elérhetősége a formátumtól, a webhely korlátozásaitól és a rendszerverziótól függ.
+A média, a könyvek és a bővítmények elérhetősége a formátumtól, a webhely korlátozásaitól és a rendszerverziótól függ. Letöltés előtt ellenőrizze, hogy a forrás engedélyezi-e a mentést.
 
 Támogatás: contact@dkluge.com

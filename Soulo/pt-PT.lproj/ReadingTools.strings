@@ -436,3 +436,65 @@
 "files_move_busy" = "Aguarde a conclusão dos downloads antes de mover ou renomear esses itens.";
 "video_show_episode_dock" = "Mostrar dock de episódios";
 "video_show_episode_dock_desc" = "Mostrar um botão de episódio encaixado em páginas da web com episódios. Os episódios permanecem disponíveis dentro do player.";
+
+// Webpage share preview
+"page_share_image" = "Partilhar imagem";
+"page_share_link" = "Partilhar ligação";
+"page_share_preview" = "Pré-visualização da área visível";
+"page_share_brand" = "Soulo: Navegador multipesquisa";
+
+"video_export_mp4" = "Exportar MP4";
+"video_export_failed" = "Não foi possível exportar este vídeo como MP4. O ficheiro original foi mantido.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Gestos com dois dedos";
+"gesture_hint" = "Mova dois dedos juntos para os lados. A indicação segue os dedos; recue para cancelar. A navegação com um dedo e o zoom por pinça continuam disponíveis.";
+"gesture_swipe_right" = "Deslizar à direita";
+"gesture_swipe_left" = "Deslizar à esquerda";
+"gesture_show_toolbar" = "Mostrar barra de ferramentas";
+"gesture_quick_menu" = "Menu rápido";
+"gesture_preview" = "Prévia do gesto";
+"zoom_remember" = "Lembrar zoom dos sites";
+"zoom_hint" = "O zoom do menu da página é guardado por domínio. Alterações em separadores privados não são guardadas.";
+"zoom_empty" = "Nenhum nível de zoom guardado";
+"zoom_reset_all" = "Repor tudo para 100%";
+
+"shake_direction" = "Direção";
+"shake_direction_horizontal" = "Esquerda e direita";
+"shake_direction_vertical" = "Cima e baixo";
+"shake_direction_any" = "Qualquer direção";
+
+"gesture_settings_title" = "Gestos de páginas web";
+"gesture_no_history" = "Se não for possível voltar";
+"gesture_no_history_hint" = "Sem histórico anterior, deslize para a direita a partir da margem esquerda para ver a ação. Recue para cancelar. Escolha Nenhuma para desativar.";
+
+"gesture_execution" = "Executar ação";
+
+"gesture_execute_release" = "Ao soltar";
+
+"gesture_execute_tap" = "Ao tocar";
+
+"gesture_feedback" = "Resposta da ação";
+
+"gesture_haptics" = "Vibração";
+
+"gesture_sound" = "Som";
+
+"gesture_feedback_preview" = "Testar resposta";
+
+"media_start_timeout" = "A reprodução não começou. Verifique a rede ou mude de reprodutor.";
+
+"wallpaper_appearance_hint" = "Defina fundos separados para o aspeto claro e escuro. Mudam automaticamente com a aplicação.";
+
+"wallpaper_image_overlay" = "Camada sobre a imagem";
+
+"auto_hide_platform_bar" = "Ocultar barra de plataformas";
+
+"top_tab_bar_hidden_title" = "Barra de separadores superior oculta";
+
+"top_tab_bar_reopen_hint" = "Para voltar a mostrá-la, toque no botão de separadores em baixo, abra o menu … e ative a barra de separadores superior.";
+
+"wallpaper_image_blur" = "Vidro fosco";
+"wallpaper_blur_amount" = "Intensidade do desfoque";
+
+"auto_hide_platform_bar_hint" = "A barra de plataformas é ocultada ao abrir um resultado de pesquisa. Volte aos resultados ou faça outra pesquisa para a mostrar novamente. Pode desativar esta opção neste menu.";

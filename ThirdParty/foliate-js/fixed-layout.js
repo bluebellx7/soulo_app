@@ -46,16 +46,23 @@ export class FixedLayout extends HTMLElement {
     constructor() {
         super()
 
-        const sheet = new CSSStyleSheet()
-        this.#root.adoptedStyleSheets = [sheet]
-        sheet.replaceSync(`:host {
+        const css = `:host {
             width: 100%;
             height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
             overflow: auto;
-        }`)
+        }`
+        if ('adoptedStyleSheets' in this.#root) {
+            const sheet = new CSSStyleSheet()
+            this.#root.adoptedStyleSheets = [sheet]
+            sheet.replaceSync(css)
+        } else {
+            const style = document.createElement('style')
+            style.textContent = css
+            this.#root.append(style)
+        }
 
         this.#observer.observe(this)
     }

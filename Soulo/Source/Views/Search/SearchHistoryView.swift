@@ -1,5 +1,5 @@
 import SwiftUI
-import SwiftData
+import CoreData
 
 struct SearchHistoryView: View {
     @Environment(\.dismiss) private var dismiss
@@ -22,9 +22,9 @@ struct SearchHistoryView: View {
 
 struct SearchHistoryContentView: View {
     @Environment(\.libraryPageIsActive) private var libraryPageIsActive
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.managedObjectContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \SearchHistoryItem.timestamp, order: .reverse) private var allHistory: [SearchHistoryItem]
+    @FetchRequest(sortDescriptors: [NSSortDescriptor(key: "timestamp", ascending: false)]) private var allHistory: FetchedResults<SearchHistoryRecord>
 
     @ObservedObject var searchVM: SearchViewModel
     var onOpen: ((String) -> Void)? = nil
@@ -34,13 +34,13 @@ struct SearchHistoryContentView: View {
     @State private var kind = "all"
     @State private var groupByPlatform = false
 
-    private var visibleHistory: [SearchHistoryItem] {
+    private var visibleHistory: [SearchHistoryRecord] {
         allHistory.filter { SearchHistoryService.isVisibleInHistory($0) && (kind == "all" || (kind == "pages" ? $0.isWebVisit : !$0.isWebVisit)) }
     }
 
-    private var deduped: [SearchHistoryItem] {
+    private var deduped: [SearchHistoryRecord] {
         var seen = Set<String>()
-        var result: [SearchHistoryItem] = []
+        var result: [SearchHistoryRecord] = []
         let source = filterText.trimmingCharacters(in: .whitespaces).isEmpty
             ? visibleHistory
             : visibleHistory.filter {
@@ -58,7 +58,7 @@ struct SearchHistoryContentView: View {
         return result
     }
 
-    private var grouped: [(title: String, items: [SearchHistoryItem])] {
+    private var grouped: [(title: String, items: [SearchHistoryRecord])] {
         if groupByPlatform {
             let platforms = Dictionary(uniqueKeysWithValues: platformStore.platforms.map { ($0.id, $0) })
             return Dictionary(grouping: deduped, by: { $0.platformID }).map { id, items in
@@ -71,9 +71,9 @@ struct SearchHistoryContentView: View {
         let todayStart = calendar.startOfDay(for: Date())
         let yesterdayStart = calendar.date(byAdding: .day, value: -1, to: todayStart)!
 
-        var today: [SearchHistoryItem] = []
-        var yesterday: [SearchHistoryItem] = []
-        var earlier: [SearchHistoryItem] = []
+        var today: [SearchHistoryRecord] = []
+        var yesterday: [SearchHistoryRecord] = []
+        var earlier: [SearchHistoryRecord] = []
 
         for item in deduped {
             let date = calendar.startOfDay(for: item.timestamp)
@@ -82,7 +82,7 @@ struct SearchHistoryContentView: View {
             else { earlier.append(item) }
         }
 
-        var result: [(String, [SearchHistoryItem])] = []
+        var result: [(String, [SearchHistoryRecord])] = []
         if !today.isEmpty { result.append((LanguageManager.shared.localizedString("today"), today)) }
         if !yesterday.isEmpty { result.append((LanguageManager.shared.localizedString("yesterday"), yesterday)) }
         if !earlier.isEmpty { result.append((LanguageManager.shared.localizedString("earlier"), earlier)) }
@@ -121,7 +121,7 @@ struct SearchHistoryContentView: View {
                     message: LanguageManager.shared.localizedString("no_history_desc")
                 )
             } else if deduped.isEmpty {
-                ContentUnavailableView(
+                CompatibleUnavailableView(
                     LanguageManager.shared.localizedString("no_results"),
                     systemImage: "magnifyingglass",
                     description: Text("")
@@ -137,8 +137,9 @@ struct SearchHistoryContentView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .listSectionSpacing(12)
-        .contentMargins(.top, 8, for: .scrollContent)
+        .mediaPlayerNavigation()
+        .compatibleListSectionSpacing(20)
+        .compatibleScrollTopMargin(24)
         .toolbar {
             if libraryPageIsActive {
                 ToolbarItem(placement: .primaryAction) {
@@ -171,12 +172,12 @@ struct SearchHistoryContentView: View {
         .onAppear {
             if libraryPageIsActive { SearchHistoryService.purgeExpiredBrowsingHistory(context: modelContext) }
         }
-        .onChange(of: libraryPageIsActive) { _, active in
+        .onCompatibleChange(of: libraryPageIsActive) { _, active in
             if active { SearchHistoryService.purgeExpiredBrowsingHistory(context: modelContext) }
         }
     }
 
-    private func historyRow(_ item: SearchHistoryItem) -> some View {
+    private func historyRow(_ item: SearchHistoryRecord) -> some View {
         Button {
             let value = item.visitedURLString ?? item.keyword
             if let onOpen {
@@ -258,7 +259,7 @@ struct SearchHistoryContentView: View {
         .background(LibrarySwipeActionsRegion())
     }
 
-    private func matchingHistoryEntries(for item: SearchHistoryItem) -> [SearchHistoryItem] {
+    private func matchingHistoryEntries(for item: SearchHistoryRecord) -> [SearchHistoryRecord] {
         if let url = item.visitedURLString {
             return allHistory.filter { $0.visitedURLString == url }
         }

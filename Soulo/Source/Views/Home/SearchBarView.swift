@@ -20,6 +20,7 @@ struct SearchBarView: View {
 
     @ObservedObject var wallpaperManager = WallpaperManager.shared
     @ObservedObject private var platformStore = PlatformDataStore.shared
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var isFocused = false
@@ -29,12 +30,12 @@ struct SearchBarView: View {
     @State private var showSearchActions = false
 
     private var isLight: Bool {
-        !isCompact && wallpaperManager.isCurrentWallpaperLight
+        !isCompact && wallpaperManager.prefersDarkForeground(for: WallpaperAppearance(colorScheme))
     }
 
     // Adaptive colors based on mode
     private var iconColor: Color {
-        isCompact ? Color(UIColor.secondaryLabel) : (isLight ? Color(hex: "2E2A47").opacity(0.5) : .white.opacity(0.5))
+        isCompact ? Color(UIColor.secondaryLabel) : (isLight ? Color(hex: "2E2A47").opacity(0.8) : .white.opacity(0.85))
     }
     private var iconActiveColor: Color {
         isCompact ? Color(UIColor.label) : (isLight ? Color(hex: "2E2A47").opacity(0.85) : .white.opacity(0.9))
@@ -43,10 +44,10 @@ struct SearchBarView: View {
         isCompact ? Color(UIColor.label) : (isLight ? Color(hex: "2E2A47") : .white)
     }
     private var placeholderColor: Color {
-        isCompact ? Color(UIColor.tertiaryLabel) : (isLight ? Color(hex: "2E2A47").opacity(0.35) : .white.opacity(0.35))
+        isCompact ? Color(UIColor.tertiaryLabel) : (isLight ? Color(hex: "2E2A47").opacity(0.7) : .white.opacity(0.75))
     }
     private var clearColor: Color {
-        isCompact ? Color(UIColor.tertiaryLabel) : (isLight ? Color(hex: "2E2A47").opacity(0.4) : .white.opacity(0.4))
+        isCompact ? Color(UIColor.tertiaryLabel) : (isLight ? Color(hex: "2E2A47").opacity(0.75) : .white.opacity(0.8))
     }
     private var dividerColor: Color {
         isCompact ? Color(UIColor.separator) : (isLight ? Color(hex: "2E2A47").opacity(0.15) : .white.opacity(0.15))
@@ -77,7 +78,7 @@ struct SearchBarView: View {
                 )
                 .popover(isPresented: $showSearchActions, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
                     searchActionsPanel(onIncognitoTap: onIncognitoTap, onScanTap: onScanTap)
-                        .presentationCompactAdaptation(.popover)
+                        .compatiblePopoverAdaptation()
                 }
             } else {
                 Image(systemName: isIncognito ? "eye.slash.fill" : "magnifyingglass")
@@ -147,7 +148,7 @@ struct SearchBarView: View {
                     }
                     .frame(width: 26, height: 26)
                 }
-                .onChange(of: isRecording) { _, recording in
+                .onCompatibleChange(of: isRecording) { _, recording in
                     if recording {
                         withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: false)) {
                             animateGlow = true
@@ -183,7 +184,7 @@ struct SearchBarView: View {
                         Capsule().fill(.white.opacity(0.75))
                         Capsule().stroke(Color(hex: "2E2A47").opacity(isFocused ? 0.35 : 0.15), lineWidth: 0.5)
                     } else {
-                        Capsule().fill(.ultraThinMaterial.opacity(0.6))
+                        Capsule().fill(.ultraThinMaterial).environment(\.colorScheme, .dark)
                         Capsule().fill(.white.opacity(0.08))
                         Capsule().stroke(.white.opacity(isFocused ? 0.3 : 0.12), lineWidth: 0.5)
                     }
@@ -191,13 +192,8 @@ struct SearchBarView: View {
                 .shadow(color: isLight ? .black.opacity(0.04) : .black.opacity(0.2), radius: 16, x: 0, y: 4)
             }
         }
-        .keyframeAnimator(initialValue: CGFloat(1), trigger: focusFeedback) { [reduceMotion, isCompact] content, scale in
-            content.scaleEffect(reduceMotion || isCompact ? 1 : scale)
-        } keyframes: { _ in
-            CubicKeyframe(0.975, duration: 0.07)
-            SpringKeyframe(1, duration: 0.2, spring: .snappy)
-        }
-        .onChange(of: isFocused) { _, focused in
+        .compatibleFocusFeedback(trigger: focusFeedback, enabled: !reduceMotion && !isCompact)
+        .onCompatibleChange(of: isFocused) { _, focused in
             if focused && !isCompact && !reduceMotion { focusFeedback &+= 1 }
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: isFocused)

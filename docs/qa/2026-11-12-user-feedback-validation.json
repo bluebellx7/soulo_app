@@ -1,0 +1,405 @@
+{
+  "wallpaper_progress_loading_visuals": {
+    "log": "/tmp/soulo-feedback-20261112/visual-validation.log",
+    "cases": [
+      {
+        "name": "SouloTests.AppPerformanceAuditTests testWallpaperAppearanceAndLoadingProgressVisuals",
+        "status": "passed",
+        "seconds": 1.291
+      }
+    ]
+  },
+  "confirmations": {
+    "log": "/tmp/soulo-feedback-20261112/popup-shadow-validation.log",
+    "cases": [
+      {
+        "name": "SouloUITests.WebEpisodeAndAdNavigationUITests testAutomaticPostNavigationKeepsNewTabActionAndRetainsSource",
+        "status": "passed",
+        "seconds": 38.077
+      },
+      {
+        "name": "SouloUITests.WebEpisodeAndAdNavigationUITests testScriptButtonsConfirmComputedCrossSiteDestinations",
+        "status": "passed",
+        "seconds": 27.771
+      }
+    ]
+  },
+  "post_window_opener_and_cancel": {
+    "log": "/tmp/soulo-feedback-20261112/popup-post-opener-fixed.log",
+    "cases": [
+      {
+        "name": "SouloUITests.WebEpisodeAndAdNavigationUITests testPopupConfirmationWaitsOnSourceAndPreservesWebKitPostAndOpener",
+        "status": "passed",
+        "seconds": 22.296
+      }
+    ]
+  },
+  "hidden_and_configured_takeover_ui_simulator": {
+    "log": "/tmp/soulo-feedback-20261112/hidden-fallback-validation.log",
+    "cases": [
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testConfiguredVideoCanStartBeforeDOMVideoWithoutAcceptingArbitraryURLs",
+        "status": "passed",
+        "seconds": 0.868
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testHiddenVideoFallbackRetainsElementIdentityAndRejectsAmbiguousOrProtectedMedia",
+        "status": "passed",
+        "seconds": 0.468
+      },
+      {
+        "name": "SouloUITests.WebEpisodeAndAdNavigationUITests testConfiguredPlayerFallbackOffersNativeFullscreenAndKeepsEpisodes",
+        "status": "passed",
+        "seconds": 44.988
+      }
+    ]
+  },
+  "hidden_and_configured_takeover_ui_physical_ipad": {
+    "log": "/tmp/soulo-feedback-20261112/final-hidden-device.log",
+    "cases": [
+      {
+        "name": "SouloUITests.WebEpisodeAndAdNavigationUITests testConfiguredPlayerFallbackOffersNativeFullscreenAndKeepsEpisodes",
+        "status": "passed",
+        "seconds": 51.486
+      }
+    ]
+  },
+  "all_episode_and_media_bridge_regressions": {
+    "log": "/tmp/soulo-feedback-20261112/final-parser-regressions.log",
+    "cases": [
+      {
+        "name": "SouloTests.WebEpisodeTests testBilibiliNavigationRejectsStateFromThePreviousVideo",
+        "status": "passed",
+        "seconds": 0.811
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testBilibiliPartsAndCollectionsUsePageIDsAndRealTitles",
+        "status": "passed",
+        "seconds": 0.377
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testDisablingEpisodeDockStopsAutomaticScansButKeepsManualSelection",
+        "status": "passed",
+        "seconds": 1.071
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testDynamicPlaylistsNormalizeOrderAndRejectUnrelatedOrUnsafeLinks",
+        "status": "passed",
+        "seconds": 0.983
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testEpisodeContextSurvivesMiniPlayerAndDecoderHandoffsButNotAnotherVideo",
+        "status": "passed",
+        "seconds": 0.126
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testEpisodeDockDoesNotInstallScrollBlockingRootTouchListeners",
+        "status": "passed",
+        "seconds": 0.756
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testExternalCatalogEpisodesRequireMatchingProvenanceAndPlaybackURLs",
+        "status": "passed",
+        "seconds": 0.003
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testFallbackDockOnlyAppearsWithoutAVisiblePlayerAndRejectsSyntheticInput",
+        "status": "passed",
+        "seconds": 1.398
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testFallbackGroupsPlaybackLinksAndIgnoresCatalogPages",
+        "status": "passed",
+        "seconds": 0.722
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testGenericDetectionRejectsPaginationRecommendationsAndCatalogCards",
+        "status": "passed",
+        "seconds": 0.426
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testGenericEpisodeLinksDoNotDependOnSiteClassesOrURLTemplates",
+        "status": "passed",
+        "seconds": 1.928
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testGenericResourceCatalogsDoNotNeedKnownClassesOrHosts",
+        "status": "passed",
+        "seconds": 1.938
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testGenericResourceDetectionRejectsAdsUnsafeCopiesAndQualityLists",
+        "status": "passed",
+        "seconds": 0.384
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testGenericTextCatalogUpdatesWhenCopyFieldChanges",
+        "status": "passed",
+        "seconds": 1.006
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testInvisiblePlayerDoesNotHideDockAndStyleChangesUpdateIt",
+        "status": "passed",
+        "seconds": 1.201
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testJinyingStyleCatalogKeepsCloudAndStreamLines",
+        "status": "passed",
+        "seconds": 0.391
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testMacCMSPlaylistsKeepSourcesAndRealEpisodeURLs",
+        "status": "passed",
+        "seconds": 0.389
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testNativeRefreshRepublishesAndReturnsTheCurrentSnapshot",
+        "status": "passed",
+        "seconds": 0.873
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testPlayerPageKeepsLineNamesAndExcludesPreviousNextLinks",
+        "status": "passed",
+        "seconds": 0.355
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testQueryBasedPlayerKeepsCurrentSeriesAndExcludesRecommendedShows",
+        "status": "passed",
+        "seconds": 0.358
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testResourceCatalogKeepsExternalPlayersStreamsAndSpecials",
+        "status": "passed",
+        "seconds": 0.681
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testRestoredDocumentRepublishesUnchangedEpisodes",
+        "status": "passed",
+        "seconds": 1.233
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testShadowPlayerToolbarReplacesFallbackDockAndRestoresItWhenHidden",
+        "status": "passed",
+        "seconds": 2.034
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testStaleResultsAndOldPageStateAreDiscarded",
+        "status": "passed",
+        "seconds": 0.003
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testStructuredEpisodesRefreshAndClearWithoutReloadingThePage",
+        "status": "passed",
+        "seconds": 1.744
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testTextResourceListsKeepSourcesFragmentsAndSignedParameters",
+        "status": "passed",
+        "seconds": 0.374
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testUnfamiliarCopyRowsKeepNamedSpecialsAndPlainLineHeadings",
+        "status": "passed",
+        "seconds": 0.354
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testVideoEpisodeRequestRecoversMissingNativeState",
+        "status": "passed",
+        "seconds": 0.93
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testWrappedResourceCatalogAppearsAndDisappearsDynamically",
+        "status": "passed",
+        "seconds": 0.983
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testWrappedResourceCatalogExtractsAllEpisodesAndSignedDirectStreams",
+        "status": "passed",
+        "seconds": 0.398
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testWrappedResourceCatalogRejectsMismatchesUnsafeLinksAndRecommendations",
+        "status": "passed",
+        "seconds": 0.373
+      },
+      {
+        "name": "SouloTests.WebEpisodeTests testYoukuAndGenericStructuredListsExcludeRecommendationsAndUnsafeURLs",
+        "status": "passed",
+        "seconds": 0.734
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testAppPageZoomPreservesCompactVideoToolsAndEpisodeDock",
+        "status": "passed",
+        "seconds": 3.76
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testBottomVideoClearanceFollowsPlayerLayoutAndResetsAfterDismissal",
+        "status": "passed",
+        "seconds": 2.112
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testConfiguredVideoCanStartBeforeDOMVideoWithoutAcceptingArbitraryURLs",
+        "status": "passed",
+        "seconds": 0.373
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testEmbeddedVideoToolbarReceivesParentScaleAndZoomUpdates",
+        "status": "passed",
+        "seconds": 3.522
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testEmptyMediaSourceNeverBecomesTheHTMLDocument",
+        "status": "passed",
+        "seconds": 0.371
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testHiddenVideoFallbackRetainsElementIdentityAndRejectsAmbiguousOrProtectedMedia",
+        "status": "passed",
+        "seconds": 0.369
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testHoldSpeedToastRejectsInvalidRatesAndStaleReleaseAndResetsForNavigation",
+        "status": "passed",
+        "seconds": 2.282
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testIsolatedSetterBypassesPageWrapperThatPretendsToSetRate",
+        "status": "passed",
+        "seconds": 0.551
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testNativeFullscreenRecoversBeforeAnInlineControlIsVisible",
+        "status": "passed",
+        "seconds": 0.626
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testNavigationDoesNotCarryRateIntoAnotherDocument",
+        "status": "passed",
+        "seconds": 0.918
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testOneTimesReleasesRestorationAndNativeControlsWorkAfterStartup",
+        "status": "passed",
+        "seconds": 3.094
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testPersistentSiteResetIsBoundedAndDoesNotReportSuccess",
+        "status": "passed",
+        "seconds": 1.082
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testRealVideoTimelineAdvancesFasterAtTwoTimes",
+        "status": "passed",
+        "seconds": 4.954
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testShadowRootVideoInspectionAndTakeoverKeepTheSelectedSource",
+        "status": "passed",
+        "seconds": 0.387
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testStartupResetIsRepairedAndReplacementInheritsSelectedRate",
+        "status": "passed",
+        "seconds": 0.908
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testToolbarHidesWhenPlayerAncestorsBecomeTransparent",
+        "status": "passed",
+        "seconds": 1.315
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testVideoPausesInBackgroundAndRestoresCheckpointAfterRuntimeEviction",
+        "status": "passed",
+        "seconds": 4.538
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testVideoRotationControlsFollowDynamicVideosAndRejectSyntheticClicks",
+        "status": "passed",
+        "seconds": 0.956
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testVideoToolsCanHideWithoutReloadingThePageOrPausingItsVideo",
+        "status": "passed",
+        "seconds": 0.817
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testVideoToolsStayCompactAcrossPageViewports",
+        "status": "passed",
+        "seconds": 5.916
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testVisiblePlayerDeterminesDisplayedRateInsteadOfHiddenPreload",
+        "status": "passed",
+        "seconds": 0.374
+      }
+    ]
+  },
+  "live_site_fix": {
+    "log": "/tmp/soulo-feedback-20261112/observed-stream-live.log",
+    "cases": [
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testBlobVideoCanResolveObservedManifestAfterResourceTimingWasCleared",
+        "status": "passed",
+        "seconds": 0.908
+      },
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testLiveMovieDirectoryCompatibilityAudit",
+        "status": "passed",
+        "seconds": 9.532
+      },
+      {
+        "name": "SouloUITests.WebEpisodeAndAdNavigationUITests testLiveMoviePageOffersTakeoverAndPreservesEpisodes",
+        "status": "passed",
+        "seconds": 15.968
+      }
+    ]
+  },
+  "late_video_creation_simulator": {
+    "log": "/tmp/soulo-feedback-20261112/accepted-delayed-simulator.log",
+    "cases": [
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testHiddenVideoFallbackRetainsElementIdentityAndRejectsAmbiguousOrProtectedMedia",
+        "status": "passed",
+        "seconds": 0.973
+      },
+      {
+        "name": "SouloUITests.WebEpisodeAndAdNavigationUITests testConfiguredPlayerFallbackOffersNativeFullscreenAndKeepsEpisodes",
+        "status": "passed",
+        "seconds": 50.507
+      }
+    ]
+  },
+  "late_video_creation_physical_ipad": {
+    "log": "/tmp/soulo-feedback-20261112/accepted-delayed-device.log",
+    "cases": [
+      {
+        "name": "SouloUITests.WebEpisodeAndAdNavigationUITests testConfiguredPlayerFallbackOffersNativeFullscreenAndKeepsEpisodes",
+        "status": "passed",
+        "seconds": 43.766
+      }
+    ]
+  },
+  "observed_stream_physical_ipad": {
+    "log": "/tmp/soulo-feedback-20261112/observed-stream-device.log",
+    "cases": [
+      {
+        "name": "SouloTests.WebMediaPlaybackBridgeTests testBlobVideoCanResolveObservedManifestAfterResourceTimingWasCleared",
+        "status": "passed",
+        "seconds": 0.1
+      },
+      {
+        "name": "SouloUITests.WebEpisodeAndAdNavigationUITests testLiveMoviePageOffersTakeoverAndPreservesEpisodes",
+        "status": "passed",
+        "seconds": 10.852
+      }
+    ]
+  },
+  "builds": {
+    "simulator": true,
+    "physicalIPad": true
+  },
+  "localizationAndMetadata": {
+    "passed": true,
+    "locales": 50
+  }
+}

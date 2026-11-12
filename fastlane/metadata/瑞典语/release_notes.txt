@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Åtgärdade ett fel där ett bokmärke eller en historikpost ibland ersatte en befintlig flik när den öppnades.
-• Förbättrad start, sidladdning och användning av hemskärmen.
-• Förbättrade helskärmskontroller, rotation och uppspelningsstatus vid appbyte.
-• Förbättrad återställning av stängda flikar, filförhandsvisning och gränssnittsdetaljer.
+• Separata bakgrunder för ljust och mörkt utseende och en brytare för bildlagret.
+• Förbättrade färger på startsidan; bakgrundens förhandsvisning följer appens tema.
+• Förhandsvisa, dela och spara bakgrunder i Bilder.
+• Inställningar för övre flikar med ny flik och valfri döljning av plattformsfältet efter navigering.

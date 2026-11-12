@@ -6,8 +6,6 @@ As abas e grupos de sites usados recentemente aparecem primeiro, e a visão gera
 
 Downloads BT: importe arquivos .torrent ou links magnet, escolha arquivos, pause e retome. No iOS 26, os downloads podem continuar em segundo plano quando o sistema permitir; versões anteriores salvam o progresso e pausam. Reproduza mídias BT compatíveis durante o download e abra arquivos MKV. Importe links ed2k/thunder. Downloads precisam de fontes disponíveis; a reprodução depende dos codecs.
 
-Navegação mais fluida, controles de vídeo aprimorados e prévias de arquivos mais claras.
-
 Escolha cinco atalhos opcionais na tela inicial para downloads, arquivos, favoritos, histórico, papéis de parede e outras páginas. A barra de abas da biblioteca fica compacta ao rolar.
 
 Encontre informações, leia artigos, reproduza mídia e gerencie downloads no mesmo navegador.
@@ -20,11 +18,11 @@ Organize a navegação com várias abas, busca por voz, histórico e grupos de p
 • Arquivos: encontre imagens, áudio, vídeos e documentos nas páginas e salve imagens em lote. Navegue por lista ou grade de capas, renomeie, importe do Fotos e transfira por Wi-Fi.
 • Compactação: extraia ZIP, RAR e 7z. Crie arquivos ZIP e 7z com proteção opcional por senha.
 • Leitura: TXT, PDF, EPUB e livros MOBI, AZW e AZW3 compatíveis sem DRM. Ajuste fonte, tamanho, espaçamento e fundo. Livros de layout fluido permitem alternar a exibição entre chinês simplificado e tradicional. O modo de leitura extrai artigos e permite continuar na próxima página.
-• Extensões: importe, edite e execute scripts JavaScript, gerencie sites e permissões e instale WebExtensions compatíveis.
+• Scripts e extensões: importe, edite e execute scripts JavaScript. WebExtensions compatíveis exigem iOS 18.4 ou posterior; o suporte varia por extensão.
 • Ferramentas web: tradução, busca na página, captura de página inteira, reconhecimento de texto em imagens, modos computador/celular, agente de usuário personalizado e certificados dos sites.
 • Favoritos: organize em pastas e importe ou exporte favoritos HTML usados por Chrome, Edge e outros navegadores. Crie QR codes de páginas com o ícone do site para compartilhar, salvar ou copiar.
-• Personalização: papéis de parede, barra de ferramentas e ações rápidas do ícone do app. Acesse funções por widgets, Atalhos e esquemas de URL. Sincronize ajustes com o iCloud se desejar.
+• Personalização: papéis de parede, barra de ferramentas e ações rápidas do ícone do app. Acesse funções por widgets, Atalhos e esquemas de URL. Sincronize ajustes com o iCloud se desejar. Fundos separados para os modos claro e escuro e opção de camada sobre a imagem.
 
-A disponibilidade de mídia, livros e extensões depende do formato, das restrições do site e da versão do sistema.
+Mídia, livros e extensões dependem de formatos, restrições do site e versão do sistema. Antes de baixar, confirme que a fonte permite salvar o conteúdo.
 
 Suporte: contact@dkluge.com

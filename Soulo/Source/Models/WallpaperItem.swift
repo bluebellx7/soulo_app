@@ -1,5 +1,18 @@
 import SwiftUI
 
+enum WallpaperAppearance: String, CaseIterable, Identifiable {
+    case light, dark
+    var id: String { rawValue }
+    init(_ scheme: ColorScheme) { self = scheme == .dark ? .dark : .light }
+    @MainActor var localizedName: String { LText("appearance_" + rawValue) }
+    func key(_ base: String) -> String { base + "_" + rawValue }
+}
+
+struct WallpaperAppearancePreset: Equatable {
+    var gradientID: String?
+    var solidColor: String?
+}
+
 enum WallpaperSource: String, Codable, CaseIterable {
     case pexels = "pexels"
     case pixabay = "pixabay"
@@ -102,5 +115,31 @@ struct RemoteWallpaper: Codable, Identifiable, Hashable {
         source = try c.decode(String.self, forKey: .source)
         topic = try c.decodeIfPresent(String.self, forKey: .topic) ?? "Nature"
         isFavorite = try c.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
+    }
+}
+
+
+/// Compare both foreground choices in linear light, including saturated colors.
+enum WallpaperContrast {
+    static let lightOverlayOpacity = 0.24
+    static let darkOverlayOpacity = 0.30
+
+    static func luminance(red: Double, green: Double, blue: Double) -> Double {
+        func linear(_ value: Double) -> Double {
+            value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+        }
+        return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
+    }
+
+    static func prefersDarkText(luminance: Double) -> Bool {
+        let dark = self.luminance(red: 46.0/255, green: 42.0/255, blue: 71.0/255)
+        return (luminance + 0.05) / (dark + 0.05) >= 1.05 / (luminance + 0.05)
+    }
+
+    static func prefersDarkText(hex: String) -> Bool {
+        let clean = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+        guard clean.count == 6, let rgb = UInt64(clean, radix: 16) else { return false }
+        return prefersDarkText(luminance: luminance(red: Double((rgb >> 16) & 255) / 255,
+            green: Double((rgb >> 8) & 255) / 255, blue: Double(rgb & 255) / 255))
     }
 }

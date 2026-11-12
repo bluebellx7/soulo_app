@@ -208,6 +208,7 @@ enum WebTranslationLanguageCatalog {
 
     private static func flag(for identifier: String) -> String {
         let language = Locale.Language(identifier: identifier)
+        if language.languageCode?.identifier == "zh" { return "🇨🇳" }
         let maximizedLanguage = Locale.Language(identifier: language.maximalIdentifier)
         guard let region = language.region?.identifier ?? maximizedLanguage.region?.identifier else {
             return "🌐"
@@ -916,7 +917,7 @@ private struct SystemWebPageTranslationView: View {
                     isLoadingAppleLanguages = false
                 }
             }
-            .onChange(of: selectedAppleTargetID) { _, _ in
+            .onCompatibleChange(of: selectedAppleTargetID) { _, _ in
                 guard !isTranslating else { return }
                 configuration = nil
                 activeSession = nil

@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Memperbaiki masalah saat membuka bookmark atau entri riwayat yang terkadang menggantikan tab yang sudah ada.
-• Meningkatkan proses mulai, pemuatan halaman, dan interaksi layar utama.
-• Menyempurnakan kontrol layar penuh, rotasi, dan status pemutaran saat berganti aplikasi.
-• Memperbaiki pemulihan tab tertutup, pratinjau berkas, dan detail antarmuka.
+• Latar terpisah untuk tampilan terang dan gelap, dengan sakelar lapisan gambar.
+• Warna beranda ditingkatkan; pratinjau wallpaper mengikuti tema aplikasi.
+• Pratinjau, bagikan, dan simpan wallpaper ke Foto.
+• Pengaturan tab atas dengan tab baru dan opsi menyembunyikan bar platform setelah navigasi.

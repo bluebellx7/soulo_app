@@ -212,7 +212,7 @@ struct TorrentTaskDetailView: View {
                             Label(job.name, systemImage: "point.3.connected.trianglepath.dotted")
                                 .font(.headline).textSelection(.enabled)
                             Text(TorrentTaskLabels.state(job, snapshot: service.snapshots[job.id])).font(.subheadline).foregroundStyle(.secondary)
-                            if let record { ProgressView(value: record.progress) }
+                            if let record { TorrentProgressIndicator(progress: record.progress) }
                             if let s = service.snapshots[id], job.isActive {
                                 HStack {
                                     Text(ByteCountFormatter.string(fromByteCount: s.speed, countStyle: .file) + "/s")
@@ -296,7 +296,7 @@ struct TorrentTaskDetailView: View {
                     .background(.regularMaterial)
                 }
             } else {
-                ContentUnavailableView(LanguageManager.shared.localizedString("downloads_empty"), systemImage: "arrow.down.circle")
+                CompatibleUnavailableView(LanguageManager.shared.localizedString("downloads_empty"), systemImage: "arrow.down.circle")
             }
         }
         .navigationTitle(ToolText.text("torrent_task"))
@@ -340,7 +340,7 @@ struct TorrentDownloadRow: View {
                     if let job = service.job(item.id) {
                         Text(TorrentTaskLabels.state(job, snapshot: service.snapshots[job.id])).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                     }
-                    if item.status == .inProgress { ProgressView(value: item.progress) }
+                    if item.status == .inProgress || item.status == .paused { TorrentProgressIndicator(progress: item.progress) }
                     if item.expectedBytes > 0 {
                         Text(ByteCountFormatter.string(fromByteCount: item.receivedBytes, countStyle: .file) + " / " + ByteCountFormatter.string(fromByteCount: item.expectedBytes, countStyle: .file))
                             .font(.caption2).foregroundStyle(.secondary)
@@ -368,7 +368,7 @@ struct TorrentDocumentContent: View {
         Group {
             if let id { TorrentTaskDetailView(id: id) }
             else if let error {
-                ContentUnavailableView(ToolText.text("error"), systemImage: "doc.badge.ellipsis", description: Text(error))
+                CompatibleUnavailableView(ToolText.text("error"), systemImage: "doc.badge.ellipsis", description: Text(error))
             } else { ProgressView() }
         }
         .task(id: url) {
@@ -383,5 +383,19 @@ struct TorrentDocumentContent: View {
                 id = try await TorrentDownloadService.shared.create(data: data, magnet: nil, openExisting: true)
             } catch is CancellationError {} catch { self.error = error.localizedDescription }
         }
+    }
+}
+
+struct TorrentProgressIndicator: View {
+    let progress: Double
+    private var value: Double { progress.isFinite ? min(1, max(0, progress)) : 0 }
+    var body: some View {
+        HStack(spacing: 10) {
+            ProgressView(value: value).progressViewStyle(.linear)
+            Text(value, format: .percent.precision(.fractionLength(0)))
+                .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                .frame(minWidth: 42, alignment: .trailing)
+        }
+        .accessibilityElement(children: .combine)
     }
 }

@@ -44,6 +44,7 @@ enum WebVideoOrientationRuntime {
       let bottomControls = {needed:false}, episodesAvailable = false, prefersSoulo = false;
       let reportedViewportScale = null;
       let lastFullscreenGesture=0;
+      let fallback = null, inlineControlsSeen = false;
       for(const type of ['pointerup','touchend','click'])window.addEventListener(type,event=>{
         if(event.isTrusted)lastFullscreenGesture=performance.now();
       },{capture:true,passive:true});
@@ -72,6 +73,7 @@ enum WebVideoOrientationRuntime {
       function nativePlaying(video) { return !video.paused && !video.ended && video.readyState >= 3; }
       function nativePlaybackChanged(event) {
         const video=event.currentTarget;
+        if(event.type==='playing') { send('sourceReady',video.getAttribute('data-soulo-media-id')||''); schedule(); }
         if(isFullscreen(video)) send('nativePlayback',video.getAttribute('data-soulo-media-id'),
           {playing:event.type!=='waiting' && nativePlaying(video),muted:video.muted,landscape:video.videoWidth>video.videoHeight});
       }
@@ -222,7 +224,7 @@ enum WebVideoOrientationRuntime {
           intersection.unobserve(video); visibleVideos.delete(video); videos.delete(video);
         }
         for (const [video, button] of controls) {
-          if (!video.isConnected) { if (expandedGroup === button) collapse(); if (active?.video === video) finish(); button.remove(); resize.unobserve(video); controls.delete(video); }
+          if (!video.isConnected) { if (expandedGroup === button) collapse(); if (active?.video === video) finish(); send('inlineVideoUnavailable',video.getAttribute('data-soulo-media-id')||''); button.remove(); resize.unobserve(video); controls.delete(video); }
         }
         let removedRoot = false;
         for (const root of roots) if (root.host && !root.host.isConnected) { roots.delete(root); removedRoot = true; }
@@ -247,12 +249,19 @@ enum WebVideoOrientationRuntime {
             && r.left < innerWidth - 44 && r.top < innerHeight - 44 && isVisible(video, styles);
           if (videoVisible) needsClearance ||= needsBottomClearance(video, r, styles);
           const visible = toolsEnabled && videoVisible;
+          if (visible && !button.__souloAvailabilityReported) {
+            inlineControlsSeen = true;
+            if (fallback) { fallback.group?.remove(); fallback = null; }
+            button.__souloAvailabilityReported = true;
+            send('inlineVideoAvailable', video.getAttribute('data-soulo-media-id') || '');
+          }
           const width = (button === expandedGroup ? expandedWidth() : controlSize) * viewport.unit;
           updates.push({button, visible,
             left:Math.max(viewport.left+viewport.gap,Math.min(r.right-viewport.gap,viewport.left+viewport.width-viewport.gap)-width),
             top:Math.max(viewport.top+viewport.gap,Math.min(r.top+viewport.gap,viewport.top+viewport.height-controlSize*viewport.unit-viewport.gap))});
         }
         reportBottomControls(needsClearance);
+        layoutFallback(viewport, styles);
         for (const {button,visible,left,top} of updates) {
           if (!visible && expandedGroup === button) collapse();
           setStyleIfChanged(button,'display',visible ? 'flex' : 'none');
@@ -333,26 +342,94 @@ enum WebVideoOrientationRuntime {
           video.addEventListener(event,fullscreenChanged);
         for (const event of ['play','playing','pause','waiting','ended','volumechange']) video.addEventListener(event,nativePlaybackChanged);
         videos.add(video); intersection.observe(video);
+        const sourceReady = () => send('sourceReady', video.getAttribute('data-soulo-media-id') || '');
+        video.addEventListener('loadedmetadata', sourceReady);
+        sourceReady();
         // Media documents may enter AVKit before a video intersects the page
         // or before our mutation scan runs. Recover the current native session.
         if (isFullscreen(video)) send('nativeFullscreen',video.getAttribute('data-soulo-media-id'),{rate:video.playbackRate,playing:nativePlaying(video),muted:video.muted,landscape:video.videoWidth>video.videoHeight});
       }
-      function createControl(video) {
-        if (controls.has(video)) return;
+      function createGroup() {
         const button = document.createElement('div');
         button.setAttribute('data-soulo-video-rotate', '');
         button.setAttribute('role', 'group');
-        button.dataset.souloMediaID = video.getAttribute('data-soulo-media-id');
         button.style.cssText = 'all:initial!important;position:fixed!important;z-index:2147483646!important;display:none!important;width:40px!important;max-width:calc(100vw - 16px)!important;height:40px!important;flex-direction:row!important;align-items:center!important;justify-content:flex-end!important;border-radius:12px!important;background:rgba(24,25,29,.7)!important;backdrop-filter:blur(16px) saturate(1.2)!important;-webkit-backdrop-filter:blur(16px) saturate(1.2)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 2px 8px rgba(0,0,0,.16)!important;color:rgba(255,255,255,.94)!important;pointer-events:auto!important;touch-action:manipulation!important;isolation:isolate!important;overflow:hidden!important;user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;';
-        const controlStyle = 'all:initial!important;box-sizing:border-box!important;width:40px!important;min-width:40px!important;min-height:40px!important;height:40px!important;display:flex!important;flex-direction:row!important;gap:0!important;padding:0!important;align-items:center!important;justify-content:center!important;border-radius:12px!important;color:rgba(255,255,255,.94)!important;cursor:pointer!important;user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;font:600 14px -apple-system,sans-serif!important;';
+        button.__souloControlStyle = 'all:initial!important;box-sizing:border-box!important;width:40px!important;min-width:40px!important;min-height:40px!important;height:40px!important;display:flex!important;flex-direction:row!important;gap:0!important;padding:0!important;align-items:center!important;justify-content:center!important;border-radius:12px!important;color:rgba(255,255,255,.94)!important;cursor:pointer!important;user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;font:600 14px -apple-system,sans-serif!important;';
+        return button;
+      }
+      function fallbackAnchor(token) {
+        const usable = node => {
+          if (!node?.isConnected || node === document.body || node === document.documentElement) return false;
+          const rect=node.getBoundingClientRect();
+          return rect.width >= 100 && rect.height >= 70 && isVisible(node,new Map());
+        };
+        const video=[...videos].find(node=>node.getAttribute('data-soulo-media-id')===token);
+        if(video)for(let node=video.parentElement;node && node!==document.body;node=node.parentElement) {
+          if(usable(node))return node;
+        }
+        for(const selector of ['#player','#player_a','#player_b','#playleft','#playbox','#video-player',
+          '#videoPlayer','#videoBox','.dplayer','.artplayer-app','.jwplayer','.video-js',
+          '.player-box','.player-container','.video-player','.video-container',
+          'iframe[src*="player" i]','iframe[src*="playurl" i]']) {
+          for(const root of roots)for(const node of root.querySelectorAll(selector))if(usable(node))return node;
+        }
+        // A selected embedded player document can itself be the video box.
+        if(window!==window.top && innerWidth>=100 && innerHeight>=70)return document.documentElement;
+        return null;
+      }
+      function layoutFallback(viewport, styles) {
+        if(!fallback)return;
+        const anchor=fallbackAnchor(fallback.token), anchored=!!anchor;
+        if(fallback.anchored!==anchored) {
+          fallback.anchored=anchored;
+          send('fallbackPlacement',fallback.token,{anchored,placementID:fallback.placementID});
+        }
+        if(!anchor || !toolsEnabled || inlineControlsSeen || active?.began) {
+          if(fallback.group)setStyleIfChanged(fallback.group,'display','none');return;
+        }
+        if(!fallback.group) {
+          const group=createGroup(), play=document.createElement('button');
+          group.setAttribute('data-soulo-video-fallback','');
+          play.type='button';play.style.cssText=group.__souloControlStyle;
+          play.setAttribute('data-video-fallback-play','');setControlLabel(play,fallback.label);
+          play.innerHTML=svg('<path d="M9 5.5 19 12 9 18.5Z" fill="currentColor" stroke-linejoin="round"/>');
+          play.__souloVideoAction=event=>{
+            event.preventDefault();event.stopImmediatePropagation();
+            if(event.isTrusted && fallback && !inlineControlsSeen)send('fallbackPlayer',fallback.token,{placementID:fallback.placementID});
+          };
+          group.append(play);configureMotion(group);document.documentElement.append(group);fallback.group=group;
+        }
+        const rect=anchor===document.documentElement
+          ? {left:0,top:0,right:innerWidth,bottom:innerHeight,width:innerWidth,height:innerHeight}
+          : anchor.getBoundingClientRect();
+        const size=controlSize*viewport.unit, gap=viewport.gap;
+        // Hide with the box; never pin this control over unrelated page content.
+        const left=Math.min(rect.right-gap-size,viewport.left+viewport.width-gap-size);
+        const top=Math.max(rect.top+gap,viewport.top+gap);
+        const visible=rect.right>viewport.left+size+gap && rect.left<viewport.left+viewport.width-size
+          && rect.top<viewport.top+viewport.height-size-gap && rect.bottom>top+size+gap;
+        const group=fallback.group;
+        setStyleIfChanged(group,'display',visible?'flex':'none');
+        if(visible) {
+          overlay.apply(group,viewport);
+          setStyleIfChanged(group,'left',Math.max(rect.left+gap,viewport.left+gap,left)+'px');
+          setStyleIfChanged(group,'top',top+'px');
+        }
+      }
+      function createControl(video) {
+        if (controls.has(video)) return;
+        const button = createGroup();
+        button.dataset.souloMediaID = video.getAttribute('data-soulo-media-id');
+        const controlStyle = button.__souloControlStyle;
+
         const fullscreen = document.createElement('button'); fullscreen.type = 'button'; fullscreen.style.cssText = controlStyle;
         fullscreen.setAttribute('aria-label', labels[0]); fullscreen.title = labels[0];
-        fullscreen.innerHTML = svg('<rect x="3" y="3" width="10" height="18" rx="2.5"/><path d="M6.5 6h3M16 12h2.5a2.5 2.5 0 0 1 2.5 2.5v4a2.5 2.5 0 0 1-2.5 2.5H16M16 3a7 7 0 0 1 5 6m-3-1 3 1 .5-3"/><circle cx="8" cy="17.5" r=".9"/>');
+        fullscreen.innerHTML = svg('<path d="M9 5.5 19 12 9 18.5Z" fill="currentColor" stroke-linejoin="round"/>');
         fullscreen.__souloVideoAction = event => {
           event.preventDefault(); event.stopImmediatePropagation();
           if (!event.isTrusted || !video.isConnected) return;
           collapse();
-          send('fullscreenPlayer',button.dataset.souloMediaID,{landscape:true,system:!prefersSoulo});
+          send('fullscreenPlayer',button.dataset.souloMediaID,{landscape:true,system:!prefersSoulo,play:true});
         };
         const download = document.createElement('button'); download.type = 'button'; download.style.cssText = controlStyle;
         download.setAttribute('aria-label', labels[2]); download.title = labels[2];
@@ -425,7 +502,7 @@ enum WebVideoOrientationRuntime {
       const observer = new MutationObserver(records => {
         // Text-only pages often animate classes/styles while scrolling. There
         // is no video geometry to update until a media element is discovered.
-        if (!videos.size && records.every(record => record.type === 'attributes')) return;
+        if (!videos.size && !fallback && records.every(record => record.type === 'attributes')) return;
         const ownUI='[data-soulo-video-rotate],[data-soulo-hold-speed],#soulo-episode-dock';
         if (records.every(r =>
           (r.target instanceof Element && r.target.closest(ownUI))
@@ -450,7 +527,12 @@ enum WebVideoOrientationRuntime {
           schedule();
         }, 150);
       });
-      window.__souloVideoOrientation = {setPrefersSoulo(value){prefersSoulo=value===true;},landscape(token) {
+      window.__souloVideoOrientation = {setPrefersSoulo(value){prefersSoulo=value===true;},setFallbackTarget(token,label,placementID) {
+        if(!token || inlineControlsSeen) { fallback?.group?.remove();fallback=null;return false; }
+        if(fallback?.token!==token) { fallback?.group?.remove();fallback={token,label:label||labels[0],anchored:null,group:null}; }
+        fallback.placementID=placementID||'';
+        schedule();return !!fallbackAnchor(token);
+      },landscape(token) {
         const video=[...videos].find(video=>video.getAttribute('data-soulo-media-id')===token);
         if(!video || active)return false;
         if(!isFullscreen(video)){enterFullscreen(video);return true;}
@@ -458,11 +540,15 @@ enum WebVideoOrientationRuntime {
         active={video,token:rotation,mode:'native',began:true};
         send('prepare',rotation,{landscape:true,native:true,alreadyFullscreen:true});send('begin',rotation);
         return true;
+      },refreshInlineAvailability() {
+        controls.forEach(button => { button.__souloAvailabilityReported = false; });
+        schedule();
       },setToolsEnabled(value) {
         if (toolsEnabled === (value === true)) return;
         toolsEnabled = value === true;
         observer.disconnect();roots.forEach(root=>observer.observe(root,observationOptions()));
         if (!toolsEnabled) {
+          if(fallback?.group)setStyleIfChanged(fallback.group,'display','none');
           collapse(); controls.forEach(button=>{resize.unobserve(button);button.remove()});controls.clear();
           if(frame)cancelAnimationFrame(frame);frame=0;reportBottomControls(false);
         } else { scan();visibleVideos.forEach(createControl);schedule(); }
@@ -525,7 +611,7 @@ enum WebVideoOrientationRuntime {
       for (const event of ['pointerdown', 'touchstart']) {
         window.addEventListener(event, collapseOutside, {capture:true, passive:true});
       }
-      const scrollLayout = () => { if (visibleVideos.size) schedule(); };
+      const scrollLayout = () => { if (visibleVideos.size || fallback) schedule(); };
       window.addEventListener('scroll', scrollLayout, {capture:true,passive:true});
       const viewportChanged = () => { schedule(); reportViewportScale(); };
       window.addEventListener('resize', viewportChanged, {passive:true});

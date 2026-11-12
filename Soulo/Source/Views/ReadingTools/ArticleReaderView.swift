@@ -26,7 +26,7 @@ struct ArticleReaderView: View {
                     if reader.loading {
                         ProgressView().frame(maxHeight: .infinity)
                     } else {
-                        ContentUnavailableView {
+                        CompatibleUnavailableView {
                             Label(ToolText.text("reader_no_content"), systemImage: "doc.text")
                         } description: {
                             Text(ToolText.text("reader_retry_hint"))
@@ -112,7 +112,7 @@ struct ArticleReaderView: View {
                                 Text(ToolText.text("light")).tag("light")
                                 Text(ToolText.text("dark")).tag("dark")
                             }.pickerStyle(.segmented)
-                            Toggle(ToolText.text("continuous_reading"), isOn: $continuous).onChange(of: continuous) {
+                            Toggle(ToolText.text("continuous_reading"), isOn: $continuous).onCompatibleChange(of: continuous) {
                                 _, enabled in if !enabled { reader.cancel() }
                             }
                             Text(ToolText.text("reader_next_hint")).font(.footnote).foregroundStyle(.secondary)

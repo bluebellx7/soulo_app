@@ -1,0 +1,117 @@
+{
+  "date": "2026-11-12",
+  "scope": "修复点击暂停后延迟一至两秒才响应",
+  "changes": [
+    "暂停优先下发解码器，随后恢复临时倍速、保存进度和更新系统媒体信息；系统播放器同步清除 playing，延迟回调不能覆盖暂停意图。",
+    "两种播放器根据最新播放意图切换，避免缓冲期间 decoder.isPlaying 或 rate 尚未更新而把暂停误判为播放。",
+    "全屏长按加速与点击显隐手势排除 UIControl、中央播放控制和上下工具区；长按不再延迟或取消控件触摸。",
+    "加载动画仍单独显示，但中央按钮可以暂停缓冲；暂停后不再被过期缓冲状态留在 loading。"
+  ],
+  "validation": {
+    "builds": [
+      "iPadOS Simulator 26.2 build-for-testing passed",
+      "iPad Air 11-inch M3 iPadOS 26.6.1 build-for-testing passed",
+      "Final simulator DEBUG touch-timestamp instrumentation build-for-testing passed"
+    ],
+    "simulatorDecoderTests": {
+      "result": "passed",
+      "count": 5,
+      "cases": [
+        "immediate pause, repeated resume and temporary-speed pause in both decoders",
+        "pause during initial held HTTP download, release does not autoplay",
+        "latest controls intent during preparation in both modes",
+        "native paused handoff near end",
+        "Soulo paused handoff near end and return to system"
+      ]
+    },
+    "physicalIPadDecoderTests": {
+      "result": "passed",
+      "count": 2,
+      "renderVerification": "暂停 250 ms 后验证实际解码器暂停；再等待 650 ms，实际时钟稳定，VLC 显示帧数变化不超过 1 帧。",
+      "measurements": [
+        {
+          "engine": "system",
+          "attempt": 0,
+          "mainThreadCommandMilliseconds": 2.443,
+          "decoderClockAdvanceSeconds": 0.0014063329999999818
+        },
+        {
+          "engine": "system",
+          "attempt": 1,
+          "mainThreadCommandMilliseconds": 2.285,
+          "decoderClockAdvanceSeconds": 0.00910701700000005
+        },
+        {
+          "engine": "system",
+          "attempt": 2,
+          "mainThreadCommandMilliseconds": 3.121,
+          "decoderClockAdvanceSeconds": 0.001983138000000162
+        },
+        {
+          "engine": "soulo",
+          "attempt": 0,
+          "mainThreadCommandMilliseconds": 0.318,
+          "decoderClockAdvanceSeconds": 0.0
+        },
+        {
+          "engine": "soulo",
+          "attempt": 1,
+          "mainThreadCommandMilliseconds": 0.374,
+          "decoderClockAdvanceSeconds": 0.0
+        },
+        {
+          "engine": "soulo",
+          "attempt": 2,
+          "mainThreadCommandMilliseconds": 0.287,
+          "decoderClockAdvanceSeconds": 0.0
+        }
+      ]
+    },
+    "fullscreenUI": {
+      "result": "passed",
+      "engines": [
+        "system",
+        "soulo"
+      ],
+      "pauseResumeCyclesPerEngine": 3,
+      "checks": [
+        "first central button tap switches to Play",
+        "UIKit touch.timestamp to pause action < 400 ms; debug-only instrumentation",
+        "decoder clock stays stopped for 650 ms"
+      ],
+      "screenshots": "/tmp/soulo-pause-20261112/ui-passed-images",
+      "touchToPauseMilliseconds": [
+        {
+          "engine": "system",
+          "milliseconds": 86.959
+        },
+        {
+          "engine": "system",
+          "milliseconds": 77.815
+        },
+        {
+          "engine": "system",
+          "milliseconds": 83.048
+        },
+        {
+          "engine": "soulo",
+          "milliseconds": 80.385
+        },
+        {
+          "engine": "soulo",
+          "milliseconds": 78.015
+        },
+        {
+          "engine": "soulo",
+          "milliseconds": 83.918
+        }
+      ],
+      "resultBundle": "/tmp/soulo-pause-20261112/input-trace-ui.xcresult"
+    },
+    "localization": "python3 scripts/check_localization.py --strict passed",
+    "whitespace": "git diff --check on affected source/test files passed"
+  },
+  "testHarnessNotes": "初次 UI 用例的就绪等待和 AX 查询跨过正常三秒控件隐藏时限，未按到暂停按钮即失败。改为先等待实际时钟就绪，再唤起控件立即点击；完整的首次点击、时钟和恢复断言通过。测试等待随后改为 XCTest 异步 fulfillment 以避免新增 Swift 6 警告。 后续重复用例中，点击前后 AX 时钟差达到 1.195 秒；日志显示这包含 XCTest 点击预检及过期的 AX 时钟采样，不能直接当成输入延迟。因此改为 DEBUG 下记录 UIKit 的 touch.timestamp 到暂停 action 的实际延迟，同时保留解码时钟和视频帧断言。 最终实际触摸到 action 为 77.8–87.0 ms，六次点按全部通过；该计时仅在 DEBUG 且显式设置测试环境变量时开启。",
+  "artifacts": "/tmp/soulo-pause-20261112",
+  "version": "1.2.12 (52) unchanged; no release or deployment requested"
+}

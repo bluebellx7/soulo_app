@@ -609,27 +609,27 @@
 "extensions_reload_note" = "Le pagine aperte vengono ricaricate dopo la modifica di un'estensione o di uno script in modo che il nuovo stato abbia effetto.";
 "web_extensions" = "Estensioni Web";
 "userscripts" = "Script ed estensioni";
-"userscripts_installed" = "I miei script";
-"userscripts_install" = "Installa script";
+"userscripts_installed" = "Installati";
+"userscripts_install" = "Aggiungi";
 "userscripts_empty" = "Nessun UserScript";
 "userscripts_empty_desc" = "Installa un file .user.js o crea uno script per vederlo qui.";
 "userscripts_reload_note" = "Le pagine aperte vengono ricaricate dopo che uno script è stato installato, modificato, abilitato, disabilitato o rimosso.";
 "userscript_experimental_badge" = "Compatibilità";
 "userscript_experimental_title" = "Compatibilità UserScript";
-"userscript_experimental_desc" = "Supporta regole del sito, inizio/fine documento, ampio spazio di archiviazione GM e API di pagina, comandi di script, notifiche, schede, download, cookie, risorse e richieste con ambito di autorizzazione. Rivedi ogni script prima dell'installazione.";
+"userscript_experimental_desc" = "Gli script utente possono leggere o modificare i siti corrispondenti e usare le API autorizzate. La compatibilità varia: installa solo script di cui ti fidi.";
 "extension_choose_file" = "Scegli file o cartella…";
 "extension_installing" = "Controllo e installazione dell'estensione…";
 "extension_install_failed" = "Impossibile installare l'estensione";
 "extension_permissions_summary" = "%d permessi · %d regole del sito web";
 "extension_untitled" = "Estensione senza titolo";
-"web_extension_install_footer" = "Tocca un punto qualsiasi della riga dell'origine per aprirla nella scheda Soulo corrente. Soulo riconosce CRX, XPI, ZIP e le azioni di installazione dello store supportate, quindi chiede informazioni prima dell'installazione. Alcune API solo desktop potrebbero non essere disponibili.";
+"web_extension_install_footer" = "Installa estensioni compatibili tramite un link dello store o importa CRX, XPI, ZIP o una cartella di estensione. Verifica permessi e compatibilità; alcune funzioni desktop non sono disponibili.";
 "web_extension_install_store_link" = "Installa dal collegamento dello Store...";
 "web_extension_browse_sources" = "Sfoglia i negozi di estensioni";
 "web_extension_browse_sources_footer" = "I pulsanti Ottieni del negozio supportano solo i propri browser desktop. Copia il collegamento alla pagina dei dettagli dell'estensione, quindi utilizza il collegamento Installa dal negozio in Soulo.";
 "web_extension_store_install_title" = "Installa un'estensione del negozio";
 "extension_page_banner_title" = "Installa con Soulo";
-"extension_page_banner_desc" = "Soulo può installare direttamente questa estensione.";
-"web_extension_store_install_desc" = "Incolla un collegamento alla pagina dei dettagli dei componenti aggiuntivi di Chrome Web Store, Microsoft Edge o Firefox. Soulo scarica il pacchetto stesso, quindi il pulsante Ottieni incompatibile dello store non viene utilizzato.";
+"extension_page_banner_desc" = "Verifica compatibilità e permessi prima dell’installazione.";
+"web_extension_store_install_desc" = "Incolla il link alla pagina di un’estensione Chrome, Edge o Firefox e verifica compatibilità e permessi prima di confermare l’installazione.";
 "web_extension_store_link_placeholder" = "Collegamento alla pagina dell'estensione o ID estensione di Chrome";
 "web_extension_store_invalid_link" = "Incolla il collegamento alla pagina dei dettagli dell'estensione da Chrome, Edge o Firefox, un ID di estensione di Chrome o un collegamento CRX, XPI o ZIP diretto.";
 "web_extension_store_https_required" = "I pacchetti di estensione devono utilizzare un collegamento HTTPS sicuro.";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "Il flusso multimediale ha restituito un segmento non valido o fuori ordine.";
 "resource_stream_download_missing_track" = "Il flusso scaricato non conteneva tracce video e audio riproducibili.";
 "resource_stream_download_export_failed" = "Soulo non è riuscito a unire il video e l’audio scaricati.";
-"resource_stream_playback_download_first" = "Non è possibile visualizzare l’anteprima di questo flusso protetto dal suo URL temporaneo. Scaricalo prima per riprodurre il file locale.";
+"resource_stream_playback_download_first" = "Al momento non è possibile visualizzare direttamente l’anteprima di questo flusso.";
 "platform_invalid_web_url" = "Inserisci un indirizzo web valido che inizi con http:// o https://.";
 
 "library_history_tab" = "Cronologia";
@@ -889,8 +889,7 @@
 "extension_review_access" = "Scegli le autorizzazioni e i siti web a cui questa estensione può accedere.";
 "extension_limit_commands" = "Le scorciatoie da tastiera delle estensioni non sono disponibili su iOS.";
 "extension_limit_notifications" = "Le notifiche possono essere mostrate, ma gli eventi di clic e chiusura non sono supportati.";
-"extension_limit_offscreen" = "I documenti fuori schermo supportano solo la riproduzione audio.";
-
+"extension_limit_offscreen" = "I documenti fuori schermo sono soggetti ai limiti di iOS; alcune funzioni potrebbero non essere disponibili.";
 "review_support_message" = "Grazie per il tuo sostegno a Soulo. Le tue recensioni ci aiutano a migliorare.";
 "review_open_app_store" = "Valuta su App Store";
 

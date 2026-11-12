@@ -2,8 +2,36 @@ import './view.js'
 import { ChineseDisplay } from './chinese-display.js'
 import { EPUB } from './epub.js'
 import { MOBI } from './mobi.js'
-import { unzlibSync } from './vendor/fflate.js'
+import { unzlibSync, inflateRaw } from './vendor/fflate.js'
 import { configure, ZipReader, BlobReader, TextWriter, BlobWriter } from './vendor/zip.js'
+
+// Safari before 16.4 has no DecompressionStream. Reuse the bundled decoder
+// rather than loading zip.js workers or WebAssembly from another location.
+if (typeof globalThis.DecompressionStream !== 'function') {
+    configure({ DecompressionStream: class extends TransformStream {
+        constructor(format) {
+            if (format !== 'deflate-raw') throw Error('Unsupported compression format')
+            const chunks = []
+            let length = 0
+            super({
+                transform(chunk) {
+                    length += chunk.length
+                    if (length > 134217728) throw Error('Book entry exceeds the reading limit')
+                    chunks.push(chunk)
+                },
+                flush(controller) {
+                    const bytes = new Uint8Array(length)
+                    let offset = 0
+                    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length }
+                    const decoded = inflateRaw(bytes)
+                    if (decoded.length > 134217728) throw Error('Book entry exceeds the reading limit')
+                    controller.enqueue(decoded)
+                },
+            })
+        }
+    } })
+}
+
 const post = (type, payload = {}) => window.webkit.messageHandlers.book.postMessage({ type, ...payload })
 const view = document.createElement('foliate-view')
 document.body.append(view)

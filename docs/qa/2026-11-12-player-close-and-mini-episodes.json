@@ -1,0 +1,106 @@
+{
+  "date": "2026-11-12",
+  "version": "1.2.12",
+  "scope": [
+    "关闭全屏播放器一次返回来源，保留独立退出全屏操作",
+    "侧边小卡片恢复网页视频时保留选集、当前集数与播放状态"
+  ],
+  "implementation": {
+    "exit": "全屏宿主区分关闭播放页与退出全屏；普通播放页、网页播放和文件播放接上关闭回调。",
+    "episodeContext": "将网页资源、选集、线路和当前集数保存在内存播放上下文中，随 AVPlayer/Soulo 的资源交接保留；小卡片恢复复用现有解码器。",
+    "boundaries": "新视频和停止播放会释放旧上下文；空列表或其它网页的选集不会覆盖当前列表；音频不走网页视频全屏恢复流程。"
+  },
+  "validation": {
+    "build": {
+      "passed": true,
+      "log": "/tmp/soulo-player-20261112/build-docked.log"
+    },
+    "unit_iPhone_iOS26_2": {
+      "log": "/tmp/soulo-player-20261112/unit-final.log",
+      "result": "/tmp/soulo-player-20261112/unit-final.xcresult",
+      "passed": true,
+      "cases": [
+        {
+          "name": "-[SouloTests.DownloadAudioPlaybackTests testDownloadedM4AStartsAndAdvancesInContentPreview]",
+          "status": "passed",
+          "seconds": 1.333
+        },
+        {
+          "name": "-[SouloTests.DownloadPlaybackTests testPlaybackSourcesRespectPauseTerminalStatesAndAreNotPersisted]",
+          "status": "passed",
+          "seconds": 0.038
+        },
+        {
+          "name": "-[SouloTests.IncrementalFeatureTests testDecoderSwitchKeepsOneFullscreenWindowAndSourceMounted]",
+          "status": "passed",
+          "seconds": 1.799
+        },
+        {
+          "name": "-[SouloTests.IncrementalFeatureTests testNativePlayerHandoffKeepsPausedPositionNearTheEnd]",
+          "status": "passed",
+          "seconds": 1.886
+        },
+        {
+          "name": "-[SouloTests.IncrementalFeatureTests testSouloPlayerHandoffKeepsPausedPositionNearTheEndAndReturnsToSystem]",
+          "status": "passed",
+          "seconds": 1.86
+        },
+        {
+          "name": "-[SouloTests.WebEpisodeTests testEpisodeContextSurvivesMiniPlayerAndDecoderHandoffsButNotAnotherVideo]",
+          "status": "passed",
+          "seconds": 0.018
+        }
+      ]
+    },
+    "ui_iPad_iPadOS26_2": {
+      "log": "/tmp/soulo-player-20261112/ui-ipad-docked.log",
+      "result": "/tmp/soulo-player-20261112/ui-ipad-docked.xcresult",
+      "passed": true,
+      "cases": [
+        {
+          "name": "-[SouloUITests.WebEpisodeAndAdNavigationUITests testLandscapeMiniPlayerRestoresWebEpisodesAndClosesInOneStep]",
+          "status": "passed",
+          "seconds": 93.243
+        }
+      ]
+    },
+    "ui_existingEpisodeHandoff": {
+      "passed": true,
+      "test": "testBothPlayersKeepFullscreenWhileSelectingWebEpisodes",
+      "log": "/tmp/soulo-player-20261112/ui-ipad-v3.log",
+      "note": "该独立用例通过；同批新用例的自动隐藏竞态已在最终 docked 回归中修正。"
+    },
+    "localization": {
+      "passed": true,
+      "log": "/tmp/soulo-player-20261112/localization.log"
+    },
+    "metadataJSON": {
+      "passed": true,
+      "log": "/tmp/soulo-player-20261112/metadata.log"
+    },
+    "visualReview": {
+      "passed": true,
+      "manifest": "/tmp/soulo-player-20261112/final-attachments/manifest.json",
+      "souloRestoredEpisodes": "/tmp/soulo-player-20261112/final-attachments/645330D3-12DF-4EE0-A956-BF4039A68088.png",
+      "note": "检查完整设备截图，恢复后第 2 集高亮、播放线路及选集抽屉可见。"
+    }
+  },
+  "notes": [
+    "界面回归使用本地 HTTP 片源和两条播放线路，覆盖系统与 Soulo 两种模式、横屏、停靠屏幕边缘、展开卡片、切集、退出全屏和单次关闭。",
+    "本轮为模拟器验证，未宣称已在用户反馈的网站或真机复测。",
+    "较早的 iPad 窗口单测未满足强制转竖屏等待；相同宿主/关闭原因回归在 iPhone 模拟器通过，iPad 另以保持横屏的端到端用例验收。"
+  ],
+  "sourceSHA256": {
+    "Soulo/Source/Services/ReadingTools/WebMediaPlaybackContext.swift": "9bef4bd34c47563f903cc641b658f9f48bbf3bacebbf953c646791f7b6199b03",
+    "Soulo/Source/Services/DownloadManagerService.swift": "f6efbd55fef46c966541482990358bc7b8196cf3084972c98fb3ebea193121b2",
+    "Soulo/Source/Services/ReadingTools/MediaSession.swift": "6edf1ce7746403c87b199d4769a763fcee8ccfd798ea74ef64477c96079b9700",
+    "Soulo/Source/Views/ReadingTools/MediaPlayerView.swift": "e66b5c786600ebf48df14cb35a7304d5dd6c6176cdd6e49cd45a6d26f275a877",
+    "Soulo/Source/Views/ReadingTools/MatroskaPlayerView.swift": "22eb8ac6282347afe6adc68ff31c45df8245269a6d3c1dcf3e9fe38e85cad458",
+    "Soulo/Source/Views/ReadingTools/VideoPlayerControls.swift": "0db16dc5f862a25ac6e2373973e8a552770dbd1312ec7355ef8c7da2ecb3b0e2",
+    "Soulo/Source/Views/WebView/WebResourceInspectorView.swift": "82a277dccebf048e3e47a0a390effaa796716be45fa0593831c468fcc4a11a1f",
+    "SouloTests/WebEpisodeTests.swift": "5c725f72d09dd94dae008bf213f9f2ab74fbe46c05031d9c927eb0c6cffe468a",
+    "SouloTests/IncrementalFeatureTests.swift": "7e95343fe1f1a824a121eafb322b44478d987951106ff2dac66379962953437f",
+    "SouloUITests/WebEpisodeAndAdNavigationUITests.swift": "7507104c2667febff990c969e534c19ced1c38543f59fd291042328f9177a8b8",
+    "Soulo.xcodeproj/project.pbxproj": "2c8455060b20c23b1f05fd643eb0442cf8cc868be9dc113701e67ba7fe215528"
+  }
+}

@@ -436,3 +436,65 @@
 "files_move_busy" = "Bu öğeleri taşımadan veya yeniden adlandırmadan önce indirme işlemlerinin bitmesini bekleyin.";
 "video_show_episode_dock" = "Bölüm iskelesini göster";
 "video_show_episode_dock_desc" = "Bölümlerin bulunduğu web sayfalarında sabitlenmiş bir bölüm düğmesi gösterin. Bölümler oynatıcının içinde kullanılabilir durumda kalır.";
+
+// Webpage share preview
+"page_share_image" = "Görseli paylaş";
+"page_share_link" = "Bağlantıyı paylaş";
+"page_share_preview" = "Görünür alan önizlemesi";
+"page_share_brand" = "Soulo: Çoklu Arama Tarayıcısı";
+
+"video_export_mp4" = "MP4 dışa aktar";
+"video_export_failed" = "Bu video MP4 olarak dışa aktarılamadı. Orijinal dosya korundu.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "İki Parmak Hareketleri";
+"gesture_hint" = "İki parmağı birlikte yana hareket ettirin. İpucu parmakları izler; iptal etmek için geri kaydırın. Tek parmakla gezinme ve sıkıştırarak yakınlaştırma kullanılabilir.";
+"gesture_swipe_right" = "Sağa Kaydır";
+"gesture_swipe_left" = "Sola Kaydır";
+"gesture_show_toolbar" = "Araç Çubuğunu Göster";
+"gesture_quick_menu" = "Hızlı Menü";
+"gesture_preview" = "Hareketi Önizle";
+"zoom_remember" = "Site Yakınlaştırmasını Hatırla";
+"zoom_hint" = "Sayfa menüsündeki yakınlaştırma alan adına göre kaydedilir. Özel sekmelerdeki değişiklikler kaydedilmez.";
+"zoom_empty" = "Kayıtlı Yakınlaştırma Yok";
+"zoom_reset_all" = "Tümünü 100% Yap";
+
+"shake_direction" = "Yön";
+"shake_direction_horizontal" = "Sağ ve Sol";
+"shake_direction_vertical" = "Yukarı ve Aşağı";
+"shake_direction_any" = "Herhangi Bir Yön";
+
+"gesture_settings_title" = "Web Sayfası Hareketleri";
+"gesture_no_history" = "Geri Dönülemediğinde";
+"gesture_no_history_hint" = "Önceki sayfa yoksa eylemi göstermek için sol kenardan sağa kaydırın. İptal etmek için geri kaydırın. Kapatmak için Yok’u seçin.";
+
+"gesture_execution" = "Eylemi Gerçekleştir";
+
+"gesture_execute_release" = "Bırakınca";
+
+"gesture_execute_tap" = "Dokununca";
+
+"gesture_feedback" = "İşlem Geri Bildirimi";
+
+"gesture_haptics" = "Titreşim";
+
+"gesture_sound" = "Ses";
+
+"gesture_feedback_preview" = "Geri Bildirimi Dene";
+
+"media_start_timeout" = "Oynatma başlamadı. Ağı kontrol edin veya oynatıcıyı değiştirin.";
+
+"wallpaper_appearance_hint" = "Açık ve koyu görünüm için ayrı arka planlar seçin. Uygulamayla birlikte otomatik değişirler.";
+
+"wallpaper_image_overlay" = "Görüntü katmanı";
+
+"auto_hide_platform_bar" = "Platform çubuğunu otomatik gizle";
+
+"top_tab_bar_hidden_title" = "Üst sekme çubuğu gizlendi";
+
+"top_tab_bar_reopen_hint" = "Yeniden göstermek için alttaki sekme düğmesine dokunun, … menüsünü açın ve üst sekme çubuğunu göster seçeneğini açın.";
+
+"wallpaper_image_blur" = "Buzlu Cam";
+"wallpaper_blur_amount" = "Bulanıklık Gücü";
+
+"auto_hide_platform_bar_hint" = "Bir arama sonucunu açtığınızda platform çubuğu gizlenir. Yeniden göstermek için sonuçlara dönün veya yeni bir arama yapın. Bu menüden kapatabilirsiniz.";

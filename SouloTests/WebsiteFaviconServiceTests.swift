@@ -1,7 +1,7 @@
 import XCTest
 import UIKit
 import SwiftUI
-import SwiftData
+import CoreData
 @testable import Soulo
 
 @MainActor
@@ -28,8 +28,7 @@ final class WebsiteFaviconServiceTests: XCTestCase {
     }
 
     func testHistoryRendersCachedSiteAndPlatformIconsInBothAppearances() async throws {
-        let container = try ModelContainer(for: SearchHistoryItem.self,
-            configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let container = try LibraryStore(inMemory: true)
         let blueURL = "http://history-blue.local/article"
         let greenURL = "http://history-green.local/article"
         let cache = WebsiteFaviconService.responseCache
@@ -46,9 +45,10 @@ final class WebsiteFaviconServiceTests: XCTestCase {
             }
             let response = try XCTUnwrap(HTTPURLResponse(url: key, statusCode: 200,
                 httpVersion: "HTTP/1.1", headerFields: ["Content-Type": "image/png",
-                    "X-Soulo-Icon-Date": String(Date().timeIntervalSince1970)]))
+                    "X-Soulo-Icon-Date": String(Date().timeIntervalSince1970),
+                    "X-Soulo-Icon-Version": WebsiteFaviconService.cacheVersion]))
             cache.storeCachedResponse(CachedURLResponse(response: response, data: icon), for: URLRequest(url: key))
-            container.mainContext.insert(SearchHistoryItem(keyword: index == 0 ? "Soulo · 网站图标示例" : "Nature · 阅读记录",
+            container.mainContext.insert(SearchHistoryRecord(keyword: index == 0 ? "Soulo · 网站图标示例" : "Nature · 阅读记录",
                 visitedURLString: url))
         }
         defer {
@@ -58,8 +58,8 @@ final class WebsiteFaviconServiceTests: XCTestCase {
         }
         let platform = PlatformDataStore.shared.platforms.first { UIImage(named: $0.iconName) != nil }
         XCTAssertNotNil(platform)
-        container.mainContext.insert(SearchHistoryItem(keyword: "旅行计划", platformID: platform?.id))
-        container.mainContext.insert(SearchHistoryItem(keyword: "普通关键词"))
+        container.mainContext.insert(SearchHistoryRecord(keyword: "旅行计划", platformID: platform?.id))
+        container.mainContext.insert(SearchHistoryRecord(keyword: "普通关键词"))
         try container.mainContext.save()
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
         let previous = scene.windows.first(where: \.isKeyWindow)
@@ -67,9 +67,9 @@ final class WebsiteFaviconServiceTests: XCTestCase {
             let content = NavigationStack {
                 SearchHistoryContentView(searchVM: SearchViewModel())
                     .navigationTitle("搜索历史").navigationBarTitleDisplayMode(.inline)
-            }.modelContainer(container).preferredColorScheme(scheme)
+            }.environment(\.managedObjectContext, (container).mainContext).preferredColorScheme(scheme)
             let host = UIHostingController(rootView: content)
-            host.safeAreaRegions = []
+            if #available(iOS 16.4, *) { host.safeAreaRegions = [] }
             let window = UIWindow(windowScene: scene)
             window.frame = CGRect(x: 0, y: 0, width: 390, height: 650)
             window.rootViewController = host
@@ -159,6 +159,25 @@ final class WebsiteFaviconServiceTests: XCTestCase {
         let third = await service.image(for: "http://localhost/three")
         XCTAssertNil(third)
         XCTAssertEqual(requests, 4)
+    }
+
+    func testIconsCachedBeforeSVGSupportAreRefreshedOnce() async throws {
+        let key = try XCTUnwrap(WebsiteFaviconService.iconURL(for: "http://localhost/page"))
+        let response = try XCTUnwrap(HTTPURLResponse(url: key, statusCode: 200, httpVersion: "HTTP/1.1",
+            headerFields: ["Content-Type": "image/png", "X-Soulo-Icon-Date": String(Date().timeIntervalSince1970),
+                "X-Soulo-Icon-Version": "2"]))
+        cache.storeCachedResponse(CachedURLResponse(response: response, data: png), for: URLRequest(url: key))
+        var requests = 0
+        let data = png!
+        FaviconTestProtocol.handler = { request in
+            Task { @MainActor in requests += 1; request.respond(data: data) }
+        }
+        let refreshed = await WebsiteFaviconService(session: session, cache: cache).image(for: "http://localhost/page")
+        XCTAssertNotNil(refreshed)
+        XCTAssertEqual(requests, 1, "An old provider icon must not hide a newly discoverable site icon for seven days")
+        let reused = await WebsiteFaviconService(session: session, cache: cache).image(for: "http://localhost/other")
+        XCTAssertNotNil(reused)
+        XCTAssertEqual(requests, 1, "The replacement still persists across service instances")
     }
 
     func testPublicSiteFallbackAndCacheUseOriginalOrigin() async throws {
@@ -277,10 +296,248 @@ final class WebsiteFaviconServiceTests: XCTestCase {
         XCTAssertEqual(urls.map(\.path), ["/favicon.ico", "/", "/bad.png", "/good.png"])
     }
 
+    func testHTMLFaviconResponseFindsSVGAndPersistsRasterWithoutFetchingPrivatePage() async throws {
+        var urls: [URL] = []
+        FaviconTestProtocol.handler = { request in
+            Task { @MainActor in
+                let url = request.request.url!; urls.append(url)
+                switch url.path {
+                case "/favicon.ico":
+                    // A SPA can return HTML with an incorrect icon MIME type.
+                    request.respond(data: Data("<head><link rel='icon' type='image/x-icon' href='https://cdn.example.com/mark.svg'></head>".utf8), mimeType: "image/x-icon")
+                case "/mark.svg":
+                    request.respond(data: Data("<svg xmlns='http://www.w3.org/2000/svg' width='50' height='50'><rect width='50' height='50' fill='#00ff00'/></svg>".utf8), mimeType: "image/svg+xml")
+                default: request.respond(data: Data(), status: 403)
+                }
+            }
+        }
+        let result = await WebsiteFaviconService(session: session, cache: cache).image(for: "https://app.example.com/usage?private=secret")
+        let image = try XCTUnwrap(result)
+        XCTAssertEqual(image.size, CGSize(width: 64, height: 64))
+        XCTAssertEqual(pixel(image, x: 32, y: 32), [0, 255, 0, 255])
+        XCTAssertEqual(urls.map(\.absoluteString), ["https://app.example.com/favicon.ico", "https://cdn.example.com/mark.svg"])
+        let restored = await WebsiteFaviconService(session: session, cache: cache).image(for: "https://app.example.com/other")
+        XCTAssertNotNil(restored)
+        XCTAssertEqual(urls.count, 2, "The SVG is stored as a small PNG, with no repeated WebKit rendering")
+    }
+
+    func testRedirectedFaviconHTMLResolvesRelativeTouchIconWithoutDependingOnOrigin() async throws {
+        var urls: [URL] = []
+        let data = png!
+        FaviconTestProtocol.handler = { request in
+            Task { @MainActor in
+                let url = request.request.url!; urls.append(url)
+                if url.path == "/favicon.ico" {
+                    request.respond(data: Data("<head><link rel='apple-touch-icon-precomposed' href='../touch.png'></head>".utf8),
+                        mimeType: "text/html", responseURL: URL(string: "https://mobile.example.com/errors/page"))
+                } else if url.absoluteString == "https://mobile.example.com/touch.png" {
+                    request.respond(data: data)
+                } else {
+                    request.respond(data: Data("<head><title>Legacy home without icons</title></head>".utf8), mimeType: "text/html")
+                }
+            }
+        }
+        let image = await WebsiteFaviconService(session: session, cache: cache).image(for: "https://search.example.com/from=123/s?word=private")
+        XCTAssertNotNil(image)
+        XCTAssertEqual(urls.map(\.absoluteString), ["https://search.example.com/favicon.ico", "https://mobile.example.com/touch.png"])
+    }
+
+    func testCyclicHTMLIconsContinueToOriginAndDoNotRepeatRequests() async throws {
+        var paths: [String] = []
+        let data = png!
+        FaviconTestProtocol.handler = { request in
+            Task { @MainActor in
+                let path = request.request.url!.path; paths.append(path)
+                switch path {
+                case "/favicon.ico": request.respond(data: Data("<link rel='icon' href='/again.ico'>".utf8), mimeType: "text/html")
+                case "/again.ico": request.respond(data: Data("<link rel='icon' href='/favicon.ico'><link rel='icon' href='/again.ico'>".utf8), mimeType: "text/html")
+                case "/": request.respond(data: Data("<link rel='icon' href='/good.png'>".utf8), mimeType: "text/html")
+                case "/good.png": request.respond(data: data)
+                default: request.respond(data: Data(), status: 404)
+                }
+            }
+        }
+        let image = await WebsiteFaviconService(session: session, cache: cache).image(for: "http://localhost/private")
+        XCTAssertNotNil(image)
+        XCTAssertEqual(paths, ["/favicon.ico", "/again.ico", "/", "/good.png"])
+    }
+
+    func testSVGRenderingFitsAspectRatioAndCannotRunScriptsOrFetchExternalResources() async throws {
+        let server = try DownloadPlaybackHTTPFixture(files: ["/external.png": png!])
+        let base = try await server.start()
+        defer { server.stop() }
+        let svg = Data("""
+            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="40">
+            <style>@import url('\(base)/external.css'); rect { fill: #00ff00; }</style>
+            <rect width="80" height="40"/>
+            <script>document.querySelector('rect').setAttribute('fill','#ff0000'); fetch('\(base)/script');</script>
+            <image href="\(base)/external.png" width="80" height="40"/>
+            </svg>
+            """.utf8)
+        FaviconTestProtocol.handler = { $0.respond(data: svg, mimeType: "image/svg+xml") }
+        let result = await WebsiteFaviconService(session: session, cache: cache).image(for: "http://localhost/page")
+        let image = try XCTUnwrap(result)
+        XCTAssertEqual(pixel(image, x: 32, y: 32), [0, 255, 0, 255])
+        XCTAssertEqual(pixel(image, x: 32, y: 2), [0, 0, 0, 0], "A non-square icon keeps its proportions and transparency")
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertTrue(server.receivedRequests.isEmpty, "SVG scripts and external resources must stay disabled")
+    }
+
+    func testMultipleOriginsCanLoadSVGIconsConcurrently() async throws {
+        var requests = 0
+        FaviconTestProtocol.handler = { request in
+            Task { @MainActor in
+                requests += 1
+                let fill = request.request.url!.host == "green.local" ? "#00ff00" : "#0000ff"
+                request.respond(data: Data("<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' fill='\(fill)'/></svg>".utf8), mimeType: "image/svg+xml")
+            }
+        }
+        let service = WebsiteFaviconService(session: session, cache: cache)
+        async let green = service.image(for: "http://green.local/private")
+        async let blue = service.image(for: "http://blue.local/private")
+        let images = await [green, blue]
+        XCTAssertEqual(pixel(try XCTUnwrap(images[0]), x: 32, y: 32), [0, 255, 0, 255])
+        XCTAssertEqual(pixel(try XCTUnwrap(images[1]), x: 32, y: 32), [0, 0, 255, 255])
+        XCTAssertEqual(requests, 2)
+    }
+
+    func testProviderHTMLDoesNotSupplyTheProvidersOwnBrandIcon() async {
+        var urls: [URL] = []
+        let data = png!
+        FaviconTestProtocol.handler = { request in
+            Task { @MainActor in
+                let url = request.request.url!; urls.append(url)
+                if url.host == "icons.duckduckgo.com" {
+                    request.respond(data: Data("<link rel='icon' href='/provider-brand.png'>".utf8), mimeType: "text/html")
+                } else if url.host == "www.google.com" {
+                    request.respond(data: data)
+                } else { request.respond(data: Data(), status: 404) }
+            }
+        }
+        let image = await WebsiteFaviconService(session: session, cache: cache).image(for: "https://example.com/private")
+        XCTAssertNotNil(image)
+        XCTAssertEqual(urls.count, 4)
+        XCTAssertFalse(urls.contains { $0.path == "/provider-brand.png" })
+    }
+
+    private func pixel(_ image: UIImage, x: Int, y: Int) -> [UInt8] {
+        var bytes = [UInt8](repeating: 0, count: 64 * 64 * 4)
+        let context = CGContext(data: &bytes, width: 64, height: 64, bitsPerComponent: 8, bytesPerRow: 64 * 4,
+            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        context.draw(image.cgImage!, in: CGRect(x: 0, y: 0, width: 64, height: 64))
+        return Array(bytes[((y * 64 + x) * 4)..<((y * 64 + x) * 4 + 4)])
+    }
+
     func testLiveSouloWebsiteIcon() async throws {
         try XCTSkipIf(ProcessInfo.processInfo.environment["SOULO_LIVE_SEARCH_QA"] != "1", "Live network QA is opt-in")
         let image = await WebsiteFaviconService(cache: cache).image(for: "https://soulo.dkluge.com/sources.html")
         XCTAssertEqual(try XCTUnwrap(image).size.width, 64)
+    }
+
+    func testManifestIconWorksWithMissingICOAndBrokenSVGPageDeclaration() async throws {
+        var urls: [URL] = []
+        let data = png!
+        FaviconTestProtocol.handler = { request in
+            Task { @MainActor in
+                let url = request.request.url!; urls.append(url)
+                switch url.path {
+                case "/": request.respond(data: Data("""
+                    <head><link rel="manifest" href="/stockclaw.webmanifest">
+                    <link rel="icon" href="/icon.svg?v=1" type="image/svg+xml"></head>
+                    """.utf8), mimeType: "text/html")
+                case "/icon.svg": request.respond(data: Data("<svg xmlns='http://www.w3.org/2000/svg'><path".utf8), mimeType: "image/svg+xml")
+                case "/stockclaw.webmanifest": request.respond(data: Data(#"{"icons":[{"src":"/images/stockclaw-logo.png","sizes":"1024x1024","type":"image/png"}]}"#.utf8), mimeType: "application/manifest+json")
+                case "/images/stockclaw-logo.png": request.respond(data: data)
+                default: request.respond(data: Data(), status: 404)
+                }
+            }
+        }
+        let service = WebsiteFaviconService(session: session, cache: cache)
+        let image = await service.image(for: "https://stockclaw.dkluge.com/private?q=secret")
+        XCTAssertEqual(try XCTUnwrap(image).size.width, 64)
+        XCTAssertEqual(urls.map(\.absoluteString), ["https://stockclaw.dkluge.com/favicon.ico",
+            "https://stockclaw.dkluge.com/", "https://stockclaw.dkluge.com/icon.svg?v=1",
+            "https://stockclaw.dkluge.com/stockclaw.webmanifest", "https://stockclaw.dkluge.com/images/stockclaw-logo.png"])
+        let restored = await WebsiteFaviconService(session: session, cache: cache).image(for: "https://stockclaw.dkluge.com/another")
+        XCTAssertNotNil(restored)
+        XCTAssertEqual(urls.count, 5, "Manifest icons use the existing origin cache")
+    }
+
+    func testInvalidManifestAndIconContinueToTheNextDeclaredCandidate() async throws {
+        var paths: [String] = []
+        let data = png!
+        FaviconTestProtocol.handler = { request in
+            Task { @MainActor in
+                let path = request.request.url!.path; paths.append(path)
+                switch path {
+                case "/": request.respond(data: Data("<head><base href='/assets/'><link rel='manifest' href='broken.json'><link rel='manifest' href='app.webmanifest'></head>".utf8), mimeType: "text/html")
+                case "/assets/app.webmanifest": request.respond(data: Data(#"{"icons":[{"src":"bad.png"},{"src":"good.png"}]}"#.utf8), mimeType: "application/manifest+json")
+                case "/assets/good.png": request.respond(data: data)
+                case "/favicon.ico": request.respond(data: Data(), status: 404)
+                default: request.respond(data: Data("invalid content".utf8))
+                }
+            }
+        }
+        let image = await WebsiteFaviconService(session: session, cache: cache).image(for: "https://example.com/page")
+        XCTAssertNotNil(image)
+        XCTAssertEqual(paths, ["/favicon.ico", "/", "/assets/broken.json", "/assets/app.webmanifest", "/assets/bad.png", "/assets/good.png"])
+    }
+
+    func testManifestURLsResolveAgainstManifestLocationAndStayBounded() throws {
+        let base = try XCTUnwrap(URL(string: "https://cdn.example.com/app/manifest.json"))
+        let data = Data(#"{"icons":[{"src":"vector.svg","type":"image/svg+xml"},{"src":"../logo.png?v=2"},{"src":"//images.example.com/icon.png"},{"src":"../logo.png?v=2"},{"src":"javascript:alert(1)"},{"src":"data:image/png;base64,abc"},{"src":"https://user:secret@example.com/icon.png"},{"src":""}]}"#.utf8)
+        XCTAssertEqual(WebsiteFaviconService.manifestIconURLs(in: data, manifestURL: base).map(\.absoluteString),
+            ["https://cdn.example.com/logo.png?v=2", "https://images.example.com/icon.png", "https://cdn.example.com/app/vector.svg"])
+        XCTAssertTrue(WebsiteFaviconService.manifestIconURLs(in: Data(repeating: 32, count: 128 * 1024 + 1), manifestURL: base).isEmpty)
+        XCTAssertTrue(WebsiteFaviconService.manifestIconURLs(in: Data("not JSON".utf8), manifestURL: base).isEmpty)
+        let many = try JSONSerialization.data(withJSONObject: ["icons": (0..<40).map { ["src": "icon-\($0).png"] }])
+        XCTAssertEqual(WebsiteFaviconService.manifestIconURLs(in: many, manifestURL: base).count, 8)
+    }
+
+    func testLiveStockClawWebsiteIcon() async throws {
+        try XCTSkipIf(ProcessInfo.processInfo.environment["SOULO_LIVE_SEARCH_QA"] != "1", "Live network QA is opt-in")
+        let image = await WebsiteFaviconService(cache: cache).image(for: "https://stockclaw.dkluge.com/")
+        XCTAssertEqual(try XCTUnwrap(image).size.width, 64)
+        let attachment = XCTAttachment(image: try XCTUnwrap(image))
+        attachment.name = "StockClaw live website icon"; attachment.lifetime = .keepAlways; add(attachment)
+    }
+
+    func testLiveDeepSeekSVGIcon() async throws {
+        try await checkLiveIcon("https://platform.deepseek.com/usage", name: "DeepSeek")
+    }
+
+    func testLiveBaiduSearchIcon() async throws {
+        try await checkLiveIcon("https://mc.baidu.com/from=1020712e/ssid=0/s?word=dentist&sa=brs_2&rq=desert&rsf=102631151&pqid=8955314148125297612&rfqid=8955314148125297612&is_rec_s=0&rqid=8955314148125297612&params_ssrt=node-san", name: "Baidu")
+    }
+
+    private func checkLiveIcon(_ value: String, name: String) async throws {
+        try XCTSkipIf(ProcessInfo.processInfo.environment["SOULO_LIVE_SEARCH_QA"] != "1", "Live network QA is opt-in")
+        let recorder = FaviconNetworkRecorder()
+        let config = URLSessionConfiguration.ephemeral
+        config.httpCookieStorage = nil; config.httpShouldSetCookies = false; config.urlCache = nil
+        config.timeoutIntervalForRequest = 4; config.timeoutIntervalForResource = 6
+        let liveSession = URLSession(configuration: config, delegate: recorder, delegateQueue: nil)
+        defer { liveSession.invalidateAndCancel() }
+        let result = await WebsiteFaviconService(session: liveSession, cache: cache).image(for: value)
+        let image = try XCTUnwrap(result)
+        XCTAssertEqual(image.size, CGSize(width: 64, height: 64))
+        XCTAssertFalse(recorder.urls.isEmpty, "Live validation must include an actual network request trace")
+        XCTAssertFalse(recorder.urls.contains { ["icons.duckduckgo.com", "www.google.com"].contains($0.host ?? "") },
+            "A provider placeholder must not count as a working site icon: \(recorder.urls)")
+        XCTAssertFalse(recorder.urls.contains { $0.query != nil && $0.host == URL(string: value)?.host }, "Never request the private page to find an icon")
+        let attachment = XCTAttachment(image: image)
+        attachment.name = "\(name) live website icon"; attachment.lifetime = .keepAlways; add(attachment)
+        let requests = XCTAttachment(string: recorder.urls.map(\.absoluteString).joined(separator: "\n"))
+        requests.name = "\(name) icon request URLs"; requests.lifetime = .keepAlways; add(requests)
+    }
+}
+
+private final class FaviconNetworkRecorder: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+    private let lock = NSLock()
+    private var recorded: [URL] = []
+    var urls: [URL] { lock.withLock { recorded } }
+    func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
+        lock.withLock { recorded.append(contentsOf: metrics.transactionMetrics.compactMap { $0.request.url }) }
     }
 }
 
@@ -291,8 +548,8 @@ private final class FaviconTestProtocol: URLProtocol, @unchecked Sendable {
     override func startLoading() { Self.handler?(self) }
     override func stopLoading() {}
 
-    func respond(data: Data, status: Int = 200, mimeType: String = "image/png") {
-        let response = HTTPURLResponse(url: request.url!, statusCode: status,
+    func respond(data: Data, status: Int = 200, mimeType: String = "image/png", responseURL: URL? = nil) {
+        let response = HTTPURLResponse(url: responseURL ?? request.url!, statusCode: status,
             httpVersion: "HTTP/1.1", headerFields: ["Content-Type": mimeType])!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: data)

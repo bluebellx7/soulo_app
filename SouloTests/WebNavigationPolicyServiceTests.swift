@@ -171,28 +171,11 @@ final class WebNavigationPolicyServiceTests: XCTestCase {
         XCTAssertFalse(service.canUseSafariCompatibilityMode(for: nil))
     }
 
-    func testAdFilterRecognizesAuthenticationWindows() {
-        let webURL = URL(string: "https://accounts.example.com/oauth")!
-        XCTAssertTrue(BrowserAdNavigationPolicy.isAuthenticationWindow(
-            navigationType: .other,
-            url: webURL
-        ))
-        XCTAssertFalse(BrowserAdNavigationPolicy.isAuthenticationWindow(
-            navigationType: .linkActivated,
-            url: URL(string: "about:blank")!
-        ))
-        XCTAssertFalse(BrowserAdNavigationPolicy.isAuthenticationWindow(
-            navigationType: .linkActivated,
-            url: URL(string: "https://example.com/article")!
-        ))
-        XCTAssertFalse(BrowserAdNavigationPolicy.isAuthenticationWindow(
-            navigationType: .other,
-            url: URL(string: "https://example.com/script-created-page")!
-        ))
-        XCTAssertTrue(BrowserAdNavigationPolicy.isAuthenticationWindow(
-            navigationType: .linkActivated,
-            url: URL(string: "https://accounts.google.com/o/oauth2/auth")!
-        ))
+    func testAuthenticationPagesUseOrdinaryWebNavigation() {
+        for address in ["https://accounts.example.com/oauth", "https://accounts.google.com/o/oauth2/auth",
+                        "https://example.com/script-created-page", "about:blank"] {
+            XCTAssertEqual(WebNavigationPolicyService.shared.decision(for: URL(string: address)!), .allow)
+        }
     }
 
     func testExpectedWebKitPolicyInterruptionIsNotPresentedAsPageFailure() {

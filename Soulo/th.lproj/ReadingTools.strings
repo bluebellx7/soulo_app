@@ -436,3 +436,65 @@
 "files_move_busy" = "รอให้การดาวน์โหลดเสร็จสิ้นก่อนที่จะย้ายหรือเปลี่ยนชื่อรายการเหล่านี้";
 "video_show_episode_dock" = "แสดงท่าเรือตอน";
 "video_show_episode_dock_desc" = "แสดงปุ่มตอนที่เชื่อมต่อไว้บนหน้าเว็บที่มีตอนต่างๆ ตอนต่างๆ ยังคงมีอยู่ในเครื่องเล่น";
+
+// Webpage share preview
+"page_share_image" = "แชร์รูปภาพ";
+"page_share_link" = "แชร์ลิงก์";
+"page_share_preview" = "ตัวอย่างพื้นที่ที่มองเห็น";
+"page_share_brand" = "Soulo: เบราว์เซอร์ค้นหา";
+
+"video_export_mp4" = "ส่งออก MP4";
+"video_export_failed" = "ไม่สามารถส่งออกวิดีโอนี้เป็น MP4 ได้ ไฟล์ต้นฉบับยังคงอยู่";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "ท่าทางสองนิ้ว";
+"gesture_hint" = "เลื่อนสองนิ้วไปด้านข้างพร้อมกัน คำใบ้จะตามนิ้ว เลื่อนกลับเพื่อยกเลิก ยังคงนำทางด้วยนิ้วเดียวและจีบเพื่อซูมได้";
+"gesture_swipe_right" = "ปัดไปทางขวา";
+"gesture_swipe_left" = "ปัดไปทางซ้าย";
+"gesture_show_toolbar" = "แสดงแถบเครื่องมือ";
+"gesture_quick_menu" = "เมนูด่วน";
+"gesture_preview" = "ดูตัวอย่างท่าทาง";
+"zoom_remember" = "จำการซูมเว็บไซต์";
+"zoom_hint" = "บันทึกการซูมจากเมนูหน้าเว็บแยกตามโดเมน ไม่บันทึกการเปลี่ยนแปลงในแท็บส่วนตัว";
+"zoom_empty" = "ยังไม่มีระดับซูมที่บันทึก";
+"zoom_reset_all" = "รีเซ็ตทั้งหมดเป็น 100%";
+
+"shake_direction" = "ทิศทาง";
+"shake_direction_horizontal" = "ซ้ายและขวา";
+"shake_direction_vertical" = "ขึ้นและลง";
+"shake_direction_any" = "ทุกทิศทาง";
+
+"gesture_settings_title" = "ท่าทางหน้าเว็บ";
+"gesture_no_history" = "เมื่อย้อนกลับไม่ได้";
+"gesture_no_history_hint" = "หากไม่มีหน้าก่อนหน้า ให้ปัดขวาจากขอบซ้ายเพื่อแสดงการทำงาน เลื่อนกลับเพื่อยกเลิก เลือกไม่มีเพื่อปิด";
+
+"gesture_execution" = "ดำเนินการ";
+
+"gesture_execute_release" = "เมื่อปล่อย";
+
+"gesture_execute_tap" = "เมื่อแตะ";
+
+"gesture_feedback" = "การตอบสนองการทำงาน";
+
+"gesture_haptics" = "การสั่น";
+
+"gesture_sound" = "เสียง";
+
+"gesture_feedback_preview" = "ทดสอบการตอบสนอง";
+
+"media_start_timeout" = "ยังไม่เริ่มเล่น โปรดตรวจสอบเครือข่ายหรือเปลี่ยนเครื่องเล่น";
+
+"wallpaper_appearance_hint" = "ตั้งค่าพื้นหลังแยกสำหรับโหมดสว่างและโหมดมืด พื้นหลังจะเปลี่ยนตามแอปโดยอัตโนมัติ";
+
+"wallpaper_image_overlay" = "เลเยอร์ทับภาพ";
+
+"auto_hide_platform_bar" = "ซ่อนแถบแพลตฟอร์มอัตโนมัติ";
+
+"top_tab_bar_hidden_title" = "ซ่อนแถบแท็บด้านบนแล้ว";
+
+"top_tab_bar_reopen_hint" = "หากต้องการแสดงอีกครั้ง ให้แตะปุ่มแท็บด้านล่าง เปิดเมนู … แล้วเปิดแสดงแถบแท็บด้านบน";
+
+"wallpaper_image_blur" = "กระจกฝ้า";
+"wallpaper_blur_amount" = "ระดับความเบลอ";
+
+"auto_hide_platform_bar_hint" = "แถบแพลตฟอร์มจะซ่อนเมื่อเปิดผลการค้นหา กลับไปที่ผลการค้นหาหรือเริ่มค้นหาใหม่เพื่อแสดงอีกครั้ง คุณปิดตัวเลือกนี้ได้ในเมนูนี้";

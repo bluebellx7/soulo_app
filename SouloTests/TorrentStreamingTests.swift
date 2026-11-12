@@ -131,8 +131,9 @@ final class TorrentStreamingTests: XCTestCase {
         let startAt = ProcessInfo.processInfo.environment["SOULO_LIVE_VIDEO_START"].flatMap(Double.init)
         let prepared: SouloMediaPlaybackSource?
         if let live {
-            let asset = AVURLAsset(url: live, options: [AVURLAssetHTTPUserAgentKey: AppConstants.mobileWebViewUserAgent,
-                AVURLAssetOverrideMIMETypeKey: "application/vnd.apple.mpegurl"])
+            var options: [String: Any] = [AVURLAssetHTTPUserAgentKey: AppConstants.mobileWebViewUserAgent]
+            if #available(iOS 17.0, *) { options[AVURLAssetOverrideMIMETypeKey] = "application/vnd.apple.mpegurl" }
+            let asset = AVURLAsset(url: live, options: options)
             do { print("PROTECTION_PROBE|\(try await asset.load(.hasProtectedContent))") }
             catch { print("PROTECTION_PROBE_ERROR|\((error as NSError).domain)|\((error as NSError).code)") }
             prepared = try await SouloMediaPlaybackSource.prepare(
@@ -270,7 +271,13 @@ final class TorrentStreamingTests: XCTestCase {
                playback.elapsed > 0.5, (playback.player?.media?.statistics.displayedPictures ?? 0) > 2 { break }
             try await Task.sleep(for: .milliseconds(100))
         }
-        let playback = try XCTUnwrap(surface(try XCTUnwrap(window.rootViewController?.view))?.playback)
+        let foundPlayback = surface(try XCTUnwrap(window.rootViewController?.view))?.playback
+        if foundPlayback == nil {
+            print("HLS_VIEW_DIAGNOSTIC window=\(window.bounds) root=\(String(describing: window.rootViewController?.view.frame)) shared=\(String(describing: MediaSession.shared.soulo?.sourceURL))")
+            let shot = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }
+            let attachment = XCTAttachment(image: shot); attachment.name = "HLS playback hierarchy"; attachment.lifetime = .keepAlways; add(attachment)
+        }
+        let playback = try XCTUnwrap(foundPlayback)
         defer { playback.stop() }
         XCTAssertNil(playback.error)
         XCTAssertGreaterThan(playback.elapsed, 0.5)
@@ -327,6 +334,11 @@ final class TorrentStreamingTests: XCTestCase {
                 if (playback?.player?.media?.statistics.displayedPictures ?? 0) > 2 { break }
                 try await Task.sleep(for: .milliseconds(100))
             }
+            if playback == nil {
+                print("MP4_VIEW_DIAGNOSTIC url=\(url) window=\(window.bounds) root=\(String(describing: window.rootViewController?.view.frame)) shared=\(String(describing: MediaSession.shared.soulo?.sourceURL))")
+                let shot = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }
+                let attachment = XCTAttachment(image: shot); attachment.name = "MP4 playback hierarchy"; attachment.lifetime = .keepAlways; add(attachment)
+            }
             let decoder = try XCTUnwrap(playback, "Both file and download paths must mount Soulo by default")
             XCTAssertGreaterThan(decoder.player?.media?.statistics.displayedPictures ?? 0, 2)
             XCTAssertTrue(decoder.playing, "Switching before AVPlayer's first frame must preserve autoplay")
@@ -336,15 +348,18 @@ final class TorrentStreamingTests: XCTestCase {
                 return view.subviews.lazy.compactMap { findSlider($0) }.first
             }
             let slider = try XCTUnwrap(findSlider(try XCTUnwrap(window.rootViewController?.view)))
+            // The parent control owns physical dragging; the child slider
+            // supplies the native appearance and adjustable accessibility.
+            let touchOwner = (slider.superview as? UIControl) ?? slider
             var hit: UIView?
             for _ in 0..<30 {
                 window.layoutIfNeeded()
                 let point = slider.convert(CGPoint(x: slider.bounds.midX, y: slider.bounds.midY), to: window)
                 hit = window.hitTest(point, with: nil)
-                if hit === slider || hit?.isDescendant(of: slider) == true { break }
+                if hit === touchOwner || hit?.isDescendant(of: touchOwner) == true { break }
                 try await Task.sleep(for: .milliseconds(100))
             }
-            XCTAssertTrue(hit === slider || hit?.isDescendant(of: slider) == true, "Timeline hit test: \(String(describing: hit))")
+            XCTAssertTrue(hit === touchOwner || hit?.isDescendant(of: touchOwner) == true, "Timeline hit test: \(String(describing: hit))")
         }
     }
 

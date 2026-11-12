@@ -436,3 +436,65 @@
 "files_move_busy" = "Vent på, at downloads er færdige, før du flytter eller omdøber disse elementer.";
 "video_show_episode_dock" = "Vis episode dock";
 "video_show_episode_dock_desc" = "Vis en forankret episodeknap på websider med episoder. Episoder forbliver tilgængelige i afspilleren.";
+
+// Webpage share preview
+"page_share_image" = "Del billede";
+"page_share_link" = "Del link";
+"page_share_preview" = "Forhåndsvisning af synligt område";
+"page_share_brand" = "Soulo: Multisøgningsbrowser";
+
+"video_export_mp4" = "Eksportér MP4";
+"video_export_failed" = "Videoen kunne ikke eksporteres som MP4. Den oprindelige fil er bevaret.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Bevægelser med to fingre";
+"gesture_hint" = "Bevæg to fingre sidelæns sammen. Hintet følger fingrene; bevæg tilbage for at annullere. Navigation med én finger og knib for at zoome virker stadig.";
+"gesture_swipe_right" = "Stryg til højre";
+"gesture_swipe_left" = "Stryg til venstre";
+"gesture_show_toolbar" = "Vis værktøjslinje";
+"gesture_quick_menu" = "Hurtigmenu";
+"gesture_preview" = "Forhåndsvis bevægelse";
+"zoom_remember" = "Husk webstedszoom";
+"zoom_hint" = "Zoom fra sidemenuen gemmes pr. domæne. Ændringer i private faner gemmes ikke.";
+"zoom_empty" = "Ingen gemte zoomniveauer";
+"zoom_reset_all" = "Nulstil alt til 100%";
+
+"shake_direction" = "Retning";
+"shake_direction_horizontal" = "Venstre og højre";
+"shake_direction_vertical" = "Op og ned";
+"shake_direction_any" = "Alle retninger";
+
+"gesture_settings_title" = "Websidebevægelser";
+"gesture_no_history" = "Når tilbage ikke er muligt";
+"gesture_no_history_hint" = "Uden tidligere sider stryger du mod højre fra venstre kant for at vise handlingen. Bevæg tilbage for at annullere. Vælg Ingen for at slå fra.";
+
+"gesture_execution" = "Udfør handling";
+
+"gesture_execute_release" = "Når du slipper";
+
+"gesture_execute_tap" = "Ved tryk";
+
+"gesture_feedback" = "Handlingsfeedback";
+
+"gesture_haptics" = "Vibration";
+
+"gesture_sound" = "Lyd";
+
+"gesture_feedback_preview" = "Prøv feedback";
+
+"media_start_timeout" = "Afspilningen er ikke startet. Tjek netværket, eller skift afspiller.";
+
+"wallpaper_appearance_hint" = "Vælg baggrunde til lyst og mørkt udseende hver for sig. De skifter automatisk med appen.";
+
+"wallpaper_image_overlay" = "Lag over billede";
+
+"auto_hide_platform_bar" = "Skjul platformslinjen automatisk";
+
+"top_tab_bar_hidden_title" = "Øverste fanelinje er skjult";
+
+"top_tab_bar_reopen_hint" = "Tryk på faneknappen nederst, åbn menuen … og slå den øverste fanelinje til for at vise den igen.";
+
+"wallpaper_image_blur" = "Matteret glas";
+"wallpaper_blur_amount" = "Sløringsstyrke";
+
+"auto_hide_platform_bar_hint" = "Platformlinjen skjules, når du åbner et søgeresultat. Gå tilbage til resultaterne, eller start en ny søgning for at vise den igen. Du kan slå det fra i denne menu.";

@@ -46,6 +46,12 @@ def main():
         if set(values)!=set(english): errors.append(f"{locale}: key parity {len(values)}/{len(english)}")
         tools=load(RESOURCES/f"{locale}.lproj"/"ReadingTools.strings")
         if set(tools)!=set(tool_english): errors.append(f"{locale}: ReadingTools coverage {len(tools)}/{len(tool_english)}")
+        name_path=METADATA/label/"name.txt"
+        if name_path.exists():
+            store_name=name_path.read_text(encoding="utf-8").strip()
+            encoded_name=json.dumps(store_name,ensure_ascii=False)[1:-1]
+            if tools.get("page_share_brand")!=encoded_name:
+                errors.append(f"{locale}: sharing footer differs from App Store name; run python3 scripts/sync_share_brand_names.py")
         features=load(RESOURCES/f"{locale}.lproj"/"FeatureImprovements.strings")
         if set(features)!=set(feature_english): errors.append(f"{locale}: FeatureImprovements coverage {len(features)}/{len(feature_english)}")
         for key,source in english.items():

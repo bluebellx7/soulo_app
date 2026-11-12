@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Fixed bookmarks and history entries sometimes replacing an existing tab when opened.
-• Improved startup, page loading and home screen interactions.
-• Refined fullscreen controls, rotation and playback state when switching apps.
-• Improved undo for closed tabs, file previews and interface details.
+• Set separate light and dark backgrounds, with an image overlay switch.
+• Improved home colors; wallpaper previews now follow the app theme.
+• Preview, share and save wallpapers to Photos.
+• Added top tab settings with New Tab, plus optional platform bar hiding after navigation.

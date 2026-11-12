@@ -1,4 +1,4 @@
-import SwiftData
+import CoreData
 import SwiftUI
 import XCTest
 @testable import Soulo
@@ -6,15 +6,15 @@ import XCTest
 /// These are real view renders at requested canvas sizes, NOT Duo simulator
 /// screenshots. Keep the exported images in a clearly marked preview folder.
 @MainActor final class AppStoreLayoutPreviewTests: XCTestCase {
-    private static var retainedContainer: ModelContainer?
+    private static var retainedContainer: LibraryStore?
 
     func testCaptureDuoLayoutPreviews() async throws {
+        guard #available(iOS 17.0, *) else { throw XCTSkip("Trait override fixtures require iOS 17") }
         try XCTSkipUnless(ProcessInfo.processInfo.environment["SOULO_CAPTURE_STORE_ASSETS"] == "1")
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
             .first { $0.activationState == .foregroundActive })
         let previous = scene.keyWindow
-        let container = try ModelContainer(for: SearchHistoryItem.self, BookmarkItem.self, BookmarkFolder.self,
-            configurations: ModelConfiguration("StoreLayoutPreviews", isStoredInMemoryOnly: true))
+        let container = try LibraryStore(inMemory: true)
         Self.retainedContainer = container
         let oldLanguage = LanguageManager.shared.selectedLanguage
         let wallpaper = WallpaperManager.shared
@@ -55,7 +55,7 @@ import XCTest
                 let host = UIHostingController(rootView: AnyView(view
                     .environmentObject(search).environmentObject(tabs)
                     .environmentObject(LanguageManager.shared).environmentObject(ThemeManager.shared)
-                    .environmentObject(wallpaper).modelContainer(container)
+                    .environmentObject(wallpaper).environment(\.managedObjectContext, (container).mainContext)
                     .environment(\.colorScheme, .light)))
                 host.traitOverrides.horizontalSizeClass = horizontal
                 host.traitOverrides.verticalSizeClass = .regular

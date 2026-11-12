@@ -739,6 +739,7 @@ final class BrowserExtensionService: ObservableObject {
         webExtensionErrors[id] = nil
         if #available(iOS 18.4, *) {
             NativeWebExtensionRuntime.shared.unload(id: id)
+            NativeWebExtensionRuntime.shared.forgetCompatibilityInstallation(id: id)
         }
         try? fileManager.removeItem(
             at: webExtensionRoot.appendingPathComponent(record.id.uuidString, isDirectory: true)
@@ -1104,7 +1105,7 @@ extension BrowserExtensionService {
             let access = previous.map { webExtensionAccess($0.id) } ?? .requested(permissions: permissions, sites: sites)
             var warnings = object.errors.map(\.localizedDescription)
             if object.manifest["commands"] != nil { warnings.append("commands") }
-            if permissions.contains("offscreen") { warnings.append("offscreen: AUDIO_PLAYBACK") }
+            if permissions.contains("offscreen") { warnings.append("offscreen") }
             if permissions.contains("notifications") { warnings.append("notifications: onClicked / onClosed") }
             let preview = WebExtensionInstallPreview(id: token, resourceURL: resources,
                 name: object.displayName ?? AppLocalization.string("extension_untitled"), version: object.version,
@@ -2672,6 +2673,18 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
         contexts[id] = context
         contextResourceURLs[ObjectIdentifier(context)] = resourceURL
         observePermissions(id: id, context: context)
+        // The content-script port needs its listeners installed before the first
+        // document connects, including after disable/re-enable and app launch.
+        if WebExtensionTampermonkeyAdapter.isPrepared(in: resourceURL) {
+            compatibilityHost.prepareInstallation(context: context)
+            do {
+                try await context.loadBackgroundContent()
+                try Task.checkCancellation()
+            } catch {
+                if contexts[id] === context { unload(id: id) }
+                throw error
+            }
+        }
         return metadata(for: extensionObject)
     }
 
@@ -2693,6 +2706,7 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
         context.deniedPermissionMatchPatterns = Dictionary(denied.compactMap { key, date in
             (try? WKWebExtension.MatchPattern(string: key)).map { ($0, date) }
         }, uniquingKeysWith: { a, _ in a })
+        compatibilityHost.refreshAccess(access, context: context)
     }
 
     private func observePermissions(id: UUID, context: WKWebExtensionContext) {
@@ -2813,6 +2827,8 @@ final class NativeWebExtensionRuntime: NSObject, WKWebExtensionControllerDelegat
         compatibilityHost.remove(context: context)
         try? controller.unload(context)
     }
+
+    func forgetCompatibilityInstallation(id: UUID) { compatibilityHost.forgetInstallation(id: id) }
 
     fileprivate func browserTab(for nativeTab: NativeExtensionTab) -> BrowserTab? {
         guard let id = nativeTab.browserTabID else { return nil }

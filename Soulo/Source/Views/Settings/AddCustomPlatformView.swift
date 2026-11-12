@@ -151,7 +151,7 @@ struct AddCustomPlatformView: View {
                                     .keyboardType(.URL)
                                     .autocorrectionDisabled()
                                     .textInputAutocapitalization(.never)
-                                    .onChange(of: searchURLTemplate) { _, newValue in
+                                    .onCompatibleChange(of: searchURLTemplate) { _, newValue in
                                         urlError = nil
                                         // Auto-parse name from domain if user hasn't manually edited
                                         if !nameManuallyEdited {
@@ -443,7 +443,7 @@ struct ShakeModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .offset(x: offset)
-            .onChange(of: trigger) { _, _ in
+            .onCompatibleChange(of: trigger) { _, _ in
                 withAnimation(.interpolatingSpring(stiffness: 600, damping: 12)) {
                     offset = -8
                 }

@@ -6,8 +6,6 @@ Recent gebruikte tabbladen en websitegroepen staan vooraan en het overzicht open
 
 BT-downloads: importeer .torrent-bestanden of magnetlinks, kies bestanden, pauzeer en hervat. Op iOS 26 kunnen downloads op de achtergrond doorgaan als het systeem dat toestaat; eerdere versies bewaren de voortgang en pauzeren. Speel ondersteunde BT-media af tijdens het downloaden en open MKV-bestanden. Importeer ed2k/thunder-links. Downloads vereisen beschikbare bronnen; afspelen hangt af van codecs.
 
-Soepeler browsen, verbeterde videobediening en duidelijkere bestandsvoorbeelden.
-
 Kies vijf optionele snelkoppelingen op het startscherm voor downloads, bestanden, bladwijzers, geschiedenis, achtergronden en andere pagina’s. De tabbladbalk van de bibliotheek wordt compacter tijdens het scrollen.
 
 Zoek informatie, lees artikelen, speel media af en beheer downloads in één browser.
@@ -20,11 +18,11 @@ Behoud je plek met meerdere tabbladen, spraakgestuurd zoeken, zoekgeschiedenis e
 • Bestanden: vind afbeeldingen, audio, video's en documenten op pagina's en sla meerdere afbeeldingen op. Bekijk bestanden als lijst of omslagraster, hernoem ze, importeer uit Foto's en verstuur via wifi.
 • Archieven: pak ZIP, RAR en 7z uit. Maak ZIP- en 7z-archieven met optionele wachtwoordbeveiliging.
 • Lezen: TXT, PDF, EPUB en ondersteunde DRM-vrije MOBI-, AZW- en AZW3-boeken. Pas lettertype, grootte, regelafstand en achtergrond aan. Boeken met aanpasbare opmaak bieden vereenvoudigde/traditionele Chinese weergave. De leesmodus haalt artikelen uit webpagina's en laat je op de volgende pagina verder lezen.
-• Extensies: importeer, bewerk en gebruik JavaScript-userscripts, beheer sites en rechten en installeer compatibele WebExtensions.
+• Scripts en extensies: importeer, bewerk en gebruik JavaScript-gebruikersscripts. Compatibele WebExtensions vereisen iOS 18.4 of nieuwer; de ondersteuning verschilt per extensie.
 • Webtools: vertaling, zoeken op pagina, schermafbeeldingen van hele pagina's, tekstherkenning in afbeeldingen, desktop-/mobiele modus, eigen useragent en sitecertificaten.
 • Bladwijzers: mappen en import/export van HTML-bladwijzers voor Chrome, Edge en andere browsers. Maak pagina-QR-codes met het sitepictogram om te delen, bewaren of kopiëren.
-• Personaliseren: achtergronden, werkbalk en snelle taken via het app-pictogram. Open functies met widgets, Opdrachten en URL-schema's. Synchroniseer instellingen desgewenst via iCloud.
+• Personaliseren: achtergronden, werkbalk en snelle taken via het app-pictogram. Open functies met widgets, Opdrachten en URL-schema's. Synchroniseer instellingen desgewenst via iCloud. Aparte achtergronden voor licht en donker, met een schakelaar voor de afbeeldingslaag.
 
-Beschikbaarheid van media, boeken en extensies hangt af van bestandsformaat, sitebeperkingen en systeemversie.
+Media, boeken en extensies zijn afhankelijk van formaten, websitebeperkingen en systeemversie. Controleer vóór het downloaden of de bron opslaan toestaat.
 
 Ondersteuning: contact@dkluge.com

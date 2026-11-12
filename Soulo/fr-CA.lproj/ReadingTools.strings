@@ -436,3 +436,65 @@
 "files_move_busy" = "Attendez la fin des téléchargements avant de déplacer ou de renommer ces éléments.";
 "video_show_episode_dock" = "Afficher le dock des épisodes";
 "video_show_episode_dock_desc" = "Afficher un bouton d'épisode ancré sur les pages Web contenant des épisodes. Les épisodes restent disponibles dans le lecteur.";
+
+// Webpage share preview
+"page_share_image" = "Partager l’image";
+"page_share_link" = "Partager le lien";
+"page_share_preview" = "Aperçu de la zone visible";
+"page_share_brand" = "Soulo : Recherche multiple";
+
+"video_export_mp4" = "Exporter en MP4";
+"video_export_failed" = "Impossible d’exporter cette vidéo en MP4. Le fichier original a été conservé.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Gestes à deux doigts";
+"gesture_hint" = "Déplacez deux doigts ensemble latéralement. L’indication suit vos doigts ; revenez en arrière pour annuler. La navigation à un doigt et le zoom par pincement restent disponibles.";
+"gesture_swipe_right" = "Balayer à droite";
+"gesture_swipe_left" = "Balayer à gauche";
+"gesture_show_toolbar" = "Afficher la barre d’outils";
+"gesture_quick_menu" = "Menu rapide";
+"gesture_preview" = "Aperçu du geste";
+"zoom_remember" = "Mémoriser le zoom des sites";
+"zoom_hint" = "Le zoom réglé dans le menu de la page est enregistré par domaine. Les modifications des onglets privés ne sont pas enregistrées.";
+"zoom_empty" = "Aucun zoom enregistré";
+"zoom_reset_all" = "Tout rétablir à 100%";
+
+"shake_direction" = "Direction";
+"shake_direction_horizontal" = "Gauche et droite";
+"shake_direction_vertical" = "Haut et bas";
+"shake_direction_any" = "Toutes les directions";
+
+"gesture_settings_title" = "Gestes des pages web";
+"gesture_no_history" = "Si le retour est indisponible";
+"gesture_no_history_hint" = "Sans historique précédent, balayez vers la droite depuis le bord gauche pour afficher l’action. Revenez en arrière pour annuler. Choisissez Aucune pour désactiver.";
+
+"gesture_execution" = "Exécuter l’action";
+
+"gesture_execute_release" = "Au relâchement";
+
+"gesture_execute_tap" = "Au toucher";
+
+"gesture_feedback" = "Retour d’action";
+
+"gesture_haptics" = "Vibrations";
+
+"gesture_sound" = "Son";
+
+"gesture_feedback_preview" = "Tester le retour";
+
+"media_start_timeout" = "La lecture n’a pas démarré. Vérifiez le réseau ou changez de lecteur.";
+
+"wallpaper_appearance_hint" = "Choisissez un arrière-plan pour l’apparence claire et un autre pour la sombre. Ils changent automatiquement avec l’app.";
+
+"wallpaper_image_overlay" = "Voile sur l’image";
+
+"auto_hide_platform_bar" = "Masquer la barre des plateformes";
+
+"top_tab_bar_hidden_title" = "Barre d’onglets supérieure masquée";
+
+"top_tab_bar_reopen_hint" = "Pour la réafficher, touchez le bouton des onglets en bas, ouvrez le menu … puis activez l’affichage de la barre d’onglets supérieure.";
+
+"wallpaper_image_blur" = "Verre dépoli";
+"wallpaper_blur_amount" = "Intensité du flou";
+
+"auto_hide_platform_bar_hint" = "La barre des plateformes se masque à l’ouverture d’un résultat. Revenez aux résultats ou lancez une nouvelle recherche pour la réafficher. Vous pouvez désactiver cette option dans ce menu.";

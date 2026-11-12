@@ -1,6 +1,146 @@
 import XCTest
+import AVFoundation
 
 final class WebEpisodeAndAdNavigationUITests: XCTestCase {
+    @MainActor
+    func testLiveBaiduFreePrivilegeButton() throws {
+        guard ProcessInfo.processInfo.environment["SOULO_LIVE_BAIDU_PRIVILEGE_QA"] == "1" else {
+            throw XCTSkip("Opt-in live Baidu privilege page check")
+        }
+        let url = try XCTUnwrap(URL(string: "https://pan.baidu.com/wap/svip/privilege/freeget?na_immerse_theme=1&task_scene=reward_video_bidding_scene_hybrid_forward_download_speed&from=pc_acceleration"))
+        for filtering in [false, true] {
+            let app = launch(incognito: true, confirmCrossDomain: false, filtering: filtering)
+            try open(url, app: app)
+            XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 30))
+            Thread.sleep(forTimeInterval: 15)
+            let cancel = app.buttons["browser.external-app-confirmation.cancel"]
+            if cancel.exists { cancel.tap() }
+            func record(_ stage: String) {
+                let tree = XCTAttachment(string: app.debugDescription)
+                tree.name = "baidu-privilege-\(filtering)-\(stage)-tree"; tree.lifetime = .keepAlways; add(tree)
+                let shot = XCTAttachment(screenshot: app.screenshot())
+                shot.name = "baidu-privilege-\(filtering)-\(stage)"; shot.lifetime = .keepAlways; add(shot)
+            }
+            record("loaded")
+            let button = app.webViews.staticTexts["开通SVIP 畅享"].firstMatch
+            XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
+            button.tap()
+            let address = app.buttons["Edit Address or Search"].firstMatch
+            let reached = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "snsyun.baidu.com"), object: address)
+            XCTAssertEqual(XCTWaiter.wait(for: [reached], timeout: 10), .completed,
+                "The chosen privilege button must reach Baidu's app handoff page with either filtering setting")
+            record("clicked")
+            app.terminate()
+        }
+    }
+
+    @MainActor
+    func testScriptButtonsConfirmComputedCrossSiteDestinations() async throws {
+        let html = #"""
+        <!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
+        <style>.privilege-free-get-privilege-buy-btn{margin:20px;padding:16px;background:#ffd69e;border-radius:24px;text-align:center}</style>
+        <div class="privilege-free-get-privilege-buy-btn" id="replace"><span>Open chosen app page</span></div>
+        <div class="privilege-free-get-privilege-buy-btn" id="window"><span>Open chosen app window</span></div>
+        <button id="native">Open native script button</button>
+        <script>
+        const next=location.origin.replace('127.0.0.1','localhost')+'/chosen.html';
+        document.getElementById('replace').addEventListener('click',()=>location.href=next);
+        document.getElementById('window').addEventListener('click',()=>window.open(next));
+        document.getElementById('native').addEventListener('click',()=>location.href=next);
+        </script>
+        """#
+        let server = try DownloadPlaybackHTTPFixture(files: ["/entry.html": Data(html.utf8),
+            "/chosen.html": Data("<body>Chosen app page reached</body>".utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let app = launch(incognito: true, confirmCrossDomain: true); defer { app.terminate() }
+        for label in ["Open chosen app page", "Open chosen app window", "Open native script button"] {
+            try open(root.appendingPathComponent("entry.html"), app: app)
+            let control = app.webViews.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+            XCTAssertTrue(control.waitForExistence(timeout: 15), app.debugDescription)
+            let previousRequests = server.receivedRequests.filter { $0.path == "/chosen.html" }.count
+            let previousTabLabel = app.buttons["browser.tabs"].label
+            control.tap()
+            let confirm = app.buttons["browser.domain-confirmation.continue"]
+            guard confirm.waitForExistence(timeout: 10) else {
+                XCTFail("An undeclared third-party target must be confirmed: " + app.debugDescription)
+                return
+            }
+            XCTAssertEqual(server.receivedRequests.filter { $0.path == "/chosen.html" }.count, previousRequests,
+                "The destination request must remain blocked until confirmation")
+            XCTAssertFalse(app.webViews.staticTexts["Chosen app page reached"].firstMatch.exists)
+            if label == "Open chosen app window" {
+                XCTAssertEqual(app.buttons["browser.tabs"].label, previousTabLabel,
+                    "A script popup must not switch or create a visible tab before approval")
+            }
+            let frame = confirm.frame
+            if UIDevice.current.userInterfaceIdiom == .pad { XCTAssertLessThan(frame.width, 200) }
+            confirm.tap()
+            XCTAssertTrue(app.webViews.staticTexts["Chosen app page reached"].firstMatch.waitForExistence(timeout: 10),
+                "Confirming must resume the original request")
+            XCTAssertFalse(app.buttons["browser.domain-confirmation.continue"].exists)
+        }
+    }
+
+    @MainActor
+    func testScriptNavigationWorksWithoutButtonClassification() async throws {
+        let html = #"""
+        <!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
+        <style>.x91,.r42,custom-action{display:block;padding:16px;margin:12px;background:#eee}</style>
+        <div class="x91" tabindex="0" id="focus"><span>Open keyboard action</span></div>
+        <div class="r42" onclick="openChosen()"><span>Open inline action</span></div>
+        <div id="plain">Open ordinary container</div>
+        <custom-action id="shadow"></custom-action>
+        <div id="card" style="height:200px;cursor:pointer;background:#eee;margin:12px">Open larger card</div>
+        <script>
+        const next=location.origin.replace('127.0.0.1','localhost')+'/chosen.html';
+        function openChosen(){location.href=next;}
+        document.getElementById('focus').addEventListener('click',openChosen);
+        document.getElementById('plain').addEventListener('click',openChosen);
+        document.getElementById('card').addEventListener('click',openChosen);
+        const root=document.getElementById('shadow').attachShadow({mode:'open'});
+        root.innerHTML='<div tabindex="0" class="r73" style="padding:16px"><span>Open shadow action</span></div>';
+        root.firstElementChild.addEventListener('click',()=>window.open(next));
+        </script>
+        """#
+        let server = try DownloadPlaybackHTTPFixture(files: ["/entry.html": Data(html.utf8),
+            "/chosen.html": Data("<body>Semantic action reached</body>".utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let app = launch(incognito: true, confirmCrossDomain: false); defer { app.terminate() }
+        for label in ["Open ordinary container", "Open keyboard action", "Open inline action", "Open shadow action", "Open larger card"] {
+            try open(root.appendingPathComponent("entry.html"), app: app)
+            let control = app.webViews.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+            XCTAssertTrue(control.waitForExistence(timeout: 15), app.debugDescription)
+            control.tap()
+            XCTAssertTrue(app.webViews.staticTexts["Semantic action reached"].firstMatch.waitForExistence(timeout: 10))
+            XCTAssertFalse(app.buttons["browser.domain-confirmation.continue"].exists)
+        }
+    }
+
+    @MainActor
+    func testSameSiteScriptsAndWindowsWorkWithoutButtonMarkup() async throws {
+        let html = #"""
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <p id="plain">Open same-site page</p>
+        <div id="window">Open same-site window</div>
+        <script>
+        document.getElementById('plain').addEventListener('click',()=>location.href='/chosen.html');
+        document.getElementById('window').addEventListener('click',()=>window.open('/chosen.html'));
+        </script>
+        """#
+        let server = try DownloadPlaybackHTTPFixture(files: ["/entry.html": Data(html.utf8),
+            "/chosen.html": Data("<body>Same-site destination</body>".utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let app = launch(incognito: true, confirmCrossDomain: true); defer { app.terminate() }
+        for label in ["Open same-site page", "Open same-site window"] {
+            try open(root.appendingPathComponent("entry.html"), app: app)
+            let target = app.webViews.staticTexts[label].firstMatch
+            XCTAssertTrue(target.waitForExistence(timeout: 15))
+            target.tap()
+            XCTAssertTrue(app.webViews.staticTexts["Same-site destination"].firstMatch.waitForExistence(timeout: 10))
+            XCTAssertFalse(app.buttons["browser.domain-confirmation.continue"].exists)
+        }
+    }
+
     @MainActor
     func testUnprocessedBaiduPlaybackBaseline() throws {
         guard ProcessInfo.processInfo.environment["SOULO_RAW_BASELINE_QA"] == "1" else {
@@ -123,7 +263,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
     }
 
     @MainActor
-    private func launch(incognito: Bool = false, confirmCrossDomain: Bool? = nil, player: String? = nil, filtering: Bool = true) -> XCUIApplication {
+    private func launch(incognito: Bool = false, confirmCrossDomain: Bool? = nil, player: String? = nil, filtering: Bool = true, episodeDock: Bool? = nil, grouped: Bool? = nil, tools: Bool? = nil) -> XCUIApplication {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
@@ -134,6 +274,14 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
             app.launchArguments += ["-ad_block_confirm_cross_domain", confirmCrossDomain ? "YES" : "NO"]
         }
         if let player { app.launchArguments += ["-video.defaultPlayer", player] }
+        if let tools { app.launchArguments += ["-video.showsWebTools", tools ? "YES" : "NO"] }
+        if let grouped {
+            app.launchArguments += ["-tab_overview_grouped", grouped ? "YES" : "NO"]
+            app.launchEnvironment["SOULO_VIDEO_VOLUME_TRACE"] = "1"
+        }
+        if let episodeDock {
+            app.launchArguments += ["-video.showsEpisodeDock", episodeDock ? "YES" : "NO", "-icloud_sync_enabled", "NO"]
+        }
         if ProcessInfo.processInfo.environment["SOULO_LIVE_SEARCH_VIDEO_QA"] == "1" {
             app.launchArguments += ["-privacy_cookie_banner_enabled", "YES"]
             app.launchEnvironment["SOULO_BROWSER_TRACE"] = "1"
@@ -220,7 +368,7 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         let server = try DownloadPlaybackHTTPFixture(files: ["/entry.html": Data(html.utf8),
             "/chosen.html": Data("<body>Computed cross-site destination</body>".utf8)])
         let root = try await server.start(); defer { server.stop() }
-        let app = launch(incognito: true, confirmCrossDomain: true); defer { app.terminate() }
+        let app = launch(incognito: true, confirmCrossDomain: false); defer { app.terminate() }
         for label in ["Continue in this tab", "Continue in a new tab"] {
             try open(root.appendingPathComponent("entry.html"), app: app)
             let control = app.webViews.buttons[label].firstMatch
@@ -286,46 +434,57 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
     }
 
     @MainActor
-    func testPageClickAdsAreBlockedAndExplicitExternalLinkStillOpens() async throws {
+    func testUndeclaredCrossSiteScriptsAskInsteadOfBeingSilentlyBlocked() async throws {
         let html = #"""
-        <html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-        <body style="font:20px system-ui;cursor:pointer"><h3>Navigation fixture</h3>
-        <p id="popup">Popup action</p><p id="replace">Replacement action</p>
-        <p id="synthetic">Synthetic link action</p><p id="status">Waiting</p>
-        <a id="external">Open chosen page</a>
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <p id="popup">Open script window</p><p id="replace">Open script page</p>
+        <p id="synthetic">Open synthetic link</p><p id="blank">Open blank then navigate</p>
+        <a id="explicit">Open declared destination</a>
         <script>
         const other=location.origin.replace('127.0.0.1','localhost');
-        document.getElementById('external').href=other+'/chosen.html';
-        document.addEventListener('pointerdown', e => {
-          if(e.target.id==='popup')window.open(other+'/ad.html','_blank');
-          if(e.target.id==='replace')location.href=other+'/ad.html';
+        document.getElementById('explicit').href=other+'/chosen.html';
+        document.addEventListener('click',e=>{
+          if(e.target.id==='popup')window.open(other+'/script.html');
+          if(e.target.id==='replace')location.href=other+'/script.html';
           if(e.target.id==='synthetic'){
-            const a=document.createElement('a');a.href=other+'/ad.html';a.target='_blank';
+            const a=document.createElement('a');a.href=other+'/script.html';a.target='_blank';
             document.body.append(a);a.click();a.remove();
           }
+          if(e.target.id==='blank'){
+            const child=window.open('about:blank');
+            setTimeout(()=>child.location.href=other+'/script.html',200);
+          }
         });
-        document.addEventListener('click',e=>{if(['popup','replace','synthetic'].includes(e.target.id))document.getElementById('status').textContent=e.target.id+' remained'});
-        </script></body></html>
+        </script>
         """#
         let server = try DownloadPlaybackHTTPFixture(files: ["/page.html": Data(html.utf8),
-            "/ad.html": Data("<html><body>Unexpected advertisement</body></html>".utf8),
-            "/chosen.html": Data("<html><body>Chosen destination</body></html>".utf8)])
-        let root = try await server.start()
-        defer { server.stop() }
-        let app = launch()
+            "/script.html": Data("<body>Script destination</body>".utf8),
+            "/chosen.html": Data("<body>Declared destination</body>".utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let app = launch(incognito: true, confirmCrossDomain: true); defer { app.terminate() }
+        for label in ["Open script window", "Open script page", "Open synthetic link", "Open blank then navigate"] {
+            try open(root.appendingPathComponent("page.html"), app: app)
+            let target = app.webViews.staticTexts[label].firstMatch
+            XCTAssertTrue(target.waitForExistence(timeout: 15), app.debugDescription)
+            target.tap()
+            let cancel = app.buttons["browser.domain-confirmation.cancel"]
+            guard cancel.waitForExistence(timeout: 10) else {
+                XCTFail(app.debugDescription)
+                return
+            }
+            XCTAssertFalse(app.webViews.staticTexts["Script destination"].exists)
+            cancel.tap()
+            XCTAssertEqual(server.receivedRequests.filter { $0.path == "/script.html" }.count, 0)
+        }
         try open(root.appendingPathComponent("page.html"), app: app)
-        XCTAssertTrue(app.webViews.staticTexts["Navigation fixture"].firstMatch.waitForExistence(timeout: 20), app.debugDescription)
-        for (label, status) in [("Popup action", "popup remained"), ("Replacement action", "replace remained"),
-                                ("Synthetic link action", "synthetic remained")] {
-            app.webViews.staticTexts[label].firstMatch.tap()
-            XCTAssertTrue(app.webViews.staticTexts[status].firstMatch.waitForExistence(timeout: 5), app.debugDescription)
-            XCTAssertFalse(app.webViews.staticTexts["Unexpected advertisement"].exists)
-        }
-        app.webViews.links["Open chosen page"].tap()
-        if app.buttons["browser.domain-confirmation.continue"].waitForExistence(timeout: 2) {
-            app.buttons["browser.domain-confirmation.continue"].tap()
-        }
-        XCTAssertTrue(app.webViews.staticTexts["Chosen destination"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        app.webViews.staticTexts["Open script page"].firstMatch.tap()
+        let confirm = app.buttons["browser.domain-confirmation.continue"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10)); confirm.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Script destination"].firstMatch.waitForExistence(timeout: 10))
+        try open(root.appendingPathComponent("page.html"), app: app)
+        app.webViews.links["Open declared destination"].firstMatch.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Declared destination"].firstMatch.waitForExistence(timeout: 10))
+        XCTAssertFalse(confirm.exists)
     }
 
     @MainActor
@@ -372,6 +531,11 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
             let target=app.webViews.descendants(matching:.any).matching(NSPredicate(format:"label == %@",label)).firstMatch
             XCTAssertTrue(target.waitForExistence(timeout:10),app.debugDescription)
             target.tap()
+            if ["Site handled result", "Delegated result card"].contains(label) {
+                let confirm = app.buttons["browser.domain-confirmation.continue"]
+                XCTAssertTrue(confirm.waitForExistence(timeout: 10), "A replacement destination is confirmed instead of guessed from element type")
+                confirm.tap()
+            }
             XCTAssertTrue(app.webViews.staticTexts["Chosen search result"].firstMatch.waitForExistence(timeout:10),app.debugDescription)
             XCTAssertFalse(app.buttons["browser.domain-confirmation.continue"].exists)
             XCTAssertFalse(app.webViews.staticTexts["Wrong intercepted href"].exists)
@@ -969,6 +1133,104 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
     }
 
     @MainActor
+    func testLandscapeMiniPlayerRestoresWebEpisodesAndClosesInOneStep() async throws {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
+        let data = try Data(contentsOf: fixture)
+        let html = """
+        <meta name="viewport" content="width=device-width,initial-scale=1"><title>Episode mini player</title>
+        <div class="dy-collect-video"><div class="dy-collect-video-name">Main</div><ul class="dy-collect-list">
+        <li><span class="c-name">Episode 1</span><a href="/first.mp4">Stream</a></li>
+        <li><span class="c-name">Episode 2</span><a href="/second.mp4">Stream</a></li></ul></div>
+        <div class="dy-collect-video"><div class="dy-collect-video-name">Backup</div><ul class="dy-collect-list">
+        <li><span class="c-name">Episode 1</span><a href="/backup.mp4">Stream</a></li></ul></div>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: ["/detail.html": Data(html.utf8),
+            "/first.mp4": data, "/second.mp4": data, "/backup.mp4": data])
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        defer { XCUIDevice.shared.orientation = .portrait }
+        for engine in ["system", "soulo"] {
+            let app = launch(player: engine, episodeDock: true)
+            defer { app.terminate() }
+            XCUIDevice.shared.orientation = .landscapeLeft
+            try open(root.appendingPathComponent("detail.html"), app: app)
+            openEpisodes(app)
+            app.scrollViews.buttons["Episode 1"].firstMatch.tap()
+            let initialExpandID = engine == "system" ? "media.fullscreen" : "media.mkv.fullscreen"
+            XCTAssertTrue(app.buttons[initialExpandID].waitForExistence(timeout: 15), app.debugDescription)
+            app.buttons[initialExpandID].tap()
+            let closeID = engine == "system" ? "media.fullscreen.close" : "media.mkv.fullscreen.close"
+            let exitID = engine == "system" ? "media.fullscreen.exit" : "media.mkv.fullscreen.exit"
+            func reveal(_ id: String) throws -> XCUIElement {
+                let button = app.buttons[id]
+                for _ in 0..<3 {
+                    if button.exists && button.isHittable { return button }
+                    app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap()
+                    if button.waitForExistence(timeout: 0.5) && button.isHittable { return button }
+                }
+                let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); shot.name = "Missing control " + id
+                shot.lifetime = .keepAlways; add(shot)
+                throw URLError(.timedOut)
+            }
+            func pausePlayback() throws {
+                let id = engine == "system" ? "media.native.play" : "media.mkv.play"
+                for _ in 0..<3 {
+                    let play = try reveal(id)
+                    if play.label != "Pause" { return }
+                    let frame = play.frame
+                    app.coordinate(withNormalizedOffset: .zero)
+                        .withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
+                    let paused = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                        play.exists && play.label == "Play"
+                    }, object: nil)
+                    if XCTWaiter.wait(for: [paused], timeout: 1) == .completed { return }
+                }
+                throw URLError(.timedOut)
+            }
+            XCTAssertTrue(app.buttons[closeID].waitForExistence(timeout: 12), app.debugDescription)
+            try pausePlayback()
+            try reveal("media.file.episodes").tap()
+            let secondID = "media.file.episode." + root.appendingPathComponent("second.mp4").absoluteString
+            XCTAssertTrue(app.buttons[secondID].waitForExistence(timeout: 5)); app.buttons[secondID].tap()
+            XCTAssertTrue(app.otherElements["media.file.episodes.drawer"].waitForNonExistence(timeout: 8))
+            try pausePlayback()
+            try reveal(closeID).tap()
+            XCTAssertTrue(app.buttons["browser.episodes-order"].waitForExistence(timeout: 6), "Close must return straight to the episode picker")
+            XCTAssertFalse(app.buttons["media.web.close"].exists, "Do not expose the intermediate preview page")
+            app.buttons["Done"].firstMatch.tap()
+            let mini = app.descendants(matching: .any)["media.mini-player"].firstMatch
+            XCTAssertTrue(mini.waitForExistence(timeout: 8), app.debugDescription)
+            app.buttons["Hide at screen edge"].firstMatch.tap()
+            let expandCard = app.buttons.matching(NSPredicate(format: "label == %@", "Expand player")).firstMatch
+            XCTAssertTrue(expandCard.waitForExistence(timeout: 5)); expandCard.tap()
+            XCTAssertTrue(app.buttons["Hide at screen edge"].firstMatch.waitForExistence(timeout: 5))
+            app.buttons.matching(NSPredicate(format: "label == %@", "Expand player")).firstMatch.tap()
+            try pausePlayback()
+            try reveal("media.file.episodes").tap()
+            XCTAssertTrue(app.buttons[secondID].waitForExistence(timeout: 5), "The mini-player must retain the same episodes")
+            XCTAssertTrue(app.buttons[secondID].isSelected, "The selected episode must survive collapsing")
+            let restoredShot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            restoredShot.name = "Restored web episodes from mini-player · " + engine
+            restoredShot.lifetime = .keepAlways; add(restoredShot)
+            let firstID = "media.file.episode." + root.appendingPathComponent("first.mp4").absoluteString
+            app.buttons[firstID].tap()
+            XCTAssertTrue(app.otherElements["media.file.episodes.drawer"].waitForNonExistence(timeout: 8))
+            try pausePlayback()
+            try reveal(exitID).tap()
+            let expandID = engine == "system" ? "media.fullscreen" : "media.mkv.fullscreen"
+            XCTAssertTrue(app.buttons[expandID].waitForExistence(timeout: 6), "Shrinking should keep the playback page")
+            app.buttons[expandID].tap()
+            try pausePlayback()
+            try reveal(closeID).tap()
+            XCTAssertTrue(app.webViews.staticTexts["Main"].firstMatch.waitForExistence(timeout: 6),
+                          "The mini-player page must also close in one step")
+            XCTAssertFalse(app.buttons["media.web.close"].exists)
+            let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); shot.name = "Landscape close and episode restoration · " + engine
+            shot.lifetime = .keepAlways; add(shot)
+            app.terminate()
+        }
+    }
+
+    @MainActor
     func testBothPlayersKeepFullscreenWhileSelectingWebEpisodes() async throws {
         let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
         let data = try Data(contentsOf: fixture)
@@ -1024,7 +1286,8 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         shot.name = "Web episodes preserve fullscreen in both engines"; shot.lifetime = .keepAlways; add(shot)
         if !nativeClose.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap() }
         nativeClose.tap()
-        app.buttons["media.web.close"].tap()
+        XCTAssertTrue(app.buttons["media.web.close"].waitForNonExistence(timeout: 5),
+                      "Closing fullscreen must dismiss the preview page as well")
     }
 
     @MainActor
@@ -1321,6 +1584,474 @@ final class WebEpisodeAndAdNavigationUITests: XCTestCase {
         XCTAssertTrue(app.webViews.staticTexts["Other control 1"].firstMatch.waitForExistence(timeout:5),app.debugDescription)
         app.webViews.buttons["Other control"].firstMatch.tap()
         XCTAssertTrue(app.webViews.staticTexts["Other control 2"].firstMatch.waitForExistence(timeout:5),app.debugDescription)
+        }
+    }
+}
+
+extension WebEpisodeAndAdNavigationUITests {
+    @MainActor func testBothFullscreenPlayersSupportHorizontalSeekingAndIPadPreview() async throws {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
+        let html = """
+        <meta name="viewport" content="width=device-width,initial-scale=1"><title>Episode mini player</title>
+        <div class="dy-collect-video"><div class="dy-collect-video-name">Main</div><ul class="dy-collect-list">
+        <li><span class="c-name">Episode 1</span><a href="/first.mp4">Stream</a></li>
+        <li><span class="c-name">Episode 2</span><a href="/second.mp4">Stream</a></li></ul></div>
+        <div class="dy-collect-video"><div class="dy-collect-video-name">Backup</div><ul class="dy-collect-list">
+        <li><span class="c-name">Episode 1</span><a href="/backup.mp4">Stream</a></li></ul></div>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: ["/detail.html": Data(html.utf8),
+            "/first.mp4": try Data(contentsOf: fixture), "/second.mp4": try Data(contentsOf: fixture)])
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop(); XCUIDevice.shared.orientation = .portrait }
+        let engines = ProcessInfo.processInfo.environment["SOULO_VOLUME_SOULO_ONLY"] == "1" ? ["soulo"] : ["system", "soulo"]
+        for engine in engines {
+            let app = launch(player: engine, episodeDock: true, grouped: false)
+            XCUIDevice.shared.orientation = .landscapeLeft
+            try open(root.appendingPathComponent("detail.html"), app: app)
+            openEpisodes(app); app.scrollViews.buttons["Episode 1"].firstMatch.tap()
+            let prefix = engine == "system" ? "media.native" : "media.mkv"
+            let expand = app.buttons[engine == "system" ? "media.fullscreen" : "media.mkv.fullscreen"]
+            guard expand.waitForExistence(timeout: 15) else { XCTFail(app.debugDescription); app.terminate(); return }
+            expand.tap()
+            let play = app.buttons[prefix + ".play"]
+            for _ in 0..<4 {
+                if !play.exists || !play.isHittable { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap() }
+                if play.waitForExistence(timeout: 1) && play.label == "Pause" {
+                    let frame = play.frame
+                    app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
+                }
+                if play.exists && play.label == "Play" { break }
+            }
+            XCTAssertEqual(play.label, "Play", app.debugDescription)
+            let origin = app.coordinate(withNormalizedOffset: .zero)
+            func drag(_ from: CGFloat, _ to: CGFloat, y: CGFloat = 0.52) {
+                origin.withOffset(CGVector(dx: app.frame.width * from, dy: app.frame.height * y))
+                    .press(forDuration: 0.5, thenDragTo: origin.withOffset(CGVector(dx: app.frame.width * to, dy: app.frame.height * y)),
+                           withVelocity: .slow, thenHoldForDuration: 0.1)
+            }
+            drag(0.3, 0.6)
+            let feedback = app.descendants(matching: .any).matching(identifier: prefix + ".gesture.feedback").firstMatch
+            XCTAssertTrue(feedback.waitForExistence(timeout: 1), app.debugDescription)
+            XCTAssertTrue(feedback.label.contains("+"), feedback.label)
+            let forwardClock = feedback.label
+            let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); shot.name = engine + "-horizontal-seek"; shot.lifetime = .keepAlways; add(shot)
+            XCTAssertTrue(feedback.waitForNonExistence(timeout: 3))
+            drag(0.65, 0.35)
+            XCTAssertTrue(feedback.waitForExistence(timeout: 1), app.debugDescription)
+            XCTAssertTrue(feedback.label.contains("−"), feedback.label)
+            XCTAssertNotEqual(feedback.label.components(separatedBy: "  ").first, forwardClock.components(separatedBy: "  ").first,
+                "Committing a forward seek and then rewinding must change the actual target")
+            XCTAssertTrue(feedback.waitForNonExistence(timeout: 3))
+            if !play.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap() }
+            XCTAssertTrue(play.waitForExistence(timeout: 2)); XCTAssertEqual(play.label, "Play", "Seeking must keep a paused player paused")
+            // Preserve the existing vertical adjustment gestures alongside seeking.
+            origin.withOffset(CGVector(dx: app.frame.width * 0.75, dy: app.frame.height * 0.60))
+                .press(forDuration: 0.05, thenDragTo: origin.withOffset(CGVector(dx: app.frame.width * 0.75, dy: app.frame.height * 0.40)),
+                       withVelocity: .fast, thenHoldForDuration: 0.05)
+            XCTAssertTrue(feedback.waitForExistence(timeout: 1)); XCTAssertTrue(feedback.label.contains("%"))
+            XCTAssertTrue(feedback.waitForNonExistence(timeout: 3))
+            #if !targetEnvironment(simulator)
+            func waitForVolumeFeedback() -> Bool {
+                let end = Date().addingTimeInterval(2)
+                while Date() < end {
+                    if feedback.exists { return true }
+                    Thread.sleep(forTimeInterval: 0.1)
+                }
+                return false
+            }
+            var returnButton: XCUIDevice.Button = .volumeUp
+            XCUIDevice.shared.press(.volumeDown)
+            if !waitForVolumeFeedback() {
+                // Dynamic iPad buttons can reverse with orientation. A key at
+                // its limit changes nothing; require feedback after an actual change.
+                XCUIDevice.shared.press(.volumeUp)
+                returnButton = .volumeDown
+                let observed = waitForVolumeFeedback()
+                if !observed { print("VOLUME DIAG \(engine): \(app.staticTexts["media.volume.diagnostics"].label)") }
+                XCTAssertTrue(observed, "A physical volume change must update the video HUD")
+            }
+            let firstVolumeLabel = feedback.label
+            XCTAssertTrue(firstVolumeLabel.contains("%"))
+            let volumeShot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            volumeShot.name = engine + "-physical-volume-hud"; volumeShot.lifetime = .keepAlways; add(volumeShot)
+            XCTAssertTrue(feedback.waitForNonExistence(timeout: 3))
+            XCUIDevice.shared.press(returnButton)
+            XCTAssertTrue(waitForVolumeFeedback())
+            let returnedVolumeLabel = feedback.label
+            XCTAssertTrue(returnedVolumeLabel.contains("%"))
+            XCTAssertNotEqual(firstVolumeLabel, returnedVolumeLabel, "Opposite physical keys must change the observed in-app volume")
+            print("VOLUME HUD QA \(engine): \(firstVolumeLabel) -> \(returnedVolumeLabel)")
+            XCTAssertTrue(feedback.waitForNonExistence(timeout: 3))
+            app.activate()
+            #endif
+            let close = app.buttons[engine == "system" ? "media.fullscreen.close" : "media.mkv.fullscreen.close"]
+            if !close.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap() }
+            XCTAssertTrue(close.waitForExistence(timeout: 3))
+            for _ in 0..<3 {
+                let frame = close.frame
+                origin.withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
+                if close.waitForNonExistence(timeout: 1) { break }
+            }
+            guard !close.exists else { XCTFail("Fullscreen did not close"); app.terminate(); return }
+            let tabsButton = app.buttons["browser.tabs"]
+            XCTAssertTrue(tabsButton.waitForExistence(timeout: 5))
+            let card = app.descendants(matching: .any).matching(identifier: "tabs.card.preview").firstMatch
+            for _ in 0..<3 {
+                let frame = tabsButton.frame
+                origin.withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
+                if card.waitForExistence(timeout: 2) { break }
+            }
+            guard card.exists else { XCTFail(app.debugDescription); app.terminate(); return }
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                XCTAssertGreaterThan(card.frame.width, 340)
+                XCTAssertGreaterThan(card.frame.width / card.frame.height, 0.9, "iPad previews should retain webpage geometry")
+            }
+            let preview = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); preview.name = engine + "-ipad-preview"; preview.lifetime = .keepAlways; add(preview)
+            app.terminate()
+        }
+    }
+}
+
+extension WebEpisodeAndAdNavigationUITests {
+    @MainActor func testWebPlayButtonStartsPausedVideoFullscreenWithoutRotatingIPad() async throws {
+        let mediaData = try await longVideoFixtureData()
+        let html = """
+        <meta name="viewport" content="width=device-width,initial-scale=1"><title>Web play intent</title>
+        <style>body{margin:0}video{width:100%;height:300px}</style>
+        <video src="/first.mp4" controls playsinline preload="metadata"></video>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: ["/play.html": Data(html.utf8), "/first.mp4": mediaData])
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop(); XCUIDevice.shared.orientation = .portrait }
+        for engine in ["system", "soulo"] {
+            let app = launch(player: engine)
+            try open(root.appendingPathComponent("play.html"), app: app)
+            let tools = app.webViews.buttons["Video tools"].firstMatch
+            guard tools.waitForExistence(timeout: 15) else { XCTFail(app.debugDescription); app.terminate(); return }
+            tools.tap()
+            let button = app.webViews.buttons["Fullscreen"].firstMatch
+            guard button.waitForExistence(timeout: 15) else { XCTFail(app.debugDescription); app.terminate(); return }
+            button.tap()
+            let fullscreen = app.otherElements[engine == "system" ? "media.fullscreen.player" : "media.mkv.fullscreen.player"].firstMatch
+            guard fullscreen.waitForExistence(timeout: 15) else { XCTFail(app.debugDescription); app.terminate(); return }
+            let play = app.buttons[engine == "system" ? "media.native.play" : "media.mkv.play"]
+            var started = false
+            for _ in 0..<4 {
+                if !play.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap() }
+                if play.exists && play.label == "Pause" { started = true; break }
+                try await Task.sleep(for: .milliseconds(300))
+            }
+            XCTAssertTrue(started, "An explicit web play action must start a previously paused video")
+            let frame = app.frame
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                XCTAssertLessThan(frame.width, frame.height, "iPad fullscreen must preserve the current portrait window")
+            } else {
+                XCTAssertGreaterThan(frame.width, frame.height, "iPhone should enter landscape playback")
+            }
+            let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); shot.name = engine + "-web-play-orientation"; shot.lifetime = .keepAlways; add(shot)
+            app.terminate()
+        }
+    }
+}
+
+extension WebEpisodeAndAdNavigationUITests {
+    @MainActor private func longVideoFixtureData() async throws -> Data {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
+        let asset = AVURLAsset(url: fixture), composition = AVMutableComposition()
+        let clipDuration = try await asset.load(.duration)
+        for index in 0..<8 {
+            try await composition.insertTimeRange(CMTimeRange(start: .zero, duration: clipDuration), of: asset,
+                at: CMTimeMultiply(clipDuration, multiplier: Int32(index)))
+        }
+        let longVideo = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
+        defer { try? FileManager.default.removeItem(at: longVideo) }
+        let export = try XCTUnwrap(AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetPassthrough))
+        export.outputURL = longVideo; export.outputFileType = .mp4
+        await withCheckedContinuation { continuation in export.exportAsynchronously { continuation.resume() } }
+        guard export.status == .completed else { throw export.error ?? URLError(.cannotDecodeContentData) }
+        return try Data(contentsOf: longVideo)
+    }
+    @MainActor func testInlineVideoNeverAddsAPageCornerPlayButtonAfterPlaybackScrollAndRemoval() async throws {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
+        let html = """
+        <meta name="viewport" content="width=device-width,initial-scale=1"><title>Inline video regression</title>
+        <h1>Inline video regression</h1>
+        <video id="v" controls playsinline muted preload="metadata" style="width:100%;height:200px" src="/first.mp4"></video>
+        <button onclick="v.play()">Play inline</button>
+        <button onclick="v.src='/second.mp4';v.play()">Switch source</button>
+        <button onclick="v.pause();v.remove()">Remove player</button>
+        <iframe src="/hidden.html" style="display:none"></iframe>
+        <div style="height:1400px"></div><p>Below the player</p>
+        """
+        let hidden = "<script>var player_aaaa={url:location.origin+'/first.mp4?hidden=1'};</script>"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/inline.html": Data(html.utf8), "/hidden.html": Data(hidden.utf8), "/first.mp4": try Data(contentsOf: fixture), "/second.mp4": try Data(contentsOf: fixture)])
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        let app = launch(player: "system", episodeDock: false, tools: true); defer { app.terminate() }
+        try open(root.appendingPathComponent("inline.html"), app: app)
+        let entry = app.buttons["browser.configured-video.play"]
+        let tools = app.webViews.buttons["Video tools"].firstMatch
+        XCTAssertTrue(tools.waitForExistence(timeout: 10))
+        XCTAssertFalse(entry.exists)
+        app.webViews.buttons["Play inline"].tap()
+        try await Task.sleep(for: .milliseconds(700))
+        XCTAssertFalse(entry.exists)
+        app.webViews.buttons["Switch source"].tap()
+        try await Task.sleep(for: .milliseconds(700))
+        XCTAssertFalse(entry.exists)
+        let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        screenshot.name = "inline-video-without-stray-page-play-button"; screenshot.lifetime = .keepAlways; add(screenshot)
+        app.webViews.firstMatch.swipeUp()
+        try await Task.sleep(for: .milliseconds(500))
+        XCTAssertFalse(entry.exists)
+        app.webViews.firstMatch.swipeDown()
+        let remove = app.webViews.buttons["Remove player"]
+        if !remove.isHittable { app.webViews.firstMatch.swipeDown() }
+        remove.tap()
+        try await Task.sleep(for: .milliseconds(2100))
+        XCTAssertFalse(entry.exists, "Recycling the real player must not expose an unrelated hidden frame's play button")
+    }
+
+    @MainActor func testConfiguredPlayerFallbackOffersNativeFullscreenAndKeepsEpisodes() async throws {
+        let media = try await longVideoFixtureData()
+        let html = """
+        <meta name="viewport" content="width=device-width,initial-scale=1"><title>Configured player</title>
+        <script>var player_aaaa={encrypt:0,url:location.origin+'/first.mp4'};</script>
+        <p>The external webpage player is still loading.</p>
+        <ul class="episode-list"><li><a href="/first.mp4">Episode 1</a></li><li><a href="/second.mp4">Episode 2</a></li></ul>
+        """
+        let hidden = "<meta name='viewport' content='width=device-width,initial-scale=1'><title>Hidden frame player</title><iframe src='/hidden-frame.html' style='width:0;height:0;border:0'></iframe><ul class='episode-list'><li><a href='/first.mp4'>Episode 1</a></li><li><a href='/second.mp4'>Episode 2</a></li></ul>"
+        // The real failure occurs after the document's initial probe has ended:
+        // a delayed player inserts an invisible video and resolves its stream.
+        let hiddenFrame = "<body><script>setTimeout(()=>{document.body.innerHTML=\"<video playsinline preload='auto' style='display:none' src='/first.mp4'></video>\";},2200);</script></body>"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/configured.html": Data(html.utf8), "/hidden.html": Data(hidden.utf8), "/hidden-frame.html": Data(hiddenFrame.utf8), "/first.mp4": media, "/second.mp4": media])
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop(); XCUIDevice.shared.orientation = .portrait }
+        for (engine, path) in [("system", "configured.html"), ("soulo", "configured.html"), ("system", "hidden.html"), ("soulo", "hidden.html")] {
+            let app = launch(player: engine, episodeDock: true, tools: true)
+            try open(root.appendingPathComponent(path), app: app)
+            let entry = app.buttons["browser.configured-video.play"]
+            guard entry.waitForExistence(timeout: 10) else { XCTFail(app.debugDescription); app.terminate(); return }
+            entry.tap()
+            let fullscreen = app.otherElements[engine == "system" ? "media.fullscreen.player" : "media.mkv.fullscreen.player"].firstMatch
+            guard fullscreen.waitForExistence(timeout: 15) else { XCTFail(app.debugDescription); app.terminate(); return }
+            let play = app.buttons[engine == "system" ? "media.native.play" : "media.mkv.play"]
+            for _ in 0..<4 {
+                if !play.exists { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap() }
+                if play.exists && play.label == "Pause" { break }
+                try await Task.sleep(for: .milliseconds(300))
+            }
+            XCTAssertEqual(play.label, "Pause")
+            let episodes = app.buttons["media.file.episodes"].firstMatch
+            XCTAssertTrue(episodes.exists, "Configured-source takeover must keep webpage episodes")
+            let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); shot.name = engine + "-configured-player-takeover"; shot.lifetime = .keepAlways; add(shot)
+            app.terminate()
+        }
+    }
+}
+
+extension WebEpisodeAndAdNavigationUITests {
+    @MainActor func testPopupConfirmationWaitsOnSourceAndPreservesWebKitPostAndOpener() async throws {
+        let html = #"""
+        <meta name="viewport" content="width=device-width,initial-scale=1"><title>Window form origin</title>
+        <h1>Window form source</h1><p id="status">Waiting</p>
+        <form id="submission" method="post" target="_blank" rel="opener"><input name="token" value="keep-body"></form>
+        <button type="button" onclick="submission.submit()">Open form window</button>
+        <script>
+        document.title+=' '+location.port;
+        submission.action=location.origin.replace('127.0.0.1','localhost')+'/window-result.html';
+        addEventListener('message',event=>{if(event.data==='opener-ok')document.getElementById('status').textContent='Opener connection preserved';});
+        </script>
+        """#
+        let result = "<h1>Window form destination</h1><script>if(opener)opener.postMessage('opener-ok','*');</script>"
+        let server = try DownloadPlaybackHTTPFixture(files: ["/window-form.html": Data(html.utf8), "/window-result.html": Data(result.utf8)])
+        let root = try await server.start(); defer { server.stop() }
+        let app = launch(confirmCrossDomain: true)
+        try open(root.appendingPathComponent("window-form.html"), app: app)
+        let openButton = app.webViews.buttons["Open form window"].firstMatch
+        XCTAssertTrue(openButton.waitForExistence(timeout: 10))
+        let tabLabel = app.buttons["browser.tabs"].label
+        openButton.tap()
+        let confirm = app.buttons["browser.domain-confirmation.continue"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(app.buttons["browser.tabs"].label, tabLabel)
+        XCTAssertTrue(app.webViews.staticTexts["Window form source"].firstMatch.exists)
+        XCTAssertTrue(server.receivedRequests.filter { $0.path == "/window-result.html" }.isEmpty)
+        let cancel = app.buttons["browser.domain-confirmation.cancel"]
+        cancel.tap()
+        XCTAssertTrue(cancel.waitForNonExistence(timeout: 3))
+        XCTAssertEqual(app.buttons["browser.tabs"].label, tabLabel)
+        XCTAssertTrue(server.receivedRequests.filter { $0.path == "/window-result.html" }.isEmpty)
+        openButton.tap()
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), app.debugDescription)
+        confirm.tap()
+        XCTAssertTrue(app.webViews.staticTexts["Window form destination"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        let request = try XCTUnwrap(server.receivedRequests.first { $0.path == "/window-result.html" })
+        XCTAssertEqual(request.method, "POST")
+        XCTAssertTrue(String(decoding: request.body, as: UTF8.self).contains("token=keep-body"))
+        app.buttons["browser.tabs"].tap()
+        selectFixtureTab(title: "Window form origin \(root.port ?? 0)", app: app)
+        XCTAssertTrue(app.webViews.staticTexts["Window form source"].firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.webViews.staticTexts["Opener connection preserved"].firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+
+    }
+}
+
+
+extension WebEpisodeAndAdNavigationUITests {
+    @MainActor func testLiveMoviePageOffersTakeoverAndPreservesEpisodes() async throws {
+        guard let raw = ProcessInfo.processInfo.environment["SOULO_LIVE_VIDEO_URL"], let url = URL(string: raw) else {
+            throw XCTSkip("Opt-in public movie player UI check")
+        }
+        let app = launch(player: "system", episodeDock: true, tools: true)
+        defer { app.terminate() }
+        try open(url, app: app)
+        let native = app.buttons["browser.configured-video.play"].firstMatch
+        let tools = app.webViews.buttons["Video tools"].firstMatch
+        for _ in 0..<60 {
+            if native.exists || tools.exists { break }
+            try await Task.sleep(for: .milliseconds(250))
+        }
+        let before = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); before.name = "Live movie page takeover entry"; before.lifetime = .keepAlways; add(before)
+        guard native.exists || tools.exists else { XCTFail(app.debugDescription); return }
+        if native.exists { native.tap() } else {
+            tools.tap()
+            let play = app.webViews.buttons["Fullscreen"].firstMatch
+            guard play.waitForExistence(timeout: 5) else { XCTFail(app.debugDescription); return }
+            play.tap()
+        }
+        let fullscreen = app.otherElements["media.fullscreen.player"].firstMatch
+        XCTAssertTrue(fullscreen.waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.buttons["media.file.episodes"].firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+        let after = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); after.name = "Live movie fullscreen with episodes"; after.lifetime = .keepAlways; add(after)
+    }
+}
+
+extension WebEpisodeAndAdNavigationUITests {
+    @MainActor func testFullscreenPauseButtonStopsTheDecoderWithoutWaitingForHoldSpeedInBothModes() async throws {
+        let media = try await longVideoFixtureData()
+        let html = """
+        <meta name="viewport" content="width=device-width,initial-scale=1"><title>Pause response</title>
+        <video src="/clip.mp4" controls playsinline preload="metadata" style="width:100%;height:300px"></video>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: ["/pause.html": Data(html.utf8), "/clip.mp4": media])
+        let root = try await server.start(); server.releaseDownloads()
+        defer { server.stop(); XCUIDevice.shared.orientation = .portrait }
+        for engine in ["system", "soulo"] {
+            let app = launch(player: engine, grouped: false)
+            defer { app.terminate() }
+            try open(root.appendingPathComponent("pause.html"), app: app)
+            let tools = app.webViews.buttons["Video tools"].firstMatch
+            XCTAssertTrue(tools.waitForExistence(timeout: 15)); tools.tap()
+            let fullscreen = app.webViews.buttons["Fullscreen"].firstMatch
+            XCTAssertTrue(fullscreen.waitForExistence(timeout: 5)); fullscreen.tap()
+            let player = app.otherElements[engine == "system" ? "media.fullscreen.player" : "media.mkv.fullscreen.player"].firstMatch
+            guard player.waitForExistence(timeout: 15) else { XCTFail(app.debugDescription); return }
+            let play = app.buttons[engine == "system" ? "media.native.play" : "media.mkv.play"]
+            let diagnostic = app.staticTexts["media.volume.diagnostics"]
+            func clock() throws -> Double {
+                let value = diagnostic.label.components(separatedBy: "clock=").last?.components(separatedBy: " ").first
+                return try XCTUnwrap(value.flatMap(Double.init), diagnostic.label)
+            }
+            let screen = app.frame
+            let backdrop = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: screen.midX, dy: screen.height * 0.25))
+            let center = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: screen.midX, dy: screen.midY))
+            let doubleTapReady = NSPredicate { _, _ in ((try? clock()) ?? 0) > 0.3 }
+            await fulfillment(of: [XCTNSPredicateExpectation(predicate: doubleTapReady, object: nil)], timeout: 10)
+            backdrop.doubleTap()
+            XCTAssertEqual(play.label, "Play", "A double tap pauses exactly once")
+            let doubleTapStopped = try clock()
+            try await Task.sleep(for: .milliseconds(600))
+            XCTAssertEqual(try clock(), doubleTapStopped, accuracy: 0.15)
+            backdrop.doubleTap()
+            let resumed = NSPredicate { _, _ in ((try? clock()) ?? 0) > doubleTapStopped + 0.3 }
+            await fulfillment(of: [XCTNSPredicateExpectation(predicate: resumed, object: nil)], timeout: 5)
+            for _ in 0..<3 {
+                // Readiness and AX polling can outlast the normal three-second
+                // auto-hide interval. Wait first, then reveal and press promptly.
+                let ready = NSPredicate { _, _ in ((try? clock()) ?? 0) > 0.3 }
+                await fulfillment(of: [XCTNSPredicateExpectation(predicate: ready, object: nil)], timeout: 10)
+                guard ((try? clock()) ?? 0) > 0.3 else { XCTFail(diagnostic.label); return }
+                if play.exists {
+                    backdrop.tap()
+                    guard play.waitForNonExistence(timeout: 2) else { XCTFail(app.debugDescription); return }
+                }
+                backdrop.tap()
+                guard play.waitForExistence(timeout: 2) else { XCTFail(app.debugDescription); return }
+                center.tap()
+                XCTAssertEqual(play.label, "Play", "The central Pause button must receive the first tap")
+                let stopped = try clock()
+                let delayText = diagnostic.label.components(separatedBy: "pauseDelay=").last?.components(separatedBy: " ").first
+                let delay = try XCTUnwrap(delayText.flatMap(Double.init), diagnostic.label)
+                XCTAssertGreaterThanOrEqual(delay, 0, "Require a real UIKit control touch timestamp")
+                XCTAssertLessThan(delay, 0.4, "Measure actual touch-to-action latency, excluding XCTest event delivery and stale AX snapshots: \(engine)")
+                print("PAUSE INPUT QA \(engine): \(delay) seconds")
+                try await Task.sleep(for: .milliseconds(650))
+                XCTAssertEqual(try clock(), stopped, accuracy: 0.15, "Verify the actual decoder, not the displayed position")
+                let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); shot.name = engine + "-paused-on-first-tap"; shot.lifetime = .keepAlways; add(shot)
+                center.tap()
+            }
+            let exit = app.buttons[engine == "system" ? "media.fullscreen.exit" : "media.mkv.fullscreen.exit"]
+            if !exit.exists { backdrop.tap() }
+            XCTAssertTrue(exit.waitForExistence(timeout: 5)); exit.tap()
+            let preview = app.otherElements[engine == "system" ? "media.preview" : "media.mkv.preview"].firstMatch
+            XCTAssertTrue(preview.waitForExistence(timeout: 5))
+            preview.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).doubleTap()
+            XCTAssertEqual(play.label, "Play", "Inline double-tap must not trigger a second fullscreen recognizer")
+            preview.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).doubleTap()
+            XCTAssertEqual(play.label, "Pause")
+        }
+    }
+}
+
+
+extension WebEpisodeAndAdNavigationUITests {
+    @MainActor func testAuxiliaryPlayAnchorsToPlayerBoxAndOpensBothPlayers() async throws {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
+        let html = """
+        <meta name='viewport' content='width=device-width,initial-scale=1'>
+        <title>Anchored auxiliary Play</title><style>body{margin:0}header{height:110px}#player{margin:0 20px;width:calc(100% - 40px);height:250px;background:#222;color:white}</style>
+        <script>var player_aaaa={url:location.origin+'/video.mp4'};</script>
+        <header>Page header must remain clear</header><div id='player' role='region' aria-label='Video box'>Video area</div><div style='height:1000px'>Other content</div>
+        """
+        let server = try DownloadPlaybackHTTPFixture(files: ["/anchored.html": Data(html.utf8), "/video.mp4": try Data(contentsOf: fixture)])
+        let root = try await server.start(); server.releaseDownloads(); defer { server.stop() }
+        for engine in ["system", "soulo"] {
+            let app = launch(player: engine, tools: true); defer { app.terminate() }
+            try open(root.appendingPathComponent("anchored.html"), app: app)
+            let entry = app.webViews.buttons["Play"].firstMatch
+            XCTAssertTrue(entry.waitForExistence(timeout: 12), app.debugDescription)
+            XCTAssertFalse(app.buttons["browser.configured-video.play"].exists, "The page-corner fallback must yield to the video-box control")
+            XCTAssertFalse(app.webViews.buttons["Video tools"].exists, "Normal video tools and auxiliary Play must be mutually exclusive")
+            let box = app.webViews.otherElements["Video box"].firstMatch
+            if box.exists { XCTAssertTrue(box.frame.contains(entry.frame), "Play must stay inside the video box") }
+            let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); shot.name = engine + "-auxiliary-play-on-video-box"; shot.lifetime = .keepAlways; add(shot)
+            entry.tap()
+            let full = app.otherElements[engine == "system" ? "media.fullscreen.player" : "media.mkv.fullscreen.player"].firstMatch
+            XCTAssertTrue(full.waitForExistence(timeout: 15), app.debugDescription)
+            app.terminate()
+        }
+    }
+
+    @MainActor func testStalledPlaybackWarningStaysOutsideTransportAndRecoversInBothPlayers() async throws {
+        let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "playback-h264-aac", withExtension: "mp4"))
+        let html = "<meta name='viewport' content='width=device-width,initial-scale=1'><title>Stalled player</title><script>var player_aaaa={url:location.origin+'/held.mp4'};</script><p>Stalled player fixture</p>"
+        defer { XCUIDevice.shared.orientation = .portrait }
+        for engine in ["system", "soulo"] {
+            let server = try DownloadPlaybackHTTPFixture(files: ["/stalled.html": Data(html.utf8), "/held.mp4": try Data(contentsOf: fixture)], heldPaths: ["/held.mp4"])
+            let root = try await server.start(); defer { server.stop() }
+            let app = launch(player: engine, tools: true); defer { app.terminate() }
+            try open(root.appendingPathComponent("stalled.html"), app: app)
+            let entry = app.buttons["browser.configured-video.play"]
+            XCTAssertTrue(entry.waitForExistence(timeout: 12)); entry.tap()
+            let prefix = engine == "system" ? "media.native" : "media.mkv"
+            let status = app.staticTexts[prefix + ".status"]
+            XCTAssertTrue(status.waitForExistence(timeout: 20), app.debugDescription)
+            let play = app.buttons[prefix + ".play"]
+            XCTAssertTrue(play.exists)
+            XCTAssertFalse(status.frame.intersects(play.frame), "The warning must have reserved space outside Play/loading")
+            XCTAssertGreaterThan(status.frame.height, 10)
+            let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            screenshot.name = engine + "-startup-warning-outside-play-and-loading"; screenshot.lifetime = .keepAlways; add(screenshot)
+            server.releaseDownloads()
+            XCTAssertTrue(status.waitForNonExistence(timeout: 20), "A slow link must recover after the first frame")
+            app.terminate()
         }
     }
 }

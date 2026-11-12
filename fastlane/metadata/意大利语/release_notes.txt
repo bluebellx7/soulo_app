@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Risolto un problema per cui l'apertura di un preferito o di una voce della cronologia poteva sostituire una scheda esistente.
-• Migliorati l'avvio, il caricamento delle pagine e le interazioni nella schermata iniziale.
-• Migliorati i controlli a schermo intero, la rotazione e lo stato di riproduzione quando si cambia app.
-• Migliorati il ripristino delle schede chiuse, le anteprime dei file e i dettagli dell'interfaccia.
+• Sfondi separati per l’aspetto chiaro e scuro, con interruttore del velo sull’immagine.
+• Colori della home migliorati; l’anteprima dello sfondo segue il tema dell’app.
+• Visualizza, condividi e salva gli sfondi in Foto.
+• Impostazioni delle schede superiori con nuova scheda e barra delle piattaforme nascondibile dopo la navigazione.

@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Opravená chyba, pri ktorej otvorenie záložky alebo položky histórie mohlo prepísať existujúcu kartu.
-• Vylepšené spúšťanie, načítavanie stránok a ovládanie domovskej obrazovky.
-• Vylepšené ovládanie na celej obrazovke, otáčanie a stav prehrávania pri prepínaní aplikácií.
-• Vylepšené obnovenie zatvorených kariet, náhľady súborov a detaily rozhrania.
+• Samostatné pozadia pre svetlý a tmavý vzhľad a prepínač vrstvy cez obrázok.
+• Vylepšené farby úvodnej stránky; ukážka tapety sleduje tému aplikácie.
+• Prezerajte si tapety, zdieľajte ich a ukladajte do Fotiek.
+• Nastavenia horných kariet s novou kartou a voliteľným skrytím lišty platforiem po navigácii.

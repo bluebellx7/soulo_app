@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Membaiki masalah apabila membuka penanda buku atau entri sejarah yang kadangkala menggantikan tab sedia ada.
-• Menambah baik permulaan, pemuatan halaman dan interaksi skrin utama.
-• Menambah baik kawalan skrin penuh, putaran dan keadaan main balik semasa bertukar aplikasi.
-• Menambah baik pemulihan tab tertutup, pratonton fail dan butiran antara muka.
+• Latar berasingan untuk penampilan cerah dan gelap dengan suis lapisan imej.
+• Warna halaman utama ditambah baik; pratonton latar mengikut tema aplikasi.
+• Pratonton, kongsi dan simpan latar ke Foto.
+• Tetapan tab atas dengan tab baharu dan pilihan menyembunyikan bar platform selepas navigasi.

@@ -89,7 +89,7 @@ struct WebPageQRCodeView: View {
                         } else if generating {
                             ProgressView().frame(height: 260)
                         } else {
-                            ContentUnavailableView(ToolText.text("page_qr_failed"), systemImage: "qrcode")
+                            CompatibleUnavailableView(ToolText.text("page_qr_failed"), systemImage: "qrcode")
                         }
                     }
                     .padding(12)

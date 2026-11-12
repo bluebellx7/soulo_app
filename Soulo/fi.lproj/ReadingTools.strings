@@ -436,3 +436,65 @@
 "files_move_busy" = "Odota latausten päättymistä, ennen kuin siirrät tai nimeät uudelleen nämä kohteet.";
 "video_show_episode_dock" = "Näytä jaksotelakka";
 "video_show_episode_dock_desc" = "Näytä telakoitu jaksopainike jaksoja sisältävillä verkkosivuilla. Jaksot ovat edelleen saatavilla soittimen sisällä.";
+
+// Webpage share preview
+"page_share_image" = "Jaa kuva";
+"page_share_link" = "Jaa linkki";
+"page_share_preview" = "Näkyvän alueen esikatselu";
+"page_share_brand" = "Soulo: Monihakuselain";
+
+"video_export_mp4" = "Vie MP4";
+"video_export_failed" = "Videota ei voitu viedä MP4-muodossa. Alkuperäinen tiedosto säilytettiin.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Kahden sormen eleet";
+"gesture_hint" = "Liikuta kahta sormea sivulle yhdessä. Vihje seuraa sormia; peruuta liikuttamalla takaisin. Yhden sormen navigointi ja nipistyszoomaus ovat yhä käytössä.";
+"gesture_swipe_right" = "Pyyhkäise oikealle";
+"gesture_swipe_left" = "Pyyhkäise vasemmalle";
+"gesture_show_toolbar" = "Näytä työkalupalkki";
+"gesture_quick_menu" = "Pikavalikko";
+"gesture_preview" = "Esikatsele elettä";
+"zoom_remember" = "Muista sivustojen zoomaus";
+"zoom_hint" = "Sivuvalikon zoomaus tallennetaan verkkotunnuksittain. Yksityisten välilehtien muutoksia ei tallenneta.";
+"zoom_empty" = "Ei tallennettuja zoomauksia";
+"zoom_reset_all" = "Palauta kaikki 100%:iin";
+
+"shake_direction" = "Suunta";
+"shake_direction_horizontal" = "Vasemmalle ja oikealle";
+"shake_direction_vertical" = "Ylös ja alas";
+"shake_direction_any" = "Mikä tahansa suunta";
+
+"gesture_settings_title" = "Verkkosivujen eleet";
+"gesture_no_history" = "Kun takaisin ei pääse";
+"gesture_no_history_hint" = "Kun aiempaa sivua ei ole, pyyhkäise vasemmasta reunasta oikealle nähdäksesi toiminnon. Peruuta liikuttamalla takaisin. Poista käytöstä valitsemalla Ei mitään.";
+
+"gesture_execution" = "Suorita toiminto";
+
+"gesture_execute_release" = "Vapautettaessa";
+
+"gesture_execute_tap" = "Napautettaessa";
+
+"gesture_feedback" = "Toiminnon palaute";
+
+"gesture_haptics" = "Värinä";
+
+"gesture_sound" = "Ääni";
+
+"gesture_feedback_preview" = "Kokeile palautetta";
+
+"media_start_timeout" = "Toisto ei ole alkanut. Tarkista verkkoyhteys tai vaihda soitinta.";
+
+"wallpaper_appearance_hint" = "Valitse vaalealle ja tummalle ulkoasulle omat taustat. Ne vaihtuvat automaattisesti sovelluksen mukana.";
+
+"wallpaper_image_overlay" = "Kuvan peittokerros";
+
+"auto_hide_platform_bar" = "Piilota alustapalkki automaattisesti";
+
+"top_tab_bar_hidden_title" = "Ylävälilehtipalkki piilotettu";
+
+"top_tab_bar_reopen_hint" = "Näytä palkki uudelleen napauttamalla alareunan välilehtipainiketta, avaamalla …-valikko ja ottamalla ylävälilehtipalkki käyttöön.";
+
+"wallpaper_image_blur" = "Huurrelasi";
+"wallpaper_blur_amount" = "Sumennuksen voimakkuus";
+
+"auto_hide_platform_bar_hint" = "Alustapalkki piilotetaan, kun avaat hakutuloksen. Palaa tuloksiin tai aloita uusi haku, niin palkki näkyy taas. Voit poistaa toiminnon käytöstä tässä valikossa.";

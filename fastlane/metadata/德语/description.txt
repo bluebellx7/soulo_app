@@ -6,8 +6,6 @@ Zuletzt verwendete Tabs und Website-Gruppen stehen zuerst, und die Übersicht ö
 
 BT-Downloads: Importiere .torrent-Dateien oder Magnet-Links, wähle Dateien, pausiere und setze fort. Unter iOS 26 können Downloads im Hintergrund weiterlaufen, wenn das System es zulässt; ältere Versionen speichern den Fortschritt und pausieren. Spiele unterstützte BT-Medien während des Downloads ab und öffne MKV-Dateien. Importiere ed2k/thunder-Links. Downloads brauchen verfügbare Quellen; die Wiedergabe hängt von Codecs ab.
 
-Flüssiger surfen, verbesserte Videosteuerung und übersichtlichere Dateivorschauen.
-
 Wähle fünf optionale Startseiten-Kurzbefehle für Downloads, Dateien, Lesezeichen, Verlauf, Hintergrundbilder und weitere Seiten. Die Tab-Leiste der Bibliothek wird beim Scrollen kompakter.
 
 Informationen finden, Artikel lesen, Medien abspielen und Downloads verwalten, alles in einem Browser.
@@ -20,11 +18,11 @@ Mit mehreren Tabs, Spracheingabe, Suchverlauf und Plattformgruppen bleiben Sie o
 • Dateien: Bilder, Audio, Videos und Dokumente auf Webseiten finden und mehrere Bilder speichern. Dateien als Liste oder Cover-Raster anzeigen, umbenennen, aus Fotos importieren und per WLAN übertragen.
 • Archive: ZIP, RAR und 7z entpacken. ZIP- und 7z-Archive mit optionalem Passwortschutz erstellen.
 • Lesen: TXT, PDF, EPUB sowie unterstützte DRM-freie MOBI-, AZW- und AZW3-Bücher. Schrift, Textgröße, Zeilenabstand und Hintergrund anpassen. Bücher mit flexiblem Layout lassen sich in vereinfachtem oder traditionellem Chinesisch anzeigen. Der Webseiten-Lesemodus extrahiert Artikel und ermöglicht das Weiterlesen auf der nächsten Seite.
-• Erweiterungen: JavaScript-Userscripts importieren, bearbeiten und ausführen, Website-Zuordnung und Berechtigungen verwalten sowie kompatible WebExtensions installieren.
+• Skripte und Erweiterungen: JavaScript-Benutzerskripte importieren, bearbeiten und ausführen. Kompatible WebExtensions erfordern iOS 18.4 oder neuer; die Unterstützung hängt von der Erweiterung ab.
 • Web-Werkzeuge: Übersetzung, Seitensuche, Ganzseiten-Screenshots, Texterkennung in Bildern, Desktop-/Mobilmodus, eigener User-Agent und Website-Zertifikate.
 • Lesezeichen: In Ordnern ordnen und HTML-Lesezeichen für Chrome, Edge und andere Browser importieren oder exportieren. Webseiten-QR-Codes mit Website-Symbol erstellen, teilen, speichern und kopieren.
-• Personalisierung: Hintergrundbilder, Symbolleiste und Schnellaktionen des App-Symbols anpassen. Widgets, Kurzbefehle und URL-Schemata für schnellen Zugriff nutzen. Einstellungen optional über iCloud synchronisieren.
+• Personalisierung: Hintergrundbilder, Symbolleiste und Schnellaktionen des App-Symbols anpassen. Widgets, Kurzbefehle und URL-Schemata für schnellen Zugriff nutzen. Einstellungen optional über iCloud synchronisieren. Separate Hintergründe für helles und dunkles Design und ein Schalter für die Bildebene.
 
-Medien-, Buch- und Erweiterungsfunktionen hängen von Dateiformat, Website-Beschränkungen und Systemversion ab.
+Medien, Bücher und Erweiterungen hängen von Formaten, Website-Beschränkungen und Systemversion ab. Prüfe vor dem Download, ob die Quelle das Speichern erlaubt.
 
 Support: contact@dkluge.com

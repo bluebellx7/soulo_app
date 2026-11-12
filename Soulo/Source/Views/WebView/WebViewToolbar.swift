@@ -541,9 +541,9 @@ struct WebViewToolbar: View {
                 else { moreMenuPanel }
             }
                 .background(MoreMenuDismissalObserver(onDismiss: completeMoreMenuAction))
-                .presentationCompactAdaptation(.popover)
-                .presentationBackground(.ultraThinMaterial)
-                .presentationCornerRadius(26)
+                .compatiblePopoverAdaptation()
+                .compatiblePresentationBackground(.ultraThinMaterial)
+                .compatiblePresentationCornerRadius(26)
         }
         .id(menuAnchorGeneration)
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
@@ -568,13 +568,13 @@ struct WebViewToolbar: View {
             persistentZoomPanel
                 .presentationDetents([.height(190)])
                 .presentationDragIndicator(.visible)
-                .presentationBackground(.ultraThinMaterial)
+                .compatiblePresentationBackground(.ultraThinMaterial)
         }
         .sheet(isPresented: $showMediaRateControls) {
             mediaRatePanel
                 .presentationDetents([.height(250)])
                 .presentationDragIndicator(.visible)
-                .presentationBackground(.ultraThinMaterial)
+                .compatiblePresentationBackground(.ultraThinMaterial)
         }
         .task(id: showMoreMenu) {
             guard showMoreMenu else { return }
@@ -591,16 +591,16 @@ struct WebViewToolbar: View {
                 do { try await Task.sleep(for: .seconds(1)) } catch { break }
             }
         }
-        .onChange(of: viewModel.currentURL) { _, _ in
+        .onCompatibleChange(of: viewModel.currentURL) { _, _ in
             pageAvailability = .init(); webMediaRate = 1; showMediaRateControls = false
         }
-        .onChange(of: showMoreMenu) { _, _ in
+        .onCompatibleChange(of: showMoreMenu) { _, _ in
             reportMoreMenuPresentationState()
         }
-        .onChange(of: showZoomControls) { _, _ in
+        .onCompatibleChange(of: showZoomControls) { _, _ in
             reportMoreMenuPresentationState()
         }
-        .onChange(of: showMediaRateControls) { _, _ in
+        .onCompatibleChange(of: showMediaRateControls) { _, _ in
             reportMoreMenuPresentationState()
         }
     }
@@ -1027,6 +1027,8 @@ struct WebViewToolbar: View {
                 ) {
                     onShare?()
                 }
+                .accessibilityIdentifier("browser.moreMenu.share")
+                .accessibilityAddTraits(.isButton)
                 moreMenuShortcut(
                     "copy_link",
                     systemImage: "doc.on.doc",
@@ -1308,6 +1310,7 @@ struct WebViewToolbar: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(LanguageManager.shared.localizedString("web_zoom_reset"))
+                .accessibilityValue("\(Int((viewModel.pageZoom * 100).rounded()))%")
 
                 zoomPanelButton(
                     systemImage: "plus",

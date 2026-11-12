@@ -43,7 +43,7 @@ enum WebImageGalleryService {
         let frames: [WKFrameInfo?] = request.frame.map { $0.isMainFrame ? [nil] : [$0, nil] } ?? [nil]
         for frame in frames {
             guard !Task.isCancelled, web.url == source else { break }
-            let value = try? await web.evaluateJavaScript(script, in: frame, contentWorld: .page)
+            let value = try? await web.evaluateCompatibleJavaScript(script, in: frame, contentWorld: .page)
             guard !Task.isCancelled, web.url == source else { break }
             for row in value as? [[String: String]] ?? [] {
                 guard let value = row["url"], let url = URL(string: value),

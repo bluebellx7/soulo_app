@@ -1,0 +1,474 @@
+{
+  "date": "2026-11-11",
+  "version": "1.2.12",
+  "build": 52,
+  "scope": "复查最近 HLS 下载修复及其凭据、取消、离线保存、后台收尾流程；升级版本并同步商店元数据。",
+  "fixes": [
+    {
+      "issue": "加密 HLS 的系统密钥请求会遗漏网页 Cookie；下载后的清单/密钥校验也未复用网页请求凭据。",
+      "evidence": "真机要求 Cookie 的 AES-128 源在修复前约 0.3 秒失败，日志确认清单和分片有 Cookie，系统密钥请求无 Cookie。",
+      "change": "普通 AES-128 HTTP 密钥使用资源加载代理补齐凭据；离线材料保存使用同一内存请求上下文。每次跳转按目标域名和路径重新筛选 Cookie，禁用共享 Cookie 存储。",
+      "beforeLog": "/tmp/soulo-1.2.12-20261111/encrypted-auth-requests.log"
+    },
+    {
+      "issue": "原生 HLS 下载回调结束时就移除任务记录，后续异步收尾不能被完整取消。",
+      "change": "任务保留到收尾结束；取消会取消导出及网络准备、移除本轮创建的文件，并返回取消错误。"
+    },
+    {
+      "issue": "系统后台完成回调早于异步导出和离线密钥保存。",
+      "change": "收尾期间申请后台执行时间，完成或取消后再释放系统完成回调；收尾阶段不把已完成的原生任务误标为暂停。"
+    }
+  ],
+  "validation": {
+    "release": {
+      "passed": true,
+      "log": "/tmp/soulo-1.2.12-20261111/release.log",
+      "bundles": {
+        "Soulo.app": {
+          "CFBundleShortVersionString": "1.2.12",
+          "CFBundleVersion": "52",
+          "MinimumOSVersion": "16.0"
+        },
+        "SouloShareExtension.appex": {
+          "CFBundleShortVersionString": "1.2.12",
+          "CFBundleVersion": "52",
+          "MinimumOSVersion": "16.0"
+        },
+        "SouloWidgetExtension.appex": {
+          "CFBundleShortVersionString": "1.2.12",
+          "CFBundleVersion": "52",
+          "MinimumOSVersion": "16.0"
+        }
+      }
+    },
+    "ipadOS26_6_1": {
+      "log": "/tmp/soulo-1.2.12-20261111/final-ipad.log",
+      "resultBundle": "/tmp/soulo-1.2.12-20261111/final-ipad.xcresult",
+      "succeeded": true,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "test": "-[SouloTests.DownloadPlaybackTests testCancelDuringHLSFinalizationRemovesFilesAndCompletesBackgroundEvents]",
+          "status": "passed",
+          "seconds": 0.332
+        },
+        {
+          "test": "-[SouloTests.DownloadPlaybackTests testCompletedHLSCacheRemainsUntilPlayerReleasesSource]",
+          "status": "passed",
+          "seconds": 0.117
+        },
+        {
+          "test": "-[SouloTests.DownloadPlaybackTests testEncryptedHLSDownloadStoresOfflineMaterialBeforeReportingFinished]",
+          "status": "passed",
+          "seconds": 6.207
+        },
+        {
+          "test": "-[SouloTests.DownloadPlaybackTests testHLSFinalizationWaitsForOfflineMaterialBeforeCompletingBackgroundEvents]",
+          "status": "passed",
+          "seconds": 0.62
+        },
+        {
+          "test": "-[SouloTests.DownloadPlaybackTests testHLSPlaybackCompletesWithIndependentDownloadAsset]",
+          "status": "passed",
+          "seconds": 2.696
+        },
+        {
+          "test": "-[SouloTests.DownloadPlaybackTests testOfflineKeyRequestsRecheckCookiesOnRedirects]",
+          "status": "passed",
+          "seconds": 0.016
+        },
+        {
+          "test": "-[SouloTests.DownloadPlaybackTests testPlaybackSourcesRespectPauseTerminalStatesAndAreNotPersisted]",
+          "status": "passed",
+          "seconds": 0.009
+        },
+        {
+          "test": "-[SouloTests.DownloadPlaybackTests testPrivateAuthenticatedEncryptedHLSDownloadFinishesAndPlaysOffline]",
+          "status": "passed",
+          "seconds": 2.809
+        },
+        {
+          "test": "-[SouloTests.DownloadPlaybackTests testPrivateAuthenticatedHLSPlaysAcrossPauseResumeAndCompletes]",
+          "status": "passed",
+          "seconds": 2.704
+        }
+      ]
+    },
+    "iOS16_4CookieHandoff": {
+      "log": "/tmp/soulo-1.2.12-20261111/ios16_4-cookie.log",
+      "resultBundle": "/tmp/soulo-1.2.12-20261111/ios16_4-cookie.xcresult",
+      "succeeded": true,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "test": "-[SouloTests.BackgroundDownloadRecoveryTests testHandoffRetainsOriginalHeadersAndAddsPrivateBrowserCookies]",
+          "status": "passed",
+          "seconds": 44.843
+        }
+      ]
+    },
+    "iOS16_4Core": {
+      "log": "/tmp/soulo-1.2.12-20261111/ios16_4-core.log",
+      "resultBundle": "/tmp/soulo-1.2.12-20261111/ios16_4-core.xcresult",
+      "succeeded": true,
+      "passed": 59,
+      "failed": 0,
+      "skipped": 2,
+      "cases": [
+        {
+          "test": "-[SouloTests.BackgroundDownloadRecoveryTests testBackgroundTracksDownloadPauseResumeAndMerge]",
+          "status": "passed",
+          "seconds": 1.924
+        },
+        {
+          "test": "-[SouloTests.BackgroundDownloadRecoveryTests testCancelRejectsLateTrackCompletionAndRemovesStaging]",
+          "status": "passed",
+          "seconds": 1.85
+        },
+        {
+          "test": "-[SouloTests.BackgroundDownloadRecoveryTests testCompletedTracksResumeMergeWithoutNetworkAfterRelaunch]",
+          "status": "passed",
+          "seconds": 0.477
+        },
+        {
+          "test": "-[SouloTests.BackgroundDownloadRecoveryTests testExpiredMergeKeepsTracksReleasesBackgroundEventsAndRestartsInForeground]",
+          "status": "passed",
+          "seconds": 0.791
+        },
+        {
+          "test": "-[SouloTests.BackgroundDownloadRecoveryTests testMissingTrackAfterRelaunchFailsAndCleansPartialFiles]",
+          "status": "passed",
+          "seconds": 0.213
+        },
+        {
+          "test": "-[SouloTests.BackgroundDownloadRecoveryTests testOnlyReplayableHTTPGetMovesOutOfWebKit]",
+          "status": "passed",
+          "seconds": 0.002
+        },
+        {
+          "test": "-[SouloTests.BackgroundDownloadRecoveryTests testOversizedTrackLengthsBecomeUnknownAndNormalProgressRecovers]",
+          "status": "passed",
+          "seconds": 0.009
+        },
+        {
+          "test": "-[SouloTests.BackgroundDownloadRecoveryTests testPauseBeforeTrackTasksExistCanResumeNormally]",
+          "status": "passed",
+          "seconds": 0.699
+        },
+        {
+          "test": "-[SouloTests.BackgroundDownloadRecoveryTests testSeparatedTrackDownloadsRemainAttachableAcrossHistoryReload]",
+          "status": "passed",
+          "seconds": 0.006
+        },
+        {
+          "test": "-[SouloTests.BackgroundDownloadRecoveryTests testTrackIdentifiersCannotAliasAnotherDownload]",
+          "status": "passed",
+          "seconds": 0.001
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testActiveDownloadLookupAndFailedRetryCleanupUseStableSourceURL]",
+          "status": "passed",
+          "seconds": 0.01
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testARemoverThatLeavesTheFileDoesNotClearPlaybackMetadata]",
+          "status": "passed",
+          "seconds": 0.051
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testBackgroundDownloadFallsBackOnlyForURLSessionUnknownError]",
+          "status": "passed",
+          "seconds": 0.002
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testBackgroundDownloadStagesCFNetworkFileBeforeDelegateReturns]",
+          "status": "passed",
+          "seconds": 0.003
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testBackgroundDownloadSurvivesReloadAndOrphansAreReconciled]",
+          "status": "passed",
+          "seconds": 0.008
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testCancelAllDownloadsMarksInProgressItemsCanceled]",
+          "status": "passed",
+          "seconds": 0.007
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testCanceledDownloadCannotLaterBecomeFinished]",
+          "status": "passed",
+          "seconds": 0.007
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testClearFinishedPreservesPausedDownloads]",
+          "status": "passed",
+          "seconds": 0.009
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testCompletionNoticeIsSentOnceAndNotForCanceledOrFailedDownloads]",
+          "status": "passed",
+          "seconds": 0.012
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testConcurrentDownloadsReserveDifferentFilenamesBeforeFilesExist]",
+          "status": "passed",
+          "seconds": 0.008
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testConfirmedDeletionHookRejectsRetainedFilesAndCleansOnlyAfterNativeOrFileRemoval]",
+          "status": "passed",
+          "seconds": 0.014
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testDeletingADirectoryAlsoClearsTheRecentDescendantPosition]",
+          "status": "passed",
+          "seconds": 0.017
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testDeletingOnlyAFinishedRecordPreservesRecentPlaybackAndPosition]",
+          "status": "passed",
+          "seconds": 0.013
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testDeletingPartialMediaClearsItsRecentEntryAndPositionAfterRemoval]",
+          "status": "passed",
+          "seconds": 0.012
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testDownloadLifecyclePersistsFinishedItems]",
+          "status": "passed",
+          "seconds": 0.009
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testFailedBackgroundDownloadCanStillRetryWithFreshState]",
+          "status": "passed",
+          "seconds": 0.007
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testFailedDownloadRemovesPartialFile]",
+          "status": "passed",
+          "seconds": 0.008
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testFailedFileRemovalDoesNotDiscardRecentPlaybackOrItsPosition]",
+          "status": "passed",
+          "seconds": 0.008
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testFilenameSanitizerRemovesUnsafeCharactersAndLimitsLength]",
+          "status": "passed",
+          "seconds": 0.003
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testFilenameSanitizerUsesImageFallbackAndPreferredExtension]",
+          "status": "passed",
+          "seconds": 0.002
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testHLSDownloadCanPauseResumeAndCancelBeforeAssetTaskExists]",
+          "status": "passed",
+          "seconds": 0.004
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testInProgressDownloadCanBeCanceledAndDeleted]",
+          "status": "passed",
+          "seconds": 0.004
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testInterruptedPausedStreamingDownloadIsCanceledAfterRelaunch]",
+          "status": "passed",
+          "seconds": 0.005
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testInterruptedStreamingDownloadIsCanceledButHLSRemainsAttachable]",
+          "status": "passed",
+          "seconds": 0.005
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testLateResumeAndPauseCallbacksCannotReviveTerminalDownloads]",
+          "status": "passed",
+          "seconds": 0.006
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testMediaDownloadsUsePageTitleAndKeepOutputExtension]",
+          "status": "passed",
+          "seconds": 0.002
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testMissingResumeDataDoesNotCreateAnUnresumablePausedDownload]",
+          "status": "passed",
+          "seconds": 0.006
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testMovingParentFolderUpdatesNestedDownloadReferencesAndPreservesTorrentTitle]",
+          "status": "passed",
+          "seconds": 0.01
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testNativeDownloadsUsePageTitleOnlyForGenericServerNames]",
+          "status": "passed",
+          "seconds": 0.002
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testNestedFinishedDownloadSurvivesRelocatedAppContainer]",
+          "status": "passed",
+          "seconds": 0.008
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testPausedDownloadsKeepTheirFilenameReservationAcrossRelaunch]",
+          "status": "passed",
+          "seconds": 0.006
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testProgressPauseAndResumeStateArePersisted]",
+          "status": "passed",
+          "seconds": 0.01
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testRemovingFinishedRecordsKeepsFilesAcrossReloadAndRedownload]",
+          "status": "passed",
+          "seconds": 0.015
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testRenamedMagnetFolderAndProgressSurviveRelocatedContainer]",
+          "status": "passed",
+          "seconds": 0.013
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testSavedDownloadsSurviveRelocatedAppContainerWithoutAdoptingUnrelatedFiles]",
+          "status": "passed",
+          "seconds": 0.007
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testSharedDownloadLocationUsesDocumentsDownloadsFolder]",
+          "status": "passed",
+          "seconds": 0.002
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testStaleInProgressDownloadIsCanceledWhenManagerReloads]",
+          "status": "passed",
+          "seconds": 0.005
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testStreamingDownloadCanPauseResumeAndDelete]",
+          "status": "passed",
+          "seconds": 0.006
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testStreamingMuxCapsDuplicatedTracksToPageDuration]",
+          "status": "passed",
+          "seconds": 0.001
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testUniqueFilenameAvoidsExistingFiles]",
+          "status": "passed",
+          "seconds": 0.005
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testUnknownProgressDropsAnOldPercentageAndCanRecover]",
+          "status": "passed",
+          "seconds": 0.006
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testUnreadableHistoryIsNotAutomaticallyOverwrittenOnStartup]",
+          "status": "passed",
+          "seconds": 0.004
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testVideoDownloadRejectsHTMLResponseSavedAsMP4]",
+          "status": "passed",
+          "seconds": 0.003
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testWebResourceCookiesRespectDomainPathSecureAndExpiration]",
+          "status": "passed",
+          "seconds": 0.004
+        },
+        {
+          "test": "-[SouloTests.DownloadManagerServiceTests testWebResourceReferrerUsesStrictOriginBehavior]",
+          "status": "passed",
+          "seconds": 0.002
+        },
+        {
+          "test": "-[SouloTests.DownloadPlaybackTests testCompletedHLSCacheRemainsUntilPlayerReleasesSource]",
+          "status": "passed",
+          "seconds": 0.098
+        },
+        {
+          "test": "-[SouloTests.DownloadPlaybackTests testOfflineKeyRequestsRecheckCookiesOnRedirects]",
+          "status": "passed",
+          "seconds": 4.081
+        },
+        {
+          "test": "-[SouloTests.DownloadPlaybackTests testPlaybackSourcesRespectPauseTerminalStatesAndAreNotPersisted]",
+          "status": "passed",
+          "seconds": 0.008
+        },
+        {
+          "test": "-[SouloTests.LibraryStoreTests testExistingSwiftDataLibraryMigratesAndDeletedItemsStayDeleted]",
+          "status": "skipped",
+          "seconds": 0.003
+        },
+        {
+          "test": "-[SouloTests.LibraryStoreTests testFailedLegacyImportPreservesSourceAndCanRetry]",
+          "status": "skipped",
+          "seconds": 0.001
+        },
+        {
+          "test": "-[SouloTests.LibraryStoreTests testRollbackRestoresBookmarkChanges]",
+          "status": "passed",
+          "seconds": 0.01
+        }
+      ]
+    },
+    "metadata": {
+      "version": "1.2.12",
+      "locales": 50,
+      "sixFieldsReviewedInAllLocales": true,
+      "updatedFields": [
+        "description",
+        "promotional_text",
+        "release_notes"
+      ],
+      "reviewedAndRetainedFields": [
+        "name",
+        "subtitle",
+        "keywords"
+      ],
+      "retainedReason": "保留现有准确的应用名称、搜索定位和关键词。",
+      "exportCheckPassed": true,
+      "strictLocalizationPassed": true,
+      "invisibleCharacterWarnings": []
+    },
+    "fixtureCleanup": {
+      "ipad": {
+        "missingOriginalDownloadPaths": 0,
+        "remainingGeneratedDownloadRoots": 0
+      },
+      "phone": {
+        "missingOriginalDownloadPaths": 0,
+        "remainingGeneratedDownloadRoots": 0
+      }
+    }
+  },
+  "limitations": [
+    "iPhone 本轮因锁定未能启动测试，不计入通过数量。",
+    "iOS 16.0 模拟器初次运行在 WebKit Cookie 交接处无响应，重启后测试进程启动仍受阻；未将该轮计为通过。日志见 /tmp/soulo-1.2.12-20261111/ios16-regressions.log 和 ios16-core.log。",
+    "现有真机为 26.6.1，没有 iOS 16 真机。后台回调测试使用前台本地 HTTP 夹具和受控完成事件，未覆盖锁屏、进程挂起或终止后的全程下载。"
+  ],
+  "sourceSHA256": {
+    "project.yml": "6c4aeebae3672f6bad4a3f5054e67e25be6e48066388d27573792b47d006d220",
+    "Soulo.xcodeproj/project.pbxproj": "86ce065d6552527203b1fe91866fc5d55b9359a80407d5f9592014cf51af43cc",
+    "Soulo/Source/Services/StreamingMediaDownloadService.swift": "37aab40a7c61138255a4912fb994ada85246f4ab99e1ffbccdc961bf5d399ec6",
+    "Soulo/Source/Services/DownloadManagerService.swift": "29be4f2aa8c4ba723bd7d0373f59b6fd27aa754137709cdb14c8d32fc6e57e23",
+    "Soulo/Source/Services/ReadingTools/VideoPlaybackRequestContext.swift": "145ebbeeed2992961f21e5b2b9c91a34a798b3cae8cd584a3842ff7c40f71057",
+    "SouloTests/DownloadPlaybackTests.swift": "bc0a5c5baec2163021dce62374db623aafc96cbb187dae07c49c68afb52b34bf",
+    "SouloTests/DownloadPlaybackHTTPFixture.swift": "d2bcf955a9cd6eec32c052ba3637d389ab315b4b448f42c4a9493084b41aa6cd",
+    "fastlane/app_store_metadata.json": "4673b76dc5d92a1f4e5acee5e7c471d39d36109443869436bdcea55d664a8c20"
+  }
+}

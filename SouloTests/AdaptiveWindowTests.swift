@@ -1,4 +1,4 @@
-import SwiftData
+import CoreData
 import SwiftUI
 import XCTest
 import Combine
@@ -62,7 +62,7 @@ final class AdaptiveWindowTests: XCTestCase {
         let host = UIHostingController(rootView: AnyView(HomeView()
             .environmentObject(search).environmentObject(tabs)
             .environmentObject(LanguageManager.shared).environmentObject(ThemeManager.shared)
-            .environmentObject(WallpaperManager.shared).modelContainer(try makeLayoutContainer())))
+            .environmentObject(WallpaperManager.shared).environment(\.managedObjectContext, (try makeLayoutContainer()).mainContext)))
         let window = UIWindow(windowScene: scene)
         window.rootViewController = host
         window.makeKeyAndVisible()
@@ -76,15 +76,12 @@ final class AdaptiveWindowTests: XCTestCase {
         try await action(search, window)
     }
 
-    // Mirror the App's WindowGroup-owned container lifetime. SwiftUI can retain
-    // a Query's context after unmounting a hosting controller; its mainContext
-    // has a weak container reference and still receives save notifications.
-    private static var layoutContainer: ModelContainer?
+    // Keep the fixture's store alive while hosting controllers unmount.
+    private static var layoutContainer: LibraryStore?
 
-    private func makeLayoutContainer() throws -> ModelContainer {
+    private func makeLayoutContainer() throws -> LibraryStore {
         if let container = Self.layoutContainer { return container }
-        let container = try ModelContainer(for: SearchHistoryItem.self, BookmarkItem.self, BookmarkFolder.self,
-            configurations: ModelConfiguration("AdaptiveWindowTests", isStoredInMemoryOnly: true))
+        let container = try LibraryStore(inMemory: true)
         Self.layoutContainer = container
         return container
     }
@@ -153,6 +150,7 @@ final class AdaptiveWindowTests: XCTestCase {
     }
 
     func testHomeSearchKeepsFieldFocusAndSelectionAcrossSizeClassChanges() async throws {
+        guard #available(iOS 17.0, *) else { throw XCTSkip("Trait override fixtures require iOS 17") }
         let scene = try activeScene()
         let previous = scene.keyWindow
         let wallpaper = WallpaperManager.shared
@@ -170,7 +168,7 @@ final class AdaptiveWindowTests: XCTestCase {
             .environmentObject(LanguageManager.shared)
             .environmentObject(ThemeManager.shared)
             .environmentObject(wallpaper)
-            .modelContainer(container)))
+            .environment(\.managedObjectContext, (container).mainContext)))
         let window = UIWindow(windowScene: scene)
         window.rootViewController = host
         window.makeKeyAndVisible()
@@ -225,7 +223,9 @@ final class AdaptiveWindowTests: XCTestCase {
         let defaults = UserDefaults.standard
         let fullscreenKey = AppConstants.StorageKeys.keepFullscreenBrowsing
         let savedFullscreen = defaults.object(forKey: fullscreenKey)
+        let savedAdBlocking = defaults.object(forKey: "ad_block_enabled")
         defaults.set(true, forKey: fullscreenKey)
+        defaults.set(false, forKey: "ad_block_enabled") // Layout does not depend on rule preparation.
         let storageKey = "adaptive-browser-\(UUID().uuidString)"
         defaults.set(Data(), forKey: storageKey)
         let tabs = TabManager(storageKey: storageKey)
@@ -239,7 +239,7 @@ final class AdaptiveWindowTests: XCTestCase {
             .environmentObject(tabs)
             .environmentObject(LanguageManager.shared)
             .environmentObject(ThemeManager.shared)
-            .modelContainer(container)))
+            .environment(\.managedObjectContext, (container).mainContext)))
         let scene = try activeScene()
         let previous = scene.keyWindow
         let window = UIWindow(windowScene: scene)
@@ -251,6 +251,8 @@ final class AdaptiveWindowTests: XCTestCase {
             window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
             if let savedFullscreen { defaults.set(savedFullscreen, forKey: fullscreenKey) }
             else { defaults.removeObject(forKey: fullscreenKey) }
+            if let savedAdBlocking { defaults.set(savedAdBlocking, forKey: "ad_block_enabled") }
+            else { defaults.removeObject(forKey: "ad_block_enabled") }
             defaults.removeObject(forKey: storageKey)
         }
         for (left, right) in [(CGFloat(80), CGFloat(12)), (CGFloat(12), CGFloat(80))] {

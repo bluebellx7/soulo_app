@@ -6,8 +6,6 @@ Las pestañas y grupos de sitios recientes aparecen primero y la vista se abre a
 
 Descargas BT: importa archivos .torrent o enlaces magnet, elige archivos, pausa y reanuda. En iOS 26 pueden continuar en segundo plano cuando el sistema lo permite; las versiones anteriores guardan el progreso y las pausan. Reproduce medios BT compatibles mientras se descargan y abre archivos MKV. Importa enlaces ed2k/thunder. Las descargas requieren fuentes disponibles; la reproducción depende de los códecs.
 
-Navegación más fluida, mejores controles de vídeo y vistas previas de archivos más claras.
-
 Configura cinco accesos directos opcionales en el inicio para descargas, archivos, marcadores, historial, fondos y otras páginas. La barra de pestañas de la biblioteca se compacta al desplazarte.
 
 Busca información, lee artículos, reproduce contenido y gestiona descargas en un mismo navegador.
@@ -20,11 +18,11 @@ Organiza la navegación con varias pestañas, búsqueda por voz, historial y gru
 • Archivos: detecta imágenes, audio, vídeos y documentos en las páginas y guarda imágenes por lotes. Explora archivos en lista o cuadrícula de portadas, cambia sus nombres, importa desde Fotos y transfiere por Wi-Fi.
 • Archivos comprimidos: extrae ZIP, RAR y 7z. Crea ZIP y 7z con protección por contraseña opcional.
 • Lectura: TXT, PDF, EPUB y libros MOBI, AZW y AZW3 sin DRM compatibles. Ajusta fuente, tamaño, interlineado y fondo. Los libros de diseño adaptable permiten alternar chino simplificado y tradicional. El modo de lectura extrae artículos y permite continuar en la página siguiente.
-• Extensiones: importa, edita y ejecuta scripts JavaScript, gestiona los sitios y permisos, e instala WebExtensions compatibles.
+• Scripts y extensiones: importa, edita y ejecuta scripts JavaScript. Las WebExtensions compatibles requieren iOS 18.4 o posterior; la compatibilidad varía según la extensión.
 • Herramientas web: traducción, buscar en la página, capturas de página completa, reconocimiento de texto en imágenes, modos escritorio/móvil, agente de usuario personalizado y certificados de sitios.
 • Marcadores: organízalos en carpetas e importa o exporta marcadores HTML de Chrome, Edge y otros navegadores. Crea códigos QR de páginas con el icono del sitio para compartirlos, guardarlos o copiarlos.
-• Personalización: fondos, barra de herramientas y acciones rápidas del icono de la app. Accede mediante widgets, Atajos y esquemas URL. Sincroniza los ajustes con iCloud de forma opcional.
+• Personalización: fondos, barra de herramientas y acciones rápidas del icono de la app. Accede mediante widgets, Atajos y esquemas URL. Sincroniza los ajustes con iCloud de forma opcional. Fondos separados para los modos claro y oscuro, con interruptor para la capa de la imagen.
 
-La disponibilidad de contenido multimedia, libros y extensiones depende del formato, las restricciones del sitio y la versión del sistema.
+Los medios, libros y extensiones dependen de los formatos, las restricciones del sitio y la versión del sistema. Antes de descargar, confirma que la fuente permite guardar el contenido.
 
 Soporte: contact@dkluge.com

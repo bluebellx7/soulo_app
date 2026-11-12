@@ -50,6 +50,101 @@ final class ExtensionManagementTests: XCTestCase {
         catch is CancellationError {} catch { XCTFail("Unexpected error: \(error)") }
     }
 
+    func testOffscreenDocumentRunsDOMMessagingAndClosesOnPermissionRevocation() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let root = try temporaryRoot(), source = try package(root)
+        try Data("<html><body><div id='answer'>real DOM</div><script src='offscreen.js'></script></body></html>".utf8)
+            .write(to: source.appendingPathComponent("offscreen.html"))
+        try Data("""
+        chrome.runtime.onMessage.addListener((message,sender,reply)=>{if(message.offscreenProbe){reply({text:document.getElementById('answer').textContent,origin:location.origin});}});
+        navigator.serviceWorker.onmessage=async event=>{const value=event.data;
+          event.ports[0].postMessage({text:await value.blob.text(),bytes:new Uint16Array([1,256,65535]),buffer:value.buffer,nested:value.nested});};
+        """.utf8)
+            .write(to: source.appendingPathComponent("offscreen.js"))
+        let service = BrowserExtensionService(extensionRoot: root.appendingPathComponent("store"))
+        let record = try await service.installWebExtension(from: source)
+        defer { service.deleteWebExtension(record.id) }
+        let context = try context(record.id), page = try await extensionPage(context)
+        let result = try await page.callAsyncJavaScript("""
+        await chrome.offscreen.createDocument({url:'offscreen.html',reasons:['DOM_PARSER'],justification:'Local DOM fixture'});
+        const contexts=await chrome.runtime.getContexts({contextTypes:['OFFSCREEN_DOCUMENT']});
+        const reply=await chrome.runtime.sendMessage({offscreenProbe:true});
+        const binary=await __souloOffscreenBinary({blob:new Blob(['a'.repeat(70000)+'✓'],{type:'text/plain'}),buffer:new Uint8Array([0,128,255]).buffer,nested:{__protoKey:'safe',value:null}});
+        let duplicateRejected=false;
+        try { await chrome.offscreen.createDocument({url:'offscreen.html',reasons:['DOM_PARSER'],justification:'Duplicate'}); }
+        catch (_) { duplicateRejected=true; }
+        return {reply,contexts,duplicateRejected,open:await chrome.offscreen.hasDocument(),
+          binary:{text:binary.text.slice(-2),length:binary.text.length,bytes:Array.from(binary.bytes),buffer:Array.from(new Uint8Array(binary.buffer)),nested:binary.nested}};
+        """, in: nil, contentWorld: .page) as? [String: Any]
+        XCTAssertEqual((result?["reply"] as? [String: Any])?["text"] as? String, "real DOM")
+        XCTAssertEqual((result?["reply"] as? [String: Any])?["origin"] as? String, String(context.baseURL.absoluteString.dropLast()))
+        XCTAssertEqual((result?["contexts"] as? [[String: Any]])?.count, 1)
+        XCTAssertEqual(result?["duplicateRejected"] as? Bool, true)
+        XCTAssertEqual(result?["open"] as? Bool, true)
+        let binary = result?["binary"] as? [String: Any]
+        XCTAssertEqual(binary?["text"] as? String, "a✓")
+        XCTAssertEqual(binary?["length"] as? Int, 70001)
+        XCTAssertEqual(binary?["bytes"] as? [Int], [1, 256, 65535])
+        XCTAssertEqual(binary?["buffer"] as? [Int], [0, 128, 255])
+        var access = service.webExtensionAccess(record.id)
+        access.setPermission("offscreen", allowed: false)
+        try service.setWebExtensionAccess(access, id: record.id)
+        let rejected = try await page.callAsyncJavaScript("try { await chrome.offscreen.hasDocument(); return false; } catch (_) { return true; }", in: nil, contentWorld: .page)
+        XCTAssertEqual(rejected as? Bool, true)
+        access.setPermission("offscreen", allowed: true)
+        try service.setWebExtensionAccess(access, id: record.id)
+        let open = try await page.callAsyncJavaScript("return await chrome.offscreen.hasDocument();", in: nil, contentWorld: .page)
+        XCTAssertEqual(open as? Bool, false)
+        let invalidPaths = try await page.callAsyncJavaScript("""
+        const paths=['https://example.com/a.html','../offscreen.html','%2e%2e/offscreen.html','content.js'];
+        return await Promise.all(paths.map(async url=>{try{await chrome.offscreen.createDocument({url,reasons:['DOM_PARSER'],justification:'Invalid path'});return false;}catch(_){return true;}}));
+        """, in: nil, contentWorld: .page)
+        XCTAssertEqual(invalidPaths as? [Bool], [true, true, true, true])
+    }
+
+    func testInstallationLifecyclePreservesFirstInstallUpdatesAndUninstall() async throws {
+        guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
+        let root = try temporaryRoot(), id = UUID(), host = WebExtensionCompatibilityHost()
+        defer { host.forgetInstallation(id: id) }
+        func event(_ version: String) async throws -> [String: Any] {
+            let object = try await WKWebExtension(resourceBaseURL: package(root, version: version))
+            let context = WKWebExtensionContext(for: object); context.uniqueIdentifier = id.uuidString
+            defer { host.remove(context: context) }
+            var result: [String: Any]?, failure: Error?
+            XCTAssertTrue(host.handle(message: ["souloCompatibility": 1, "api": "lifecycle", "operation": "installation", "details": ["reason": "install"]],
+                applicationIdentifier: WebExtensionCompatibilityHost.applicationIdentifier, context: context, resourceURL: nil,
+                replyHandler: { value, error in result = value as? [String: Any]; failure = error }))
+            XCTAssertNil(failure); return try XCTUnwrap(result)
+        }
+        let first = try await event("1.0")
+        XCTAssertEqual(first["skip"] as? Bool, false)
+        XCTAssertEqual((first["details"] as? [String: Any])?["reason"] as? String, "install")
+        let duplicate = try await event("1.0")
+        XCTAssertEqual(duplicate["skip"] as? Bool, true)
+        let update = try await event("2.0")
+        XCTAssertEqual(update["skip"] as? Bool, false)
+        XCTAssertEqual((update["details"] as? [String: Any])?["reason"] as? String, "update")
+        XCTAssertEqual((update["details"] as? [String: Any])?["previousVersion"] as? String, "1.0")
+        host.forgetInstallation(id: id)
+        let reinstalled = try await event("2.0")
+        XCTAssertEqual((reinstalled["details"] as? [String: Any])?["reason"] as? String, "install")
+        XCTAssertEqual(reinstalled["skip"] as? Bool, false)
+        let nextObject = try await WKWebExtension(resourceBaseURL: package(root, version: "3.0"))
+        let nextContext = WKWebExtensionContext(for: nextObject); nextContext.uniqueIdentifier = id.uuidString
+        defer { host.remove(context: nextContext) }
+        func nextEvent(_ reason: String) -> [String: Any]? {
+            var result: [String: Any]?
+            _ = host.handle(message: ["souloCompatibility": 1, "api": "lifecycle", "operation": "installation", "details": ["reason": reason]],
+                applicationIdentifier: WebExtensionCompatibilityHost.applicationIdentifier, context: nextContext, resourceURL: nil,
+                replyHandler: { value, error in XCTAssertNil(error); result = value as? [String: Any] })
+            return result
+        }
+        XCTAssertEqual((nextEvent("chrome_update")?["details"] as? [String: Any])?["reason"] as? String, "chrome_update")
+        let versionUpdate = nextEvent("install")
+        XCTAssertEqual(versionUpdate?["skip"] as? Bool, false, "A browser update must not consume the extension version update")
+        XCTAssertEqual((versionUpdate?["details"] as? [String: Any])?["reason"] as? String, "update")
+    }
+
     func testUpdateAndRollbackKeepIdentityDecisionsAndExtensionStorage() async throws {
         guard #available(iOS 18.4, *) else { throw XCTSkip("Requires native extensions") }
         let root = try temporaryRoot(), store = root.appendingPathComponent("store")

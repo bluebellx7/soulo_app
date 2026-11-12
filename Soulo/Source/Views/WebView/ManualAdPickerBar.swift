@@ -75,7 +75,7 @@ struct ManualAdPickerBar: View {
         .background(.regularMaterial)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("browser.manualAdPicker")
-        .onChange(of: model.manualAdSelection?.token) { _, _ in
+        .onCompatibleChange(of: model.manualAdSelection?.token) { _, _ in
             wholeSite = true
         }
     }

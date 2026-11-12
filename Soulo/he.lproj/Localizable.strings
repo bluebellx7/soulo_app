@@ -609,27 +609,27 @@
 "extensions_reload_note" = "דפים פתוחים נטענים מחדש לאחר שתוסף או סקריפט השתנו כך שהמצב החדש ייכנס לתוקף.";
 "web_extensions" = "הרחבות אינטרנט";
 "userscripts" = "סקריפטים והרחבות";
-"userscripts_installed" = "התסריטים שלי";
-"userscripts_install" = "התקן סקריפטים";
+"userscripts_installed" = "מותקנים";
+"userscripts_install" = "הוספה";
 "userscripts_empty" = "אין UserScripts";
 "userscripts_empty_desc" = "התקן קובץ ‎.user.js או צור סקריפט כדי לראות אותו כאן.";
 "userscripts_reload_note" = "דפים פתוחים נטענים מחדש לאחר שסקריפט מותקן, ערוך, מופעל, מושבת או הוסר.";
 "userscript_experimental_badge" = "תאימות";
 "userscript_experimental_title" = "UserScript תאימות";
-"userscript_experimental_desc" = "תומך בכללי האתר, התחלה/סיום של מסמכים, אחסון GM ו-API של עמודים נרחבים, פקודות סקריפט, התראות, כרטיסיות, הורדות, קובצי Cookie, משאבים ובקשות בהיקף הרשאות. סקור כל סקריפט לפני ההתקנה.";
+"userscript_experimental_desc" = "סקריפטים של משתמש יכולים לקרוא או לשנות אתרים תואמים ולהשתמש בממשקי API מורשים. התאימות משתנה בין סקריפטים. יש להתקין רק סקריפטים מהימנים.";
 "extension_choose_file" = "בחר קובץ או תיקייה…";
 "extension_installing" = "בודק ומתקין תוסף...";
 "extension_install_failed" = "לא ניתן היה להתקין את ההרחבה";
 "extension_permissions_summary" = "%d הרשאות · %d כללי אתר";
 "extension_untitled" = "הרחבה ללא כותרת";
-"web_extension_install_footer" = "הקש בכל מקום בשורת מקור כדי לפתוח אותה בכרטיסייה הנוכחית Soulo. Soulo מזהה CRX, XPI, ZIP ופעולות התקנת חנות נתמכות, ואז שואל לפני ההתקנה. ייתכן שחלק מממשקי API לשולחן העבודה בלבד לא יהיו זמינים.";
+"web_extension_install_footer" = "אפשר להתקין הרחבות תואמות מקישור לחנות או לייבא CRX, XPI, ZIP או תיקיית הרחבה. יש לבדוק הרשאות ותאימות לפני ההתקנה; חלק מתכונות המחשב אינן זמינות.";
 "web_extension_install_store_link" = "התקן מקישור לחנות...";
 "web_extension_browse_sources" = "עיין בחנויות הרחבות";
 "web_extension_browse_sources_footer" = "לחצני Store Get תומכים רק בדפדפנים שולחניים משלהם. העתק קישור לדף פרטי הרחבה, ולאחר מכן השתמש ב- Install from Store Link ב-Soulo.";
 "web_extension_store_install_title" = "התקן תוסף לחנות";
 "extension_page_banner_title" = "התקן עם Soulo";
-"extension_page_banner_desc" = "Soulo יכול להתקין את התוסף הזה ישירות.";
-"web_extension_store_install_desc" = "הדבק קישור לדף פירוט של חנות האינטרנט של Chrome, Microsoft Edge Add-ons או Firefox Add-ons. Soulo מוריד את החבילה עצמה, כך שלא נעשה שימוש בלחצן 'קבל' שאינו תואם בחנות.";
+"extension_page_banner_desc" = "יש לבדוק תאימות והרשאות לפני ההתקנה.";
+"web_extension_store_install_desc" = "יש להדביק קישור לדף הפרטים של הרחבת Chrome, Edge או Firefox ולבדוק תאימות והרשאות לפני אישור ההתקנה.";
 "web_extension_store_link_placeholder" = "קישור לדף התוסף או מזהה תוסף של Chrome";
 "web_extension_store_invalid_link" = "הדבק קישור לדף פרטי תוסף מ-Chrome, Edge או Firefox, מזהה תוסף של Chrome או קישור ישיר של CRX, XPI או ZIP.";
 "web_extension_store_https_required" = "חבילות הרחבה חייבות להשתמש בקישור HTTPS מאובטח.";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "זרם המדיה החזיר מקטע לא תקין או מקטע בסדר שגוי.";
 "resource_stream_download_missing_track" = "השידור שהורד לא כלל רצועות וידאו ושמע שניתן לנגן.";
 "resource_stream_download_export_failed" = "Soulo לא הצליח לשלב את הווידאו והשמע שהורדו.";
-"resource_stream_playback_download_first" = "לא ניתן להציג תצוגה מקדימה של השידור המוגן הזה מהכתובת הזמנית שלו. יש להוריד אותו תחילה כדי לנגן את הקובץ המקומי.";
+"resource_stream_playback_download_first" = "לא ניתן להציג תצוגה מקדימה ישירה של הזרם הזה כרגע.";
 "platform_invalid_web_url" = "יש להזין כתובת אינטרנט תקינה שמתחילה ב־http:// או ב־https://.";
 
 "library_history_tab" = "היסטוריה";
@@ -889,8 +889,7 @@
 "extension_review_access" = "בחרו את ההרשאות ואת האתרים שאליהם תוסף זה יכול לגשת.";
 "extension_limit_commands" = "קיצורי מקשים של תוספים אינם זמינים ב-iOS.";
 "extension_limit_notifications" = "ניתן להציג התראות, אך אירועי לחיצה וסגירה אינם נתמכים.";
-"extension_limit_offscreen" = "מסמכים מחוץ למסך תומכים בניגון שמע בלבד.";
-
+"extension_limit_offscreen" = "מסמכים מחוץ למסך כפופים למגבלות iOS; ייתכן שחלק מהתכונות לא יהיו זמינות.";
 "review_support_message" = "תודה על התמיכה ב-Soulo. הביקורות שלך עוזרות לנו להמשיך להשתפר.";
 "review_open_app_store" = "כתיבת ביקורת ב-App Store";
 

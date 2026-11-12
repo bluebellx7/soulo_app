@@ -609,27 +609,27 @@
 "extensions_reload_note" = "Les pàgines obertes es tornen a carregar després de canviar una extensió o un script perquè el nou estat tingui efecte.";
 "web_extensions" = "Extensions web";
 "userscripts" = "Scripts i extensions";
-"userscripts_installed" = "Els meus guions";
-"userscripts_install" = "Instal·leu scripts";
+"userscripts_installed" = "Instal·lats";
+"userscripts_install" = "Afegeix";
 "userscripts_empty" = "Cap script d’usuari";
 "userscripts_empty_desc" = "Instal·leu un fitxer .user.js o creeu un script per veure'l aquí.";
 "userscripts_reload_note" = "Les pàgines obertes es tornen a carregar després d'instal·lar, editar, activar, desactivar o eliminar un script.";
 "userscript_experimental_badge" = "Compatibilitat";
 "userscript_experimental_title" = "Compatibilitat UserScript";
-"userscript_experimental_desc" = "Admet regles del lloc, inici/finalització de documents, emmagatzematge extensiu de GM i API de pàgines, ordres d'script, notificacions, pestanyes, descàrregues, galetes, recursos i sol·licituds amb àmbit de permís. Reviseu cada script abans d'instal·lar-lo.";
+"userscript_experimental_desc" = "Els scripts d’usuari poden llegir o modificar els llocs coincidents i fer servir les API autoritzades. La compatibilitat varia. Instal·la només scripts de confiança.";
 "extension_choose_file" = "Tria un fitxer o carpeta…";
 "extension_installing" = "S'està comprovant i instal·lant l'extensió...";
 "extension_install_failed" = "No s'ha pogut instal·lar l'extensió";
 "extension_permissions_summary" = "%d permisos · %d regles del lloc web";
 "extension_untitled" = "Extensió sense títol";
-"web_extension_install_footer" = "Toqueu qualsevol lloc d'una fila d'origen per obrir-la a la pestanya Soulo actual. Soulo reconeix CRX, XPI, ZIP i les accions d'instal·lació de botiga admeses i, a continuació, pregunta abans d'instal·lar-les. És possible que algunes API només per a ordinadors no estiguin disponibles.";
+"web_extension_install_footer" = "Instal·la extensions compatibles des d’un enllaç de la botiga o importa CRX, XPI, ZIP o una carpeta d’extensió. Revisa permisos i compatibilitat; algunes funcions d’escriptori no estan disponibles.";
 "web_extension_install_store_link" = "Instal·la des de l'enllaç de la botiga...";
 "web_extension_browse_sources" = "Explora les botigues d'extensions";
 "web_extension_browse_sources_footer" = "Els botons Store Get només admeten els seus propis navegadors d'escriptori. Copieu l'enllaç d'una pàgina de detalls de l'extensió i, a continuació, utilitzeu Instal·la des de l'enllaç de la botiga a Soulo.";
 "web_extension_store_install_title" = "Instal·leu una extensió de botiga";
 "extension_page_banner_title" = "Instal·leu amb Soulo";
-"extension_page_banner_desc" = "Soulo pot instal·lar aquesta extensió directament.";
-"web_extension_store_install_desc" = "Enganxeu un enllaç a la pàgina de detall de Chrome Web Store, complements de Microsoft Edge o complements de Firefox. Soulo baixa el paquet en si mateix, de manera que no s'utilitza el botó Obteniu incompatible de la botiga.";
+"extension_page_banner_desc" = "Revisa la compatibilitat i els permisos abans d’instal·lar.";
+"web_extension_store_install_desc" = "Enganxa l’enllaç de la pàgina d’una extensió de Chrome, Edge o Firefox i revisa’n la compatibilitat i els permisos abans de confirmar la instal·lació.";
 "web_extension_store_link_placeholder" = "Enllaç a la pàgina d'extensió o identificador d'extensió de Chrome";
 "web_extension_store_invalid_link" = "Enganxeu un enllaç de pàgina de detalls de l'extensió de Chrome, Edge o Firefox, un ID d'extensió de Chrome o un enllaç CRX, XPI o ZIP directe.";
 "web_extension_store_https_required" = "Els paquets d'extensió han d'utilitzar un enllaç HTTPS segur.";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "El flux multimèdia ha retornat un segment no vàlid o fora d'ordre.";
 "resource_stream_download_missing_track" = "El flux baixat no contenia pistes de vídeo i àudio reproduïbles.";
 "resource_stream_download_export_failed" = "Soulo no ha pogut combinar el vídeo i l'àudio baixats.";
-"resource_stream_playback_download_first" = "Aquest flux protegit no es pot previsualitzar des del seu URL temporal. Baixa'l primer per reproduir el fitxer local.";
+"resource_stream_playback_download_first" = "Ara mateix no es pot previsualitzar directament aquest flux.";
 "platform_invalid_web_url" = "Introdueix una adreça web vàlida que comenci per http:// o https://.";
 
 "library_history_tab" = "Historial";
@@ -889,8 +889,7 @@
 "extension_review_access" = "Tria els permisos i els llocs web als quals pot accedir aquesta extensió.";
 "extension_limit_commands" = "Les dreceres de teclat de les extensions no estan disponibles a iOS.";
 "extension_limit_notifications" = "Es poden mostrar notificacions, però no s’admeten els esdeveniments de clic i tancament.";
-"extension_limit_offscreen" = "Els documents fora de pantalla només admeten reproducció d’àudio.";
-
+"extension_limit_offscreen" = "Els documents fora de pantalla estan subjectes als límits d’iOS; algunes funcions poden no estar disponibles.";
 "review_support_message" = "Gràcies per donar suport a Soulo. Les teves ressenyes ens ajuden a continuar millorant.";
 "review_open_app_store" = "Valora a l’App Store";
 

@@ -1,0 +1,86 @@
+﻿name,url,status,samplePage,nativeFirstFrame,souloFirstFrame,webControlsObserved,nativeFallbackObserved,episodeEntriesObserved,notes
+片吧影视,https://www.pbkan.com/,样本两种解码器均出帧,https://www.pbkan.com/yun/271770-3-1.html,True,True,True,False,20,
+可可影视,https://www.kkys02.com/,验证或访问限制，未验证接管,https://www.kkys02.com/,,,False,,0,
+Netflix,https://www.netflix.com/hk/,需要登录或授权，未验证正片,https://www.netflix.com/jp/,,,False,,0,没有使用会员账户，没有验证会员正片，也没有绕过登录或内容保护。
+Disney+,https://www.disneyplus.com/zh-hk,需要登录或授权，未验证正片,https://www.disneyplus.com/en-jp,,,False,,0,没有使用会员账户，没有验证会员正片，也没有绕过登录或内容保护。
+6V 电影,https://www.6vdyy.com/,下载、索引、资讯或工具入口,https://www.6vdyy.com/,,,False,,0,
+磁力熊,https://www.cilixiong.org/,下载、索引、资讯或工具入口,https://www.cilixiong.org/,,,False,,0,
+追新番,https://www.fanxinzhui.com/,下载、索引、资讯或工具入口,https://www.fanxinzhui.com/rr/2695,,,False,False,0,
+韩娱网,https://koreayule.com/,样本两种解码器均出帧,https://koreayule.com/movie/yu-wang-de-xian-jing-2026,True,True,True,False,53,
+日娱观察所,https://ribenyule.com/,样本两种解码器均出帧,https://ribenyule.com/vod/movie/hou-hui-you-qi,True,True,False,False,0,详情页公开数据中的媒体可解码，但本次自动检查未验证实际网页播放按钮和选集。
+哔哩哔哩,https://www.bilibili.com/,样本至少一种解码器出帧,https://www.bilibili.com/bangumi/play/ep7303508,False,True,True,False,0,原生报资源访问许可错误；Soulo 解码器成功出帧。未测试付费、DRM 或完整分集。
+稀饭动漫,https://dick.xfani.com/,样本至少一种解码器出帧,https://next.xifanacg.com/anime/3441/play/203869?source=xfxf1,True,False,True,False,7,从首页提供的 Next 入口进入代表播放页；原生出帧，Soulo 本次最长等待 15 秒未出帧。
+Anime1,https://anime1.in/,样本两种解码器均出帧,https://anime1.in/2026-xue-wang-lai-le-10028000,True,True,False,False,0,
+次元城动画,https://www.cycani.org/,本次检查页未取得可接管媒体,https://www.cycani.org/,,,False,,0,
+trace.moe,https://trace.moe/,下载、索引、资讯或工具入口,https://trace.moe/,,,False,,0,
+80s 电影,https://y80s.tv/movie/search/,下载、索引、资讯或工具入口,https://y80s.tv/movie/search/,,,False,,0,
+茶杯狐,https://cupfox.app/,下载、索引、资讯或工具入口,https://cupfox.app/,,,False,,0,
+搜片,https://soupian.one/,下载、索引、资讯或工具入口,https://soupian.one/,,,False,,0,
+i8K 影视导航,https://i8k.tv/,下载、索引、资讯或工具入口,https://i8k.tv/,,,False,,0,
+阿里小站,https://pan666.net/,下载、索引、资讯或工具入口,https://pan666.net/member.php?mod=logging&action=login&referer=https%3A%2F%2Fpan666.net%2Findex.php,,,False,,0,
+UP 云搜,https://www.upyunso.com/,下载、索引、资讯或工具入口,https://www.upyunso.com/,,,False,,0,
+深影译站,https://sysub.com/,下载、索引、资讯或工具入口,https://sysub.com/,,,False,,0,
+找台词,https://zhaotaici.cn/,下载、索引、资讯或工具入口,https://zhaotaici.cn/,,,False,,0,
+33 台词,https://33.agilestudio.cn/,下载、索引、资讯或工具入口,https://33tc.net/,,,False,,0,
+QuoDB,https://www.quodb.com/,下载、索引、资讯或工具入口,https://www.quodb.com/,,,False,,0,
+影猫 MVCAT,https://www.mvcat.com/movie/,下载、索引、资讯或工具入口,https://www.mvcat.com/movie/,,,False,,0,
+巅峰剧单,https://best.i8k.tv/,下载、索引、资讯或工具入口,https://best.i8k.tv/,,,False,,0,
+烂番茄,https://www.rottentomatoes.com/,下载、索引、资讯或工具入口,https://www.rottentomatoes.com/,,,False,,0,
+Box Office Mojo,https://www.boxofficemojo.com/,下载、索引、资讯或工具入口,https://www.boxofficemojo.com/,,,False,,0,
+类似电影,https://leisidianying.com/,下载、索引、资讯或工具入口,https://leisidianying.com/,,,False,,0,
+盗火线,https://dao-fire.com/,下载、索引、资讯或工具入口,https://docu-lib.com/movie/10943,,,False,,0,
+CCTV 在线,https://tv.cctv.com/live/cctv1/,样本至少一种解码器出帧,https://tv.cctv.com/2017/11/09/VIDEPw7NTso8rxL1ujRvvSsh171109.shtml,False,True,True,False,0,补查样本是央视公开的存档节目；不代表直播频道或跨期选集已全部验证。
+直播吧,https://www.zhibo8.com/,样本两种解码器均出帧,https://www.zhibo8.com/zuqiu/2026/1112-090652b-svideo.htm,True,True,True,False,0,
+ZY Player,https://zyplayer.fun/,下载、索引、资讯或工具入口,https://zyplayer.fun/,,,False,,0,
+茅台资源站,https://mtzy.me/,下载、索引、资讯或工具入口,https://mtzy.me/,,,False,,0,
+4K 在线,https://www.bbibb.top/,样本两种解码器均出帧,https://www.bbibb.top/video/?217629-1-0.html,True,True,True,False,7,
+麦田影院,https://www.mtyy5.com/,样本两种解码器均出帧,https://www.mtyy5.com/vodplay/230035-5-1.html,True,True,False,True,4,修复前 iframe 内视频尺寸为零；修复后验证单一视频的原生接管入口。
+大米星球,https://www.dm154.top/,样本两种解码器均出帧,https://www.dm154.top/vodplay/418822-1-1.html,True,True,True,False,6,
+秒看电影,https://miaokan.cc/,本次检查页未取得可接管媒体,https://miaokan.cc/,,,False,,0,
+光速影视,https://4kzaixian.top/,样本两种解码器均出帧,https://4kzaixian.top/video/?215656-0-0.html,True,True,True,False,2,原线路媒体域名解析失败；改用第 0 线路复查成功。
+茶杯狐影视,https://www.cupfox.lol/,本次检查页未取得可接管媒体,https://www.cupfox.lol/movie/123769.html,,,False,,0,
+柯南影视,https://www.knvod.com/,本次检查页未取得可接管媒体,https://www.knvod.com/index.php/vod/show/id/1.html,,,False,,0,
+FreeOK,https://www.freeokk.pro/,样本两种解码器均出帧,https://www.freeokk.pro/play/84204-4-1.html,True,True,True,False,53,原线路 6 秒未出帧；第 4 线路复查两种解码器出帧，不代表所有线路正常。
+看片狂人,https://www.kpkuang.fun/,识别到媒体，本次未成功出帧,https://www.kpkuang.fun/voddetail/1150450/,False,False,False,False,0,本次检测页中的 videothumbs 预览/缩略视频返回 404，未验证正片流程，不能据此判定整站正片不兼容。
+在线之家,https://www.zxzjhd.com/,本次检查页未取得可接管媒体,https://www.zxzj.run/vodplay/4628-1-1.html,,,False,,8,
+樱花影院,https://www.dcjyb.com/,样本两种解码器均出帧,https://www.dcjyb.com/vodplay/362608-3-1.html,True,True,False,False,157,
+看剧 AI,https://kanju1.com/,下载、索引、资讯或工具入口,https://kanju1.com/,,,False,,0,
+腾讯视频,https://v.qq.com/,样本至少一种解码器出帧,https://v.qq.com/x/cover/mzc002001bk7moh/o41028027ng.html,False,True,True,False,0,公开页面检测流可由 Soulo 解码器出帧；未核对整部正片、会员内容或广告前后切换。
+爱奇艺,https://www.iqiyi.com/,识别到媒体，本次未成功出帧,https://www.iqiyi.com/,,,False,,0,样本页面有网页视频控件，但取得的链接原生返回无可用资源；未证明正片可接管。
+Apple TV,https://www.apple.com/apple-tv-plus,仅公开宣传片出帧，未验证会员正片,https://www.apple.com/apple-tv/,True,True,True,,0,没有使用会员账户，没有验证会员正片，也没有绕过登录或内容保护。
+豆瓣电影,https://movie.douban.com/,下载、索引、资讯或工具入口,https://movie.douban.com/,,,False,,0,
+芒果 TV,https://www.mgtv.com/,本次检查页未取得可接管媒体,https://w.mgtv.com/i/my/watch/?lastp=user_history,,,False,False,0,
+小马盘,https://www.xiaomapan.com/#/main/search?restype=1,下载、索引、资讯或工具入口,https://www.xiaomapan.com/#/main/search?restype=1,,,False,,0,
+人人影视分享,https://yyets.click/,下载、索引、资讯或工具入口,https://yyets.click/home,,,False,,0,
+嘎嘎影视,https://www.gagays.com/,下载、索引、资讯或工具入口,https://www.gagays.com/,,,False,,0,
+ACG.RIP,https://acg.rip/,下载、索引、资讯或工具入口,https://acg.rip/,,,False,,0,
+云盘资源社区,https://yunpan1.cc/,下载、索引、资讯或工具入口,https://yunpan1.cc/,,,False,,0,
+飘花电影,https://www.piaohua.com/,下载、索引、资讯或工具入口,https://www.piaohua.com/,,,False,,0,
+CHAOSPACE,https://www.chaospace.xyz/,下载、索引、资讯或工具入口,https://www.chaospace.xyz/,,,False,,0,
+蜜柑计划,https://mikanani.me/,下载、索引、资讯或工具入口,https://mikanani.me/,,,False,,0,
+团长资源,https://t-rex.tzfile.com/,下载、索引、资讯或工具入口,https://t-rex.tzfile.com/,,,False,,0,
+CINEFOX,https://www.cinefox.com/,需要登录或授权，未验证正片,https://www.cinefox.com/vod/movie/list,,,False,False,0,没有使用会员账户，没有验证会员正片，也没有绕过登录或内容保护。
+人人影视字幕组,https://www.yysub.net/,下载、索引、资讯或工具入口,https://www.yysub.net/,,,False,,0,
+树屋经典影视,https://treehousesub.com/forum.php,下载、索引、资讯或工具入口,https://treehousesub.com/forum.php,,,False,,0,
+天府泰剧,https://weibo.com/tfthaimovie,下载、索引、资讯或工具入口,https://weibo.com/tfthaimovie,,,False,,0,
+纪录片之家论坛,https://www.jlpzj.net/forum.php,下载、索引、资讯或工具入口,https://www.jlpzj.net/plugin.php?id=dsu_paulsign:sign,,,False,,0,
+影猫の仓库,https://ymck.pro/,本次检查页未取得可接管媒体,https://www.ymck.pro/movie/123481.html,,,False,False,0,
+金牌影院,https://www.x8kb9k8.com/,本次检查页未取得可接管媒体,https://www.x8kb9k8.com/vod/play/147747/sid/1326359,,,False,False,40,
+NO 视频,https://www.novipnoad.net/,本次检查页未取得可接管媒体,https://www.novipnoad.net/tv/hongkong/#,,,False,,0,
+威视 TV,https://weishitv.xyz/,样本至少一种解码器出帧,https://weishitv.xyz/index.php/vod/play/id/120809/sid/1/nid/1.html,True,False,False,True,9,
+人人电影网,https://www.rrdynb.com/,下载、索引、资讯或工具入口,https://www.rrdynb.com/index.html,,,False,,0,
+Ultra4K,https://dianying4k.com/,下载、索引、资讯或工具入口,https://dianying4k.com/auth/login?callback=/,,,False,,0,
+电影街,https://dyjie.net/,下载、索引、资讯或工具入口,https://dyjie.net/user/login/?next=%2F,,,False,,0,
+比特大雄,https://www.btdx8.net/,下载、索引、资讯或工具入口,https://www.btdx8.net/,,,False,,0,
+番组放送,https://bgmlist.com/,下载、索引、资讯或工具入口,https://bgmlist.com/,,,False,,0,
+Animex 动漫社,https://www.animetox.com/,下载、索引、资讯或工具入口,https://www.animetox.com/,,,False,,0,
+时光电影榜,https://list.mtime.com/listIndex,下载、索引、资讯或工具入口,https://list.mtime.com/,,,False,,0,
+Anime Garden,https://animes.garden/,下载、索引、资讯或工具入口,https://animes.garden/detail/dmhy/730769,,,False,,0,
+预告片世界,https://www.6huo.com/,本次检查页未取得可接管媒体,https://www.6huo.com/movie/87064,,,False,False,0,入口为预告片站；单独补查影片页，不将预告片结果视为电影正片兼容。
+IMP Awards,https://www.impawards.com/,下载、索引、资讯或工具入口,http://www.impawards.com/,,,False,,0,
+射手网（伪）,https://assrt.net/,下载、索引、资讯或工具入口,https://assrt.net/,,,False,,0,
+央视纪实,https://jishi.cctv.com/,样本至少一种解码器出帧,https://tv.cctv.com/2017/01/02/VIDExRcknoQut7D7Qsxtunds170102.shtml,False,True,True,False,0,补查样本是央视公开的存档节目；不代表直播频道或跨期选集已全部验证。
+西瓜卡通,https://cn1.xgcartoon.com/,本次检查页未取得可接管媒体,https://cn1.xgcartoon.com/detail/doupocangqiongnianfanguoyu-tiancantudou,,,False,,0,
+纪录片之家,https://www.05jl.com/,下载、索引、资讯或工具入口,https://www.05jl.com/,,,False,,0,
+厂长资源,https://www.4kcz.com/,本次检查页未取得可接管媒体,https://www.4kcz.com/movie/2584.html,,,False,,0,
+影视搜,https://yingshi.xyz/,下载、索引、资讯或工具入口,https://yingshi.co/,,,False,,0,

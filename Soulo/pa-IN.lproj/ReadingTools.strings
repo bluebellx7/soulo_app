@@ -436,3 +436,65 @@
 "files_move_busy" = "ਇਹਨਾਂ ਆਈਟਮਾਂ ਨੂੰ ਮੂਵ ਕਰਨ ਜਾਂ ਨਾਮ ਬਦਲਣ ਤੋਂ ਪਹਿਲਾਂ ਡਾਊਨਲੋਡਾਂ ਦੇ ਪੂਰਾ ਹੋਣ ਦੀ ਉਡੀਕ ਕਰੋ।";
 "video_show_episode_dock" = "ਐਪੀਸੋਡ ਡੌਕ ਦਿਖਾਓ";
 "video_show_episode_dock_desc" = "ਐਪੀਸੋਡਾਂ ਵਾਲੇ ਵੈੱਬ ਪੰਨਿਆਂ 'ਤੇ ਡੌਕਡ ਐਪੀਸੋਡ ਬਟਨ ਦਿਖਾਓ। ਐਪੀਸੋਡ ਪਲੇਅਰ ਦੇ ਅੰਦਰ ਉਪਲਬਧ ਰਹਿੰਦੇ ਹਨ।";
+
+// Webpage share preview
+"page_share_image" = "ਚਿੱਤਰ ਸਾਂਝਾ ਕਰੋ";
+"page_share_link" = "ਲਿੰਕ ਸਾਂਝਾ ਕਰੋ";
+"page_share_preview" = "ਦਿਸਦੇ ਖੇਤਰ ਦੀ ਝਲਕ";
+"page_share_brand" = "Soulo: ਮਲਟੀ-ਸਰਚ ਬ੍ਰਾਊਜ਼ਰ";
+
+"video_export_mp4" = "MP4 ਨਿਰਯਾਤ ਕਰੋ";
+"video_export_failed" = "ਇਸ ਵੀਡੀਓ ਨੂੰ MP4 ਵਜੋਂ ਨਿਰਯਾਤ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ। ਅਸਲ ਫ਼ਾਈਲ ਸੰਭਾਲੀ ਗਈ ਹੈ।";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "ਦੋ ਉਂਗਲਾਂ ਦੇ ਇਸ਼ਾਰੇ";
+"gesture_hint" = "ਦੋ ਉਂਗਲਾਂ ਨੂੰ ਇਕੱਠੇ ਪਾਸੇ ਹਿਲਾਓ। ਸੰਕੇਤ ਉਂਗਲਾਂ ਦੇ ਨਾਲ ਚੱਲਦਾ ਹੈ; ਰੱਦ ਕਰਨ ਲਈ ਵਾਪਸ ਲਿਆਓ। ਇੱਕ ਉਂਗਲ ਨਾਲ ਨੈਵੀਗੇਸ਼ਨ ਤੇ ਪਿੰਚ ਜ਼ੂਮ ਉਪਲਬਧ ਰਹਿੰਦੇ ਹਨ।";
+"gesture_swipe_right" = "ਸੱਜੇ ਸਵਾਈਪ";
+"gesture_swipe_left" = "ਖੱਬੇ ਸਵਾਈਪ";
+"gesture_show_toolbar" = "ਟੂਲਬਾਰ ਦਿਖਾਓ";
+"gesture_quick_menu" = "ਤੇਜ਼ ਮੀਨੂ";
+"gesture_preview" = "ਇਸ਼ਾਰੇ ਦੀ ਝਲਕ";
+"zoom_remember" = "ਵੈੱਬਸਾਈਟ ਜ਼ੂਮ ਯਾਦ ਰੱਖੋ";
+"zoom_hint" = "ਪੇਜ ਮੀਨੂ ਦਾ ਜ਼ੂਮ ਹਰ ਡੋਮੇਨ ਲਈ ਸੁਰੱਖਿਅਤ ਹੁੰਦਾ ਹੈ। ਨਿੱਜੀ ਟੈਬ ਦੇ ਬਦਲਾਅ ਸੁਰੱਖਿਅਤ ਨਹੀਂ ਹੁੰਦੇ।";
+"zoom_empty" = "ਕੋਈ ਜ਼ੂਮ ਸੁਰੱਖਿਅਤ ਨਹੀਂ";
+"zoom_reset_all" = "ਸਭ ਨੂੰ 100% 'ਤੇ ਰੀਸੈੱਟ ਕਰੋ";
+
+"shake_direction" = "ਦਿਸ਼ਾ";
+"shake_direction_horizontal" = "ਖੱਬੇ ਅਤੇ ਸੱਜੇ";
+"shake_direction_vertical" = "ਉੱਪਰ ਅਤੇ ਹੇਠਾਂ";
+"shake_direction_any" = "ਕੋਈ ਵੀ ਦਿਸ਼ਾ";
+
+"gesture_settings_title" = "ਵੈੱਬਪੇਜ ਇਸ਼ਾਰੇ";
+"gesture_no_history" = "ਜਦੋਂ ਪਿੱਛੇ ਨਹੀਂ ਜਾ ਸਕਦੇ";
+"gesture_no_history_hint" = "ਪਿਛਲਾ ਪੇਜ ਨਾ ਹੋਵੇ ਤਾਂ ਕਾਰਵਾਈ ਦਿਖਾਉਣ ਲਈ ਖੱਬੇ ਕਿਨਾਰੇ ਤੋਂ ਸੱਜੇ ਸਵਾਈਪ ਕਰੋ। ਰੱਦ ਕਰਨ ਲਈ ਵਾਪਸ ਲਿਆਓ। ਬੰਦ ਕਰਨ ਲਈ ਕੋਈ ਨਹੀਂ ਚੁਣੋ।";
+
+"gesture_execution" = "ਕਾਰਵਾਈ ਕਰੋ";
+
+"gesture_execute_release" = "ਛੱਡਣ 'ਤੇ";
+
+"gesture_execute_tap" = "ਟੈਪ ਕਰਨ 'ਤੇ";
+
+"gesture_feedback" = "ਕਾਰਵਾਈ ਦਾ ਫੀਡਬੈਕ";
+
+"gesture_haptics" = "ਵਾਈਬ੍ਰੇਸ਼ਨ";
+
+"gesture_sound" = "ਆਵਾਜ਼";
+
+"gesture_feedback_preview" = "ਫੀਡਬੈਕ ਦੀ ਝਲਕ";
+
+"media_start_timeout" = "ਪਲੇਬੈਕ ਸ਼ੁਰੂ ਨਹੀਂ ਹੋਇਆ। ਨੈੱਟਵਰਕ ਜਾਂਚੋ ਜਾਂ ਪਲੇਅਰ ਬਦਲੋ।";
+
+"wallpaper_appearance_hint" = "ਹਲਕੀ ਅਤੇ ਗੂੜ੍ਹੀ ਦਿੱਖ ਲਈ ਵੱਖਰੇ ਪਿਛੋਕੜ ਸੈੱਟ ਕਰੋ। ਐਪ ਦੀ ਦਿੱਖ ਬਦਲਣ ਨਾਲ ਇਹ ਆਪਣੇ ਆਪ ਬਦਲ ਜਾਣਗੇ।";
+
+"wallpaper_image_overlay" = "ਤਸਵੀਰ ਦੀ ਪਰਤ";
+
+"auto_hide_platform_bar" = "ਪਲੇਟਫਾਰਮ ਬਾਰ ਆਪਣੇ ਆਪ ਲੁਕਾਓ";
+
+"top_tab_bar_hidden_title" = "ਉੱਪਰਲੀ ਟੈਬ ਬਾਰ ਲੁਕਾਈ ਗਈ";
+
+"top_tab_bar_reopen_hint" = "ਦੁਬਾਰਾ ਵੇਖਣ ਲਈ ਹੇਠਾਂ ਟੈਬ ਬਟਨ ਟੈਪ ਕਰੋ, … ਮੀਨੂ ਖੋਲ੍ਹੋ ਅਤੇ ਉੱਪਰਲੀ ਟੈਬ ਬਾਰ ਦਿਖਾਉਣ ਦਾ ਵਿਕਲਪ ਚਾਲੂ ਕਰੋ।";
+
+"wallpaper_image_blur" = "ਧੁੰਦਲਾ ਕੱਚ";
+"wallpaper_blur_amount" = "ਧੁੰਦਲੇਪਨ ਦੀ ਤੀਬਰਤਾ";
+
+"auto_hide_platform_bar_hint" = "ਖੋਜ ਦਾ ਨਤੀਜਾ ਖੋਲ੍ਹਣ ’ਤੇ ਪਲੇਟਫਾਰਮ ਬਾਰ ਲੁਕ ਜਾਵੇਗੀ। ਨਤੀਜਿਆਂ ’ਤੇ ਵਾਪਸ ਜਾਣ ਜਾਂ ਨਵੀਂ ਖੋਜ ਕਰਨ ’ਤੇ ਇਹ ਮੁੜ ਦਿਖੇਗੀ। ਇਸ ਮੀਨੂ ਵਿੱਚ ਇਸਨੂੰ ਬੰਦ ਕਰ ਸਕਦੇ ਹੋ।";

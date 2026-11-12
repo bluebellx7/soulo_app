@@ -609,27 +609,27 @@
 "extensions_reload_note" = "Paginile deschise se reîncarcă după ce o extensie sau un script este schimbat, astfel încât noua stare să intre în vigoare.";
 "web_extensions" = "Extensii web";
 "userscripts" = "Scripturi și extensii";
-"userscripts_installed" = "Scripturile mele";
-"userscripts_install" = "Instalați scripturi";
+"userscripts_installed" = "Instalate";
+"userscripts_install" = "Adaugă";
 "userscripts_empty" = "Fără UserScripts";
 "userscripts_empty_desc" = "Instalați un fișier .user.js sau creați un script pentru a-l vedea aici.";
 "userscripts_reload_note" = "Paginile deschise se reîncarcă după ce un script este instalat, editat, activat, dezactivat sau eliminat.";
 "userscript_experimental_badge" = "Compatibilitate";
 "userscript_experimental_title" = "Compatibilitate UserScript";
-"userscript_experimental_desc" = "Acceptă regulile site-ului, pornirea/sfârșitul documentului, stocare extinsă GM și API-uri de pagină, comenzi de script, notificări, file, descărcări, cookie-uri, resurse și solicitări cu permisiuni. Examinați fiecare script înainte de instalare.";
+"userscript_experimental_desc" = "Scripturile de utilizator pot citi sau modifica site-urile corespunzătoare și folosi API-urile permise. Compatibilitatea diferă. Instalează doar scripturi de încredere.";
 "extension_choose_file" = "Alege fișier sau dosar…";
 "extension_installing" = "Se verifică și se instalează extensia...";
 "extension_install_failed" = "Extensia nu a putut fi instalată";
 "extension_permissions_summary" = "%d permisiuni · %d regulile site-ului";
 "extension_untitled" = "Extensie fără titlu";
-"web_extension_install_footer" = "Atingeți oriunde pe un rând sursă pentru a-l deschide în fila Soulo curentă. Soulo recunoaște CRX, XPI, ZIP și acțiunile de instalare în magazin acceptate, apoi întreabă înainte de instalare. Este posibil ca unele API-uri numai pentru desktop să fie indisponibile.";
+"web_extension_install_footer" = "Instalează extensii compatibile dintr-un link de magazin sau importă CRX, XPI, ZIP ori un dosar de extensie. Verifică permisiunile și compatibilitatea; unele funcții desktop nu sunt disponibile.";
 "web_extension_install_store_link" = "Instalați din linkul magazinului...";
 "web_extension_browse_sources" = "Răsfoiți magazinele de extensii";
 "web_extension_browse_sources_footer" = "Butoanele Store Get acceptă doar propriile browsere desktop. Copiați linkul unei pagini cu detalii de extensie, apoi utilizați Instalare din linkul magazinului în Soulo.";
 "web_extension_store_install_title" = "Instalați o extensie de magazin";
 "extension_page_banner_title" = "Instalați cu Soulo";
-"extension_page_banner_desc" = "Soulo poate instala această extensie direct.";
-"web_extension_store_install_desc" = "Inserați un link către pagina de detalii a unui magazin web Chrome, a suplimentelor Microsoft Edge sau a programelor de completare Firefox. Soulo descarcă pachetul în sine, astfel încât butonul Obținere incompatibil al magazinului nu este utilizat.";
+"extension_page_banner_desc" = "Verifică compatibilitatea și permisiunile înainte de instalare.";
+"web_extension_store_install_desc" = "Lipește linkul paginii unei extensii Chrome, Edge sau Firefox și verifică compatibilitatea și permisiunile înainte de confirmarea instalării.";
 "web_extension_store_link_placeholder" = "Link pentru pagina de extensie sau ID-ul extensiei Chrome";
 "web_extension_store_invalid_link" = "Inserați un link pentru o pagină cu detalii de extensie din Chrome, Edge sau Firefox, un ID de extensie Chrome sau un link direct CRX, XPI sau ZIP.";
 "web_extension_store_https_required" = "Pachetele de extensie trebuie să utilizeze o legătură HTTPS securizată.";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "Fluxul media a returnat un segment nevalid sau într-o ordine incorectă.";
 "resource_stream_download_missing_track" = "Fluxul descărcat nu conținea piste video și audio care pot fi redate.";
 "resource_stream_download_export_failed" = "Soulo nu a putut combina conținutul video și audio descărcat.";
-"resource_stream_playback_download_first" = "Acest flux protejat nu poate fi previzualizat de la adresa URL temporară. Descarcă-l mai întâi pentru a reda fișierul local.";
+"resource_stream_playback_download_first" = "Acest flux nu poate fi previzualizat direct momentan.";
 "platform_invalid_web_url" = "Introduceți o adresă web validă care începe cu http:// sau https://.";
 
 "library_history_tab" = "Istoric";
@@ -889,8 +889,7 @@
 "extension_review_access" = "Alege permisiunile și site-urile pe care le poate accesa această extensie.";
 "extension_limit_commands" = "Scurtăturile de tastatură ale extensiilor nu sunt disponibile pe iOS.";
 "extension_limit_notifications" = "Notificările pot fi afișate, dar evenimentele de clic și închidere nu sunt acceptate.";
-"extension_limit_offscreen" = "Documentele în afara ecranului acceptă doar redarea audio.";
-
+"extension_limit_offscreen" = "Documentele din afara ecranului sunt supuse limitelor iOS; unele funcții pot fi indisponibile.";
 "review_support_message" = "Îți mulțumim că susții Soulo. Recenziile tale ne ajută să îmbunătățim aplicația.";
 "review_open_app_store" = "Recenzie în App Store";
 

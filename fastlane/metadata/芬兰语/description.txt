@@ -6,8 +6,6 @@ Valitse asetuksissa Soulo oletusselaimeksi, jotta voit avata linkkejä muista ap
 
 BT-lataukset: tuo .torrent-tiedostoja tai magnet-linkkejä, valitse tiedostot, keskeytä ja jatka. iOS 26:ssa lataukset voivat jatkua taustalla järjestelmän salliessa; aiemmat versiot tallentavat etenemisen ja keskeyttävät. Toista tuettuja BT-tiedostoja latauksen aikana ja avaa MKV-tiedostoja. Tuo ed2k/thunder-linkkejä. Lataus vaatii saatavilla olevia lähteitä; toisto riippuu koodekeista.
 
-Sujuvampaa selaamista, paremmat videosäätimet ja selkeämmät tiedostojen esikatselut.
-
 Valitse aloitussivulle viisi valinnaista oikopolkua latauksiin, tiedostoihin, kirjanmerkkeihin, historiaan, taustakuviin ja muille sivuille. Kirjaston välilehtipalkki tiivistyy vieritettäessä.
 
 Etsi tietoa, lue artikkeleita, toista mediaa ja hallitse latauksia samassa selaimessa.
@@ -20,11 +18,11 @@ Selaa useilla välilehdillä ja käytä puhehakua, hakuhistoriaa sekä palvelury
 • Tiedostot: löydä sivujen kuvat, ääni, videot ja asiakirjat ja tallenna useita kuvia kerralla. Selaa luettelona tai kansiruudukkona, nimeä uudelleen, tuo Kuvista ja siirrä Wi-Fi-yhteydellä.
 • Pakkaus: pura ZIP-, RAR- ja 7z-tiedostoja. Luo ZIP- ja 7z-paketteja halutessasi salasanasuojauksella.
 • Lukeminen: TXT, PDF, EPUB ja tuetut DRM-vapaat MOBI-, AZW- ja AZW3-kirjat. Säädä fonttia, kokoa, riviväliä ja taustaa. Mukautuvan asettelun kirjoissa voit vaihtaa kiinan yksinkertaistetun ja perinteisen kirjoitusasun välillä. Lukutila poimii artikkelin ja antaa jatkaa seuraavalle sivulle.
-• Laajennukset: tuo, muokkaa ja suorita JavaScript-käyttäjäskriptejä, hallitse sivustokohdistusta ja oikeuksia sekä asenna yhteensopivia WebExtension-laajennuksia.
+• Skriptit ja laajennukset: Tuo, muokkaa ja suorita JavaScript-käyttäjäskriptejä. Yhteensopivat WebExtensions-laajennukset vaativat iOS 18.4:n tai uudemman; tuki vaihtelee laajennuksittain.
 • Verkkotyökalut: käännös, sivulta haku, koko sivun kuvakaappaus, kuvien tekstintunnistus, työpöytä-/mobiilitila, oma käyttäjäagentti ja sivustojen varmenteet.
 • Kirjanmerkit: kansiot sekä Chromen, Edgen ja muiden selainten HTML-kirjanmerkkien tuonti ja vienti. Luo sivun kuvakkeella varustettu QR-koodi ja jaa, tallenna tai kopioi se.
-• Mukautus: taustakuvat, työkalupalkki ja sovelluskuvakkeen pikatoiminnot. Käytä widgettejä, Pikakomentoja ja URL-skeemoja. Synkronoi asetukset halutessasi iCloudiin.
+• Mukautus: taustakuvat, työkalupalkki ja sovelluskuvakkeen pikatoiminnot. Käytä widgettejä, Pikakomentoja ja URL-skeemoja. Synkronoi asetukset halutessasi iCloudiin. Erilliset taustat vaalealle ja tummalle ulkoasulle sekä kuvan peittokerroksen kytkin.
 
-Median, kirjojen ja laajennusten toimivuus riippuu tiedostomuodosta, sivuston rajoituksista ja järjestelmäversiosta.
+Median, kirjojen ja laajennusten saatavuus riippuu muodoista, sivuston rajoituksista ja järjestelmäversiosta. Varmista ennen latausta, että lähde sallii tallennuksen.
 
 Tuki: contact@dkluge.com

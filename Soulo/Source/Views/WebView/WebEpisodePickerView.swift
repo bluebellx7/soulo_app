@@ -112,7 +112,7 @@ struct WebEpisodePickerView: View {
                 } else if viewModel.isLoading {
                     Spacer(); ProgressView(); Spacer()
                 } else {
-                    ContentUnavailableView(ToolText.text("episodes_unavailable"), systemImage: "list.number")
+                    CompatibleUnavailableView(ToolText.text("episodes_unavailable"), systemImage: "list.number")
                 }
             }
             .padding(.horizontal, 20)
@@ -149,8 +149,8 @@ struct WebEpisodePickerView: View {
                     .accessibilityIdentifier("browser.episodes-downloads")
                 }
             }
-            .onChange(of: source?.id) { _, _ in selectedIDs.removeAll() }
-            .onChange(of: source?.episodes.map(\.id)) { _, ids in selectedIDs.formIntersection(Set(ids ?? [])) }
+            .onCompatibleChange(of: source?.id) { _, _ in selectedIDs.removeAll() }
+            .onCompatibleChange(of: source?.episodes.map(\.id)) { _, ids in selectedIDs.formIntersection(Set(ids ?? [])) }
             .sheet(item: $selectedMedia) { media in
                 WebResourceMediaPlayerView(resource: media, pageURL: media.sourcePageURL ?? viewModel.currentURL,
                     sourceWebView: viewModel.webView,

@@ -436,3 +436,65 @@
 "files_move_busy" = "Tunggu muat turun selesai sebelum mengalihkan atau menamakan semula item ini.";
 "video_show_episode_dock" = "Tunjukkan dok episod";
 "video_show_episode_dock_desc" = "Tunjukkan butang episod berlabuh pada halaman web dengan episod. Episod kekal tersedia di dalam pemain.";
+
+// Webpage share preview
+"page_share_image" = "Kongsi imej";
+"page_share_link" = "Kongsi pautan";
+"page_share_preview" = "Pratonton kawasan kelihatan";
+"page_share_brand" = "Soulo: Pelayar Pelbagai Carian";
+
+"video_export_mp4" = "Eksport MP4";
+"video_export_failed" = "Video ini tidak dapat dieksport sebagai MP4. Fail asal telah dikekalkan.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Gerak Isyarat Dua Jari";
+"gesture_hint" = "Gerakkan dua jari bersama ke sisi. Petunjuk mengikut jari; gerakkan kembali untuk membatalkan. Navigasi satu jari dan zum cubit masih tersedia.";
+"gesture_swipe_right" = "Leret ke Kanan";
+"gesture_swipe_left" = "Leret ke Kiri";
+"gesture_show_toolbar" = "Tunjukkan Bar Alat";
+"gesture_quick_menu" = "Menu Pantas";
+"gesture_preview" = "Pratonton Gerak Isyarat";
+"zoom_remember" = "Ingat Zum Laman";
+"zoom_hint" = "Zum daripada menu halaman disimpan bagi setiap domain. Perubahan dalam tab peribadi tidak disimpan.";
+"zoom_empty" = "Tiada Zum Disimpan";
+"zoom_reset_all" = "Tetapkan Semula Semua ke 100%";
+
+"shake_direction" = "Arah";
+"shake_direction_horizontal" = "Kiri dan Kanan";
+"shake_direction_vertical" = "Atas dan Bawah";
+"shake_direction_any" = "Sebarang Arah";
+
+"gesture_settings_title" = "Gerak Isyarat Halaman Web";
+"gesture_no_history" = "Apabila Tidak Boleh Kembali";
+"gesture_no_history_hint" = "Jika tiada halaman terdahulu, leret ke kanan dari tepi kiri untuk melihat tindakan. Gerakkan kembali untuk membatalkan. Pilih Tiada untuk melumpuhkan.";
+
+"gesture_execution" = "Laksanakan Tindakan";
+
+"gesture_execute_release" = "Apabila Dilepaskan";
+
+"gesture_execute_tap" = "Apabila Diketuk";
+
+"gesture_feedback" = "Maklum Balas Tindakan";
+
+"gesture_haptics" = "Getaran";
+
+"gesture_sound" = "Bunyi";
+
+"gesture_feedback_preview" = "Pratonton Maklum Balas";
+
+"media_start_timeout" = "Main balik belum bermula. Semak rangkaian atau tukar pemain.";
+
+"wallpaper_appearance_hint" = "Tetapkan latar berasingan untuk penampilan cerah dan gelap. Latar bertukar secara automatik mengikut aplikasi.";
+
+"wallpaper_image_overlay" = "Lapisan Imej";
+
+"auto_hide_platform_bar" = "Sembunyi Bar Platform Automatik";
+
+"top_tab_bar_hidden_title" = "Bar Tab Atas Disembunyikan";
+
+"top_tab_bar_reopen_hint" = "Untuk menunjukkannya semula, ketik butang tab di bawah, buka menu … kemudian hidupkan bar tab atas.";
+
+"wallpaper_image_blur" = "Kaca Kabur";
+"wallpaper_blur_amount" = "Kekuatan Kabur";
+
+"auto_hide_platform_bar_hint" = "Bar platform disembunyikan apabila anda membuka hasil carian. Kembali ke hasil atau mulakan carian baharu untuk memaparkannya semula. Anda boleh mematikannya dalam menu ini.";

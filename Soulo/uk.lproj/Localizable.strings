@@ -609,27 +609,27 @@
 "extensions_reload_note" = "Відкриті сторінки перезавантажуються після зміни розширення або сценарію, щоб новий стан набув чинності.";
 "web_extensions" = "Веб-розширення";
 "userscripts" = "Скрипти та розширення";
-"userscripts_installed" = "Мої сценарії";
-"userscripts_install" = "Встановити скрипти";
+"userscripts_installed" = "Установлено";
+"userscripts_install" = "Додати";
 "userscripts_empty" = "Ні UserScripts";
 "userscripts_empty_desc" = "Установіть файл .user.js або створіть сценарій, щоб побачити його тут.";
 "userscripts_reload_note" = "Відкриті сторінки перезавантажуються після встановлення, редагування, увімкнення, вимкнення або видалення сценарію.";
 "userscript_experimental_badge" = "Сумісність";
 "userscript_experimental_title" = "UserScript сумісність";
-"userscript_experimental_desc" = "Підтримує правила сайту, початок/кінець документа, велике сховище GM і API сторінок, команди сценаріїв, сповіщення, вкладки, завантаження, файли cookie, ресурси та запити на рівні дозволів. Перегляньте кожен сценарій перед встановленням.";
+"userscript_experimental_desc" = "Користувацькі скрипти можуть читати або змінювати відповідні сайти й використовувати дозволені API. Сумісність залежить від скрипту. Установлюйте лише скрипти, яким довіряєте.";
 "extension_choose_file" = "Вибрати файл або папку…";
 "extension_installing" = "Перевірка та встановлення розширення…";
 "extension_install_failed" = "Не вдалося встановити розширення";
 "extension_permissions_summary" = "%d дозволи · %d правила веб-сайту";
 "extension_untitled" = "Розширення без назви";
-"web_extension_install_footer" = "Торкніться будь-де на вихідному рядку, щоб відкрити його на поточній вкладці Soulo. Soulo розпізнає CRX, XPI, ZIP і підтримувані дії встановлення з магазину, а потім запитує перед встановленням. Деякі API лише для робочого столу можуть бути недоступні.";
+"web_extension_install_footer" = "Установлюйте сумісні розширення за посиланням на магазин або імпортуйте CRX, XPI, ZIP чи папку розширення. Перевірте дозволи й сумісність; деякі функції для комп’ютерів недоступні.";
 "web_extension_install_store_link" = "Установити з Store Link…";
 "web_extension_browse_sources" = "Перегляньте магазини розширень";
 "web_extension_browse_sources_footer" = "Кнопки «Зберігати» підтримують лише свої власні браузери на робочому столі. Скопіюйте посилання на сторінку з інформацією про розширення, а потім скористайтеся посиланням «Установити з магазину» в Soulo.";
 "web_extension_store_install_title" = "Встановіть розширення Store";
 "extension_page_banner_title" = "Встановити за допомогою Soulo";
-"extension_page_banner_desc" = "Soulo може встановити це розширення безпосередньо.";
-"web_extension_store_install_desc" = "Вставте посилання на сторінку з деталями веб-магазину Chrome, додатків Microsoft Edge або додатків Firefox. Soulo завантажує сам пакет, тому несумісна кнопка Отримати в магазині не використовується.";
+"extension_page_banner_desc" = "Перед установленням перевірте сумісність і дозволи.";
+"web_extension_store_install_desc" = "Вставте посилання на сторінку розширення Chrome, Edge або Firefox і перевірте сумісність та дозволи перед підтвердженням установлення.";
 "web_extension_store_link_placeholder" = "Посилання на сторінку розширення або ідентифікатор розширення Chrome";
 "web_extension_store_invalid_link" = "Вставте посилання на сторінку з деталями розширення з Chrome, Edge або Firefox, ідентифікатор розширення Chrome або пряме посилання CRX, XPI чи ZIP.";
 "web_extension_store_https_required" = "Пакети розширень повинні використовувати безпечне посилання HTTPS.";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "Медіапотік повернув недійсний сегмент або сегмент у неправильному порядку.";
 "resource_stream_download_missing_track" = "Завантажений потік не містив відтворюваних відео- й аудіодоріжок.";
 "resource_stream_download_export_failed" = "Soulo не вдалося об’єднати завантажені відео та аудіо.";
-"resource_stream_playback_download_first" = "Попередній перегляд цього захищеного потоку за тимчасовою URL-адресою неможливий. Спочатку завантажте його, щоб відтворити локальний файл.";
+"resource_stream_playback_download_first" = "Наразі цей потік неможливо переглянути безпосередньо.";
 "platform_invalid_web_url" = "Введіть коректну вебадресу, що починається з http:// або https://.";
 
 "library_history_tab" = "Історія";
@@ -889,8 +889,7 @@
 "extension_review_access" = "Виберіть дозволи та сайти, доступні цьому розширенню.";
 "extension_limit_commands" = "Клавіатурні скорочення розширень недоступні в iOS.";
 "extension_limit_notifications" = "Сповіщення відображаються, але події натискання й закриття не підтримуються.";
-"extension_limit_offscreen" = "Позаекранні документи підтримують лише відтворення аудіо.";
-
+"extension_limit_offscreen" = "На позаекранні документи поширюються обмеження iOS; деякі функції можуть бути недоступні.";
 "review_support_message" = "Дякуємо за підтримку Soulo. Ваші відгуки допомагають нам ставати кращими.";
 "review_open_app_store" = "Відгук в App Store";
 

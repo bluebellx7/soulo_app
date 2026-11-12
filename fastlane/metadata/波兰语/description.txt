@@ -6,8 +6,6 @@ Ostatnio używane karty i grupy witryn pojawiają się jako pierwsze, a przeglą
 
 Pobieranie BT: importuj pliki .torrent lub linki magnet, wybieraj pliki, wstrzymuj i wznawiaj. W iOS 26 pobieranie może działać w tle, gdy system na to pozwala; starsze wersje zapisują postęp i wstrzymują zadanie. Odtwarzaj obsługiwane media BT podczas pobierania i otwieraj pliki MKV. Importuj linki ed2k/thunder. Pobieranie wymaga dostępnych źródeł; odtwarzanie zależy od kodeków.
 
-Płynniejsze przeglądanie, lepsze sterowanie wideo i czytelniejsze podglądy plików.
-
 Wybierz pięć opcjonalnych skrótów na stronie głównej do pobierania, plików, zakładek, historii, tapet i innych stron. Pasek kart biblioteki zmniejsza się podczas przewijania.
 
 Szukaj informacji, czytaj artykuły, odtwarzaj multimedia i zarządzaj pobraniami w jednej przeglądarce.
@@ -20,11 +18,11 @@ Korzystaj z wielu kart, wyszukiwania głosowego, historii i grup serwisów. Zmie
 • Pliki: wykrywaj obrazy, audio, filmy i dokumenty na stronach oraz zapisuj wiele obrazów naraz. Lista lub siatka okładek, zmiana nazw, import ze Zdjęć i przesyłanie przez Wi-Fi.
 • Archiwa: rozpakowuj ZIP, RAR i 7z. Twórz ZIP i 7z z opcjonalnym hasłem.
 • Czytanie: TXT, PDF, EPUB oraz obsługiwane MOBI, AZW i AZW3 bez DRM. Dostosuj czcionkę, rozmiar, interlinię i tło. Książki z elastycznym układem obsługują wyświetlanie chińskiego uproszczonego i tradycyjnego. Tryb czytania wydobywa tekst artykułu i pozwala kontynuować na kolejnej stronie.
-• Rozszerzenia: importuj, edytuj i uruchamiaj skrypty JavaScript, zarządzaj dopasowaniem witryn i uprawnieniami oraz instaluj zgodne WebExtensions.
+• Skrypty i rozszerzenia: importuj, edytuj i uruchamiaj skrypty JavaScript. Zgodne WebExtensions wymagają iOS 18.4 lub nowszego; zakres obsługi zależy od rozszerzenia.
 • Narzędzia: tłumaczenie, szukanie na stronie, zrzuty całych stron, rozpoznawanie tekstu na obrazach, tryby komputerowy/mobilny, własny agent użytkownika i certyfikaty witryn.
 • Zakładki: foldery oraz import i eksport zakładek HTML używanych przez Chrome, Edge i inne przeglądarki. Twórz kody QR stron z ikoną witryny, udostępniaj je, zapisuj i kopiuj.
-• Personalizacja: tapety, pasek narzędzi i szybkie czynności ikony aplikacji. Dostęp przez widżety, Skróty i schematy URL. Opcjonalna synchronizacja ustawień przez iCloud.
+• Personalizacja: tapety, pasek narzędzi i szybkie czynności ikony aplikacji. Dostęp przez widżety, Skróty i schematy URL. Opcjonalna synchronizacja ustawień przez iCloud. Osobne tła dla jasnego i ciemnego wyglądu oraz przełącznik warstwy na obrazie.
 
-Dostępność multimediów, książek i rozszerzeń zależy od formatu, ograniczeń witryny i wersji systemu.
+Multimedia, książki i rozszerzenia zależą od formatów, ograniczeń witryn i wersji systemu. Przed pobraniem sprawdź, czy źródło zezwala na zapis.
 
 Pomoc: contact@dkluge.com

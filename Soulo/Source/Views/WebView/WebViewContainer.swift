@@ -1,5 +1,5 @@
 import SwiftUI
-import SwiftData
+import CoreData
 import SafariServices
 
 enum BrowserChromeLayout {
@@ -186,7 +186,8 @@ private struct BrowserNavigationConfirmationBar: View {
             }
         }
         .buttonStyle(.plain)
-        .padding(14)
+        .padding(12)
+        .frame(maxWidth: UIDevice.current.userInterfaceIdiom == .pad ? 520 : .infinity)
         .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(identifier)
@@ -212,7 +213,7 @@ struct WebViewContainer: View {
     var onPageLoaded: (() -> Void)? = nil
     var topSafeAreaInset: CGFloat = 0
     var bottomSafeAreaInset: CGFloat = 0
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.managedObjectContext) private var modelContext
     @EnvironmentObject private var searchVM: SearchViewModel
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -221,8 +222,9 @@ struct WebViewContainer: View {
     @StateObject private var safariCompatibilityPresenter = SafariCompatibilityPresenter()
 
     @State private var isBookmarked: Bool = false
+    @AppStorage(VideoPlaybackPreferences.showsToolsKey) private var showsWebVideoTools = true
     @State private var videoPlaybackOrientation: WebVideoFullscreenOrientation?
-    @State private var sharePresentation: PageSharePresentation?
+    @State private var sharePreview: WebPageSharePreviewModel?
     @State private var showExternalConfirm: Bool = false
     @State private var showBookmarkToast: Bool = false
     @State private var showLinkCopiedToast: Bool = false
@@ -250,6 +252,7 @@ struct WebViewContainer: View {
     @State private var showFullscreenExitHandle = false
     @State private var showFullscreenExitHint = false
     @State private var showFullscreenMenu = false
+    @State private var swipeActionTask: Task<Void, Never>?
     @State private var fullscreenHintDismissTask: Task<Void, Never>?
     @State private var showCaptureOptions = false
     @State private var showResourceInspector = false
@@ -281,6 +284,7 @@ struct WebViewContainer: View {
 
     var body: some View {
         browserContent.modifier(SafariCompatibilityFeedback(presenter: safariCompatibilityPresenter))
+            .onDisappear { dismissSwipePanel() }
     }
 
     private var showsInitialLoading: Bool {
@@ -403,6 +407,44 @@ struct WebViewContainer: View {
             }
 
             // Toast overlays
+            if isActiveTab, let swipe = webViewModel.swipeActionRequest, swipe.url == webViewModel.currentURL {
+                BrowserSwipeHint(request: swipe,
+                    menu: BrowserSwipePreferences.menu(value: UserDefaults.standard.string(forKey: BrowserSwipePreferences.menuKey)
+                        ?? BrowserSwipePreferences.defaultMenuValue),
+                    isAvailable: canPerformSwipeAction,
+                    onAction: { performSwipeAction($0, request: swipe) })
+                    .transition(reduceMotion ? .opacity : .opacity.combined(with: .offset(x: swipe.direction == .right ? -24 : 24)).combined(with: .scale(scale: 0.92)))
+                    .zIndex(90)
+            }
+            if isActiveTab, showsWebVideoTools, webViewModel.configuredVideo != nil,
+               !webViewModel.configuredVideoUsesInlineControl,
+               webViewModel.domainNavigationConfirmation == nil {
+                VStack {
+                    HStack {
+                        Spacer()
+                        Button {
+                            guard let web = webViewModel.webView,
+                                  let coordinator = web.navigationDelegate as? WebViewRepresentable.Coordinator else { return }
+                            coordinator.playConfiguredVideo(on: web)
+                        } label: {
+                            Image(systemName: "play.fill").font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.94))
+                                .frame(width: 40, height: 40)
+                                .background {
+                                    RoundedRectangle(cornerRadius: 12).fill(.ultraThinMaterial)
+                                        .overlay(RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color(red: 24.0 / 255, green: 25.0 / 255, blue: 29.0 / 255).opacity(0.7)))
+                                }
+                                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.white.opacity(0.16), lineWidth: 1))
+                                .shadow(color: .black.opacity(0.16), radius: 4, y: 2)
+                        }
+                        .buttonStyle(.plain).accessibilityLabel(ToolText.text("play"))
+                        .accessibilityIdentifier("browser.configured-video.play")
+                    }
+                    Spacer()
+                }
+                .padding(.top, 12).padding(.trailing, 12).zIndex(70)
+            }
             if isActiveTab, let rate = webViewModel.videoHoldSpeed {
                 VStack {
                     VideoPlaybackSpeedToast(rate: rate)
@@ -551,6 +593,7 @@ struct WebViewContainer: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             webViewModel.clearVideoHoldSpeed()
+            dismissSwipePanel()
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if isActiveTab && (webViewModel.manualAdSelection != nil || webViewModel.manualAdSavedRuleID != nil) {
@@ -565,8 +608,9 @@ struct WebViewContainer: View {
             Text(ToolText.text("manual_ad_error"))
         }
         .modifier(VideoOrientationErrorAlert(message: $webViewModel.videoOrientationError))
-        .onChange(of: isActiveTab) { _, active in
+        .onCompatibleChange(of: isActiveTab) { _, active in
             if !active {
+                dismissSwipePanel()
                 webViewModel.clearVideoHoldSpeed()
                 webViewModel.cancelMarkingAdvertisement()
                 webViewModel.resolveDomainNavigationConfirmation(allowed: false)
@@ -574,7 +618,7 @@ struct WebViewContainer: View {
             }
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: webViewModel.domainNavigationConfirmation?.id)
-        .onChange(of: webViewModel.domainNavigationConfirmation?.id) { _, id in
+        .onCompatibleChange(of: webViewModel.domainNavigationConfirmation?.id) { _, id in
             guard id != nil else { return }
             guard isActiveTab else {
                 webViewModel.resolveDomainNavigationConfirmation(id: id, allowed: false)
@@ -588,7 +632,7 @@ struct WebViewContainer: View {
                 ? .all
                 : .subviews
         )
-        .onChange(of: webViewModel.isScrollingUp) { _, scrollingUp in
+        .onCompatibleChange(of: webViewModel.isScrollingUp) { _, scrollingUp in
             if isActiveTab {
                 guard !voiceOverEnabled, !shouldKeepPageAboveToolbar else {
                     toolbarMinimized = false
@@ -615,21 +659,21 @@ struct WebViewContainer: View {
                 }
             }
         }
-        .onChange(of: voiceOverEnabled) { _, enabled in
+        .onCompatibleChange(of: voiceOverEnabled) { _, enabled in
             if enabled {
                 toolbarMinimized = false
                 toolbarManuallyHidden = false
             }
         }
-        .onChange(of: shouldKeepPageAboveToolbar) { _, enabled in
+        .onCompatibleChange(of: shouldKeepPageAboveToolbar) { _, enabled in
             if enabled {
                 toolbarMinimized = false
             }
         }
-        .onChange(of: isFullscreen) { _, fullscreen in
+        .onCompatibleChange(of: isFullscreen) { _, fullscreen in
             updateFullscreenPresentation(isFullscreen: fullscreen)
         }
-        .onChange(of: showTranslationSheet) { _, isPresented in
+        .onCompatibleChange(of: showTranslationSheet) { _, isPresented in
             guard !isPresented else { return }
             Task { @MainActor in
                 await webViewModel.refreshPageTranslationState()
@@ -666,19 +710,20 @@ struct WebViewContainer: View {
                 exitFullscreen()
             }
         }
-        .onChange(of: webViewModel.isLoading) { _, loading in
+        .onCompatibleChange(of: webViewModel.isLoading) { _, loading in
             if loading { onPageStarted?() } else { onPageLoaded?() }
         }
-        .onChange(of: webViewModel.hasVisibleContent) { _, visible in
+        .onCompatibleChange(of: webViewModel.hasVisibleContent) { _, visible in
             if visible { onPageLoaded?() }
         }
-        .onChange(of: webViewModel.estimatedProgress) { _, progress in
+        .onCompatibleChange(of: webViewModel.estimatedProgress) { _, progress in
             if progress >= 0.98 { onPageLoaded?() }
         }
         .modifier(BrowserHandoffModifier(
             url: BrowserHandoff.eligibleURL(webViewModel.currentURL, isPrivate: searchVM.isIncognito),
             title: webViewModel.pageTitle, enabled: isActiveTab))
-        .onChange(of: webViewModel.currentURL) { _, url in
+        .onCompatibleChange(of: webViewModel.currentURL) { _, url in
+            dismissSwipePanel()
             showExternalConfirm = false
             if isActiveTab { tabManager?.dismissFindInPage() }
             onPageStarted?()
@@ -687,7 +732,7 @@ struct WebViewContainer: View {
                 withAnimation(.easeOut(duration: 0.2)) { showNewTabPage = false }
             }
         }
-        .onChange(of: videoViewportBottomInset) { _, _ in
+        .onCompatibleChange(of: videoViewportBottomInset) { _, _ in
             guard webViewModel.needsVideoViewportClearance else { return }
             DispatchQueue.main.async {
                 webViewModel.synchronizePageViewport()
@@ -754,8 +799,8 @@ struct WebViewContainer: View {
 
     private var browserContent: some View {
         browserNotifications
-        .sheet(item: $sharePresentation) { presentation in
-            ShareSheet(items: presentation.items)
+        .sheet(item: $sharePreview) { preview in
+            WebPageSharePreview(model: preview)
         }
         .sheet(
             isPresented: $showAddressEditor,
@@ -824,7 +869,7 @@ struct WebViewContainer: View {
                 }
             }
         }
-        .navigationDestination(item: $librarySection) { section in
+        .compatibleNavigationDestination(item: $librarySection) { section in
             LibraryView(
                 initialSection: section,
                 searchVM: searchVM
@@ -910,7 +955,7 @@ struct WebViewContainer: View {
                 webViewModel.imagePreview = nil
             })
         }
-        .onChange(of: webViewModel.showMediaDownloads) { _, show in
+        .onCompatibleChange(of: webViewModel.showMediaDownloads) { _, show in
             if show { showResourceInspector = true; webViewModel.showMediaDownloads = false }
         }
         .modifier(ImageTextRecognitionPresentationModifier(
@@ -1501,6 +1546,58 @@ struct WebViewContainer: View {
         }
     }
 
+    private func dismissSwipePanel() {
+        swipeActionTask?.cancel(); swipeActionTask = nil
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { webViewModel.swipeActionRequest = nil }
+    }
+
+    private func canPerformSwipeAction(_ action: BrowserSwipeAction) -> Bool {
+        switch action {
+        case .back: webViewModel.canGoBack
+        case .forward: webViewModel.canGoForward
+        case .tabs, .newTab, .closeTab: tabManager?.activeWebViewModel === webViewModel
+        case .home: onGoHome != nil
+        case .none: false
+        default: true
+        }
+    }
+
+    private func performSwipeAction(_ action: BrowserSwipeAction, request: BrowserSwipeRequest) {
+        guard isActiveTab, webViewModel.swipeActionRequest?.id == request.id,
+              request.phase == .ready, request.url == webViewModel.currentURL else { return }
+        guard canPerformSwipeAction(action) else { dismissSwipePanel(); return }
+        let tabID = tabManager?.activeTab?.id
+        if action == .closeTab, let tabID, !reduceMotion {
+            request.phase = .executing
+            swipeActionTask?.cancel()
+            swipeActionTask = Task { @MainActor in
+                do { try await Task.sleep(for: .milliseconds(280)) } catch { return }
+                guard webViewModel.swipeActionRequest?.id == request.id, request.url == webViewModel.currentURL,
+                      tabManager?.activeWebViewModel === webViewModel else { return }
+                BrowserSwipeFeedback.executed()
+                dismissSwipePanel()
+                tabManager?.closeTab(id: tabID)
+            }
+            return
+        }
+        BrowserSwipeFeedback.executed()
+        dismissSwipePanel()
+        switch action {
+        case .closeTab: if let tabID { tabManager?.closeTab(id: tabID) }
+        case .tabs: tabManager?.showTabOverview = true
+        case .newTab: tabManager?.createTab(); searchVM.isSearching = true
+        case .back: webViewModel.goBack()
+        case .forward: webViewModel.goForward()
+        case .reload: webViewModel.reload()
+        case .home: onGoHome?()
+        case .showToolbar:
+            exitFullscreen()
+            toolbarManuallyHidden = false
+            toolbarMinimized = false
+        case .none, .menu: break
+        }
+    }
+
     private var fullscreenHandleRevealGesture: some Gesture {
         DragGesture(minimumDistance: 10, coordinateSpace: .local)
             .onEnded { value in
@@ -1630,16 +1727,14 @@ struct WebViewContainer: View {
 
     private func shareCurrentPage() {
         guard let url = webViewModel.currentURL else { return }
-        // This one item behaves as a regular URL for every share extension and
-        // also adopts SafariServices' native Add to Home Screen activity.
-        if #available(iOS 17.4, *),
-           ["http", "https"].contains(url.scheme?.lowercased() ?? "") {
-            sharePresentation = PageSharePresentation(items: [
-                WebPageShareActivityItem(url: url, title: fullscreenDisplayTitle)
-            ])
-        } else {
-            sharePresentation = PageSharePresentation(items: [url])
-        }
+        let obscuredBottom = max(0,
+            (showsBottomToolbar ? pageBottomClearance : videoViewportBottomInset) - pageViewportBottomInset)
+        let source = webViewModel.errorMessage == nil && !webViewModel.showSnapshotWhileRestoring
+            ? webViewModel.webView : nil
+        let preview = WebPageSharePreviewModel(url: url, title: fullscreenDisplayTitle,
+                                              webView: source, obscuredBottom: obscuredBottom)
+        preview.capture()
+        sharePreview = preview
     }
 
     private func handleAddressTranslationAction() {
@@ -1944,10 +2039,10 @@ struct BrowserAddressEditorSheet: View {
             .padding(.bottom, 12)
         }
         .scrollIndicators(.hidden)
-        .scrollBounceBehavior(.basedOnSize)
+        .compatibleSizeBasedBounce()
         .scrollDismissesKeyboard(.interactively)
         .accessibilityAction(.escape) { dismiss() }
-        .onChange(of: pageURLText) { _, _ in
+        .onCompatibleChange(of: pageURLText) { _, _ in
             copyFeedbackID = UUID()
             didCopyLink = false
         }
@@ -2035,7 +2130,7 @@ struct BrowserAddressEditorSheet: View {
 
                 Button(action: copyPageURL) {
                     Image(systemName: didCopyLink ? "checkmark" : "doc.on.doc")
-                        .contentTransition(.symbolEffect(.replace))
+                        .compatibleSymbolReplacement()
                         .foregroundStyle(didCopyLink ? Color.green : Color.secondary)
                 }
                 .buttonStyle(AddressEditorIconButtonStyle())
@@ -2156,12 +2251,12 @@ struct BrowserLoadErrorView: View {
                 content
                 .frame(maxWidth: .infinity, minHeight: geometry.size.height)
             }
-            .scrollBounceBehavior(.basedOnSize)
+            .compatibleSizeBasedBounce()
         }
         .background(Color(UIColor.systemBackground))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("browser.error")
-        .onChange(of: url) { _, _ in copied = false; copyResetTask?.cancel() }
+        .onCompatibleChange(of: url) { _, _ in copied = false; copyResetTask?.cancel() }
         .onDisappear { copyResetTask?.cancel() }
     }
 
@@ -2361,21 +2456,6 @@ private struct SafariCompatibilityFeedback: ViewModifier {
             Button(ToolText.text("done"), role: .cancel) {}
         } message: { Text(ToolText.text("safari_open_failed")) }
     }
-}
-
-// MARK: - ShareSheet
-
-private struct PageSharePresentation: Identifiable {
-    let id = UUID()
-    let items: [Any]
-}
-
-private struct ShareSheet: UIViewControllerRepresentable {
-    let items: [Any]
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
-    }
-    func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }
 
 @available(iOS 17.4, *)

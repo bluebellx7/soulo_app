@@ -1,5 +1,6 @@
 import XCTest
 import SwiftUI
+import CoreData
 import WebKit
 import PDFKit
 import AVFoundation
@@ -448,6 +449,70 @@ final class ReadingToolsTests: XCTestCase {
         nav.popViewController(animated: false)
         try await wait { nav.viewControllers.count == 2 }
         XCTAssertTrue(nav.topViewController === directory)
+    }
+
+    @MainActor func testFloatingPlayerOpensFromEveryLibrarySection() async throws {
+        final class Route: ObservableObject { @Published var library = false }
+        struct Harness: View {
+            @ObservedObject var route: Route
+            let section: LibrarySection
+            let search: SearchViewModel
+            var body: some View {
+                NavigationStack {
+                    Text("Root").mediaPlayerNavigation()
+                        .navigationDestination(isPresented: $route.library) {
+                            LibraryView(initialSection: section, searchVM: search)
+                        }
+                }
+            }
+        }
+        func navigation(in controller: UIViewController?) -> UINavigationController? {
+            guard let controller else { return nil }
+            if let navigation = controller as? UINavigationController { return navigation }
+            return controller.children.compactMap { navigation(in: $0) }.first
+        }
+        let session = MediaSession.shared
+        session.stop()
+        let container = try LibraryStore(inMemory: true)
+        let key = "mini-player-library-" + UUID().uuidString
+        let tabs = TabManager(storageKey: key)
+        defer { session.stop(); UserDefaults.standard.removeObject(forKey: key) }
+        for section in LibrarySection.allCases {
+            print("LIBRARY_EXPANSION stage=mount section=\(section.rawValue)")
+            let route = Route(), search = SearchViewModel()
+            let window = host(Harness(route: route, section: section, search: search)
+                .environmentObject(tabs).environmentObject(search)
+                .environmentObject(LanguageManager.shared).environmentObject(ThemeManager.shared)
+                .environment(\.managedObjectContext, (container).mainContext))
+            defer { window.isHidden = true; window.rootViewController = nil }
+            try await wait { navigation(in: window.rootViewController) != nil }
+            let nav = try XCTUnwrap(navigation(in: window.rootViewController))
+            route.library = true
+            print("LIBRARY_EXPANSION stage=push-library section=\(section.rawValue)")
+            try await wait { nav.viewControllers.count == 2 && nav.transitionCoordinator == nil }
+            let library = try XCTUnwrap(nav.topViewController)
+            print("LIBRARY_EXPANSION stage=expand-player section=\(section.rawValue)")
+            session.expanded = true
+            try await wait { nav.viewControllers.count == 3 && nav.transitionCoordinator == nil }
+            XCTAssertEqual(nav.viewControllers.count, 3, "Floating-player expansion must work from \(section)")
+            XCTAssertFalse(session.expanded, "The request must be consumed by the active page")
+            XCTAssertTrue(nav.viewControllers[1] === library, "Opening playback must preserve the library page")
+            print("LIBRARY_EXPANSION stage=player-presented section=\(section.rawValue)")
+            if nav.viewControllers.count == 3 {
+                print("LIBRARY_EXPANSION stage=pop-player section=\(section.rawValue)")
+                nav.popViewController(animated: false)
+                print("LIBRARY_EXPANSION stage=popped-player section=\(section.rawValue)")
+                try await wait { nav.viewControllers.count == 2 }
+                XCTAssertTrue(nav.topViewController === library)
+                session.expanded = true
+                print("LIBRARY_EXPANSION stage=reexpand-player section=\(section.rawValue)")
+                try await wait { nav.viewControllers.count == 3 && nav.transitionCoordinator == nil }
+                XCTAssertEqual(nav.viewControllers.count, 3, "A second expansion must still work from \(section)")
+            }
+            session.expanded = false
+            window.isHidden = true; window.rootViewController = nil
+            try await Task.sleep(for: .milliseconds(100))
+        }
     }
 
     @MainActor private func host<V: View>(_ view: V) -> UIWindow {

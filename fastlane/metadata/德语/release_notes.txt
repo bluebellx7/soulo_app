@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Ein Fehler wurde behoben, durch den Lesezeichen oder Verlaufseinträge beim Öffnen einen bestehenden Tab ersetzen konnten.
-• Start, Seitenladen und Bedienung der Startseite verbessert.
-• Vollbildsteuerung, Bildschirmdrehung und Wiedergabestatus beim App-Wechsel verbessert.
-• Wiederherstellen geschlossener Tabs, Dateivorschauen und Oberflächendetails verbessert.
+• Separate Hintergründe für helles und dunkles Design und ein Schalter für die Bildebene.
+• Verbesserte Startseitenfarben; die Hintergrundvorschau folgt dem App-Design.
+• Hintergründe ansehen, teilen und in Fotos sichern.
+• Einstellungen für obere Tabs mit neuem Tab und optionalem Ausblenden der Plattformleiste nach der Navigation.

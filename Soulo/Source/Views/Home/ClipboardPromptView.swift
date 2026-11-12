@@ -1,5 +1,5 @@
 import SwiftUI
-import SwiftData
+import CoreData
 
 struct ClipboardPromptView: View {
     var onSearch: () -> Void

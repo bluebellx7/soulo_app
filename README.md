@@ -20,7 +20,7 @@ Soulo 是一款 iOS 多平台搜索浏览器。输入一次关键词，即可在
 
 ## 开发
 
-- SwiftUI、WKWebView、SwiftData；最低 iOS 17.0。
+- SwiftUI、WKWebView、Core Data；最低 iOS 16.0，旧版 SwiftData 数据自动迁移。
 - `project.yml` 是工程配置源文件。使用 XcodeGen 重新生成 `Soulo.xcodeproj`，不要只改生成的工程设置。
 - 第三方播放和下载依赖位于 `ThirdParty/`；使用和构建说明见各目录 README，许可证见 App 内与资源声明。
 

@@ -6,8 +6,6 @@ Nedavno uporabljeni zavihki in skupine spletnih mest so prikazani najprej, pregl
 
 Prenosi BT: uvozite datoteke .torrent ali povezave magnet, izberite datoteke, začasno ustavite in nadaljujte. V iOS 26 se lahko nadaljujejo v ozadju, ko sistem dovoli; starejše različice shranijo napredek in jih začasno ustavijo. Predvajajte podprte BT medije med prenosom in odprite datoteke MKV. Uvozite povezave ed2k/thunder. Prenosi potrebujejo razpoložljive vire; predvajanje je odvisno od kodekov.
 
-Bolj tekoče brskanje, izboljšani videokontrolniki in jasnejši predogledi datotek.
-
 Izberite pet izbirnih bližnjic na domači strani za prenose, datoteke, zaznamke, zgodovino, ozadja in druge strani. Vrstica zavihkov knjižnice se med pomikanjem skrči.
 
 Poiščite informacije, berite članke, predvajajte vsebine in upravljajte prenose v enem brskalniku.
@@ -20,11 +18,11 @@ Brskajte po več zavihkih in uporabite glasovno iskanje, zgodovino ter skupine p
 • Datoteke: poiščite slike, zvok, videe in dokumente na straneh ter shranite več slik hkrati. Seznam ali mreža naslovnic, preimenovanje, uvoz iz Fotografij in prenos prek Wi-Fi.
 • Arhivi: razširite ZIP, RAR in 7z. Ustvarite arhive ZIP in 7z z izbirno zaščito z geslom.
 • Branje: TXT, PDF, EPUB ter podprte knjige MOBI, AZW in AZW3 brez DRM. Nastavite pisavo, velikost, razmik vrstic in ozadje. Knjige s prilagodljivo postavitvijo omogočajo poenostavljeni ali tradicionalni kitajski prikaz. Bralni način izlušči članek in omogoča nadaljevanje na naslednji strani.
-• Razširitve: uvozite, uredite in izvajajte uporabniške skripte JavaScript, upravljajte mesta in dovoljenja ter namestite združljive WebExtensions.
+• Skripti in razširitve: uvozite, uredite in zaženite uporabniške skripte JavaScript. Združljive WebExtensions zahtevajo iOS 18.4 ali novejši; podpora je odvisna od razširitve.
 • Spletna orodja: prevajanje, iskanje po strani, posnetki celotnih strani, prepoznavanje besedila na slikah, namizni/mobilni način, lasten uporabniški agent in potrdila spletnih mest.
 • Zaznamki: mape in uvoz/izvoz zaznamkov HTML za Chrome, Edge in druge brskalnike. Ustvarite kode QR strani z ikono mesta ter jih delite, shranite ali kopirajte.
-• Prilagoditev: ozadja, orodna vrstica in hitra dejanja ikone aplikacije. Dostop prek gradnikov, Bližnjic in shem URL. Izbirna sinhronizacija nastavitev z iCloudom.
+• Prilagoditev: ozadja, orodna vrstica in hitra dejanja ikone aplikacije. Dostop prek gradnikov, Bližnjic in shem URL. Izbirna sinhronizacija nastavitev z iCloudom. Ločeni ozadji za svetli in temni videz ter stikalo za plast čez sliko.
 
-Razpoložljivost vsebin, knjig in razširitev je odvisna od oblike datoteke, omejitev strani in različice sistema.
+Mediji, knjige in razširitve so odvisni od oblik, omejitev spletnih mest in različice sistema. Pred prenosom preverite, ali vir dovoljuje shranjevanje vsebine.
 
 Podpora: contact@dkluge.com

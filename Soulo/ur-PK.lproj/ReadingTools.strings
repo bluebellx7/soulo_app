@@ -436,3 +436,65 @@
 "files_move_busy" = "ان آئٹمز کو منتقل کرنے یا ان کا نام تبدیل کرنے سے پہلے ڈاؤن لوڈز کے مکمل ہونے کا انتظار کریں۔";
 "video_show_episode_dock" = "ایپی سوڈ ڈاک دکھائیں۔";
 "video_show_episode_dock_desc" = "ایپی سوڈز کے ساتھ ویب صفحات پر ڈاک شدہ ایپی سوڈ بٹن دکھائیں۔ اقساط پلیئر کے اندر دستیاب رہتے ہیں۔";
+
+// Webpage share preview
+"page_share_image" = "تصویر شیئر کریں";
+"page_share_link" = "لنک شیئر کریں";
+"page_share_preview" = "نظر آنے والے حصے کا پیش منظر";
+"page_share_brand" = "Soulo: ملٹی سرچ براؤزر";
+
+"video_export_mp4" = "MP4 برآمد کریں";
+"video_export_failed" = "اس ویڈیو کو MP4 کے طور پر برآمد نہیں کیا جا سکا۔ اصل فائل محفوظ ہے۔";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "دو انگلیوں کے اشارے";
+"gesture_hint" = "دو انگلیاں ساتھ ایک طرف حرکت دیں۔ اشارہ انگلیوں کے ساتھ چلے گا؛ منسوخ کرنے کے لیے واپس لائیں۔ ایک انگلی سے نیویگیشن اور پنچ زوم دستیاب رہتے ہیں۔";
+"gesture_swipe_right" = "دائیں سوائپ";
+"gesture_swipe_left" = "بائیں سوائپ";
+"gesture_show_toolbar" = "ٹول بار دکھائیں";
+"gesture_quick_menu" = "فوری مینو";
+"gesture_preview" = "اشارہ دیکھیں";
+"zoom_remember" = "ویب سائٹ زوم یاد رکھیں";
+"zoom_hint" = "صفحے کے مینو کا زوم ہر ڈومین کے لیے محفوظ ہوتا ہے۔ نجی ٹیب کی تبدیلیاں محفوظ نہیں ہوتیں۔";
+"zoom_empty" = "کوئی زوم محفوظ نہیں";
+"zoom_reset_all" = "سب کو 100% پر بحال کریں";
+
+"shake_direction" = "سمت";
+"shake_direction_horizontal" = "دائیں اور بائیں";
+"shake_direction_vertical" = "اوپر اور نیچے";
+"shake_direction_any" = "کوئی بھی سمت";
+
+"gesture_settings_title" = "ویب پیج کے اشارے";
+"gesture_no_history" = "جب پیچھے نہ جا سکیں";
+"gesture_no_history_hint" = "پچھلا صفحہ نہ ہو تو عمل دکھانے کے لیے بائیں کنارے سے دائیں سوائپ کریں۔ منسوخ کرنے کے لیے واپس لائیں۔ بند کرنے کے لیے کوئی نہیں چنیں۔";
+
+"gesture_execution" = "عمل چلائیں";
+
+"gesture_execute_release" = "چھوڑنے پر";
+
+"gesture_execute_tap" = "ٹیپ کرنے پر";
+
+"gesture_feedback" = "عمل کا ردعمل";
+
+"gesture_haptics" = "ارتعاش";
+
+"gesture_sound" = "آواز";
+
+"gesture_feedback_preview" = "ردعمل کا پیش منظر";
+
+"media_start_timeout" = "پلے بیک شروع نہیں ہوا۔ نیٹ ورک چیک کریں یا پلیئر تبدیل کریں۔";
+
+"wallpaper_appearance_hint" = "ہلکی اور گہری تھیم کے لیے الگ پس منظر مقرر کریں۔ یہ ایپ کی تھیم کے ساتھ خود بخود بدل جائیں گے۔";
+
+"wallpaper_image_overlay" = "تصویر کی تہہ";
+
+"auto_hide_platform_bar" = "پلیٹ فارم بار خودکار چھپائیں";
+
+"top_tab_bar_hidden_title" = "اوپر کی ٹیب بار چھپا دی گئی";
+
+"top_tab_bar_reopen_hint" = "دوبارہ دکھانے کے لیے نیچے ٹیب بٹن دبائیں، … مینو کھولیں اور اوپر کی ٹیب بار دکھانے کا اختیار آن کریں۔";
+
+"wallpaper_image_blur" = "دھندلا شیشہ";
+"wallpaper_blur_amount" = "دھندلاپن کی شدت";
+
+"auto_hide_platform_bar_hint" = "تلاش کا نتیجہ کھولنے پر پلیٹ فارم بار چھپ جائے گی۔ نتائج پر واپس جانے یا نئی تلاش شروع کرنے پر یہ دوبارہ دکھے گی۔ اس مینو سے اسے بند کر سکتے ہیں۔";

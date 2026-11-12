@@ -609,27 +609,27 @@
 "extensions_reload_note" = "Åpne sider lastes inn på nytt etter at en utvidelse eller et skript er endret slik at den nye tilstanden trer i kraft.";
 "web_extensions" = "Web-utvidelser";
 "userscripts" = "Skript og utvidelser";
-"userscripts_installed" = "Skriptene mine";
-"userscripts_install" = "Installer skript";
+"userscripts_installed" = "Installert";
+"userscripts_install" = "Legg til";
 "userscripts_empty" = "Ingen UserScripts";
 "userscripts_empty_desc" = "Installer en .user.js-fil eller lag et skript for å se det her.";
 "userscripts_reload_note" = "Åpne sider lastes inn på nytt etter at et skript er installert, redigert, aktivert, deaktivert eller fjernet.";
 "userscript_experimental_badge" = "Kompatibilitet";
 "userscript_experimental_title" = "UserScript kompatibilitet";
-"userscript_experimental_desc" = "Støtter nettstedregler, dokumentstart/slutt, omfattende GM-lagring og side-API-er, skriptkommandoer, varsler, faner, nedlastinger, informasjonskapsler, ressurser og forespørsler med tillatelsesomfang. Gå gjennom hvert skript før du installerer.";
+"userscript_experimental_desc" = "Brukerskript kan lese eller endre samsvarende nettsteder og bruke tillatte API-er. Kompatibiliteten varierer. Installer bare skript du stoler på.";
 "extension_choose_file" = "Velg fil eller mappe…";
 "extension_installing" = "Sjekker og installerer utvidelsen …";
 "extension_install_failed" = "Utvidelsen kunne ikke installeres";
 "extension_permissions_summary" = "%d tillatelser · %d nettstedsregler";
 "extension_untitled" = "Uten tittel utvidelse";
-"web_extension_install_footer" = "Trykk hvor som helst på en kilderad for å åpne den i gjeldende Soulo-fane. Soulo gjenkjenner CRX, XPI, ZIP og støttede butikkinstallasjonshandlinger, og spør deretter før installasjon. Noen programmerbare API-er kan være utilgjengelige.";
+"web_extension_install_footer" = "Installer kompatible utvidelser via en butikklenke, eller importer CRX, XPI, ZIP eller en utvidelsesmappe. Sjekk tillatelser og kompatibilitet; enkelte skrivebordsfunksjoner er ikke tilgjengelige.";
 "web_extension_install_store_link" = "Installer fra Store Link...";
 "web_extension_browse_sources" = "Bla gjennom utvidelsesbutikker";
 "web_extension_browse_sources_footer" = "Store Get-knapper støtter kun deres egne nettlesere. Kopier en utvidelsesdetaljsidekobling, og bruk deretter Installer fra butikkkobling i Soulo.";
 "web_extension_store_install_title" = "Installer en butikkutvidelse";
 "extension_page_banner_title" = "Installer med Soulo";
-"extension_page_banner_desc" = "Soulo kan installere denne utvidelsen direkte.";
-"web_extension_store_install_desc" = "Lim inn en detaljsidekobling for Chrome Nettmarked, Microsoft Edge-tillegg eller Firefox-tillegg. Soulo laster ned selve pakken, så butikkens inkompatible Get-knapp brukes ikke.";
+"extension_page_banner_desc" = "Sjekk kompatibilitet og tillatelser før installasjon.";
+"web_extension_store_install_desc" = "Lim inn lenken til en Chrome-, Edge- eller Firefox-utvidelses detaljside og sjekk kompatibilitet og tillatelser før du bekrefter installasjonen.";
 "web_extension_store_link_placeholder" = "Utvidelsessidelink eller Chrome-utvidelses-ID";
 "web_extension_store_invalid_link" = "Lim inn en utvidelsesdetaljsidekobling fra Chrome, Edge eller Firefox, en Chrome-utvidelses-ID eller en direkte CRX-, XPI- eller ZIP-kobling.";
 "web_extension_store_https_required" = "Utvidelsespakker må bruke en sikker HTTPS-kobling.";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "Mediestrømmen returnerte et ugyldig segment eller et segment i feil rekkefølge.";
 "resource_stream_download_missing_track" = "Den nedlastede strømmen inneholdt ikke video- og lydspor som kunne spilles av.";
 "resource_stream_download_export_failed" = "Soulo kunne ikke slå sammen den nedlastede videoen og lyden.";
-"resource_stream_playback_download_first" = "Denne beskyttede strømmen kan ikke forhåndsvises fra den midlertidige nettadressen. Last den ned først for å spille av den lokale filen.";
+"resource_stream_playback_download_first" = "Denne strømmen kan ikke forhåndsvises direkte akkurat nå.";
 "platform_invalid_web_url" = "Skriv inn en gyldig nettadresse som begynner med http:// eller https://.";
 
 "library_history_tab" = "Historikk";
@@ -889,8 +889,7 @@
 "extension_review_access" = "Velg tillatelsene og nettstedene denne utvidelsen kan få tilgang til.";
 "extension_limit_commands" = "Tastatursnarveier for utvidelser er ikke tilgjengelige på iOS.";
 "extension_limit_notifications" = "Varsler kan vises, men klikk- og lukkehendelser støttes ikke.";
-"extension_limit_offscreen" = "Dokumenter utenfor skjermen støtter bare lydavspilling.";
-
+"extension_limit_offscreen" = "Dokumenter utenfor skjermen er underlagt iOS-begrensninger; enkelte funksjoner kan være utilgjengelige.";
 "review_support_message" = "Takk for at du støtter Soulo. Anmeldelsene dine hjelper oss å bli bedre.";
 "review_open_app_store" = "Vurder i App Store";
 

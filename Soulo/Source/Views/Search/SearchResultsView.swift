@@ -1,6 +1,7 @@
 import SwiftUI
-import SwiftData
+import CoreData
 import WebKit
+import Combine
 
 enum PersistentFullscreenBehavior {
     static func shouldEnter(
@@ -27,14 +28,20 @@ struct SearchResultsView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var appColorScheme
     @StateObject private var bookmarkVM = BookmarkViewModel()
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.managedObjectContext) private var modelContext
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
 
     @State private var showBookmarkToast = false
     @State private var isFullscreen: Bool = false
     @State private var showVoiceInput = false
     @State private var showPlatformManagement = false
+    @State private var showAutoHidePlatformHint = false
+    @State private var autoHidePlatformHintTask: Task<Void, Never>?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showTopTabRecovery = false
+    @State private var topTabRecoveryTask: Task<Void, Never>?
     @State private var showGroupPicker = false
+    @State private var platformNavigationLeftRoot = false
     @State private var pageReady = false
     @State private var userScriptOpenedTabs: [String: UUID] = [:]
     /// Incremented each time performSearch runs; compared to detect new vs. returning
@@ -53,11 +60,13 @@ struct SearchResultsView: View {
     // Persist last selected group
     @AppStorage("last_selected_region") private var lastRegion: String = ""
     @AppStorage("last_selected_group_id") private var lastGroupID: String = ""
+    @AppStorage("auto_hide_platform_bar") private var autoHidePlatformBar = false
     @AppStorage("show_top_tab_bar") private var showTopTabBar = true
     @AppStorage("show_top_search_bar") private var showTopSearchBar = BrowserInitialPreferences.showTopSearchBar
     @AppStorage(AppConstants.StorageKeys.keepFullscreenBrowsing) private var keepFullscreenBrowsing = false
     @AppStorage(AppConstants.StorageKeys.shakeAction) private var shakeAction = BrowserShakeAction.none.rawValue
     @AppStorage(AppConstants.StorageKeys.shakeIntensity) private var shakeIntensity = BrowserShakeIntensity.standard.rawValue
+    @AppStorage(BrowserShakeDirection.preferenceKey) private var shakeDirection = BrowserShakeDirection.horizontal.rawValue
     @AppStorage(AppConstants.StorageKeys.browserToolbarHidden) private var toolbarManuallyHidden = false
 
     private var selectedCustomGroup: CustomGroup? {
@@ -71,9 +80,17 @@ struct SearchResultsView: View {
         return !platformStore.visiblePlatforms(for: searchVM.selectedRegion).isEmpty
     }
 
+    private var platformNavigationPublisher: AnyPublisher<Bool, Never> {
+        if let model = tabManager.activeWebViewModel {
+            return model.$hasNavigatedFromPlatformSearch.removeDuplicates().eraseToAnyPublisher()
+        }
+        return Just(false).eraseToAnyPublisher()
+    }
+
     var body: some View {
         browserSurface
-        .onChange(of: tabManager.activeTab?.id) { _, _ in
+        .onReceive(platformNavigationPublisher) { platformNavigationLeftRoot = $0 }
+        .onCompatibleChange(of: tabManager.activeTab?.id) { _, _ in
             cancelAIInteraction()
             if let vm = tabManager.activeWebViewModel {
                 pageReady = vm.hasVisibleContent || vm.estimatedProgress >= 0.98 || (!vm.isLoading && vm.currentURL != nil)
@@ -109,6 +126,10 @@ struct SearchResultsView: View {
                 onDismiss: { showVoiceInput = false }
             )
         }
+        .alert(ToolText.text("auto_hide_platform_bar"), isPresented: $showAutoHidePlatformHint) {
+            Button(ToolText.text("done"), role: .cancel) { }
+        } message: { Text(ToolText.text("auto_hide_platform_bar_hint")) }
+        .sheet(isPresented: $showTopTabRecovery) { TopTabBarRecoveryView(tabCount: tabManager.tabCount) }
         .sheet(isPresented: $showPlatformManagement) {
             NavigationStack {
                 PlatformManagementView()
@@ -168,17 +189,17 @@ struct SearchResultsView: View {
             }
             // Otherwise: returning to existing tabs, keep as-is
         }
-        .onDisappear { cancelAIInteraction() }
-        .onChange(of: scenePhase) { _, phase in
+        .onDisappear { cancelAIInteraction(); topTabRecoveryTask?.cancel(); autoHidePlatformHintTask?.cancel() }
+        .onCompatibleChange(of: scenePhase) { _, phase in
             if phase == .background { cancelAIInteraction() }
         }
-        .onChange(of: searchVM.externalSearchRequestID) { _, requestID in
+        .onCompatibleChange(of: searchVM.externalSearchRequestID) { _, requestID in
             guard requestID != nil, searchVM.searchID != lastSearchID,
                   !searchVM.currentKeyword.isEmpty else { return }
             lastSearchID = searchVM.searchID
             loadCurrentPlatformURL()
         }
-        .onChange(of: keepFullscreenBrowsing) { _, enabled in
+        .onCompatibleChange(of: keepFullscreenBrowsing) { _, enabled in
             guard PersistentFullscreenBehavior.shouldEnter(
                 enabled: enabled,
                 hasSearch: !searchVM.currentKeyword.isEmpty,
@@ -188,15 +209,16 @@ struct SearchResultsView: View {
                 isFullscreen = true
             }
         }
-        .onChange(of: defaultSearch.overrides) { _, _ in synchronizeSelectedPlatformAfterStoreChange() }
-        .onChange(of: platformStore.customGroups) { _, _ in synchronizeSelectedPlatformAfterStoreChange() }
-        .onChange(of: platformStore.platforms) { _, _ in
+        .onCompatibleChange(of: defaultSearch.overrides) { _, _ in synchronizeSelectedPlatformAfterStoreChange() }
+        .onCompatibleChange(of: platformStore.customGroups) { _, _ in synchronizeSelectedPlatformAfterStoreChange() }
+        .onCompatibleChange(of: platformStore.platforms) { _, _ in
             synchronizeSelectedPlatformAfterStoreChange()
         }
         .background {
             DeviceShakeDetector(
                 isEnabled: BrowserShakeAction(rawValue: shakeAction) != BrowserShakeAction.none,
-                intensity: BrowserShakeIntensity(rawValue: shakeIntensity) ?? .standard
+                intensity: BrowserShakeIntensity(rawValue: shakeIntensity) ?? .standard,
+                direction: BrowserShakeDirection(rawValue: shakeDirection) ?? .horizontal
             ) {
                 handleShakeAction()
             }
@@ -230,7 +252,7 @@ struct SearchResultsView: View {
 
                         // Tab bar — show when multiple tabs
                         if showTopTabBar && tabManager.tabs.count > 1 {
-                            BrowserTabBar(tabManager: tabManager) {
+                            BrowserTabBar(tabManager: tabManager, onHidingTabBar: scheduleTopTabRecovery) {
                                 tabManager.createTab()
                             }
                             .accessibilityIdentifier("browser.top-tab-bar")
@@ -424,7 +446,7 @@ struct SearchResultsView: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .symbolEffect(.pulse.wholeSymbol, options: .repeating)
+                    .compatiblePulseSymbol()
                     .accessibilityHidden(true)
 
                 Text(aiLoadingText)
@@ -467,13 +489,39 @@ struct SearchResultsView: View {
         .matchedGeometryEffect(id: "searchBar", in: searchBarNamespace)
     }
 
+    private func scheduleTopTabRecovery() {
+        topTabRecoveryTask?.cancel()
+        topTabRecoveryTask = Task { @MainActor in
+            // The popover's anchor is about to disappear. Present from the
+            // persistent browser surface after that dismissal has settled.
+            do { try await Task.sleep(for: .milliseconds(350)) } catch { return }
+            guard !Task.isCancelled, !showTopTabBar else { return }
+            showTopTabRecovery = true
+        }
+    }
+
+    private func setAutoHidePlatformBar(_ enabled: Bool) {
+        autoHidePlatformBar = enabled
+        autoHidePlatformHintTask?.cancel()
+        guard enabled else { return }
+        showGroupPicker = false
+        autoHidePlatformHintTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(350)) } catch { return }
+            guard !Task.isCancelled, autoHidePlatformBar else { return }
+            showAutoHidePlatformHint = true
+        }
+    }
+
     private var platformSwitcher: some View {
         Group {
-            if hasVisiblePlatforms && (!searchVM.currentKeyword.isValidURL || searchVM.isSelectionSearch) {
+            if hasVisiblePlatforms && (!searchVM.currentKeyword.isValidURL || searchVM.isSelectionSearch)
+                && (!autoHidePlatformBar || !platformNavigationLeftRoot) {
                 platformBar
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .onChange(of: searchVM.selectedPlatform?.id) { _, _ in
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: autoHidePlatformBar && platformNavigationLeftRoot)
+        .onCompatibleChange(of: searchVM.selectedPlatform?.id) { _, _ in
             guard !searchVM.currentKeyword.isValidURL || searchVM.isSelectionSearch else { return }
             loadCurrentPlatformURL()
         }
@@ -559,6 +607,11 @@ struct SearchResultsView: View {
                 .frame(maxHeight: 350)
 
                 Divider()
+                Toggle(ToolText.text("auto_hide_platform_bar"), isOn: Binding(get: { autoHidePlatformBar }, set: setAutoHidePlatformBar))
+                    .font(.subheadline)
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .accessibilityIdentifier("search.auto-hide-platforms")
+                Divider()
 
                 Button {
                     showGroupPicker = false
@@ -573,7 +626,7 @@ struct SearchResultsView: View {
             }
             .frame(width: 260)
             .padding(.vertical, 6)
-            .presentationCompactAdaptation(.popover)
+            .compatiblePopoverAdaptation()
         }
     }
 
@@ -681,6 +734,9 @@ struct SearchResultsView: View {
         } else {
             directURL = nil
         }
+
+        if directURL == nil { webVM.beginPlatformSearchTracking() }
+        else { webVM.resetPlatformSearchTracking() }
 
         // Apply the platform's required content mode before starting navigation,
         // so the very first request already carries the correct user agent.

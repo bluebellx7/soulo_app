@@ -26,7 +26,7 @@ import Combine
         for attempt in 0..<240 {
             if let web = model.webView {
                 for frame in model.mediaFrameInfos {
-                    guard let tokens = try? await web.evaluateJavaScript("Array.from(document.querySelectorAll('video')).map(v=>v.getAttribute('data-soulo-media-id')).filter(Boolean)", in: frame, contentWorld: .page) as? [String] else { continue }
+                    guard let tokens = try? await web.evaluateCompatibleJavaScript("Array.from(document.querySelectorAll('video')).map(v=>v.getAttribute('data-soulo-media-id')).filter(Boolean)", in: frame, contentWorld: .page) as? [String] else { continue }
                     for token in tokens {
                         if let resource = await WebResourceInspectionService.currentVideoResource(webView: web, frame: frame, token: token), resource.delivery == .hls {
                             resolved = resource; break
@@ -223,7 +223,7 @@ import Combine
         XCTAssertTrue(requests.isEmpty)
         let exposed = try await web.evaluateJavaScript("!!globalThis.webkit?.messageHandlers?.souloNavigationGesture") as? Bool
         XCTAssertEqual(exposed, false, "Website code cannot forge the isolated gesture bridge")
-        _ = try await web.evaluateJavaScript("webkit.messageHandlers.souloNavigationGesture.postMessage({event:'click',control:true,link:false,form:false,destinations:[]});null",
+        _ = try await web.evaluateCompatibleJavaScript("webkit.messageHandlers.souloNavigationGesture.postMessage({event:'click',destinations:[]});null",
             in: nil, contentWorld: BrowserNavigationGesture.world)
         try await Task.sleep(for: .milliseconds(50))
         _ = try await web.evaluateJavaScript("document.getElementById('get-magnet').click();null")
@@ -584,7 +584,7 @@ import Combine
         XCTAssertEqual(server.requests.filter { $0.path == "/history-with-video" }.count, 1)
         XCTAssertEqual(server.requests.filter { $0.path == "/clip.mp4" }.count, before,
                        "Returning to a cached document must not restart media loading")
-        let reloads = try await web.evaluateJavaScript("globalThis.__qaMediaLoadCalls", in: nil, contentWorld: WebMediaSession.world)
+        let reloads = try await web.evaluateCompatibleJavaScript("globalThis.__qaMediaLoadCalls", in: nil, contentWorld: WebMediaSession.world)
         XCTAssertEqual(reloads as? Int, 0, "A retained player must not be torn down and reconstructed")
     }
 
@@ -716,7 +716,7 @@ import Combine
         let previous = scene.keyWindow, window = UIWindow(windowScene: scene)
         let controller = UIViewController(), configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
-        configuration.websiteDataStore.proxyConfigurations = []
+        if #available(iOS 17.0, *) { configuration.websiteDataStore.proxyConfigurations = [] }
         let web = WKWebView(frame: .zero, configuration: configuration)
         window.rootViewController = controller; window.makeKeyAndVisible()
         web.frame = controller.view.bounds; controller.view.addSubview(web)
@@ -884,7 +884,7 @@ import Combine
             if (try? await web.evaluateJavaScript("!!document.getElementById('editor')")) as? Bool == true { break }
             try await Task.sleep(for: .milliseconds(25))
         }
-        _ = try await web.evaluateJavaScript(WebViewScripts.textSelection, in: nil, contentWorld: .defaultClient)
+        _ = try await web.evaluateCompatibleJavaScript(WebViewScripts.textSelection, in: nil, contentWorld: .defaultClient)
         let styles = try await web.evaluateJavaScript("['plain','buttonLabel','editor','sliderLabel'].map(id=>getComputedStyle(document.getElementById(id)).webkitUserSelect)")
         XCTAssertEqual(styles as? [String], ["text", "none", "all", "none"])
     }
@@ -1074,7 +1074,7 @@ import Combine
         WebViewRepresentable.dismantleUIView(web, coordinator: old)
         XCTAssertTrue(model.isWebViewRuntimeInstalled)
         model.beginPageNavigation()
-        _ = try await web.evaluateJavaScript(
+        _ = try await web.evaluateCompatibleJavaScript(
             "window.webkit.messageHandlers.souloPageReady.postMessage({visible:true});true",
             in: nil, contentWorld: .defaultClient)
         for _ in 0..<40 {
@@ -1303,7 +1303,7 @@ import Combine
             try await Task.sleep(for: .milliseconds(30))
         }
         if !model.hasVisibleContent, let web = model.webView {
-            let state = try? await web.evaluateJavaScript("({sent:window.__souloPageHasVisibleContent===true,ready:document.readyState,visibility:document.visibilityState,height:document.body?.getBoundingClientRect().height,url:location.href})", in: nil, contentWorld: .defaultClient)
+            let state = try? await web.evaluateCompatibleJavaScript("({sent:window.__souloPageHasVisibleContent===true,ready:document.readyState,visibility:document.visibilityState,height:document.body?.getBoundingClientRect().height,url:location.href})", in: nil, contentWorld: .defaultClient)
             print("VISIBLE_CONTENT_DIAGNOSTIC", state ?? "nil", "frame", web.frame, "key", window.isKeyWindow, "scene", window.windowScene?.activationState.rawValue ?? -1)
         }
         XCTAssertTrue(model.hasVisibleContent)

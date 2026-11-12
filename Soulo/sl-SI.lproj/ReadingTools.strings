@@ -436,3 +436,65 @@
 "files_move_busy" = "Počakajte, da se prenosi končajo, preden premaknete ali preimenujete te elemente.";
 "video_show_episode_dock" = "Pokaži postajo epizode";
 "video_show_episode_dock_desc" = "Prikaži gumb za zasidrano epizodo na spletnih straneh z epizodami. Epizode ostanejo na voljo v predvajalniku.";
+
+// Webpage share preview
+"page_share_image" = "Deli sliko";
+"page_share_link" = "Deli povezavo";
+"page_share_preview" = "Predogled vidnega območja";
+"page_share_brand" = "Soulo: Brskalnik za več iskanj";
+
+"video_export_mp4" = "Izvozi MP4";
+"video_export_failed" = "Tega videoposnetka ni bilo mogoče izvoziti kot MP4. Izvirna datoteka je ohranjena.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Poteze z dvema prstoma";
+"gesture_hint" = "Premaknite dva prsta skupaj vstran. Namig sledi prstoma; premaknite nazaj za preklic. Krmarjenje z enim prstom in povečava s ščipanjem ostaneta na voljo.";
+"gesture_swipe_right" = "Podrsaj desno";
+"gesture_swipe_left" = "Podrsaj levo";
+"gesture_show_toolbar" = "Prikaži orodno vrstico";
+"gesture_quick_menu" = "Hitri meni";
+"gesture_preview" = "Predogled poteze";
+"zoom_remember" = "Zapomni si povečavo strani";
+"zoom_hint" = "Povečava iz menija strani se shrani za vsako domeno. Spremembe v zasebnih zavihkih se ne shranijo.";
+"zoom_empty" = "Ni shranjenih povečav";
+"zoom_reset_all" = "Ponastavi vse na 100%";
+
+"shake_direction" = "Smer";
+"shake_direction_horizontal" = "Levo in desno";
+"shake_direction_vertical" = "Gor in dol";
+"shake_direction_any" = "Poljubna smer";
+
+"gesture_settings_title" = "Poteze spletnih strani";
+"gesture_no_history" = "Ko vrnitev ni mogoča";
+"gesture_no_history_hint" = "Brez prejšnje strani podrsajte z levega roba desno, da prikažete dejanje. Premaknite nazaj za preklic. Izberite Brez za izklop.";
+
+"gesture_execution" = "Izvedi dejanje";
+
+"gesture_execute_release" = "Ob spustu";
+
+"gesture_execute_tap" = "Ob dotiku";
+
+"gesture_feedback" = "Odziv dejanja";
+
+"gesture_haptics" = "Vibriranje";
+
+"gesture_sound" = "Zvok";
+
+"gesture_feedback_preview" = "Preizkusi odziv";
+
+"media_start_timeout" = "Predvajanje se ni začelo. Preverite omrežje ali zamenjajte predvajalnik.";
+
+"wallpaper_appearance_hint" = "Nastavite ločeni ozadji za svetli in temni videz. Samodejno se spreminjata z aplikacijo.";
+
+"wallpaper_image_overlay" = "Plast čez sliko";
+
+"auto_hide_platform_bar" = "Samodejno skrij vrstico platform";
+
+"top_tab_bar_hidden_title" = "Zgornja vrstica zavihkov je skrita";
+
+"top_tab_bar_reopen_hint" = "Za ponovni prikaz tapnite gumb zavihkov spodaj, odprite meni … in vklopite prikaz zgornje vrstice zavihkov.";
+
+"wallpaper_image_blur" = "Motno steklo";
+"wallpaper_blur_amount" = "Moč zameglitve";
+
+"auto_hide_platform_bar_hint" = "Vrstica platform se skrije, ko odprete rezultat iskanja. Vrnite se na rezultate ali začnite novo iskanje, da se spet prikaže. To lahko izklopite v tem meniju.";

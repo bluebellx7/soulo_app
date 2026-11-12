@@ -98,7 +98,7 @@ final class SiteOptimizationTests: XCTestCase {
         defer { controller.detach() }
         web.loadHTMLString("<p id='ready'>Other website</p>", baseURL: URL(string: "https://example.com/article"))
         try await wait(web, "!!document.getElementById('ready')")
-        let installed = try await web.evaluateJavaScript("!!globalThis.__souloSiteOptimization", in: nil, contentWorld: rule.world)
+        let installed = try await web.evaluateCompatibleJavaScript("!!globalThis.__souloSiteOptimization", in: nil, contentWorld: rule.world)
         XCTAssertEqual(installed as? Bool, false)
         let styled = try await web.evaluateJavaScript("document.documentElement.hasAttribute('data-soulo-baidu-search')")
         XCTAssertEqual(styled as? Bool, false)
@@ -156,9 +156,9 @@ final class SiteOptimizationTests: XCTestCase {
         try await wait(web, "!!document.getElementById('soulo-baidu-search-style')")
         let pageAccess = try await web.evaluateJavaScript("!!globalThis.webkit?.messageHandlers?.souloSiteOptimizationNavigate")
         XCTAssertEqual(pageAccess as? Bool, false)
-        _ = try await web.evaluateJavaScript("webkit.messageHandlers.souloSiteOptimizationNavigate.postMessage({url:'javascript:alert(1)'});true", in: nil, contentWorld: rule.world)
+        _ = try await web.evaluateCompatibleJavaScript("webkit.messageHandlers.souloSiteOptimizationNavigate.postMessage({url:'javascript:alert(1)'});true", in: nil, contentWorld: rule.world)
         try await Task.sleep(for: .milliseconds(100)); XCTAssertTrue(navigations.isEmpty)
-        _ = try await web.evaluateJavaScript("webkit.messageHandlers.souloSiteOptimizationNavigate.postMessage({url:'https://example.com/direct'});true", in: nil, contentWorld: rule.world)
+        _ = try await web.evaluateCompatibleJavaScript("webkit.messageHandlers.souloSiteOptimizationNavigate.postMessage({url:'https://example.com/direct'});true", in: nil, contentWorld: rule.world)
         for _ in 0..<50 where navigations.isEmpty { try await Task.sleep(for: .milliseconds(20)) }
         XCTAssertEqual(navigations.first?.url?.absoluteString, "https://example.com/direct")
         let scriptCount = web.configuration.userContentController.userScripts.count

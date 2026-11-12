@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Opravena chyba, kdy otevření záložky nebo položky historie mohlo přepsat existující panel.
-• Vylepšeno spouštění, načítání stránek a ovládání domovské obrazovky.
-• Vylepšeno ovládání na celé obrazovce, otáčení a stav přehrávání při přepínání aplikací.
-• Vylepšeno obnovení zavřených panelů, náhledy souborů a detaily rozhraní.
+• Samostatná pozadí pro světlý a tmavý vzhled a přepínač vrstvy přes obrázek.
+• Vylepšené barvy úvodní stránky; náhled tapety sleduje motiv aplikace.
+• Zobrazujte náhledy tapet, sdílejte je a ukládejte do Fotek.
+• Nastavení horních panelů s novým panelem a volitelným skrytím lišty platforem po navigaci.

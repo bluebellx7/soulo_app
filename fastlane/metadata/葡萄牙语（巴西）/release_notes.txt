@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Corrigido um problema que podia substituir uma aba existente ao abrir um favorito ou um item do histórico.
-• Melhorias na inicialização, no carregamento de páginas e nas interações da tela inicial.
-• Melhorias nos controles de tela cheia, na rotação e no estado de reprodução ao trocar de app.
-• Melhorias na restauração de abas fechadas, nas prévias de arquivos e nos detalhes da interface.
+• Fundos separados para os modos claro e escuro e opção de camada sobre a imagem.
+• Cores da página inicial melhoradas; a prévia do fundo segue o tema do app.
+• Veja, compartilhe e salve fundos no Fotos.
+• Ajustes das abas superiores com nova aba e opção de ocultar a barra de plataformas após navegar.

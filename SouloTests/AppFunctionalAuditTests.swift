@@ -1,5 +1,5 @@
 import CoreSpotlight
-import SwiftData
+import CoreData
 import XCTest
 @testable import Soulo
 
@@ -142,14 +142,14 @@ final class AppFunctionalAuditTests: XCTestCase {
     func testDeletingHistoryRemovesItsSystemSearchEntryAndKeepsOtherData() throws {
         let container = try modelContainer()
         let context = container.mainContext
-        let history = SearchHistoryItem(keyword: "Removed query")
-        let kept = SearchHistoryItem(keyword: "Kept query")
+        let history = SearchHistoryRecord(keyword: "Removed query")
+        let kept = SearchHistoryRecord(keyword: "Kept query")
         let identifier = "search-history-\(history.id.uuidString)"
         context.insert(history); context.insert(kept); try context.save()
         let index = AuditSearchableIndex(name: UUID().uuidString)
         SearchHistoryService.deleteEntry(history, context: context, index: index)
         XCTAssertEqual(index.removedIdentifiers, [identifier])
-        XCTAssertEqual(try context.fetch(FetchDescriptor<SearchHistoryItem>()).map(\.keyword), ["Kept query"])
+        XCTAssertEqual(try context.fetch(SearchHistoryRecord.request()).map(\.keyword), ["Kept query"])
         XCTAssertTrue(index.removedDomains.isEmpty)
     }
 
@@ -157,14 +157,14 @@ final class AppFunctionalAuditTests: XCTestCase {
         for throwingEntry in [true, false] {
             let container = try modelContainer()
             let context = container.mainContext
-            context.insert(SearchHistoryItem(keyword: "Removed query"))
-            context.insert(BookmarkItem(title: "Keep", urlString: "https://example.com"))
+            context.insert(SearchHistoryRecord(keyword: "Removed query"))
+            context.insert(BookmarkRecord(title: "Keep", urlString: "https://example.com"))
             try context.save()
             let index = AuditSearchableIndex(name: UUID().uuidString)
             if throwingEntry { try SearchHistoryService.clearAll(in: context, index: index) }
             else { SearchHistoryService.clearAll(context: context, index: index) }
-            XCTAssertTrue(try context.fetch(FetchDescriptor<SearchHistoryItem>()).isEmpty)
-            XCTAssertEqual(try context.fetchCount(FetchDescriptor<BookmarkItem>()), 1)
+            XCTAssertTrue(try context.fetch(SearchHistoryRecord.request()).isEmpty)
+            XCTAssertEqual(try context.count(for: BookmarkRecord.request()), 1)
             XCTAssertEqual(index.removedDomains, ["soulo.history"])
         }
     }
@@ -172,15 +172,15 @@ final class AppFunctionalAuditTests: XCTestCase {
     func testBookmarkClearRemovesFoldersAndSystemIndexWithoutDeletingHistory() throws {
         let container = try modelContainer()
         let context = container.mainContext
-        context.insert(BookmarkItem(title: "Remove", urlString: "https://example.com"))
-        context.insert(BookmarkFolder(title: "Remove folder"))
-        context.insert(SearchHistoryItem(keyword: "Keep query"))
+        context.insert(BookmarkRecord(title: "Remove", urlString: "https://example.com"))
+        context.insert(BookmarkFolderRecord(title: "Remove folder"))
+        context.insert(SearchHistoryRecord(keyword: "Keep query"))
         try context.save()
         let index = AuditSearchableIndex(name: UUID().uuidString)
         try BookmarkService.clearAll(in: context, index: index)
-        XCTAssertEqual(try context.fetchCount(FetchDescriptor<BookmarkItem>()), 0)
-        XCTAssertEqual(try context.fetchCount(FetchDescriptor<BookmarkFolder>()), 0)
-        XCTAssertEqual(try context.fetchCount(FetchDescriptor<SearchHistoryItem>()), 1)
+        XCTAssertEqual(try context.count(for: BookmarkRecord.request()), 0)
+        XCTAssertEqual(try context.count(for: BookmarkFolderRecord.request()), 0)
+        XCTAssertEqual(try context.count(for: SearchHistoryRecord.request()), 1)
         XCTAssertEqual(index.removedDomains, ["soulo.bookmarks"])
     }
 
@@ -191,11 +191,11 @@ final class AppFunctionalAuditTests: XCTestCase {
         XCTAssertNotEqual(SearchHistoryService.canonicalHistoryURLString(for:
             try XCTUnwrap(URL(string: "https://example.com:8443/case?q=C%2B%2B&token=a%2Fb%3D"))), expected)
         let container = try modelContainer(), context = container.mainContext
-        context.insert(SearchHistoryItem(keyword: "Legacy", visitedURLString: input.absoluteString))
+        context.insert(SearchHistoryRecord(keyword: "Legacy", visitedURLString: input.absoluteString))
         try context.save()
         SearchHistoryService.purgeExpiredBrowsingHistory(context: context)
         SearchHistoryService.recordWebVisit(url: input, title: "Updated", context: context)
-        let history = try context.fetch(FetchDescriptor<SearchHistoryItem>())
+        let history = try context.fetch(SearchHistoryRecord.request())
         XCTAssertEqual(history.count, 1)
         XCTAssertEqual(history.first?.visitedURLString, expected)
         XCTAssertEqual(history.first?.keyword, "Updated")
@@ -239,9 +239,8 @@ final class AppFunctionalAuditTests: XCTestCase {
             isVisible: true, sortOrder: 0, usageCount: 0, isCustom: true)
     }
 
-    private func modelContainer() throws -> ModelContainer {
-        try ModelContainer(for: SearchHistoryItem.self, BookmarkItem.self, BookmarkFolder.self,
-            configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+    private func modelContainer() throws -> LibraryStore {
+        try LibraryStore(inMemory: true)
     }
 
     private func withIsolatedPlatforms(_ action: (PlatformDataStore) throws -> Void) throws {

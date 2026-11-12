@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Een probleem verholpen waarbij een bladwijzer of geschiedenisitem bij het openen soms een bestaand tabblad verving.
-• Opstarten, pagina's laden en interacties op het startscherm verbeterd.
-• Bediening op volledig scherm, draaien en de afspeelstatus bij wisselen van app verbeterd.
-• Het terughalen van gesloten tabbladen, bestandsvoorbeelden en interfacedetails verbeterd.
+• Aparte achtergronden voor licht en donker, met een schakelaar voor de afbeeldingslaag.
+• Verbeterde startpaginakleuren; de achtergrondvoorvertoning volgt het appthema.
+• Bekijk, deel en bewaar achtergronden in Foto’s.
+• Instellingen voor de bovenste tabbladen met nieuw tabblad en optioneel verbergen van de platformbalk na navigatie.

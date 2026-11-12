@@ -6,8 +6,6 @@ Senest brugte faner og webstedsgrupper vises først, og faneoversigten åbner ø
 
 BT-downloads: Importér .torrent-filer eller magnetlinks, vælg filer, sæt på pause og fortsæt. På iOS 26 kan downloads fortsætte i baggrunden, når systemet tillader det; tidligere versioner gemmer fremdriften og sætter på pause. Afspil understøttede BT-medier under download, og åbn MKV-filer. Importér ed2k/thunder-links. Downloads kræver tilgængelige kilder; afspilning afhænger af codecs.
 
-Mere flydende browsing, bedre videobetjening og tydeligere filvisninger.
-
 Vælg fem valgfrie genveje på startsiden til downloads, filer, bogmærker, historik, baggrunde og andre sider. Bibliotekets fanelinje bliver kompakt, når du ruller.
 
 Find information, læs artikler, afspil medier og administrer downloads i samme browser.
@@ -20,11 +18,11 @@ Hold styr på sider med flere faner, stemmesøgning, søgehistorik og grupper af
 • Filer: find billeder, lyd, video og dokumenter på websider, og gem flere billeder ad gangen. Vis filer som liste eller omslagsgitter, omdøb, importér fra Fotos, og overfør via Wi-Fi.
 • Arkiver: udpak ZIP, RAR og 7z. Opret ZIP- og 7z-arkiver med valgfri adgangskodebeskyttelse.
 • Læsning: TXT, PDF, EPUB og understøttede DRM-frie MOBI-, AZW- og AZW3-bøger. Juster skrifttype, størrelse, linjeafstand og baggrund. Bøger med flydende layout kan vises på forenklet eller traditionelt kinesisk. Læsetilstanden udtrækker artikler og lader dig fortsætte på næste side.
-• Udvidelser: importér, rediger og kør JavaScript-brugerscripts, administrer websteder og tilladelser, og installér kompatible WebExtensions.
+• Scripts og udvidelser: Importer, rediger og kør JavaScript-brugerscripts. Kompatible WebExtensions kræver iOS 18.4 eller nyere; understøttelsen varierer efter udvidelse.
 • Webværktøjer: oversættelse, søgning på siden, skærmbilleder af hele sider, tekstgenkendelse i billeder, computer-/mobilvisning, egen brugeragent og webstedscertifikater.
 • Bogmærker: mapper og import/eksport af HTML-bogmærker til Chrome, Edge og andre browsere. Opret QR-koder med webstedets ikon, og del, gem eller kopiér dem.
-• Tilpasning: baggrunde, værktøjslinje og hurtige handlinger på appikonet. Åbn funktioner via widgets, Genveje og URL-skemaer. Synkroniser eventuelt indstillinger med iCloud.
+• Tilpasning: baggrunde, værktøjslinje og hurtige handlinger på appikonet. Åbn funktioner via widgets, Genveje og URL-skemaer. Synkroniser eventuelt indstillinger med iCloud. Separate baggrunde til lyst og mørkt udseende og en kontakt til billedlaget.
 
-Tilgængelighed af medier, bøger og udvidelser afhænger af filformat, webstedets begrænsninger og systemversion.
+Medier, bøger og udvidelser afhænger af formater, webstedets begrænsninger og systemversion. Tjek før download, at kilden tillader at gemme indholdet.
 
 Support: contact@dkluge.com

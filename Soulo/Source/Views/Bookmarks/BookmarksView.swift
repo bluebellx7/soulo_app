@@ -1,5 +1,5 @@
 import SwiftUI
-import SwiftData
+import CoreData
 
 struct BookmarksView: View {
     @Environment(\.dismiss) private var dismiss
@@ -21,10 +21,10 @@ struct BookmarksView: View {
 
 struct BookmarksContentView: View {
     @Environment(\.libraryPageIsActive) private var libraryPageIsActive
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.managedObjectContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \BookmarkItem.dateAdded, order: .reverse) private var bookmarks: [BookmarkItem]
-    @Query(sort: \BookmarkFolder.dateAdded) private var folders: [BookmarkFolder]
+    @FetchRequest(sortDescriptors: [NSSortDescriptor(key: "dateAdded", ascending: false)]) private var bookmarks: FetchedResults<BookmarkRecord>
+    @FetchRequest(sortDescriptors: [NSSortDescriptor(key: "dateAdded", ascending: true)]) private var folders: FetchedResults<BookmarkFolderRecord>
     @ObservedObject var searchVM: SearchViewModel
     var onOpen: ((String) -> Void)? = nil
     @State private var path: [UUID] = []
@@ -34,10 +34,10 @@ struct BookmarksContentView: View {
     @State private var busy = false
     @State private var document: BookmarkHTMLDocument?
     @State private var notice: String?
-    @State private var editingFolder: BookmarkFolder?
+    @State private var editingFolder: BookmarkFolderRecord?
     @State private var folderName = ""
     @State private var folderPrompt = false
-    @State private var removingFolder: BookmarkFolder?
+    @State private var removingFolder: BookmarkFolderRecord?
     @State private var moving: BookmarkMoveTarget?
     @State private var search = ""
     @State private var selecting = false
@@ -46,10 +46,10 @@ struct BookmarksContentView: View {
     @EnvironmentObject private var tabManager: TabManager
 
     private var parentID: UUID? { path.last }
-    private var visibleFolders: [BookmarkFolder] {
+    private var visibleFolders: [BookmarkFolderRecord] {
         return folders.filter { search.isEmpty ? $0.parentID == parentID : $0.title.localizedCaseInsensitiveContains(search) }
     }
-    private var visibleBookmarks: [BookmarkItem] {
+    private var visibleBookmarks: [BookmarkRecord] {
         return bookmarks.filter { item in
             let matches = search.isEmpty ? item.folderID == parentID : item.title.localizedCaseInsensitiveContains(search) || item.urlString.localizedCaseInsensitiveContains(search)
             return matches
@@ -58,6 +58,7 @@ struct BookmarksContentView: View {
 
     var body: some View {
         managedList
+        .mediaPlayerNavigation()
         .navigationDestination(isPresented: $showReadingList) { ReadingListView() }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.html], allowsMultipleSelection: false) { result in
             switch result {
@@ -75,8 +76,14 @@ struct BookmarksContentView: View {
         .alert(ToolText.text(editingFolder == nil ? "favorites_new_folder" : "favorites_rename"), isPresented: $folderPrompt) {
             TextField(ToolText.text("favorites_folder_name"), text: $folderName)
             Button(ToolText.text("cancel"), role: .cancel) { }
-            Button(ToolText.text("done")) { saveFolder() }
-                .disabled(folderName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            if #available(iOS 17.0, *) {
+                Button(ToolText.text("done")) { saveFolder() }
+                    .disabled(folderName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            } else {
+                // iOS 16 can omit an initially disabled alert action and never
+                // restore it as the text changes. saveFolder validates the name.
+                Button(ToolText.text("done")) { saveFolder() }
+            }
         }
         .alert(ToolText.text("favorites_remove_folder"), isPresented: Binding(
             get: { removingFolder != nil }, set: { if !$0 { removingFolder = nil } })) {
@@ -94,7 +101,7 @@ struct BookmarksContentView: View {
             Button(ToolText.text("done"), role: .cancel) { notice = nil }
         } message: { Text(notice ?? "") }
         .sheet(item: $moving) { target in
-            BookmarkFolderPicker(folders: folders, target: target) { destination in
+            BookmarkFolderPicker(folders: Array(folders), target: target) { destination in
                 do {
                     try modelContext.save()
                     switch target {
@@ -106,7 +113,7 @@ struct BookmarksContentView: View {
                 moving = nil
             }
         }
-        .onChange(of: folders.map(\.id)) { _, ids in
+        .onCompatibleChange(of: folders.map(\.id)) { _, ids in
             while let last = path.last, !ids.contains(last) { path.removeLast() }
         }
     }
@@ -154,8 +161,8 @@ struct BookmarksContentView: View {
             }.listRowBackground(Color.clear)
         }
         .listStyle(.insetGrouped)
-        .listSectionSpacing(12)
-        .contentMargins(.top, 8, for: .scrollContent)
+        .compatibleListSectionSpacing(20)
+        .compatibleScrollTopMargin(24)
 
     }
 
@@ -216,11 +223,11 @@ struct BookmarksContentView: View {
                 } catch { modelContext.rollback(); notice = error.localizedDescription }
             }
         } message: { Text(String(format: FeatureText.text("Delete %lld selected bookmarks?"), Int64(selectedIDs.count))) }
-        .onChange(of: bookmarks.map(\.id)) { _, ids in selectedIDs.formIntersection(Set(ids)) }
+        .onCompatibleChange(of: bookmarks.map(\.id)) { _, ids in selectedIDs.formIntersection(Set(ids)) }
 
     }
 
-    private func folderRow(_ folder: BookmarkFolder, count: Int) -> some View {
+    private func folderRow(_ folder: BookmarkFolderRecord, count: Int) -> some View {
         Button { path.append(folder.id); search = "" } label: {
             HStack(spacing: 12) {
                 Image(systemName: "folder.fill").font(.title2).foregroundStyle(Color.themePrimary).frame(width: 28)
@@ -252,7 +259,7 @@ struct BookmarksContentView: View {
         .background(LibrarySwipeActionsRegion())
     }
 
-    private func bookmarkRow(_ item: BookmarkItem) -> some View {
+    private func bookmarkRow(_ item: BookmarkRecord) -> some View {
         Button {
             if selecting {
                 if !selectedIDs.insert(item.id).inserted { selectedIDs.remove(item.id) }
@@ -309,7 +316,7 @@ struct BookmarksContentView: View {
         do {
             try modelContext.save()
             if let folder = editingFolder { folder.title = name }
-            else { modelContext.insert(BookmarkFolder(title: name, parentID: parentID)) }
+            else { modelContext.insert(BookmarkFolderRecord(title: name, parentID: parentID)) }
             try modelContext.save()
         } catch { modelContext.rollback(); notice = error.localizedDescription }
         editingFolder = nil
@@ -343,14 +350,14 @@ struct BookmarksContentView: View {
 }
 
 private enum BookmarkMoveTarget: Identifiable {
-    case bookmark(BookmarkItem), folder(BookmarkFolder)
+    case bookmark(BookmarkRecord), folder(BookmarkFolderRecord)
     var id: UUID { switch self { case .bookmark(let item): item.id; case .folder(let folder): folder.id } }
     var parentID: UUID? { switch self { case .bookmark(let item): item.folderID; case .folder(let folder): folder.parentID } }
 }
 
 private struct BookmarkFolderPicker: View {
     @Environment(\.dismiss) private var dismiss
-    let folders: [BookmarkFolder]
+    let folders: [BookmarkFolderRecord]
     let target: BookmarkMoveTarget
     let onSelect: (UUID?) -> Void
 

@@ -503,3 +503,65 @@
 "files_move_busy" = "请等待下载完成后再移动或重命名这些项目。";
 "video_show_episode_dock" = "显示选集浮标";
 "video_show_episode_dock_desc" = "网页有选集时，在侧边显示吸附按钮。关闭后仍可在播放器中选集。";
+
+// Webpage share preview
+"page_share_image" = "分享图片";
+"page_share_link" = "分享网址";
+"page_share_preview" = "可视区域预览";
+"page_share_brand" = "Soulo：多重搜索浏览器";
+
+"video_export_mp4" = "导出 MP4";
+"video_export_failed" = "无法将此视频导出为 MP4。原文件已保留。";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "双指手势";
+"gesture_hint" = "双指同向左右滑动，提示跟随手指移动，回滑可取消。单指导航和捏合缩放保持不变。";
+"gesture_swipe_right" = "向右滑动";
+"gesture_swipe_left" = "向左滑动";
+"gesture_show_toolbar" = "显示工具栏";
+"gesture_quick_menu" = "快捷菜单";
+"gesture_preview" = "预览手势";
+"zoom_remember" = "记住网站缩放";
+"zoom_hint" = "从网页菜单调整缩放后，会按域名保存比例。无痕标签中的调整不会保存。";
+"zoom_empty" = "还没有保存的缩放";
+"zoom_reset_all" = "全部恢复 100%";
+
+"shake_direction" = "摇晃方向";
+"shake_direction_horizontal" = "左右";
+"shake_direction_vertical" = "上下";
+"shake_direction_any" = "任意方向";
+
+"gesture_settings_title" = "网页手势";
+"gesture_no_history" = "无法后退时";
+"gesture_no_history_hint" = "没有可返回的记录时，从左侧边缘右滑会显示此操作，回滑可取消。选择“无”可关闭。";
+
+"gesture_execution" = "执行方式";
+
+"gesture_execute_release" = "松手执行";
+
+"gesture_execute_tap" = "点按执行";
+
+"gesture_feedback" = "执行反馈";
+
+"gesture_haptics" = "震动";
+
+"gesture_sound" = "声音";
+
+"gesture_feedback_preview" = "预览反馈";
+
+"media_start_timeout" = "当前链接暂未播放，请检查网络或切换播放器。";
+
+"wallpaper_appearance_hint" = "分别设置浅色和深色外观使用的背景，切换外观时自动应用。";
+
+"wallpaper_image_overlay" = "图片蒙层";
+
+"auto_hide_platform_bar" = "自动隐藏平台栏";
+
+"top_tab_bar_hidden_title" = "顶部标签栏已隐藏";
+
+"top_tab_bar_reopen_hint" = "重新开启：点击底部标签页按钮，进入“…”菜单，再打开“显示顶部标签栏”。";
+
+"wallpaper_image_blur" = "毛玻璃";
+"wallpaper_blur_amount" = "模糊强度";
+
+"auto_hide_platform_bar_hint" = "进入搜索结果中的页面后，平台栏会自动收起。返回搜索结果或重新搜索时会再次显示，可在此菜单关闭。";

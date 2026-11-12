@@ -609,27 +609,27 @@
 "extensions_reload_note" = "Geopende pagina's worden opnieuw geladen nadat een extensie of script is gewijzigd, zodat de nieuwe status van kracht wordt.";
 "web_extensions" = "Webextensies";
 "userscripts" = "Scripts en extensies";
-"userscripts_installed" = "Mijn scripts";
-"userscripts_install" = "Scripts installeren";
+"userscripts_installed" = "Geïnstalleerd";
+"userscripts_install" = "Toevoegen";
 "userscripts_empty" = "Geen UserScripts";
 "userscripts_empty_desc" = "Installeer een .user.js-bestand of maak een script om het hier te bekijken.";
 "userscripts_reload_note" = "Open pagina's worden opnieuw geladen nadat een script is geïnstalleerd, bewerkt, ingeschakeld, uitgeschakeld of verwijderd.";
 "userscript_experimental_badge" = "Compatibiliteit";
 "userscript_experimental_title" = "UserScript compatibiliteit";
-"userscript_experimental_desc" = "Ondersteunt siteregels, begin/einde van documenten, uitgebreide GM-opslag en pagina-API's, scriptopdrachten, meldingen, tabbladen, downloads, cookies, bronnen en op toestemming gerichte verzoeken. Controleer elk script voordat u het installeert.";
+"userscript_experimental_desc" = "Gebruikersscripts kunnen overeenkomende websites lezen of wijzigen en toegestane API’s gebruiken. De compatibiliteit verschilt per script. Installeer alleen scripts die je vertrouwt.";
 "extension_choose_file" = "Kies bestand of map…";
 "extension_installing" = "Extensie controleren en installeren…";
 "extension_install_failed" = "Extensie kon niet worden geïnstalleerd";
 "extension_permissions_summary" = "%d rechten · %d websiteregels";
 "extension_untitled" = "Naamloze extensie";
-"web_extension_install_footer" = "Tik ergens op een bronrij om deze te openen op het huidige tabblad Soulo. Soulo herkent CRX, XPI, ZIP en ondersteunde winkelinstallatieacties en vraagt ​​vervolgens voordat de installatie wordt uitgevoerd. Sommige desktop-API's zijn mogelijk niet beschikbaar.";
+"web_extension_install_footer" = "Installeer compatibele extensies via een winkellink of importeer CRX, XPI, ZIP of een extensiemap. Controleer rechten en compatibiliteit; sommige desktopfuncties zijn niet beschikbaar.";
 "web_extension_install_store_link" = "Installeren via winkellink...";
 "web_extension_browse_sources" = "Blader door extensiewinkels";
 "web_extension_browse_sources_footer" = "Store Get-knoppen ondersteunen alleen hun eigen desktopbrowsers. Kopieer de link naar een extensiedetailpagina en gebruik vervolgens Installeren vanuit winkellink in Soulo.";
 "web_extension_store_install_title" = "Installeer een winkelextensie";
 "extension_page_banner_title" = "Installeer met Soulo";
-"extension_page_banner_desc" = "Soulo kan deze extensie rechtstreeks installeren.";
-"web_extension_store_install_desc" = "Plak een link naar de Chrome Web Store, Microsoft Edge Add-ons of Firefox Add-ons-detailpagina. Soulo downloadt het pakket zelf, dus de incompatibele Get-knop van de winkel wordt niet gebruikt.";
+"extension_page_banner_desc" = "Controleer compatibiliteit en rechten vóór installatie.";
+"web_extension_store_install_desc" = "Plak de link naar de detailpagina van een Chrome-, Edge- of Firefox-extensie en controleer compatibiliteit en rechten voordat je de installatie bevestigt.";
 "web_extension_store_link_placeholder" = "Link naar extensiepagina of Chrome-extensie-ID";
 "web_extension_store_invalid_link" = "Plak een link naar een extensiedetailpagina uit Chrome, Edge of Firefox, een Chrome-extensie-ID of een directe CRX-, XPI- of ZIP-link.";
 "web_extension_store_https_required" = "Extensiepakketten moeten een beveiligde HTTPS-link gebruiken.";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "De mediastream gaf een ongeldig segment of een segment in de verkeerde volgorde terug.";
 "resource_stream_download_missing_track" = "De gedownloade stream bevatte geen afspeelbare video- en audiotracks.";
 "resource_stream_download_export_failed" = "Soulo kon de gedownloade video en audio niet samenvoegen.";
-"resource_stream_playback_download_first" = "Deze beveiligde stream kan niet via de tijdelijke URL worden bekeken. Download deze eerst om het lokale bestand af te spelen.";
+"resource_stream_playback_download_first" = "Deze stream kan momenteel niet rechtstreeks worden voorvertoond.";
 "platform_invalid_web_url" = "Voer een geldig webadres in dat begint met http:// of https://.";
 
 "library_history_tab" = "Geschiedenis";
@@ -889,8 +889,7 @@
 "extension_review_access" = "Kies de machtigingen en websites waartoe deze extensie toegang heeft.";
 "extension_limit_commands" = "Sneltoetsen voor extensies zijn niet beschikbaar op iOS.";
 "extension_limit_notifications" = "Meldingen kunnen worden weergegeven, maar klik- en sluitgebeurtenissen worden niet ondersteund.";
-"extension_limit_offscreen" = "Offscreen-documenten ondersteunen alleen het afspelen van audio.";
-
+"extension_limit_offscreen" = "Offscreen-documenten vallen onder de beperkingen van iOS; sommige functies zijn mogelijk niet beschikbaar.";
 "review_support_message" = "Bedankt voor je steun aan Soulo. Je recensies helpen ons steeds beter te worden.";
 "review_open_app_store" = "Beoordeel in de App Store";
 

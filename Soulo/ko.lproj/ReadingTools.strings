@@ -436,3 +436,65 @@
 "files_move_busy" = "이러한 항목을 이동하거나 이름을 바꾸기 전에 다운로드가 완료될 때까지 기다리십시오.";
 "video_show_episode_dock" = "에피소드 독 표시";
 "video_show_episode_dock_desc" = "에피소드가 있는 웹페이지에 고정된 에피소드 버튼을 표시합니다. 에피소드는 플레이어 내에서 계속 사용할 수 있습니다.";
+
+// Webpage share preview
+"page_share_image" = "이미지 공유";
+"page_share_link" = "링크 공유";
+"page_share_preview" = "표시 영역 미리보기";
+"page_share_brand" = "Soulo: 다중 검색 브라우저";
+
+"video_export_mp4" = "MP4 내보내기";
+"video_export_failed" = "이 동영상을 MP4로 내보낼 수 없습니다. 원본 파일은 유지됩니다.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "두 손가락 제스처";
+"gesture_hint" = "두 손가락을 좌우로 함께 움직이면 안내가 따라옵니다. 되돌리면 취소됩니다. 한 손가락 탐색과 핀치 확대는 그대로 사용할 수 있습니다.";
+"gesture_swipe_right" = "오른쪽으로 밀기";
+"gesture_swipe_left" = "왼쪽으로 밀기";
+"gesture_show_toolbar" = "도구 막대 표시";
+"gesture_quick_menu" = "빠른 메뉴";
+"gesture_preview" = "제스처 미리보기";
+"zoom_remember" = "사이트 확대 비율 기억";
+"zoom_hint" = "페이지 메뉴에서 조절한 비율을 도메인별로 저장합니다. 비공개 탭의 변경은 저장하지 않습니다.";
+"zoom_empty" = "저장된 확대 비율 없음";
+"zoom_reset_all" = "모두 100%로 재설정";
+
+"shake_direction" = "흔들기 방향";
+"shake_direction_horizontal" = "좌우";
+"shake_direction_vertical" = "상하";
+"shake_direction_any" = "모든 방향";
+
+"gesture_settings_title" = "웹페이지 제스처";
+"gesture_no_history" = "뒤로 갈 수 없을 때";
+"gesture_no_history_hint" = "뒤로 갈 기록이 없을 때 왼쪽 가장자리에서 오른쪽으로 밀면 동작이 표시됩니다. 되돌리면 취소됩니다. ‘없음’으로 끌 수 있습니다.";
+
+"gesture_execution" = "실행 방식";
+
+"gesture_execute_release" = "손을 떼면 실행";
+
+"gesture_execute_tap" = "탭하여 실행";
+
+"gesture_feedback" = "동작 피드백";
+
+"gesture_haptics" = "진동";
+
+"gesture_sound" = "소리";
+
+"gesture_feedback_preview" = "피드백 미리보기";
+
+"media_start_timeout" = "재생이 시작되지 않았습니다. 네트워크를 확인하거나 플레이어를 변경하세요.";
+
+"wallpaper_appearance_hint" = "라이트 모드와 다크 모드의 배경을 따로 설정하세요. 앱의 화면 모드에 따라 자동으로 전환됩니다.";
+
+"wallpaper_image_overlay" = "이미지 오버레이";
+
+"auto_hide_platform_bar" = "플랫폼 막대 자동 숨기기";
+
+"top_tab_bar_hidden_title" = "상단 탭 막대를 숨겼습니다";
+
+"top_tab_bar_reopen_hint" = "다시 표시하려면 하단의 탭 버튼을 누르고 … 메뉴에서 상단 탭 막대 표시를 켜세요.";
+
+"wallpaper_image_blur" = "반투명 유리";
+"wallpaper_blur_amount" = "흐림 강도";
+
+"auto_hide_platform_bar_hint" = "검색 결과의 페이지를 열면 플랫폼 막대가 자동으로 숨겨집니다. 검색 결과로 돌아가거나 새로 검색하면 다시 표시됩니다. 이 메뉴에서 끌 수 있습니다.";

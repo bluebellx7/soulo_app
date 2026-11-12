@@ -436,3 +436,65 @@
 "files_move_busy" = "Warten Sie, bis die Downloads abgeschlossen sind, bevor Sie diese Elemente verschieben oder umbenennen.";
 "video_show_episode_dock" = "Episoden-Dock anzeigen";
 "video_show_episode_dock_desc" = "Zeigen Sie auf Webseiten mit Episoden eine angedockte Episodenschaltfläche an. Episoden bleiben im Player verfügbar.";
+
+// Webpage share preview
+"page_share_image" = "Bild teilen";
+"page_share_link" = "Link teilen";
+"page_share_preview" = "Vorschau des sichtbaren Bereichs";
+"page_share_brand" = "Soulo: Multi-Suchbrowser";
+
+"video_export_mp4" = "MP4 exportieren";
+"video_export_failed" = "Dieses Video konnte nicht als MP4 exportiert werden. Die Originaldatei wurde beibehalten.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Zwei-Finger-Gesten";
+"gesture_hint" = "Zwei Finger gemeinsam seitlich bewegen. Der Hinweis folgt den Fingern; zurückbewegen zum Abbrechen. Navigation mit einem Finger und Aufziehen zum Zoomen bleiben verfügbar.";
+"gesture_swipe_right" = "Nach rechts wischen";
+"gesture_swipe_left" = "Nach links wischen";
+"gesture_show_toolbar" = "Werkzeugleiste zeigen";
+"gesture_quick_menu" = "Schnellmenü";
+"gesture_preview" = "Geste ansehen";
+"zoom_remember" = "Website-Zoom merken";
+"zoom_hint" = "Der Zoom aus dem Seitenmenü wird pro Domain gespeichert. Änderungen in privaten Tabs werden nicht gespeichert.";
+"zoom_empty" = "Keine Zoomstufen gespeichert";
+"zoom_reset_all" = "Alles zurücksetzen (100%)";
+
+"shake_direction" = "Richtung";
+"shake_direction_horizontal" = "Links und rechts";
+"shake_direction_vertical" = "Oben und unten";
+"shake_direction_any" = "Alle Richtungen";
+
+"gesture_settings_title" = "Webseiten-Gesten";
+"gesture_no_history" = "Wenn Zurück nicht möglich ist";
+"gesture_no_history_hint" = "Ohne vorherige Seite vom linken Rand nach rechts wischen, um die Aktion anzuzeigen. Zurückbewegen zum Abbrechen. Mit Keine deaktivieren.";
+
+"gesture_execution" = "Aktion ausführen";
+
+"gesture_execute_release" = "Beim Loslassen";
+
+"gesture_execute_tap" = "Beim Antippen";
+
+"gesture_feedback" = "Aktionsfeedback";
+
+"gesture_haptics" = "Vibration";
+
+"gesture_sound" = "Ton";
+
+"gesture_feedback_preview" = "Feedback testen";
+
+"media_start_timeout" = "Die Wiedergabe hat nicht begonnen. Prüfe das Netzwerk oder wechsle den Player.";
+
+"wallpaper_appearance_hint" = "Wähle eigene Hintergründe für das helle und dunkle Erscheinungsbild. Sie wechseln automatisch mit der App.";
+
+"wallpaper_image_overlay" = "Bildebene";
+
+"auto_hide_platform_bar" = "Plattformleiste automatisch ausblenden";
+
+"top_tab_bar_hidden_title" = "Obere Tableiste ausgeblendet";
+
+"top_tab_bar_reopen_hint" = "Tippe unten auf die Tab-Taste, öffne das Menü … und aktiviere die obere Tableiste, um sie wieder anzuzeigen.";
+
+"wallpaper_image_blur" = "Milchglas";
+"wallpaper_blur_amount" = "Unschärfestärke";
+
+"auto_hide_platform_bar_hint" = "Die Plattformleiste wird beim Öffnen eines Suchergebnisses ausgeblendet. Sie erscheint wieder, wenn du zu den Ergebnissen zurückkehrst oder neu suchst. In diesem Menü kannst du dies ausschalten.";

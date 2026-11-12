@@ -1,7 +1,7 @@
 import XCTest
 import WebKit
 import SwiftUI
-import SwiftData
+import CoreData
 @testable import Soulo
 
 @MainActor
@@ -199,14 +199,13 @@ final class ManualAdBlockTests: XCTestCase {
         let model = WebViewModel()
         model.webView = web
         model.updateCurrentURL(web.url)
-        let container = try ModelContainer(for: BookmarkItem.self,
-            configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let container = try LibraryStore(inMemory: true)
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
         let host = UIHostingController(rootView:
             WebViewContainer(webViewModel: model, bookmarkViewModel: BookmarkViewModel(), isFullscreen: .constant(false))
-                .environmentObject(SearchViewModel()).modelContainer(container))
+                .environmentObject(SearchViewModel()).environment(\.managedObjectContext, (container).mainContext))
         window.rootViewController = host
         window.makeKeyAndVisible()
         defer {
@@ -944,6 +943,6 @@ final class ManualAdBlockTests: XCTestCase {
 
     @discardableResult
     private func js(_ source: String, _ web: WKWebView) async throws -> Any? {
-        try await web.evaluateJavaScript(source, in: nil, contentWorld: ManualAdBlockRuntime.world)
+        try await web.evaluateCompatibleJavaScript(source, in: nil, contentWorld: ManualAdBlockRuntime.world)
     }
 }

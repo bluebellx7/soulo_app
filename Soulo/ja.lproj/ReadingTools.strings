@@ -436,3 +436,65 @@
 "files_move_busy" = "これらの項目を移動または名前変更する前に、ダウンロードが完了するまで待ってください。";
 "video_show_episode_dock" = "エピソードドックを表示";
 "video_show_episode_dock_desc" = "エピソードのある Web ページにドッキングされたエピソード ボタンを表示します。エピソードはプレーヤー内で引き続き利用できます。";
+
+// Webpage share preview
+"page_share_image" = "画像を共有";
+"page_share_link" = "URLを共有";
+"page_share_preview" = "表示範囲のプレビュー";
+"page_share_brand" = "Soulo: マルチ検索ブラウザ";
+
+"video_export_mp4" = "MP4を書き出す";
+"video_export_failed" = "この動画をMP4として書き出せませんでした。元のファイルは保持されています。";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "2本指のジェスチャ";
+"gesture_hint" = "2本指で左右に動かすとヒントが指に追従します。戻すとキャンセルします。1本指の移動やピンチズームも使えます。";
+"gesture_swipe_right" = "右にスワイプ";
+"gesture_swipe_left" = "左にスワイプ";
+"gesture_show_toolbar" = "ツールバーを表示";
+"gesture_quick_menu" = "クイックメニュー";
+"gesture_preview" = "ジェスチャをプレビュー";
+"zoom_remember" = "サイトのズームを記憶";
+"zoom_hint" = "ページメニューで調整した倍率をドメインごとに保存します。プライベートタブでの変更は保存しません。";
+"zoom_empty" = "保存済みの倍率はありません";
+"zoom_reset_all" = "すべて100%に戻す";
+
+"shake_direction" = "振る方向";
+"shake_direction_horizontal" = "左右";
+"shake_direction_vertical" = "上下";
+"shake_direction_any" = "すべての方向";
+
+"gesture_settings_title" = "ページのジェスチャ";
+"gesture_no_history" = "戻る履歴がない場合";
+"gesture_no_history_hint" = "戻る履歴がないとき、左端から右にスワイプすると操作が表示されます。戻すとキャンセルします。「なし」で無効にできます。";
+
+"gesture_execution" = "実行方法";
+
+"gesture_execute_release" = "指を離して実行";
+
+"gesture_execute_tap" = "タップして実行";
+
+"gesture_feedback" = "操作のフィードバック";
+
+"gesture_haptics" = "触覚";
+
+"gesture_sound" = "サウンド";
+
+"gesture_feedback_preview" = "フィードバックを試す";
+
+"media_start_timeout" = "再生が始まりません。ネットワークを確認するか、プレーヤーを切り替えてください。";
+
+"wallpaper_appearance_hint" = "ライトとダークの背景を個別に設定できます。アプリの外観に合わせて自動で切り替わります。";
+
+"wallpaper_image_overlay" = "画像のオーバーレイ";
+
+"auto_hide_platform_bar" = "プラットフォームバーを自動で隠す";
+
+"top_tab_bar_hidden_title" = "上部タブバーを非表示にしました";
+
+"top_tab_bar_reopen_hint" = "再表示するには、下部のタブボタンをタップし、「…」メニューで「上部タブバーを表示」をオンにしてください。";
+
+"wallpaper_image_blur" = "すりガラス";
+"wallpaper_blur_amount" = "ぼかしの強さ";
+
+"auto_hide_platform_bar_hint" = "検索結果のページを開くと、プラットフォームバーが自動的に隠れます。検索結果に戻るか、新しく検索すると再表示されます。このメニューでオフにできます。";

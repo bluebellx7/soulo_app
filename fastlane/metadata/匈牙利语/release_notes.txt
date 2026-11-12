@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Javítottuk azt a hibát, amely miatt egy könyvjelző vagy előzményelem megnyitása felülírhatott egy meglévő lapot.
-• Javult az indítás, az oldalak betöltése és a kezdőképernyő kezelése.
-• Javult a teljes képernyős vezérlés, az elforgatás és a lejátszás állapota alkalmazásváltáskor.
-• Javult a bezárt lapok visszaállítása, a fájlok előnézete és a felület részletei.
+• Külön háttér a világos és sötét megjelenéshez, kapcsolható képfedő réteggel.
+• Javított kezdőlapszínek; a háttér előnézete követi az alkalmazás témáját.
+• Hátterek előnézete, megosztása és mentése a Fotókba.
+• Felső lapbeállítások új lappal és a platformsáv választható elrejtésével navigáció után.

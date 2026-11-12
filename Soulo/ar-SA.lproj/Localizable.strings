@@ -609,27 +609,27 @@
 "extensions_reload_note" = "يتم إعادة تحميل الصفحات المفتوحة بعد تغيير الامتداد أو البرنامج النصي حتى تدخل الحالة الجديدة حيز التنفيذ.";
 "web_extensions" = "ملحقات الويب";
 "userscripts" = "البرامج النصية والإضافات";
-"userscripts_installed" = "البرامج النصية الخاصة بي";
-"userscripts_install" = "تثبيت البرامج النصية";
+"userscripts_installed" = "المثبتة";
+"userscripts_install" = "إضافة";
 "userscripts_empty" = "لا UserScripts";
 "userscripts_empty_desc" = "قم بتثبيت ملف .user.js أو قم بإنشاء برنامج نصي لرؤيته هنا.";
 "userscripts_reload_note" = "يتم إعادة تحميل الصفحات المفتوحة بعد تثبيت البرنامج النصي أو تحريره أو تمكينه أو تعطيله أو إزالته.";
 "userscript_experimental_badge" = "التوافق";
 "userscript_experimental_title" = "التوافق UserScript";
-"userscript_experimental_desc" = "يدعم قواعد الموقع، وبدء/نهاية المستند، وتخزين GM الشامل وواجهات برمجة التطبيقات للصفحة، وأوامر البرنامج النصي، والإشعارات، وعلامات التبويب، والتنزيلات، وملفات تعريف الارتباط، والموارد، والطلبات ذات نطاق الأذونات. قم بمراجعة كل برنامج نصي قبل التثبيت.";
+"userscript_experimental_desc" = "يمكن لبرامج المستخدم النصية قراءة المواقع المطابقة أو تعديلها واستخدام واجهات API المسموح بها. يختلف التوافق حسب البرنامج النصي. ثبّت البرامج التي تثق بها فقط.";
 "extension_choose_file" = "اختيار ملف أو مجلد…";
 "extension_installing" = "جارٍ التحقق من الإضافة وتثبيتها…";
 "extension_install_failed" = "تعذر تثبيت الامتداد";
 "extension_permissions_summary" = "%d الأذونات · %d قواعد الموقع";
 "extension_untitled" = "ملحق بلا عنوان";
-"web_extension_install_footer" = "انقر في أي مكان على صف المصدر لفتحه في علامة التبويب Soulo الحالية. Soulo يتعرف على CRX وXPI وZIP وإجراءات تثبيت المتجر المدعومة، ثم يسأل قبل التثبيت. قد لا تكون بعض واجهات برمجة التطبيقات المخصصة لسطح المكتب فقط متاحة.";
+"web_extension_install_footer" = "ثبّت الإضافات المتوافقة من رابط المتجر أو استورد CRX أو XPI أو ZIP أو مجلد إضافة. راجع الأذونات والتوافق قبل التثبيت؛ بعض ميزات سطح المكتب غير متاحة.";
 "web_extension_install_store_link" = "رابط التثبيت من المتجر...";
 "web_extension_browse_sources" = "تصفح متاجر الامتداد";
 "web_extension_browse_sources_footer" = "تدعم أزرار Store Get متصفحات سطح المكتب الخاصة بها فقط. انسخ رابط صفحة تفاصيل الإضافة، ثم استخدم رابط التثبيت من المتجر في Soulo.";
 "web_extension_store_install_title" = "قم بتثبيت ملحق المتجر";
 "extension_page_banner_title" = "التثبيت باستخدام Soulo";
-"extension_page_banner_desc" = "يمكن Soulo تثبيت هذا الامتداد مباشرة.";
-"web_extension_store_install_desc" = "الصق رابط صفحة تفاصيل Chrome Web Store أو Microsoft Edge Add-ons أو Firefox Add-ons. يقوم Soulo بتنزيل الحزمة نفسها، لذلك لا يتم استخدام زر Get غير المتوافق الخاص بالمتجر.";
+"extension_page_banner_desc" = "راجع التوافق والأذونات قبل التثبيت.";
+"web_extension_store_install_desc" = "ألصق رابط صفحة تفاصيل إضافة Chrome أو Edge أو Firefox وراجع التوافق والأذونات قبل تأكيد التثبيت.";
 "web_extension_store_link_placeholder" = "رابط صفحة الامتداد أو معرف ملحق Chrome";
 "web_extension_store_invalid_link" = "الصق رابط صفحة تفاصيل الإضافة من Chrome، أو Edge، أو Firefox، أو معرف ملحق Chrome، أو رابط CRX، أو XPI، أو ZIP المباشر.";
 "web_extension_store_https_required" = "يجب أن تستخدم حزم الملحقات رابط HTTPS آمنًا.";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "أعاد بث الوسائط مقطعًا غير صالح أو بترتيب غير صحيح.";
 "resource_stream_download_missing_track" = "لم يتضمن البث الذي تم تنزيله مسارات فيديو وصوت قابلة للتشغيل.";
 "resource_stream_download_export_failed" = "تعذر على Soulo دمج الفيديو والصوت اللذين تم تنزيلهما.";
-"resource_stream_playback_download_first" = "لا يمكن معاينة هذا البث المحمي من رابطه المؤقت. نزّله أولًا لتشغيل الملف المحلي.";
+"resource_stream_playback_download_first" = "لا يمكن معاينة هذا البث مباشرة في الوقت الحالي.";
 "platform_invalid_web_url" = "أدخل عنوان موقع صالحًا يبدأ بـ http:// أو https://.";
 
 "library_history_tab" = "السجل";
@@ -889,8 +889,7 @@
 "extension_review_access" = "اختر الأذونات والمواقع التي يمكن لهذه الإضافة الوصول إليها.";
 "extension_limit_commands" = "اختصارات لوحة المفاتيح للإضافات غير متاحة على iOS.";
 "extension_limit_notifications" = "يمكن عرض الإشعارات، لكن أحداث النقر والإغلاق غير مدعومة.";
-"extension_limit_offscreen" = "يقتصر دعم المستندات خارج الشاشة على تشغيل الصوت.";
-
+"extension_limit_offscreen" = "تخضع المستندات خارج الشاشة لقيود iOS؛ وقد لا تتوفر بعض الميزات.";
 "review_support_message" = "شكرًا لدعمك Soulo. تساعدنا مراجعاتك على مواصلة التحسين.";
 "review_open_app_store" = "تقييم في App Store";
 

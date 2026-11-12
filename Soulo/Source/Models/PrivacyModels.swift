@@ -176,6 +176,8 @@ struct BrowserDownloadItem: Identifiable, Codable, Equatable {
     var expectedBytes: Int64
     var transport: Transport
     var userScriptPolicy: UserScriptDownloadPolicy?
+    /// Only regular browsing may consult persistent web cookies after relaunch.
+    var hlsUsesPersistentCookies: Bool?
 
     init(
         id: UUID,
@@ -190,7 +192,8 @@ struct BrowserDownloadItem: Identifiable, Codable, Equatable {
         receivedBytes: Int64 = 0,
         expectedBytes: Int64 = 0,
         transport: Transport = .webKit,
-        userScriptPolicy: UserScriptDownloadPolicy? = nil
+        userScriptPolicy: UserScriptDownloadPolicy? = nil,
+        hlsUsesPersistentCookies: Bool? = nil
     ) {
         self.id = id
         self.fileName = fileName
@@ -205,11 +208,12 @@ struct BrowserDownloadItem: Identifiable, Codable, Equatable {
         self.expectedBytes = expectedBytes
         self.transport = transport
         self.userScriptPolicy = userScriptPolicy
+        self.hlsUsesPersistentCookies = hlsUsesPersistentCookies
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, fileName, sourceURLString, localPath, startedAt, completedAt, status
-        case errorMessage, progress, receivedBytes, expectedBytes, transport, userScriptPolicy
+        case errorMessage, progress, receivedBytes, expectedBytes, transport, userScriptPolicy, hlsUsesPersistentCookies
     }
 
     init(from decoder: Decoder) throws {
@@ -227,6 +231,7 @@ struct BrowserDownloadItem: Identifiable, Codable, Equatable {
         expectedBytes = try container.decodeIfPresent(Int64.self, forKey: .expectedBytes) ?? 0
         transport = try container.decodeIfPresent(Transport.self, forKey: .transport) ?? .webKit
         userScriptPolicy = try container.decodeIfPresent(UserScriptDownloadPolicy.self, forKey: .userScriptPolicy)
+        hlsUsesPersistentCookies = try container.decodeIfPresent(Bool.self, forKey: .hlsUsesPersistentCookies)
     }
 
     var localURL: URL {

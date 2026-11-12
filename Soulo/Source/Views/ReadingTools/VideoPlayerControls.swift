@@ -3,16 +3,44 @@ import AVFoundation
 import MediaPlayer
 
 struct VideoGestureFeedback {
-    enum Kind: Equatable { case rate, brightness, volume }
+    enum Kind: Equatable { case rate, brightness, volume, seek }
     let kind: Kind
     let value: Double
+    var delta: Double? = nil
     var symbol: String {
-        switch kind { case .rate: "speedometer"; case .brightness: "sun.max.fill"; case .volume: "speaker.wave.2.fill" }
+        switch kind { case .rate: "speedometer"; case .brightness: "sun.max.fill"; case .volume: "speaker.wave.2.fill"; case .seek: (delta ?? 0) < 0 ? "gobackward" : "goforward" }
     }
-    var text: String { kind == .rate ? String(format: "%g×", value) : "\(Int((value * 100).rounded()))%" }
+    var text: String {
+        if kind == .seek {
+            let seconds = Int(max(0, value)), change = Int(abs(delta ?? 0))
+            return String(format: "%d:%02d  %@%d:%02d", seconds / 60, seconds % 60, (delta ?? 0) < 0 ? "−" : "+", change / 60, change % 60)
+        }
+        return kind == .rate ? String(format: "%g×", value) : "\(Int((value * 100).rounded()))%"
+    }
 }
 
-/// Shared vertical gesture routing for both decoders. Player state owns brightness
+/// Keep adjustment feedback clear of the central transport controls.
+struct VideoGestureFeedbackView: View {
+    let feedback: VideoGestureFeedback
+    let identifier: String
+    var body: some View {
+        GeometryReader { geometry in
+            Label(feedback.text, systemImage: feedback.symbol)
+                .font(.system(size: 16, weight: .semibold)).monospacedDigit()
+                .foregroundStyle(.white.opacity(0.92))
+                .padding(.horizontal, 18).padding(.vertical, 12)
+                .background(.black.opacity(0.72), in: Capsule())
+                .overlay(Capsule().strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(feedback.text)
+                .accessibilityIdentifier(identifier)
+                .position(x: geometry.size.width / 2, y: max(32, geometry.size.height * 0.25))
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+/// Shared horizontal seek and vertical adjustment routing for both decoders. Player state owns brightness
 /// restoration; moving an output surface between inline/fullscreen keeps it intact.
 final class VideoVerticalGestureHandler: NSObject, UIGestureRecognizerDelegate {
     private weak var view: UIView?
@@ -21,13 +49,22 @@ final class VideoVerticalGestureHandler: NSObject, UIGestureRecognizerDelegate {
     private let brightness: (CGFloat, UIScreen) -> Void
     private let feedback: (VideoGestureFeedback.Kind, Double) -> Void
     private let ended: () -> Void
+    private let position: () -> (elapsed: Double, duration: Double)
+    private let previewSeek: (Double, Double) -> Void
+    private let seek: (Double) -> Void
+    private var seeking = false
+    private var startTime = 0.0
+    private var seekDuration = 0.0
     private var adjustingBrightness = false
     private var startingValue: CGFloat = 0
     private var volumeSlider: UISlider? { volumeControl.subviews.compactMap { $0 as? UISlider }.first }
 
     init(in view: UIView, enabled: @escaping () -> Bool, brightness: @escaping (CGFloat, UIScreen) -> Void,
-         feedback: @escaping (VideoGestureFeedback.Kind, Double) -> Void, ended: @escaping () -> Void) {
+         feedback: @escaping (VideoGestureFeedback.Kind, Double) -> Void,
+         position: @escaping () -> (elapsed: Double, duration: Double), previewSeek: @escaping (Double, Double) -> Void,
+         seek: @escaping (Double) -> Void, ended: @escaping () -> Void) {
         self.view = view; self.enabled = enabled; self.brightness = brightness; self.feedback = feedback; self.ended = ended
+        self.position = position; self.previewSeek = previewSeek; self.seek = seek
         super.init()
         volumeControl.showsRouteButton = false
         volumeControl.isUserInteractionEnabled = false
@@ -41,17 +78,36 @@ final class VideoVerticalGestureHandler: NSObject, UIGestureRecognizerDelegate {
         guard enabled(), let view, view.bounds.width >= 100, view.bounds.height >= 80,
               let pan = gestureRecognizer as? UIPanGestureRecognizer else { return false }
         let velocity = pan.velocity(in: view)
+        if abs(velocity.x) > abs(velocity.y) * 1.2 {
+            let state = position()
+            return VideoSeekGesture.target(start: state.elapsed, duration: state.duration, translation: 0, width: view.bounds.width) != nil
+        }
         return abs(velocity.y) > abs(velocity.x) * 1.2
+    }
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        otherGestureRecognizer is UILongPressGestureRecognizer
     }
     @objc private func adjusted(_ gesture: UIPanGestureRecognizer) {
         guard let view, let screen = view.window?.windowScene?.screen else { return }
         switch gesture.state {
         case .began:
+            let velocity = gesture.velocity(in: view)
+            seeking = abs(velocity.x) > abs(velocity.y)
+            if seeking {
+                let state = position(); startTime = state.elapsed; seekDuration = state.duration
+                previewSeek(startTime, startTime)
+                return
+            }
             volumeControl.layoutIfNeeded()
             adjustingBrightness = gesture.location(in: view).x < view.bounds.midX
             startingValue = adjustingBrightness ? screen.brightness : CGFloat(volumeSlider?.value ?? AVAudioSession.sharedInstance().outputVolume)
             feedback(adjustingBrightness ? .brightness : .volume, Double(startingValue))
         case .changed:
+            if seeking {
+                if let target = VideoSeekGesture.target(start: startTime, duration: seekDuration,
+                    translation: gesture.translation(in: view).x, width: view.bounds.width) { previewSeek(target, startTime) }
+                return
+            }
             let value = min(1, max(0, startingValue - gesture.translation(in: view).y / max(150, view.bounds.height * 0.7)))
             if adjustingBrightness { brightness(value, screen) }
             else {
@@ -60,7 +116,11 @@ final class VideoVerticalGestureHandler: NSObject, UIGestureRecognizerDelegate {
                 feedback(.volume, Double(value))
             }
         case .ended, .cancelled, .failed:
-            if !adjustingBrightness { volumeSlider?.sendActions(for: .touchUpInside) }
+            if seeking {
+                if gesture.state == .ended, let target = VideoSeekGesture.target(start: startTime, duration: seekDuration,
+                    translation: gesture.translation(in: view).x, width: view.bounds.width) { seek(target) }
+                seeking = false
+            } else if !adjustingBrightness { volumeSlider?.sendActions(for: .touchUpInside) }
             ended()
         default: break
         }
@@ -79,11 +139,23 @@ extension EnvironmentValues {
 
 /// A fullscreen session survives decoder changes. Switching modes updates the
 /// content of this controller, preserving its window, geometry and orientation.
+enum VideoFullscreenDismissal { case closePlayback, exitFullscreen }
+private struct VideoFullscreenRotationKey: EnvironmentKey {
+    static let defaultValue: ((Bool, @escaping (Error) -> Void) -> Void)? = nil
+}
+private extension EnvironmentValues {
+    var videoFullscreenRotation: ((Bool, @escaping (Error) -> Void) -> Void)? {
+        get { self[VideoFullscreenRotationKey.self] }
+        set { self[VideoFullscreenRotationKey.self] = newValue }
+    }
+}
+
 @MainActor final class SharedVideoFullscreenHost {
     final class Screen: UIHostingController<AnyView> {
         private var playerContent = AnyView(EmptyView())
         private var playerInsets = EdgeInsets()
         var closed: (() -> Void)?
+        var rotate: ((Bool, @escaping (Error) -> Void) -> Void)?
         var openingOrientation: UIInterfaceOrientation = .portrait
         var allowedOrientations: UIInterfaceOrientationMask = .allButUpsideDown
         override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation { openingOrientation }
@@ -92,7 +164,7 @@ extension EnvironmentValues {
         func setContent(_ content: AnyView, initialInsets: UIEdgeInsets? = nil) {
             playerContent = content
             if let initialInsets { playerInsets = Self.insets(initialInsets) }
-            rootView = AnyView(content.environment(\.videoFullscreenInsets, playerInsets))
+            rootView = AnyView(content.environment(\.videoFullscreenInsets, playerInsets).environment(\.videoFullscreenRotation, rotate))
         }
         override func viewSafeAreaInsetsDidChange() {
             super.viewSafeAreaInsetsDidChange()
@@ -100,7 +172,7 @@ extension EnvironmentValues {
             let next = Self.insets(view.safeAreaInsets)
             guard next != playerInsets else { return }
             playerInsets = next
-            rootView = AnyView(playerContent.environment(\.videoFullscreenInsets, next))
+            rootView = AnyView(playerContent.environment(\.videoFullscreenInsets, next).environment(\.videoFullscreenRotation, rotate))
         }
         private static func insets(_ value: UIEdgeInsets) -> EdgeInsets {
             EdgeInsets(top: value.top, leading: value.left, bottom: value.bottom, trailing: value.right)
@@ -114,9 +186,11 @@ extension EnvironmentValues {
     private let key: ObjectIdentifier
     private(set) var owner: UUID
     private(set) var screen: Screen?
-    private var onClose: (() -> Void)?
+    private var onClose: ((VideoFullscreenDismissal) -> Void)?
     private var handoffTask: Task<Void, Never>?
     private var handingOff = false
+    private var rotationTask: Task<Void, Never>?
+    private var rotationID = UUID()
     private weak var accessibilitySource: UIView?
     private var sourceAccessibilityWasHidden = false
     private let orientation = WebVideoFullscreenOrientation()
@@ -133,7 +207,7 @@ extension EnvironmentValues {
         return nil
     }
     static func present(owner: UUID, in window: UIWindow, content: AnyView, identifier: String,
-                        landscape: Bool, onClose: @escaping () -> Void) -> SharedVideoFullscreenHost? {
+                        landscape: Bool, onClose: @escaping (VideoFullscreenDismissal) -> Void) -> SharedVideoFullscreenHost? {
         guard let scene = window.windowScene else { return nil }
         if let current = current(in: window), let screen = current.screen {
             current.handoffTask?.cancel(); current.handoffTask = nil; current.handingOff = false
@@ -145,17 +219,21 @@ extension EnvironmentValues {
               !source.isBeingPresented, !source.isBeingDismissed, source.transitionCoordinator == nil else { return nil }
         let current = SharedVideoFullscreenHost(scene: scene, owner: owner)
         let screen = Screen(rootView: content)
+        screen.rotate = { [weak current] landscape, failure in
+            guard let current else { failure(CocoaError(.featureUnsupported)); return }
+            current.setLandscape(landscape, onError: failure)
+        }
         screen.setContent(content, initialInsets: window.safeAreaInsets)
         screen.modalPresentationCapturesStatusBarAppearance = true
-        screen.openingOrientation = landscape ? VideoOrientation.landscapePresentation(in: scene) : .portrait
+        screen.openingOrientation = UIDevice.current.userInterfaceIdiom == .pad ? scene.interfaceOrientation : (landscape ? VideoOrientation.landscapePresentation(in: scene) : .portrait)
         // Keep an explicitly landscape player landscape while iOS rebuilds
         // foreground geometry, even when the phone is held upright.
-        screen.allowedOrientations = landscape ? .landscape : .allButUpsideDown
+        screen.allowedOrientations = UIDevice.current.userInterfaceIdiom == .pad ? .allButUpsideDown : (landscape ? .landscape : .allButUpsideDown)
         // Keep the source mounted so the destination decoder can start while
         // this same fullscreen controller remains visible during a handoff.
         screen.modalPresentationStyle = .overFullScreen; screen.view.backgroundColor = .black
         screen.view.accessibilityIdentifier = identifier; screen.view.accessibilityViewIsModal = true
-        screen.closed = { [weak current] in current?.finished() }
+        screen.closed = { [weak current] in current?.finished(reason: .exitFullscreen) }
         current.screen = screen; current.onClose = onClose; sessions[current.key] = current
         current.accessibilitySource = source.view
         current.sourceAccessibilityWasHidden = source.view.accessibilityElementsHidden
@@ -171,12 +249,29 @@ extension EnvironmentValues {
         handoffTask?.cancel(); handoffTask = nil; handingOff = false
         screen?.setContent(content)
     }
-    func setLandscape(_ landscape: Bool) {
-        guard let screen, !screen.isBeingDismissed, let scene = screen.view.window?.windowScene else { return }
+    func setLandscape(_ landscape: Bool, onError: @escaping (Error) -> Void = { _ in }) {
+        guard let screen, !screen.isBeingDismissed, let scene = screen.view.window?.windowScene else {
+            onError(CocoaError(.featureUnsupported)); return
+        }
+        rotationTask?.cancel(); rotationID = UUID()
+        let request = rotationID, previous = screen.allowedOrientations
         screen.openingOrientation = landscape ? VideoOrientation.landscapePresentation(in: scene) : .portrait
         screen.allowedOrientations = landscape ? .landscape : .portrait
         screen.setNeedsUpdateOfSupportedInterfaceOrientations()
-        orientation.setFullscreenOrientation(landscape, in: scene, sourceView: nil, onError: { _ in })
+        let failed: (Error) -> Void = { [weak self, weak screen] error in
+            guard let self, let screen, self.rotationID == request, !screen.isBeingDismissed else { return }
+            self.rotationTask?.cancel(); screen.allowedOrientations = previous
+            screen.setNeedsUpdateOfSupportedInterfaceOrientations(); onError(error)
+        }
+        rotationTask = Task { @MainActor [weak self, weak screen] in
+            do { try await Task.sleep(for: .milliseconds(50)) } catch { return }
+            guard let self, let screen, self.rotationID == request, !screen.isBeingDismissed else { return }
+            self.orientation.setFullscreenOrientation(landscape, in: scene, sourceView: nil,
+                fullscreenController: screen, onError: failed)
+            do { try await Task.sleep(for: .seconds(2)) } catch { return }
+            guard self.rotationID == request, !screen.isBeingDismissed else { return }
+            if (screen.view.bounds.width > screen.view.bounds.height) != landscape { failed(CocoaError(.featureUnsupported)) }
+        }
     }
     func beginHandoff(owner: UUID) {
         guard self.owner == owner else { return }
@@ -191,21 +286,22 @@ extension EnvironmentValues {
         guard self.owner == owner, !handingOff else { return }
         dismiss(owner: owner)
     }
-    func dismiss(owner: UUID) {
+    func dismiss(owner: UUID, reason: VideoFullscreenDismissal = .exitFullscreen) {
         guard self.owner == owner, let screen, !screen.isBeingDismissed else { return }
         handoffTask?.cancel(); handoffTask = nil
         screen.closed = nil
-        screen.dismiss(animated: false) { [weak self] in self?.finished() }
+        screen.dismiss(animated: false) { [weak self] in self?.finished(reason: reason) }
     }
-    private func finished() {
+    private func finished(reason: VideoFullscreenDismissal) {
         guard screen != nil else { return }
+        rotationID = UUID(); rotationTask?.cancel(); rotationTask = nil
         screen?.closed = nil; screen = nil
         handoffTask?.cancel(); handoffTask = nil
         Self.sessions.removeValue(forKey: key)
         accessibilitySource?.accessibilityElementsHidden = sourceAccessibilityWasHidden
         accessibilitySource = nil
         orientation.end()
-        let callback = onClose; onClose = nil; callback?()
+        let callback = onClose; onClose = nil; callback?(reason)
     }
 }
 
@@ -247,6 +343,8 @@ struct VideoPlaybackControls: View {
 /// only differences between web, download and file fullscreen playback.
 struct VideoFullscreenChrome<More: View>: ViewModifier {
     @Environment(\.videoFullscreenInsets) private var windowInsets
+    @Environment(\.videoFullscreenRotation) private var rotateFullscreen
+    @State private var rotationError: String?
     @ObservedObject var visibility: VideoControlsVisibility
     let title: String
     let elapsed: Double
@@ -258,7 +356,9 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
     let identifier: String
     let closeIdentifier: String
     var options: FileVideoOptions?
+    var retry: (() -> Void)?
     let close: () -> Void
+    var exitFullscreen: (() -> Void)? = nil
     let toggle: () -> Void
     let seek: (Double) -> Void
     let setRate: (Float) -> Void
@@ -326,7 +426,7 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
                                     .accessibilityIdentifier("media.fullscreen.settings")
                                 }
                                 .padding(16).frame(width: 280).buttonStyle(.plain)
-                                .presentationCompactAdaptation(.popover)
+                                .compatiblePopoverAdaptation()
                                 .onDisappear {
                                     if opensSettings { opensSettings = false; DispatchQueue.main.async { settingsVisible = true } }
                                     if let action = pendingAction {
@@ -367,16 +467,23 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
                                         .frame(width: 44, height: 44)
                                 }
                                 let landscape = geometry.size.width > geometry.size.height
-                                VideoPlayerIconButton(symbol: landscape ? "iphone" : "iphone.landscape",
+                                VideoPlayerIconButton(symbol: UIDevice.current.userInterfaceIdiom == .pad
+                                    ? (landscape ? "ipad" : "ipad.landscape") : (landscape ? "iphone" : "iphone.landscape"),
                                     label: ToolText.text(landscape ? "media_portrait" : "media_landscape"),
                                     identifier: "media.fullscreen.rotate") {
-                                        guard let window = playbackWindow.window else { return }
-                                        SharedVideoFullscreenHost.current(in: window)?.setLandscape(!landscape)
+                                        guard let rotateFullscreen else { rotationError = CocoaError(.featureUnsupported).localizedDescription; return }
+                                        rotateFullscreen(!landscape) { rotationError = $0.localizedDescription }
                                         visibility.show()
                                     }
                                     .frame(width: 44, height: 44)
+                                if let exitFullscreen {
+                                    VideoPlayerIconButton(symbol: "arrow.down.right.and.arrow.up.left",
+                                        label: LanguageManager.shared.localizedString("exit_fullscreen"),
+                                        identifier: closeIdentifier.replacingOccurrences(of: ".close", with: ".exit"),
+                                        action: exitFullscreen)
+                                        .frame(width: 44, height: 44)
+                                }
                             }
-                            if let error { Text(error).font(.footnote).lineLimit(3) }
                         }
                         .padding(.leading, max(24, max(windowInsets.leading, geometry.safeAreaInsets.leading)))
                         .padding(.trailing, max(24, max(windowInsets.trailing, geometry.safeAreaInsets.trailing)))
@@ -386,16 +493,30 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
                     }
                 }
         }
+        // Reserve real layout space below the video canvas. An overlay at
+        // the center can be covered by the transport buttons or loading HUD.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if let error {
+                VideoPlaybackStatus(message: error, identifier: identifier + ".status", retry: retry)
+                    .padding(.horizontal, 24).padding(.vertical, 12).background(.black)
+            }
+        }
+        .modifier(VideoOrientationErrorAlert(message: $rotationError))
         .modifier(FileVideoEpisodeDrawer(isPresented: $episodesVisible, playlist: options?.playlist, fullscreen: true))
         .ignoresSafeArea().foregroundStyle(.white.opacity(0.9)).tint(.white).background(.black)
         .preferredColorScheme(.dark)
         .background(VideoFullscreenTapReader(controlsVisible: visibility.visible, action: visibility.toggle,
-            holdBegan: holdBegan, holdEnded: holdEnded))
+            doubleTap: { toggle(); visibility.show() }, holdBegan: holdBegan, holdEnded: holdEnded))
         .background(VideoPlaybackWindowReader(context: playbackWindow))
+        #if DEBUG
+        .overlay(alignment: .topLeading) { VideoVolumeDiagnostics() }
+        #endif
         .onAppear { if options?.showsEpisodesOnAppear == true { episodesVisible = true } }
-        .onChange(of: episodesVisible) { _, shown in visibility.interaction(shown) }
-        .onChange(of: settingsVisible) { _, shown in visibility.interaction(shown) }
-        .onChange(of: morePresented) { _, shown in visibility.interaction(shown) }
+        .onCompatibleChange(of: error) { _, message in visibility.interaction(message != nil) }
+        .onCompatibleChange(of: rotationError) { _, message in visibility.interaction(message != nil) }
+        .onCompatibleChange(of: episodesVisible) { _, shown in visibility.interaction(shown) }
+        .onCompatibleChange(of: settingsVisible) { _, shown in visibility.interaction(shown) }
+        .onCompatibleChange(of: morePresented) { _, shown in visibility.interaction(shown) }
         .sheet(isPresented: $settingsVisible) {
             NavigationStack { VideoSettingsView().toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button(ToolText.text("done")) { settingsVisible = false } }
@@ -403,6 +524,20 @@ struct VideoFullscreenChrome<More: View>: ViewModifier {
         }
     }
 }
+
+#if DEBUG
+private struct VideoVolumeDiagnostics: View {
+    @ObservedObject private var session = MediaSession.shared
+    var body: some View {
+        if ProcessInfo.processInfo.environment["SOULO_VIDEO_VOLUME_TRACE"] == "1" {
+            Text("clock=\(session.soulo.map { Double($0.player?.time.intValue ?? 0) / 1000 } ?? session.player.currentTime().seconds) pauseDelay=\(session.pauseInputLatency ?? -1) events=\(session.volumeObservationEvents) raw=\(AVAudioSession.sharedInstance().outputVolume) state=\(UIApplication.shared.applicationState.rawValue) video=\(session.hasVideo) nativeSurfaces=\(session.playerSurfaces) soulo=\(session.soulo != nil) souloVideo=\(session.soulo?.hasVideo == true) visible=\(session.soulo?.hasVisibleSurface == true)")
+                .font(.system(size: 8)).foregroundStyle(.white.opacity(0.3))
+                .accessibilityIdentifier("media.volume.diagnostics")
+                .allowsHitTesting(false)
+        }
+    }
+}
+#endif
 
 private struct VideoFullscreenClock: View {
     var body: some View {
@@ -420,6 +555,7 @@ private struct VideoFullscreenClock: View {
 private struct VideoFullscreenTapReader: UIViewRepresentable {
     let controlsVisible: Bool
     let action: () -> Void
+    let doubleTap: () -> Void
     var holdBegan: (() -> Void)?
     var holdEnded: (() -> Void)?
     final class Anchor: UIView {
@@ -434,7 +570,7 @@ private struct VideoFullscreenTapReader: UIViewRepresentable {
         return view
     }
     func updateUIView(_ view: Anchor, context: Context) {
-        context.coordinator.controlsVisible = controlsVisible; context.coordinator.action = action
+        context.coordinator.controlsVisible = controlsVisible; context.coordinator.action = action; context.coordinator.doubleTapAction = doubleTap
         context.coordinator.holdBegan = holdBegan; context.coordinator.holdEnded = holdEnded
         context.coordinator.attach(from: view)
     }
@@ -442,10 +578,13 @@ private struct VideoFullscreenTapReader: UIViewRepresentable {
     @MainActor final class Coordinator: NSObject, UIGestureRecognizerDelegate {
         var controlsVisible = true
         var action: (() -> Void)?
+        var doubleTapAction: (() -> Void)?
         var holdBegan: (() -> Void)?
         var holdEnded: (() -> Void)?
         private weak var controller: UIViewController?
         private var tap: UITapGestureRecognizer?
+        private var doubleTap: UITapGestureRecognizer?
+        private var lastDoubleTap: CFTimeInterval = 0
         private var hold: UILongPressGestureRecognizer?
         func attach(from view: UIView) {
             var candidate = view.window?.rootViewController
@@ -462,8 +601,16 @@ private struct VideoFullscreenTapReader: UIViewRepresentable {
             tap.name = "SouloFullscreenControlsTap"
             tap.cancelsTouchesInView = false; tap.delaysTouchesBegan = false; tap.delegate = self
             owner.view.addGestureRecognizer(tap); self.tap = tap
+            let doubleTap = UITapGestureRecognizer(target: self, action: #selector(doubleTapped))
+            doubleTap.numberOfTapsRequired = 2; doubleTap.delegate = self
+            doubleTap.name = "SouloFullscreenPlaybackDoubleTap"
+            doubleTap.cancelsTouchesInView = false
+            doubleTap.delaysTouchesBegan = false; doubleTap.delaysTouchesEnded = false
+            owner.view.addGestureRecognizer(doubleTap); self.doubleTap = doubleTap
             let hold = UILongPressGestureRecognizer(target: self, action: #selector(held(_:)))
             hold.minimumPressDuration = 0.4; hold.delegate = self
+            hold.cancelsTouchesInView = false
+            hold.delaysTouchesBegan = false; hold.delaysTouchesEnded = false
             hold.name = "SouloFullscreenHoldSpeed"
             owner.view.addGestureRecognizer(hold); self.hold = hold
             tap.require(toFail: hold)
@@ -471,9 +618,17 @@ private struct VideoFullscreenTapReader: UIViewRepresentable {
         func detach() {
             if let tap { tap.view?.removeGestureRecognizer(tap) }
             if let hold { hold.view?.removeGestureRecognizer(hold) }
-            holdEnded?(); tap = nil; hold = nil; controller = nil
+            if let doubleTap { doubleTap.view?.removeGestureRecognizer(doubleTap) }
+            holdEnded?(); tap = nil; doubleTap = nil; hold = nil; controller = nil
         }
-        @objc private func activate() { action?() }
+        @objc private func activate() {
+            guard CACurrentMediaTime() - lastDoubleTap > 0.25 else { return }
+            action?()
+        }
+        @objc private func doubleTapped() {
+            lastDoubleTap = CACurrentMediaTime()
+            doubleTapAction?()
+        }
         @objc private func held(_ gesture: UILongPressGestureRecognizer) {
             if gesture.state == .began { holdBegan?() }
             else if [.ended, .cancelled, .failed].contains(gesture.state) { holdEnded?() }
@@ -481,19 +636,24 @@ private struct VideoFullscreenTapReader: UIViewRepresentable {
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
             guard let controller, controller.presentedViewController == nil else { return false }
             let view = controller.view!, point = touch.location(in: view)
-            if gestureRecognizer === hold {
-                let insets = view.safeAreaInsets
-                return point.y >= max(12, insets.top) + 64
-                    && point.y <= view.bounds.height - max(16, insets.bottom) - 120
+            #if DEBUG
+            if controlsVisible, gestureRecognizer === tap,
+               CGRect(x: view.bounds.midX - 140, y: view.bounds.midY - 48, width: 280, height: 96).contains(point) {
+                MediaSession.shared.recordVideoControlTouch(timestamp: touch.timestamp)
             }
+            #endif
+            // Neither recognizer may delay or cancel a control's touch. In
+            // particular, long-press speed must not compete with Pause.
             var target = touch.view
             while let node = target {
                 if node is UIControl, node.bounds.width * node.bounds.height < view.bounds.width * view.bounds.height / 2 { return false }
                 target = node.superview
             }
-            guard controlsVisible else { return true }
             let insets = view.safeAreaInsets
-            if point.y < max(12, insets.top) + 64 || point.y > view.bounds.height - max(16, insets.bottom) - 120 { return false }
+            if gestureRecognizer === hold || controlsVisible {
+                if point.y < max(12, insets.top) + 64 || point.y > view.bounds.height - max(16, insets.bottom) - 120 { return false }
+            }
+            guard controlsVisible else { return true }
             let transport = CGRect(x: view.bounds.midX - 140, y: view.bounds.midY - 48, width: 280, height: 96)
             return !transport.contains(point)
         }
@@ -525,6 +685,7 @@ struct VideoPlayerIconButton: UIViewRepresentable {
 
 struct VideoTransportButtons: View {
     let playing: Bool
+    var buffering = false
     let identifier: String
     let toggle: () -> Void
     let seek: (Double) -> Void
@@ -537,11 +698,19 @@ struct VideoTransportButtons: View {
                     .frame(width: 64, height: 64).background(.black.opacity(0.22), in: Circle())
             }
             Button { toggle(); interaction?() } label: {
-                Image(systemName: playing ? "pause.fill" : "play.fill").font(.system(size: 40, weight: .semibold))
-                    .frame(width: 80, height: 80).background(.black.opacity(0.22), in: Circle())
+                ZStack {
+                    if buffering {
+                        ProgressView().tint(.white).controlSize(.large)
+                            .accessibilityIdentifier(identifier + ".buffering")
+                    } else {
+                        Image(systemName: playing ? "pause.fill" : "play.fill")
+                            .font(.system(size: 40, weight: .semibold))
+                    }
+                }
+                .frame(width: 80, height: 80).background(.black.opacity(0.22), in: Circle())
             }
             .accessibilityIdentifier(identifier)
-            .accessibilityLabel(ToolText.text(playing ? "pause" : "play"))
+            .accessibilityLabel(ToolText.text(playing || buffering ? "pause" : "play"))
             Button { seek(10); interaction?() } label: {
                 Image(systemName: "goforward.10").font(.system(size: 27, weight: .medium))
                     .frame(width: 64, height: 64).background(.black.opacity(0.22), in: Circle())
@@ -596,16 +765,16 @@ struct VideoTransportOverlay: ViewModifier {
     func body(content: Content) -> some View {
         content.overlay {
             if enabled && visibility.visible {
-                VideoTransportButtons(playing: playing, identifier: identifier, toggle: toggle, seek: seek,
+                VideoTransportButtons(playing: playing, buffering: buffering, identifier: identifier, toggle: toggle, seek: seek,
                                       interaction: visibility.show)
             }
         }
         .onAppear { visibility.show(); update() }
         .onDisappear { visibility.cancel() }
-        .onChange(of: playing) { _, _ in update() }
-        .onChange(of: buffering) { _, _ in update() }
-        .onChange(of: voiceOver) { _, _ in update() }
-        .onChange(of: enabled) { _, _ in update() }
+        .onCompatibleChange(of: playing) { _, _ in update() }
+        .onCompatibleChange(of: buffering) { _, _ in update() }
+        .onCompatibleChange(of: voiceOver) { _, _ in update() }
+        .onCompatibleChange(of: enabled) { _, _ in update() }
     }
     private func update() { visibility.update(enabled: enabled, playing: playing, buffering: buffering, voiceOver: voiceOver) }
 }
@@ -638,7 +807,7 @@ struct VideoPlaybackTimeline: View {
                     if !active { scrubTime = nil }
                     interactionChanged?(active)
                 })
-                .frame(height: 31)
+                .frame(height: 44)
         }
     }
 }
@@ -646,6 +815,60 @@ struct VideoPlaybackTimeline: View {
 /// Keep the playback clock authoritative whenever no finger is tracking the
 /// native slider. Touch cancellation cannot leave a separate SwiftUI drag
 /// flag pinning the thumb while decoded video continues to advance.
+/// Keep UIKit's slider appearance and adjustable accessibility, while a single
+/// gesture on its 44 pt control owns the complete touch sequence. Native slider
+/// tracking can drop the end event when a new touch starts away from its thumb.
+private final class PlaybackPositionControl: UIControl {
+    let slider = UISlider()
+    private var trackingOffset: CGFloat = 0
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        addSubview(slider)
+        let gesture = UILongPressGestureRecognizer(target: self, action: #selector(track(_:)))
+        gesture.minimumPressDuration = 0
+        gesture.allowableMovement = .greatestFiniteMagnitude
+        addGestureRecognizer(gesture)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    override func layoutSubviews() { super.layoutSubviews(); slider.frame = bounds }
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        // Route physical touches to this control's single recognizer while the
+        // slider remains enabled for VoiceOver and accessibility adjustment.
+        super.hitTest(point, with: event) == nil ? nil : self
+    }
+    @objc private func track(_ gesture: UILongPressGestureRecognizer) {
+        guard isEnabled else { return }
+        let point = gesture.location(in: slider)
+        switch gesture.state {
+        case .began:
+            let track = slider.trackRect(forBounds: slider.bounds)
+            let thumb = slider.thumbRect(forBounds: slider.bounds, trackRect: track, value: slider.value)
+            trackingOffset = thumb.insetBy(dx: -8, dy: -8).contains(point) ? point.x - thumb.midX : 0
+            updateValue(at: point)
+            slider.sendActions(for: .touchDown)
+        case .changed:
+            updateValue(at: point)
+            slider.sendActions(for: .valueChanged)
+        case .ended:
+            updateValue(at: point)
+            slider.sendActions(for: .touchUpInside)
+            trackingOffset = 0
+        case .cancelled, .failed:
+            slider.sendActions(for: .touchCancel)
+            trackingOffset = 0
+        default: break
+        }
+    }
+    private func updateValue(at point: CGPoint) {
+        let track = slider.trackRect(forBounds: slider.bounds)
+        let start = slider.thumbRect(forBounds: slider.bounds, trackRect: track, value: slider.minimumValue).midX
+        let end = slider.thumbRect(forBounds: slider.bounds, trackRect: track, value: slider.maximumValue).midX
+        guard abs(end - start) > .ulpOfOne else { return }
+        let fraction = min(1, max(0, (point.x - trackingOffset - start) / (end - start)))
+        slider.setValue(slider.minimumValue + Float(fraction) * (slider.maximumValue - slider.minimumValue), animated: false)
+    }
+}
+
 private struct PlaybackTimelineSlider: UIViewRepresentable {
     let elapsed: Double
     let duration: Double
@@ -683,33 +906,51 @@ private struct PlaybackTimelineSlider: UIViewRepresentable {
         }
     }
     func makeCoordinator() -> Coordinator { Coordinator(self) }
-    func makeUIView(context: Context) -> UISlider {
-        let slider = UISlider()
+    func makeUIView(context: Context) -> PlaybackPositionControl {
+        let control = PlaybackPositionControl()
+        let slider = control.slider
         slider.addTarget(context.coordinator, action: #selector(Coordinator.began(_:)), for: .touchDown)
         slider.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .valueChanged)
         slider.addTarget(context.coordinator, action: #selector(Coordinator.ended(_:)), for: [.touchUpInside, .touchUpOutside])
         slider.addTarget(context.coordinator, action: #selector(Coordinator.cancelled(_:)), for: .touchCancel)
-        return slider
+        return control
     }
-    func updateUIView(_ slider: UISlider, context: Context) {
+    func updateUIView(_ control: PlaybackPositionControl, context: Context) {
+        let slider = control.slider
         context.coordinator.parent = self
         slider.minimumValue = 0
         slider.maximumValue = Float(duration.isFinite && duration > 0 ? duration : 1)
         slider.isEnabled = duration.isFinite && duration > 0
+        control.isEnabled = slider.isEnabled
         slider.accessibilityLabel = ToolText.text("position")
         slider.accessibilityIdentifier = identifier
-        guard !slider.isTracking else { return }
+        // UIKit can stop reporting isTracking before its final release action.
+        // Keep the preview until that action commits or explicitly cancels it.
+        guard !slider.isTracking, !context.coordinator.editing else { return }
         let value = Float(min(max(0, elapsed.isFinite ? elapsed : 0), Double(slider.maximumValue)))
         if slider.value != value { slider.setValue(value, animated: abs(slider.value - value) < 2) }
-        if context.coordinator.editing {
-            let coordinator = context.coordinator
-            DispatchQueue.main.async { [weak slider] in
-                guard let slider, !slider.isTracking, coordinator.editing else { return }
-                coordinator.cancelled(slider)
+    }
+    static func dismantleUIView(_ control: PlaybackPositionControl, coordinator: Coordinator) {
+        if coordinator.editing { coordinator.cancelled(control.slider) }
+    }
+}
+
+/// Status text gets its own row, outside the video/transport overlay stack.
+struct VideoPlaybackStatus: View {
+    let message: String
+    let identifier: String
+    var retry: (() -> Void)?
+    var body: some View {
+        HStack(spacing: 16) {
+            Text(message).font(.footnote)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier(identifier)
+            if let retry {
+                Button(ToolText.text("retry"), action: retry)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .accessibilityIdentifier(identifier + ".retry")
             }
         }
-    }
-    static func dismantleUIView(_ slider: UISlider, coordinator: Coordinator) {
-        if coordinator.editing { coordinator.cancelled(slider) }
     }
 }

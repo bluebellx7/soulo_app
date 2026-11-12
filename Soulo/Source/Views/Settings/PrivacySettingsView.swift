@@ -1,8 +1,8 @@
 import SwiftUI
-import SwiftData
+import CoreData
 
 struct PrivacySettingsView: View {
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.managedObjectContext) private var modelContext
     @EnvironmentObject private var tabManager: TabManager
     @EnvironmentObject private var searchVM: SearchViewModel
 
@@ -197,7 +197,7 @@ struct PrivacySettingsView: View {
         .task {
             await refreshCacheSize()
         }
-        .onChange(of: isIncognito) { _, enabled in
+        .onCompatibleChange(of: isIncognito) { _, enabled in
             let wasBrowsing = searchVM.isSearching
             let pageURL = tabManager.activeWebViewModel?.currentURL
             tabManager.resetTabsForPrivacy()

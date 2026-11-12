@@ -113,7 +113,7 @@
 "resource_stream_download_invalid_chunk" = "The media stream returned an invalid or out-of-order segment.";
 "resource_stream_download_missing_track" = "The downloaded stream did not contain playable video and audio tracks.";
 "resource_stream_download_export_failed" = "Soulo could not combine the downloaded video and audio.";
-"resource_stream_playback_download_first" = "This protected stream cannot be previewed from its temporary URL. Download it first to play the local file.";
+"resource_stream_playback_download_first" = "This stream cannot be previewed directly at the moment.";
 "resource_photo_access_denied" = "Allow photo access to save this image.";
 "resource_inspector_page_unavailable" = "Open a webpage before scanning resources.";
 "resource_inspector_invalid_result" = "The page returned an unsupported resource result.";
@@ -702,27 +702,27 @@
 "extensions_reload_note" = "Open pages reload after an extension or script is changed so the new state takes effect.";
 "web_extensions" = "Web Extensions";
 "userscripts" = "Scripts & Extensions";
-"userscripts_installed" = "My Scripts";
-"userscripts_install" = "Install Scripts";
+"userscripts_installed" = "Installed";
+"userscripts_install" = "Add";
 "userscripts_empty" = "No UserScripts";
 "userscripts_empty_desc" = "Install a .user.js file or create a script to see it here.";
 "userscripts_reload_note" = "Open pages reload after a script is installed, edited, enabled, disabled, or removed.";
 "userscript_experimental_badge" = "Compatibility";
 "userscript_experimental_title" = "UserScript compatibility";
-"userscript_experimental_desc" = "Supports site rules, document-start/end, extensive GM storage and page APIs, script commands, notifications, tabs, downloads, cookies, resources, and permission-scoped requests. Review every script before installing.";
+"userscript_experimental_desc" = "UserScripts can read or change matching websites and use granted APIs. Compatibility varies by script; install only scripts you trust.";
 "extension_choose_file" = "Choose File or Folder…";
 "extension_installing" = "Checking and installing extension…";
 "extension_install_failed" = "Extension Could Not Be Installed";
 "extension_permissions_summary" = "%d permissions · %d website rules";
 "extension_untitled" = "Untitled Extension";
-"web_extension_install_footer" = "Paste a Chrome, Edge, or Firefox extension page link for Soulo to download and install it directly. You can also import a CRX, XPI, ZIP, or extension folder. Some desktop-only APIs may be unavailable.";
+"web_extension_install_footer" = "Install compatible extensions from a store link or import CRX, XPI, ZIP or an extension folder. Review permissions and compatibility before installing; some desktop features are unavailable.";
 "web_extension_install_store_link" = "Install from Store Link…";
 "web_extension_browse_sources" = "Browse Extension Stores";
 "web_extension_browse_sources_footer" = "Store Get buttons only support their own desktop browsers. Copy an extension detail page link, then use Install from Store Link in Soulo.";
 "web_extension_store_install_title" = "Install a Store Extension";
 "extension_page_banner_title" = "Install with Soulo";
-"extension_page_banner_desc" = "Soulo can install this extension directly.";
-"web_extension_store_install_desc" = "Paste a Chrome Web Store, Microsoft Edge Add-ons, or Firefox Add-ons detail page link. Soulo downloads the package itself, so the store’s incompatible Get button is not used.";
+"extension_page_banner_desc" = "Check compatibility and permissions before installing.";
+"web_extension_store_install_desc" = "Paste a Chrome, Edge or Firefox extension detail page link to check compatibility and permissions before confirming installation.";
 "web_extension_store_link_placeholder" = "Extension page link or Chrome extension ID";
 "web_extension_store_invalid_link" = "Paste an extension detail page link from Chrome, Edge, or Firefox, a Chrome extension ID, or a direct CRX, XPI, or ZIP link.";
 "web_extension_store_https_required" = "Extension packages must use a secure HTTPS link.";
@@ -978,8 +978,7 @@
 "extension_review_access" = "Choose which permissions and websites this extension can access.";
 "extension_limit_commands" = "Keyboard shortcuts are unavailable on iOS.";
 "extension_limit_notifications" = "Notifications can be shown, but click and close events are unavailable.";
-"extension_limit_offscreen" = "Offscreen support is limited to audio playback.";
-
+"extension_limit_offscreen" = "Offscreen documents follow iOS limits; some features may be unavailable.";
 "review_support_message" = "Thanks for supporting Soulo. Your reviews help us keep improving.";
 "review_open_app_store" = "Review on the App Store";
 

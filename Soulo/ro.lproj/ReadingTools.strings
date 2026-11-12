@@ -436,3 +436,65 @@
 "files_move_busy" = "Așteptați ca descărcările să se termine înainte de a muta sau a redenumi aceste elemente.";
 "video_show_episode_dock" = "Afișează episodul de andocare";
 "video_show_episode_dock_desc" = "Afișați un buton de episod andocat pe paginile web cu episoade. Episoadele rămân disponibile în interiorul jucătorului.";
+
+// Webpage share preview
+"page_share_image" = "Distribuie imaginea";
+"page_share_link" = "Distribuie linkul";
+"page_share_preview" = "Previzualizarea zonei vizibile";
+"page_share_brand" = "Soulo: Browser cu căutare web";
+
+"video_export_mp4" = "Exportă MP4";
+"video_export_failed" = "Acest videoclip nu a putut fi exportat ca MP4. Fișierul original a fost păstrat.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Gesturi cu două degete";
+"gesture_hint" = "Mișcă două degete împreună lateral. Indicația urmărește degetele; revino pentru anulare. Navigarea cu un deget și zoomul prin apropiere rămân disponibile.";
+"gesture_swipe_right" = "Glisare la dreapta";
+"gesture_swipe_left" = "Glisare la stânga";
+"gesture_show_toolbar" = "Arată bara de instrumente";
+"gesture_quick_menu" = "Meniu rapid";
+"gesture_preview" = "Previzualizează gestul";
+"zoom_remember" = "Reține zoomul site-urilor";
+"zoom_hint" = "Zoomul din meniul paginii este salvat pentru fiecare domeniu. Modificările din filele private nu sunt salvate.";
+"zoom_empty" = "Niciun nivel de zoom salvat";
+"zoom_reset_all" = "Resetează tot la 100%";
+
+"shake_direction" = "Direcție";
+"shake_direction_horizontal" = "Stânga și dreapta";
+"shake_direction_vertical" = "Sus și jos";
+"shake_direction_any" = "Orice direcție";
+
+"gesture_settings_title" = "Gesturi pentru pagini web";
+"gesture_no_history" = "Când nu poți reveni";
+"gesture_no_history_hint" = "Fără o pagină anterioară, glisează spre dreapta de la marginea stângă pentru a afișa acțiunea. Revino pentru anulare. Alege Niciuna pentru dezactivare.";
+
+"gesture_execution" = "Execută acțiunea";
+
+"gesture_execute_release" = "La eliberare";
+
+"gesture_execute_tap" = "La atingere";
+
+"gesture_feedback" = "Feedback acțiune";
+
+"gesture_haptics" = "Vibrație";
+
+"gesture_sound" = "Sunet";
+
+"gesture_feedback_preview" = "Testează feedbackul";
+
+"media_start_timeout" = "Redarea nu a început. Verifică rețeaua sau schimbă playerul.";
+
+"wallpaper_appearance_hint" = "Alege fundaluri separate pentru aspectul luminos și întunecat. Se schimbă automat odată cu aplicația.";
+
+"wallpaper_image_overlay" = "Strat peste imagine";
+
+"auto_hide_platform_bar" = "Ascunde automat bara platformelor";
+
+"top_tab_bar_hidden_title" = "Bara de file de sus este ascunsă";
+
+"top_tab_bar_reopen_hint" = "Pentru a o afișa din nou, atinge butonul filelor de jos, deschide meniul … și activează afișarea barei de file de sus.";
+
+"wallpaper_image_blur" = "Sticlă mată";
+"wallpaper_blur_amount" = "Intensitatea estompării";
+
+"auto_hide_platform_bar_hint" = "Bara platformelor se ascunde când deschizi un rezultat al căutării. Revino la rezultate sau începe o căutare nouă pentru a o afișa din nou. Poți dezactiva opțiunea din acest meniu.";

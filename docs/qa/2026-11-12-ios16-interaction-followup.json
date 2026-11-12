@@ -1,0 +1,88 @@
+{
+  "date": "2026-11-12",
+  "scope": "Wallpaper appearance selection outlines, immediate tab overview layout switching and iOS 16 library swipe actions",
+  "version": {
+    "marketingVersion": "1.2.13",
+    "build": 53,
+    "changedByThisTask": false,
+    "minimumIOS": "16.0"
+  },
+  "paidAPIsUsed": false,
+  "implementation": [
+    "Draw Light/Dark card outlines inside their bounds and retain 2-point horizontal row insets; selected outlines remain complete on both edges.",
+    "Render the overview layout from SwiftUI State, persist the selected mode to UserDefaults and restore it on presentation so iOS 16 responds on the first tap.",
+    "Connect the existing row/paging/navigation gesture priority to the iOS 16 PageTabView paging scroll. Keep its relative offsets separate from global section progress; preserve the iOS 17+ scroll implementation.",
+    "Keep the iOS 16 new/rename bookmark folder confirmation action present. saveFolder still rejects blank names; iOS 17+ retains the existing disabled-state behavior."
+  ],
+  "ios16": {
+    "device": "iPhone 14 simulator",
+    "system": "iOS 16.4",
+    "acceptedUniqueUIScenarios": 7,
+    "passedScenarios": [
+      "Light and Dark selected-card screenshots; both outlines manually inspected.",
+      "Overview layout changes on the first tap, changes back and survives closing/reopening.",
+      "Bookmark folder trailing swipe shows Rename/Delete, does not page and completes deletion.",
+      "Open bookmark folder remains open after paging away and back.",
+      "All four sections swipe/tap correctly with matching toolbar actions.",
+      "Leading-edge navigation returns from all four sections; a short edge drag cancels.",
+      "File row reveals Delete; a leading swipe first restores the row, a second pages to Downloads; returning and deleting completes."
+    ],
+    "evidence": [
+      "/tmp/soulo-ios16-interactions-20261112/ios16-1.xcresult",
+      "/tmp/soulo-ios16-interactions-20261112/ios16-library-2.xcresult",
+      "/tmp/soulo-ios16-interactions-20261112/ios16-regression-3.xcresult",
+      "/tmp/soulo-ios16-interactions-20261112/ios16-file-4.xcresult"
+    ]
+  },
+  "modernIPad": {
+    "device": "iPad Air 13-inch M3 simulator",
+    "system": "iPadOS 26.2",
+    "passedCoreUIScenarios": 6,
+    "failedCoreUIScenarios": 0,
+    "evidence": "/tmp/soulo-ios16-interactions-20261112/ipad-regression-3.xcresult",
+    "screenshotsManuallyInspected": [
+      "/tmp/soulo-ios16-interactions-20261112/screenshots-ipad-3/3FE4F0C5-57E6-4F2B-9DFD-9CF222E9189F.png",
+      "/tmp/soulo-ios16-interactions-20261112/screenshots-ipad-3/B19FE5BD-FFBD-467F-BFA9-EBB2BEBFD34E.png"
+    ],
+    "supplementalFileScenario": "Not completed. The initial exact accessibility-identifier lookup skipped this case; the corrected identifier/label query passed on iOS 16. Subsequent iPad attempts failed before executing application tests: test-runner installation reported a missing placeholder promise. A new isolated simulator also stalled in application lookup/test preparation. Those attempts are not counted as passes.",
+    "blockedAttemptEvidence": [
+      "/tmp/soulo-ios16-interactions-20261112/ipad-file-4.log",
+      "/tmp/soulo-ios16-interactions-20261112/ipad-final-5.log"
+    ],
+    "testDataCleanup": "Removed only the owned Swipe-QA.txt fixtures after the blocked iPad attempts; existing app data was retained."
+  },
+  "unitRegression": {
+    "initialSuite": {
+      "total": 22,
+      "passed": 21,
+      "failed": 1,
+      "evidence": "/tmp/soulo-ios16-interactions-20261112/unit-regression-3.xcresult"
+    },
+    "initialFailure": "Full-image Vision OCR missed the visibly present developer.apple.com header in the Chinese narrow preview. The actual saved screenshot shows the correct group at the top.",
+    "testCorrection": "Recognize only the top 30% header region and map the observation back to full-image coordinates. Keep the expected domain and top-position assertions.",
+    "correctedCase": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "system": "iOS 16.4",
+      "covers": [
+        "zh-Hans 402x874",
+        "en-US 320x568",
+        "ar-SA 402x874",
+        "en-US 874x402"
+      ],
+      "evidence": "/tmp/soulo-ios16-interactions-20261112/ios16-grouped-preview-5.xcresult"
+    },
+    "modernManualEvidence": "/tmp/soulo-ios16-interactions-20261112/screenshots-unit-all-3/1634E3FE-9592-4954-874A-6F3AF1DD63A6.png",
+    "modernCorrectedCaseRerun": "Not completed because of the same simulator preparation issue. Header-region OCR was separately checked against all four saved modern screenshots using local Vision.",
+    "libraryGeometryAndPagerTests": "All 5 passed on iPadOS 26.2 in the initial suite."
+  },
+  "checks": {
+    "simulatorBuildForTesting": "Passed; build-5.log",
+    "genericIOSDeviceBuild": "Passed; device-build-5.log; code signing disabled for compile validation",
+    "localizationStrict": "Passed: 881 Localizable, 476 ReadingTools and 81 FeatureImprovements keys across 50 locales",
+    "metadataJSONCheck": "Passed: 50 locales; version unchanged",
+    "diffWhitespace": "Passed",
+    "physicalDeviceTestingThisTask": false
+  }
+}

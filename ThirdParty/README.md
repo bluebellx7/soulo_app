@@ -9,6 +9,8 @@ All parsing runs locally. No CDN or runtime script downloads.
   - `soulo.js`: app bridge, TXT documents, appearance, search, cover thumbnails and reader controls.
   - `continuous.js`: Soulo's vertical chapter renderer; keeps the current chapter and two neighbors on each side loaded, retaining measured placeholder heights when releasing documents.
   - `paginator.js`: exports the sandboxed chapter view for the continuous renderer; `view.js` selects it for reflowable Soulo books.
+  - `epub.js` / `fixed-layout.js` / `paginator.js`: fall back for missing grouping and constructable stylesheet APIs and avoid regular-expression lookbehind on iOS 16.
+  - `soulo.js`: supplies a local DEFLATE stream on WebKit before 16.4 using the raw decoder already bundled for MOBI; `vendor/fflate.js` exports that decoder as `inflateRaw`.
   - Vendor zip.js and fflate preserve upstream license files.
 - Mozilla Readability: https://github.com/mozilla/readability, revision `ab4027a8b37669745016869a37a504727992b2ba`, Apache 2.0. Source is `Soulo/Source/Resources/SouloReadability.js`; license here.
 - PLzmaSDK, ZipArchive and Unrar.swift use exact revisions in `project.yml`. They compile from source for device and simulator. UnRAR is extraction-only; its license prohibits using its code to develop a RAR compressor.
@@ -17,7 +19,7 @@ All parsing runs locally. No CDN or runtime script downloads.
 Regenerate the bundled reader after source changes:
 
 ```sh
-npx --yes esbuild@0.28.2 ThirdParty/foliate-js/soulo.js --bundle --format=iife --target=safari17 --minify --outfile=Soulo/Source/Resources/SouloBookEngine.js
+npx --yes esbuild@0.28.2 ThirdParty/foliate-js/soulo.js --bundle --format=iife --target=safari16 --minify --outfile=Soulo/Source/Resources/SouloBookEngine.js
 ```
 
 Commit both source and generated bundle. Xcode does not require Node.js to build the app.

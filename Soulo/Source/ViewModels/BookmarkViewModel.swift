@@ -1,29 +1,29 @@
 import SwiftUI
-import SwiftData
+import CoreData
 
 @MainActor
 class BookmarkViewModel: ObservableObject {
-    @Published var bookmarks: [BookmarkItem] = []
+    @Published var bookmarks: [BookmarkRecord] = []
 
-    func loadBookmarks(context: ModelContext) {
+    func loadBookmarks(context: NSManagedObjectContext) {
         bookmarks = BookmarkService.fetchAll(context: context)
     }
 
-    func addBookmark(title: String, url: String, platformName: String?, context: ModelContext) {
+    func addBookmark(title: String, url: String, platformName: String?, context: NSManagedObjectContext) {
         BookmarkService.add(title: title, url: url, platformName: platformName, context: context)
         loadBookmarks(context: context)
     }
 
-    func deleteBookmark(_ item: BookmarkItem, context: ModelContext) {
+    func deleteBookmark(_ item: BookmarkRecord, context: NSManagedObjectContext) {
         BookmarkService.delete(item, context: context)
         loadBookmarks(context: context)
     }
 
-    func isBookmarked(url: String, context: ModelContext) -> Bool {
+    func isBookmarked(url: String, context: NSManagedObjectContext) -> Bool {
         BookmarkService.isBookmarked(url: url, context: context)
     }
 
-    func toggleBookmark(title: String, url: String, platformName: String?, context: ModelContext) -> Bool {
+    func toggleBookmark(title: String, url: String, platformName: String?, context: NSManagedObjectContext) -> Bool {
         let result = BookmarkService.toggleBookmark(title: title, url: url, platformName: platformName, context: context)
         loadBookmarks(context: context)
         return result

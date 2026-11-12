@@ -100,7 +100,7 @@ struct SettingsBackupsView: View {
             Button(ToolText.text("done")) {}
         } message: { Text(FeatureText.text("The imported backup has been added to the list. Choose Restore to apply it. Current settings have not changed.")) }
         .onAppear(perform: load)
-        .onChange(of: sync.backupRevision) { _, _ in load() }
+        .onCompatibleChange(of: sync.backupRevision) { _, _ in load() }
         .alert(LanguageManager.shared.localizedString("delete"), isPresented: Binding(
             get: { deletingBackup != nil }, set: { if !$0 { deletingBackup = nil } }
         ), presenting: deletingBackup) { backup in

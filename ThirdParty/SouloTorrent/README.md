@@ -2,7 +2,7 @@
 
 A small, original Objective-C++ interface around **libtorrent 2.0.15**, statically linked with **OpenSSL 3.6.5**. The app supports BitTorrent v1/v2 metadata, magnet metadata exchange, selected-file downloads, hash verification and persistent fast resume. It does not implement a remote download service or use an audio keepalive.
 
-`Artifacts/SouloTorrent.xcframework` contains iOS arm64 and iOS Simulator arm64/x86_64 slices, built with Xcode 26.2 for iOS 17+. The public module autolinks libc++, Foundation, CoreFoundation and SystemConfiguration. App archives do not contain the simulator slices.
+`Artifacts/SouloTorrent.xcframework` contains iOS arm64 and iOS Simulator arm64/x86_64 slices, built with Xcode 26.2 for iOS 16+. The public module autolinks libc++, Foundation, CoreFoundation and SystemConfiguration. App archives do not contain the simulator slices.
 
 The app links this static XCFramework directly from `project.yml` with `embed: false`. The optional `Package.swift` remains available for SwiftPM clients, but is not an app package dependency: Xcode can otherwise open this in-repository package as a folder before resolving it as a package, causing `Missing package product` in the GUI while command-line builds succeed. Regenerate the Xcode project after changing the dependency.
 

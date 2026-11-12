@@ -29,7 +29,7 @@ extension WebViewModel {
         webView.endEditing(true)
         Task { @MainActor [weak self] in
             do {
-                let result = try await webView.evaluateJavaScript(
+                let result = try await webView.evaluateCompatibleJavaScript(
                     "window.__souloManualAds.begin('\(token)')", in: nil, contentWorld: ManualAdBlockRuntime.world
                 )
                 guard self?.manualAdSelection?.token == token else { return }
@@ -82,7 +82,7 @@ extension WebViewModel {
         Task { @MainActor [weak self] in
             defer { if self?.manualAdSelection?.token == token { self?.manualAdBusy = false } }
             do {
-                let result = try await webView.evaluateJavaScript(
+                let result = try await webView.evaluateCompatibleJavaScript(
                     "window.__souloManualAds.command('\(action)')", in: nil, contentWorld: ManualAdBlockRuntime.world
                 )
                 guard self?.manualAdSelection?.token == token else { return }
@@ -99,7 +99,7 @@ extension WebViewModel {
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let result = try await webView.evaluateJavaScript(
+                let result = try await webView.evaluateCompatibleJavaScript(
                     "window.__souloManualAds.selection()", in: nil, contentWorld: ManualAdBlockRuntime.world
                 )
                 guard self.manualAdSelection?.token == selection.token else { return }
@@ -122,7 +122,7 @@ extension WebViewModel {
         if manualAdSelection != nil { manualAdSelection = nil }
         if manualAdSavedRuleID != nil { manualAdSavedRuleID = nil }
         if manualAdBusy { manualAdBusy = false }
-        webView?.evaluateJavaScript(
+        webView?.evaluateCompatibleJavaScript(
             "window.__souloManualAds?.command('cancel'); null", in: nil,
             in: ManualAdBlockRuntime.world, completionHandler: nil
         )

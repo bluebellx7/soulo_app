@@ -1,0 +1,235 @@
+{
+  "date": "2026-11-12",
+  "version": "1.2.13",
+  "build": 53,
+  "minimum_ios": "16.0",
+  "scope": "对照本轮对话的今日需求、当前源码和既有验证记录；新补齐项执行交互测试，保留历史验证与本次验证的区别。",
+  "items": [
+    {
+      "requirement": "顶部＋改为设置菜单，并提供新增标签页",
+      "status": "本次补齐并交互验证",
+      "implementation": "顶部与标签管理页复用同一菜单，含新标签页、顶部栏开关及开关示意、关闭其他、关闭全部。关闭全部后保留一个空白标签。",
+      "evidence": "verified-ui / ipad-ui; BrowserTabBar.swift"
+    },
+    {
+      "requirement": "网页内跳转后自动隐藏平台栏，默认关闭",
+      "status": "本次补齐并交互验证",
+      "implementation": "分组下拉增加开关。按每个标签的搜索落地页跟踪导航；跳转隐藏、返回结果恢复、新搜索或换平台重置；忽略锚点变化。",
+      "evidence": "verified-ui; SearchResultsView.swift / WebViewModel.swift"
+    },
+    {
+      "requirement": "图片壁纸需要可控制的蒙层",
+      "status": "本次完成并验证",
+      "implementation": "新增图片蒙层开关，默认开启，适用于个人照片和远程图片，保存后重启仍有效；纯色保持原色。",
+      "evidence": "unit / ipad-ui; WallpaperManager.swift / WallpaperBackground.swift"
+    },
+    {
+      "requirement": "壁纸预览背景跟随 App 主题",
+      "status": "本次完成并截图验证",
+      "implementation": "导出预览和全屏壁纸浏览的背景跟随系统背景色；移除导出预览强制深色，标题栏和操作区随主题变化。",
+      "evidence": "ipad-ui: wallpaper-export-preview-two-actions / wallpaper-preview-follows-dark-theme"
+    },
+    {
+      "requirement": "Nature 关键词仅在相应在线壁纸下显示",
+      "status": "本次完成并验证",
+      "implementation": "仅远程壁纸显示来源或搜索主题；个人照片、渐变和纯色不显示主题文字。",
+      "evidence": "ipad-ui / iOS 16.0 screenshots; HomeView.swift"
+    },
+    {
+      "requirement": "纯色背景去掉蒙层，避免发灰",
+      "status": "实现保留并回归验证",
+      "implementation": "纯色在两种外观下均不叠加蒙层。iOS 16.0 截图采样为原始 #18243E 和 #FFFFFF。",
+      "evidence": "unit; ios16-light.png / ios16-dark.png"
+    },
+    {
+      "requirement": "渐变、照片、纯色隐藏远程自动刷新设置",
+      "status": "实现保留并回归验证",
+      "implementation": "本地背景隐藏远程刷新选项并停止相应定时任务，避免隐藏设置自动切回远程来源。",
+      "evidence": "unit / ipad-ui"
+    },
+    {
+      "requirement": "浅色和深色背景分别配置",
+      "status": "实现保留并回归验证",
+      "implementation": "三类本地背景分别保存两种外观的值；旧设置和原照片作为兼容回退。编辑另一外观的照片不替换当前显示图片。",
+      "evidence": "unit / ipad-ui; 2026-11-12-wallpaper-appearance-preview.json"
+    },
+    {
+      "requirement": "下载壁纸先预览，底部分享和保存到相册",
+      "status": "实现保留并回归验证",
+      "implementation": "首页和壁纸浏览入口共用导出预览；优先保留原始图片字节。系统确认保存成功后才提示，权限或写入失败允许重试。",
+      "evidence": "unit / ipad-ui: native share sheet + Photos save"
+    },
+    {
+      "requirement": "首页文字图标自动适应背景明暗",
+      "status": "实现保留并回归验证",
+      "implementation": "标题、平台分组、菜单、搜索栏、建议和说明文字使用实际背景明暗。图片亮度在后台小图采样，关闭蒙层后使用未加蒙层的亮度。",
+      "evidence": "unit; iOS 16.0 display smoke; prior iPhone/iPad contrast matrix"
+    },
+    {
+      "requirement": "iPad 标签截图清晰度与横竖屏比例",
+      "status": "源码及既有证据核对，本次定向回归通过",
+      "implementation": "按窗口和截图比例布局，iPad 使用更高像素上限；视口变化重新截取，不复用过期竖屏尺寸。",
+      "evidence": "unit / audit-regressions; TabOverviewLifecycleTests; 2026-11-12-video-gestures-and-ipad.json"
+    },
+    {
+      "requirement": "播放器退出两层、侧边小卡片恢复缺少选集",
+      "status": "源码及既有交互证据核对，本次上下文与切换回归通过",
+      "implementation": "区分关闭播放页与退出全屏；小卡片和解码器交接保留视频来源、选集与当前集。",
+      "evidence": "audit-regressions; 2026-11-12-player-close-and-mini-episodes.json"
+    },
+    {
+      "requirement": "视频横向拖动与进度条不同步",
+      "status": "源码及既有交互证据核对，本次进度用例通过",
+      "implementation": "两种播放器支持横向预览后松手跳转，缓冲期间保留目标进度，到达或超时后恢复实际进度；取消拖动恢复刷新。",
+      "evidence": "unit; IncrementalFeatureTests; 2026-11-12-video-gestures-and-ipad.json"
+    },
+    {
+      "requirement": "暂停延迟一至两秒",
+      "status": "源码及真机既有证据核对，本次解码器回归通过",
+      "implementation": "优先暂停真实解码器，并使用最新播放意图；长按手势排除控件，避免延迟按钮触摸。",
+      "evidence": "unit; 2026-11-12-player-pause.json"
+    },
+    {
+      "requirement": "音量键变化反馈、五秒未播放提示、加载和播放图标重叠",
+      "status": "源码与既有验证记录核对",
+      "implementation": "实体音量反馈避开中央按钮，启动警告排除暂停和后台时间；加载和播放图标互斥。",
+      "evidence": "2026-11-12-video-gestures-and-ipad.json / 2026-11-12-user-feedback-validation.json"
+    },
+    {
+      "requirement": "平台管理长按排序",
+      "status": "源码与既有交互记录核对",
+      "implementation": "拖动顺序保存到对应区域或自定义分组。",
+      "evidence": "2026-11-12-video-gestures-and-ipad.json; GroupDefaultSearchUITests"
+    },
+    {
+      "requirement": "网页视频播放图标、iPad 全屏、额外浮动按钮",
+      "status": "源码与既有交互记录核对，本次桥接回归通过",
+      "implementation": "播放入口主动进入全屏，iPad 沿用窗口方向，iPhone 横屏；工具条可隐藏，避免重复入口。",
+      "evidence": "audit-regressions; 2026-11-12-user-feedback-validation.json"
+    },
+    {
+      "requirement": "跨域确认前不能先跳转，iPad 确认区域过宽",
+      "status": "源码与既有交互记录核对",
+      "implementation": "确认前维持来源页并暂缓新窗口；取消不访问目标，继续保留 POST/opener；iPad 卡片限制宽度。",
+      "evidence": "2026-11-12-user-feedback-validation.json; WebNavigationPolicyService.swift"
+    },
+    {
+      "requirement": "BT/种子下载显示百分比和进度条",
+      "status": "源码与既有截图记录核对",
+      "implementation": "任务列表和详情共用进度组件；暂停保留进度。",
+      "evidence": "NewDownloadTaskView.swift; 2026-11-12-user-feedback-validation.json"
+    },
+    {
+      "requirement": "新标签页快速链接图标缩小",
+      "status": "源码核对",
+      "implementation": "图标显示为 28×28 点。",
+      "evidence": "NewTabPageView.swift"
+    },
+    {
+      "requirement": "资源嗅探改为网页资源及界面文案优化",
+      "status": "源码及本地化检查通过",
+      "implementation": "保留功能，使用网页资源等用户可理解的文案；50 种语言通过检查。",
+      "evidence": "check_localization.py --strict; prior review-copy validation"
+    },
+    {
+      "requirement": "视频插件造成偶发整 App 无响应",
+      "status": "源码与已有防护核对，不能据此认定所有场景彻底消除",
+      "implementation": "桥接控制避免重复样式写入，布局与扫描合并调度，播放器退出释放有异步保护；本次媒体和选集回归正常。仍需具体复现场景才能归因新的偶发卡住。",
+      "evidence": "WebMediaPlaybackBridge.swift / MatroskaPlayerView.swift; audit-regressions"
+    },
+    {
+      "requirement": "备案公钥、证书 SHA-1 指纹",
+      "status": "此前已交付",
+      "implementation": "已从发布证书导出公钥与指纹；未导出私钥。桌面备案信息文件仍在。",
+      "evidence": "/Users/shunfei.z/Desktop/Soulo-iOS-备案信息-20261112.txt"
+    },
+    {
+      "requirement": "版本 1.2.13 和 fastlane/app_store_metadata.json",
+      "status": "本次完成并校验",
+      "implementation": "主 App、小组件、分享扩展均为 1.2.13 (53)，由 project.yml 重新生成工程。50 个语言的推广文本、描述、新增内容同步更新；名称、副标题、关键词审核后沿用。JSON 由导出脚本生成。",
+      "evidence": "project.yml; metadata-field-audit.json: 300 fields; export_metadata_json.py --check"
+    }
+  ],
+  "remaining_boundaries": [
+    {
+      "requirement": "影视导航所有网站的视频接管与选集",
+      "status": "85 个入口已检查；仍有公开样本未验证成功，不能标为全部影片和线路均兼容。",
+      "summary": {
+        "样本两种解码器均出帧": 11,
+        "验证或访问限制，未验证接管": 1,
+        "需要登录或授权，未验证正片": 3,
+        "下载、索引、资讯或工具入口": 49,
+        "样本至少一种解码器出帧": 6,
+        "本次检查页未取得可接管媒体": 12,
+        "识别到媒体，本次未成功出帧": 2,
+        "仅公开宣传片出帧，未验证会员正片": 1
+      },
+      "evidence": "docs/qa/2026-11-12-movie-site-compatibility.json"
+    },
+    {
+      "requirement": "所有场景下都不再偶发卡住",
+      "status": "本次回归未复现业务卡死；已有防护和测试不能证明所有网页与全部解码资源都无此类问题。"
+    }
+  ],
+  "validation": {
+    "core": {
+      "passed": 60,
+      "failed": 0,
+      "skipped": 0,
+      "result": "/tmp/soulo-1.2.13-20261112/unit.xcresult"
+    },
+    "iphone_ui": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "result": "/tmp/soulo-1.2.13-20261112/verified-ui.xcresult"
+    },
+    "ipad_ui": {
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "result": "/tmp/soulo-1.2.13-20261112/ipad-ui.xcresult"
+    },
+    "media_original_run": {
+      "passed": 54,
+      "failed": 3,
+      "skipped": 1,
+      "result": "/tmp/soulo-1.2.13-20261112/audit-regressions.xcresult"
+    },
+    "media_resolved_reruns": {
+      "messages": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "result": "/tmp/soulo-1.2.13-20261112/media-messages-verified.xcresult"
+      },
+      "background_restore": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "result": "/tmp/soulo-1.2.13-20261112/media-background-isolated.xcresult"
+      }
+    },
+    "media_unique_final_outcome": {
+      "passed": 57,
+      "failed": 0,
+      "skipped": 1,
+      "skip_reason": "Explicit opt-in live website audit; existing live 85-entry evidence is retained."
+    },
+    "initial_media_failures_explained": [
+      "Two legacy assertions counted sourceReady notifications as privileged rotation requests. Updated the recorder to exclude only discovery notifications, and explicitly assert one nativeFullscreen recovery and zero synthetic privileged requests; both passed.",
+      "The test host was killed by tccd when QA granted PhotosAdd during a running test. The system log explicitly reports that cause. Isolated background/eviction restoration then passed; no application-code change was made for this interruption."
+    ],
+    "simulator_build": "passed",
+    "device_sdk_build_without_signing": "passed",
+    "ios16_smoke": "Installation, launch and two appearance screenshots passed. UI test runner minimum is 16.4, so these are display smoke checks, not a 16.0 UI suite.",
+    "strict_localization": "passed: 50 locales",
+    "metadata": "passed: all 300 fields, 50 release notes and JSON version agree",
+    "metadata_warnings": [],
+    "diff_check": "passed",
+    "visual_review": "iPad light/dark preview and top settings screenshots reviewed",
+    "artifact_directory": "/tmp/soulo-1.2.13-20261112"
+  },
+  "paid_services_used": false,
+  "new_dependencies": false
+}

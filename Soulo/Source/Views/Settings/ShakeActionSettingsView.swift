@@ -3,9 +3,17 @@ import SwiftUI
 struct ShakeActionSettingsView: View {
     @AppStorage(AppConstants.StorageKeys.shakeAction) private var selectedAction = BrowserShakeAction.none.rawValue
     @AppStorage(AppConstants.StorageKeys.shakeIntensity) private var selectedIntensity = BrowserShakeIntensity.standard.rawValue
+    @AppStorage(BrowserShakeDirection.preferenceKey) private var selectedDirection = BrowserShakeDirection.horizontal.rawValue
 
     var body: some View {
         List {
+            Section {
+                Picker(ToolText.text("shake_direction"), selection: $selectedDirection) {
+                    ForEach(BrowserShakeDirection.allCases) { direction in
+                        Label(ToolText.text(direction.titleKey), systemImage: direction.symbol).tag(direction.rawValue)
+                    }
+                }.accessibilityIdentifier("settings.shake.direction")
+            }
             Section {
                 ForEach(BrowserShakeAction.allCases) { action in
                     Button {

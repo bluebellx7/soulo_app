@@ -609,27 +609,27 @@
 "extensions_reload_note" = "Buka muat semula halaman selepas sambungan atau skrip ditukar supaya keadaan baharu berkuat kuasa.";
 "web_extensions" = "Sambungan Web";
 "userscripts" = "Skrip & Sambungan";
-"userscripts_installed" = "Skrip Saya";
-"userscripts_install" = "Pasang Skrip";
+"userscripts_installed" = "Dipasang";
+"userscripts_install" = "Tambah";
 "userscripts_empty" = "Tiada UserScripts";
 "userscripts_empty_desc" = "Pasang fail .user.js atau buat skrip untuk melihatnya di sini.";
 "userscripts_reload_note" = "Buka muat semula halaman selepas skrip dipasang, diedit, didayakan, dilumpuhkan atau dialih keluar.";
 "userscript_experimental_badge" = "Keserasian";
 "userscript_experimental_title" = "UserScript keserasian";
-"userscript_experimental_desc" = "Menyokong peraturan tapak, permulaan/tamat dokumen, storan GM dan API halaman yang luas, arahan skrip, pemberitahuan, tab, muat turun, kuki, sumber dan permintaan skop kebenaran. Semak setiap skrip sebelum memasang.";
+"userscript_experimental_desc" = "Skrip pengguna boleh membaca atau mengubah laman yang sepadan dan menggunakan API yang dibenarkan. Keserasian berbeza mengikut skrip. Pasang hanya skrip yang dipercayai.";
 "extension_choose_file" = "Pilih Fail atau Folder…";
 "extension_installing" = "Menyemak dan memasang sambungan…";
 "extension_install_failed" = "Sambungan Tidak Dapat Dipasang";
 "extension_permissions_summary" = "%d kebenaran · %d peraturan tapak web";
 "extension_untitled" = "Sambungan Tanpa Tajuk";
-"web_extension_install_footer" = "Ketik mana-mana pada baris sumber untuk membukanya dalam tab Soulo semasa. Soulo mengenali CRX, XPI, ZIP dan tindakan pemasangan kedai yang disokong, kemudian bertanya sebelum memasang. Sesetengah API desktop sahaja mungkin tidak tersedia.";
+"web_extension_install_footer" = "Pasang sambungan serasi melalui pautan gedung atau import CRX, XPI, ZIP atau folder sambungan. Semak kebenaran dan keserasian; sesetengah fungsi desktop tidak tersedia.";
 "web_extension_install_store_link" = "Pasang daripada Pautan Kedai…";
 "web_extension_browse_sources" = "Semak imbas Kedai Sambungan";
 "web_extension_browse_sources_footer" = "Butang Simpan Dapatkan hanya menyokong pelayar desktop mereka sendiri. Salin pautan halaman butiran sambungan, kemudian gunakan Pasang daripada Pautan Kedai dalam Soulo.";
 "web_extension_store_install_title" = "Pasang Sambungan Kedai";
 "extension_page_banner_title" = "Pasang dengan Soulo";
-"extension_page_banner_desc" = "Soulo boleh memasang sambungan ini secara langsung.";
-"web_extension_store_install_desc" = "Tampalkan pautan halaman perincian Gedung Web Chrome, Microsoft Edge Add-ons atau Firefox Add-ons. Soulo memuat turun pakej itu sendiri, jadi butang Dapatkan kedai yang tidak serasi tidak digunakan.";
+"extension_page_banner_desc" = "Semak keserasian dan kebenaran sebelum memasang.";
+"web_extension_store_install_desc" = "Tampal pautan halaman butiran sambungan Chrome, Edge atau Firefox, kemudian semak keserasian dan kebenaran sebelum mengesahkan pemasangan.";
 "web_extension_store_link_placeholder" = "Pautan halaman sambungan atau ID sambungan Chrome";
 "web_extension_store_invalid_link" = "Tampalkan pautan halaman butiran sambungan daripada Chrome, Edge atau Firefox, ID sambungan Chrome atau pautan CRX, XPI atau ZIP langsung.";
 "web_extension_store_https_required" = "Pakej sambungan mesti menggunakan pautan HTTPS yang selamat.";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "Strim media mengembalikan segmen yang tidak sah atau di luar turutan.";
 "resource_stream_download_missing_track" = "Strim yang dimuat turun tidak mengandungi trek video dan audio yang boleh dimainkan.";
 "resource_stream_download_export_failed" = "Soulo tidak dapat menggabungkan video dan audio yang dimuat turun.";
-"resource_stream_playback_download_first" = "Strim terlindung ini tidak dapat dipratonton daripada URL sementaranya. Muat turun dahulu untuk memainkan fail setempat.";
+"resource_stream_playback_download_first" = "Strim ini tidak dapat dipratonton secara langsung buat masa ini.";
 "platform_invalid_web_url" = "Masukkan alamat web yang sah bermula dengan http:// atau https://.";
 
 "library_history_tab" = "Sejarah";
@@ -889,8 +889,7 @@
 "extension_review_access" = "Pilih kebenaran dan laman web yang boleh diakses oleh sambungan ini.";
 "extension_limit_commands" = "Pintasan papan kekunci sambungan tidak tersedia pada iOS.";
 "extension_limit_notifications" = "Pemberitahuan boleh dipaparkan, tetapi peristiwa klik dan tutup tidak disokong.";
-"extension_limit_offscreen" = "Dokumen luar skrin hanya menyokong main balik audio.";
-
+"extension_limit_offscreen" = "Dokumen luar skrin tertakluk pada had iOS; sesetengah ciri mungkin tidak tersedia.";
 "review_support_message" = "Terima kasih kerana menyokong Soulo. Ulasan anda membantu kami terus menambah baik aplikasi.";
 "review_open_app_store" = "Tulis ulasan di App Store";
 

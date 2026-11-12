@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Am remediat o problemă prin care deschiderea unui marcaj sau a unei intrări din istoric putea înlocui o filă existentă.
-• Am îmbunătățit pornirea, încărcarea paginilor și interacțiunile pe ecranul de pornire.
-• Am îmbunătățit comenzile pe tot ecranul, rotirea și starea redării la schimbarea aplicației.
-• Am îmbunătățit restaurarea filelor închise, previzualizările și detaliile interfeței.
+• Fundaluri separate pentru aspectul luminos și întunecat și un comutator pentru stratul imaginii.
+• Culori îmbunătățite pe pagina principală; previzualizarea fundalului urmează tema aplicației.
+• Previzualizează, partajează și salvează fundaluri în Poze.
+• Setări pentru filele de sus cu filă nouă și ascunderea opțională a barei platformelor după navigare.

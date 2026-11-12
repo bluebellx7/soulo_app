@@ -32,6 +32,38 @@ enum BrowserShakeAction: String, CaseIterable, Identifiable {
     }
 }
 
+enum BrowserShakeDirection: String, CaseIterable, Identifiable {
+    case horizontal, vertical, any
+    static let preferenceKey = "browser_shake_direction"
+    var id: String { rawValue }
+    var titleKey: String {
+        switch self {
+        case .horizontal: "shake_direction_horizontal"
+        case .vertical: "shake_direction_vertical"
+        case .any: "shake_direction_any"
+        }
+    }
+    var symbol: String {
+        switch self {
+        case .horizontal: "arrow.left.and.right"
+        case .vertical: "arrow.up.and.down"
+        case .any: "arrow.up.and.down.and.arrow.left.and.right"
+        }
+    }
+    /// Core Motion uses device axes; rotate the selected axis with the screen.
+    func magnitude(_ acceleration: CMAcceleration, orientation: UIInterfaceOrientation) -> Double? {
+        let x = abs(acceleration.x), y = abs(acceleration.y), z = abs(acceleration.z)
+        if self == .any { return sqrt(x * x + y * y + z * z) }
+        let landscape = orientation.isLandscape
+        let horizontal = landscape ? y : x, vertical = landscape ? x : y
+        let selected = self == .horizontal ? horizontal : vertical
+        let other = self == .horizontal ? vertical : horizontal
+        // Lifting the phone, tapping its back or moving diagonally must not
+        // accumulate peaks toward an axis-specific shake.
+        return selected > max(other, z) * 1.35 ? selected : nil
+    }
+}
+
 enum BrowserShakeIntensity: String, CaseIterable, Identifiable {
     case light
     case standard
@@ -60,19 +92,19 @@ enum BrowserShakeIntensity: String, CaseIterable, Identifiable {
 
     var peakThreshold: Double {
         switch self {
-        case .light: 0.42
-        case .standard: 0.60
-        case .firm: 0.80
-        case .strong: 1.00
+        case .light: 0.28
+        case .standard: 0.42
+        case .firm: 0.60
+        case .strong: 0.80
         }
     }
 
     var strongPeakThreshold: Double {
         switch self {
-        case .light: 1.00
-        case .standard: 1.35
-        case .firm: 1.65
-        case .strong: 1.95
+        case .light: 0.75
+        case .standard: 1.00
+        case .firm: 1.35
+        case .strong: 1.65
         }
     }
 }
@@ -90,9 +122,23 @@ struct ShakeMotionClassifier {
     private var peakCount = 0
     private var cooldownUntil: TimeInterval = 0
     private let intensity: BrowserShakeIntensity
+    private var lastDirection: BrowserShakeDirection?
+    private var lastOrientation: UIInterfaceOrientation?
 
     init(intensity: BrowserShakeIntensity = .standard) {
         self.intensity = intensity
+    }
+
+    mutating func register(acceleration: CMAcceleration, direction: BrowserShakeDirection,
+                           orientation: UIInterfaceOrientation, at timestamp: TimeInterval) -> Bool {
+        if lastDirection != direction || lastOrientation != orientation {
+            resetCandidate(); lastDirection = direction; lastOrientation = orientation
+        }
+        guard let magnitude = direction.magnitude(acceleration, orientation: orientation) else {
+            if max(abs(acceleration.x), abs(acceleration.y), abs(acceleration.z)) >= intensity.peakThreshold { resetCandidate() }
+            return false
+        }
+        return register(magnitude: magnitude, at: timestamp)
     }
 
     mutating func register(magnitude: Double, at timestamp: TimeInterval) -> Bool {
@@ -137,12 +183,14 @@ struct ShakeMotionClassifier {
 struct DeviceShakeDetector: UIViewControllerRepresentable {
     let isEnabled: Bool
     let intensity: BrowserShakeIntensity
+    var direction: BrowserShakeDirection = .horizontal
     let onShake: () -> Void
 
     func makeUIViewController(context: Context) -> ShakeViewController {
         let controller = ShakeViewController()
         controller.isEnabled = isEnabled
         controller.intensity = intensity
+        controller.direction = direction
         controller.onShake = onShake
         return controller
     }
@@ -150,6 +198,7 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: ShakeViewController, context: Context) {
         uiViewController.onShake = onShake
         uiViewController.intensity = intensity
+        uiViewController.direction = direction
         uiViewController.isEnabled = isEnabled
         if isEnabled {
             uiViewController.startMotionUpdatesIfNeeded()
@@ -163,6 +212,9 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
                 guard intensity != oldValue else { return }
                 motionClassifier = ShakeMotionClassifier(intensity: intensity)
             }
+        }
+        var direction: BrowserShakeDirection = .horizontal {
+            didSet { if direction != oldValue { motionClassifier.resetCandidate() } }
         }
         var isEnabled = false {
             didSet {
@@ -180,7 +232,7 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
         private var lastDeliveryTime: TimeInterval = -.infinity
 
         override var canBecomeFirstResponder: Bool {
-            isEnabled && !motionManager.isDeviceMotionAvailable
+            isEnabled && direction == .any && !motionManager.isDeviceMotionAvailable
         }
 
         override func viewDidAppear(_ animated: Bool) {
@@ -198,6 +250,7 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
             super.motionEnded(motion, with: event)
             guard isEnabled,
                   motion == .motionShake,
+                  direction == .any,
                   !motionManager.isDeviceMotionActive else { return }
             deliverShake(at: ProcessInfo.processInfo.systemUptime)
         }
@@ -208,7 +261,7 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
             // Core Motion does not need keyboard focus. The UIKit fallback may
             // claim an idle window, but must never replace a page or text field.
             guard motionManager.isDeviceMotionAvailable else {
-                if !containsFirstResponder(in: window) { becomeFirstResponder() }
+                if direction == .any && !containsFirstResponder(in: window) { becomeFirstResponder() }
                 return
             }
             guard !motionManager.isDeviceMotionActive else { return }
@@ -217,13 +270,10 @@ struct DeviceShakeDetector: UIViewControllerRepresentable {
             motionClassifier = ShakeMotionClassifier(intensity: intensity)
             motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, _ in
                 guard let self, self.isEnabled, let acceleration = motion?.userAcceleration else { return }
-                let magnitude = sqrt(
-                    acceleration.x * acceleration.x
-                        + acceleration.y * acceleration.y
-                        + acceleration.z * acceleration.z
-                )
+                let orientation = self.view.window?.windowScene?.interfaceOrientation ?? .portrait
                 let timestamp = ProcessInfo.processInfo.systemUptime
-                if self.motionClassifier.register(magnitude: magnitude, at: timestamp) {
+                if self.motionClassifier.register(acceleration: acceleration, direction: self.direction,
+                                                   orientation: orientation, at: timestamp) {
                     self.deliverShake(at: timestamp)
                 }
             }

@@ -1,11 +1,14 @@
 import SwiftUI
+import UIKit.UIGestureRecognizerSubclass
 
 // MARK: - Browser Tab Bar (Scrollable Strip)
 
 struct BrowserTabBar: View {
     @ObservedObject var tabManager: TabManager
+    var onHidingTabBar: (() -> Void)? = nil
     let onNewTab: () -> Void
 
+    @State private var showTabOptions = false
     @Namespace private var tabNamespace
 
     var body: some View {
@@ -38,18 +41,26 @@ struct BrowserTabBar: View {
                         ))
                     }
 
-                    // New Tab Button
                     Button {
                         HapticsManager.light()
-                        onNewTab()
+                        showTabOptions = true
                     } label: {
-                        Image(systemName: "plus")
+                        Image(systemName: "slider.horizontal.3")
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.primary)
                             .frame(width: 30, height: 30)
-                            .background(Color(UIColor.tertiarySystemFill), in: Circle())
+                            .background {
+                                Circle().fill(.ultraThinMaterial).opacity(0.5)
+                            }
                     }
-                    .accessibilityLabel(LanguageManager.shared.localizedString("tab_new_tab"))
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(LanguageManager.shared.localizedString("settings"))
+                    .accessibilityIdentifier("browser.top-tab-options")
+                    .popover(isPresented: $showTabOptions, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
+                        BrowserTabOptionsPanel(tabManager: tabManager, dismissWhenHidingBar: true, onHidingTabBar: onHidingTabBar,
+                            onDismiss: { showTabOptions = false }, onNewTab: onNewTab)
+                            .compatiblePopoverAdaptation()
+                    }
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
@@ -58,7 +69,7 @@ struct BrowserTabBar: View {
             .onAppear {
                 if let id = tabManager.activeTab?.id { proxy.scrollTo(id, anchor: .center) }
             }
-            .onChange(of: tabManager.activeTabIndex) { _, _ in
+            .onCompatibleChange(of: tabManager.activeTabIndex) { _, _ in
                 if let id = tabManager.activeTab?.id {
                     withAnimation {
                         proxy.scrollTo(id, anchor: .center)
@@ -123,12 +134,9 @@ private struct BrowserTabChip: View {
         .background(
             Capsule()
                 .fill(.ultraThinMaterial)
+                .opacity(isActive ? 0.62 : 0.40)
                 .overlay(
-                    Capsule().fill(
-                        isActive
-                            ? Color.primary.opacity(0.10)
-                            : Color.primary.opacity(0.025)
-                    )
+                    Capsule().fill(Color.primary.opacity(isActive ? 0.06 : 0.015))
                 )
         )
         .overlay(
@@ -179,8 +187,9 @@ private struct BrowserTabChip: View {
 // MARK: - Tab Switcher Overlay
 
 struct TabSwitcherOverlay: View {
-    @AppStorage("show_top_tab_bar") private var showTopTabBar = true
-    @AppStorage("tab_overview_grouped") private var showsDomainGroups = false
+    // Drive the visible hierarchy from view state. iOS 16 can defer an
+    // AppStorage-only invalidation until another interaction or presentation.
+    @State private var showsDomainGroups = UserDefaults.standard.bool(forKey: "tab_overview_grouped")
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showTabOptions = false
     @State private var orderedTabIDs: [UUID] = []
@@ -234,10 +243,10 @@ struct TabSwitcherOverlay: View {
                     .background(Color.primary.opacity(0.10), in: Capsule())
                     .padding(.horizontal, 24).padding(.top, max(geo.safeAreaInsets.top, 12))
                     if orderedTabs.isEmpty && !tabManager.tabs.isEmpty {
-                        ContentUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
+                        CompatibleUnavailableView(LanguageManager.shared.localizedString("no_results"), systemImage: "magnifyingglass")
                             .foregroundStyle(.primary).frame(maxHeight: .infinity)
                     } else if showsDomainGroups && !tabManager.tabs.isEmpty {
-                        TabSwitcherDomainGroups(tabManager: tabManager, tabs: orderedTabs, onSelect: selectTab, onClose: closeTab)
+                        TabSwitcherDomainGroups(tabManager: tabManager, tabs: orderedTabs, viewportSize: geo.size, onSelect: selectTab, onClose: closeTab, onDismiss: dismiss)
                             .padding(.top, 12)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .transition(.opacity)
@@ -251,6 +260,7 @@ struct TabSwitcherOverlay: View {
                                     TabSwitcherCarousel(
                                         tabManager: tabManager,
                                         tabs: orderedTabs,
+                                        pageViewport: geo.size,
                                         isExpanding: $isExpanding,
                                         expandingIndex: $expandingIndex,
                                         onSelect: selectTab,
@@ -276,8 +286,11 @@ struct TabSwitcherOverlay: View {
                 }
             }
         }
-        .onAppear { orderedTabIDs = tabManager.tabsForOverview.map(\.id) }
-        .onChange(of: tabManager.tabs.map(\.id)) { _, ids in
+        .onAppear {
+            orderedTabIDs = tabManager.tabsForOverview.map(\.id)
+            showsDomainGroups = UserDefaults.standard.bool(forKey: "tab_overview_grouped")
+        }
+        .onCompatibleChange(of: tabManager.tabs.map(\.id)) { _, ids in
             let liveIDs = Set(ids), knownIDs = Set(orderedTabIDs)
             orderedTabIDs.removeAll { !liveIDs.contains($0) }
             let added = tabManager.tabsForOverview.map(\.id).filter { !knownIDs.contains($0) }
@@ -302,6 +315,7 @@ struct TabSwitcherOverlay: View {
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
                     showsDomainGroups.toggle()
                 }
+                UserDefaults.standard.set(showsDomainGroups, forKey: "tab_overview_grouped")
             }
             .accessibilityValue(LanguageManager.shared.localizedString(showsDomainGroups ? "tab_view_grouped" : "tab_view_carousel"))
             .accessibilityIdentifier("tabs.view-mode")
@@ -324,7 +338,7 @@ struct TabSwitcherOverlay: View {
             .accessibilityIdentifier("tabs.options")
             .popover(isPresented: $showTabOptions, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
                 tabOptionsPanel
-                    .presentationCompactAdaptation(.popover)
+                    .compatiblePopoverAdaptation()
             }
 
             iconButton("xmark", label: "done") {
@@ -357,74 +371,10 @@ struct TabSwitcherOverlay: View {
     }
 
     private var tabOptionsPanel: some View {
-        VStack(spacing: 14) {
-            Toggle(isOn: $showTopTabBar) {
-                Text(ToolText.text("show_top_tab_bar"))
-                    .font(.subheadline.weight(.semibold))
-            }
-            .tint(Color.themePrimary)
-            .accessibilityIdentifier("tabs.show-top-bar")
-
-            HStack(spacing: 12) {
-                tabBarPreview(isVisible: true)
-                tabBarPreview(isVisible: false)
-            }
-            .accessibilityHidden(true)
-            Text(ToolText.text("top_tab_bar_hint"))
-                .font(.caption).foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Divider()
-            if tabManager.tabs.count > 1 {
-                Button {
-                    showTabOptions = false
-                    tabManager.closeOtherTabs()
-                } label: {
-                    Label(LanguageManager.shared.localizedString("tab_close_others"), systemImage: "xmark.circle")
-                        .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
-                }
-                .foregroundStyle(.primary)
-            }
-            Button(role: .destructive) {
-                showTabOptions = false
-                tabManager.closeAllTabs()
-            } label: {
-                Label(LanguageManager.shared.localizedString("tab_close_all"), systemImage: "trash")
-                    .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
-            }
-            .foregroundStyle(.red)
-        }
-        .buttonStyle(.plain)
-        .padding(16)
-        .frame(width: 300)
-    }
-
-    private func tabBarPreview(isVisible: Bool) -> some View {
-        VStack(spacing: 6) {
-            VStack(alignment: .leading, spacing: 7) {
-                if isVisible {
-                    HStack(spacing: 4) {
-                        Capsule().fill(Color.themePrimary.opacity(0.65))
-                        Capsule().fill(Color.primary.opacity(0.14))
-                    }
-                    .frame(height: 12)
-                }
-                RoundedRectangle(cornerRadius: 3).fill(Color.primary.opacity(0.16)).frame(height: 6)
-                RoundedRectangle(cornerRadius: 3).fill(Color.primary.opacity(0.09)).frame(height: 5)
-                RoundedRectangle(cornerRadius: 3).fill(Color.primary.opacity(0.09)).frame(width: 55, height: 5)
-                Spacer(minLength: 0)
-                Capsule().fill(Color.primary.opacity(0.12)).frame(height: 10)
-            }
-            .padding(10)
-            .frame(maxWidth: .infinity)
-            .frame(height: 88)
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(
-                showTopTabBar == isVisible ? Color.themePrimary.opacity(0.65) : Color.primary.opacity(0.12), lineWidth: 1))
-            Text(LanguageManager.shared.localizedString(isVisible ? "accessibility_enabled" : "accessibility_disabled"))
-                .font(.caption2).foregroundStyle(.secondary)
-        }
+        BrowserTabOptionsPanel(tabManager: tabManager, onDismiss: { showTabOptions = false }, onNewTab: {
+            tabManager.createTab()
+            dismiss()
+        })
     }
 
     private var emptyState: some View {
@@ -524,8 +474,10 @@ struct TabOverviewDomainGroup: Identifiable {
 private struct TabSwitcherDomainGroups: View {
     @ObservedObject var tabManager: TabManager
     let tabs: [BrowserTab]
+    let viewportSize: CGSize
     let onSelect: (Int) -> Void
     let onClose: (Int) -> Void
+    let onDismiss: () -> Void
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var orderedGroupIDs: [String] = []
@@ -548,6 +500,7 @@ private struct TabSwitcherDomainGroups: View {
                             group: group, tabManager: tabManager,
                             positions: positions,
                             cardWidth: cardWidth, columnCount: Int(columns), previewHeight: previewHeight,
+                            viewportSize: viewportSize,
                             onSelect: onSelect, onClose: onClose,
                             onCloseGroup: closeGroup
                         )
@@ -555,12 +508,18 @@ private struct TabSwitcherDomainGroups: View {
                     }
                 }
                 .padding(.vertical, 12)
+                .frame(maxWidth: .infinity, minHeight: geometry.size.height, alignment: .top)
+                .backgroundPreferenceValue(TabGroupOccupiedBoundsKey.self) { anchors in
+                    GeometryReader { proxy in
+                        TabGroupBlankTapGesture(excludedRects: anchors.map { proxy[$0] }, onTap: onDismiss)
+                    }
+                }
             }
             .accessibilityIdentifier("tabs.groups")
             .onAppear {
                 if orderedGroupIDs.isEmpty { orderedGroupIDs = groups.map(\.id) }
             }
-            .defaultScrollAnchor(.top)
+            .compatibleTopScrollAnchor()
             .mask {
                 VStack(spacing: 0) {
                     LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: 8)
@@ -588,6 +547,7 @@ private struct TabDomainGroupRow: View {
     let cardWidth: CGFloat
     let columnCount: Int
     let previewHeight: CGFloat
+    let viewportSize: CGSize
     let onSelect: (Int) -> Void
     let onClose: (Int) -> Void
     let onCloseGroup: (TabOverviewDomainGroup) -> Void
@@ -600,6 +560,7 @@ private struct TabDomainGroupRow: View {
             HStack(spacing: 8) {
                 HStack(spacing: 8) {
                     if tabManager.pinnedOverviewGroupIDs.contains(group.id) { Image(systemName: "pin.fill").font(.caption).foregroundStyle(Color.primary.opacity(0.8)) }
+                    groupIcon
                     Text(group.title)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.primary.opacity(0.94))
@@ -655,6 +616,7 @@ private struct TabDomainGroupRow: View {
                 }
             }
             .padding(.horizontal, 24)
+            .anchorPreference(key: TabGroupOccupiedBoundsKey.self, value: .bounds) { [$0] }
 
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(cardWidth), spacing: 12, alignment: .top), count: columnCount), alignment: .leading, spacing: 14) {
                     ForEach(group.tabs) { tab in
@@ -665,6 +627,7 @@ private struct TabDomainGroupRow: View {
                             isExpanding: false,
                             position: positions[tab.id] ?? 1,
                             total: tabManager.tabCount,
+                            viewportSize: viewportSize,
                             onTap: { select(tab.id, action: onSelect) },
                             onClose: { select(tab.id, action: onClose) },
                             compactPreviewHeight: previewHeight
@@ -673,6 +636,7 @@ private struct TabDomainGroupRow: View {
                         .modifier(GroupedTabSwipeToClose(width: cardWidth) {
                             select(tab.id, action: onClose)
                         })
+                        .anchorPreference(key: TabGroupOccupiedBoundsKey.self, value: .bounds) { [$0] }
                         .id(tab.id)
                     }
             }
@@ -683,8 +647,104 @@ private struct TabDomainGroupRow: View {
         }
     }
 
+    @ViewBuilder private var groupIcon: some View {
+        if let url = group.tabs.first.flatMap({ $0.webViewModel.currentURL ?? $0.suspendedURL }),
+           WebsiteFaviconService.iconURL(for: url.absoluteString) != nil {
+            BookmarkFaviconView(urlString: url.absoluteString, size: 20)
+        } else {
+            Image(systemName: group.id == "local-files" ? "doc" : "square.on.square")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(width: 20, height: 20)
+                .accessibilityHidden(true)
+        }
+    }
+
     private func select(_ id: UUID, action: (Int) -> Void) {
         if let index = tabManager.tabs.firstIndex(where: { $0.id == id }) { action(index) }
+    }
+}
+
+private struct TabGroupOccupiedBoundsKey: PreferenceKey {
+    static let defaultValue: [Anchor<CGRect>] = []
+    static func reduce(value: inout [Anchor<CGRect>], nextValue: () -> [Anchor<CGRect>]) {
+        value.append(contentsOf: nextValue())
+    }
+}
+
+/// Listen only to genuinely empty parts of the grouped scroll content. Reject
+/// card/header touches before recognition so their menus, taps and left drags
+/// never compete with this recognizer. Native scrolling keeps priority.
+private struct TabGroupBlankTapGesture: UIViewRepresentable {
+    var excludedRects: [CGRect]
+    var onTap: () -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
+    func makeUIView(context: Context) -> MarkerView {
+        let view = MarkerView()
+        view.isUserInteractionEnabled = false
+        view.accessibilityElementsHidden = true
+        view.onHierarchyChange = { [weak coordinator = context.coordinator] marker in coordinator?.attach(to: marker) }
+        return view
+    }
+    func updateUIView(_ view: MarkerView, context: Context) {
+        context.coordinator.parent = self
+        context.coordinator.attach(to: view)
+    }
+    static func dismantleUIView(_ view: MarkerView, coordinator: Coordinator) {
+        view.onHierarchyChange = nil
+        coordinator.detach()
+    }
+
+    final class MarkerView: UIView {
+        var onHierarchyChange: ((MarkerView) -> Void)?
+        override func didMoveToSuperview() { super.didMoveToSuperview(); onHierarchyChange?(self) }
+        override func didMoveToWindow() { super.didMoveToWindow(); onHierarchyChange?(self) }
+    }
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        var parent: TabGroupBlankTapGesture
+        private weak var marker: MarkerView?
+        private weak var scrollView: UIScrollView?
+        private lazy var tap: UITapGestureRecognizer = {
+            let gesture = UITapGestureRecognizer(target: self, action: #selector(tapped(_:)))
+            gesture.name = "SouloTabGroupBlankTap"
+            gesture.numberOfTouchesRequired = 1
+            gesture.cancelsTouchesInView = false
+            gesture.delaysTouchesBegan = false
+            gesture.delaysTouchesEnded = false
+            gesture.delegate = self
+            return gesture
+        }()
+        init(parent: TabGroupBlankTapGesture) { self.parent = parent }
+        func attach(to marker: MarkerView) {
+            var ancestor = marker.superview
+            while let view = ancestor, !(view is UIScrollView) { ancestor = view.superview }
+            guard marker.window != nil, let scroll = ancestor as? UIScrollView else { detach(); return }
+            if scrollView === scroll { self.marker = marker; return }
+            detach()
+            self.marker = marker; scrollView = scroll
+            scroll.addGestureRecognizer(tap)
+        }
+        func detach() {
+            scrollView?.removeGestureRecognizer(tap)
+            marker = nil; scrollView = nil
+        }
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            guard let marker, marker.window != nil, let scrollView,
+                  !parent.excludedRects.isEmpty,
+                  !scrollView.isDragging, !scrollView.isDecelerating else { return false }
+            let point = touch.location(in: marker)
+            return marker.bounds.contains(point) && !parent.excludedRects.contains { $0.contains(point) }
+        }
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                               shouldRequireFailureOf otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+            otherGestureRecognizer === scrollView?.panGestureRecognizer
+        }
+        @objc private func tapped(_ gesture: UITapGestureRecognizer) {
+            guard gesture.state == .ended, let scrollView,
+                  !scrollView.isDragging, !scrollView.isDecelerating else { return }
+            parent.onTap()
+        }
     }
 }
 
@@ -852,6 +912,7 @@ private struct GroupedTabLeftSwipeGesture: UIViewRepresentable {
 private struct TabSwitcherCarousel: View {
     @ObservedObject var tabManager: TabManager
     let tabs: [BrowserTab]
+    let pageViewport: CGSize
     @Binding var isExpanding: Bool
     @Binding var expandingIndex: Int?
     let onSelect: (Int) -> Void
@@ -876,7 +937,11 @@ private struct TabSwitcherCarousel: View {
 
     var body: some View {
         GeometryReader { geo in
-            let cardWidth = min(max(geo.size.width * 0.64, 220), 340)
+            let previewRatio = TabPreviewLayout.aspect(isPad: UIDevice.current.userInterfaceIdiom == .pad,
+                snapshot: tabManager.activeTab?.webViewModel.snapshot?.size,
+                viewport: pageViewport)
+            let cardWidth = TabPreviewLayout.width(viewport: geo.size, aspect: previewRatio,
+                isPad: UIDevice.current.userInterfaceIdiom == .pad)
             let cardSpacing = -cardWidth * 0.24
             let stepDistance = cardWidth + cardSpacing
 
@@ -896,6 +961,7 @@ private struct TabSwitcherCarousel: View {
                         stepDistance: stepDistance,
                         dragOffset: dragOffset,
                         viewportWidth: geo.size.width,
+                        viewportSize: pageViewport,
                         onSelect: { _ in
                             if let index = tabManager.tabs.firstIndex(where: { $0.id == tab.id }) { onSelect(index) }
                         },
@@ -954,7 +1020,7 @@ private struct TabSwitcherCarousel: View {
                     }
             )
             .onAppear { focusedTabID = tabs.first?.id }
-            .onChange(of: tabs.map(\.id)) { _, ids in
+            .onCompatibleChange(of: tabs.map(\.id)) { _, ids in
                 if let focusedTabID, ids.contains(focusedTabID) { return }
                 focusedTabID = tabs.first?.id
                 resetDrag()
@@ -1037,6 +1103,7 @@ private struct TabSwitcherCardItem: View {
     let stepDistance: CGFloat
     let dragOffset: CGFloat
     let viewportWidth: CGFloat
+    let viewportSize: CGSize
     let onSelect: (Int) -> Void
     let onClose: (Int) -> Void
     @ObservedObject var tabManager: TabManager
@@ -1079,6 +1146,7 @@ private struct TabSwitcherCardItem: View {
                         isExpanding: isThisExpanding,
                         position: index + 1,
                         total: tabManager.tabs.count,
+                        viewportSize: viewportSize,
                         onTap: { onSelect(index) },
                         onClose: { onClose(index) }
                     )
@@ -1179,6 +1247,74 @@ struct CardSwipeWrapper<Content: View>: View {
 
 // MARK: - Tab Overview Card (observes WebViewModel directly)
 
+private struct TabOverviewTapSurface: UIViewRepresentable {
+    let onTap: () -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(onTap: onTap) }
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.accessibilityElementsHidden = true
+        let tap = TapRecognizer(target: context.coordinator, action: #selector(Coordinator.selectCard))
+        tap.cancelsTouchesInView = false
+        tap.delaysTouchesEnded = false
+        view.addGestureRecognizer(tap)
+        return view
+    }
+
+    func updateUIView(_ view: UIView, context: Context) {
+        context.coordinator.onTap = onTap
+    }
+
+    final class Coordinator: NSObject {
+        var onTap: () -> Void
+        init(onTap: @escaping () -> Void) { self.onTap = onTap }
+        @objc func selectCard() { onTap() }
+    }
+
+    private final class TapRecognizer: UITapGestureRecognizer {
+        private var start: CGPoint?
+
+        override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+            guard start == nil, touches.count == 1, let touch = touches.first else {
+                state = .failed
+                return
+            }
+            start = touch.location(in: touch.window)
+            super.touchesBegan(touches, with: event)
+        }
+
+        override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+            guard staysWithinTapDistance(touches, event: event) else { state = .failed; return }
+            super.touchesMoved(touches, with: event)
+        }
+
+        override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+            guard staysWithinTapDistance(touches, event: event) else { state = .failed; return }
+            super.touchesEnded(touches, with: event)
+        }
+
+        override func reset() {
+            super.reset()
+            start = nil
+        }
+
+        private func staysWithinTapDistance(_ touches: Set<UITouch>, event: UIEvent) -> Bool {
+            guard let start else { return false }
+            // The card can move with the carousel. Measure in window coordinates
+            // and check the final sample even if a quick flick skipped a move event.
+            func movedTooFar(_ touch: UITouch) -> Bool {
+                let point = touch.location(in: touch.window)
+                let dx = point.x - start.x, dy = point.y - start.y
+                return dx * dx + dy * dy > 5 * 5
+            }
+            return !touches.contains { touch in
+                movedTooFar(touch) || event.coalescedTouches(for: touch)?.contains(where: movedTooFar) == true
+            }
+        }
+    }
+}
+
 private struct TabOverviewCard: View {
     @ObservedObject var webViewModel: WebViewModel
     let keyword: String?
@@ -1186,6 +1322,7 @@ private struct TabOverviewCard: View {
     let isExpanding: Bool
     let position: Int
     let total: Int
+    var viewportSize: CGSize = .zero
     let onTap: () -> Void
     let onClose: () -> Void
     var compactPreviewHeight: CGFloat? = nil
@@ -1210,9 +1347,6 @@ private struct TabOverviewCard: View {
             if let compactPreviewHeight {
                 previewSurface
                     .frame(height: compactPreviewHeight)
-                    .overlay(alignment: .topTrailing) {
-                        closeButton(size: 26)
-                    }
                 Text(displayTitle)
                     .font(.caption.weight(.medium))
                     .foregroundStyle(Color.primary.opacity(isActive ? 1 : 0.78))
@@ -1225,15 +1359,22 @@ private struct TabOverviewCard: View {
                     .padding(.horizontal, 4)
                     .frame(height: 44)
                 previewSurface
-                    .aspectRatio(0.56, contentMode: .fit)
+                    .aspectRatio(TabPreviewLayout.aspect(isPad: UIDevice.current.userInterfaceIdiom == .pad,
+                        snapshot: webViewModel.snapshot?.size,
+                        viewport: viewportSize), contentMode: .fit)
             }
+        }
+        .allowsHitTesting(false)
+        .overlay {
+            TabOverviewTapSurface {
+                if !isExpanding { onTap() }
+            }
+        }
+        .overlay(alignment: .topTrailing) {
+            closeButton(size: compactPreviewHeight == nil ? 30 : 26)
+                .padding(.trailing, compactPreviewHeight == nil ? 4 : 0)
         }
         .contentShape(Rectangle())
-        .onTapGesture {
-            if !isExpanding {
-                onTap()
-            }
-        }
         .contextMenu {
             if !isExpanding {
                 Button(role: .destructive) {
@@ -1286,7 +1427,9 @@ private struct TabOverviewCard: View {
             if !isExpanding { onClose() }
         }
         .accessibilityIdentifier(webViewModel.snapshot == nil ? "tabs.card.placeholder" : "tabs.card.preview")
-        .task(id: webViewModel.snapshotRevision) { await webViewModel.loadSnapshotIfNeeded() }
+        .task(id: "\(webViewModel.snapshotRevision)-\(viewportSize.width)-\(viewportSize.height)") {
+            await webViewModel.prepareOverviewSnapshot(viewport: viewportSize)
+        }
         .onDisappear {
             if !webViewModel.showSnapshotWhileRestoring { webViewModel.releaseSnapshotMemory() }
         }
@@ -1321,7 +1464,7 @@ private struct TabOverviewCard: View {
 
             Spacer(minLength: 6)
 
-            closeButton(size: 30)
+            Color.clear.frame(width: 44, height: 44)
         }
     }
 
@@ -1371,9 +1514,7 @@ private struct TabOverviewCard: View {
     @ViewBuilder
     private var preview: some View {
         if let snapshot = webViewModel.snapshot {
-            Image(uiImage: snapshot)
-                .resizable()
-                .scaledToFill()
+            TabSnapshotPreview(image: snapshot)
         } else {
             Rectangle()
                 .fill(Color(UIColor.tertiarySystemFill).opacity(0.5))
@@ -1472,6 +1613,210 @@ private func tabContextLabel(_ key: String, systemImage: String) -> some View {
             Image(uiImage: image)
         } else {
             Image(systemName: systemImage).foregroundStyle(.primary)
+        }
+    }
+}
+
+/// Keep every edge of the captured page visible when card and image aspects
+/// differ. A softened copy fills the unused space without stretching the page.
+struct TabSnapshotPreview: View {
+    let image: UIImage
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Image(uiImage: image).resizable().scaledToFill()
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .clipped().scaleEffect(1.12).blur(radius: 14, opaque: true)
+                    .overlay(Color.black.opacity(0.12))
+                Image(uiImage: image).resizable().scaledToFit()
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height).clipped()
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// The current window owns iPad card geometry; cached portrait images cannot pin it.
+enum TabPreviewLayout {
+    static func aspect(isPad: Bool, snapshot: CGSize?, viewport: CGSize) -> CGFloat {
+        guard isPad else { return 0.56 }
+        for size in [viewport, snapshot].compactMap({ $0 }) {
+            if size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0 {
+                return min(3, max(0.4, size.width / size.height))
+            }
+        }
+        return 4.0 / 3.0
+    }
+    static func width(viewport: CGSize, aspect: CGFloat, isPad: Bool) -> CGFloat {
+        guard isPad else { return min(max(viewport.width * 0.64, 220), 340) }
+        return max(1, min(720, viewport.width * 0.68, max(1, viewport.height - 80) * aspect))
+    }
+}
+
+
+private struct BrowserTabOptionsPanel: View {
+    @ObservedObject var tabManager: TabManager
+    @AppStorage("show_top_tab_bar") private var showTopTabBar = true
+    var dismissWhenHidingBar = false
+    var onHidingTabBar: (() -> Void)? = nil
+    let onDismiss: () -> Void
+    let onNewTab: () -> Void
+    var body: some View {
+        VStack(spacing: 14) {
+            Toggle(isOn: Binding(get: { showTopTabBar }, set: { value in
+                if !value && dismissWhenHidingBar { onDismiss(); onHidingTabBar?() }
+                showTopTabBar = value
+            })) {
+                Text(ToolText.text("show_top_tab_bar"))
+                    .font(.subheadline.weight(.semibold))
+            }
+            .tint(Color.themePrimary)
+            .accessibilityIdentifier("tabs.show-top-bar")
+
+            HStack(spacing: 12) {
+                tabBarPreview(isVisible: true)
+                tabBarPreview(isVisible: false)
+            }
+            .accessibilityHidden(true)
+            Text(ToolText.text("top_tab_bar_hint"))
+                .font(.caption).foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Divider()
+            Button {
+                onDismiss()
+                onNewTab()
+            } label: {
+                Label(LanguageManager.shared.localizedString("tab_new_tab"), systemImage: "plus")
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .foregroundStyle(.primary)
+            .accessibilityIdentifier("tabs.new-tab")
+            if tabManager.tabs.count > 1 {
+                Button {
+                    onDismiss()
+                    tabManager.closeOtherTabs()
+                } label: {
+                    Label(LanguageManager.shared.localizedString("tab_close_others"), systemImage: "xmark.circle")
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .foregroundStyle(.primary)
+                .accessibilityIdentifier("tabs.close-others")
+            }
+            Button(role: .destructive) {
+                onDismiss()
+                tabManager.closeAllTabs()
+            } label: {
+                Label(LanguageManager.shared.localizedString("tab_close_all"), systemImage: "trash")
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .foregroundStyle(.red)
+            .accessibilityIdentifier("tabs.close-all")
+        }
+        .buttonStyle(.plain)
+        .padding(16)
+        .frame(width: 300)
+    }
+
+    private func tabBarPreview(isVisible: Bool) -> some View {
+        VStack(spacing: 6) {
+            VStack(alignment: .leading, spacing: 7) {
+                if isVisible {
+                    HStack(spacing: 4) {
+                        Capsule().fill(Color.themePrimary.opacity(0.65))
+                        Capsule().fill(Color.primary.opacity(0.14))
+                    }
+                    .frame(height: 12)
+                }
+                RoundedRectangle(cornerRadius: 3).fill(Color.primary.opacity(0.16)).frame(height: 6)
+                RoundedRectangle(cornerRadius: 3).fill(Color.primary.opacity(0.09)).frame(height: 5)
+                RoundedRectangle(cornerRadius: 3).fill(Color.primary.opacity(0.09)).frame(width: 55, height: 5)
+                Spacer(minLength: 0)
+                Capsule().fill(Color.primary.opacity(0.12)).frame(height: 10)
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity)
+            .frame(height: 88)
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(
+                showTopTabBar == isVisible ? Color.themePrimary.opacity(0.65) : Color.primary.opacity(0.12), lineWidth: 1))
+            Text(LanguageManager.shared.localizedString(isVisible ? "accessibility_enabled" : "accessibility_disabled"))
+                .font(.caption2).foregroundStyle(.secondary)
+        }
+    }
+
+}
+
+
+struct TopTabBarRecoveryView: View {
+    let tabCount: Int
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Label(ToolText.text("top_tab_bar_hidden_title"), systemImage: "rectangle.topthird.inset.filled")
+                    .font(.title3.weight(.semibold))
+                illustration.accessibilityHidden(true)
+                Text(ToolText.text("top_tab_bar_reopen_hint"))
+                    .font(.body).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(24).frame(maxWidth: 520)
+            .frame(maxWidth: .infinity)
+        }
+        .safeAreaInset(edge: .bottom) {
+            Button { dismiss() } label: {
+                Text(ToolText.text("done"))
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .contentShape(Rectangle())
+            }
+                .buttonStyle(.borderedProminent).tint(Color.themePrimary)
+                .padding(.horizontal, 24).padding(.bottom, 16)
+                .accessibilityIdentifier("tabs.recovery.dismiss")
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private var illustration: some View {
+        HStack(spacing: 12) {
+            VStack(spacing: 12) {
+                RoundedRectangle(cornerRadius: 3).fill(Color.primary.opacity(0.08)).frame(height: 6)
+                RoundedRectangle(cornerRadius: 3).fill(Color.primary.opacity(0.08)).frame(height: 6)
+                Spacer(minLength: 4)
+                HStack(spacing: 8) {
+                    Image(systemName: "house").font(.caption)
+                    Capsule().fill(Color.primary.opacity(0.1)).frame(height: 12)
+                    TabCountSymbol(count: max(1, tabCount))
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Color.themePrimary)
+                        .frame(width: 32, height: 32)
+                        .background(Color.themePrimary.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+                }
+            }
+            .padding(12).frame(maxWidth: .infinity).frame(height: 116)
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+            Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 12) {
+                Image(systemName: "ellipsis").font(.title3.weight(.semibold))
+                HStack(spacing: 6) {
+                    Text(ToolText.text("show_top_tab_bar")).font(.caption2.weight(.semibold))
+                    Spacer(minLength: 0)
+                    Capsule().fill(Color.themePrimary).frame(width: 32, height: 20)
+                        .overlay(alignment: .trailing) { Circle().fill(.white).padding(2).frame(width: 20, height: 20) }
+                }
+                RoundedRectangle(cornerRadius: 3).fill(Color.primary.opacity(0.08)).frame(height: 5)
+            }
+            .padding(12).frame(maxWidth: .infinity).frame(height: 116)
+            .background(Color.themePrimary.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.themePrimary.opacity(0.3), lineWidth: 1))
         }
     }
 }

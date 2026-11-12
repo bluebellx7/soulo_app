@@ -14,8 +14,10 @@ import UniformTypeIdentifiers
     @Published private(set) var duration = 0.0
     @Published private(set) var hasVideo = true
     @Published private(set) var error: String?
+    @Published private(set) var startupWarning: String?
     @Published var orientationError: String?
     @Published private(set) var gestureFeedback: VideoGestureFeedback?
+    @Published private(set) var seekPreview: Double?
     @Published private(set) var rate: Float = {
         let saved = UserDefaults.standard.float(forKey: "media.rate")
         return MediaSession.validRate(saved) ? min(4, saved) : 1
@@ -26,11 +28,15 @@ import UniformTypeIdentifiers
     private var originalBrightness: CGFloat?
     private(set) var player: VLCMediaPlayer?
     private weak var surface: UIView?
-    private let drawable = UIView()
+    private var drawable = UIView()
+    private var hasStartedPlayer = false
+    private var hasSeenRunningState = false
     private let awakeOwner = UUID()
     private var updates: Task<Void, Never>?
     private var resourceLease: AnyObject?
     private var requestContext: VideoPlaybackRequestContext?
+    var preparedPlaybackSource: SouloMediaPlaybackSource? { resourceLease as? SouloMediaPlaybackSource }
+    var playbackRequestContext: VideoPlaybackRequestContext? { requestContext }
     private var waitingForSurface = false
     private var wantsPlayback = true
     private(set) var sourceURL: URL?
@@ -98,12 +104,16 @@ import UniformTypeIdentifiers
             guard let surface, surface.window != nil, !surface.bounds.isEmpty else { return }
         }
         waitingForSurface = false
+        hasStartedPlayer = true
         player.play()
     }
     func open(_ url: URL, resourceLease: AnyObject? = nil, persistPosition: Bool = false,
               startAt: Double? = nil, autoplay: Bool = true, requestContext: VideoPlaybackRequestContext? = nil,
-              title: String? = nil, originalURL: URL? = nil, systemAvailable: Bool = true) {
-        if sourceURL == url, player != nil, error == nil, !reportedEnd { return }
+              title: String? = nil, originalURL: URL? = nil, systemAvailable: Bool = true, systemAvailabilityPending: Bool = false) {
+        if sourceURL == url, player != nil, error == nil, !reportedEnd {
+            if !systemAvailabilityPending { MediaSession.shared.updateSouloSystemAvailability(systemAvailable, for: self) }
+            return
+        }
         stop(deactivateAudioSession: false)
         MediaSession.shared.stop(deactivateAudioSession: false)
         sourceURL = url
@@ -135,18 +145,19 @@ import UniformTypeIdentifiers
             waitingForSurface = true
             MediaSession.shared.adoptSoulo(self, url: originalURL ?? url, title: title,
                 source: (resourceLease as? SouloMediaPlaybackSource)?.native,
-                pageURL: requestContext?.referrer, systemAvailable: systemAvailable)
+                pageURL: requestContext?.referrer, systemAvailable: systemAvailable, systemAvailabilityPending: systemAvailabilityPending)
             startWhenVisible()
             updates = Task { [weak self] in
+                var startup = VideoStartupWatch()
                 var stoppedSince: ContinuousClock.Instant?
                 var lastProgress = 0.0
                 while !Task.isCancelled {
                     guard let self, let player = self.player else { return }
                     let playing = self.wantsPlayback && player.isPlaying && player.state != .ended && player.state != .stopped
                     if self.playing != playing { self.playing = playing }
-                    let buffering = self.waitingForSurface || ((self.wantsPlayback || self.pendingStart != nil)
-                        && !player.isPlaying && (player.state == .opening || player.state == .buffering))
+                    let buffering = self.wantsPlayback && (self.waitingForSurface || !player.isPlaying && (player.state == .opening || player.state == .buffering))
                     if self.buffering != buffering { self.buffering = buffering }
+                    if player.state != .stopped { self.hasSeenRunningState = true }
                     let clock = max(0, Double(player.time.intValue) / 1000)
                     if playing { lastProgress = clock }
                     // VLC clears its clock on stop. Keep the last decoded
@@ -156,6 +167,12 @@ import UniformTypeIdentifiers
                     self.elapsed = self.pendingStart?.seconds ?? self.pendingSeek?.target ?? actual
                     let duration = max(0, Double(player.media?.length.intValue ?? 0) / 1000)
                     if self.duration != duration { self.duration = duration }
+                    let frameReady = (player.media?.statistics.displayedPictures ?? 0) > 0
+                    let warning = startup.update(now: Date.timeIntervalSinceReferenceDate,
+                        requested: self.wantsPlayback && self.hasVisibleSurface && UIApplication.shared.applicationState == .active,
+                        ready: frameReady || (!self.hasVideo && actual > 0.1))
+                    let message = warning ? ToolText.text("media_start_timeout") : nil
+                    if self.startupWarning != message { self.startupWarning = message }
                     self.layoutVideo()
                     if let tracks = player.media?.tracksInformation as? [[String: Any]], !tracks.isEmpty {
                         let hasVideo = tracks.contains { $0[VLCMediaTracksInformationType] as? String == VLCMediaTracksInformationTypeVideo }
@@ -197,19 +214,25 @@ import UniformTypeIdentifiers
         } catch { self.error = error.localizedDescription; buffering = false }
     }
     func togglePlayback() {
-        endTemporaryRate()
-        guard let player else { return }
+        guard player != nil else { return }
         if reportedEnd { play(); return }
-        wantsPlayback = !(pendingStart?.autoplay ?? player.isPlaying)
-        if let pending = pendingStart { pendingStart = (pending.seconds, wantsPlayback, pending.explicit) }
-        if wantsPlayback { play() } else { pause() }
+        // VLC's isPlaying lags behind Play while buffering and Pause while
+        // draining output. Toggle the latest command, not that stale report.
+        if wantsPlayback { pause() } else { play() }
     }
     nonisolated func mediaPlayerStateChanged(_ notification: Notification) {
-        guard let player = notification.object as? VLCMediaPlayer, player.state == .ended else { return }
-        let identity = ObjectIdentifier(player)
+        guard let player = notification.object as? VLCMediaPlayer, player.state == .ended || player.state == .paused else { return }
+        let identity = ObjectIdentifier(player), paused = player.state == .paused
         Task { @MainActor [weak self] in
             guard let self, self.player.map(ObjectIdentifier.init) == identity else { return }
-            self.didEnd()
+            if paused {
+                // VLC releases its output session on pause. Keep volume keys and
+                // public outputVolume observation working while video remains visible.
+                if self.hasVideo, self.hasVisibleSurface, !self.wantsPlayback,
+                   UIApplication.shared.applicationState == .active {
+                    try? AVAudioSession.sharedInstance().setActive(true)
+                }
+            } else { self.didEnd() }
         }
     }
     private func didEnd() {
@@ -229,17 +252,22 @@ import UniformTypeIdentifiers
             // Reopen it while retaining credentials and the user's mode.
             open(sourceURL, resourceLease: resourceLease, persistPosition: persistsPosition,
                  startAt: 0, requestContext: requestContext, title: MediaSession.shared.title,
-                 originalURL: MediaSession.shared.url, systemAvailable: MediaSession.shared.souloSystemAvailable)
+                 originalURL: MediaSession.shared.url, systemAvailable: MediaSession.shared.souloSystemAvailable,
+                 systemAvailabilityPending: MediaSession.shared.souloSystemAvailabilityPending)
             return
         }
         player?.play()
     }
     func pause() {
-        endTemporaryRate(); wantsPlayback = false; resumeAfterInterruption = false
+        #if DEBUG
+        if MediaSession.shared.soulo === self { MediaSession.shared.recordVideoPauseInput() }
+        #endif
+        wantsPlayback = false; resumeAfterInterruption = false
         waitingForSurface = false
         playing = false; buffering = false
         if let pending = pendingStart { pendingStart = (pending.seconds, false, pending.explicit) }
-        player?.pause(); savePosition()
+        player?.pause()
+        endTemporaryRate(); savePosition()
         MediaSession.shared.updateSouloState(self)
     }
     func handleInterruption(began: Bool, shouldResume: Bool) {
@@ -270,7 +298,7 @@ import UniformTypeIdentifiers
     }
     func beginTemporaryRate() {
         let target = Float(VideoPlaybackPreferences.holdSpeed())
-        guard let player, player.isPlaying, player.rate < target, rateBeforeHold == nil else { return }
+        guard gestureFeedback?.kind != .seek, let player, player.isPlaying, player.rate < target, rateBeforeHold == nil else { return }
         feedbackDismissal?.cancel()
         rateBeforeHold = player.rate
         player.rate = target
@@ -297,10 +325,16 @@ import UniformTypeIdentifiers
         feedbackDismissal?.cancel()
         gestureFeedback = VideoGestureFeedback(kind: kind, value: min(1, max(0, value)))
     }
-    func finishAdjustment() {
+    func showSeekPreview(_ target: Double, start: Double) {
+        endTemporaryRate(); feedbackDismissal?.cancel()
+        seekPreview = target
+        gestureFeedback = VideoGestureFeedback(kind: .seek, value: target, delta: target - start)
+    }
+    func finishAdjustment(after delay: Duration = .milliseconds(1500)) {
+        seekPreview = nil
         feedbackDismissal?.cancel()
         feedbackDismissal = Task { @MainActor [weak self] in
-            do { try await Task.sleep(for: .milliseconds(1500)) } catch { return }
+            do { try await Task.sleep(for: delay) } catch { return }
             self?.gestureFeedback = nil
         }
     }
@@ -317,16 +351,26 @@ import UniformTypeIdentifiers
         player?.time = VLCTime(int: Int32(target * 1000))
     }
     func stop(deactivateAudioSession: Bool = true) {
+        startupWarning = nil
         savePosition()
         endTemporaryRate()
-        feedbackDismissal?.cancel(); feedbackDismissal = nil; gestureFeedback = nil
+        feedbackDismissal?.cancel(); feedbackDismissal = nil; gestureFeedback = nil; seekPreview = nil
         if let originalBrightness { adjustedScreen?.brightness = originalBrightness }
         adjustedScreen = nil; originalBrightness = nil
         let hadPlayer = player != nil
         waitingForSurface = false
         wantsPlayback = false
         updates?.cancel(); updates = nil
-        player?.delegate = nil; player?.stop(); player?.drawable = nil; player = nil
+        if let retiringPlayer = player {
+            player = nil
+            let retiringDrawable = drawable
+            retiringDrawable.removeFromSuperview()
+            drawable = UIView()
+            if let surface { attach(surface, primary: primarySurface === surface) }
+            VLCPlaybackRetirement.retire(retiringPlayer, drawable: retiringDrawable, lease: resourceLease,
+                wasStarted: hasStartedPlayer, hadRunningState: hasSeenRunningState)
+        }
+        hasStartedPlayer = false; hasSeenRunningState = false
         playing = false; buffering = false
         VideoScreenAwakeService.shared.setActive(false, owner: awakeOwner)
         resourceLease = nil
@@ -357,9 +401,12 @@ final class MatroskaVideoSurface: UIView, UIGestureRecognizerDelegate {
         didSet {
             let enabled = tapped != nil
             if tapRecognizer?.isEnabled != enabled { tapRecognizer?.isEnabled = enabled }
+            if doubleTapRecognizer?.isEnabled != enabled { doubleTapRecognizer?.isEnabled = enabled }
         }
     }
     private var tapRecognizer: UITapGestureRecognizer?
+    private var doubleTapRecognizer: UITapGestureRecognizer?
+    private var lastDoubleTap: CFTimeInterval = 0
     private var verticalGesture: VideoVerticalGestureHandler?
 
     override init(frame: CGRect) {
@@ -367,6 +414,9 @@ final class MatroskaVideoSurface: UIView, UIGestureRecognizerDelegate {
         verticalGesture = VideoVerticalGestureHandler(in: self, enabled: { [weak self] in self?.playback?.hasVideo == true },
             brightness: { [weak self] value, screen in self?.playback?.adjustBrightness(value, screen: screen) },
             feedback: { [weak self] kind, value in self?.playback?.showAdjustment(kind, value: value) },
+            position: { [weak self] in (self?.playback?.elapsed ?? 0, self?.playback?.duration ?? 0) },
+            previewSeek: { [weak self] in self?.playback?.showSeekPreview($0, start: $1) },
+            seek: { [weak self] in self?.playback?.seek($0) },
             ended: { [weak self] in self?.playback?.finishAdjustment() })
         let hold = UILongPressGestureRecognizer(target: self, action: #selector(held(_:)))
         hold.minimumPressDuration = 0.35
@@ -374,6 +424,10 @@ final class MatroskaVideoSurface: UIView, UIGestureRecognizerDelegate {
         let tap = UITapGestureRecognizer(target: self, action: #selector(tappedVideo))
         tap.isEnabled = false; tapRecognizer = tap
         tap.require(toFail: hold)
+        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(doubleTappedVideo))
+        doubleTap.numberOfTapsRequired = 2; doubleTap.isEnabled = false
+        doubleTap.name = "SouloInlinePlaybackDoubleTap"
+        doubleTapRecognizer = doubleTap; addGestureRecognizer(doubleTap)
         addGestureRecognizer(tap)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -397,7 +451,13 @@ final class MatroskaVideoSurface: UIView, UIGestureRecognizerDelegate {
         if gesture.state == .began { playback?.beginTemporaryRate() }
         else if [.ended, .cancelled, .failed].contains(gesture.state) { playback?.endTemporaryRate() }
     }
-    @objc private func tappedVideo() { tapped?() }
+    @objc private func tappedVideo() {
+        if CACurrentMediaTime() - lastDoubleTap > 0.25 { tapped?() }
+    }
+    @objc private func doubleTappedVideo() {
+        lastDoubleTap = CACurrentMediaTime()
+        playback?.togglePlayback()
+    }
 
 }
 
@@ -442,6 +502,7 @@ struct FileVideoPlaylist {
 struct FileVideoOptions: Equatable {
     var usesSystem: Bool
     var systemAvailable: Bool
+    var systemAvailabilityPending = false
     var souloAvailable = true
     var playlist: FileVideoPlaylist?
     var requestAirPlay: ((Double, Bool) -> Void)?
@@ -455,6 +516,7 @@ struct FileVideoOptions: Equatable {
     var selectPlayer: (Bool, Double, Bool) -> Void
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.usesSystem == rhs.usesSystem && lhs.systemAvailable == rhs.systemAvailable
+            && lhs.systemAvailabilityPending == rhs.systemAvailabilityPending
             && lhs.souloAvailable == rhs.souloAvailable
             && lhs.playlist?.selectedID == rhs.playlist?.selectedID
             && lhs.playlist?.episodes == rhs.playlist?.episodes
@@ -493,7 +555,7 @@ struct MediaPlayerMenu: View {
                 choice(ToolText.text("media_player_system"), system: true, enabled: options.systemAvailable)
             }
             .frame(width: 220).padding(.vertical, 6).buttonStyle(.plain)
-            .presentationCompactAdaptation(.popover)
+            .compatiblePopoverAdaptation()
             .onDisappear {
                 guard let pending else { return }
                 self.pending = nil
@@ -511,7 +573,7 @@ struct MediaPlayerMenu: View {
                 }
             }
         }
-        .onChange(of: presented) { _, shown in interactionChanged?(shown) }
+        .onCompatibleChange(of: presented) { _, shown in interactionChanged?(shown) }
         .background(VideoPlaybackWindowReader(context: playbackWindow))
     }
     private func choice(_ title: String, system: Bool, enabled: Bool) -> some View {
@@ -568,9 +630,9 @@ struct FileVideoMenus: View {
                             }.accessibilityIdentifier("media.file.rate.\(value)")
                         }
                     }.padding(.vertical, 6)
-                }.frame(width: 180, height: 280).buttonStyle(.plain).presentationCompactAdaptation(.popover)
+                }.frame(width: 180, height: 280).buttonStyle(.plain).compatiblePopoverAdaptation()
             }
-            .onChange(of: speedPresented) { _, shown in menuInteraction?(shown) }
+            .onCompatibleChange(of: speedPresented) { _, shown in menuInteraction?(shown) }
             Spacer(minLength: 0)
             if let playlist = options?.playlist, playlist.episodes.count > 1 || playlist.sources.count > 1 {
                 Button { showEpisodes?(); interaction?() } label: {
@@ -707,12 +769,17 @@ struct MatroskaPlayerView: View {
             guard !Task.isCancelled, !leavingPlayback else { return }
             playback.open(url, resourceLease: resourceLease, persistPosition: persistPosition,
                                      startAt: startAt, autoplay: autoplay, requestContext: requestContext, title: title,
-                                     originalURL: options?.shareURL, systemAvailable: options?.systemAvailable ?? true) }
+                                     originalURL: options?.shareURL, systemAvailable: options?.systemAvailable ?? true,
+                                     systemAvailabilityPending: options?.systemAvailabilityPending ?? false) }
+        .onCompatibleChange(of: options, initial: true) { _, options in
+            guard options?.systemAvailabilityPending != true else { return }
+            MediaSession.shared.updateSouloSystemAvailability(options?.systemAvailable ?? true, for: playback)
+        }
         .onAppear {
             if startsFullscreen, !startedFullscreen { startedFullscreen = true; expanded = true }
             controls.show()
         }
-        .onChange(of: expanded) { _, full in if full { startedFullscreen = true } }
+        .onCompatibleChange(of: expanded) { _, full in if full { startedFullscreen = true } }
         .onDisappear { playback.endTemporaryRate() }
         .sheet(isPresented: $settingsVisible) {
             NavigationStack { VideoSettingsView().toolbar {
@@ -727,11 +794,15 @@ private struct MatroskaVideoContent: View {
     let url: URL
     var resourceLease: AnyObject?
     var onTap: (() -> Void)?
+    private var tapAction: (() -> Void)? {
+        guard let onTap else { return nil }
+        return {
+            guard playback.gestureFeedback == nil else { return }
+            onTap()
+        }
+    }
     var body: some View {
-        MatroskaSurface(playback: playback, onTap: {
-                guard playback.gestureFeedback == nil else { return }
-                onTap?()
-            })
+        MatroskaSurface(playback: playback, onTap: tapAction)
             .contentShape(Rectangle())
             .overlay {
                 if !playback.hasVideo {
@@ -740,27 +811,8 @@ private struct MatroskaVideoContent: View {
                 }
             }
             .overlay {
-                if let error = playback.error {
-                    VStack(spacing: 16) {
-                        Text(error).foregroundStyle(.white).multilineTextAlignment(.center)
-                        Button(ToolText.text("retry")) { playback.retry() }
-                    }.padding(24)
-                } else if playback.buffering && playback.gestureFeedback == nil {
-                    ProgressView().tint(.white).controlSize(.large)
-                        .padding(18).background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 14))
-                        .accessibilityIdentifier("media.mkv.buffering")
-                        .allowsHitTesting(false)
-                }
-            }
-            .overlay {
                 if let feedback = playback.gestureFeedback {
-                    Label(feedback.text, systemImage: feedback.symbol)
-                        .font(.system(size: 16, weight: .semibold)).monospacedDigit()
-                        .foregroundStyle(.white.opacity(0.92))
-                        .padding(.horizontal, 18).padding(.vertical, 12)
-                        .background(.black.opacity(0.65), in: Capsule())
-                        .accessibilityIdentifier("media.mkv.gesture.feedback")
-                        .allowsHitTesting(false)
+                    VideoGestureFeedbackView(feedback: feedback, identifier: "media.mkv.gesture.feedback")
                 }
             }
     }
@@ -773,9 +825,15 @@ private struct MatroskaControls: View {
     var expand: (() -> Void)?
     var interactionChanged: ((Bool) -> Void)?
     var body: some View {
-        VideoPlaybackControls(elapsed: playback.elapsed, duration: playback.duration, rate: playback.rate,
-            playing: playback.playing, identifier: "media.mkv", options: options, showEpisodes: showEpisodes,
-            expand: expand, interactionChanged: interactionChanged, seek: playback.seek, setRate: playback.setRate)
+        VStack(spacing: 12) {
+            VideoPlaybackControls(elapsed: playback.seekPreview ?? playback.elapsed, duration: playback.duration, rate: playback.rate,
+                playing: playback.playing, identifier: "media.mkv", options: options, showEpisodes: showEpisodes,
+                expand: expand, interactionChanged: interactionChanged, seek: playback.seek, setRate: playback.setRate)
+            if let error = playback.error ?? playback.startupWarning {
+                VideoPlaybackStatus(message: error, identifier: "media.mkv.status", retry: playback.retry)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 }
 
@@ -786,15 +844,16 @@ private struct MatroskaFullscreenContent: View {
     var title: String?
     var options: FileVideoOptions?
     let close: () -> Void
+    let exitFullscreen: () -> Void
     @StateObject private var controls = VideoControlsVisibility()
 
     var body: some View {
         MatroskaVideoContent(playback: playback, url: url, resourceLease: resourceLease)
             .modifier(VideoFullscreenChrome(visibility: controls, title: title ?? url.lastPathComponent,
-                elapsed: playback.elapsed, duration: playback.duration, rate: playback.rate,
-                playing: playback.playing, buffering: playback.buffering, error: playback.error,
-                identifier: "media.mkv", closeIdentifier: "media.mkv.fullscreen.close", options: options,
-                close: close, toggle: playback.togglePlayback, seek: playback.seek, setRate: playback.setRate,
+                elapsed: playback.seekPreview ?? playback.elapsed, duration: playback.duration, rate: playback.rate,
+                playing: playback.playing, buffering: playback.buffering, error: playback.error ?? playback.startupWarning,
+                identifier: "media.mkv", closeIdentifier: "media.mkv.fullscreen.close", options: options, retry: playback.retry,
+                close: close, exitFullscreen: exitFullscreen, toggle: playback.togglePlayback, seek: playback.seek, setRate: playback.setRate,
                 holdBegan: playback.beginTemporaryRate, holdEnded: playback.endTemporaryRate) { EmptyView() })
             .modifier(VideoOrientationErrorAlert(message: $playback.orientationError))
     }
@@ -865,8 +924,8 @@ private struct MatroskaFullscreenPresenter: UIViewControllerRepresentable {
             let size = playback.player?.videoSize ?? .zero
             handingOff = false
             sharedHost = SharedVideoFullscreenHost.present(owner: ownerID, in: window, content: AnyView(content(url: url)),
-                identifier: "media.mkv.fullscreen.player", landscape: size.width > size.height || scene.interfaceOrientation.isLandscape,
-                onClose: { [weak self] in self?.finish() })
+                identifier: "media.mkv.fullscreen.player", landscape: VideoOrientation.fullscreenLandscape(video: size.width > size.height, scene: scene),
+                onClose: { [weak self] reason in self?.finish(reason: reason) })
             if sharedHost == nil {
                 if presentationRetry == nil {
                     presentationRetry = Task { @MainActor [weak self, weak host] in
@@ -911,7 +970,9 @@ private struct MatroskaFullscreenPresenter: UIViewControllerRepresentable {
             }
             return MatroskaFullscreenContent(playback: playback, url: url, resourceLease: resourceLease,
                                             title: title, options: actions, close: { [weak self] in
-                guard let self else { return }; self.sharedHost?.dismiss(owner: self.ownerID)
+                guard let self else { return }; self.sharedHost?.dismiss(owner: self.ownerID, reason: .closePlayback)
+            }, exitFullscreen: { [weak self] in
+                guard let self else { return }; self.sharedHost?.dismiss(owner: self.ownerID, reason: .exitFullscreen)
             })
         }
         func dismiss() {
@@ -924,11 +985,11 @@ private struct MatroskaFullscreenPresenter: UIViewControllerRepresentable {
             selection?.wrappedValue = false
             action()
         }
-        private func finish() {
+        private func finish(reason: VideoFullscreenDismissal) {
             sharedHost = nil; presentedURL = nil; presentedOptions = nil; handingOff = false
             selection?.wrappedValue = false
             options?.fullscreenChanged?(false)
-            options?.closePlayback?()
+            if reason == .closePlayback { options?.closePlayback?() }
         }
         func teardown() {
             presentationRetry?.cancel(); presentationRetry = nil
@@ -941,6 +1002,7 @@ private struct MatroskaFullscreenPresenter: UIViewControllerRepresentable {
 
 /// File and torrent video share the default player, episode menu and safe native fallback.
 struct FileMediaPlaybackView: View {
+    @Environment(\.dismiss) private var dismiss
     let url: URL
     var path: String?
     var resourceLease: AnyObject?
@@ -1004,6 +1066,7 @@ struct FileMediaPlaybackView: View {
             airPlayActive = false
             selectedSystemPlayer = system
         }
+        result.systemAvailabilityPending = currentURL.isFileURL && nativeAvailable == nil
         result.requestAirPlay = { time, _ in
             handoff = (time, native.isPlaybackRequested)
             airPlayRequested = true
@@ -1022,10 +1085,11 @@ struct FileMediaPlaybackView: View {
         result.fullscreenChanged = { preserveFullscreen = $0 }
         result.airPlayPresentation = $airPlayRequested
         result.shareURL = currentURL
+        result.closePlayback = { dismiss() }
         return result
     }
     var body: some View {
-        Group {
+        ZStack {
             if ((prefersSystem || airPlayActive) && nativeAvailable == nil)
                 || (["movpkg", "hls", "m3u8", OfflineHLSReference.fileExtension].contains(currentURL.pathExtension.lowercased()) && resolvedURL != currentURL) {
                 ProgressView(ToolText.text("loading"))
@@ -1037,7 +1101,7 @@ struct FileMediaPlaybackView: View {
                         guard native.soulo != nil || native.url != currentURL || native.player.currentItem == nil else { return }
                         let source = DownloadPlaybackSource(asset: asset ?? AVURLAsset(url: currentURL), pageURL: nil,
                                                             webView: nil, persistPosition: persistPosition)
-                        source.resourceLease = resourceLease
+                        source.resourceLease = preparedSource ?? resourceLease
                         native.open(url: currentURL, title: (currentPath as NSString).lastPathComponent,
                                     asset: source.asset, persistPosition: persistPosition, downloadSource: source,
                                     startAt: handoff?.time, autoplay: handoff?.playing ?? true)
@@ -1107,7 +1171,8 @@ struct FileMediaPlaybackView: View {
             let source = DownloadPlaybackSource(asset: asset, pageURL: nil, webView: nil, persistPosition: persistPosition)
             source.resourceLease = resourceLease
             let soulo = try await SouloMediaPlaybackSource.prepare(native: source, originalURL: url)
-            return (asset, true, soulo)
+            let system = try? await soulo.systemAsset()
+            return (system, system != nil, soulo)
         }
         let candidate = AVURLAsset(url: url)
         let extended = try await TorrentFileDecoder.prefersExtended(candidate, path: path)
@@ -1180,7 +1245,7 @@ struct TorrentFilePlaybackView: View {
                 FileMediaPlaybackView(url: url, path: currentFile.path, resourceLease: lease,
                                       persistPosition: false, playlist: playlist)
             } else if let error {
-                ContentUnavailableView(ToolText.text("media_unavailable"), systemImage: "play.slash", description: Text(error))
+                CompatibleUnavailableView(ToolText.text("media_unavailable"), systemImage: "play.slash", description: Text(error))
             } else { ProgressView(ToolText.text("loading")) }
         }
         .navigationTitle((currentFile.path as NSString).lastPathComponent)
@@ -1230,6 +1295,63 @@ enum TorrentFileDecoder {
             }
         } onCancel: {
             asset.cancelLoading()
+        }
+    }
+}
+
+
+/// VLCKit's stop is asynchronous. Its drawable setter and deallocator synchronise
+/// with the decoder queue, so release them after Stopped and away from the UI thread.
+private final class RetiredVLCBox: @unchecked Sendable {
+    var player: VLCMediaPlayer?
+    init(_ player: VLCMediaPlayer) { self.player = player }
+    func dispose() { player?.drawable = nil; player = nil }
+}
+@MainActor private final class VLCPlaybackRetirement: NSObject, VLCMediaPlayerDelegate {
+    private static var pending: [UUID: VLCPlaybackRetirement] = [:]
+    private let id = UUID()
+    private let box: RetiredVLCBox
+    private var drawable: UIView?
+    private var lease: AnyObject?
+    private var watch: Task<Void, Never>?
+    private var disposing = false
+    private init(_ player: VLCMediaPlayer, drawable: UIView, lease: AnyObject?) {
+        box = RetiredVLCBox(player); self.drawable = drawable; self.lease = lease
+    }
+    static func retire(_ player: VLCMediaPlayer, drawable: UIView, lease: AnyObject?, wasStarted: Bool, hadRunningState: Bool) {
+        let retirement = VLCPlaybackRetirement(player, drawable: drawable, lease: lease)
+        pending[retirement.id] = retirement
+        player.delegate = retirement
+        let stopped = !wasStarted || (hadRunningState && player.state == .stopped)
+        player.stop()
+        if stopped { retirement.finish(); return }
+        retirement.watch = Task { @MainActor [weak retirement] in
+            var stoppedSamples = 0
+            while !Task.isCancelled, let retirement, let player = retirement.box.player {
+                do { try await Task.sleep(for: .milliseconds(100)) } catch { return }
+                stoppedSamples = player.state == .stopped ? stoppedSamples + 1 : 0
+                if stoppedSamples >= 5 { retirement.finish(); return }
+            }
+        }
+    }
+    nonisolated func mediaPlayerStateChanged(_ notification: Notification) {
+        guard let player = notification.object as? VLCMediaPlayer, player.state == .stopped else { return }
+        Task { @MainActor [weak self] in self?.finish() }
+    }
+    private func finish() {
+        guard !disposing else { return }; disposing = true
+        watch?.cancel(); watch = nil
+        let box = box, id = id
+        // Let the SDK's main-queue notification release its reference first.
+        DispatchQueue.main.async { [self] in
+            box.player?.delegate = nil
+            DispatchQueue.global(qos: .utility).async {
+                box.dispose()
+                Task { @MainActor in
+                    self.drawable = nil; self.lease = nil
+                    Self.pending.removeValue(forKey: id)
+                }
+            }
         }
     }
 }

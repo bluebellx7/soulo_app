@@ -1,6 +1,6 @@
 import XCTest
 import UIKit
-import SwiftData
+import CoreData
 import CoreImage
 import PDFKit
 import WebKit
@@ -35,6 +35,7 @@ final class WebViewModelTests: XCTestCase {
         }
         XCTAssertNotNil(SearchPlatformURLInput.searchTemplate("http://localhost:8080/?q=%@"))
         XCTAssertNotNil(SearchPlatformURLInput.searchTemplate("https://例子.中国/?q=%@"))
+        XCTAssertNotNil("dentist".asSearchURL(template: "https://例子.中国/?q=%@"))
     }
 
     func testTranslationSkipsEditableRegionsAndPreservesLivePageChanges() async throws {
@@ -384,10 +385,10 @@ final class WebViewModelTests: XCTestCase {
         XCTAssertTrue(light.register(magnitude: 0.47, at: 1.12))
 
         var strong = ShakeMotionClassifier(intensity: .strong)
-        XCTAssertFalse(strong.register(magnitude: 0.90, at: 1.00))
-        XCTAssertFalse(strong.register(magnitude: 0.95, at: 1.12))
-        XCTAssertFalse(strong.register(magnitude: 1.05, at: 2.00))
-        XCTAssertTrue(strong.register(magnitude: 1.08, at: 2.12))
+        XCTAssertFalse(strong.register(magnitude: 0.70, at: 1.00))
+        XCTAssertFalse(strong.register(magnitude: 0.75, at: 1.12))
+        XCTAssertFalse(strong.register(magnitude: 0.85, at: 2.00))
+        XCTAssertTrue(strong.register(magnitude: 0.88, at: 2.12))
     }
 
     func testPhoneAddressEditorUsesCompactDetent() {
@@ -567,7 +568,7 @@ final class WebViewModelTests: XCTestCase {
             context: context
         )
 
-        let entries = try context.fetch(FetchDescriptor<SearchHistoryItem>())
+        let entries = try context.fetch(SearchHistoryRecord.request())
         XCTAssertEqual(entries.count, 1)
         XCTAssertEqual(entries.first?.keyword, "New title")
         XCTAssertEqual(entries.first?.visitedURLString, "https://example.com/article?aweme_id=42")
@@ -577,16 +578,16 @@ final class WebViewModelTests: XCTestCase {
     func testBrowsingHistoryKeepsOnlyLastThreeDaysWithoutDeletingSearchTerms() throws {
         let context = try makeHistoryContext()
         let now = Date(timeIntervalSince1970: 1_000_000)
-        let search = SearchHistoryItem(
+        let search = SearchHistoryRecord(
             keyword: "永久保留的搜索词",
             timestamp: now.addingTimeInterval(-10 * 24 * 60 * 60)
         )
-        let expiredVisit = SearchHistoryItem(
+        let expiredVisit = SearchHistoryRecord(
             keyword: "Old page",
             timestamp: now.addingTimeInterval(-SearchHistoryService.browsingHistoryLifetime - 1),
             visitedURLString: "https://old.example.com"
         )
-        let recentVisit = SearchHistoryItem(
+        let recentVisit = SearchHistoryRecord(
             keyword: "Recent page",
             timestamp: now.addingTimeInterval(-SearchHistoryService.browsingHistoryLifetime + 1),
             visitedURLString: "https://recent.example.com"
@@ -595,23 +596,25 @@ final class WebViewModelTests: XCTestCase {
         context.insert(expiredVisit)
         context.insert(recentVisit)
         try context.save()
+        let expiredURL = expiredVisit.visitedURLString
+        let recentURL = recentVisit.visitedURLString
 
         SearchHistoryService.purgeExpiredBrowsingHistory(
             referenceDate: now,
             context: context
         )
 
-        let entries = try context.fetch(FetchDescriptor<SearchHistoryItem>())
+        let entries = try context.fetch(SearchHistoryRecord.request())
         XCTAssertTrue(entries.contains { $0.keyword == search.keyword })
-        XCTAssertFalse(entries.contains { $0.visitedURLString == expiredVisit.visitedURLString })
-        XCTAssertTrue(entries.contains { $0.visitedURLString == recentVisit.visitedURLString })
+        XCTAssertFalse(entries.contains { $0.visitedURLString == expiredURL })
+        XCTAssertTrue(entries.contains { $0.visitedURLString == recentURL })
     }
 
     func testClearingBrowserCacheAlsoRemovesVisitsAndPreservesSearchTerms() async throws {
         let context = try makeHistoryContext()
-        context.insert(SearchHistoryItem(keyword: "search term"))
+        context.insert(SearchHistoryRecord(keyword: "search term"))
         context.insert(
-            SearchHistoryItem(
+            SearchHistoryRecord(
                 keyword: "Visited page",
                 visitedURLString: "https://example.com/page"
             )
@@ -620,7 +623,7 @@ final class WebViewModelTests: XCTestCase {
 
         await BrowserCacheService.clear(tabManager: nil, historyContext: context)
 
-        let entries = try context.fetch(FetchDescriptor<SearchHistoryItem>())
+        let entries = try context.fetch(SearchHistoryRecord.request())
         XCTAssertEqual(entries.map(\.keyword), ["search term"])
         XCTAssertNil(entries.first?.visitedURLString)
     }
@@ -661,13 +664,10 @@ final class WebViewModelTests: XCTestCase {
         XCTAssertEqual(model.downloadFileName, "")
     }
 
-    private func makeHistoryContext() throws -> ModelContext {
-        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: SearchHistoryItem.self,
-            configurations: configuration
-        )
-        return ModelContext(container)
+    private func makeHistoryContext() throws -> NSManagedObjectContext {
+
+        let container = try LibraryStore(inMemory: true)
+        return container.makeContext()
     }
 
     func testBrowserChromeUsesStableBottomToolbarOverlayHeight() {
@@ -1008,7 +1008,7 @@ final class WebViewModelTests: XCTestCase {
 
     func testPrivateSearchDoesNotStoreHistoryOrUsageButKeepsExistingRecentsVisible() throws {
         let context = try makeHistoryContext()
-        context.insert(SearchHistoryItem(keyword: "existing search"))
+        context.insert(SearchHistoryRecord(keyword: "existing search"))
         try context.save()
 
         let model = SearchViewModel()
@@ -1019,7 +1019,7 @@ final class WebViewModelTests: XCTestCase {
         model.performSearch(context: context)
         model.loadRecentSearches(context: context)
 
-        let items = try context.fetch(FetchDescriptor<SearchHistoryItem>())
+        let items = try context.fetch(SearchHistoryRecord.request())
         XCTAssertEqual(items.map(\.keyword), ["existing search"])
         XCTAssertEqual(model.selectedPlatform?.usageCount, usageBefore)
         XCTAssertEqual(model.recentSearches, ["existing search"])
@@ -1378,7 +1378,7 @@ final class WebViewModelTests: XCTestCase {
     }
 
     func testGoogleTranslationURLMapsSimplifiedChineseAndPreservesPageURL() throws {
-        let pageURL = try XCTUnwrap(URL(string: "https://example.com/article?q=hello world"))
+        let pageURL = try XCTUnwrap(URL(string: "https://example.com/article?q=hello%20world"))
         let url = try XCTUnwrap(googleTranslationURL(pageURL: pageURL, target: "zh-Hans"))
         let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
         let values = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).compactMap { item in

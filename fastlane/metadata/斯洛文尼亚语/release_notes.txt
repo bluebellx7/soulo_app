@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Odpravljena je težava, pri kateri je odpiranje zaznamka ali vnosa iz zgodovine lahko zamenjalo obstoječi zavihek.
-• Izboljšani zagon, nalaganje strani in uporaba začetnega zaslona.
-• Izboljšani celozaslonski kontrolniki, obračanje zaslona in stanje predvajanja ob preklopu aplikacij.
-• Izboljšani obnovitev zaprtih zavihkov, predogledi datotek in podrobnosti vmesnika.
+• Ločeni ozadji za svetli in temni videz ter stikalo za plast čez sliko.
+• Izboljšane barve domače strani; predogled ozadja sledi temi aplikacije.
+• Predoglejte, delite in shranite ozadja v Fotografije.
+• Nastavitve zgornjih zavihkov z novim zavihkom in izbirnim skrivanjem vrstice platform po navigaciji.

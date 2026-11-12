@@ -9,7 +9,7 @@ struct GroupManagementView: View {
     var body: some View {
         List {
             if groups.isEmpty {
-                ContentUnavailableView(
+                CompatibleUnavailableView(
                     LanguageManager.shared.localizedString("no_groups"),
                     systemImage: "folder.badge.plus",
                     description: Text(LanguageManager.shared.localizedString("no_groups_desc"))

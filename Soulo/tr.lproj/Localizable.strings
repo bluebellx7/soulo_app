@@ -609,27 +609,27 @@
 "extensions_reload_note" = "Açık sayfalar, bir uzantı veya komut dosyası değiştirildikten sonra yeni durumun geçerli olması için yeniden yüklenir.";
 "web_extensions" = "Web Uzantıları";
 "userscripts" = "Komut Dosyaları ve Uzantılar";
-"userscripts_installed" = "Senaryolarım";
-"userscripts_install" = "Komut Dosyalarını Yükle";
+"userscripts_installed" = "Yüklü";
+"userscripts_install" = "Ekle";
 "userscripts_empty" = "UserScript yok";
 "userscripts_empty_desc" = "Burada görmek için bir .user.js dosyası yükleyin veya bir komut dosyası oluşturun.";
 "userscripts_reload_note" = "Açık sayfalar, bir komut dosyası yüklendikten, düzenlendikten, etkinleştirildikten, devre dışı bırakıldıktan veya kaldırıldıktan sonra yeniden yüklenir.";
 "userscript_experimental_badge" = "Uyumluluk";
 "userscript_experimental_title" = "UserScript uyumluluğu";
-"userscript_experimental_desc" = "Site kurallarını, belge başlangıç/bitişini, kapsamlı GM depolama ve sayfa API'lerini, komut dosyası komutlarını, bildirimleri, sekmeleri, indirmeleri, çerezleri, kaynakları ve izin kapsamlı istekleri destekler. Yüklemeden önce her komut dosyasını inceleyin.";
+"userscript_experimental_desc" = "Kullanıcı betikleri eşleşen siteleri okuyabilir veya değiştirebilir ve izin verilen API’leri kullanabilir. Uyumluluk betiğe göre değişir. Yalnızca güvendiğiniz betikleri yükleyin.";
 "extension_choose_file" = "Dosya veya klasör seç…";
 "extension_installing" = "Uzantı kontrol ediliyor ve yükleniyor…";
 "extension_install_failed" = "Uzantı Yüklenemedi";
 "extension_permissions_summary" = "%d izinleri · %d web sitesi kuralları";
 "extension_untitled" = "Başlıksız Uzantı";
-"web_extension_install_footer" = "Geçerli Soulo sekmesinde açmak için kaynak satırında herhangi bir yere dokunun. Soulo CRX, XPI, ZIP ve desteklenen mağaza yükleme işlemlerini tanır ve yüklemeden önce sorar. Yalnızca masaüstüne yönelik bazı API'ler kullanılamayabilir.";
+"web_extension_install_footer" = "Uyumlu uzantıları mağaza bağlantısından yükleyin veya CRX, XPI, ZIP ya da uzantı klasörü içe aktarın. İzinleri ve uyumluluğu kontrol edin; bazı masaüstü özellikleri kullanılamaz.";
 "web_extension_install_store_link" = "Mağaza Bağlantısından yükleyin…";
 "web_extension_browse_sources" = "Uzantı Mağazalarına Göz Atın";
 "web_extension_browse_sources_footer" = "Mağaza Al düğmeleri yalnızca kendi masaüstü tarayıcılarını destekler. Bir uzantı ayrıntı sayfası bağlantısını kopyalayın ve ardından Soulo'deki Mağaza Bağlantısından Yükle'yi kullanın.";
 "web_extension_store_install_title" = "Mağaza Uzantısı Yükleme";
 "extension_page_banner_title" = "Soulo ile yükleyin";
-"extension_page_banner_desc" = "Soulo bu uzantıyı doğrudan yükleyebilir.";
-"web_extension_store_install_desc" = "Bir Chrome Web Mağazası, Microsoft Edge Eklentileri veya Firefox Eklentileri ayrıntı sayfası bağlantısını yapıştırın. Soulo paketi kendisi indirdiğinden mağazanın uyumsuz Al düğmesi kullanılmaz.";
+"extension_page_banner_desc" = "Yüklemeden önce uyumluluğu ve izinleri kontrol edin.";
+"web_extension_store_install_desc" = "Bir Chrome, Edge veya Firefox uzantısının ayrıntı sayfası bağlantısını yapıştırın ve yüklemeyi onaylamadan önce uyumluluğu ve izinleri kontrol edin.";
 "web_extension_store_link_placeholder" = "Uzantı sayfası bağlantısı veya Chrome uzantı kimliği";
 "web_extension_store_invalid_link" = "Chrome, Edge veya Firefox'tan bir uzantı ayrıntı sayfası bağlantısını, bir Chrome uzantı kimliğini ya da doğrudan CRX, XPI ya da ZIP bağlantısını yapıştırın.";
 "web_extension_store_https_required" = "Uzantı paketleri güvenli bir HTTPS bağlantısı kullanmalıdır.";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "Medya akışı geçersiz veya yanlış sıralanmış bir bölüm döndürdü.";
 "resource_stream_download_missing_track" = "İndirilen akış, oynatılabilir video ve ses parçaları içermiyordu.";
 "resource_stream_download_export_failed" = "Soulo indirilen video ve sesi birleştiremedi.";
-"resource_stream_playback_download_first" = "Bu korumalı akış geçici URL üzerinden önizlenemez. Yerel dosyayı oynatmak için önce indirin.";
+"resource_stream_playback_download_first" = "Bu akış şu anda doğrudan önizlenemiyor.";
 "platform_invalid_web_url" = "http:// veya https:// ile başlayan geçerli bir web adresi girin.";
 
 "library_history_tab" = "Geçmiş";
@@ -889,8 +889,7 @@
 "extension_review_access" = "Bu uzantının erişebileceği izinleri ve web sitelerini seçin.";
 "extension_limit_commands" = "Uzantı klavye kısayolları iOS’te kullanılamaz.";
 "extension_limit_notifications" = "Bildirimler gösterilebilir, ancak tıklama ve kapatma olayları desteklenmez.";
-"extension_limit_offscreen" = "Ekran dışı belgeler yalnızca ses oynatmayı destekler.";
-
+"extension_limit_offscreen" = "Ekran dışı belgeler iOS sınırlamalarına tabidir; bazı özellikler kullanılamayabilir.";
 "review_support_message" = "Soulo’yu desteklediğiniz için teşekkürler. Yorumlarınız gelişmemize yardımcı oluyor.";
 "review_open_app_store" = "App Store'da değerlendirin";
 

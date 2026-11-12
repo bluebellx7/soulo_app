@@ -23,7 +23,7 @@ extension String {
 
     func asSearchURL(template: String) -> URL? {
         let urlString = template.replacingOccurrences(of: "%@", with: percentEncoded)
-        return URL(string: urlString)
+        return URL(string: urlString) ?? URLComponents(string: urlString)?.url
     }
 
     var asURL: URL? {

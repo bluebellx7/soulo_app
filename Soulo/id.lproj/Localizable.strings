@@ -609,27 +609,27 @@
 "extensions_reload_note" = "Halaman terbuka dimuat ulang setelah ekstensi atau skrip diubah sehingga status baru diterapkan.";
 "web_extensions" = "Ekstensi Web";
 "userscripts" = "Skrip & Ekstensi";
-"userscripts_installed" = "Skrip saya";
-"userscripts_install" = "Instal Skrip";
+"userscripts_installed" = "Terpasang";
+"userscripts_install" = "Tambah";
 "userscripts_empty" = "Tidak ada UserScripts";
 "userscripts_empty_desc" = "Instal file .user.js atau buat skrip untuk melihatnya di sini.";
 "userscripts_reload_note" = "Halaman terbuka dimuat ulang setelah skrip diinstal, diedit, diaktifkan, dinonaktifkan, atau dihapus.";
 "userscript_experimental_badge" = "Kompatibilitas";
 "userscript_experimental_title" = "UserScript kompatibilitas";
-"userscript_experimental_desc" = "Mendukung aturan situs, awal/akhir dokumen, penyimpanan GM yang luas dan API halaman, perintah skrip, notifikasi, tab, unduhan, cookie, sumber daya, dan permintaan dengan cakupan izin. Tinjau setiap skrip sebelum menginstal.";
+"userscript_experimental_desc" = "Skrip pengguna dapat membaca atau mengubah situs yang cocok dan memakai API yang diizinkan. Kompatibilitas berbeda per skrip. Pasang hanya skrip yang Anda percaya.";
 "extension_choose_file" = "Pilih File atau Folder…";
 "extension_installing" = "Memeriksa dan memasang ekstensi…";
 "extension_install_failed" = "Ekstensi Tidak Dapat Dipasang";
 "extension_permissions_summary" = "%d izin · %d aturan situs web";
 "extension_untitled" = "Ekstensi Tanpa Judul";
-"web_extension_install_footer" = "Ketuk di mana saja pada baris sumber untuk membukanya di tab Soulo saat ini. Soulo mengenali CRX, XPI, ZIP dan tindakan pemasangan toko yang didukung, lalu bertanya sebelum memasang. Beberapa API khusus desktop mungkin tidak tersedia.";
+"web_extension_install_footer" = "Pasang ekstensi kompatibel dari tautan toko atau impor CRX, XPI, ZIP, atau folder ekstensi. Periksa izin dan kompatibilitas; beberapa fitur desktop tidak tersedia.";
 "web_extension_install_store_link" = "Instal dari Tautan Toko…";
 "web_extension_browse_sources" = "Telusuri Toko Ekstensi";
 "web_extension_browse_sources_footer" = "Tombol Store Get hanya mendukung browser desktopnya sendiri. Salin tautan halaman detail ekstensi, lalu gunakan Tautan Instal dari Toko di Soulo.";
 "web_extension_store_install_title" = "Instal Ekstensi Toko";
 "extension_page_banner_title" = "Instal dengan Soulo";
-"extension_page_banner_desc" = "Soulo dapat menginstal ekstensi ini secara langsung.";
-"web_extension_store_install_desc" = "Tempel tautan halaman detail Toko Web Chrome, Pengaya Microsoft Edge, atau Pengaya Firefox. Soulo mengunduh paket itu sendiri, sehingga tombol Dapatkan dari toko yang tidak kompatibel tidak digunakan.";
+"extension_page_banner_desc" = "Periksa kompatibilitas dan izin sebelum memasang.";
+"web_extension_store_install_desc" = "Tempel tautan halaman detail ekstensi Chrome, Edge, atau Firefox, lalu periksa kompatibilitas dan izin sebelum mengonfirmasi pemasangan.";
 "web_extension_store_link_placeholder" = "Tautan laman ekstensi atau ID ekstensi Chrome";
 "web_extension_store_invalid_link" = "Tempelkan tautan laman detail ekstensi dari Chrome, Edge, atau Firefox, ID ekstensi Chrome, atau tautan CRX, XPI, atau ZIP langsung.";
 "web_extension_store_https_required" = "Paket ekstensi harus menggunakan tautan HTTPS yang aman.";
@@ -846,7 +846,7 @@
 "resource_stream_download_invalid_chunk" = "Streaming media mengembalikan segmen yang tidak valid atau tidak berurutan.";
 "resource_stream_download_missing_track" = "Streaming yang diunduh tidak berisi trek video dan audio yang dapat diputar.";
 "resource_stream_download_export_failed" = "Soulo tidak dapat menggabungkan video dan audio yang diunduh.";
-"resource_stream_playback_download_first" = "Streaming terlindungi ini tidak dapat dipratinjau dari URL sementaranya. Unduh terlebih dahulu untuk memutar file lokal.";
+"resource_stream_playback_download_first" = "Streaming ini belum dapat dipratinjau secara langsung.";
 "platform_invalid_web_url" = "Masukkan alamat web valid yang diawali dengan http:// atau https://.";
 
 "library_history_tab" = "Riwayat";
@@ -889,8 +889,7 @@
 "extension_review_access" = "Pilih izin dan situs yang dapat diakses ekstensi ini.";
 "extension_limit_commands" = "Pintasan keyboard ekstensi tidak tersedia di iOS.";
 "extension_limit_notifications" = "Notifikasi dapat ditampilkan, tetapi peristiwa klik dan tutup tidak didukung.";
-"extension_limit_offscreen" = "Dokumen di luar layar hanya mendukung pemutaran audio.";
-
+"extension_limit_offscreen" = "Dokumen di luar layar mengikuti batasan iOS; beberapa fitur mungkin tidak tersedia.";
 "review_support_message" = "Terima kasih telah mendukung Soulo. Ulasan Anda membantu kami terus berkembang.";
 "review_open_app_store" = "Tulis ulasan di App Store";
 

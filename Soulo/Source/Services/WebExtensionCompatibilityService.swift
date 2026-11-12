@@ -72,6 +72,7 @@ enum WebExtensionPackagePreparer {
             if let serviceWorker = background["service_worker"] as? String {
                 let isModule = (background["type"] as? String)?.lowercased() == "module"
                 let workerURL = try originalWorkerURL(serviceWorker, isModule: isModule, in: resourceDirectory)
+                if !isModule { try WebExtensionTampermonkeyAdapter.prepare(worker: workerURL, root: resourceDirectory, manifest: &manifest) }
                 let root = resourceDirectory.resolvingSymlinksInPath().standardizedFileURL
                 let relativeDirectory = String(workerURL.deletingLastPathComponent().path.dropFirst(root.path.count))
                     .split(separator: "/").map(String.init)
@@ -257,6 +258,7 @@ enum WebExtensionPackagePreparer {
         return target[key] || value;
       };
       const host = 'com.dkluge.Soulo.WebExtensionCompatibility';
+      \#(WebExtensionTampermonkeyAdapter.javaScript)
       const event = () => ({
         addListener() {}, removeListener() {}, hasListener() { return false; },
         hasListeners() { return false; }
@@ -298,7 +300,7 @@ enum WebExtensionPackagePreparer {
         };
         try {
           if (typeof chrome.runtime.sendNativeMessage !== 'function') {
-            done(null);
+            failed(new Error('The native extension compatibility host is unavailable.'));
           } else {
             const result = chrome.runtime.sendNativeMessage(host, payload, done);
             if (result && typeof result.then === 'function') result.then(done, failed);
@@ -306,6 +308,22 @@ enum WebExtensionPackagePreparer {
         } catch (error) { failed(error); }
         return typeof callback === 'function' ? undefined : promise;
       };
+      // WebKit can report install again when a context is re-created. Preserve
+      // the first install and real version updates, without re-quarantining an
+      // existing script collection each time the user enables the extension.
+      if (!root.__souloAddInstallationListener) {
+        const listeners=new Set();let registered=false;
+        Object.defineProperty(root,'__souloAddInstallationListener',{value:function(listener) {
+          listeners.add(listener);
+          if(registered)return;registered=true;
+          chrome.runtime.onInstalled.addListener(function(details) {
+            const dispatch=event=>{for(const listener of listeners){try{listener(event);}catch(error){console.error(error);}}};
+            native({souloCompatibility:1,api:'lifecycle',operation:'installation',details}).then(result=>{
+              if(!result?.skip)dispatch(result?.details||details);
+            },error=>{console.error(error);dispatch(details);});
+          });
+        }});
+      }
 
       const notifications = chrome.notifications || {};
       setIfMissing(notifications, 'onClicked', event());
@@ -363,19 +381,41 @@ enum WebExtensionPackagePreparer {
 
       let offscreenOpen = false;
       const offscreen = chrome.offscreen || {};
-      setIfMissing(offscreen, 'Reason', { AUDIO_PLAYBACK: 'AUDIO_PLAYBACK', CLIPBOARD: 'CLIPBOARD',
-        DOM_PARSER: 'DOM_PARSER', LOCAL_STORAGE: 'LOCAL_STORAGE' });
-      if (typeof offscreen.createDocument !== 'function') setIfMissing(offscreen, 'createDocument', function() {
-        offscreenOpen = true; return Promise.resolve();
+      const usesOffscreenCompatibility = typeof offscreen.createDocument !== 'function';
+      setIfMissing(offscreen, 'Reason', Object.fromEntries(['AUDIO_PLAYBACK','CLIPBOARD','DOM_PARSER',
+        'LOCAL_STORAGE','BLOBS','IFRAME_SCRIPTING','DOM_SCRAPING','WORKERS','MATCH_MEDIA','TESTING']
+        .map(value => [value, value])));
+      if (typeof offscreen.createDocument !== 'function') setIfMissing(offscreen, 'createDocument', function(options) {
+        return native({souloCompatibility:1, api:'offscreen', operation:'create', options}, undefined,
+          () => { offscreenOpen = true; });
       });
       if (typeof offscreen.closeDocument !== 'function') setIfMissing(offscreen, 'closeDocument', function() {
-        offscreenOpen = false; return Promise.resolve();
+        return native({souloCompatibility:1, api:'offscreen', operation:'close'}, undefined,
+          () => { offscreenOpen = false; });
       });
       if (typeof offscreen.hasDocument !== 'function') {
-        setIfMissing(offscreen, 'hasDocument', function() { return Promise.resolve(offscreenOpen); });
+        setIfMissing(offscreen, 'hasDocument', function() {
+          return native({souloCompatibility:1, api:'offscreen', operation:'has'}, undefined,
+            value => (offscreenOpen = !!value?.open));
+        });
       }
       setIfMissing(chrome, 'offscreen', offscreen);
       if (root.browser && root.browser !== chrome) setIfMissing(root.browser, 'offscreen', offscreen);
+      if (usesOffscreenCompatibility && !root.__souloOffscreenBinary) {
+        const codec = \#(WebExtensionStructuredMessageCodec.javaScript);
+        Object.defineProperty(root,'__souloOffscreenBinary',{value:async function(message) {
+          const packet=await codec.encode(message);
+          const response=await native({souloCompatibility:1,api:'offscreen',operation:'structuredMessage',packet});
+          return codec.decode(response);
+        }});
+      }
+      setIfMissing(chrome.runtime, 'getContexts', function(filter, callback) {
+        return native({souloCompatibility:1, api:'offscreen', operation:'contexts', filter:filter || {}}, callback,
+          value => value?.contexts || []);
+      });
+      if (root.browser && root.browser !== chrome) {
+        setIfMissing(root.browser.runtime, 'getContexts', chrome.runtime.getContexts);
+      }
 
       // Tomato Clock's MV3 worker cannot currently be kept alive by WebKit on
       // iOS. Keep its public message/storage contract intact in extension
@@ -689,6 +729,31 @@ final class WebExtensionCompatibilityHost {
     static let applicationIdentifier = "com.dkluge.Soulo.WebExtensionCompatibility"
 
     private var audioPlayers: [ObjectIdentifier: AVAudioPlayer] = [:]
+    private var offscreenDocuments: [ObjectIdentifier: WebExtensionOffscreenDocument] = [:]
+    private struct InstallationEvent {
+        let previousVersion: String?
+        let version: String
+        var delivered = false
+    }
+    private var installationEvents: [ObjectIdentifier: InstallationEvent] = [:]
+
+    func prepareInstallation(context: WKWebExtensionContext) {
+        let identity = ObjectIdentifier(context)
+        guard installationEvents[identity] == nil, let version = context.webExtension.version, !version.isEmpty else { return }
+        let key = Self.installationKey(context.uniqueIdentifier)
+        installationEvents[identity] = InstallationEvent(previousVersion: UserDefaults.standard.string(forKey: key), version: version)
+        // Persist the instance load even if WebKit omits/delays its initial event.
+        UserDefaults.standard.set(version, forKey: key)
+    }
+
+    func refreshAccess(_ access: WebExtensionAccess, context: WKWebExtensionContext) {
+        let key = ObjectIdentifier(context)
+        offscreenDocuments[key]?.access = access
+        if !hasPermission("offscreen", context: context, access: access) {
+            offscreenDocuments.removeValue(forKey: key)?.close()
+            audioPlayers.removeValue(forKey: key)?.stop()
+        }
+    }
 
     func handle(
         message: Any,
@@ -703,6 +768,12 @@ final class WebExtensionCompatibilityHost {
               (values["souloCompatibility"] as? Int) == 1,
               let api = values["api"] as? String else { return false }
         switch api {
+        case "offscreen":
+            guard hasPermission("offscreen", context: context, access: access) else {
+                replyHandler(nil, NativeWebExtensionCompatibilityError.missingPermission("offscreen"))
+                return true
+            }
+            handleOffscreen(values, context: context, resourceURL: resourceURL, access: access, replyHandler: replyHandler)
         case "notifications":
             guard hasPermission("notifications", context: context, access: access) else {
                 replyHandler(nil, NativeWebExtensionCompatibilityError.missingPermission("notifications"))
@@ -716,8 +787,29 @@ final class WebExtensionCompatibilityHost {
             }
             handleAudio(values, context: context, resourceURL: resourceURL, replyHandler: replyHandler)
         case "lifecycle":
-            // Accepted for packages prepared by an earlier compatibility wrapper.
-            replyHandler(["success": true], nil)
+            if values["operation"] as? String == "installation" {
+                var details = values["details"] as? [String: Any] ?? [:]
+                guard let version = context.webExtension.version, !version.isEmpty else {
+                    replyHandler(["details": details, "skip": false], nil); return true
+                }
+                prepareInstallation(context: context)
+                let identity = ObjectIdentifier(context)
+                var event = installationEvents[identity]!
+                let previous = event.previousVersion
+                if details["reason"] as? String == "install", event.delivered || previous == version {
+                    replyHandler(["skip": true], nil)
+                } else {
+                    if details["reason"] as? String == "install", let previous {
+                        details["reason"] = "update"; details["previousVersion"] = previous
+                    }
+                    replyHandler(["details": details, "skip": false], nil)
+                }
+                if ["install", "update"].contains(details["reason"] as? String ?? "") { event.delivered = true }
+                installationEvents[identity] = event
+            } else {
+                // Accepted for packages prepared by an earlier wrapper.
+                replyHandler(["success": true], nil)
+            }
         default:
             replyHandler(nil, NativeWebExtensionCompatibilityError.unsupportedAPI)
         }
@@ -735,6 +827,70 @@ final class WebExtensionCompatibilityHost {
         let key = ObjectIdentifier(context)
         audioPlayers[key]?.stop()
         audioPlayers.removeValue(forKey: key)
+        offscreenDocuments.removeValue(forKey: key)?.close()
+        installationEvents.removeValue(forKey: key)
+    }
+
+    private static func installationKey(_ id: String) -> String { "soulo.webextension.installation." + id }
+
+    func forgetInstallation(id: UUID) {
+        UserDefaults.standard.removeObject(forKey: Self.installationKey(id.uuidString))
+    }
+
+    private func handleOffscreen(_ values: [String: Any], context: WKWebExtensionContext, resourceURL: URL?,
+                                 access: WebExtensionAccess?, replyHandler: @escaping (Any?, Error?) -> Void) {
+        let key = ObjectIdentifier(context)
+        switch values["operation"] as? String {
+        case "create":
+            guard offscreenDocuments[key]?.descriptor == nil else {
+                replyHandler(nil, WebExtensionOffscreenDocument.failure("Only one offscreen document may be open.")); return
+            }
+            guard let root = resourceURL, let options = values["options"] as? [String: Any],
+                  let reference = options["url"] as? String, let reasons = options["reasons"] as? [String], !reasons.isEmpty,
+                  let justification = options["justification"] as? String, !justification.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                replyHandler(nil, WebExtensionOffscreenDocument.failure("An offscreen URL, reasons and justification are required.")); return
+            }
+            let supported: Set<String> = ["AUDIO_PLAYBACK", "DOM_PARSER", "LOCAL_STORAGE", "BLOBS", "IFRAME_SCRIPTING", "DOM_SCRAPING", "WORKERS", "MATCH_MEDIA", "TESTING"]
+            guard reasons.allSatisfy(supported.contains) else {
+                replyHandler(nil, WebExtensionOffscreenDocument.failure("The requested offscreen reason is unavailable on iOS.")); return
+            }
+            do {
+                let document = try WebExtensionOffscreenDocument(reference: reference, root: root, context: context, access: access)
+                offscreenDocuments[key] = document
+                document.open(completion: replyHandler)
+            } catch { replyHandler(nil, error) }
+        case "close":
+            guard let document = offscreenDocuments.removeValue(forKey: key), document.descriptor != nil else {
+                replyHandler(nil, WebExtensionOffscreenDocument.failure("There is no open offscreen document.")); return
+            }
+            document.close(); replyHandler(["success": true], nil)
+        case "has": replyHandler(["open": offscreenDocuments[key]?.descriptor != nil], nil)
+        case "structuredMessage":
+            guard let packet = values["packet"], let document = offscreenDocuments[key], document.descriptor != nil,
+                  JSONSerialization.isValidJSONObject(packet),
+                  let size = try? JSONSerialization.data(withJSONObject: packet).count, size <= 32 * 1024 * 1024 else {
+                replyHandler(nil, WebExtensionOffscreenDocument.failure("The offscreen document or message is unavailable.")); return
+            }
+            document.sendStructuredMessage(packet, completion: replyHandler)
+        case "contexts":
+            let filter = values["filter"] as? [String: Any] ?? [:]
+            // WebKit does not expose a complete list of its worker/popup contexts.
+            // This adapter intentionally supports the offscreen query only.
+            guard let types = filter["contextTypes"] as? [String], types == ["OFFSCREEN_DOCUMENT"] else {
+                replyHandler(nil, WebExtensionOffscreenDocument.failure("Context enumeration currently supports OFFSCREEN_DOCUMENT queries.")); return
+            }
+            var descriptors = offscreenDocuments[key]?.descriptor.map { [$0] } ?? []
+            for (filterKey, field) in [("contextIds", "contextId"), ("documentIds", "documentId"), ("documentUrls", "documentUrl"), ("documentOrigins", "documentOrigin"), ("frameIds", "frameId"), ("tabIds", "tabId"), ("windowIds", "windowId")] {
+                if let accepted = filter[filterKey] as? [AnyHashable] {
+                    descriptors = descriptors.filter { descriptor in
+                        (descriptor[field] as? AnyHashable).map(accepted.contains) == true
+                    }
+                }
+            }
+            if filter["incognito"] as? Bool == true { descriptors = [] }
+            replyHandler(["contexts": descriptors], nil)
+        default: replyHandler(nil, NativeWebExtensionCompatibilityError.unsupportedOperation)
+        }
     }
 
     private func handleNotification(

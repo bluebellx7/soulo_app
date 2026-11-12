@@ -174,7 +174,8 @@ struct NewTabPageView: View {
                         }
                     } label: {
                         VStack(spacing: 8) {
-                            PlatformIconView(platform: platform, size: 44)
+                            PlatformIconView(platform: platform, size: 36)
+                                .frame(width: 44, height: 44)
 
                             Text(LanguageManager.shared.localizedString(platform.name))
                                 .font(.system(size: 11, weight: .medium))
@@ -182,6 +183,7 @@ struct NewTabPageView: View {
                                 .lineLimit(1)
                         }
                         .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(LanguageManager.shared.localizedString(platform.name))

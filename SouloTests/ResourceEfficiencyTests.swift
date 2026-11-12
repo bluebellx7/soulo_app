@@ -256,7 +256,8 @@ final class ResourceEfficiencyTests: XCTestCase {
         let keys = ["wallpaper_source", "wallpaper_refresh_interval", "wallpaper_only_favorites", "wallpaper_favorites", "wallpaper_last_auto_refresh_at"]
         let saved = keys.map { defaults.object(forKey: $0) }
         defer { for (key, value) in zip(keys, saved) { defaults.set(value, forKey: key) } }
-        defaults.set("gradient", forKey: "wallpaper_source")
+        defaults.set("bing", forKey: "wallpaper_source")
+        defaults.set(Date().timeIntervalSince1970, forKey: "wallpaper_last_auto_refresh_at")
         defaults.set(60, forKey: "wallpaper_refresh_interval")
         defaults.set(true, forKey: "wallpaper_only_favorites")
         defaults.removeObject(forKey: "wallpaper_favorites")

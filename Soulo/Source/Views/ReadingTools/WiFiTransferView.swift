@@ -94,7 +94,7 @@ struct WiFiTransferView: View {
         .navigationTitle(ToolText.text("wifi_transfer"))
         .navigationBarTitleDisplayMode(.inline)
         .background(Color(uiColor: .systemGroupedBackground))
-        .sensoryFeedback(.success, trigger: transferCount)
+        .compatibleSuccessFeedback(trigger: transferCount)
         .mediaPlayerNavigation()
         .onDisappear { stop() }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in

@@ -5,6 +5,59 @@ import UIKit
 final class LibraryPagingUITests: XCTestCase {
     private let sections = ["bookmarks", "history", "downloads", "files"]
 
+    func testFolderSwipeActionsTakePriorityOverPagingAndCanDelete() throws {
+        let app = launch(); defer { app.terminate() }
+        app.open(try XCTUnwrap(URL(string: "soulo://bookmarks")))
+        XCTAssertTrue(app.buttons["favorites.manage"].waitForExistence(timeout: 10))
+        let name = "Swipe QA " + UUID().uuidString.prefix(6)
+        app.buttons["favorites.manage"].tap(); app.buttons["New Folder"].firstMatch.tap()
+        let input = app.alerts.textFields.firstMatch
+        XCTAssertTrue(input.waitForExistence(timeout: 5)); input.typeText(name)
+        app.alerts.buttons["Done"].tap()
+        let folder = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
+        XCTAssertTrue(folder.waitForExistence(timeout: 5))
+        let start = folder.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5))
+        let end = folder.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5))
+        start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.1)
+        XCTAssertTrue(app.buttons["Delete"].firstMatch.waitForExistence(timeout: 3), app.debugDescription)
+        XCTAssertTrue(app.buttons["Rename"].firstMatch.exists)
+        XCTAssertTrue(app.buttons["library.section.bookmarks"].isSelected, "A row swipe must not switch library pages")
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); shot.name = "library-folder-native-swipe"; shot.lifetime = .keepAlways; add(shot)
+        app.buttons["Delete"].firstMatch.tap(); app.alerts.buttons["Delete"].firstMatch.tap()
+        XCTAssertTrue(folder.waitForNonExistence(timeout: 5))
+    }
+
+    func testFileSwipeRestoresBeforePagingAndCanDelete() throws {
+        let app = launch(); defer { app.terminate() }
+        try open("files", app: app)
+        let file = app.buttons.matching(NSPredicate(format: "identifier CONTAINS %@ OR label CONTAINS %@",
+            "files.item.Swipe-QA.txt", "Swipe-QA.txt")).firstMatch
+        guard file.waitForExistence(timeout: 5) else { throw XCTSkip("Requires an opt-in Swipe-QA.txt fixture in Downloads") }
+        func swipe(from: CGFloat, to: CGFloat) {
+            file.coordinate(withNormalizedOffset: CGVector(dx: from, dy: 0.5)).press(forDuration: 0.05,
+                thenDragTo: file.coordinate(withNormalizedOffset: CGVector(dx: to, dy: 0.5)),
+                withVelocity: .slow, thenHoldForDuration: 0.1)
+        }
+        swipe(from: 0.85, to: 0.4)
+        let action = app.buttons["Delete"].firstMatch
+        XCTAssertTrue(action.waitForExistence(timeout: 3), "A file's trailing swipe must reveal its action")
+        assertSelected("files", app: app)
+        swipe(from: 0.25, to: 0.95)
+        XCTAssertTrue(action.waitForNonExistence(timeout: 3), "The first leading swipe must restore the row")
+        assertSelected("files", app: app)
+        swipe(from: 0.25, to: 0.95)
+        assertSelected("downloads", app: app)
+        app.buttons["library.section.files"].tap()
+        assertSelected("files", app: app)
+        swipe(from: 0.85, to: 0.4)
+        XCTAssertTrue(action.waitForExistence(timeout: 3))
+        action.tap()
+        let confirmation = app.buttons["Delete"].firstMatch
+        XCTAssertTrue(confirmation.waitForExistence(timeout: 3))
+        confirmation.tap()
+        XCTAssertTrue(file.waitForNonExistence(timeout: 5), "The file's swipe action must complete deletion")
+    }
+
     func testAirPlayFromSouloKeepsTheDefaultPlayerPreference() throws {
         let app = launch()
         func openVideo() throws {
@@ -41,7 +94,7 @@ final class LibraryPagingUITests: XCTestCase {
         let app = XCUIApplication(bundleIdentifier: "com.dkluge.Soulo")
         app.launchArguments = ["-app_language", "en-US", "-appearance", "light",
             "-wallpaper_source", "gradient", "-wallpaper_gradient_id", "dawn",
-            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO"]
+            "-browser_toolbar_hidden", "NO", "-keep_fullscreen_browsing", "NO", "-files.gridView", "NO"]
         app.launch()
         return app
     }
@@ -57,8 +110,8 @@ final class LibraryPagingUITests: XCTestCase {
         let selected = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in button.isSelected }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [selected], timeout: 5), .completed, app.debugDescription, file: file, line: line)
         if section != "files" {
-            let page = app.collectionViews.firstMatch
-            let viewport = app.scrollViews["library.pages"].firstMatch
+            let page = app.collectionViews.matching(NSPredicate(format: "identifier != %@", "library.pages")).firstMatch
+            let viewport = app.descendants(matching: .any)["library.pages"].firstMatch
             let aligned = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
                 page.exists && abs(page.frame.midX - viewport.frame.midX) < 1.5
             }, object: nil)
@@ -70,7 +123,7 @@ final class LibraryPagingUITests: XCTestCase {
     }
 
     private func page(left: Bool, app: XCUIApplication) {
-        let viewport = app.scrollViews["library.pages"].firstMatch
+        let viewport = app.descendants(matching: .any)["library.pages"].firstMatch
         XCTAssertTrue(viewport.waitForExistence(timeout: 5), app.debugDescription)
         // Start outside the inset row's swipe actions. A rightward page drag
         // begins well inside the viewport, away from the navigation edge.
@@ -127,7 +180,7 @@ final class LibraryPagingUITests: XCTestCase {
         try open("downloads", app: app)
         let row = app.collectionViews.cells.firstMatch
         guard row.waitForExistence(timeout: 5) else { throw XCTSkip("Requires a downloaded item") }
-        let viewport = app.scrollViews["library.pages"].firstMatch
+        let viewport = app.descendants(matching: .any)["library.pages"].firstMatch
         let start = row.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.5))
         let end = app.coordinate(withNormalizedOffset: .zero).withOffset(
             CGVector(dx: viewport.frame.maxX - 16, dy: row.frame.midY))

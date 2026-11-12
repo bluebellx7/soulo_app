@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Se ha corregido un problema por el que abrir un favorito o una entrada del historial podía sustituir una pestaña existente.
-• Mejoras en el inicio, la carga de páginas y las interacciones en la pantalla de inicio.
-• Mejoras en los controles de pantalla completa, la rotación y el estado de reproducción al cambiar de app.
-• Mejoras al restaurar pestañas cerradas, en las vistas previas y en los detalles de la interfaz.
+• Fondos separados para los modos claro y oscuro, con interruptor para la capa de la imagen.
+• Colores de inicio mejorados; la vista previa del fondo sigue el tema de la app.
+• Previsualiza, comparte y guarda fondos en Fotos.
+• Ajustes de pestañas superiores con nueva pestaña y opción de ocultar la barra de plataformas tras navegar.

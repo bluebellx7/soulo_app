@@ -1,0 +1,330 @@
+{
+  "date": "2026-11-11",
+  "scope": [
+    "最低系统由 iOS 17.0 降到 iOS 16.0",
+    "保留 iOS 17 及以上系统的原生 API 分支",
+    "繁体与简体中文统一使用 🇨🇳"
+  ],
+  "version": {
+    "marketingVersion": "1.2.11",
+    "minimumOS": "16.0",
+    "uiTestRunnerMinimumOS": "16.4"
+  },
+  "implementation": {
+    "library": "统一使用 Core Data；iOS 17+ 首次升级从旧 SwiftData 迁移 UUID、日期、书签目录、历史和图标；迁移成功后才退役旧库，失败保留源数据。",
+    "legacyUI": "iOS 16 使用独立分页宿主及播放器导航；高版本保留原生分页和导航。",
+    "webkit": "iOS 16 使用公开 Objective-C WebKit API 处理 undefined 返回值，媒体关闭回调传非空闭包。",
+    "books": "复用现有压缩解码器，补齐 Safari 16 分组、样式和解压能力；没有新增运行时第三方包。",
+    "nativeEngines": "使用原锁定版本重新构建 Torrent、ED2K 设备和模拟器产物，最低版本均为 16.0。",
+    "flags": [
+      "Soulo/Source/Utils/Constants.swift",
+      "Soulo/Source/Views/WebView/WebPageTranslationView.swift"
+    ]
+  },
+  "dependencyOutsideRepository": {
+    "file": "../DKlugeKit/Package.swift",
+    "change": "iOS 平台最低版本降为 16；此本地依赖也需随工程保留。"
+  },
+  "validation": {
+    "releaseBuild": {
+      "passed": true,
+      "log": "/tmp/soulo-ios16-20261111/release-final.log",
+      "minimumOS": {
+        "app": "16.0",
+        "shareExtension": "16.0",
+        "widgetExtension": "16.0"
+      },
+      "weakFrameworks": [
+        "SwiftData",
+        "ActivityKit"
+      ]
+    },
+    "iOS16_0": {
+      "runtime": "iOS 16.0 simulator, iPhone 14",
+      "plannedCoverage": {
+        "planned": 283,
+        "covered": 283,
+        "plannedFailures": [],
+        "plannedSkipped": 15,
+        "extraFailures": [
+          [
+            "DownloadPlaybackTests",
+            "testEncryptedHLSDownloadStoresOfflineMaterialBeforeReportingFinished"
+          ],
+          [
+            "DownloadPlaybackTests",
+            "testHLSPlaybackReusesDownloadingAssetAndSurvivesCompletion"
+          ]
+        ]
+      },
+      "expandedSuite": {
+        "tests": 334,
+        "skipped": 18,
+        "failedCases": 2,
+        "failedAssertions": 3,
+        "log": "/tmp/soulo-ios16-20261111/ios16-serial-complete.log"
+      },
+      "notes": "原定 283 项均已覆盖，无失败，其中 15 项按条件跳过；扩展运行中的两个后台 HLS 下载用例失败，另行保留，不能将整个 334 项运行报告为通过。",
+      "HLSAfterSimulatorReboot": {
+        "tests": 2,
+        "failedCases": 2,
+        "log": "/tmp/soulo-ios16-20261111/minimum-hls-after-reboot.log",
+        "errors": [
+          "AVAssetDownloadTask: NSURLErrorDomain -1",
+          "AVAssetDownloadTask: AVFoundationErrorDomain -11800 / underlying -16090"
+        ],
+        "notes": "重启旧模拟器后仍可复现。尚不能仅凭模拟器失败断定真机行为；未修改测试将失败标记为跳过。"
+      }
+    },
+    "iOS16_4_UI": {
+      "tests": 3,
+      "failedCases": 0,
+      "log": "/tmp/soulo-ios16-20261111/ios16-isolated-pages.log",
+      "covers": [
+        "MP4 两种播放器首次打开、悬浮窗展开、再次展开、实际触摸拖动进度",
+        "资料库搜索与筛选",
+        "书签进入阅读列表及导航标题"
+      ]
+    },
+    "iOS26_2": {
+      "tests": 312,
+      "skipped": 9,
+      "failedCases": 0,
+      "log": "/tmp/soulo-ios16-20261111/high-final-isolated.log",
+      "notes": "额外插入两个后台 HLS 用例的 314 项混合运行曾导致后续广告选择视口断言失败；单独运行原定 312 项后全部无失败。"
+    },
+    "iOS26_2_HLS": {
+      "tests": 2,
+      "failedCases": 0,
+      "log": "/tmp/soulo-ios16-20261111/high-complete.log",
+      "cases": [
+        "testEncryptedHLSDownloadStoresOfflineMaterialBeforeReportingFinished",
+        "testHLSPlaybackReusesDownloadingAssetAndSurvivesCompletion"
+      ]
+    },
+    "iOS26_2_UI": {
+      "status": "passed",
+      "log": "/tmp/soulo-ios16-20261111/high-ui-complete.log",
+      "tests": 3,
+      "failedCases": 0
+    },
+    "localization": {
+      "strict": true,
+      "locales": 50,
+      "metadataJSONCheck": true
+    },
+    "gitDiffCheck": true,
+    "websiteChanged": false,
+    "physicalDevicesAvailable": [
+      {
+        "model": "iPad Air (M3)",
+        "system": "iOS 26.6.1"
+      },
+      {
+        "model": "iPhone 17",
+        "system": "iOS 26.6.1"
+      }
+    ],
+    "physicalDeviceTestingPerformed": true,
+    "physicalHLS": {
+      "devices": [
+        {
+          "model": "iPad Air (M3)",
+          "system": "iPadOS 26.6.1",
+          "tests": 4,
+          "passedCases": 4,
+          "failedCases": 0,
+          "log": "/tmp/soulo-hls-fix-20261111/fix-ipad-v3.log",
+          "resultBundle": "/tmp/soulo-hls-fix-20261111/fix-ipad-v3.xcresult"
+        },
+        {
+          "model": "iPhone 17",
+          "system": "iOS 26.6.1",
+          "tests": 8,
+          "passedCases": 8,
+          "failedCases": 0,
+          "log": "/tmp/soulo-hls-fix-20261111/fix-phone.log",
+          "resultBundle": "/tmp/soulo-hls-fix-20261111/fix-phone.xcresult"
+        }
+      ],
+      "passed": [
+        "加密 HLS 完成下载前保存离线播放材料",
+        "下载源关闭后首次播放、再次播放及跳转；系统和 Soulo 两种播放器均解码",
+        "普通 HLS 边播边下正常完成，完成时播放继续，停止源站后成品实际解码",
+        "私密 Cookie 认证 HLS、User-Agent、暂停恢复、下载完成和离线解码",
+        "播放资源与下载资源不共用对象；缓存释放和下载记录旧格式兼容",
+        "带 Cookie 的 MP4 边播边下回归"
+      ],
+      "diagnosticControls": {
+        "visiblePlayerAndIdleTimer": "仍失败，应用处于 active",
+        "nativeAVPlayerWithoutMediaSession": "iPad 仍失败",
+        "modernAssetDownloadConfiguration": "iPhone 仍失败，未保留接口替换",
+        "independentAsset": "通过，正式修复前独立资源对照 2.084 秒完成。",
+        "accuratePlaylistDurations": "共享资源仍卡住；播放列表分片时长误差并非充分原因。",
+        "assetCopy": "NSCopying 返回同一个对象，不能用于分离资源。"
+      },
+      "limitations": [
+        "两台设备均为 26.6.1，没有 iOS 16 真机。",
+        "本地 HTTP 测试源运行于 App 进程内；本轮验证边播边下，未验证锁屏、App 挂起或终止后的持续下载。",
+        "修复是基于真机对照确认的资源隔离方案，不推断所有网站或所有系统版本均已覆盖。"
+      ],
+      "phoneOriginalLibrary": {
+        "ZBOOKMARKRECORD": {
+          "before": 8,
+          "after": 8,
+          "missingOriginalIDs": 0
+        },
+        "ZBOOKMARKFOLDERRECORD": {
+          "before": 1,
+          "after": 1,
+          "missingOriginalIDs": 0
+        },
+        "ZSEARCHHISTORYRECORD": {
+          "before": 101,
+          "after": 101,
+          "missingOriginalIDs": 0
+        }
+      },
+      "ipadOriginalLibrary": {
+        "ZBOOKMARKRECORD": {
+          "before": 0,
+          "after": 0,
+          "missingOriginalIDs": 0
+        },
+        "ZBOOKMARKFOLDERRECORD": {
+          "before": 0,
+          "after": 0,
+          "missingOriginalIDs": 0
+        },
+        "ZSEARCHHISTORYRECORD": {
+          "before": 33,
+          "after": 33,
+          "missingOriginalIDs": 0
+        }
+      },
+      "ipadFixtureCleanup": {
+        "passed": true,
+        "log": "/tmp/soulo-ios16-20261111/ipad-fixture-cleanup-final.log",
+        "remainingGeneratedPaths": 0
+      },
+      "phoneFixtureCleanup": {
+        "removedPaths": 4,
+        "remainingFixturePaths": 0
+      },
+      "phoneCleanInstall": {
+        "passed": true,
+        "log": "/tmp/soulo-ios16-20261111/phone-clean-install.json"
+      },
+      "cleanupVerification": {
+        "phone": {
+          "originalDownloadEntries": 2268,
+          "missingOriginalPaths": 0,
+          "remainingGeneratedPaths": 0,
+          "originalDownloadRecords": 2,
+          "missingOriginalRecords": 0,
+          "remainingGeneratedRecords": 0
+        },
+        "ipad": {
+          "originalDownloadEntries": 0,
+          "missingOriginalPaths": 0,
+          "remainingGeneratedPaths": 0,
+          "originalDownloadRecords": 0,
+          "missingOriginalRecords": 0,
+          "remainingGeneratedRecords": 0
+        }
+      },
+      "temporaryCodeRemoved": true,
+      "sourceModificationInHardwareTurn": "已保留 HLS 资源隔离、请求上下文复用、恢复隐私标记、缓存生命周期及回归测试。",
+      "beforeFixDevices": [
+        {
+          "model": "iPhone 17",
+          "system": "iOS 26.6.1",
+          "tests": 3,
+          "passedCases": 2,
+          "failedCases": 1,
+          "log": "/tmp/soulo-ios16-20261111/phone-hls-unlocked.log"
+        },
+        {
+          "model": "iPad Air (M3)",
+          "system": "iPadOS 26.6.1",
+          "tests": 3,
+          "passedCases": 2,
+          "failedCases": 1,
+          "log": "/tmp/soulo-ios16-20261111/ipad-hls-native.log"
+        }
+      ],
+      "initialFailure": "边下载边播放能开始；最后分片已放行，系统下载任务仍停在约 25%（iPad）或 50%（iPhone），未报告完成。并非先前旧模拟器的 -16090。",
+      "initialFailureStage": "没有收到 AVAssetDownloadDelegate 正常完成回调；尚未进入保存或转 MP4 的后处理。",
+      "resolved": true,
+      "fix": {
+        "trigger": "AVPlayer 与 AVAssetDownloadTask 共用 task.urlAsset；在两台 26.6.1 真机上播放后下载无正常完成回调。",
+        "implementation": "下载和播放构造两个 AVURLAsset，共用一次获取的 User-Agent/Cookie 快照；恢复的任务也分离播放对象。",
+        "credentialStorage": "Cookie 和资源对象仅驻留内存。下载历史增加可选布尔值区分是否允许恢复时读取普通浏览 Cookie；旧记录可继续解码，未知或私密上下文不读取普通浏览 Cookie。",
+        "packageLifetime": "播放器保留独立播放资源及原生下载资源的关联，下载转 MP4 后缓存仍等播放器释放才删除。",
+        "tradeoff": "播放独立取流，可能增加边播边下期间的网络流量。",
+        "restorationLimit": "本轮没有验证进程终止后恢复；私密或旧任务无法恢复内存 Cookie 时，受认证保护的视频可能需要下载完成后再播放。"
+      },
+      "concurrentRegressionSeconds": {
+        "ipadPublic": 2.21,
+        "ipadAuthenticated": 2.707,
+        "phonePublic": 2.528,
+        "phoneAuthenticated": 3.028
+      },
+      "beforeFixSourceRestored": {
+        "StreamingMediaDownloadService.swift": true,
+        "DownloadPlaybackTests.swift": true
+      },
+      "beforeFixCleanBuild": {
+        "passed": true,
+        "log": "/tmp/soulo-ios16-20261111/device-clean-build.log"
+      },
+      "build": {
+        "passed": true,
+        "configuration": "Debug arm64，MinimumOSVersion 16.0",
+        "log": "/tmp/soulo-hls-fix-20261111/fix-ipad-v3.log"
+      },
+      "cleanupAfterFix": {
+        "ipad": {
+          "missingOriginalDownloadPaths": 0,
+          "removedGeneratedRoots": 1,
+          "remainingGeneratedRoots": 0,
+          "log": "/tmp/soulo-hls-fix-20261111/ipad-cleanup.log"
+        },
+        "phone": {
+          "missingOriginalDownloadPaths": 0,
+          "removedGeneratedRoots": 0,
+          "remainingGeneratedRoots": 0,
+          "log": "/tmp/soulo-hls-fix-20261111/phone-cleanup.log"
+        }
+      }
+    }
+  },
+  "size": {
+    "before": {
+      "appBytes": 84097640,
+      "executable": 27764608,
+      "zip": 42223193,
+      "minimumOS": "17.0"
+    },
+    "after": {
+      "appBytes": 84589255,
+      "executable": 28237448,
+      "zip": 42409172,
+      "minimumOS": "16.0"
+    },
+    "delta": {
+      "appBytes": 491615,
+      "executable": 472840,
+      "zip": 185979
+    },
+    "zipPercent": 0.44046645169634613,
+    "SouloShareExtension.appex": "16.0",
+    "SouloWidgetExtension.appex": "16.0"
+  },
+  "sizeMethod": "同配置 unsigned Release 真机 app，本地 Payload/Soulo.app ZIP，deflate level 6；不等同 App Store 切片下载体积。",
+  "pending": [
+    "iOS 16 真机 HLS 后台下载尚未验证。"
+  ],
+  "releaseReadiness": "高版本真机边下载边播放停滞已修复，iPhone/iPad 合计 12 项针对性回归通过。iOS 16 真机后台下载仍待验证，不能宣称全部系统和后台场景均已覆盖。",
+  "sizeMeasurementNote": "现有 Release 体积对比测于本次 HLS 资源隔离修复之前；本轮验证 Debug 真机产物，未重新测量 Release 体积。"
+}

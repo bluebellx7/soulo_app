@@ -36,7 +36,7 @@ struct ExternalNavigationSettingsView: View {
         }
         .overlay {
             if service.blockedHosts.isEmpty {
-                ContentUnavailableView(
+                CompatibleUnavailableView(
                     LanguageManager.shared.localizedString("no_external_hosts"),
                     systemImage: "arrow.up.forward.app",
                     description: Text(LanguageManager.shared.localizedString("no_external_hosts_desc"))

@@ -1,0 +1,63 @@
+{
+  "externalHostAccess": false,
+  "kind": "capability_probe_not_functional_certification",
+  "matrix": {
+    "cookies": "function",
+    "debugger": "undefined",
+    "downloads": "undefined",
+    "identity": "undefined",
+    "offscreen": "undefined",
+    "runtime": "function",
+    "runtimeContexts": "undefined",
+    "scriptingExecute": "function",
+    "scriptingRegister": "function",
+    "storage": "function",
+    "userScripts": "undefined",
+    "userScriptsRegister": "undefined",
+    "userScriptsWorld": "undefined",
+    "webRequestBlocking": "function"
+  },
+  "name": "篡改猴",
+  "offscreenAdapterCreatesDOM": false,
+  "previewWarnings": [
+    "commands",
+    "offscreen: AUDIO_PLAYBACK",
+    "notifications: onClicked / onClosed"
+  ],
+  "runtimeDiagnostics": [
+    "commands",
+    "offscreen"
+  ],
+  "system": "26.2",
+  "version": "5.5.1",
+  "date": "2026-11-12",
+  "package_source": "https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo",
+  "package_sha256": "b5167937817e636adeba462ed9bf9b32ff01c2888f78a9afc6aa4f8e655fe872",
+  "package_cost": "Chrome version is free according to publisher download page; no paid API used",
+  "scope": "Chrome package 5.5.1 on iPadOS 26.2 simulator; user-specific extension version and failing script not supplied",
+  "matrix_scope": "Native API surface in a real extension-origin page. The probe page does not load Soulo compatibility JS. Existing shim separately provides an offscreen namespace but only fake document state, not an actual DOM document.",
+  "required_missing": [
+    "native userScripts namespace (declared in required permissions)",
+    "native offscreen document (declared in required permissions)"
+  ],
+  "permission_caveat": "Undefined optional or undeclared APIs such as downloads, debugger and identity do not prove those APIs unsupported; their permissions were not granted for this probe.",
+  "host_access": "Only local fixture origins granted. External host access was withheld. No installed user scripts, cloud account login or external-site functional certification.",
+  "conclusion": "Not complete desktop WebExtension or Tampermonkey compatibility. Package installation/loading succeeds while required API gaps remain; script execution, dashboard installation, iframe behavior and persistence still require extension-specific functional testing. No production extension runtime changes made during this audit.",
+  "current_app_boundaries": {
+    "native_webextensions": "iOS 18.4 or later, per application availability guards and Apple WebKit platform API",
+    "userscripts": "Built-in GM compatibility is a separate runtime; synchronous resources, full sandbox/world semantics and every Tampermonkey API are not certified"
+  },
+  "primary_references": [
+    "https://webkit.org/blog/16574/webkit-features-in-safari-18-4/",
+    "https://www.tampermonkey.net/index.php?browser=chrome",
+    "https://www.tampermonkey.net/documentation.php?ext=d2&q=content_script_api",
+    "https://developer.chrome.com/docs/extensions/reference/api/userScripts"
+  ],
+  "evidence": "/tmp/soulo-extension-compatibility-20261112/capability-and-final-unit.xcresult",
+  "additional_missing_surface_observed": [
+    "userScripts.register",
+    "userScripts.configureWorld",
+    "runtime.getContexts"
+  ],
+  "causality_limit": "The API gaps can explain incompatibility; the reported user installation and script were not provided, so its exact failure is not yet reproduced."
+}

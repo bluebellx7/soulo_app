@@ -1,6 +1,6 @@
-1.2.10
+1.2.13
 
-• Đã sửa lỗi đôi khi thay thế thẻ hiện có khi mở dấu trang hoặc mục trong lịch sử.
-• Cải thiện khởi động, tải trang và thao tác trên màn hình chính.
-• Cải thiện điều khiển toàn màn hình, xoay màn hình và trạng thái phát khi chuyển ứng dụng.
-• Cải thiện khôi phục thẻ đã đóng, xem trước tệp và các chi tiết giao diện.
+• Nền riêng cho giao diện sáng và tối, cùng công tắc lớp phủ ảnh.
+• Cải thiện màu trang chủ; xem trước hình nền theo chủ đề ứng dụng.
+• Xem trước, chia sẻ và lưu hình nền vào Ảnh.
+• Cài đặt tab trên cùng có tab mới và tùy chọn ẩn thanh nền tảng sau khi chuyển trang.

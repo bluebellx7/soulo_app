@@ -436,3 +436,65 @@
 "files_move_busy" = "Vent til nedlastingene er fullført før du flytter eller gir nytt navn til disse elementene.";
 "video_show_episode_dock" = "Vis episodedokk";
 "video_show_episode_dock_desc" = "Vis en forankret episodeknapp på nettsider med episoder. Episoder forblir tilgjengelige inne i spilleren.";
+
+// Webpage share preview
+"page_share_image" = "Del bilde";
+"page_share_link" = "Del lenke";
+"page_share_preview" = "Forhåndsvisning av synlig område";
+"page_share_brand" = "Soulo: Nettleser for flere søk";
+
+"video_export_mp4" = "Eksporter MP4";
+"video_export_failed" = "Videoen kunne ikke eksporteres som MP4. Originalfilen er beholdt.";
+
+// Website zoom and two-finger gestures
+"gesture_title" = "Bevegelser med to fingre";
+"gesture_hint" = "Beveg to fingre sidelengs sammen. Hintet følger fingrene; beveg tilbake for å avbryte. Navigering med én finger og knipezoom er fortsatt tilgjengelig.";
+"gesture_swipe_right" = "Sveip til høyre";
+"gesture_swipe_left" = "Sveip til venstre";
+"gesture_show_toolbar" = "Vis verktøylinje";
+"gesture_quick_menu" = "Hurtigmeny";
+"gesture_preview" = "Forhåndsvis bevegelse";
+"zoom_remember" = "Husk nettstedszoom";
+"zoom_hint" = "Zoom fra sidemenyen lagres per domene. Endringer i private faner lagres ikke.";
+"zoom_empty" = "Ingen lagrede zoomnivåer";
+"zoom_reset_all" = "Tilbakestill alt til 100%";
+
+"shake_direction" = "Retning";
+"shake_direction_horizontal" = "Venstre og høyre";
+"shake_direction_vertical" = "Opp og ned";
+"shake_direction_any" = "Alle retninger";
+
+"gesture_settings_title" = "Nettsidebevegelser";
+"gesture_no_history" = "Når tilbake ikke er tilgjengelig";
+"gesture_no_history_hint" = "Uten tidligere sider sveiper du mot høyre fra venstre kant for å vise handlingen. Beveg tilbake for å avbryte. Velg Ingen for å slå av.";
+
+"gesture_execution" = "Utfør handling";
+
+"gesture_execute_release" = "Når du slipper";
+
+"gesture_execute_tap" = "Ved trykk";
+
+"gesture_feedback" = "Handlingstilbakemelding";
+
+"gesture_haptics" = "Vibrasjon";
+
+"gesture_sound" = "Lyd";
+
+"gesture_feedback_preview" = "Prøv tilbakemelding";
+
+"media_start_timeout" = "Avspillingen har ikke startet. Sjekk nettverket eller bytt avspiller.";
+
+"wallpaper_appearance_hint" = "Velg egne bakgrunner for lyst og mørkt utseende. De byttes automatisk med appen.";
+
+"wallpaper_image_overlay" = "Bildelag";
+
+"auto_hide_platform_bar" = "Skjul plattformlinjen automatisk";
+
+"top_tab_bar_hidden_title" = "Øverste fanelinje er skjult";
+
+"top_tab_bar_reopen_hint" = "Trykk på faneknappen nederst, åpne menyen … og slå på øverste fanelinje for å vise den igjen.";
+
+"wallpaper_image_blur" = "Frostet glass";
+"wallpaper_blur_amount" = "Uskarphetsstyrke";
+
+"auto_hide_platform_bar_hint" = "Plattformlinjen skjules når du åpner et søkeresultat. Gå tilbake til resultatene eller start et nytt søk for å vise den igjen. Du kan slå dette av i denne menyen.";
